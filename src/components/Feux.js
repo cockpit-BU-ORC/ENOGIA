@@ -5,13 +5,13 @@ import { fmt, diffDays } from "../parsers";
 import { CARD, EmptyNote } from "./ManagerParts";
 
 // ── Niveau de confiance par PJ : 4 feux (comme « Overall Project Status » du reporting PowerPoint) ──
-// planning · cash in/out · risques / problèmes · communication client. Un feu = rouge (à risque),
+// planning · cash in · risques / problèmes · communication client. Un feu = rouge (à risque),
 // jaune (vigilance) ou vert (bon) ; pas de feu = non renseigné. Stocké par PJ dans
 // planning/pjMetaOverrides (champs feux + feuxAt), donc jamais écrasé par un import MS Project.
-export const FEUX=[["planning","Planning"],["cash","Cash in/out"],["risques","Risques / Problèmes"],["com","Communication client"]];
+export const FEUX=[["planning","Planning"],["cash","Cash in"],["risques","Risques / Problèmes"],["com","Communication client"]];
 // Commentaires d'explication saisis dans la fiche synthèse (meta.notes) et repris dans le rapport CODIR :
 // « codir » = commentaire de synthèse (anciennement « headline ») ; les autres clés accompagnent un feu ou un indicateur chiffré.
-export const NOTE_LABELS={codir:"Commentaire CODIR",planning:"Planning",cash:"Cash in/out",risques:"Risques / Problèmes",com:"Communication client",av:"Avancement",dr:"Dérive du départ",rt:"Retards",ct:"Contrat"};
+export const NOTE_LABELS={codir:"Commentaire CODIR",planning:"Planning",cash:"Cash in",risques:"Risques / Problèmes",com:"Communication client",av:"Avancement",dr:"Dérive du départ",rt:"Retards",ct:"Contrat"};
 export const NOTE_ORDER=["planning","cash","risques","com","av","dr","rt","ct"];
 export const NOTE_MAX=200;
 export const CODIR_MAX=450;   // commentaire de synthèse (zone dédiée, visible uniquement dans le rapport CODIR)

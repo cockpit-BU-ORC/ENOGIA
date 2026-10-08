@@ -543,7 +543,7 @@ export function ManagerPanel({data,progress,setProgress,initialData,lastInitialI
     </div>}
 
     {codirOpen&&<CodirDialog data={data} initialData={initialData} comments={comments} delays={delays} progress={progress} onClose={()=>setCodirOpen(false)}/>}
-    {pendingAdd&&<InitialAddReview parsed={pendingAdd} initialData={initialData} busy={initialImporting} onCancel={()=>setPendingAdd(null)} onConfirm={async rows=>{await onInitialAdd(rows);setPendingAdd(null);}}/>}
+    {pendingAdd&&<InitialAddReview parsed={pendingAdd} initialData={initialData} busy={initialImporting} onCancel={()=>setPendingAdd(null)} onConfirm={async(rows,fixRows)=>{await onInitialAdd(rows,fixRows);setPendingAdd(null);}}/>}
 
     {tab==="derives"&&kpiTab==="derives"&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
       {!hasInitial&&<div style={{background:T.amber100,color:T.amber600,borderRadius:12,padding:"16px 18px",fontSize:14,display:"flex",alignItems:"center",gap:10}}><NavIcon name="warning" size={16}/>Aucun planning initial importé — les dérives ne peuvent pas être calculées. Utilisez le menu ⋯ de la tuile « Planning initial » en haut à droite.</div>}

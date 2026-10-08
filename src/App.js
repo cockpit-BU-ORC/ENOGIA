@@ -33,7 +33,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-07-v96-import-liste-numeros-serie";
+const APP_BUILD_VERSION = "2026-10-07-v98-cash-in-correction-initial";
 
 export default function App(){
   // Utilisateur connecté via Google, restreint aux comptes @enogia.com (null tant que non connecté).
@@ -561,7 +561,7 @@ export default function App(){
   // AJOUT au planning initial (nouveau, ne remplace pas l'import initial ci-dessus) : n'ajoute que les
   // PJ absents — ceux déjà ancrés ne sont jamais modifiés. On relit le document juste avant d'écrire
   // (pas l'état local, qui peut être en retard) et on garde une copie de l'initial précédent.
-  const handleInitialAdd=useCallback(async newRows=>{
+  const handleInitialAdd=useCallback(async (newRows,fixRows=[])=>{
     setInitialImporting(true);
     try{
       const snap=await getDoc(INITIAL_DOC_REF());
@@ -570,10 +570,13 @@ export default function App(){
       const have=new Set(curRows.map(r=>r.pj));
       const stamp=new Date().toLocaleString("fr-FR");
       const added=newRows.filter(r=>!have.has(r.pj)).map(r=>({...r,anchoredAt:stamp}));
-      if(added.length===0){setInitialImporting(false);return;}
-      try{await setDoc(doc(db,"planning","initialBackup"),{rows:curRows,lastImport:cur.lastImport||null,savedAt:stamp,reason:"avant ajout de "+added.length+" projet(s)"});}
+      // Correction explicite (cochée un par un) de PJ déjà ancrés : on remet les dates du fichier comme référence initiale
+      const fixMap=new Map((fixRows||[]).filter(r=>have.has(r.pj)).map(r=>[r.pj,r]));
+      if(added.length===0&&fixMap.size===0){setInitialImporting(false);return;}
+      const nextRows=curRows.map(r=>fixMap.has(r.pj)?{...r,...fixMap.get(r.pj),anchoredAt:stamp,correctedAt:stamp}:r);
+      try{await setDoc(doc(db,"planning","initialBackup"),{rows:curRows,lastImport:cur.lastImport||null,savedAt:stamp,reason:"avant "+(added.length?"ajout de "+added.length+" projet(s)":"")+(added.length&&fixMap.size?" et ":"")+(fixMap.size?"correction de "+fixMap.size+" PJ":"")});}
       catch(e){console.warn("Sauvegarde de l'initial impossible (l'ajout continue, rien n'est écrasé) :",e);}
-      await setDoc(INITIAL_DOC_REF(),{...cur,rows:[...curRows,...added],lastImport:cur.lastImport||stamp,lastAdd:stamp});
+      await setDoc(INITIAL_DOC_REF(),{...cur,rows:[...nextRows,...added],lastImport:cur.lastImport||stamp,lastAdd:stamp});
     }catch(e){
       console.error(e);
       alert("Erreur lors de l'ajout au planning initial : "+e.message);
