@@ -246,4 +246,8 @@ export const RELEASE_CATALOG = [
   { v: "166", t: "Calendrier réparé", items: [
     ["Calendrier", "Ne plante plus à l'ouverture quand le zoom mémorisé est illisible."],
   ] },
+  { v: "167", t: "Calendrier fluide", items: [
+    ["Calendrier", "Seules les colonnes visibles sont dessinées : ouverture rapide, plus de blocage."],
+    ["Survol et commentaires", "Ne redessinent plus tout le calendrier."],
+  ] },
 ];

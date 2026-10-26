@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { isPhone } from "../useIsPhone";
 import { EtatInfoButton } from "./ProdStagesUI";
 import { T, FZF, stagePalette, stageSoft } from "../theme";
@@ -93,19 +93,11 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
   const headerTop=MONTH_H+(mode==="day"?WEEK_BAND_H:0);
   // zoomLevel est désormais géré au niveau de App (props) pour persister quand on quitte/revient sur cet onglet
   const [commentPopup,setCommentPopup]=useState(null); // {pj, dateIso}
-  const [tip,setTip]=useState(null); // v142 : infobulle propre {r,status,pKind,label,x,y}
-  // Fermeture au clavier (Échap), même comportement que la fiche projet (ProjectModal) — cohérence
-  // demandée explicitement ("même registre que Gantt/liste").
-  useEffect(()=>{
-    if(!commentPopup)return;
-    const onKey=e=>{if(e.key==="Escape")setCommentPopup(null);};
-    window.addEventListener("keydown",onKey);
-    return ()=>window.removeEventListener("keydown",onKey);
-  },[commentPopup]);
-  const [commentAuthor,setCommentAuthor]=useState("");
-  const [commentText,setCommentText]=useState("");
-  const [commentErr,setCommentErr]=useState("");
-  const [commentPrivate,setCommentPrivate]=useState(false);
+  const closeCommentPopup=useCallback(()=>setCommentPopup(null),[]);
+  // v167 : l'infobulle vit dans son propre composant (CalTip) — avant, chaque mouvement de souris
+  // redessinait toute la grille (des dizaines de milliers de cases) et figeait la page.
+  const tipRef=useRef(null);
+  const setTip=t=>{if(tipRef.current)tipRef.current(t);};
   const WEEK_COUNTS=[6,8,14,24,36];
   // Niveau "6" ajouté devant (demandé explicitement : "il faut dézoomer pour avoir une vision plus
   // claire") — colonnes jour nettement plus larges pour une vue moins chargée ; décale aussi le
@@ -174,6 +166,15 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
   const DAY_NAMES=["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"];
 
   const scrollRef=React.useRef(null);
+  // v167 : seules les colonnes visibles (+ une marge) sont dessinées ; la position de défilement est
+  // relue au plus une fois par image.
+  const [scrollX,setScrollX]=useState(0);
+  const rafRef=useRef(0);
+  const onGridScroll=()=>{
+    if(rafRef.current)return;
+    rafRef.current=requestAnimationFrame(()=>{rafRef.current=0;if(scrollRef.current)setScrollX(scrollRef.current.scrollLeft);});
+  };
+  useEffect(()=>()=>cancelAnimationFrame(rafRef.current),[]);
   useEffect(()=>{
     const el=scrollRef.current;
     if(!el)return;
@@ -207,6 +208,7 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
     if(mode==="week"){const w=weekStartOf(today);w.setDate(w.getDate()-7*Math.floor((effCount-1)/2));setAnchor(w);}
     else{const d=new Date(today);d.setHours(0,0,0,0);d.setDate(d.getDate()-Math.floor(effCount/2));setDayAnchor(d);}
     if(scrollRef.current)scrollRef.current.scrollLeft=0;
+    setScrollX(0);
   };
   const goToday=centerOnToday;
   const goTodayRef=useRef(goToday);goTodayRef.current=goToday;
@@ -217,6 +219,15 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
   const unit=Math.floor((avail/weightOf(effCount))*100)/100;
   const colPx=unit;
   const wePx=Math.floor(unit*WE_RATIO*100)/100;
+  // Plage de colonnes à dessiner [lo, hi] d'après le défilement horizontal.
+  const colW=cols.map(c=>mode==="week"?colPx:((c.getDay()===0||c.getDay()===6)?wePx:colPx));
+  const colX=[];colW.reduce((acc,w)=>{colX.push(acc);return acc+w;},0);
+  const COL_BUF=8;
+  let lo=0;while(lo<cols.length-1&&colX[lo]+colW[lo]<scrollX)lo++;
+  let hi=lo;while(hi<cols.length-1&&colX[hi]<scrollX+viewW-LEFT_W)hi++;
+  lo=Math.max(0,lo-COL_BUF);hi=Math.min(cols.length-1,hi+COL_BUF);
+  // Lignes de la grille : 1 = mois, (2 = n° de semaine en mode Jour), puis en-tête, puis une ligne par machine.
+  const HEAD_ROW=mode==="day"?3:2;
   // Page précédente / suivante : défile d'environ une largeur d'écran.
   const pageScroll=dir=>{if(scrollRef.current)scrollRef.current.scrollBy({left:dir*Math.round((viewW-LEFT_W)*0.85),behavior:"smooth"});};
 
@@ -251,13 +262,13 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
       </div>
     </div>
 
-    <div ref={scrollRef}
+    <div ref={scrollRef} onScroll={onGridScroll}
       style={{overflowX:"auto",overflowY:"auto",maxHeight:"calc(100vh - 260px)"}}>
       <div style={{display:"grid",width:"max-content",minWidth:"100%",gridTemplateColumns:LEFT_W+"px "+(mode==="week"
         ?"repeat("+cols.length+","+colPx+"px)"
         :cols.map(d=>(d.getDay()===0||d.getDay()===6)?wePx+"px":colPx+"px").join(" ")
       )}}>
-        <div className="enogia-lblcell" style={{padding:"4px 14px",fontSize:FZF.sm,fontWeight:700,color:T.ink300,background:T.surface,borderBottom:"1px solid "+T.line,borderRight:"1px solid "+T.line,position:"sticky",left:0,top:0,zIndex:12,height:MONTH_H,width:LEFT_W,minWidth:LEFT_W,maxWidth:LEFT_W,boxSizing:"border-box"}}/>
+        <div className="enogia-lblcell" style={{padding:"4px 14px",fontSize:FZF.sm,fontWeight:700,color:T.ink300,background:T.surface,borderBottom:"1px solid "+T.line,borderRight:"1px solid "+T.line,position:"sticky",left:0,top:0,zIndex:12,height:MONTH_H,width:LEFT_W,minWidth:LEFT_W,maxWidth:LEFT_W,boxSizing:"border-box",gridColumn:1,gridRow:1}}/>
         {(()=>{
           // Regroupe les colonnes consécutives par mois pour afficher une bande "Mois Année" au-dessus
           const groups=[];
@@ -265,40 +276,40 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
             const m=c.getMonth(),y=c.getFullYear();
             const last=groups[groups.length-1];
             if(last&&last.m===m&&last.y===y)last.span++;
-            else groups.push({m,y,span:1});
+            else groups.push({m,y,span:1,start:i});
           });
           return groups.map((g,gi)=>(
-            <div key={gi} style={{gridColumn:"span "+g.span,padding:"2px 4px",textAlign:"center",fontSize:FZF.sm,fontWeight:700,color:g.m===today.getMonth()&&g.y===today.getFullYear()?T.teal600:T.ink500,background:g.m===today.getMonth()&&g.y===today.getFullYear()?T.teal100:T.surface,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,position:"sticky",top:0,zIndex:10,height:MONTH_H,boxSizing:"border-box",display:"flex",alignItems:"center",justifyContent:"center"}}>{MONTHS_FULL[g.m]} {g.y}</div>
+            <div key={gi} style={{gridColumn:(g.start+2)+" / span "+g.span,gridRow:1,padding:"2px 4px",textAlign:"center",fontSize:FZF.sm,fontWeight:700,color:g.m===today.getMonth()&&g.y===today.getFullYear()?T.teal600:T.ink500,background:g.m===today.getMonth()&&g.y===today.getFullYear()?T.teal100:T.surface,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,position:"sticky",top:0,zIndex:10,height:MONTH_H,boxSizing:"border-box",display:"flex",alignItems:"center",justifyContent:"center"}}>{MONTHS_FULL[g.m]} {g.y}</div>
           ));
         })()}
 
         {/* Bande "numéro de semaine" séparée, une seule fois par semaine (mode Jour uniquement) —
             demandé explicitement : "séparer le numéro de semaine et le numéro du jour (regroupé le
             numéro de semaine en 1 fois)" plutôt que de le répéter dans chaque cellule de jour. */}
-        {mode==="day"&&<div style={{background:T.surface,borderBottom:"1px solid "+T.line,borderRight:"1px solid "+T.line,position:"sticky",left:0,top:MONTH_H,zIndex:12,height:WEEK_BAND_H,width:LEFT_W,minWidth:LEFT_W,maxWidth:LEFT_W,boxSizing:"border-box"}}/>}
+        {mode==="day"&&<div style={{background:T.surface,borderBottom:"1px solid "+T.line,borderRight:"1px solid "+T.line,position:"sticky",left:0,top:MONTH_H,zIndex:12,height:WEEK_BAND_H,width:LEFT_W,minWidth:LEFT_W,maxWidth:LEFT_W,boxSizing:"border-box",gridColumn:1,gridRow:2}}/>}
         {mode==="day"&&(()=>{
           const wgroups=[];
-          days.forEach(d=>{
+          days.forEach((d,i)=>{
             const wn=weekNum(d),wy=d.getFullYear();
             const last=wgroups[wgroups.length-1];
             if(last&&last.wn===wn&&last.wy===wy)last.span++;
-            else wgroups.push({wn,wy,span:1});
+            else wgroups.push({wn,wy,span:1,start:i});
           });
           return wgroups.map((g,gi)=>(
-            <div key={gi} style={{gridColumn:"span "+g.span,padding:"1px 4px",textAlign:"center",fontSize:FZF.xs,fontWeight:700,color:T.ink500,background:T.surface,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,position:"sticky",top:MONTH_H,zIndex:9,height:WEEK_BAND_H,boxSizing:"border-box",display:"flex",alignItems:"center",justifyContent:"center"}}>S{g.wn}</div>
+            <div key={gi} style={{gridColumn:(g.start+2)+" / span "+g.span,gridRow:2,padding:"1px 4px",textAlign:"center",fontSize:FZF.xs,fontWeight:700,color:T.ink500,background:T.surface,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,position:"sticky",top:MONTH_H,zIndex:9,height:WEEK_BAND_H,boxSizing:"border-box",display:"flex",alignItems:"center",justifyContent:"center"}}>S{g.wn}</div>
           ));
         })()}
 
-        <div className="enogia-lblcell" style={{padding:"6px 14px",fontSize:FZF.xs,fontWeight:700,color:T.ink500,textTransform:"uppercase",letterSpacing:".03em",background:T.surface,borderBottom:"1px solid "+T.line,borderRight:"1px solid "+T.line,position:"sticky",left:0,top:headerTop,zIndex:12,width:LEFT_W,minWidth:LEFT_W,maxWidth:LEFT_W,boxSizing:"border-box"}}>Machine</div>
+        <div className="enogia-lblcell" style={{padding:"6px 14px",fontSize:FZF.xs,fontWeight:700,color:T.ink500,textTransform:"uppercase",letterSpacing:".03em",background:T.surface,borderBottom:"1px solid "+T.line,borderRight:"1px solid "+T.line,position:"sticky",left:0,top:headerTop,zIndex:12,width:LEFT_W,minWidth:LEFT_W,maxWidth:LEFT_W,boxSizing:"border-box",gridColumn:1,gridRow:HEAD_ROW}}>Machine</div>
         {mode==="week"?weeks.map((w,wi)=>{
           const we=new Date(w);we.setDate(we.getDate()+7);
           const closed=isClosurePeriod(w,we);
-          return(<div key={wi} style={{padding:"6px 4px",textAlign:"center",fontSize:FZF.sm,fontWeight:700,color:wi===todayWeekIdx?T.red600:closed?T.ink300:T.ink500,background:wi===todayWeekIdx?T.red100:closed?T.ink100:T.surface,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,boxShadow:wi===todayWeekIdx?"inset 0 -3px 0 "+T.red500:"none",position:"sticky",top:headerTop,zIndex:10}}>S{weekNum(w)}</div>);
+          return(<div key={wi} style={{padding:"6px 4px",textAlign:"center",fontSize:FZF.sm,fontWeight:700,color:wi===todayWeekIdx?T.red600:closed?T.ink300:T.ink500,background:wi===todayWeekIdx?T.red100:closed?T.ink100:T.surface,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,boxShadow:wi===todayWeekIdx?"inset 0 -3px 0 "+T.red500:"none",position:"sticky",top:headerTop,zIndex:10,gridColumn:wi+2,gridRow:HEAD_ROW}}>S{weekNum(w)}</div>);
         }):days.map((d,di)=>{
           const isWE=d.getDay()===0||d.getDay()===6;
           const dEnd=new Date(d);dEnd.setDate(dEnd.getDate()+1);
           const closed=isClosurePeriod(d,dEnd);
-          return(<div key={di} style={{padding:"3px 1px",textAlign:"center",background:di===todayDayIdx?T.red100:closed?T.ink100:isWE?T.ink100:T.surface,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,boxShadow:di===todayDayIdx?"inset 0 -3px 0 "+T.red500:"none",position:"sticky",top:headerTop,zIndex:10}}>
+          return(<div key={di} style={{padding:"3px 1px",textAlign:"center",background:di===todayDayIdx?T.red100:closed?T.ink100:isWE?T.ink100:T.surface,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,boxShadow:di===todayDayIdx?"inset 0 -3px 0 "+T.red500:"none",position:"sticky",top:headerTop,zIndex:10,gridColumn:di+2,gridRow:HEAD_ROW}}>
             {/* Numéro de semaine retiré d'ici (demandé explicitement) : il vit désormais uniquement
                 dans la bande groupée au-dessus. */}
             <div style={{fontSize:FZF.xs,fontWeight:600,lineHeight:1.2,color:di===todayDayIdx?T.red600:closed?T.ink300:T.ink300}}>{DAY_NAMES[d.getDay()]}</div>
@@ -310,33 +321,36 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
           const r=data.find(x=>x.pj===pj);
           const meta=getPjMeta(pj,r);
           const rowBg=T.surface;
+          const row=HEAD_ROW+1+pjIdx;
           return(<React.Fragment key={pj}>
             {/* Même bloc "Projet" que le Gantt (demandé explicitement : "même type de projet entre le
                 gantt et le calendrier, ça doit être un copier-coller") — composant partagé, voir
                 pjMeta.js. */}
-            <div className="enogia-lblcell" onClick={()=>onSelectPj&&onSelectPj(pj)} style={{padding:"6px 14px",display:"flex",flexDirection:"column",justifyContent:"center",gap:2,height:rowH,width:LEFT_W,minWidth:LEFT_W,maxWidth:LEFT_W,boxSizing:"border-box",borderBottom:"1px solid "+T.line,borderRight:"1px solid "+T.line,background:rowBg,position:"sticky",left:0,cursor:"pointer",overflow:"hidden",zIndex:5}}>
+            <div className="enogia-lblcell" onClick={()=>onSelectPj&&onSelectPj(pj)} style={{padding:"6px 14px",display:"flex",flexDirection:"column",justifyContent:"center",gap:2,height:rowH,width:LEFT_W,minWidth:LEFT_W,maxWidth:LEFT_W,boxSizing:"border-box",borderBottom:"1px solid "+T.line,borderRight:"1px solid "+T.line,background:rowBg,position:"sticky",left:0,cursor:"pointer",overflow:"hidden",zIndex:5,gridColumn:1,gridRow:row}}>
               <ProjectLabelCell pj={pj} r={r} meta={meta} mark={marks.get(pj)?<NewMark mark={marks.get(pj)}/>:null}/>
             </div>
-            {mode==="week"?weeks.map((w,wi)=>{
+            {mode==="week"?weeks.slice(lo,hi+1).map((w,k)=>{
+              const wi=lo+k,pos={gridColumn:wi+2,gridRow:row};
               const we=new Date(w);we.setDate(we.getDate()+7);
               const status=getWeekStatus(r,w,we);
               const isTodayCol=wi===todayWeekIdx;
               const closed=isClosurePeriod(w,we);
               const cellBg=closed?T.ink100:isTodayCol?T.red500+"12":rowBg;
               const todayEdge=isTodayCol?"inset 2px 0 0 "+T.red500+", inset -2px 0 0 "+T.red500:"none";
-              if(!status)return<div key={wi} style={{height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,background:cellBg,boxShadow:todayEdge}}/>;
+              if(!status)return<div key={wi} style={{...pos,height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,background:cellBg,boxShadow:todayEdge}}/>;
               const lastMilestone=status.split(" + ").pop();
               const st=SEGMENT_STYLE[lastMilestone]||SEGMENT_STYLE["Production"];
               const fill=stageFill(status);
               const pKindW=presenceKindAt(r.clientPresence,v=>{const x=new Date(v);return x>=w&&x<we;});
               const pKind=pKindW,showPresence=!!pKindW;
-              return(<div key={wi} onClick={()=>onSelectPj&&onSelectPj(pj)} onMouseEnter={e=>{e.currentTarget.style.background=T.teal100+"50";}} onMouseMove={e=>setTip({r,status,pKind:showPresence?pKind:null,label:"Semaine S"+weekNum(w)+" · "+fmt(w)+" → "+fmt(new Date(we.getTime()-86400000)),x:e.clientX,y:e.clientY})} onMouseLeave={e=>{e.currentTarget.style.background=cellBg;setTip(null);}} style={{height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,boxShadow:todayEdge,padding:3,cursor:"pointer",position:"relative",background:cellBg,transition:"background .12s ease"}}>
+              return(<div key={wi} onClick={()=>onSelectPj&&onSelectPj(pj)} onMouseEnter={e=>{e.currentTarget.style.background=T.teal100+"50";}} onMouseMove={e=>setTip({r,status,pKind:showPresence?pKind:null,label:"Semaine S"+weekNum(w)+" · "+fmt(w)+" → "+fmt(new Date(we.getTime()-86400000)),x:e.clientX,y:e.clientY})} onMouseLeave={e=>{e.currentTarget.style.background=cellBg;setTip(null);}} style={{...pos,height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,boxShadow:todayEdge,padding:3,cursor:"pointer",position:"relative",background:cellBg,transition:"background .12s ease"}}>
                 {/* Tuile de nouveau remplie (demandé explicitement : "essaye de les remplir") — le mot
                     complet doit toujours rester lisible ("je dois toujours réussir à lire l'intégralité
                     des mots"), donc texte qui s'enroule sur 2 lignes plutôt qu'une troncature. */}
                 <div style={{height:"100%",background:fill.background,borderRadius:4,boxShadow:showPresence?presenceRing(pKind):T.mode==="dark"?"inset 0 0 0 1px "+st.t+"33":"none",display:"flex",flexDirection:"column",gap:3,alignItems:"center",justifyContent:"center",textAlign:"center",fontSize:status.includes("+")?FZF.xs:FZF.sm,fontWeight:fill.bold?700:600,color:fill.color,overflow:"visible",whiteSpace:"normal",lineHeight:1.15,padding:"2px 6px",opacity:closed?0.45:1}}><span>{status}</span>{showPresence&&<PresenceChip kind={pKind} compact tiny/>}</div>
               </div>);
-            }):days.map((d,di)=>{
+            }):days.slice(lo,hi+1).map((d,k)=>{
+              const di=lo+k,pos={gridColumn:di+2,gridRow:row};
               const isWE=d.getDay()===0||d.getDay()===6;
               const status=getDayStatus(r,d,productionExclusions?.[pj]);
               const isTodayCol=di===todayDayIdx;
@@ -350,9 +364,8 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
               const openCommentPopup=e=>{
                 e.stopPropagation();
                 setCommentPopup({pj,dateIso:iso});
-                setCommentAuthor("");setCommentText("");setCommentErr("");
               };
-              if(!status)return(<div key={di} className="enogia-cal-daycell" style={{height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,background:cellBg,boxShadow:todayEdge,position:"relative"}}>
+              if(!status)return(<div key={di} className="enogia-cal-daycell" style={{...pos,height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,background:cellBg,boxShadow:todayEdge,position:"relative"}}>
                 <button onClick={openCommentPopup} className={"enogia-cal-commentbtn"+(hasComment?" has-comment":"")} title={hasComment?dayComments.length+" commentaire(s) ce jour":"Ajouter un commentaire ce jour"} style={{position:"absolute",bottom:2,right:2,background:hasComment?T.card:"none",border:hasComment?"1.5px solid "+T.teal500:"none",borderRadius:hasComment?"50%":0,boxShadow:hasComment?T.shadowSm:"none",width:hasComment?22:16,height:hasComment?22:16,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:hasComment?T.teal600:T.ink300,padding:0,zIndex:8}}><NavIcon name="comments" size={hasComment?12:11}/></button>
               </div>);
               const lastMilestone=status.split(" + ").pop();
@@ -365,7 +378,7 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
               // étroite. Centré au milieu de la tuile (pivot au centre, plutôt qu'ancré au coin
               // bas-gauche) et contenu dans la tuile (overflow:"hidden" sur le conteneur) — demandé
               // explicitement : "les étapes sont pas au milieu des tiles et dépassent de celles-ci".
-              return(<div key={di} className="enogia-cal-daycell" onClick={()=>onSelectPj&&onSelectPj(pj)} onMouseEnter={e=>{e.currentTarget.style.background=T.teal100+"50";}} onMouseMove={e=>setTip({r,status,pKind:showPresence?pKind:null,label:DAY_NAMES[d.getDay()]+" "+fmt(d),x:e.clientX,y:e.clientY})} onMouseLeave={e=>{e.currentTarget.style.background=cellBg;setTip(null);}} style={{height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,boxShadow:todayEdge,cursor:"pointer",background:cellBg,position:"relative",transition:"background .12s ease"}}>
+              return(<div key={di} className="enogia-cal-daycell" onClick={()=>onSelectPj&&onSelectPj(pj)} onMouseEnter={e=>{e.currentTarget.style.background=T.teal100+"50";}} onMouseMove={e=>setTip({r,status,pKind:showPresence?pKind:null,label:DAY_NAMES[d.getDay()]+" "+fmt(d),x:e.clientX,y:e.clientY})} onMouseLeave={e=>{e.currentTarget.style.background=cellBg;setTip(null);}} style={{...pos,height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,boxShadow:todayEdge,cursor:"pointer",background:cellBg,position:"relative",transition:"background .12s ease"}}>
                 <div style={{position:"absolute",inset:3,borderRadius:4,background:fill.background,boxShadow:showPresence?presenceRing(pKind):T.mode==="dark"?"inset 0 0 0 1px "+st.t+"33":"none",overflow:"hidden",opacity:closed?0.45:1,display:"flex",flexDirection:"column",gap:2,alignItems:"center",justifyContent:"center",padding:"0 3px"}}>
                   <span style={{fontSize:FZF.xs,fontWeight:fill.bold?700:600,color:fill.color,textAlign:"center",lineHeight:1.15}}>{status}</span>
                   {showPresence&&<PresenceChip kind={pKind} compact tiny fontSize={9.5}/>}
@@ -391,81 +404,104 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
       <span style={{fontSize:FZF.md,color:T.ink300,marginLeft:"auto"}}>Couleur de la tuile = étape · Colonne rouge = aujourd'hui · Clic = détail</span>
     </div>
 
-    {tip&&(()=>{
-      const r=tip.r,meta=getPjMeta(r.pj,r),W=260,vw=typeof window!=="undefined"?window.innerWidth:1400,vh=typeof window!=="undefined"?window.innerHeight:800;
-      const left=Math.min(tip.x+16,vw-W-12),top=Math.max(8,Math.min(tip.y+16,vh-190));
-      return(<div role="tooltip" style={{position:"fixed",left,top,width:W,zIndex:10030,pointerEvents:"none",background:T.card,color:T.ink900,borderRadius:12,boxShadow:T.shadowFloat,padding:"10px 12px",fontFamily:T.font}}>
-        <div style={{fontSize:FZF.md,fontWeight:700,lineHeight:1.2}}>{r.pj}<span style={{fontWeight:500,color:T.ink500,fontSize:FZF.sm}}>{meta&&meta.nomProjet?"  "+meta.nomProjet:""}</span></div>
-        <div style={{fontSize:FZF.xs,color:T.ink500,marginTop:2}}>{tip.label}</div>
-        <div style={{display:"flex",flexDirection:"column",gap:4,marginTop:8}}>
-          {tip.status.split(" + ").map(m=>{const st=SEGMENT_STYLE[m]||SEGMENT_STYLE["Production"];return(<span key={m} style={{display:"flex",alignItems:"center",gap:8,fontSize:FZF.sm,fontWeight:600}}><span aria-hidden="true" style={{width:12,height:12,borderRadius:4,background:st.c,boxShadow:T.shadowFlat}}/>{m}</span>);})}
-        </div>
-        {tip.pKind&&<div style={{marginTop:8,fontSize:FZF.sm,color:T.ink700}}>Présence {PRESENCE_META[tip.pKind].label} aux tests</div>}
-        {r.drift!=null&&r.drift!==0&&<div style={{marginTop:8,paddingTop:8,borderTop:"1px solid "+T.line,fontSize:FZF.sm,display:"flex",justifyContent:"space-between"}}><span style={{color:T.ink500}}>vs planning initial</span><span style={{fontWeight:700,color:r.drift>0?T.red600:T.emerald600}}>{(r.drift>0?"+":"−")+Math.abs(r.drift)+" j"}</span></div>}
-      </div>);
-    })()}
+    <CalTip apiRef={tipRef}/>
 
-    {commentPopup&&<div onClick={()=>setCommentPopup(null)} style={{position:"fixed",inset:0,background:"transparent",zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",padding:20,fontFamily:T.font}}>
-      <div onClick={e=>e.stopPropagation()} style={{background:T.card,borderRadius:16,padding:22,maxWidth:440,width:"100%",boxShadow:T.shadowLg}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
-          <div>
-            <div style={{fontFamily:T.fontDisplay,fontWeight:700,fontSize:FZF.lg,color:T.ink900}}>Commentaire — {commentPopup.pj}</div>
-            <div style={{color:T.ink500,fontSize:FZF.md,marginTop:2}}>{fmt(new Date(commentPopup.dateIso))}</div>
-          </div>
-          <button onClick={()=>setCommentPopup(null)} style={{background:T.surface,border:"none",borderRadius:8,width:30,height:30,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:T.ink700}}><NavIcon name="close" size={14}/></button>
-        </div>
-
-        {/* Composeur toujours en haut, dans son propre cadre — même pattern que la fiche projet
-            (onglet Commentaires) pour une gestion cohérente partout dans l'appli. */}
-        <div style={{background:T.surface,borderRadius:12,padding:14,marginBottom:16}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,gap:8,flexWrap:"wrap"}}>
-            {authorName?
-              <span style={{fontSize:FZF.sm,color:T.ink500}}>En tant que <strong style={{color:T.ink700}}>{authorName}</strong></span>
-              :<input type="text" value={commentAuthor} onChange={e=>{setCommentAuthor(e.target.value);setCommentErr("");}} placeholder="Votre nom (obligatoire)" maxLength={40}
-                style={{padding:"7px 11px",borderRadius:8,border:"1px solid "+(commentErr?T.red500:T.line),fontSize:FZF.sm,fontFamily:T.font,color:T.ink700}}/>}
-            {pinOk?<label style={{display:"flex",alignItems:"center",gap:6,fontSize:FZF.sm,color:T.ink500,fontWeight:600,cursor:"pointer"}}>
-              <input type="checkbox" checked={commentPrivate} onChange={e=>setCommentPrivate(e.target.checked)}/> Privé
-            </label>:<span/>}
-          </div>
-          {commentErr&&<div style={{fontSize:FZF.sm,color:T.red500,marginBottom:6}}>{commentErr}</div>}
-          <textarea value={commentText} onChange={e=>setCommentText(e.target.value)} placeholder="Votre commentaire..." rows={3} maxLength={1000}
-            style={{padding:"9px 12px",borderRadius:9,border:"1px solid "+T.line,fontSize:FZF.md,fontFamily:T.font,color:T.ink700,resize:"vertical",width:"100%",boxSizing:"border-box",background:T.card}}/>
-          <div style={{display:"flex",justifyContent:"flex-end",marginTop:8}}>
-            <button onClick={async ()=>{
-              const author=authorName||commentAuthor;
-              if(!author.trim()){setCommentErr("Le nom est obligatoire pour publier un commentaire.");return;}
-              if(!commentText.trim())return;
-              const ok=await addComment(commentPopup.pj,author,commentText,commentPopup.dateIso,commentPrivate);
-              if(ok){setCommentText("");setCommentAuthor("");setCommentPrivate(false);}
-            }} disabled={!commentText.trim()} style={{padding:"8px 18px",borderRadius:8,border:"none",background:commentText.trim()?T.teal500:T.surfaceAlt,color:commentText.trim()?"#fff":T.ink300,fontSize:FZF.md,fontWeight:700,cursor:commentText.trim()?"pointer":"default"}}>Publier</button>
-          </div>
-        </div>
-
-        {(()=>{
-          const dayComments=(comments?.[commentPopup.pj]||[]).filter(c=>c.linkedDate===commentPopup.dateIso&&(pinOk||!c.private));
-          return(<>
-            <div style={{fontSize:FZF.sm,fontWeight:700,color:T.ink300,textTransform:"uppercase",letterSpacing:".04em",marginBottom:8}}>{dayComments.length} commentaire{dayComments.length!==1?"s":""}</div>
-            {/* Refonte "chat" (demandé explicitement : "je vois ça plus comme un chat gmail") — même
-                registre que la page Commentaires et la fiche projet. */}
-            {dayComments.length>0?<div style={{display:"flex",flexDirection:"column",gap:12,maxHeight:220,overflowY:"auto",paddingRight:2}}>
-              {dayComments.map((c,i)=>(
-                <div key={i} style={{display:"flex",gap:9}}>
-                  <Avatar name={c.author} tint={c.private?T.amber500:T.teal500} size={26}/>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{display:"flex",alignItems:"baseline",gap:6,flexWrap:"wrap",marginBottom:2}}>
-                      <span style={{fontWeight:700,color:T.ink700,fontSize:FZF.sm}}>{c.author}</span>
-                      {c.private&&<span style={{fontSize:FZF.xs,color:T.amber600,background:T.amber100,borderRadius:4,padding:"1px 5px",fontWeight:700}}>Privé</span>}
-                      <span style={{fontSize:FZF.xs,color:T.ink300}}>{relTime(c.date)}</span>
-                    </div>
-                    <div style={{background:c.private?T.amber100:T.card,borderRadius:"3px 12px 12px 12px",padding:"8px 12px",display:"inline-block",maxWidth:"100%",fontSize:FZF.sm,color:T.ink700,whiteSpace:"pre-wrap"}}>{c.text}</div>
-                  </div>
-                </div>
-              ))}
-            </div>:<div style={{textAlign:"center",color:T.ink300,fontSize:FZF.sm,padding:"18px 0"}}>Aucun commentaire pour l'instant sur ce jour.</div>}
-          </>);
-        })()}
-      </div>
-    </div>}
+    {commentPopup&&<CalCommentPopup key={commentPopup.pj+"|"+commentPopup.dateIso} popup={commentPopup} onClose={closeCommentPopup}
+      comments={comments} addComment={addComment} pinOk={pinOk} authorName={authorName}/>}
   </div>);
 }
 
+
+
+// v167 : infobulle isolée — son état ne redessine plus la grille entière.
+function CalTip({apiRef}){
+  const [tip,setTip]=useState(null);
+  apiRef.current=setTip;
+  if(!tip)return null;
+  const r=tip.r,meta=getPjMeta(r.pj,r),W=260,vw=typeof window!=="undefined"?window.innerWidth:1400,vh=typeof window!=="undefined"?window.innerHeight:800;
+  const left=Math.min(tip.x+16,vw-W-12),top=Math.max(8,Math.min(tip.y+16,vh-190));
+  return(<div role="tooltip" style={{position:"fixed",left,top,width:W,zIndex:10030,pointerEvents:"none",background:T.card,color:T.ink900,borderRadius:12,boxShadow:T.shadowFloat,padding:"10px 12px",fontFamily:T.font}}>
+    <div style={{fontSize:FZF.md,fontWeight:700,lineHeight:1.2}}>{r.pj}<span style={{fontWeight:500,color:T.ink500,fontSize:FZF.sm}}>{meta&&meta.nomProjet?"  "+meta.nomProjet:""}</span></div>
+    <div style={{fontSize:FZF.xs,color:T.ink500,marginTop:2}}>{tip.label}</div>
+    <div style={{display:"flex",flexDirection:"column",gap:4,marginTop:8}}>
+      {tip.status.split(" + ").map(m=>{const st=SEGMENT_STYLE[m]||SEGMENT_STYLE["Production"];return(<span key={m} style={{display:"flex",alignItems:"center",gap:8,fontSize:FZF.sm,fontWeight:600}}><span aria-hidden="true" style={{width:12,height:12,borderRadius:4,background:st.c,boxShadow:T.shadowFlat}}/>{m}</span>);})}
+    </div>
+    {tip.pKind&&<div style={{marginTop:8,fontSize:FZF.sm,color:T.ink700}}>Présence {PRESENCE_META[tip.pKind].label} aux tests</div>}
+    {r.drift!=null&&r.drift!==0&&<div style={{marginTop:8,paddingTop:8,borderTop:"1px solid "+T.line,fontSize:FZF.sm,display:"flex",justifyContent:"space-between"}}><span style={{color:T.ink500}}>vs planning initial</span><span style={{fontWeight:700,color:r.drift>0?T.red600:T.emerald600}}>{(r.drift>0?"+":"−")+Math.abs(r.drift)+" j"}</span></div>}
+  </div>);
+}
+
+// v167 : fenêtre de commentaire isolée — la saisie ne redessine plus la grille à chaque touche.
+function CalCommentPopup({popup,onClose,comments,addComment,pinOk,authorName}){
+  const [commentAuthor,setCommentAuthor]=useState("");
+  const [commentText,setCommentText]=useState("");
+  const [commentErr,setCommentErr]=useState("");
+  const [commentPrivate,setCommentPrivate]=useState(false);
+  // Fermeture au clavier (Échap), même comportement que la fiche projet (ProjectModal).
+  useEffect(()=>{
+    const onKey=e=>{if(e.key==="Escape")onClose();};
+    window.addEventListener("keydown",onKey);
+    return ()=>window.removeEventListener("keydown",onKey);
+  },[onClose]);
+  return(<div onClick={()=>onClose()} style={{position:"fixed",inset:0,background:"transparent",zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",padding:20,fontFamily:T.font}}>
+    <div onClick={e=>e.stopPropagation()} style={{background:T.card,borderRadius:16,padding:22,maxWidth:440,width:"100%",boxShadow:T.shadowLg}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
+        <div>
+          <div style={{fontFamily:T.fontDisplay,fontWeight:700,fontSize:FZF.lg,color:T.ink900}}>Commentaire — {popup.pj}</div>
+          <div style={{color:T.ink500,fontSize:FZF.md,marginTop:2}}>{fmt(new Date(popup.dateIso))}</div>
+        </div>
+        <button onClick={()=>onClose()} style={{background:T.surface,border:"none",borderRadius:8,width:30,height:30,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:T.ink700}}><NavIcon name="close" size={14}/></button>
+      </div>
+
+      {/* Composeur toujours en haut, dans son propre cadre — même pattern que la fiche projet
+          (onglet Commentaires) pour une gestion cohérente partout dans l'appli. */}
+      <div style={{background:T.surface,borderRadius:12,padding:14,marginBottom:16}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,gap:8,flexWrap:"wrap"}}>
+          {authorName?
+            <span style={{fontSize:FZF.sm,color:T.ink500}}>En tant que <strong style={{color:T.ink700}}>{authorName}</strong></span>
+            :<input type="text" value={commentAuthor} onChange={e=>{setCommentAuthor(e.target.value);setCommentErr("");}} placeholder="Votre nom (obligatoire)" maxLength={40}
+              style={{padding:"7px 11px",borderRadius:8,border:"1px solid "+(commentErr?T.red500:T.line),fontSize:FZF.sm,fontFamily:T.font,color:T.ink700}}/>}
+          {pinOk?<label style={{display:"flex",alignItems:"center",gap:6,fontSize:FZF.sm,color:T.ink500,fontWeight:600,cursor:"pointer"}}>
+            <input type="checkbox" checked={commentPrivate} onChange={e=>setCommentPrivate(e.target.checked)}/> Privé
+          </label>:<span/>}
+        </div>
+        {commentErr&&<div style={{fontSize:FZF.sm,color:T.red500,marginBottom:6}}>{commentErr}</div>}
+        <textarea value={commentText} onChange={e=>setCommentText(e.target.value)} placeholder="Votre commentaire..." rows={3} maxLength={1000}
+          style={{padding:"9px 12px",borderRadius:9,border:"1px solid "+T.line,fontSize:FZF.md,fontFamily:T.font,color:T.ink700,resize:"vertical",width:"100%",boxSizing:"border-box",background:T.card}}/>
+        <div style={{display:"flex",justifyContent:"flex-end",marginTop:8}}>
+          <button onClick={async ()=>{
+            const author=authorName||commentAuthor;
+            if(!author.trim()){setCommentErr("Le nom est obligatoire pour publier un commentaire.");return;}
+            if(!commentText.trim())return;
+            const ok=await addComment(popup.pj,author,commentText,popup.dateIso,commentPrivate);
+            if(ok){setCommentText("");setCommentAuthor("");setCommentPrivate(false);}
+          }} disabled={!commentText.trim()} style={{padding:"8px 18px",borderRadius:8,border:"none",background:commentText.trim()?T.teal500:T.surfaceAlt,color:commentText.trim()?"#fff":T.ink300,fontSize:FZF.md,fontWeight:700,cursor:commentText.trim()?"pointer":"default"}}>Publier</button>
+        </div>
+      </div>
+
+      {(()=>{
+        const dayComments=(comments?.[popup.pj]||[]).filter(c=>c.linkedDate===popup.dateIso&&(pinOk||!c.private));
+        return(<>
+          <div style={{fontSize:FZF.sm,fontWeight:700,color:T.ink300,textTransform:"uppercase",letterSpacing:".04em",marginBottom:8}}>{dayComments.length} commentaire{dayComments.length!==1?"s":""}</div>
+          {/* Refonte "chat" (demandé explicitement : "je vois ça plus comme un chat gmail") — même
+              registre que la page Commentaires et la fiche projet. */}
+          {dayComments.length>0?<div style={{display:"flex",flexDirection:"column",gap:12,maxHeight:220,overflowY:"auto",paddingRight:2}}>
+            {dayComments.map((c,i)=>(
+              <div key={i} style={{display:"flex",gap:9}}>
+                <Avatar name={c.author} tint={c.private?T.amber500:T.teal500} size={26}/>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{display:"flex",alignItems:"baseline",gap:6,flexWrap:"wrap",marginBottom:2}}>
+                    <span style={{fontWeight:700,color:T.ink700,fontSize:FZF.sm}}>{c.author}</span>
+                    {c.private&&<span style={{fontSize:FZF.xs,color:T.amber600,background:T.amber100,borderRadius:4,padding:"1px 5px",fontWeight:700}}>Privé</span>}
+                    <span style={{fontSize:FZF.xs,color:T.ink300}}>{relTime(c.date)}</span>
+                  </div>
+                  <div style={{background:c.private?T.amber100:T.card,borderRadius:"3px 12px 12px 12px",padding:"8px 12px",display:"inline-block",maxWidth:"100%",fontSize:FZF.sm,color:T.ink700,whiteSpace:"pre-wrap"}}>{c.text}</div>
+                </div>
+              </div>
+            ))}
+          </div>:<div style={{textAlign:"center",color:T.ink300,fontSize:FZF.sm,padding:"18px 0"}}>Aucun commentaire pour l'instant sur ce jour.</div>}
+        </>);
+      })()}
+    </div>
+  </div>);
+}

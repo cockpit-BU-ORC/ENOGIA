@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v167",
+    date: "2026-10-26",
+    title: "V167 : Calendrier fluide, plus de blocage",
+    items: [
+      { t: "Calendrier beaucoup plus léger", d: "Seules les colonnes visibles sont dessinées : l'onglet s'ouvre vite, même en vue Jour, et ne fige plus l'application." },
+      { t: "Survol et commentaires sans ralentir", d: "Passer la souris sur les cases ou écrire un commentaire ne redessine plus tout le calendrier." },
+    ],
+  },
+  {
     id: "2026-10-v166",
     date: "2026-10-26",
     title: "V166 : le Calendrier ne plante plus",

@@ -886,3 +886,13 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - **Correction** : `App.js` ignore un zoom non numérique ou négatif (défaut 2) et une date d'ancre illisible (`enogia_calAnchor`, `enogia_calDayAnchor`) ; `CalendarView.js` normalise aussi le zoom reçu (défaut 2) et les boutons + / − partent de la valeur normalisée. Aucune clé `localStorage` nouvelle ; les postes touchés se réparent seuls au premier affichage.
 - **Outil** : `.claude/launch.json` (configuration `dev` = `npm start`, port 3000) pour l'aperçu local.
 - Fichiers : App.js, components/CalendarView.js, releaseNotes.js, releaseCatalog.js(+test), .claude/launch.json.
+
+## v167 — Calendrier : fin du gel de l'application
+
+- **Cause** : la V166 corrigeait le zoom illisible, mais l'onglet figeait encore la page. Le Calendrier dessinait toutes les colonnes (300 jours ou 60 semaines) pour chaque machine : avec 120 machines, environ 39 000 éléments en vue Jour (1er rendu ≈ 31 s sous jsdom). L'infobulle (`tip`) et la saisie de commentaire étaient des états de `CalendarView` : chaque mouvement de souris ou chaque touche redessinait toute la grille (≈ 226 ms par mouvement en vue Semaine).
+- **Correction** (`components/CalendarView.js`) :
+  - Fenêtrage horizontal : seules les colonnes visibles + 8 de marge de chaque côté sont dessinées (position relue au plus une fois par image via `requestAnimationFrame`). Toutes les cases ont désormais une position explicite (`gridColumn`/`gridRow`), en-têtes compris ; les pistes de la grille sont inchangées, donc l'affichage et la largeur de défilement restent identiques.
+  - Infobulle déplacée dans `CalTip` (état propre, alimenté par une ref) et fenêtre de commentaire dans `CalCommentPopup` (champs, Échap, remise à zéro par `key` à chaque ouverture).
+  - Mesure (120 machines, jsdom) : vue Jour 39 128 → 5 528 éléments, 31 s → 2,7 s ; vue Semaine 226 ms → 2 ms par mouvement de souris.
+- Aucune clé `localStorage` nouvelle.
+- Fichiers : components/CalendarView.js, App.js (version), releaseNotes.js, releaseCatalog.js(+test).
