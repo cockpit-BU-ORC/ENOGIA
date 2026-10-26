@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
-import { T, FZ } from "../theme";
+import { T, FZ, inkOn } from "../theme";
 import { SerieTag, getPjMeta, ETAT_META, ASSIGNABLE_ETATS, Avatar, relTime, PRESENCE_META, presenceKind, presenceBg, presenceDates } from "../pjMeta";
 import { fmt, toLocalISO } from "../parsers";
 import { EtatsDialog } from "./EtatsDialog";
@@ -23,7 +23,7 @@ export function PieBlock({data,unit="",size=150,centerLabel,sub}){
   const total=data.reduce((a,d)=>a+d.value,0);
   if(!total)return null;
   return(<div style={{display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
-    <div style={{position:"relative",width:size,height:size,flexShrink:0}}>
+    <div role="img" aria-label={data.map(d=>d.name+" : "+d.value+unit).join(", ")} style={{position:"relative",width:size,height:size,flexShrink:0}}>
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie data={data} dataKey="value" nameKey="name" innerRadius={size*.31} outerRadius={size*.5} paddingAngle={data.length>1?2:0} stroke="none">
@@ -233,7 +233,7 @@ export function DelayInsights({delays,delayTypes}){
   // camembert par PJ : les 8 plus touchés, le reste regroupé
   const pjSlices=useMemo(()=>{
     const all=Object.entries(allEntries.reduce((m,e)=>{m[e.pj]=(m[e.pj]||0)+(e.days||0);return m;},{})).map(([pj,days])=>({pj,days})).sort((a,b)=>b.days-a.days);
-    const pal=["#6E99B0","#A090C4","#D1A468","#80A98A","#C4847F","#8C93C2","#6FACA3","#A3AE78"];
+    const pal=getDelayColors(); // v168 : jetons du thème (contraste ≥ 3:1 sur la carte), plus de teintes codées en dur
     const top=all.slice(0,8).map((p,i)=>({name:p.pj,value:p.days,color:pal[i%pal.length]}));
     const rest=all.slice(8).reduce((a,p)=>a+p.days,0);
     if(rest>0)top.push({name:"Autres ("+(all.length-8)+" PJ)",value:rest,color:T.ink300});
@@ -274,6 +274,16 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
   const [showTypes,setShowTypes]=useState(false);
   const [newType,setNewType]=useState("");
   const [drawerOpen,setDrawerOpen]=useState(false);
+  // v168 : tiroir accessible — le focus y entre à l'ouverture, Échap le ferme, le focus revient ensuite où il était.
+  const drawerRef=useRef(null);
+  useEffect(()=>{
+    if(!drawerOpen)return;
+    const back=document.activeElement;
+    if(drawerRef.current)drawerRef.current.focus();
+    const onKey=e=>{if(e.key==="Escape")setDrawerOpen(false);};
+    window.addEventListener("keydown",onKey);
+    return()=>{window.removeEventListener("keydown",onKey);if(back&&back.focus)back.focus();};
+  },[drawerOpen]);
   const [view,setView]=useState("cause"); // « cause » | « pj » | « fil »
   const author=(authorName||authorInput||"").trim();
   const colorOf=t=>{const i=delayTypes.indexOf(t);{const dc=getDelayColors();return dc[(i<0?delayTypes.length:i)%dc.length];}};
@@ -379,7 +389,7 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
 
     {view==="fil"
       ?<div style={{...CARD,padding:16,maxWidth:760}}>
-        <div style={{maxHeight:"calc(100vh - 300px)",minHeight:160,overflowY:"auto",display:"flex",flexDirection:"column",gap:8,paddingRight:2}}>
+        <div style={{maxHeight:"calc(100dvh - 300px)",minHeight:160,overflowY:"auto",display:"flex",flexDirection:"column",gap:8,paddingRight:2}}>
           {feed.length===0&&<EmptyNote>Aucun retard déclaré{filterPj?" pour ce PJ":""}.</EmptyNote>}
           {feed.map(e=>card(e,false))}
         </div>
@@ -389,7 +399,7 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
         {cols.map(col=>{
           const c=view==="pj"?T.red500:colorOf(col.key);
           const mm=view==="pj"?meta(col.pj):null;
-          return(<div key={col.key} style={{width:268,flexShrink:0,background:T.surfaceAlt,borderRadius:12,display:"flex",flexDirection:"column",maxHeight:"calc(100vh - 290px)",minHeight:120}}>
+          return(<div key={col.key} style={{width:268,flexShrink:0,background:T.surfaceAlt,borderRadius:12,display:"flex",flexDirection:"column",maxHeight:"calc(100dvh - 290px)",minHeight:120}}>
             <div style={{padding:"8px 12px 8px",borderBottom:"2px solid "+c,display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
               <div style={{minWidth:0,flex:1}}>
                 <div style={{display:"flex",alignItems:"center",gap:6,minWidth:0}}>
@@ -410,14 +420,14 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
       </div>}
 
     {drawerOpen&&<>
-      <div onClick={()=>setDrawerOpen(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.35)",zIndex:9998}}/>
-    <div style={{...CARD,position:"fixed",top:0,right:0,bottom:0,width:"min(470px,100vw)",boxSizing:"border-box",overflowY:"auto",zIndex:9999,borderRadius:"16px 0 0 16px",boxShadow:T.shadowLg,padding:20,display:"flex",flexDirection:"column",gap:16}}>
+      <div aria-hidden="true" onClick={()=>setDrawerOpen(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.35)",zIndex:9998}}/>
+    <div ref={drawerRef} role="dialog" aria-modal="true" aria-labelledby="enogia-delay-title" tabIndex={-1} style={{...CARD,outline:"none",position:"fixed",top:0,right:0,bottom:0,width:"min(470px,100vw)",boxSizing:"border-box",overflowY:"auto",zIndex:9999,borderRadius:"16px 0 0 16px",boxShadow:T.shadowLg,padding:20,display:"flex",flexDirection:"column",gap:16}}>
       <div style={{display:"flex",alignItems:"flex-start",gap:8}}>
         <div style={{flex:1}}>
-          <div style={H_TITLE}>Déclarer un retard</div>
+          <div id="enogia-delay-title" style={H_TITLE}>Déclarer un retard</div>
           <div style={H_SUB}>Quel PJ, pourquoi, de combien de jours — et ce qu'il s'est passé.</div>
         </div>
-        <button onClick={()=>setDrawerOpen(false)} title="Fermer" style={{width:30,height:30,borderRadius:8,border:"none",background:T.surface,color:T.ink500,fontSize:FZ.md,cursor:"pointer"}}><NavIcon name="close" size={11}/></button>
+        <button onClick={()=>setDrawerOpen(false)} title="Fermer" aria-label="Fermer" style={{width:30,height:30,borderRadius:8,border:"none",background:T.surface,color:T.ink500,fontSize:FZ.md,cursor:"pointer"}}><NavIcon name="close" size={11}/></button>
       </div>
 
       <div>
@@ -433,7 +443,7 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
         <span style={label}>Cause du retard</span>
         <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
           {delayTypes.map(t=>{const on=type===t;const c=colorOf(t);return(
-            <button key={t} onClick={()=>setType(on?"":t)} style={{padding:"6px 12px",borderRadius:999,border:"1.5px solid "+(on?c:T.line),background:on?c:T.card,color:on?"#fff":T.ink700,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font,transition:"all .12s ease"}}>{t}</button>
+            <button key={t} onClick={()=>setType(on?"":t)} aria-pressed={on} style={{padding:"6px 12px",borderRadius:999,border:"1.5px solid "+(on?c:T.line),background:on?c:T.card,color:on?inkOn(c):T.ink700,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font,transition:"background-color .12s ease, border-color .12s ease, color .12s ease"}}>{t}</button>
           );})}
           <NewDelayType types={delayTypes} onCreate={setDelayTypes} onCreated={setType}/>
         </div>

@@ -896,3 +896,21 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
   - Mesure (120 machines, jsdom) : vue Jour 39 128 → 5 528 éléments, 31 s → 2,7 s ; vue Semaine 226 ms → 2 ms par mouvement de souris.
 - Aucune clé `localStorage` nouvelle.
 - Fichiers : components/CalendarView.js, App.js (version), releaseNotes.js, releaseCatalog.js(+test).
+
+## v168 — Calendrier instantané, audit Manager (ui-ux-pro-max)
+
+- **Calendrier** (`components/CalendarView.js`) : la V167 ne fenêtrait que les colonnes ; toutes les lignes machine restaient dessinées et la grille se redessinait à chaque image de défilement.
+  - Lignes fenêtrées aussi : hauteur des lignes figée dans `gridTemplateRows` (`rowH + 1` px) pour que la barre de défilement reste juste.
+  - Position de défilement arrondie par paliers de 240 px (`SCROLL_Q`), marge de 720 px (`VIEW_BUF`) : la grille ne se redessine qu'en changeant de palier.
+  - `rowOf` (Map PJ → 1re ligne) remplace les `data.find` répétés (tri, largeur de colonne, lignes).
+  - Mesure (jsdom) : vue Semaine 120 PJ, 1er rendu 2,4 s (V166) → 0,36 s ; vue Jour 31 s → 0,7 s ; 400 PJ : identique (33 lignes dessinées) ; ≈ 15 ms par palier de défilement.
+- **Audit Manager** (`ManagerPanel.js`, `ManagerParts.js`, `ManagerNav.js`) et corrections :
+  - Cause de retard sélectionnée : le texte blanc tombait à 1,8–3,4:1 → nouvel utilitaire `inkOn(bg)` dans `theme.js` (blanc ou encre foncée, le plus contrasté) ; minimum mesuré 4,5:1 sauf `navy600` du thème Forêt clair (4,26:1, aucune encre ne fait mieux).
+  - Camembert « par PJ » : 8 teintes pastel codées en dur (2,3–3,1:1 sur la carte en clair) → `getDelayColors()` (jetons du thème).
+  - Volet « Déclarer un retard » : `role="dialog"`, `aria-modal`, titre relié, focus à l'ouverture, Échap, retour du focus.
+  - Boutons de choix (étape analysée, sous-onglets téléphone, causes) : `aria-pressed` ; groupe « Étape analysée » nommé.
+  - Graphique « initial vs révisé » : `role="img"` + résumé (retard / avance / total), textes 10,5 → 11 px, points « date initiale » en `T.card` (étaient blancs en sombre). Camembert : `role="img"` + liste des valeurs.
+  - Bouton « Effacer » : zone de clic ≥ 24 px ; hauteurs de listes en `100dvh`.
+  - Rien à corriger dans le menu latéral (`aria-current`, bouton nommé, sous-onglets hors tabulation quand repliés).
+- Aucune clé `localStorage` nouvelle.
+- Fichiers : theme.js, components/{CalendarView,ManagerPanel,ManagerParts}.js, App.js (version), releaseNotes.js, releaseCatalog.js(+test).

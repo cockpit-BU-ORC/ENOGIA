@@ -381,14 +381,14 @@ export function ManagerPanel({jumpFiche,changeLog,data,progress,setProgress,rele
     {((phone&&subItems)||showFilters)&&<div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
       {phone&&subItems&&<div style={{display:"inline-flex",gap:2,padding:3,background:T.surface,border:"1px solid "+T.line,borderRadius:12}}>
         {subItems.map(([id,l])=>{const on=subValue===id;return(
-          <button key={id} onClick={()=>onSub(id)} style={{padding:"4px 12px",borderRadius:8,border:"none",background:on?T.card:"transparent",boxShadow:on?T.shadowSm:"none",color:on?T.teal600:T.ink500,fontWeight:on?700:600,fontSize:FZ.sm,cursor:"pointer",fontFamily:T.font,transition:"background .12s ease"}}>{l}</button>
+          <button key={id} onClick={()=>onSub(id)} aria-pressed={on} style={{padding:"4px 12px",borderRadius:8,border:"none",background:on?T.card:"transparent",boxShadow:on?T.shadowSm:"none",color:on?T.teal600:T.ink500,fontWeight:on?700:600,fontSize:FZ.sm,cursor:"pointer",fontFamily:T.font,transition:"background .12s ease"}}>{l}</button>
         );})}
       </div>}
       {showFilters&&<div style={{marginLeft:phone&&subItems?"auto":0,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
         <DropFilter label="Statut" options={ALL_ETATS} selected={fEtat} onChange={setFEtat} getLabel={o=>ETAT_META[o]?.label||o}/>
         <EtatInfoButton/>
         <DropFilter label="Gamme" options={ALL_GAMMES} selected={fGamme} onChange={setFGamme}/>
-        <button onClick={()=>{setFEtat(new Set(ALL_ETATS));setFGamme(new Set(ALL_GAMMES));}} title="Réinitialiser les filtres" style={{background:"none",border:"none",padding:0,fontSize:FZ.xs,color:T.ink300,cursor:"pointer",textDecoration:"underline",fontFamily:T.font}}>Effacer</button>
+        <button onClick={()=>{setFEtat(new Set(ALL_ETATS));setFGamme(new Set(ALL_GAMMES));}} title="Réinitialiser les filtres" style={{background:"none",border:"none",padding:"0 4px",minHeight:24,fontSize:FZ.xs,color:T.ink300,cursor:"pointer",textDecoration:"underline",fontFamily:T.font}}>Effacer</button>
         <span style={{fontSize:FZ.xs,color:T.ink500,fontWeight:500}}>{fk.length} unités</span>
       </div>}
     </div>}
@@ -581,8 +581,8 @@ export function ManagerPanel({jumpFiche,changeLog,data,progress,setProgress,rele
             </div>
             <div style={{display:"flex",alignItems:"center",gap:8,background:T.surface,borderRadius:12,padding:"6px 8px"}}>
               <span style={{fontSize:FZ.sm,color:T.ink500,fontWeight:600}}>Étape analysée :</span>
-              <div style={{display:"flex",gap:4}}>
-                {Object.entries(STEP_LABELS).map(([k,l])=><button key={k} onClick={()=>setKpiStep(k)} style={{padding:"6px 12px",borderRadius:8,border:"none",background:kpiStep===k?T.teal500:T.card,color:kpiStep===k?"#fff":T.ink700,fontSize:FZ.sm,fontWeight:600,cursor:"pointer"}}>{l}</button>)}
+              <div role="group" aria-label="Étape analysée" style={{display:"flex",gap:4}}>
+                {Object.entries(STEP_LABELS).map(([k,l])=><button key={k} onClick={()=>setKpiStep(k)} aria-pressed={kpiStep===k} style={{padding:"6px 12px",borderRadius:8,border:"none",background:kpiStep===k?T.teal500:T.card,color:kpiStep===k?"#fff":T.ink700,fontSize:FZ.sm,fontWeight:600,cursor:"pointer"}}>{l}</button>)}
               </div>
             </div>
           </div>
@@ -625,12 +625,12 @@ export function ManagerPanel({jumpFiche,changeLog,data,progress,setProgress,rele
               const dEnd=new Date(yearStart);dEnd.setDate(dEnd.getDate()+Math.ceil(domainMax));
               while(curM<=dEnd){monthTicks.push(new Date(curM));curM=new Date(curM.getFullYear(),curM.getMonth()+1,1);}
               return(<div style={{overflowX:"auto"}}>
-                <svg width="100%" height={chartH} viewBox={"0 0 "+chartW+" "+chartH} preserveAspectRatio="xMinYMin meet" style={{minWidth:600,fontFamily:T.font}}>
+                <svg role="img" aria-label={"Date initiale et date révisée par PJ ("+STEP_LABELS[kpiStep]+") : "+pjCompareChart.filter(p=>p.delta>0).length+" en retard, "+pjCompareChart.filter(p=>p.delta<0).length+" en avance, sur "+pjCompareChart.length+" PJ"} width="100%" height={chartH} viewBox={"0 0 "+chartW+" "+chartH} preserveAspectRatio="xMinYMin meet" style={{minWidth:600,fontFamily:T.font}}>
                   {/* grille de fond : repères mensuels */}
                   {monthTicks.map((mt,i)=>{const dv=dayOfYear(mt);const x=xOf(dv);if(x<labelW||x>chartW-2)return null;return(
                     <g key={i}>
                       <line x1={x} x2={x} y1={topPad-6} y2={chartH-bottomPad} stroke={T.line} strokeWidth={1} strokeDasharray="3 3"/>
-                      <text x={x} y={topPad-12} fontSize={10.5} fontWeight={700} fill={T.ink300} textAnchor="middle">{MONTHS[mt.getMonth()]}</text>
+                      <text x={x} y={topPad-12} fontSize={11} fontWeight={700} fill={T.ink300} textAnchor="middle">{MONTHS[mt.getMonth()]}</text>
                     </g>
                   );})}
                   {/* lignes alternées pour la lisibilité */}
@@ -646,16 +646,16 @@ export function ManagerPanel({jumpFiche,changeLog,data,progress,setProgress,rele
                     return(<g key={p.pj}>
                       <text x={6} y={y+4} fontSize={13} fontWeight={700} fill={T.teal600}>{p.pj}</text>
                       <line x1={Math.min(x1,x2)} x2={Math.max(x1,x2)} y1={y} y2={y} stroke={dotColor} strokeWidth={2.5} strokeOpacity={0.35}/>
-                      <circle cx={x1} cy={y} r={5} fill="#fff" stroke={T.ink300} strokeWidth={2}/>
+                      <circle cx={x1} cy={y} r={5} fill={T.card} stroke={T.ink300} strokeWidth={2}/>
                       <circle cx={x2} cy={y} r={6} fill={dotColor}/>
-                      <text x={x2} y={y-11} fontSize={10.5} fontWeight={700} fill={dotColor} textAnchor="middle">{p.delta===0?"=":(p.delta>0?"+":"")+p.delta+"j"}</text>
+                      <text x={x2} y={y-11} fontSize={11} fontWeight={700} fill={dotColor} textAnchor="middle">{p.delta===0?"=":(p.delta>0?"+":"")+p.delta+"j"}</text>
                     </g>);
                   })}
                 </svg>
               </div>);
             })()}
             <div style={{display:"flex",gap:16,marginTop:12,paddingTop:12,borderTop:"1px solid "+T.line,flexWrap:"wrap"}}>
-              <span style={{display:"flex",alignItems:"center",gap:6,fontSize:FZ.sm,color:T.ink500}}><span style={{width:11,height:11,borderRadius:"50%",background:"#fff",border:"2px solid "+T.ink300,display:"inline-block"}}/>Date initiale</span>
+              <span style={{display:"flex",alignItems:"center",gap:6,fontSize:FZ.sm,color:T.ink500}}><span style={{width:11,height:11,borderRadius:"50%",background:T.card,border:"2px solid "+T.ink300,display:"inline-block"}}/>Date initiale</span>
               <span style={{display:"flex",alignItems:"center",gap:6,fontSize:FZ.sm,color:T.ink500}}><span style={{width:11,height:11,borderRadius:"50%",background:T.red500,display:"inline-block"}}/>Révisée — retard</span>
               <span style={{display:"flex",alignItems:"center",gap:6,fontSize:FZ.sm,color:T.ink500}}><span style={{width:11,height:11,borderRadius:"50%",background:T.emerald500,display:"inline-block"}}/>Révisée — avance</span>
             </div>

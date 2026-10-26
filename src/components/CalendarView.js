@@ -131,12 +131,14 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
   },[dayAnchor,TOTAL_DAYS]);
 
   const cols=mode==="week"?weeks:days;
-  const pjs=useMemo(()=>[...new Set(data.map(r=>r.pj))].sort((a,b)=>{
-    const ra=data.find(r=>r.pj===a),rb=data.find(r=>r.pj===b);
+  // v168 : 1re ligne de chaque PJ indexée une fois (remplace les data.find répétés, coûteux avec beaucoup de machines).
+  const rowOf=useMemo(()=>{const m=new Map();data.forEach(r=>{if(!m.has(r.pj))m.set(r.pj,r);});return m;},[data]);
+  const pjs=useMemo(()=>[...rowOf.keys()].sort((a,b)=>{
+    const ra=rowOf.get(a),rb=rowOf.get(b);
     const da=ra&&ra.arrivee?new Date(ra.arrivee):new Date(9999,0,1);
     const db=rb&&rb.arrivee?new Date(rb.arrivee):new Date(9999,0,1);
     return da-db;
-  }),[data]);
+  }),[rowOf]);
   // Largeurs calées sur les MOTS LES PLUS LONGS (demandé : « les colonnes se mettent parfaitement avec
   // les mots les plus grands dans la ligne ») : on mesure le texte réel au canvas. Colonne « Machine » =
   // plus long « PJ + gamme » / nom de projet ; colonnes de dates = plus long mot d'étape (« Production »…).
@@ -147,14 +149,14 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
   const LEFT_W=useMemo(()=>{
     let w=0;
     pjs.forEach(pj=>{
-      const r=data.find(x=>x.pj===pj);const m=getPjMeta(pj,r);
+      const r=rowOf.get(pj);const m=getPjMeta(pj,r);
       const l1=8+7+measure(pj,"700 "+FZF.sm+"px "+T.fontMono)+7+measure(r?.gamme||"","700 "+FZF.xs+"px "+T.font)+12+(marks.get(pj)?60:0);
       const l2=15+17+measure(m.nomProjet||"","500 "+FZF.xs+"px "+T.font);
       w=Math.max(w,l1,l2);
     });
     if(isPhone())return 112; // téléphone : la colonne ne garde que PJ + pastille
     return Math.min(380,Math.max(200,Math.ceil(w+14*2+6)));
-  },[pjs,data,measure,marks]);
+  },[pjs,rowOf,measure,marks]);
   const longestWordPx=useMemo(()=>{
     const f=mode==="week"?"700 "+FZF.sm+"px "+T.font:"700 "+FZF.xs+"px "+T.font;
     let w=0;Object.keys(SEGMENT_STYLE).forEach(k=>k.split(" ").forEach(word=>{w=Math.max(w,measure(word,f));}));
@@ -166,19 +168,27 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
   const DAY_NAMES=["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"];
 
   const scrollRef=React.useRef(null);
-  // v167 : seules les colonnes visibles (+ une marge) sont dessinées ; la position de défilement est
-  // relue au plus une fois par image.
-  const [scrollX,setScrollX]=useState(0);
+  // v167 : seules les cases visibles (+ une marge) sont dessinées. v168 : lignes aussi, et la position
+  // de défilement est arrondie par paliers (SCROLL_Q) — la grille ne se redessine qu'en changeant de
+  // palier, pas à chaque image ; la marge (VIEW_BUF) couvre largement un palier.
+  const SCROLL_Q=240, VIEW_BUF=720;
+  const [scrollPos,setScrollPos]=useState({x:0,y:0});
+  const scrollX=scrollPos.x;
+  const [viewH,setViewH]=useState(800);
   const rafRef=useRef(0);
   const onGridScroll=()=>{
     if(rafRef.current)return;
-    rafRef.current=requestAnimationFrame(()=>{rafRef.current=0;if(scrollRef.current)setScrollX(scrollRef.current.scrollLeft);});
+    rafRef.current=requestAnimationFrame(()=>{
+      rafRef.current=0;const el=scrollRef.current;if(!el)return;
+      const x=Math.floor(el.scrollLeft/SCROLL_Q)*SCROLL_Q,y=Math.floor(el.scrollTop/SCROLL_Q)*SCROLL_Q;
+      setScrollPos(p=>p.x===x&&p.y===y?p:{x,y});
+    });
   };
   useEffect(()=>()=>cancelAnimationFrame(rafRef.current),[]);
   useEffect(()=>{
     const el=scrollRef.current;
     if(!el)return;
-    const measure=()=>{setViewW(el.clientWidth||1100);setViewMeasured(true);};
+    const measure=()=>{setViewW(el.clientWidth||1100);setViewH(el.clientHeight||800);setViewMeasured(true);};
     measure();
     if(typeof ResizeObserver==="undefined"){window.addEventListener("resize",measure);return ()=>window.removeEventListener("resize",measure);}
     const ro=new ResizeObserver(measure);
@@ -208,7 +218,7 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
     if(mode==="week"){const w=weekStartOf(today);w.setDate(w.getDate()-7*Math.floor((effCount-1)/2));setAnchor(w);}
     else{const d=new Date(today);d.setHours(0,0,0,0);d.setDate(d.getDate()-Math.floor(effCount/2));setDayAnchor(d);}
     if(scrollRef.current)scrollRef.current.scrollLeft=0;
-    setScrollX(0);
+    setScrollPos(p=>p.x===0?p:{x:0,y:p.y});
   };
   const goToday=centerOnToday;
   const goTodayRef=useRef(goToday);goTodayRef.current=goToday;
@@ -222,12 +232,15 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
   // Plage de colonnes à dessiner [lo, hi] d'après le défilement horizontal.
   const colW=cols.map(c=>mode==="week"?colPx:((c.getDay()===0||c.getDay()===6)?wePx:colPx));
   const colX=[];colW.reduce((acc,w)=>{colX.push(acc);return acc+w;},0);
-  const COL_BUF=8;
-  let lo=0;while(lo<cols.length-1&&colX[lo]+colW[lo]<scrollX)lo++;
-  let hi=lo;while(hi<cols.length-1&&colX[hi]<scrollX+viewW-LEFT_W)hi++;
-  lo=Math.max(0,lo-COL_BUF);hi=Math.min(cols.length-1,hi+COL_BUF);
+  let lo=0;while(lo<cols.length-1&&colX[lo]+colW[lo]<scrollX-VIEW_BUF)lo++;
+  let hi=lo;while(hi<cols.length-1&&colX[hi]<scrollX+viewW-LEFT_W+VIEW_BUF)hi++;
   // Lignes de la grille : 1 = mois, (2 = n° de semaine en mode Jour), puis en-tête, puis une ligne par machine.
+  // Hauteur des lignes machine figée dans gridTemplateRows (case de rowH px + filet de 1 px), pour que les
+  // lignes non dessinées gardent leur place et que la barre de défilement reste juste.
   const HEAD_ROW=mode==="day"?3:2;
+  const ROW_PX=rowH+1;
+  const r0=Math.max(0,Math.floor((scrollPos.y-VIEW_BUF)/ROW_PX));
+  const r1=Math.min(pjs.length-1,Math.ceil((scrollPos.y+viewH+VIEW_BUF)/ROW_PX));
   // Page précédente / suivante : défile d'environ une largeur d'écran.
   const pageScroll=dir=>{if(scrollRef.current)scrollRef.current.scrollBy({left:dir*Math.round((viewW-LEFT_W)*0.85),behavior:"smooth"});};
 
@@ -264,7 +277,7 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
 
     <div ref={scrollRef} onScroll={onGridScroll}
       style={{overflowX:"auto",overflowY:"auto",maxHeight:"calc(100vh - 260px)"}}>
-      <div style={{display:"grid",width:"max-content",minWidth:"100%",gridTemplateColumns:LEFT_W+"px "+(mode==="week"
+      <div style={{display:"grid",width:"max-content",minWidth:"100%",gridTemplateRows:MONTH_H+"px "+(mode==="day"?WEEK_BAND_H+"px ":"")+"auto"+(pjs.length?" repeat("+pjs.length+","+ROW_PX+"px)":""),gridTemplateColumns:LEFT_W+"px "+(mode==="week"
         ?"repeat("+cols.length+","+colPx+"px)"
         :cols.map(d=>(d.getDay()===0||d.getDay()===6)?wePx+"px":colPx+"px").join(" ")
       )}}>
@@ -317,8 +330,9 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
           </div>);
         })}
 
-        {pjs.map((pj,pjIdx)=>{
-          const r=data.find(x=>x.pj===pj);
+        {pjs.slice(r0,r1+1).map((pj,k)=>{
+          const pjIdx=r0+k;
+          const r=rowOf.get(pj);
           const meta=getPjMeta(pj,r);
           const rowBg=T.surface;
           const row=HEAD_ROW+1+pjIdx;

@@ -250,4 +250,9 @@ export const RELEASE_CATALOG = [
     ["Calendrier", "Seules les colonnes visibles sont dessinées : ouverture rapide, plus de blocage."],
     ["Survol et commentaires", "Ne redessinent plus tout le calendrier."],
   ] },
+  { v: "168", t: "Calendrier instantané, Manager plus lisible", items: [
+    ["Calendrier", "Seules les machines et dates visibles sont dessinées."],
+    ["Manager", "Causes de retard lisibles dans tous les thèmes, couleurs du thème dans les graphiques."],
+    ["Accessibilité", "Volet « Déclarer un retard » au clavier (Échap), état des boutons de choix annoncé."],
+  ] },
 ];

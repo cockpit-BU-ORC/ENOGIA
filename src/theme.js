@@ -248,6 +248,9 @@ const ALERT_HUES = {
   neutral:{ light: { bg: "#ECEAE6", ring: "#CFCBC4", ink: "#4F565E" }, dark: { bg: "#323C48", ring: "#566170", ink: "#C3CBD5" } },
 };
 // Rouge / orange / neutre doux (même grain que les étapes) — pour les états d'alerte partout dans l'appli.
+// v168 : encre lisible posée sur une couleur pleine (pastille sélectionnée…) — blanc ou encre foncée, celle qui contraste le plus.
+const relLum = hex => { const c = String(hex || "").replace("#", ""); if (c.length < 6) return 1; return [0, 2, 4].map(i => parseInt(c.slice(i, i + 2), 16) / 255).map(v => v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4)).reduce((a, v, i) => a + v * [.2126, .7152, .0722][i], 0); };
+export function inkOn(bg) { const L = relLum(bg), INK = "#101828"; return (1.05 / (L + .05)) >= ((L + .05) / (relLum(INK) + .05)) ? "#FFFFFF" : INK; }
 export function alertSoft() { const m = T.mode === "dark" ? "dark" : "light"; return { red: ALERT_HUES.red[m], orange: ALERT_HUES.orange[m], neutral: ALERT_HUES.neutral[m] }; }
 export function statusSoft() {
   const m = T.mode === "dark" ? "dark" : "light", S = stageSoft();

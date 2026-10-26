@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v168",
+    date: "2026-10-26",
+    title: "V168 : Calendrier instantané, Manager plus lisible",
+    items: [
+      { t: "Calendrier instantané", d: "Seules les machines et les dates visibles sont dessinées : l'onglet s'ouvre et défile sans attendre, même avec beaucoup de projets." },
+      { t: "Causes de retard lisibles", d: "La cause choisie reste lisible dans tous les thèmes, y compris en mode sombre ; les graphiques utilisent les couleurs du thème." },
+      { t: "Déclarer un retard au clavier", d: "Le volet s'ouvre avec le curseur dedans et se ferme avec Échap ; les boutons de choix annoncent leur état aux lecteurs d'écran." },
+    ],
+  },
+  {
     id: "2026-10-v167",
     date: "2026-10-26",
     title: "V167 : Calendrier fluide, plus de blocage",
