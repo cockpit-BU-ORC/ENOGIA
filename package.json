@@ -2,7 +2,7 @@
   "name": "planning-enogia-2026",
   "version": "1.0.0",
   "private": true,
-  "homepage": "https://Gab-ENOGIA.github.io/planning-enogia-2026",
+  "homepage": "https://Planning-ENOGIA-BU-ORC.github.io/planning-enogia-2026",
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -19,7 +19,11 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d build"
+    "deploy": "node scripts/deploy.js prod",
+    "build:beta": "node scripts/build.js beta",
+    "predeploy:beta": "npm run build:beta",
+    "deploy:beta": "node scripts/deploy.js beta",
+    "check:contrast": "node scripts/check-contrast.mjs"
   },
   "eslintConfig": {
     "extends": [

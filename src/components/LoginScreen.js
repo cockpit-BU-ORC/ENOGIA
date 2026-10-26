@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { signInWithPopup, signOut } from "firebase/auth";
 import { auth, googleProvider, ALLOWED_EMAIL_DOMAIN } from "../firebase";
-import { T } from "../theme";
+import { T, FZ } from "../theme";
 import { NavIcon } from "./SharedUI";
 
 export const ROBOTO="'Roboto',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif";
@@ -66,27 +66,27 @@ export function LoginScreen(){
           /* Écran d'accueil : un seul bouton "Entrer", "incrusté" dans la page (ombre interne au
              lieu d'une ombre portée flottante). Fondu+léger retrait à la sortie vers la carte. */
           <div className={introLeaving?"enogia-fade-out":"enogia-float-in"} style={{textAlign:"center",maxWidth:420}}>
-            <div style={{fontFamily:ROBOTO,fontSize:12,letterSpacing:".08em",color:T.ink500,fontWeight:600,textTransform:"uppercase",marginBottom:14}}>BU ORC · Planning Ordonnancement</div>
+            <div style={{fontFamily:ROBOTO,fontSize:FZ.xs,letterSpacing:".08em",color:T.ink500,fontWeight:600,textTransform:"uppercase",marginBottom:14}}>BU ORC · Planning Ordonnancement</div>
             {/* Nouvelle phrase d'accroche (demandé explicitement : "Bon retour parmi nous" retiré) —
                 confirmée parmi les options proposées. */}
-            <div style={{fontFamily:ROBOTO,fontWeight:700,fontSize:25,color:T.teal600,margin:"0 0 12px",letterSpacing:"-.005em",lineHeight:1.3}}>Toute la production BU ORC, en un clin d'œil.</div>
-            <div style={{fontSize:15,color:T.ink500,lineHeight:1.5,marginBottom:32,fontFamily:ROBOTO}}>Suivez la production ENOGIA, de l'arrivée à l'expédition.</div>
-            <button onClick={openCard} className="enogia-btn-tap" style={{padding:"14px 46px",borderRadius:12,border:"none",background:T.teal600,color:"#fff",fontFamily:ROBOTO,fontSize:16,fontWeight:700,letterSpacing:".01em",cursor:"pointer",boxShadow:"inset 0 1px 0 rgba(255,255,255,.14), 0 1px 3px rgba(18,27,48,.12)",transition:"box-shadow .15s ease, transform .15s ease"}}
+            <div style={{fontFamily:ROBOTO,fontWeight:700,fontSize:FZ.xl,color:T.teal600,margin:"0 0 12px",letterSpacing:"-.005em",lineHeight:1.3}}>Toute la production BU ORC, en un clin d'œil.</div>
+            <div style={{fontSize:FZ.md,color:T.ink500,lineHeight:1.5,marginBottom:32,fontFamily:ROBOTO}}>Suivez la production ENOGIA, de l'arrivée à l'expédition.</div>
+            <button onClick={openCard} className="enogia-btn-tap" style={{padding:"12px 44px",borderRadius:12,border:"none",background:T.teal600,color:"#fff",fontFamily:ROBOTO,fontSize:FZ.md,fontWeight:700,letterSpacing:".01em",cursor:"pointer",boxShadow:"inset 0 1px 0 rgba(255,255,255,.14), 0 1px 3px rgba(18,27,48,.12)",transition:"box-shadow .15s ease, transform .15s ease"}}
               onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-1px)";e.currentTarget.style.boxShadow="inset 0 1px 0 rgba(255,255,255,.14), 0 5px 16px rgba(18,27,48,.22)";}}
               onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="inset 0 1px 0 rgba(255,255,255,.14), 0 1px 3px rgba(18,27,48,.12)";}}>
               Entrer
             </button>
           </div>
         ):(
-          <div className={cardLeaving?"enogia-modal-pop-out":"enogia-modal-pop"} style={{width:"100%",maxWidth:400,background:T.card,borderRadius:18,padding:"36px 32px 30px",boxShadow:T.shadowLg,border:"1px solid "+T.line,textAlign:"center",fontFamily:ROBOTO}}>
-            <div style={{width:52,height:52,margin:"0 auto 20px",borderRadius:14,background:T.surface,boxShadow:T.neuInSm,color:T.teal600,display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <div className={cardLeaving?"enogia-modal-pop-out":"enogia-modal-pop"} style={{width:"100%",maxWidth:400,background:T.card,borderRadius:18,padding:"36px 32px 28px",boxShadow:T.shadowLg,border:"1px solid "+T.line,textAlign:"center",fontFamily:ROBOTO}}>
+            <div style={{width:52,height:52,margin:"0 auto 20px",borderRadius:16,background:T.surface,boxShadow:T.neuInSm,color:T.teal600,display:"flex",alignItems:"center",justifyContent:"center"}}>
               <NavIcon name="lock" size={24}/>
             </div>
-            <div style={{fontSize:15,color:T.ink500,lineHeight:1.5,marginBottom:26,fontFamily:ROBOTO}}>Connectez-vous avec votre compte ENOGIA pour accéder au planning de production.</div>
+            <div style={{fontSize:FZ.md,color:T.ink500,lineHeight:1.5,marginBottom:26,fontFamily:ROBOTO}}>Connectez-vous avec votre compte ENOGIA pour accéder au planning de production.</div>
 
             {/* Bouton Google "incrusté" : fond T.surface + ombre interne plutôt qu'un blanc pur avec
                 ombre portée flottante, pour qu'il se lise comme intégré à la carte. */}
-            <button onClick={handleGoogleSignIn} disabled={busy} className="enogia-btn-tap" style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:10,background:T.surface,color:T.ink700,border:"1px solid "+T.line,borderRadius:11,padding:"13px 16px",fontFamily:ROBOTO,fontSize:15.5,fontWeight:600,cursor:busy?"default":"pointer",transition:"box-shadow .15s ease",boxShadow:T.neuInSm,opacity:busy?.7:1}}
+            <button onClick={handleGoogleSignIn} disabled={busy} className="enogia-btn-tap" style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8,background:T.surface,color:T.ink700,border:"1px solid "+T.line,borderRadius:12,padding:"12px 16px",fontFamily:ROBOTO,fontSize:FZ.md,fontWeight:600,cursor:busy?"default":"pointer",transition:"box-shadow .15s ease",boxShadow:T.neuInSm,opacity:busy?.7:1}}
               onMouseEnter={e=>{if(!busy)e.currentTarget.style.boxShadow=T.neuIn;}}
               onMouseLeave={e=>{e.currentTarget.style.boxShadow=T.neuInSm;}}>
               {busy?
@@ -95,19 +95,19 @@ export function LoginScreen(){
               {busy?"Connexion…":"Continuer avec Google"}
             </button>
 
-            {error&&<div style={{marginTop:16,background:T.red100,border:"1px solid "+T.red500+"40",borderRadius:10,padding:"10px 12px",color:T.red600,fontSize:13,lineHeight:1.4,textAlign:"left",fontFamily:ROBOTO}}>{error}</div>}
+            {error&&<div style={{marginTop:16,background:T.red100,border:"1px solid "+T.red500+"40",borderRadius:12,padding:"8px 12px",color:T.red600,fontSize:FZ.sm,lineHeight:1.4,textAlign:"left",fontFamily:ROBOTO}}>{error}</div>}
 
-            <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginTop:20,fontSize:12.5,color:T.ink300,fontWeight:600,fontFamily:ROBOTO}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginTop:20,fontSize:FZ.xs,color:T.ink300,fontWeight:600,fontFamily:ROBOTO}}>
               <NavIcon name="lock" size={12}/>
               Réservé aux comptes @{ALLOWED_EMAIL_DOMAIN}
             </div>
 
-            <button onClick={closeCard} className="enogia-btn-tap" style={{marginTop:16,background:"none",border:"none",color:T.ink300,fontSize:12.5,fontFamily:ROBOTO,cursor:"pointer",padding:0}}>← Retour</button>
+            <button onClick={closeCard} className="enogia-btn-tap" style={{marginTop:16,background:"none",border:"none",color:T.ink300,fontSize:FZ.xs,fontFamily:ROBOTO,cursor:"pointer",padding:0}}>← Retour</button>
           </div>
         )}
       </div>
 
-      <div style={{marginTop:20,display:"flex",justifyContent:"center",gap:16,fontSize:11.5,color:T.ink300,fontFamily:ROBOTO,position:"relative",zIndex:1}}>
+      <div style={{marginTop:20,display:"flex",justifyContent:"center",gap:16,fontSize:FZ.xs,color:T.ink300,fontFamily:ROBOTO,position:"relative",zIndex:1}}>
         <span>ENOGIA · Marseille</span>
       </div>
     </div>
@@ -126,10 +126,10 @@ export function LoginTransition({name}){
   return(
     <div className="enogia-fade-in" style={{position:"fixed",inset:0,zIndex:10000,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:T.mode==="dark"?"rgba(15,20,25,.6)":"rgba(253,251,246,.55)",backdropFilter:"blur(26px) saturate(1.15)",WebkitBackdropFilter:"blur(26px) saturate(1.15)",fontFamily:ROBOTO}}>
       <img src={process.env.PUBLIC_URL+"/enogia-logo-color-crop.svg"} alt="ENOGIA" style={{height:132,width:"auto",marginBottom:28,filter:T.mode==="dark"?"brightness(0) invert(1)":"drop-shadow(0 8px 24px rgba(18,27,48,.16))",animation:"enogiaLogoPulse 1.3s ease-in-out infinite"}}/>
-      {firstName&&<div className="enogia-float-in" style={{fontSize:28,fontWeight:700,color:T.teal600,letterSpacing:".005em",textShadow:T.mode==="dark"?"none":"0 1px 0 rgba(255,255,255,.6)"}}>Bienvenue, {firstName}</div>}
+      {firstName&&<div className="enogia-float-in" style={{fontSize:FZ.xl,fontWeight:700,color:T.teal600,letterSpacing:".005em",textShadow:T.mode==="dark"?"none":"0 1px 0 rgba(255,255,255,.6)"}}>Bienvenue, {firstName}</div>}
       {/* Phrase d'accroche sur le suivi de projet, demandée explicitement, en plus du message de
           bienvenue. */}
-      <div className="enogia-float-in" style={{fontSize:15,color:T.ink500,marginTop:8,textShadow:T.mode==="dark"?"none":"0 1px 0 rgba(255,255,255,.6)"}}>Le suivi de vos projets, à jour en temps réel.</div>
+      <div className="enogia-float-in" style={{fontSize:FZ.md,color:T.ink500,marginTop:8,textShadow:T.mode==="dark"?"none":"0 1px 0 rgba(255,255,255,.6)"}}>Le suivi de vos projets, à jour en temps réel.</div>
     </div>
   );
 }

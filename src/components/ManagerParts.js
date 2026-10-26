@@ -1,8 +1,10 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { T } from "../theme";
-import { SerieTag, getPjMeta, ETAT_META, ASSIGNABLE_ETATS, Avatar, relTime, PRESENCE_META, presenceKind, presenceBg } from "../pjMeta";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import { T, FZ } from "../theme";
+import { SerieTag, getPjMeta, ETAT_META, ASSIGNABLE_ETATS, Avatar, relTime, PRESENCE_META, presenceKind, presenceBg, presenceDates } from "../pjMeta";
 import { fmt, toLocalISO } from "../parsers";
-import { Select, NavIcon, PjChecklist, DelayScopeNote } from "./SharedUI";
+import { EtatsDialog } from "./EtatsDialog";
+import { Select, NavIcon, PjChecklist, DelayScopeNote, EmptyState, SuperOnly, NewDelayType } from "./SharedUI";
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // Briques de la refonte de la page Manager (« un sacré coup de jeune ») : même langage visuel partout
@@ -12,102 +14,74 @@ import { Select, NavIcon, PjChecklist, DelayScopeNote } from "./SharedUI";
 // Accesseurs (et non valeurs figées) : ces objets sont créés une seule fois à l'import, avant que le
 // thème sombre ne soit appliqué — des valeurs fixes resteraient blanches en mode sombre.
 export const CARD={get background(){return T.card;},borderRadius:12,get border(){return "1px solid "+T.line;}};
-export const H_TITLE={get fontFamily(){return T.fontDisplay;},fontWeight:600,fontSize:15,get color(){return T.ink900;}};
-export const H_SUB={fontSize:12.5,get color(){return T.ink300;},marginTop:2};
+export const H_TITLE={get fontFamily(){return T.fontDisplay;},fontWeight:600,fontSize:FZ.md,get color(){return T.ink900;}};
+export const H_SUB={fontSize:FZ.xs,get color(){return T.ink300;},marginTop:2};
+
+// Camembert + légende (remplace les barres de répartition) : data = [{name,value,color}], unit = suffixe de la valeur.
+// Le centre affiche le total ; la légende donne valeur et pourcentage de chaque part.
+export function PieBlock({data,unit="",size=150,centerLabel,sub}){
+  const total=data.reduce((a,d)=>a+d.value,0);
+  if(!total)return null;
+  return(<div style={{display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
+    <div style={{position:"relative",width:size,height:size,flexShrink:0}}>
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie data={data} dataKey="value" nameKey="name" innerRadius={size*.31} outerRadius={size*.5} paddingAngle={data.length>1?2:0} stroke="none">
+            {data.map((d,i)=><Cell key={d.name+i} fill={d.color}/>)}
+          </Pie>
+          <Tooltip content={({active,payload})=>{
+            if(!active||!payload||!payload.length)return null;const p=payload[0];
+            return(<div style={{background:T.card,border:"1px solid "+T.line,borderRadius:8,padding:"4px 8px",fontSize:FZ.xs,fontFamily:T.font,color:T.ink900,boxShadow:T.shadowSm,display:"flex",alignItems:"center",gap:6}}>
+              <span style={{width:7,height:7,borderRadius:"50%",background:p.payload&&p.payload.color,flexShrink:0}}/><span>{p.name}</span><strong>{p.value}{unit}</strong>
+            </div>);
+          }}/>
+        </PieChart>
+      </ResponsiveContainer>
+      <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
+        <span style={{fontFamily:T.fontDisplay,fontSize:size*.19,fontWeight:700,color:T.ink900,lineHeight:1}}>{centerLabel!=null?centerLabel:total+unit}</span>
+        {sub&&size>=120&&<span style={{fontSize:FZ.xs,color:T.ink300,marginTop:2}}>{sub}</span>} {/* petit anneau : le trou ne peut pas porter une ligne de 12 px, le libellé reste dans la légende */}
+      </div>
+    </div>
+    <div style={{display:"flex",flexDirection:"column",gap:4,minWidth:150,flex:1}}>
+      {data.map((d,i)=>(<div key={d.name+i} style={{display:"flex",alignItems:"center",gap:8,fontSize:FZ.xs}}>
+        <span style={{width:9,height:9,borderRadius:"50%",background:d.color,flexShrink:0}}/>
+        <span style={{color:T.ink700,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",minWidth:0}} title={d.name}>{d.name}</span>
+        <span style={{marginLeft:"auto",fontWeight:700,color:T.ink900,whiteSpace:"nowrap"}}>{d.value}{unit}<span style={{color:T.ink300,fontWeight:500}}> · {Math.round(d.value/total*100)}%</span></span>
+      </div>))}
+    </div>
+  </div>);
+}
 
 // Rangée de tuiles KPI : items = [[valeur, libellé, couleur d'accent]]
 export function KpiRow({items,min=140}){
-  return(<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax("+min+"px,1fr))",gap:10}}>
+  return(<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax("+min+"px,1fr))",gap:8}}>
     {items.map(([v,l,c])=>(
-      <div key={l} style={{...CARD,padding:"11px 14px",borderLeft:"3px solid "+c}}>
-        <div style={{fontFamily:T.fontDisplay,fontSize:24,fontWeight:700,color:T.ink900,lineHeight:1.1}}>{v}</div>
-        <div style={{fontSize:12.5,fontWeight:600,color:T.ink500,marginTop:4}}>{l}</div>
+      <div key={l} style={{...CARD,padding:"12px 12px",borderLeft:"3px solid "+c}}>
+        <div style={{fontFamily:T.fontDisplay,fontSize:FZ.xl,fontWeight:700,color:T.ink900,lineHeight:1.1}}>{v}</div>
+        <div style={{fontSize:FZ.xs,fontWeight:600,color:T.ink500,marginTop:4}}>{l}</div>
       </div>
     ))}
   </div>);
 }
 
 // Petit message vide, réutilisé partout
-export function EmptyNote({children}){
-  return(<div style={{padding:"26px 0",textAlign:"center",color:T.ink300,fontSize:13.5}}>{children}</div>);
-}
-
-// ── SUIVI › AVANCEMENT ─────────────────────────────────────────────────────────────────────────
-// Demande : « la page avancement n'est pas très claire car trop grande » → tableau compact sur 2 colonnes,
-// enregistrement automatique (plus de bouton « Valider » ni d'avertissement « modifications temporaires »).
-export function AvancementTab({rows,progress,setProgress,saveProgress,savingProgress,progressSaved}){
-  const [dirty,setDirty]=useState(false);
-  const [hideDone,setHideDone]=useState(false);
-  const pvOf=r=>progress[r.pj]!=null?progress[r.pj]:r.etat==="SHIPPED"?100:0;
-  const setPct=(pj,v)=>{
-    setProgress(p=>({...p,[pj]:Math.max(0,Math.min(100,Math.round(v)))}));
-    setDirty(true);
-  };
-  // Sauvegarde différée : on attend 0,9 s sans modification pour ne pas écrire à chaque frappe.
-  useEffect(()=>{
-    if(!dirty)return;
-    const t=setTimeout(()=>{setDirty(false);saveProgress();},900);
-    return()=>clearTimeout(t);
-  },[dirty,progress,saveProgress]);
-  // Si on quitte l'onglet pendant le délai, on enregistre quand même (sinon la saisie serait perdue).
-  const latest=useRef({dirty,saveProgress});
-  latest.current={dirty,saveProgress};
-  useEffect(()=>()=>{if(latest.current.dirty)latest.current.saveProgress();},[]);
-
-  const avg=rows.length?Math.round(rows.reduce((a,r)=>a+pvOf(r),0)/rows.length):0;
-  const doneCount=rows.filter(r=>pvOf(r)>=100).length;
-  const list=hideDone?rows.filter(r=>pvOf(r)<100):rows;
-  const status=savingProgress?"Enregistrement…":progressSaved?"✓ Enregistré":dirty?"Modification en cours…":"Enregistrement automatique";
-  const statusColor=progressSaved?T.emerald500:T.ink300;
-
-  return(<div style={{...CARD,padding:16}}>
-    <div style={{display:"flex",alignItems:"center",gap:14,flexWrap:"wrap",marginBottom:12}}>
-      <div>
-        <div style={H_TITLE}>Avancement de production</div>
-        <div style={H_SUB} title="Cet avancement reflète uniquement la production chez ENOGIA — il ne prend pas en compte l'avancement chez les fournisseurs.">Production ENOGIA uniquement (hors fournisseurs) · cliquer sur la barre ou saisir le %</div>
-      </div>
-      <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
-        <span style={{fontSize:12.5,color:T.ink500}}><b style={{color:T.ink900}}>{avg}%</b> en moyenne · <b style={{color:T.ink900}}>{doneCount}</b>/{rows.length} terminés</span>
-        <label style={{display:"flex",alignItems:"center",gap:6,fontSize:12.5,color:T.ink500,fontWeight:600,cursor:"pointer"}}>
-          <input type="checkbox" checked={hideDone} onChange={e=>setHideDone(e.target.checked)}/> Masquer les 100 %
-        </label>
-        <span style={{fontSize:12,fontWeight:600,color:statusColor,minWidth:130,textAlign:"right"}}>{status}</span>
-      </div>
-    </div>
-    {list.length===0?<EmptyNote>Aucun PJ à afficher.</EmptyNote>:
-    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(400px,1fr))",gap:"6px 14px"}}>
-      {list.map(r=>{
-        const pv=pvOf(r);
-        const meta=getPjMeta(r.pj,r);
-        const col=pv>=100?T.emerald500:pv>=50?T.teal500:T.amber500;
-        return(<div key={r.pj} style={{display:"flex",alignItems:"center",gap:10,padding:"6px 10px",border:"1px solid "+T.line,borderRadius:9,background:T.card}}>
-          <div style={{width:124,flexShrink:0,minWidth:0}}>
-            <div style={{fontFamily:T.fontMono,fontWeight:700,fontSize:13,color:T.teal600}}>{r.pj}<SerieTag pj={r.pj} style={{marginLeft:7}}/></div>
-            <div title={meta.nomProjet||""} style={{fontSize:11,color:T.ink300,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{meta.nomProjet||r.gamme}</div>
-          </div>
-          <div title="Cliquer pour régler l'avancement" style={{flex:1,background:T.surfaceAlt,borderRadius:6,height:9,overflow:"hidden",cursor:"pointer"}}
-            onClick={e=>{const rect=e.currentTarget.getBoundingClientRect();setPct(r.pj,((e.clientX-rect.left)/rect.width)*100);}}>
-            <div style={{width:pv+"%",height:"100%",background:col,borderRadius:6,transition:"width .15s ease"}}/>
-          </div>
-          <input type="number" min={0} max={100} value={pv} onChange={e=>setPct(r.pj,+e.target.value||0)} style={{width:50,padding:"4px 6px",borderRadius:7,border:"1px solid "+T.line,fontSize:13,fontWeight:700,fontFamily:T.font,color:T.ink900,textAlign:"right"}}/>
-          <span style={{fontSize:12.5,color:T.ink500}}>%</span>
-        </div>);
-      })}
-    </div>}
-  </div>);
+export function EmptyNote({children,icon}){
+  return(<EmptyState compact icon={icon||(/résultat|ne correspond/i.test(String(children))?"search":"inbox")} title={children}/>);
 }
 
 // ── SUIVI › STATUT & ÉTAT ──────────────────────────────────────────────────────────────────────
 // Tableau dense : une ligne par PJ — l'état se choisit dans une pastille déroulante colorée, la présence
 // client / NOBO aux tests est un petit interrupteur ; la date n'apparaît que lorsque la présence est cochée.
-function EtatSelect({value,onChange}){
+const NEW_ETAT="__NEW_ETAT__";
+export function EtatSelect({value,onChange,onCreate,compact}){
   const m=ETAT_META[value]||ETAT_META["A_DEFINIR"];
-  const options=value==="A_DEFINIR"?["A_DEFINIR",...ASSIGNABLE_ETATS]:ASSIGNABLE_ETATS;
+  const options=ASSIGNABLE_ETATS.includes(value)?ASSIGNABLE_ETATS:[value,...ASSIGNABLE_ETATS];
   return(<div style={{position:"relative",display:"inline-block"}}>
-    <select value={value} onChange={onChange} style={{appearance:"none",WebkitAppearance:"none",MozAppearance:"none",padding:"4px 26px 4px 11px",borderRadius:999,border:"1px solid "+m.border,background:m.bg,color:m.text,fontSize:12.5,fontWeight:700,fontFamily:T.font,cursor:"pointer",minWidth:150}}>
-      {options.map(o=><option key={o} value={o} disabled={o==="A_DEFINIR"}>{ETAT_META[o].label}</option>)}
+    <select value={value} onChange={e=>{if(e.target.value===NEW_ETAT){if(onCreate)onCreate();return;}onChange(e);}} style={{appearance:"none",WebkitAppearance:"none",MozAppearance:"none",padding:compact?"2px 20px 2px 9px":"4px 24px 4px 12px",borderRadius:999,border:"1px solid "+m.border,background:m.bg,color:m.text,fontSize:FZ.xs,fontWeight:700,fontFamily:T.font,cursor:"pointer",minWidth:compact?0:150,maxWidth:"100%"}}>
+      {options.map(o=><option key={o} value={o} disabled={o===value&&!ASSIGNABLE_ETATS.includes(o)} style={{background:T.card,color:T.ink900,fontWeight:600}}>{(ETAT_META[o]||ETAT_META["A_DEFINIR"]).label}</option>)}
+      {onCreate&&<option value={NEW_ETAT} style={{background:T.card,color:T.teal600,fontWeight:800}}>＋ Créer / gérer les états…</option>}
     </select>
-    <span style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",color:m.text,opacity:.7}}><NavIcon name="chevronDown" size={10}/></span>
+    <span style={{position:"absolute",right:compact?7:10,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",color:m.text,opacity:.7}}><NavIcon name="chevronDown" size={10}/></span>
   </div>);
 }
 
@@ -116,57 +90,74 @@ function EtatSelect({value,onChange}){
 // les pastilles du calendrier, de la liste et de la fiche), « Aucun » reste neutre.
 export function PresencePicker({kind,onChange}){
   const opts=[{k:null,label:"Aucun"},{k:"client",label:"Client"},{k:"nobo",label:"NOBO"},{k:"both",label:"Les deux"}];
-  return(<div role="radiogroup" aria-label="Présence aux tests" style={{display:"inline-flex",background:T.surface,border:"1px solid "+T.line,borderRadius:9,padding:2,gap:2,flexShrink:0}}>
+  return(<div role="radiogroup" aria-label="Présence aux tests" style={{display:"inline-flex",background:T.surface,border:"1px solid "+T.line,borderRadius:8,padding:2,gap:2,flexShrink:0}}>
     {opts.map(o=>{
       const on=(kind||null)===o.k;
-      return(<button key={o.k||"none"} role="radio" aria-checked={on} onClick={()=>onChange(o.k)} style={{border:"none",cursor:"pointer",borderRadius:7,padding:"4px 10px",fontSize:12,fontWeight:700,fontFamily:T.font,color:on?(o.k?PRESENCE_META[o.k].ink:T.ink900):T.ink500,background:on?(o.k?presenceBg(o.k):T.card):"transparent",boxShadow:on?(o.k&&!PRESENCE_META[o.k].color2?"inset 0 0 0 1px "+PRESENCE_META[o.k].color:T.shadowSm):"none",transition:"background .12s ease"}}>{o.label}</button>);
+      return(<button key={o.k||"none"} role="radio" aria-checked={on} onClick={()=>onChange(o.k)} style={{border:"none",cursor:"pointer",borderRadius:8,padding:"4px 8px",fontSize:FZ.xs,fontWeight:700,fontFamily:T.font,color:on?(o.k?PRESENCE_META[o.k].ink:T.ink900):T.ink500,background:on?(o.k?presenceBg(o.k):T.card):"transparent",boxShadow:on?(o.k&&!PRESENCE_META[o.k].color2?"inset 0 0 0 1px "+PRESENCE_META[o.k].color:T.shadowSm):"none",transition:"background .12s ease"}}>{o.label}</button>);
     })}
   </div>);
 }
 
-export function StatutTab({rows,etatChoice,setEtatFor,clientPresence,setClientPresenceFor}){
-  const COLS="150px 84px 180px 1fr";
+// Éditeur complet de la présence client / NOBO d'un PJ : choix (Aucun / Client / NOBO / Les deux) + une date
+// par partie, bornée à la période de tests. Utilisé dans Manager › Statut ET directement dans la Liste.
+export function PresenceEditor({r,presence,onChange}){
+  const pres=presence||{present:false,date:""};
+  const kind=presenceKind(pres);
+  const minD=r.tests?toLocalISO(new Date(r.tests)):null;
+  const maxD=r.testsFin?toLocalISO(new Date(r.testsFin)):minD;
+  const noTests=!minD;
+  const pDates=presenceDates(pres);
+  // Une date pour le client et une date pour NOBO, chacune dans la période de tests ; « date » (la plus proche) reste renseignée pour les anciens affichages.
+  const onDate=(who,v)=>{
+    let x=v||"";
+    if(x&&minD&&x<minD)x=minD;
+    if(x&&maxD&&x>maxD)x=maxD;
+    const nd={client:pDates.client||"",nobo:pDates.nobo||"",[who]:x};
+    const first=[kind==="nobo"?"":nd.client,kind==="client"?"":nd.nobo].filter(Boolean).sort()[0]||"";
+    onChange({...pres,dateClient:nd.client,dateNobo:nd.nobo,date:first});
+  };
+  return(<div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",minWidth:0}}>
+    <PresencePicker kind={kind} onChange={k=>onChange(k?{...pres,present:true,who:k}:{...pres,present:false})}/>
+    {kind&&(noTests
+      ?<span style={{fontSize:FZ.xs,color:T.red500,fontWeight:600}}>Période de tests non définie — date impossible</span>
+      :<>
+        {(kind==="both"?["client","nobo"]:[kind]).map(w=><label key={w} style={{display:"inline-flex",alignItems:"center",gap:5,fontSize:FZ.xs,fontWeight:700,color:PRESENCE_META[w].ink}}>
+          <span style={{background:presenceBg(w),borderRadius:6,padding:"2px 8px"}}>{w==="client"?"Client":"NOBO"}</span>
+          <input type="date" value={pDates[w]||""} min={minD||undefined} max={maxD||undefined} onChange={e=>onDate(w,e.target.value)}
+            style={{padding:"3px 8px",borderRadius:8,border:"1.5px solid "+PRESENCE_META[w].color,fontSize:FZ.xs,fontFamily:T.font,color:T.ink700,fontWeight:600}}/>
+        </label>)}
+        <span style={{fontSize:FZ.xs,color:T.ink300}}>entre le {fmt(new Date(minD))} et le {fmt(new Date(maxD))}</span>
+      </>)}
+  </div>);
+}
+
+export function StatutTab({rows,etatChoice,setEtatFor,clientPresence,setClientPresenceFor,customEtats,setCustomEtats,data}){
+  const COLS="130px 150px 84px 180px 1fr";
+  const [etatsOpen,setEtatsOpen]=useState(false);
   return(<div style={{...CARD,overflow:"hidden"}}>
-    <div style={{padding:"14px 16px 10px"}}>
+    {etatsOpen&&setCustomEtats&&<EtatsDialog onClose={()=>setEtatsOpen(false)} customEtats={customEtats||[]} setCustomEtats={setCustomEtats} data={data||rows}/>}
+    <div style={{padding:"12px 16px 8px"}}>
       <div style={H_TITLE}>Statut & état des machines</div>
-      <div style={H_SUB}>L'état choisi ici est celui affiché partout sur le site, immédiatement visible par tous — aucun calcul automatique.</div>
+      <div style={H_SUB}>L'état choisi ici est celui affiché partout sur le site, immédiatement visible par tous. En Montage, Élec, Tests, Packaging et Expédiée, l'avancement de production s'en déduit automatiquement (voir le « i » des filtres d'état).</div>
     </div>
-    <div style={{display:"grid",gridTemplateColumns:COLS,gap:12,padding:"7px 16px",background:T.surface,borderTop:"1px solid "+T.line,borderBottom:"1px solid "+T.line,fontSize:11,fontWeight:700,color:T.ink300,textTransform:"uppercase",letterSpacing:".05em"}}>
-      <span>PJ</span><span>Gamme</span><span>État</span><span>Présence client / NOBO aux tests</span>
+    <div style={{display:"grid",gridTemplateColumns:COLS,gap:12,padding:"8px 16px",background:T.surface,borderTop:"1px solid "+T.line,borderBottom:"1px solid "+T.line,fontSize:FZ.xs,fontWeight:700,color:T.ink300,textTransform:"uppercase",letterSpacing:".05em"}}>
+      <span>PJ</span><span>S/N</span><span>Gamme</span><span>État</span><span>Présence client / NOBO aux tests</span>
     </div>
     {rows.length===0&&<EmptyNote>Aucun PJ à afficher.</EmptyNote>}
     {rows.map(r=>{
       const current=etatChoice[r.pj]||"A_DEFINIR";
       const presence=clientPresence[r.pj]||{present:false,date:""};
-      const kind=presenceKind(presence);
       const meta=getPjMeta(r.pj,r);
-      const minD=r.tests?toLocalISO(new Date(r.tests)):null;
-      const maxD=r.testsFin?toLocalISO(new Date(r.testsFin)):minD;
-      const noTests=!minD;
-      const onDate=v=>{
-        if(!v){setClientPresenceFor(r.pj,{...presence,date:""});return;}
-        if(minD&&v<minD){setClientPresenceFor(r.pj,{...presence,date:minD});return;}
-        if(maxD&&v>maxD){setClientPresenceFor(r.pj,{...presence,date:maxD});return;}
-        setClientPresenceFor(r.pj,{...presence,date:v});
-      };
-      return(<div key={r.pj} style={{display:"grid",gridTemplateColumns:COLS,gap:12,alignItems:"center",padding:"7px 16px",borderBottom:"1px solid "+T.surface}}
+      return(<div key={r.pj} style={{display:"grid",gridTemplateColumns:COLS,gap:12,alignItems:"center",padding:"8px 16px",borderBottom:"1px solid "+T.surface}}
         onMouseEnter={e=>e.currentTarget.style.background=T.surface} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
         <div style={{minWidth:0}}>
-          <div style={{fontFamily:T.fontMono,fontWeight:700,fontSize:13,color:T.teal600}}>{r.pj}<SerieTag pj={r.pj} style={{marginLeft:7}}/></div>
-          <div title={meta.nomProjet||""} style={{fontSize:11,color:T.ink300,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{meta.nomProjet||""}</div>
+          <div style={{fontFamily:T.fontMono,fontWeight:700,fontSize:FZ.sm,color:T.teal600,whiteSpace:"nowrap"}}>{r.pj}</div>
+          <div title={meta.nomProjet||""} style={{fontSize:FZ.xs,color:T.ink300,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{meta.nomProjet||""}</div>
         </div>
-        <span style={{fontSize:12.5,color:T.ink500}}>{r.gamme}</span>
-        <EtatSelect value={current} onChange={e=>setEtatFor(r.pj,e.target.value)}/>
-        <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",minWidth:0}}>
-          <PresencePicker kind={kind} onChange={k=>setClientPresenceFor(r.pj,k?{...presence,present:true,who:k}:{...presence,present:false})}/>
-          {kind&&(noTests
-            ?<span style={{fontSize:12,color:T.red500,fontWeight:600}}>Période de tests non définie — date impossible</span>
-            :<>
-              <input type="date" value={presence.date||""} min={minD||undefined} max={maxD||undefined} onChange={e=>onDate(e.target.value)}
-                style={{padding:"3px 8px",borderRadius:7,border:"1.5px solid "+PRESENCE_META[kind].color,fontSize:12.5,fontFamily:T.font,color:T.ink700,fontWeight:600}}/>
-              <span style={{fontSize:11.5,color:T.ink300}}>entre le {fmt(new Date(minD))} et le {fmt(new Date(maxD))}</span>
-            </>)}
-        </div>
+        <div style={{minWidth:0}}><SerieTag pj={r.pj} style={{verticalAlign:"middle"}}/></div>
+        <span style={{fontSize:FZ.xs,color:T.ink500}}>{r.gamme||"—"}</span>
+        <EtatSelect value={current} onChange={e=>setEtatFor(r.pj,e.target.value)} onCreate={setCustomEtats?()=>setEtatsOpen(true):null}/>
+        <PresenceEditor r={r} presence={presence} onChange={v=>setClientPresenceFor(r.pj,v)}/>
       </div>);
     })}
   </div>);
@@ -182,22 +173,22 @@ export function KpiAvancement({rows,progress}){
   const notStarted=vals.filter(x=>x.pv===0).length;
   const byGamme=useMemo(()=>{
     const m={};
-    vals.forEach(({r,pv})=>{if(!m[r.gamme])m[r.gamme]={sum:0,n:0};m[r.gamme].sum+=pv;m[r.gamme].n++;});
+    vals.forEach(({r,pv})=>{if(!r.gamme)return;if(!m[r.gamme])m[r.gamme]={sum:0,n:0};m[r.gamme].sum+=pv;m[r.gamme].n++;});
     return Object.entries(m).map(([g,v])=>({g,avg:Math.round(v.sum/v.n),n:v.n})).sort((a,b)=>b.avg-a.avg);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[rows,progress]);
   const running20=vals.filter(x=>x.pv>0&&x.pv<100).sort((a,b)=>a.pv-b.pv).slice(0,8);
-  return(<div style={{display:"flex",flexDirection:"column",gap:14}}>
+  return(<div style={{display:"flex",flexDirection:"column",gap:12}}>
     <KpiRow items={[[avg+"%","Avancement moyen",T.teal500],[done,"PJ terminés (100 %)",T.emerald500],[running,"PJ en cours",T.amber500],[notStarted,"PJ non démarrés",T.ink300]]}/>
-    <div style={{display:"flex",gap:14,flexWrap:"wrap"}}>
+    <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
       <div style={{...CARD,padding:16,flex:"1 1 340px"}}>
         <div style={H_TITLE}>Avancement moyen par gamme</div>
         <div style={{...H_SUB,marginBottom:12}}>Moyenne des % saisis, PJ de la sélection</div>
         {byGamme.length===0?<EmptyNote>Aucune donnée.</EmptyNote>:byGamme.map(x=>(
-          <div key={x.g} style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
-            <span style={{width:80,fontSize:13,fontWeight:700,color:T.ink700,flexShrink:0}}>{x.g}</span>
-            <div style={{flex:1,background:T.surfaceAlt,borderRadius:6,height:10,overflow:"hidden"}}><div style={{width:x.avg+"%",height:"100%",background:T.teal500,borderRadius:6}}/></div>
-            <span style={{width:70,textAlign:"right",fontSize:12.5,fontWeight:700,color:T.ink900}}>{x.avg}% <span style={{color:T.ink300,fontWeight:500}}>({x.n})</span></span>
+          <div key={x.g} style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+            <span style={{width:80,fontSize:FZ.sm,fontWeight:700,color:T.ink700,flexShrink:0}}>{x.g}</span>
+            <div style={{flex:1,background:T.surfaceAlt,borderRadius:8,height:10,overflow:"hidden"}}><div className="enogia-bar-fill" style={{width:x.avg+"%",height:"100%",background:T.teal500,borderRadius:8}}/></div>
+            <span style={{width:70,textAlign:"right",fontSize:FZ.xs,fontWeight:700,color:T.ink900}}>{x.avg}% <span style={{color:T.ink300,fontWeight:500}}>({x.n})</span></span>
           </div>
         ))}
       </div>
@@ -205,10 +196,10 @@ export function KpiAvancement({rows,progress}){
         <div style={H_TITLE}>En cours — les moins avancés</div>
         <div style={{...H_SUB,marginBottom:12}}>Les PJ démarrés mais encore loin de la fin</div>
         {running20.length===0?<EmptyNote>Aucun PJ en cours.</EmptyNote>:running20.map(({r,pv})=>(
-          <div key={r.pj} style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
-            <span style={{width:92,fontFamily:T.fontMono,fontSize:12.5,fontWeight:700,color:T.teal600,flexShrink:0}}>{r.pj}</span>
-            <div style={{flex:1,background:T.surfaceAlt,borderRadius:6,height:10,overflow:"hidden"}}><div style={{width:pv+"%",height:"100%",background:pv>=50?T.teal500:T.amber500,borderRadius:6}}/></div>
-            <span style={{width:40,textAlign:"right",fontSize:12.5,fontWeight:700,color:T.ink900}}>{pv}%</span>
+          <div key={r.pj} style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+            <span style={{width:92,fontFamily:T.fontMono,fontSize:FZ.xs,fontWeight:700,color:T.teal600,flexShrink:0}}>{r.pj}</span>
+            <div style={{flex:1,background:T.surfaceAlt,borderRadius:8,height:10,overflow:"hidden"}}><div className="enogia-bar-fill" style={{width:pv+"%",height:"100%",background:pv>=50?T.teal500:T.amber500,borderRadius:8}}/></div>
+            <span style={{width:40,textAlign:"right",fontSize:FZ.xs,fontWeight:700,color:T.ink900}}>{pv}%</span>
           </div>
         ))}
       </div>
@@ -217,7 +208,7 @@ export function KpiAvancement({rows,progress}){
 }
 
 // ── RETARDS ────────────────────────────────────────────────────────────────────────────────────
-export const getDelayColors=()=>[T.red500,T.amber500,T.violet500,T.teal500,"#e8821a",T.emerald500,T.navy600,T.ink500];
+export const getDelayColors=()=>[T.red500,T.amber500,T.violet500,T.teal500,T.ember500,T.emerald500,T.navy600,T.ink500];
 
 // Vue d'analyse (onglet KPI › Retards) : répartition par cause + PJ qui concentrent le plus de retard
 export function DelayInsights({delays,delayTypes}){
@@ -239,34 +230,27 @@ export function DelayInsights({delays,delayTypes}){
   },[allEntries]);
   const totalDays=allEntries.reduce((a,e)=>a+(e.days||0),0);
   const pjCount=new Set(allEntries.map(e=>e.pj)).size;
-  const maxType=Math.max(...byType.map(t=>t.days),1);
-  const maxPj=Math.max(...byPj.map(t=>t.days),1);
-  return(<div style={{display:"flex",flexDirection:"column",gap:14}}>
+  // camembert par PJ : les 8 plus touchés, le reste regroupé
+  const pjSlices=useMemo(()=>{
+    const all=Object.entries(allEntries.reduce((m,e)=>{m[e.pj]=(m[e.pj]||0)+(e.days||0);return m;},{})).map(([pj,days])=>({pj,days})).sort((a,b)=>b.days-a.days);
+    const pal=["#6E99B0","#A090C4","#D1A468","#80A98A","#C4847F","#8C93C2","#6FACA3","#A3AE78"];
+    const top=all.slice(0,8).map((p,i)=>({name:p.pj,value:p.days,color:pal[i%pal.length]}));
+    const rest=all.slice(8).reduce((a,p)=>a+p.days,0);
+    if(rest>0)top.push({name:"Autres ("+(all.length-8)+" PJ)",value:rest,color:T.ink300});
+    return top;
+  },[allEntries]);
+  return(<div style={{display:"flex",flexDirection:"column",gap:12}}>
     <KpiRow items={[[totalDays+"j","Jours de retard alloués",T.red500],[allEntries.length,"Retards enregistrés",T.teal500],[pjCount,"PJ concernés",T.violet500],[byType.length,"Causes utilisées",T.amber500]]}/>
-    <div style={{display:"flex",gap:14,flexWrap:"wrap"}}>
+    <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
       <div style={{...CARD,padding:16,flex:"1 1 340px"}}>
         <div style={H_TITLE}>Répartition par cause</div>
         <div style={{...H_SUB,marginBottom:12}}>Qu'est-ce qui génère le plus de retard sur le portefeuille ?</div>
-        {byType.length===0?<EmptyNote>Aucun retard enregistré pour l'instant.</EmptyNote>:byType.map(t=>(
-          <div key={t.type} style={{marginBottom:10}}>
-            <div style={{display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:4}}>
-              <span style={{fontWeight:600,color:T.ink700}}>{t.type}</span>
-              <span style={{fontWeight:700,color:T.ink900}}>{t.days}j · {Math.round(t.days/Math.max(totalDays,1)*100)}%</span>
-            </div>
-            <div style={{background:T.surfaceAlt,borderRadius:6,height:9,overflow:"hidden"}}><div style={{width:(t.days/maxType*100)+"%",height:"100%",background:colorOf(t.type),borderRadius:6}}/></div>
-          </div>
-        ))}
+        {byType.length===0?<EmptyNote>Aucun retard enregistré pour l'instant.</EmptyNote>:<PieBlock data={byType.map(t=>({name:t.type,value:t.days,color:colorOf(t.type)}))} unit="j" sub="de retard"/>}
       </div>
       <div style={{...CARD,padding:16,flex:"1 1 340px"}}>
-        <div style={H_TITLE}>Top PJ — jours de retard cumulés</div>
+        <div style={H_TITLE}>Retard par PJ — jours cumulés</div>
         <div style={{...H_SUB,marginBottom:12}}>Les projets qui concentrent le plus de retard, toutes causes confondues</div>
-        {byPj.length===0?<EmptyNote>Aucune donnée.</EmptyNote>:byPj.map(p=>(
-          <div key={p.pj} style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
-            <span style={{width:92,fontFamily:T.fontMono,fontWeight:700,color:T.teal600,fontSize:12.5,flexShrink:0}}>{p.pj}</span>
-            <div style={{flex:1,background:T.surfaceAlt,borderRadius:6,height:9,overflow:"hidden"}}><div style={{width:(p.days/maxPj*100)+"%",height:"100%",background:T.red500,borderRadius:6}}/></div>
-            <span style={{width:38,textAlign:"right",fontWeight:700,color:T.ink900,fontSize:12.5,flexShrink:0}}>{p.days}j</span>
-          </div>
-        ))}
+        {byPj.length===0?<EmptyNote>Aucune donnée.</EmptyNote>:<PieBlock data={pjSlices} unit="j" sub="de retard"/>}
       </div>
     </div>
   </div>);
@@ -329,7 +313,7 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
   };
   const removeType=t=>{if(delayTypes.length<=1)return;setDelayTypes(delayTypes.filter(x=>x!==t));if(type===t)setType("");};
 
-  const label={fontSize:12,fontWeight:700,color:T.ink500,marginBottom:6,display:"block"};
+  const label={fontSize:FZ.xs,fontWeight:700,color:T.ink500,marginBottom:6,display:"block"};
   const pjOptions=[{value:"",label:"Choisir un PJ…"},...data.map(d=>{const m=getPjMeta(d.pj,d);return{value:d.pj,label:d.pj+(m.nomProjet?" — "+m.nomProjet:"")};})];
 
   // ── Vue Kanban (demandé : « une vue plus UX/UI comme un Kanban ») ────────────────────────────
@@ -352,37 +336,37 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
     if(preset.type!==undefined)setType(preset.type);
     setDrawerOpen(true);
   };
-  const seg=on=>({padding:"5px 13px",borderRadius:8,border:"none",background:on?T.card:"transparent",boxShadow:on?T.shadowSm:"none",color:on?T.teal600:T.ink500,fontWeight:on?700:600,fontSize:13,cursor:"pointer",fontFamily:T.font});
+  const seg=on=>({padding:"4px 12px",borderRadius:8,border:"none",background:on?T.card:"transparent",boxShadow:on?T.shadowSm:"none",color:on?T.teal600:T.ink500,fontWeight:on?700:600,fontSize:FZ.sm,cursor:"pointer",fontFamily:T.font});
   const card=(e,byPj)=>{
     const c=colorOf(e.type);const ask=confirmId===e.id;const m=meta(e.pj);
-    return(<div key={e.pj+"-"+e.id} style={{background:T.card,border:"1px solid "+T.line,borderLeft:"3px solid "+c,borderRadius:10,padding:"9px 11px",boxShadow:T.shadowSm}}>
-      <div style={{display:"flex",alignItems:"center",gap:7}}>
+    return(<div key={e.pj+"-"+e.id} style={{background:T.card,border:"1px solid "+T.line,borderLeft:"3px solid "+c,borderRadius:12,padding:"8px 12px",boxShadow:T.shadowSm}}>
+      <div style={{display:"flex",alignItems:"center",gap:8}}>
         {byPj
-          ?<span style={{display:"inline-flex",alignItems:"center",gap:5,background:T.surface,borderRadius:999,padding:"1px 9px 1px 7px",fontSize:12,fontWeight:700,color:T.ink700}}><span style={{width:7,height:7,borderRadius:"50%",background:c}}/>{e.type}</span>
-          :<span style={{fontFamily:T.fontMono,fontWeight:800,fontSize:13,color:T.teal600}}>{e.pj}</span>}
+          ?<span style={{display:"inline-flex",alignItems:"center",gap:4,background:T.surface,borderRadius:999,padding:"1px 8px 1px 8px",fontSize:FZ.xs,fontWeight:700,color:T.ink700}}><span style={{width:7,height:7,borderRadius:"50%",background:c}}/>{e.type}</span>
+          :<span style={{fontFamily:T.fontMono,fontWeight:800,fontSize:FZ.sm,color:T.teal600}}>{e.pj}</span>}
         {!byPj&&<SerieTag pj={e.pj}/>}
-        <span style={{fontSize:13,fontWeight:800,color:T.red500,background:T.red100,borderRadius:6,padding:"0 7px"}}>+{e.days}j</span>
-        {e.groupPjs&&e.groupPjs.length>1&&<span title={e.groupPjs.join(", ")} style={{fontSize:10.5,color:T.violet600,background:T.violet100,borderRadius:6,padding:"1px 6px",fontWeight:700}}>×{e.groupPjs.length}</span>}
+        <span style={{fontSize:FZ.sm,fontWeight:800,color:T.red500,background:T.red100,borderRadius:8,padding:"0 8px"}}>+{e.days}j</span>
+        {e.groupPjs&&e.groupPjs.length>1&&<span title={e.groupPjs.join(", ")} style={{fontSize:FZ.xs,color:T.violet600,background:T.violet100,borderRadius:8,padding:"1px 6px",fontWeight:700}}>×{e.groupPjs.length}</span>}
         <span style={{marginLeft:"auto"}}>
           {ask
-            ?<span style={{display:"inline-flex",gap:5,alignItems:"center"}}><button onClick={async()=>{await deleteDelayAllocation(e.pj,e.id);setConfirmId(null);}} style={{border:"none",background:T.red500,color:"#fff",borderRadius:6,fontSize:11,fontWeight:700,padding:"1px 7px",cursor:"pointer"}}>Supprimer ?</button><button onClick={()=>setConfirmId(null)} style={{border:"none",background:"none",color:T.ink300,fontSize:11,cursor:"pointer"}}>Non</button></span>
-            :<button onClick={()=>setConfirmId(e.id)} title="Supprimer ce retard" style={{border:"none",background:"none",color:T.ink300,fontSize:12.5,cursor:"pointer",padding:0}}>✕</button>}
+            ?<span style={{display:"inline-flex",gap:4,alignItems:"center"}}><button onClick={async()=>{await deleteDelayAllocation(e.pj,e.id);setConfirmId(null);}} style={{border:"none",background:T.redFill,color:"#fff",borderRadius:8,fontSize:FZ.xs,fontWeight:700,padding:"1px 8px",cursor:"pointer"}}>Supprimer ?</button><button onClick={()=>setConfirmId(null)} style={{border:"none",background:"none",color:T.ink300,fontSize:FZ.xs,cursor:"pointer"}}>Non</button></span>
+            :<SuperOnly><button onClick={()=>setConfirmId(e.id)} title="Supprimer ce retard" style={{border:"none",background:"none",color:T.ink300,fontSize:FZ.xs,cursor:"pointer",padding:0}}><NavIcon name="close" size={11}/></button></SuperOnly>}
         </span>
       </div>
-      {!byPj&&m.nomProjet&&<div style={{fontSize:11.5,color:T.ink500,marginTop:3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{m.nomProjet}</div>}
-      {e.note&&<div style={{fontSize:12.5,color:T.ink700,marginTop:6,lineHeight:1.4,whiteSpace:"pre-wrap",wordBreak:"break-word",display:"-webkit-box",WebkitLineClamp:4,WebkitBoxOrient:"vertical",overflow:"hidden"}} title={e.note}>{e.note}</div>}
-      <div style={{display:"flex",alignItems:"center",gap:6,marginTop:8,fontSize:11,color:T.ink300}}><Avatar name={e.author||"?"} size={16}/><span style={{fontWeight:600,color:T.ink500}}>{e.author||"Anonyme"}</span><span>· {e.date?relTime(e.date):""}</span></div>
+      {!byPj&&m.nomProjet&&<div style={{fontSize:FZ.xs,color:T.ink500,marginTop:3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{m.nomProjet}</div>}
+      {e.note&&<div style={{fontSize:FZ.xs,color:T.ink700,marginTop:6,lineHeight:1.4,whiteSpace:"pre-wrap",wordBreak:"break-word",display:"-webkit-box",WebkitLineClamp:4,WebkitBoxOrient:"vertical",overflow:"hidden"}} title={e.note}>{e.note}</div>}
+      <div style={{display:"flex",alignItems:"center",gap:6,marginTop:8,fontSize:FZ.xs,color:T.ink300}}><Avatar name={e.author||"?"} size={16}/><span style={{fontWeight:600,color:T.ink500}}>{e.author||"Anonyme"}</span><span>· {e.date?relTime(e.date):""}</span></div>
     </div>);
   };
 
   return(<div style={{display:"flex",flexDirection:"column",gap:12}}>
     {/* ── Barre : titre, bascule de vue, filtre PJ, bouton « Déclarer » ── */}
-    <div style={{display:"flex",alignItems:"center",gap:14,flexWrap:"wrap"}}>
+    <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
       <div>
         <div style={H_TITLE}>Retards déclarés</div>
         <div style={H_SUB}>{feed.length} retard{feed.length>1?"s":""} · <b style={{color:feedDays>0?T.red500:T.ink500}}>{feedDays} jour{feedDays>1?"s":""}</b> au total</div>
       </div>
-      <div style={{display:"inline-flex",gap:2,padding:3,background:T.surface,border:"1px solid "+T.line,borderRadius:10}}>
+      <div style={{display:"inline-flex",gap:2,padding:3,background:T.surface,border:"1px solid "+T.line,borderRadius:12}}>
         <button onClick={()=>setView("cause")} style={seg(view==="cause")}>Par cause</button>
         <button onClick={()=>setView("pj")} style={seg(view==="pj")}>Par PJ</button>
         <button onClick={()=>setView("fil")} style={seg(view==="fil")}>Fil</button>
@@ -390,7 +374,7 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
       <div style={{width:190}}>
         <Select compact value={filterPj} onChange={e=>setFilterPj(e.target.value)} options={[{value:"",label:"Tous les PJ"},...data.map(d=>({value:d.pj,label:d.pj}))]}/>
       </div>
-      <button onClick={()=>openForm(filterPj?{pj:filterPj}:{})} style={{marginLeft:"auto",padding:"9px 18px",borderRadius:10,border:"none",background:T.teal500,color:"#fff",fontSize:13.5,fontWeight:700,cursor:"pointer",fontFamily:T.font,boxShadow:T.shadowSm}}>+ Déclarer un retard</button>
+      <button onClick={()=>openForm(filterPj?{pj:filterPj}:{})} style={{marginLeft:"auto",padding:"8px 16px",borderRadius:12,border:"none",background:T.teal500,color:"#fff",fontSize:FZ.sm,fontWeight:700,cursor:"pointer",fontFamily:T.font,boxShadow:T.shadowSm}}>+ Déclarer un retard</button>
     </div>
 
     {view==="fil"
@@ -406,19 +390,19 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
           const c=view==="pj"?T.red500:colorOf(col.key);
           const mm=view==="pj"?meta(col.pj):null;
           return(<div key={col.key} style={{width:268,flexShrink:0,background:T.surfaceAlt,borderRadius:12,display:"flex",flexDirection:"column",maxHeight:"calc(100vh - 290px)",minHeight:120}}>
-            <div style={{padding:"10px 12px 9px",borderBottom:"2px solid "+c,display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+            <div style={{padding:"8px 12px 8px",borderBottom:"2px solid "+c,display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
               <div style={{minWidth:0,flex:1}}>
                 <div style={{display:"flex",alignItems:"center",gap:6,minWidth:0}}>
-                  {view==="pj"?<span style={{fontFamily:T.fontMono,fontWeight:800,fontSize:14,color:T.teal600}}>{col.pj}<SerieTag pj={col.pj} style={{marginLeft:7}}/></span>
-                    :<><span style={{width:9,height:9,borderRadius:"50%",background:c,flexShrink:0}}/><span style={{fontWeight:700,fontSize:14,color:T.ink900,overflowWrap:"anywhere"}}>{col.title}</span></>}
+                  {view==="pj"?<span style={{fontFamily:T.fontMono,fontWeight:800,fontSize:FZ.sm,color:T.teal600}}>{col.pj}<SerieTag pj={col.pj} style={{marginLeft:7}}/></span>
+                    :<><span style={{width:9,height:9,borderRadius:"50%",background:c,flexShrink:0}}/><span style={{fontWeight:700,fontSize:FZ.sm,color:T.ink900,overflowWrap:"anywhere"}}>{col.title}</span></>}
                 </div>
-                <div style={{fontSize:11.5,color:T.ink500,marginTop:2,overflowWrap:"anywhere"}}>{view==="pj"?(mm.nomProjet||""):col.items.length+" retard"+(col.items.length>1?"s":"")}{view==="pj"?" · "+col.items.length+" retard"+(col.items.length>1?"s":""):""}</div>
+                <div style={{fontSize:FZ.xs,color:T.ink500,marginTop:2,overflowWrap:"anywhere"}}>{view==="pj"?(mm.nomProjet||""):col.items.length+" retard"+(col.items.length>1?"s":"")}{view==="pj"?" · "+col.items.length+" retard"+(col.items.length>1?"s":""):""}</div>
               </div>
-              <span style={{fontFamily:T.fontDisplay,fontWeight:800,fontSize:18,color:col.days>0?T.red500:T.ink300,flexShrink:0}}>{col.days}j</span>
-              <button onClick={()=>openForm(view==="pj"?{pj:col.pj}:{type:col.key})} title="Ajouter un retard ici" style={{width:24,height:24,borderRadius:7,border:"none",background:T.card,color:T.ink900,fontSize:15,fontWeight:700,cursor:"pointer",flexShrink:0}}>+</button>
+              <span style={{fontFamily:T.fontDisplay,fontWeight:800,fontSize:FZ.md,color:col.days>0?T.red500:T.ink300,flexShrink:0}}>{col.days}j</span>
+              <button onClick={()=>openForm(view==="pj"?{pj:col.pj}:{type:col.key})} title="Ajouter un retard ici" style={{width:24,height:24,borderRadius:8,border:"none",background:T.card,color:T.ink900,fontSize:FZ.md,fontWeight:700,cursor:"pointer",flexShrink:0}}>+</button>
             </div>
-            <div style={{padding:8,display:"flex",flexDirection:"column",gap:7,overflowY:"auto",minHeight:0}}>
-              {col.items.length===0&&<div style={{color:T.ink300,fontSize:12.5,textAlign:"center",padding:"14px 6px"}}>Aucun retard.</div>}
+            <div style={{padding:8,display:"flex",flexDirection:"column",gap:8,overflowY:"auto",minHeight:0}}>
+              {col.items.length===0&&<div style={{color:T.ink300,fontSize:FZ.xs,textAlign:"center",padding:"12px 6px"}}>Aucun retard.</div>}
               {col.items.map(e=>card(e,view==="pj"))}
             </div>
           </div>);
@@ -428,18 +412,18 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
     {drawerOpen&&<>
       <div onClick={()=>setDrawerOpen(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.35)",zIndex:9998}}/>
     <div style={{...CARD,position:"fixed",top:0,right:0,bottom:0,width:"min(470px,100vw)",boxSizing:"border-box",overflowY:"auto",zIndex:9999,borderRadius:"16px 0 0 16px",boxShadow:T.shadowLg,padding:20,display:"flex",flexDirection:"column",gap:16}}>
-      <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
+      <div style={{display:"flex",alignItems:"flex-start",gap:8}}>
         <div style={{flex:1}}>
           <div style={H_TITLE}>Déclarer un retard</div>
           <div style={H_SUB}>Quel PJ, pourquoi, de combien de jours — et ce qu'il s'est passé.</div>
         </div>
-        <button onClick={()=>setDrawerOpen(false)} title="Fermer" style={{width:30,height:30,borderRadius:9,border:"none",background:T.surface,color:T.ink500,fontSize:15,cursor:"pointer"}}>✕</button>
+        <button onClick={()=>setDrawerOpen(false)} title="Fermer" style={{width:30,height:30,borderRadius:8,border:"none",background:T.surface,color:T.ink500,fontSize:FZ.md,cursor:"pointer"}}><NavIcon name="close" size={11}/></button>
       </div>
 
       <div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <span style={label}>{multiMode?"PJ concernés":"PJ"}</span>
-          <button onClick={()=>{setMultiMode(m=>!m);}} style={{background:"none",border:"none",color:T.teal600,fontSize:12,fontWeight:700,cursor:"pointer",padding:0,marginBottom:6}}>{multiMode?"← Un seul PJ":"Plusieurs PJ (décalage groupé)"}</button>
+          <button onClick={()=>{setMultiMode(m=>!m);}} style={{background:"none",border:"none",color:T.teal600,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",padding:0,marginBottom:6}}>{multiMode?"← Un seul PJ":"Plusieurs PJ (décalage groupé)"}</button>
         </div>
         {multiMode?<PjChecklist data={data} selected={selPjs} onChange={setSelPjs} maxHeight={180}/>
           :<Select value={selPj} onChange={e=>setSelPj(e.target.value)} options={pjOptions}/>}
@@ -449,8 +433,9 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
         <span style={label}>Cause du retard</span>
         <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
           {delayTypes.map(t=>{const on=type===t;const c=colorOf(t);return(
-            <button key={t} onClick={()=>setType(on?"":t)} style={{padding:"6px 12px",borderRadius:999,border:"1.5px solid "+(on?c:T.line),background:on?c:T.card,color:on?"#fff":T.ink700,fontSize:12.5,fontWeight:600,cursor:"pointer",fontFamily:T.font,transition:"all .12s ease"}}>{t}</button>
+            <button key={t} onClick={()=>setType(on?"":t)} style={{padding:"6px 12px",borderRadius:999,border:"1.5px solid "+(on?c:T.line),background:on?c:T.card,color:on?"#fff":T.ink700,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font,transition:"all .12s ease"}}>{t}</button>
           );})}
+          <NewDelayType types={delayTypes} onCreate={setDelayTypes} onCreated={setType}/>
         </div>
       </div>
 
@@ -458,10 +443,10 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
         <span style={label}>Durée du retard</span>
         <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
           {[1,2,3,5,10,15].map(v=>{const on=n===v&&String(days)===String(v);return(
-            <button key={v} onClick={()=>setDays(String(v))} style={{padding:"6px 11px",borderRadius:8,border:"1px solid "+(on?T.teal500:T.line),background:on?T.teal100:T.card,color:on?T.teal600:T.ink700,fontSize:12.5,fontWeight:700,cursor:"pointer",fontFamily:T.font}}>{v} j</button>
+            <button key={v} onClick={()=>setDays(String(v))} style={{padding:"6px 12px",borderRadius:8,border:"1px solid "+(on?T.teal500:T.line),background:on?T.teal100:T.card,color:on?T.teal600:T.ink700,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font}}>{v} j</button>
           );})}
-          <input type="number" min="1" value={days} onChange={e=>setDays(e.target.value)} placeholder="Autre" style={{width:70,padding:"6px 9px",borderRadius:8,border:"1px solid "+T.line,fontSize:13,fontFamily:T.font,color:T.ink700}}/>
-          <span style={{fontSize:12.5,color:T.ink500}}>jours</span>
+          <input type="number" min="1" value={days} onChange={e=>setDays(e.target.value)} placeholder="Autre" style={{width:70,padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700}}/>
+          <span style={{fontSize:FZ.xs,color:T.ink500}}>jours</span>
         </div>
       </div>
 
@@ -470,34 +455,34 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
       <div>
         <span style={label}>Commentaire <span style={{fontWeight:500,color:T.ink300}}>(optionnel)</span></span>
         <textarea value={note} onChange={e=>setNote(e.target.value)} rows={3} maxLength={300} placeholder="Que s'est-il passé ? Ex. : échangeurs livrés avec 2 semaines de retard par le fournisseur…"
-          style={{width:"100%",boxSizing:"border-box",padding:"9px 11px",borderRadius:9,border:"1px solid "+T.line,fontSize:13.5,fontFamily:T.font,color:T.ink700,resize:"vertical",lineHeight:1.45}}/>
-        <div style={{fontSize:11,color:T.ink300,textAlign:"right",marginTop:2}}>{note.length}/300</div>
+          style={{width:"100%",boxSizing:"border-box",padding:"8px 12px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700,resize:"vertical",lineHeight:1.45}}/>
+        <div style={{fontSize:FZ.xs,color:T.ink300,textAlign:"right",marginTop:2}}>{note.length}/300</div>
       </div>
 
-      <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
         {authorName
-          ?<span style={{display:"inline-flex",alignItems:"center",gap:7,fontSize:13,color:T.ink700,fontWeight:600}}><Avatar name={authorName} size={24}/>{authorName}</span>
-          :<input type="text" value={authorInput} onChange={e=>setAuthorInput(e.target.value)} placeholder="Votre nom" maxLength={40} style={{width:140,padding:"7px 10px",borderRadius:8,border:"1px solid "+T.line,fontSize:13,fontFamily:T.font,color:T.ink700}}/>}
-        <button onClick={submit} disabled={!canSubmit} style={{marginLeft:"auto",padding:"9px 20px",borderRadius:9,border:"none",background:canSubmit?T.teal500:T.surfaceAlt,color:canSubmit?"#fff":T.ink300,fontSize:13.5,fontWeight:700,cursor:canSubmit?"pointer":"default",fontFamily:T.font}}>
+          ?<span style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:FZ.sm,color:T.ink700,fontWeight:600}}><Avatar name={authorName} size={24}/>{authorName}</span>
+          :<input type="text" value={authorInput} onChange={e=>setAuthorInput(e.target.value)} placeholder="Votre nom" maxLength={40} style={{width:140,padding:"8px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700}}/>}
+        <button onClick={submit} disabled={!canSubmit} style={{marginLeft:"auto",padding:"8px 20px",borderRadius:8,border:"none",background:canSubmit?T.teal500:T.surfaceAlt,color:canSubmit?"#fff":T.ink300,fontSize:FZ.sm,fontWeight:700,cursor:canSubmit?"pointer":"default",fontFamily:T.font}}>
           {saving?"Enregistrement…":ok?"✓ Enregistré":"Enregistrer le retard"}
         </button>
       </div>
-      {missing.length>0&&<div style={{fontSize:12,color:T.ink300,marginTop:-8}}>Il manque : {missing.join(" · ")}</div>}
+      {missing.length>0&&<div style={{fontSize:FZ.xs,color:T.ink300,marginTop:-8}}>Il manque : {missing.join(" · ")}</div>}
 
       <div style={{borderTop:"1px solid "+T.line,paddingTop:12}}>
-        <button onClick={()=>setShowTypes(v=>!v)} style={{background:"none",border:"none",padding:0,fontSize:12,fontWeight:700,color:T.ink500,cursor:"pointer",fontFamily:T.font}}>{showTypes?"▾":"▸"} Gérer les causes proposées ({delayTypes.length})</button>
+        <button onClick={()=>setShowTypes(v=>!v)} style={{background:"none",border:"none",padding:0,fontSize:FZ.xs,fontWeight:700,color:T.ink500,cursor:"pointer",fontFamily:T.font}}>{showTypes?"▾":"▸"} Gérer les causes proposées ({delayTypes.length})</button>
         {showTypes&&<div style={{marginTop:10}}>
           <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:10}}>
             {delayTypes.map(t=>(
-              <span key={t} style={{display:"inline-flex",alignItems:"center",gap:6,background:T.surface,borderRadius:999,padding:"4px 8px 4px 11px",fontSize:12.5,color:T.ink700,fontWeight:600}}>
+              <span key={t} style={{display:"inline-flex",alignItems:"center",gap:6,background:T.surface,borderRadius:999,padding:"4px 8px 4px 12px",fontSize:FZ.xs,color:T.ink700,fontWeight:600}}>
                 <span style={{width:8,height:8,borderRadius:"50%",background:colorOf(t)}}/>{t}
-                <button onClick={()=>removeType(t)} disabled={delayTypes.length<=1} title="Supprimer cette cause" style={{background:"none",border:"none",color:T.ink300,cursor:delayTypes.length<=1?"default":"pointer",fontSize:12,padding:0}}>✕</button>
+                <SuperOnly><button onClick={()=>removeType(t)} disabled={delayTypes.length<=1} title="Supprimer cette cause" style={{background:"none",border:"none",color:T.ink300,cursor:delayTypes.length<=1?"default":"pointer",fontSize:FZ.xs,padding:0}}><NavIcon name="close" size={11}/></button></SuperOnly>
               </span>
             ))}
           </div>
           <div style={{display:"flex",gap:6}}>
-            <input type="text" value={newType} onChange={e=>setNewType(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")addType();}} placeholder="Nouvelle cause…" maxLength={60} style={{flex:1,padding:"6px 10px",borderRadius:8,border:"1px solid "+T.line,fontSize:13,fontFamily:T.font,color:T.ink700}}/>
-            <button onClick={addType} disabled={!newType.trim()} style={{padding:"6px 14px",borderRadius:8,border:"none",background:newType.trim()?T.teal500:T.surfaceAlt,color:newType.trim()?"#fff":T.ink300,fontSize:12.5,fontWeight:700,cursor:newType.trim()?"pointer":"default"}}>Ajouter</button>
+            <input type="text" value={newType} onChange={e=>setNewType(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")addType();}} placeholder="Nouvelle cause…" maxLength={60} style={{flex:1,padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700}}/>
+            <button onClick={addType} disabled={!newType.trim()} style={{padding:"6px 12px",borderRadius:8,border:"none",background:newType.trim()?T.teal500:T.surfaceAlt,color:newType.trim()?"#fff":T.ink300,fontSize:FZ.xs,fontWeight:700,cursor:newType.trim()?"pointer":"default"}}>Ajouter</button>
           </div>
         </div>}
       </div>
@@ -599,14 +584,14 @@ export function ProductionCalendarManager({data,productionExclusions,setProducti
     we:{color:T.ink300,background:"transparent",cursor:"default",opacity:.55},
   };
 
-  return(<div style={{...CARD,padding:18}}>
-    <div style={{display:"flex",alignItems:"center",gap:14,flexWrap:"wrap",marginBottom:14}}>
+  return(<div style={{...CARD,padding:16}}>
+    <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",marginBottom:14}}>
       <div>
         <div style={H_TITLE}>Calendrier de production</div>
         <div style={H_SUB}>Désactivez les jours sans activité (férié, pont, arrêt) : ils disparaissent de la vue « Production » du Calendrier.</div>
       </div>
       <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
-        <label style={{display:"flex",alignItems:"center",gap:7,fontSize:12.5,fontWeight:600,color:T.ink700,cursor:"pointer"}}>
+        <label style={{display:"flex",alignItems:"center",gap:8,fontSize:FZ.xs,fontWeight:600,color:T.ink700,cursor:"pointer"}}>
           <input type="checkbox" checked={allMode} onChange={e=>setAllMode(e.target.checked)}/> Tous les PJ
         </label>
         {!allMode&&<div style={{width:190}}><Select value={selectedPj} onChange={e=>setSelectedPj(e.target.value)} options={pjOptions}/></div>}
@@ -614,19 +599,19 @@ export function ProductionCalendarManager({data,productionExclusions,setProducti
     </div>
 
     {!allMode&&!selectedPj&&<EmptyNote>Choisissez un PJ — ou cochez « Tous les PJ » — pour afficher son calendrier de production.</EmptyNote>}
-    {selectedHasNoRange&&<div style={{fontSize:13.5,color:T.red500}}>Période de production non définie (Arrivée / Fin de prod manquante) pour ce PJ.</div>}
+    {selectedHasNoRange&&<div style={{fontSize:FZ.sm,color:T.red500}}>Période de production non définie (Arrivée / Fin de prod manquante) pour ce PJ.</div>}
 
     {range&&<>
-      <div style={{display:"flex",alignItems:"center",gap:16,flexWrap:"wrap",marginBottom:12,fontSize:12.5,color:T.ink500}}>
+      <div style={{display:"flex",alignItems:"center",gap:16,flexWrap:"wrap",marginBottom:12,fontSize:FZ.xs,color:T.ink500}}>
         <span>Production du <b style={{color:T.ink700}}>{fmt(range.start)}</b> au <b style={{color:T.ink700}}>{fmt(range.end)}</b>{allMode?" ("+targets.length+" PJ)":""}</span>
         <span style={{color:T.ink300}}>Clic = exclure / réactiver un jour · clic-glisser = toute une période</span>
         <span style={{marginLeft:"auto",display:"flex",gap:12}}>
           {[["on","Jour de prod"],["off","Désactivé"],...(allMode?[["part","Partiel"]]:[]),["we","Week-end"]].map(([k,l])=>(
-            <span key={k} style={{display:"inline-flex",alignItems:"center",gap:5}}><span style={{width:12,height:12,borderRadius:4,background:k==="on"?T.teal100:k==="off"?T.red100:k==="part"?T.amber100:T.surfaceAlt}}/>{l}</span>
+            <span key={k} style={{display:"inline-flex",alignItems:"center",gap:4}}><span style={{width:12,height:12,borderRadius:4,background:k==="on"?T.teal100:k==="off"?T.red100:k==="part"?T.amber100:T.surfaceAlt}}/>{l}</span>
           ))}
         </span>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(250px,1fr))",gap:14,userSelect:"none"}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(250px,1fr))",gap:12,userSelect:"none"}}>
         {months.map(m=>{
           const y=m.getFullYear(),mo=m.getMonth();
           const nDays=new Date(y,mo+1,0).getDate();
@@ -634,10 +619,10 @@ export function ProductionCalendarManager({data,productionExclusions,setProducti
           const cells=[];
           for(let i=0;i<lead;i++)cells.push(null);
           for(let d=1;d<=nDays;d++)cells.push(new Date(y,mo,d));
-          return(<div key={y+"-"+mo} style={{border:"1px solid "+T.line,borderRadius:10,padding:10}}>
-            <div style={{fontSize:13,fontWeight:700,color:T.ink900,textTransform:"capitalize",marginBottom:6}}>{m.toLocaleDateString("fr-FR",{month:"long",year:"numeric"})}</div>
+          return(<div key={y+"-"+mo} style={{border:"1px solid "+T.line,borderRadius:12,padding:8}}>
+            <div style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,textTransform:"capitalize",marginBottom:6}}>{m.toLocaleDateString("fr-FR",{month:"long",year:"numeric"})}</div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2}}>
-              {DOW.map((l,i)=><div key={i} style={{textAlign:"center",fontSize:10.5,fontWeight:700,color:T.ink300,paddingBottom:2}}>{l}</div>)}
+              {DOW.map((l,i)=><div key={i} style={{textAlign:"center",fontSize:FZ.xs,fontWeight:700,color:T.ink300,paddingBottom:2}}>{l}</div>)}
               {cells.map((d,i)=>{
                 if(!d)return<div key={"b"+i}/>;
                 const iso=toLocalISO(d);
@@ -647,7 +632,7 @@ export function ProductionCalendarManager({data,productionExclusions,setProducti
                 return(<div key={iso}
                   onMouseDown={clickable?e=>{e.preventDefault();startDrag(iso,st);}:undefined}
                   onMouseEnter={clickable?()=>overDay(iso):undefined}
-                  style={{height:28,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:6,fontSize:12.5,...palette[st],outline:dragging?"2px solid "+(drag.mode==="exclude"?T.red500:T.teal500):"none",outlineOffset:-2}}>
+                  style={{height:28,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:8,fontSize:FZ.xs,...palette[st],outline:dragging?"2px solid "+(drag.mode==="exclude"?T.red500:T.teal500):"none",outlineOffset:-2}}>
                   {d.getDate()}
                 </div>);
               })}
@@ -657,13 +642,13 @@ export function ProductionCalendarManager({data,productionExclusions,setProducti
       </div>
 
       {!allMode&&<div style={{marginTop:16}}>
-        <div style={{fontSize:12.5,fontWeight:700,color:T.ink700,marginBottom:8}}>Jours désactivés ({excluded.length})</div>
-        {excluded.length===0?<div style={{fontSize:13,color:T.ink300}}>Aucun jour exclu pour ce PJ.</div>:
+        <div style={{fontSize:FZ.xs,fontWeight:700,color:T.ink700,marginBottom:8}}>Jours désactivés ({excluded.length})</div>
+        {excluded.length===0?<div style={{fontSize:FZ.sm,color:T.ink300}}>Aucun jour exclu pour ce PJ.</div>:
           <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
             {[...excluded].sort().map(iso=>(
-              <span key={iso} style={{display:"inline-flex",alignItems:"center",gap:6,background:T.red100,color:T.red600,borderRadius:999,padding:"3px 8px 3px 11px",fontSize:12.5,fontWeight:600}}>
+              <span key={iso} style={{display:"inline-flex",alignItems:"center",gap:6,background:T.red100,color:T.red600,borderRadius:999,padding:"3px 8px 3px 12px",fontSize:FZ.xs,fontWeight:600}}>
                 {fmt(new Date(iso+"T00:00:00"))}
-                <button onClick={()=>setProductionExclusionDays({[selectedPj]:[iso]},false)} title="Réactiver ce jour" style={{background:"none",border:"none",color:T.red500,cursor:"pointer",fontSize:12,padding:0}}>✕</button>
+                <button onClick={()=>setProductionExclusionDays({[selectedPj]:[iso]},false)} title="Réactiver ce jour" style={{background:"none",border:"none",color:T.red500,cursor:"pointer",fontSize:FZ.xs,padding:0}}><NavIcon name="close" size={11}/></button>
               </span>
             ))}
           </div>}

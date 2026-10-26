@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { T } from "../theme";
-import { SerieTag, getPjMeta, PresenceChip, presenceKind, CountryFlag, MONTHS_FULL, today, ALL_GAMMES, getAllChefs, ALL_PAYS, relTime, Avatar } from "../pjMeta";
+import { T, FZF as FZ, stripeBg, stripeHues } from "../theme";
+import { SerieTag, getPjMeta, PresenceChip, presenceKind, presenceDates, presenceFirstDate, CountryFlag, MONTHS_FULL, today, ALL_GAMMES, getAllChefs, ALL_PAYS, relTime, Avatar, ETAT_META } from "../pjMeta";
 import { fmt, fmtMode } from "../parsers";
-import { Badge, NavIcon, Select, DelayScopeNote } from "./SharedUI";
+import { MentionPicker, MentionTextarea } from "./MentionPicker";
+import { useMentions } from "../mentionContext";
+import { typedMentions } from "../mentions";
+import { Badge, NavIcon, Select, DelayScopeNote, EmptyState, SuperOnly, NewDelayType } from "./SharedUI";
 import { PHASES } from "./GanttView";
+import { useDetailMode } from "../detailMode";
 
 // La fiche projet (panneau de droite) doit rester "blanche mate entièrement" (demandé
 // explicitement) : les sous-blocs internes (onglets, cartes de phase, commentaires...)
@@ -15,14 +19,15 @@ import { PHASES } from "./GanttView";
 // placeholder affiché par la fiche persistante (mode inline) quand aucune ligne n'est sélectionnée —
 // garde la même largeur/chrome que la fiche remplie pour que la mise en page ne saute pas.
 function InlinePanelPlaceholder(){
-  return(<div style={{position:"sticky",top:16,width:"100%",border:"1px solid "+T.line,borderRadius:12,background:T.card,padding:"32px 18px",textAlign:"center",fontFamily:T.font,boxSizing:"border-box"}}>
-    <div style={{width:34,height:34,borderRadius:9,background:T.neuPanel,color:T.ink300,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 10px"}}><NavIcon name="list" size={15}/></div>
-    <div style={{color:T.ink500,fontSize:12.5,lineHeight:1.5}}>Sélectionnez une ligne du tableau pour afficher le détail du projet ici.</div>
+  return(<div style={{position:"sticky",top:16,width:"100%",boxShadow:T.shadowCard,borderRadius:12,background:T.card,fontFamily:T.font,boxSizing:"border-box"}}>
+    <EmptyState compact icon="list" title="Aucun PJ sélectionné" hint="Sélectionnez une ligne du tableau pour afficher le détail du projet ici."/>
   </div>);
 }
 
-export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComment,pinOk,delays,delayTypes,addDelayAllocation,deleteDelayAllocation,addDelayComment,deleteDelayComment,authorName,savePjMetaOverride,inline,canEditMeta}){
+export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComment,pinOk,delays,delayTypes,setDelayTypes,addDelayAllocation,deleteDelayAllocation,addDelayComment,deleteDelayComment,authorName,savePjMetaOverride,inline,canEditMeta}){
   const [editingMeta,setEditingMeta]=useState(false);
+  const [detailMode,setDetailMode]=useDetailMode();
+  const center=!inline&&detailMode==="popup"; // v159 : fenêtre centrale au choix de la personne
   const [tab,setTab]=useState("apercu");
   // Fermeture au clavier (Échap) — demandé explicitement, pour la fiche en mode "popup" (Gantt,
   // Calendrier) ; avant tout retour anticipé pour respecter l'ordre des hooks React. Le mode inline
@@ -69,44 +74,43 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
   // Plus de voile sombre derrière le panneau en mode popup (Gantt/Calendrier) — demandé
   // explicitement ("que cela ne grise pas l'arrière-plan") : le calque reste présent (zone
   // cliquable pour fermer en cliquant à l'extérieur) mais transparent.
-  return(<div className={inline?"":"enogia-panel-backdrop"} onClick={inline?undefined:onClose} style={inline?{width:"100%",height:"100%"}:{position:"fixed",inset:0,background:"transparent",zIndex:9998,fontFamily:T.font}}>
-    <div className={inline?"":"enogia-panel-slide"} onClick={inline?undefined:e=>e.stopPropagation()} style={inline?{position:"sticky",top:16,width:"100%",maxHeight:"calc(100vh - 32px)",background:T.card,padding:pad,overflowY:"auto",border:"1px solid "+T.line,borderRadius:12,boxSizing:"border-box"}:{position:"fixed",top:0,right:0,bottom:0,width:"min(440px,100vw)",background:T.card,padding:pad,overflowY:"auto",boxShadow:"-10px 0 36px rgba(12,36,54,.28)"}}>
+  return(<div className={inline?"":"enogia-panel-backdrop"} onClick={inline?undefined:onClose} style={inline?{width:"100%",height:"100%"}:center?{position:"fixed",inset:0,background:"rgba(8,12,28,.45)",backdropFilter:"blur(3px)",WebkitBackdropFilter:"blur(3px)",zIndex:9998,fontFamily:T.font,display:"flex",alignItems:"center",justifyContent:"center",padding:16}:{position:"fixed",inset:0,background:"transparent",zIndex:9998,fontFamily:T.font}}>
+    <div role={center?"dialog":undefined} aria-modal={center?"true":undefined} aria-label={center?"Fiche "+pj:undefined} className={inline?"":center?"enogia-pop-in":"enogia-panel-slide"} onClick={inline?undefined:e=>e.stopPropagation()} style={inline?{position:"sticky",top:16,width:"100%",maxHeight:"calc(100vh - 32px)",background:stripeBg(((r&&ETAT_META[r.etat])||{}).bar||stripeHues().brand,T.card,4),padding:pad,overflowY:"auto",border:"1px solid "+T.line,borderRadius:12,boxSizing:"border-box"}:center?{position:"relative",width:"min(600px,100%)",maxHeight:"min(90vh,860px)",background:stripeBg(((r&&ETAT_META[r.etat])||{}).bar||stripeHues().brand,T.card,4),padding:pad+4,overflowY:"auto",border:"1px solid "+T.line,borderRadius:16,boxShadow:"0 24px 70px rgba(0,0,0,.35)",boxSizing:"border-box"}:{position:"fixed",top:0,right:0,bottom:0,width:"min(440px,100vw)",background:stripeBg(((r&&ETAT_META[r.etat])||{}).bar||stripeHues().brand,T.card,4),padding:pad,overflowY:"auto",boxShadow:"-10px 0 36px rgba(12,36,54,.28)"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
         <div style={{flex:1,minWidth:0}}>
-          {/* Retour au mono (demandé explicitement : "la police de la page de droite équivalente à la
-              police de la page") — sur la page liste, ce même champ (r.pj) est en T.fontMono ; le
-              Fraunces essayé précédemment rendait ce titre différent de son équivalent dans le
-              tableau au lieu de l'unifier. Taille/graisse plus marquées que dans le tableau (c'est un
-              titre), mais même famille de police et même teinte bleu acier. */}
-          <div style={{fontFamily:T.fontMono,fontWeight:700,fontSize:17,color:T.teal600,letterSpacing:"-.01em"}}>{pj}<SerieTag pj={pj} size={11} style={{marginLeft:10,verticalAlign:"middle"}}/></div>
+          {/* v129 : une seule police dans la liste, le volet et la fiche (T.font, chiffres tabulaires) ; le volet garde un titre plus marqué. */}
+          <div style={{fontVariantNumeric:"tabular-nums",fontWeight:700,fontSize:FZ.md,color:T.teal600,letterSpacing:"-.01em",whiteSpace:"nowrap"}}>{pj}<SerieTag pj={pj} size={11} style={{marginLeft:10,verticalAlign:"middle"}}/></div>
           {editingMeta?
             <EditMetaForm meta={meta} gamme={r.gamme} onCancel={()=>setEditingMeta(false)} onSave={async fields=>{const ok=await savePjMetaOverride(pj,fields);if(ok)setEditingMeta(false);}}/>
-            :<div style={{color:T.ink500,fontSize:13.5,marginTop:3,fontWeight:500,display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+            :<div style={{color:T.ink500,fontSize:FZ.sm,marginTop:3,fontWeight:500,display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
               {meta.nomProjet} · <CountryFlag pays={meta.pays} size={14}/> {meta.pays} · {meta.chefProjet}
               {/* Restreint à canEditMeta (l'email de connexion de Gabriel), pas à pinOk — demandé
                   explicitement : d'autres membres de la BU ORC peuvent avoir pinOk via le code
                   Manager sans devoir pour autant pouvoir modifier la fiche projet. */}
-              {canEditMeta&&savePjMetaOverride&&<button onClick={()=>setEditingMeta(true)} title="Modifier le nom, le pays, le chef de projet, la gamme" style={{background:T.neuPanel,border:"none",borderRadius:7,padding:"3px 9px",fontSize:12,fontWeight:700,color:T.teal600,cursor:"pointer"}}>✎ Modifier</button>}
+              {canEditMeta&&savePjMetaOverride&&<button onClick={()=>setEditingMeta(true)} title="Modifier le nom, le pays, le chef de projet, la gamme" style={{background:T.neuPanel,border:"none",borderRadius:8,padding:"3px 8px",fontSize:FZ.xs,fontWeight:700,color:T.teal600,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:5}}><NavIcon name="edit" size={13}/>Modifier</button>}
             </div>}
         </div>
-        <button onClick={onClose} title={inline?"Désélectionner":"Fermer"} style={{background:T.neuPanel,border:"none",borderRadius:9,width:30,height:30,fontSize:15,cursor:"pointer",color:T.ink700,flexShrink:0}}>✕</button>
+        <div style={{display:"flex",gap:6,alignItems:"flex-start",flexShrink:0}}>
+        <button onClick={()=>setDetailMode(detailMode==="popup"?"panel":"popup")} title={detailMode==="popup"?"Afficher les fiches dans un volet à droite":"Afficher les fiches dans une fenêtre centrale"} aria-label={detailMode==="popup"?"Passer en volet latéral":"Passer en pop-up central"} style={{background:T.neuPanel,border:"none",borderRadius:8,height:30,padding:"0 9px",fontSize:FZ.xs,fontWeight:700,cursor:"pointer",color:T.ink700,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font}}><NavIcon name={detailMode==="popup"?"sidepanel":"popup"} size={13}/>{detailMode==="popup"?"Volet":"Pop-up"}</button>
+        <button onClick={onClose} title={inline?"Désélectionner":"Fermer"} style={{background:T.neuPanel,border:"none",borderRadius:8,width:30,height:30,fontSize:FZ.md,cursor:"pointer",color:T.ink700,flexShrink:0}}><NavIcon name="close" size={11}/></button>
+        </div>
       </div>
 
-      <div style={{display:"flex",gap:10,marginBottom:14,flexWrap:"wrap",alignItems:"center"}}>
+      <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap",alignItems:"center"}}>
         <Badge etat={r.etat}/>
-        <span style={{fontSize:13.5,color:T.ink500,alignSelf:"center"}}>{r.gamme}</span>
-        {presenceKind(r.clientPresence)&&<PresenceChip kind={presenceKind(r.clientPresence)} date={r.clientPresence.date} fontSize={13}/>}
+        <span style={{fontSize:FZ.sm,color:T.ink500,alignSelf:"center"}}>{r.gamme}</span>
+        {presenceKind(r.clientPresence)&&<PresenceChip kind={presenceKind(r.clientPresence)} date={presenceFirstDate(r.clientPresence)} dates={presenceDates(r.clientPresence)} fontSize={13}/>}
       </div>
 
       {/* ── Onglets : séparer la vue d'ensemble des commentaires évite d'avoir à
           descendre tout le panneau pour trouver/écrire un commentaire. ── */}
-      <div style={{display:"flex",gap:4,marginBottom:14,background:T.neuPanel,borderRadius:11,padding:4}}>
+      <div style={{display:"flex",gap:4,marginBottom:14,background:T.neuPanel,borderRadius:12,padding:4}}>
         {[
           {key:"apercu",label:"Aperçu",icon:"calendar"},
-          {key:"commentaires",label:"Commentaires",icon:"comments",count:(comments?.[pj]||[]).filter(c=>pinOk||!c.private).length},
+          {key:"commentaires",label:"Commentaires",icon:"comments",count:(comments?.[pj]||[]).filter(c=>!c.private).length},
           ...(pinOk&&delayTypes?[{key:"retards",label:"Retards",icon:"clock",count:(delays?.[pj]||[]).length}]:[]),
-        ].map(t=><button key={t.key} onClick={()=>setTab(t.key)} style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:5,padding:"7px 6px",borderRadius:8,border:"none",cursor:"pointer",background:tab===t.key?T.card:"transparent",boxShadow:tab===t.key?T.shadowSm:"none",color:tab===t.key?T.teal600:T.ink500,fontSize:12,fontWeight:700,transition:"background .15s ease,color .15s ease"}}>
-          <NavIcon name={t.icon} size={12}/>{t.label}{t.count>0&&<span style={{fontSize:10.5,fontWeight:700,color:tab===t.key?"#fff":T.ink500,background:tab===t.key?T.teal500:T.ink100,borderRadius:20,padding:"1px 6px"}}>{t.count}</span>}
+        ].map(t=><button key={t.key} onClick={()=>setTab(t.key)} style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:4,padding:"8px 6px",borderRadius:8,border:"none",cursor:"pointer",background:tab===t.key?T.card:"transparent",boxShadow:tab===t.key?T.shadowSm:"none",color:tab===t.key?T.teal600:T.ink500,fontSize:FZ.xs,fontWeight:700,transition:"background .15s ease,color .15s ease"}}>
+          <NavIcon name={t.icon} size={12}/>{t.label}{t.count>0&&<span style={{fontSize:FZ.xs,fontWeight:700,color:tab===t.key?"#fff":T.ink500,background:tab===t.key?T.teal500:T.ink100,borderRadius:999,padding:"1px 6px"}}>{t.count}</span>}
         </button>)}
       </div>
 
@@ -116,16 +120,16 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
             ("il faut que les 4 tuiles soient sur la même ligne avec la même taille"). Police et
             padding réduits en conséquence pour que ça tienne même à ~260-300px de large. */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:14}}>
-          {PHASES.map(ph=>{const d=r[ph.k]?new Date(r[ph.k]):null;const showPresence=ph.k==="tests"&&presenceKind(r.clientPresence);return(
-            <div key={ph.k} style={{background:T.neuPanel,borderRadius:9,padding:"6px 5px",borderTop:"3px solid "+ph.c,position:"relative",minWidth:0}}>
-              <div style={{color:T.ink500,fontSize:8.5,fontWeight:600,textTransform:"uppercase",letterSpacing:".02em",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{ph.t}</div>
-              <div style={{fontWeight:700,color:T.ink900,fontSize:12,marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{d?fmtMode(d,df):"—"}</div>
-              {showPresence&&<div style={{marginTop:3}}><PresenceChip kind={presenceKind(r.clientPresence)} compact fontSize={9}/></div>}
+          {PHASES.map((ph,phIdx)=>{const d=r[ph.k]?new Date(r[ph.k]):null;const showPresence=ph.k==="tests"&&presenceKind(r.clientPresence);return(
+            <div key={ph.k} style={{background:stripeBg(ph.c,ph.tbg,4),borderRadius:8,padding:"9px 4px 6px",position:"relative",minWidth:0}}>
+              <div style={{color:ph.tink,fontSize:FZ.xs,fontWeight:600,textTransform:"uppercase",letterSpacing:".02em",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}><span style={{opacity:.6,marginRight:5,fontVariantNumeric:"tabular-nums"}}>{String(phIdx+1).padStart(2,"0")}</span>{ph.t}</div>
+              <div style={{fontWeight:700,color:T.ink900,fontSize:FZ.xs,marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{d?fmtMode(d,df):"—"}</div>
+              {showPresence&&<div style={{marginTop:3,minWidth:0,overflow:"hidden"}}><PresenceChip kind={presenceKind(r.clientPresence)} compact tiny fontSize={9}/></div>}
             </div>
           );})}
         </div>
 
-        <div style={{display:"grid",gridTemplateColumns:"repeat("+months.length+",1fr)",gap:8}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat("+months.length+",minmax(0,1fr))",gap:8}}>
           {months.map((mo,mi)=>{
             const y=mo.getFullYear(),m=mo.getMonth();
             const de=evByDay(y,m);
@@ -133,17 +137,17 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
             const adj=(fd+6)%7;
             const dim=new Date(y,m+1,0).getDate();
             const cells=[...Array(adj).fill(null),...Array.from({length:dim},(_,i)=>i+1)];
-            return(<div key={mi}>
-              <div style={{textAlign:"center",fontWeight:700,fontSize:12,color:T.ink900,marginBottom:8}}>{MONTHS_FULL[m]} {y}</div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2}}>
-                {["L","M","M","J","V","S","D"].map((d,i)=><div key={i} style={{textAlign:"center",fontSize:8.5,fontWeight:700,color:T.ink300}}>{d}</div>)}
+            return(<div key={mi} style={{minWidth:0}}>
+              <div style={{textAlign:"center",fontWeight:700,fontSize:FZ.xs,color:T.ink900,marginBottom:8}}>{MONTHS_FULL[m]} {y}</div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(0,1fr))",gap:2}}>
+                {["L","M","M","J","V","S","D"].map((d,i)=><div key={i} style={{textAlign:"center",fontSize:FZ.xs,fontWeight:700,color:T.ink300}}>{d}</div>)}
                 {cells.map((day,ci)=>{
                   if(!day)return<div key={"e"+ci}/>;
                   const evs=de[day]||[];
                   const isToday=day===today.getDate()&&m===today.getMonth()&&y===today.getFullYear();
-                  return(<div key={day} style={{aspectRatio:"1",borderRadius:7,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:evs.length?700:500,color:evs.length?"#fff":isToday?T.teal600:T.ink700,background:evs.length?evs[0].c:isToday?T.teal100:"transparent",border:isToday&&!evs.length?"1.5px solid "+T.teal400:"none",position:"relative"}}>
+                  return(<div key={day} style={{aspectRatio:"1",borderRadius:8,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontSize:FZ.xs,fontWeight:evs.length?700:500,color:evs.length?evs[0].ink:isToday?T.teal600:T.ink700,background:evs.length?evs[0].bg:isToday?T.teal100:"transparent",border:evs.length?"1.5px solid "+evs[0].c:isToday?"1.5px solid "+T.teal400:"none",position:"relative"}}>
                     {day}
-                    {evs.length>1&&<div style={{position:"absolute",bottom:1,right:2,fontSize:7,color:"#fff"}}>+{evs.length-1}</div>}
+                    {evs.length>1&&<div style={{position:"absolute",bottom:1,right:2,fontSize:FZ.xs,color:evs[0].ink}}>+{evs.length-1}</div>}
                   </div>);
                 })}
               </div>
@@ -151,13 +155,13 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
           })}
         </div>
 
-        <div style={{display:"flex",gap:14,marginTop:18,paddingTop:14,borderTop:"1px solid "+T.line,flexWrap:"wrap"}}>
-          {PHASES.map(ph=><span key={ph.k} style={{display:"flex",alignItems:"center",gap:5,fontSize:12}}><span style={{width:13,height:13,borderRadius:4,background:ph.c}}/><span style={{color:T.ink500}}>{ph.t}</span></span>)}
+        <div style={{display:"flex",gap:12,marginTop:18,paddingTop:14,borderTop:"1px solid "+T.line,flexWrap:"wrap"}}>
+          {PHASES.map(ph=><span key={ph.k} style={{display:"flex",alignItems:"center",gap:4,fontSize:FZ.xs}}><span style={{width:13,height:13,borderRadius:4,background:ph.bg,border:"1.5px solid "+ph.c}}/><span style={{color:T.ink500}}>{ph.t}</span></span>)}
         </div>
       </>}
 
       {tab==="commentaires"&&<ProjectComments pj={pj} comments={comments?.[pj]||[]} addComment={addComment} deleteComment={deleteComment} pinOk={pinOk} authorName={authorName}/>}
-      {tab==="retards"&&pinOk&&delayTypes&&<DelayAllocations pj={pj} delays={delays?.[pj]||[]} delayTypes={delayTypes} addDelayAllocation={addDelayAllocation} deleteDelayAllocation={deleteDelayAllocation} addDelayComment={addDelayComment} deleteDelayComment={deleteDelayComment} authorName={authorName}/>}
+      {tab==="retards"&&pinOk&&delayTypes&&<DelayAllocations pj={pj} delays={delays?.[pj]||[]} delayTypes={delayTypes} setDelayTypes={setDelayTypes} addDelayAllocation={addDelayAllocation} deleteDelayAllocation={deleteDelayAllocation} addDelayComment={addDelayComment} deleteDelayComment={deleteDelayComment} authorName={authorName}/>}
     </div>
   </div>);
 }
@@ -175,17 +179,17 @@ function EditMetaForm({meta,gamme,onSave,onCancel}){
     await onSave({nomProjet:nomProjet.trim(),pays:pays.trim(),chefProjet:chefProjet.trim(),gamme:gammeVal});
     setSaving(false);
   };
-  const fieldStyle={padding:"7px 10px",borderRadius:8,border:"1px solid "+T.line,fontSize:14,fontFamily:T.font,color:T.ink900,background:T.card};
-  return(<div style={{display:"flex",flexDirection:"column",gap:7,marginTop:6,maxWidth:420}}>
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7}}>
-      <label style={{display:"flex",flexDirection:"column",gap:3,fontSize:11,fontWeight:700,color:T.ink500,textTransform:"uppercase"}}>Nom du projet
+  const fieldStyle={padding:"8px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink900,background:T.card};
+  return(<div style={{display:"flex",flexDirection:"column",gap:8,marginTop:6,maxWidth:420}}>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+      <label style={{display:"flex",flexDirection:"column",gap:3,fontSize:FZ.xs,fontWeight:700,color:T.ink500,textTransform:"uppercase"}}>Nom du projet
         <input type="text" value={nomProjet} onChange={e=>setNomProjet(e.target.value)} style={fieldStyle}/>
       </label>
-      <label style={{display:"flex",flexDirection:"column",gap:3,fontSize:11,fontWeight:700,color:T.ink500,textTransform:"uppercase"}}>Pays
+      <label style={{display:"flex",flexDirection:"column",gap:3,fontSize:FZ.xs,fontWeight:700,color:T.ink500,textTransform:"uppercase"}}>Pays
         {/* Liste déroulante (plutôt qu'un texte libre) — le drapeau se met à jour automatiquement
             dès qu'on choisit un pays (demandé explicitement), garanti puisqu'on ne peut plus taper
             une orthographe qui ne correspond à aucun drapeau connu. */}
-        <div style={{display:"flex",alignItems:"center",gap:7}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
           <CountryFlag pays={pays} size={16}/>
           <select value={pays} onChange={e=>setPays(e.target.value)} style={{...fieldStyle,flex:1}}>
             {!ALL_PAYS.includes(pays)&&pays&&<option value={pays}>{pays}</option>}
@@ -194,8 +198,8 @@ function EditMetaForm({meta,gamme,onSave,onCancel}){
         </div>
       </label>
     </div>
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7}}>
-      <label style={{display:"flex",flexDirection:"column",gap:3,fontSize:11,fontWeight:700,color:T.ink500,textTransform:"uppercase"}}>Chef de projet
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+      <label style={{display:"flex",flexDirection:"column",gap:3,fontSize:FZ.xs,fontWeight:700,color:T.ink500,textTransform:"uppercase"}}>Chef de projet
         {/* Liste déroulante (plutôt qu'un texte libre) construite à partir des chefs de projet
             connus (référentiel + synchro Suivi ORC + corrections manuelles), déjà stockés en
             "Prénom NOM" complet — demandé explicitement. */}
@@ -204,7 +208,7 @@ function EditMetaForm({meta,gamme,onSave,onCancel}){
           {allChefs.map(c=><option key={c} value={c}>{c}</option>)}
         </select>
       </label>
-      <label style={{display:"flex",flexDirection:"column",gap:3,fontSize:11,fontWeight:700,color:T.ink500,textTransform:"uppercase"}}>Gamme
+      <label style={{display:"flex",flexDirection:"column",gap:3,fontSize:FZ.xs,fontWeight:700,color:T.ink500,textTransform:"uppercase"}}>Gamme
         <select value={gammeVal} onChange={e=>setGammeVal(e.target.value)} style={fieldStyle}>
           {!ALL_GAMMES.includes(gammeVal)&&gammeVal&&<option value={gammeVal}>{gammeVal}</option>}
           {ALL_GAMMES.map(g=><option key={g} value={g}>{g}</option>)}
@@ -212,8 +216,8 @@ function EditMetaForm({meta,gamme,onSave,onCancel}){
       </label>
     </div>
     <div style={{display:"flex",gap:8,marginTop:2}}>
-      <button onClick={submit} disabled={saving} style={{padding:"7px 16px",borderRadius:8,border:"none",background:T.teal500,color:"#fff",fontSize:13,fontWeight:700,cursor:saving?"default":"pointer",opacity:saving?.6:1}}>{saving?"Enregistrement…":"Enregistrer"}</button>
-      <button onClick={onCancel} style={{padding:"7px 14px",borderRadius:8,border:"none",background:T.neuPanel,color:T.ink700,fontSize:13,fontWeight:600,cursor:"pointer"}}>Annuler</button>
+      <button onClick={submit} disabled={saving} style={{padding:"8px 16px",borderRadius:8,border:"none",background:T.teal500,color:"#fff",fontSize:FZ.sm,fontWeight:700,cursor:saving?"default":"pointer",opacity:saving?.6:1}}>{saving?"Enregistrement…":"Enregistrer"}</button>
+      <button onClick={onCancel} style={{padding:"8px 12px",borderRadius:8,border:"none",background:T.neuPanel,color:T.ink700,fontSize:FZ.sm,fontWeight:600,cursor:"pointer"}}>Annuler</button>
     </div>
   </div>);
 }
@@ -223,6 +227,9 @@ export function ProjectComments({pj,comments,addComment,deleteComment,pinOk,auth
   const author=authorName||authorInput;
   const [text,setText]=useState("");
   const [isPrivate,setIsPrivate]=useState(false);
+  const mctx=useMentions();
+  const [showPrivate,setShowPrivate]=useState(false); // v151 : privés masqués à l'ouverture d'un PJ, affichés sur demande
+  useEffect(()=>{setShowPrivate(false);},[pj]);
   const [err,setErr]=useState("");
   const [deleteTarget,setDeleteTarget]=useState(null); // index original du commentaire à supprimer
   const [pinInput,setPinInput]=useState("");
@@ -230,7 +237,8 @@ export function ProjectComments({pj,comments,addComment,deleteComment,pinOk,auth
     if(!author.trim()){setErr("Le nom est obligatoire pour publier un commentaire.");return;}
     if(!text.trim())return;
     setErr("");
-    const ok=await addComment(pj,author,text,null,isPrivate);
+    const tagged=typedMentions(text,mctx.options);
+    const ok=await addComment(pj,author,text,null,isPrivate,tagged.map(o=>o.email));
     if(ok){setText("");setIsPrivate(false);}
   };
   const confirmDelete=async ()=>{
@@ -238,60 +246,65 @@ export function ProjectComments({pj,comments,addComment,deleteComment,pinOk,auth
     if(ok){setDeleteTarget(null);setPinInput("");}
   };
   const withIndex=comments.map((c,i)=>({...c,_idx:i}));
-  const visible=pinOk?withIndex:withIndex.filter(c=>!c.private);
+  const nPriv=pinOk?withIndex.filter(c=>c.private).length:0;
+  const visible=pinOk&&showPrivate?withIndex:withIndex.filter(c=>!c.private);
   const sorted=[...visible].sort((a,b)=>new Date(b.date)-new Date(a.date));
   return(<div>
     {/* Composeur toujours en haut, dans son propre cadre : on écrit un commentaire
         sans avoir à chercher où, ni à faire défiler le fil existant. */}
-    <div style={{background:T.neuPanel,borderRadius:12,padding:14,marginBottom:16}}>
+    <div style={{background:T.neuPanel,borderRadius:12,padding:12,marginBottom:16}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,gap:8,flexWrap:"wrap"}}>
         {authorName?
-          <span style={{fontSize:12.5,color:T.ink500}}>En tant que <strong style={{color:T.ink700}}>{authorName}</strong></span>
+          <span style={{fontSize:FZ.xs,color:T.ink500}}>En tant que <strong style={{color:T.ink700}}>{authorName}</strong></span>
           :<input type="text" value={authorInput} onChange={e=>{setAuthorInput(e.target.value);setErr("");}} placeholder="Votre nom (obligatoire)" maxLength={40}
-            style={{padding:"7px 11px",borderRadius:8,border:"1px solid "+(err?T.red500:T.line),fontSize:13.5,fontFamily:T.font,color:T.ink700}}/>}
-        {pinOk?<label style={{display:"flex",alignItems:"center",gap:6,fontSize:12.5,color:T.ink500,fontWeight:600,cursor:"pointer"}}>
+            style={{padding:"8px 12px",borderRadius:8,border:"1px solid "+(err?T.red500:T.line),fontSize:FZ.sm,fontFamily:T.font,color:T.ink700}}/>}
+        {pinOk?<label style={{display:"flex",alignItems:"center",gap:6,fontSize:FZ.xs,color:T.ink500,fontWeight:600,cursor:"pointer"}}>
           <input type="checkbox" checked={isPrivate} onChange={e=>setIsPrivate(e.target.checked)}/> Privé (BU ORC uniquement)
         </label>:<span/>}
       </div>
-      {err&&<div style={{fontSize:13,color:T.red500,marginBottom:6}}>{err}</div>}
-      <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="Ajouter un commentaire..." rows={3} maxLength={1000}
-        style={{padding:"9px 12px",borderRadius:9,border:"1px solid "+T.line,fontSize:13,fontFamily:T.font,color:T.ink700,resize:"vertical",width:"100%",boxSizing:"border-box",background:T.card}}/>
+      {err&&<div style={{fontSize:FZ.sm,color:T.red500,marginBottom:6}}>{err}</div>}
+      <MentionTextarea value={text} onChange={e=>setText(e.target.value)} placeholder="Ajouter un commentaire..." rows={3} maxLength={1000}
+        style={{padding:"8px 12px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700,resize:"vertical",width:"100%",boxSizing:"border-box",background:T.card}}/>
+      <MentionPicker text={text} pjs={[pj]}/>
       <div style={{display:"flex",justifyContent:"flex-end",marginTop:8}}>
-        <button onClick={submit} disabled={!text.trim()} style={{padding:"7px 16px",borderRadius:8,border:"none",background:text.trim()?T.teal500:T.neuPanelDim,color:text.trim()?"#fff":T.ink300,fontSize:13,fontWeight:700,cursor:text.trim()?"pointer":"default"}}>Publier</button>
+        <button onClick={submit} disabled={!text.trim()} style={{padding:"8px 16px",borderRadius:8,border:"none",background:text.trim()?T.teal500:T.neuPanelDim,color:text.trim()?"#fff":T.ink300,fontSize:FZ.sm,fontWeight:700,cursor:text.trim()?"pointer":"default"}}>Publier</button>
       </div>
     </div>
 
-    <div style={{fontSize:12,fontWeight:700,color:T.ink300,textTransform:"uppercase",letterSpacing:".04em",marginBottom:8}}>{sorted.length} commentaire{sorted.length!==1?"s":""}</div>
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,flexWrap:"wrap",marginBottom:8}}>
+      <span style={{fontSize:FZ.xs,fontWeight:700,color:T.ink300,textTransform:"uppercase",letterSpacing:".04em"}}>{sorted.length} commentaire{sorted.length!==1?"s":""}</span>
+      {nPriv>0&&<button onClick={()=>setShowPrivate(v=>!v)} aria-pressed={showPrivate} style={{border:"1px solid "+(showPrivate?T.amber500:T.line),background:showPrivate?T.amber100:"transparent",color:showPrivate?T.amber600:T.ink500,borderRadius:8,padding:"2px 8px",fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font}}>{showPrivate?"Masquer les privés":"Afficher les privés ("+nPriv+")"}</button>}
+    </div>
     {/* Refonte "chat" (demandé explicitement : "je vois ça plus comme un chat gmail") — avatar +
         bloc aligné à gauche, même registre que la page Commentaires dédiée. */}
-    {sorted.length>0?<div style={{display:"flex",flexDirection:"column",gap:14,maxHeight:430,overflowY:"auto",paddingRight:2}}>
+    {sorted.length>0?<div style={{display:"flex",flexDirection:"column",gap:12,maxHeight:430,overflowY:"auto",paddingRight:2}}>
       {sorted.map(c=>(
-        <div key={c._idx} style={{display:"flex",gap:10}}>
+        <div key={c._idx} style={{display:"flex",gap:8}}>
           <Avatar name={c.author} tint={c.private?T.amber500:T.teal500} size={28}/>
           <div style={{flex:1,minWidth:0}}>
-            <div style={{display:"flex",alignItems:"baseline",gap:7,flexWrap:"wrap",marginBottom:2}}>
-              <span style={{fontWeight:700,color:T.ink700,fontSize:13}}>{c.author}</span>
-              {c.private&&<span style={{fontSize:10.5,color:T.amber600,background:T.amber100,borderRadius:5,padding:"1px 6px",fontWeight:700,letterSpacing:".01em"}}>Privé</span>}
-              {c.groupPjs&&<span title={"Commentaire groupé : "+c.groupPjs.join(", ")} style={{fontSize:11,color:T.violet600,background:T.violet100,borderRadius:5,padding:"1px 6px",fontWeight:700}}>groupé ×{c.groupPjs.length}</span>}
-              <span style={{fontSize:11,color:T.ink300}}>{relTime(c.date)}</span>
-              <button onClick={()=>{setDeleteTarget(c._idx);setPinInput("");}} title="Supprimer" style={{background:"none",border:"none",color:T.ink100,cursor:"pointer",fontSize:12,padding:0,marginLeft:2}}>✕</button>
+            <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap",marginBottom:2}}>
+              <span style={{fontWeight:700,color:T.ink700,fontSize:FZ.sm}}>{c.author}</span>
+              {c.private&&<span style={{fontSize:FZ.xs,color:T.amber600,background:T.amber100,borderRadius:4,padding:"1px 6px",fontWeight:700,letterSpacing:".01em"}}>Privé</span>}
+              {c.groupPjs&&<span title={"Commentaire groupé : "+c.groupPjs.join(", ")} style={{fontSize:FZ.xs,color:T.violet600,background:T.violet100,borderRadius:4,padding:"1px 6px",fontWeight:700}}>groupé ×{c.groupPjs.length}</span>}
+              <span style={{fontSize:FZ.xs,color:T.ink300}}>{relTime(c.date)}</span>
+              <SuperOnly><button onClick={()=>{setDeleteTarget(c._idx);setPinInput("");}} title="Supprimer" style={{background:"none",border:"none",color:T.ink100,cursor:"pointer",fontSize:FZ.xs,padding:0,marginLeft:2}}><NavIcon name="close" size={11}/></button></SuperOnly>
             </div>
-            <div style={{background:c.private?T.amber100:T.neuPanel,borderRadius:"3px 12px 12px 12px",padding:"9px 13px",display:"inline-block",maxWidth:"100%",fontSize:12.5,color:T.ink700,whiteSpace:"pre-wrap"}}>{c.text}</div>
-            {c.linkedDate&&<div style={{marginTop:5,fontSize:11.5,color:T.ink500,fontWeight:600}}>Lié au {fmt(new Date(c.linkedDate))}</div>}
+            <div style={{background:c.private?T.amber100:T.neuPanel,borderRadius:"3px 12px 12px 12px",padding:"8px 12px",display:"inline-block",maxWidth:"100%",fontSize:FZ.xs,color:T.ink700,whiteSpace:"pre-wrap"}}>{c.text}</div>
+            {c.linkedDate&&<div style={{marginTop:5,fontSize:FZ.xs,color:T.ink500,fontWeight:600}}>Lié au {fmt(new Date(c.linkedDate))}</div>}
             {deleteTarget===c._idx&&<div style={{marginTop:8,paddingTop:8,borderTop:"1px solid "+T.line,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
-              <input type="password" value={pinInput} onChange={e=>setPinInput(e.target.value)} placeholder="Code Manager" style={{padding:"6px 10px",borderRadius:7,border:"1px solid "+T.line,fontSize:13,fontFamily:T.font,width:120}}/>
-              <button onClick={confirmDelete} style={{padding:"6px 12px",borderRadius:7,border:"none",background:T.red500,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>Confirmer la suppression</button>
-              <button onClick={()=>setDeleteTarget(null)} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.neuPanel,boxShadow:T.neuOutSm,color:T.ink700,fontSize:13,cursor:"pointer"}}>Annuler</button>
+              <input type="password" value={pinInput} onChange={e=>setPinInput(e.target.value)} placeholder="Code Manager" style={{padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,width:120}}/>
+              <button onClick={confirmDelete} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.redFill,color:"#fff",fontSize:FZ.sm,fontWeight:700,cursor:"pointer"}}>Confirmer la suppression</button>
+              <button onClick={()=>setDeleteTarget(null)} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.neuPanel,boxShadow:T.neuOutSm,color:T.ink700,fontSize:FZ.sm,cursor:"pointer"}}>Annuler</button>
             </div>}
           </div>
         </div>
       ))}
-    </div>:<div style={{textAlign:"center",color:T.ink300,fontSize:13.5,padding:"22px 0"}}>Aucun commentaire pour l'instant sur ce PJ.</div>}
+    </div>:<div style={{textAlign:"center",color:T.ink300,fontSize:FZ.sm,padding:"20px 0"}}>Aucun commentaire pour l'instant sur ce PJ.</div>}
   </div>);
 }
 
 // ── Allocation des jours de retard par cause générique, pour un PJ donné (visible Manager uniquement) ──
-function DelayAllocations({pj,delays,delayTypes,addDelayAllocation,deleteDelayAllocation,addDelayComment,deleteDelayComment,authorName}){
+function DelayAllocations({pj,delays,delayTypes,setDelayTypes,addDelayAllocation,deleteDelayAllocation,addDelayComment,deleteDelayComment,authorName}){
   const [type,setType]=useState(delayTypes[0]||"");
   const [days,setDays]=useState("");
   const [note,setNote]=useState("");
@@ -317,46 +330,46 @@ function DelayAllocations({pj,delays,delayTypes,addDelayAllocation,deleteDelayAl
   const byType={};
   delays.forEach(d=>{byType[d.type]=(byType[d.type]||0)+(d.days||0);});
   return(<div style={{marginTop:20,paddingTop:16,borderTop:"1px solid "+T.line}}>
-    <div style={{fontFamily:T.fontDisplay,fontWeight:700,fontSize:17,color:T.ink900,marginBottom:10}}>⏱️ Causes de retard ({delays.length})</div>
+    <div style={{fontFamily:T.fontDisplay,fontWeight:700,fontSize:FZ.md,color:T.ink900,marginBottom:10}}>⏱️ Causes de retard ({delays.length})</div>
     {Object.keys(byType).length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:12}}>
-      {Object.entries(byType).map(([t,d])=><span key={t} style={{background:T.neuPanel,borderRadius:7,padding:"4px 10px",fontSize:13,color:T.ink700,fontWeight:600}}>{t} · {d}j</span>)}
+      {Object.entries(byType).map(([t,d])=><span key={t} style={{background:T.neuPanel,borderRadius:8,padding:"4px 8px",fontSize:FZ.sm,color:T.ink700,fontWeight:600}}>{t} · {d}j</span>)}
     </div>}
-    {authorName&&<div style={{fontSize:12.5,color:T.ink500,marginBottom:8}}>En tant que <strong style={{color:T.ink700}}>{authorName}</strong></div>}
+    {authorName&&<div style={{fontSize:FZ.xs,color:T.ink500,marginBottom:8}}>En tant que <strong style={{color:T.ink700}}>{authorName}</strong></div>}
     <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:8,marginBottom:10}}>
       {/* Liste déroulante premium (demandé explicitement : "manque de premium sur le choix de
           liste" près des commentaires/retards) — même habillage que le reste de l'appli. */}
-      <Select value={type} onChange={e=>setType(e.target.value)} options={delayTypes}/>
-      <input type="number" min="1" value={days} onChange={e=>{setDays(e.target.value);setErr("");}} placeholder="Jours" style={{padding:"8px 10px",borderRadius:8,border:"1px solid "+T.line,fontSize:14,fontFamily:T.font,color:T.ink700}}/>
-      {!authorName&&<input type="text" value={authorInput} onChange={e=>{setAuthorInput(e.target.value);setErr("");}} placeholder="Votre nom" maxLength={40} style={{padding:"8px 10px",borderRadius:8,border:"1px solid "+T.line,fontSize:14,fontFamily:T.font,color:T.ink700}}/>}
+      <div style={{display:"flex",flexDirection:"column",gap:6,minWidth:0}}><Select value={type} onChange={e=>setType(e.target.value)} options={delayTypes}/><NewDelayType types={delayTypes} onCreate={setDelayTypes} onCreated={setType}/></div>
+      <input type="number" min="1" value={days} onChange={e=>{setDays(e.target.value);setErr("");}} placeholder="Jours" style={{padding:"8px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700}}/>
+      {!authorName&&<input type="text" value={authorInput} onChange={e=>{setAuthorInput(e.target.value);setErr("");}} placeholder="Votre nom" maxLength={40} style={{padding:"8px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700}}/>}
     </div>
     <DelayScopeNote/>
     {/* Zone de note agrandie (textarea, plus input une ligne) — demandé explicitement ("plus de
         place pour les notes") : une note comme "Des absences en production et un test de pression
         capricieux." tenait à peine dans l'ancien champ. */}
-    <textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="Note (optionnel)" rows={2} maxLength={300} style={{width:"100%",padding:"8px 10px",borderRadius:8,border:"1px solid "+T.line,fontSize:14,fontFamily:T.font,color:T.ink700,resize:"vertical",boxSizing:"border-box",marginBottom:8,background:T.card}}/>
+    <textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="Note (optionnel)" rows={2} maxLength={300} style={{width:"100%",padding:"8px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700,resize:"vertical",boxSizing:"border-box",marginBottom:8,background:T.card}}/>
     <div style={{display:"flex",justifyContent:"flex-end",marginBottom:10}}>
-      <button onClick={submit} style={{padding:"8px 18px",borderRadius:8,border:"none",background:T.teal500,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>Allouer</button>
+      <button onClick={submit} style={{padding:"8px 16px",borderRadius:8,border:"none",background:T.teal500,color:"#fff",fontSize:FZ.sm,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>Allouer</button>
     </div>
-    {err&&<div style={{fontSize:13,color:T.red500,marginBottom:8}}>{err}</div>}
+    {err&&<div style={{fontSize:FZ.sm,color:T.red500,marginBottom:8}}>{err}</div>}
     {delays.length>0&&<div style={{display:"flex",flexDirection:"column",gap:8,maxHeight:220,overflowY:"auto"}}>
       {[...delays].sort((a,b)=>new Date(b.date)-new Date(a.date)).map(d=>(
-        <div key={d.id} style={{background:T.neuPanel,borderRadius:10,padding:"9px 12px"}}>
+        <div key={d.id} style={{background:T.neuPanel,borderRadius:12,padding:"8px 12px"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8}}>
-            <span style={{fontWeight:700,color:T.ink900,fontSize:14}}>{d.type} — {d.days}j</span>
+            <span style={{fontWeight:700,color:T.ink900,fontSize:FZ.sm}}>{d.type} — {d.days}j</span>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <span style={{fontSize:12,color:T.ink300}}>{d.author} · {new Date(d.date).toLocaleDateString("fr-FR")}</span>
-              <button onClick={()=>{setDeleteTarget(d.id);setPinInput("");}} title="Supprimer" style={{background:"none",border:"none",color:T.ink300,cursor:"pointer",fontSize:14,padding:0}}>✕</button>
+              <span style={{fontSize:FZ.xs,color:T.ink300}}>{d.author} · {new Date(d.date).toLocaleDateString("fr-FR")}</span>
+              <SuperOnly><button onClick={()=>{setDeleteTarget(d.id);setPinInput("");}} title="Supprimer" style={{background:"none",border:"none",color:T.ink300,cursor:"pointer",fontSize:FZ.sm,padding:0}}><NavIcon name="close" size={11}/></button></SuperOnly>
             </div>
           </div>
-          {d.note&&<div style={{fontSize:13,color:T.ink500,marginTop:3}}>{d.note}</div>}
-          {addDelayComment&&<button onClick={()=>setOpenThread(openThread===d.id?null:d.id)} style={{marginTop:6,background:"none",border:"none",padding:0,color:T.teal600,fontSize:12.5,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
+          {d.note&&<div style={{fontSize:FZ.sm,color:T.ink500,marginTop:3}}>{d.note}</div>}
+          {addDelayComment&&<button onClick={()=>setOpenThread(openThread===d.id?null:d.id)} style={{marginTop:6,background:"none",border:"none",padding:0,color:T.teal600,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
             {(d.comments||[]).length>0?(d.comments.length+" réponse"+(d.comments.length>1?"s":"")):"Répondre"}
           </button>}
           {openThread===d.id&&<DelayThread d={d} pj={pj} authorName={authorName} addDelayComment={addDelayComment} deleteDelayComment={deleteDelayComment}/>}
           {deleteTarget===d.id&&<div style={{marginTop:8,paddingTop:8,borderTop:"1px solid "+T.line,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
-            <input type="password" value={pinInput} onChange={e=>setPinInput(e.target.value)} placeholder="Code Manager" style={{padding:"6px 10px",borderRadius:7,border:"1px solid "+T.line,fontSize:13,fontFamily:T.font,width:120}}/>
-            <button onClick={confirmDelete} style={{padding:"6px 12px",borderRadius:7,border:"none",background:T.red500,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>Confirmer</button>
-            <button onClick={()=>setDeleteTarget(null)} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.neuPanel,boxShadow:T.neuOutSm,color:T.ink700,fontSize:13,cursor:"pointer"}}>Annuler</button>
+            <input type="password" value={pinInput} onChange={e=>setPinInput(e.target.value)} placeholder="Code Manager" style={{padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,width:120}}/>
+            <button onClick={confirmDelete} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.redFill,color:"#fff",fontSize:FZ.sm,fontWeight:700,cursor:"pointer"}}>Confirmer</button>
+            <button onClick={()=>setDeleteTarget(null)} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.neuPanel,boxShadow:T.neuOutSm,color:T.ink700,fontSize:FZ.sm,cursor:"pointer"}}>Annuler</button>
           </div>}
         </div>
       ))}
@@ -380,28 +393,28 @@ function DelayThread({d,pj,authorName,addDelayComment,deleteDelayComment}){
     const ok=await deleteDelayComment(pj,d.id,idx,pin);
     if(ok){setDelTarget(null);setPin("");}
   };
-  return(<div style={{marginTop:8,paddingTop:8,borderTop:"1px solid "+T.line,display:"flex",flexDirection:"column",gap:7}}>
+  return(<div style={{marginTop:8,paddingTop:8,borderTop:"1px solid "+T.line,display:"flex",flexDirection:"column",gap:8}}>
     {(d.comments||[]).map((c,i)=>(
-      <div key={i} style={{background:T.card,borderRadius:8,padding:"7px 10px"}}>
+      <div key={i} style={{background:T.card,borderRadius:8,padding:"8px 8px"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8}}>
-          <span style={{fontWeight:700,color:T.teal600,fontSize:12.5}}>{c.author}</span>
+          <span style={{fontWeight:700,color:T.teal600,fontSize:FZ.xs}}>{c.author}</span>
           <div style={{display:"flex",alignItems:"center",gap:6}}>
-            <span style={{fontSize:11,color:T.ink300}}>{new Date(c.date).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</span>
-            {deleteDelayComment&&<button onClick={()=>{setDelTarget(i);setPin("");}} title="Supprimer" style={{background:"none",border:"none",color:T.ink300,cursor:"pointer",fontSize:12,padding:0}}>✕</button>}
+            <span style={{fontSize:FZ.xs,color:T.ink300}}>{new Date(c.date).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</span>
+            {deleteDelayComment&&<SuperOnly><button onClick={()=>{setDelTarget(i);setPin("");}} title="Supprimer" style={{background:"none",border:"none",color:T.ink300,cursor:"pointer",fontSize:FZ.xs,padding:0}}><NavIcon name="close" size={11}/></button></SuperOnly>}
           </div>
         </div>
-        <div style={{fontSize:13,color:T.ink700,whiteSpace:"pre-wrap",marginTop:2}}>{c.text}</div>
+        <div style={{fontSize:FZ.sm,color:T.ink700,whiteSpace:"pre-wrap",marginTop:2}}>{c.text}</div>
         {delTarget===i&&<div style={{marginTop:6,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
-          <input type="password" value={pin} onChange={e=>setPin(e.target.value)} placeholder="Code Manager" style={{padding:"5px 8px",borderRadius:6,border:"1px solid "+T.line,fontSize:12,fontFamily:T.font,width:110}}/>
-          <button onClick={()=>confirmDelete(i)} style={{padding:"5px 10px",borderRadius:6,border:"none",background:T.red500,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}>Confirmer</button>
-          <button onClick={()=>setDelTarget(null)} style={{padding:"5px 10px",borderRadius:6,border:"none",background:T.neuPanelDim,color:T.ink700,fontSize:12,cursor:"pointer"}}>Annuler</button>
+          <input type="password" value={pin} onChange={e=>setPin(e.target.value)} placeholder="Code Manager" style={{padding:"4px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.xs,fontFamily:T.font,width:110}}/>
+          <button onClick={()=>confirmDelete(i)} style={{padding:"4px 8px",borderRadius:8,border:"none",background:T.redFill,color:"#fff",fontSize:FZ.xs,fontWeight:700,cursor:"pointer"}}>Confirmer</button>
+          <button onClick={()=>setDelTarget(null)} style={{padding:"4px 8px",borderRadius:8,border:"none",background:T.neuPanelDim,color:T.ink700,fontSize:FZ.xs,cursor:"pointer"}}>Annuler</button>
         </div>}
       </div>
     ))}
     <div style={{display:"flex",gap:6,alignItems:"flex-start"}}>
-      {!authorName&&<input type="text" value={authorInput} onChange={e=>setAuthorInput(e.target.value)} placeholder="Nom" maxLength={40} style={{width:90,padding:"7px 9px",borderRadius:7,border:"1px solid "+T.line,fontSize:12.5,fontFamily:T.font,color:T.ink700}}/>}
-      <input type="text" value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();send();}}} placeholder="Répondre sur ce retard... (Entrée pour envoyer)" maxLength={500} style={{flex:1,padding:"7px 10px",borderRadius:7,border:"1px solid "+T.line,fontSize:12.5,fontFamily:T.font,color:T.ink700}}/>
-      <button onClick={send} disabled={!text.trim()||!author.trim()} style={{padding:"7px 14px",borderRadius:7,border:"none",background:text.trim()&&author.trim()?T.teal500:T.neuPanelDim,color:text.trim()&&author.trim()?"#fff":T.ink300,fontSize:12.5,fontWeight:700,cursor:text.trim()&&author.trim()?"pointer":"default"}}>Envoyer</button>
+      {!authorName&&<input type="text" value={authorInput} onChange={e=>setAuthorInput(e.target.value)} placeholder="Nom" maxLength={40} style={{width:90,padding:"8px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.xs,fontFamily:T.font,color:T.ink700}}/>}
+      <input type="text" value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();send();}}} placeholder="Répondre sur ce retard... (Entrée pour envoyer)" maxLength={500} style={{flex:1,padding:"8px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.xs,fontFamily:T.font,color:T.ink700}}/>
+      <button onClick={send} disabled={!text.trim()||!author.trim()} style={{padding:"8px 12px",borderRadius:8,border:"none",background:text.trim()&&author.trim()?T.teal500:T.neuPanelDim,color:text.trim()&&author.trim()?"#fff":T.ink300,fontSize:FZ.xs,fontWeight:700,cursor:text.trim()&&author.trim()?"pointer":"default"}}>Envoyer</button>
     </div>
   </div>);
 }

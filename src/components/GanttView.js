@@ -1,22 +1,38 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { T } from "../theme";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { isPhone } from "../useIsPhone";
+import { EtatInfoButton } from "./ProdStagesUI";
+import { T, FZF, mixHex, ganttSoft, stageSoft, stripeBg } from "../theme";
+import { fmt } from "../parsers";
 import { getPjMeta, ETAT_META, ALL_ETATS, MONTHS, today, ProjectLabelCell } from "../pjMeta";
-import { DropFilter } from "./SharedUI";
+import { DropFilter, NavIcon } from "./SharedUI";
 import { ProjectModal } from "./ProjectModal";
 
 // Couleurs lues à chaque rendu (accesseurs) : un tableau figé à l'import garderait le thème clair.
 export const PHASES=[
-  {k:"arrivee",l:"A",get c(){return T.teal500;},t:"Arrivée"},
-  {k:"tests",l:"T",get c(){return T.amber500;},t:"Tests"},
-  {k:"finProd",l:"F",get c(){return T.emerald500;},t:"Fin prod"},
-  {k:"depart",l:"D",get c(){return T.red500;},t:"Départ"},
+  // v144 : pastel. c = trait doux (anneau, liseré), bg = aplat clair, ink = texte foncé. Pas de rouge : réservé au retard.
+  {k:"arrivee",l:"A",get c(){return ganttSoft().arrivee.ring;},get bg(){return ganttSoft().arrivee.bg;},get ink(){return ganttSoft().arrivee.ink;},get tbg(){return stageSoft().arrivee.bg;},get tink(){return stageSoft().arrivee.ink;},t:"Arrivée"},
+  {k:"tests",l:"T",get c(){return ganttSoft().tests.ring;},get bg(){return ganttSoft().tests.bg;},get ink(){return ganttSoft().tests.ink;},get tbg(){return stageSoft().tests.bg;},get tink(){return stageSoft().tests.ink;},t:"Tests"},
+  {k:"finProd",l:"F",get c(){return ganttSoft().finProd.ring;},get bg(){return ganttSoft().finProd.bg;},get ink(){return ganttSoft().finProd.ink;},get tbg(){return stageSoft().finProd.bg;},get tink(){return stageSoft().finProd.ink;},t:"Fin prod"},
+  {k:"depart",l:"D",get c(){return ganttSoft().depart.ring;},get bg(){return ganttSoft().depart.bg;},get ink(){return ganttSoft().depart.ink;},get tbg(){return stageSoft().depart.bg;},get tink(){return stageSoft().depart.ink;},t:"Départ"},
 ];
+
+// v142 : dégradé continu de la dérive vs planning initial (jours) : en avance (vert) → au plan (bleu-gris neutre) → léger retard (ambre) → retard marqué (braise) → gros retard (rouge).
+const DRIFT_STOPS=()=>[[-21,T.emerald500],[0,T.info500],[7,T.amber500],[21,T.ember500],[45,T.red500]];
+export function driftGradientColor(d){
+  if(d==null)return T.ink300; // pas de planning initial pour ce PJ : neutre
+  const st=DRIFT_STOPS();
+  if(d<=st[0][0])return st[0][1];
+  if(d>=st[st.length-1][0])return st[st.length-1][1];
+  for(let i=0;i<st.length-1;i++){const[a,ca]=st[i],[b,cb]=st[i+1];if(d>=a&&d<=b)return mixHex(ca,cb,(d-a)/(b-a));}
+  return st[0][1];
+}
 
 // selEtats/selPJs (demandé explicitement : "mettre en place un système de filtre pour enlever
 // certain PJ ou certain état") — même état que la liste (App.js), donc filtrer ici filtre aussi la
 // liste et inversement, sans dupliquer la logique de filtrage.
-export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,setSelPJs,comments,addComment,deleteComment,pinOk,delays,delayTypes,addDelayAllocation,deleteDelayAllocation,addDelayComment,deleteDelayComment,authorName,savePjMetaOverride,canEditMeta}){
+export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,setSelPJs,comments,addComment,deleteComment,pinOk,delays,delayTypes,setDelayTypes,addDelayAllocation,deleteDelayAllocation,addDelayComment,deleteDelayComment,authorName,savePjMetaOverride,canEditMeta}){
   const [sel,setSel]=useState(null);
+  const [tip,setTip]=useState(null); // v142 : infobulle propre (PJ survolé + position)
   const todayYear=today.getFullYear();
   // Plage dynamique : couvre toujours l'année en cours, étendue si des machines
   // ont des jalons avant/après (ex. départ en janvier de l'année suivante).
@@ -47,16 +63,29 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
   // Dézoom par défaut (demandé explicitement : "voir 6 mois en une fois") — niveau 6px/jour ajouté
   // sous l'ancien minimum (10), et utilisé comme valeur de départ plutôt que le niveau médian.
   const ZOOM_LEVELS=[6,10,14,18,26,36,50];
-  const [dayW,setDayW]=useState(ZOOM_LEVELS[0]); // px par jour — ajustable via le zoom
+  const ZMIN=4,ZMAX=56;
+  const [dayW,setDayW]=useState(ZOOM_LEVELS[0]); // px par jour — ajustable via les boutons ou Ctrl + molette (v162 : zoom continu, centré sur le curseur)
   // Mémorise le jour actuellement affiché à gauche de l'écran avant de changer le zoom,
   // pour recentrer la vue sur la même période après — sinon zoomer fait "sauter" le planning.
-  const anchorDayRef=React.useRef(null);
-  const captureAnchor=()=>{if(scrollRef.current)anchorDayRef.current=scrollRef.current.scrollLeft/dayW;};
-  const zoomOut=()=>{captureAnchor();setDayW(w=>{const i=ZOOM_LEVELS.indexOf(w);return ZOOM_LEVELS[Math.max(0,i-1)]||ZOOM_LEVELS[0];});};
-  const zoomIn=()=>{captureAnchor();setDayW(w=>{const i=ZOOM_LEVELS.indexOf(w);return ZOOM_LEVELS[Math.min(ZOOM_LEVELS.length-1,i+1)]||ZOOM_LEVELS[ZOOM_LEVELS.length-1];});};
-  const colW=240;
+  const anchorDayRef=React.useRef(null); // {day, off} : jour qui doit rester sous le même repère (off px du bord gauche de la frise)
+  const captureAnchor=(off=0)=>{if(scrollRef.current)anchorDayRef.current={day:(scrollRef.current.scrollLeft+off)/dayW,off};};
+  const clampZ=w=>Math.round(Math.max(ZMIN,Math.min(ZMAX,w))*10)/10;
+  const zoomOut=()=>{captureAnchor();setDayW(w=>clampZ(w/1.28));};
+  const zoomIn=()=>{captureAnchor();setDayW(w=>clampZ(w*1.28));};
+  // v146.13 : colonne Projet calée sur le texte réel (nom complet visible), comme dans le Calendrier.
+  const colW=useMemo(()=>{
+    let ctx=null;try{ctx=document.createElement("canvas").getContext("2d");}catch(e){}
+    const ms=(t,f)=>{if(!ctx)return String(t).length*7;ctx.font=f;return ctx.measureText(t).width;};
+    let w=0;
+    data.forEach(r=>{const m=getPjMeta(r.pj,r);
+      const l1=8+7+ms(r.pj,"700 "+FZF.sm+"px "+T.fontMono)+7+ms(r.gamme||"","700 "+FZF.xs+"px "+T.font)+12+60;
+      const l2=15+17+ms(m.nomProjet||"","500 "+FZF.xs+"px "+T.font);
+      w=Math.max(w,l1,l2);});
+    if(isPhone())return 124; // téléphone : PJ + pastille seulement, la frise garde la place
+    return Math.min(380,Math.max(240,Math.ceil(w+16*2+6)));
+  },[data]);
   const endPad=Math.round((typeof window!=="undefined"?window.innerWidth:1400)/2);
-  const rowH=54;
+  const rowH=58;
   // En-tête à 3 bandes — mois, puis numéro de semaine ("SXX", demandé explicitement : "rajouter les
   // SXX (numéro de semaine) dans la page gantt"), puis le repère jour existant — plutôt que de
   // remplacer ce dernier, pour ne pas perdre le détail jour tout en ajoutant le numéro de semaine.
@@ -86,10 +115,28 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
   // recentre la vue sur la même période après un changement de zoom (dayW)
   useEffect(()=>{
     if(anchorDayRef.current==null)return;
-    const target=Math.max(0,anchorDayRef.current*dayW);
+    const target=Math.max(0,anchorDayRef.current.day*dayW-anchorDayRef.current.off);
     if(scrollRef.current)scrollRef.current.scrollLeft=target;
     if(topScrollRef.current)topScrollRef.current.scrollLeft=target;
   },[dayW]);
+
+  // Ctrl + molette (ou pincement du pavé tactile) : zoom continu centré sur le curseur
+  const dayWRef=useRef(dayW);dayWRef.current=dayW;
+  useEffect(()=>{
+    const el=scrollRef.current;if(!el)return undefined;
+    const onWheel=e=>{
+      if(!(e.ctrlKey||e.metaKey))return;
+      e.preventDefault();
+      const rect=el.getBoundingClientRect();
+      const off=Math.max(0,e.clientX-rect.left-colW);
+      anchorDayRef.current={day:(el.scrollLeft+off)/dayWRef.current,off};
+      const f=Math.exp(-e.deltaY*0.0022);
+      setDayW(w=>clampZ(w*f));
+    };
+    el.addEventListener("wheel",onWheel,{passive:false});
+    return()=>el.removeEventListener("wheel",onWheel);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[colW]);
 
   // synchronisation bidirectionnelle entre la barre de scroll du haut (factice) et le contenu réel
   const syncFromTop=()=>{if(scrollRef.current&&topScrollRef.current)scrollRef.current.scrollLeft=topScrollRef.current.scrollLeft;};
@@ -102,6 +149,9 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
       if(topScrollRef.current)topScrollRef.current.scrollTo({left:target,behavior:"smooth"});
     }
   };
+
+  const scrollTodayRef=useRef(null);scrollTodayRef.current=()=>scrollToDay(dayOf(today));
+  useEffect(()=>{const h=()=>scrollTodayRef.current&&scrollTodayRef.current();window.addEventListener("enogia:today",h);return()=>window.removeEventListener("enogia:today",h);},[]);
 
   // graduations : un repère par début de semaine (lundi)
   const weekMarks=useMemo(()=>{
@@ -117,23 +167,43 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
   // le trait "aujourd'hui" s'appuyait sur bottom:0, qui ne retombait pas toujours exactement en bas
   // de la dernière ligne ("le trait rouge ne va pas au bout") ; une hauteur numérique garantit que
   // la colonne de gauche, la zone du planning et le trait font tous exactement la même hauteur.
-  const ganttH=HEADER_H+data.length*rowH;
+  const GROUP_H=34;
+  const [grouped,setGroupedS]=useState(()=>{try{return localStorage.getItem("enogia_gantt_group")==="1";}catch(e){return false;}});
+  const setGrouped=v=>{setGroupedS(v);try{localStorage.setItem("enogia_gantt_group",v?"1":"0");}catch(e){}};
+  // v162 : regroupement par projet (en-tête de groupe + étendue arrivée → départ du projet)
+  const items=useMemo(()=>{
+    if(!grouped)return data.map(r=>({r}));
+    const m=new Map();
+    data.forEach(r=>{const n=getPjMeta(r.pj,r).nomProjet;const k=n&&n!=="—"?n:"Sans nom de projet";if(!m.has(k))m.set(k,[]);m.get(k).push(r);});
+    const out=[];
+    [...m.entries()].sort((a,b)=>a[0].localeCompare(b[0],"fr")).forEach(([k,rs])=>{
+      const arr=rs.map(r=>r.arrivee).filter(Boolean).sort()[0]||null;
+      const dep=rs.map(r=>r.depart).filter(Boolean).sort().slice(-1)[0]||null;
+      out.push({g:k,n:rs.length,from:arr,to:dep});
+      rs.forEach(r=>out.push({r}));
+    });
+    return out;
+  },[data,grouped]);
+  const ganttH=HEADER_H+items.reduce((n,it)=>n+(it.g?GROUP_H:rowH),0);
 
-  return(<div style={{background:T.surface,borderRadius:12,overflow:"hidden",border:"1px solid "+T.line,fontFamily:T.font}}>
+  return(<div style={{background:stripeBg(stageSoft().production.ring,T.surface,4),borderRadius:12,overflow:"hidden",border:"1px solid "+T.line,fontFamily:T.font}}>
     <div style={{display:"flex",gap:10,padding:"14px 18px",borderBottom:"1px solid "+T.line,alignItems:"center",flexWrap:"wrap",background:T.surface}}>
-      <span style={{fontSize:16,fontWeight:700,color:T.ink900}}>Planning {multiYear?yearStart.getFullYear()+" – "+yearEnd.getFullYear():yearStart.getFullYear()}</span>
+      <span style={{fontSize:FZF.md,fontWeight:700,color:T.ink900}}>Planning {multiYear?yearStart.getFullYear()+" – "+yearEnd.getFullYear():yearStart.getFullYear()}</span>
       {/* Plus petite + italique (demandé explicitement) : une note d'usage secondaire, pas un titre. */}
-      <span style={{fontSize:12,fontStyle:"italic",color:T.ink500}}>Faites glisser ou utilisez la molette pour défiler → · cliquez une ligne pour la fiche projet</span>
+      <span style={{fontSize:FZF.sm,fontStyle:"italic",color:T.ink500}}>Molette pour défiler · Ctrl + molette pour zoomer · cliquez une ligne pour la fiche projet</span>
       {/* Filtres État + PJ (demandé explicitement : "système de filtre pour enlever certain PJ ou
           certain état") — même état que la liste (App.js), donc filtrer ici filtre aussi la liste. */}
       <div style={{display:"flex",gap:8,marginLeft:"auto",alignItems:"center",flexWrap:"wrap"}}>
         {setSelEtats&&<DropFilter label="État" options={ALL_ETATS} selected={selEtats} onChange={setSelEtats} getLabel={o=>ETAT_META[o]?.label||o}/>}
+        {setSelEtats&&<EtatInfoButton/>}
         {allPJs&&<DropFilter label="PJ" options={allPJs} selected={selPJs||new Set(allPJs)} onChange={setSelPJs}/>}
+        <button type="button" onClick={()=>setGrouped(!grouped)} aria-pressed={grouped} title="Regrouper les lignes par projet"
+          style={{padding:"5px 11px",borderRadius:7,border:"1px solid "+(grouped?T.teal400:T.line),background:grouped?T.teal100:"transparent",color:grouped?T.teal600:T.ink700,fontSize:FZF.sm,fontWeight:700,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6}}><NavIcon name="layers" size={15}/>Par projet</button>
         <div style={{display:"flex",gap:4}}>
-          <button onClick={zoomOut} disabled={dayW<=ZOOM_LEVELS[0]} style={{padding:"5px 9px",borderRadius:7,border:"1px solid "+T.line,background:"transparent",color:dayW<=ZOOM_LEVELS[0]?T.ink300:T.ink700,fontSize:14,fontWeight:700,cursor:dayW<=ZOOM_LEVELS[0]?"default":"pointer"}}>−</button>
-          <button onClick={zoomIn} disabled={dayW>=ZOOM_LEVELS[ZOOM_LEVELS.length-1]} style={{padding:"5px 9px",borderRadius:7,border:"1px solid "+T.line,background:"transparent",color:dayW>=ZOOM_LEVELS[ZOOM_LEVELS.length-1]?T.ink300:T.ink700,fontSize:14,fontWeight:700,cursor:dayW>=ZOOM_LEVELS[ZOOM_LEVELS.length-1]?"default":"pointer"}}>+</button>
+          <button onClick={zoomOut} disabled={dayW<=ZMIN} style={{padding:"5px 9px",borderRadius:7,border:"1px solid "+T.line,background:"transparent",color:dayW<=ZMIN?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:700,cursor:dayW<=ZMIN?"default":"pointer"}}>−</button>
+          <button onClick={zoomIn} disabled={dayW>=ZMAX} style={{padding:"5px 9px",borderRadius:7,border:"1px solid "+T.line,background:"transparent",color:dayW>=ZMAX?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:700,cursor:dayW>=ZMAX?"default":"pointer"}}>+</button>
         </div>
-        <button onClick={()=>scrollToDay(dayOf(today))} style={{padding:"5px 11px",borderRadius:7,border:"1px solid "+T.teal400,background:"transparent",color:T.teal600,fontSize:12.5,fontWeight:700,cursor:"pointer"}}>Aujourd'hui</button>
+        <button onClick={()=>scrollToDay(dayOf(today))} style={{padding:"5px 11px",borderRadius:7,border:"1px solid "+T.teal400,background:"transparent",color:T.teal600,fontSize:FZF.sm,fontWeight:700,cursor:"pointer"}}>Aujourd'hui</button>
       </div>
     </div>
 
@@ -143,11 +213,14 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
 
     <div ref={scrollRef} onScroll={syncFromBottom} style={{display:"flex",overflowX:"auto",overflowY:"auto",maxHeight:"calc(100vh - 300px)",position:"relative"}}>
       <div style={{width:colW,height:ganttH,flexShrink:0,position:"sticky",left:0,zIndex:8,background:T.surface,borderRight:"1px solid "+T.line,boxShadow:"2px 0 6px rgba(15,40,60,.04)"}}>
-        <div style={{height:HEADER_H,padding:"0 16px",display:"flex",alignItems:"center",fontSize:14,fontWeight:700,color:T.ink500,textTransform:"uppercase",letterSpacing:".04em",borderBottom:"1px solid "+T.line,background:T.surface,position:"sticky",top:0,zIndex:9}}>Projet</div>
-        {data.map((r,ri)=>{
+        <div className="enogia-lblcell" style={{height:HEADER_H,padding:"0 16px",display:"flex",alignItems:"center",fontSize:FZF.md,fontWeight:700,color:T.ink500,textTransform:"uppercase",letterSpacing:".04em",borderBottom:"1px solid "+T.line,background:T.surface,position:"sticky",top:0,zIndex:9}}>Projet</div>
+        {items.map((it,ri)=>{
+          if(it.g)return(<div key={"g"+ri} className="enogia-lblcell" style={{height:GROUP_H,padding:"0 16px",display:"flex",alignItems:"center",gap:8,background:T.surfaceAlt,borderBottom:"1px solid "+T.line,fontSize:FZF.sm,fontWeight:700,color:T.ink700,overflow:"hidden"}}>
+            <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{it.g}</span><span style={{fontWeight:600,color:T.ink500,flexShrink:0}}>{it.n}</span></div>);
+          const r=it.r;
           const meta=getPjMeta(r.pj,r);
           const isSel=sel===r.pj;
-          return(<div key={ri} onClick={()=>setSel(isSel?null:r.pj)} style={{height:rowH,padding:"6px 16px",display:"flex",flexDirection:"column",justifyContent:"center",gap:2,borderBottom:"1px solid "+T.surfaceAlt,borderLeft:"3px solid "+(isSel?T.teal500:"transparent"),background:isSel?T.surfaceAlt:"transparent",cursor:"pointer",transition:"background .12s ease, border-color .12s ease"}}
+          return(<div key={ri} className="enogia-lblcell" onClick={()=>setSel(isSel?null:r.pj)} style={{height:rowH,padding:"6px 16px",display:"flex",flexDirection:"column",justifyContent:"center",gap:2,borderBottom:"1px solid "+T.surfaceAlt,borderLeft:"3px solid "+(isSel?T.teal500:"transparent"),background:isSel?T.surfaceAlt:"transparent",cursor:"pointer",transition:"background .12s ease, border-color .12s ease"}}
             onMouseEnter={e=>{if(!isSel)e.currentTarget.style.background=T.surfaceAlt;}}
             onMouseLeave={e=>{if(!isSel)e.currentTarget.style.background="transparent";}}>
             <ProjectLabelCell pj={r.pj} r={r} meta={meta}/>
@@ -167,39 +240,45 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
         {/* en-tête mois + numéro de semaine + semaines (repère jour) */}
         <div style={{height:HEADER_H,position:"sticky",top:0,zIndex:7,borderBottom:"1px solid "+T.line,background:T.surface}}>
           {months.map((ms,mi)=>{const me=new Date(ms.getFullYear(),ms.getMonth()+1,1);const w=(xOf(me)-xOf(ms));const isCur=ms.getFullYear()===todayYear&&ms.getMonth()===today.getMonth();
-            return(<div key={mi} style={{position:"absolute",left:xOf(ms),width:w,top:0,height:MONTH_BAND_H,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:isCur?T.teal600:T.ink700,borderLeft:"1px solid "+T.line,background:isCur?T.teal100:"transparent"}}>{MONTHS[ms.getMonth()]}{multiYear?" "+ms.getFullYear():""}</div>);
+            return(<div key={mi} style={{position:"absolute",left:xOf(ms),width:w,top:0,height:MONTH_BAND_H,display:"flex",alignItems:"center",justifyContent:"center",fontSize:FZF.md,fontWeight:700,color:isCur?T.teal600:T.ink700,borderLeft:"1px solid "+T.line,background:isCur?T.teal100:"transparent"}}>{MONTHS[ms.getMonth()]}{multiYear?" "+ms.getFullYear():""}</div>);
           })}
           {/* Bande "SXX" (demandé explicitement), une fois par semaine, séparée du repère jour
               ci-dessous plutôt que de le remplacer. */}
           {weekMarks.map((wm,wi)=>(
-            <div key={wi} style={{position:"absolute",left:xOf(wm),top:MONTH_BAND_H,height:WEEK_NUM_BAND_H,width:dayW*7,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10.5,fontWeight:700,color:T.ink300,borderLeft:"1px solid "+T.surfaceAlt}}>S{weekNum(wm)}</div>
+            <div key={wi} style={{position:"absolute",left:xOf(wm),top:MONTH_BAND_H,height:WEEK_NUM_BAND_H,width:dayW*7,display:"flex",alignItems:"center",justifyContent:"center",fontSize:FZF.xs,fontWeight:700,color:T.ink300,borderLeft:"1px solid "+T.surfaceAlt}}>S{weekNum(wm)}</div>
           ))}
           {weekMarks.map((wm,wi)=>(
-            <div key={"d"+wi} style={{position:"absolute",left:xOf(wm),top:MONTH_BAND_H+WEEK_NUM_BAND_H,height:DAY_TICK_H,width:dayW*7,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:T.ink300,borderLeft:"1px solid "+T.surfaceAlt,fontWeight:500}}>{wm.getDate()}</div>
+            <div key={"d"+wi} style={{position:"absolute",left:xOf(wm),top:MONTH_BAND_H+WEEK_NUM_BAND_H,height:DAY_TICK_H,width:dayW*7,display:"flex",alignItems:"center",justifyContent:"center",fontSize:FZF.sm,color:T.ink300,borderLeft:"1px solid "+T.surfaceAlt,fontWeight:500}}>{wm.getDate()}</div>
           ))}
         </div>
 
         {/* lignes de fond + grille */}
-        {data.map((r,ri)=>{
+        {items.map((it,ri)=>{
+          if(it.g){const gb=bpct(it.from,it.to);return(<div key={"g"+ri} style={{height:GROUP_H,position:"relative",background:T.surfaceAlt,borderBottom:"1px solid "+T.line}}>
+            {gb&&<div aria-hidden="true" style={{position:"absolute",left:gb.left,width:gb.width,top:"50%",height:6,transform:"translateY(-50%)",borderRadius:3,background:mixHex(T.surfaceAlt,T.ink500,.45)}}/>}
+          </div>);}
+          const r=it.r;
           const c=ETAT_META[r.etat]||ETAT_META["NOT ORDERED"];
           const mb=bpct(r.arrivee,r.depart);
           const isSel=sel===r.pj;
-          return(<div key={ri} onClick={()=>setSel(isSel?null:r.pj)} style={{height:rowH,position:"relative",borderBottom:"1px solid "+T.surfaceAlt,background:isSel?T.surfaceAlt:"transparent",cursor:"pointer"}}>
+          return(<div key={ri} onClick={()=>setSel(isSel?null:r.pj)} onMouseMove={e=>setTip({r,x:e.clientX,y:e.clientY})} onMouseLeave={()=>setTip(null)} style={{height:rowH,position:"relative",borderBottom:"1px solid "+T.surfaceAlt,background:isSel?T.surfaceAlt:"transparent",cursor:"pointer"}}>
             {weekMarks.map((wm,wi)=><div key={wi} style={{position:"absolute",left:xOf(wm),top:0,bottom:0,width:1,background:T.surfaceAlt}}/>)}
             {months.map((ms,mi)=><div key={mi} style={{position:"absolute",left:xOf(ms),top:0,bottom:0,width:1,background:T.line}}/>)}
-            {mb&&<div style={{position:"absolute",left:mb.left,width:mb.width,top:"50%",transform:"translateY(-50%)",height:20,background:c.bar,borderRadius:6,opacity:.16,zIndex:1}}/>}
+            {mb&&(()=>{const dc=driftGradientColor(r.drift);return <div className="enogia-bar-fill" style={{position:"absolute",left:mb.left,width:mb.width,top:"50%",transform:"translateY(-50%)",height:22,background:"linear-gradient(90deg,"+mixHex(T.surface,dc,.30)+","+mixHex(T.surface,dc,.46)+")",boxShadow:"inset 0 0 0 1px "+mixHex(T.surface,dc,.65),borderRadius:8,zIndex:1,animationDelay:Math.min(ri,14)*35+"ms"}}/>;})()}
             {/* Marqueurs affinés (demandé explicitement, registre "premium épuré") : pastille claire
                 à contour coloré plutôt qu'un disque plein — plus petit, plus plat, ombre quasi
                 invisible comme le reste de l'appli au lieu de l'ombre portée marquée d'origine. */}
             {PHASES.map(ph=>{const dt=r[ph.k];if(!dt)return null;const x=xOf(new Date(dt));
-              return(<div key={ph.k} style={{position:"absolute",left:x,top:"50%",transform:"translate(-50%,-50%)",width:18,height:18,borderRadius:"50%",background:T.card,border:"2px solid "+ph.c,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:ph.c,zIndex:4,cursor:"pointer",boxShadow:T.shadowSm}}>{ph.l}</div>);
+              return(<div key={ph.k} style={{position:"absolute",left:x,top:"50%",transform:"translate(-50%,-50%)",width:18,height:18,borderRadius:"50%",background:ph.bg,border:"2px solid "+ph.c,display:"flex",alignItems:"center",justifyContent:"center",fontSize:FZF.xs,fontWeight:700,color:ph.ink,zIndex:4,cursor:"pointer",boxShadow:T.shadowFlat}}>{ph.l}</div>);
             })}
           </div>);
         })}
 
         {/* ligne "aujourd'hui" — hauteur explicite (ganttH-HEADER_H) plutôt que bottom:0, pour être
             sûr qu'elle descend exactement jusqu'à la dernière ligne quel que soit le nombre de PJ. */}
-        <div style={{position:"absolute",left:xOf(today),top:HEADER_H,height:ganttH-HEADER_H,width:2,background:T.red500,opacity:.5,zIndex:3}}/>
+        <div style={{position:"absolute",left:xOf(today)-1,top:HEADER_H,height:ganttH-HEADER_H,width:2,background:T.red500,zIndex:3,pointerEvents:"none"}}/>
+        {/* v142 : repère « aujourd'hui » net : trait plein + pastille datée posée sur le bord de l'en-tête. */}
+        <div style={{position:"absolute",left:xOf(today),top:HEADER_H-10,transform:"translateX(-50%)",zIndex:9,pointerEvents:"none",background:T.redFill,color:"#fff",fontSize:FZF.xs,fontWeight:700,padding:"2px 8px",borderRadius:999,whiteSpace:"nowrap",boxShadow:T.shadowFlat}}>Aujourd'hui · {fmt(today)}</div>
       </div>
       {/* Marge de fin : sans elle, « aujourd'hui » ne peut pas être centré quand il est proche de la fin de la plage. */}
       <div style={{width:endPad,height:1,flexShrink:0}}/>
@@ -208,11 +287,46 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
 
     {/* Légende alignée sur le même traitement "contour" que les marqueurs ci-dessus. */}
     <div style={{padding:"10px 18px",borderTop:"1px solid "+T.line,display:"flex",gap:14,flexWrap:"wrap",background:T.surface}}>
-      {PHASES.map(ph=><span key={ph.k} style={{display:"flex",alignItems:"center",gap:6,fontSize:13}}><span style={{width:16,height:16,borderRadius:"50%",background:T.card,border:"2px solid "+ph.c,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9.5,color:ph.c,fontWeight:700}}>{ph.l}</span><span style={{color:T.ink500,fontWeight:500}}>{ph.t}</span></span>)}
+      {PHASES.map(ph=><span key={ph.k} style={{display:"flex",alignItems:"center",gap:6,fontSize:FZF.sm}}><span style={{width:16,height:16,borderRadius:"50%",background:ph.bg,border:"2px solid "+ph.c,display:"flex",alignItems:"center",justifyContent:"center",fontSize:FZF.xs,color:ph.ink,fontWeight:700}}>{ph.l}</span><span style={{color:T.ink500,fontWeight:500}}>{ph.t}</span></span>)}
     </div>
 
+    {/* v142 : légende du dégradé de dérive */}
+    <div style={{padding:"0 18px 12px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",fontSize:FZF.sm,color:T.ink500,background:T.surface}}>
+      <span style={{fontWeight:600,color:T.ink700}}>Couleur de la barre arrivée → départ :</span>
+      <span>en avance</span>
+      <span aria-hidden="true" style={{width:180,height:10,borderRadius:6,background:"linear-gradient(90deg,"+DRIFT_STOPS().map(([d,c],i,a)=>c+" "+Math.round((i/(a.length-1))*100)+"%").join(",")+")",boxShadow:T.shadowFlat}}/>
+      <span>en retard vs planning initial (−21 j … +45 j)</span>
+      <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:14,height:10,borderRadius:4,background:mixHex(T.surface,T.ink300,.4)}}/>pas de planning initial</span>
+    </div>
+
+    {tip&&(()=>{
+      const r=tip.r,meta=getPjMeta(r.pj,r),W=270,left=Math.min(tip.x+16,(typeof window!=="undefined"?window.innerWidth:1400)-W-12),top=Math.max(8,Math.min(tip.y+16,(typeof window!=="undefined"?window.innerHeight:800)-270));
+      const dc=driftGradientColor(r.drift),iniDep=r.drift!=null&&r.depart?new Date(new Date(r.depart).getTime()-r.drift*86400000):null;
+      return(<div role="tooltip" style={{position:"fixed",left,top,width:W,zIndex:10030,pointerEvents:"none",background:T.card,color:T.ink900,borderRadius:12,boxShadow:T.shadowFloat,padding:"10px 12px",fontFamily:T.font}}>
+        <div style={{fontSize:FZF.md,fontWeight:700,lineHeight:1.2}}>{r.pj}<span style={{fontWeight:500,color:T.ink500,fontSize:FZF.sm}}>{meta&&meta.nomProjet?"  "+meta.nomProjet:""}</span></div>
+        <div style={{display:"flex",alignItems:"center",gap:6,marginTop:6,flexWrap:"wrap",fontSize:FZF.xs,color:T.ink500}}>
+          {ETAT_META[r.etat]&&<span style={{display:"inline-flex",alignItems:"center",gap:5,fontWeight:600,color:T.ink700}}><span aria-hidden="true" style={{width:8,height:8,borderRadius:"50%",background:ETAT_META[r.etat].bar}}/>{ETAT_META[r.etat].label}</span>}
+          {meta&&meta.chefProjet&&meta.chefProjet!=="—"&&<span>· {meta.chefProjet}</span>}
+          {r.gamme&&<span>· {r.gamme}</span>}
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"auto 1fr",columnGap:10,rowGap:4,marginTop:8,fontSize:FZF.sm,alignItems:"center"}}>
+          {PHASES.map(ph=>{const dt=r[ph.k];return(<React.Fragment key={ph.k}>
+            <span style={{display:"flex",alignItems:"center",gap:6,color:T.ink700}}><span style={{width:10,height:10,borderRadius:"50%",border:"2px solid "+ph.c,background:ph.bg}}/>{ph.t}</span>
+            <span style={{textAlign:"right",fontVariantNumeric:"tabular-nums",fontWeight:600}}>{dt?fmt(new Date(dt))+(ph.k==="tests"&&r.testsFin?" → "+fmt(new Date(r.testsFin)):""):"—"}</span>
+          </React.Fragment>);})}
+        </div>
+        <div style={{marginTop:8,paddingTop:8,borderTop:"1px solid "+T.line,display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:FZF.sm}}>
+          <span style={{color:T.ink500}}>vs planning initial</span>
+          <span style={{fontWeight:700,color:r.drift==null?T.ink500:r.drift>0?T.red600:r.drift<0?T.emerald600:T.info600}}>
+            {r.drift==null?"pas d'initial":r.drift===0?"dans les temps":(r.drift>0?"+":"−")+Math.abs(r.drift)+" j"+(iniDep?" (départ initial "+fmt(iniDep)+")":"")}
+          </span>
+        </div>
+        <div aria-hidden="true" style={{marginTop:8,height:4,borderRadius:4,background:dc}}/>
+      </div>);
+    })()}
+
     {sel&&<ProjectModal pj={sel} data={data} df={df} onClose={()=>setSel(null)} comments={comments} addComment={addComment} deleteComment={deleteComment}
-      pinOk={pinOk} delays={delays} delayTypes={delayTypes} addDelayAllocation={addDelayAllocation} deleteDelayAllocation={deleteDelayAllocation}
+      pinOk={pinOk} delays={delays} delayTypes={delayTypes} setDelayTypes={setDelayTypes} addDelayAllocation={addDelayAllocation} deleteDelayAllocation={deleteDelayAllocation}
       addDelayComment={addDelayComment} deleteDelayComment={deleteDelayComment} authorName={authorName} savePjMetaOverride={savePjMetaOverride} canEditMeta={canEditMeta}/>}
   </div>);
 }

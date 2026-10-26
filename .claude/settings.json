@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(git push:*)",
+      "Bash(git push)",
+      "Bash(npm run deploy:*)",
+      "Bash(npm run deploy)",
+      "Bash(npm run predeploy:*)",
+      "Bash(npm run predeploy)",
+      "Bash(node scripts/deploy.js:*)",
+      "Bash(npx gh-pages:*)",
+      "Bash(gh-pages:*)"
+    ]
+  }
+}

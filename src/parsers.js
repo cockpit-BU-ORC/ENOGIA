@@ -10,13 +10,16 @@ export function parseDateAny(s){
   if(m)return new Date(+m[3],+m[2]-1,+m[1]);
   const d=new Date(s);return isNaN(d)?null:d;
 }
-export function fmt(d){if(!d)return"—";return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0");}
+// Année en 2 chiffres ajoutée partout (« /25 », « /26 ») — demandé explicitement : sans elle, deux dates
+// d'années différentes se lisent pareil.
+export function yy(d){return String(d.getFullYear()).slice(-2);}
+export function fmt(d){if(!d)return"—";return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+yy(d);}
 export function toLocalISO(d){if(!d)return null;return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 export function diffDays(a,b){if(!a||!b)return null;return Math.round((b-a)/86400000);}
 export function fmtMode(d,mode){
   if(!d)return"—";
-  if(mode==="semaine"){const j=new Date(d.getFullYear(),0,1);const w=Math.ceil(((d-j)/86400000+j.getDay()+1)/7);return"S"+String(w).padStart(2,"0");}
-  if(mode==="mois")return MONTHS[d.getMonth()];
+  if(mode==="semaine"){const j=new Date(d.getFullYear(),0,1);const w=Math.ceil(((d-j)/86400000+j.getDay()+1)/7);return"S"+String(w).padStart(2,"0")+"/"+yy(d);}
+  if(mode==="mois")return MONTHS[d.getMonth()]+"/"+yy(d);
   return fmt(d);
 }
 export function guessGamme(pj){

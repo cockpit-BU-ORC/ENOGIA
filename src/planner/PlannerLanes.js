@@ -1,0 +1,189 @@
+import React, { useMemo, useRef, useState, useEffect } from "react";
+import { STEP_LABEL, nodeKey, dayNum, isoOfDay, moveStepTo, setStep, orderOf, rulesOf, schedule } from "./engine";
+import { fmtIso, STEP_COLOR, headerCells } from "./PlannerGantt";
+
+// Vue « Couloirs » : le planning lu comme un atelier. Deux rails de jalons (Arrivées en haut, Départs en bas) encadrent
+// trois couloirs de travail (Production, Banc d'essai, Fin de production). Même échelle de temps que le Gantt, défilement
+// horizontal libre (molette + Maj, glisser le fond, boutons ‹ ›), mise en page dense pour voir beaucoup de PJ à la fois.
+const FONT = "Roboto, 'Helvetica Neue', Arial, sans-serif", MONO = "'Roboto Mono', ui-monospace, Menlo, Consolas, monospace";
+const C = { bg: "#FFFFFF", panel: "#F8FAFC", line: "#E5E7EB", line2: "#EEF0F3", ink: "#111827", ink2: "#4B5563", ink3: "#6B7280", accent: "#1F4E79", bad: "#B3261E", warn: "#B45309", ok: "#0F766E" };
+const LABEL_W = 148, TR = 21, BH = 17, PAD = 7;
+const LANES = [
+  { id: "arr", step: "arrivee", title: "Arrivées", ms: true },
+  { id: "prod", step: "production", title: "Production", res: "prod" },
+  { id: "banc", step: "tests", title: "Banc d'essai", res: "banc" },
+  { id: "fin", step: "finProd", title: "Fin de production" },
+  { id: "dep", step: "depart", title: "Départs", ms: true },
+];
+let fontsDone = false;
+function ensureRoboto() { if (fontsDone || typeof document === "undefined") return; fontsDone = true; const l = document.createElement("link"); l.rel = "stylesheet"; l.href = "https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap"; document.head.appendChild(l); }
+
+export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load, tl, sel, setSel, readOnly, onPreview, onCommit, scrollRef }) {
+  useEffect(() => { ensureRoboto(); }, []);
+  const { lo, px, W } = tl; const nodes = sched.nodes; const base = basePlan || plan;
+  const rules = rulesOf(plan);
+  const names = useMemo(() => { const m = {}; plan.pjs.forEach(p => { m[p.pj] = p.nomProjet || ""; }); return m; }, [plan]);
+  const ranks = useMemo(() => ({ prod: orderOf(plan, "prod"), banc: orderOf(plan, "banc") }), [plan]);
+  const changed = useMemo(() => {
+    const s = new Set(); if (!basePlan || basePlan === plan) return s; const a = schedule(basePlan, cal);
+    Object.keys(nodes).forEach(k => { const x = a.nodes[k], y = nodes[k]; if (x && y && x.s !== null && y.s !== null && (x.start !== y.start || x.finish !== y.finish)) s.add(k); });
+    return s;
+  }, [basePlan, plan, nodes, cal]);
+
+  // ── mise en page : chaque étape reçoit une position absolue ; les barres qui se chevauchent passent sur une autre piste ──
+  const L = useMemo(() => {
+    const out = []; let y = 0; const pos = {};
+    LANES.forEach(l => {
+      const arr = [];
+      plan.pjs.forEach(p => {
+        const key = nodeKey(p.pj, l.step), n = nodes[key]; if (!n || n.s === null) return;
+        const a = dayNum(n.start), b = dayNum(n.finish);
+        if (l.ms) { const cx = (a - lo + 0.5) * px; arr.push({ pj: p.pj, key, n, cx, from: cx - 6, to: cx + 12 + p.pj.length * 6.4 }); }
+        else { const x = (a - lo) * px, w = Math.max(px, (b - a + 1) * px); arr.push({ pj: p.pj, key, n, x, w, from: x, to: x + w }); }
+      });
+      arr.sort((p, q) => p.from - q.from);
+      const tracks = []; arr.forEach(i => { let t = tracks.findIndex(e => e <= i.from + 0.5); if (t < 0) { t = tracks.length; tracks.push(0); } tracks[t] = i.to + 2; i.track = t; });
+      const h = Math.max(44, Math.max(1, tracks.length) * TR + PAD * 2);
+      arr.forEach(i => { i.y = y + PAD + i.track * TR + (TR - BH) / 2; pos[i.key] = { ...i, cy: i.y + BH / 2, ms: !!l.ms }; });
+      out.push({ ...l, y, h, items: arr }); y += h;
+    });
+    return { lanes: out, H: y, pos };
+  }, [plan, nodes, lo, px]);
+
+  // ── glisser-déposer ──
+  const drag = useRef(null); const tipRef = useRef(null); const [dragKey, setDragKey] = useState(null); const [tip, setTip] = useState("");
+  const startDrag = (e, d) => {
+    if (readOnly || (e.button !== undefined && e.button !== 0)) return;
+    e.stopPropagation(); e.preventDefault(); drag.current = { ...d, x0: e.clientX, dd: 0, base }; setDragKey(d.key + (d.kind === "resize" ? "|r" : ""));
+  };
+  useEffect(() => {
+    if (!dragKey) return;
+    const move = e => {
+      const d = drag.current; if (!d) return;
+      if (tipRef.current) { tipRef.current.style.left = (e.clientX + 14) + "px"; tipRef.current.style.top = (e.clientY + 16) + "px"; }
+      const dd = Math.round((e.clientX - d.x0) / px); if (dd === d.dd) return; d.dd = dd;
+      if (dd === 0) { d.cand = null; setTip(""); onPreview(null); return; }
+      const ns = isoOfDay(dayNum(d.node.start) + dd);
+      const cand = d.kind === "move" ? moveStepTo(d.base, cal, d.pj, d.step, cal.dateOf(cal.idxOnOrAfter(ns))) : setStep(d.base, d.pj, d.step, { dur: Math.max(1, cal.countBetween(d.node.start, isoOfDay(dayNum(d.node.finish) + dd))) });
+      d.cand = cand; setTip(d.kind === "move" ? "début " + fmtIso(cal.dateOf(cal.idxOnOrAfter(ns))) : Math.max(1, cal.countBetween(d.node.start, isoOfDay(dayNum(d.node.finish) + dd))) + " j ouvrés"); onPreview(cand);
+    };
+    const up = () => {
+      const d = drag.current; drag.current = null; setDragKey(null); setTip(""); if (!d) return;
+      if (d.dd && d.cand) { const want = d.kind === "move" ? cal.dateOf(cal.idxOnOrAfter(isoOfDay(dayNum(d.node.start) + d.dd))) : null; onCommit(d.cand, { pj: d.pj, key: want ? d.key : null, want }); } else onPreview(null);
+    };
+    const esc = e => { if (e.key === "Escape") { drag.current = null; setDragKey(null); setTip(""); onPreview(null); } };
+    window.addEventListener("pointermove", move); window.addEventListener("pointerup", up); window.addEventListener("keydown", esc);
+    return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); window.removeEventListener("keydown", esc); };
+  }, [dragKey, px, cal, onPreview, onCommit]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // clavier : ← → déplacent d'un jour ouvré (Maj : une semaine), [ ] changent la durée
+  const onKey = (e, it, step, isMs) => {
+    const n = it.n;
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSel({ pj: it.pj, step }); return; }
+    if (e.key === "Escape") { setSel(null); return; }
+    if (readOnly) return;
+    if (e.key === "ArrowLeft" || e.key === "ArrowRight") { e.preventDefault(); const want = cal.addWork(n.start, (e.key === "ArrowRight" ? 1 : -1) * (e.shiftKey ? 5 : 1)); setSel({ pj: it.pj, step }); onCommit(moveStepTo(base, cal, it.pj, step, want), { pj: it.pj, key: it.key, want }); }
+    else if (!isMs && (e.key === "[" || e.key === "]")) { e.preventDefault(); setSel({ pj: it.pj, step }); onCommit(setStep(base, it.pj, step, { dur: Math.max(1, n.dur + (e.key === "]" ? 1 : -1)) }), { pj: it.pj, key: null, want: null }); }
+  };
+
+  // ── défilement : glisser le fond pour parcourir les dates ──
+  const pan = useRef(null); const [panning, setPanning] = useState(false);
+  useEffect(() => {
+    if (!panning) return;
+    const move = e => { const p = pan.current; if (p && scrollRef.current) scrollRef.current.scrollLeft = p.s0 - (e.clientX - p.x0); };
+    const up = () => { pan.current = null; setPanning(false); };
+    window.addEventListener("pointermove", move); window.addEventListener("pointerup", up); return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
+  }, [panning, scrollRef]);
+  const shift = k => { if (scrollRef.current) scrollRef.current.scrollBy({ left: k * 7 * px * 4, behavior: "smooth" }); };
+
+  const head = useMemo(() => headerCells(tl), [tl]);
+  const wmap = useMemo(() => { const m = new Map(); (load ? load.weeks : []).forEach(w => m.set(w.week, w)); return m; }, [load]);
+  const showGauge = px >= 8 && load && load.capDay > 0;
+  const HEAD1 = 22, HEAD2 = tl.zoom === "day" ? 34 : 22, GAUGE = showGauge ? 18 : 0, HEAD = HEAD1 + HEAD2 + GAUGE;
+  const selPj = sel ? sel.pj : null;
+  const todayX = (tl.today - lo) * px + px / 2;
+  const closures = (closurePeriods || []).map(c => ({ x: (dayNum(c.start) - lo) * px, w: (dayNum(c.end || c.start) - dayNum(c.start) + 1) * px, label: c.label })).filter(c => c.x + c.w > 0 && c.x < W);
+  const sPos = useMemo(() => selPj ? ["arrivee", "production", "tests", "finProd", "depart"].map(s => L.pos[nodeKey(selPj, s)]).filter(Boolean) : [], [selPj, L]);
+
+  const label = it => it.pj + (px >= 9 && it.w > 170 && names[it.pj] ? "  " + names[it.pj] : "");
+  const aria = (it, l) => it.pj + ", " + STEP_LABEL[l.step] + ", " + (l.ms ? "le " + fmtIso(it.n.start) : "du " + fmtIso(it.n.start) + " au " + fmtIso(it.n.finish));
+
+  return (<div style={{ fontFamily: FONT, color: C.ink, background: C.bg }}>
+    <div ref={scrollRef} style={{ overflow: "auto", maxHeight: "calc(100vh - 230px)", minHeight: 320, position: "relative", cursor: panning ? "grabbing" : "default", userSelect: dragKey || panning ? "none" : "auto" }}>
+      <div style={{ width: LABEL_W + W, position: "relative" }}>
+        {/* en-tête */}
+        <div style={{ display: "flex", position: "sticky", top: 0, zIndex: 8, height: HEAD, background: C.bg, borderBottom: "1px solid " + C.line }}>
+          <div style={{ width: LABEL_W, flex: "none", position: "sticky", left: 0, zIndex: 9, background: C.bg, borderRight: "1px solid " + C.line, display: "flex", alignItems: "flex-end", justifyContent: "space-between", padding: "0 8px 6px 12px", boxSizing: "border-box" }}>
+            <span style={{ fontSize: 11, fontWeight: 500, letterSpacing: ".06em", textTransform: "uppercase", color: C.ink3 }}>Couloirs</span>
+            <span style={{ display: "inline-flex", gap: 2 }}>
+              {[["‹", -1, "Plus tôt"], ["›", 1, "Plus tard"]].map(([t, k, a]) => <button key={t} onClick={() => shift(k)} aria-label={a} title={a} style={{ width: 24, height: 22, border: "1px solid " + C.line, background: C.bg, color: C.ink2, borderRadius: 4, cursor: "pointer", fontSize: 14, lineHeight: 1, padding: 0 }}>{t}</button>)}
+            </span>
+          </div>
+          <div style={{ position: "relative", width: W, flex: "none" }}>
+            {head.top.map((m, i) => <div key={i} style={{ position: "absolute", left: m.x, width: m.w, top: 0, height: HEAD1, borderLeft: "1px solid " + C.line, padding: "4px 8px", fontSize: 11.5, fontWeight: 500, color: C.ink2, whiteSpace: "nowrap", overflow: "hidden", boxSizing: "border-box" }}>{m.w > 60 ? m.label : ""}</div>)}
+            {head.bottom.map((m, i) => <div key={i} style={{ position: "absolute", left: m.x, width: m.w, top: HEAD1, height: HEAD2, borderLeft: "1px solid " + C.line2, display: "flex", flexDirection: "column", alignItems: tl.zoom === "day" ? "center" : "flex-start", justifyContent: "center", paddingLeft: tl.zoom === "day" ? 0 : 6, fontSize: 10.5, color: m.we ? "#9CA3AF" : C.ink3, fontWeight: m.cur || m.today ? 700 : 400, background: m.cur ? "#EEF4FA" : "transparent", boxSizing: "border-box", overflow: "hidden", lineHeight: 1.15 }}>
+              {tl.zoom === "day" && <span style={{ fontSize: 9, color: "#9CA3AF" }}>{m.sub}</span>}<span style={m.today ? { background: C.accent, color: "#fff", borderRadius: 8, padding: "0 5px" } : undefined}>{m.label}</span></div>)}
+            {showGauge && Array.from({ length: Math.ceil((tl.hi - lo + 1) / 7) }, (_, i) => {
+              const n = lo + i * 7, w = wmap.get(isoOfDay(n)); if (!w) return null; const r = w.cap > 0 ? w.hours / w.cap : (w.hours > 0 ? 9 : 0); const over = w.over;
+              return (<div key={"g" + i} title={Math.round(w.hours) + " h planifiées / " + Math.round(w.cap) + " h de capacité"} style={{ position: "absolute", left: i * 7 * px + 3, width: 7 * px - 6, top: HEAD1 + HEAD2 + 7, height: 4, borderRadius: 2, background: C.line2 }}>
+                <div style={{ width: Math.min(100, r * 100) + "%", height: "100%", borderRadius: 2, background: over ? C.bad : r > 0.85 ? C.warn : C.ok }} />
+                {px >= 10 && <span style={{ position: "absolute", left: 0, top: 5, fontSize: 9, fontFamily: MONO, color: over ? C.bad : C.ink3, whiteSpace: "nowrap" }}>{Math.round(w.hours)}</span>}
+              </div>);
+            })}
+          </div>
+        </div>
+
+        {/* corps */}
+        <div style={{ display: "flex", position: "relative", height: L.H }}>
+          <div style={{ width: LABEL_W, flex: "none", position: "sticky", left: 0, zIndex: 6, background: C.bg, borderRight: "1px solid " + C.line }}>
+            {L.lanes.map(l => (<div key={l.id} style={{ position: "absolute", top: l.y, left: 0, right: 0, height: l.h, borderBottom: "1px solid " + C.line, background: l.ms ? C.panel : C.bg, padding: "8px 12px", boxSizing: "border-box" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                <span style={{ width: 8, height: 8, background: STEP_COLOR[l.step], borderRadius: l.ms ? 1 : 2, transform: l.ms ? "rotate(45deg)" : "none", flex: "none" }} />
+                <span style={{ fontSize: 12, fontWeight: 500, color: C.ink }}>{l.title}</span>
+              </div>
+              <div style={{ fontSize: 10.5, color: C.ink3, marginTop: 3, paddingLeft: 15 }}>{l.items.length} PJ{l.res && rules[l.res] ? " · 1 à la fois" : ""}</div>
+            </div>))}
+          </div>
+          <div style={{ position: "relative", width: W, flex: "none" }} onPointerDown={e => { if (e.target === e.currentTarget || e.target.dataset.bg) { setSel(null); if (scrollRef.current) { pan.current = { x0: e.clientX, s0: scrollRef.current.scrollLeft }; setPanning(true); } } }}>
+            {L.lanes.map(l => <div key={l.id} data-bg="1" style={{ position: "absolute", left: 0, right: 0, top: l.y, height: l.h, borderBottom: "1px solid " + C.line, background: l.ms ? C.panel : "transparent", cursor: "grab" }} />)}
+            {px >= 8 && Array.from({ length: Math.ceil((tl.hi - lo + 1) / 7) }, (_, i) => <div key={"we" + i} data-bg="1" style={{ position: "absolute", left: (i * 7 + 5) * px, width: 2 * px, top: 0, bottom: 0, background: "rgba(17,24,39,.035)", cursor: "grab" }} />)}
+            {closures.map((c, i) => <div key={i} title={c.label} style={{ position: "absolute", left: c.x, width: c.w, top: 0, bottom: 0, background: "rgba(180,83,9,.08)", pointerEvents: "none" }} />)}
+            {head.bottom.map((m, i) => <div key={"v" + i} style={{ position: "absolute", left: m.x, top: 0, bottom: 0, width: 1, background: C.line2, pointerEvents: "none" }} />)}
+            <div title="Aujourd'hui" style={{ position: "absolute", left: todayX - 0.5, top: 0, bottom: 0, width: 1, background: C.bad, opacity: 0.7, zIndex: 3, pointerEvents: "none" }} />
+            {/* liaison du PJ sélectionné d'un couloir à l'autre */}
+            {sPos.length > 1 && <svg width={W} height={L.H} style={{ position: "absolute", left: 0, top: 0, pointerEvents: "none", zIndex: 4 }} aria-hidden="true">
+              {sPos.slice(1).map((b, i) => { const a = sPos[i]; const x1 = a.ms ? a.cx : a.x + a.w, x2 = b.ms ? b.cx : b.x; const mx = (x1 + x2) / 2; return <path key={i} d={"M" + x1 + "," + a.cy + " C" + mx + "," + a.cy + " " + mx + "," + b.cy + " " + x2 + "," + b.cy} fill="none" stroke={C.accent} strokeWidth={1.25} opacity={0.75} />; })}
+            </svg>}
+            {L.lanes.map(l => l.items.map(it => {
+              const on = sel && sel.pj === it.pj && (!sel.step || sel.step === l.step); const dim = selPj && selPj !== it.pj; const ch = changed.has(it.key);
+              const col = STEP_COLOR[l.step]; const n = it.n; const pinned = n.driver === "snet" && !l.ms;
+              const rank = l.res && rules[l.res] ? ranks[l.res].indexOf(it.pj) + 1 : 0;
+              const common = { tabIndex: 0, role: "button", "aria-label": aria(it, l), "aria-pressed": !!on, onKeyDown: e => onKey(e, it, l.step, !!l.ms), title: it.pj + (names[it.pj] ? " · " + names[it.pj] : "") + "\n" + STEP_LABEL[l.step] + " : " + fmtIso(n.start) + (l.ms ? "" : " → " + fmtIso(n.finish) + " (" + n.dur + " j)") + (readOnly ? "" : "\nGlisser pour déplacer") };
+              if (l.ms) {
+                const y = it.y; return (<div key={it.key} {...common} onPointerDown={e => startDrag(e, { kind: "move", pj: it.pj, step: l.step, key: it.key, node: n })} onClick={() => setSel({ pj: it.pj, step: l.step })}
+                  style={{ position: "absolute", left: it.cx - 6, top: y, height: BH, display: "flex", alignItems: "center", gap: 6, opacity: dim ? 0.3 : 1, cursor: readOnly ? "default" : "grab", zIndex: on ? 5 : 2, whiteSpace: "nowrap" }}>
+                  <span style={{ width: 11, height: 11, background: col, transform: "rotate(45deg)", borderRadius: 1.5, outline: on ? "2px solid " + C.ink : ch ? "2px dashed #E08A00" : "none", outlineOffset: 2, flex: "none", marginLeft: 0 }} />
+                  <span style={{ fontSize: 11, fontWeight: on ? 700 : 500, color: on ? C.ink : C.ink2, fontFamily: MONO }}>{it.pj}</span>
+                </div>);
+              }
+              return (<div key={it.key} {...common} onPointerDown={e => startDrag(e, { kind: "move", pj: it.pj, step: l.step, key: it.key, node: n })} onClick={() => setSel({ pj: it.pj, step: l.step })}
+                style={{ position: "absolute", left: it.x, top: it.y, width: it.w, height: BH, borderRadius: 3, background: col, opacity: dim ? 0.28 : 1, outline: on ? "2px solid " + C.ink : ch ? "2px dashed #E08A00" : "none", outlineOffset: 1, display: "flex", alignItems: "center", padding: "0 6px", gap: 5, color: "#fff", fontSize: 10.5, fontWeight: 500, overflow: "hidden", whiteSpace: "nowrap", cursor: readOnly ? "default" : "grab", zIndex: on ? 5 : 2, boxSizing: "border-box" }}>
+                {rank > 0 && it.w > 36 && <span style={{ fontFamily: MONO, fontSize: 9.5, background: "rgba(255,255,255,.25)", borderRadius: 3, padding: "0 3px", flex: "none" }}>{rank}</span>}
+                <span style={{ fontFamily: MONO, pointerEvents: "none", overflow: "hidden", textOverflow: "ellipsis" }}>{it.w > 44 ? label(it) : ""}</span>
+                {it.w > 96 && <span style={{ marginLeft: "auto", opacity: 0.85, pointerEvents: "none", flex: "none", fontFamily: MONO }}>{n.dur} j</span>}
+                {pinned && <span aria-hidden="true" style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: "rgba(0,0,0,.35)" }} />}
+                {!readOnly && <span onPointerDown={e => startDrag(e, { kind: "resize", pj: it.pj, step: l.step, key: it.key, node: n })} style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 6, cursor: "ew-resize", background: "rgba(0,0,0,.22)" }} />}
+              </div>);
+            }))}
+          </div>
+        </div>
+      </div>
+    </div>
+    {dragKey && tip && <div ref={tipRef} style={{ position: "fixed", left: 0, top: 0, zIndex: 10001, background: C.ink, color: "#fff", borderRadius: 4, padding: "3px 8px", fontSize: 11.5, fontWeight: 500, pointerEvents: "none" }}>{tip}</div>}
+    <div style={{ display: "flex", gap: 16, flexWrap: "wrap", padding: "6px 14px 8px", fontSize: 11, color: C.ink3, borderTop: "1px solid " + C.line }}>
+      <span>Glisser une barre : déplacer · bord droit : durée · glisser le fond : parcourir les dates · ← → au clavier</span>
+      {(rules.prod || rules.banc) && <span>Chiffre dans la barre = rang de passage</span>}
+      <span>Trait sombre à gauche = date imposée</span>
+    </div>
+  </div>);
+}

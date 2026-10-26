@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { initializeFirestore } from "firebase/firestore";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 const firebaseConfig = {
@@ -13,7 +13,8 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+// ignoreUndefinedProperties : un champ « undefined » (ex. groupPjs d'un retard sur un seul PJ) est ignoré au lieu de faire échouer l'enregistrement.
+export const db = initializeFirestore(app, { ignoreUndefinedProperties: true });
 
 // ── Authentification ───────────────────────────────────────────
 // Connexion restreinte aux comptes Google du domaine @enogia.com.

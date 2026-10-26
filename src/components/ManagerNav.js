@@ -1,0 +1,124 @@
+// v158 — Navigation de l'espace Manager : rail latéral groupé (réductible, sous-onglets en accordéon) + palette « Aller à… » (Ctrl K).
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { T, FZ } from "../theme";
+import { NavIcon } from "./SharedUI";
+
+const LS_COLLAPSED = "enogia_manager_rail_min", LS_RECENT = "enogia_manager_recent";
+const lsGet = (k, d) => { try { const v = window.localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
+const lsSet = (k, v) => { try { window.localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* stockage indisponible : sans effet */ } };
+export const useRailCollapsed = () => { const [m, setM] = useState(() => !!lsGet(LS_COLLAPSED, false)); return [m, v => { setM(v); lsSet(LS_COLLAPSED, v); }]; };
+const fold = s => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
+// Aplatit les entrées du menu en « destinations » (une par sous-onglet, ou une par onglet sans sous-onglet), utilisées par la palette.
+export function leavesOf(groups) {
+  const out = [];
+  groups.forEach(g => g.entries.forEach(e => {
+    if (e.subs) e.subs.forEach(s => out.push({ key: e.id + ":" + s.id, label: e.label + " › " + s.label, group: g.label, icon: e.icon, lock: e.lock, go: s.go, hay: fold(e.label + " " + s.label + " " + g.label + " " + (e.hint || "")) }));
+    else out.push({ key: e.id + ":", label: e.label, group: g.label, icon: e.icon, lock: e.lock, go: e.go, hay: fold(e.label + " " + g.label + " " + (e.hint || "")) });
+  }));
+  return out;
+}
+
+export function ManagerRail({ groups, activeId, activeSub, onGo, collapsed, setCollapsed, phone }) {
+  const w = collapsed ? 58 : 216;
+  if (phone) return (<nav aria-label="Navigation Manager" style={{ display: "flex", gap: 4, overflowX: "auto", paddingBottom: 4, borderBottom: "1px solid " + T.line }}>
+    {groups.flatMap(g => g.entries).map(e => { const on = e.id === activeId; return (
+      <button key={e.id} onClick={() => onGo(e.go)} aria-current={on ? "page" : undefined} style={{ flex: "none", display: "flex", alignItems: "center", gap: 6, padding: "7px 11px", border: "none", borderBottom: "2px solid " + (on ? T.teal500 : "transparent"), background: "transparent", color: on ? T.teal600 : T.ink500, fontWeight: on ? 700 : 600, fontSize: FZ.sm, cursor: "pointer", fontFamily: T.font }}><NavIcon name={e.icon} size={15} />{e.label}</button>); })}
+  </nav>);
+  return (<nav aria-label="Navigation Manager" style={{ width: w, flex: "none", transition: "width .28s var(--e-ease)", position: "sticky", top: 8, alignSelf: "flex-start", background: T.surface, border: "1px solid " + T.line, borderRadius: 14, padding: "8px 8px 10px", display: "flex", flexDirection: "column", gap: 2, overflow: "hidden", fontFamily: T.font }}>
+    {groups.map(g => (<div key={g.label} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+      <div style={{ fontSize:11, fontWeight: 700, letterSpacing: ".09em", textTransform: "uppercase", color: T.ink500, padding: collapsed ? "6px 0 2px" : "10px 10px 3px", whiteSpace: "nowrap", textAlign: collapsed ? "center" : "left", overflow: "hidden", height: collapsed ? 14 : "auto", transition: "padding .2s" }}>{collapsed ? "·" : g.label}</div>
+      {g.entries.map(e => { const on = e.id === activeId; return (<React.Fragment key={e.id}>
+        <button onClick={() => onGo(e.go)} title={collapsed ? e.label : undefined} aria-current={on ? "page" : undefined}
+          style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", border: "none", borderRadius: 9, padding: collapsed ? "9px 0" : "8px 10px", justifyContent: collapsed ? "center" : "flex-start", background: on ? T.card : "transparent", boxShadow: on ? T.shadowSm : "none", color: on ? T.ink900 : T.ink500, fontWeight: on ? 700 : 500, fontSize: FZ.sm, cursor: "pointer", fontFamily: T.font, textAlign: "left", whiteSpace: "nowrap" }}
+          onMouseEnter={x => { if (!on) { x.currentTarget.style.background = T.card; x.currentTarget.style.color = T.ink900; } }} onMouseLeave={x => { if (!on) { x.currentTarget.style.background = "transparent"; x.currentTarget.style.color = T.ink500; } }}>
+          <span style={{ display: "inline-flex", color: on ? T.teal500 : "inherit", flex: "none" }}><NavIcon name={e.icon} size={17} /></span>
+          {!collapsed && <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>{e.label}</span>}
+          {!collapsed && e.badge > 0 && <span style={{ fontSize: 11, fontWeight: 700, background: T.red500, color: "#fff", borderRadius: 99, padding: "0 6px", minWidth: 18, textAlign: "center" }}>{e.badge}</span>}
+          {!collapsed && e.lock && <span style={{ fontSize:11, fontWeight: 700, color: T.amber600, background: T.amber100, padding: "1px 6px", borderRadius: 99 }}>Admin</span>}
+        </button>
+        {e.subs && !collapsed && <div style={{ display: "grid", gridTemplateRows: on ? "1fr" : "0fr", transition: "grid-template-rows .28s var(--e-ease)" }}>
+          <div style={{ overflow: "hidden", minHeight: 0 }}>
+            <div style={{ display: "flex", flexDirection: "column", margin: "2px 0 4px 19px", paddingLeft: 6, borderLeft: "2px solid " + T.line }}>
+              {e.subs.map(s => { const sOn = on && s.id === activeSub; return (
+                <button key={s.id} tabIndex={on ? 0 : -1} onClick={() => onGo(s.go)} aria-current={sOn ? "page" : undefined}
+                  style={{ border: "none", background: sOn ? T.teal100 : "transparent", textAlign: "left", padding: "5px 10px", borderRadius: 7, color: sOn ? T.teal600 : T.ink500, fontWeight: sOn ? 700 : 500, fontSize: FZ.sm, cursor: "pointer", fontFamily: T.font, whiteSpace: "nowrap" }}
+                  onMouseEnter={x => { if (!sOn) x.currentTarget.style.color = T.ink900; }} onMouseLeave={x => { if (!sOn) x.currentTarget.style.color = T.ink500; }}>{s.label}</button>); })}
+            </div>
+          </div>
+        </div>}
+      </React.Fragment>); })}
+    </div>))}
+    <button onClick={() => setCollapsed(!collapsed)} aria-label={collapsed ? "Agrandir le menu" : "Réduire le menu"} title={collapsed ? "Agrandir le menu" : "Réduire le menu"}
+      style={{ marginTop: 8, border: "1px solid " + T.line, background: T.card, borderRadius: 9, padding: 6, display: "flex", justifyContent: "center", color: T.ink500, cursor: "pointer" }}>
+      <span style={{ display: "inline-flex", transform: "rotate(" + (collapsed ? "-90deg" : "90deg") + ")", transition: "transform .28s var(--e-ease)" }}><NavIcon name="chevronDown" size={15} /></span>
+    </button>
+  </nav>);
+}
+
+// Ligne du haut : fil d'Ariane + bouton « Aller à… »
+export function ManagerCrumb({ parts, onOpenPalette }) {
+  return (<div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", minWidth: 0 }}>
+    <div style={{ flex: 1, minWidth: 140, fontSize: FZ.sm, color: T.ink500, display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }} aria-label="Fil d'Ariane">
+      {parts.map((p, i) => <React.Fragment key={i}>{i > 0 && <span aria-hidden="true" style={{ color: T.ink300 }}>›</span>}{i === parts.length - 1 ? <h1 style={{ margin: 0, font: "inherit", color: T.ink900, fontWeight: 700 }}>{p}</h1> : <span style={{ color: T.ink500, fontWeight: 500 }}>{p}</span>}</React.Fragment>)}
+    </div>
+    <button onClick={onOpenPalette} aria-label="Aller à… (Ctrl K)" style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 210, border: "1px solid " + T.line, background: T.surface, borderRadius: 10, padding: "6px 10px 6px 12px", color: T.ink500, fontSize: FZ.sm, cursor: "pointer", fontFamily: T.font }}>
+      <NavIcon name="search" size={15} /><span>Aller à…</span>
+      <kbd style={{ marginLeft: "auto", fontFamily: T.font, fontSize: 11, fontWeight: 600, border: "1px solid " + T.line, borderRadius: 5, padding: "1px 6px", background: T.card, color: T.ink500 }}>Ctrl K</kbd>
+    </button>
+  </div>);
+}
+
+export function ManagerPalette({ groups, data, onGo, onOpenPj, onClose, activeKey, storageKey = LS_RECENT }) {
+  const [q, setQ] = useState(""), [sel, setSel] = useState(0), [recent] = useState(() => lsGet(storageKey, []));
+  const ref = useRef(null), listRef = useRef(null);
+  const leaves = useMemo(() => leavesOf(groups), [groups]);
+  const items = useMemo(() => {
+    const f = fold(q.trim());
+    if (!f) {
+      const rec = recent.map(k => leaves.find(l => l.key === k)).filter(l => l && l.key !== activeKey);
+      const rest = leaves.filter(l => !rec.includes(l) && l.key !== activeKey);
+      return [...(rec.length ? [{ head: "Récents" }] : []), ...rec, { head: "Destinations" }, ...rest];
+    }
+    const nav = leaves.filter(l => f.split(/\s+/).every(w => (" " + l.hay).includes(" " + w)));
+    const pjs = f.length >= 2 ? (data || []).filter(r => r && r.pj && r.etat !== "SLOT_LIBRE" && fold(r.pj + " " + (r.nomProjet || r.client || "")).includes(f)).slice(0, 5).map(r => ({ pjRow: r, key: "pj:" + r.pj, label: "Fiche " + r.pj + (r.nomProjet ? " · " + r.nomProjet : ""), icon: "list", group: "Projet" })) : [];
+    const out = [];
+    if (nav.length) out.push({ head: "Aller à" }, ...nav);
+    if (pjs.length) out.push({ head: "Ouvrir une fiche projet" }, ...pjs);
+    return out;
+  }, [q, leaves, recent, data, activeKey]);
+  const real = items.filter(i => !i.head);
+  useEffect(() => { if (ref.current) ref.current.focus(); }, []);
+  useEffect(() => { setSel(0); }, [q]);
+  useEffect(() => { const el = listRef.current && listRef.current.querySelector("[data-sel='1']"); if (el && el.scrollIntoView) el.scrollIntoView({ block: "nearest" }); }, [sel, items]);
+  const choose = it => { if (!it) return; if (it.pjRow) onOpenPj(it.pjRow.pj); else { lsSet(storageKey, [it.key, ...recent.filter(k => k !== it.key)].slice(0, 3)); onGo(it.go); } onClose(); };
+  const keyDown = e => {
+    if (e.key === "Escape") { e.preventDefault(); onClose(); }
+    else if (e.key === "ArrowDown") { e.preventDefault(); setSel(s => real.length ? (s + 1) % real.length : 0); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setSel(s => real.length ? (s - 1 + real.length) % real.length : 0); }
+    else if (e.key === "Enter") { e.preventDefault(); choose(real[sel]); }
+  };
+  let n = -1;
+  return (<div onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(8,12,28,.45)", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "min(14vh,110px) 16px 16px", animation: "enogiaFadeIn .18s ease" }}>
+    <div role="dialog" aria-modal="true" aria-label="Aller à…" onKeyDown={keyDown} style={{ width: "min(560px,100%)", background: T.card, border: "1px solid " + T.line, borderRadius: 16, boxShadow: "0 24px 70px rgba(0,0,0,.35)", overflow: "hidden", animation: "enogiaPop .24s var(--e-ease)", fontFamily: T.font }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 16px", borderBottom: "1px solid " + T.line, color: T.ink500 }}>
+        <NavIcon name="search" size={17} />
+        <input ref={ref} value={q} onChange={e => setQ(e.target.value)} placeholder="Aller à… (ex. dérives, cash, accès, PJ2003)" aria-label="Rechercher une destination" autoComplete="off"
+          style={{ flex: 1, border: "none", outline: "none", background: "transparent", color: T.ink900, fontSize: FZ.md, padding: "15px 0", fontFamily: T.font }} />
+      </div>
+      <div ref={listRef} role="listbox" style={{ maxHeight: 340, overflowY: "auto", padding: 6 }}>
+        {items.map((it, i) => { if (it.head) return <div key={"h" + i} style={{ fontSize:11, fontWeight: 700, letterSpacing: ".09em", textTransform: "uppercase", color: T.ink500, padding: "8px 12px 3px" }}>{it.head}</div>;
+          n++; const on = n === sel, idx = n; return (
+            <div key={it.key} role="option" aria-selected={on} data-sel={on ? "1" : "0"} onMouseEnter={() => setSel(idx)} onMouseDown={e => { e.preventDefault(); choose(it); }}
+              style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 12px", borderRadius: 9, cursor: "pointer", background: on ? T.teal100 : "transparent", color: T.ink900, fontSize: FZ.sm }}>
+              <span style={{ display: "inline-flex", color: T.teal500 }}><NavIcon name={it.icon} size={16} /></span>
+              <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: on ? 700 : 500 }}>{it.label}</span>
+              {it.lock && <span style={{ fontSize:11, fontWeight: 700, color: T.amber600, background: T.amber100, padding: "1px 6px", borderRadius: 99 }}>Admin</span>}
+              <span style={{ fontSize: FZ.xs, color: T.ink500, minWidth: 14, textAlign: "right" }}>{on ? "↵" : it.lock ? "" : it.group}</span>
+            </div>); })}
+        {real.length === 0 && <div style={{ padding: "18px 14px", fontSize: FZ.sm, color: T.ink500 }}>Aucun résultat pour « {q} ».</div>}
+      </div>
+      <div style={{ display: "flex", gap: 16, padding: "8px 16px", borderTop: "1px solid " + T.line, fontSize: FZ.xs, color: T.ink500 }}><span>↑↓ naviguer</span><span>↵ ouvrir</span><span>Échap fermer</span></div>
+    </div>
+  </div>);
+}

@@ -1,5 +1,5 @@
 import React from "react";
-import { T } from "./theme";
+import { T, FZ, mixHex } from "./theme";
 
 // Corrections manuelles de gamme, prioritaires sur ce qui est importé/deviné — s'appliquent immédiatement, sans réimport.
 export const GAMME_OVERRIDE={
@@ -179,7 +179,7 @@ export const ALL_PAYS=Object.keys(COUNTRY_ISO).sort();
 export function driftColor(drift){
   if(drift==null||drift<=0)return null; // pas de décalage ou en avance : pas de pastille
   if(drift<=5)return T.amber500;
-  if(drift<=15)return"#e8821a";
+  if(drift<=15)return T.ember500;
   return T.red500;
 }
 export function DriftDot({drift,size}){
@@ -203,15 +203,37 @@ export const PRESENCE_KINDS=["client","nobo","both"];
 // Teintes demandées « légères » : client = violet doux, NOBO = orange doux. « color » = liseré/accent
 // (moyen), « bg » = fond pastel de la pastille, « ink » = texte foncé lisible sur le pastel (clair ou sombre).
 export const PRESENCE_META={
-  client:{key:"client",label:"Client",short:"Client",color:"#A18CE0",bg:"#E4DCFA",ink:"#4A3A8F"},
-  nobo:{key:"nobo",label:"NOBO",short:"NOBO",color:"#F0A55C",bg:"#FFE2C2",ink:"#8A4A0C"},
-  both:{key:"both",label:"Client + NOBO",short:"Les deux",color:"#A18CE0",color2:"#F0A55C",bg:"#E4DCFA",bg2:"#FFE2C2",ink:"#4D3F6B"},
+  client:{key:"client",label:"Client",short:"Client",color:"#B9AACD",bg:"#E8E2F0",ink:"#4B3F6B"},
+  nobo:{key:"nobo",label:"NOBO",short:"NOBO",color:"#E3B590",bg:"#F8E6D6",ink:"#7A4A20"},
+  both:{key:"both",label:"Client + NOBO",short:"Les deux",color:"#B9AACD",color2:"#E3B590",bg:"#E8E2F0",bg2:"#F8E6D6",ink:"#4B3F6B"},
 };
 // Anciennes saisies (« present:true » sans « who », faites avant ce choix) = les deux, comme
 // l'ancien libellé « Client/NOBO présent » — aucune donnée n'est perdue ni réécrite.
 export function presenceKind(cp){
   if(!cp||!cp.present)return null;
   return PRESENCE_KINDS.includes(cp.who)?cp.who:"both";
+}
+// v146.11 : une date pour le client ET une date pour NOBO. { present, who, dateClient, dateNobo } ; « date » (ancien champ, = la plus proche)
+// reste renseigné pour les anciens affichages et sert de valeur de repli.
+export function presenceDates(cp){
+  if(!cp||!cp.present)return {};
+  const k=presenceKind(cp),base=cp.date||"",o={};
+  if(k==="client"||k==="both")o.client=cp.dateClient||base;
+  if(k==="nobo"||k==="both")o.nobo=cp.dateNobo||base;
+  return o;
+}
+export function presenceFirstDate(cp){return Object.values(presenceDates(cp)).filter(Boolean).sort()[0]||"";}
+const fdmIso=d=>String(d).slice(8,10)+"/"+String(d).slice(5,7);
+// « 21/10 » ou « C 21/10 · N 23/10 » quand les deux dates diffèrent
+export function presenceDateText(cp){
+  const d=presenceDates(cp),c=d.client,n=d.nobo;
+  if(c&&n&&c!==n)return "C "+fdmIso(c)+" · N "+fdmIso(n);
+  const one=c||n;return one?fdmIso(one):"";
+}
+// Type de présence (client / nobo / both) correspondant aux dates qui vérifient pred ; null si aucune
+export function presenceKindAt(cp,pred){
+  const d=presenceDates(cp),hit=["client","nobo"].filter(k=>d[k]&&pred(d[k]));
+  return hit.length===2?"both":hit[0]||null;
 }
 export function presenceBg(kind){
   const m=PRESENCE_META[kind];
@@ -222,13 +244,14 @@ export function presenceRing(kind){
   const m=PRESENCE_META[kind];
   return m.color2?"inset 4px 0 0 "+m.color+", inset -4px 0 0 "+m.color2:"inset 0 0 0 2px "+m.color;
 }
-export function PresenceChip({kind,date,compact,fontSize,tiny,short}){
+export function PresenceChip({kind,date,dates,compact,fontSize,tiny,short}){
   if(!kind)return null;
   const m=PRESENCE_META[kind];
   const fs=fontSize||(compact?11:12);
-  const dd=date?String(date).slice(8,10)+"/"+String(date).slice(5,7)+"/"+String(date).slice(2,4):"";
+  const two=dates&&dates.client&&dates.nobo&&dates.client!==dates.nobo;
+  const dd=two?"C "+fdmIso(dates.client)+" · N "+fdmIso(dates.nobo):date?String(date).slice(8,10)+"/"+String(date).slice(5,7)+"/"+String(date).slice(2,4):"";
   return(
-    <span title={"Présence "+m.label+" aux tests"+(date?" le "+date:"")} style={{display:"inline-flex",alignItems:"center",gap:4,background:presenceBg(kind),color:m.ink,boxShadow:m.color2?"none":"inset 0 0 0 1px "+m.color,borderRadius:compact?5:6,padding:compact?"1px 6px":"2px 8px",fontSize:fs,fontWeight:800,lineHeight:1.3,whiteSpace:"nowrap",fontFamily:T.font}}>
+    <span title={"Présence "+m.label+" aux tests"+(two?" — client le "+dates.client+", NOBO le "+dates.nobo:date?" le "+date:"")} style={{display:"inline-flex",alignItems:"center",gap:4,background:presenceBg(kind),color:m.ink,boxShadow:m.color2?"none":"inset 0 0 0 1px "+m.color,borderRadius:compact?5:6,padding:compact?"1px 6px":"2px 8px",fontSize:fs,fontWeight:800,lineHeight:1.3,whiteSpace:"nowrap",fontFamily:T.font}}>
       {!short&&<PersonIcon size={fs+1} color={m.ink}/>}{short?(kind==="client"?"C":kind==="nobo"?"N":"C+N"):tiny&&kind==="both"?"C + N":m.label}{dd&&!compact?" · "+dd:""}
     </span>
   );
@@ -241,7 +264,7 @@ export function CountryFlag({pays,size}){
   const iso=COUNTRY_ISO[pays];
   const h=size||14;
   if(!iso)return null;
-  return <img src={"https://flagcdn.com/"+iso+".svg"} alt={pays} style={{height:h,width:"auto",minWidth:h*1.3,borderRadius:2,verticalAlign:"middle",boxShadow:"0 0 0 1px rgba(0,0,0,.06)",background:T.surfaceAlt,objectFit:"cover"}}
+  return <img src={"https://flagcdn.com/"+iso+".svg"} alt={pays} style={{height:h,width:"auto",minWidth:h*1.3,borderRadius:4,verticalAlign:"middle",boxShadow:"0 0 0 1px rgba(0,0,0,.06)",background:T.surfaceAlt,objectFit:"cover"}}
     onError={e=>{e.target.style.display="none";}}/>;
 }
 
@@ -251,23 +274,55 @@ export const GAMME_COLORS={"180LTV3":"#5068b0","100LTV3":"#8a76b5","40LTV3":"#5a
 // Couleurs d'état sensibles au thème : T est muté en place au changement de mode, mais un objet figé
 // à l'import garderait les valeurs claires — d'où les accesseurs (lus à chaque rendu). En sombre : fonds
 // teintés très foncés + texte clair, au lieu des pastels clairs qui éblouissaient.
+// v164 : couleur d'état utilisable comme TEXTE sur une carte (clair : encre foncée de la teinte ; sombre : teinte éclaircie).
+export const etatInk=etat=>{const m=ETAT_META[etat]||ETAT_META["NOT ORDERED"];return T.mode==="dark"?m.bar:m.text;};
 const etatThemed=(light,dark,label)=>({
   get bg(){return(T.mode==="dark"?dark:light).bg;},
   get text(){return(T.mode==="dark"?dark:light).text;},
   get border(){return(T.mode==="dark"?dark:light).border;},
-  get bar(){return(T.mode==="dark"?dark:light).bar;},
+  get bar(){return T.mode==="dark"?dark.bar:mixHex(light.bar,T.card,.06);}, // v144 : point et camembert plus doux en clair
   label,
 });
 export const ETAT_META={
-  "SHIPPED":etatThemed({bg:"#e7f2ec",text:"#3d7a62",border:"#c7e1d4",bar:"#5a9e85"},{bg:"#14261F",text:"#7FCBA9",border:"#1F3D31",bar:"#4C9C7E"},"Expédiée"),
-  "PROD":etatThemed({bg:"#eaedf8",text:"#45548f",border:"#d2d8f0",bar:"#5068b0"},{bg:"#171E36",text:"#9FB0EC",border:"#26315A",bar:"#6580D0"},"Production ENOGIA"),
-  "En fabrication":etatThemed({bg:"#f6ede1",text:"#92653a",border:"#ecd9bf",bar:"#b68a56"},{bg:"#2A2114",text:"#E4BC82",border:"#46361F",bar:"#C79A5C"},"Fabrication FNR"),
-  "STOCKAGE_EXT":etatThemed({bg:"#eceef1",text:"#5c6672",border:"#dadfe4",bar:"#8a9199"},{bg:"#1E2429",text:"#A9B3BE",border:"#303942",bar:"#84909C"},"Stockage Externe"),
-  "NOT ORDERED":etatThemed({bg:"#f6e9e8",text:"#95453f",border:"#ecd2cf",bar:"#b86a63"},{bg:"#2D1A1A",text:"#F0A29C",border:"#4A2A2A",bar:"#D0746C"},"Non commandée"),
+  // v162 : palette B (teintes franches : fond = 18 % de la couleur en clair, point/liseré = couleur pleine). Ancien : v146.10 : teintes plus soutenues (fonds, liserés et texte un cran plus foncés). « Production ENOGIA » est remplacée par les 4 étapes de production.
+  "SHIPPED":etatThemed({bg:"#DFEFD6",text:"#1A390A",border:"#B4DAA0",bar:"#4CA81E"},{bg:"#4A6359",text:"#F5F7FC",border:"#6F9768",bar:"#94CB78"},"Expédiée"),
+  "MONTAGE":etatThemed({bg:"#E7DFF9",text:"#2A1A4A",border:"#C8B4F0",bar:"#7C4DDB"},{bg:"#5C5887",text:"#F5F7FC",border:"#8676B8",bar:"#B094E9"},"Montage Méca"),
+  "ELEC":etatThemed({bg:"#D6E3F9",text:"#0A224C",border:"#A0BDF2",bar:"#1D63E0"},{bg:"#465E89",text:"#F5F7FC",border:"#5E80BA",bar:"#77A1EC"},"Montage Élec"),
+  "TESTS":etatThemed({bg:"#D3EAEF",text:"#042F39",border:"#99CEDA",bar:"#0C8AA8"},{bg:"#406277",text:"#F5F7FC",border:"#568EA1",bar:"#6DB9CB"},"Tests"),
+  "PACKAGING":etatThemed({bg:"#D4EDE6",text:"#053527",border:"#9AD6C5",bar:"#0F9D74"},{bg:"#3F636B",text:"#F5F7FC",border:"#57948C",bar:"#6FC4AC"},"Packaging"),
+  "En fabrication":etatThemed({bg:"#E4E7EB",text:"#242831",border:"#C1C6D0",bar:"#6B778F"},{bg:"#545E72",text:"#F5F7FC",border:"#7D8697",bar:"#A6ADBC"},"Fabrication FNR"),
+  "STOCKAGE_EXT":etatThemed({bg:"#DFE1E6",text:"#1B1F27",border:"#B5BAC4",bar:"#4F5B72"},{bg:"#545E71",text:"#F5F7FC",border:"#747E8E",bar:"#959DAA"},"Stockage Externe"),
+  "NOT ORDERED":etatThemed({bg:"#F9EAD1",text:"#4C2F00",border:"#F2CE94",bar:"#E08A00"},{bg:"#655C53",text:"#F5F7FC",border:"#A88A5C",bar:"#ECB966"},"Non commandée"),
+  "NON_DESIGNEE":etatThemed({bg:"#EAECEF",text:"#303339",border:"#CFD2DA",bar:"#8C95A8"},{bg:"#545E72",text:"#F5F7FC",border:"#878E9E",bar:"#BABFCB"},"Non Designée"),
+  "SLOT_LIBRE":etatThemed({bg:"#D6D9E0",text:"#090E1D",border:"#9FA6B8",bar:"#1B2A55"},{bg:"#545D77",text:"#F5F7FC",border:"#656E88",bar:"#767F99"},"Slot libre"),
   "A_DEFINIR":{get bg(){return T.surfaceAlt;},get text(){return T.ink500;},get border(){return T.ink100;},get bar(){return T.ink300;},label:"À définir"},
 };
 export const ALL_ETATS=Object.keys(ETAT_META);
 export const ASSIGNABLE_ETATS=ALL_ETATS.filter(e=>e!=="A_DEFINIR");
+
+// ── v146.18 : états créés par l'utilisateur (Manager › Réglages › États). Stockés dans planning/overrides.customEtats : [{id,label,color}].
+// ETAT_META / ALL_ETATS / ASSIGNABLE_ETATS sont complétés sur place : tous les écrans qui les lisent voient les nouveaux états.
+const lum=h=>{const p=String(h).replace("#","");const c=[0,2,4].map(i=>parseInt(p.slice(i,i+2),16)/255).map(v=>v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4));return .2126*c[0]+.7152*c[1]+.0722*c[2];};
+export const contrastRatio=(a,b)=>{const x=lum(a),y=lum(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05);};
+const readable=(color,bg,toward)=>{for(let t=.3;t<=1.001;t+=.05){const c=mixHex(color,toward,t);if(contrastRatio(c,bg)>=4.6)return c;}return toward;};
+export function etatColors(color){
+  const c=/^#[0-9a-f]{6}$/i.test(color||"")?color:"#6b7f99";
+  const lbg=mixHex(c,"#ffffff",.8),dbg=mixHex(c,"#101826",.64);
+  return{light:{bg:lbg,text:readable(c,lbg,"#000000"),border:mixHex(c,"#ffffff",.5),bar:c},dark:{bg:dbg,text:readable(c,dbg,"#ffffff"),border:mixHex(c,"#101826",.3),bar:mixHex(c,"#ffffff",.12)}};
+}
+let CUSTOM_IDS=[];
+export function registerCustomEtats(list){
+  CUSTOM_IDS.forEach(id=>{delete ETAT_META[id];});
+  CUSTOM_IDS=[];
+  (Array.isArray(list)?list:[]).forEach(e=>{
+    if(!e||!e.id||!e.label||ETAT_META[e.id])return;
+    const k=etatColors(e.color);ETAT_META[e.id]=etatThemed(k.light,k.dark,String(e.label));CUSTOM_IDS.push(e.id);
+  });
+  ALL_ETATS.length=0;Object.keys(ETAT_META).forEach(k=>ALL_ETATS.push(k));
+  ASSIGNABLE_ETATS.length=0;ALL_ETATS.filter(e=>e!=="A_DEFINIR").forEach(k=>ASSIGNABLE_ETATS.push(k));
+  return[...CUSTOM_IDS];
+}
+export const isCustomEtat=id=>CUSTOM_IDS.includes(id);
 
 // Bloc "Projet" partagé entre le Gantt et le Calendrier (demandé explicitement : "je dois avoir les
 // même type de projet entre le gantt et le calendrier ça doit être un copier coller") — un seul
@@ -278,24 +333,28 @@ export const ASSIGNABLE_ETATS=ALL_ETATS.filter(e=>e!=="A_DEFINIR");
 export function SerieTag({pj,size=10.5,style}){
   const n=(getPjMeta(pj)||{}).numSerie;
   if(!n)return null;
-  return <span title={"N° de série : "+n} style={{display:"inline-block",fontFamily:T.fontMono,fontSize:size,fontWeight:600,color:T.ink500,background:T.surfaceAlt,borderRadius:5,padding:"0 6px",lineHeight:"17px",whiteSpace:"nowrap",flexShrink:0,...style}}>S/N {n}</span>;
+  return <span title={"N° de série : "+n} style={{display:"inline-block",fontVariantNumeric:"tabular-nums",fontSize:size,fontWeight:600,color:T.ink500,background:T.surfaceAlt,borderRadius:4,padding:"0 6px",lineHeight:"17px",whiteSpace:"nowrap",flexShrink:1,minWidth:0,maxWidth:"100%",overflow:"hidden",textOverflow:"ellipsis",...style}}>S/N {n}</span>;
 }
-export function ProjectLabelCell({pj,r,meta}){
+export function ProjectLabelCell({pj,r,meta,mark}){
   const c=ETAT_META[r.etat]||ETAT_META["NOT ORDERED"];
   // Le numéro de PJ et le nom du projet doivent TOUJOURS être lisibles (demandé explicitement) :
   // 1re ligne = pastille d'état + code + gamme, 2e ligne = drapeau + nom du projet sur toute la largeur
   // (la gamme n'est plus collée au nom, c'est elle qui faisait tronquer le nom). Infobulle = nom complet.
+  // v146.13 : 3 lignes, plus rien n'est tronqué — la colonne s'élargit au besoin (voir LEFT_W du Calendrier).
+  // Ligne 1 = pastille + code PJ + gamme + repère « modifié » ; ligne 2 = drapeau + nom du projet en entier ; ligne 3 = N° de série.
+  const sn=(meta&&meta.numSerie)||(getPjMeta(pj)||{}).numSerie;
   return(<>
     <div style={{display:"flex",alignItems:"center",gap:7,minWidth:0}}>
       <div style={{width:8,height:8,borderRadius:"50%",background:c.bar,flexShrink:0}}/>
-      <span style={{fontSize:14.5,fontWeight:700,color:T.teal600,fontFamily:T.fontMono,whiteSpace:"nowrap",flexShrink:0}}>{pj}</span>
-      <SerieTag pj={pj}/>
-      <span style={{fontStyle:"italic",fontSize:11,color:T.ink300,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",minWidth:0}}>{r.gamme}</span>
+      <span style={{fontSize:FZ.sm,fontWeight:700,color:T.teal600,fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap",flexShrink:0}}>{pj}</span>
+      {r.gamme&&<span className="enogia-hide-phone" title={"Gamme "+r.gamme} style={{fontSize:FZ.xs,fontWeight:700,color:T.ink700,background:T.surfaceAlt,borderRadius:4,padding:"0 6px",lineHeight:"16px",whiteSpace:"nowrap",flexShrink:0}}>{r.gamme}</span>}
+      {mark&&<span style={{marginLeft:"auto",flexShrink:0}}>{mark}</span>}
     </div>
     <div title={meta.nomProjet||""} style={{display:"flex",alignItems:"center",gap:6,paddingLeft:15,minWidth:0}}>
       <CountryFlag pays={meta.pays} size={11}/>
-      <span style={{fontSize:12.5,color:T.ink500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",minWidth:0}}>{meta.nomProjet}</span>
+      <span style={{fontSize:FZ.xs,fontWeight:500,color:T.ink700,whiteSpace:"nowrap",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",lineHeight:1.25}}>{meta.nomProjet}</span>
     </div>
+    {sn&&<div style={{paddingLeft:15,fontVariantNumeric:"tabular-nums",fontSize:11,fontWeight:600,color:T.ink500,whiteSpace:"nowrap",lineHeight:1.2}}>S/N {sn}</div>}
   </>);
 }
 export const ALL_GAMMES=Object.keys(GAMME_COLORS);

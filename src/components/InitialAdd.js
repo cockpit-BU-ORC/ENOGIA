@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { T } from "../theme";
+import { T, FZ } from "../theme";
 import { fmt } from "../parsers";
 import { NavIcon } from "./SharedUI";
 
@@ -22,17 +22,17 @@ export function InitialAddReview({parsed,initialData,onConfirm,onCancel,busy}){
   const [off,setOff]=useState(()=>new Set());
   const chosen=fresh.filter(r=>!off.has(r.pj));
   const toggle=pj=>setOff(s=>{const n=new Set(s);n.has(pj)?n.delete(pj):n.add(pj);return n;});
-  const th={textAlign:"left",padding:"6px 10px",fontSize:12,fontWeight:700,color:T.ink500,whiteSpace:"nowrap"};
-  const td={padding:"7px 10px",fontSize:13.5,color:T.ink700,whiteSpace:"nowrap"};
+  const th={textAlign:"left",padding:"6px 8px",fontSize:FZ.xs,fontWeight:700,color:T.ink500,whiteSpace:"nowrap"};
+  const td={padding:"8px 8px",fontSize:FZ.sm,color:T.ink700,whiteSpace:"nowrap"};
   return(<div onClick={onCancel} style={{position:"fixed",inset:0,background:"rgba(10,20,30,.45)",zIndex:10000,display:"flex",alignItems:"center",justifyContent:"center",padding:16,fontFamily:T.font}}>
-    <div onClick={e=>e.stopPropagation()} style={{background:T.card,borderRadius:16,boxShadow:T.shadowLg,border:"1px solid "+T.line,width:"min(640px,100%)",maxHeight:"88vh",overflow:"auto",padding:"20px 22px"}}>
-      <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:19,color:T.ink900,display:"flex",alignItems:"center",gap:9}}><NavIcon name="pin" size={18}/>Ajouter à l'initial</div>
-      <div style={{fontSize:14,color:T.ink500,marginTop:6,lineHeight:1.5}}>
+    <div onClick={e=>e.stopPropagation()} style={{background:T.card,borderRadius:16,boxShadow:T.shadowLg,border:"1px solid "+T.line,width:"min(640px,100%)",maxHeight:"88vh",overflow:"auto",padding:"20px 20px"}}>
+      <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.lg,color:T.ink900,display:"flex",alignItems:"center",gap:8}}><NavIcon name="pin" size={18}/>Ajouter à l'initial</div>
+      <div style={{fontSize:FZ.sm,color:T.ink500,marginTop:6,lineHeight:1.5}}>
         {fresh.length>0
           ?<>{fresh.length} nouveau{fresh.length>1?"x":""} projet{fresh.length>1?"s":""} trouvé{fresh.length>1?"s":""} dans le fichier. Ils seront ancrés avec les dates ci-dessous.</>
           :<>Aucun nouveau projet : tous les PJ du fichier sont déjà dans le planning initial.</>}
       </div>
-      {fresh.length>0&&<div style={{marginTop:12,border:"1px solid "+T.line,borderRadius:11,overflow:"auto"}}>
+      {fresh.length>0&&<div style={{marginTop:12,border:"1px solid "+T.line,borderRadius:12,overflow:"auto"}}>
         <table style={{width:"100%",borderCollapse:"collapse"}}>
           <thead><tr style={{background:T.surface}}><th style={th}></th><th style={th}>PJ</th><th style={th}>Arrivée</th><th style={th}>Tests</th><th style={th}>Fin prod</th><th style={th}>Départ</th></tr></thead>
           <tbody>{fresh.map(r=>{const on=!off.has(r.pj);return(
@@ -44,8 +44,8 @@ export function InitialAddReview({parsed,initialData,onConfirm,onCancel,busy}){
         </table>
       </div>}
       {changed.length>0&&<div style={{marginTop:12}}>
-        <div style={{fontSize:13,fontWeight:700,color:T.ink900,marginBottom:6}}>Corriger l'initial de PJ déjà ancrés <span style={{fontWeight:500,color:T.ink500}}>({fixChosen.length} coché{fixChosen.length>1?"s":""} · ancien → fichier)</span></div>
-        <div style={{border:"1px solid "+T.line,borderRadius:11,overflow:"auto",maxHeight:260}}>
+        <div style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,marginBottom:6}}>Corriger l'initial de PJ déjà ancrés <span style={{fontWeight:500,color:T.ink500}}>({fixChosen.length} coché{fixChosen.length>1?"s":""} · ancien → fichier)</span></div>
+        <div style={{border:"1px solid "+T.line,borderRadius:12,overflow:"auto",maxHeight:260}}>
           <table style={{width:"100%",borderCollapse:"collapse"}}>
             <thead><tr style={{background:T.surface,position:"sticky",top:0}}><th style={th}></th><th style={th}>PJ</th><th style={th}>Arrivée</th><th style={th}>Tests</th><th style={th}>Fin prod</th><th style={th}>Départ</th></tr></thead>
             <tbody>{changed.map(r=>{const on=fix.has(r.pj);const o=known[r.pj];
@@ -57,15 +57,15 @@ export function InitialAddReview({parsed,initialData,onConfirm,onCancel,busy}){
               </tr>);})}</tbody>
           </table>
         </div>
-        <div style={{marginTop:6,fontSize:12.5,color:T.ink300}}>Une copie de l'initial actuel est sauvegardée avant toute modification.</div>
+        <div style={{marginTop:6,fontSize:FZ.xs,color:T.ink300}}>Une copie de l'initial actuel est sauvegardée avant toute modification.</div>
       </div>}
-      <div style={{marginTop:12,fontSize:13.5,color:T.ink500,lineHeight:1.55,display:"flex",gap:8,alignItems:"flex-start"}}>
+      <div style={{marginTop:12,fontSize:FZ.sm,color:T.ink500,lineHeight:1.55,display:"flex",gap:8,alignItems:"flex-start"}}>
         <span style={{color:T.teal600,display:"inline-flex",marginTop:2}}><NavIcon name="pin" size={13}/></span>
         <span><b>{kept.length}</b> PJ déjà ancrés {changed.length>0?<>— dont <b>{changed.length}</b> avec des dates différentes dans ce fichier. Ils restent inchangés sauf si vous cochez ci-dessous ceux dont vous voulez <b>remettre les dates du fichier</b> comme référence initiale.</>:<>sont conservés tels quels.</>}</span>
       </div>
-      <div style={{display:"flex",justifyContent:"flex-end",gap:9,marginTop:16}}>
-        <button onClick={onCancel} style={{padding:"9px 16px",borderRadius:9,border:"1px solid "+T.line,background:"transparent",color:T.ink700,fontWeight:600,fontSize:14,cursor:"pointer",fontFamily:T.font}}>Annuler</button>
-        <button disabled={busy||(chosen.length+fixChosen.length)===0} onClick={()=>onConfirm(chosen,fixChosen)} style={{padding:"9px 18px",borderRadius:9,border:"none",background:(chosen.length+fixChosen.length)===0?T.ink100:"linear-gradient(135deg,"+T.teal500+","+T.navy700+")",color:"#fff",fontWeight:700,fontSize:14,cursor:(chosen.length+fixChosen.length)===0||busy?"default":"pointer",fontFamily:T.font,opacity:busy?.7:1}}>{busy?"Enregistrement…":[chosen.length?"Ancrer "+chosen.length+" nouveau"+(chosen.length>1?"x":""):"",fixChosen.length?"Corriger "+fixChosen.length+" PJ":""].filter(Boolean).join(" + ")||"Ancrer"}</button>
+      <div style={{display:"flex",justifyContent:"flex-end",gap:8,marginTop:16}}>
+        <button onClick={onCancel} style={{padding:"8px 16px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:T.ink700,fontWeight:600,fontSize:FZ.sm,cursor:"pointer",fontFamily:T.font}}>Annuler</button>
+        <button disabled={busy||(chosen.length+fixChosen.length)===0} onClick={()=>onConfirm(chosen,fixChosen)} style={{padding:"8px 16px",borderRadius:8,border:"none",background:(chosen.length+fixChosen.length)===0?T.ink100:T.navy700,color:"#fff",fontWeight:700,fontSize:FZ.sm,cursor:(chosen.length+fixChosen.length)===0||busy?"default":"pointer",fontFamily:T.font,opacity:busy?.7:1}}>{busy?"Enregistrement…":[chosen.length?"Ancrer "+chosen.length+" nouveau"+(chosen.length>1?"x":""):"",fixChosen.length?"Corriger "+fixChosen.length+" PJ":""].filter(Boolean).join(" + ")||"Ancrer"}</button>
       </div>
     </div>
   </div>);

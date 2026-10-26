@@ -49,8 +49,9 @@
   50%      { transform: scale(1.045); opacity: .92; }
 }
 
-.enogia-fade-in { animation: enogiaFadeInUp .4s cubic-bezier(.2,.7,.3,1) both; }
-.enogia-float-in { animation: enogiaFloatIn .28s cubic-bezier(.2,.8,.3,1) both; }
+/* v139 : fill-mode « backwards » (et non « both ») : une fois l'animation finie, aucun transform ne reste sur l'élément, donc les fenêtres et panneaux en position:fixed qu'il contient se calent sur l'écran et non sur la page. */
+.enogia-fade-in { animation: enogiaFadeInUp .4s cubic-bezier(.2,.7,.3,1) backwards; }
+.enogia-float-in { animation: enogiaFloatIn .28s cubic-bezier(.2,.8,.3,1) backwards; }
 .enogia-modal-backdrop { animation: enogiaBackdropFade .18s ease both; }
 .enogia-modal-pop { animation: enogiaModalPop .25s cubic-bezier(.2,.85,.3,1.15) both; }
 .enogia-panel-backdrop { animation: enogiaBackdropFade .18s ease both; }
@@ -71,21 +72,22 @@
 .enogia-cal-daycell:hover .enogia-cal-commentbtn { opacity: 1; }
 
 .enogia-skeleton {
-  background: linear-gradient(90deg, #eef2f4 25%, #f6f8f9 37%, #eef2f4 63%);
+  background: linear-gradient(90deg, rgba(128,138,150,.14) 25%, rgba(128,138,150,.26) 37%, rgba(128,138,150,.14) 63%);
+  border-radius: 8px;
   background-size: 400px 100%;
   animation: enogiaShimmer 1.4s ease infinite;
 }
 
 /* Scrollbars discrètes mais visibles, cohérentes avec la palette */
-* { scrollbar-width: thin; scrollbar-color: #a3b3bb transparent; }
+* { scrollbar-width: thin; scrollbar-color: var(--e-scroll, #a3b3bb) transparent; }
 *::-webkit-scrollbar { width: 10px; height: 10px; }
-*::-webkit-scrollbar-thumb { background: #b6c2c9; border-radius: 20px; border: 2px solid transparent; background-clip: content-box; }
-*::-webkit-scrollbar-thumb:hover { background: #7c8f9a; background-clip: content-box; }
+*::-webkit-scrollbar-thumb { background: var(--e-scroll, #b6c2c9); border-radius: 20px; border: 2px solid transparent; background-clip: content-box; }
+*::-webkit-scrollbar-thumb:hover { background: var(--e-scroll-hover, #7c8f9a); background-clip: content-box; }
 *::-webkit-scrollbar-track { background: transparent; }
 
 /* Focus clavier lisible sans casser le style des boutons custom */
 button:focus-visible, input:focus-visible, [tabindex]:focus-visible {
-  outline: 2px solid #0d9bb5;
+  outline: 2px solid var(--e-accent, #0E8C9E);
   outline-offset: 2px;
 }
 
@@ -109,3 +111,148 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), textarea, 
   color: var(--e-ink700, #3d4349);
 }
 input::placeholder, textarea::placeholder { color: var(--e-ink300, #a7acb1); opacity: 1; }
+
+/* ── Finitions UX (v122) ─────────────────────────────────────────────────────────────────────────── */
+/* Chiffres de même largeur partout : dates, pourcentages et montants s'alignent en colonnes. */
+body { font-variant-numeric: tabular-nums; }
+/* Anneau de focus visible au clavier (jamais au clic souris). */
+button:focus-visible, select:focus-visible, a:focus-visible, summary:focus-visible, input[type="checkbox"]:focus-visible, input[type="date"]:focus-visible {
+  outline: 2px solid var(--e-accent, #0E8C9E); outline-offset: 2px;
+}
+/* Retour au survol / à l'appui sur les boutons (fond plus soutenu, léger enfoncement). */
+button { transition: background-color .12s ease, border-color .12s ease, color .12s ease, box-shadow .12s ease, transform .1s ease, filter .12s ease; }
+button:not(:disabled):hover { filter: brightness(1.07); }
+button:not(:disabled):active { transform: scale(.985); }
+button:disabled { cursor: default; }
+/* Cases à cocher personnalisées : la coche s'installe en douceur. */
+input[type="checkbox"] { transition: background-color .14s ease, border-color .14s ease, box-shadow .14s ease; }
+/* Mouvement réduit : on coupe toutes les animations et transitions. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+}
+
+/* ── Transitions et micro-animations (v137) ──────────────────────────────────────────────────────────
+   Principe : tout ce qui apparaît « arrive » en 0,2–0,3 s (jamais plus), tout ce qui change d'état s'adoucit,
+   rien ne bouge sans raison. Fin d'animation SANS transform résiduel (fill-mode « backwards ») pour ne pas
+   casser les éléments collants ou fixes à l'intérieur. Tout est coupé par « réduire les animations » (voir plus haut). */
+:root { --e-ease: cubic-bezier(.2,.8,.2,1); }
+@keyframes enogiaViewIn   { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes enogiaBarGrow  { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes enogiaRingDraw { from { stroke-dasharray: 0 1000; } }
+@keyframes enogiaBadgePop { 0% { transform: scale(0); } 60% { transform: scale(1.25); } 100% { transform: scale(1); } }
+/* changement d'onglet (espace Manager), de PJ (fiche), arrivée d'une carte */
+.enogia-view-in { animation: enogiaViewIn .26s var(--e-ease) backwards; }
+/* barres d'avancement : elles se remplissent depuis la gauche ; les anneaux se dessinent */
+.enogia-bar-fill { animation: enogiaBarGrow .7s var(--e-ease) backwards; transition: width .4s var(--e-ease), background-color .3s ease; }
+.enogia-ring     { animation: enogiaRingDraw .8s var(--e-ease) backwards; transition: stroke-dasharray .45s var(--e-ease), stroke .3s ease; }
+/* pastille « nouveautés » : elle jaillit puis émet 3 ondes discrètes pour attirer l'œil, ensuite elle reste fixe */
+.enogia-badge-pop { animation: enogiaBadgePop .42s var(--e-ease) both, enogiaPulseRing 1.8s ease-out .5s 3; }
+/* tuiles qui arrivent l'une après l'autre (40 ms d'écart) */
+.enogia-stagger > * { animation: enogiaViewIn .32s var(--e-ease) backwards; }
+.enogia-stagger > *:nth-child(2) { animation-delay: .04s; }
+.enogia-stagger > *:nth-child(3) { animation-delay: .08s; }
+.enogia-stagger > *:nth-child(4) { animation-delay: .12s; }
+.enogia-stagger > *:nth-child(5) { animation-delay: .16s; }
+.enogia-stagger > *:nth-child(n+6) { animation-delay: .2s; }
+/* boutons : appui un peu plus net, survol plus doux */
+button { transition: background-color .16s var(--e-ease), border-color .16s var(--e-ease), color .16s var(--e-ease), box-shadow .16s var(--e-ease), transform .12s var(--e-ease), filter .16s ease, opacity .16s ease; }
+/* liens et zones cliquables génériques */
+a { transition: color .16s ease, opacity .16s ease; }
+details > summary { transition: color .16s ease; }
+/* fenêtre : le fond se teinte en douceur */
+.enogia-modal-backdrop, .enogia-panel-backdrop { animation-duration: .22s; }
+
+
+/* ── v146.15 — téléphone et tablette ──────────────────────────────────────────────────────────────────────────
+   Tablette (≤ 900 px) : marges réduites. Téléphone (≤ 700 px) : le rail d'icônes passe en barre d'onglets fixe en bas,
+   l'en-tête se compacte, les fenêtres prennent toute la largeur et les tableaux/diagrammes défilent horizontalement. */
+html { -webkit-text-size-adjust: 100%; }
+@media (max-width: 900px) {
+  .enogia-bar { padding: 8px 16px !important; gap: 10px !important; }
+  .enogia-main { padding-left: 14px !important; padding-right: 14px !important; }
+}
+@media (max-width: 700px) {
+  .enogia-shell { flex-direction: column !important; padding-bottom: calc(60px + env(safe-area-inset-bottom)); }
+  .enogia-nav {
+    position: fixed !important; left: 0; right: 0; bottom: 0; top: auto !important; width: 100% !important;
+    height: calc(56px + env(safe-area-inset-bottom)) !important; flex-direction: row !important; justify-content: space-around;
+    padding: 0 6px env(safe-area-inset-bottom) !important; gap: 2px !important; border-right: none !important;
+    box-shadow: 0 -1px 0 rgba(120, 130, 150, .28), 0 -6px 18px rgba(14, 23, 38, .08); overflow-x: auto !important; overflow-y: hidden !important; align-items: center;
+  }
+  .enogia-nav > div:empty { display: none; }
+  .enogia-nav > div { margin-top: 0 !important; flex: 0 0 auto !important; }
+  .enogia-nav > button { flex: 0 0 auto; }
+  .enogia-bar { padding: 6px 12px !important; min-height: 48px !important; gap: 8px !important; }
+  .enogia-bar .enogia-logo { height: 28px !important; width: auto !important; }
+  .enogia-title { font-size: 14px !important; white-space: normal !important; line-height: 1.15; }
+  .enogia-main { padding: 10px 10px 16px !important; }
+  .enogia-dash { flex-direction: column !important; align-items: stretch !important; gap: 12px !important; }
+  .enogia-dash-sep { display: none !important; }
+  .enogia-mlist { width: 100% !important; max-height: 260px !important; min-height: 0 !important; }
+  .enogia-mcard { height: auto !important; min-height: 0 !important; overflow: visible !important; }
+  .enogia-mcard-in { overflow: visible !important; }
+  .enogia-panel { max-width: none !important; flex-basis: 100% !important; }
+  .enogia-theme-pop { left: 8px !important; right: 8px !important; bottom: calc(66px + env(safe-area-inset-bottom)) !important; width: auto !important; }
+  [role="dialog"] > div, [role="dialog"] { max-width: 100vw; }
+  /* v146.20 — en-tête compact : logo + titre sur une ligne, puis « unités · dernier import » à gauche, actions en icônes à droite */
+  .enogia-hide-phone { display: none !important; }
+  .enogia-bar { gap: 6px 10px !important; }
+  .enogia-bar-right { width: 100% !important; margin-left: 0 !important; flex-wrap: nowrap !important; gap: 8px !important; }
+  .enogia-bar-meta { flex: 1 1 auto; min-width: 0; flex-direction: row !important; flex-wrap: wrap; align-items: baseline !important; gap: 0 8px !important; }
+  .enogia-bar-meta > * { text-align: left !important; }
+  .enogia-user-name, .enogia-import-label { display: none !important; }
+  .enogia-bar-right button { min-width: 36px; min-height: 36px; justify-content: center; }
+  .enogia-lblcell { padding-left: 8px !important; padding-right: 6px !important; }
+}
+@media print { .enogia-nav { display: none !important; } }
+/* v158 : palette « Aller à… » (Manager) */
+@keyframes enogiaFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes enogiaPop    { from { opacity: 0; transform: translateY(-10px) scale(.97); } to { opacity: 1; transform: none; } }
+/* v159 : fiche PJ en fenêtre centrale */
+.enogia-pop-in { animation: enogiaPop .24s var(--e-ease) both; }
+/* v159 : menu principal libellé ; sur téléphone il redevient une barre d'icônes en bas */
+@media (max-width: 700px) {
+  .enogia-nav .enogia-nav-lab, .enogia-nav .enogia-nav-grp, .enogia-nav .enogia-nav-toggle { display: none !important; }
+  .enogia-nav .enogia-nav-btn { width: 40px !important; padding: 0 !important; justify-content: center !important; }
+}
+
+/* ── v162 — hiérarchie typographique, accueil, menu d'actions rapides, aperçu Gantt ──────────────────────────── */
+body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; font-kerning: normal; }
+table, input, select, textarea, button, .recharts-text, .recharts-layer text { font-variant-numeric: tabular-nums; }
+th { letter-spacing: .02em; }
+/* accueil « Aujourd'hui » : lignes cliquables et repères qui se soulèvent doucement */
+.enogia-homeline:hover, .enogia-homeline:focus-visible { background: var(--e-surface-alt, rgba(128,138,150,.12)) !important; }
+.enogia-homeline:active { transform: scale(.995); }
+.enogia-kpi { transition: transform .16s var(--e-ease), box-shadow .16s var(--e-ease); }
+.enogia-kpi:not(:disabled):hover { transform: translateY(-2px); }
+.enogia-homelink:hover { text-decoration: underline; text-underline-offset: 3px; }
+/* menu d'actions rapides (clic droit / ⋯ sur une ligne) */
+@keyframes enogiaMenuIn { from { opacity: 0; transform: translateY(-4px) scale(.97); } to { opacity: 1; transform: none; } }
+.enogia-menu { animation: enogiaMenuIn .14s var(--e-ease) both; transform-origin: top left; }
+.enogia-menu-item { display: flex; align-items: center; gap: 10px; width: 100%; border: none; background: transparent; padding: 8px 12px; border-radius: 8px; cursor: pointer; text-align: left; font: inherit; color: inherit; }
+.enogia-menu-item:hover, .enogia-menu-item:focus-visible { background: var(--e-surface-alt, rgba(128,138,150,.14)); outline: none; }
+.enogia-rowact { opacity: 0; transition: opacity .12s ease; }
+tr:hover .enogia-rowact, tr:focus-within .enogia-rowact, .enogia-rowact[aria-expanded="true"] { opacity: 1; }
+@media (hover: none) { .enogia-rowact { opacity: .7; } }
+/* aperçu au survol d'une barre du Gantt */
+.enogia-ganttcard { animation: enogiaMenuIn .12s var(--e-ease) both; pointer-events: none; }
+
+/* ── v162 (palette B affinée) : menu latéral « C » — liseré sur l'entrée active ── */
+.enogia-nav-btn[aria-current="page"]::before { content:""; position:absolute; left:0; top:9px; bottom:9px; width:3px; border-radius:0 3px 3px 0; background: currentColor; }
+/* Lignes de la liste : le liseré d'état apparaît au survol (couleur posée par la ligne) */
+tbody tr { border-left-style: solid; }
+/* Mode présentation (téléviseur / projection) : on retire les gestes de souris, qui n'ont pas de sens à l'écran */
+body.enogia-present .enogia-rowact, body.enogia-present .enogia-ui-edit { display:none !important; }
+body.enogia-present tbody td { font-size: 1.08em; }
+
+/* v164 : poignée de redimensionnement de la liste des fiches synthèse */
+.enogia-mhandle:hover > span, .enogia-mhandle:focus-visible > span { background: var(--e-accent); }
+.enogia-mhandle:focus-visible { outline: none; }
+@media (max-width: 760px) { .enogia-mhandle { display: none !important; } }
+.enogia-skip { position: fixed; left: 12px; top: -48px; z-index: 11000; background: var(--e-card); color: var(--e-ink900); border: 2px solid var(--e-accent); border-radius: 10px; padding: 8px 14px; font-weight: 700; font-size: 13px; text-decoration: none; transition: top .15s ease; }
+.enogia-skip:focus { top: 12px; }
+.enogia-mhandle:focus-visible > span { width: 5px; outline: 2px solid var(--e-accent); outline-offset: 2px; }
+
+/* v165 : zones cliquables élargies (WCAG 2.2, 24 px) pour les petits boutons repérés par a11yFallback.js */
+[data-hit] { position: relative; }
+[data-hit]::after { content: ""; position: absolute; inset: -5px; }

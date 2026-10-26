@@ -1,15 +1,23 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend } from "recharts";
-import { T } from "../theme";
+import { T, FZ } from "../theme";
 import { SerieTag, getPjMeta, initials, GAMME_COLORS, ETAT_META, ALL_ETATS, ALL_GAMMES, MONTHS, today } from "../pjMeta";
 import { fmt, toLocalISO, diffDays, weekStartOf } from "../parsers";
 import { DropFilter, ImportButton, NavIcon, Select } from "./SharedUI";
-import { CARD, KpiRow, EmptyNote, AvancementTab, StatutTab, KpiAvancement, DelayInsights, DelaysTab, ProductionCalendarManager } from "./ManagerParts";
+import { CARD, KpiRow, PieBlock, EmptyNote, StatutTab, KpiAvancement, DelayInsights, DelaysTab, ProductionCalendarManager } from "./ManagerParts";
 import { ProjectFileManager } from "./ManagerFiche";
+import { EtatInfoButton } from "./ProdStagesUI";
+import { ManagerRail, ManagerCrumb, ManagerPalette, useRailCollapsed } from "./ManagerNav";
+import { useIsPhone } from "../useIsPhone";
+import { ReleaseEditor, ReleaseCatalog } from "./ReleaseNotes";
+import { PointHebdo } from "./PointHebdo";
 import { InitialAddReview } from "./InitialAdd";
 import { SanteTab } from "./Feux";
-import { CodirDialog } from "./CodirReport";
+import { TurbinesTab } from "./TurbinesTab";
 import { SerieTab } from "./Series";
+import { CashInTab } from "./CashInTab";
+import { ImportHistory } from "./ImportHistory";
+import { isSuperAdmin } from "../roles";
 
 // Filtre de période (mois et/ou année) réutilisable sur chaque graphique temporel
 export function PeriodFilter({yearsAvailable,year,setYear,month,setMonth,showMonth=true}){
@@ -18,10 +26,13 @@ export function PeriodFilter({yearsAvailable,year,setYear,month,setMonth,showMon
     {showMonth&&<div style={{width:128}}><Select compact value={month==null?"":month} onChange={e=>setMonth(e.target.value===""?null:+e.target.value)} options={[{value:"",label:"Tous les mois"},...MONTHS.map((m,i)=>({value:i,label:m}))]}/></div>}
   </div>);
 }
-export function ManagerPanel({data,progress,setProgress,initialData,lastInitialImport,lastInitialAdd,onInitialImport,onInitialAdd,initialImporting,etatChoice,setEtatFor,saveProgress,savingProgress,progressSaved,tab,setTab,clientPresence,setClientPresenceFor,closurePeriods,setClosurePeriods,productionExclusions,setProductionExclusionDays,comments,delays,delayTypes,setDelayTypes,addDelayAllocationMulti,deleteDelayAllocation,managerEmails,setManagerEmails,currentUserEmail,authorName,buildVersion,savePjMetaOverride,addComment,deleteComment}){
+export function ManagerPanel({jumpFiche,changeLog,data,progress,setProgress,releases,saveReleaseNotes,releaseSelection,saveReleaseSelection,publishRelease,isBeta,initialData,lastInitialImport,lastInitialAdd,onInitialImport,onInitialAdd,initialImporting,etatChoice,setEtatFor,saveProgress,savingProgress,progressSaved,tab,setTab,clientPresence,setClientPresenceFor,closurePeriods,setClosurePeriods,customEtats,setCustomEtats,productionExclusions,setProductionExclusionDays,comments,delays,delayTypes,setDelayTypes,addDelayAllocationMulti,deleteDelayAllocation,managerEmails,setManagerEmails,currentUserEmail,authorName,buildVersion,savePjMetaOverride,savePjMetaMulti,addCommentMulti,addComment,resolveComment,deleteComment,turbineDoc,saveTurbines,certifs,setCertifs,compCatalog,setCompCatalog}){
   const [fEtat,setFEtat]=useState(new Set(ALL_ETATS));
   const [kpiStep,setKpiStep]=useState("depart");
   const [kpiTab,setKpiTab]=useState("synthese"); // sous-onglet KPI par famille
+  const [cashFocus,setCashFocus]=useState(null); // V146.1 : PJ à afficher dans Cash in depuis la fiche
+  const [fichePj,setFichePj]=useState(null); // v134 : PJ à ouvrir dans la fiche depuis le Point hebdo
+  useEffect(()=>{if(jumpFiche&&jumpFiche.pj)setFichePj(jumpFiche);},[jumpFiche]);
   const [chargeYear,setChargeYear]=useState(null);
   const [chargeMonth,setChargeMonth]=useState(null);
   const [satYear,setSatYear]=useState(null);
@@ -34,17 +45,19 @@ export function ManagerPanel({data,progress,setProgress,initialData,lastInitialI
   },[data]);
   const STEP_LABELS={arrivee:"Arrivée",tests:"Tests",finProd:"Fin de production",depart:"Départ"};
   const [fGamme,setFGamme]=useState(new Set(ALL_GAMMES));
-  const fd=useMemo(()=>data.filter(r=>fEtat.has(r.etat)&&fGamme.has(r.gamme)),[data,fEtat,fGamme]);
-  const shipped=fd.filter(r=>r.etat==="SHIPPED");
-  const inProd=fd.filter(r=>["PROD","En fabrication"].includes(r.etat));
-  const upcoming=fd.filter(r=>{const d=r.depart?diffDays(today,new Date(r.depart)):null;return d!=null&&d>=0&&d<=30;});
-  const byMonth=Array(12).fill(0);fd.forEach(r=>{if(r.depart)byMonth[new Date(r.depart).getMonth()]++;});
+  const fd=useMemo(()=>data.filter(r=>fEtat.has(r.etat)&&(r.etat==="SLOT_LIBRE"||fGamme.has(r.gamme))),[data,fEtat,fGamme]);
+  // Les slots libres restent dans la liste, le statut et la charge atelier, mais ne comptent jamais dans les KPI ni les rapports.
+  const fk=useMemo(()=>fd.filter(r=>r.etat!=="SLOT_LIBRE"),[fd]);
+  const shipped=fk.filter(r=>r.etat==="SHIPPED");
+  const inProd=fk.filter(r=>["MONTAGE","ELEC","TESTS","PACKAGING","En fabrication"].includes(r.etat));
+  const upcoming=fk.filter(r=>{const d=r.depart?diffDays(today,new Date(r.depart)):null;return d!=null&&d>=0&&d<=30;});
+  const byMonth=Array(12).fill(0);fk.forEach(r=>{if(r.depart)byMonth[new Date(r.depart).getMonth()]++;});
   const maxBar=Math.max(...byMonth,1);
-  const gammeCounts={};fd.forEach(r=>{gammeCounts[r.gamme]=(gammeCounts[r.gamme]||0)+1;});
+  const gammeCounts={};fk.forEach(r=>{if(r.gamme)gammeCounts[r.gamme]=(gammeCounts[r.gamme]||0)+1;});
 
   // ── Rapprochement Initial (figé) ↔ Révisé, par N° PJ ──────────
   const initialByPJ=useMemo(()=>{const m={};initialData.forEach(r=>{m[r.pj]=r;});return m;},[initialData]);
-  const driftRows=useMemo(()=>fd.map(r=>{
+  const driftRows=useMemo(()=>fk.map(r=>{
     const ini=initialByPJ[r.pj];
     const mk=k=>{
       const iv=ini?ini[k]:null;
@@ -53,7 +66,7 @@ export function ManagerPanel({data,progress,setProgress,initialData,lastInitialI
       return{ini:iv||null,rev:rv||null,delta};
     };
     return{pj:r.pj,gamme:r.gamme,etat:r.etat,hasInitial:!!ini,arrivee:mk("arrivee"),tests:mk("tests"),finProd:mk("finProd"),depart:mk("depart")};
-  }),[fd,initialByPJ]);
+  }),[fk,initialByPJ]);
   const comparable=driftRows.filter(r=>r.hasInitial);
   const stepDeltas=comparable.map(r=>r[kpiStep].delta).filter(d=>d!=null);
   const lateCount=stepDeltas.filter(d=>d>0).length;
@@ -89,7 +102,7 @@ export function ManagerPanel({data,progress,setProgress,initialData,lastInitialI
     const buckets=[
       {label:"À l'heure / avance",min:-Infinity,max:0,c:T.emerald500,n:0},
       {label:"Léger retard (1-15j)",min:0,max:15,c:T.amber500,n:0},
-      {label:"Retard important (15-30j)",min:15,max:30,c:"#e8821a",n:0},
+      {label:"Retard important (15-30j)",min:15,max:30,c:T.ember500,n:0},
       {label:"Retard critique (30j+)",min:30,max:Infinity,c:T.red500,n:0},
     ];
     stepDeltas.forEach(d=>{
@@ -141,7 +154,7 @@ export function ManagerPanel({data,progress,setProgress,initialData,lastInitialI
   const driftByGamme=useMemo(()=>{
     const m={};
     comparable.forEach(r=>{
-      if(r.depart.delta==null)return;
+      if(r.depart.delta==null||!r.gamme)return;
       if(!m[r.gamme])m[r.gamme]={sum:0,n:0};
       m[r.gamme].sum+=r.depart.delta;m[r.gamme].n++;
     });
@@ -182,7 +195,7 @@ export function ManagerPanel({data,progress,setProgress,initialData,lastInitialI
   const [exploreDim,setExploreDim]=useState("gamme");
   const [exploreMetric,setExploreMetric]=useState("count");
   const DIM_GETTERS={
-    gamme:r=>r.gamme,
+    gamme:r=>r.gamme||"Sans gamme",
     etat:r=>ETAT_META[r.etat]?.label||r.etat,
     pays:r=>getPjMeta(r.pj,r).pays,
     chef:r=>initials(getPjMeta(r.pj,r).chefProjet),
@@ -213,7 +226,7 @@ export function ManagerPanel({data,progress,setProgress,initialData,lastInitialI
   };
 
   // ── Nouveaux KPI : volumétrie, durée moyenne, charge mensuelle ─
-  const dureeProdValues=fd.map(r=>r.arrivee&&r.depart?diffDays(new Date(r.arrivee),new Date(r.depart)):null).filter(d=>d!=null);
+  const dureeProdValues=fk.map(r=>r.arrivee&&r.depart?diffDays(new Date(r.arrivee),new Date(r.depart)):null).filter(d=>d!=null);
   const avgDureeProd=dureeProdValues.length?Math.round(dureeProdValues.reduce((a,b)=>a+b,0)/dureeProdValues.length):null;
   const chargeByMonthMulti=useMemo(()=>{
     const steps=[["arrivee","Arrivée",T.teal500],["tests","Tests",T.amber500],["finProd","Fin prod",T.emerald500],["depart","Départ",T.red500]];
@@ -285,67 +298,77 @@ export function ManagerPanel({data,progress,setProgress,initialData,lastInitialI
 
   const countByPays=useMemo(()=>{
     const m={};
-    fd.forEach(r=>{const p=getPjMeta(r.pj,r).pays;m[p]=(m[p]||0)+1;});
+    fk.forEach(r=>{const p=getPjMeta(r.pj,r).pays;m[p]=(m[p]||0)+1;});
     return Object.entries(m).map(([pays,n])=>({pays,n})).sort((a,b)=>b.n-a.n);
-  },[fd]);
+  },[fk]);
   const countByEtat=useMemo(()=>{
-    return ALL_ETATS.map(e=>({etat:ETAT_META[e].label,n:fd.filter(r=>r.etat===e).length,c:ETAT_META[e].bar})).filter(d=>d.n>0);
-  },[fd]);
+    return ALL_ETATS.map(e=>({etat:ETAT_META[e].label,n:fk.filter(r=>r.etat===e).length,c:ETAT_META[e].bar})).filter(d=>d.n>0);
+  },[fk]);
 
   // ── Navigation Manager : onglets horizontaux + sous-onglets par famille ──
   // « Il y a bcp de KPI… plusieurs petits onglets par famille de KPI ? » → un sous-onglet par famille.
-  const GROUP_OF={fiche:"fiche",derives:"derives",avancement:"suivi",statut:"suivi",sante:"suivi",retards:"retards",acces:"reglages",serie:"reglages",vacances:"reglages",production:"reglages"};
-  const TOP=[["fiche","Fiche projet","list","fiche"],["derives","KPI","chart","derives"],["suivi","Suivi","gauge","avancement"],["retards","Retards","warning","retards"],["reglages","Réglages","lock","production"]];
+  const GROUP_OF={fiche:"fiche",hebdo:"hebdo",derives:"derives",statut:"suivi",sante:"suivi",retards:"retards",acces:"reglages",imports:"reglages",serie:"reglages",vacances:"reglages",production:"reglages",nouveautes:"reglages",cash:"cash",turbines:"turbines"};
+  const superAdmin=isSuperAdmin(); // v143 : seul le super admin voit l'onglet « Réglages » (changer le site) ; un admin n'a que les onglets d'usage
+  // v158 : menu groupé (rail latéral) ; chaque entrée sait où aller. Cash in et Réglages : super admin seulement.
+  const [railMin,setRailMin]=useRailCollapsed(),[palOpen,setPalOpen]=useState(false),phone=useIsPhone();
   const SUBS={
     derives:[["synthese","Synthèse"],["derives","Dérives"],["charge","Charge"],["avancement","Avancement"],["retards","Retards"]],
-    suivi:[["avancement","Avancement"],["statut","Statut & état"],["sante","Santé projets"]],
-    reglages:[["serie","N° de série"],["production","Production"],["vacances","Vacances"],["acces","Accès Manager"]],
+    suivi:[["statut","Statut & état"],["sante","Santé projets"]],
+    reglages:[["serie","N° de série"],["production","Production"],["vacances","Vacances"],["imports","Imports"],["nouveautes","Nouveautés"],["acces","Accès Manager"]],
   };
   const group=GROUP_OF[tab]||"derives";
+  useEffect(()=>{if(!superAdmin&&(GROUP_OF[tab]==="reglages"||GROUP_OF[tab]==="cash"))setTab("derives");},[superAdmin,tab]); // un admin qui arrive sur un onglet Réglages (ancien état mémorisé) est ramené aux KPI
   const subItems=SUBS[group]||null;
   const subValue=group==="derives"?kpiTab:tab;
   const onSub=id=>{if(group==="derives")setKpiTab(id);else setTab(id);};
-  const showFilters=tab==="derives"||tab==="avancement"||tab==="statut"||tab==="sante";
+  const goSub=(top,id)=>()=>{if(top==="derives"){setTab("derives");setKpiTab(id);}else setTab(id);};
+  const entry=(id,label,icon,hint,extra)=>{const subs=SUBS[id]?SUBS[id].map(([sid,sl])=>({id:sid,label:sl,go:goSub(id,sid)})):null;return{id,label,icon,hint,subs,go:subs?subs[0].go:()=>setTab(id),...(extra||{})};};
+  const navGroups=[
+    {label:"Pilotage",entries:[entry("derives","KPI","chart","synthèse dérives charge avancement"),entry("suivi","Suivi","gauge","statut santé état"),entry("retards","Retards","warning","délais allocation")]},
+    {label:"Projets",entries:[entry("fiche","Fiche projet","list","pj commentaires dates"),entry("hebdo","Point hebdo","clock","semaine changements"),entry("turbines","Turbines","factory","machines")]},
+    ...(superAdmin?[{label:"Admin",entries:[entry("cash","Cash in","euro","encaissement facturation",{lock:true}),entry("reglages","Réglages","lock","série production vacances imports nouveautés accès",{lock:true,go:goSub("reglages","production")})]}]:[]),
+  ];
+  const activeEntry=navGroups.flatMap(g=>g.entries).find(e=>e.id===group)||navGroups[0].entries[0];
+  const activeSubLabel=activeEntry.subs?((activeEntry.subs.find(x=>x.id===subValue)||{}).label||""):"";
+  const palettePjs=useMemo(()=>(data||[]).filter(r=>r&&r.pj).map(r=>({pj:r.pj,etat:r.etat,nomProjet:getPjMeta(r.pj,r).nomProjet||""})),[data]);
+  useEffect(()=>{const f=e=>{if((e.ctrlKey||e.metaKey)&&!e.altKey&&String(e.key).toLowerCase()==="k"){e.preventDefault();setPalOpen(o=>!o);}};window.addEventListener("keydown",f);return()=>window.removeEventListener("keydown",f);},[]);
+  const showFilters=tab==="derives"||tab==="statut"||tab==="sante";
   const hasInitial=initialData.length>0;
-  const [codirOpen,setCodirOpen]=useState(false); // rapport CODIR (synthèse + 1 page par PJ, export PDF)
   const [pendingAdd,setPendingAdd]=useState(null); // lignes du fichier en cours d'examen pour l'ajout à l'initial
 
-  return(<div style={{display:"flex",flexDirection:"column",gap:14,fontFamily:T.font}}>
-    {/* ── Barre d'onglets + petite tuile « planning initial » ── */}
-    <div style={{display:"flex",alignItems:"flex-end",gap:18,flexWrap:"wrap",borderBottom:"1px solid "+T.line}}>
-      <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-        {TOP.map(([id,l,icon,first])=>{const on=group===id;return(
-          <button key={id} onClick={()=>{if(!on)setTab(first);}} style={{padding:"10px 14px",border:"none",borderBottom:"2px solid "+(on?T.teal500:"transparent"),marginBottom:-1,background:"transparent",color:on?T.teal600:T.ink500,fontWeight:on?700:600,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:T.font,transition:"color .15s ease"}}
-            onMouseEnter={e=>{if(!on)e.currentTarget.style.color=T.ink900;}} onMouseLeave={e=>{if(!on)e.currentTarget.style.color=T.ink500;}}><NavIcon name={icon} size={15}/>{l}</button>
-        );})}
-      </div>
-      <button onClick={()=>setCodirOpen(true)} title="Générer la synthèse CODIR (PDF) pour les projets choisis" style={{marginLeft:"auto",marginBottom:6,display:"inline-flex",alignItems:"center",gap:7,padding:"8px 13px",border:"none",borderRadius:10,background:"linear-gradient(135deg,"+T.teal500+","+T.navy700+")",color:"#fff",fontWeight:700,fontSize:13,fontFamily:T.font,cursor:"pointer"}}><NavIcon name="chart" size={14}/>Rapport CODIR</button>
-      <div style={{marginBottom:6,display:"flex",alignItems:"center",gap:9,padding:"4px 5px 4px 11px",border:"1px solid "+(hasInitial?T.line:T.amber500),borderRadius:10,background:hasInitial?T.card:T.amber100}}>
+  return(<div style={{display:"flex",flexDirection:phone?"column":"row",alignItems:phone?"stretch":"flex-start",gap:phone?10:16,fontFamily:T.font}}>
+    <ManagerRail groups={navGroups} activeId={activeEntry.id} activeSub={subValue} onGo={f=>f()} collapsed={railMin} setCollapsed={setRailMin} phone={phone}/>
+    {palOpen&&<ManagerPalette groups={navGroups} data={palettePjs} activeKey={activeEntry.id+":"+(activeEntry.subs?subValue:"")} onGo={f=>f()} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}} onClose={()=>setPalOpen(false)}/>}
+    <div style={{flex:1,minWidth:0,width:"100%",display:"flex",flexDirection:"column",gap:12}}>
+    {/* ── Fil d'Ariane + « Aller à… » + petite tuile « planning initial » ── */}
+    <div style={{display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
+      <div style={{flex:"1 1 280px",minWidth:0}}><ManagerCrumb parts={["Manager",activeEntry.label,...(activeSubLabel?[activeSubLabel]:[])]} onOpenPalette={()=>setPalOpen(true)}/></div>
+      <div style={{marginBottom:6,display:"flex",alignItems:"center",gap:8,padding:"4px 4px 4px 12px",border:"1px solid "+(hasInitial?T.line:T.amber500),borderRadius:12,background:hasInitial?T.card:T.amber100}}>
         <span style={{color:hasInitial?T.teal600:T.amber600,display:"inline-flex"}}><NavIcon name={hasInitial?"pin":"warning"} size={13}/></span>
         <div style={{lineHeight:1.25}}>
-          <div style={{fontSize:12,fontWeight:700,color:T.ink900}}>Planning initial</div>
-          <div style={{fontSize:11,color:hasInitial?T.ink500:T.amber600}}>{hasInitial?initialData.length+" unités"+(lastInitialImport?" · "+lastInitialImport:" · figé")+(lastInitialAdd?" · ajout "+lastInitialAdd:""):"non importé — dérives indisponibles"}</div>
+          <div style={{fontSize:FZ.xs,fontWeight:700,color:T.ink900}}>Planning initial</div>
+          <div style={{fontSize:FZ.xs,color:hasInitial?T.ink500:T.amber600}}>{hasInitial?initialData.length+" unités"+(lastInitialImport?" · "+lastInitialImport:" · figé")+(lastInitialAdd?" · ajout "+lastInitialAdd:""):"non importé — dérives indisponibles"}</div>
         </div>
         {/* Import initial complet (⋯) : seulement tant qu'aucun initial n'existe (première mise en place). Ensuite on n'ajoute que de nouveaux PJ avec ＋, les PJ ancrés ne sont plus écrasables par erreur. */}
-        {!hasInitial&&<ImportButton
+        {superAdmin&&!hasInitial&&<ImportButton
           iconOnly
           onImport={onInitialImport}
           busy={initialImporting}
           label="Importer planning initial"
-          accent={"linear-gradient(135deg,"+T.teal500+","+T.navy700+")"}
+          accent={T.navy700}
           hasExisting={hasInitial}
           inputId="msp-file-initial"
           confirmMessage={"Un planning initial a déjà été importé"+(lastInitialImport?(" le "+lastInitialImport):"")+".\n\nCe planning sert de référence figée pour calculer les dérives — il ne devrait normalement être importé qu'une seule fois.\n\nÊtes-vous sûr de vouloir l'écraser ?"}
           helpText={<>Export Excel (.xlsx) avec colonnes <b>Nom, Début, Niveau hiérarchique</b>.<br/>Ce planning sera <b>figé</b> et servira de référence pour calculer les dérives par rapport au planning révisé.</>}
           warnText="Ce planning devient la référence figée (dates initiales) — à importer une seule fois normalement."
         />}
-        {hasInitial&&<ImportButton
+        {superAdmin&&hasInitial&&<ImportButton
           iconOnly
           iconGlyph="＋"
           onImport={rows=>setPendingAdd(rows)}
           busy={initialImporting}
           label="Ajouter des projets à l'initial"
-          accent={"linear-gradient(135deg,"+T.teal500+","+T.navy700+")"}
+          accent={T.navy700}
           hasExisting={false}
           inputId="msp-file-initial-add"
           helpText={<>Même format que l'import initial. Le site repère les <b>nouveaux PJ</b> du fichier et vous propose de les ancrer.<br/>Les PJ déjà dans l'initial ne sont <b>jamais modifiés</b>.</>}
@@ -355,33 +378,34 @@ export function ManagerPanel({data,progress,setProgress,initialData,lastInitialI
     </div>
 
     {/* ── Sous-onglets (famille de KPI, pages de suivi, réglages) + filtres ── */}
-    {(subItems||showFilters)&&<div style={{display:"flex",alignItems:"center",gap:14,flexWrap:"wrap"}}>
-      {subItems&&<div style={{display:"inline-flex",gap:2,padding:3,background:T.surface,border:"1px solid "+T.line,borderRadius:10}}>
+    {((phone&&subItems)||showFilters)&&<div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+      {phone&&subItems&&<div style={{display:"inline-flex",gap:2,padding:3,background:T.surface,border:"1px solid "+T.line,borderRadius:12}}>
         {subItems.map(([id,l])=>{const on=subValue===id;return(
-          <button key={id} onClick={()=>onSub(id)} style={{padding:"5px 13px",borderRadius:8,border:"none",background:on?T.card:"transparent",boxShadow:on?T.shadowSm:"none",color:on?T.teal600:T.ink500,fontWeight:on?700:600,fontSize:13,cursor:"pointer",fontFamily:T.font,transition:"background .12s ease"}}>{l}</button>
+          <button key={id} onClick={()=>onSub(id)} style={{padding:"4px 12px",borderRadius:8,border:"none",background:on?T.card:"transparent",boxShadow:on?T.shadowSm:"none",color:on?T.teal600:T.ink500,fontWeight:on?700:600,fontSize:FZ.sm,cursor:"pointer",fontFamily:T.font,transition:"background .12s ease"}}>{l}</button>
         );})}
       </div>}
-      {showFilters&&<div style={{marginLeft:subItems?"auto":0,display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+      {showFilters&&<div style={{marginLeft:phone&&subItems?"auto":0,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
         <DropFilter label="Statut" options={ALL_ETATS} selected={fEtat} onChange={setFEtat} getLabel={o=>ETAT_META[o]?.label||o}/>
+        <EtatInfoButton/>
         <DropFilter label="Gamme" options={ALL_GAMMES} selected={fGamme} onChange={setFGamme}/>
-        <button onClick={()=>{setFEtat(new Set(ALL_ETATS));setFGamme(new Set(ALL_GAMMES));}} title="Réinitialiser les filtres" style={{background:"none",border:"none",padding:0,fontSize:10.5,color:T.ink300,cursor:"pointer",textDecoration:"underline",fontFamily:T.font}}>Effacer</button>
-        <span style={{fontSize:12.5,color:T.ink500,fontWeight:500}}>{fd.length} unités</span>
+        <button onClick={()=>{setFEtat(new Set(ALL_ETATS));setFGamme(new Set(ALL_GAMMES));}} title="Réinitialiser les filtres" style={{background:"none",border:"none",padding:0,fontSize:FZ.xs,color:T.ink300,cursor:"pointer",textDecoration:"underline",fontFamily:T.font}}>Effacer</button>
+        <span style={{fontSize:FZ.xs,color:T.ink500,fontWeight:500}}>{fk.length} unités</span>
       </div>}
     </div>}
 
-    <div style={{minWidth:0}}>
-    {tab==="derives"&&kpiTab==="synthese"&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
-      <KpiRow items={[[fd.length,"Total",T.teal500],[shipped.length,"Expédiées",T.emerald500],[inProd.length,"En production",T.amber500],[upcoming.length,"Départs < 30j",T.red500],[avgDureeProd==null?"—":avgDureeProd+"j","Durée moy. production",T.violet500]]}/>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(380px,1fr))",gap:14}}>
-        {countByEtat.length>0&&<div style={{background:T.card,borderRadius:14,padding:20,border:"1px solid "+T.line}}>
-          <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:15,color:T.ink900,marginBottom:4}}>Répartition par état</div>
-          <div style={{fontSize:13,color:T.ink300,marginBottom:10}}>Volumétrie actuelle du portefeuille</div>
+    <div key={tab+(tab==="derives"?"/"+kpiTab:"")} className="enogia-view-in" style={{minWidth:0}}>
+    {tab==="derives"&&kpiTab==="synthese"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
+      <KpiRow items={[[fk.length,"Total",T.teal500],[shipped.length,"Expédiées",T.emerald500],[inProd.length,"En production",T.amber500],[upcoming.length,"Départs < 30j",T.red500],[avgDureeProd==null?"—":avgDureeProd+"j","Durée moy. production",T.violet500]]}/>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(380px,1fr))",gap:12}}>
+        {countByEtat.length>0&&<div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line}}>
+          <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:4}}>Répartition par état</div>
+          <div style={{fontSize:FZ.sm,color:T.ink300,marginBottom:10}}>Volumétrie actuelle du portefeuille</div>
           <ResponsiveContainer width="100%" height={Math.max(160,countByEtat.length*40)}>
             <BarChart data={countByEtat} layout="vertical" margin={{left:10,right:20}}>
               <CartesianGrid strokeDasharray="3 3" stroke={T.surface}/>
-              <XAxis type="number" allowDecimals={false} tick={{fontSize:12,fill:T.ink500}}/>
-              <YAxis type="category" dataKey="etat" width={130} tick={{fontSize:13,fill:T.ink700,fontWeight:600}}/>
-              <Tooltip contentStyle={{fontFamily:T.font,fontSize:13,borderRadius:8}}/>
+              <XAxis type="number" allowDecimals={false} tick={{fontSize:FZ.xs,fill:T.ink500}}/>
+              <YAxis type="category" dataKey="etat" width={130} tick={{fontSize:FZ.sm,fill:T.ink700,fontWeight:600}}/>
+              <Tooltip contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
               <Bar dataKey="n" radius={[0,6,6,0]}>
                 {countByEtat.map((d,i)=><Cell key={i} fill={d.c}/>)}
               </Bar>
@@ -389,25 +413,25 @@ export function ManagerPanel({data,progress,setProgress,initialData,lastInitialI
           </ResponsiveContainer>
         </div>}
 
-        {countByPays.length>0&&<div style={{background:T.card,borderRadius:14,padding:20,border:"1px solid "+T.line}}>
-          <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:15,color:T.ink900,marginBottom:4}}>Répartition par pays</div>
-          <div style={{fontSize:13,color:T.ink300,marginBottom:10}}>Destinations des machines du portefeuille</div>
+        {countByPays.length>0&&<div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line}}>
+          <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:4}}>Répartition par pays</div>
+          <div style={{fontSize:FZ.sm,color:T.ink300,marginBottom:10}}>Destinations des machines du portefeuille</div>
           <ResponsiveContainer width="100%" height={Math.max(160,countByPays.length*36)}>
             <BarChart data={countByPays} layout="vertical" margin={{left:10,right:20}}>
               <CartesianGrid strokeDasharray="3 3" stroke={T.surface}/>
-              <XAxis type="number" allowDecimals={false} tick={{fontSize:12,fill:T.ink500}}/>
-              <YAxis type="category" dataKey="pays" width={90} tick={{fontSize:13,fill:T.ink700,fontWeight:600}}/>
-              <Tooltip contentStyle={{fontFamily:T.font,fontSize:13,borderRadius:8}}/>
+              <XAxis type="number" allowDecimals={false} tick={{fontSize:FZ.xs,fill:T.ink500}}/>
+              <YAxis type="category" dataKey="pays" width={90} tick={{fontSize:FZ.sm,fill:T.ink700,fontWeight:600}}/>
+              <Tooltip contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
               <Bar dataKey="n" radius={[0,6,6,0]} fill={T.teal500}/>
             </BarChart>
           </ResponsiveContainer>
         </div>}
 
-        <div style={{background:T.card,borderRadius:14,padding:20,border:"1px solid "+T.line}}>
+        <div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8,marginBottom:10}}>
             <div>
-              <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:15,color:T.ink900}}>Explorateur libre</div>
-              <div style={{fontSize:13,color:T.ink300}}>Choisissez ce que vous voulez analyser</div>
+              <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900}}>Explorateur libre</div>
+              <div style={{fontSize:FZ.sm,color:T.ink300}}>Choisissez ce que vous voulez analyser</div>
             </div>
             <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
               <div style={{width:170}}><Select compact value={exploreDim} onChange={e=>setExploreDim(e.target.value)} options={[{value:"gamme",label:"Par gamme"},{value:"etat",label:"Par état"},{value:"pays",label:"Par pays"},{value:"chef",label:"Par chef de projet"},{value:"moisDepart",label:"Par mois de départ"}]}/></div>
@@ -417,124 +441,124 @@ export function ManagerPanel({data,progress,setProgress,initialData,lastInitialI
           <ResponsiveContainer width="100%" height={Math.max(180,exploreData.length*36)}>
             <BarChart data={exploreData} layout="vertical" margin={{left:10,right:20}}>
               <CartesianGrid strokeDasharray="3 3" stroke={T.surface}/>
-              <XAxis type="number" tick={{fontSize:12,fill:T.ink500}}/>
-              <YAxis type="category" dataKey="key" width={100} tick={{fontSize:13,fill:T.ink700,fontWeight:600}}/>
-              <Tooltip formatter={(v,n,p)=>[v,exploreMetricInfo[exploreMetric].label]} contentStyle={{fontFamily:T.font,fontSize:13,borderRadius:8}}/>
+              <XAxis type="number" tick={{fontSize:FZ.xs,fill:T.ink500}}/>
+              <YAxis type="category" dataKey="key" width={100} tick={{fontSize:FZ.sm,fill:T.ink700,fontWeight:600}}/>
+              <Tooltip formatter={(v,n,p)=>[v,exploreMetricInfo[exploreMetric].label]} contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
               <Bar dataKey={exploreMetric} radius={[0,6,6,0]} fill={T.violet500}/>
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-      <div style={{background:T.card,borderRadius:14,padding:20,border:"1px solid "+T.line}}>
-        <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:15,color:T.ink900,marginBottom:10}}>Départs par mois</div>
+      <div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line}}>
+        <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:10}}>Départs par mois</div>
         <div style={{display:"flex",gap:4,alignItems:"flex-end",height:84}}>
           {byMonth.map((n,i)=>{const iC=i===today.getMonth();return(<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
-            <div style={{fontSize:14,color:T.ink500,fontWeight:600}}>{n||""}</div>
+            <div style={{fontSize:FZ.sm,color:T.ink500,fontWeight:600}}>{n||""}</div>
             <div style={{width:"100%",height:n?(n/maxBar*60)+"px":"0",minHeight:n?4:0,background:i<today.getMonth()?T.ink100:iC?T.teal500:T.teal400,borderRadius:"3px 3px 0 0"}}/>
-            <div style={{fontSize:13,color:iC?T.teal600:T.ink300,fontWeight:iC?700:500}}>{MONTHS[i]}</div>
+            <div style={{fontSize:FZ.sm,color:iC?T.teal600:T.ink300,fontWeight:iC?700:500}}>{MONTHS[i]}</div>
           </div>);})}
         </div>
       </div>
-      <div style={{background:T.card,borderRadius:14,padding:20,border:"1px solid "+T.line}}>
-        <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:15,color:T.ink900,marginBottom:10}}>Par gamme</div>
-        {Object.entries(gammeCounts).sort((a,b)=>b[1]-a[1]).map(([g,n])=>{const col=GAMME_COLORS[g]||T.ink500;return(<div key={g} style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
-          <span style={{width:78,fontSize:15,fontWeight:700,color:col,flexShrink:0}}>{g}</span>
-          <div style={{flex:1,background:T.surfaceAlt,borderRadius:5,height:18,overflow:"hidden",position:"relative"}}><div style={{width:((n/Math.max(fd.length,1))*100)+"%",height:"100%",background:col}}/><span style={{position:"absolute",left:8,top:1,fontSize:14,color:"#fff",fontWeight:700,lineHeight:"16px"}}>{n}</span></div>
+      <div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line}}>
+        <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:10}}>Par gamme</div>
+        {Object.entries(gammeCounts).sort((a,b)=>b[1]-a[1]).map(([g,n])=>{const col=GAMME_COLORS[g]||T.ink500;return(<div key={g} style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+          <span style={{width:78,fontSize:FZ.md,fontWeight:700,color:col,flexShrink:0}}>{g}</span>
+          <div style={{flex:1,background:T.surfaceAlt,borderRadius:4,height:18,overflow:"hidden",position:"relative"}}><div style={{width:((n/Math.max(fd.length,1))*100)+"%",height:"100%",background:col}}/><span style={{position:"absolute",left:8,top:1,fontSize:FZ.sm,color:"#fff",fontWeight:700,lineHeight:"16px"}}>{n}</span></div>
         </div>);})}
       </div>
       </div>
     </div>}
 
-    {tab==="derives"&&kpiTab==="charge"&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
-        {fd.length>0&&<div style={{background:T.card,borderRadius:14,padding:20,border:"1px solid "+T.line,gridColumn:"1 / -1"}}>
+    {tab==="derives"&&kpiTab==="charge"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
+        {fd.length>0&&<div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line,gridColumn:"1 / -1"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8}}>
             <div>
-              <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:15,color:T.ink900,marginBottom:4}}>Charge prévisionnelle par étape et par mois</div>
-              <div style={{fontSize:13,color:T.ink300,marginBottom:10}}>Nombre de machines à chaque étape chaque mois — Production = machines en fabrication ce mois-là</div>
+              <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:4}}>Charge prévisionnelle par étape et par mois</div>
+              <div style={{fontSize:FZ.sm,color:T.ink300,marginBottom:10}}>Nombre de machines à chaque étape chaque mois — Production = machines en fabrication ce mois-là</div>
             </div>
             <PeriodFilter yearsAvailable={yearsInData} year={chargeYear} setYear={setChargeYear} showMonth={false}/>
           </div>
           {chargeByMonthMulti.length>0?<ResponsiveContainer width="100%" height={260}>
             <BarChart data={chargeByMonthMulti}>
               <CartesianGrid strokeDasharray="3 3" stroke={T.surface}/>
-              <XAxis dataKey="mois" tick={{fontSize:12,fill:T.ink700,fontWeight:600}}/>
-              <YAxis allowDecimals={false} tick={{fontSize:12,fill:T.ink500}}/>
-              <Tooltip contentStyle={{fontFamily:T.font,fontSize:13,borderRadius:8}}/>
-              <Legend wrapperStyle={{fontSize:13}}/>
+              <XAxis dataKey="mois" tick={{fontSize:FZ.xs,fill:T.ink700,fontWeight:600}}/>
+              <YAxis allowDecimals={false} tick={{fontSize:FZ.xs,fill:T.ink500}}/>
+              <Tooltip contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
+              <Legend wrapperStyle={{fontSize:FZ.sm}}/>
               <Bar dataKey="Arrivée" fill={T.teal500} radius={[4,4,0,0]}/>
-              <Bar dataKey="Production" fill="#5eccc9" radius={[4,4,0,0]}/>
+              <Bar dataKey="Production" fill={T.info500} radius={[4,4,0,0]}/>
               <Bar dataKey="Tests" fill={T.amber500} radius={[4,4,0,0]}/>
               <Bar dataKey="Fin prod" fill={T.emerald500} radius={[4,4,0,0]}/>
               <Bar dataKey="Départ" fill={T.red500} radius={[4,4,0,0]}/>
             </BarChart>
-          </ResponsiveContainer>:<div style={{padding:"40px 0",textAlign:"center",color:T.ink300,fontSize:14}}>Aucune donnée pour cette période</div>}
+          </ResponsiveContainer>:<div style={{padding:"40px 0",textAlign:"center",color:T.ink300,fontSize:FZ.sm}}>Aucune donnée pour cette période</div>}
         </div>}
 
-        {workloadByPJ.length>0&&<div style={{background:T.card,borderRadius:14,padding:20,border:"1px solid "+T.line,gridColumn:"1 / -1"}}>
-          <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:15,color:T.ink900,marginBottom:4,display:"flex",alignItems:"center",gap:8}}><NavIcon name="gauge" size={17}/>Charge de travail Atelier / Autom</div>
-          <div style={{fontSize:13,color:T.ink300,marginBottom:14}}>Heures de travail par PJ, issues de l'import Excel (feuille Table_affectation)</div>
+        {workloadByPJ.length>0&&<div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line,gridColumn:"1 / -1"}}>
+          <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:4,display:"flex",alignItems:"center",gap:8}}><NavIcon name="gauge" size={17}/>Charge de travail Atelier / Autom</div>
+          <div style={{fontSize:FZ.sm,color:T.ink300,marginBottom:14}}>Heures de travail par PJ, issues de l'import Excel (feuille Table_affectation)</div>
 
           <KpiRow items={[[totalHeuresAtelier+"h","Total Atelier",T.teal500],[totalHeuresAutom+"h","Total Autom",T.violet500],[workloadByPJ.length,"PJ avec charge connue",T.ink500]]} min={150}/>
 
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(380px,1fr))",gap:18}}>
-            <div style={{background:T.surface,borderRadius:10,padding:14,overflow:"auto",maxHeight:380}}>
-              <div style={{fontSize:14,fontWeight:700,color:T.ink900,marginBottom:8}}>Détail par PJ</div>
-              <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(380px,1fr))",gap:16}}>
+            <div style={{background:T.surface,borderRadius:12,padding:12,overflow:"auto",maxHeight:380}}>
+              <div style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,marginBottom:8}}>Détail par PJ</div>
+              <table style={{width:"100%",borderCollapse:"collapse",fontSize:FZ.sm}}>
                 <thead><tr style={{borderBottom:"1px solid "+T.line,position:"sticky",top:0,background:T.surface}}>
-                  {["N° PJ","Gamme","Atelier","Autom"].map(h=><th key={h} style={{padding:"6px 10px",textAlign:h==="N° PJ"||h==="Gamme"?"left":"right",fontWeight:700,color:T.ink500,fontSize:12,textTransform:"uppercase"}}>{h}</th>)}
+                  {["N° PJ","Gamme","Atelier","Autom"].map(h=><th key={h} style={{padding:"6px 8px",textAlign:h==="N° PJ"||h==="Gamme"?"left":"right",fontWeight:700,color:T.ink500,fontSize:FZ.xs,textTransform:"uppercase"}}>{h}</th>)}
                 </tr></thead>
                 <tbody>{workloadByPJ.map(r=>(
                   <tr key={r.pj} style={{borderBottom:"1px solid "+T.surfaceAlt}}>
-                    <td style={{padding:"7px 10px",fontWeight:700,color:T.teal600}}>{r.pj} <SerieTag pj={r.pj}/></td>
-                    <td style={{padding:"7px 10px",color:T.ink500}}>{r.gamme}</td>
-                    <td style={{padding:"7px 10px",textAlign:"right",fontWeight:600,color:T.ink900}}>{r.heuresAtelier}h</td>
-                    <td style={{padding:"7px 10px",textAlign:"right",fontWeight:600,color:T.violet600}}>{r.heuresAutom}h</td>
+                    <td style={{padding:"8px 8px",fontWeight:700,color:T.teal600}}>{r.pj} <SerieTag pj={r.pj}/></td>
+                    <td style={{padding:"8px 8px",color:T.ink500}}>{r.gamme}</td>
+                    <td style={{padding:"8px 8px",textAlign:"right",fontWeight:600,color:T.ink900}}>{r.heuresAtelier}h</td>
+                    <td style={{padding:"8px 8px",textAlign:"right",fontWeight:600,color:T.violet600}}>{r.heuresAutom}h</td>
                   </tr>
                 ))}</tbody>
               </table>
             </div>
 
             {workloadByPJ.length>0&&<>
-              <div style={{background:T.surface,borderRadius:10,padding:14}}>
+              <div style={{background:T.surface,borderRadius:12,padding:12}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8}}>
                   <div>
-                    <div style={{fontSize:14,fontWeight:700,color:T.ink900,marginBottom:4}}>Taux de saturation hebdomadaire</div>
-                    <div style={{fontSize:12,color:T.ink300,marginBottom:8}}>Atelier (capacité {CAPA_ATELIER_SEM}h/sem.) vs Autom (capacité {CAPA_AUTOM_SEM}h/sem.)</div>
+                    <div style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,marginBottom:4}}>Taux de saturation hebdomadaire</div>
+                    <div style={{fontSize:FZ.xs,color:T.ink300,marginBottom:8}}>Atelier (capacité {CAPA_ATELIER_SEM}h/sem.) vs Autom (capacité {CAPA_AUTOM_SEM}h/sem.)</div>
                   </div>
                   <PeriodFilter yearsAvailable={yearsInData} year={satYear} setYear={setSatYear} month={satMonth} setMonth={setSatMonth}/>
                 </div>
                 {saturationByWeek.length>0?<ResponsiveContainer width="100%" height={220}>
                   <LineChart data={saturationByWeek}>
                     <CartesianGrid strokeDasharray="3 3" stroke={T.line}/>
-                    <XAxis dataKey="semaineMois" tick={{fontSize:10.5,fill:T.ink500}} angle={-35} textAnchor="end" height={55}/>
-                    <YAxis tick={{fontSize:12,fill:T.ink500}} tickFormatter={v=>v+"%"}/>
-                    <Tooltip formatter={(v,n)=>[v+"%",n]} contentStyle={{fontFamily:T.font,fontSize:13,borderRadius:8}}/>
-                    <Legend wrapperStyle={{fontSize:13}}/>
+                    <XAxis dataKey="semaineMois" tick={{fontSize:FZ.xs,fill:T.ink500}} angle={-35} textAnchor="end" height={55}/>
+                    <YAxis tick={{fontSize:FZ.xs,fill:T.ink500}} tickFormatter={v=>v+"%"}/>
+                    <Tooltip formatter={(v,n)=>[v+"%",n]} contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
+                    <Legend wrapperStyle={{fontSize:FZ.sm}}/>
                     <Line type="monotone" dataKey="satAtelier" name="Atelier" stroke={T.teal500} strokeWidth={3} dot={{r:4,fill:T.teal500}}/>
                     <Line type="monotone" dataKey="satAutom" name="Autom" stroke={T.violet500} strokeWidth={3} dot={{r:4,fill:T.violet500}}/>
                   </LineChart>
-                </ResponsiveContainer>:<div style={{padding:"40px 0",textAlign:"center",color:T.ink300,fontSize:14}}>Aucune donnée pour cette période</div>}
+                </ResponsiveContainer>:<div style={{padding:"40px 0",textAlign:"center",color:T.ink300,fontSize:FZ.sm}}>Aucune donnée pour cette période</div>}
               </div>
 
-              <div style={{background:T.surface,borderRadius:10,padding:14}}>
+              <div style={{background:T.surface,borderRadius:12,padding:12}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8}}>
                   <div>
-                    <div style={{fontSize:14,fontWeight:700,color:T.ink900,marginBottom:4}}>Heures de travail hebdomadaires</div>
-                    <div style={{fontSize:12,color:T.ink300,marginBottom:8}}>Volume brut d'heures Atelier et Autom, semaine par semaine</div>
+                    <div style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,marginBottom:4}}>Heures de travail hebdomadaires</div>
+                    <div style={{fontSize:FZ.xs,color:T.ink300,marginBottom:8}}>Volume brut d'heures Atelier et Autom, semaine par semaine</div>
                   </div>
                   <PeriodFilter yearsAvailable={yearsInData} year={satYear} setYear={setSatYear} month={satMonth} setMonth={setSatMonth}/>
                 </div>
                 {saturationByWeek.length>0?<ResponsiveContainer width="100%" height={220}>
                   <LineChart data={saturationByWeek}>
                     <CartesianGrid strokeDasharray="3 3" stroke={T.line}/>
-                    <XAxis dataKey="semaineMois" tick={{fontSize:10.5,fill:T.ink500}} angle={-35} textAnchor="end" height={55}/>
-                    <YAxis tick={{fontSize:12,fill:T.ink500}} tickFormatter={v=>v+"h"}/>
-                    <Tooltip formatter={(v,n)=>[v+"h",n]} contentStyle={{fontFamily:T.font,fontSize:13,borderRadius:8}}/>
-                    <Legend wrapperStyle={{fontSize:13}}/>
+                    <XAxis dataKey="semaineMois" tick={{fontSize:FZ.xs,fill:T.ink500}} angle={-35} textAnchor="end" height={55}/>
+                    <YAxis tick={{fontSize:FZ.xs,fill:T.ink500}} tickFormatter={v=>v+"h"}/>
+                    <Tooltip formatter={(v,n)=>[v+"h",n]} contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
+                    <Legend wrapperStyle={{fontSize:FZ.sm}}/>
                     <Line type="monotone" dataKey="atelier" name="Atelier" stroke={T.teal500} strokeWidth={3} dot={{r:4,fill:T.teal500}}/>
                     <Line type="monotone" dataKey="autom" name="Autom" stroke={T.violet500} strokeWidth={3} dot={{r:4,fill:T.violet500}}/>
                   </LineChart>
-                </ResponsiveContainer>:<div style={{padding:"40px 0",textAlign:"center",color:T.ink300,fontSize:14}}>Aucune donnée pour cette période</div>}
+                </ResponsiveContainer>:<div style={{padding:"40px 0",textAlign:"center",color:T.ink300,fontSize:FZ.sm}}>Aucune donnée pour cette période</div>}
               </div>
             </>}
           </div>
@@ -542,48 +566,47 @@ export function ManagerPanel({data,progress,setProgress,initialData,lastInitialI
       {fd.length===0&&<EmptyNote>Aucune donnée pour la sélection.</EmptyNote>}
     </div>}
 
-    {codirOpen&&<CodirDialog data={data} initialData={initialData} comments={comments} delays={delays} progress={progress} onClose={()=>setCodirOpen(false)}/>}
     {pendingAdd&&<InitialAddReview parsed={pendingAdd} initialData={initialData} busy={initialImporting} onCancel={()=>setPendingAdd(null)} onConfirm={async(rows,fixRows)=>{await onInitialAdd(rows,fixRows);setPendingAdd(null);}}/>}
 
-    {tab==="derives"&&kpiTab==="derives"&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
-      {!hasInitial&&<div style={{background:T.amber100,color:T.amber600,borderRadius:12,padding:"16px 18px",fontSize:14,display:"flex",alignItems:"center",gap:10}}><NavIcon name="warning" size={16}/>Aucun planning initial importé — les dérives ne peuvent pas être calculées. Utilisez le menu ⋯ de la tuile « Planning initial » en haut à droite.</div>}
+    {tab==="derives"&&kpiTab==="derives"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
+      {!hasInitial&&<div style={{background:T.amber100,color:T.amber600,borderRadius:12,padding:"16px 16px",fontSize:FZ.sm,display:"flex",alignItems:"center",gap:8}}><NavIcon name="warning" size={16}/>Aucun planning initial importé — les dérives ne peuvent pas être calculées. Utilisez le menu ⋯ de la tuile « Planning initial » en haut à droite.</div>}
       {initialData.length>0&&<>
           <KpiRow items={[[avgDelay==null?"—":(avgDelay>0?"+":"")+avgDelay+"j","Retard moyen départ",avgDelay>0?T.red500:T.emerald500],[lateCount,"PJ en retard",T.red500],[onTimeOrEarlyCount,"PJ à l'heure / en avance",T.emerald500],[onTimeRate==null?"—":onTimeRate+"%","Taux de respect délais",onTimeRate>=70?T.emerald500:onTimeRate>=40?T.amber500:T.red500],[comparable.length,"PJ comparables",T.ink500]]}/>
 
-        <div style={{background:T.card,borderRadius:14,padding:"18px 20px",border:"1px solid "+T.line}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:10,marginBottom:2}}>
+        <div style={{background:T.card,borderRadius:16,padding:"16px 20px",border:"1px solid "+T.line}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8,marginBottom:2}}>
             <div>
-              <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:17,color:T.ink900,display:"flex",alignItems:"center",gap:9}}><NavIcon name="chart" size={19}/>Vue CODIR — Promesse vs Réalité</div>
-              <div style={{fontSize:14,color:T.ink500}}>Impact cumulé de l'écart entre le planning initial et le planning révisé</div>
+              <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,display:"flex",alignItems:"center",gap:8}}><NavIcon name="chart" size={19}/>Vue CODIR — Promesse vs Réalité</div>
+              <div style={{fontSize:FZ.sm,color:T.ink500}}>Impact cumulé de l'écart entre le planning initial et le planning révisé</div>
             </div>
-            <div style={{display:"flex",alignItems:"center",gap:8,background:T.surface,borderRadius:10,padding:"6px 10px"}}>
-              <span style={{fontSize:13,color:T.ink500,fontWeight:600}}>Étape analysée :</span>
+            <div style={{display:"flex",alignItems:"center",gap:8,background:T.surface,borderRadius:12,padding:"6px 8px"}}>
+              <span style={{fontSize:FZ.sm,color:T.ink500,fontWeight:600}}>Étape analysée :</span>
               <div style={{display:"flex",gap:4}}>
-                {Object.entries(STEP_LABELS).map(([k,l])=><button key={k} onClick={()=>setKpiStep(k)} style={{padding:"6px 12px",borderRadius:8,border:"none",background:kpiStep===k?T.teal500:T.card,color:kpiStep===k?"#fff":T.ink700,fontSize:13,fontWeight:600,cursor:"pointer"}}>{l}</button>)}
+                {Object.entries(STEP_LABELS).map(([k,l])=><button key={k} onClick={()=>setKpiStep(k)} style={{padding:"6px 12px",borderRadius:8,border:"none",background:kpiStep===k?T.teal500:T.card,color:kpiStep===k?"#fff":T.ink700,fontSize:FZ.sm,fontWeight:600,cursor:"pointer"}}>{l}</button>)}
               </div>
             </div>
           </div>
           <div style={{marginBottom:16}}/>
           <KpiRow items={[[totalDelayDays+"j","Retard cumulé généré ("+STEP_LABELS[kpiStep]+")",T.red500],[totalGainDays+"j","Avance cumulée gagnée",T.emerald500],[reliabilityRate==null?"—":reliabilityRate+"%","PJ tenus à la date promise",T.teal500],[dureeCompare.ecart==null?"—":(dureeCompare.ecart>0?"+":"")+dureeCompare.ecart+"j","Écart durée moy. production",dureeCompare.ecart>0?T.red500:T.emerald500]]} min={170}/>
 
-          {promiseVsReality.length>0&&<div style={{background:T.surface,borderRadius:10,padding:14,marginBottom:14}}>
-            <div style={{fontSize:14,fontWeight:700,color:T.ink900,marginBottom:8}}>{STEP_LABELS[kpiStep]} promis (initial) vs maintenus dans le mois (révisé)</div>
+          {promiseVsReality.length>0&&<div style={{background:T.surface,borderRadius:12,padding:12,marginBottom:14}}>
+            <div style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,marginBottom:8}}>{STEP_LABELS[kpiStep]} promis (initial) vs maintenus dans le mois (révisé)</div>
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={promiseVsReality}>
                 <CartesianGrid strokeDasharray="3 3" stroke={T.line}/>
-                <XAxis dataKey="mois" tick={{fontSize:12,fill:T.ink700,fontWeight:600}}/>
-                <YAxis allowDecimals={false} tick={{fontSize:12,fill:T.ink500}}/>
-                <Tooltip contentStyle={{fontFamily:T.font,fontSize:13,borderRadius:8}}/>
-                <Legend wrapperStyle={{fontSize:13}}/>
+                <XAxis dataKey="mois" tick={{fontSize:FZ.xs,fill:T.ink700,fontWeight:600}}/>
+                <YAxis allowDecimals={false} tick={{fontSize:FZ.xs,fill:T.ink500}}/>
+                <Tooltip contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
+                <Legend wrapperStyle={{fontSize:FZ.sm}}/>
                 <Line type="monotone" dataKey="promis" name="Promis (initial)" stroke={T.ink300} strokeWidth={2.5} strokeDasharray="5 4" dot={{r:4,fill:T.ink300}}/>
                 <Line type="monotone" dataKey="realise" name="Maintenu dans le mois" stroke={T.teal500} strokeWidth={3} dot={{r:5,fill:T.teal500}}/>
               </LineChart>
             </ResponsiveContainer>
           </div>}
 
-          {pjCompareChart.length>0&&<div style={{background:T.surface,borderRadius:10,padding:16,marginBottom:14}}>
-            <div style={{fontSize:14,fontWeight:700,color:T.ink900,marginBottom:4}}>Date de {STEP_LABELS[kpiStep].toLowerCase()} par PJ — Initial vs Révisé</div>
-            <div style={{fontSize:12,color:T.ink300,marginBottom:12}}>Chaque ligne relie la date promise à la date réelle — la longueur et la couleur indiquent l'ampleur du glissement</div>
+          {pjCompareChart.length>0&&<div style={{background:T.surface,borderRadius:12,padding:16,marginBottom:14}}>
+            <div style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,marginBottom:4}}>Date de {STEP_LABELS[kpiStep].toLowerCase()} par PJ — Initial vs Révisé</div>
+            <div style={{fontSize:FZ.xs,color:T.ink300,marginBottom:12}}>Chaque ligne relie la date promise à la date réelle — la longueur et la couleur indiquent l'ampleur du glissement</div>
             {(()=>{
               const rowHd=34,labelW=78,leftPad=20,rightPad=20,topPad=28,bottomPad=4;
               const minD=Math.min(...pjCompareChart.map(p=>Math.min(p.initial,p.revise)));
@@ -631,65 +654,55 @@ export function ManagerPanel({data,progress,setProgress,initialData,lastInitialI
                 </svg>
               </div>);
             })()}
-            <div style={{display:"flex",gap:18,marginTop:12,paddingTop:12,borderTop:"1px solid "+T.line,flexWrap:"wrap"}}>
-              <span style={{display:"flex",alignItems:"center",gap:6,fontSize:13,color:T.ink500}}><span style={{width:11,height:11,borderRadius:"50%",background:"#fff",border:"2px solid "+T.ink300,display:"inline-block"}}/>Date initiale</span>
-              <span style={{display:"flex",alignItems:"center",gap:6,fontSize:13,color:T.ink500}}><span style={{width:11,height:11,borderRadius:"50%",background:T.red500,display:"inline-block"}}/>Révisée — retard</span>
-              <span style={{display:"flex",alignItems:"center",gap:6,fontSize:13,color:T.ink500}}><span style={{width:11,height:11,borderRadius:"50%",background:T.emerald500,display:"inline-block"}}/>Révisée — avance</span>
+            <div style={{display:"flex",gap:16,marginTop:12,paddingTop:12,borderTop:"1px solid "+T.line,flexWrap:"wrap"}}>
+              <span style={{display:"flex",alignItems:"center",gap:6,fontSize:FZ.sm,color:T.ink500}}><span style={{width:11,height:11,borderRadius:"50%",background:"#fff",border:"2px solid "+T.ink300,display:"inline-block"}}/>Date initiale</span>
+              <span style={{display:"flex",alignItems:"center",gap:6,fontSize:FZ.sm,color:T.ink500}}><span style={{width:11,height:11,borderRadius:"50%",background:T.red500,display:"inline-block"}}/>Révisée — retard</span>
+              <span style={{display:"flex",alignItems:"center",gap:6,fontSize:FZ.sm,color:T.ink500}}><span style={{width:11,height:11,borderRadius:"50%",background:T.emerald500,display:"inline-block"}}/>Révisée — avance</span>
             </div>
           </div>}
 
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(320px,1fr))",gap:14,marginBottom:14}}>
-            {driftBuckets.length>0&&<div style={{background:T.surface,borderRadius:10,padding:14}}>
-              <div style={{fontSize:14,fontWeight:700,color:T.ink900,marginBottom:8}}>Répartition par sévérité du retard</div>
-              <ResponsiveContainer width="100%" height={180}>
-                <BarChart data={driftBuckets} layout="vertical" margin={{left:10,right:20}}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={T.line}/>
-                  <XAxis type="number" allowDecimals={false} tick={{fontSize:11,fill:T.ink500}}/>
-                  <YAxis type="category" dataKey="label" width={140} tick={{fontSize:12,fill:T.ink700}}/>
-                  <Tooltip contentStyle={{fontFamily:T.font,fontSize:13,borderRadius:8}}/>
-                  <Bar dataKey="n" radius={[0,6,6,0]}>
-                    {driftBuckets.map((d,i)=><Cell key={i} fill={d.c}/>)}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(320px,1fr))",gap:12,marginBottom:14}}>
+            {driftBuckets.length>0&&<div style={{background:T.surface,borderRadius:12,padding:12}}>
+              <div style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,marginBottom:8}}>Répartition par sévérité du retard</div>
+              <PieBlock data={driftBuckets.filter(d=>d.n>0).map(d=>({name:d.label,value:d.n,color:d.c}))} unit=" PJ" size={140} centerLabel={driftBuckets.reduce((a,d)=>a+d.n,0)} sub="PJ"/>
             </div>}
 
-            {trajectory.some(t=>t.moyenne!=null)&&<div style={{background:T.surface,borderRadius:10,padding:14}}>
-              <div style={{fontSize:14,fontWeight:700,color:T.ink900,marginBottom:8}}>Trajectoire de la dérive le long de la chaîne</div>
-              <div style={{fontSize:12,color:T.ink300,marginBottom:6}}>Le retard s'aggrave-t-il ou se résorbe-t-il entre l'arrivée et le départ ?</div>
+            {trajectory.some(t=>t.moyenne!=null)&&<div style={{background:T.surface,borderRadius:12,padding:12}}>
+              <div style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,marginBottom:8}}>Trajectoire de la dérive le long de la chaîne</div>
+              <div style={{fontSize:FZ.xs,color:T.ink300,marginBottom:6}}>Le retard s'aggrave-t-il ou se résorbe-t-il entre l'arrivée et le départ ?</div>
               <ResponsiveContainer width="100%" height={150}>
                 <LineChart data={trajectory}>
                   <CartesianGrid strokeDasharray="3 3" stroke={T.line}/>
-                  <XAxis dataKey="jalon" tick={{fontSize:12,fill:T.ink700,fontWeight:600}}/>
-                  <YAxis tick={{fontSize:11,fill:T.ink500}}/>
-                  <Tooltip contentStyle={{fontFamily:T.font,fontSize:13,borderRadius:8}}/>
+                  <XAxis dataKey="jalon" tick={{fontSize:FZ.xs,fill:T.ink700,fontWeight:600}}/>
+                  <YAxis tick={{fontSize:FZ.xs,fill:T.ink500}}/>
+                  <Tooltip contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
                   <Line type="monotone" dataKey="moyenne" stroke={T.teal500} strokeWidth={3} dot={{r:5,fill:T.teal500}}/>
                 </LineChart>
               </ResponsiveContainer>
             </div>}
 
-            {dureeCompare.rows.length>0&&<div style={{background:T.surface,borderRadius:10,padding:14}}>
-              <div style={{fontSize:14,fontWeight:700,color:T.ink900,marginBottom:4}}>Durée de production : initial vs révisé</div>
-              <div style={{fontSize:12,color:T.ink300,marginBottom:8}}>Moyenne sur le portefeuille comparable (Arrivée → Départ)</div>
+            {dureeCompare.rows.length>0&&<div style={{background:T.surface,borderRadius:12,padding:12}}>
+              <div style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,marginBottom:4}}>Durée de production : initial vs révisé</div>
+              <div style={{fontSize:FZ.xs,color:T.ink300,marginBottom:8}}>Moyenne sur le portefeuille comparable (Arrivée → Départ)</div>
               <div style={{display:"flex",gap:20,alignItems:"baseline"}}>
-                <div><div style={{fontFamily:T.fontDisplay,fontSize:26,fontWeight:700,color:T.ink500}}>{dureeCompare.avgIni}j</div><div style={{fontSize:12,color:T.ink300}}>Initial</div></div>
-                <div style={{fontSize:20,color:T.ink300}}>→</div>
-                <div><div style={{fontFamily:T.fontDisplay,fontSize:26,fontWeight:700,color:dureeCompare.ecart>0?T.red500:T.emerald500}}>{dureeCompare.avgRev}j</div><div style={{fontSize:12,color:T.ink300}}>Révisé</div></div>
+                <div><div style={{fontFamily:T.fontDisplay,fontSize:FZ.xl,fontWeight:700,color:T.ink500}}>{dureeCompare.avgIni}j</div><div style={{fontSize:FZ.xs,color:T.ink300}}>Initial</div></div>
+                <div style={{fontSize:FZ.lg,color:T.ink300}}>→</div>
+                <div><div style={{fontFamily:T.fontDisplay,fontSize:FZ.xl,fontWeight:700,color:dureeCompare.ecart>0?T.red500:T.emerald500}}>{dureeCompare.avgRev}j</div><div style={{fontSize:FZ.xs,color:T.ink300}}>Révisé</div></div>
               </div>
             </div>}
           </div>
         </div>
 
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(380px,1fr))",gap:18}}>
-          {driftByGamme.length>0&&<div style={{background:T.card,borderRadius:14,padding:20,border:"1px solid "+T.line}}>
-            <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:15,color:T.ink900,marginBottom:4}}>Dérive moyenne par gamme</div>
-            <div style={{fontSize:13,color:T.ink300,marginBottom:10}}>Écart moyen (jours) entre départ initial et révisé, par gamme</div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(380px,1fr))",gap:16}}>
+          {driftByGamme.length>0&&<div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line}}>
+            <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:4}}>Dérive moyenne par gamme</div>
+            <div style={{fontSize:FZ.sm,color:T.ink300,marginBottom:10}}>Écart moyen (jours) entre départ initial et révisé, par gamme</div>
             <ResponsiveContainer width="100%" height={Math.max(180,driftByGamme.length*38)}>
               <BarChart data={driftByGamme} layout="vertical" margin={{left:10,right:20}}>
                 <CartesianGrid strokeDasharray="3 3" stroke={T.surface}/>
-                <XAxis type="number" tick={{fontSize:12,fill:T.ink500}}/>
-                <YAxis type="category" dataKey="gamme" width={90} tick={{fontSize:13,fill:T.ink700,fontWeight:600}}/>
-                <Tooltip formatter={(v,n,p)=>[v+"j (n="+p.payload.n+")","Dérive moyenne"]} contentStyle={{fontFamily:T.font,fontSize:13,borderRadius:8}}/>
+                <XAxis type="number" tick={{fontSize:FZ.xs,fill:T.ink500}}/>
+                <YAxis type="category" dataKey="gamme" width={90} tick={{fontSize:FZ.sm,fill:T.ink700,fontWeight:600}}/>
+                <Tooltip formatter={(v,n,p)=>[v+"j (n="+p.payload.n+")","Dérive moyenne"]} contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
                 <Bar dataKey="moyenne" radius={[0,6,6,0]}>
                   {driftByGamme.map((d,i)=><Cell key={i} fill={d.moyenne>0?T.red500:T.emerald500}/>)}
                 </Bar>
@@ -697,15 +710,15 @@ export function ManagerPanel({data,progress,setProgress,initialData,lastInitialI
             </ResponsiveContainer>
           </div>}
 
-          {driftByMilestone.some(d=>d.moyenne!=null)&&<div style={{background:T.card,borderRadius:14,padding:20,border:"1px solid "+T.line}}>
-            <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:15,color:T.ink900,marginBottom:4}}>Dérive moyenne par jalon</div>
-            <div style={{fontSize:13,color:T.ink300,marginBottom:10}}>Où le retard se creuse le plus dans la chaîne de production</div>
+          {driftByMilestone.some(d=>d.moyenne!=null)&&<div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line}}>
+            <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:4}}>Dérive moyenne par jalon</div>
+            <div style={{fontSize:FZ.sm,color:T.ink300,marginBottom:10}}>Où le retard se creuse le plus dans la chaîne de production</div>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={driftByMilestone}>
                 <CartesianGrid strokeDasharray="3 3" stroke={T.surface}/>
-                <XAxis dataKey="jalon" tick={{fontSize:13,fill:T.ink700,fontWeight:600}}/>
-                <YAxis tick={{fontSize:12,fill:T.ink500}}/>
-                <Tooltip formatter={(v,n,p)=>[v+"j (n="+p.payload.n+")","Dérive moyenne"]} contentStyle={{fontFamily:T.font,fontSize:13,borderRadius:8}}/>
+                <XAxis dataKey="jalon" tick={{fontSize:FZ.sm,fill:T.ink700,fontWeight:600}}/>
+                <YAxis tick={{fontSize:FZ.xs,fill:T.ink500}}/>
+                <Tooltip formatter={(v,n,p)=>[v+"j (n="+p.payload.n+")","Dérive moyenne"]} contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
                 <Bar dataKey="moyenne" radius={[6,6,0,0]}>
                   {driftByMilestone.map((d,i)=><Cell key={i} fill={d.moyenne>0?T.amber500:T.emerald500}/>)}
                 </Bar>
@@ -713,52 +726,52 @@ export function ManagerPanel({data,progress,setProgress,initialData,lastInitialI
             </ResponsiveContainer>
           </div>}
 
-          {comparable.length>0&&<div style={{background:T.card,borderRadius:14,padding:20,border:"1px solid "+T.line}}>
+          {comparable.length>0&&<div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8}}>
               <div>
-                <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:15,color:T.ink900,marginBottom:4}}>Dérive moyenne par mois de départ</div>
-                <div style={{fontSize:13,color:T.ink300,marginBottom:10}}>Périodes où les retards sont les plus fréquents — la situation s'améliore-t-elle dans le temps ?</div>
+                <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:4}}>Dérive moyenne par mois de départ</div>
+                <div style={{fontSize:FZ.sm,color:T.ink300,marginBottom:10}}>Périodes où les retards sont les plus fréquents — la situation s'améliore-t-elle dans le temps ?</div>
               </div>
               <div style={{width:128}}><Select compact value={driftMoisYear||""} onChange={e=>setDriftMoisYear(e.target.value?+e.target.value:null)} options={[{value:"",label:"Toutes années"},...yearsInData.map(y=>({value:y,label:String(y)}))]}/></div>
             </div>
             {driftTrend.length>0?<ResponsiveContainer width="100%" height={220}>
               <LineChart data={driftTrend}>
                 <CartesianGrid strokeDasharray="3 3" stroke={T.surface}/>
-                <XAxis dataKey="mois" tick={{fontSize:12,fill:T.ink700,fontWeight:600}}/>
-                <YAxis tick={{fontSize:12,fill:T.ink500}}/>
-                <Tooltip formatter={(v,n,p)=>[v+"j (n="+p.payload.n+")","Dérive moyenne"]} contentStyle={{fontFamily:T.font,fontSize:13,borderRadius:8}}/>
+                <XAxis dataKey="mois" tick={{fontSize:FZ.xs,fill:T.ink700,fontWeight:600}}/>
+                <YAxis tick={{fontSize:FZ.xs,fill:T.ink500}}/>
+                <Tooltip formatter={(v,n,p)=>[v+"j (n="+p.payload.n+")","Dérive moyenne"]} contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
                 <Line type="monotone" dataKey="moyenne" stroke={T.violet500} strokeWidth={3} dot={({cx,cy,payload})=><circle key={payload.mois} cx={cx} cy={cy} r={5} fill={payload.moyenne>0?T.red500:T.emerald500}/>}/>
               </LineChart>
-            </ResponsiveContainer>:<div style={{padding:"40px 0",textAlign:"center",color:T.ink300,fontSize:14}}>Aucune donnée pour cette période</div>}
+            </ResponsiveContainer>:<div style={{padding:"40px 0",textAlign:"center",color:T.ink300,fontSize:FZ.sm}}>Aucune donnée pour cette période</div>}
           </div>}
 
         </div>
 
-        {worstDrifts.length>0&&<div style={{background:T.card,borderRadius:12,padding:14,border:"1px solid "+T.line,maxWidth:520}}>
-          <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:15,color:T.ink900,marginBottom:8}}>Top 5 dérives — {STEP_LABELS[kpiStep]} (vs planning initial)</div>
+        {worstDrifts.length>0&&<div style={{background:T.card,borderRadius:12,padding:12,border:"1px solid "+T.line,maxWidth:520}}>
+          <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:8}}>Top 5 dérives — {STEP_LABELS[kpiStep]} (vs planning initial)</div>
           {worstDrifts.map(r=>{const d=r[kpiStep].delta;const c=d>0?T.red500:d<0?T.emerald500:T.ink500;return(
             <div key={r.pj} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:"1px solid "+T.surface}}>
-              <span style={{fontWeight:700,color:T.teal600,fontSize:14,minWidth:85}}>{r.pj}<SerieTag pj={r.pj} style={{marginLeft:7}}/></span>
-              <span style={{color:T.ink300,fontSize:12,minWidth:50}}>{r.gamme}</span>
-              <span style={{fontSize:13,color:T.ink500}}>{fmt(r[kpiStep].ini?new Date(r[kpiStep].ini):null)} → {fmt(r[kpiStep].rev?new Date(r[kpiStep].rev):null)}</span>
-              <span style={{marginLeft:"auto",fontWeight:800,fontSize:15,color:c}}>{d>0?"+":""}{d}j</span>
+              <span style={{fontWeight:700,color:T.teal600,fontSize:FZ.sm,minWidth:85}}>{r.pj}<SerieTag pj={r.pj} style={{marginLeft:7}}/></span>
+              <span style={{color:T.ink300,fontSize:FZ.xs,minWidth:50}}>{r.gamme}</span>
+              <span style={{fontSize:FZ.sm,color:T.ink500}}>{fmt(r[kpiStep].ini?new Date(r[kpiStep].ini):null)} → {fmt(r[kpiStep].rev?new Date(r[kpiStep].rev):null)}</span>
+              <span style={{marginLeft:"auto",fontWeight:800,fontSize:FZ.md,color:c}}>{d>0?"+":""}{d}j</span>
             </div>
           );})}
         </div>}
 
         <div style={{background:T.card,borderRadius:12,padding:0,border:"1px solid "+T.line,overflow:"auto"}}>
-          <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:15,color:T.ink900,padding:"16px 16px 0"}}>Détail par PJ — Initial vs Révisé</div>
+          <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,padding:"16px 16px 0"}}>Détail par PJ — Initial vs Révisé</div>
           <table style={{width:"100%",borderCollapse:"collapse",marginTop:10,tableLayout:"auto"}}>
             <thead><tr style={{background:T.surface,borderBottom:"2px solid "+T.line}}>
-              {["N° PJ","Gamme","Arrivée","Δ","Tests","Δ","Fin prod","Δ","Départ","Δ"].map((h,i)=><th key={i} style={{padding:"9px 12px",textAlign:"left",fontWeight:700,color:T.ink500,fontSize:14,whiteSpace:"nowrap",textTransform:"uppercase",letterSpacing:".03em"}}>{h}</th>)}
+              {["N° PJ","Gamme","Arrivée","Δ","Tests","Δ","Fin prod","Δ","Départ","Δ"].map((h,i)=><th key={i} style={{padding:"8px 12px",textAlign:"left",fontWeight:700,color:T.ink500,fontSize:FZ.sm,whiteSpace:"nowrap",textTransform:"uppercase",letterSpacing:".03em"}}>{h}</th>)}
             </tr></thead>
             <tbody>{driftRows.map((r,i)=>(
               <tr key={i} style={{borderBottom:"1px solid "+T.surface,background:r.hasInitial?T.card:T.surface}}>
-                <td style={{padding:"9px 12px",fontWeight:700,color:T.teal600,fontSize:16,whiteSpace:"nowrap"}}>{r.pj} <SerieTag pj={r.pj} size={11}/></td>
-                <td style={{padding:"9px 12px",color:T.ink500,fontSize:15,whiteSpace:"nowrap"}}>{r.gamme}</td>
+                <td style={{padding:"8px 12px",fontWeight:700,color:T.teal600,fontSize:FZ.md,whiteSpace:"nowrap"}}>{r.pj} <SerieTag pj={r.pj} size={11}/></td>
+                <td style={{padding:"8px 12px",color:T.ink500,fontSize:FZ.md,whiteSpace:"nowrap"}}>{r.gamme}</td>
                 {["arrivee","tests","finProd","depart"].map(k=>{const c=r[k];const d=c.delta;const col=d==null?T.ink300:d>0?T.red500:d<0?T.emerald500:T.ink500;return(<React.Fragment key={k}>
-                  <td style={{padding:"9px 12px",fontSize:15,color:T.ink700,whiteSpace:"nowrap"}}>{c.rev?fmt(new Date(c.rev)):"—"}</td>
-                  <td style={{padding:"9px 12px",fontSize:15,fontWeight:700,color:col,whiteSpace:"nowrap"}}>{d==null?"—":(d>0?"+":"")+d+"j"}</td>
+                  <td style={{padding:"8px 12px",fontSize:FZ.md,color:T.ink700,whiteSpace:"nowrap"}}>{c.rev?fmt(new Date(c.rev)):"—"}</td>
+                  <td style={{padding:"8px 12px",fontSize:FZ.md,fontWeight:700,color:col,whiteSpace:"nowrap"}}>{d==null?"—":(d>0?"+":"")+d+"j"}</td>
                 </React.Fragment>);})}
               </tr>
             ))}</tbody>
@@ -767,25 +780,30 @@ export function ManagerPanel({data,progress,setProgress,initialData,lastInitialI
       </>}
     </div>}
 
-    {tab==="derives"&&kpiTab==="avancement"&&<KpiAvancement rows={fd} progress={progress}/>}
+    {tab==="derives"&&kpiTab==="avancement"&&<KpiAvancement rows={fk} progress={progress}/>}
     {tab==="derives"&&kpiTab==="retards"&&<DelayInsights delays={delays} delayTypes={delayTypes}/>}
 
-    {tab==="avancement"&&<AvancementTab rows={fd} progress={progress} setProgress={setProgress} saveProgress={saveProgress} savingProgress={savingProgress} progressSaved={progressSaved}/>}
-    {tab==="sante"&&<SanteTab rows={fd} onSave={(pj,f)=>savePjMetaOverride&&savePjMetaOverride(pj,f)}/>}
-    {tab==="statut"&&<StatutTab rows={fd} etatChoice={etatChoice} setEtatFor={setEtatFor} clientPresence={clientPresence} setClientPresenceFor={setClientPresenceFor}/>}
-    {tab==="fiche"&&<ProjectFileManager data={data} initialData={initialData} comments={comments} delays={delays} progress={progress} savePjMetaOverride={savePjMetaOverride} addComment={addComment} deleteComment={deleteComment} addDelayAllocationMulti={addDelayAllocationMulti} deleteDelayAllocation={deleteDelayAllocation} delayTypes={delayTypes} authorName={authorName}/>}
+    {tab==="sante"&&<SanteTab rows={fk} onSave={(pj,f)=>savePjMetaOverride&&savePjMetaOverride(pj,f)}/>}
+    {tab==="turbines"&&<TurbinesTab doc={turbineDoc||{turbines:[]}} save={saveTurbines} data={data} authorName={authorName} superAdmin={superAdmin}/>}
+    {tab==="statut"&&<StatutTab rows={fd} etatChoice={etatChoice} setEtatFor={setEtatFor} clientPresence={clientPresence} setClientPresenceFor={setClientPresenceFor} customEtats={customEtats||[]} setCustomEtats={superAdmin?setCustomEtats:null} data={data}/>}
+    {tab==="hebdo"&&<PointHebdo data={data} savePjMetaOverride={savePjMetaOverride} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}}/>}
+    {tab==="fiche"&&<ProjectFileManager compCatalog={compCatalog} setCompCatalog={setCompCatalog} managerEmails={managerEmails} currentUserEmail={currentUserEmail} resolveComment={resolveComment} certifs={certifs} setCertifs={setCertifs} openPj={fichePj&&fichePj.pj} openNonce={fichePj&&fichePj.n} lastChange={changeLog&&changeLog[0]} data={data} initialData={initialData} comments={comments} delays={delays} progress={progress} savePjMetaOverride={savePjMetaOverride} savePjMetaMulti={savePjMetaMulti} addCommentMulti={addCommentMulti} addComment={addComment} deleteComment={deleteComment} addDelayAllocationMulti={addDelayAllocationMulti} deleteDelayAllocation={deleteDelayAllocation} delayTypes={delayTypes} setDelayTypes={setDelayTypes} changeLog={changeLog} authorName={authorName} onOpenCash={superAdmin?(pj=>{setCashFocus({pj,n:Date.now()});setTab("cash");}):null}/>}
     {tab==="retards"&&<DelaysTab data={data} delays={delays} delayTypes={delayTypes} setDelayTypes={setDelayTypes} addDelayAllocationMulti={addDelayAllocationMulti} deleteDelayAllocation={deleteDelayAllocation} authorName={authorName}/>}
-    {tab==="acces"&&<>
+    {superAdmin&&tab==="acces"&&<>
       <ManagerAccessManager managerEmails={managerEmails} setManagerEmails={setManagerEmails} currentUserEmail={currentUserEmail}/>
       {/* Nom du build : réservé au propriétaire (demandé : « uniquement visible par moi, dans l'onglet manager »). */}
-      {buildVersion&&<div style={{...CARD,padding:"10px 14px",marginTop:14,display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-        <span style={{fontSize:12,fontWeight:700,color:T.ink500,textTransform:"uppercase",letterSpacing:".04em"}}>Version du site</span>
-        <span style={{fontFamily:"monospace",fontSize:12.5,fontWeight:600,color:T.ink700,background:T.ink100,borderRadius:7,padding:"3px 10px"}}>build {buildVersion}</span>
+      {buildVersion&&<div style={{...CARD,padding:"8px 12px",marginTop:14,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+        <span style={{fontSize:FZ.xs,fontWeight:700,color:T.ink500,textTransform:"uppercase",letterSpacing:".04em"}}>Version du site</span>
+        <span style={{fontFamily:"monospace",fontSize:FZ.xs,fontWeight:600,color:T.ink700,background:T.ink100,borderRadius:8,padding:"3px 8px"}}>build {buildVersion}</span>
       </div>}
     </>}
-    {tab==="serie"&&<SerieTab data={data} savePjMetaOverride={savePjMetaOverride}/>}
-    {tab==="vacances"&&<ClosurePeriodsManager closurePeriods={closurePeriods} setClosurePeriods={setClosurePeriods}/>}
-    {tab==="production"&&<ProductionCalendarManager data={data} productionExclusions={productionExclusions} setProductionExclusionDays={setProductionExclusionDays}/>}
+    {superAdmin&&tab==="cash"&&<CashInTab authorName={authorName} focus={cashFocus}/>}
+    {superAdmin&&tab==="nouveautes"&&<><ReleaseCatalog isBeta={!!isBeta} selection={releaseSelection} onSaveSelection={saveReleaseSelection} onPublish={publishRelease} authorName={authorName}/><ReleaseEditor key={((releases||[])[0]||{}).id+":"+!!((releases||[])[0]||{}).off} releases={releases||[]} onSave={saveReleaseNotes} authorName={authorName}/></>}
+    {superAdmin&&tab==="imports"&&<ImportHistory authorName={authorName}/>}
+    {superAdmin&&tab==="serie"&&<SerieTab data={data} savePjMetaOverride={savePjMetaOverride}/>}
+    {superAdmin&&tab==="vacances"&&<ClosurePeriodsManager closurePeriods={closurePeriods} setClosurePeriods={setClosurePeriods}/>}
+    {superAdmin&&tab==="production"&&<ProductionCalendarManager data={data} productionExclusions={productionExclusions} setProductionExclusionDays={setProductionExclusionDays}/>}
+    </div>
     </div>
   </div>);
 }
@@ -808,33 +826,33 @@ function ManagerAccessManager({managerEmails,setManagerEmails,currentUserEmail})
     setManagerEmails(managerEmails.filter(e=>e!==email));
   };
 
-  return(<div style={{display:"flex",flexDirection:"column",gap:14}}>
-    <div style={{background:T.card,borderRadius:12,padding:18,border:"1px solid "+T.line}}>
-      <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:15,color:T.ink900,marginBottom:4}}>Accès automatique à l'espace Manager</div>
-      <div style={{fontSize:13.5,color:T.ink500,marginBottom:14,lineHeight:1.5}}>
+  return(<div style={{display:"flex",flexDirection:"column",gap:12}}>
+    <div style={{background:T.card,borderRadius:12,padding:16,border:"1px solid "+T.line}}>
+      <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:4}}>Accès automatique à l'espace Manager</div>
+      <div style={{fontSize:FZ.sm,color:T.ink500,marginBottom:14,lineHeight:1.5}}>
         Les comptes Google listés ci-dessous entrent directement dans l'espace Manager après connexion, sans avoir besoin du code PIN. Le code PIN reste utilisable en secours pour tout le monde.
       </div>
 
-      {managerEmails.length===0&&<div style={{background:T.amber100,color:T.amber600,borderRadius:9,padding:"10px 14px",fontSize:13.5,marginBottom:14}}>
+      {managerEmails.length===0&&<div style={{background:T.amber100,color:T.amber600,borderRadius:8,padding:"8px 12px",fontSize:FZ.sm,marginBottom:14}}>
         Aucun email enregistré pour l'instant — tout le monde doit encore utiliser le code PIN pour accéder au Manager.
       </div>}
 
       <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
         {managerEmails.map(email=>(
-          <div key={email} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:T.surface,borderRadius:9,padding:"9px 14px"}}>
-            <span style={{fontSize:14,color:T.ink700,fontWeight:600}}>{email}{email===currentUserEmail&&<span style={{marginLeft:8,fontSize:11.5,color:T.teal600,background:T.teal100,borderRadius:5,padding:"1px 7px",fontWeight:700}}>vous</span>}</span>
-            <button onClick={()=>removeEmail(email)} title="Retirer" style={{background:"none",border:"none",color:T.ink300,cursor:"pointer",fontSize:15,padding:0}}>✕</button>
+          <div key={email} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:T.surface,borderRadius:8,padding:"8px 12px"}}>
+            <span style={{fontSize:FZ.sm,color:T.ink700,fontWeight:600}}>{email}{email===currentUserEmail&&<span style={{marginLeft:8,fontSize:FZ.xs,color:T.teal600,background:T.teal100,borderRadius:4,padding:"1px 8px",fontWeight:700}}>vous</span>}</span>
+            <button onClick={()=>removeEmail(email)} title="Retirer" style={{background:"none",border:"none",color:T.ink300,cursor:"pointer",fontSize:FZ.md,padding:0}}><NavIcon name="close" size={11}/></button>
           </div>
         ))}
-        {managerEmails.length===0&&<div style={{color:T.ink300,fontSize:14,textAlign:"center",padding:"10px 0"}}>Aucun email pour l'instant.</div>}
+        {managerEmails.length===0&&<div style={{color:T.ink300,fontSize:FZ.sm,textAlign:"center",padding:"8px 0"}}>Aucun email pour l'instant.</div>}
       </div>
 
       <div style={{display:"flex",gap:8}}>
         <input type="email" value={newEmail} onChange={e=>{setNewEmail(e.target.value);setErr("");}} onKeyDown={e=>{if(e.key==="Enter")addEmail();}}
-          placeholder="prenom.nom@enogia.com" style={{flex:1,padding:"8px 12px",borderRadius:8,border:"1px solid "+(err?T.red500:T.line),fontSize:14,fontFamily:T.font,color:T.ink700}}/>
-        <button onClick={addEmail} disabled={!newEmail.trim()} style={{padding:"8px 18px",borderRadius:8,border:"none",background:newEmail.trim()?T.teal500:T.surfaceAlt,color:newEmail.trim()?"#fff":T.ink300,fontSize:14,fontWeight:700,cursor:newEmail.trim()?"pointer":"default",whiteSpace:"nowrap"}}>Ajouter</button>
+          placeholder="prenom.nom@enogia.com" style={{flex:1,padding:"8px 12px",borderRadius:8,border:"1px solid "+(err?T.red500:T.line),fontSize:FZ.sm,fontFamily:T.font,color:T.ink700}}/>
+        <button onClick={addEmail} disabled={!newEmail.trim()} style={{padding:"8px 16px",borderRadius:8,border:"none",background:newEmail.trim()?T.teal500:T.surfaceAlt,color:newEmail.trim()?"#fff":T.ink300,fontSize:FZ.sm,fontWeight:700,cursor:newEmail.trim()?"pointer":"default",whiteSpace:"nowrap"}}>Ajouter</button>
       </div>
-      {err&&<div style={{fontSize:13,color:T.red500,marginTop:8}}>{err}</div>}
+      {err&&<div style={{fontSize:FZ.sm,color:T.red500,marginTop:8}}>{err}</div>}
     </div>
   </div>);
 }
@@ -854,34 +872,34 @@ export function ClosurePeriodsManager({closurePeriods,setClosurePeriods}){
     const next=closurePeriods.filter((_,idx)=>idx!==i);
     setClosurePeriods(next);
   };
-  return(<div style={{background:T.card,borderRadius:14,padding:20,border:"1px solid "+T.line,marginTop:16}}>
-    <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:15,color:T.ink900,marginBottom:4,display:"flex",alignItems:"center",gap:8}}><NavIcon name="sun" size={17}/>Périodes de fermeture (vacances)</div>
-    <div style={{fontSize:14,color:T.ink500,marginBottom:14}}>
+  return(<div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line,marginTop:16}}>
+    <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:4,display:"flex",alignItems:"center",gap:8}}><NavIcon name="sun" size={17}/>Périodes de fermeture (vacances)</div>
+    <div style={{fontSize:FZ.sm,color:T.ink500,marginBottom:14}}>
       Les semaines/jours concernés seront grisés dans le Calendrier pour tous les utilisateurs.
     </div>
     {closurePeriods.length>0&&<div style={{marginBottom:14}}>
       {closurePeriods.map((p,i)=>(
-        <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:"1px solid "+T.surface}}>
-          <span style={{fontSize:14,fontWeight:700,color:T.ink900,minWidth:120}}>{p.label}</span>
-          <span style={{fontSize:14,color:T.ink500}}>{fmt(new Date(p.start))} → {fmt(new Date(p.end))}</span>
-          <button onClick={()=>removePeriod(i)} style={{marginLeft:"auto",padding:"6px 12px",borderRadius:8,border:"none",background:T.surface,boxShadow:T.neuOutSm,color:T.red500,fontSize:13,fontWeight:600,cursor:"pointer"}}>✕ Retirer</button>
+        <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 0",borderBottom:"1px solid "+T.surface}}>
+          <span style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,minWidth:120}}>{p.label}</span>
+          <span style={{fontSize:FZ.sm,color:T.ink500}}>{fmt(new Date(p.start))} → {fmt(new Date(p.end))}</span>
+          <button onClick={()=>removePeriod(i)} style={{marginLeft:"auto",padding:"6px 12px",borderRadius:8,border:"none",background:T.surface,boxShadow:T.neuOutSm,color:T.red500,fontSize:FZ.sm,fontWeight:600,cursor:"pointer"}}><NavIcon name="close" size={11}/> Retirer</button>
         </div>
       ))}
     </div>}
     <div style={{display:"flex",gap:8,alignItems:"flex-end",flexWrap:"wrap",paddingTop:10,borderTop:closurePeriods.length>0?"1px solid "+T.line:"none"}}>
       <div>
-        <label style={{fontSize:12,color:T.ink500,fontWeight:600,display:"block",marginBottom:4}}>Libellé</label>
-        <input type="text" value={newLabel} onChange={e=>setNewLabel(e.target.value)} placeholder="Ex: Vacances été" style={{padding:"7px 10px",borderRadius:8,border:"1px solid "+T.line,fontSize:14,fontFamily:T.font,width:140}}/>
+        <label style={{fontSize:FZ.xs,color:T.ink500,fontWeight:600,display:"block",marginBottom:4}}>Libellé</label>
+        <input type="text" value={newLabel} onChange={e=>setNewLabel(e.target.value)} placeholder="Ex: Vacances été" style={{padding:"8px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,width:140}}/>
       </div>
       <div>
-        <label style={{fontSize:12,color:T.ink500,fontWeight:600,display:"block",marginBottom:4}}>Du</label>
-        <input type="date" value={newStart} onChange={e=>setNewStart(e.target.value)} style={{padding:"7px 10px",borderRadius:8,border:"1px solid "+T.line,fontSize:14,fontFamily:T.font}}/>
+        <label style={{fontSize:FZ.xs,color:T.ink500,fontWeight:600,display:"block",marginBottom:4}}>Du</label>
+        <input type="date" value={newStart} onChange={e=>setNewStart(e.target.value)} style={{padding:"8px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font}}/>
       </div>
       <div>
-        <label style={{fontSize:12,color:T.ink500,fontWeight:600,display:"block",marginBottom:4}}>Au</label>
-        <input type="date" value={newEnd} onChange={e=>setNewEnd(e.target.value)} style={{padding:"7px 10px",borderRadius:8,border:"1px solid "+T.line,fontSize:14,fontFamily:T.font}}/>
+        <label style={{fontSize:FZ.xs,color:T.ink500,fontWeight:600,display:"block",marginBottom:4}}>Au</label>
+        <input type="date" value={newEnd} onChange={e=>setNewEnd(e.target.value)} style={{padding:"8px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font}}/>
       </div>
-      <button onClick={addPeriod} disabled={!newStart||!newEnd} style={{padding:"8px 16px",borderRadius:8,border:"none",background:newStart&&newEnd?T.teal500:T.surfaceAlt,color:newStart&&newEnd?"#fff":T.ink300,fontSize:14,fontWeight:700,cursor:newStart&&newEnd?"pointer":"default"}}>+ Ajouter</button>
+      <button onClick={addPeriod} disabled={!newStart||!newEnd} style={{padding:"8px 16px",borderRadius:8,border:"none",background:newStart&&newEnd?T.teal500:T.surfaceAlt,color:newStart&&newEnd?"#fff":T.ink300,fontSize:FZ.sm,fontWeight:700,cursor:newStart&&newEnd?"pointer":"default"}}>+ Ajouter</button>
     </div>
   </div>);
 }

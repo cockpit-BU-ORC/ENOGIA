@@ -1,9 +1,12 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { T } from "../theme";
+import { T, FZ } from "../theme";
 import { fmt } from "../parsers";
 import { SerieTag, getPjMeta, CountryFlag, relTime, Avatar } from "../pjMeta";
-import { PjChecklist, NavIcon } from "./SharedUI";
+import { PjChecklist, NavIcon, SuperOnly } from "./SharedUI";
 import { CommentsKanban } from "./CommentsKanban";
+import { MentionPicker, MentionTextarea } from "./MentionPicker";
+import { useMentions } from "../mentionContext";
+import { typedMentions } from "../mentions";
 
 export function CommentsView({data,comments,addComment,deleteComment,pinOk,addCommentMulti,jumpToPj,authorName}){
   // Vue Kanban (une colonne par PJ + colonne des commentaires groupés) ou Fil (liste + conversation) —
@@ -24,6 +27,7 @@ export function CommentsView({data,comments,addComment,deleteComment,pinOk,addCo
   const author=authorName||authorInput;
   const [text,setText]=useState("");
   const [isPrivate,setIsPrivate]=useState(false);
+  const mctx=useMentions();
   const [err,setErr]=useState("");
   const [deleteTarget,setDeleteTarget]=useState(null); // {pj,idx}
   const [pinInput,setPinInput]=useState("");
@@ -101,9 +105,10 @@ export function CommentsView({data,comments,addComment,deleteComment,pinOk,addCo
     if(!author.trim()){setErr("Le nom est obligatoire pour publier un commentaire.");return;}
     if(!text.trim()||!canCompose)return;
     setErr("");
+    const tagged=typedMentions(text,mctx.options).map(o=>o.email);
     const ok=composeTargets.length>1
-      ?await addCommentMulti(composeTargets,author,text,null,isPrivate)
-      :await addComment(composeTargets[0],author,text,null,isPrivate);
+      ?await addCommentMulti(composeTargets,author,text,null,isPrivate,tagged)
+      :await addComment(composeTargets[0],author,text,null,isPrivate,tagged);
     if(ok){setText("");setIsPrivate(false);}
   };
   const onComposerKeyDown=e=>{
@@ -119,12 +124,12 @@ export function CommentsView({data,comments,addComment,deleteComment,pinOk,addCo
     composeTargets.length===1?composeTargets[0]:
     composeTargets.length+" PJ sélectionnés";
 
-  const modeToggle=(<div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12,flexWrap:"wrap"}}>
-    <div style={{display:"flex",gap:4,background:T.surfaceAlt,borderRadius:9,padding:3}}>
-      {[["kanban","Kanban"],["fil","Fil"]].map(([k,l])=><button key={k} onClick={()=>changeMode(k)} style={{padding:"5px 14px",borderRadius:7,border:"none",background:mode===k?T.card:"transparent",color:mode===k?T.teal600:T.ink500,fontWeight:700,fontSize:13,cursor:"pointer",boxShadow:mode===k?T.shadowSm:"none"}}>{l}</button>)}
+  const modeToggle=(<div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12,flexWrap:"wrap"}}>
+    <div style={{display:"flex",gap:4,background:T.surfaceAlt,borderRadius:8,padding:3}}>
+      {[["kanban","Kanban"],["fil","Fil"]].map(([k,l])=><button key={k} onClick={()=>changeMode(k)} style={{padding:"4px 12px",borderRadius:8,border:"none",background:mode===k?T.card:"transparent",color:mode===k?T.teal600:T.ink500,fontWeight:700,fontSize:FZ.sm,cursor:"pointer",boxShadow:mode===k?T.shadowSm:"none"}}>{l}</button>)}
     </div>
-    {pinOk&&<button onClick={()=>flip("enogia_cmtHidePrivate",setHidePrivate)} title="Masquer les commentaires privés (partage d'écran)" style={{padding:"5px 11px",borderRadius:8,border:"1px solid "+(hidePrivate?T.amber500:T.line),background:hidePrivate?T.amber100:"transparent",color:hidePrivate?T.amber600:T.ink500,fontSize:12.5,fontWeight:700,cursor:"pointer",marginLeft:"auto"}}>{hidePrivate?"Privés masqués":"Masquer les privés"}</button>}
-    {mode==="kanban"&&<input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher un PJ, un projet, un texte…" style={{width:260,padding:"6px 11px",borderRadius:8,border:"1px solid "+T.line,fontSize:13,fontFamily:T.font,color:T.ink700,background:T.card}}/>}
+    {pinOk&&<button onClick={()=>flip("enogia_cmtHidePrivate",setHidePrivate)} title="Masquer les commentaires privés (partage d'écran)" style={{padding:"4px 12px",borderRadius:8,border:"1px solid "+(hidePrivate?T.amber500:T.line),background:hidePrivate?T.amber100:"transparent",color:hidePrivate?T.amber600:T.ink500,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",marginLeft:"auto"}}>{hidePrivate?"Privés masqués":"Masquer les privés"}</button>}
+    {mode==="kanban"&&<input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher un PJ, un projet, un texte…" style={{width:260,padding:"6px 12px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700,background:T.card}}/>}
   </div>);
 
   if(mode==="kanban")return(<div style={{fontFamily:T.font}}>
@@ -136,43 +141,43 @@ export function CommentsView({data,comments,addComment,deleteComment,pinOk,addCo
 
   return(<div style={{fontFamily:T.font}}>
   {modeToggle}
-  <div style={{display:"flex",gap:14,fontFamily:T.font,height:"calc(100vh - 250px)",minHeight:480}}>
+  <div style={{display:"flex",gap:12,fontFamily:T.font,height:"calc(100vh - 250px)",minHeight:480}}>
 
     {/* ── Liste des fils (par PJ) ── */}
-    <div style={{width:280,flexShrink:0,background:T.card,borderRadius:14,boxShadow:T.shadowMd,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+    <div style={{width:280,flexShrink:0,background:T.card,borderRadius:16,boxShadow:T.shadowMd,display:"flex",flexDirection:"column",overflow:"hidden"}}>
       <div style={{padding:12,borderBottom:"1px solid "+T.line,display:"flex",flexDirection:"column",gap:8}}>
         <input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher un PJ, un projet..."
-          style={{width:"100%",padding:"8px 12px",borderRadius:8,border:"1px solid "+T.line,fontSize:14,fontFamily:T.font,color:T.ink700,boxSizing:"border-box"}}/>
-        <label style={{display:"flex",alignItems:"center",gap:6,fontSize:12.5,color:T.ink500,fontWeight:600,cursor:"pointer"}}>
+          style={{width:"100%",padding:"8px 12px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700,boxSizing:"border-box"}}/>
+        <label style={{display:"flex",alignItems:"center",gap:6,fontSize:FZ.xs,color:T.ink500,fontWeight:600,cursor:"pointer"}}>
           <input type="checkbox" checked={multiSelectMode} onChange={e=>{setMultiSelectMode(e.target.checked);if(!e.target.checked&&viewPjs.size>1){setViewPjs(new Set([...viewPjs].slice(0,1)));}}}/>
           Sélection multiple (commentaire groupé)
         </label>
       </div>
 
-      {pinOk&&<div onClick={selectAll} style={{padding:"10px 14px",cursor:"pointer",background:viewAll?T.teal100:T.card,borderBottom:"1px solid "+T.line,display:"flex",alignItems:"center",gap:8}}>
-        <div style={{width:30,height:30,borderRadius:9,background:T.surface,color:T.teal600,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><NavIcon name="list" size={15}/></div>
+      {pinOk&&<div onClick={selectAll} style={{padding:"8px 12px",cursor:"pointer",background:viewAll?T.teal100:T.card,borderBottom:"1px solid "+T.line,display:"flex",alignItems:"center",gap:8}}>
+        <div style={{width:30,height:30,borderRadius:8,background:T.surface,color:T.teal600,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><NavIcon name="list" size={15}/></div>
         <div style={{minWidth:0}}>
-          <div style={{fontWeight:700,color:T.ink900,fontSize:13.5}}>Tous les commentaires</div>
-          <div style={{fontSize:11.5,color:T.ink300}}>Vue globale Manager</div>
+          <div style={{fontWeight:700,color:T.ink900,fontSize:FZ.sm}}>Tous les commentaires</div>
+          <div style={{fontSize:FZ.xs,color:T.ink300}}>Vue globale Manager</div>
         </div>
       </div>}
 
       {groupsList.length>0&&<div style={{borderBottom:"1px solid "+T.line}}>
-        <div style={{padding:"8px 14px 4px",fontSize:11,fontWeight:700,color:T.ink300,textTransform:"uppercase",letterSpacing:".04em"}}>Commentaires groupés ({groupsList.length})</div>
+        <div style={{padding:"8px 12px 4px",fontSize:FZ.xs,fontWeight:700,color:T.ink300,textTransform:"uppercase",letterSpacing:".04em"}}>Commentaires groupés ({groupsList.length})</div>
         <div style={{maxHeight:180,overflowY:"auto"}}>
           {groupsList.map(g=>{
             const active=!viewAll&&g.groupPjs.every(p=>viewPjs.has(p))&&viewPjs.size===g.groupPjs.length;
             return(<div key={g.groupId} onClick={()=>selectGroup(g.groupPjs)}
-              style={{padding:"9px 14px",cursor:"pointer",background:active?T.violet100:"transparent",display:"flex",alignItems:"center",gap:9}}
+              style={{padding:"8px 12px",cursor:"pointer",background:active?T.violet100:"transparent",display:"flex",alignItems:"center",gap:8}}
               onMouseEnter={e=>{if(!active)e.currentTarget.style.background=T.surface;}}
               onMouseLeave={e=>{if(!active)e.currentTarget.style.background="transparent";}}>
-              <div style={{width:30,height:30,borderRadius:9,background:T.violet100,color:T.violet600,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><NavIcon name="layers" size={15}/></div>
+              <div style={{width:30,height:30,borderRadius:8,background:T.violet100,color:T.violet600,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><NavIcon name="layers" size={15}/></div>
               <div style={{minWidth:0,flex:1}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:6}}>
-                  <span style={{fontWeight:700,color:T.violet600,fontSize:12.5}}>{g.groupPjs.length} PJ</span>
-                  <span style={{fontSize:10.5,color:T.ink300,flexShrink:0}}>{relTime(g.date)}</span>
+                  <span style={{fontWeight:700,color:T.violet600,fontSize:FZ.xs}}>{g.groupPjs.length} PJ</span>
+                  <span style={{fontSize:FZ.xs,color:T.ink300,flexShrink:0}}>{relTime(g.date)}</span>
                 </div>
-                <div style={{fontSize:12,color:T.ink500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{g.text}</div>
+                <div style={{fontSize:FZ.xs,color:T.ink500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{g.text}</div>
               </div>
             </div>);
           })}
@@ -183,113 +188,114 @@ export function CommentsView({data,comments,addComment,deleteComment,pinOk,addCo
         {sidebarList.map(row=>{
           const active=viewAll?false:(!multiSelectMode&&viewPjs.has(row.pj));
           return(<div key={row.pj} onClick={()=>{if(!multiSelectMode)selectSingle(row.pj);}}
-            style={{padding:"10px 14px",cursor:multiSelectMode?"default":"pointer",opacity:multiSelectMode?.55:1,background:active?T.teal100:T.card,borderBottom:"1px solid "+T.surface,display:"flex",alignItems:"center",gap:9}}>
+            style={{padding:"8px 12px",cursor:multiSelectMode?"default":"pointer",opacity:multiSelectMode?.55:1,background:active?T.teal100:T.card,borderBottom:"1px solid "+T.surface,display:"flex",alignItems:"center",gap:8}}>
             {row.last?<Avatar name={row.last.author} tint={row.last.private?T.amber500:T.teal500}/>:
               <div style={{width:30,height:30,borderRadius:"50%",background:T.surfaceAlt,flexShrink:0}}/>}
             <div style={{minWidth:0,flex:1}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:6}}>
-                <span style={{fontWeight:700,color:T.ink900,fontSize:13.5,display:"flex",alignItems:"center",gap:5}}>{row.pj}<SerieTag pj={row.pj}/><CountryFlag pays={row.meta.pays} size={11}/></span>
-                {row.last&&<span style={{fontSize:10.5,color:T.ink300,flexShrink:0}}>{relTime(row.last.date)}</span>}
+                <span style={{fontWeight:700,color:T.ink900,fontSize:FZ.sm,display:"flex",alignItems:"center",gap:4,whiteSpace:"nowrap"}}>{row.pj}<SerieTag pj={row.pj}/><CountryFlag pays={row.meta.pays} size={11}/></span>
+                {row.last&&<span style={{fontSize:FZ.xs,color:T.ink300,flexShrink:0}}>{relTime(row.last.date)}</span>}
               </div>
-              <div style={{fontSize:12,color:T.ink500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+              <div style={{fontSize:FZ.xs,color:T.ink500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
                 {row.last?row.last.text:row.meta.nomProjet}
               </div>
             </div>
-            {row.count>0&&<span style={{fontSize:11,fontWeight:700,color:T.teal600,background:T.teal100,borderRadius:20,padding:"2px 7px",flexShrink:0}}>{row.count}</span>}
+            {row.count>0&&<span style={{fontSize:FZ.xs,fontWeight:700,color:T.teal600,background:T.teal100,borderRadius:999,padding:"2px 8px",flexShrink:0}}>{row.count}</span>}
           </div>);
         })}
-        {sidebarList.length===0&&<div style={{padding:20,textAlign:"center",color:T.ink300,fontSize:13.5}}>Aucun résultat.</div>}
+        {sidebarList.length===0&&<div style={{padding:20,textAlign:"center",color:T.ink300,fontSize:FZ.sm}}>Aucun résultat.</div>}
       </div>
     </div>
 
     {/* ── Fil sélectionné / composition groupée ── */}
-    <div style={{flex:1,minWidth:0,background:T.card,borderRadius:14,boxShadow:T.shadowMd,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+    <div style={{flex:1,minWidth:0,background:T.card,borderRadius:16,boxShadow:T.shadowMd,display:"flex",flexDirection:"column",overflow:"hidden"}}>
       {multiSelectMode?<>
-        <div style={{padding:"14px 20px",borderBottom:"1px solid "+T.line}}>
-          <div style={{fontFamily:T.fontDisplay,textTransform:"uppercase",letterSpacing:".03em",fontWeight:700,fontSize:17,color:T.ink900,marginBottom:10}}>Commentaire groupé — choisir les PJ</div>
+        <div style={{padding:"12px 20px",borderBottom:"1px solid "+T.line}}>
+          <div style={{fontFamily:T.fontDisplay,textTransform:"uppercase",letterSpacing:".03em",fontWeight:700,fontSize:FZ.md,color:T.ink900,marginBottom:10}}>Commentaire groupé — choisir les PJ</div>
           <PjChecklist data={data} selected={viewPjs} onChange={setViewPjs} maxHeight={220}/>
         </div>
-        {viewPjs.size>0?<div style={{flex:1,overflowY:"auto",padding:"16px 20px",display:"flex",flexDirection:"column",gap:14}}>
-          {feed.length===0&&<div style={{color:T.ink300,fontSize:14,textAlign:"center",padding:"30px 0"}}>Aucun commentaire pour l'instant sur ces PJ.</div>}
+        {viewPjs.size>0?<div style={{flex:1,overflowY:"auto",padding:"16px 20px",display:"flex",flexDirection:"column",gap:12}}>
+          {feed.length===0&&<div style={{color:T.ink300,fontSize:FZ.sm,textAlign:"center",padding:"28px 0"}}>Aucun commentaire pour l'instant sur ces PJ.</div>}
           {feed.map(c=>{
             const isTarget=deleteTarget&&deleteTarget.pj===c.pj&&deleteTarget.idx===c._idx;
-            return(<div key={c.pj+"-"+c._idx} style={{display:"flex",gap:10}}>
+            return(<div key={c.pj+"-"+c._idx} style={{display:"flex",gap:8}}>
               <Avatar name={c.author} tint={c.private?T.amber500:T.teal500}/>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{display:"flex",alignItems:"baseline",gap:7,flexWrap:"wrap",marginBottom:2}}>
-                  <span onClick={()=>jumpToPj&&jumpToPj(c.pj)} style={{fontWeight:700,fontSize:13,color:T.teal600,fontFamily:T.fontMono,cursor:jumpToPj?"pointer":"default"}}>{c.pj}</span><SerieTag pj={c.pj}/>
-                  <span style={{color:T.ink300,fontSize:12}}>·</span>
-                  <span style={{fontWeight:600,color:T.ink700,fontSize:13}}>{c.author}</span>
-                  {c.private&&<span title="Privé (BU ORC uniquement)" style={{fontSize:10.5,color:T.amber600,background:T.amber100,borderRadius:5,padding:"1px 6px",fontWeight:700}}>Privé</span>}
-                  {c.groupPjs&&(()=>{const others=c.groupPjs.filter(p=>p!==c.pj);return <span style={{fontSize:10.5,color:T.violet600,background:T.violet100,borderRadius:5,padding:"1px 7px",fontWeight:700}}>groupé avec {others.length>3?others.slice(0,3).join(", ")+" +"+(others.length-3):others.join(", ")}</span>;})()}
-                  <span style={{fontSize:11,color:T.ink300}}>{relTime(c.date)}</span>
-                  <button onClick={()=>{setDeleteTarget({pj:c.pj,idx:c._idx});setPinInput("");}} title="Supprimer" style={{background:"none",border:"none",color:T.ink100,cursor:"pointer",fontSize:12,padding:0,marginLeft:2}}>✕</button>
+                <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap",marginBottom:2}}>
+                  <span onClick={()=>jumpToPj&&jumpToPj(c.pj)} style={{fontWeight:700,fontSize:FZ.sm,color:T.teal600,fontFamily:T.fontMono,whiteSpace:"nowrap",cursor:jumpToPj?"pointer":"default"}}>{c.pj}</span><SerieTag pj={c.pj}/>
+                  <span style={{color:T.ink300,fontSize:FZ.xs}}>·</span>
+                  <span style={{fontWeight:600,color:T.ink700,fontSize:FZ.sm}}>{c.author}</span>
+                  {c.private&&<span title="Privé (BU ORC uniquement)" style={{fontSize:FZ.xs,color:T.amber600,background:T.amber100,borderRadius:4,padding:"1px 6px",fontWeight:700}}>Privé</span>}
+                  {c.groupPjs&&(()=>{const others=c.groupPjs.filter(p=>p!==c.pj);return <span style={{fontSize:FZ.xs,color:T.violet600,background:T.violet100,borderRadius:4,padding:"1px 8px",fontWeight:700}}>groupé avec {others.length>3?others.slice(0,3).join(", ")+" +"+(others.length-3):others.join(", ")}</span>;})()}
+                  <span style={{fontSize:FZ.xs,color:T.ink300}}>{relTime(c.date)}</span>
+                  <SuperOnly><button onClick={()=>{setDeleteTarget({pj:c.pj,idx:c._idx});setPinInput("");}} title="Supprimer" style={{background:"none",border:"none",color:T.ink100,cursor:"pointer",fontSize:FZ.xs,padding:0,marginLeft:2}}><NavIcon name="close" size={11}/></button></SuperOnly>
                 </div>
-                <div style={{background:c.private?T.amber100:T.surface,borderRadius:"3px 12px 12px 12px",padding:"9px 13px",display:"inline-block",maxWidth:"100%",fontSize:14,color:T.ink700,whiteSpace:"pre-wrap"}}>{c.text}</div>
+                <div style={{background:c.private?T.amber100:T.surface,borderRadius:"3px 12px 12px 12px",padding:"8px 12px",display:"inline-block",maxWidth:"100%",fontSize:FZ.sm,color:T.ink700,whiteSpace:"pre-wrap"}}>{c.text}</div>
                 {isTarget&&<div style={{marginTop:7,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
-                  <input type="password" value={pinInput} onChange={e=>setPinInput(e.target.value)} placeholder="Code Manager" style={{padding:"6px 10px",borderRadius:7,border:"1px solid "+T.line,fontSize:12.5,fontFamily:T.font,width:110}}/>
-                  <button onClick={confirmDelete} style={{padding:"6px 11px",borderRadius:7,border:"none",background:T.red500,color:"#fff",fontSize:12.5,fontWeight:700,cursor:"pointer"}}>Confirmer</button>
-                  <button onClick={()=>setDeleteTarget(null)} style={{padding:"6px 11px",borderRadius:7,border:"none",background:T.surface,boxShadow:T.neuOutSm,color:T.ink700,fontSize:12.5,cursor:"pointer"}}>Annuler</button>
+                  <input type="password" value={pinInput} onChange={e=>setPinInput(e.target.value)} placeholder="Code Manager" style={{padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.xs,fontFamily:T.font,width:110}}/>
+                  <button onClick={confirmDelete} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.redFill,color:"#fff",fontSize:FZ.xs,fontWeight:700,cursor:"pointer"}}>Confirmer</button>
+                  <button onClick={()=>setDeleteTarget(null)} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.surface,boxShadow:T.neuOutSm,color:T.ink700,fontSize:FZ.xs,cursor:"pointer"}}>Annuler</button>
                 </div>}
               </div>
             </div>);
           })}
           <div ref={feedEndRef}/>
-        </div>:<div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",color:T.ink300,fontSize:14,padding:30,textAlign:"center"}}>Cochez au moins un PJ ci-dessus pour composer un commentaire groupé.</div>}
+        </div>:<div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",color:T.ink300,fontSize:FZ.sm,padding:28,textAlign:"center"}}>Cochez au moins un PJ ci-dessus pour composer un commentaire groupé.</div>}
 
         {canCompose&&<div style={{borderTop:"1px solid "+T.line,padding:"12px 20px",flexShrink:0}}>
           <div style={{display:"flex",gap:8,marginBottom:8,alignItems:"center"}}>
             {authorName?
-              <span style={{fontSize:12.5,color:T.ink500}}>En tant que <strong style={{color:T.ink700}}>{authorName}</strong></span>
+              <span style={{fontSize:FZ.xs,color:T.ink500}}>En tant que <strong style={{color:T.ink700}}>{authorName}</strong></span>
             :<input type="text" value={authorInput} onChange={e=>{setAuthorInput(e.target.value);setErr("");}} placeholder="Votre nom" maxLength={40}
-              style={{width:150,padding:"7px 11px",borderRadius:8,border:"1px solid "+(err?T.red500:T.line),fontSize:13,fontFamily:T.font,color:T.ink700}}/>}
-            {pinOk&&<label style={{display:"flex",alignItems:"center",gap:5,fontSize:12.5,color:T.ink500,fontWeight:600,cursor:"pointer"}}>
+              style={{width:150,padding:"8px 12px",borderRadius:8,border:"1px solid "+(err?T.red500:T.line),fontSize:FZ.sm,fontFamily:T.font,color:T.ink700}}/>}
+            {pinOk&&<label style={{display:"flex",alignItems:"center",gap:4,fontSize:FZ.xs,color:T.ink500,fontWeight:600,cursor:"pointer"}}>
               <input type="checkbox" checked={isPrivate} onChange={e=>setIsPrivate(e.target.checked)}/> Privé
             </label>}
-            {err&&<span style={{fontSize:12.5,color:T.red500,alignSelf:"center"}}>{err}</span>}
+            {err&&<span style={{fontSize:FZ.xs,color:T.red500,alignSelf:"center"}}>{err}</span>}
           </div>
           <div style={{display:"flex",gap:8,alignItems:"flex-end"}}>
-            <textarea value={text} onChange={e=>setText(e.target.value)} onKeyDown={onComposerKeyDown}
+            <MentionTextarea value={text} onChange={e=>setText(e.target.value)} onKeyDown={onComposerKeyDown}
               placeholder={"Message pour les "+composeTargets.length+" PJ sélectionnés... (Entrée pour envoyer)"}
               rows={2} maxLength={1000}
-              style={{flex:1,padding:"9px 12px",borderRadius:10,border:"1px solid "+T.line,fontSize:14,fontFamily:T.font,color:T.ink700,resize:"none"}}/>
-            <button onClick={submit} disabled={!text.trim()} style={{padding:"10px 18px",borderRadius:10,border:"none",background:text.trim()?T.teal500:T.surfaceAlt,color:text.trim()?"#fff":T.ink300,fontSize:14,fontWeight:700,cursor:text.trim()?"pointer":"default",flexShrink:0}}>Envoyer</button>
+              style={{flex:1,padding:"8px 12px",borderRadius:12,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700,resize:"none"}}/>
+            <button onClick={submit} disabled={!text.trim()} style={{padding:"8px 16px",borderRadius:12,border:"none",background:text.trim()?T.teal500:T.surfaceAlt,color:text.trim()?"#fff":T.ink300,fontSize:FZ.sm,fontWeight:700,cursor:text.trim()?"pointer":"default",flexShrink:0}}>Envoyer</button>
           </div>
+          <MentionPicker text={text} pjs={composeTargets}/>
         </div>}
       </>:!headerLabel?
-        <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:8,color:T.ink300,padding:30,textAlign:"center"}}>
+        <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:8,color:T.ink300,padding:28,textAlign:"center"}}>
           <div style={{color:T.ink300}}><NavIcon name="comments" size={30}/></div>
-          <div style={{fontSize:15,fontWeight:600,color:T.ink500}}>Sélectionnez un PJ pour voir ses commentaires</div>
-          <div style={{fontSize:13}}>Ou cochez "Sélection multiple" pour un commentaire groupé sur plusieurs projets.</div>
+          <div style={{fontSize:FZ.md,fontWeight:600,color:T.ink500}}>Sélectionnez un PJ pour voir ses commentaires</div>
+          <div style={{fontSize:FZ.sm}}>Ou cochez "Sélection multiple" pour un commentaire groupé sur plusieurs projets.</div>
         </div>
       :<>
-        <div style={{padding:"14px 20px",borderBottom:"1px solid "+T.line,display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap"}}>
-          <div style={{fontFamily:T.fontDisplay,textTransform:"uppercase",letterSpacing:".03em",fontWeight:700,fontSize:17,color:T.ink900}}>{headerLabel}</div>
-          <span style={{fontSize:12.5,color:T.ink300}}>{feed.length} commentaire{feed.length!==1?"s":""}</span>
+        <div style={{padding:"12px 20px",borderBottom:"1px solid "+T.line,display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,flexWrap:"wrap"}}>
+          <div style={{fontFamily:T.fontDisplay,textTransform:"uppercase",letterSpacing:".03em",fontWeight:700,fontSize:FZ.md,color:T.ink900}}>{headerLabel}</div>
+          <span style={{fontSize:FZ.xs,color:T.ink300}}>{feed.length} commentaire{feed.length!==1?"s":""}</span>
         </div>
 
-        <div style={{flex:1,overflowY:"auto",padding:"16px 20px",display:"flex",flexDirection:"column",gap:14}}>
-          {feed.length===0&&<div style={{color:T.ink300,fontSize:14,textAlign:"center",padding:"30px 0"}}>Aucun commentaire pour l'instant.</div>}
+        <div style={{flex:1,overflowY:"auto",padding:"16px 20px",display:"flex",flexDirection:"column",gap:12}}>
+          {feed.length===0&&<div style={{color:T.ink300,fontSize:FZ.sm,textAlign:"center",padding:"28px 0"}}>Aucun commentaire pour l'instant.</div>}
           {feed.map(c=>{
             const isTarget=deleteTarget&&deleteTarget.pj===c.pj&&deleteTarget.idx===c._idx;
-            return(<div key={c.pj+"-"+c._idx} style={{display:"flex",gap:10}}>
+            return(<div key={c.pj+"-"+c._idx} style={{display:"flex",gap:8}}>
               <Avatar name={c.author} tint={c.private?T.amber500:T.teal500}/>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{display:"flex",alignItems:"baseline",gap:7,flexWrap:"wrap",marginBottom:2}}>
-                  <span onClick={()=>jumpToPj&&jumpToPj(c.pj)} style={{fontWeight:700,fontSize:13,color:T.teal600,fontFamily:T.fontMono,cursor:jumpToPj?"pointer":"default"}}>{c.pj}</span><SerieTag pj={c.pj}/>
-                  <span style={{color:T.ink300,fontSize:12}}>·</span>
-                  <span style={{fontWeight:600,color:T.ink700,fontSize:13}}>{c.author}</span>
-                  {c.private&&<span title="Privé (BU ORC uniquement)" style={{fontSize:10.5,color:T.amber600,background:T.amber100,borderRadius:5,padding:"1px 6px",fontWeight:700}}>Privé</span>}
-                  {c.groupPjs&&(()=>{const others=c.groupPjs.filter(p=>p!==c.pj);return <span style={{fontSize:10.5,color:T.violet600,background:T.violet100,borderRadius:5,padding:"1px 7px",fontWeight:700}}>groupé avec {others.length>3?others.slice(0,3).join(", ")+" +"+(others.length-3):others.join(", ")}</span>;})()}
-                  <span style={{fontSize:11,color:T.ink300}}>{relTime(c.date)}</span>
-                  <button onClick={()=>{setDeleteTarget({pj:c.pj,idx:c._idx});setPinInput("");}} title="Supprimer" style={{background:"none",border:"none",color:T.ink100,cursor:"pointer",fontSize:12,padding:0,marginLeft:2}}>✕</button>
+                <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap",marginBottom:2}}>
+                  <span onClick={()=>jumpToPj&&jumpToPj(c.pj)} style={{fontWeight:700,fontSize:FZ.sm,color:T.teal600,fontFamily:T.fontMono,whiteSpace:"nowrap",cursor:jumpToPj?"pointer":"default"}}>{c.pj}</span><SerieTag pj={c.pj}/>
+                  <span style={{color:T.ink300,fontSize:FZ.xs}}>·</span>
+                  <span style={{fontWeight:600,color:T.ink700,fontSize:FZ.sm}}>{c.author}</span>
+                  {c.private&&<span title="Privé (BU ORC uniquement)" style={{fontSize:FZ.xs,color:T.amber600,background:T.amber100,borderRadius:4,padding:"1px 6px",fontWeight:700}}>Privé</span>}
+                  {c.groupPjs&&(()=>{const others=c.groupPjs.filter(p=>p!==c.pj);return <span style={{fontSize:FZ.xs,color:T.violet600,background:T.violet100,borderRadius:4,padding:"1px 8px",fontWeight:700}}>groupé avec {others.length>3?others.slice(0,3).join(", ")+" +"+(others.length-3):others.join(", ")}</span>;})()}
+                  <span style={{fontSize:FZ.xs,color:T.ink300}}>{relTime(c.date)}</span>
+                  <SuperOnly><button onClick={()=>{setDeleteTarget({pj:c.pj,idx:c._idx});setPinInput("");}} title="Supprimer" style={{background:"none",border:"none",color:T.ink100,cursor:"pointer",fontSize:FZ.xs,padding:0,marginLeft:2}}><NavIcon name="close" size={11}/></button></SuperOnly>
                 </div>
-                <div style={{background:c.private?T.amber100:T.surface,borderRadius:"3px 12px 12px 12px",padding:"9px 13px",display:"inline-block",maxWidth:"100%",fontSize:14,color:T.ink700,whiteSpace:"pre-wrap"}}>{c.text}</div>
-                {c.linkedDate&&<div style={{marginTop:4,fontSize:11.5,color:T.ink500,fontWeight:600}}>Lié au {fmt(new Date(c.linkedDate))}</div>}
+                <div style={{background:c.private?T.amber100:T.surface,borderRadius:"3px 12px 12px 12px",padding:"8px 12px",display:"inline-block",maxWidth:"100%",fontSize:FZ.sm,color:T.ink700,whiteSpace:"pre-wrap"}}>{c.text}</div>
+                {c.linkedDate&&<div style={{marginTop:4,fontSize:FZ.xs,color:T.ink500,fontWeight:600}}>Lié au {fmt(new Date(c.linkedDate))}</div>}
                 {isTarget&&<div style={{marginTop:7,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
-                  <input type="password" value={pinInput} onChange={e=>setPinInput(e.target.value)} placeholder="Code Manager" style={{padding:"6px 10px",borderRadius:7,border:"1px solid "+T.line,fontSize:12.5,fontFamily:T.font,width:110}}/>
-                  <button onClick={confirmDelete} style={{padding:"6px 11px",borderRadius:7,border:"none",background:T.red500,color:"#fff",fontSize:12.5,fontWeight:700,cursor:"pointer"}}>Confirmer</button>
-                  <button onClick={()=>setDeleteTarget(null)} style={{padding:"6px 11px",borderRadius:7,border:"none",background:T.surface,boxShadow:T.neuOutSm,color:T.ink700,fontSize:12.5,cursor:"pointer"}}>Annuler</button>
+                  <input type="password" value={pinInput} onChange={e=>setPinInput(e.target.value)} placeholder="Code Manager" style={{padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.xs,fontFamily:T.font,width:110}}/>
+                  <button onClick={confirmDelete} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.redFill,color:"#fff",fontSize:FZ.xs,fontWeight:700,cursor:"pointer"}}>Confirmer</button>
+                  <button onClick={()=>setDeleteTarget(null)} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.surface,boxShadow:T.neuOutSm,color:T.ink700,fontSize:FZ.xs,cursor:"pointer"}}>Annuler</button>
                 </div>}
               </div>
             </div>);
@@ -300,23 +306,24 @@ export function CommentsView({data,comments,addComment,deleteComment,pinOk,addCo
         {canCompose?<div style={{borderTop:"1px solid "+T.line,padding:"12px 20px",flexShrink:0}}>
           <div style={{display:"flex",gap:8,marginBottom:8,alignItems:"center"}}>
             {authorName?
-              <span style={{fontSize:12.5,color:T.ink500}}>En tant que <strong style={{color:T.ink700}}>{authorName}</strong></span>
+              <span style={{fontSize:FZ.xs,color:T.ink500}}>En tant que <strong style={{color:T.ink700}}>{authorName}</strong></span>
             :<input type="text" value={authorInput} onChange={e=>{setAuthorInput(e.target.value);setErr("");}} placeholder="Votre nom" maxLength={40}
-              style={{width:150,padding:"7px 11px",borderRadius:8,border:"1px solid "+(err?T.red500:T.line),fontSize:13,fontFamily:T.font,color:T.ink700}}/>}
-            {pinOk&&<label style={{display:"flex",alignItems:"center",gap:5,fontSize:12.5,color:T.ink500,fontWeight:600,cursor:"pointer"}}>
+              style={{width:150,padding:"8px 12px",borderRadius:8,border:"1px solid "+(err?T.red500:T.line),fontSize:FZ.sm,fontFamily:T.font,color:T.ink700}}/>}
+            {pinOk&&<label style={{display:"flex",alignItems:"center",gap:4,fontSize:FZ.xs,color:T.ink500,fontWeight:600,cursor:"pointer"}}>
               <input type="checkbox" checked={isPrivate} onChange={e=>setIsPrivate(e.target.checked)}/> Privé
             </label>}
-            {err&&<span style={{fontSize:12.5,color:T.red500,alignSelf:"center"}}>{err}</span>}
+            {err&&<span style={{fontSize:FZ.xs,color:T.red500,alignSelf:"center"}}>{err}</span>}
           </div>
           <div style={{display:"flex",gap:8,alignItems:"flex-end"}}>
-            <textarea value={text} onChange={e=>setText(e.target.value)} onKeyDown={onComposerKeyDown}
+            <MentionTextarea value={text} onChange={e=>setText(e.target.value)} onKeyDown={onComposerKeyDown}
               placeholder="Écrire un commentaire... (Entrée pour envoyer)"
               rows={2} maxLength={1000}
-              style={{flex:1,padding:"9px 12px",borderRadius:10,border:"1px solid "+T.line,fontSize:14,fontFamily:T.font,color:T.ink700,resize:"none"}}/>
-            <button onClick={submit} disabled={!text.trim()} style={{padding:"10px 18px",borderRadius:10,border:"none",background:text.trim()?T.teal500:T.surfaceAlt,color:text.trim()?"#fff":T.ink300,fontSize:14,fontWeight:700,cursor:text.trim()?"pointer":"default",flexShrink:0}}>Envoyer</button>
+              style={{flex:1,padding:"8px 12px",borderRadius:12,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700,resize:"none"}}/>
+            <button onClick={submit} disabled={!text.trim()} style={{padding:"8px 16px",borderRadius:12,border:"none",background:text.trim()?T.teal500:T.surfaceAlt,color:text.trim()?"#fff":T.ink300,fontSize:FZ.sm,fontWeight:700,cursor:text.trim()?"pointer":"default",flexShrink:0}}>Envoyer</button>
           </div>
+          <MentionPicker text={text} pjs={composeTargets}/>
         </div>
-        :<div style={{borderTop:"1px solid "+T.line,padding:"14px 20px",flexShrink:0,fontSize:13,color:T.ink300,textAlign:"center"}}>
+        :<div style={{borderTop:"1px solid "+T.line,padding:"12px 20px",flexShrink:0,fontSize:FZ.sm,color:T.ink300,textAlign:"center"}}>
           Sélectionnez un PJ pour écrire un message.
         </div>}
       </>}
