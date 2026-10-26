@@ -312,4 +312,7 @@ export const RELEASE_CATALOG = [
   { v: "181", t: "Des mouvements plus fluides", items: [
     ["Animations", "Fondu entre les vues, lignes et barres qui arrivent, retour au clic ; courtes et désactivables."],
   ] },
+  { v: "182", t: "Nouveau thème « Salle de contrôle »", items: [
+    ["Thèmes", "Salle de contrôle (ardoise dense, écran d'atelier) en plus d'Atelier et Ardoise ; fin de l'effet en relief."],
+  ] },
 ];

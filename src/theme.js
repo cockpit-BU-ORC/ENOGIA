@@ -3,7 +3,8 @@
 // ── DESIGN TOKENS ──────────────────────────────────────────────
 // Palette ancrée sur le dégradé du logo ENOGIA (navy → teal) + un accent "braise"
 // qui évoque le cycle thermique ORC (froid → chaud) pour les statuts urgents.
-// Rendu plat et net (bordures fines + ombres discrètes) plutôt que néomorphisme :
+// Rendu plat et net (bordures fines + ombres discrètes). v182 : néomorphisme abandonné — les anciens jetons neu* sont renommés
+// panel / panelDim (fonds de panneau), outline / outlineSoft (filets), insetSm / inset (filets intérieurs).
 // l'objectif est un outil industriel qui ressemble à un vrai produit, pas à un tableur.
 
 
@@ -32,10 +33,10 @@ const SEMANTIC_LIGHT = {
   shadowSm:"0 0 0 1px rgba(16,24,34,.06), 0 1px 2px rgba(16,24,34,.05), 0 6px 16px -8px rgba(16,24,34,.12)",
   shadowMd:"0 0 0 1px rgba(16,24,34,.06), 0 1px 2px rgba(16,24,34,.05), 0 6px 16px -8px rgba(16,24,34,.12)",
   shadowLg:"0 16px 40px rgba(10,20,32,.14), 0 2px 8px rgba(10,20,32,.06)",
-  neuOut:"0 0 0 1px rgba(16,24,34,.06), 0 1px 2px rgba(16,24,34,.05), 0 6px 16px -8px rgba(16,24,34,.12)",
-  neuOutSm:"0 0 0 1px rgba(16,24,34,.07)",
-  neuIn:"inset 0 0 0 1px rgba(16,24,34,.09)",
-  neuInSm:"inset 0 0 0 1px rgba(16,24,34,.08)",
+  outlineSoft:"0 0 0 1px rgba(16,24,34,.06), 0 1px 2px rgba(16,24,34,.05), 0 6px 16px -8px rgba(16,24,34,.12)",
+  outline:"0 0 0 1px rgba(16,24,34,.07)",
+  inset:"inset 0 0 0 1px rgba(16,24,34,.09)",
+  insetSm:"inset 0 0 0 1px rgba(16,24,34,.08)",
 };
 const SEMANTIC_DARK = {
   amber600:"#FFD27A", amber500:"#F9A620", amber100:"#3A3020",
@@ -51,10 +52,10 @@ const SEMANTIC_DARK = {
   shadowSm:"0 0 0 1px rgba(255,255,255,.09)",
   shadowMd:"0 0 0 1px rgba(255,255,255,.09)",
   shadowLg:"0 0 0 1px rgba(255,255,255,.14), 0 12px 28px rgba(0,0,0,.32)",
-  neuOut:"0 0 0 1px rgba(255,255,255,.09)",
-  neuOutSm:"0 0 0 1px rgba(255,255,255,.09)",
-  neuIn:"inset 0 0 0 1px rgba(255,255,255,.09)",
-  neuInSm:"inset 0 0 0 1px rgba(255,255,255,.08)",
+  outlineSoft:"0 0 0 1px rgba(255,255,255,.09)",
+  outline:"0 0 0 1px rgba(255,255,255,.09)",
+  inset:"inset 0 0 0 1px rgba(255,255,255,.09)",
+  insetSm:"inset 0 0 0 1px rgba(255,255,255,.08)",
 };
 
 const grad = (a,b,c) => ({
@@ -71,14 +72,14 @@ export const THEMES = {
       teal600:"#0A2A49", teal500:"#0D3B66", teal400:"#4A6F92", teal100:"#E4ECF3",
       surface:"#FCF8EA", surfaceAlt:"#F5EDD3", card:"#FFFFFF",
       ink900:"#0D2238", ink700:"#2E3E52", ink500:"#4E5A68", ink300:"#55606E", ink100:"#F0E8CC",
-      line:"#EBE2C4", neuPanel:"#F8F2DE", neuPanelDim:"#F1E9CF",
+      line:"#EBE2C4", panel:"#F8F2DE", panelDim:"#F1E9CF",
       accent:"#8A6400", accentInk:"#7A5800", accentSoft:"#FCF0BE" },
     dark:{ ...grad("#0B1130","#1D2C4E","#46587F"),
       navy900:"#0B1130", navy800:"#C9D3F0", navy700:"#3B4F94", navy600:"#6F86CC",
       teal600:"#C6D0EE", teal500:"#5C73B8", teal400:"#9AABDC", teal100:"#33406A",
       surface:"#1C2536", surfaceAlt:"#2A3550", card:"#27324A",
       ink900:"#EEF2F9", ink700:"#CDD6E6", ink500:"#B5C1D6", ink300:"#AAB7CF", ink100:"#3C4A68",
-      line:"#3C4A68", neuPanel:"#2B3650", neuPanelDim:"#33405E",
+      line:"#3C4A68", panel:"#2B3650", panelDim:"#33405E",
       accent:"#F4D35E", accentInk:"#F7DE84", accentSoft:"#4A3E22" } },
   // ── Ardoise (v161, ex-Marine) : l'identité ENOGIA (RAL 5011 « bleu acier ») sur fond gris froid + accent sarcelle ──
   marine: { label:"Ardoise", desc:"Bleu acier, fond gris froid", swatch:["#1D2C4E","#F3F5F8","#0A9DB5"],
@@ -87,15 +88,32 @@ export const THEMES = {
       teal600:"#121B30", teal500:"#1D2C4E", teal400:"#4B5D85", teal100:"#E8EAF0",
       surface:"#F3F5F8", surfaceAlt:"#E9EDF3", card:"#FFFFFF",
       ink900:"#101828", ink700:"#344054", ink500:"#52607A", ink300:"#5B6880", ink100:"#E4E8EF",
-      line:"#DDE2EA", neuPanel:"#F1F3F7", neuPanelDim:"#E7EAF0",
+      line:"#DDE2EA", panel:"#F1F3F7", panelDim:"#E7EAF0",
       accent:"#0A9DB5", accentInk:"#076477", accentSoft:"#D3F0F6" },
     dark:{ ...grad("#0B1130","#1D2C4E","#46587F"),
       navy900:"#0B1130", navy800:"#C9D3F0", navy700:"#3B4F94", navy600:"#6F86CC",
       teal600:"#C6D0EE", teal500:"#5C73B8", teal400:"#9AABDC", teal100:"#33406A",
       surface:"#1C2536", surfaceAlt:"#2A3550", card:"#27324A",
       ink900:"#EEF2F9", ink700:"#CDD6E6", ink500:"#B5C1D6", ink300:"#AAB7CF", ink100:"#3C4A68",
-      line:"#3C4A68", neuPanel:"#2B3650", neuPanelDim:"#33405E",
+      line:"#3C4A68", panel:"#2B3650", panelDim:"#33405E",
       accent:"#2FD0E6", accentInk:"#7FE0EE", accentSoft:"#1F4A57" } },
+  // ── Salle de contrôle (v182, 2e direction de l'audit) : pensé pour l'écran d'atelier et la tablette — ardoise dense en sombre,
+  // gris industriel clair en clair ; mêmes couleurs d'étapes et d'alertes que le thème Atelier ; accent or pour les repères.
+  controle: { label:"Salle de contrôle", desc:"Ardoise dense, pour l'écran d'atelier", swatch:["#16202E","#1F2B3D","#F4D35E"],
+    light:{ ...grad("#082440","#0D3B66","#4A6F92"),
+      navy900:"#082440", navy800:"#0A2D50", navy700:"#0D3B66", navy600:"#1E5A8C",
+      teal600:"#0A2A49", teal500:"#0D3B66", teal400:"#4A6F92", teal100:"#E1E8EF",
+      surface:"#EEF1F4", surfaceAlt:"#E2E7ED", card:"#FFFFFF",
+      ink900:"#0E1824", ink700:"#2C3A4B", ink500:"#4A5869", ink300:"#526072", ink100:"#DCE2E9",
+      line:"#D3DAE2", panel:"#F3F5F8", panelDim:"#E7EBF0",
+      accent:"#8A6400", accentInk:"#7A5800", accentSoft:"#FCF0BE" },
+    dark:{ ...grad("#082440","#0D3B66","#4A6F92"),
+      navy900:"#0B1220", navy800:"#C9D6E6", navy700:"#2E5A88", navy600:"#6F93BD",
+      teal600:"#D0DCEB", teal500:"#4A73A3", teal400:"#9DB6D3", teal100:"#24364F",
+      surface:"#16202E", surfaceAlt:"#22304A", card:"#1F2B3D",
+      ink900:"#F1F5FA", ink700:"#D2DCE8", ink500:"#B6C3D3", ink300:"#A7B5C7", ink100:"#33435C",
+      line:"#33435C", panel:"#243247", panelDim:"#2B3B55",
+      accent:"#F4D35E", accentInk:"#F7DE84", accentSoft:"#4A3E22" } },
 };
 export const THEME_IDS = Object.keys(THEMES);
 export const DEFAULT_THEME = "atelier";
@@ -105,6 +123,8 @@ export const THEME_KEY = "enogia_theme2";
 
 // v173 : menu latéral « industriel » (fond marine, repère jaune) pour le thème Atelier ; les autres thèmes gardent leur menu clair.
 export function navTokens(){
+  // v182 : menu « Salle de contrôle » — ardoise très sombre, repère or.
+  if (T.themeId === "controle") return { industrial:true, bg:T.mode==="dark"?"#0E1622":"#16202E", border:T.mode==="dark"?"#22304A":"#16202E", ink:"#C9D4E2", inkOn:"#FFFFFF", bgOn:"rgba(244,211,94,.14)", hover:"rgba(255,255,255,.07)", hoverInk:"#FFFFFF", group:"#F4D35E", mark:"#F4D35E" };
   if (T.themeId !== "atelier") return { industrial:false, bg:T.card, border:T.line, ink:T.ink500, inkOn:T.teal600, bgOn:T.teal100, hover:T.surface, hoverInk:T.ink900, group:T.ink500, mark:"currentColor" };
   const dark = T.mode === "dark";
   return { industrial:true, bg:dark?"#0B2440":"#0D3B66", border:dark?"#1E3A5A":"#0D3B66", ink:"#D6E2EE", inkOn:"#FFFFFF", bgOn:"rgba(244,211,94,.14)", hover:"rgba(255,255,255,.07)", hoverInk:"#FFFFFF", group:"#F4D35E", mark:"#F4D35E" };
@@ -159,14 +179,14 @@ const PRESENT_LIGHT = {
   ink900:"#000000", ink700:"#1A1D21", ink500:"#2E3338", ink300:"#434A52",
   teal600:"#0B1226", line:"#8A93A0",
   red600:"#8E1C1C", red500:"#A62222", amber600:"#744105", emerald600:"#0B6347", info600:"#1B47A0", ember600:"#8A4116", violet600:"#4F3790",
-  shadowFlat:"0 0 0 1px rgba(0,0,0,.40)", shadowCard:"0 0 0 1px rgba(0,0,0,.40)", shadowSm:"0 0 0 1px rgba(0,0,0,.40)", shadowMd:"0 0 0 1px rgba(0,0,0,.40)", neuOut:"0 0 0 1px rgba(0,0,0,.40)", neuOutSm:"0 0 0 1px rgba(0,0,0,.40)",
+  shadowFlat:"0 0 0 1px rgba(0,0,0,.40)", shadowCard:"0 0 0 1px rgba(0,0,0,.40)", shadowSm:"0 0 0 1px rgba(0,0,0,.40)", shadowMd:"0 0 0 1px rgba(0,0,0,.40)", outlineSoft:"0 0 0 1px rgba(0,0,0,.40)", outline:"0 0 0 1px rgba(0,0,0,.40)",
   shadowFloat:"0 0 0 2px rgba(0,0,0,.55), 0 12px 28px rgba(0,0,0,.25)", shadowLg:"0 0 0 2px rgba(0,0,0,.55), 0 12px 28px rgba(0,0,0,.25)",
 };
 const PRESENT_DARK = {
   ink900:"#FFFFFF", ink700:"#F2F5F9", ink500:"#DCE2EA", ink300:"#C9D1DB",
   teal600:"#E6ECFA", line:"#7C8798",
   red600:"#FFB3B3", red500:"#FFA6A6", amber600:"#FFD487", emerald600:"#8FE8C3", info600:"#BFD3FF", ember600:"#FFC09A", violet600:"#D5C8FF",
-  shadowFlat:"0 0 0 1px rgba(255,255,255,.35)", shadowCard:"0 0 0 1px rgba(255,255,255,.35)", shadowSm:"0 0 0 1px rgba(255,255,255,.35)", shadowMd:"0 0 0 1px rgba(255,255,255,.35)", neuOut:"0 0 0 1px rgba(255,255,255,.35)", neuOutSm:"0 0 0 1px rgba(255,255,255,.35)",
+  shadowFlat:"0 0 0 1px rgba(255,255,255,.35)", shadowCard:"0 0 0 1px rgba(255,255,255,.35)", shadowSm:"0 0 0 1px rgba(255,255,255,.35)", shadowMd:"0 0 0 1px rgba(255,255,255,.35)", outlineSoft:"0 0 0 1px rgba(255,255,255,.35)", outline:"0 0 0 1px rgba(255,255,255,.35)",
   shadowFloat:"0 0 0 2px rgba(255,255,255,.55), 0 12px 28px rgba(0,0,0,.4)", shadowLg:"0 0 0 2px rgba(255,255,255,.55), 0 12px 28px rgba(0,0,0,.4)",
 };
 const FZ_BASE = { ...FZ }, FZF_BASE = { ...FZF };

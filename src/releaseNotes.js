@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v182",
+    date: "2026-10-26",
+    title: "V182 : nouveau thème « Salle de contrôle »",
+    items: [
+      { t: "Salle de contrôle", d: "Un second style au choix dans le menu Apparence : ardoise sombre et dense, pensé pour l'écran d'atelier et la tablette, avec les mêmes couleurs d'étapes." },
+      { t: "Style plus net", d: "Les derniers restes de l'ancien effet « en relief » ont disparu : filets fins et fonds plats partout." },
+    ],
+  },
+  {
     id: "2026-10-v181",
     date: "2026-10-26",
     title: "V181 : des mouvements plus fluides",

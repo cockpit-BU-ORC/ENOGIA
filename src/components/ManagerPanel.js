@@ -887,7 +887,7 @@ export function ClosurePeriodsManager({closurePeriods,setClosurePeriods}){
         <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 0",borderBottom:"1px solid "+T.surface}}>
           <span style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,minWidth:120}}>{p.label}</span>
           <span style={{fontSize:FZ.sm,color:T.ink500}}>{fmt(new Date(p.start))} → {fmt(new Date(p.end))}</span>
-          <button onClick={()=>removePeriod(i)} style={{marginLeft:"auto",padding:"6px 12px",borderRadius:8,border:"none",background:T.surface,boxShadow:T.neuOutSm,color:T.red500,fontSize:FZ.sm,fontWeight:600,cursor:"pointer"}}><NavIcon name="close" size={11}/> Retirer</button>
+          <button onClick={()=>removePeriod(i)} style={{marginLeft:"auto",padding:"6px 12px",borderRadius:8,border:"none",background:T.surface,boxShadow:T.outline,color:T.red500,fontSize:FZ.sm,fontWeight:600,cursor:"pointer"}}><NavIcon name="close" size={11}/> Retirer</button>
         </div>
       ))}
     </div>}

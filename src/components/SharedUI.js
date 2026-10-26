@@ -188,13 +188,13 @@ export function PinGate({onUnlock}){
   const [v,setV]=useState("");const [err,setErr]=useState(false);
   const check=()=>{if(v===PIN)onUnlock();else{setErr(true);setV("");setTimeout(()=>setErr(false),1200);}};
   return(<div style={{background:T.card,borderRadius:16,padding:36,maxWidth:300,margin:"40px auto",boxShadow:T.shadowLg,textAlign:"center",fontFamily:T.font}}>
-    <div style={{width:48,height:48,margin:"0 auto 14px",borderRadius:12,background:T.surface,boxShadow:T.neuInSm,color:T.teal600,display:"flex",alignItems:"center",justifyContent:"center"}}><NavIcon name="lock" size={22}/></div>
+    <div style={{width:48,height:48,margin:"0 auto 14px",borderRadius:12,background:T.surface,boxShadow:T.insetSm,color:T.teal600,display:"flex",alignItems:"center",justifyContent:"center"}}><NavIcon name="lock" size={22}/></div>
     <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.lg,color:T.ink900,marginBottom:18}}>Accès Manager</div>
     <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,maxWidth:190,margin:"0 auto 14px"}}>
-      {[1,2,3,4,5,6,7,8,9,"","0","⌫"].map((k,i)=><button key={i} onClick={()=>{if(k==="⌫")setV(x=>x.slice(0,-1));else if(k!=="")setV(x=>x.length<4?x+k:x);}} style={{height:48,borderRadius:12,border:"none",background:k===""?"transparent":T.surface,boxShadow:k===""?"none":T.neuOutSm,fontSize:FZ.lg,fontWeight:600,cursor:k===""?"default":"pointer",color:T.ink900,transition:"box-shadow .1s ease"}}
-        onMouseDown={e=>{if(k!=="")e.currentTarget.style.boxShadow=T.neuInSm;}}
-        onMouseUp={e=>{if(k!=="")e.currentTarget.style.boxShadow=T.neuOutSm;}}
-        onMouseLeave={e=>{if(k!=="")e.currentTarget.style.boxShadow=T.neuOutSm;}}>{k}</button>)}
+      {[1,2,3,4,5,6,7,8,9,"","0","⌫"].map((k,i)=><button key={i} onClick={()=>{if(k==="⌫")setV(x=>x.slice(0,-1));else if(k!=="")setV(x=>x.length<4?x+k:x);}} style={{height:48,borderRadius:12,border:"none",background:k===""?"transparent":T.surface,boxShadow:k===""?"none":T.outline,fontSize:FZ.lg,fontWeight:600,cursor:k===""?"default":"pointer",color:T.ink900,transition:"box-shadow .1s ease"}}
+        onMouseDown={e=>{if(k!=="")e.currentTarget.style.boxShadow=T.insetSm;}}
+        onMouseUp={e=>{if(k!=="")e.currentTarget.style.boxShadow=T.outline;}}
+        onMouseLeave={e=>{if(k!=="")e.currentTarget.style.boxShadow=T.outline;}}>{k}</button>)}
     </div>
     <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:12}}>{[0,1,2,3].map(i=><div key={i} style={{width:11,height:11,borderRadius:"50%",background:i<v.length?T.teal500:T.ink100}}/>)}</div>
     {err&&<div style={{color:T.red500,fontSize:FZ.md,marginBottom:8,fontWeight:600}}>Code incorrect</div>}
@@ -207,7 +207,7 @@ export function PinGate({onUnlock}){
 // (liste « Accès Manager » + super admin). Cet écran s'affiche aux autres comptes.
 export function ManagerAccessNotice({email}){
   return(<div role="status" style={{background:T.card,borderRadius:16,padding:"32px 28px",maxWidth:420,margin:"40px auto",boxShadow:T.shadowLg,textAlign:"center",fontFamily:T.font}}>
-    <div style={{width:48,height:48,margin:"0 auto 14px",borderRadius:12,background:T.surface,boxShadow:T.neuInSm,color:T.teal600,display:"flex",alignItems:"center",justifyContent:"center"}}><NavIcon name="lock" size={22}/></div>
+    <div style={{width:48,height:48,margin:"0 auto 14px",borderRadius:12,background:T.surface,boxShadow:T.insetSm,color:T.teal600,display:"flex",alignItems:"center",justifyContent:"center"}}><NavIcon name="lock" size={22}/></div>
     <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.lg,color:T.ink900,marginBottom:8}}>Espace Manager réservé</div>
     <div style={{fontSize:FZ.md,color:T.ink700,lineHeight:1.5}}>
       {email?<>Votre adresse <b>{email}</b> n'est pas dans la liste « Accès Manager ».</>:<>Connectez-vous avec votre adresse pour accéder à cet espace.</>}

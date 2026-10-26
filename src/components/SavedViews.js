@@ -43,7 +43,7 @@ export function ViewsMenu({ current, presets, onApply }) {
   </div>);
   return (<span ref={ref} style={{ position: "relative", display: "inline-block" }}>
     <button onClick={() => setOpen(v => !v)} aria-haspopup="true" aria-expanded={open}
-      style={{ ...BTN, background: custom ? T.teal100 : T.card, color: custom ? T.teal600 : T.ink700, boxShadow: T.neuOutSm, maxWidth: 260 }}>
+      style={{ ...BTN, background: custom ? T.teal100 : T.card, color: custom ? T.teal600 : T.ink700, boxShadow: T.outline, maxWidth: 260 }}>
       <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{custom ? "Vue : " + active.name : "Vues"}</span><span aria-hidden="true" style={{ fontSize: FZ.xs }}>▾</span>
     </button>
     {open && <div role="group" aria-label="Vues enregistrées" style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, zIndex: 9999, minWidth: 280, maxWidth: 340, background: T.card, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, padding: 8, display: "flex", flexDirection: "column", gap: 2 }}>

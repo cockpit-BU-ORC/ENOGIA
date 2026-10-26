@@ -11,8 +11,8 @@ import { useDetailMode } from "../detailMode";
 
 // La fiche projet (panneau de droite) doit rester "blanche mate entièrement" (demandé
 // explicitement) : les sous-blocs internes (onglets, cartes de phase, commentaires...)
-// utilisaient T.surface/T.surfaceAlt, c'est-à-dire le crème de la page — remplacé par T.neuPanel/
-// T.neuPanelDim (un gris neutre), pour que l'ensemble du panneau reste sur un registre blanc/gris,
+// utilisaient T.surface/T.surfaceAlt, c'est-à-dire le crème de la page — remplacé par T.panel/
+// T.panelDim (un gris neutre), pour que l'ensemble du panneau reste sur un registre blanc/gris,
 // sans crème. Ce sont des tokens de thème (plutôt que des constantes figées comme avant) pour
 // rester cohérents en mode sombre ("mettre le mode sombre en adéquation avec le mode clair").
 
@@ -95,14 +95,14 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
               {/* Restreint à canEditMeta (l'email de connexion de Gabriel), pas à pinOk — demandé
                   explicitement : d'autres membres de la BU ORC peuvent avoir pinOk via le code
                   Manager sans devoir pour autant pouvoir modifier la fiche projet. */}
-              {canEditMeta&&savePjMetaOverride&&<button onClick={()=>setEditingMeta(true)} title="Modifier le nom, le pays, le chef de projet, la gamme" style={{background:T.neuPanel,border:"none",borderRadius:8,padding:"3px 8px",fontSize:FZ.xs,fontWeight:700,color:T.teal600,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:5}}><NavIcon name="edit" size={13}/>Modifier</button>}
+              {canEditMeta&&savePjMetaOverride&&<button onClick={()=>setEditingMeta(true)} title="Modifier le nom, le pays, le chef de projet, la gamme" style={{background:T.panel,border:"none",borderRadius:8,padding:"3px 8px",fontSize:FZ.xs,fontWeight:700,color:T.teal600,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:5}}><NavIcon name="edit" size={13}/>Modifier</button>}
             </div>}
         </div>
         <div style={{display:"flex",gap:6,alignItems:"flex-start",flexShrink:0}}>
         {/* v176 : accès direct à la fiche synthèse (Manager › Fiche) pour les admins. */}
         {pinOk&&<button type="button" className="enogia-btn-ind" onClick={()=>{try{window.dispatchEvent(new CustomEvent("enogia:openSynthese",{detail:{pj}}));}catch(e){}if(onClose)onClose();}} title="Ouvrir la fiche synthèse de ce PJ (Manager)" style={{background:"transparent",border:"1.5px solid "+T.teal500,borderRadius:8,height:30,padding:"0 10px",fontSize:FZ.xs,fontWeight:700,cursor:"pointer",color:T.teal600,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font,whiteSpace:"nowrap"}}><NavIcon name="arrow" size={13}/>Fiche synthèse</button>}
-        <button onClick={()=>setDetailMode(detailMode==="popup"?"panel":"popup")} title={detailMode==="popup"?"Afficher les fiches dans un volet à droite":"Afficher les fiches dans une fenêtre centrale"} aria-label={detailMode==="popup"?"Passer en volet latéral":"Passer en pop-up central"} style={{background:T.neuPanel,border:"none",borderRadius:8,height:30,padding:"0 9px",fontSize:FZ.xs,fontWeight:700,cursor:"pointer",color:T.ink700,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font}}><NavIcon name={detailMode==="popup"?"sidepanel":"popup"} size={13}/>{detailMode==="popup"?"Volet":"Pop-up"}</button>
-        <button onClick={onClose} title={inline?"Désélectionner":"Fermer"} style={{background:T.neuPanel,border:"none",borderRadius:8,width:30,height:30,fontSize:FZ.md,cursor:"pointer",color:T.ink700,flexShrink:0}}><NavIcon name="close" size={11}/></button>
+        <button onClick={()=>setDetailMode(detailMode==="popup"?"panel":"popup")} title={detailMode==="popup"?"Afficher les fiches dans un volet à droite":"Afficher les fiches dans une fenêtre centrale"} aria-label={detailMode==="popup"?"Passer en volet latéral":"Passer en pop-up central"} style={{background:T.panel,border:"none",borderRadius:8,height:30,padding:"0 9px",fontSize:FZ.xs,fontWeight:700,cursor:"pointer",color:T.ink700,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font}}><NavIcon name={detailMode==="popup"?"sidepanel":"popup"} size={13}/>{detailMode==="popup"?"Volet":"Pop-up"}</button>
+        <button onClick={onClose} title={inline?"Désélectionner":"Fermer"} style={{background:T.panel,border:"none",borderRadius:8,width:30,height:30,fontSize:FZ.md,cursor:"pointer",color:T.ink700,flexShrink:0}}><NavIcon name="close" size={11}/></button>
         </div>
       </div>
 
@@ -228,7 +228,7 @@ function EditMetaForm({meta,gamme,onSave,onCancel}){
     </div>
     <div style={{display:"flex",gap:8,marginTop:2}}>
       <button onClick={submit} disabled={saving} style={{padding:"8px 16px",borderRadius:8,border:"none",background:T.teal500,color:"#fff",fontSize:FZ.sm,fontWeight:700,cursor:saving?"default":"pointer",opacity:saving?.6:1}}>{saving?"Enregistrement…":"Enregistrer"}</button>
-      <button onClick={onCancel} style={{padding:"8px 12px",borderRadius:8,border:"none",background:T.neuPanel,color:T.ink700,fontSize:FZ.sm,fontWeight:600,cursor:"pointer"}}>Annuler</button>
+      <button onClick={onCancel} style={{padding:"8px 12px",borderRadius:8,border:"none",background:T.panel,color:T.ink700,fontSize:FZ.sm,fontWeight:600,cursor:"pointer"}}>Annuler</button>
     </div>
   </div>);
 }
@@ -263,7 +263,7 @@ export function ProjectComments({pj,comments,addComment,deleteComment,pinOk,auth
   return(<div>
     {/* Composeur toujours en haut, dans son propre cadre : on écrit un commentaire
         sans avoir à chercher où, ni à faire défiler le fil existant. */}
-    <div style={{background:T.neuPanel,borderRadius:12,padding:12,marginBottom:16}}>
+    <div style={{background:T.panel,borderRadius:12,padding:12,marginBottom:16}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,gap:8,flexWrap:"wrap"}}>
         {authorName?
           <span style={{fontSize:FZ.xs,color:T.ink500}}>En tant que <strong style={{color:T.ink700}}>{authorName}</strong></span>
@@ -278,7 +278,7 @@ export function ProjectComments({pj,comments,addComment,deleteComment,pinOk,auth
         style={{padding:"8px 12px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700,resize:"vertical",width:"100%",boxSizing:"border-box",background:T.card}}/>
       <MentionPicker text={text} pjs={[pj]}/>
       <div style={{display:"flex",justifyContent:"flex-end",marginTop:8}}>
-        <button onClick={submit} disabled={!text.trim()} style={{padding:"8px 16px",borderRadius:8,border:"none",background:text.trim()?T.teal500:T.neuPanelDim,color:text.trim()?"#fff":T.ink300,fontSize:FZ.sm,fontWeight:700,cursor:text.trim()?"pointer":"default"}}>Publier</button>
+        <button onClick={submit} disabled={!text.trim()} style={{padding:"8px 16px",borderRadius:8,border:"none",background:text.trim()?T.teal500:T.panelDim,color:text.trim()?"#fff":T.ink300,fontSize:FZ.sm,fontWeight:700,cursor:text.trim()?"pointer":"default"}}>Publier</button>
       </div>
     </div>
 
@@ -300,12 +300,12 @@ export function ProjectComments({pj,comments,addComment,deleteComment,pinOk,auth
               <span style={{fontSize:FZ.xs,color:T.ink300}}>{relTime(c.date)}</span>
               <SuperOnly><button onClick={()=>{setDeleteTarget(c._idx);setPinInput("");}} title="Supprimer" style={{background:"none",border:"none",color:T.ink100,cursor:"pointer",fontSize:FZ.xs,padding:0,marginLeft:2}}><NavIcon name="close" size={11}/></button></SuperOnly>
             </div>
-            <div style={{background:c.private?T.amber100:T.neuPanel,borderRadius:"3px 12px 12px 12px",padding:"8px 12px",display:"inline-block",maxWidth:"100%",fontSize:FZ.xs,color:T.ink700,whiteSpace:"pre-wrap"}}>{c.text}</div>
+            <div style={{background:c.private?T.amber100:T.panel,borderRadius:"3px 12px 12px 12px",padding:"8px 12px",display:"inline-block",maxWidth:"100%",fontSize:FZ.xs,color:T.ink700,whiteSpace:"pre-wrap"}}>{c.text}</div>
             {c.linkedDate&&<div style={{marginTop:5,fontSize:FZ.xs,color:T.ink500,fontWeight:600}}>Lié au {fmt(new Date(c.linkedDate))}</div>}
             {deleteTarget===c._idx&&<div style={{marginTop:8,paddingTop:8,borderTop:"1px solid "+T.line,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
               <input type="password" value={pinInput} onChange={e=>setPinInput(e.target.value)} placeholder="Code Manager" style={{padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,width:120}}/>
               <button onClick={confirmDelete} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.redFill,color:"#fff",fontSize:FZ.sm,fontWeight:700,cursor:"pointer"}}>Confirmer la suppression</button>
-              <button onClick={()=>setDeleteTarget(null)} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.neuPanel,boxShadow:T.neuOutSm,color:T.ink700,fontSize:FZ.sm,cursor:"pointer"}}>Annuler</button>
+              <button onClick={()=>setDeleteTarget(null)} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.panel,boxShadow:T.outline,color:T.ink700,fontSize:FZ.sm,cursor:"pointer"}}>Annuler</button>
             </div>}
           </div>
         </div>
@@ -343,7 +343,7 @@ function DelayAllocations({pj,delays,delayTypes,setDelayTypes,addDelayAllocation
   return(<div style={{marginTop:20,paddingTop:16,borderTop:"1px solid "+T.line}}>
     <div style={{fontFamily:T.fontDisplay,fontWeight:700,fontSize:FZ.md,color:T.ink900,marginBottom:10}}>⏱️ Causes de retard ({delays.length})</div>
     {Object.keys(byType).length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:12}}>
-      {Object.entries(byType).map(([t,d])=><span key={t} style={{background:T.neuPanel,borderRadius:8,padding:"4px 8px",fontSize:FZ.sm,color:T.ink700,fontWeight:600}}>{t} · {d}j</span>)}
+      {Object.entries(byType).map(([t,d])=><span key={t} style={{background:T.panel,borderRadius:8,padding:"4px 8px",fontSize:FZ.sm,color:T.ink700,fontWeight:600}}>{t} · {d}j</span>)}
     </div>}
     {authorName&&<div style={{fontSize:FZ.xs,color:T.ink500,marginBottom:8}}>En tant que <strong style={{color:T.ink700}}>{authorName}</strong></div>}
     <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:8,marginBottom:10}}>
@@ -364,7 +364,7 @@ function DelayAllocations({pj,delays,delayTypes,setDelayTypes,addDelayAllocation
     {err&&<div style={{fontSize:FZ.sm,color:T.red500,marginBottom:8}}>{err}</div>}
     {delays.length>0&&<div style={{display:"flex",flexDirection:"column",gap:8,maxHeight:220,overflowY:"auto"}}>
       {[...delays].sort((a,b)=>new Date(b.date)-new Date(a.date)).map(d=>(
-        <div key={d.id} style={{background:T.neuPanel,borderRadius:12,padding:"8px 12px"}}>
+        <div key={d.id} style={{background:T.panel,borderRadius:12,padding:"8px 12px"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8}}>
             <span style={{fontWeight:700,color:T.ink900,fontSize:FZ.sm}}>{d.type} — {d.days}j</span>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -380,7 +380,7 @@ function DelayAllocations({pj,delays,delayTypes,setDelayTypes,addDelayAllocation
           {deleteTarget===d.id&&<div style={{marginTop:8,paddingTop:8,borderTop:"1px solid "+T.line,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
             <input type="password" value={pinInput} onChange={e=>setPinInput(e.target.value)} placeholder="Code Manager" style={{padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,width:120}}/>
             <button onClick={confirmDelete} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.redFill,color:"#fff",fontSize:FZ.sm,fontWeight:700,cursor:"pointer"}}>Confirmer</button>
-            <button onClick={()=>setDeleteTarget(null)} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.neuPanel,boxShadow:T.neuOutSm,color:T.ink700,fontSize:FZ.sm,cursor:"pointer"}}>Annuler</button>
+            <button onClick={()=>setDeleteTarget(null)} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.panel,boxShadow:T.outline,color:T.ink700,fontSize:FZ.sm,cursor:"pointer"}}>Annuler</button>
           </div>}
         </div>
       ))}
@@ -418,14 +418,14 @@ function DelayThread({d,pj,authorName,addDelayComment,deleteDelayComment}){
         {delTarget===i&&<div style={{marginTop:6,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
           <input type="password" value={pin} onChange={e=>setPin(e.target.value)} placeholder="Code Manager" style={{padding:"4px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.xs,fontFamily:T.font,width:110}}/>
           <button onClick={()=>confirmDelete(i)} style={{padding:"4px 8px",borderRadius:8,border:"none",background:T.redFill,color:"#fff",fontSize:FZ.xs,fontWeight:700,cursor:"pointer"}}>Confirmer</button>
-          <button onClick={()=>setDelTarget(null)} style={{padding:"4px 8px",borderRadius:8,border:"none",background:T.neuPanelDim,color:T.ink700,fontSize:FZ.xs,cursor:"pointer"}}>Annuler</button>
+          <button onClick={()=>setDelTarget(null)} style={{padding:"4px 8px",borderRadius:8,border:"none",background:T.panelDim,color:T.ink700,fontSize:FZ.xs,cursor:"pointer"}}>Annuler</button>
         </div>}
       </div>
     ))}
     <div style={{display:"flex",gap:6,alignItems:"flex-start"}}>
       {!authorName&&<input type="text" value={authorInput} onChange={e=>setAuthorInput(e.target.value)} placeholder="Nom" maxLength={40} style={{width:90,padding:"8px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.xs,fontFamily:T.font,color:T.ink700}}/>}
       <input type="text" value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();send();}}} placeholder="Répondre sur ce retard... (Entrée pour envoyer)" maxLength={500} style={{flex:1,padding:"8px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.xs,fontFamily:T.font,color:T.ink700}}/>
-      <button onClick={send} disabled={!text.trim()||!author.trim()} style={{padding:"8px 12px",borderRadius:8,border:"none",background:text.trim()&&author.trim()?T.teal500:T.neuPanelDim,color:text.trim()&&author.trim()?"#fff":T.ink300,fontSize:FZ.xs,fontWeight:700,cursor:text.trim()&&author.trim()?"pointer":"default"}}>Envoyer</button>
+      <button onClick={send} disabled={!text.trim()||!author.trim()} style={{padding:"8px 12px",borderRadius:8,border:"none",background:text.trim()&&author.trim()?T.teal500:T.panelDim,color:text.trim()&&author.trim()?"#fff":T.ink300,fontSize:FZ.xs,fontWeight:700,cursor:text.trim()&&author.trim()?"pointer":"default"}}>Envoyer</button>
     </div>
   </div>);
 }

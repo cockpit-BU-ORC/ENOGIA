@@ -40,7 +40,7 @@ export function ColumnPicker({hidden,setHidden}){
     setOpen(v=>!v);
   };
   return(<span style={{position:"relative",display:"inline-block"}}>
-    <button ref={btnRef} onClick={openMenu} style={{padding:"6px 12px",borderRadius:8,border:"none",background:hidden.size>0?T.teal100:T.card,color:hidden.size>0?T.teal600:T.ink700,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:6,boxShadow:hidden.size>0?T.neuInSm:T.neuOutSm}}><span style={{color:T.teal500,display:"flex"}}><NavIcon name="settings" size={12}/></span>Colonnes{hidden.size>0?" ("+(TABLE_COLUMNS.length-hidden.size)+"/"+TABLE_COLUMNS.length+")":""}</button>
+    <button ref={btnRef} onClick={openMenu} style={{padding:"6px 12px",borderRadius:8,border:"none",background:hidden.size>0?T.teal100:T.card,color:hidden.size>0?T.teal600:T.ink700,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:6,boxShadow:hidden.size>0?T.insetSm:T.outline}}><span style={{color:T.teal500,display:"flex"}}><NavIcon name="settings" size={12}/></span>Colonnes{hidden.size>0?" ("+(TABLE_COLUMNS.length-hidden.size)+"/"+TABLE_COLUMNS.length+")":""}</button>
     {open&&<>
       <div onClick={()=>setOpen(false)} style={{position:"fixed",inset:0,zIndex:9998}}/>
       <div style={{position:"fixed",top:pos.top,left:pos.left,background:T.card,borderRadius:12,boxShadow:T.shadowLg,border:"1px solid "+T.line,zIndex:9999,minWidth:200,maxHeight:340,overflowY:"auto",fontFamily:T.font}}>
@@ -75,7 +75,7 @@ export function DateFormatPicker({df,setDf}){
     setOpen(v=>!v);
   };
   return(<span style={{position:"relative",display:"inline-block"}}>
-    <button ref={btnRef} onClick={openMenu} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.card,color:T.ink700,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:6,boxShadow:T.neuOutSm}}>
+    <button ref={btnRef} onClick={openMenu} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.card,color:T.ink700,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:6,boxShadow:T.outline}}>
       <span style={{color:T.teal500,display:"flex"}}><NavIcon name="calendar" size={12}/></span>Affichage : {LABELS[df]}
     </button>
     {open&&<>
@@ -363,14 +363,14 @@ export function TableView({data,progress,df,setDf,selEtats,setSelEtats,selGammes
       <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
         {setOnlyChanged&&marks.size>0&&<span style={{display:"inline-flex",alignItems:"center",gap:6}}>
           <button onClick={()=>setOnlyChanged(!onlyChanged)} aria-pressed={!!onlyChanged} title="N'afficher que les PJ touchés par les derniers imports (depuis votre dernière lecture)"
-            style={{padding:"6px 12px",borderRadius:8,border:"none",minHeight:28,background:onlyChanged?T.teal100:T.card,color:onlyChanged?T.teal600:T.ink700,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",boxShadow:T.neuOutSm,fontFamily:T.font}}>{onlyChanged?"✓ ":""}Modifiés ({marks.size})</button>
+            style={{padding:"6px 12px",borderRadius:8,border:"none",minHeight:28,background:onlyChanged?T.teal100:T.card,color:onlyChanged?T.teal600:T.ink700,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",boxShadow:T.outline,fontFamily:T.font}}>{onlyChanged?"✓ ":""}Modifiés ({marks.size})</button>
           <button onClick={()=>{clearMarks();setOnlyChanged(false);}} title="Retire les repères « modifié » de la Liste et du Calendrier" style={{padding:"4px 8px",borderRadius:8,border:"none",background:"transparent",color:T.ink500,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font,textDecoration:"underline"}}>Tout marquer comme vu</button>
         </span>}
       </div>
       <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",gap:8,flexWrap:"wrap"}}>
       {setDf&&<DateFormatPicker df={df} setDf={setDf}/>}
-      <button onClick={exportToExcel} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.card,color:T.ink700,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:6,boxShadow:T.neuOutSm,transition:"box-shadow .15s ease"}}
-        onMouseDown={e=>e.currentTarget.style.boxShadow=T.neuInSm} onMouseUp={e=>e.currentTarget.style.boxShadow=T.neuOutSm} onMouseLeave={e=>e.currentTarget.style.boxShadow=T.neuOutSm}><span style={{color:T.teal500,display:"flex"}}><NavIcon name="download" size={12}/></span><span className="enogia-hide-phone">Export Excel</span></button>
+      <button onClick={exportToExcel} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.card,color:T.ink700,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:6,boxShadow:T.outline,transition:"box-shadow .15s ease"}}
+        onMouseDown={e=>e.currentTarget.style.boxShadow=T.insetSm} onMouseUp={e=>e.currentTarget.style.boxShadow=T.outline} onMouseLeave={e=>e.currentTarget.style.boxShadow=T.outline}><span style={{color:T.teal500,display:"flex"}}><NavIcon name="download" size={12}/></span><span className="enogia-hide-phone">Export Excel</span></button>
       <ColumnPicker hidden={hiddenCols} setHidden={setHiddenCols}/>
       </div>
     </div>

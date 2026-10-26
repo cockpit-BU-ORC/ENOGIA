@@ -234,7 +234,7 @@ export function CommentsView({data,comments,addComment,deleteComment,pinOk,addCo
                 {isTarget&&<div style={{marginTop:7,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
                   <input type="password" value={pinInput} onChange={e=>setPinInput(e.target.value)} placeholder="Code Manager" style={{padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.xs,fontFamily:T.font,width:110}}/>
                   <button onClick={confirmDelete} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.redFill,color:"#fff",fontSize:FZ.xs,fontWeight:700,cursor:"pointer"}}>Confirmer</button>
-                  <button onClick={()=>setDeleteTarget(null)} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.surface,boxShadow:T.neuOutSm,color:T.ink700,fontSize:FZ.xs,cursor:"pointer"}}>Annuler</button>
+                  <button onClick={()=>setDeleteTarget(null)} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.surface,boxShadow:T.outline,color:T.ink700,fontSize:FZ.xs,cursor:"pointer"}}>Annuler</button>
                 </div>}
               </div>
             </div>);
@@ -295,7 +295,7 @@ export function CommentsView({data,comments,addComment,deleteComment,pinOk,addCo
                 {isTarget&&<div style={{marginTop:7,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
                   <input type="password" value={pinInput} onChange={e=>setPinInput(e.target.value)} placeholder="Code Manager" style={{padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.xs,fontFamily:T.font,width:110}}/>
                   <button onClick={confirmDelete} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.redFill,color:"#fff",fontSize:FZ.xs,fontWeight:700,cursor:"pointer"}}>Confirmer</button>
-                  <button onClick={()=>setDeleteTarget(null)} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.surface,boxShadow:T.neuOutSm,color:T.ink700,fontSize:FZ.xs,cursor:"pointer"}}>Annuler</button>
+                  <button onClick={()=>setDeleteTarget(null)} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.surface,boxShadow:T.outline,color:T.ink700,fontSize:FZ.xs,cursor:"pointer"}}>Annuler</button>
                 </div>}
               </div>
             </div>);

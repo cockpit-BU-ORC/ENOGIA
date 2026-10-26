@@ -1068,3 +1068,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Restent hors règle : transitions de couleur au survol (peinture seule, sans recalcul de mise en page) ; indicateur de diapositive de l'écran atelier (largeur).
 - Aucune modification de logique ni de Firebase.
 - Fichiers : styles.css, App.js, components/{ManagerNav,ManagerFiche,DashboardSummary,TableView}.js, releaseNotes.js, releaseCatalog.js(+test).
+
+## v182 — 2e direction « Salle de contrôle », fin du néomorphisme
+
+- **Thème « Salle de contrôle »** (`theme.js`, id `controle`) : sombre = ardoise dense (surface `#16202E`, carte `#1F2B3D`, filets `#33435C`, accent or `#F4D35E`, `teal500` `#4A73A3` pour le texte blanc ≥ 4,5:1) ; clair = gris industriel (`#EEF1F4`, cartes blanches, marine `#0D3B66`). Mêmes étapes, états et alertes que le thème Atelier. Menu latéral ardoise très sombre avec repère or (`navTokens`). Au choix dans « Apparence » ; « Atelier » reste par défaut.
+- **Néomorphisme abandonné** : jetons renommés partout (59 occurrences, `src/` et `scripts/check-contrast.mjs`) — `neuPanel`→`panel`, `neuPanelDim`→`panelDim`, `neuOutSm`→`outline`, `neuOut`→`outlineSoft`, `neuInSm`→`insetSm`, `neuIn`→`inset`. Valeurs inchangées (déjà plates depuis V140).
+- `check:contrast` : 1 095 vérifications (3 thèmes), 0 échec.
+- `CLAUDE.md` : thèmes, néomorphisme et règles d'animation mis à jour.
+- Vérifié : rendu statique de l'accueil en « Salle de contrôle » sombre ; build, tests, contraste.
+- Fichiers : theme.js, scripts/check-contrast.mjs, components/{CommentsKanban,CommentsView,ManagerPanel,ProjectModal,SavedViews,SharedUI,TableView}.js, App.js (version), releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.

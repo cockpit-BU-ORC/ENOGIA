@@ -11,7 +11,7 @@ const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) +
 let fails = 0, n = 0; const rows = [];
 for (const id of Object.keys(THEMES)) for (const dark of [false, true]) for (const pres of [false, true]) {
   const P = palette(id, dark, pres), tag = id + (dark ? " (sombre)" : " (clair)") + (pres ? " (présentation)" : "");
-  const bgs = ["surface", "surfaceAlt", "card", "neuPanel", "neuPanelDim"];
+  const bgs = ["surface", "surfaceAlt", "card", "panel", "panelDim"];
   const pairs = [];
   for (const t of ["ink900", "ink700", "ink500", "ink300"]) for (const b of bgs) pairs.push([t, b]);
   for (const b of ["surface", "card", "teal100", "surfaceAlt"]) pairs.push(["teal600", b]);

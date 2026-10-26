@@ -30,7 +30,7 @@ function Card({c,onDelete,confirming,pinInput,setPinInput,onConfirm,onCancel,onJ
     {confirming&&<div style={{marginTop:8,paddingTop:8,borderTop:"1px solid "+T.line,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
       <input type="password" value={pinInput} onChange={e=>setPinInput(e.target.value)} placeholder="Code Manager" style={{padding:"4px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.xs,fontFamily:T.font,width:104}}/>
       <button onClick={onConfirm} style={{padding:"4px 8px",borderRadius:8,border:"none",background:T.redFill,color:"#fff",fontSize:FZ.xs,fontWeight:700,cursor:"pointer"}}>Confirmer</button>
-      <button onClick={onCancel} style={{padding:"4px 8px",borderRadius:8,border:"none",background:T.neuPanel,color:T.ink700,fontSize:FZ.xs,cursor:"pointer"}}>Annuler</button>
+      <button onClick={onCancel} style={{padding:"4px 8px",borderRadius:8,border:"none",background:T.panel,color:T.ink700,fontSize:FZ.xs,cursor:"pointer"}}>Annuler</button>
     </div>}
   </div>);
 }
@@ -146,7 +146,7 @@ export function CommentsKanban({data,comments,addComment,deleteComment,pinOk,aut
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:6,gap:6}}>
             {pinOk?<label style={{display:"flex",alignItems:"center",gap:4,fontSize:FZ.xs,color:T.ink500,fontWeight:600,cursor:"pointer"}}><input type="checkbox" checked={isPrivate} onChange={e=>setIsPrivate(e.target.checked)}/>Privé</label>:<span/>}
             <div style={{display:"flex",gap:6}}>
-              <button onClick={()=>setComposePj(null)} style={{padding:"4px 8px",borderRadius:8,border:"none",background:T.neuPanel,color:T.ink700,fontSize:FZ.xs,cursor:"pointer"}}>Annuler</button>
+              <button onClick={()=>setComposePj(null)} style={{padding:"4px 8px",borderRadius:8,border:"none",background:T.panel,color:T.ink700,fontSize:FZ.xs,cursor:"pointer"}}>Annuler</button>
               <button onClick={()=>submit(col.pj)} disabled={!text.trim()} style={{padding:"4px 12px",borderRadius:8,border:"none",background:text.trim()?T.teal500:T.surfaceAlt,color:text.trim()?"#fff":T.ink300,fontSize:FZ.xs,fontWeight:700,cursor:text.trim()?"pointer":"default"}}>Publier</button>
             </div>
           </div>
