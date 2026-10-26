@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { T, FZ } from "../theme";
 import { fmt } from "../parsers";
-import { SerieTag, getPjMeta, CountryFlag, relTime, Avatar } from "../pjMeta";
+import { SerieTag, getPjMeta, CountryFlag, relTime, Avatar, PjPlate } from "../pjMeta";
 import { PjChecklist, NavIcon, SuperOnly, pressable } from "./SharedUI";
 import { CommentsKanban } from "./CommentsKanban";
 import { MentionPicker, MentionTextarea } from "./MentionPicker";
@@ -163,7 +163,7 @@ export function CommentsView({data,comments,addComment,deleteComment,pinOk,addCo
       </div>}
 
       {groupsList.length>0&&<div style={{borderBottom:"1px solid "+T.line}}>
-        <div style={{padding:"8px 12px 4px",fontSize:FZ.xs,fontWeight:700,color:T.ink300,textTransform:"uppercase",letterSpacing:".04em"}}>Commentaires groupés ({groupsList.length})</div>
+        <div style={{fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk,padding:"8px 12px 4px"}}>Commentaires groupés ({groupsList.length})</div>
         <div style={{maxHeight:180,overflowY:"auto"}}>
           {groupsList.map(g=>{
             const active=!viewAll&&g.groupPjs.every(p=>viewPjs.has(p))&&viewPjs.size===g.groupPjs.length;
@@ -193,7 +193,7 @@ export function CommentsView({data,comments,addComment,deleteComment,pinOk,addCo
               <div style={{width:30,height:30,borderRadius:"50%",background:T.surfaceAlt,flexShrink:0}}/>}
             <div style={{minWidth:0,flex:1}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:6}}>
-                <span style={{fontWeight:700,color:T.ink900,fontSize:FZ.sm,display:"flex",alignItems:"center",gap:4,whiteSpace:"nowrap"}}>{row.pj}<SerieTag pj={row.pj}/><CountryFlag pays={row.meta.pays} size={11}/></span>
+                <span style={{fontWeight:700,color:T.ink900,fontSize:FZ.sm,display:"flex",alignItems:"center",gap:4,whiteSpace:"nowrap"}}><PjPlate pj={row.pj}/><SerieTag pj={row.pj}/><CountryFlag pays={row.meta.pays} size={11}/></span>
                 {row.last&&<span style={{fontSize:FZ.xs,color:T.ink300,flexShrink:0}}>{relTime(row.last.date)}</span>}
               </div>
               <div style={{fontSize:FZ.xs,color:T.ink500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
@@ -211,7 +211,7 @@ export function CommentsView({data,comments,addComment,deleteComment,pinOk,addCo
     <div style={{flex:1,minWidth:0,background:T.card,borderRadius:16,boxShadow:T.shadowMd,display:"flex",flexDirection:"column",overflow:"hidden"}}>
       {multiSelectMode?<>
         <div style={{padding:"12px 20px",borderBottom:"1px solid "+T.line}}>
-          <div style={{fontFamily:T.fontDisplay,textTransform:"uppercase",letterSpacing:".03em",fontWeight:700,fontSize:FZ.md,color:T.ink900,marginBottom:10}}>Commentaire groupé — choisir les PJ</div>
+          <div style={{fontFamily:T.fontDisplay,fontWeight:300,fontSize:22,letterSpacing:"-.02em",color:T.ink900,marginBottom:10}}>Commentaire groupé — choisir les PJ</div>
           <PjChecklist data={data} selected={viewPjs} onChange={setViewPjs} maxHeight={220}/>
         </div>
         {viewPjs.size>0?<div style={{flex:1,overflowY:"auto",padding:"16px 20px",display:"flex",flexDirection:"column",gap:12}}>
@@ -222,7 +222,7 @@ export function CommentsView({data,comments,addComment,deleteComment,pinOk,addCo
               <Avatar name={c.author} tint={c.private?T.amber500:T.teal500}/>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap",marginBottom:2}}>
-                  <span onClick={()=>jumpToPj&&jumpToPj(c.pj)} style={{fontWeight:700,fontSize:FZ.sm,color:T.teal600,fontFamily:T.fontMono,whiteSpace:"nowrap",cursor:jumpToPj?"pointer":"default"}}>{c.pj}</span><SerieTag pj={c.pj}/>
+                  <span onClick={()=>jumpToPj&&jumpToPj(c.pj)} style={{fontWeight:700,fontSize:FZ.sm,color:T.teal600,fontFamily:T.fontMono,whiteSpace:"nowrap",cursor:jumpToPj?"pointer":"default"}}><PjPlate pj={c.pj}/></span><SerieTag pj={c.pj}/>
                   <span style={{color:T.ink300,fontSize:FZ.xs}}>·</span>
                   <span style={{fontWeight:600,color:T.ink700,fontSize:FZ.sm}}>{c.author}</span>
                   {c.private&&<span title="Privé (BU ORC uniquement)" style={{fontSize:FZ.xs,color:T.amber600,background:T.amber100,borderRadius:4,padding:"1px 6px",fontWeight:700}}>Privé</span>}
@@ -270,7 +270,7 @@ export function CommentsView({data,comments,addComment,deleteComment,pinOk,addCo
         </div>
       :<>
         <div style={{padding:"12px 20px",borderBottom:"1px solid "+T.line,display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,flexWrap:"wrap"}}>
-          <div style={{fontFamily:T.fontDisplay,textTransform:"uppercase",letterSpacing:".03em",fontWeight:700,fontSize:FZ.md,color:T.ink900}}>{headerLabel}</div>
+          <div style={{fontFamily:T.fontDisplay,fontWeight:300,fontSize:22,letterSpacing:"-.02em",color:T.ink900}}>{headerLabel}</div>
           <span style={{fontSize:FZ.xs,color:T.ink300}}>{feed.length} commentaire{feed.length!==1?"s":""}</span>
         </div>
 
@@ -282,7 +282,7 @@ export function CommentsView({data,comments,addComment,deleteComment,pinOk,addCo
               <Avatar name={c.author} tint={c.private?T.amber500:T.teal500}/>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap",marginBottom:2}}>
-                  <span onClick={()=>jumpToPj&&jumpToPj(c.pj)} style={{fontWeight:700,fontSize:FZ.sm,color:T.teal600,fontFamily:T.fontMono,whiteSpace:"nowrap",cursor:jumpToPj?"pointer":"default"}}>{c.pj}</span><SerieTag pj={c.pj}/>
+                  <span onClick={()=>jumpToPj&&jumpToPj(c.pj)} style={{fontWeight:700,fontSize:FZ.sm,color:T.teal600,fontFamily:T.fontMono,whiteSpace:"nowrap",cursor:jumpToPj?"pointer":"default"}}><PjPlate pj={c.pj}/></span><SerieTag pj={c.pj}/>
                   <span style={{color:T.ink300,fontSize:FZ.xs}}>·</span>
                   <span style={{fontWeight:600,color:T.ink700,fontSize:FZ.sm}}>{c.author}</span>
                   {c.private&&<span title="Privé (BU ORC uniquement)" style={{fontSize:FZ.xs,color:T.amber600,background:T.amber100,borderRadius:4,padding:"1px 6px",fontWeight:700}}>Privé</span>}

@@ -282,4 +282,7 @@ export const RELEASE_CATALOG = [
     ["Commandes", "Boutons actifs et « Aujourd'hui » en bleu marine."],
     ["Fiche projet", "Grande plaque, nom du projet en titre, onglets soulignés."],
   ] },
+  { v: "175", t: "Le style « Atelier » sur tout le site", items: [
+    ["Suivi et Manager", "Plaques de PJ, intitulés d'atelier et grands chiffres sur Modifications, Commentaires, Tests et Manager."],
+  ] },
 ];

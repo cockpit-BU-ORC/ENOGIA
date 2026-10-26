@@ -984,3 +984,13 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - **Mode sombre** : les fonds marine pleins passent à `teal600` (`#C6D0EE`) avec texte `#0B1130` (12:1) ; survol des boutons via `--e-ind-bg` / `--e-ind-ink` posées par `App.js` (`.enogia-btn-ind`).
 - Vérifié par rendu statique (jsdom → HTML, 1 100 px) en clair et en sombre ; pas testé dans l'appli connectée.
 - Fichiers : pjMeta.js, App.js, styles.css, components/{SharedUI,GanttView,CalendarView,ProjectModal}.js, releaseNotes.js, releaseCatalog.js(+test).
+
+## v175 — Direction « Éditorial industriel » : Modifications, Commentaires, Tests, Manager
+
+- **Sur-titres d'atelier** : les petits libellés gris en capitales grasses (≈ 18) passent en JetBrains Mono 11 px, ocre (`T.accentInk`), espacement .1em — ChangesTable, CompareFiles, CommentsView, TestsTab (`Cap`, en-tête « Testeur »), ManagerPanel (en-têtes de tableaux, « Version du site »), ManagerParts, ManagerNav (titres de groupe), ManagerFiche (`Cap`, montants, « Projets », boutons de colonnes des composants).
+- **Plaques de PJ** (`PjPlate`) : 14 n° de PJ affichés en texte dans les listes (ChangesTable, CommentsView, CommentsKanban, ManagerParts, ManagerPanel, ManagerFiche — grande plaque dans l'en-tête de la fiche synthèse). Le n° du graphique SVG « initial vs révisé » reste en texte (pas de HTML dans un SVG).
+- **Chiffres clés du Manager** (`KpiRow`) : filet marine de 3 px en haut, chiffre Roboto 300 de 30–40 px, libellé dessous avec un petit carré de la couleur d'accent (au lieu de la bordure gauche colorée), apparition en fondu.
+- **Commentaires** : titres en capitales grasses → Roboto 300 de 22 px.
+- **Modifications** : le titre interne (doublon de l'en-tête de page) devient le sur-titre « JOURNAL DES IMPORTS » ; carte à liseré marine, sans ombre.
+- Vérifié : rendu statique des chiffres clés et des Commentaires (thème Atelier, clair) ; build, tests, contraste. Pas testé dans l'appli connectée.
+- Fichiers : components/{ChangesView,ChangesTable,CompareFiles,CommentsView,CommentsKanban,TestsTab,ManagerPanel,ManagerParts,ManagerNav,ManagerFiche}.js, App.js (version), releaseNotes.js, releaseCatalog.js(+test).

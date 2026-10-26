@@ -27,7 +27,7 @@ export function ManagerRail({ groups, activeId, activeSub, onGo, collapsed, setC
   </nav>);
   return (<nav aria-label="Navigation Manager" style={{ width: w, flex: "none", transition: "width .28s var(--e-ease)", position: "sticky", top: 8, alignSelf: "flex-start", background: T.surface, border: "1px solid " + T.line, borderRadius: 14, padding: "8px 8px 10px", display: "flex", flexDirection: "column", gap: 2, overflow: "hidden", fontFamily: T.font }}>
     {groups.map(g => (<div key={g.label} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-      <div style={{ fontSize:11, fontWeight: 700, letterSpacing: ".09em", textTransform: "uppercase", color: T.ink500, padding: collapsed ? "6px 0 2px" : "10px 10px 3px", whiteSpace: "nowrap", textAlign: collapsed ? "center" : "left", overflow: "hidden", height: collapsed ? 14 : "auto", transition: "padding .2s" }}>{collapsed ? "·" : g.label}</div>
+      <div style={{fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk,padding: collapsed ? "6px 0 2px" : "10px 10px 3px",whiteSpace: "nowrap",textAlign: collapsed ? "center" : "left",overflow: "hidden",height: collapsed ? 14 : "auto",transition: "padding .2s"}}>{collapsed ? "·" : g.label}</div>
       {g.entries.map(e => { const on = e.id === activeId; return (<React.Fragment key={e.id}>
         <button onClick={() => onGo(e.go)} title={collapsed ? e.label : undefined} aria-current={on ? "page" : undefined}
           style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", border: "none", borderRadius: 9, padding: collapsed ? "9px 0" : "8px 10px", justifyContent: collapsed ? "center" : "flex-start", background: on ? T.card : "transparent", boxShadow: on ? T.shadowSm : "none", color: on ? T.ink900 : T.ink500, fontWeight: on ? 700 : 500, fontSize: FZ.sm, cursor: "pointer", fontFamily: T.font, textAlign: "left", whiteSpace: "nowrap" }}
@@ -107,7 +107,7 @@ export function ManagerPalette({ groups, data, onGo, onOpenPj, onClose, activeKe
           style={{ flex: 1, border: "none", outline: "none", background: "transparent", color: T.ink900, fontSize: FZ.md, padding: "15px 0", fontFamily: T.font }} />
       </div>
       <div ref={listRef} role="listbox" style={{ maxHeight: 340, overflowY: "auto", padding: 6 }}>
-        {items.map((it, i) => { if (it.head) return <div key={"h" + i} style={{ fontSize:11, fontWeight: 700, letterSpacing: ".09em", textTransform: "uppercase", color: T.ink500, padding: "8px 12px 3px" }}>{it.head}</div>;
+        {items.map((it, i) => { if (it.head) return <div key={"h" + i} style={{fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk,padding: "8px 12px 3px"}}>{it.head}</div>;
           n++; const on = n === sel, idx = n; return (
             <div key={it.key} role="option" aria-selected={on} data-sel={on ? "1" : "0"} onMouseEnter={() => setSel(idx)} onMouseDown={e => { e.preventDefault(); choose(it); }}
               style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 12px", borderRadius: 9, cursor: "pointer", background: on ? T.teal100 : "transparent", color: T.ink900, fontSize: FZ.sm }}>

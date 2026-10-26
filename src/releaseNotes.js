@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v175",
+    date: "2026-10-26",
+    title: "V175 : le style « Atelier » sur tout le site",
+    items: [
+      { t: "Suivi et Manager", d: "Modifications, Commentaires, Tests et Manager adoptent le même style : n° de PJ sur plaques, intitulés d'atelier, grands chiffres." },
+      { t: "Chiffres clés du Manager", d: "Chaque indicateur s'affiche en grand chiffre sous un filet bleu marine, avec un petit repère de couleur à côté de son libellé." },
+    ],
+  },
+  {
     id: "2026-10-v174",
     date: "2026-10-26",
     title: "V174 : Gantt, Calendrier et fiche au style « Atelier »",

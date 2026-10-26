@@ -22,7 +22,7 @@ const dIso = x => { if (!x) return ""; const d = new Date(x); return isNaN(d) ? 
 const fd = iso => iso ? fmt(new Date(iso + "T12:00:00")) : "—";
 const fdm = iso => iso ? iso.slice(8, 10) + "/" + iso.slice(5, 7) : "";
 const period = r => r.tests ? fd(dIso(r.tests)) + (r.testsFin ? " → " + fd(dIso(r.testsFin)) : "") : "Période non définie";
-const Cap = ({ children, style }) => <div style={{ fontSize: FZ.xs, fontWeight: 700, color: T.ink500, textTransform: "uppercase", letterSpacing: ".05em", ...style }}>{children}</div>;
+const Cap = ({ children, style }) => <div style={{fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk,...style}}>{children}</div>;
 
 function TesterChip({ t, warn, on, onClick, disabled, small }) {
   const interactive = !!onClick;
@@ -185,7 +185,7 @@ function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdi
                 {on && <span style={{ fontSize: FZ.xs, color: T.ink500, fontWeight: 600 }}>{ids.length}/{catalog[k].length} test{catalog[k].length > 1 ? "s" : ""}</span>}
               </div>
               {on && <>
-                {catalog[k].length > 0 && <div style={{ display: "grid", gridTemplateColumns: "26px minmax(150px,1fr) minmax(200px,2fr) minmax(150px,1fr)", gap: "0 10px", padding: "4px 12px", fontSize:11, fontWeight: 700, color: T.ink300, textTransform: "uppercase", letterSpacing: ".05em" }}><span /><span>Test</span><span>Objectifs</span><span>Commentaires</span></div>}
+                {catalog[k].length > 0 && <div style={{fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk,display: "grid",gridTemplateColumns: "26px minmax(150px,1fr) minmax(200px,2fr) minmax(150px,1fr)",gap: "0 10px",padding: "4px 12px"}}><span /><span>Test</span><span>Objectifs</span><span>Commentaires</span></div>}
                 {catalog[k].map(tst => { const chk = ids.includes(tst.id); return (
                   <div key={tst.id} style={{ display: "grid", gridTemplateColumns: "26px minmax(150px,1fr) minmax(200px,2fr) minmax(150px,1fr)", gap: "0 10px", padding: "6px 12px", borderTop: "1px solid " + T.surface, alignItems: "start", opacity: chk ? 1 : .55 }}>
                     <input type="checkbox" checked={chk} disabled={!canTest} onChange={() => saveTests(toggleTest(plan, catalog, k, tst.id))} aria-label={tst.name} style={{ marginTop: 3 }} />
@@ -260,7 +260,7 @@ function TesterTimeline({ doc, rows, testers, conflicts, commit, canEdit, myTest
     <div style={{ overflowX: "auto" }}>
       <div style={{ minWidth: LABEL_W + N * DAY_W }}>
         <div style={{ display: "flex", background: T.surface, borderTop: "1px solid " + T.line }}>
-          <div style={{ ...labelCell, background: T.surface, fontSize: FZ.xs, fontWeight: 700, color: T.ink500, textTransform: "uppercase" }}>Testeur</div>
+          <div style={{fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk,...labelCell,background: T.surface}}>Testeur</div>
           <div style={{ display: "flex" }}>{Array.from({ length: WEEKS }, (_, w) => <div key={w} style={{ width: 7 * DAY_W, flexShrink: 0, padding: "6px 6px", borderLeft: "1px solid " + T.line, fontSize: FZ.xs, fontWeight: 700, color: T.ink500 }}>Sem. du {fdm(addDaysIso(start, w * 7))}</div>)}</div>
         </div>
         {/* À affecter */}

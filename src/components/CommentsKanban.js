@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { T, FZ } from "../theme";
-import { SerieTag, getPjMeta, CountryFlag, relTime, Avatar } from "../pjMeta";
+import { SerieTag, getPjMeta, CountryFlag, relTime, Avatar, PjPlate } from "../pjMeta";
 import { NavIcon, EmptyState, SuperOnly, pressable } from "./SharedUI";
 
 // Vue Kanban des commentaires (demandé explicitement : "des tuiles comme un kanban pour chaque PJ
@@ -137,7 +137,7 @@ export function CommentsKanban({data,comments,addComment,deleteComment,pinOk,aut
     {columns.map(col=>(
       <Column key={col.pj} accent={T.teal500} count={col.list.length} width={colW}
         onHeaderClick={()=>onOpenThread&&onOpenThread(col.pj)}
-        title={<><span style={{fontFamily:T.fontMono,fontWeight:700,fontSize:FZ.sm,color:T.teal600,flexShrink:0}}>{col.pj}</span><SerieTag pj={col.pj}/><CountryFlag pays={col.meta.pays} size={11}/><span title={col.meta.nomProjet} style={{fontSize:FZ.xs,color:T.ink500,lineHeight:1.2,flex:"1 1 auto",minWidth:0,overflowWrap:"anywhere"}}>{col.meta.nomProjet}</span></>}
+        title={<><span style={{fontFamily:T.fontMono,fontWeight:700,fontSize:FZ.sm,color:T.teal600,flexShrink:0}}><PjPlate pj={col.pj}/></span><SerieTag pj={col.pj}/><CountryFlag pays={col.meta.pays} size={11}/><span title={col.meta.nomProjet} style={{fontSize:FZ.xs,color:T.ink500,lineHeight:1.2,flex:"1 1 auto",minWidth:0,overflowWrap:"anywhere"}}>{col.meta.nomProjet}</span></>}
         headerExtra={<>{groupCountByPj[col.pj]>0&&<button onClick={e=>{e.stopPropagation();setFocusPj(focusPj===col.pj?null:col.pj);}} title={groupCountByPj[col.pj]+" commentaire(s) groupé(s) concernent ce PJ — cliquer pour les filtrer dans la colonne Groupés"} style={{height:18,borderRadius:8,border:"none",background:focusPj===col.pj?T.violet500:T.violet100,color:focusPj===col.pj?"#fff":T.violet600,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",flexShrink:0,padding:"0 6px"}}>⧉ {groupCountByPj[col.pj]}</button>}{isAdmin&&<button onClick={e=>{e.stopPropagation();onTogglePrivate&&onTogglePrivate();}} title={hidePrivate?"Commentaires privés masqués — cliquer pour les afficher":"Masquer les commentaires privés"} style={{width:18,height:18,borderRadius:4,border:"none",background:hidePrivate?T.amber100:"transparent",color:hidePrivate?T.amber600:T.ink300,cursor:"pointer",flexShrink:0,padding:0,display:"flex",alignItems:"center",justifyContent:"center"}}><NavIcon name="lock" size={10}/></button>}<button onClick={e=>{e.stopPropagation();setComposePj(composePj===col.pj?null:col.pj);setText("");setErr("");}} title="Ajouter un commentaire" style={{width:24,height:24,borderRadius:8,border:"none",background:T.teal100,color:T.teal600,fontSize:FZ.md,fontWeight:700,cursor:"pointer",flexShrink:0,lineHeight:1}}>+</button></>}>
         {composePj===col.pj&&<div style={{background:T.card,border:"1px solid "+T.teal500,borderRadius:12,padding:8}}>
           {!authorName&&<input type="text" value={authorInput} onChange={e=>{setAuthorInput(e.target.value);setErr("");}} placeholder="Votre nom" maxLength={40} style={{width:"100%",boxSizing:"border-box",padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.xs,fontFamily:T.font,marginBottom:6}}/>}

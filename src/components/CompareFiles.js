@@ -14,7 +14,7 @@ function Drop({ label, file, onFile }) {
   return (<div onDragOver={e => { e.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)} onDrop={e => { e.preventDefault(); setOver(false); const f = e.dataTransfer.files[0]; if (f) onFile(f); }}
     onClick={() => document.getElementById(id).click()}
     style={{ flex: "1 1 240px", minWidth: 220, border: "2px dashed " + (over ? T.teal500 : file ? T.emerald500 : T.ink100), borderRadius: 12, padding: "12px 16px", background: over ? T.teal100 : T.surface, cursor: "pointer", textAlign: "center" }}>
-    <div style={{ fontSize: FZ.xs, fontWeight: 800, letterSpacing: ".12em", textTransform: "uppercase", color: T.ink500 }}>{label}</div>
+    <div style={{fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk}}>{label}</div>
     <div style={{ fontSize: FZ.sm, color: file ? T.ink900 : T.ink300, fontWeight: file ? 600 : 400, marginTop: 5, wordBreak: "break-all" }}>{file ? file.name : "Glisser un fichier ou cliquer"}</div>
     <input id={id} type="file" accept=".xlsx,.xls,.txt,.tsv" style={{ display: "none" }} onChange={e => { const f = e.target.files[0]; if (f) onFile(f); e.target.value = ""; }} />
   </div>);

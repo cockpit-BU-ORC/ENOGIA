@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { T, FZ } from "../theme";
 import { EmptyState } from "./SharedUI";
+import { PjPlate } from "../pjMeta";
 const fmtIso = iso => iso ? iso.slice(8, 10) + "/" + iso.slice(5, 7) + "/" + iso.slice(2, 4) : "—";
 
 // ── Onglet « Modifications » : synthèse de ce qui a bougé entre le plan en cours et une référence ──────────
@@ -87,7 +88,7 @@ export function ChangesTable({ summary, refs, refId, setRefId, refLabel, q, onOp
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 8, marginBottom: 12 }}>
       {tiles.map(([k, label, n, sub, col]) => (<button key={k} onClick={() => setFilter(filter === k && k !== "all" ? "all" : k)} aria-pressed={filter === k}
         style={{ textAlign: "left", cursor: "pointer", fontFamily: T.font, background: filter === k ? T.teal100 : T.card, border: "1px solid " + (filter === k ? T.teal500 : T.line), borderRadius: 12, padding: "8px 12px" }}>
-        <div style={{ fontSize: FZ.xs, fontWeight: 700, color: T.ink500, textTransform: "uppercase", letterSpacing: ".03em" }}>{label}</div>
+        <div style={{fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk}}>{label}</div>
         <div style={{ fontSize: FZ.xl, fontWeight: 700, color: n ? col : T.ink300, lineHeight: 1.15 }}>{n}</div>
         <div style={{ fontSize: FZ.xs, color: T.ink500 }}>{sub}</div>
       </button>))}
@@ -121,7 +122,7 @@ export function ChangesTable({ summary, refs, refId, setRefId, refLabel, q, onOp
             </tr>))}
             {gone.map(r => (<tr key={"rm-" + r.pj} style={{ borderTop: "1px solid " + T.line }}>
               <td style={{ padding: "8px 8px 8px 12px", minWidth: 190 }}>
-                <div style={{ fontFamily: T.fontMono, fontWeight: 700, color: T.ink500 }}>{r.pj}<span style={{ marginLeft: 6, fontFamily: T.font, fontSize: FZ.xs, background: T.red100, color: T.red500, borderRadius: 4, padding: "1px 6px" }}>retiré</span></div>
+                <div style={{ fontFamily: T.fontMono, fontWeight: 700, color: T.ink500 }}><PjPlate pj={r.pj}/><span style={{ marginLeft: 6, fontFamily: T.font, fontSize: FZ.xs, background: T.red100, color: T.red500, borderRadius: 4, padding: "1px 6px" }}>retiré</span></div>
                 {r.nomProjet && <div style={{ fontSize: FZ.xs, color: T.ink500, maxWidth: 240, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.nomProjet}</div>}
               </td>
               {FIELDS.map(([f]) => <td key={f} style={{ padding: "6px 4px", textAlign: "center" }}>{f === "depart" && r.depart ? <span title="Départ qui était prévu" style={{ fontSize: FZ.xs, color: T.ink500, fontFamily: T.fontMono, textDecoration: "line-through" }}>{fmtIso(r.depart)}</span> : null}</td>)}
@@ -132,7 +133,7 @@ export function ChangesTable({ summary, refs, refId, setRefId, refLabel, q, onOp
         </table>
       </div>}
     <div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 6 }}>Écarts en jours calendaires : <span style={{ color: TONE.late.fg, fontWeight: 700 }}>rouge = plus tard</span>, <span style={{ color: TONE.early.fg, fontWeight: 700 }}>vert = plus tôt</span> (le trait va vers la droite quand c'est plus tard, vers la gauche quand c'est plus tôt) · cliquez une ligne pour l'ouvrir dans la liste.</div>
-    {removed && removed.length > 0 && <div style={{ marginTop: 10, fontSize: FZ.xs, color: T.ink700, lineHeight: 1.7 }}><b style={{ color: T.red500 }}>Retirés de cette version :</b> {removed.map(r => <span key={r.pj} title={r.nomProjet || ""} style={{ fontFamily: T.fontMono, fontWeight: 700, background: T.red100, color: T.red500, borderRadius: 4, padding: "1px 8px", marginRight: 5, display: "inline-block" }}>{r.pj}</span>)}</div>}
+    {removed && removed.length > 0 && <div style={{ marginTop: 10, fontSize: FZ.xs, color: T.ink700, lineHeight: 1.7 }}><b style={{ color: T.red500 }}>Retirés de cette version :</b> {removed.map(r => <span key={r.pj} title={r.nomProjet || ""} style={{ fontFamily: T.fontMono, fontWeight: 700, background: T.red100, color: T.red500, borderRadius: 4, padding: "1px 8px", marginRight: 5, display: "inline-block" }}><PjPlate pj={r.pj}/></span>)}</div>}
 
   </div>);
 }

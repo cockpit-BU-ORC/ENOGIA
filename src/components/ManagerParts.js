@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { T, FZ, inkOn } from "../theme";
-import { SerieTag, getPjMeta, ETAT_META, ASSIGNABLE_ETATS, Avatar, relTime, PRESENCE_META, presenceKind, presenceBg, presenceDates } from "../pjMeta";
+import { SerieTag, getPjMeta, ETAT_META, ASSIGNABLE_ETATS, Avatar, relTime, PRESENCE_META, presenceKind, presenceBg, presenceDates, PjPlate } from "../pjMeta";
 import { fmt, toLocalISO } from "../parsers";
 import { EtatsDialog } from "./EtatsDialog";
 import { Select, NavIcon, PjChecklist, DelayScopeNote, EmptyState, SuperOnly, NewDelayType } from "./SharedUI";
@@ -56,9 +56,10 @@ export function PieBlock({data,unit="",size=150,centerLabel,sub}){
 export function KpiRow({items,min=140}){
   return(<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax("+min+"px,1fr))",gap:8}}>
     {items.map(([v,l,c])=>(
-      <div key={l} style={{...CARD,padding:"12px 12px",borderLeft:"3px solid "+c}}>
-        <div style={{fontFamily:T.fontDisplay,fontSize:FZ.xl,fontWeight:700,color:T.ink900,lineHeight:1.1}}>{v}</div>
-        <div style={{fontSize:FZ.xs,fontWeight:600,color:T.ink500,marginTop:4}}>{l}</div>
+      <div key={l} className="enogia-view-in" style={{...CARD,padding:"12px 14px 10px",borderTop:"3px solid "+T.teal500,borderRadius:"0 0 12px 12px",position:"relative"}}>
+        {/* v175 : chiffre éditorial (grand, léger) ; la couleur d'accent devient un petit repère carré à côté du libellé. */}
+        <div style={{fontFamily:T.fontDisplay,fontSize:"clamp(30px,3.4vw,40px)",fontWeight:300,letterSpacing:"-.03em",color:T.ink900,lineHeight:1,fontVariantNumeric:"tabular-nums"}}>{v}</div>
+        <div style={{fontSize:FZ.xs,fontWeight:600,color:T.ink700,marginTop:6,display:"flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:8,height:8,borderRadius:2,background:c,flexShrink:0}}/>{l}</div>
       </div>
     ))}
   </div>);
@@ -140,7 +141,7 @@ export function StatutTab({rows,etatChoice,setEtatFor,clientPresence,setClientPr
       <div style={H_TITLE}>Statut & état des machines</div>
       <div style={H_SUB}>L'état choisi ici est celui affiché partout sur le site, immédiatement visible par tous. En Montage, Élec, Tests, Packaging et Expédiée, l'avancement de production s'en déduit automatiquement (voir le « i » des filtres d'état).</div>
     </div>
-    <div style={{display:"grid",gridTemplateColumns:COLS,gap:12,padding:"8px 16px",background:T.surface,borderTop:"1px solid "+T.line,borderBottom:"1px solid "+T.line,fontSize:FZ.xs,fontWeight:700,color:T.ink300,textTransform:"uppercase",letterSpacing:".05em"}}>
+    <div style={{fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk,display:"grid",gridTemplateColumns:COLS,gap:12,padding:"8px 16px",background:T.surface,borderTop:"1px solid "+T.line,borderBottom:"1px solid "+T.line}}>
       <span>PJ</span><span>S/N</span><span>Gamme</span><span>État</span><span>Présence client / NOBO aux tests</span>
     </div>
     {rows.length===0&&<EmptyNote>Aucun PJ à afficher.</EmptyNote>}
@@ -151,7 +152,7 @@ export function StatutTab({rows,etatChoice,setEtatFor,clientPresence,setClientPr
       return(<div key={r.pj} style={{display:"grid",gridTemplateColumns:COLS,gap:12,alignItems:"center",padding:"8px 16px",borderBottom:"1px solid "+T.surface}}
         onMouseEnter={e=>e.currentTarget.style.background=T.surface} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
         <div style={{minWidth:0}}>
-          <div style={{fontFamily:T.fontMono,fontWeight:700,fontSize:FZ.sm,color:T.teal600,whiteSpace:"nowrap"}}>{r.pj}</div>
+          <div style={{fontFamily:T.fontMono,fontWeight:700,fontSize:FZ.sm,color:T.teal600,whiteSpace:"nowrap"}}><PjPlate pj={r.pj}/></div>
           <div title={meta.nomProjet||""} style={{fontSize:FZ.xs,color:T.ink300,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{meta.nomProjet||""}</div>
         </div>
         <div style={{minWidth:0}}><SerieTag pj={r.pj} style={{verticalAlign:"middle"}}/></div>
@@ -197,7 +198,7 @@ export function KpiAvancement({rows,progress}){
         <div style={{...H_SUB,marginBottom:12}}>Les PJ démarrés mais encore loin de la fin</div>
         {running20.length===0?<EmptyNote>Aucun PJ en cours.</EmptyNote>:running20.map(({r,pv})=>(
           <div key={r.pj} style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-            <span style={{width:92,fontFamily:T.fontMono,fontSize:FZ.xs,fontWeight:700,color:T.teal600,flexShrink:0}}>{r.pj}</span>
+            <span style={{width:92,fontFamily:T.fontMono,fontSize:FZ.xs,fontWeight:700,color:T.teal600,flexShrink:0}}><PjPlate pj={r.pj}/></span>
             <div style={{flex:1,background:T.surfaceAlt,borderRadius:8,height:10,overflow:"hidden"}}><div className="enogia-bar-fill" style={{width:pv+"%",height:"100%",background:pv>=50?T.teal500:T.amber500,borderRadius:8}}/></div>
             <span style={{width:40,textAlign:"right",fontSize:FZ.xs,fontWeight:700,color:T.ink900}}>{pv}%</span>
           </div>
@@ -353,7 +354,7 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
       <div style={{display:"flex",alignItems:"center",gap:8}}>
         {byPj
           ?<span style={{display:"inline-flex",alignItems:"center",gap:4,background:T.surface,borderRadius:999,padding:"1px 8px 1px 8px",fontSize:FZ.xs,fontWeight:700,color:T.ink700}}><span style={{width:7,height:7,borderRadius:"50%",background:c}}/>{e.type}</span>
-          :<span style={{fontFamily:T.fontMono,fontWeight:800,fontSize:FZ.sm,color:T.teal600}}>{e.pj}</span>}
+          :<span style={{fontFamily:T.fontMono,fontWeight:800,fontSize:FZ.sm,color:T.teal600}}><PjPlate pj={e.pj}/></span>}
         {!byPj&&<SerieTag pj={e.pj}/>}
         <span style={{fontSize:FZ.sm,fontWeight:800,color:T.red500,background:T.red100,borderRadius:8,padding:"0 8px"}}>+{e.days}j</span>
         {e.groupPjs&&e.groupPjs.length>1&&<span title={e.groupPjs.join(", ")} style={{fontSize:FZ.xs,color:T.violet600,background:T.violet100,borderRadius:8,padding:"1px 6px",fontWeight:700}}>×{e.groupPjs.length}</span>}
@@ -403,7 +404,7 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
             <div style={{padding:"8px 12px 8px",borderBottom:"2px solid "+c,display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
               <div style={{minWidth:0,flex:1}}>
                 <div style={{display:"flex",alignItems:"center",gap:6,minWidth:0}}>
-                  {view==="pj"?<span style={{fontFamily:T.fontMono,fontWeight:800,fontSize:FZ.sm,color:T.teal600}}>{col.pj}<SerieTag pj={col.pj} style={{marginLeft:7}}/></span>
+                  {view==="pj"?<span style={{fontFamily:T.fontMono,fontWeight:800,fontSize:FZ.sm,color:T.teal600}}><PjPlate pj={col.pj}/><SerieTag pj={col.pj} style={{marginLeft:7}}/></span>
                     :<><span style={{width:9,height:9,borderRadius:"50%",background:c,flexShrink:0}}/><span style={{fontWeight:700,fontSize:FZ.sm,color:T.ink900,overflowWrap:"anywhere"}}>{col.title}</span></>}
                 </div>
                 <div style={{fontSize:FZ.xs,color:T.ink500,marginTop:2,overflowWrap:"anywhere"}}>{view==="pj"?(mm.nomProjet||""):col.items.length+" retard"+(col.items.length>1?"s":"")}{view==="pj"?" · "+col.items.length+" retard"+(col.items.length>1?"s":""):""}</div>
