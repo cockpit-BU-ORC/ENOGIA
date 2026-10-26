@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v184",
+    date: "2026-10-26",
+    title: "V184 : un Gantt lisible",
+    items: [
+      { t: "Une barre par machine, par étape", d: "Chaque barre se découpe en production, tests et fin de production jusqu'au départ, au lieu des pastilles qui se chevauchaient." },
+      { t: "L'écart écrit en clair", d: "Au bout de chaque barre : « à l'heure », « +5 j » ou « +12 j », en vert, orange ou rouge ; le planning initial apparaît en pointillés." },
+      { t: "Lignes alignées", d: "Chaque nom de machine est maintenant exactement en face de sa barre, même en bas d'une longue liste." },
+    ],
+  },
+  {
     id: "2026-10-v183",
     date: "2026-10-26",
     title: "V183 : ORDO & OPS – BU ORC",

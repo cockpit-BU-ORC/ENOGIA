@@ -1088,3 +1088,13 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - **Animations, revue avec les skills animation-principles et motion-framer** : courbe d'entrée `--e-ease` = `cubic-bezier(.16,1,.3,1)`, courbe de sortie `--e-ease-in` = `cubic-bezier(.7,0,.84,0)` ; notifications avec sortie animée (180 ms) ; chiffres animés (`AnimatedNumber`) 700 → 300 ms. Motion (framer-motion) non ajouté : ~30 ko pour des sorties faisables en CSS.
 - Vérifié : rendu statique de la connexion, de la transition et de l'accueil ; build, tests, contraste. Pas testé dans l'appli connectée.
 - Fichiers : siteName.js, App.js, theme.js, styles.css, public/index.html, public/manifest.json, components/{SharedUI,HomeView,LoginScreen}.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
+
+## v184 — Gantt lisible (maquette validée)
+
+- **Barres par étape** (`GanttView.js`) : une barre par machine (arrivée → départ) découpée en trois segments aux couleurs d'étape (`stageSoft().x.solid`) — production (arrivée → tests), tests (tests → fin prod), fin de prod (fin prod → départ) ; segments absents si la date manque. Machine « Non commandée » : barre en pointillés « dates prévisionnelles ». Les pastilles A/T/F/D sur la barre sont retirées (détail toujours dans l'infobulle).
+- **Écart en clair** au bout de la barre : « à l'heure » / « −3 j » (vert), « +5 j » (orange, 4–10 j), « +12 j » (rouge, > 10 j), sur pastille pâle ; `aria-label` de la barre = étapes + écart.
+- **Planning initial** : pointillés de 2 px sous la barre (au lieu d'un trait plein).
+- **Lignes** : 60 px. **Correctif d'alignement** : les cellules de la colonne « Machine » faisaient 73 px (60 + marges intérieures, `content-box`) contre 61 px pour les lignes de barres — le décalage s'accumulait vers le bas. `box-sizing: border-box` sur les lignes et regroupements des deux colonnes : 60 / 34 px exacts, et la ligne « aujourd'hui » descend jusqu'en bas.
+- **Légende** : segments d'étape, planning initial, aujourd'hui, dates prévisionnelles, paliers d'écart.
+- Vérifié : rendu statique clair/sombre, alignement mesuré (positions identiques ligne à ligne). Pas testé dans l'appli connectée.
+- Fichiers : components/GanttView.js, App.js (version), releaseNotes.js, releaseCatalog.js(+test).

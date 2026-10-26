@@ -88,7 +88,7 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
     return Math.min(380,Math.max(240,Math.ceil(w+16*2+6)));
   },[data]);
   const endPad=Math.round((typeof window!=="undefined"?window.innerWidth:1400)/2);
-  const rowH=58;
+  const rowH=60; // v184 : lignes un peu plus hautes (maquette validée)
   // En-tête à 3 bandes — mois, puis numéro de semaine ("SXX", demandé explicitement : "rajouter les
   // SXX (numéro de semaine) dans la page gantt"), puis le repère jour existant — plutôt que de
   // remplacer ce dernier, pour ne pas perdre le détail jour tout en ajoutant le numéro de semaine.
@@ -218,12 +218,12 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
       <div style={{width:colW,height:ganttH,flexShrink:0,position:"sticky",left:0,zIndex:8,background:T.surface,borderRight:"1px solid "+T.line,boxShadow:"2px 0 6px rgba(15,40,60,.04)"}}>
         <div className="enogia-lblcell" style={{height:HEADER_H,padding:"0 16px",display:"flex",alignItems:"center",fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk,borderBottom:"1px solid "+T.line,background:T.surface,position:"sticky",top:0,zIndex:9}}>Machine</div>
         {items.map((it,ri)=>{
-          if(it.g)return(<div key={"g"+ri} className="enogia-lblcell" style={{height:GROUP_H,padding:"0 16px",display:"flex",alignItems:"center",gap:8,background:T.surfaceAlt,borderBottom:"1px solid "+T.line,fontSize:FZF.sm,fontWeight:700,color:T.ink700,overflow:"hidden"}}>
+          if(it.g)return(<div key={"g"+ri} className="enogia-lblcell" style={{height:GROUP_H,boxSizing:"border-box",padding:"0 16px",display:"flex",alignItems:"center",gap:8,background:T.surfaceAlt,borderBottom:"1px solid "+T.line,fontSize:FZF.sm,fontWeight:700,color:T.ink700,overflow:"hidden"}}>
             <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{it.g}</span><span style={{fontWeight:600,color:T.ink500,flexShrink:0}}>{it.n}</span></div>);
           const r=it.r;
           const meta=getPjMeta(r.pj,r);
           const isSel=sel===r.pj;
-          return(<div key={ri} className="enogia-lblcell" {...pressable(()=>setSel(isSel?null:r.pj),{"aria-pressed":isSel})} style={{height:rowH,padding:"6px 16px",display:"flex",flexDirection:"column",justifyContent:"center",gap:2,borderBottom:"1px solid "+T.surfaceAlt,borderLeft:"3px solid "+(isSel?T.teal500:"transparent"),background:isSel?T.surfaceAlt:"transparent",cursor:"pointer",transition:"background .12s ease, border-color .12s ease"}}
+          return(<div key={ri} className="enogia-lblcell" {...pressable(()=>setSel(isSel?null:r.pj),{"aria-pressed":isSel})} style={{height:rowH,boxSizing:"border-box",padding:"6px 16px",display:"flex",flexDirection:"column",justifyContent:"center",gap:2,borderBottom:"1px solid "+T.surfaceAlt,borderLeft:"3px solid "+(isSel?T.teal500:"transparent"),background:isSel?T.surfaceAlt:"transparent",cursor:"pointer",transition:"background .12s ease, border-color .12s ease"}}
             onMouseEnter={e=>{if(!isSel)e.currentTarget.style.background=T.surfaceAlt;}}
             onMouseLeave={e=>{if(!isSel)e.currentTarget.style.background="transparent";}}>
             <ProjectLabelCell pj={r.pj} r={r} meta={meta}/>
@@ -257,30 +257,38 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
 
         {/* lignes de fond + grille */}
         {items.map((it,ri)=>{
-          if(it.g){const gb=bpct(it.from,it.to);return(<div key={"g"+ri} style={{height:GROUP_H,position:"relative",background:T.surfaceAlt,borderBottom:"1px solid "+T.line}}>
+          if(it.g){const gb=bpct(it.from,it.to);return(<div key={"g"+ri} style={{height:GROUP_H,boxSizing:"border-box",position:"relative",background:T.surfaceAlt,borderBottom:"1px solid "+T.line}}>
             {gb&&<div aria-hidden="true" style={{position:"absolute",left:gb.left,width:gb.width,top:"50%",height:6,transform:"translateY(-50%)",borderRadius:3,background:mixHex(T.surfaceAlt,T.ink500,.45)}}/>}
           </div>);}
           const r=it.r;
           const c=ETAT_META[r.etat]||ETAT_META["NOT ORDERED"];
           const mb=bpct(r.arrivee,r.depart);
           const isSel=sel===r.pj;
-          return(<div key={ri} onClick={()=>setSel(isSel?null:r.pj)} onMouseMove={e=>setTip({r,x:e.clientX,y:e.clientY})} onMouseLeave={()=>setTip(null)} style={{height:rowH,position:"relative",borderBottom:"1px solid "+T.surfaceAlt,background:isSel?T.surfaceAlt:"transparent",cursor:"pointer"}}>
+          return(<div key={ri} onClick={()=>setSel(isSel?null:r.pj)} onMouseMove={e=>setTip({r,x:e.clientX,y:e.clientY})} onMouseLeave={()=>setTip(null)} style={{height:rowH,boxSizing:"border-box",position:"relative",borderBottom:"1px solid "+T.surfaceAlt,background:isSel?T.surfaceAlt:"transparent",cursor:"pointer"}}>
             {weekMarks.map((wm,wi)=><div key={wi} style={{position:"absolute",left:xOf(wm),top:0,bottom:0,width:1,background:T.surfaceAlt}}/>)}
             {months.map((ms,mi)=><div key={mi} style={{position:"absolute",left:xOf(ms),top:0,bottom:0,width:1,background:T.line}}/>)}
-            {mb&&(()=>{const dc=driftColor(r.drift);
-              // Planning initial : même arrivée, départ décalé de l'écart → trait fin sous la barre.
+            {/* v184 (maquette validée, « le Gantt est illisible ») : une barre par machine découpée par étape —
+                production (arrivée → tests), tests (tests → fin prod), fin de prod (fin prod → départ) —, l'écart écrit en clair
+                au bout de la barre, le planning initial en pointillés dessous. Plus de pastilles A/T/F/D superposées. */}
+            {mb&&(()=>{
+              const S=stageSoft(),dOf=v=>v?new Date(v):null,arr=dOf(r.arrivee),dep=dOf(r.depart),tst=dOf(r.tests),fin=dOf(r.finProd);
+              const prevision=r.etat==="NOT ORDERED";
+              const cuts=[[arr,tst||fin||dep,S.production.solid,"Production"],[tst,fin||dep,S.tests.solid,"Tests"],[fin,dep,S.finProd.solid,"Fin de prod → départ"]].filter(([x,y])=>x&&y&&y>x);
+              const total=Math.max(1,dep-arr);
               const ini=r.drift?bpct(r.arrivee,new Date(new Date(r.depart).getTime()-r.drift*86400000)):null;
+              const lvl=r.drift==null?null:r.drift>10?"late":r.drift>3?"warn":"ok";
+              const pill=lvl==="late"?{bg:T.red100,fg:T.red600}:lvl==="warn"?{bg:T.amber100,fg:T.amber600}:lvl==="ok"?{bg:T.emerald100,fg:T.emerald600}:null;
+              const txt=r.drift==null?null:r.drift===0?"à l'heure":(r.drift>0?"+":"−")+Math.abs(r.drift)+" j";
               return <>
-                <div className="enogia-bar-fill" style={{position:"absolute",left:mb.left,width:mb.width,top:"50%",transform:"translateY(-50%)",height:22,background:mixHex(T.surface,dc,.5),borderRadius:6,zIndex:1,animationDelay:Math.min(ri,14)*35+"ms"}}/>
-                {ini&&<div aria-hidden="true" title="Planning initial" style={{position:"absolute",left:ini.left,width:ini.width,top:"50%",marginTop:13,height:2,borderRadius:1,background:T.ink500,zIndex:2}}/>}
+                <div className="enogia-bar-fill" role="img" aria-label={r.pj+" : "+(prevision?"dates prévisionnelles":cuts.map(c=>c[3]).join(", "))+(txt?" ; écart "+txt:"")}
+                  style={{position:"absolute",left:mb.left,width:mb.width,top:"50%",transform:"translateY(-50%)",marginTop:-4,height:18,display:"flex",borderRadius:4,overflow:"hidden",zIndex:1,animationDelay:Math.min(ri,14)*30+"ms",
+                    border:prevision?"1.5px dashed "+T.ink300:"none",background:prevision?"transparent":T.ink100,boxSizing:"border-box"}}>
+                  {!prevision&&cuts.map(([x,y,col,lab],k)=><div key={k} title={lab} style={{flex:"0 0 "+((y-x)/total*100)+"%",background:col}}/>)}
+                </div>
+                {ini&&<div aria-hidden="true" title="Planning initial" style={{position:"absolute",left:ini.left,width:ini.width,top:"50%",marginTop:9,height:0,borderTop:"2px dashed "+T.ink500,opacity:.75,zIndex:2}}/>}
+                {(txt||prevision)&&<span style={{position:"absolute",left:mb.left+mb.width+8,top:"50%",transform:"translateY(-50%)",marginTop:-4,zIndex:4,whiteSpace:"nowrap",fontSize:FZF.xs,fontWeight:700,padding:"1px 8px",borderRadius:999,fontVariantNumeric:"tabular-nums",
+                  background:prevision?"transparent":pill?pill.bg:"transparent",color:prevision?T.ink500:pill?pill.fg:T.ink500}}>{prevision?"dates prévisionnelles":txt}</span>}
               </>;})()}
-            {/* Marqueurs affinés (demandé explicitement, registre "premium épuré") : pastille claire
-                à contour coloré plutôt qu'un disque plein — plus petit, plus plat, ombre quasi
-                invisible comme le reste de l'appli au lieu de l'ombre portée marquée d'origine. */}
-            {/* v180 (audit : « trop de marqueurs par ligne ») : le prochain jalon ressort (plus grand, anneau), les jalons passés s'estompent. */}
-            {(()=>{const nextK=(PHASES.find(ph=>r[ph.k]&&new Date(r[ph.k])>=today)||{}).k;return PHASES.map(ph=>{const dt=r[ph.k];if(!dt)return null;const x=xOf(new Date(dt)),past=new Date(dt)<today,nx=ph.k===nextK,sz=nx?22:16;
-              return(<div key={ph.k} title={ph.t+(nx?" (prochain jalon)":"")} style={{position:"absolute",left:x,top:"50%",transform:"translate(-50%,-50%)",width:sz,height:sz,borderRadius:"50%",background:ph.bg,border:"2px solid "+ph.c,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:ph.ink,zIndex:nx?5:4,cursor:"pointer",opacity:past?.5:1,boxShadow:nx?"0 0 0 3px "+T.card+", 0 0 0 5px "+ph.c:T.shadowFlat}}>{ph.l}</div>);
-            });})()}
           </div>);
         })}
 
@@ -295,16 +303,13 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
     </div>
 
 
-    {/* Légende alignée sur le même traitement "contour" que les marqueurs ci-dessus. */}
-    <div style={{padding:"10px 18px",borderTop:"1px solid "+T.line,display:"flex",gap:14,flexWrap:"wrap",background:T.surface}}>
-      {PHASES.map(ph=><span key={ph.k} style={{display:"flex",alignItems:"center",gap:6,fontSize:FZF.sm}}><span style={{width:16,height:16,borderRadius:"50%",background:ph.bg,border:"2px solid "+ph.c,display:"flex",alignItems:"center",justifyContent:"center",fontSize:FZF.xs,color:ph.ink,fontWeight:700}}>{ph.l}</span><span style={{color:T.ink500,fontWeight:500}}>{ph.t}</span></span>)}
-    </div>
-
-    {/* v171 : légende des paliers d'écart (remplace le dégradé). */}
-    <div style={{padding:"0 18px 12px",display:"flex",alignItems:"center",gap:"6px 16px",flexWrap:"wrap",fontSize:FZF.sm,color:T.ink500,background:T.surface}}>
-      <span style={{fontWeight:600,color:T.ink700}}>Barre arrivée → départ :</span>
-      {DRIFT_LEVELS().map(l=><span key={l.id} style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:16,height:10,borderRadius:3,background:mixHex(T.surface,l.c,.5)}}/>{l.label}</span>)}
-      <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:16,height:2,borderRadius:1,background:T.ink500}}/>Trait = planning initial</span>
+    {/* v184 : légende de la maquette validée */}
+    <div style={{padding:"10px 18px",borderTop:"1px solid "+T.line,display:"flex",gap:"6px 18px",flexWrap:"wrap",alignItems:"center",background:T.surface,fontSize:FZF.sm,color:T.ink700}}>
+      {[["Production",stageSoft().production.solid],["Tests",stageSoft().tests.solid],["Fin de prod → départ",stageSoft().finProd.solid]].map(([l,c])=><span key={l} style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:18,height:10,borderRadius:2,background:c}}/>{l}</span>)}
+      <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:18,height:0,borderTop:"2px dashed "+T.ink500}}/>Planning initial</span>
+      <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:2,height:12,background:T.red500}}/>Aujourd'hui</span>
+      <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:18,height:10,borderRadius:2,border:"1.5px dashed "+T.ink300,boxSizing:"border-box"}}/>Dates prévisionnelles</span>
+      <span style={{marginLeft:"auto",color:T.ink500}}>Écart : <b style={{color:T.emerald600}}>à l'heure</b> · <b style={{color:T.amber600}}>4 à 10 j</b> · <b style={{color:T.red600}}>plus de 10 j</b></span>
     </div>
 
     {tip&&(()=>{

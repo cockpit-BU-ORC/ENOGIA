@@ -320,4 +320,7 @@ export const RELEASE_CATALOG = [
     ["Titres", "Titres de page plus grands, sans sur-titre."],
     ["Connexion", "Carte du monde en fond ; nouvel écran après connexion ; thème Atelier retiré."],
   ] },
+  { v: "184", t: "Un Gantt lisible", items: [
+    ["Gantt", "Barres découpées par étape, écart écrit en clair, planning initial en pointillés, lignes alignées."],
+  ] },
 ];
