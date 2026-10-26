@@ -943,3 +943,13 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
   - Laissé volontairement : couleurs du logo Google (`LoginScreen`), nuancier de choix d'état (`EtatsDialog`), palette pastel des camemberts de `DashboardSummary` (demandée explicitement), tailles < 11 px des rapports imprimés.
 - Aucune clé `localStorage` nouvelle (le zoom du calendrier `enogia_calZoom` est réécrit au niveau J-7 → J+21 à chaque ouverture).
 - Fichiers : App.js, styles.css, components/{CalendarView,SharedUI,TableView,GanttView,CommentsView,CommentsKanban,ManagerFiche,ProjectModal,InitialAdd,CdpReport,CodirReport,Feux,CashInTab,LoginScreen,Series,ThemePicker}.js, releaseNotes.js, releaseCatalog.js(+test).
+
+## v171 — Maquettes taste-skill appliquées : Liste, Gantt, fiche projet
+
+- **Liste** (`components/DashboardSummary.js`, `TableView.js`, `SharedUI.js`) :
+  - Vue d'ensemble : les 4 camemberts deviennent des barres horizontales triées (gamme, pays, chef de projet, une teinte `T.teal500`, 5 valeurs + « Autres ») et une barre découpée aux couleurs d'état (`ETAT_META[].bar`) avec sa légende chiffrée. Recharts n'y est plus utilisé ; la palette pastel `PALETTE` est retirée (choix validé avec la maquette). Titre « Vue d'ensemble » en casse normale, bouton replier nommé (`aria-expanded`). Clé `enogia-dashboard-collapsed` inchangée.
+  - Tableau : en-tête sur le fond des lignes avec un filet de 1 px (plus de bandeau `surfaceAlt`) ; « Chef de projet » en casse normale ; pastille d'état sans ombre (`Badge`).
+- **Gantt** (`components/GanttView.js`) : `DRIFT_STOPS`/`driftGradientColor` (dégradé continu) remplacés par `DRIFT_LEVELS`/`driftColor` : ≤ 3 j ou en avance = vert, 4–10 j = orange, > 10 j = rouge, sans initial = gris ; barre unie (50 % de la teinte sur la surface) ; trait de 2 px sous la barre = planning initial (arrivée → départ − écart) ; légende à 4 pastilles + trait.
+- **Fiche projet** (`components/ProjectModal.js`) : en-tête n° de PJ (JetBrains Mono) + nom du projet + pastille d'état ; grille Chef de projet / Gamme / Pays / Départ (+ écart) ; les 4 étapes restent sur une ligne à largeur égale (demande d'origine) mais en barre segmentée (segment coloré une fois la date passée) avec libellé et date dessous, sans numéros ni majuscules ; libellés du formulaire et compteur de commentaires en casse normale.
+- Vérifié par rendu statique (jsdom → HTML) en clair et en sombre, 768 px ; pas testé dans l'appli connectée.
+- Fichiers : components/{DashboardSummary,TableView,SharedUI,GanttView,ProjectModal}.js, App.js (version), releaseNotes.js, releaseCatalog.js(+test).

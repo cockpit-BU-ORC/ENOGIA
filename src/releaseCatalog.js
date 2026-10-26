@@ -264,4 +264,9 @@ export const RELEASE_CATALOG = [
     ["Calendrier", "Semaine passée à gauche, 3 semaines à venir à droite ; commentaires par jour retirés."],
     ["Clavier", "Filtres, listes et lignes utilisables avec Tab et Entrée ; Échap ferme les fenêtres."],
   ] },
+  { v: "171", t: "Liste, Gantt et fiche plus lisibles", items: [
+    ["Liste", "Vue d'ensemble en barres triées, en-tête du tableau allégé."],
+    ["Gantt", "Une couleur par niveau d'écart, trait du planning initial."],
+    ["Fiche projet", "En-tête PJ + nom + état, informations clés, étapes en une barre."],
+  ] },
 ];

@@ -16,15 +16,18 @@ export const PHASES=[
   {k:"depart",l:"D",get c(){return ganttSoft().depart.ring;},get bg(){return ganttSoft().depart.bg;},get ink(){return ganttSoft().depart.ink;},get tbg(){return stageSoft().depart.bg;},get tink(){return stageSoft().depart.ink;},t:"Départ"},
 ];
 
-// v142 : dégradé continu de la dérive vs planning initial (jours) : en avance (vert) → au plan (bleu-gris neutre) → léger retard (ambre) → retard marqué (braise) → gros retard (rouge).
-const DRIFT_STOPS=()=>[[-21,T.emerald500],[0,T.info500],[7,T.amber500],[21,T.ember500],[45,T.red500]];
-export function driftGradientColor(d){
-  if(d==null)return T.ink300; // pas de planning initial pour ce PJ : neutre
-  const st=DRIFT_STOPS();
-  if(d<=st[0][0])return st[0][1];
-  if(d>=st[st.length-1][0])return st[st.length-1][1];
-  for(let i=0;i<st.length-1;i++){const[a,ca]=st[i],[b,cb]=st[i+1];if(d>=a&&d<=b)return mixHex(ca,cb,(d-a)/(b-a));}
-  return st[0][1];
+// v171 (maquette validée) : une teinte unie par palier d'écart vs planning initial, au lieu du dégradé continu.
+//   ≤ 3 j (ou en avance) = vert · 4 à 10 j = orange · > 10 j = rouge · pas de planning initial = gris.
+export const DRIFT_LEVELS=()=>[
+  {id:"ok",label:"À l'heure ou en avance (≤ 3 j)",c:T.emerald500},
+  {id:"warn",label:"Retard de 4 à 10 j",c:T.amber500},
+  {id:"late",label:"Retard de plus de 10 j",c:T.red500},
+  {id:"none",label:"Pas de planning initial",c:T.ink300},
+];
+export function driftColor(d){
+  const L=DRIFT_LEVELS();
+  if(d==null)return L[3].c;
+  return d>10?L[2].c:d>3?L[1].c:L[0].c;
 }
 
 // selEtats/selPJs (demandé explicitement : "mettre en place un système de filtre pour enlever
@@ -264,7 +267,13 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
           return(<div key={ri} onClick={()=>setSel(isSel?null:r.pj)} onMouseMove={e=>setTip({r,x:e.clientX,y:e.clientY})} onMouseLeave={()=>setTip(null)} style={{height:rowH,position:"relative",borderBottom:"1px solid "+T.surfaceAlt,background:isSel?T.surfaceAlt:"transparent",cursor:"pointer"}}>
             {weekMarks.map((wm,wi)=><div key={wi} style={{position:"absolute",left:xOf(wm),top:0,bottom:0,width:1,background:T.surfaceAlt}}/>)}
             {months.map((ms,mi)=><div key={mi} style={{position:"absolute",left:xOf(ms),top:0,bottom:0,width:1,background:T.line}}/>)}
-            {mb&&(()=>{const dc=driftGradientColor(r.drift);return <div className="enogia-bar-fill" style={{position:"absolute",left:mb.left,width:mb.width,top:"50%",transform:"translateY(-50%)",height:22,background:"linear-gradient(90deg,"+mixHex(T.surface,dc,.30)+","+mixHex(T.surface,dc,.46)+")",boxShadow:"inset 0 0 0 1px "+mixHex(T.surface,dc,.65),borderRadius:8,zIndex:1,animationDelay:Math.min(ri,14)*35+"ms"}}/>;})()}
+            {mb&&(()=>{const dc=driftColor(r.drift);
+              // Planning initial : même arrivée, départ décalé de l'écart → trait fin sous la barre.
+              const ini=r.drift?bpct(r.arrivee,new Date(new Date(r.depart).getTime()-r.drift*86400000)):null;
+              return <>
+                <div className="enogia-bar-fill" style={{position:"absolute",left:mb.left,width:mb.width,top:"50%",transform:"translateY(-50%)",height:22,background:mixHex(T.surface,dc,.5),borderRadius:6,zIndex:1,animationDelay:Math.min(ri,14)*35+"ms"}}/>
+                {ini&&<div aria-hidden="true" title="Planning initial" style={{position:"absolute",left:ini.left,width:ini.width,top:"50%",marginTop:13,height:2,borderRadius:1,background:T.ink500,zIndex:2}}/>}
+              </>;})()}
             {/* Marqueurs affinés (demandé explicitement, registre "premium épuré") : pastille claire
                 à contour coloré plutôt qu'un disque plein — plus petit, plus plat, ombre quasi
                 invisible comme le reste de l'appli au lieu de l'ombre portée marquée d'origine. */}
@@ -290,18 +299,16 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
       {PHASES.map(ph=><span key={ph.k} style={{display:"flex",alignItems:"center",gap:6,fontSize:FZF.sm}}><span style={{width:16,height:16,borderRadius:"50%",background:ph.bg,border:"2px solid "+ph.c,display:"flex",alignItems:"center",justifyContent:"center",fontSize:FZF.xs,color:ph.ink,fontWeight:700}}>{ph.l}</span><span style={{color:T.ink500,fontWeight:500}}>{ph.t}</span></span>)}
     </div>
 
-    {/* v142 : légende du dégradé de dérive */}
-    <div style={{padding:"0 18px 12px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",fontSize:FZF.sm,color:T.ink500,background:T.surface}}>
-      <span style={{fontWeight:600,color:T.ink700}}>Couleur de la barre arrivée → départ :</span>
-      <span>en avance</span>
-      <span aria-hidden="true" style={{width:180,height:10,borderRadius:6,background:"linear-gradient(90deg,"+DRIFT_STOPS().map(([d,c],i,a)=>c+" "+Math.round((i/(a.length-1))*100)+"%").join(",")+")",boxShadow:T.shadowFlat}}/>
-      <span>en retard vs planning initial (−21 j … +45 j)</span>
-      <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:14,height:10,borderRadius:4,background:mixHex(T.surface,T.ink300,.4)}}/>pas de planning initial</span>
+    {/* v171 : légende des paliers d'écart (remplace le dégradé). */}
+    <div style={{padding:"0 18px 12px",display:"flex",alignItems:"center",gap:"6px 16px",flexWrap:"wrap",fontSize:FZF.sm,color:T.ink500,background:T.surface}}>
+      <span style={{fontWeight:600,color:T.ink700}}>Barre arrivée → départ :</span>
+      {DRIFT_LEVELS().map(l=><span key={l.id} style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:16,height:10,borderRadius:3,background:mixHex(T.surface,l.c,.5)}}/>{l.label}</span>)}
+      <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:16,height:2,borderRadius:1,background:T.ink500}}/>Trait = planning initial</span>
     </div>
 
     {tip&&(()=>{
       const r=tip.r,meta=getPjMeta(r.pj,r),W=270,left=Math.min(tip.x+16,(typeof window!=="undefined"?window.innerWidth:1400)-W-12),top=Math.max(8,Math.min(tip.y+16,(typeof window!=="undefined"?window.innerHeight:800)-270));
-      const dc=driftGradientColor(r.drift),iniDep=r.drift!=null&&r.depart?new Date(new Date(r.depart).getTime()-r.drift*86400000):null;
+      const dc=driftColor(r.drift),iniDep=r.drift!=null&&r.depart?new Date(new Date(r.depart).getTime()-r.drift*86400000):null;
       return(<div role="tooltip" style={{position:"fixed",left,top,width:W,zIndex:10030,pointerEvents:"none",background:T.card,color:T.ink900,borderRadius:12,boxShadow:T.shadowFloat,padding:"10px 12px",fontFamily:T.font}}>
         <div style={{fontSize:FZF.md,fontWeight:700,lineHeight:1.2}}>{r.pj}<span style={{fontWeight:500,color:T.ink500,fontSize:FZF.sm}}>{meta&&meta.nomProjet?"  "+meta.nomProjet:""}</span></div>
         <div style={{display:"flex",alignItems:"center",gap:6,marginTop:6,flexWrap:"wrap",fontSize:FZF.xs,color:T.ink500}}>

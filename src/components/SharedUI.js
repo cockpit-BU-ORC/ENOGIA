@@ -28,7 +28,7 @@ export function DelayScopeNote(){
   </div>);
 }
 
-export function Badge({etat,wrap}){const c=ETAT_META[etat]||ETAT_META["NOT ORDERED"];const urgent=etat==="NOT ORDERED";return <span className={urgent?"enogia-pulse-urgent":""} style={{background:c.bg,color:c.text,border:"1px solid "+c.border,borderRadius:wrap?14:20,padding:"2.5px 8px 2.5px 8px",fontSize:FZ.xs,fontWeight:600,letterSpacing:".01em",display:"inline-flex",alignItems:"center",gap:4,boxShadow:"0 1px 2px rgba(15,40,60,.08)",maxWidth:"100%",boxSizing:"border-box"}}><span style={{width:6,height:6,borderRadius:"50%",background:c.bar,flexShrink:0}}/><span style={wrap?{lineHeight:1.2,overflowWrap:"break-word",minWidth:0}:{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.label||etat}</span></span>;}
+export function Badge({etat,wrap}){const c=ETAT_META[etat]||ETAT_META["NOT ORDERED"];const urgent=etat==="NOT ORDERED";return <span className={urgent?"enogia-pulse-urgent":""} style={{background:c.bg,color:c.text,border:"1px solid "+c.border,borderRadius:wrap?14:20,padding:"2.5px 8px 2.5px 8px",fontSize:FZ.xs,fontWeight:600,letterSpacing:".01em",display:"inline-flex",alignItems:"center",gap:4,maxWidth:"100%",boxSizing:"border-box"}}><span style={{width:6,height:6,borderRadius:"50%",background:c.bar,flexShrink:0}}/><span style={wrap?{lineHeight:1.2,overflowWrap:"break-word",minWidth:0}:{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.label||etat}</span></span>;}
 
 // v139.1 : un seul menu flottant à la fois. Tout composant qui ouvre l'un d'eux (ou un panneau) envoie « enogia:closemenus » : les autres se ferment.
 export const closeAllMenus=()=>{try{window.dispatchEvent(new Event("enogia:closemenus"));}catch(e){}};

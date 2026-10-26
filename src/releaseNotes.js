@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v171",
+    date: "2026-10-26",
+    title: "V171 : Liste, Gantt et fiche plus lisibles",
+    items: [
+      { t: "Liste : vue d'ensemble en barres", d: "La répartition par gamme, pays et chef de projet se lit en barres triées, l'état en une barre découpée ; l'en-tête du tableau est plus discret." },
+      { t: "Gantt : une couleur par niveau d'écart", d: "Barre verte à l'heure (≤ 3 j), orange de 4 à 10 j de retard, rouge au-delà ; un trait fin montre le planning initial." },
+      { t: "Fiche projet plus claire", d: "N° de PJ, nom du projet et état en tête, puis chef de projet, gamme, pays et départ ; les 4 étapes en une barre qui se remplit au fil du projet." },
+    ],
+  },
+  {
     id: "2026-10-v170",
     date: "2026-10-26",
     title: "V170 : Calendrier recentré, tout au clavier",

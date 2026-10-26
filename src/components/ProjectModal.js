@@ -79,11 +79,19 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
         <div style={{flex:1,minWidth:0}}>
           {/* v129 : une seule police dans la liste, le volet et la fiche (T.font, chiffres tabulaires) ; le volet garde un titre plus marqué. */}
-          <div style={{fontVariantNumeric:"tabular-nums",fontWeight:700,fontSize:FZ.md,color:T.teal600,letterSpacing:"-.01em",whiteSpace:"nowrap"}}>{pj}<SerieTag pj={pj} size={11} style={{marginLeft:10,verticalAlign:"middle"}}/></div>
+          {/* v171 (maquette validée) : n° de PJ en police d'identifiant, nom du projet à côté, état en pastille. */}
+          <div style={{display:"flex",alignItems:"baseline",gap:10,flexWrap:"wrap",minWidth:0}}>
+            <span style={{fontFamily:T.fontMono,fontVariantNumeric:"tabular-nums",fontWeight:700,fontSize:FZ.md,color:T.teal600,whiteSpace:"nowrap"}}>{pj}</span>
+            {!editingMeta&&meta.nomProjet&&meta.nomProjet!=="—"&&<span style={{fontSize:FZ.lg,fontWeight:600,color:T.ink900,minWidth:0}}>{meta.nomProjet}</span>}
+            <span style={{alignSelf:"center",display:"inline-flex",gap:6,alignItems:"center"}}><Badge etat={r.etat}/><SerieTag pj={pj} size={11}/></span>
+          </div>
           {editingMeta?
             <EditMetaForm meta={meta} gamme={r.gamme} onCancel={()=>setEditingMeta(false)} onSave={async fields=>{const ok=await savePjMetaOverride(pj,fields);if(ok)setEditingMeta(false);}}/>
-            :<div style={{color:T.ink500,fontSize:FZ.sm,marginTop:3,fontWeight:500,display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
-              {meta.nomProjet} · <CountryFlag pays={meta.pays} size={14}/> {meta.pays} · {meta.chefProjet}
+            :<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))",gap:"8px 14px",marginTop:12,fontSize:FZ.sm,color:T.ink900,alignItems:"end"}}>
+              <div style={{minWidth:0}}><div style={{fontSize:FZ.xs,color:T.ink500}}>Chef de projet</div><div style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{meta.chefProjet||"—"}</div></div>
+              <div style={{minWidth:0}}><div style={{fontSize:FZ.xs,color:T.ink500}}>Gamme</div><div>{r.gamme||"—"}</div></div>
+              <div style={{minWidth:0}}><div style={{fontSize:FZ.xs,color:T.ink500}}>Pays</div><div style={{display:"flex",alignItems:"center",gap:5}}><CountryFlag pays={meta.pays} size={14}/>{meta.pays||"—"}</div></div>
+              <div style={{minWidth:0}}><div style={{fontSize:FZ.xs,color:T.ink500}}>Départ</div><div style={{whiteSpace:"nowrap"}}>{r.depart?fmtMode(new Date(r.depart),df):"—"}{r.drift>0&&<span style={{color:T.amber600,fontWeight:700,marginLeft:6}}>+{r.drift} j</span>}{r.drift<0&&<span style={{color:T.emerald600,fontWeight:700,marginLeft:6}}>{r.drift} j</span>}</div></div>
               {/* Restreint à canEditMeta (l'email de connexion de Gabriel), pas à pinOk — demandé
                   explicitement : d'autres membres de la BU ORC peuvent avoir pinOk via le code
                   Manager sans devoir pour autant pouvoir modifier la fiche projet. */}
@@ -96,11 +104,9 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
         </div>
       </div>
 
-      <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap",alignItems:"center"}}>
-        <Badge etat={r.etat}/>
-        <span style={{fontSize:FZ.sm,color:T.ink500,alignSelf:"center"}}>{r.gamme}</span>
-        {presenceKind(r.clientPresence)&&<PresenceChip kind={presenceKind(r.clientPresence)} date={presenceFirstDate(r.clientPresence)} dates={presenceDates(r.clientPresence)} fontSize={13}/>}
-      </div>
+      {presenceKind(r.clientPresence)&&<div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap",alignItems:"center"}}>
+        <PresenceChip kind={presenceKind(r.clientPresence)} date={presenceFirstDate(r.clientPresence)} dates={presenceDates(r.clientPresence)} fontSize={13}/>
+      </div>}
 
       {/* ── Onglets : séparer la vue d'ensemble des commentaires évite d'avoir à
           descendre tout le panneau pour trouver/écrire un commentaire. ── */}
@@ -119,11 +125,14 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
             rester sur une seule ligne quelle que soit la largeur du panneau — demandé explicitement
             ("il faut que les 4 tuiles soient sur la même ligne avec la même taille"). Police et
             padding réduits en conséquence pour que ça tienne même à ~260-300px de large. */}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:14}}>
-          {PHASES.map((ph,phIdx)=>{const d=r[ph.k]?new Date(r[ph.k]):null;const showPresence=ph.k==="tests"&&presenceKind(r.clientPresence);return(
-            <div key={ph.k} style={{background:stripeBg(ph.c,ph.tbg,4),borderRadius:8,padding:"9px 4px 6px",position:"relative",minWidth:0}}>
-              <div style={{color:ph.tink,fontSize:FZ.xs,fontWeight:600,textTransform:"uppercase",letterSpacing:".02em",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}><span style={{opacity:.6,marginRight:5,fontVariantNumeric:"tabular-nums"}}>{String(phIdx+1).padStart(2,"0")}</span>{ph.t}</div>
-              <div style={{fontWeight:700,color:T.ink900,fontSize:FZ.xs,marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{d?fmtMode(d,df):"—"}</div>
+        {/* v171 (maquette validée) : les 4 étapes restent sur une ligne, à largeur égale (demande d'origine), en barre segmentée :
+            segment plein = étape atteinte (date passée), segment gris = à venir ; libellé et date dessous, en casse normale. */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,minmax(0,1fr))",gap:"6px 4px",marginBottom:14}}>
+          {PHASES.map(ph=>{const d=r[ph.k]?new Date(r[ph.k]):null;const done=d&&d<=today;return <div key={ph.k+"b"} aria-hidden="true" style={{height:6,borderRadius:2,background:done?ph.c:T.ink100}}/>;})}
+          {PHASES.map(ph=>{const d=r[ph.k]?new Date(r[ph.k]):null;const showPresence=ph.k==="tests"&&presenceKind(r.clientPresence);return(
+            <div key={ph.k} style={{minWidth:0}}>
+              <div style={{color:T.ink500,fontSize:FZ.xs,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{ph.t}</div>
+              <div style={{fontWeight:600,color:T.ink900,fontSize:FZ.xs,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",fontVariantNumeric:"tabular-nums"}}>{d?fmtMode(d,df):"—"}</div>
               {showPresence&&<div style={{marginTop:3,minWidth:0,overflow:"hidden"}}><PresenceChip kind={presenceKind(r.clientPresence)} compact tiny fontSize={9}/></div>}
             </div>
           );})}
@@ -182,10 +191,10 @@ function EditMetaForm({meta,gamme,onSave,onCancel}){
   const fieldStyle={padding:"8px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink900,background:T.card};
   return(<div style={{display:"flex",flexDirection:"column",gap:8,marginTop:6,maxWidth:420}}>
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-      <label style={{display:"flex",flexDirection:"column",gap:3,fontSize:FZ.xs,fontWeight:700,color:T.ink500,textTransform:"uppercase"}}>Nom du projet
+      <label style={{display:"flex",flexDirection:"column",gap:3,fontSize:FZ.xs,fontWeight:600,color:T.ink500}}>Nom du projet
         <input type="text" value={nomProjet} onChange={e=>setNomProjet(e.target.value)} style={fieldStyle}/>
       </label>
-      <label style={{display:"flex",flexDirection:"column",gap:3,fontSize:FZ.xs,fontWeight:700,color:T.ink500,textTransform:"uppercase"}}>Pays
+      <label style={{display:"flex",flexDirection:"column",gap:3,fontSize:FZ.xs,fontWeight:600,color:T.ink500}}>Pays
         {/* Liste déroulante (plutôt qu'un texte libre) — le drapeau se met à jour automatiquement
             dès qu'on choisit un pays (demandé explicitement), garanti puisqu'on ne peut plus taper
             une orthographe qui ne correspond à aucun drapeau connu. */}
@@ -199,7 +208,7 @@ function EditMetaForm({meta,gamme,onSave,onCancel}){
       </label>
     </div>
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-      <label style={{display:"flex",flexDirection:"column",gap:3,fontSize:FZ.xs,fontWeight:700,color:T.ink500,textTransform:"uppercase"}}>Chef de projet
+      <label style={{display:"flex",flexDirection:"column",gap:3,fontSize:FZ.xs,fontWeight:600,color:T.ink500}}>Chef de projet
         {/* Liste déroulante (plutôt qu'un texte libre) construite à partir des chefs de projet
             connus (référentiel + synchro Suivi ORC + corrections manuelles), déjà stockés en
             "Prénom NOM" complet — demandé explicitement. */}
@@ -208,7 +217,7 @@ function EditMetaForm({meta,gamme,onSave,onCancel}){
           {allChefs.map(c=><option key={c} value={c}>{c}</option>)}
         </select>
       </label>
-      <label style={{display:"flex",flexDirection:"column",gap:3,fontSize:FZ.xs,fontWeight:700,color:T.ink500,textTransform:"uppercase"}}>Gamme
+      <label style={{display:"flex",flexDirection:"column",gap:3,fontSize:FZ.xs,fontWeight:600,color:T.ink500}}>Gamme
         <select value={gammeVal} onChange={e=>setGammeVal(e.target.value)} style={fieldStyle}>
           {!ALL_GAMMES.includes(gammeVal)&&gammeVal&&<option value={gammeVal}>{gammeVal}</option>}
           {ALL_GAMMES.map(g=><option key={g} value={g}>{g}</option>)}
@@ -272,7 +281,7 @@ export function ProjectComments({pj,comments,addComment,deleteComment,pinOk,auth
     </div>
 
     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,flexWrap:"wrap",marginBottom:8}}>
-      <span style={{fontSize:FZ.xs,fontWeight:700,color:T.ink300,textTransform:"uppercase",letterSpacing:".04em"}}>{sorted.length} commentaire{sorted.length!==1?"s":""}</span>
+      <span style={{fontSize:FZ.xs,fontWeight:600,color:T.ink500}}>{sorted.length} commentaire{sorted.length!==1?"s":""}</span>
       {nPriv>0&&<button onClick={()=>setShowPrivate(v=>!v)} aria-pressed={showPrivate} style={{border:"1px solid "+(showPrivate?T.amber500:T.line),background:showPrivate?T.amber100:"transparent",color:showPrivate?T.amber600:T.ink500,borderRadius:8,padding:"2px 8px",fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font}}>{showPrivate?"Masquer les privés":"Afficher les privés ("+nPriv+")"}</button>}
     </div>
     {/* Refonte "chat" (demandé explicitement : "je vois ça plus comme un chat gmail") — avatar +
