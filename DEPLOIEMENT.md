@@ -1077,3 +1077,14 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - `CLAUDE.md` : thèmes, néomorphisme et règles d'animation mis à jour.
 - Vérifié : rendu statique de l'accueil en « Salle de contrôle » sombre ; build, tests, contraste.
 - Fichiers : theme.js, scripts/check-contrast.mjs, components/{CommentsKanban,CommentsView,ManagerPanel,ProjectModal,SavedViews,SharedUI,TableView}.js, App.js (version), releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
+
+## v183 — ORDO & OPS – BU ORC, titres, connexion, transition, thème, courbes d'animation
+
+- **Nom du site** (`src/siteName.js`, nouveau) : `SITE_NAME` « ORDO & OPS », `SITE_SCOPE` « BU ORC », `SITE_SUB` « Ordonnancement · Planning de production · Suivi des tests · Pilotage projets ». Repris dans le menu (sous le logo, menu déplié), le titre de l'accueil (+ sous-titre, la phrase du jour passe en paragraphe), l'écran de connexion, l'écran de transition, le titre de l'onglet (`document.title`, `public/index.html`) et `public/manifest.json`.
+- **Titres de page** (`PageHead`, `App.js`) : sur-titre « Planning / Suivi » retiré ; titre 28–36 px, Cabinet Grotesk 600.
+- **Thème Atelier retiré** (`theme.js`) : `DEFAULT_THEME` = `controle` ; une préférence `enogia_theme2 = atelier` retombe sur « Salle de contrôle ». `check:contrast` : 731 vérifications (2 thèmes), 0 échec.
+- **Connexion** (`LoginScreen.js`) : carte du monde (`world-map-bg.svg`) en filigrane blanc à 12 % dans le panneau marine ; nom + sous-titre au-dessus de la phrase d'accroche.
+- **Écran de transition** (`LoginTransition`) : refait (l'ancien « verre dépoli » jugé kitsch) — fond du menu, carte en filigrane, logo, nom surligné or, sous-titre, « Bienvenue, Prénom. Chargement du planning… », barre or de 1,8 s ; entrée échelonnée (60 ms), fondu de sortie à 1,95 s (avant le retrait à 2,2 s par `App`).
+- **Animations, revue avec les skills animation-principles et motion-framer** : courbe d'entrée `--e-ease` = `cubic-bezier(.16,1,.3,1)`, courbe de sortie `--e-ease-in` = `cubic-bezier(.7,0,.84,0)` ; notifications avec sortie animée (180 ms) ; chiffres animés (`AnimatedNumber`) 700 → 300 ms. Motion (framer-motion) non ajouté : ~30 ko pour des sorties faisables en CSS.
+- Vérifié : rendu statique de la connexion, de la transition et de l'accueil ; build, tests, contraste. Pas testé dans l'appli connectée.
+- Fichiers : siteName.js, App.js, theme.js, styles.css, public/index.html, public/manifest.json, components/{SharedUI,HomeView,LoginScreen}.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.

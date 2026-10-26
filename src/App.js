@@ -29,6 +29,7 @@ import { CalendarView } from "./components/CalendarView";
 import { ManagerPanel } from "./components/ManagerPanel";
 import { ManagerPalette } from "./components/ManagerNav";
 import { LoginScreen, LoginTransition } from "./components/LoginScreen";
+import { SITE_NAME, SITE_SCOPE, SITE_SUB, SITE_TITLE } from "./siteName";
 import { DashboardSummary } from "./components/DashboardSummary";
 import { ChangesView } from "./components/ChangesView";
 import { WorkshopScreen } from "./components/WorkshopScreen";
@@ -44,7 +45,7 @@ import { saveBackup } from "./importBackups";
 // production vers la bêta. Build normal : préfixe vide, comportement strictement inchangé.
 const IS_BETA=process.env.REACT_APP_BETA==="1";
 const DOC_PFX=IS_BETA?"beta_":"";
-if(IS_BETA&&typeof document!=="undefined")document.title="[BÊTA] Planning Ordonnancement ENOGIA";
+if(IS_BETA&&typeof document!=="undefined")document.title="[BÊTA] ORDO & OPS – BU ORC";
 const BETA_DOCS=["current","initial","overrides","comments","pjMetaSync","pjMetaOverrides","delays","delayTypes","managerEmails","changeLog","cashin","cashinLinks","turbines","tests"];
 const DOC_REF=()=>doc(db,"planning",DOC_PFX+"current");
 const INITIAL_DOC_REF=()=>doc(db,"planning",DOC_PFX+"initial");
@@ -64,7 +65,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-26-v182-salle-de-controle";
+const APP_BUILD_VERSION = "2026-10-26-v183-ordo-ops";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -333,7 +334,7 @@ export default function App(){
   // Onglet du navigateur : pastille tant que des modifications n'ont pas été lues
   useEffect(()=>{
     if(typeof document==="undefined")return;
-    const base=IS_BETA?"[BÊTA] Planning Ordonnancement ENOGIA":"Planning Ordonnancement ENOGIA 2026";
+    const base=(IS_BETA?"[BÊTA] ":"")+SITE_TITLE+" · ENOGIA"; // v183 : nouveau nom du site
     document.title=(unseenChanges.length&&loggedIn?"● ("+unseenChanges.length+") ":"")+base;
   },[unseenChanges.length,loggedIn]);
   useEffect(()=>{if(view==="changes"&&changeLog&&changeLog.length){markChangesSeen();setNoticeOpen(false);}},[view,changeLog]); // eslint-disable-line
@@ -1017,8 +1018,11 @@ export default function App(){
     <a href="#enogia-main" className="enogia-skip" onClick={e=>{e.preventDefault();const m=document.getElementById("enogia-main");if(m){m.focus();m.scrollIntoView&&m.scrollIntoView({block:"start"});}}}>Aller au contenu</a>
     <nav className={"enogia-nav"+(NAV.industrial?" enogia-nav-ind":"")} aria-label="Pages" style={{width:navCompact?64:216,flexShrink:0,background:NAV.bg,borderRight:"1px solid "+NAV.border,display:"flex",flexDirection:"column",alignItems:navCompact?"center":"stretch",padding:navCompact?"16px 0":"16px 10px",gap:4,position:"sticky",top:0,zIndex:30,height:"100vh",overflowY:"auto",overflowX:"hidden",scrollbarWidth:"none"}}>
       {/* v179 (demandé : « le logo en haut à gauche pour avoir le début de la page au même niveau ») : le logo ouvre le menu, en blanc sur le marine. */}
-      <button type="button" onClick={()=>setView("home")} aria-label="ENOGIA — accueil" title="Accueil" style={{border:"none",background:"transparent",cursor:"pointer",padding:navCompact?"2px 0 10px":"2px 10px 12px",display:"flex",justifyContent:navCompact?"center":"flex-start",alignItems:"center",minHeight:44}}>
+      <button type="button" onClick={()=>setView("home")} aria-label={SITE_TITLE+" — accueil"} title="Accueil" style={{border:"none",background:"transparent",cursor:"pointer",padding:navCompact?"2px 0 10px":"2px 10px 12px",display:"flex",justifyContent:navCompact?"center":"flex-start",alignItems:"center",minHeight:44}}>
+        <span style={{display:"flex",flexDirection:"column",alignItems:navCompact?"center":"flex-start",gap:6,minWidth:0}}>
         <img src={process.env.PUBLIC_URL+"/enogia-logo-color-crop.svg"} alt="" aria-hidden="true" width="105" height="42" style={{height:navCompact?24:34,width:"auto",maxWidth:navCompact?44:170,objectFit:"contain",objectPosition:"left center",filter:NAV.industrial||darkMode?"brightness(0) invert(1)":"none"}}/>
+        {!navCompact&&<span style={{textAlign:"left",lineHeight:1.25}}><span style={{display:"block",fontFamily:T.fontDisplay,fontWeight:800,fontSize:14,letterSpacing:".02em",color:NAV.industrial?"#FFFFFF":T.ink900}}>{SITE_NAME} <span style={{color:NAV.group}}>· {SITE_SCOPE}</span></span><span style={{display:"block",fontSize:11,color:NAV.ink,marginTop:2,whiteSpace:"normal"}}>{SITE_SUB}</span></span>}
+        </span>
       </button>
       {[["Planning",["home","table","gantt","calendar"]],["Suivi",["changes","comments","tests"]]].map(([gl,ids])=>{const items=VIEWS.filter(v=>ids.includes(v.id));if(!items.length)return null;return(<React.Fragment key={gl}>
         {!navCompact&&<div className="enogia-nav-grp" style={{fontSize:12,fontWeight:700,color:NAV.group,fontFamily:T.font,padding:"12px 10px 4px",whiteSpace:"nowrap"}}>{gl}</div>}
@@ -1101,9 +1105,8 @@ export default function App(){
                 jamais varier selon les filtres actifs sur la liste, demandé explicitement — seules
                 les 4 répartitions en camembert, elles, continuent de suivre les filtres. */}
             {view!=="home"&&(()=>{const v=VIEWS.find(x=>x.id===view);if(!v)return null;
-              const grp=["table","gantt","calendar"].includes(view)?"Planning":"Suivi";
               const subs={table:filtered.length+" machine"+(filtered.length>1?"s":"")+" affichée"+(filtered.length>1?"s":"")+" · survolez un état ou un écart pour le détail",gantt:"Chaque machine, étape par étape · Ctrl + molette pour zoomer",calendar:"Arrivées, tests, fins de production et départs",changes:"Ce qui a changé à chaque mise à jour du planning",comments:"Les échanges, machine par machine",tests:"Plans d'essais et affectations des testeurs"};
-              return <PageHead kicker={grp} title={v.l} sub={subs[view]}/>;})()}
+              /* v183 : plus de sur-titre « Planning / Suivi » (demandé) */return <PageHead title={v.l} sub={subs[view]}/>;})()}
             {view==="home"&&<HomeView pinOk={pinOk} testsDoc={canSeeTests?testsDoc:null} data={dataWithOverrides} comments={comments} myEmail={currentUser&&currentUser.email} myName={authorName} people={peopleAll} unseenChanges={unseenChanges} lastImport={lastImport} onOpenPj={setCalSel} onGo={setView}/>}
             {view==="table"&&<DashboardSummary data={filtered} allData={dataWithOverrides} progress={progressEff} changeLog={changeLog} onOpenChanges={()=>setView("changes")}/>}
             {view==="table"&&<TableView data={filtered} progress={progressEff} df={df} setDf={setDf} setEtatFor={setEtatFor} setClientPresenceFor={setClientPresenceFor}

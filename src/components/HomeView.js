@@ -3,6 +3,7 @@ import { T, FZ, R, stageSoft, stripeBg, stripeHues, alertSoft, inkOn } from "../
 import { getPjMeta, ETAT_META, PresenceChip, presenceKind, presenceFirstDate, presenceDates, countShippedYTD } from "../pjMeta";
 import { NavIcon, AnimatedNumber, EmptyState, PjPlate, Hl } from "./SharedUI";
 import { openMentionsFor, chefAccount, nameFromEmail } from "../mentions";
+import { SITE_NAME, SITE_SCOPE, SITE_SUB } from "../siteName";
 import { testerOfEmail, planOf } from "../testPlan";
 
 // v173 — direction « Éditorial industriel » : sur-titre d'atelier en mono, grande phrase légère, chiffres géants sous un filet marine,
@@ -141,9 +142,12 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
     <div style={{ fontFamily: T.font }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
         <div style={{ flex: 1, minWidth: 260 }}>
-          <h1 className="enogia-view-in" style={{ margin: 0, fontFamily: T.fontDisplay, fontWeight: 300, fontSize: "clamp(24px,3.2vw,34px)", lineHeight: 1.18, letterSpacing: "-.02em", color: T.ink900, maxWidth: 820 }}>
+          {/* v183 : nom du site en titre de l'accueil, avec son sous-titre (demandé) */}
+          <h1 style={{ margin: "0 0 2px", fontFamily: T.fontDisplay, fontWeight: 800, fontSize: "clamp(28px,3vw,36px)", letterSpacing: "-.01em", color: T.ink900, lineHeight: 1.1 }}><Hl>{SITE_NAME}</Hl> <span style={{ fontWeight: 500, color: T.ink500 }}>– {SITE_SCOPE}</span></h1>
+          <div style={{ fontSize: FZ.sm, color: T.ink500, marginBottom: 14 }}>{SITE_SUB}</div>
+          <p className="enogia-view-in" style={{ margin: 0, fontFamily: T.fontDisplay, fontWeight: 300, fontSize: "clamp(24px,3.2vw,34px)", lineHeight: 1.18, letterSpacing: "-.02em", color: T.ink900, maxWidth: 820 }}>
             {hello()}{firstName ? " " + firstName : ""}. {num(inProd + " machine" + (inProd > 1 ? "s" : ""), S.production.ring)} avance{inProd > 1 ? "nt" : ""}, {num(late.length, T.amber500)} glisse{late.length > 1 ? "nt" : ""}, {num(next30, S.finProd.ring)} part{next30 > 1 ? "ent" : ""} d'ici un mois.
-          </h1>
+          </p>
         </div>
         <button type="button" className="enogia-ui-edit" onClick={() => setCustomize(v => !v)} aria-expanded={customize}
           style={{ border: "1px solid " + T.line, background: customize ? T.teal100 : "transparent", color: T.ink700, borderRadius: R.pill, padding: "6px 12px", minHeight: 28, fontSize: FZ.xs, fontWeight: 600, cursor: "pointer", fontFamily: T.font, display: "inline-flex", alignItems: "center", gap: 6 }}>

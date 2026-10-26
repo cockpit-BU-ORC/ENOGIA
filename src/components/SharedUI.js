@@ -45,13 +45,13 @@ export function Toaster(){
   const [list,setList]=useState([]);
   useEffect(()=>{
     let n=0;const timers=[];
-    const on=e=>{const id=++n,t={id,...e.detail};setList(l=>[...l.slice(-3),t]);timers.push(setTimeout(()=>setList(l=>l.filter(x=>x.id!==id)),t.kind==="error"?8000:4500));};
+    const on=e=>{const id=++n,t={id,...e.detail};setList(l=>[...l.slice(-3),t]);timers.push(setTimeout(()=>{setList(l=>l.map(x=>x.id===id?{...x,leaving:true}:x));timers.push(setTimeout(()=>setList(l=>l.filter(x=>x.id!==id)),180));},t.kind==="error"?8000:4500));};
     window.addEventListener("enogia:toast",on);return()=>{window.removeEventListener("enogia:toast",on);timers.forEach(clearTimeout);};
   },[]);
   if(!list.length)return null;
   return(<div aria-live="polite" style={{position:"fixed",right:16,bottom:16,zIndex:10060,display:"flex",flexDirection:"column",gap:8,maxWidth:"min(420px,calc(100vw - 32px))",fontFamily:T.font}}>
     {list.map(t=>{const err=t.kind==="error",ok=t.kind==="ok";return(
-      <div key={t.id} role={err?"alert":"status"} className="enogia-toast" style={{display:"flex",alignItems:"flex-start",gap:10,background:T.card,color:T.ink900,border:"1px solid "+T.line,borderLeft:"4px solid "+(err?T.red500:ok?T.emerald500:T.teal500),borderRadius:10,padding:"10px 12px",boxShadow:T.shadowFloat,fontSize:FZ.sm,lineHeight:1.45}}>
+      <div key={t.id} role={err?"alert":"status"} className={"enogia-toast"+(t.leaving?" is-leaving":"")} style={{display:"flex",alignItems:"flex-start",gap:10,background:T.card,color:T.ink900,border:"1px solid "+T.line,borderLeft:"4px solid "+(err?T.red500:ok?T.emerald500:T.teal500),borderRadius:10,padding:"10px 12px",boxShadow:T.shadowFloat,fontSize:FZ.sm,lineHeight:1.45}}>
         <span aria-hidden="true" style={{color:err?T.red600:ok?T.emerald600:T.teal600,display:"inline-flex",marginTop:1}}><NavIcon name={err?"warning":ok?"check":"inbox"} size={17}/></span>
         <span style={{flex:1,minWidth:0}}>{t.message}</span>
         <button type="button" onClick={()=>setList(l=>l.filter(x=>x.id!==t.id))} aria-label="Fermer la notification" style={{border:"none",background:"transparent",color:T.ink500,cursor:"pointer",padding:2,minWidth:24,minHeight:24,display:"inline-flex",alignItems:"center",justifyContent:"center"}}><NavIcon name="close" size={14}/></button>
@@ -371,7 +371,7 @@ export function SuperOnly({children}){ return isSuperAdmin()?<>{children}</>:nul
 
 // v162 — nombre qui « monte » jusqu'à sa valeur (1re apparition et à chaque changement). Chiffres tabulaires pour éviter tout saut de largeur.
 // Respecte « réduire les animations » : dans ce cas la valeur est affichée directement.
-export function AnimatedNumber({value,duration=700,style}){
+export function AnimatedNumber({value,duration=300,style}){
   const target=Number(value)||0;
   const [shown,setShown]=React.useState(()=>{try{if(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches)return target;}catch(e){}return 0;});
   const fromRef=React.useRef(shown);
@@ -437,7 +437,7 @@ export function PageHead({kicker,title,sub,right,style}){
   return(<div className="enogia-view-in" style={{display:"flex",alignItems:"flex-end",gap:12,flexWrap:"wrap",marginBottom:12,paddingBottom:6,borderBottom:"3px solid "+T.teal500,...style}}>
     <div style={{minWidth:0,flex:1,display:"flex",alignItems:"baseline",gap:"4px 14px",flexWrap:"wrap"}}>
       {kicker&&<span style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>{kicker}</span>}
-      <h1 style={{margin:0,fontFamily:T.fontDisplay,fontSize:26,fontWeight:500,letterSpacing:"-.02em",color:T.ink900,lineHeight:1.15}}><Hl>{title}</Hl></h1>
+      <h1 style={{margin:0,fontFamily:T.fontDisplay,fontSize:"clamp(28px,3vw,36px)",fontWeight:600,letterSpacing:"-.02em",color:T.ink900,lineHeight:1.1}}><Hl>{title}</Hl></h1>
       {sub&&<span style={{fontSize:FZ.sm,color:T.ink500}}>{sub}</span>}
     </div>
     {right}

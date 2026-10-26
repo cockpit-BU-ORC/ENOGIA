@@ -7,6 +7,17 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v183",
+    date: "2026-10-26",
+    title: "V183 : ORDO & OPS – BU ORC",
+    items: [
+      { t: "Nouveau nom", d: "Le site s'appelle désormais ORDO & OPS – BU ORC : ordonnancement, planning de production, suivi des tests et pilotage des projets." },
+      { t: "Titres plus lisibles", d: "Chaque page affiche son titre en plus grand, sans le mot « Planning » au-dessus." },
+      { t: "Connexion et accueil", d: "Écran de connexion avec une carte du monde en fond et un écran d'accueil après connexion dans le style du site." },
+      { t: "Thème", d: "Le thème « Salle de contrôle » est utilisé par défaut ; « Ardoise » reste disponible dans le menu Apparence." },
+    ],
+  },
+  {
     id: "2026-10-v182",
     date: "2026-10-26",
     title: "V182 : nouveau thème « Salle de contrôle »",

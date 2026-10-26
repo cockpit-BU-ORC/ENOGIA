@@ -315,4 +315,9 @@ export const RELEASE_CATALOG = [
   { v: "182", t: "Nouveau thème « Salle de contrôle »", items: [
     ["Thèmes", "Salle de contrôle (ardoise dense, écran d'atelier) en plus d'Atelier et Ardoise ; fin de l'effet en relief."],
   ] },
+  { v: "183", t: "ORDO & OPS – BU ORC", items: [
+    ["Nom", "Nouveau nom du site et sous-titre, partout."],
+    ["Titres", "Titres de page plus grands, sans sur-titre."],
+    ["Connexion", "Carte du monde en fond ; nouvel écran après connexion ; thème Atelier retiré."],
+  ] },
 ];

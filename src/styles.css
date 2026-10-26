@@ -132,7 +132,7 @@ input[type="checkbox"] { transition: background-color .14s ease, border-color .1
    Principe : tout ce qui apparaît « arrive » en 0,2–0,3 s (jamais plus), tout ce qui change d'état s'adoucit,
    rien ne bouge sans raison. Fin d'animation SANS transform résiduel (fill-mode « backwards ») pour ne pas
    casser les éléments collants ou fixes à l'intérieur. Tout est coupé par « réduire les animations » (voir plus haut). */
-:root { --e-ease: cubic-bezier(.2,.8,.2,1); }
+:root { --e-ease: cubic-bezier(.16,1,.3,1); --e-ease-in: cubic-bezier(.7,0,.84,0); } /* v183 : courbes d'entrée / de sortie (skill animation-principles) */
 @keyframes enogiaViewIn   { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes enogiaBarGrow  { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
 @keyframes enogiaRingDraw { from { stroke-dasharray: 0 1000; } }
@@ -330,3 +330,17 @@ button:not(:disabled):active { transform: scale(.97); }
 /* 7. Alertes qui doivent attirer l'œil : 3 pulsations d'échelle puis immobiles (plus de halo infini en box-shadow). */
 .enogia-pulse-urgent { animation: enogiaNudge .6s ease-in-out 3; }
 .enogia-badge-pop    { animation: enogiaBadgePop .3s var(--e-ease) both, enogiaNudge .6s ease-in-out .4s 3; }
+
+/* ── v183 : sorties animées (skill animation-principles : ce qui part accélère, 60–70 % de la durée d'entrée) ── */
+@keyframes enogiaToastOut { to { opacity: 0; transform: translateX(14px); } }
+@keyframes enogiaFadeOut  { to { opacity: 0; } }
+.enogia-toast.is-leaving { animation: enogiaToastOut .18s var(--e-ease-in) forwards; }
+.enogia-overlay-out      { animation: enogiaFadeOut .24s var(--e-ease-in) forwards; }
+/* Écran de transition après connexion : logo, nom, sous-titre et barre de chargement entrent l'un après l'autre (60 ms). */
+@keyframes enogiaRise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes enogiaLoad { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.enogia-tr > * { animation: enogiaRise .36s var(--e-ease) backwards; }
+.enogia-tr > *:nth-child(2) { animation-delay: .06s; }
+.enogia-tr > *:nth-child(3) { animation-delay: .12s; }
+.enogia-tr > *:nth-child(4) { animation-delay: .18s; }
+.enogia-tr-bar { transform-origin: left center; animation: enogiaLoad 1.8s linear .2s backwards; }

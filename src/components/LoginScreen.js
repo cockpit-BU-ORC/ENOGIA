@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { signInWithPopup, signOut } from "firebase/auth";
 import { auth, googleProvider, ALLOWED_EMAIL_DOMAIN } from "../firebase";
 import { T, FZ, navTokens } from "../theme";
 import { NavIcon, Hl } from "./SharedUI";
+import { SITE_NAME, SITE_SCOPE, SITE_SUB } from "../siteName";
 
 export const ROBOTO="'Satoshi',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"; // v177 : Satoshi (nom de constante conservé)
 
@@ -39,22 +40,25 @@ export function LoginScreen(){
   return(
     <div className="enogia-login" style={{minHeight:"100dvh",display:"flex",flexWrap:"wrap",fontFamily:T.font,background:T.surface,color:T.ink900}}>
       {/* Panneau marine : identité + ce que contient le site */}
-      <section aria-label="Présentation" className="enogia-login-side" style={{flex:"1 1 420px",minWidth:0,background:N.industrial?N.bg:T.teal500,color:"#FFFFFF",padding:"40px clamp(24px,5vw,64px)",display:"flex",flexDirection:"column",gap:28}}>
-        <img src={process.env.PUBLIC_URL+"/enogia-logo-color-crop.svg"} alt="ENOGIA" width="105" height="42" style={{height:40,width:"auto",alignSelf:"flex-start",filter:"brightness(0) invert(1)"}}/>
-        <div style={{marginTop:"auto"}}>
-          <div style={{fontSize:13,fontWeight:700,color:"#F4D35E",marginBottom:10}}>BU ORC</div>
+      <section aria-label="Présentation" className="enogia-login-side" style={{flex:"1 1 420px",minWidth:0,position:"relative",overflow:"hidden",background:N.industrial?N.bg:T.teal500,color:"#FFFFFF",padding:"40px clamp(24px,5vw,64px)",display:"flex",flexDirection:"column",gap:28}}>
+        {/* v183 : fond léger — carte du monde en filigrane (blanc à 12 %), purement décorative */}
+        <img src={process.env.PUBLIC_URL+"/world-map-bg.svg"} alt="" aria-hidden="true" style={{position:"absolute",right:"-18%",bottom:"-8%",width:"min(1100px,140%)",maxWidth:"none",opacity:.12,filter:"brightness(0) invert(1)",pointerEvents:"none",zIndex:0}}/>
+        <img src={process.env.PUBLIC_URL+"/enogia-logo-color-crop.svg"} alt="ENOGIA" width="105" height="42" style={{position:"relative",height:40,width:"auto",alignSelf:"flex-start",filter:"brightness(0) invert(1)"}}/>
+        <div style={{marginTop:"auto",position:"relative"}}>
+          <div style={{fontFamily:T.fontDisplay,fontWeight:800,fontSize:16,letterSpacing:".02em",marginBottom:2}}>{SITE_NAME} <span style={{color:"#F4D35E"}}>– {SITE_SCOPE}</span></div>
+          <div style={{fontSize:FZ.xs,color:"#C9D4E2",marginBottom:16}}>{SITE_SUB}</div>
           <h1 className="enogia-float-in" style={{margin:0,fontFamily:T.fontDisplay,fontWeight:500,fontSize:"clamp(30px,4vw,46px)",lineHeight:1.08,letterSpacing:"-.02em",maxWidth:560}}>
             Toutes les machines ORC, de l'<Hl color="#F4D35E">atelier</Hl> à la livraison.
           </h1>
         </div>
-        <ul className="enogia-stagger" style={{listStyle:"none",margin:0,padding:0,display:"flex",flexDirection:"column",gap:14,maxWidth:520}}>
+        <ul className="enogia-stagger" style={{position:"relative",listStyle:"none",margin:0,padding:0,display:"flex",flexDirection:"column",gap:14,maxWidth:520}}>
           {USES.map(([ic,t,d])=>(
             <li key={t} style={{display:"flex",gap:12,alignItems:"flex-start"}}>
               <span aria-hidden="true" style={{width:34,height:34,borderRadius:8,background:"rgba(255,255,255,.1)",color:"#F4D35E",display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><NavIcon name={ic} size={19}/></span>
               <span><span style={{display:"block",fontWeight:700,fontSize:FZ.sm}}>{t}</span><span style={{display:"block",fontSize:FZ.sm,color:"#D6E2EE",lineHeight:1.45}}>{d}</span></span>
             </li>))}
         </ul>
-        <div style={{fontSize:FZ.xs,color:"#B9C8D8",marginTop:"auto"}}>ENOGIA · 43, avenue de Boisbaudran, Marseille</div>
+        <div style={{position:"relative",fontSize:FZ.xs,color:"#B9C8D8",marginTop:"auto"}}>ENOGIA · 43, avenue de Boisbaudran, Marseille</div>
       </section>
 
       {/* Connexion */}
@@ -79,22 +83,26 @@ export function LoginScreen(){
   );
 }
 
-// Popup de transition, affichée après la connexion réussie et avant d'arriver sur le planning
-// (demandé explicitement) — logo (agrandi) qui pulse + message de bienvenue (agrandi) avec le
-// prénom du compte Google connecté. Remplace le fond clair à formes décoratives (jugé pas assez
-// joli) par un vrai calque "verre dépoli" : App.js laisse désormais l'écran de connexion monté en
-// dessous (au lieu de le démonter), et ce composant ne dessine plus qu'un voile clair translucide
-// avec backdrop-filter:blur — on voit donc réellement, flouté, ce qu'il y a derrière, plutôt qu'un
-// décor plat qui l'imite.
+// v183 — Écran de transition après connexion, refait dans le style du site (demandé : l'ancien « verre dépoli » faisait kitsch) :
+// fond marine du menu, logo, nom du site et sous-titre qui entrent l'un après l'autre (60 ms), barre or qui se remplit pendant
+// l'attente, puis fondu de sortie juste avant l'arrivée sur le site (App retire l'écran à 2,2 s).
 export function LoginTransition({name}){
   const firstName=(name||"").trim().split(/\s+/)[0]||"";
+  const [leaving,setLeaving]=useState(false);
+  useEffect(()=>{const t=setTimeout(()=>setLeaving(true),1950);return()=>clearTimeout(t);},[]);
+  const N=navTokens();
   return(
-    <div className="enogia-fade-in" style={{position:"fixed",inset:0,zIndex:10000,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:T.mode==="dark"?"rgba(15,20,25,.6)":"rgba(253,251,246,.55)",backdropFilter:"blur(26px) saturate(1.15)",WebkitBackdropFilter:"blur(26px) saturate(1.15)",fontFamily:ROBOTO}}>
-      <img src={process.env.PUBLIC_URL+"/enogia-logo-color-crop.svg"} alt="ENOGIA" style={{height:132,width:"auto",marginBottom:28,filter:T.mode==="dark"?"brightness(0) invert(1)":"drop-shadow(0 8px 24px rgba(18,27,48,.16))",animation:"enogiaLogoPulse 1.3s ease-in-out infinite"}}/>
-      {firstName&&<div className="enogia-float-in" style={{fontSize:FZ.xl,fontWeight:700,color:T.teal600,letterSpacing:".005em",textShadow:T.mode==="dark"?"none":"0 1px 0 rgba(255,255,255,.6)"}}>Bienvenue, {firstName}</div>}
-      {/* Phrase d'accroche sur le suivi de projet, demandée explicitement, en plus du message de
-          bienvenue. */}
-      <div className="enogia-float-in" style={{fontSize:FZ.md,color:T.ink500,marginTop:8,textShadow:T.mode==="dark"?"none":"0 1px 0 rgba(255,255,255,.6)"}}>Le suivi de vos projets, à jour en temps réel.</div>
+    <div role="status" aria-live="polite" className={leaving?"enogia-overlay-out":"enogia-fade-in"} style={{position:"fixed",inset:0,zIndex:10000,display:"flex",alignItems:"center",justifyContent:"center",background:N.industrial?N.bg:T.teal500,color:"#FFFFFF",fontFamily:T.font,overflow:"hidden"}}>
+      <img src={process.env.PUBLIC_URL+"/world-map-bg.svg"} alt="" aria-hidden="true" style={{position:"absolute",left:"50%",top:"50%",transform:"translate(-50%,-50%)",width:"min(1500px,170vw)",maxWidth:"none",opacity:.1,filter:"brightness(0) invert(1)",pointerEvents:"none"}}/>
+      <div className="enogia-tr" style={{position:"relative",display:"flex",flexDirection:"column",alignItems:"flex-start",gap:14,width:"min(440px,calc(100vw - 48px))"}}>
+        <img src={process.env.PUBLIC_URL+"/enogia-logo-color-crop.svg"} alt="ENOGIA" width="105" height="42" style={{height:44,width:"auto",filter:"brightness(0) invert(1)"}}/>
+        <div>
+          <div style={{fontFamily:T.fontDisplay,fontWeight:800,fontSize:"clamp(30px,5vw,40px)",letterSpacing:"-.01em",lineHeight:1.05}}><Hl color="#F4D35E">{SITE_NAME}</Hl> <span style={{fontWeight:500,color:"#C9D4E2"}}>– {SITE_SCOPE}</span></div>
+          <div style={{fontSize:FZ.sm,color:"#C9D4E2",marginTop:6}}>{SITE_SUB}</div>
+        </div>
+        <div style={{fontSize:FZ.md,fontWeight:600}}>{firstName?"Bienvenue, "+firstName+".":"Bienvenue."} <span style={{fontWeight:400,color:"#C9D4E2"}}>Chargement du planning…</span></div>
+        <div aria-hidden="true" style={{width:"100%",height:3,borderRadius:2,background:"rgba(255,255,255,.14)",overflow:"hidden"}}><div className="enogia-tr-bar" style={{height:"100%",background:"#F4D35E"}}/></div>
+      </div>
     </div>
   );
 }
