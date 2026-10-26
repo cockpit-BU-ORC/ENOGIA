@@ -1018,3 +1018,15 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - `check:contrast` : 731 vérifications, 0 échec. Bundle : 538 kB gzip.
 - Vérifié par rendu statique (accueil, liste, calendrier) en clair et en sombre avec les vraies polices ; pas testé dans l'appli connectée.
 - Fichiers : theme.js, pjMeta.js, App.js, public/index.html, package.json, package-lock.json, components/{SharedUI,LoginScreen,DashboardSummary,HomeView,CalendarView,GanttView,ChangesTable,ChangesView,CommentsView,CompareFiles,ManagerFiche,ManagerNav,ManagerPanel,ManagerParts,TestsTab}.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
+
+## v178 — Plus de place pour le contenu : en-tête, vue d'ensemble, Manager, Pilotage
+
+- **En-tête** (`App.js`) : grand titre « Planning Ordonnancement » + « BU ORC » retirés (chaque page a son `PageHead`) ; barre collante (`position: sticky`) qui s'efface en fondu quand on descend (`hdrHidden` : fond et filet transparents, partie droite en opacité 0 / `visibility: hidden`, logo réduit sur une pastille) et revient dès qu'on remonte ou en haut de page (écoute de `window.scroll`, une lecture par image).
+- **En-tête de page** (`PageHead`) : sur-titre, titre (26 px, Cabinet Grotesk 500) et sous-titre sur une même ligne de base, marges réduites.
+- **Surligneur décalé** (`Hl` dans `SharedUI.js`, demandé : « les lignes de couleur sous la police, en décalé ») : trait épais (`text-decoration-thickness: .3em`, `text-underline-offset: -.08em`) posé sous le bas des lettres ; titres de page (or) et phrase du jour de l'accueil (couleur de l'étape / de l'alerte à 53 %).
+- **Vue d'ensemble de la Liste** (`DashboardSummary.js`) : repli automatique au défilement (au-delà de 180 px), réouverture en haut de page (< 8 px), animé (`grid-template-rows` 1fr → 0fr + fondu) ; le choix manuel `enogia-dashboard-collapsed` est inchangé.
+- **Manager** : bouton « Fiche plein écran » (clé `localStorage` `enogia_manager_focus`) — menu réduit aux icônes + liste des projets masquée en fondu (largeur 0, opacité 0) ; au survol ou au focus d'une icône du menu réduit, panneau des sous-pages (portail `role="menu"`, Échap pour fermer), clic = navigation (`ManagerNav.js`, `ManagerPanel.js`, `ManagerFiche.js`).
+- **Pilotage aligné** (`ManagerFiche.js`, `styles.css`) : en-tête « Synthèse » sur la 1re colonne (les trois colonnes commencent au même niveau) ; cartes Statut global et Indicateurs clés en hauteur égale, « Commentaire de synthèse » calé en bas (`.enogia-pilot-card`) ; Indicateurs en grille 2 × 2 au lieu de 3 + 1.
+- Nouvelle clé `localStorage` : `enogia_manager_focus`.
+- Vérifié : test isolé du panneau des sous-pages (survol → menu → clic → navigation, fermeture) ; rendu statique de l'en-tête de page et de la phrase du jour. Pas testé dans l'appli connectée (défilement réel, Manager complet).
+- Fichiers : App.js, styles.css, components/{SharedUI,HomeView,DashboardSummary,ManagerNav,ManagerPanel,ManagerFiche}.js, releaseNotes.js, releaseCatalog.js(+test).

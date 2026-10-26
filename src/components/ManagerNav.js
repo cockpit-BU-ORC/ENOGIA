@@ -1,5 +1,6 @@
 // v158 — Navigation de l'espace Manager : rail latéral groupé (réductible, sous-onglets en accordéon) + palette « Aller à… » (Ctrl K).
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import { T, FZ } from "../theme";
 import { NavIcon } from "./SharedUI";
 
@@ -21,17 +22,34 @@ export function leavesOf(groups) {
 
 export function ManagerRail({ groups, activeId, activeSub, onGo, collapsed, setCollapsed, phone }) {
   const w = collapsed ? 58 : 216;
+  // v178 : panneau des sous-pages au survol d'une icône (menu réduit). Rendu hors du rail (portail) pour ne pas être rogné.
+  const [fly, setFly] = useState(null), flyT = useRef(0);
+  const openFly = (e, el) => { if (!collapsed || !el) return; clearTimeout(flyT.current); const r = el.getBoundingClientRect(); setFly({ e, top: r.top, left: r.right + 8 }); };
+  const closeFly = () => { clearTimeout(flyT.current); flyT.current = setTimeout(() => setFly(null), 160); };
+  useEffect(() => { if (!fly) return; const k = ev => { if (ev.key === "Escape") setFly(null); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [fly]);
+  useEffect(() => () => clearTimeout(flyT.current), []);
+  useEffect(() => { if (!collapsed) setFly(null); }, [collapsed]);
+  const flyout = fly && typeof document !== "undefined" ? createPortal(
+    <div role="menu" aria-label={fly.e.label} className="enogia-flyout" onMouseEnter={() => clearTimeout(flyT.current)} onMouseLeave={closeFly}
+      style={{ position: "fixed", top: Math.max(8, fly.top - 6), left: fly.left, zIndex: 10040, minWidth: 200, background: T.card, border: "1px solid " + T.line, borderRadius: 10, boxShadow: T.shadowFloat, padding: 6, fontFamily: T.font }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: T.accentInk, padding: "4px 8px 6px" }}>{fly.e.label}</div>
+      {(fly.e.subs || [{ id: "", label: "Ouvrir", go: fly.e.go }]).map(s => { const sOn = fly.e.id === activeId && (!fly.e.subs || s.id === activeSub); return (
+        <button key={s.id || "open"} role="menuitem" type="button" onClick={() => { onGo(s.go); setFly(null); }} aria-current={sOn ? "page" : undefined}
+          style={{ display: "block", width: "100%", textAlign: "left", border: "none", background: sOn ? T.teal100 : "transparent", color: sOn ? T.teal600 : T.ink700, fontWeight: sOn ? 700 : 500, fontSize: FZ.sm, fontFamily: T.font, padding: "7px 10px", minHeight: 32, borderRadius: 7, cursor: "pointer" }}
+          onMouseEnter={x => { if (!sOn) x.currentTarget.style.background = T.surface; }} onMouseLeave={x => { if (!sOn) x.currentTarget.style.background = "transparent"; }}>{s.label}</button>); })}
+    </div>, document.body) : null;
   if (phone) return (<nav aria-label="Navigation Manager" style={{ display: "flex", gap: 4, overflowX: "auto", paddingBottom: 4, borderBottom: "1px solid " + T.line }}>
     {groups.flatMap(g => g.entries).map(e => { const on = e.id === activeId; return (
       <button key={e.id} onClick={() => onGo(e.go)} aria-current={on ? "page" : undefined} style={{ flex: "none", display: "flex", alignItems: "center", gap: 6, padding: "7px 11px", border: "none", borderBottom: "2px solid " + (on ? T.teal500 : "transparent"), background: "transparent", color: on ? T.teal600 : T.ink500, fontWeight: on ? 700 : 600, fontSize: FZ.sm, cursor: "pointer", fontFamily: T.font }}><NavIcon name={e.icon} size={15} />{e.label}</button>); })}
   </nav>);
-  return (<nav aria-label="Navigation Manager" style={{ width: w, flex: "none", transition: "width .28s var(--e-ease)", position: "sticky", top: 8, alignSelf: "flex-start", background: T.surface, border: "1px solid " + T.line, borderRadius: 14, padding: "8px 8px 10px", display: "flex", flexDirection: "column", gap: 2, overflow: "hidden", fontFamily: T.font }}>
+  return (<>{flyout}<nav aria-label="Navigation Manager" style={{ width: w, flex: "none", transition: "width .28s var(--e-ease)", position: "sticky", top: 8, alignSelf: "flex-start", background: T.surface, border: "1px solid " + T.line, borderRadius: 14, padding: "8px 8px 10px", display: "flex", flexDirection: "column", gap: 2, overflow: "hidden", fontFamily: T.font }}>
     {groups.map(g => (<div key={g.label} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
       <div style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk,padding: collapsed ? "6px 0 2px" : "10px 10px 3px",whiteSpace: "nowrap",textAlign: collapsed ? "center" : "left",overflow: "hidden",height: collapsed ? 14 : "auto",transition: "padding .2s"}}>{collapsed ? "·" : g.label}</div>
       {g.entries.map(e => { const on = e.id === activeId; return (<React.Fragment key={e.id}>
-        <button onClick={() => onGo(e.go)} title={collapsed ? e.label : undefined} aria-current={on ? "page" : undefined}
+        <button onClick={() => onGo(e.go)} title={collapsed && !fly ? e.label : undefined} aria-current={on ? "page" : undefined} aria-haspopup={collapsed ? "menu" : undefined} aria-expanded={collapsed ? !!(fly && fly.e.id === e.id) : undefined}
+          onFocus={x => openFly(e, x.currentTarget)} onBlur={closeFly}
           style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", border: "none", borderRadius: 9, padding: collapsed ? "9px 0" : "8px 10px", justifyContent: collapsed ? "center" : "flex-start", background: on ? T.card : "transparent", boxShadow: on ? T.shadowSm : "none", color: on ? T.ink900 : T.ink500, fontWeight: on ? 700 : 500, fontSize: FZ.sm, cursor: "pointer", fontFamily: T.font, textAlign: "left", whiteSpace: "nowrap" }}
-          onMouseEnter={x => { if (!on) { x.currentTarget.style.background = T.card; x.currentTarget.style.color = T.ink900; } }} onMouseLeave={x => { if (!on) { x.currentTarget.style.background = "transparent"; x.currentTarget.style.color = T.ink500; } }}>
+          onMouseEnter={x => { openFly(e, x.currentTarget); if (!on) { x.currentTarget.style.background = T.card; x.currentTarget.style.color = T.ink900; } }} onMouseLeave={x => { closeFly(); if (!on) { x.currentTarget.style.background = "transparent"; x.currentTarget.style.color = T.ink500; } }}>
           <span style={{ display: "inline-flex", color: on ? T.teal500 : "inherit", flex: "none" }}><NavIcon name={e.icon} size={17} /></span>
           {!collapsed && <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>{e.label}</span>}
           {!collapsed && e.badge > 0 && <span style={{ fontSize: 11, fontWeight: 700, background: T.red500, color: "#fff", borderRadius: 99, padding: "0 6px", minWidth: 18, textAlign: "center" }}>{e.badge}</span>}
@@ -53,7 +71,7 @@ export function ManagerRail({ groups, activeId, activeSub, onGo, collapsed, setC
       style={{ marginTop: 8, border: "1px solid " + T.line, background: T.card, borderRadius: 9, padding: 6, display: "flex", justifyContent: "center", color: T.ink500, cursor: "pointer" }}>
       <span style={{ display: "inline-flex", transform: "rotate(" + (collapsed ? "-90deg" : "90deg") + ")", transition: "transform .28s var(--e-ease)" }}><NavIcon name="chevronDown" size={15} /></span>
     </button>
-  </nav>);
+  </nav></>);
 }
 
 // Ligne du haut : fil d'Ariane + bouton « Aller à… »

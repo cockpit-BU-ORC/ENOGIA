@@ -64,7 +64,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-26-v177-palette-police-icones";
+const APP_BUILD_VERSION = "2026-10-26-v178-place-contenu";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -148,6 +148,15 @@ export default function App(){
   const [presentation,setPresentation]=useState(()=>{try{return sessionStorage.getItem("enogia_present")==="1";}catch(e){return false;}});
   setThemeMode(darkMode,themeId,presentation); // mute T en place avant que quoi que ce soit ne le lise pendant ce rendu
   const NAV=navTokens(); // v173 : couleurs du menu latéral (marine + repère jaune pour le thème Atelier)
+  // v178 : en-tête qui s'efface en fondu quand on descend (seul le logo reste), et revient dès qu'on remonte ou en haut de page.
+  const [hdrHidden,setHdrHidden]=useState(false);
+  useEffect(()=>{
+    let last=window.scrollY||0,raf=0;
+    const on=()=>{if(raf)return;raf=requestAnimationFrame(()=>{raf=0;const y=window.scrollY||0;
+      if(y<40)setHdrHidden(false);else if(y>last+6)setHdrHidden(true);else if(y<last-6)setHdrHidden(false);last=y;});};
+    window.addEventListener("scroll",on,{passive:true});
+    return()=>{window.removeEventListener("scroll",on);cancelAnimationFrame(raf);};
+  },[]);
   setDensity(density);
   useA11yFallback(); // v165 : étiquettes et zones cliquables de secours
   useEffect(()=>{try{localStorage.setItem("enogia_density2",density);}catch(e){}},[density]);
@@ -1017,29 +1026,15 @@ export default function App(){
       {IS_BETA&&<BetaBanner canCopy={canEditMeta}/>}
 
       {/* Barre de marque — fine, claire, sans dégradé : l'identité tient au logo + à la typo, pas à un bloc de couleur */}
-      <div className="enogia-bar" style={{flexShrink:0,minHeight:60,display:"flex",alignItems:"center",gap:16,padding:"8px 28px",background:T.card,borderBottom:"1px solid "+T.line,flexWrap:"wrap"}}>
+      <div className={"enogia-bar"+(hdrHidden?" is-hidden":"")} style={{flexShrink:0,minHeight:60,display:"flex",alignItems:"center",gap:16,padding:"8px 28px",background:hdrHidden?"transparent":T.card,borderBottom:"1px solid "+(hdrHidden?"transparent":T.line),flexWrap:"wrap",position:"sticky",top:0,zIndex:25,pointerEvents:hdrHidden?"none":"auto",transition:"background-color .28s ease, border-color .28s ease"}}>
         {/* Le fichier logo d'origine a énormément de marge transparente autour du dessin réel
             (~24% de sa hauteur seulement est visible) : l'agrandir ne suffisait donc pas, il
             paraissait toujours minuscule. enogia-logo-color-crop.svg est recadré au plus près
             du dessin (mark + "enogia"), donc la même hauteur rend un logo visuellement ~3x
             plus grand qu'avant, comme demandé — sans avoir à démesurer toute la barre d'en-tête. */}
-        <img className="enogia-logo" src={process.env.PUBLIC_URL+"/enogia-logo-color-crop.svg"} alt="ENOGIA" width="105" height="42" style={{height:42,width:"auto",objectFit:"contain",flexShrink:0,filter:darkMode?"brightness(0) invert(1)":"none"}}/>
-        <div className="enogia-hide-phone" style={{width:1,height:26,background:T.teal400,opacity:.35,flexShrink:0}}/>
-        {/* Fraunces (empattements fins) : même police que tous les autres titres/intitulés de
-            section de l'appli (ManagerPanel, fiche projet, etc.) — déjà "la police utilisée partout"
-            pour un titre, donc inchangée ici. Couleur passée en bleu acier foncé (T.teal600, plus
-            sombre que le gris-noir T.ink900 d'avant, demandé explicitement : "le titre doit être plus
-            sombre") et tracking aligné sur celui des intitulés de section (.03em) pour que ce titre se
-            lise comme le même registre typographique que le reste, pas comme une police à part. */}
-        <div style={{display:"flex",flexDirection:"column",gap:1}}>
-          {/* Taille augmentée (demandé explicitement : "police plus grande") — police Roboto en
-              attendant la confirmation (Roboto ou Abel, les deux proposées) ; bleu acier foncé déjà en
-              place. "Production" retiré du sous-titre, qui ne garde que "BU ORC" (demandé
-              explicitement). */}
-          <div className="enogia-title" style={{fontFamily:T.fontDisplay,fontWeight:700,fontSize:FZ.xl,color:T.teal600,letterSpacing:".01em",textTransform:"uppercase",whiteSpace:"nowrap"}}>Planning Ordonnancement</div>
-          <span style={{fontFamily:T.fontDisplay,fontSize:FZ.xs,fontWeight:600,letterSpacing:".06em",textTransform:"uppercase",color:T.teal500,whiteSpace:"nowrap"}}>BU ORC</span>
-        </div>
-        <div className="enogia-bar-right" style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+        <img className="enogia-logo" src={process.env.PUBLIC_URL+"/enogia-logo-color-crop.svg"} alt="ENOGIA" width="105" height="42" style={{height:hdrHidden?34:42,width:"auto",objectFit:"contain",flexShrink:0,filter:darkMode?"brightness(0) invert(1)":"none",pointerEvents:"auto",padding:hdrHidden?"4px 8px":0,borderRadius:8,background:hdrHidden?T.surface:"transparent",boxShadow:hdrHidden?T.shadowSm:"none",transition:"height .28s var(--e-ease), padding .28s var(--e-ease), background-color .28s ease"}}/>
+        {/* v178 : plus de grand titre ici (demandé) — chaque page porte son titre (PageHead) ; seul le logo reste. */}
+        <div className="enogia-bar-right" aria-hidden={hdrHidden?"true":undefined} style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",opacity:hdrHidden?0:1,transform:hdrHidden?"translateY(-6px)":"none",visibility:hdrHidden?"hidden":"visible",transition:"opacity .25s ease, transform .25s var(--e-ease), visibility 0s linear "+(hdrHidden?".25s":"0s")}}>
           <div className="enogia-bar-meta" style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:1}}>
             {loading?<span className="enogia-skeleton" aria-label="Chargement" style={{display:"inline-block",width:84,height:16}}/>:<span style={{color:T.ink700,fontSize:FZ.sm,fontWeight:600,fontFamily:T.font}}>{data.length+" unités"}</span>}
             {!loading&&lastImport&&<button onClick={()=>setView("changes")} title="Voir ce qui a bougé avec ce dernier import" style={{border:"none",background:"transparent",padding:0,cursor:"pointer",color:T.ink700,fontWeight:600,fontSize:FZ.xs,fontFamily:T.font,textAlign:"right"}}>Dernier import {lastImport}{changeLog&&changeLog[0]&&changeLog[0].stats?" · "+changeLog[0].stats.nPj+" PJ modifié"+(changeLog[0].stats.nPj>1?"s":""):""} ›</button>}

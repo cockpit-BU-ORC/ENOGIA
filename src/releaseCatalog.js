@@ -295,4 +295,9 @@ export const RELEASE_CATALOG = [
     ["Police", "Cabinet Grotesk (titres, chiffres) et Satoshi (texte)."],
     ["Icônes", "Famille Phosphor partout."],
   ] },
+  { v: "178", t: "Plus de place pour le contenu", items: [
+    ["En-tête", "Grand titre retiré ; la barre s'efface au défilement, seul le logo reste."],
+    ["Liste", "Vue d'ensemble repliée automatiquement en descendant."],
+    ["Manager", "Fiche synthèse plein écran, sous-pages au survol des icônes ; Pilotage aligné."],
+  ] },
 ];

@@ -311,6 +311,9 @@ export function ManagerPanel({jumpFiche,changeLog,data,progress,setProgress,rele
   const superAdmin=isSuperAdmin(); // v143 : seul le super admin voit l'onglet « Réglages » (changer le site) ; un admin n'a que les onglets d'usage
   // v158 : menu groupé (rail latéral) ; chaque entrée sait où aller. Cash in et Réglages : super admin seulement.
   const [railMin,setRailMin]=useRailCollapsed(),[palOpen,setPalOpen]=useState(false),phone=useIsPhone();
+  // v178 : « fiche plein écran » — menu réduit aux icônes (sous-pages au survol) et liste des projets masquée en fondu.
+  const [focusFiche,setFocusFiche]=useState(()=>{try{return localStorage.getItem("enogia_manager_focus")==="1";}catch(e){return false;}});
+  useEffect(()=>{try{localStorage.setItem("enogia_manager_focus",focusFiche?"1":"0");}catch(e){}},[focusFiche]);
   const SUBS={
     derives:[["synthese","Synthèse"],["derives","Dérives"],["charge","Charge"],["avancement","Avancement"],["retards","Retards"]],
     suivi:[["statut","Statut & état"],["sante","Santé projets"]],
@@ -337,12 +340,14 @@ export function ManagerPanel({jumpFiche,changeLog,data,progress,setProgress,rele
   const [pendingAdd,setPendingAdd]=useState(null); // lignes du fichier en cours d'examen pour l'ajout à l'initial
 
   return(<div style={{display:"flex",flexDirection:phone?"column":"row",alignItems:phone?"stretch":"flex-start",gap:phone?10:16,fontFamily:T.font}}>
-    <ManagerRail groups={navGroups} activeId={activeEntry.id} activeSub={subValue} onGo={f=>f()} collapsed={railMin} setCollapsed={setRailMin} phone={phone}/>
+    <ManagerRail groups={navGroups} activeId={activeEntry.id} activeSub={subValue} onGo={f=>f()} collapsed={railMin||focusFiche} setCollapsed={v=>{if(focusFiche&&!v)setFocusFiche(false);setRailMin(v);}} phone={phone}/>
     {palOpen&&<ManagerPalette groups={navGroups} data={palettePjs} activeKey={activeEntry.id+":"+(activeEntry.subs?subValue:"")} onGo={f=>f()} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}} onClose={()=>setPalOpen(false)}/>}
     <div style={{flex:1,minWidth:0,width:"100%",display:"flex",flexDirection:"column",gap:12}}>
     {/* ── Fil d'Ariane + « Aller à… » + petite tuile « planning initial » ── */}
     <div style={{display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
       <div style={{flex:"1 1 280px",minWidth:0}}><ManagerCrumb parts={["Manager",activeEntry.label,...(activeSubLabel?[activeSubLabel]:[])]} onOpenPalette={()=>setPalOpen(true)}/></div>
+      {!phone&&<button type="button" className="enogia-btn-ind" onClick={()=>setFocusFiche(v=>!v)} aria-pressed={focusFiche} title={focusFiche?"Réafficher le menu complet et la liste des projets":"Replier le menu et la liste pour laisser toute la place à la fiche"}
+        style={{marginBottom:6,display:"inline-flex",alignItems:"center",gap:6,height:30,padding:"0 10px",borderRadius:8,border:"1.5px solid "+T.teal500,background:focusFiche?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:focusFiche?(T.mode==="dark"?"#0B1130":"#FFFFFF"):T.teal600,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font,whiteSpace:"nowrap"}}><NavIcon name="sidepanel" size={15}/>{focusFiche?"Afficher les colonnes":"Fiche plein écran"}</button>}
       <div style={{marginBottom:6,display:"flex",alignItems:"center",gap:8,padding:"4px 4px 4px 12px",border:"1px solid "+(hasInitial?T.line:T.amber500),borderRadius:12,background:hasInitial?T.card:T.amber100}}>
         <span style={{color:hasInitial?T.teal600:T.amber600,display:"inline-flex"}}><NavIcon name={hasInitial?"pin":"warning"} size={13}/></span>
         <div style={{lineHeight:1.25}}>
@@ -787,7 +792,7 @@ export function ManagerPanel({jumpFiche,changeLog,data,progress,setProgress,rele
     {tab==="turbines"&&<TurbinesTab doc={turbineDoc||{turbines:[]}} save={saveTurbines} data={data} authorName={authorName} superAdmin={superAdmin}/>}
     {tab==="statut"&&<StatutTab rows={fd} etatChoice={etatChoice} setEtatFor={setEtatFor} clientPresence={clientPresence} setClientPresenceFor={setClientPresenceFor} customEtats={customEtats||[]} setCustomEtats={superAdmin?setCustomEtats:null} data={data}/>}
     {tab==="hebdo"&&<PointHebdo data={data} savePjMetaOverride={savePjMetaOverride} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}}/>}
-    {tab==="fiche"&&<ProjectFileManager compCatalog={compCatalog} setCompCatalog={setCompCatalog} managerEmails={managerEmails} currentUserEmail={currentUserEmail} resolveComment={resolveComment} certifs={certifs} setCertifs={setCertifs} openPj={fichePj&&fichePj.pj} openNonce={fichePj&&fichePj.n} lastChange={changeLog&&changeLog[0]} data={data} initialData={initialData} comments={comments} delays={delays} progress={progress} savePjMetaOverride={savePjMetaOverride} savePjMetaMulti={savePjMetaMulti} addCommentMulti={addCommentMulti} addComment={addComment} deleteComment={deleteComment} addDelayAllocationMulti={addDelayAllocationMulti} deleteDelayAllocation={deleteDelayAllocation} delayTypes={delayTypes} setDelayTypes={setDelayTypes} changeLog={changeLog} authorName={authorName} onOpenCash={superAdmin?(pj=>{setCashFocus({pj,n:Date.now()});setTab("cash");}):null}/>}
+    {tab==="fiche"&&<ProjectFileManager focus={focusFiche} compCatalog={compCatalog} setCompCatalog={setCompCatalog} managerEmails={managerEmails} currentUserEmail={currentUserEmail} resolveComment={resolveComment} certifs={certifs} setCertifs={setCertifs} openPj={fichePj&&fichePj.pj} openNonce={fichePj&&fichePj.n} lastChange={changeLog&&changeLog[0]} data={data} initialData={initialData} comments={comments} delays={delays} progress={progress} savePjMetaOverride={savePjMetaOverride} savePjMetaMulti={savePjMetaMulti} addCommentMulti={addCommentMulti} addComment={addComment} deleteComment={deleteComment} addDelayAllocationMulti={addDelayAllocationMulti} deleteDelayAllocation={deleteDelayAllocation} delayTypes={delayTypes} setDelayTypes={setDelayTypes} changeLog={changeLog} authorName={authorName} onOpenCash={superAdmin?(pj=>{setCashFocus({pj,n:Date.now()});setTab("cash");}):null}/>}
     {tab==="retards"&&<DelaysTab data={data} delays={delays} delayTypes={delayTypes} setDelayTypes={setDelayTypes} addDelayAllocationMulti={addDelayAllocationMulti} deleteDelayAllocation={deleteDelayAllocation} authorName={authorName}/>}
     {superAdmin&&tab==="acces"&&<>
       <ManagerAccessManager managerEmails={managerEmails} setManagerEmails={setManagerEmails} currentUserEmail={currentUserEmail}/>

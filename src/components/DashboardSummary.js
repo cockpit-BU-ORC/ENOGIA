@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { isPhone } from "../useIsPhone";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { T, FZ } from "../theme";
@@ -31,6 +31,13 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
   const [collapsed,setCollapsed]=useState(()=>{
     try{const v=localStorage.getItem("enogia-dashboard-collapsed");if(v==null)return isPhone();return v==="1";}catch(e){return false;}
   });
+  // v178 : repli automatique au défilement (demandé) — se replie quand on descend, se rouvre en haut de page ; le choix manuel reste enregistré à part.
+  const [autoHid,setAutoHid]=useState(false);
+  useEffect(()=>{
+    let raf=0;const on=()=>{if(raf)return;raf=requestAnimationFrame(()=>{raf=0;const y=window.scrollY||0;if(y>180)setAutoHid(true);else if(y<8)setAutoHid(false);});};
+    window.addEventListener("scroll",on,{passive:true});return()=>{window.removeEventListener("scroll",on);cancelAnimationFrame(raf);};
+  },[]);
+  const folded=collapsed||autoHid;
   const toggleCollapsed=()=>{
     setCollapsed(c=>{
       const next=!c;
@@ -69,12 +76,12 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
   // 5 premières valeurs + « Autres » regroupées, pour que chaque bloc reste lisible d'un coup d'œil.
   const topOf=list=>{if(list.length<=TOP_N+1)return list;const rest=list.slice(TOP_N).reduce((a,x)=>a+x.value,0);return[...list.slice(0,TOP_N),{name:"Autres ("+(list.length-TOP_N)+")",value:rest,other:true}];};
 
-  return(<div style={{paddingBottom:collapsed?12:16,marginBottom:16,borderBottom:"1px solid "+T.line,fontFamily:T.font}}>
+  return(<div style={{paddingBottom:folded?10:16,marginBottom:folded?12:16,transition:"padding .3s ease, margin .3s ease",borderBottom:"1px solid "+T.line,fontFamily:T.font}}>
     {/* Pas de carte ici : le bandeau est posé directement sur le fond de page (direction "Piste A"),
         séparé du reste par un simple filet. L'en-tête reste fixe, avec le contrôle d'affichage ancré à droite. */}
     <div style={{display:"flex",alignItems:"center",gap:12}}>
       <h2 style={{margin:0,fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>Vue d'ensemble</h2>
-      {collapsed&&<span style={{fontSize:FZ.sm,color:T.ink700}}><strong style={{color:T.teal600}}>{shippedYTD}</strong> expédiée{shippedYTD>1?"s":""} depuis le {SHIPPED_SINCE_LABEL}</span>}
+      {folded&&<span style={{fontSize:FZ.sm,color:T.ink700}}><strong style={{color:T.teal600}}>{shippedYTD}</strong> expédiée{shippedYTD>1?"s":""} depuis le {SHIPPED_SINCE_LABEL}</span>}
       <button onClick={toggleCollapsed} title={collapsed?"Afficher la répartition":"Masquer la répartition"} aria-label={collapsed?"Afficher la répartition":"Masquer la répartition"} aria-expanded={!collapsed} style={{marginLeft:"auto",flexShrink:0,width:26,height:26,borderRadius:8,border:"none",background:"transparent",cursor:"pointer",color:T.ink300,display:"flex",alignItems:"center",justifyContent:"center"}}
         onMouseEnter={e=>{e.currentTarget.style.background=T.surface;}}
         onMouseLeave={e=>{e.currentTarget.style.background="transparent";}}>
@@ -84,7 +91,8 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
       </button>
     </div>
 
-    {!collapsed&&<div className="enogia-dash" style={{display:"flex",alignItems:"center",gap:24,flexWrap:"wrap",marginTop:12}}>
+    <div className="enogia-fold" style={{display:"grid",gridTemplateRows:folded?"0fr":"1fr",opacity:folded?0:1,transition:"grid-template-rows .32s var(--e-ease), opacity .24s ease"}} aria-hidden={folded?"true":undefined}><div style={{overflow:"hidden",minHeight:0}}>
+    {<div className="enogia-dash" style={{display:"flex",alignItems:"center",gap:24,flexWrap:"wrap",marginTop:12}}>
       <div style={{display:"flex",flexDirection:"column",gap:2,minWidth:120,flexShrink:0}}>
         <div style={{fontSize:"clamp(36px,4vw,46px)",fontWeight:300,letterSpacing:"-.03em",color:T.ink900,fontFamily:T.fontDisplay,lineHeight:.95,fontVariantNumeric:"tabular-nums"}}><AnimatedNumber value={shippedYTD}/></div>
         <div style={{fontSize:FZ.xs,color:T.ink500}}>machine{shippedYTD>1?"s":""} livrée{shippedYTD>1?"s":""}<br/>depuis le {SHIPPED_SINCE_LABEL}</div>
@@ -132,5 +140,6 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
         })}
       </div>
     </div>}
+    </div></div>
   </div>);
 }

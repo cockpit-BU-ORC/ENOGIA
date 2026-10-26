@@ -174,9 +174,9 @@ function StatutGlobal({meta,pj,onSave,onNote}){
   const notes=meta.notes||{};
   const ev=FEUX.filter(([k])=>f[k]),ne=FEUX.filter(([k])=>!f[k]);
   return(<Section title="Statut global" right={<span style={{fontSize:FZ.xs,color:T.ink300,whiteSpace:"nowrap"}}>{gate.dialog}{meta.feuxAt?"évalué le "+fmt(new Date(meta.feuxAt)):"non évalué"}{w?" · pire niveau : "+feuLabel(w).toLowerCase():""}</span>}>
-    {ev.length>0&&<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))",gap:8}}>
+    {ev.length>0&&<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))",gap:8,alignItems:"stretch"}}>
       {ev.map(([k,lab])=>{const lv=f[k];return(
-        <div key={k} style={{background:T.card,borderRadius:8,padding:"6px 8px",minWidth:0}}>
+        <div key={k} className="enogia-pilot-card" style={{background:T.card,borderRadius:8,padding:"6px 8px",minWidth:0,display:"flex",flexDirection:"column"}}>
           <Cap>{lab}</Cap>
           <div style={{marginTop:3,display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
             <span style={{fontSize:FZ.sm,fontWeight:600,color:feuText(lv),letterSpacing:"-.01em"}}>{feuLabel(lv)}</span>
@@ -552,7 +552,7 @@ function GlobalTile({gp,onSave}){
   </div>);
 }
 
-export function ProjectFileManager({compCatalog,setCompCatalog,managerEmails,currentUserEmail,resolveComment,certifs,setCertifs,openPj,openNonce,lastChange,data,initialData,comments,delays,progress,savePjMetaOverride,savePjMetaMulti,addCommentMulti,addComment,deleteComment,addDelayAllocationMulti,deleteDelayAllocation,delayTypes,setDelayTypes,changeLog,authorName,onOpenCash}){
+export function ProjectFileManager({focus,compCatalog,setCompCatalog,managerEmails,currentUserEmail,resolveComment,certifs,setCertifs,openPj,openNonce,lastChange,data,initialData,comments,delays,progress,savePjMetaOverride,savePjMetaMulti,addCommentMulti,addComment,deleteComment,addDelayAllocationMulti,deleteDelayAllocation,delayTypes,setDelayTypes,changeLog,authorName,onOpenCash}){
   const [search,setSearch]=useState("");
   // v164 : colonne de gauche redimensionnable (glisser la poignée) et réductible en mini-liste (n° de PJ + état), mémorisées sur ce poste
   const [listW,setListW]=useState(()=>{try{const v=parseInt(localStorage.getItem("enogia_mlist_w"),10);return v>=220&&v<=640?v:340;}catch(e){return 340;}});
@@ -675,7 +675,7 @@ export function ProjectFileManager({compCatalog,setCompCatalog,managerEmails,cur
     {cdpOpen&&<CdpDialog certifs={certifs} data={data} initialData={initialData} delays={delays} comments={comments} progress={progress} changeLog={changeLog} initialChef={meta&&meta.chefProjet&&meta.chefProjet!=="—"?meta.chefProjet:undefined} onClose={()=>setCdpOpen(false)}/>}
     {codirOpen&&isSuperAdmin()&&<CodirDialog data={data} initialData={initialData} comments={comments} delays={delays} progress={progress} initialPj={r&&r.pj} onClose={()=>setCodirOpen(false)}/>}
     {/* ── Liste : avancement, état et compteurs visibles sans ouvrir la fiche ── */}
-    <div className="enogia-mlist" style={{...CARD,width:listMini?76:listW,transition:"width .2s ease",flexShrink:0,maxHeight:"calc(100dvh - 200px)",minHeight:300,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+    <div className="enogia-mlist" aria-hidden={focus?"true":undefined} style={{...CARD,width:focus?0:listMini?76:listW,opacity:focus?0:1,pointerEvents:focus?"none":"auto",visibility:focus?"hidden":"visible",padding:focus?0:CARD.padding,borderWidth:focus?0:undefined,marginRight:focus?-12:0,transition:"width .3s var(--e-ease), opacity .22s ease, visibility 0s linear "+(focus?".3s":"0s"),flexShrink:0,maxHeight:"calc(100dvh - 200px)",minHeight:300,display:"flex",flexDirection:"column",overflow:"hidden"}}>
       <div style={{padding:8,borderBottom:"1px solid "+T.line}}>
         <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:listMini?0:6,justifyContent:listMini?"center":"flex-end"}}>
           {!listMini&&<span style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk,marginRight:"auto"}}>Projets</span>}
@@ -722,7 +722,7 @@ export function ProjectFileManager({compCatalog,setCompCatalog,managerEmails,cur
       </div>
     </div>
 
-    {!listMini&&<div className="enogia-mhandle" role="separator" aria-orientation="vertical" aria-label="Redimensionner la liste (flèches gauche/droite)" tabIndex={0} onPointerDown={startDrag} onKeyDown={onHandleKey} onDoubleClick={()=>setListW(340)} title="Glisser pour élargir ou réduire la liste · double-clic : taille d'origine"
+    {!listMini&&!focus&&<div className="enogia-mhandle" role="separator" aria-orientation="vertical" aria-label="Redimensionner la liste (flèches gauche/droite)" tabIndex={0} onPointerDown={startDrag} onKeyDown={onHandleKey} onDoubleClick={()=>setListW(340)} title="Glisser pour élargir ou réduire la liste · double-clic : taille d'origine"
       style={{width:10,alignSelf:"stretch",minHeight:300,margin:"0 -6px",cursor:"col-resize",flexShrink:0,display:"flex",justifyContent:"center",touchAction:"none"}}><span style={{width:3,borderRadius:2,background:T.line,margin:"8px 0"}}/></div>}
     <div style={{flex:"1 1 560px",minWidth:340,maxWidth:"none"}}>
       {/* v146.15 : les rapports se lancent depuis une barre AU-DESSUS de la fiche, pas dedans (lecture de la synthèse) */}
@@ -770,7 +770,8 @@ export function ProjectFileManager({compCatalog,setCompCatalog,managerEmails,cur
         <Frame title="Pilotage" sub="Où en est ce projet" style={{gap:8}}>
         <Cols>
 <Col>
-        <Synthese r={r} ini={ini} meta={meta}/>
+        {/* v178 : en-tête aligné sur « Statut global » et « Indicateurs clés » (les trois colonnes commencent au même niveau). */}
+        <Section title="Synthèse"><Synthese r={r} ini={ini} meta={meta}/></Section>
 
         {/* ── Légende : les deux types de commentaires (v123 : repliée, un clic sur « ? » l'affiche) ── */}
         {savePjMetaOverride&&<div style={{marginTop:-6}}>
@@ -797,14 +798,14 @@ export function ProjectFileManager({compCatalog,setCompCatalog,managerEmails,cur
 <Col>
         {/* ── Indicateurs clés + explication de chacun ── */}
         <Section title="Indicateurs clés" right={<span style={{fontSize:FZ.xs,color:T.ink300,whiteSpace:"nowrap"}}>{kpi.toDepart==null?"":(kpi.toDepart>=0?"J-"+kpi.toDepart+" avant départ":"départ dépassé de "+Math.abs(kpi.toDepart)+" j")}{kpi.atelier!=null?" · séjour atelier "+kpi.atelier+" j":""}{kpi.tests!=null?" · fenêtre tests "+kpi.tests+" j":""}</span>}>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))",gap:8}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:8,alignItems:"stretch"}}>
             {[
               ["gl","Avancement global",<GlobalTile gp={gp} onSave={savePjMetaOverride?f=>savePjMetaOverride(r.pj,f):null}/>,null],
               ["av","Avancement production",<div style={{display:"flex",alignItems:"center",gap:8}}><Donut v={kpi.pv}/><span style={{fontSize:FZ.xs,color:T.ink300,lineHeight:1.35}}>{r.etat==="SHIPPED"?"expédié":"production chez ENOGIA"}</span></div>,null],
               ["dr","Dérive du départ",<Big color={kpi.driftDepart>0?T.red500:kpi.driftDepart<0?T.emerald600:T.ink900}>{ini?signed(kpi.driftDepart):"—"}</Big>,ini?(kpi.driftDepart===0?"conforme au planning initial":"initial : "+fmtLong(dOf(ini.depart))):"pas de planning initial"],
               ["rt","Retards déclarés",<Big color={totalDelayDays>0?T.red500:T.ink900}>{totalDelayDays>0?totalDelayDays+" j":"0"}</Big>,totalDelayDays>0?pjDelays.length+" cause"+(pjDelays.length>1?"s":"")+" consignée"+(pjDelays.length>1?"s":""):"aucun retard consigné"],
             ].map(([k,lab,val,sub])=>
-              <div key={k} style={{background:T.card,borderRadius:8,padding:"6px 8px",minWidth:0}}>
+              <div key={k} className="enogia-pilot-card" style={{background:T.card,borderRadius:8,padding:"6px 8px",minWidth:0,display:"flex",flexDirection:"column"}}>
                 <Cap style={{marginBottom:4}}>{lab}</Cap>{val}
                 {sub&&<div style={{fontSize:FZ.xs,color:T.ink300,marginTop:3}}>{sub}</div>}
                 {savePjMetaOverride&&<NoteField value={notes[k]} onSave={t=>saveNote(k,t)} placeholder="＋ Commentaire de synthèse"/>}

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { T, FZ, R, stageSoft, stripeBg, stripeHues, alertSoft, inkOn } from "../theme";
 import { getPjMeta, ETAT_META, PresenceChip, presenceKind, presenceFirstDate, presenceDates, countShippedYTD } from "../pjMeta";
-import { NavIcon, AnimatedNumber, EmptyState, PjPlate } from "./SharedUI";
+import { NavIcon, AnimatedNumber, EmptyState, PjPlate, Hl } from "./SharedUI";
 import { openMentionsFor, chefAccount, nameFromEmail } from "../mentions";
 import { testerOfEmail, planOf } from "../testPlan";
 
@@ -120,7 +120,8 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
     </div>
   );
 
-  const num = (v, c) => <b style={{ color: c, background: "none", fontWeight: 700, fontVariantNumeric: "tabular-nums", WebkitTextFillColor: c }}>{v}</b>;
+  // v178 : surligneur décalé (trait de couleur sous le bas des lettres) au lieu de la seule couleur du chiffre.
+  const num = (v, c) => <Hl color={c + "88"} style={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{v}</Hl>;
   const nextDep = departs[0];
   const maxLate = late[0];
   const stageCount = id => open.filter(r => r.etat === id).length;
@@ -145,7 +146,7 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
         <div style={{ flex: 1, minWidth: 260 }}>
           <div style={{ fontFamily: T.font, fontSize: 12, fontWeight: 700, color: T.accentInk, marginBottom: 6 }}>{dateLine}{lastImport ? " · import " + lastImport : ""} · BU ORC</div>
           <h1 className="enogia-view-in" style={{ margin: 0, fontFamily: T.fontDisplay, fontWeight: 300, fontSize: "clamp(24px,3.2vw,34px)", lineHeight: 1.18, letterSpacing: "-.02em", color: T.ink900, maxWidth: 820 }}>
-            {hello()}{firstName ? " " + firstName : ""}. {num(inProd, S.production.ring)} machine{inProd > 1 ? "s" : ""} avance{inProd > 1 ? "nt" : ""}, {num(late.length, T.amber600)} glisse{late.length > 1 ? "nt" : ""}, {num(next30, S.depart.ring)} part{next30 > 1 ? "ent" : ""} d'ici un mois.
+            {hello()}{firstName ? " " + firstName : ""}. {num(inProd + " machine" + (inProd > 1 ? "s" : ""), S.production.ring)} avance{inProd > 1 ? "nt" : ""}, {num(late.length, T.amber500)} glisse{late.length > 1 ? "nt" : ""}, {num(next30, S.finProd.ring)} part{next30 > 1 ? "ent" : ""} d'ici un mois.
           </h1>
           {profile.length > 0 && <div style={{ ...grey, marginTop: 6 }}>Vue adaptée à votre profil : {profile.join(" · ")}</div>}
         </div>

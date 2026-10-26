@@ -404,14 +404,19 @@ export function HoverPop({render,children,delay=220,width=260,style,disabled}){
 }
 
 // ── v162 : en-tête de page commun (kicker en capitales espacées + titre) — même gabarit sur toutes les vues ──────────────
+// v178 : « surligneur décalé » (demandé : « les lignes de couleur sous la police, en décalé ») — un trait épais de couleur posé sous le bas des lettres.
+export function Hl({children,color,style}){
+  return <span className="enogia-hl" style={{textDecorationLine:"underline",textDecorationColor:color||T.accent,textDecorationThickness:".3em",textUnderlineOffset:"-.08em",textDecorationSkipInk:"none",WebkitTextDecorationSkip:"none",...style}}>{children}</span>;
+}
 // v173 (direction « Éditorial industriel ») : sur-titre en police d'identifiant couleur ocre (marquage d'atelier), titre éditorial plus grand et léger,
 // filet épais marine dessous — même en-tête sur toutes les pages.
 export function PageHead({kicker,title,sub,right,style}){
-  return(<div className="enogia-view-in" style={{display:"flex",alignItems:"flex-end",gap:12,flexWrap:"wrap",marginBottom:16,paddingBottom:10,borderBottom:"3px solid "+T.teal500,...style}}>
-    <div style={{minWidth:0,flex:1}}>
-      {kicker&&<div style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk,marginBottom:4}}>{kicker}</div>}
-      <h1 style={{margin:0,fontFamily:T.fontDisplay,fontSize:32,fontWeight:300,letterSpacing:"-.02em",color:T.ink900,lineHeight:1.1}}>{title}</h1>
-      {sub&&<div style={{fontSize:FZ.sm,color:T.ink500,marginTop:3}}>{sub}</div>}
+  // v178 : en-tête plus bas (demandé : « trop de hauteur à chaque fois ») — sur-titre, titre et sous-titre sur une même ligne de base.
+  return(<div className="enogia-view-in" style={{display:"flex",alignItems:"flex-end",gap:12,flexWrap:"wrap",marginBottom:12,paddingBottom:6,borderBottom:"3px solid "+T.teal500,...style}}>
+    <div style={{minWidth:0,flex:1,display:"flex",alignItems:"baseline",gap:"4px 14px",flexWrap:"wrap"}}>
+      {kicker&&<span style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>{kicker}</span>}
+      <h1 style={{margin:0,fontFamily:T.fontDisplay,fontSize:26,fontWeight:500,letterSpacing:"-.02em",color:T.ink900,lineHeight:1.15}}><Hl>{title}</Hl></h1>
+      {sub&&<span style={{fontSize:FZ.sm,color:T.ink500}}>{sub}</span>}
     </div>
     {right}
   </div>);

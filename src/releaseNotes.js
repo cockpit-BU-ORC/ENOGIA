@@ -7,6 +7,17 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v178",
+    date: "2026-10-26",
+    title: "V178 : plus de place pour le contenu",
+    items: [
+      { t: "En-tête discret", d: "Le grand titre disparaît : chaque page a le sien. En descendant dans la page, la barre du haut s'efface et seul le logo reste ; elle revient dès qu'on remonte." },
+      { t: "Vue d'ensemble qui se replie", d: "Dans la liste, la vue d'ensemble se replie toute seule quand on descend et se rouvre en haut de page." },
+      { t: "Fiche synthèse plein écran", d: "Un bouton replie le menu du Manager et la liste des projets pour laisser toute la place à la fiche ; au survol d'une icône, ses sous-pages s'affichent et s'ouvrent d'un clic.", admin: true },
+      { t: "Pilotage aligné", d: "Les trois colonnes du bloc Pilotage commencent au même niveau et leurs cartes ont la même hauteur." },
+    ],
+  },
+  {
     id: "2026-10-v177",
     date: "2026-10-26",
     title: "V177 : nouvelles couleurs, nouvelle police, nouvelles icônes",
