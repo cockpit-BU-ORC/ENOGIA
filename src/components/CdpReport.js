@@ -130,7 +130,7 @@ export function CdpDialog({ data, initialData, delays, comments, progress, chang
   const row = { display: "flex", alignItems: "center", gap: 8, fontSize: FZ.sm, color: T.ink700, cursor: "pointer" };
   return createPortal(
     <div onMouseDown={e => { if (e.target === e.currentTarget && !busy) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 10050, background: "rgba(10,18,32,.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, fontFamily: T.font }}>
-      <div style={{ width: "min(520px,100%)", maxHeight: "90vh", overflow: "auto", background: T.card, borderRadius: 16, boxShadow: "0 20px 60px rgba(0,0,0,.35)", border: "1px solid " + T.line }}>
+      <div role="dialog" aria-modal="true" aria-label="Rapport chef de projet" style={{ width: "min(520px,100%)", maxHeight: "90vh", overflow: "auto", background: T.card, borderRadius: 16, boxShadow: "0 20px 60px rgba(0,0,0,.35)", border: "1px solid " + T.line }}>
         <div style={{ padding: "16px 20px", borderBottom: "1px solid " + T.line, display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ color: T.teal600, display: "inline-flex" }}><NavIcon name="chart" size={18} /></span>
           <div style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: FZ.md, color: T.ink900 }}>Rapport chef de projet (PowerPoint)</div>

@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useLayoutEffect, useRef } from "re
 import { T, FZF as FZ, D, statusSoft, stripeBg, stripeHues } from "../theme";
 import { SerieTag, getPjMeta, CountryFlag, Avatar, GAMME_COLORS, ETAT_META, etatInk, PresenceChip, PRESENCE_META, presenceKind, presenceDates, presenceFirstDate, today } from "../pjMeta";
 import { fmt, diffDays } from "../parsers";
-import { Badge, NavIcon, EmptyState, SuperOnly } from "./SharedUI";
+import { Badge, NavIcon, EmptyState, SuperOnly, pressable } from "./SharedUI";
 import { CARD, EmptyNote, PieBlock, getDelayColors } from "./ManagerParts";
 import { cashSummary, STATUS_LABEL, getCashinDoc } from "../cashinLink";
 import { useCashin } from "../useCashin";
@@ -675,7 +675,7 @@ export function ProjectFileManager({compCatalog,setCompCatalog,managerEmails,cur
     {cdpOpen&&<CdpDialog certifs={certifs} data={data} initialData={initialData} delays={delays} comments={comments} progress={progress} changeLog={changeLog} initialChef={meta&&meta.chefProjet&&meta.chefProjet!=="—"?meta.chefProjet:undefined} onClose={()=>setCdpOpen(false)}/>}
     {codirOpen&&isSuperAdmin()&&<CodirDialog data={data} initialData={initialData} comments={comments} delays={delays} progress={progress} initialPj={r&&r.pj} onClose={()=>setCodirOpen(false)}/>}
     {/* ── Liste : avancement, état et compteurs visibles sans ouvrir la fiche ── */}
-    <div className="enogia-mlist" style={{...CARD,width:listMini?76:listW,transition:"width .2s ease",flexShrink:0,maxHeight:"calc(100vh - 200px)",minHeight:300,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+    <div className="enogia-mlist" style={{...CARD,width:listMini?76:listW,transition:"width .2s ease",flexShrink:0,maxHeight:"calc(100dvh - 200px)",minHeight:300,display:"flex",flexDirection:"column",overflow:"hidden"}}>
       <div style={{padding:8,borderBottom:"1px solid "+T.line}}>
         <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:listMini?0:6,justifyContent:listMini?"center":"flex-end"}}>
           {!listMini&&<span style={{marginRight:"auto",fontSize:FZ.xs,fontWeight:700,letterSpacing:".08em",textTransform:"uppercase",color:T.ink500}}>Projets</span>}
@@ -698,7 +698,7 @@ export function ProjectFileManager({compCatalog,setCompCatalog,managerEmails,cur
             <span style={{fontWeight:700,fontSize:FZ.xs,fontVariantNumeric:"tabular-nums",color:etatInk(row.etat)}}>{row.pj.replace(/^PJ/,"")}</span>
             <span style={{width:"70%",height:3,borderRadius:2,background:T.surfaceAlt,overflow:"hidden"}}><span style={{display:"block",height:"100%",width:Math.min(100,pv)+"%",background:ec.bar}}/></span>
           </button>);
-          return(<div key={row.pj} onClick={()=>setSelPj(row.pj)} style={{padding:"6px 8px 6px 8px",cursor:"pointer",background:sel?T.teal100:"transparent",borderLeft:"3px solid "+(sel?T.teal500:"transparent"),borderBottom:"1px solid "+T.line}}>
+          return(<div key={row.pj} {...pressable(()=>setSelPj(row.pj),{"aria-current":sel?"true":undefined})} style={{padding:"6px 8px 6px 8px",cursor:"pointer",background:sel?T.teal100:"transparent",borderLeft:"3px solid "+(sel?T.teal500:"transparent"),borderBottom:"1px solid "+T.line}}>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
               <span style={{width:8,height:8,borderRadius:"50%",background:ec.bar,flexShrink:0}} title={ec.label}/>
               <span style={{fontWeight:700,fontVariantNumeric:"tabular-nums",color:etatInk(row.etat),fontSize:FZ.sm,whiteSpace:"nowrap",flexShrink:0}}>{row.pj}</span>
@@ -733,7 +733,7 @@ export function ProjectFileManager({compCatalog,setCompCatalog,managerEmails,cur
         {isSuperAdmin()&&<button onClick={()=>setCodirOpen(true)} title="Générer la synthèse CODIR (PDF)" style={{display:"inline-flex",alignItems:"center",gap:6,padding:"5px 10px",border:"none",borderRadius:10,background:T.navy700,color:"#fff",fontWeight:700,fontSize:FZ.xs,fontFamily:T.font,cursor:"pointer"}}><NavIcon name="chart" size={13}/>Rapport CODIR</button>}
       </div>}
       {!r?<div style={{...CARD,padding:28,textAlign:"center",color:T.ink300}}>Sélectionnez un PJ dans la liste.</div>:
-      <div key={r.pj} className="enogia-view-in enogia-mcard" style={{...CARD,overflow:"hidden",display:"flex",flexDirection:"column",height:"calc(100vh - 244px)",minHeight:420}}>
+      <div key={r.pj} className="enogia-view-in enogia-mcard" style={{...CARD,overflow:"hidden",display:"flex",flexDirection:"column",height:"calc(100dvh - 244px)",minHeight:420}}>
         <div style={{height:4,flexShrink:0,background:T.navy800,position:"relative"}}><span style={{position:"absolute",left:26,top:0,bottom:0,width:56,background:T.accent}}/></div>
         {/* v134 : la fiche prend la hauteur de l'écran ; elle défile à l'intérieur, l'en-tête (PJ, état, statut) reste figé en haut */}
         <div className="enogia-mcard-in" style={{padding:"0 16px 16px",display:"flex",flexDirection:"column",gap:12,flex:1,minHeight:0,overflowY:"auto",overflowX:"hidden"}}>

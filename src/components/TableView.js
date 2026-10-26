@@ -4,7 +4,7 @@ import { useMarks, NewMark } from "./ChangesNotice";
 import { EtatInfoButton } from "./ProdStagesUI";
 import { getPjMeta, initials, personTint, DriftDot, PresenceChip, presenceKind, presenceDates, presenceFirstDate, CountryFlag, ETAT_META, ALL_ETATS, ALL_GAMMES, GAMME_COLORS, MONTHS, today } from "../pjMeta";
 import { diffDays, fmtMode } from "../parsers";
-import { HoverPop, useSheetJS, Badge, DropFilter, NavIcon, useCloseOnSignal, EmptyState } from "./SharedUI";
+import { HoverPop, useSheetJS, Badge, DropFilter, NavIcon, useCloseOnSignal, EmptyState, pressable } from "./SharedUI";
 import { ProjectModal } from "./ProjectModal";
 import { RowMenu } from "./RowMenu";
 import { EtatPopBody, DriftPopBody, AvPopBody } from "./RowPops";
@@ -44,7 +44,7 @@ export function ColumnPicker({hidden,setHidden}){
       <div style={{position:"fixed",top:pos.top,left:pos.left,background:T.card,borderRadius:12,boxShadow:T.shadowLg,border:"1px solid "+T.line,zIndex:9999,minWidth:200,maxHeight:340,overflowY:"auto",fontFamily:T.font}}>
         <div style={{padding:"8px 12px",fontSize:FZ.sm,fontWeight:700,color:T.ink500,textTransform:"uppercase",letterSpacing:".03em",borderBottom:"1px solid "+T.line,background:T.surface}}>Colonnes visibles</div>
         {TABLE_COLUMNS.map(c=>{const visible=!hidden.has(c.id);return(
-          <div key={c.id} onClick={()=>toggle(c.id)} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",cursor:"pointer",borderBottom:"1px solid "+T.surface}}>
+          <div key={c.id} {...pressable(()=>toggle(c.id),{role:"checkbox","aria-checked":visible})} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",cursor:"pointer",borderBottom:"1px solid "+T.surface}}>
             <div style={{width:16,height:16,borderRadius:4,border:"1.5px solid "+(visible?T.teal500:T.ink100),background:visible?T.teal500:T.card,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{visible&&<span style={{color:"#fff",fontSize:FZ.sm,fontWeight:700}}>✓</span>}</div>
             <span style={{fontSize:FZ.md,color:T.ink700,fontWeight:visible?600:400}}>{c.label}</span>
           </div>
@@ -73,7 +73,7 @@ export function DateFormatPicker({df,setDf}){
     {open&&<>
       <div onClick={()=>setOpen(false)} style={{position:"fixed",inset:0,zIndex:9998}}/>
       <div style={{position:"fixed",top:pos.top,left:pos.left,background:T.card,borderRadius:12,boxShadow:T.shadowLg,border:"1px solid "+T.line,zIndex:9999,minWidth:150,overflow:"hidden",fontFamily:T.font}}>
-        {Object.entries(LABELS).map(([k,l])=><div key={k} onClick={()=>{setDf(k);setOpen(false);}} style={{padding:"8px 12px",cursor:"pointer",fontSize:FZ.sm,fontWeight:df===k?700:500,color:df===k?T.teal600:T.ink700,background:df===k?T.teal100:"transparent"}}>{l}</div>)}
+        {Object.entries(LABELS).map(([k,l])=><div key={k} {...pressable(()=>{setDf(k);setOpen(false);},{role:"radio","aria-checked":df===k})} style={{padding:"8px 12px",cursor:"pointer",fontSize:FZ.sm,fontWeight:df===k?700:500,color:df===k?T.teal600:T.ink700,background:df===k?T.teal100:"transparent"}}>{l}</div>)}
       </div>
     </>}
   </span>);
@@ -371,7 +371,7 @@ export function TableView({data,progress,df,setDf,selEtats,setSelEtats,selGammes
       {!panelCollapsed&&!popupMode&&<button onClick={togglePanel} style={{border:"none",background:"transparent",color:T.teal600,fontWeight:700,fontSize:FZ.xs,cursor:"pointer",padding:0,fontFamily:T.font,textDecoration:"underline"}}>Réduire le volet de droite pour les afficher</button>}
     </div>}
     {rows.length===0&&<EmptyState compact icon="search" title={onlyDrift?"Aucun PJ en dérive avec les filtres actuels.":"Aucun PJ ne correspond aux filtres actuels."} action="Tout afficher" onAction={()=>applyView(baseView())}/>}
-    <div ref={boxRef} onScroll={e=>{const v=e.currentTarget.scrollLeft>0;if(v!==scrolledX)setScrolledX(v);}} style={{overflow:"auto",maxHeight:"calc(100vh - 170px)",minHeight:240,padding:"0 4px"}}>
+    <div ref={boxRef} onScroll={e=>{const v=e.currentTarget.scrollLeft>0;if(v!==scrolledX)setScrolledX(v);}} style={{overflow:"auto",maxHeight:"calc(100dvh - 170px)",minHeight:240,padding:"0 4px"}}>
     {/* tableLayout:"auto" (plus "fixed") : les largeurs de colonnes ci-dessous ne sont plus que des
         points de départ — le navigateur élargit automatiquement une colonne si son contenu ne
         rentre pas, au lieu de le tronquer avec "..." ("ajuster automatiquement les colonnes pour

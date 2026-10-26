@@ -4,7 +4,7 @@ import { EtatInfoButton } from "./ProdStagesUI";
 import { T, FZF, mixHex, ganttSoft, stageSoft, stripeBg } from "../theme";
 import { fmt } from "../parsers";
 import { getPjMeta, ETAT_META, ALL_ETATS, MONTHS, today, ProjectLabelCell } from "../pjMeta";
-import { DropFilter, NavIcon } from "./SharedUI";
+import { DropFilter, NavIcon, pressable } from "./SharedUI";
 import { ProjectModal } from "./ProjectModal";
 
 // Couleurs lues à chaque rendu (accesseurs) : un tableau figé à l'import garderait le thème clair.
@@ -211,7 +211,7 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
       <div style={{width:colW+totalDays*dayW+endPad,height:1}}/>
     </div>
 
-    <div ref={scrollRef} onScroll={syncFromBottom} style={{display:"flex",overflowX:"auto",overflowY:"auto",maxHeight:"calc(100vh - 300px)",position:"relative"}}>
+    <div ref={scrollRef} onScroll={syncFromBottom} style={{display:"flex",overflowX:"auto",overflowY:"auto",maxHeight:"calc(100dvh - 300px)",position:"relative"}}>
       <div style={{width:colW,height:ganttH,flexShrink:0,position:"sticky",left:0,zIndex:8,background:T.surface,borderRight:"1px solid "+T.line,boxShadow:"2px 0 6px rgba(15,40,60,.04)"}}>
         <div className="enogia-lblcell" style={{height:HEADER_H,padding:"0 16px",display:"flex",alignItems:"center",fontSize:FZF.md,fontWeight:700,color:T.ink500,textTransform:"uppercase",letterSpacing:".04em",borderBottom:"1px solid "+T.line,background:T.surface,position:"sticky",top:0,zIndex:9}}>Projet</div>
         {items.map((it,ri)=>{
@@ -220,7 +220,7 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
           const r=it.r;
           const meta=getPjMeta(r.pj,r);
           const isSel=sel===r.pj;
-          return(<div key={ri} className="enogia-lblcell" onClick={()=>setSel(isSel?null:r.pj)} style={{height:rowH,padding:"6px 16px",display:"flex",flexDirection:"column",justifyContent:"center",gap:2,borderBottom:"1px solid "+T.surfaceAlt,borderLeft:"3px solid "+(isSel?T.teal500:"transparent"),background:isSel?T.surfaceAlt:"transparent",cursor:"pointer",transition:"background .12s ease, border-color .12s ease"}}
+          return(<div key={ri} className="enogia-lblcell" {...pressable(()=>setSel(isSel?null:r.pj),{"aria-pressed":isSel})} style={{height:rowH,padding:"6px 16px",display:"flex",flexDirection:"column",justifyContent:"center",gap:2,borderBottom:"1px solid "+T.surfaceAlt,borderLeft:"3px solid "+(isSel?T.teal500:"transparent"),background:isSel?T.surfaceAlt:"transparent",cursor:"pointer",transition:"background .12s ease, border-color .12s ease"}}
             onMouseEnter={e=>{if(!isSel)e.currentTarget.style.background=T.surfaceAlt;}}
             onMouseLeave={e=>{if(!isSel)e.currentTarget.style.background="transparent";}}>
             <ProjectLabelCell pj={r.pj} r={r} meta={meta}/>

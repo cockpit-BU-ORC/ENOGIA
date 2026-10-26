@@ -52,7 +52,7 @@ export function LoginScreen(){
   };
 
   return(
-    <div style={{position:"relative",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",padding:"52px 24px 24px",fontFamily:ROBOTO,overflow:"hidden",background:T.surface}}>
+    <div style={{position:"relative",minHeight:"100dvh",display:"flex",flexDirection:"column",alignItems:"center",padding:"52px 24px 24px",fontFamily:ROBOTO,overflow:"hidden",background:T.surface}}>
 
       {/* Carte du monde très discrète, en bleu acier, pour rester visible sur ce fond clair. */}
       <img src={process.env.PUBLIC_URL+"/world-map-bg.svg"} alt="" aria-hidden="true" style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:"min(1500px,170vw)",maxWidth:"none",pointerEvents:"none",zIndex:0}}/>

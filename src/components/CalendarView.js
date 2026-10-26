@@ -1,22 +1,12 @@
-import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { isPhone } from "../useIsPhone";
 import { EtatInfoButton } from "./ProdStagesUI";
 import { T, FZF, stagePalette, stageSoft } from "../theme";
 import { useMarks, NewMark } from "./ChangesNotice";
-import { getPjMeta, PresenceChip, presenceKind, presenceKindAt, presenceRing, PRESENCE_META, MONTHS_FULL, today, ETAT_META, ALL_ETATS, ProjectLabelCell, relTime, Avatar } from "../pjMeta";
-import { NavIcon, DropFilter } from "./SharedUI";
+import { getPjMeta, PresenceChip, presenceKind, presenceKindAt, presenceRing, PRESENCE_META, MONTHS_FULL, today, ETAT_META, ALL_ETATS, ProjectLabelCell } from "../pjMeta";
+import { DropFilter, pressable } from "./SharedUI";
 import { fmt, toLocalISO, weekStartOf } from "../parsers";
 
-// Palette cyclique pour distinguer chaque machine (PJ) dans le calendrier
-export const PJ_PALETTE=["#0d9bb5","#7c3aed","#d97706","#059669","#dc2626","#9333ea","#0e8fa8","#65a30d","#c2761a","#2563eb","#be185d","#0f766e","#b45309","#4338ca","#16a34a"];
-export function usePjColors(data){
-  return useMemo(()=>{
-    const pjs=[...new Set(data.map(r=>r.pj))].sort();
-    const m={};
-    pjs.forEach((pj,i)=>{m[pj]=PJ_PALETTE[i%PJ_PALETTE.length];});
-    return m;
-  },[data]);
-}
 export function getWeekStatus(r,weekStart,weekEnd){
   const a=r.arrivee?new Date(r.arrivee):null;
   const t1=r.tests?new Date(r.tests):null;
@@ -72,7 +62,7 @@ export function getDayStatus(r,day,excludedDates){
   });
   return milestones.length?milestones.join(" + "):null;
 }
-export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayAnchor,setDayAnchor,closurePeriods,productionExclusions,comments,addComment,zoomLevel:zoomRaw,setZoomLevel,pinOk,authorName,selEtats,setSelEtats,allPJs,selPJs,setSelPJs}){
+export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayAnchor,setDayAnchor,closurePeriods,productionExclusions,zoomLevel:zoomRaw,setZoomLevel,selEtats,setSelEtats,allPJs,selPJs,setSelPJs}){
   const {marks}=useMarks();
   const isClosurePeriod=(colStart,colEnd)=>{
     if(!closurePeriods||!closurePeriods.length)return false;
@@ -92,17 +82,17 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
   const WEEK_BAND_H=18;
   const headerTop=MONTH_H+(mode==="day"?WEEK_BAND_H:0);
   // zoomLevel est désormais géré au niveau de App (props) pour persister quand on quitte/revient sur cet onglet
-  const [commentPopup,setCommentPopup]=useState(null); // {pj, dateIso}
-  const closeCommentPopup=useCallback(()=>setCommentPopup(null),[]);
   // v167 : l'infobulle vit dans son propre composant (CalTip) — avant, chaque mouvement de souris
   // redessinait toute la grille (des dizaines de milliers de cases) et figeait la page.
   const tipRef=useRef(null);
   const setTip=t=>{if(tipRef.current)tipRef.current(t);};
-  const WEEK_COUNTS=[6,8,14,24,36];
+  // v170 : niveau 0 = 5 semaines (S-1, S, S+1…S+3) ; niveau 3 du mode Jour = 29 jours (J-7 → J+21). Voir HOME_ZOOM.
+  const WEEK_COUNTS=[5,8,14,24,36];
   // Niveau "6" ajouté devant (demandé explicitement : "il faut dézoomer pour avoir une vision plus
   // claire") — colonnes jour nettement plus larges pour une vue moins chargée ; décale aussi le
   // niveau par défaut (App.js) vers des colonnes plus larges sans changer son code.
-  const DAY_COUNTS=[6,9,14,21,35,52,84,168,252];
+  const DAY_COUNTS=[9,14,21,29,35,52,84,168,252];
+  const HOME_ZOOM=mode==="week"?0:3;
   const maxZoomLevel=mode==="week"?WEEK_COUNTS.length-1:DAY_COUNTS.length-1;
   // Zoom invalide (NaN, négatif) → niveau par défaut, sinon nWeeks/nDays indéfinis font planter l'en-tête.
   const zoomLevel=Number.isFinite(zoomRaw)&&zoomRaw>=0?Math.round(zoomRaw):2;
@@ -206,17 +196,21 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
   // était coupée et la grille ne tombait jamais juste. Désormais on compte les poids EXACTS des
   // colonnes visibles (jours ouvrés 1, week-end 0,6) et, si l'écran est trop étroit pour le zoom
   // demandé, on affiche quelques colonnes de moins plutôt que de déborder.
-  const MIN_COL=Math.ceil(longestWordPx+3*2+3*2+6); // inset de tuile + marge intérieure + filet
+  const WORD_COL=Math.ceil(longestWordPx+3*2+3*2+6); // inset de tuile + marge intérieure + filet
+  // v170 : en vue Jour, les colonnes peuvent descendre sous la largeur d'un mot (29 jours à l'écran) ;
+  // la case ne garde alors que la couleur de l'étape, le détail reste dans l'infobulle.
+  const MIN_COL=mode==="week"?WORD_COL:28;
   const avail=Math.max(200,viewW-LEFT_W);
   const weightOf=n=>mode==="week"?n:days.slice(0,n).reduce((a,d)=>a+((d.getDay()===0||d.getDay()===6)?WE_RATIO:1),0);
   let effCount=visCount;
   while(effCount>1&&avail/weightOf(effCount)<MIN_COL)effCount--;
-  // Vue CENTRÉE sur la date du jour (demandé : « les centrer sur la date du jour ») : la plage visible
-  // commence ~la moitié des colonnes avant aujourd'hui, donc « aujourd'hui » tombe au milieu. Appliqué à
+  // v170 (demandé : « le jour J à gauche en gardant la semaine passée, à droite les 3 prochaines semaines ») :
+  // la plage commence 7 jours (ou 1 semaine) avant aujourd'hui et le zoom revient à J-7 → J+21. Appliqué à
   // l'ouverture (une fois la largeur mesurée), au changement Semaine/Jour et sur « Aujourd'hui ».
   const centerOnToday=()=>{
-    if(mode==="week"){const w=weekStartOf(today);w.setDate(w.getDate()-7*Math.floor((effCount-1)/2));setAnchor(w);}
-    else{const d=new Date(today);d.setHours(0,0,0,0);d.setDate(d.getDate()-Math.floor(effCount/2));setDayAnchor(d);}
+    setZoomLevel(HOME_ZOOM);
+    if(mode==="week"){const w=weekStartOf(today);w.setDate(w.getDate()-7);setAnchor(w);}
+    else{const d=new Date(today);d.setHours(0,0,0,0);d.setDate(d.getDate()-7);setDayAnchor(d);}
     if(scrollRef.current)scrollRef.current.scrollLeft=0;
     setScrollPos(p=>p.x===0?p:{x:0,y:p.y});
   };
@@ -229,6 +223,7 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
   const unit=Math.floor((avail/weightOf(effCount))*100)/100;
   const colPx=unit;
   const wePx=Math.floor(unit*WE_RATIO*100)/100;
+  const showWords=mode==="week"||colPx>=WORD_COL;
   // Plage de colonnes à dessiner [lo, hi] d'après le défilement horizontal.
   const colW=cols.map(c=>mode==="week"?colPx:((c.getDay()===0||c.getDay()===6)?wePx:colPx));
   const colX=[];colW.reduce((acc,w)=>{colX.push(acc);return acc+w;},0);
@@ -276,7 +271,7 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
     </div>
 
     <div ref={scrollRef} onScroll={onGridScroll}
-      style={{overflowX:"auto",overflowY:"auto",maxHeight:"calc(100vh - 260px)"}}>
+      style={{overflowX:"auto",overflowY:"auto",maxHeight:"calc(100dvh - 260px)"}}>
       <div style={{display:"grid",width:"max-content",minWidth:"100%",gridTemplateRows:MONTH_H+"px "+(mode==="day"?WEEK_BAND_H+"px ":"")+"auto"+(pjs.length?" repeat("+pjs.length+","+ROW_PX+"px)":""),gridTemplateColumns:LEFT_W+"px "+(mode==="week"
         ?"repeat("+cols.length+","+colPx+"px)"
         :cols.map(d=>(d.getDay()===0||d.getDay()===6)?wePx+"px":colPx+"px").join(" ")
@@ -340,7 +335,7 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
             {/* Même bloc "Projet" que le Gantt (demandé explicitement : "même type de projet entre le
                 gantt et le calendrier, ça doit être un copier-coller") — composant partagé, voir
                 pjMeta.js. */}
-            <div className="enogia-lblcell" onClick={()=>onSelectPj&&onSelectPj(pj)} style={{padding:"6px 14px",display:"flex",flexDirection:"column",justifyContent:"center",gap:2,height:rowH,width:LEFT_W,minWidth:LEFT_W,maxWidth:LEFT_W,boxSizing:"border-box",borderBottom:"1px solid "+T.line,borderRight:"1px solid "+T.line,background:rowBg,position:"sticky",left:0,cursor:"pointer",overflow:"hidden",zIndex:5,gridColumn:1,gridRow:row}}>
+            <div className="enogia-lblcell" {...pressable(()=>onSelectPj&&onSelectPj(pj),{"aria-label":"Ouvrir la fiche "+pj})} style={{padding:"6px 14px",display:"flex",flexDirection:"column",justifyContent:"center",gap:2,height:rowH,width:LEFT_W,minWidth:LEFT_W,maxWidth:LEFT_W,boxSizing:"border-box",borderBottom:"1px solid "+T.line,borderRight:"1px solid "+T.line,background:rowBg,position:"sticky",left:0,cursor:"pointer",overflow:"hidden",zIndex:5,gridColumn:1,gridRow:row}}>
               <ProjectLabelCell pj={pj} r={r} meta={meta} mark={marks.get(pj)?<NewMark mark={marks.get(pj)}/>:null}/>
             </div>
             {mode==="week"?weeks.slice(lo,hi+1).map((w,k)=>{
@@ -372,16 +367,7 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
               const closed=isClosurePeriod(d,dEnd);
               const cellBg=closed?T.ink100:isTodayCol?T.red500+"14":isWE?T.ink100:rowBg;
               const todayEdge=isTodayCol?"inset 2px 0 0 "+T.red500+", inset -2px 0 0 "+T.red500:"none";
-              const iso=toLocalISO(d);
-              const dayComments=(comments?.[pj]||[]).filter(c=>c.linkedDate===iso&&(pinOk||!c.private));
-              const hasComment=dayComments.length>0;
-              const openCommentPopup=e=>{
-                e.stopPropagation();
-                setCommentPopup({pj,dateIso:iso});
-              };
-              if(!status)return(<div key={di} className="enogia-cal-daycell" style={{...pos,height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,background:cellBg,boxShadow:todayEdge,position:"relative"}}>
-                <button onClick={openCommentPopup} className={"enogia-cal-commentbtn"+(hasComment?" has-comment":"")} title={hasComment?dayComments.length+" commentaire(s) ce jour":"Ajouter un commentaire ce jour"} style={{position:"absolute",bottom:2,right:2,background:hasComment?T.card:"none",border:hasComment?"1.5px solid "+T.teal500:"none",borderRadius:hasComment?"50%":0,boxShadow:hasComment?T.shadowSm:"none",width:hasComment?22:16,height:hasComment?22:16,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:hasComment?T.teal600:T.ink300,padding:0,zIndex:8}}><NavIcon name="comments" size={hasComment?12:11}/></button>
-              </div>);
+              if(!status)return(<div key={di} className="enogia-cal-daycell" style={{...pos,height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,background:cellBg,boxShadow:todayEdge,position:"relative"}}/>);
               const lastMilestone=status.split(" + ").pop();
               const st=SEGMENT_STYLE[lastMilestone]||SEGMENT_STYLE["Production"];
               const fill=stageFill(status);
@@ -394,10 +380,9 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
               // explicitement : "les étapes sont pas au milieu des tiles et dépassent de celles-ci".
               return(<div key={di} className="enogia-cal-daycell" onClick={()=>onSelectPj&&onSelectPj(pj)} onMouseEnter={e=>{e.currentTarget.style.background=T.teal100+"50";}} onMouseMove={e=>setTip({r,status,pKind:showPresence?pKind:null,label:DAY_NAMES[d.getDay()]+" "+fmt(d),x:e.clientX,y:e.clientY})} onMouseLeave={e=>{e.currentTarget.style.background=cellBg;setTip(null);}} style={{...pos,height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,boxShadow:todayEdge,cursor:"pointer",background:cellBg,position:"relative",transition:"background .12s ease"}}>
                 <div style={{position:"absolute",inset:3,borderRadius:4,background:fill.background,boxShadow:showPresence?presenceRing(pKind):T.mode==="dark"?"inset 0 0 0 1px "+st.t+"33":"none",overflow:"hidden",opacity:closed?0.45:1,display:"flex",flexDirection:"column",gap:2,alignItems:"center",justifyContent:"center",padding:"0 3px"}}>
-                  <span style={{fontSize:FZF.xs,fontWeight:fill.bold?700:600,color:fill.color,textAlign:"center",lineHeight:1.15}}>{status}</span>
-                  {showPresence&&<PresenceChip kind={pKind} compact tiny fontSize={9.5}/>}
+                  {showWords&&<span style={{fontSize:FZF.xs,fontWeight:fill.bold?700:600,color:fill.color,textAlign:"center",lineHeight:1.15}}>{status}</span>}
+                  {showWords&&showPresence&&<PresenceChip kind={pKind} compact tiny fontSize={9.5}/>}
                 </div>
-                <button onClick={openCommentPopup} className={"enogia-cal-commentbtn"+(hasComment?" has-comment":"")} title={hasComment?dayComments.length+" commentaire(s) ce jour":"Ajouter un commentaire ce jour"} style={{position:"absolute",bottom:-6,left:-4,background:hasComment?T.card:"none",border:hasComment?"1.5px solid "+T.teal500:"none",borderRadius:hasComment?"50%":0,boxShadow:hasComment?T.shadowSm:"none",width:hasComment?24:16,height:hasComment?24:16,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:hasComment?T.teal600:T.ink300,padding:0,zIndex:8}}><NavIcon name="comments" size={hasComment?13:11}/></button>
               </div>);
             })}
           </React.Fragment>);
@@ -420,8 +405,6 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
 
     <CalTip apiRef={tipRef}/>
 
-    {commentPopup&&<CalCommentPopup key={commentPopup.pj+"|"+commentPopup.dateIso} popup={commentPopup} onClose={closeCommentPopup}
-      comments={comments} addComment={addComment} pinOk={pinOk} authorName={authorName}/>}
   </div>);
 }
 
@@ -445,77 +428,3 @@ function CalTip({apiRef}){
   </div>);
 }
 
-// v167 : fenêtre de commentaire isolée — la saisie ne redessine plus la grille à chaque touche.
-function CalCommentPopup({popup,onClose,comments,addComment,pinOk,authorName}){
-  const [commentAuthor,setCommentAuthor]=useState("");
-  const [commentText,setCommentText]=useState("");
-  const [commentErr,setCommentErr]=useState("");
-  const [commentPrivate,setCommentPrivate]=useState(false);
-  // Fermeture au clavier (Échap), même comportement que la fiche projet (ProjectModal).
-  useEffect(()=>{
-    const onKey=e=>{if(e.key==="Escape")onClose();};
-    window.addEventListener("keydown",onKey);
-    return ()=>window.removeEventListener("keydown",onKey);
-  },[onClose]);
-  return(<div onClick={()=>onClose()} style={{position:"fixed",inset:0,background:"transparent",zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",padding:20,fontFamily:T.font}}>
-    <div onClick={e=>e.stopPropagation()} style={{background:T.card,borderRadius:16,padding:22,maxWidth:440,width:"100%",boxShadow:T.shadowLg}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
-        <div>
-          <div style={{fontFamily:T.fontDisplay,fontWeight:700,fontSize:FZF.lg,color:T.ink900}}>Commentaire — {popup.pj}</div>
-          <div style={{color:T.ink500,fontSize:FZF.md,marginTop:2}}>{fmt(new Date(popup.dateIso))}</div>
-        </div>
-        <button onClick={()=>onClose()} style={{background:T.surface,border:"none",borderRadius:8,width:30,height:30,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:T.ink700}}><NavIcon name="close" size={14}/></button>
-      </div>
-
-      {/* Composeur toujours en haut, dans son propre cadre — même pattern que la fiche projet
-          (onglet Commentaires) pour une gestion cohérente partout dans l'appli. */}
-      <div style={{background:T.surface,borderRadius:12,padding:14,marginBottom:16}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,gap:8,flexWrap:"wrap"}}>
-          {authorName?
-            <span style={{fontSize:FZF.sm,color:T.ink500}}>En tant que <strong style={{color:T.ink700}}>{authorName}</strong></span>
-            :<input type="text" value={commentAuthor} onChange={e=>{setCommentAuthor(e.target.value);setCommentErr("");}} placeholder="Votre nom (obligatoire)" maxLength={40}
-              style={{padding:"7px 11px",borderRadius:8,border:"1px solid "+(commentErr?T.red500:T.line),fontSize:FZF.sm,fontFamily:T.font,color:T.ink700}}/>}
-          {pinOk?<label style={{display:"flex",alignItems:"center",gap:6,fontSize:FZF.sm,color:T.ink500,fontWeight:600,cursor:"pointer"}}>
-            <input type="checkbox" checked={commentPrivate} onChange={e=>setCommentPrivate(e.target.checked)}/> Privé
-          </label>:<span/>}
-        </div>
-        {commentErr&&<div style={{fontSize:FZF.sm,color:T.red500,marginBottom:6}}>{commentErr}</div>}
-        <textarea value={commentText} onChange={e=>setCommentText(e.target.value)} placeholder="Votre commentaire..." rows={3} maxLength={1000}
-          style={{padding:"9px 12px",borderRadius:9,border:"1px solid "+T.line,fontSize:FZF.md,fontFamily:T.font,color:T.ink700,resize:"vertical",width:"100%",boxSizing:"border-box",background:T.card}}/>
-        <div style={{display:"flex",justifyContent:"flex-end",marginTop:8}}>
-          <button onClick={async ()=>{
-            const author=authorName||commentAuthor;
-            if(!author.trim()){setCommentErr("Le nom est obligatoire pour publier un commentaire.");return;}
-            if(!commentText.trim())return;
-            const ok=await addComment(popup.pj,author,commentText,popup.dateIso,commentPrivate);
-            if(ok){setCommentText("");setCommentAuthor("");setCommentPrivate(false);}
-          }} disabled={!commentText.trim()} style={{padding:"8px 18px",borderRadius:8,border:"none",background:commentText.trim()?T.teal500:T.surfaceAlt,color:commentText.trim()?"#fff":T.ink300,fontSize:FZF.md,fontWeight:700,cursor:commentText.trim()?"pointer":"default"}}>Publier</button>
-        </div>
-      </div>
-
-      {(()=>{
-        const dayComments=(comments?.[popup.pj]||[]).filter(c=>c.linkedDate===popup.dateIso&&(pinOk||!c.private));
-        return(<>
-          <div style={{fontSize:FZF.sm,fontWeight:700,color:T.ink300,textTransform:"uppercase",letterSpacing:".04em",marginBottom:8}}>{dayComments.length} commentaire{dayComments.length!==1?"s":""}</div>
-          {/* Refonte "chat" (demandé explicitement : "je vois ça plus comme un chat gmail") — même
-              registre que la page Commentaires et la fiche projet. */}
-          {dayComments.length>0?<div style={{display:"flex",flexDirection:"column",gap:12,maxHeight:220,overflowY:"auto",paddingRight:2}}>
-            {dayComments.map((c,i)=>(
-              <div key={i} style={{display:"flex",gap:9}}>
-                <Avatar name={c.author} tint={c.private?T.amber500:T.teal500} size={26}/>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{display:"flex",alignItems:"baseline",gap:6,flexWrap:"wrap",marginBottom:2}}>
-                    <span style={{fontWeight:700,color:T.ink700,fontSize:FZF.sm}}>{c.author}</span>
-                    {c.private&&<span style={{fontSize:FZF.xs,color:T.amber600,background:T.amber100,borderRadius:4,padding:"1px 5px",fontWeight:700}}>Privé</span>}
-                    <span style={{fontSize:FZF.xs,color:T.ink300}}>{relTime(c.date)}</span>
-                  </div>
-                  <div style={{background:c.private?T.amber100:T.card,borderRadius:"3px 12px 12px 12px",padding:"8px 12px",display:"inline-block",maxWidth:"100%",fontSize:FZF.sm,color:T.ink700,whiteSpace:"pre-wrap"}}>{c.text}</div>
-                </div>
-              </div>
-            ))}
-          </div>:<div style={{textAlign:"center",color:T.ink300,fontSize:FZF.sm,padding:"18px 0"}}>Aucun commentaire pour l'instant sur ce jour.</div>}
-        </>);
-      })()}
-    </div>
-  </div>);
-}

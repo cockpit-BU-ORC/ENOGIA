@@ -260,4 +260,8 @@ export const RELEASE_CATALOG = [
     ["Départs", "Colonne à droite avec accès au calendrier."],
     ["Parcours", "Machines ouvertes par étape sur une seule barre."],
   ] },
+  { v: "170", t: "Calendrier recentré, tout au clavier", items: [
+    ["Calendrier", "Semaine passée à gauche, 3 semaines à venir à droite ; commentaires par jour retirés."],
+    ["Clavier", "Filtres, listes et lignes utilisables avec Tab et Entrée ; Échap ferme les fenêtres."],
+  ] },
 ];

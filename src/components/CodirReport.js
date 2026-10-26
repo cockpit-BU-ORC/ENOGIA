@@ -439,7 +439,7 @@ export function CodirDialog({data,initialData,comments,delays,progress,initialPj
   const nCov=withCover&&chosen.length?1:0;const nSum=withSummary?chunks.length:0;const total=nCov+nSum+chosen.length+nCov;
   const chip=(on)=>({border:"1px solid "+(on?T.teal500:T.line),background:on?T.teal100:"transparent",color:on?T.teal600:T.ink500,borderRadius:8,padding:"3px 9px",fontSize:11.5,fontWeight:700,cursor:"pointer",fontFamily:T.font});
   return createPortal(
-    <div id="codir-root" style={{position:"fixed",inset:0,zIndex:10050,background:T.surface,display:"flex",flexDirection:"column",fontFamily:T.font}}>
+    <div id="codir-root" role="dialog" aria-modal="true" aria-label="Rapport CODIR" style={{position:"fixed",inset:0,zIndex:10050,background:T.surface,display:"flex",flexDirection:"column",fontFamily:T.font}}>
       <div className="codir-noprint" style={{display:"flex",alignItems:"center",gap:14,padding:"10px 18px",background:T.card,borderBottom:"1px solid "+T.line,flexWrap:"wrap"}}>
         <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:17,color:T.ink900,display:"flex",alignItems:"center",gap:9}}><NavIcon name="chart" size={18}/>Rapport CODIR</div>
         <label style={{display:"inline-flex",alignItems:"center",gap:7,fontSize:12.5,color:T.ink500,fontWeight:600}}>Date du CODIR<input type="date" value={meeting} onChange={e=>e.target.value&&setMeeting(e.target.value)} style={{padding:"4px 8px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink900,fontFamily:T.font,fontSize:12.5,colorScheme:T.mode==="dark"?"dark":"light"}}/></label>

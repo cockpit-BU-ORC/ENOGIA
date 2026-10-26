@@ -105,7 +105,7 @@ export function FeuPicker({value,onChange,size=16,disabled}){
       const on=value===lv;const c=feuColor(lv);const sh=feuShape(lv,size);
       return(<button key={lv} type="button" disabled={disabled} title={lab+(on?" (cliquer pour effacer)":"")} aria-label={lab} aria-pressed={on} onClick={()=>onChange(on?null:lv)}
         style={{width:size+8,height:size+8,display:"inline-flex",alignItems:"center",justifyContent:"center",border:"none",background:"transparent",padding:0,cursor:disabled?"default":"pointer",opacity:value&&!on?.35:1}}>
-        <span style={{...sh,boxSizing:"border-box",border:"2px solid "+c,background:on?c:"transparent",boxShadow:on?"0 0 0 3px "+c+"33":"none",transition:"all .12s ease",display:"block"}}/>
+        <span style={{...sh,boxSizing:"border-box",border:"2px solid "+c,background:on?c:"transparent",boxShadow:on?"0 0 0 3px "+c+"33":"none",transition:"background-color .12s ease, box-shadow .12s ease",display:"block"}}/>
       </button>);
     })}
   </span>);

@@ -67,9 +67,6 @@
 /* Calendrier, mode Jour : le bouton "ajouter un commentaire" ne reste visible en permanence que
    lorsqu'un commentaire existe déjà — sinon il n'apparaît qu'au survol de la cellule (demandé
    explicitement : trop de "logos commentaires" affichés sur chaque jour). */
-.enogia-cal-commentbtn { opacity: 0; transition: opacity .12s ease; }
-.enogia-cal-commentbtn.has-comment { opacity: 1; }
-.enogia-cal-daycell:hover .enogia-cal-commentbtn { opacity: 1; }
 
 .enogia-skeleton {
   background: linear-gradient(90deg, rgba(128,138,150,.14) 25%, rgba(128,138,150,.26) 37%, rgba(128,138,150,.14) 63%);

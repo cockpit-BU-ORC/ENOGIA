@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { T, FZ } from "../theme";
 import { SerieTag, getPjMeta, CountryFlag, relTime, Avatar } from "../pjMeta";
-import { NavIcon, EmptyState, SuperOnly } from "./SharedUI";
+import { NavIcon, EmptyState, SuperOnly, pressable } from "./SharedUI";
 
 // Vue Kanban des commentaires (demandé explicitement : "des tuiles comme un kanban pour chaque PJ
 // et des tuiles regroupées pour les commentaires multiples") — une colonne par PJ, une carte par
@@ -37,7 +37,7 @@ function Card({c,onDelete,confirming,pinInput,setPinInput,onConfirm,onCancel,onJ
 
 function Column({title,sub,accent,count,children,headerExtra,onHeaderClick,width,span2}){
   return(<div style={{width,flexShrink:0,gridRow:span2?"1 / span 2":undefined,display:"flex",flexDirection:"column",background:T.surfaceAlt,borderRadius:12,maxHeight:"100%",minHeight:0}}>
-    <div onClick={onHeaderClick} style={{padding:"12px 12px 8px",display:"flex",alignItems:"center",gap:8,borderBottom:"2px solid "+accent,cursor:onHeaderClick?"pointer":"default",flexShrink:0}}>
+    <div {...(onHeaderClick?pressable(onHeaderClick):{})} style={{padding:"12px 12px 8px",display:"flex",alignItems:"center",gap:8,borderBottom:"2px solid "+accent,cursor:onHeaderClick?"pointer":"default",flexShrink:0}}>
       <div style={{minWidth:0,flex:1}}>
         {/* Nom complet du projet visible (demandé : « on ne voit pas encore les noms complets ») : le titre peut passer sur 2 lignes au lieu d'être tronqué par « … ». */}
         <div style={{display:"flex",alignItems:"center",flexWrap:"wrap",columnGap:6,rowGap:1,minWidth:0}}>{title}</div>
@@ -118,7 +118,7 @@ export function CommentsKanban({data,comments,addComment,deleteComment,pinOk,aut
     if(ok){setDeleteTarget(null);setPinInput("");}
   };
 
-  return(<div style={twoRows?{display:"grid",gridTemplateRows:"minmax(0,1fr) minmax(0,1fr)",gridAutoFlow:"column",gridAutoColumns:colW+"px",gap:8,overflowX:"auto",height:"calc(100vh - 260px)",minHeight:480,paddingBottom:6}:{display:"flex",gap:12,overflowX:"auto",alignItems:"stretch",height:"calc(100vh - 260px)",minHeight:460,paddingBottom:6}}>
+  return(<div style={twoRows?{display:"grid",gridTemplateRows:"minmax(0,1fr) minmax(0,1fr)",gridAutoFlow:"column",gridAutoColumns:colW+"px",gap:8,overflowX:"auto",height:"calc(100dvh - 260px)",minHeight:480,paddingBottom:6}:{display:"flex",gap:12,overflowX:"auto",alignItems:"stretch",height:"calc(100dvh - 260px)",minHeight:460,paddingBottom:6}}>
     {/* Colonne des commentaires groupés (multi-PJ) */}
     <Column accent={T.violet500} count={groups.length} width={colW} span2={twoRows}
       title={<><span style={{color:T.violet600,display:"flex"}}><NavIcon name="layers" size={14}/></span><span style={{fontWeight:700,fontSize:FZ.sm,color:T.violet600}}>Groupés</span></>}

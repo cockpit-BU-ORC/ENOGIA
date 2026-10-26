@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from "react";
 import { T, FZ } from "../theme";
 import { fmt } from "../parsers";
 import { SerieTag, getPjMeta, CountryFlag, relTime, Avatar } from "../pjMeta";
-import { PjChecklist, NavIcon, SuperOnly } from "./SharedUI";
+import { PjChecklist, NavIcon, SuperOnly, pressable } from "./SharedUI";
 import { CommentsKanban } from "./CommentsKanban";
 import { MentionPicker, MentionTextarea } from "./MentionPicker";
 import { useMentions } from "../mentionContext";
@@ -141,7 +141,7 @@ export function CommentsView({data,comments,addComment,deleteComment,pinOk,addCo
 
   return(<div style={{fontFamily:T.font}}>
   {modeToggle}
-  <div style={{display:"flex",gap:12,fontFamily:T.font,height:"calc(100vh - 250px)",minHeight:480}}>
+  <div style={{display:"flex",gap:12,fontFamily:T.font,height:"calc(100dvh - 250px)",minHeight:480}}>
 
     {/* ── Liste des fils (par PJ) ── */}
     <div style={{width:280,flexShrink:0,background:T.card,borderRadius:16,boxShadow:T.shadowMd,display:"flex",flexDirection:"column",overflow:"hidden"}}>
@@ -154,7 +154,7 @@ export function CommentsView({data,comments,addComment,deleteComment,pinOk,addCo
         </label>
       </div>
 
-      {pinOk&&<div onClick={selectAll} style={{padding:"8px 12px",cursor:"pointer",background:viewAll?T.teal100:T.card,borderBottom:"1px solid "+T.line,display:"flex",alignItems:"center",gap:8}}>
+      {pinOk&&<div {...pressable(selectAll,{"aria-pressed":viewAll})} style={{padding:"8px 12px",cursor:"pointer",background:viewAll?T.teal100:T.card,borderBottom:"1px solid "+T.line,display:"flex",alignItems:"center",gap:8}}>
         <div style={{width:30,height:30,borderRadius:8,background:T.surface,color:T.teal600,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><NavIcon name="list" size={15}/></div>
         <div style={{minWidth:0}}>
           <div style={{fontWeight:700,color:T.ink900,fontSize:FZ.sm}}>Tous les commentaires</div>
@@ -167,7 +167,7 @@ export function CommentsView({data,comments,addComment,deleteComment,pinOk,addCo
         <div style={{maxHeight:180,overflowY:"auto"}}>
           {groupsList.map(g=>{
             const active=!viewAll&&g.groupPjs.every(p=>viewPjs.has(p))&&viewPjs.size===g.groupPjs.length;
-            return(<div key={g.groupId} onClick={()=>selectGroup(g.groupPjs)}
+            return(<div key={g.groupId} {...pressable(()=>selectGroup(g.groupPjs))}
               style={{padding:"8px 12px",cursor:"pointer",background:active?T.violet100:"transparent",display:"flex",alignItems:"center",gap:8}}
               onMouseEnter={e=>{if(!active)e.currentTarget.style.background=T.surface;}}
               onMouseLeave={e=>{if(!active)e.currentTarget.style.background="transparent";}}>
@@ -187,7 +187,7 @@ export function CommentsView({data,comments,addComment,deleteComment,pinOk,addCo
       <div style={{overflowY:"auto",flex:1}}>
         {sidebarList.map(row=>{
           const active=viewAll?false:(!multiSelectMode&&viewPjs.has(row.pj));
-          return(<div key={row.pj} onClick={()=>{if(!multiSelectMode)selectSingle(row.pj);}}
+          return(<div key={row.pj} {...pressable(()=>{if(!multiSelectMode)selectSingle(row.pj);})}
             style={{padding:"8px 12px",cursor:multiSelectMode?"default":"pointer",opacity:multiSelectMode?.55:1,background:active?T.teal100:T.card,borderBottom:"1px solid "+T.surface,display:"flex",alignItems:"center",gap:8}}>
             {row.last?<Avatar name={row.last.author} tint={row.last.private?T.amber500:T.teal500}/>:
               <div style={{width:30,height:30,borderRadius:"50%",background:T.surfaceAlt,flexShrink:0}}/>}

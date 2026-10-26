@@ -35,6 +35,8 @@ export const closeAllMenus=()=>{try{window.dispatchEvent(new Event("enogia:close
 export function useCloseOnSignal(setOpen){
   useEffect(()=>{const f=()=>setOpen(false);window.addEventListener("enogia:closemenus",f);return()=>window.removeEventListener("enogia:closemenus",f);},[setOpen]);
 }
+// v170 : rend une zone cliquable utilisable au clavier (Tab puis Entrée ou Espace), avec son rôle et son état.
+export const pressable=(fn,extra={})=>({role:"button",tabIndex:0,onClick:fn,onKeyDown:e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();fn(e);}},...extra});
 export function DropFilter({label,options,selected,onChange,getLabel,icon,sort}){
   const [open,setOpen]=useState(false);
   useCloseOnSignal(setOpen);
@@ -73,7 +75,7 @@ export function DropFilter({label,options,selected,onChange,getLabel,icon,sort})
                 <span style={{fontSize:FZ.xs,color:on?T.teal600:T.ink700,fontWeight:on?700:500}}>{o.label}</span>
               </div>);})}
           </div>}
-          <div onClick={()=>onChange(all?new Set():new Set(options))} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",cursor:"pointer",borderBottom:"1px solid "+T.line,background:T.surface,flexShrink:0,borderRadius:"10px 10px 0 0"}}>
+          <div {...pressable(()=>onChange(all?new Set():new Set(options)),{role:"checkbox","aria-checked":all})} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",cursor:"pointer",borderBottom:"1px solid "+T.line,background:T.surface,flexShrink:0,borderRadius:"10px 10px 0 0"}}>
             <div style={{width:13,height:13,borderRadius:4,border:"1.5px solid "+(all?T.teal500:T.ink100),background:all?T.teal500:T.card,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
               {all&&<span style={{color:"#fff",fontSize:FZ.xs,fontWeight:700}}>✓</span>}
               {!all&&!none&&<span style={{color:T.teal600,fontSize:FZ.xs,fontWeight:700}}>—</span>}
@@ -82,7 +84,7 @@ export function DropFilter({label,options,selected,onChange,getLabel,icon,sort})
           </div>
           <div style={{overflowY:"auto",flex:1}}>
             {options.map(o=>{const a=selected.has(o);return(
-              <div key={o} onClick={()=>toggle(o)} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 12px",cursor:"pointer",background:a?T.teal100:T.card,borderBottom:"1px solid "+T.surface}}>
+              <div key={o} {...pressable(()=>toggle(o),{role:"checkbox","aria-checked":a})} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 12px",cursor:"pointer",background:a?T.teal100:T.card,borderBottom:"1px solid "+T.surface}}>
                 <div style={{width:13,height:13,borderRadius:4,border:"1.5px solid "+(a?T.teal500:T.ink100),background:a?T.teal500:T.card,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{a&&<span style={{color:"#fff",fontSize:FZ.xs,fontWeight:700}}>✓</span>}</div>
                 <span style={{fontSize:FZ.xs,color:T.ink700,fontWeight:a?600:400}}>{disp(o)}</span>
               </div>
@@ -137,7 +139,7 @@ export function PjChecklist({data,selected,onChange,maxHeight=220}){
       <input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher un PJ, un projet..." style={{flex:1,padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700,background:T.card}}/>
       <span style={{fontSize:FZ.xs,color:T.ink500,fontWeight:700,whiteSpace:"nowrap"}}>{selected.size} sélectionné{selected.size!==1?"s":""}</span>
     </div>
-    <div onClick={toggleAll} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 8px",cursor:"pointer",borderBottom:"1px solid "+T.line}}>
+    <div {...pressable(toggleAll,{role:"checkbox","aria-checked":allChecked})} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 8px",cursor:"pointer",borderBottom:"1px solid "+T.line}}>
       <div style={{width:15,height:15,borderRadius:4,border:"1.5px solid "+(allChecked?T.teal500:T.ink100),background:allChecked?T.teal500:T.card,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{allChecked&&<span style={{color:"#fff",fontSize:FZ.xs,fontWeight:700}}>✓</span>}</div>
       <span style={{fontSize:FZ.xs,fontWeight:700,color:T.ink700}}>Tout sélectionner{q?" (résultats filtrés)":""}</span>
     </div>
@@ -145,7 +147,7 @@ export function PjChecklist({data,selected,onChange,maxHeight=220}){
       {filtered.map(d=>{
         const meta=getPjMeta(d.pj,d);
         const checked=selected.has(d.pj);
-        return(<div key={d.pj} onClick={()=>toggle(d.pj)} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 8px",cursor:"pointer",background:checked?T.teal100:"transparent",borderBottom:"1px solid "+T.surface}}>
+        return(<div key={d.pj} {...pressable(()=>toggle(d.pj),{role:"checkbox","aria-checked":checked})} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 8px",cursor:"pointer",background:checked?T.teal100:"transparent",borderBottom:"1px solid "+T.surface}}>
           <div style={{width:15,height:15,borderRadius:4,border:"1.5px solid "+(checked?T.teal500:T.ink100),background:checked?T.teal500:T.card,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{checked&&<span style={{color:"#fff",fontSize:FZ.xs,fontWeight:700}}>✓</span>}</div>
           <span style={{fontWeight:700,color:T.ink900,fontSize:FZ.sm,fontFamily:T.fontMono,flexShrink:0}}>{d.pj}</span><SerieTag pj={d.pj}/>
           <span style={{fontSize:FZ.xs,color:T.ink500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{meta.nomProjet}</span>

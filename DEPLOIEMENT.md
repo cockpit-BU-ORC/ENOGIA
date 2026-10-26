@@ -928,3 +928,18 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - **Préférences** : même clé `localStorage` `enogia_home_<email>` ; les cases Pour moi / Mes tests / À surveiller / Depuis ma dernière visite pilotent désormais les lignes du bloc « À traiter ».
 - Vérifié par rendu statique (jsdom → HTML) en clair, en sombre, à 500 et 768 px de large ; pas testé dans l'appli connectée.
 - Fichiers : components/HomeView.js, theme.js, App.js (version), releaseNotes.js, releaseCatalog.js(+test).
+
+## v170 — Calendrier recentré et allégé, audit complet (ui-ux-pro-max)
+
+- **Calendrier** (`components/CalendarView.js`, `App.js`, `styles.css`) :
+  - Commentaires par jour retirés : bouton sur chaque case, fenêtre `CalCommentPopup`, styles `.enogia-cal-commentbtn`, props `comments` / `addComment` / `pinOk` / `authorName` du Calendrier. Les commentaires datés existants restent en base et visibles dans la fiche projet et la page Commentaires.
+  - Cadrage (demandé) : à l'ouverture, au changement Semaine/Jour et sur « Aujourd'hui », la plage commence à J-7 (vue Jour) ou à la semaine passée (vue Semaine), et le zoom revient au niveau « J-7 → J+21 » : `WEEK_COUNTS[0]=5` semaines, `DAY_COUNTS[3]=29` jours (`HOME_ZOOM`). Les niveaux +/− restent disponibles.
+  - Vue Jour : largeur minimale de colonne abaissée à 28 px pour faire tenir 29 jours ; sous la largeur d'un mot, la case ne garde que la couleur d'étape (`showWords`), le détail reste dans l'infobulle.
+  - Code mort retiré : `PJ_PALETTE`, `usePjColors`.
+- **Audit du site** (scan de tous les composants) et corrections :
+  - Clavier : nouvel utilitaire `pressable(fn, extra)` dans `SharedUI.js` (rôle, `tabIndex`, Entrée/Espace). Appliqué aux options de `DropFilter` et `PjChecklist` (`role="checkbox"` + `aria-checked`), au choix des colonnes et du format de date de la Liste, aux lignes du Gantt (`aria-pressed`), du Calendrier, des Commentaires, des en-têtes du Kanban et de la liste des fiches synthèse (`aria-current`).
+  - Dialogues : `role="dialog"` + `aria-modal` + nom sur la fiche projet en panneau latéral (déjà présent en mode centré), « Ajouter à l'initial » (+ Échap), rapport chef de projet, rapport CODIR.
+  - `100vh` → `100dvh` (11 composants) ; `transition: all` retiré dans `Feux.js`.
+  - Laissé volontairement : couleurs du logo Google (`LoginScreen`), nuancier de choix d'état (`EtatsDialog`), palette pastel des camemberts de `DashboardSummary` (demandée explicitement), tailles < 11 px des rapports imprimés.
+- Aucune clé `localStorage` nouvelle (le zoom du calendrier `enogia_calZoom` est réécrit au niveau J-7 → J+21 à chaque ouverture).
+- Fichiers : App.js, styles.css, components/{CalendarView,SharedUI,TableView,GanttView,CommentsView,CommentsKanban,ManagerFiche,ProjectModal,InitialAdd,CdpReport,CodirReport,Feux,CashInTab,LoginScreen,Series,ThemePicker}.js, releaseNotes.js, releaseCatalog.js(+test).

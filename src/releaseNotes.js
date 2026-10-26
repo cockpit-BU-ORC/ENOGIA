@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v170",
+    date: "2026-10-26",
+    title: "V170 : Calendrier recentré, tout au clavier",
+    items: [
+      { t: "Calendrier : la semaine passée et les 3 suivantes", d: "À l'ouverture et sur « Aujourd'hui », le calendrier montre la semaine passée à gauche puis les 3 prochaines semaines. En vue Jour, les cases étroites gardent la couleur de l'étape et le détail s'affiche au survol." },
+      { t: "Calendrier allégé", d: "Les commentaires par jour et leur fenêtre sont retirés du calendrier ; les commentaires restent dans la fiche projet et la page Commentaires." },
+      { t: "Utilisable au clavier", d: "Filtres, listes de PJ, lignes du Gantt, du Calendrier et des Commentaires s'ouvrent avec Tab puis Entrée ; les fenêtres se ferment avec Échap." },
+    ],
+  },
+  {
     id: "2026-10-v169",
     date: "2026-10-26",
     title: "V169 : un accueil plus direct",
