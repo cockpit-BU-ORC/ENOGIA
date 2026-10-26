@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v179",
+    date: "2026-10-26",
+    title: "V179 : écran de connexion et en-tête allégé",
+    items: [
+      { t: "Nouvel écran de connexion", d: "Plus clair et en un seul clic : « Continuer avec Google », avec ce que l'on trouve dans le site." },
+      { t: "Session d'une journée", d: "Pour la sécurité, la session se ferme chaque soir à minuit ; il suffit de se reconnecter le lendemain." },
+      { t: "Logo en haut du menu", d: "Le logo ENOGIA passe en haut du menu de gauche et la page commence tout de suite, sans bandeau." },
+    ],
+  },
+  {
     id: "2026-10-v178",
     date: "2026-10-26",
     title: "V178 : plus de place pour le contenu",

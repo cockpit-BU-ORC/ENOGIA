@@ -75,10 +75,7 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
   const on = id => (prefs[id] != null ? !!prefs[id] : defaults[id]);
   const available = id => id !== "tests" || !!myTester;
   const setPref = (id, v) => { const n = { ...prefs, [id]: v }; setPrefs(n); try { localStorage.setItem(prefKey(myEmail), JSON.stringify(n)); } catch (e) {} };
-  const profile = [pinOk ? "manager" : null, mine.length ? "chef de projet" : null, myTester ? "testeur" : null].filter(Boolean);
 
-  const dateLong = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
-  const dateLine = dateLong.charAt(0).toUpperCase() + dateLong.slice(1);
   // v169 (maquette validée) : cartes plates — bordure fine, pas d'ombre (l'ombre est réservée à ce qui flotte), liseré de 4 px conservé.
   const card = { background: T.card, borderRadius: R.lg, border: "1px solid " + T.line, padding: "14px 16px", minWidth: 0, boxSizing: "border-box" };
   const S = stageSoft(), H = stripeHues(), A = alertSoft();
@@ -144,11 +141,9 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
     <div style={{ fontFamily: T.font }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
         <div style={{ flex: 1, minWidth: 260 }}>
-          <div style={{ fontFamily: T.font, fontSize: 12, fontWeight: 700, color: T.accentInk, marginBottom: 6 }}>{dateLine}{lastImport ? " · import " + lastImport : ""} · BU ORC</div>
           <h1 className="enogia-view-in" style={{ margin: 0, fontFamily: T.fontDisplay, fontWeight: 300, fontSize: "clamp(24px,3.2vw,34px)", lineHeight: 1.18, letterSpacing: "-.02em", color: T.ink900, maxWidth: 820 }}>
             {hello()}{firstName ? " " + firstName : ""}. {num(inProd + " machine" + (inProd > 1 ? "s" : ""), S.production.ring)} avance{inProd > 1 ? "nt" : ""}, {num(late.length, T.amber500)} glisse{late.length > 1 ? "nt" : ""}, {num(next30, S.finProd.ring)} part{next30 > 1 ? "ent" : ""} d'ici un mois.
           </h1>
-          {profile.length > 0 && <div style={{ ...grey, marginTop: 6 }}>Vue adaptée à votre profil : {profile.join(" · ")}</div>}
         </div>
         <button type="button" className="enogia-ui-edit" onClick={() => setCustomize(v => !v)} aria-expanded={customize}
           style={{ border: "1px solid " + T.line, background: customize ? T.teal100 : "transparent", color: T.ink700, borderRadius: R.pill, padding: "6px 12px", minHeight: 28, fontSize: FZ.xs, fontWeight: 600, cursor: "pointer", fontFamily: T.font, display: "inline-flex", alignItems: "center", gap: 6 }}>

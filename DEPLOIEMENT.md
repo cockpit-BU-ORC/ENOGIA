@@ -1030,3 +1030,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Nouvelle clé `localStorage` : `enogia_manager_focus`.
 - Vérifié : test isolé du panneau des sous-pages (survol → menu → clic → navigation, fermeture) ; rendu statique de l'en-tête de page et de la phrase du jour. Pas testé dans l'appli connectée (défilement réel, Manager complet).
 - Fichiers : App.js, styles.css, components/{SharedUI,HomeView,DashboardSummary,ManagerNav,ManagerPanel,ManagerFiche}.js, releaseNotes.js, releaseCatalog.js(+test).
+
+## v179 — En-tête allégé, logo dans le menu, connexion refaite, déconnexion quotidienne
+
+- **En-tête** (`App.js`) : logo retiré de la barre du haut et placé en haut du menu latéral (blanc sur le marine, bouton vers l'accueil) pour que la page commence au même niveau que le menu ; la barre ne garde que les outils, sans fond ni filet (toujours masquée au défilement). Nombre d'unités, dernier import et « Enregistré à » **réservés aux admins** (`pinOk`), sur une ligne compacte ; le bouton d'import l'était déjà.
+- **Accueil** (`HomeView.js`) : ligne « date · import · BU ORC » et phrase « Vue adaptée à votre profil » retirées.
+- **Connexion** (`LoginScreen.js`) : écran refait en direction Atelier — panneau marine (logo, « Toutes les machines ORC, de l'atelier à la livraison » avec surligneur sur « atelier », les trois usages du site avec icônes Phosphor), connexion Google en un clic (étape « Entrer » supprimée), messages d'erreur explicites (fenêtre bloquée, réseau), mention de la session quotidienne ; plus d'ombres internes néomorphiques. `LoginTransition` inchangée.
+- **Déconnexion quotidienne** (`App.js`) : à la restauration de session, si `user.metadata.lastSignInTime` n'est pas aujourd'hui → `signOut` ; si le site reste ouvert, minuteur jusqu'à minuit + 5 s → `signOut`. Aucune écriture en base.
+- Vérifié : rendu statique de la connexion (bureau) ; build, tests, contraste. Pas testé dans l'appli connectée.
+- Fichiers : App.js, styles.css, components/{HomeView,LoginScreen}.js, releaseNotes.js, releaseCatalog.js(+test).

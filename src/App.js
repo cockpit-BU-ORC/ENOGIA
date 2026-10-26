@@ -64,7 +64,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-26-v178-place-contenu";
+const APP_BUILD_VERSION = "2026-10-26-v179-connexion-entete";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -94,6 +94,10 @@ export default function App(){
 
   useEffect(()=>{
     const unsub=onAuthStateChanged(auth,user=>{
+      // v179 : déconnexion forcée chaque jour (demandé) — une session ouverte un autre jour que celui-ci est fermée.
+      // lastSignInTime ne change qu'à une vraie connexion (pas au rafraîchissement du jeton) : c'est donc bien « connecté aujourd'hui ».
+      const signedDay=user&&user.metadata&&user.metadata.lastSignInTime?new Date(user.metadata.lastSignInTime).toDateString():null;
+      if(user&&signedDay&&signedDay!==new Date().toDateString()){signOut(auth);setCurrentUser(null);setAuthChecked(true);return;}
       if(user&&user.email&&user.email.toLowerCase().endsWith("@"+ALLOWED_EMAIL_DOMAIN)){
         setCurrentUser(user);
       }else{
@@ -104,6 +108,13 @@ export default function App(){
     });
     return ()=>unsub();
   },[]);
+  // v179 : si le site reste ouvert, déconnexion à minuit (heure locale) — l'écran de connexion réapparaît.
+  useEffect(()=>{
+    if(!currentUser)return;
+    const now=new Date(),midnight=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1,0,0,5);
+    const t=setTimeout(()=>{signOut(auth);},Math.max(1000,midnight-now));
+    return()=>clearTimeout(t);
+  },[currentUser]);
 
   const loggedIn=!!currentUser;
   // Nom à utiliser automatiquement pour les commentaires/retards : celui du compte Google connecté.
@@ -1000,8 +1011,10 @@ export default function App(){
     {/* ── Rail de navigation : icônes de vue + accès Manager + mode sombre ── */}
     <a href="#enogia-main" className="enogia-skip" onClick={e=>{e.preventDefault();const m=document.getElementById("enogia-main");if(m){m.focus();m.scrollIntoView&&m.scrollIntoView({block:"start"});}}}>Aller au contenu</a>
     <nav className={"enogia-nav"+(NAV.industrial?" enogia-nav-ind":"")} aria-label="Pages" style={{width:navCompact?64:216,transition:"width .28s var(--e-ease)",flexShrink:0,background:NAV.bg,borderRight:"1px solid "+NAV.border,display:"flex",flexDirection:"column",alignItems:navCompact?"center":"stretch",padding:navCompact?"16px 0":"16px 10px",gap:4,position:"sticky",top:0,zIndex:30,height:"100vh",overflowY:"auto",overflowX:"hidden",scrollbarWidth:"none"}}>
-      {/* Plus de logo ici (demandé explicitement : trop petit pour être lisible) — il ne reste
-          qu'au seul endroit où il est bien lisible, agrandi, dans l'en-tête. */}
+      {/* v179 (demandé : « le logo en haut à gauche pour avoir le début de la page au même niveau ») : le logo ouvre le menu, en blanc sur le marine. */}
+      <button type="button" onClick={()=>setView("home")} aria-label="ENOGIA — accueil" title="Accueil" style={{border:"none",background:"transparent",cursor:"pointer",padding:navCompact?"2px 0 10px":"2px 10px 12px",display:"flex",justifyContent:navCompact?"center":"flex-start",alignItems:"center",minHeight:44}}>
+        <img src={process.env.PUBLIC_URL+"/enogia-logo-color-crop.svg"} alt="" aria-hidden="true" width="105" height="42" style={{height:navCompact?24:34,width:"auto",maxWidth:navCompact?44:170,objectFit:"contain",objectPosition:"left center",filter:NAV.industrial||darkMode?"brightness(0) invert(1)":"none",transition:"height .28s var(--e-ease)"}}/>
+      </button>
       {[["Planning",["home","table","gantt","calendar"]],["Suivi",["changes","comments","tests"]]].map(([gl,ids])=>{const items=VIEWS.filter(v=>ids.includes(v.id));if(!items.length)return null;return(<React.Fragment key={gl}>
         {!navCompact&&<div className="enogia-nav-grp" style={{fontSize:12,fontWeight:700,color:NAV.group,fontFamily:T.font,padding:"12px 10px 4px",whiteSpace:"nowrap"}}>{gl}</div>}
         {navCompact&&<div className="enogia-nav-grp" style={{width:18,height:1,background:NAV.industrial?"rgba(255,255,255,.18)":T.line,margin:"4px 0"}}/>}
@@ -1026,20 +1039,14 @@ export default function App(){
       {IS_BETA&&<BetaBanner canCopy={canEditMeta}/>}
 
       {/* Barre de marque — fine, claire, sans dégradé : l'identité tient au logo + à la typo, pas à un bloc de couleur */}
-      <div className={"enogia-bar"+(hdrHidden?" is-hidden":"")} style={{flexShrink:0,minHeight:60,display:"flex",alignItems:"center",gap:16,padding:"8px 28px",background:hdrHidden?"transparent":T.card,borderBottom:"1px solid "+(hdrHidden?"transparent":T.line),flexWrap:"wrap",position:"sticky",top:0,zIndex:25,pointerEvents:hdrHidden?"none":"auto",transition:"background-color .28s ease, border-color .28s ease"}}>
-        {/* Le fichier logo d'origine a énormément de marge transparente autour du dessin réel
-            (~24% de sa hauteur seulement est visible) : l'agrandir ne suffisait donc pas, il
-            paraissait toujours minuscule. enogia-logo-color-crop.svg est recadré au plus près
-            du dessin (mark + "enogia"), donc la même hauteur rend un logo visuellement ~3x
-            plus grand qu'avant, comme demandé — sans avoir à démesurer toute la barre d'en-tête. */}
-        <img className="enogia-logo" src={process.env.PUBLIC_URL+"/enogia-logo-color-crop.svg"} alt="ENOGIA" width="105" height="42" style={{height:hdrHidden?34:42,width:"auto",objectFit:"contain",flexShrink:0,filter:darkMode?"brightness(0) invert(1)":"none",pointerEvents:"auto",padding:hdrHidden?"4px 8px":0,borderRadius:8,background:hdrHidden?T.surface:"transparent",boxShadow:hdrHidden?T.shadowSm:"none",transition:"height .28s var(--e-ease), padding .28s var(--e-ease), background-color .28s ease"}}/>
-        {/* v178 : plus de grand titre ici (demandé) — chaque page porte son titre (PageHead) ; seul le logo reste. */}
+      {/* v179 : le logo passe en haut du menu (même ligne de départ que la page) ; la barre ne garde que les outils, sans fond ni filet. */}
+      <div className={"enogia-bar"+(hdrHidden?" is-hidden":"")} style={{flexShrink:0,minHeight:44,display:"flex",alignItems:"center",gap:12,padding:"6px 28px 0",background:"transparent",flexWrap:"wrap",position:"sticky",top:0,zIndex:25,pointerEvents:hdrHidden?"none":"auto"}}>
         <div className="enogia-bar-right" aria-hidden={hdrHidden?"true":undefined} style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",opacity:hdrHidden?0:1,transform:hdrHidden?"translateY(-6px)":"none",visibility:hdrHidden?"hidden":"visible",transition:"opacity .25s ease, transform .25s var(--e-ease), visibility 0s linear "+(hdrHidden?".25s":"0s")}}>
-          <div className="enogia-bar-meta" style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:1}}>
-            {loading?<span className="enogia-skeleton" aria-label="Chargement" style={{display:"inline-block",width:84,height:16}}/>:<span style={{color:T.ink700,fontSize:FZ.sm,fontWeight:600,fontFamily:T.font}}>{data.length+" unités"}</span>}
+          {pinOk&&<div className="enogia-bar-meta" style={{display:"flex",alignItems:"baseline",gap:10,fontSize:FZ.xs}}>
+            {loading?<span className="enogia-skeleton" aria-label="Chargement" style={{display:"inline-block",width:64,height:12}}/>:<span style={{color:T.ink500,fontSize:FZ.xs,fontWeight:600,fontFamily:T.font}}>{data.length+" unités"}</span>}
             {!loading&&lastImport&&<button onClick={()=>setView("changes")} title="Voir ce qui a bougé avec ce dernier import" style={{border:"none",background:"transparent",padding:0,cursor:"pointer",color:T.ink700,fontWeight:600,fontSize:FZ.xs,fontFamily:T.font,textAlign:"right"}}>Dernier import {lastImport}{changeLog&&changeLog[0]&&changeLog[0].stats?" · "+changeLog[0].stats.nPj+" PJ modifié"+(changeLog[0].stats.nPj>1?"s":""):""} ›</button>}
             {savedAt&&<span role="status" aria-live="polite" style={{color:T.emerald600||T.ink500,fontSize:FZ.xs,fontFamily:T.font,textAlign:"right"}}>✓ Enregistré à {String(savedAt.getHours()).padStart(2,"0")+":"+String(savedAt.getMinutes()).padStart(2,"0")}</span>}
-          </div>
+          </div>}
           {pinOk&&<ImportButton
             onImport={handleImport}
             busy={importing}

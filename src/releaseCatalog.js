@@ -300,4 +300,8 @@ export const RELEASE_CATALOG = [
     ["Liste", "Vue d'ensemble repliée automatiquement en descendant."],
     ["Manager", "Fiche synthèse plein écran, sous-pages au survol des icônes ; Pilotage aligné."],
   ] },
+  { v: "179", t: "Écran de connexion et en-tête allégé", items: [
+    ["Connexion", "Nouvel écran en un clic ; session fermée chaque soir à minuit."],
+    ["En-tête", "Logo en haut du menu ; informations d'import réservées aux admins."],
+  ] },
 ];

@@ -274,3 +274,6 @@ body.enogia-present tbody td { font-size: 1.08em; }
 .enogia-btn-ind:hover { background: var(--e-ind-bg, #1B2A55) !important; color: var(--e-ind-ink, #FFFFFF) !important; }
 /* v178 : cartes du bloc Pilotage — le champ « Commentaire de synthèse » est calé en bas, pour que les cartes d'une même ligne s'alignent. */
 .enogia-pilot-card > :last-child { margin-top: auto; }
+/* v179 : écran de connexion — le bouton Google se remplit en marine au survol (texte blanc). */
+.enogia-login-btn:not(:disabled):hover { background: var(--e-ind-bg, #0D3B66) !important; color: var(--e-ind-ink, #FFFFFF) !important; }
+@media (max-width: 760px) { .enogia-login-side { padding: 28px 20px !important; gap: 18px !important; } }
