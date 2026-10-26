@@ -269,4 +269,7 @@ export const RELEASE_CATALOG = [
     ["Gantt", "Une couleur par niveau d'écart, trait du planning initial."],
     ["Fiche projet", "En-tête PJ + nom + état, informations clés, étapes en une barre."],
   ] },
+  { v: "172", t: "Calendrier sans bulles, étapes nommées", items: [
+    ["Calendrier", "Plus d'infobulle au survol ; chaque jour affiche son étape, abrégée si la colonne est étroite."],
+  ] },
 ];

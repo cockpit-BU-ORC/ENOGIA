@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v172",
+    date: "2026-10-26",
+    title: "V172 : Calendrier sans bulles, étapes nommées",
+    items: [
+      { t: "Plus de bulles au survol", d: "Le calendrier n'affiche plus d'infobulle quand on passe la souris sur une case ; un clic ouvre toujours la fiche." },
+      { t: "Chaque jour nomme son étape", d: "En vue Jour, chaque case affiche à nouveau l'étape : en entier quand la place le permet, sinon en abrégé (Arr., Prod, Tests, Fin, Dép.)." },
+    ],
+  },
+  {
     id: "2026-10-v171",
     date: "2026-10-26",
     title: "V171 : Liste, Gantt et fiche plus lisibles",

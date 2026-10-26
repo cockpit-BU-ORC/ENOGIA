@@ -953,3 +953,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - **Fiche projet** (`components/ProjectModal.js`) : en-tête n° de PJ (JetBrains Mono) + nom du projet + pastille d'état ; grille Chef de projet / Gamme / Pays / Départ (+ écart) ; les 4 étapes restent sur une ligne à largeur égale (demande d'origine) mais en barre segmentée (segment coloré une fois la date passée) avec libellé et date dessous, sans numéros ni majuscules ; libellés du formulaire et compteur de commentaires en casse normale.
 - Vérifié par rendu statique (jsdom → HTML) en clair et en sombre, 768 px ; pas testé dans l'appli connectée.
 - Fichiers : components/{DashboardSummary,TableView,SharedUI,GanttView,ProjectModal}.js, App.js (version), releaseNotes.js, releaseCatalog.js(+test).
+
+## v172 — Calendrier : plus d'infobulle, nom d'étape dans chaque case
+
+- **Infobulle retirée** (demandé : « il y a toujours les petits pop-up ») : composant `CalTip`, `tipRef`/`setTip` et les `onMouseMove` des cases supprimés (`components/CalendarView.js`). Le survol garde la teinte de fond ; le clic ouvre toujours la fiche.
+- **Nom d'étape rétabli en vue Jour** (demandé : « plus les noms des status par jours ») : la V170 n'affichait que la couleur sous la largeur d'un mot. Désormais mot entier quand il tient, sinon abréviation `STAGE_SHORT` (Arr., Prod, Tests, Fin, Dép.) ; largeur minimale de colonne = abréviation la plus longue mesurée (`SHORT_COL`) au lieu de 28 px. `aria-label` = libellé complet.
+- Imports inutilisés retirés (`PRESENCE_META`, `fmt`).
+- Fichiers : components/CalendarView.js, App.js (version), releaseNotes.js, releaseCatalog.js(+test).

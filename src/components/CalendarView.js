@@ -3,9 +3,9 @@ import { isPhone } from "../useIsPhone";
 import { EtatInfoButton } from "./ProdStagesUI";
 import { T, FZF, stagePalette, stageSoft } from "../theme";
 import { useMarks, NewMark } from "./ChangesNotice";
-import { getPjMeta, PresenceChip, presenceKind, presenceKindAt, presenceRing, PRESENCE_META, MONTHS_FULL, today, ETAT_META, ALL_ETATS, ProjectLabelCell } from "../pjMeta";
+import { getPjMeta, PresenceChip, presenceKind, presenceKindAt, presenceRing, MONTHS_FULL, today, ETAT_META, ALL_ETATS, ProjectLabelCell } from "../pjMeta";
 import { DropFilter, pressable } from "./SharedUI";
-import { fmt, toLocalISO, weekStartOf } from "../parsers";
+import { toLocalISO, weekStartOf } from "../parsers";
 
 export function getWeekStatus(r,weekStart,weekEnd){
   const a=r.arrivee?new Date(r.arrivee):null;
@@ -47,6 +47,10 @@ export function stageFill(status){
   return{background:"linear-gradient(135deg,"+cols.map((c,i)=>c+" "+(i*100/n).toFixed(2)+"% "+((i+1)*100/n).toFixed(2)+"%").join(",")+")",color:T.ink900,bold:true};
 }
 
+// v172 : abréviations des étapes, pour les colonnes jour étroites (le mot entier reste affiché quand il tient).
+export const STAGE_SHORT={"Arrivée":"Arr.","Production":"Prod","Tests":"Tests","Fin prod":"Fin","Départ":"Dép."};
+const shortStatus=st=>String(st||"").split(" + ").map(k=>STAGE_SHORT[k]||k).join(" + ");
+
 export function getDayStatus(r,day,excludedDates){
   const dayEnd=new Date(day);dayEnd.setDate(dayEnd.getDate()+1);
   const status=getWeekStatus(r,day,dayEnd);
@@ -82,10 +86,6 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
   const WEEK_BAND_H=18;
   const headerTop=MONTH_H+(mode==="day"?WEEK_BAND_H:0);
   // zoomLevel est désormais géré au niveau de App (props) pour persister quand on quitte/revient sur cet onglet
-  // v167 : l'infobulle vit dans son propre composant (CalTip) — avant, chaque mouvement de souris
-  // redessinait toute la grille (des dizaines de milliers de cases) et figeait la page.
-  const tipRef=useRef(null);
-  const setTip=t=>{if(tipRef.current)tipRef.current(t);};
   // v170 : niveau 0 = 5 semaines (S-1, S, S+1…S+3) ; niveau 3 du mode Jour = 29 jours (J-7 → J+21). Voir HOME_ZOOM.
   const WEEK_COUNTS=[5,8,14,24,36];
   // Niveau "6" ajouté devant (demandé explicitement : "il faut dézoomer pour avoir une vision plus
@@ -197,9 +197,12 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
   // colonnes visibles (jours ouvrés 1, week-end 0,6) et, si l'écran est trop étroit pour le zoom
   // demandé, on affiche quelques colonnes de moins plutôt que de déborder.
   const WORD_COL=Math.ceil(longestWordPx+3*2+3*2+6); // inset de tuile + marge intérieure + filet
+  // v172 : abréviations lisibles quand la colonne est trop étroite pour le mot entier (vue Jour sur 29 jours).
+  const shortPx=useMemo(()=>{const f="700 "+FZF.xs+"px "+T.font;return Math.max(...Object.values(STAGE_SHORT).map(w=>measure(w,f)));},[measure]);
+  const SHORT_COL=Math.ceil(shortPx+3*2+2*2+4);
   // v170 : en vue Jour, les colonnes peuvent descendre sous la largeur d'un mot (29 jours à l'écran) ;
   // la case ne garde alors que la couleur de l'étape, le détail reste dans l'infobulle.
-  const MIN_COL=mode==="week"?WORD_COL:28;
+  const MIN_COL=mode==="week"?WORD_COL:SHORT_COL;
   const avail=Math.max(200,viewW-LEFT_W);
   const weightOf=n=>mode==="week"?n:days.slice(0,n).reduce((a,d)=>a+((d.getDay()===0||d.getDay()===6)?WE_RATIO:1),0);
   let effCount=visCount;
@@ -352,7 +355,7 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
               const fill=stageFill(status);
               const pKindW=presenceKindAt(r.clientPresence,v=>{const x=new Date(v);return x>=w&&x<we;});
               const pKind=pKindW,showPresence=!!pKindW;
-              return(<div key={wi} onClick={()=>onSelectPj&&onSelectPj(pj)} onMouseEnter={e=>{e.currentTarget.style.background=T.teal100+"50";}} onMouseMove={e=>setTip({r,status,pKind:showPresence?pKind:null,label:"Semaine S"+weekNum(w)+" · "+fmt(w)+" → "+fmt(new Date(we.getTime()-86400000)),x:e.clientX,y:e.clientY})} onMouseLeave={e=>{e.currentTarget.style.background=cellBg;setTip(null);}} style={{...pos,height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,boxShadow:todayEdge,padding:3,cursor:"pointer",position:"relative",background:cellBg,transition:"background .12s ease"}}>
+              return(<div key={wi} onClick={()=>onSelectPj&&onSelectPj(pj)} onMouseEnter={e=>{e.currentTarget.style.background=T.teal100+"50";}} onMouseLeave={e=>{e.currentTarget.style.background=cellBg;}} style={{...pos,height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,boxShadow:todayEdge,padding:3,cursor:"pointer",position:"relative",background:cellBg,transition:"background .12s ease"}}>
                 {/* Tuile de nouveau remplie (demandé explicitement : "essaye de les remplir") — le mot
                     complet doit toujours rester lisible ("je dois toujours réussir à lire l'intégralité
                     des mots"), donc texte qui s'enroule sur 2 lignes plutôt qu'une troncature. */}
@@ -378,9 +381,9 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
               // étroite. Centré au milieu de la tuile (pivot au centre, plutôt qu'ancré au coin
               // bas-gauche) et contenu dans la tuile (overflow:"hidden" sur le conteneur) — demandé
               // explicitement : "les étapes sont pas au milieu des tiles et dépassent de celles-ci".
-              return(<div key={di} className="enogia-cal-daycell" onClick={()=>onSelectPj&&onSelectPj(pj)} onMouseEnter={e=>{e.currentTarget.style.background=T.teal100+"50";}} onMouseMove={e=>setTip({r,status,pKind:showPresence?pKind:null,label:DAY_NAMES[d.getDay()]+" "+fmt(d),x:e.clientX,y:e.clientY})} onMouseLeave={e=>{e.currentTarget.style.background=cellBg;setTip(null);}} style={{...pos,height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,boxShadow:todayEdge,cursor:"pointer",background:cellBg,position:"relative",transition:"background .12s ease"}}>
+              return(<div key={di} className="enogia-cal-daycell" onClick={()=>onSelectPj&&onSelectPj(pj)} onMouseEnter={e=>{e.currentTarget.style.background=T.teal100+"50";}} onMouseLeave={e=>{e.currentTarget.style.background=cellBg;}} style={{...pos,height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,boxShadow:todayEdge,cursor:"pointer",background:cellBg,position:"relative",transition:"background .12s ease"}}>
                 <div style={{position:"absolute",inset:3,borderRadius:4,background:fill.background,boxShadow:showPresence?presenceRing(pKind):T.mode==="dark"?"inset 0 0 0 1px "+st.t+"33":"none",overflow:"hidden",opacity:closed?0.45:1,display:"flex",flexDirection:"column",gap:2,alignItems:"center",justifyContent:"center",padding:"0 3px"}}>
-                  {showWords&&<span style={{fontSize:FZF.xs,fontWeight:fill.bold?700:600,color:fill.color,textAlign:"center",lineHeight:1.15}}>{status}</span>}
+                  <span aria-label={status} style={{fontSize:FZF.xs,fontWeight:fill.bold?700:600,color:fill.color,textAlign:"center",lineHeight:1.15}}>{showWords?status:shortStatus(status)}</span>
                   {showWords&&showPresence&&<PresenceChip kind={pKind} compact tiny fontSize={9.5}/>}
                 </div>
               </div>);
@@ -403,28 +406,9 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
       <span style={{fontSize:FZF.md,color:T.ink300,marginLeft:"auto"}}>Couleur de la tuile = étape · Colonne rouge = aujourd'hui · Clic = détail</span>
     </div>
 
-    <CalTip apiRef={tipRef}/>
 
   </div>);
 }
 
 
-
-// v167 : infobulle isolée — son état ne redessine plus la grille entière.
-function CalTip({apiRef}){
-  const [tip,setTip]=useState(null);
-  apiRef.current=setTip;
-  if(!tip)return null;
-  const r=tip.r,meta=getPjMeta(r.pj,r),W=260,vw=typeof window!=="undefined"?window.innerWidth:1400,vh=typeof window!=="undefined"?window.innerHeight:800;
-  const left=Math.min(tip.x+16,vw-W-12),top=Math.max(8,Math.min(tip.y+16,vh-190));
-  return(<div role="tooltip" style={{position:"fixed",left,top,width:W,zIndex:10030,pointerEvents:"none",background:T.card,color:T.ink900,borderRadius:12,boxShadow:T.shadowFloat,padding:"10px 12px",fontFamily:T.font}}>
-    <div style={{fontSize:FZF.md,fontWeight:700,lineHeight:1.2}}>{r.pj}<span style={{fontWeight:500,color:T.ink500,fontSize:FZF.sm}}>{meta&&meta.nomProjet?"  "+meta.nomProjet:""}</span></div>
-    <div style={{fontSize:FZF.xs,color:T.ink500,marginTop:2}}>{tip.label}</div>
-    <div style={{display:"flex",flexDirection:"column",gap:4,marginTop:8}}>
-      {tip.status.split(" + ").map(m=>{const st=SEGMENT_STYLE[m]||SEGMENT_STYLE["Production"];return(<span key={m} style={{display:"flex",alignItems:"center",gap:8,fontSize:FZF.sm,fontWeight:600}}><span aria-hidden="true" style={{width:12,height:12,borderRadius:4,background:st.c,boxShadow:T.shadowFlat}}/>{m}</span>);})}
-    </div>
-    {tip.pKind&&<div style={{marginTop:8,fontSize:FZF.sm,color:T.ink700}}>Présence {PRESENCE_META[tip.pKind].label} aux tests</div>}
-    {r.drift!=null&&r.drift!==0&&<div style={{marginTop:8,paddingTop:8,borderTop:"1px solid "+T.line,fontSize:FZF.sm,display:"flex",justifyContent:"space-between"}}><span style={{color:T.ink500}}>vs planning initial</span><span style={{fontWeight:700,color:r.drift>0?T.red600:T.emerald600}}>{(r.drift>0?"+":"−")+Math.abs(r.drift)+" j"}</span></div>}
-  </div>);
-}
 
