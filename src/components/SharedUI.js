@@ -37,6 +37,10 @@ export function useCloseOnSignal(setOpen){
 }
 // v170 : rend une zone cliquable utilisable au clavier (Tab puis Entrée ou Espace), avec son rôle et son état.
 export const pressable=(fn,extra={})=>({role:"button",tabIndex:0,onClick:fn,onKeyDown:e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();fn(e);}},...extra});
+// v173 : plaque de n° de PJ (plaque signalétique de machine) — police d'identifiant, fond marine, texte blanc.
+export function PjPlate({pj,size="sm",style}){
+  return <span className="enogia-plate" style={{fontFamily:T.fontMono,fontWeight:700,fontSize:size==="lg"?14:12,lineHeight:1,letterSpacing:".04em",background:T.mode==="dark"?T.teal600:T.teal500,color:T.mode==="dark"?"#0B1130":"#FFFFFF",padding:size==="lg"?"5px 8px":"3px 7px",borderRadius:3,whiteSpace:"nowrap",display:"inline-block",flexShrink:0,fontVariantNumeric:"tabular-nums",...style}}>{pj}</span>;
+}
 export function DropFilter({label,options,selected,onChange,getLabel,icon,sort}){
   const [open,setOpen]=useState(false);
   useCloseOnSignal(setOpen);
@@ -444,11 +448,13 @@ export function HoverPop({render,children,delay=220,width=260,style,disabled}){
 }
 
 // ── v162 : en-tête de page commun (kicker en capitales espacées + titre) — même gabarit sur toutes les vues ──────────────
+// v173 (direction « Éditorial industriel ») : sur-titre en police d'identifiant couleur ocre (marquage d'atelier), titre éditorial plus grand et léger,
+// filet épais marine dessous — même en-tête sur toutes les pages.
 export function PageHead({kicker,title,sub,right,style}){
-  return(<div style={{display:"flex",alignItems:"flex-end",gap:12,flexWrap:"wrap",marginBottom:14,...style}}>
+  return(<div className="enogia-view-in" style={{display:"flex",alignItems:"flex-end",gap:12,flexWrap:"wrap",marginBottom:16,paddingBottom:10,borderBottom:"3px solid "+T.teal500,...style}}>
     <div style={{minWidth:0,flex:1}}>
-      {kicker&&<div style={{fontSize:FZ.xs,fontWeight:700,letterSpacing:".14em",textTransform:"uppercase",color:T.ink500,marginBottom:4}}>{kicker}</div>}
-      <h1 style={{margin:0,fontFamily:T.fontDisplay,fontSize:FZ.xl,fontWeight:700,letterSpacing:"-.01em",color:T.ink900,lineHeight:1.15}}>{title}</h1>
+      {kicker&&<div style={{fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk,marginBottom:4}}>{kicker}</div>}
+      <h1 style={{margin:0,fontFamily:T.fontDisplay,fontSize:32,fontWeight:300,letterSpacing:"-.02em",color:T.ink900,lineHeight:1.1}}>{title}</h1>
       {sub&&<div style={{fontSize:FZ.sm,color:T.ink500,marginTop:3}}>{sub}</div>}
     </div>
     {right}

@@ -4,7 +4,7 @@ import { useMarks, NewMark } from "./ChangesNotice";
 import { EtatInfoButton } from "./ProdStagesUI";
 import { getPjMeta, initials, personTint, DriftDot, PresenceChip, presenceKind, presenceDates, presenceFirstDate, CountryFlag, ETAT_META, ALL_ETATS, ALL_GAMMES, GAMME_COLORS, MONTHS, today } from "../pjMeta";
 import { diffDays, fmtMode } from "../parsers";
-import { HoverPop, useSheetJS, Badge, DropFilter, NavIcon, useCloseOnSignal, EmptyState, pressable } from "./SharedUI";
+import { HoverPop, useSheetJS, Badge, DropFilter, NavIcon, useCloseOnSignal, EmptyState, pressable, PjPlate } from "./SharedUI";
 import { ProjectModal } from "./ProjectModal";
 import { RowMenu } from "./RowMenu";
 import { EtatPopBody, DriftPopBody, AvPopBody } from "./RowPops";
@@ -419,12 +419,12 @@ export function TableView({data,progress,df,setDf,selEtats,setSelEtats,selGammes
         const rowBg=isSel?T.teal100:T.surface; // v162 : plus de zébrage ; liseré + teinte 7 % de la couleur d'état au survol
         const rk=(ETAT_META[r.etat]||ETAT_META["NOT ORDERED"]).bar, tintBg=mixHex(T.surface,rk,T.mode==="dark"?.12:.07);
         const [avTint,avTintBg]=personTint(meta.chefProjet);
-        return(<tr key={i} onClick={()=>setSel(sel===r.pj?null:r.pj)} onContextMenu={e=>{e.preventDefault();setRowMenu({pj:r.pj,x:e.clientX,y:e.clientY});}} style={{height:rowH,borderLeft:"3px solid "+(isSel?T.teal500:"transparent"),cursor:"pointer",background:rowBg,transition:"background .12s ease, border-color .12s ease"}}
-          onMouseEnter={e=>{if(!isSel){e.currentTarget.style.background=tintBg;e.currentTarget.style.borderLeftColor=rk;}}}
-          onMouseLeave={e=>{if(!isSel){e.currentTarget.style.background=rowBg;e.currentTarget.style.borderLeftColor="transparent";}}}>
+        return(<tr key={i} onClick={()=>setSel(sel===r.pj?null:r.pj)} onContextMenu={e=>{e.preventDefault();setRowMenu({pj:r.pj,x:e.clientX,y:e.clientY});}} style={{height:rowH,borderLeft:"4px solid "+(isSel?T.teal500:rk),cursor:"pointer",background:rowBg,transition:"background .12s ease, border-color .12s ease"}}
+          onMouseEnter={e=>{if(!isSel)e.currentTarget.style.background=tintBg;}}
+          onMouseLeave={e=>{if(!isSel)e.currentTarget.style.background=rowBg;}}>
           <td style={{padding:D.cellY+"px "+PX+"px",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",position:"sticky",left:0,zIndex:5,background:"inherit",boxShadow:scrolledX?"4px 0 6px -4px rgba(15,40,60,.22)":"none"}}>
             <span style={{display:"inline-flex",alignItems:"center",gap:8}}>
-              <span style={{fontVariantNumeric:"tabular-nums",fontWeight:500,color:T.ink900,fontSize:FS}}>{r.pj}</span>
+              <PjPlate pj={r.pj}/>
               {r.drift>0?<HoverPop width={250} render={()=><DriftPopBody r={r} df={df}/>}><DriftDot drift={r.drift}/></HoverPop>:null}
               <NewMark mark={marks.get(r.pj)}/>
               <button type="button" className="enogia-rowact" aria-label={"Actions pour "+r.pj} aria-haspopup="menu" aria-expanded={!!rowMenu&&rowMenu.pj===r.pj} title="Actions rapides (clic droit)"

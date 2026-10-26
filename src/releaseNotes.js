@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v173",
+    date: "2026-10-26",
+    title: "V173 : nouveau style « Atelier »",
+    items: [
+      { t: "Un nouveau style", d: "Fond crème, menu latéral bleu marine avec repère jaune, grands titres et grands chiffres : le planning prend l'allure d'un journal d'atelier. Les anciens thèmes restent disponibles dans le menu Apparence." },
+      { t: "Accueil et liste refaits", d: "Les n° de PJ apparaissent sur des plaques, chaque ligne de la liste porte la couleur de son état, et les chiffres se comptent à l'ouverture." },
+      { t: "Des transitions douces", d: "Pages qui apparaissent en fondu, barres qui se remplissent, lignes qui glissent au survol — désactivées si votre ordinateur demande moins d'animations." },
+    ],
+  },
+  {
     id: "2026-10-v172",
     date: "2026-10-26",
     title: "V172 : Calendrier sans bulles, étapes nommées",

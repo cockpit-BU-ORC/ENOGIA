@@ -62,6 +62,23 @@ const grad = (a,b,c) => ({
 });
 
 export const THEMES = {
+  // ── Atelier (v173, maquette « Éditorial industriel » validée) : fond crème éditorial, marine ENOGIA, signal jaune d'atelier ──
+  // Le marine porte la structure (menu, plaques de n° de PJ, filets épais) ; le jaune ne sert que de repère sur fond marine.
+  atelier: { label:"Atelier", desc:"Crème éditorial, marine industriel", swatch:["#1B2A55","#FAF7F1","#F3C35B"],
+    light:{ ...grad("#0B1130","#1B2A55","#46587F"),
+      navy900:"#0B1130", navy800:"#131B49", navy700:"#1B2A55", navy600:"#2C3F8C",
+      teal600:"#14203F", teal500:"#1B2A55", teal400:"#4B5D85", teal100:"#ECE6D8",
+      surface:"#FAF7F1", surfaceAlt:"#F1EBDF", card:"#FFFFFF",
+      ink900:"#14203F", ink700:"#33405E", ink500:"#4F5B73", ink300:"#566279", ink100:"#ECE5D8",
+      line:"#E4DCCB", neuPanel:"#F5F0E6", neuPanelDim:"#EDE6D8",
+      accent:"#7A5C12", accentInk:"#6A4F0F", accentSoft:"#F6EBCB" },
+    dark:{ ...grad("#0B1130","#1D2C4E","#46587F"),
+      navy900:"#0B1130", navy800:"#C9D3F0", navy700:"#3B4F94", navy600:"#6F86CC",
+      teal600:"#C6D0EE", teal500:"#5C73B8", teal400:"#9AABDC", teal100:"#33406A",
+      surface:"#1C2536", surfaceAlt:"#2A3550", card:"#27324A",
+      ink900:"#EEF2F9", ink700:"#CDD6E6", ink500:"#B5C1D6", ink300:"#AAB7CF", ink100:"#3C4A68",
+      line:"#3C4A68", neuPanel:"#2B3650", neuPanelDim:"#33405E",
+      accent:"#F3C35B", accentInk:"#F6D98E", accentSoft:"#4A3E22" } },
   // ── Ardoise (v161, ex-Marine) : l'identité ENOGIA (RAL 5011 « bleu acier ») sur fond gris froid + accent sarcelle ──
   marine: { label:"Ardoise", desc:"Bleu acier, fond gris froid", swatch:["#1D2C4E","#F3F5F8","#0A9DB5"],
     light:{ ...grad("#0B1130","#1D2C4E","#46587F"),
@@ -112,7 +129,17 @@ export const THEMES = {
       accent:"#2FD3C8", accentInk:"#8DE4DD", accentSoft:"#133F3C" } },
 };
 export const THEME_IDS = Object.keys(THEMES);
-export const DEFAULT_THEME = "marine";
+export const DEFAULT_THEME = "atelier";
+// v173 : nouvelle clé de stockage du thème — l'ancienne (« enogia_theme ») était écrite pour tout le monde à chaque visite,
+// donc changer le thème par défaut n'aurait touché personne. Chacun peut toujours repasser en Ardoise, Forêt ou Cuivre.
+export const THEME_KEY = "enogia_theme2";
+
+// v173 : menu latéral « industriel » (fond marine, repère jaune) pour le thème Atelier ; les autres thèmes gardent leur menu clair.
+export function navTokens(){
+  if (T.themeId !== "atelier") return { industrial:false, bg:T.card, border:T.line, ink:T.ink500, inkOn:T.teal600, bgOn:T.teal100, hover:T.surface, hoverInk:T.ink900, group:T.ink500, mark:"currentColor" };
+  const dark = T.mode === "dark";
+  return { industrial:true, bg:dark?"#121A2E":"#1B2A55", border:dark?"#2A3550":"#1B2A55", ink:"#C3CCE0", inkOn:"#FFFFFF", bgOn:"rgba(255,255,255,.10)", hover:"rgba(255,255,255,.06)", hoverInk:"#FFFFFF", group:"#F3C35B", mark:"#F3C35B" };
+}
 
 // Polices et jetons non colorés, communs à tous les thèmes
 const SHARED = {

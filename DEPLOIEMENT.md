@@ -960,3 +960,17 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - **Nom d'étape rétabli en vue Jour** (demandé : « plus les noms des status par jours ») : la V170 n'affichait que la couleur sous la largeur d'un mot. Désormais mot entier quand il tient, sinon abréviation `STAGE_SHORT` (Arr., Prod, Tests, Fin, Dép.) ; largeur minimale de colonne = abréviation la plus longue mesurée (`SHORT_COL`) au lieu de 28 px. `aria-label` = libellé complet.
 - Imports inutilisés retirés (`PRESENCE_META`, `fmt`).
 - Fichiers : components/CalendarView.js, App.js (version), releaseNotes.js, releaseCatalog.js(+test).
+
+## v173 — Direction « Éditorial industriel » : fondations, accueil et liste
+
+- **Thème « Atelier »** (`theme.js`, par défaut) : fond crème `#FAF7F1`, cartes blanches, filets `#E4DCCB`, encres marine (`#14203F`…), accent ocre (`#7A5C12` / encre `#6A4F0F`) ; sombre = surfaces du mode sombre validé + accent jaune `#F3C35B`. `check:contrast` : 1 509 vérifications, 0 échec (le nouveau thème ajoute 364 vérifications).
+- **Clé de thème** : `enogia_theme` → `enogia_theme2` (`THEME_KEY`). L'ancienne clé était réécrite pour tout le monde à chaque visite : sans changement de clé, personne n'aurait vu le nouveau thème. Ardoise, Forêt et Cuivre restent au choix dans « Apparence ».
+- **Menu latéral industriel** (`navTokens()` dans `theme.js`, `App.js`, `styles.css`) : pour le thème Atelier seulement, fond marine `#1B2A55` (sombre `#121A2E`), libellés `#C3CCE0` (8,6:1), titres de groupe en JetBrains Mono jaune, repère jaune de 4 px sur la page active (`--nav-mark`), anneau de focus jaune ; `ThemePicker` reçoit une couleur d'icône (`ink`). Les autres thèmes gardent le menu clair.
+- **En-tête de page** (`PageHead`, toutes les pages sauf l'accueil) : sur-titre JetBrains Mono ocre en capitales, titre Roboto 300 de 32 px, filet marine de 3 px, apparition en fondu.
+- **Plaque de n° de PJ** (`PjPlate` dans `SharedUI.js`) : JetBrains Mono, fond marine (clair) / `teal600` (sombre, 12:1).
+- **Accueil** (`HomeView.js`) : sur-titre d'atelier (date · import · BU ORC), phrase du jour en Roboto 300 jusqu'à 34 px, repères en bande éditoriale (filet marine de 3 px, chiffres 40–56 px en trait fin qui se comptent, séparateurs verticaux), n° de PJ en plaques (liseré intérieur couleur d'état), parcours en blocs pleins de 32 px avec effectifs (encre `inkOn`), barre qui se déploie.
+- **Liste** (`TableView.js`, `DashboardSummary.js`) : bordure gauche permanente de 4 px à la couleur d'état sur chaque ligne (la sélection reste marine), n° de PJ en plaque ; vue d'ensemble : sur-titre d'atelier, compteur des livraisons en grand chiffre léger animé, séparateur marine, barres plus épaisses qui se remplissent.
+- **Transitions** (`styles.css`) : glissement des lignes de l'accueil au survol, soulèvement des repères ; tout est coupé sous `prefers-reduced-motion`.
+- `CLAUDE.md` : section Design mise à jour (direction validée, taste-skill n'est plus la direction principale).
+- Vérifié par rendu statique (jsdom → HTML, 1 100 px) en clair et en sombre ; pas testé dans l'appli connectée.
+- Fichiers : theme.js, App.js, styles.css, components/{SharedUI,ThemePicker,HomeView,TableView,DashboardSummary}.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.

@@ -1,10 +1,12 @@
 import React, { useMemo, useState } from "react";
-import { T, FZ, R, stageSoft, stripeBg, stripeHues, alertSoft } from "../theme";
-import { getPjMeta, ETAT_META, etatInk, PresenceChip, presenceKind, presenceFirstDate, presenceDates, countShippedYTD } from "../pjMeta";
-import { NavIcon, AnimatedNumber, EmptyState } from "./SharedUI";
+import { T, FZ, R, stageSoft, stripeBg, stripeHues, alertSoft, inkOn } from "../theme";
+import { getPjMeta, ETAT_META, PresenceChip, presenceKind, presenceFirstDate, presenceDates, countShippedYTD } from "../pjMeta";
+import { NavIcon, AnimatedNumber, EmptyState, PjPlate } from "./SharedUI";
 import { openMentionsFor, chefAccount, nameFromEmail } from "../mentions";
 import { testerOfEmail, planOf } from "../testPlan";
 
+// v173 — direction « Éditorial industriel » : sur-titre d'atelier en mono, grande phrase légère, chiffres géants sous un filet marine,
+//   n° de PJ en plaques, parcours en blocs pleins étiquetés.
 // v169 — maquette validée (taste-skill) : bloc principal « À traiter » + « Départs à venir », parcours en une barre, cartes plates.
 // v162 — Page d'accueil « Aujourd'hui » : ce qui compte pour la personne connectée, en un coup d'œil.
 //   Blocs selon le profil (tous / chef de projet / testeur / manager), réglables par chacun via « Personnaliser ».
@@ -85,11 +87,11 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
   const link = { border: "none", background: "transparent", color: T.accent, fontWeight: 600, fontSize: FZ.sm, cursor: "pointer", padding: "4px 0", minHeight: 24, display: "inline-flex", alignItems: "center", gap: 6, fontFamily: T.font };
   const etatOf = useMemo(() => { const m = new Map(); rows.forEach(r => m.set(r.pj, r.etat)); return m; }, [rows]);
 
-  const Kpi = ({ label, value, tone, onClick, hint, color, sub }) => (
-    <button type="button" onClick={onClick} disabled={!onClick} className="enogia-kpi" title={hint}
-      style={{ ...cardS(color), textAlign: "left", cursor: onClick ? "pointer" : "default", fontFamily: T.font, display: "flex", flexDirection: "column", gap: 4 }}>
-      <span style={{ fontSize: FZ.xs, fontWeight: 500, color: T.ink500 }}>{label}</span>
-      <span style={{ fontSize: 28, fontWeight: 600, lineHeight: 1.1, fontFamily: T.fontDisplay, color: tone || T.ink900, fontVariantNumeric: "tabular-nums" }}><AnimatedNumber value={value} /></span>
+  const Kpi = ({ label, value, tone, onClick, hint, sub }) => (
+    <button type="button" onClick={onClick} disabled={!onClick} className="enogia-kpi enogia-kpi-ed" title={hint}
+      style={{ border: "none", borderRight: "1px solid " + T.line, background: "transparent", textAlign: "left", cursor: onClick ? "pointer" : "default", fontFamily: T.font, display: "flex", flexDirection: "column", gap: 4, padding: "12px 16px 6px 0", minWidth: 0 }}>
+      <span style={{ fontSize: "clamp(40px,5vw,56px)", fontWeight: 300, lineHeight: .95, letterSpacing: "-.03em", fontFamily: T.fontDisplay, color: tone || T.ink900, fontVariantNumeric: "tabular-nums" }}><AnimatedNumber value={value} /></span>
+      <span style={{ fontSize: FZ.sm, fontWeight: 500, color: T.ink700 }}>{label}</span>
       {sub && <span style={{ ...grey, minHeight: 16 }}>{sub}</span>}
     </button>
   );
@@ -101,7 +103,7 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
     <button type="button" className="enogia-homeline" onClick={() => onOpenPj && onOpenPj(pj)}
       style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", minHeight: 40, border: "none", borderTop: first ? "none" : "1px solid " + T.line, background: "transparent", padding: "8px 6px", borderRadius: 0, cursor: "pointer", textAlign: "left", fontFamily: T.font, color: T.ink900 }}>
       {pill}
-      <span style={{ fontFamily: T.fontMono, fontWeight: 700, fontSize: FZ.xs, flexShrink: 0, minWidth: 58, color: etatInk(etatOf.get(pj)) }}>{pj}</span>
+      <PjPlate pj={pj} style={{ minWidth: 58, textAlign: "center", boxShadow: "inset 3px 0 0 " + ((ETAT_META[etatOf.get(pj)] || {}).bar || T.ink300) }} />
       <span style={{ fontSize: FZ.sm, color: T.ink700, minWidth: 0, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{main}</span>
       {presence}
       <span style={{ fontSize: FZ.xs, fontWeight: 600, color: rightColor || T.ink500, flexShrink: 0, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{right}</span>
@@ -118,7 +120,7 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
     </div>
   );
 
-  const num = (v, c) => <b style={{ color: c, background: "none", fontWeight: 800, fontVariantNumeric: "tabular-nums", WebkitTextFillColor: c }}>{v}</b>;
+  const num = (v, c) => <b style={{ color: c, background: "none", fontWeight: 700, fontVariantNumeric: "tabular-nums", WebkitTextFillColor: c }}>{v}</b>;
   const nextDep = departs[0];
   const maxLate = late[0];
   const stageCount = id => open.filter(r => r.etat === id).length;
@@ -141,8 +143,8 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
     <div style={{ fontFamily: T.font }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
         <div style={{ flex: 1, minWidth: 260 }}>
-          <div style={{ ...grey, marginBottom: 6 }}>{dateLine}{lastImport ? " · dernier import " + lastImport : ""}</div>
-          <h1 style={{ margin: 0, fontFamily: T.fontDisplay, fontWeight: 600, fontSize: "clamp(20px,2.6vw,26px)", lineHeight: 1.3, letterSpacing: "-.01em", color: T.ink900, maxWidth: 760 }}>
+          <div style={{ fontFamily: T.fontMono, fontSize: 11, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: T.accentInk, marginBottom: 6 }}>{dateLine}{lastImport ? " · import " + lastImport : ""} · BU ORC</div>
+          <h1 className="enogia-view-in" style={{ margin: 0, fontFamily: T.fontDisplay, fontWeight: 300, fontSize: "clamp(24px,3.2vw,34px)", lineHeight: 1.18, letterSpacing: "-.02em", color: T.ink900, maxWidth: 820 }}>
             {hello()}{firstName ? " " + firstName : ""}. {num(inProd, S.production.ring)} machine{inProd > 1 ? "s" : ""} avance{inProd > 1 ? "nt" : ""}, {num(late.length, T.amber600)} glisse{late.length > 1 ? "nt" : ""}, {num(next30, S.depart.ring)} part{next30 > 1 ? "ent" : ""} d'ici un mois.
           </h1>
           {profile.length > 0 && <div style={{ ...grey, marginTop: 6 }}>Vue adaptée à votre profil : {profile.join(" · ")}</div>}
@@ -164,10 +166,10 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
         </div>
       )}
 
-      <div className="enogia-stagger" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 10, marginBottom: 12 }}>
+      <div className="enogia-stagger enogia-kpis-ed" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: "0 16px", borderTop: "3px solid " + T.teal500, marginBottom: 20 }}>
         <Kpi color={S.depart.ring} label="Livrées cette année" value={shipped} sub={shipped28 > 0 ? shipped28 + " sur les 28 derniers jours" : open.length + " encore en cours"} onClick={() => onGo && onGo("table")} hint="Ouvrir la liste" />
         <Kpi color={S.production.ring} label="En production" value={inProd} sub={"sur " + open.length + " projet" + (open.length > 1 ? "s" : "") + " ouvert" + (open.length > 1 ? "s" : "")} onClick={() => onGo && onGo("table")} hint="Ouvrir la liste" />
-        <Kpi color={S.tests.ring} label="Départs sous 30 j" value={next30} sub={nextDep ? "prochain " + nextDep.pj + " · " + fmtD(nextDep.depart) : "Aucun départ à venir"} onClick={() => onGo && onGo("calendar")} hint="Ouvrir le calendrier" />
+        <Kpi color={S.tests.ring} label="Départs sous 30 j" value={next30} tone={S.depart.ring} sub={nextDep ? "prochain " + nextDep.pj + " · " + fmtD(nextDep.depart) : "Aucun départ à venir"} onClick={() => onGo && onGo("calendar")} hint="Ouvrir le calendrier" />
         <Kpi color={H.warn} label="En retard sur l'initial" value={late.length} tone={late.length ? T.amber600 : T.ink900} sub={maxLate ? "max " + maxLate.pj + " · +" + maxLate.drift + " j" : "Aucune dérive"} onClick={() => onGo && onGo("table")} hint="Ouvrir la liste" />
       </div>
 
@@ -213,9 +215,9 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
           <Head title={"Où en sont les " + open.length + " machine" + (open.length > 1 ? "s" : "") + " ouverte" + (open.length > 1 ? "s" : "")} />
           <div style={{ ...grey, marginBottom: 10 }}>+ {shipped} expédiée{shipped > 1 ? "s" : ""} depuis janvier</div>
           {open.length === 0 ? <div style={grey}>Aucune machine ouverte pour l'instant.</div> : (<>
-            <div role="img" aria-label={journey.map(j => j.l + " " + j.n).join(", ") + ", pas encore lancées " + notStarted} style={{ display: "flex", height: 10, gap: 2, borderRadius: 3, overflow: "hidden" }}>
-              {journey.filter(j => j.n > 0).map(j => <div key={j.id} title={j.l + " : " + j.n} style={{ flex: j.n, background: j.c }} />)}
-              {notStarted > 0 && <div title={"Pas encore lancées : " + notStarted} style={{ flex: notStarted, background: T.ink100 }} />}
+            <div role="img" aria-label={journey.map(j => j.l + " " + j.n).join(", ") + ", pas encore lancées " + notStarted} className="enogia-bar-fill" style={{ display: "flex", height: 32, gap: 4 }}>
+              {journey.filter(j => j.n > 0).map(j => <div key={j.id} title={j.l + " : " + j.n} style={{ flex: j.n, minWidth: 0, background: j.c, color: inkOn(j.c), borderRadius: 3, display: "flex", alignItems: "center", padding: "0 8px", fontSize: 11, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", whiteSpace: "nowrap", overflow: "hidden" }}>{j.n}</div>)}
+              {notStarted > 0 && <div title={"Pas encore lancées : " + notStarted} style={{ flex: notStarted, minWidth: 0, background: T.ink100, color: T.ink900, borderRadius: 3, display: "flex", alignItems: "center", padding: "0 8px", fontSize: 11, fontWeight: 700, letterSpacing: ".06em", whiteSpace: "nowrap", overflow: "hidden" }}>{notStarted}</div>}
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px", marginTop: 8, fontSize: FZ.xs, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>
               {journey.map(j => <span key={j.id} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: 2, background: j.c }} />{j.l} <b style={{ color: T.ink900 }}>{j.n}</b></span>)}

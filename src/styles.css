@@ -235,7 +235,10 @@ tr:hover .enogia-rowact, tr:focus-within .enogia-rowact, .enogia-rowact[aria-exp
 .enogia-ganttcard { animation: enogiaMenuIn .12s var(--e-ease) both; pointer-events: none; }
 
 /* ── v162 (palette B affinée) : menu latéral « C » — liseré sur l'entrée active ── */
-.enogia-nav-btn[aria-current="page"]::before { content:""; position:absolute; left:0; top:9px; bottom:9px; width:3px; border-radius:0 3px 3px 0; background: currentColor; }
+.enogia-nav-btn[aria-current="page"]::before { content:""; position:absolute; left:0; top:9px; bottom:9px; width:3px; border-radius:0 3px 3px 0; background: var(--nav-mark, currentColor); }
+/* v173 : menu industriel (thème Atelier) — repère jaune plus épais, anneau de focus visible sur le marine */
+.enogia-nav-ind .enogia-nav-btn[aria-current="page"]::before { width:4px; top:8px; bottom:8px; }
+.enogia-nav-ind button:focus-visible { outline: 2px solid #F3C35B !important; outline-offset: 2px; }
 /* Lignes de la liste : le liseré d'état apparaît au survol (couleur posée par la ligne) */
 tbody tr { border-left-style: solid; }
 /* Mode présentation (téléviseur / projection) : on retire les gestes de souris, qui n'ont pas de sens à l'écran */
@@ -253,3 +256,16 @@ body.enogia-present tbody td { font-size: 1.08em; }
 /* v165 : zones cliquables élargies (WCAG 2.2, 24 px) pour les petits boutons repérés par a11yFallback.js */
 [data-hit] { position: relative; }
 [data-hit]::after { content: ""; position: absolute; inset: -5px; }
+
+/* ── v173 : direction « Éditorial industriel » ─────────────────────────────────────────────── */
+/* Bande des repères de l'accueil : séparateurs verticaux, le dernier sans filet. */
+.enogia-kpis-ed > .enogia-kpi-ed:last-child { border-right: none !important; }
+.enogia-kpi-ed:not(:disabled):hover { transform: translateY(-2px); }
+/* Lignes de liste (accueil) : léger glissement au survol — cause/effet : « cette ligne s'ouvre ». */
+.enogia-homeline { transition: background-color .15s ease, transform .18s var(--e-ease); }
+.enogia-homeline:hover { transform: translateX(3px); }
+/* Plaques de n° de PJ : apparition douce avec la ligne. */
+.enogia-plate { transition: transform .18s var(--e-ease); }
+@media (prefers-reduced-motion: reduce) {
+  .enogia-homeline, .enogia-homeline:hover, .enogia-kpi-ed:hover, .enogia-plate { transition: none !important; transform: none !important; }
+}

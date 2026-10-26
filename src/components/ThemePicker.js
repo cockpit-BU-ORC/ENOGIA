@@ -5,7 +5,7 @@ import { useDetailMode } from "../detailMode";
 
 // ── Choix du thème (v139) : bouton « palette » dans la barre latérale + petit panneau avec les 5 thèmes. ──
 // Le choix est mémorisé par personne et par poste (navigateur) ; il se combine avec le mode clair / sombre.
-export function ThemePicker({ themeId, onPick, density = "comfortable", onDensity, presentation = false, onPresentation, darkMode = false, onDarkMode }) {
+export function ThemePicker({ ink, themeId, onPick, density = "comfortable", onDensity, presentation = false, onPresentation, darkMode = false, onDarkMode }) {
   const [open, setOpen] = useState(false);
   const [detailMode, setDetailMode] = useDetailMode();
   const ref = useRef(null);
@@ -18,7 +18,7 @@ export function ThemePicker({ themeId, onPick, density = "comfortable", onDensit
   }, [open]);
   const toggle = () => { if (!open) closeAllMenus(); setOpen(v => !v); }; // on ferme d'abord les autres menus
   return (<div ref={ref} style={{ position: "relative", marginTop: 4 }}>
-    <button onClick={toggle} title="Apparence : thème, mode clair / sombre, densité, présentation" aria-label="Apparence : thème, mode clair ou sombre, densité, présentation" aria-expanded={open} aria-haspopup="dialog" style={{ width: 40, height: 36, borderRadius: 12, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", background: open ? T.teal100 : "transparent", color: open ? T.teal600 : T.ink300 }}><NavIcon name="palette" size={17} /></button>
+    <button onClick={toggle} title="Apparence : thème, mode clair / sombre, densité, présentation" aria-label="Apparence : thème, mode clair ou sombre, densité, présentation" aria-expanded={open} aria-haspopup="dialog" style={{ width: 40, height: 36, borderRadius: 12, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", background: open ? T.teal100 : "transparent", color: open ? T.teal600 : (ink || T.ink300) }}><NavIcon name="palette" size={17} /></button>
     {open && <div aria-hidden="true" onMouseDown={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 10019 }} />}
     {open && <div role="dialog" aria-label="Affichage" className="enogia-float-in enogia-theme-pop" style={{ position: "fixed", left: 72, bottom: 14, zIndex: 10020, width: 262, maxHeight: "calc(100dvh - 28px)", overflowY: "auto", background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 16, boxShadow: T.shadowLg, padding: "12px 12px 8px", fontFamily: T.font }}>
       {onDarkMode && <>

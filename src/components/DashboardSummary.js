@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { isPhone } from "../useIsPhone";
 import { T, FZ } from "../theme";
 import { getPjMeta, ETAT_META, countShippedYTD } from "../pjMeta";
+import { AnimatedNumber } from "./SharedUI";
 
 // v171 (maquette validée) : les 4 répartitions passent de camemberts à des barres horizontales triées (une teinte),
 // l'état en une barre découpée aux couleurs d'état ; 5 valeurs max par dimension + « Autres ».
@@ -69,7 +70,7 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
     {/* Pas de carte ici : le bandeau est posé directement sur le fond de page (direction "Piste A"),
         séparé du reste par un simple filet. L'en-tête reste fixe, avec le contrôle d'affichage ancré à droite. */}
     <div style={{display:"flex",alignItems:"center",gap:12}}>
-      <h2 style={{margin:0,fontSize:FZ.sm,fontWeight:700,color:T.ink700}}>Vue d'ensemble</h2>
+      <h2 style={{margin:0,fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk}}>Vue d'ensemble</h2>
       {collapsed&&<span style={{fontSize:FZ.sm,color:T.ink700}}><strong style={{color:T.teal600}}>{shippedYTD}</strong> expédiée{shippedYTD>1?"s":""} depuis le {SHIPPED_SINCE_LABEL}</span>}
       <button onClick={toggleCollapsed} title={collapsed?"Afficher la répartition":"Masquer la répartition"} aria-label={collapsed?"Afficher la répartition":"Masquer la répartition"} aria-expanded={!collapsed} style={{marginLeft:"auto",flexShrink:0,width:26,height:26,borderRadius:8,border:"none",background:"transparent",cursor:"pointer",color:T.ink300,display:"flex",alignItems:"center",justifyContent:"center"}}
         onMouseEnter={e=>{e.currentTarget.style.background=T.surface;}}
@@ -82,24 +83,24 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
 
     {!collapsed&&<div className="enogia-dash" style={{display:"flex",alignItems:"center",gap:28,flexWrap:"wrap",marginTop:18}}>
       <div style={{display:"flex",flexDirection:"column",gap:4,minWidth:150,flexShrink:0}}>
-        <div style={{fontSize:FZ.xxl,fontWeight:700,color:T.teal600,fontFamily:T.fontMontserrat,lineHeight:1}}>{shippedYTD}</div>
+        <div style={{fontSize:"clamp(44px,5vw,60px)",fontWeight:300,letterSpacing:"-.03em",color:T.ink900,fontFamily:T.fontDisplay,lineHeight:.95,fontVariantNumeric:"tabular-nums"}}><AnimatedNumber value={shippedYTD}/></div>
         <div style={{fontSize:FZ.sm,color:T.ink500}}>machine{shippedYTD>1?"s":""} livrée{shippedYTD>1?"s":""}<br/>depuis le {SHIPPED_SINCE_LABEL}</div>
       </div>
 
-      <div className="enogia-dash-sep" style={{width:1,alignSelf:"stretch",background:T.teal400,opacity:.3,flexShrink:0}}/>
+      <div className="enogia-dash-sep" style={{width:3,alignSelf:"stretch",background:T.teal500,flexShrink:0,borderRadius:1}}/>
 
       <div className="enogia-stagger" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:"16px 28px",flex:1,minWidth:0}}>
         {DIMENSIONS.map(d=>{
           const all=breakdownsByDim[d.key],list=topOf(all),total=all.reduce((a,x)=>a+x.value,0),max=Math.max(1,...list.map(x=>x.value));
           return(<section key={d.key} aria-label={"Répartition par "+d.label.toLowerCase()} style={{minWidth:0}}>
             <div style={{display:"flex",alignItems:"baseline",marginBottom:8}}>
-              <h3 style={{margin:0,fontSize:FZ.xs,fontWeight:600,color:T.ink500}}>Par {d.label.toLowerCase()}</h3>
+              <h3 style={{margin:0,fontSize:FZ.sm,fontWeight:500,color:T.ink900}}>Par {d.label.toLowerCase()}</h3>
               <span style={{marginLeft:"auto",fontSize:FZ.xs,color:T.ink500,fontVariantNumeric:"tabular-nums"}}>{total}</span>
             </div>
             {total===0?<div style={{fontSize:FZ.xs,color:T.ink500}}>Aucune machine avec ces filtres.</div>:d.key==="etat"?(<>
               {/* État : une barre découpée (part de chaque état), aux couleurs d'état. */}
-              <div role="img" aria-label={all.map(x=>x.name+" "+x.value).join(", ")} style={{display:"flex",height:8,gap:2,borderRadius:2,overflow:"hidden",marginBottom:8}}>
-                {all.map(x=><div key={x.name} title={x.name+" : "+x.value} style={{flex:x.value,background:etatColor(x.name)}}/>)}
+              <div role="img" aria-label={all.map(x=>x.name+" "+x.value).join(", ")} className="enogia-bar-fill" style={{display:"flex",height:12,gap:3,marginBottom:8}}>
+                {all.map(x=><div key={x.name} title={x.name+" : "+x.value} style={{flex:x.value,background:etatColor(x.name),borderRadius:2}}/>)}
               </div>
               <div style={{display:"flex",flexDirection:"column",gap:3}}>
                 {list.map(x=><div key={x.name} style={{display:"flex",alignItems:"center",gap:7,fontSize:FZ.xs,color:T.ink700}}>
@@ -113,7 +114,7 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
               <div style={{display:"grid",gridTemplateColumns:"minmax(0,max-content) minmax(40px,1fr) max-content",alignItems:"center",gap:"5px 8px"}}>
                 {list.map(x=><React.Fragment key={x.name}>
                   <span title={x.name} style={{fontSize:FZ.xs,color:T.ink700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:140}}>{x.name}</span>
-                  <span aria-hidden="true" style={{height:8,borderRadius:2,background:T.surfaceAlt,overflow:"hidden"}}><span style={{display:"block",height:"100%",width:(x.value/max*100)+"%",background:x.other?T.ink300:T.teal500}}/></span>
+                  <span aria-hidden="true" style={{height:10,borderRadius:2,background:T.surfaceAlt,overflow:"hidden"}}><span className="enogia-bar-fill" style={{display:"block",height:"100%",width:(x.value/max*100)+"%",background:x.other?T.ink300:T.teal500}}/></span>
                   <span style={{fontSize:FZ.xs,fontWeight:700,color:T.ink900,fontVariantNumeric:"tabular-nums",textAlign:"right"}}>{x.value}</span>
                 </React.Fragment>)}
               </div>

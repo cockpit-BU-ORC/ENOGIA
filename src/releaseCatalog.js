@@ -272,4 +272,9 @@ export const RELEASE_CATALOG = [
   { v: "172", t: "Calendrier sans bulles, étapes nommées", items: [
     ["Calendrier", "Plus d'infobulle au survol ; chaque jour affiche son étape, abrégée si la colonne est étroite."],
   ] },
+  { v: "173", t: "Nouveau style « Atelier »", items: [
+    ["Style", "Fond crème, menu marine avec repère jaune, grands titres et chiffres ; anciens thèmes toujours disponibles."],
+    ["Accueil et liste", "N° de PJ en plaques, couleur d'état sur chaque ligne, chiffres animés."],
+    ["Transitions", "Fondus, barres qui se remplissent, désactivés si l'ordinateur demande moins d'animations."],
+  ] },
 ];
