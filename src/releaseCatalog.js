@@ -255,4 +255,9 @@ export const RELEASE_CATALOG = [
     ["Manager", "Causes de retard lisibles dans tous les thèmes, couleurs du thème dans les graphiques."],
     ["Accessibilité", "Volet « Déclarer un retard » au clavier (Échap), état des boutons de choix annoncé."],
   ] },
+  { v: "169", t: "Un accueil plus direct", items: [
+    ["À traiter", "Mentions, tests et dérives réunis dans un seul bloc, une pastille par ligne."],
+    ["Départs", "Colonne à droite avec accès au calendrier."],
+    ["Parcours", "Machines ouvertes par étape sur une seule barre."],
+  ] },
 ];

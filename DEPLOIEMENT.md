@@ -914,3 +914,17 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
   - Rien à corriger dans le menu latéral (`aria-current`, bouton nommé, sous-onglets hors tabulation quand repliés).
 - Aucune clé `localStorage` nouvelle.
 - Fichiers : theme.js, components/{CalendarView,ManagerPanel,ManagerParts}.js, App.js (version), releaseNotes.js, releaseCatalog.js(+test).
+
+## v169 — Accueil refait d'après la maquette validée (taste-skill)
+
+- **Structure** (`components/HomeView.js`, affichage seulement ; calculs inchangés) :
+  - En-tête : date en casse normale (plus de majuscules espacées), phrase-bilan conservée, « Personnaliser » conservé.
+  - 4 repères : liseré 4 px conservé, libellé au-dessus, valeur 28 px semi-gras en chiffres tabulaires.
+  - Bloc principal « À traiter » : mentions ouvertes (4 max), mes tests à venir (3 max), dérives (4 max), une pastille par ligne (teinte pâle + texte foncé de la même teinte), puis « Depuis votre dernière visite » ; « Départs à venir » (5) dans une colonne à droite (`flex` 3/2, repli sous ~760 px).
+  - « Mes projets » garde sa carte (non présent dans la maquette, conservé pour les chefs de projet).
+  - « Le parcours d'une machine » → « Où en sont les N machines ouvertes » : une barre empilée (méca, élec, tests, packaging, pas encore lancées) avec effectifs, `role="img"` + résumé.
+  - Numéros 01, 02… supprimés ; cartes plates (bordure 1 px, plus d'ombre) ; lignes ≥ 40 px, séparées par un filet.
+- **Thème** : teinte douce `note` ajoutée à `alertSoft()` (pastille « Mention » ; 8,9:1 en clair, 7,4:1 en sombre).
+- **Préférences** : même clé `localStorage` `enogia_home_<email>` ; les cases Pour moi / Mes tests / À surveiller / Depuis ma dernière visite pilotent désormais les lignes du bloc « À traiter ».
+- Vérifié par rendu statique (jsdom → HTML) en clair, en sombre, à 500 et 768 px de large ; pas testé dans l'appli connectée.
+- Fichiers : components/HomeView.js, theme.js, App.js (version), releaseNotes.js, releaseCatalog.js(+test).

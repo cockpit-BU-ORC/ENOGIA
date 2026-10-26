@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v169",
+    date: "2026-10-26",
+    title: "V169 : un accueil plus direct",
+    items: [
+      { t: "« À traiter » d'abord", d: "Vos mentions, vos tests à venir et les départs qui glissent sont réunis dans un seul bloc, une pastille par ligne, avec ce qui a changé depuis votre dernière visite." },
+      { t: "Départs à côté", d: "Les prochains départs s'affichent dans une colonne à droite, avec un accès direct au calendrier." },
+      { t: "Parcours en une barre", d: "La répartition des machines ouvertes par étape tient maintenant sur une seule barre, avec le nombre sous chaque étape." },
+    ],
+  },
+  {
     id: "2026-10-v168",
     date: "2026-10-26",
     title: "V168 : Calendrier instantané, Manager plus lisible",
