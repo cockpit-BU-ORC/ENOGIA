@@ -191,7 +191,7 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
 
   return(<div className="enogia-view-in" style={{background:stripeBg(T.teal500,T.surface,4),borderRadius:12,overflow:"hidden",border:"1px solid "+T.line,fontFamily:T.font}}>
     <div style={{display:"flex",gap:10,padding:"14px 18px",borderBottom:"1px solid "+T.line,alignItems:"center",flexWrap:"wrap",background:T.surface}}>
-      <span style={{display:"inline-flex",alignItems:"baseline",gap:8}}><span style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>Planning</span><span style={{fontSize:22,fontWeight:300,letterSpacing:"-.02em",color:T.ink900,fontVariantNumeric:"tabular-nums"}}>{multiYear?yearStart.getFullYear()+" – "+yearEnd.getFullYear():yearStart.getFullYear()}</span></span>
+      <span style={{fontSize:FZF.md,fontWeight:600,color:T.ink700,fontVariantNumeric:"tabular-nums"}}>{multiYear?yearStart.getFullYear()+" – "+yearEnd.getFullYear():yearStart.getFullYear()}</span>
       {/* Plus petite + italique (demandé explicitement) : une note d'usage secondaire, pas un titre. */}
       <span style={{fontSize:FZF.sm,color:T.ink500}}>Molette pour défiler · Ctrl + molette pour zoomer · cliquez une ligne pour la fiche projet</span>
       {/* Filtres État + PJ (demandé explicitement : "système de filtre pour enlever certain PJ ou
@@ -277,9 +277,10 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
             {/* Marqueurs affinés (demandé explicitement, registre "premium épuré") : pastille claire
                 à contour coloré plutôt qu'un disque plein — plus petit, plus plat, ombre quasi
                 invisible comme le reste de l'appli au lieu de l'ombre portée marquée d'origine. */}
-            {PHASES.map(ph=>{const dt=r[ph.k];if(!dt)return null;const x=xOf(new Date(dt));
-              return(<div key={ph.k} style={{position:"absolute",left:x,top:"50%",transform:"translate(-50%,-50%)",width:18,height:18,borderRadius:"50%",background:ph.bg,border:"2px solid "+ph.c,display:"flex",alignItems:"center",justifyContent:"center",fontSize:FZF.xs,fontWeight:700,color:ph.ink,zIndex:4,cursor:"pointer",boxShadow:T.shadowFlat}}>{ph.l}</div>);
-            })}
+            {/* v180 (audit : « trop de marqueurs par ligne ») : le prochain jalon ressort (plus grand, anneau), les jalons passés s'estompent. */}
+            {(()=>{const nextK=(PHASES.find(ph=>r[ph.k]&&new Date(r[ph.k])>=today)||{}).k;return PHASES.map(ph=>{const dt=r[ph.k];if(!dt)return null;const x=xOf(new Date(dt)),past=new Date(dt)<today,nx=ph.k===nextK,sz=nx?22:16;
+              return(<div key={ph.k} title={ph.t+(nx?" (prochain jalon)":"")} style={{position:"absolute",left:x,top:"50%",transform:"translate(-50%,-50%)",width:sz,height:sz,borderRadius:"50%",background:ph.bg,border:"2px solid "+ph.c,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:ph.ink,zIndex:nx?5:4,cursor:"pointer",opacity:past?.5:1,boxShadow:nx?"0 0 0 3px "+T.card+", 0 0 0 5px "+ph.c:T.shadowFlat}}>{ph.l}</div>);
+            });})()}
           </div>);
         })}
 

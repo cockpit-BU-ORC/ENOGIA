@@ -304,4 +304,9 @@ export const RELEASE_CATALOG = [
     ["Connexion", "Nouvel écran en un clic ; session fermée chaque soir à minuit."],
     ["En-tête", "Logo en haut du menu ; informations d'import réservées aux admins."],
   ] },
+  { v: "180", t: "Messages clairs et planning plus lisible", items: [
+    ["Messages", "Notifications discrètes au lieu des fenêtres bloquantes ; bandeau si les données ne sont plus synchronisées."],
+    ["Liste", "Vues prêtes Atelier et Direction dans le menu Colonnes."],
+    ["Gantt et calendrier", "Prochain jalon mis en avant ; abréviations rappelées dans la légende."],
+  ] },
 ];

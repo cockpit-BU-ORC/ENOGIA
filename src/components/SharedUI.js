@@ -36,6 +36,28 @@ export const closeAllMenus=()=>{try{window.dispatchEvent(new Event("enogia:close
 export function useCloseOnSignal(setOpen){
   useEffect(()=>{const f=()=>setOpen(false);window.addEventListener("enogia:closemenus",f);return()=>window.removeEventListener("enogia:closemenus",f);},[setOpen]);
 }
+// v180 : notifications non bloquantes (remplacent les alert() natifs). notify(message, "error"|"info"|"ok") ; le type est deviné si absent.
+export function notify(message, kind){
+  const k=kind||(/erreur|impossible|échec|incorrect|réservée|refus/i.test(String(message))?"error":"info");
+  try{window.dispatchEvent(new CustomEvent("enogia:toast",{detail:{message:String(message),kind:k}}));}catch(e){/* hors navigateur */}
+}
+export function Toaster(){
+  const [list,setList]=useState([]);
+  useEffect(()=>{
+    let n=0;const timers=[];
+    const on=e=>{const id=++n,t={id,...e.detail};setList(l=>[...l.slice(-3),t]);timers.push(setTimeout(()=>setList(l=>l.filter(x=>x.id!==id)),t.kind==="error"?8000:4500));};
+    window.addEventListener("enogia:toast",on);return()=>{window.removeEventListener("enogia:toast",on);timers.forEach(clearTimeout);};
+  },[]);
+  if(!list.length)return null;
+  return(<div aria-live="polite" style={{position:"fixed",right:16,bottom:16,zIndex:10060,display:"flex",flexDirection:"column",gap:8,maxWidth:"min(420px,calc(100vw - 32px))",fontFamily:T.font}}>
+    {list.map(t=>{const err=t.kind==="error",ok=t.kind==="ok";return(
+      <div key={t.id} role={err?"alert":"status"} className="enogia-toast" style={{display:"flex",alignItems:"flex-start",gap:10,background:T.card,color:T.ink900,border:"1px solid "+T.line,borderLeft:"4px solid "+(err?T.red500:ok?T.emerald500:T.teal500),borderRadius:10,padding:"10px 12px",boxShadow:T.shadowFloat,fontSize:FZ.sm,lineHeight:1.45}}>
+        <span aria-hidden="true" style={{color:err?T.red600:ok?T.emerald600:T.teal600,display:"inline-flex",marginTop:1}}><NavIcon name={err?"warning":ok?"check":"inbox"} size={17}/></span>
+        <span style={{flex:1,minWidth:0}}>{t.message}</span>
+        <button type="button" onClick={()=>setList(l=>l.filter(x=>x.id!==t.id))} aria-label="Fermer la notification" style={{border:"none",background:"transparent",color:T.ink500,cursor:"pointer",padding:2,minWidth:24,minHeight:24,display:"inline-flex",alignItems:"center",justifyContent:"center"}}><NavIcon name="close" size={14}/></button>
+      </div>);})}
+  </div>);
+}
 // v170 : rend une zone cliquable utilisable au clavier (Tab puis Entrée ou Espace), avec son rôle et son état.
 export const pressable=(fn,extra={})=>({role:"button",tabIndex:0,onClick:fn,onKeyDown:e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();fn(e);}},...extra});
 export { PjPlate } from "../pjMeta"; // v174 : défini dans pjMeta (partagé avec ProjectLabelCell)

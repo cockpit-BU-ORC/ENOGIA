@@ -397,7 +397,7 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
       <span style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>Étapes</span>
       {Object.entries(SEGMENT_STYLE).map(([label,st])=><span key={label} style={{display:"flex",alignItems:"center",gap:6,fontSize:FZF.md}}>
         <span style={{width:14,height:14,borderRadius:4,background:st.c,boxShadow:"inset 0 0 0 1.5px "+stageSoft()[{"Arrivée":"arrivee","Production":"production","Tests":"tests","Fin prod":"finProd","Départ":"depart"}[label]].ring}}/>
-        <span style={{color:T.ink700,fontWeight:500}}>{label}</span>
+        <span style={{color:T.ink700,fontWeight:500}}>{label}{mode==="day"&&!showWords&&STAGE_SHORT[label]!==label?<span style={{color:T.ink500,fontWeight:400}}> ({STAGE_SHORT[label]})</span>:null}</span>
       </span>)}
       <span style={{display:"flex",alignItems:"center",gap:8,paddingLeft:16,borderLeft:"1px solid "+T.line}}>
         <span style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>Présence tests</span>

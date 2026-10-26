@@ -1039,3 +1039,15 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - **Déconnexion quotidienne** (`App.js`) : à la restauration de session, si `user.metadata.lastSignInTime` n'est pas aujourd'hui → `signOut` ; si le site reste ouvert, minuteur jusqu'à minuit + 5 s → `signOut`. Aucune écriture en base.
 - Vérifié : rendu statique de la connexion (bureau) ; build, tests, contraste. Pas testé dans l'appli connectée.
 - Fichiers : App.js, styles.css, components/{HomeView,LoginScreen}.js, releaseNotes.js, releaseCatalog.js(+test).
+
+## v180 — Problèmes de l'audit ui-ux-pro-max (1/2)
+
+- **Notifications** (`notify()` + `<Toaster/>` dans `SharedUI.js`, monté dans `App.js`) : les 34 `alert()` natifs (App, ManagerPanel, TableView) deviennent des notifications non bloquantes en bas à droite (`role="alert"` pour les erreurs, `role="status"` sinon), fermeture auto 4,5 s (8 s pour une erreur) ou manuelle, 4 au plus à l'écran. Le type est déduit du texte (« Erreur », « réservée », « incorrect »…). Les `confirm()` de suppression restent (choix explicite requis).
+- **Synchronisation perdue** (`App.js`) : bandeau « hors ligne » (événements `online`/`offline`) ou « connexion aux données interrompue » (erreur de l'abonnement principal `DOC_REF`), avec bouton « Recharger ».
+- **Liste — vues prêtes** (`TableView.js`, `COLUMN_PRESETS`) : « Atelier » (masque N° de série, pays, chef, gamme), « Direction » (masque série, commentaires, arrivée, tests, fin prod), « Tout afficher » ; même stockage des colonnes masquées qu'avant.
+- **Gantt** (`GanttView.js`) : prochain jalon de chaque ligne mis en avant (22 px + anneau), jalons passés à 50 % d'opacité ; libellé « PLANNING » retiré (doublon de l'en-tête de page), années conservées.
+- **Calendrier** : en vue Jour avec colonnes étroites, la légende rappelle l'abréviation de chaque étape.
+- Déjà en place (vérifié) : squelette de chargement sur toutes les vues pendant le premier chargement (`LoadingSkeleton`), états vides sur 11 écrans.
+- Reste à faire (audit) : vue tablette dédiée « mes machines du jour », abonnements Firestore secondaires sans gestion d'erreur (14), couleurs codées en dur hors thème (65, dont logo Google, nuancier et rapports).
+- Vérifié : test isolé des notifications ; build, tests, contraste. Pas testé dans l'appli connectée.
+- Fichiers : App.js, components/{SharedUI,ManagerPanel,TableView,GanttView,CalendarView}.js, releaseNotes.js, releaseCatalog.js(+test).

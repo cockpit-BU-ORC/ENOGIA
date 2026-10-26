@@ -3,7 +3,7 @@ import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, R
 import { T, FZ } from "../theme";
 import { SerieTag, getPjMeta, initials, GAMME_COLORS, ETAT_META, ALL_ETATS, ALL_GAMMES, MONTHS, today, PjPlate } from "../pjMeta";
 import { fmt, toLocalISO, diffDays, weekStartOf } from "../parsers";
-import { DropFilter, ImportButton, NavIcon, Select } from "./SharedUI";
+import { DropFilter, ImportButton, NavIcon, Select, notify } from "./SharedUI";
 import { CARD, KpiRow, PieBlock, EmptyNote, StatutTab, KpiAvancement, DelayInsights, DelaysTab, ProductionCalendarManager } from "./ManagerParts";
 import { ProjectFileManager } from "./ManagerFiche";
 import { EtatInfoButton } from "./ProdStagesUI";
@@ -868,7 +868,7 @@ export function ClosurePeriodsManager({closurePeriods,setClosurePeriods}){
   const [newLabel,setNewLabel]=useState("");
   const addPeriod=()=>{
     if(!newStart||!newEnd)return;
-    if(newEnd<newStart){alert("La date de fin doit être après la date de début.");return;}
+    if(newEnd<newStart){notify("La date de fin doit être après la date de début.");return;}
     const next=[...closurePeriods,{start:newStart,end:newEnd,label:newLabel.trim()||"Fermeture"}];
     setClosurePeriods(next);
     setNewStart("");setNewEnd("");setNewLabel("");

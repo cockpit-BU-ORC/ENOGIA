@@ -7,6 +7,17 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v180",
+    date: "2026-10-26",
+    title: "V180 : messages clairs et planning plus lisible",
+    items: [
+      { t: "Messages discrets", d: "Les erreurs et confirmations s'affichent en bas à droite, sans bloquer la page, et se ferment seules." },
+      { t: "Hors ligne signalé", d: "Si la connexion aux données est perdue, un bandeau le dit et propose de recharger, au lieu d'afficher des données figées." },
+      { t: "Vues prêtes dans la liste", d: "Le menu Colonnes propose une vue Atelier et une vue Direction en un clic." },
+      { t: "Gantt et calendrier", d: "Dans le Gantt, le prochain jalon de chaque machine ressort et les jalons passés s'estompent ; la légende du calendrier rappelle les abréviations." },
+    ],
+  },
+  {
     id: "2026-10-v179",
     date: "2026-10-26",
     title: "V179 : écran de connexion et en-tête allégé",

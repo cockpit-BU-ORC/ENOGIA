@@ -4,7 +4,7 @@ import { useMarks, NewMark } from "./ChangesNotice";
 import { EtatInfoButton } from "./ProdStagesUI";
 import { getPjMeta, initials, personTint, DriftDot, PresenceChip, presenceKind, presenceDates, presenceFirstDate, CountryFlag, ETAT_META, ALL_ETATS, ALL_GAMMES, GAMME_COLORS, MONTHS, today } from "../pjMeta";
 import { diffDays, fmtMode } from "../parsers";
-import { HoverPop, useSheetJS, Badge, DropFilter, NavIcon, useCloseOnSignal, EmptyState, pressable, PjPlate } from "./SharedUI";
+import { HoverPop, useSheetJS, Badge, DropFilter, NavIcon, useCloseOnSignal, EmptyState, pressable, PjPlate, notify } from "./SharedUI";
 import { ProjectModal } from "./ProjectModal";
 import { RowMenu } from "./RowMenu";
 import { EtatPopBody, DriftPopBody, AvPopBody } from "./RowPops";
@@ -27,6 +27,8 @@ export const TABLE_COLUMNS=[
   {id:"depart",label:"Départ"},
   {id:"avancement",label:"Avancement"},
 ];
+// v180 : vues prêtes — [libellé, colonnes masquées].
+const COLUMN_PRESETS=[["Atelier",["serie","pays","chef","gamme"]],["Direction",["serie","commentaires","arrivee","tests","finprod"]],["Tout afficher",[]]];
 export function ColumnPicker({hidden,setHidden}){
   const [open,setOpen]=useState(false);
   useCloseOnSignal(setOpen);
@@ -42,7 +44,13 @@ export function ColumnPicker({hidden,setHidden}){
     {open&&<>
       <div onClick={()=>setOpen(false)} style={{position:"fixed",inset:0,zIndex:9998}}/>
       <div style={{position:"fixed",top:pos.top,left:pos.left,background:T.card,borderRadius:12,boxShadow:T.shadowLg,border:"1px solid "+T.line,zIndex:9999,minWidth:200,maxHeight:340,overflowY:"auto",fontFamily:T.font}}>
-        <div style={{padding:"8px 12px",fontSize:FZ.sm,fontWeight:700,color:T.ink500,textTransform:"uppercase",letterSpacing:".03em",borderBottom:"1px solid "+T.line,background:T.surface}}>Colonnes visibles</div>
+        <div style={{padding:"8px 12px",fontSize:12,fontWeight:700,color:T.accentInk,borderBottom:"1px solid "+T.line,background:T.surface}}>Vues prêtes</div>
+        {/* v180 : vues prêtes selon le public (audit : « trop de colonnes à la fois ») — un clic règle les colonnes visibles. */}
+        <div role="group" aria-label="Vues prêtes" style={{display:"flex",gap:6,flexWrap:"wrap",padding:"8px 12px",borderBottom:"1px solid "+T.line}}>
+          {COLUMN_PRESETS.map(([l,hid])=>{const on=hid.length===hidden.size&&hid.every(h=>hidden.has(h));return(
+            <button key={l} type="button" aria-pressed={on} onClick={()=>setHidden(new Set(hid))} style={{border:"1.5px solid "+T.teal500,background:on?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:on?(T.mode==="dark"?"#0B1130":"#FFFFFF"):T.teal600,borderRadius:7,padding:"4px 10px",minHeight:28,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font}}>{l}</button>);})}
+        </div>
+        <div style={{padding:"8px 12px",fontSize:12,fontWeight:700,color:T.accentInk,borderBottom:"1px solid "+T.line,background:T.surface}}>Colonnes visibles</div>
         {TABLE_COLUMNS.map(c=>{const visible=!hidden.has(c.id);return(
           <div key={c.id} {...pressable(()=>toggle(c.id),{role:"checkbox","aria-checked":visible})} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",cursor:"pointer",borderBottom:"1px solid "+T.surface}}>
             <div style={{width:16,height:16,borderRadius:4,border:"1.5px solid "+(visible?T.teal500:T.ink100),background:visible?T.teal500:T.card,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{visible&&<span style={{color:"#fff",fontSize:FZ.sm,fontWeight:700}}>✓</span>}</div>
@@ -302,7 +310,7 @@ export function TableView({data,progress,df,setDf,selEtats,setSelEtats,selGammes
     try{await exportPlanningXlsx(recs);}catch(e){exportSimple();}
   };
   const exportSimple=()=>{
-    if(!window.XLSX){alert("Librairie Excel en cours de chargement, réessayez dans 2 secondes.");return;}
+    if(!window.XLSX){notify("Librairie Excel en cours de chargement, réessayez dans 2 secondes.");return;}
     const headers=["N° PJ","N° de série","Projet","Pays","Chef de Projet","Gamme","État","Arrivée","Tests","Fin prod","Départ","Avancement (%)"];
     const xrows=rows.map(r=>{
       const meta=getPjMeta(r.pj,r);

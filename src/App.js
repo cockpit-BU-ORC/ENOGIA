@@ -20,7 +20,7 @@ import { getPjMeta, ALL_GAMMES, ALL_ETATS, ETAT_META, registerCustomEtats, MONTH
 import { weekStartOf } from "./parsers";
 import { HomeView } from "./components/HomeView";
 import { useA11yFallback } from "./a11yFallback";
-import { ImportButton, ManagerAccessNotice, PIN, NavIcon, EmptyState, LoadingSkeleton, PageHead } from "./components/SharedUI";
+import { ImportButton, ManagerAccessNotice, PIN, NavIcon, EmptyState, LoadingSkeleton, PageHead, notify, Toaster } from "./components/SharedUI";
 import { GanttView } from "./components/GanttView";
 import { ProjectModal } from "./components/ProjectModal";
 import { CommentsView } from "./components/CommentsView";
@@ -64,7 +64,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-26-v179-connexion-entete";
+const APP_BUILD_VERSION = "2026-10-26-v180-audit-messages";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -90,7 +90,10 @@ function BetaBanner({canCopy}){
 export default function App(){
   // Utilisateur connecté via Google, restreint aux comptes @enogia.com (null tant que non connecté).
   const [currentUser,setCurrentUser]=useState(null);
-  const [authChecked,setAuthChecked]=useState(false); // évite un flash de l'écran de connexion pendant la vérification initiale
+  const [authChecked,setAuthChecked]=useState(false);
+  // v180 : données plus synchronisées (réseau coupé ou erreur Firestore) → bandeau explicite avec « Recharger ».
+  const [syncLost,setSyncLost]=useState(false),[offline,setOffline]=useState(typeof navigator!=="undefined"&&navigator.onLine===false);
+  useEffect(()=>{const on=()=>setOffline(false),off=()=>setOffline(true);window.addEventListener("online",on);window.addEventListener("offline",off);return()=>{window.removeEventListener("online",on);window.removeEventListener("offline",off);};},[]); // évite un flash de l'écran de connexion pendant la vérification initiale
 
   useEffect(()=>{
     const unsub=onAuthStateChanged(auth,user=>{
@@ -297,6 +300,7 @@ export default function App(){
     }, (err)=>{
       console.error("Erreur Firestore:", err);
       setLoading(false);
+      setSyncLost(true); // v180 : l'écran affiche un bandeau au lieu de rester figé sans explication
     });
     return ()=>unsub();
   },[]);
@@ -386,7 +390,7 @@ export default function App(){
       return true;
     }catch(e){
       console.error(e);
-      alert("Erreur lors de l'enregistrement de la liste des composants : " + e.message);
+      notify("Erreur lors de l'enregistrement de la liste des composants : " + e.message);
       return false;
     }
   },[]);
@@ -397,7 +401,7 @@ export default function App(){
       return true;
     }catch(e){
       console.error(e);
-      alert("Erreur lors de l'enregistrement des certifications : " + e.message);
+      notify("Erreur lors de l'enregistrement des certifications : " + e.message);
       return false;
     }
   },[]);
@@ -407,7 +411,7 @@ export default function App(){
       return true;
     }catch(e){
       console.error(e);
-      alert("Erreur lors de l'enregistrement des états : " + e.message);
+      notify("Erreur lors de l'enregistrement des états : " + e.message);
       return false;
     }
   },[]);
@@ -417,7 +421,7 @@ export default function App(){
       await setDoc(OVERRIDES_DOC_REF(), { closurePeriods:next }, { merge:true });
     }catch(e){
       console.error(e);
-      alert("Erreur lors de l'enregistrement : " + e.message);
+      notify("Erreur lors de l'enregistrement : " + e.message);
     }
   },[]);
 
@@ -435,7 +439,7 @@ export default function App(){
       await setDoc(OVERRIDES_DOC_REF(), { productionExclusions:nextAll }, { merge:true });
     }catch(e){
       console.error(e);
-      alert("Erreur lors de l'enregistrement : " + e.message);
+      notify("Erreur lors de l'enregistrement : " + e.message);
     }
   },[productionExclusions]);
 
@@ -543,7 +547,7 @@ export default function App(){
         return true;
       }catch(e){
         console.error(e);
-        alert("Erreur lors de l'enregistrement des infos projet : " + e.message);
+        notify("Erreur lors de l'enregistrement des infos projet : " + e.message);
         return false;
       }
     }
@@ -563,7 +567,7 @@ export default function App(){
       const next={...pjOverridesState};
       entries.forEach(([pj,fields])=>{next[pj]={...(next[pj]||{}),...fields};});
       try{await setDoc(PJ_META_OVERRIDES_DOC_REF(),{meta:next},{merge:true});setSavedAt(new Date());return true;}
-      catch(e){console.error(e);alert("Erreur lors de l'enregistrement sur plusieurs projets : "+e.message);return false;}
+      catch(e){console.error(e);notify("Erreur lors de l'enregistrement sur plusieurs projets : "+e.message);return false;}
     }
   },[pjOverridesState]);
 
@@ -578,7 +582,7 @@ export default function App(){
       return true;
     }catch(e){
       console.error(e);
-      alert("Erreur lors de l'enregistrement du commentaire : " + e.message);
+      notify("Erreur lors de l'enregistrement du commentaire : " + e.message);
       return false;
     }
   },[comments,currentUser]);
@@ -606,7 +610,7 @@ export default function App(){
   const resolveComment=useCallback(async (pj,idx,email,on)=>{
     const nextAll={...comments,[pj]:setCommentResolved(comments[pj]||[],idx,email,on,new Date().toISOString())};
     try{await setDoc(COMMENTS_DOC_REF(),{byPj:nextAll},{merge:true});return true;}
-    catch(e){console.error(e);alert("Erreur lors de l'enregistrement : "+e.message);return false;}
+    catch(e){console.error(e);notify("Erreur lors de l'enregistrement : "+e.message);return false;}
   },[comments]);
 
   // Ajoute le même commentaire à plusieurs PJ à la fois (ex. décalage affectant toute une ligne de projets)
@@ -623,14 +627,14 @@ export default function App(){
       return true;
     }catch(e){
       console.error(e);
-      alert("Erreur lors de l'enregistrement du commentaire : " + e.message);
+      notify("Erreur lors de l'enregistrement du commentaire : " + e.message);
       return false;
     }
   },[comments,currentUser]);
 
   const deleteComment=useCallback(async (pj,index,pin)=>{
-    if(!isSuperAdmin()){alert("La suppression est réservée au super admin.");return false;}
-    if(pin!==PIN){alert("Code incorrect.");return false;}
+    if(!isSuperAdmin()){notify("La suppression est réservée au super admin.");return false;}
+    if(pin!==PIN){notify("Code incorrect.");return false;}
     const current=comments[pj]||[];
     const next=current.filter((_,i)=>i!==index);
     const nextAll={...comments,[pj]:next};
@@ -639,7 +643,7 @@ export default function App(){
       return true;
     }catch(e){
       console.error(e);
-      alert("Erreur lors de la suppression : " + e.message);
+      notify("Erreur lors de la suppression : " + e.message);
       return false;
     }
   },[comments]);
@@ -676,11 +680,11 @@ export default function App(){
   useEffect(()=>{if(view==="tests"&&testsLoaded&&!canSeeTests)setView("table");},[view,testsLoaded,canSeeTests]); // accès retiré ou ancien choix mémorisé
   const saveTests=useCallback(async next=>{
     try{await setDoc(TESTS_DOC_REF(),{...next,updatedAt:new Date().toISOString(),updatedBy:authorName||""});return true;}
-    catch(e){console.error(e);alert("Erreur lors de l'enregistrement des tests : "+e.message);return false;}
+    catch(e){console.error(e);notify("Erreur lors de l'enregistrement des tests : "+e.message);return false;}
   },[authorName]);
   const saveTurbines=useCallback(async next=>{
     try{await setDoc(TURBINES_DOC_REF(),{...next,updatedAt:new Date().toISOString(),updatedBy:authorName||""});return true;}
-    catch(e){console.error(e);alert("Erreur lors de l'enregistrement des turbines : "+e.message);return false;}
+    catch(e){console.error(e);notify("Erreur lors de l'enregistrement des turbines : "+e.message);return false;}
   },[authorName]);
 
   // Lecture temps réel des types de retard génériques (configurables par le Manager)
@@ -713,7 +717,7 @@ export default function App(){
       return true;
     }catch(e){
       console.error(e);
-      alert("Erreur lors de l'enregistrement de la liste des accès Manager : " + e.message);
+      notify("Erreur lors de l'enregistrement de la liste des accès Manager : " + e.message);
       return false;
     }
   },[]);
@@ -728,7 +732,7 @@ export default function App(){
       return true;
     }catch(e){
       console.error(e);
-      alert("Erreur lors de l'enregistrement du retard : " + e.message);
+      notify("Erreur lors de l'enregistrement du retard : " + e.message);
       return false;
     }
   },[delays]);
@@ -748,14 +752,14 @@ export default function App(){
       return true;
     }catch(e){
       console.error(e);
-      alert("Erreur lors de l'enregistrement du retard : " + e.message);
+      notify("Erreur lors de l'enregistrement du retard : " + e.message);
       return false;
     }
   },[delays]);
 
   const deleteDelayAllocation=useCallback(async (pj,id,pin)=>{
-    if(!isSuperAdmin()){alert("La suppression est réservée au super admin.");return false;}
-    if(pin!==PIN){alert("Code incorrect.");return false;}
+    if(!isSuperAdmin()){notify("La suppression est réservée au super admin.");return false;}
+    if(pin!==PIN){notify("Code incorrect.");return false;}
     const current=delays[pj]||[];
     const next=current.filter(d=>d.id!==id);
     const nextAll={...delays,[pj]:next};
@@ -764,7 +768,7 @@ export default function App(){
       return true;
     }catch(e){
       console.error(e);
-      alert("Erreur lors de la suppression : " + e.message);
+      notify("Erreur lors de la suppression : " + e.message);
       return false;
     }
   },[delays]);
@@ -781,14 +785,14 @@ export default function App(){
       return true;
     }catch(e){
       console.error(e);
-      alert("Erreur lors de l'enregistrement du commentaire : " + e.message);
+      notify("Erreur lors de l'enregistrement du commentaire : " + e.message);
       return false;
     }
   },[delays]);
 
   const deleteDelayComment=useCallback(async (pj,delayId,idx,pin)=>{
-    if(!isSuperAdmin()){alert("La suppression est réservée au super admin.");return false;}
-    if(pin!==PIN){alert("Code incorrect.");return false;}
+    if(!isSuperAdmin()){notify("La suppression est réservée au super admin.");return false;}
+    if(pin!==PIN){notify("Code incorrect.");return false;}
     const current=delays[pj]||[];
     const next=current.map(d=>d.id===delayId?{...d,comments:(d.comments||[]).filter((_,i)=>i!==idx)}:d);
     const nextAll={...delays,[pj]:next};
@@ -797,7 +801,7 @@ export default function App(){
       return true;
     }catch(e){
       console.error(e);
-      alert("Erreur lors de la suppression : " + e.message);
+      notify("Erreur lors de la suppression : " + e.message);
       return false;
     }
   },[delays]);
@@ -808,7 +812,7 @@ export default function App(){
       return true;
     }catch(e){
       console.error(e);
-      alert("Erreur lors de l'enregistrement des types de retard : " + e.message);
+      notify("Erreur lors de l'enregistrement des types de retard : " + e.message);
       return false;
     }
   },[]);
@@ -819,7 +823,7 @@ export default function App(){
       await setDoc(OVERRIDES_DOC_REF(), { clientPresence:next }, { merge:true });
     }catch(e){
       console.error(e);
-      alert("Erreur lors de l'enregistrement : " + e.message);
+      notify("Erreur lors de l'enregistrement : " + e.message);
     }
   },[clientPresence]);
 
@@ -833,7 +837,7 @@ export default function App(){
       return true;
     }catch(e){
       console.error(e);
-      alert("Erreur lors de l'enregistrement : " + e.message);
+      notify("Erreur lors de l'enregistrement : " + e.message);
       return false;
     }
   },[etatChoice]);
@@ -858,7 +862,7 @@ export default function App(){
       setTimeout(()=>setProgressSaved(false),2500);
     }catch(e){
       console.error(e);
-      alert("Erreur lors de l'enregistrement : " + e.message);
+      notify("Erreur lors de l'enregistrement : " + e.message);
     }
     setSavingProgress(false);
   },[progress]);
@@ -893,7 +897,7 @@ export default function App(){
       // Pas besoin de setData ici : onSnapshot va le faire automatiquement pour tout le monde
     }catch(e){
       console.error(e);
-      alert("Erreur lors de l'enregistrement : " + e.message);
+      notify("Erreur lors de l'enregistrement : " + e.message);
     }
     setImporting(false);
   },[authorName]);
@@ -906,7 +910,7 @@ export default function App(){
       // Pas besoin de setInitialData ici : onSnapshot va le faire automatiquement
     }catch(e){
       console.error(e);
-      alert("Erreur lors de l'enregistrement du planning initial : " + e.message);
+      notify("Erreur lors de l'enregistrement du planning initial : " + e.message);
     }
     setInitialImporting(false);
   },[]);
@@ -932,7 +936,7 @@ export default function App(){
       await setDoc(INITIAL_DOC_REF(),{...cur,rows:[...nextRows,...added],lastImport:cur.lastImport||stamp,lastAdd:stamp});
     }catch(e){
       console.error(e);
-      alert("Erreur lors de l'ajout au planning initial : "+e.message);
+      notify("Erreur lors de l'ajout au planning initial : "+e.message);
     }
     setInitialImporting(false);
   },[]);
@@ -1003,6 +1007,7 @@ export default function App(){
 
   return(<MentionCtx.Provider value={mentionCtx}><ChangeMarksContext.Provider value={changeMarks}><div className="enogia-fade-in enogia-shell" style={{fontFamily:T.font,fontSize:FZ.md,background:T.surface,minHeight:"100vh",color:T.ink900,display:"flex"}}>
     <style>{"*{box-sizing:border-box;}"}</style>
+    <Toaster/>
     {presentation&&<button onClick={()=>setPresentation(false)} title="Quitter le mode présentation (Échap)" className="enogia-btn-tap" style={{position:"fixed",right:16,bottom:16,zIndex:10010,border:"none",borderRadius:999,padding:"8px 16px",background:T.ink900,color:T.surface,fontFamily:T.font,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",boxShadow:T.shadowFloat}}>Mode présentation · Quitter (Échap)</button>}
     {screenOpen&&<WorkshopScreen data={dataWithOverrides} productionExclusions={productionExclusions} closurePeriods={closurePeriods} changeLog={changeLog} darkMode={darkMode} onClose={()=>setScreenOpen(false)}/>}
     {loggedIn&&!justLoggedIn&&!screenOpen&&overridesLoaded&&unseenReleases.length>0&&<ReleasePopup releases={unseenReleases} userName={authorName} onClose={markReleasesSeen}/>}
@@ -1062,6 +1067,11 @@ export default function App(){
       </div>
 
       <main id="enogia-main" tabIndex={-1} className="enogia-main" style={{padding:D.main,flex:1,outline:"none"}}>
+        {(syncLost||offline)&&<div role="alert" style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",marginBottom:12,padding:"10px 14px",borderRadius:10,background:T.amber100,borderLeft:"4px solid "+T.amber500,color:T.ink900,fontSize:FZ.sm,fontFamily:T.font}}>
+          <NavIcon name="warning" size={18}/>
+          <span style={{flex:1,minWidth:200}}>{offline?"Vous êtes hors ligne : les données affichées ne se mettent plus à jour.":"La connexion aux données a été interrompue : les informations affichées peuvent être anciennes."}</span>
+          <button type="button" onClick={()=>window.location.reload()} className="enogia-btn-ind" style={{border:"1.5px solid "+T.teal500,background:"transparent",color:T.teal600,borderRadius:8,padding:"5px 12px",fontWeight:700,fontSize:FZ.xs,cursor:"pointer",fontFamily:T.font}}>Recharger</button>
+        </div>}
 
 
     {loading?<div style={{position:"relative"}}><LoadingSkeleton variant={view==="home"?"home":undefined}/></div>:
