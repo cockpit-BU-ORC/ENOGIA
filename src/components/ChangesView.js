@@ -13,7 +13,7 @@ export function ChangesView({ entries, onOpenPj }) {
   const [id, setId] = useState(null); const [q, setQ] = useState("");
   const card = { background: stripeBg(T.teal500, T.card, 4), border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden" };
   const title = <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
-    <span style={{ fontFamily: T.fontMono, fontSize: 11, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: T.accentInk }}>Journal des imports</span>
+    <span style={{ fontFamily: T.font, fontSize: 12, fontWeight: 700, color: T.accentInk }}>Journal des imports</span>
     <span style={{ fontSize: FZ.sm, color: T.ink500 }}>Ce qui a bougé entre l'ancienne version et la nouvelle, à chaque import</span>
   </div>;
   if (entries === null) return <div>{title}<div aria-label="Chargement" style={{ display: "flex", flexDirection: "column", gap: 8, padding: "6px 0" }}>{[100, 92, 96, 70].map((w, k) => <div key={k} className="enogia-skeleton" style={{ height: 38, width: w + "%" }} />)}</div></div>;

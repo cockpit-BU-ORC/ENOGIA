@@ -143,7 +143,7 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
     <div style={{ fontFamily: T.font }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
         <div style={{ flex: 1, minWidth: 260 }}>
-          <div style={{ fontFamily: T.fontMono, fontSize: 11, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: T.accentInk, marginBottom: 6 }}>{dateLine}{lastImport ? " · import " + lastImport : ""} · BU ORC</div>
+          <div style={{ fontFamily: T.font, fontSize: 12, fontWeight: 700, color: T.accentInk, marginBottom: 6 }}>{dateLine}{lastImport ? " · import " + lastImport : ""} · BU ORC</div>
           <h1 className="enogia-view-in" style={{ margin: 0, fontFamily: T.fontDisplay, fontWeight: 300, fontSize: "clamp(24px,3.2vw,34px)", lineHeight: 1.18, letterSpacing: "-.02em", color: T.ink900, maxWidth: 820 }}>
             {hello()}{firstName ? " " + firstName : ""}. {num(inProd, S.production.ring)} machine{inProd > 1 ? "s" : ""} avance{inProd > 1 ? "nt" : ""}, {num(late.length, T.amber600)} glisse{late.length > 1 ? "nt" : ""}, {num(next30, S.depart.ring)} part{next30 > 1 ? "ent" : ""} d'ici un mois.
           </h1>

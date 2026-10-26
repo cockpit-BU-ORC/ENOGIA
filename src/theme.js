@@ -15,11 +15,12 @@
 // Contrastes : texte ≥ 4,5:1 sur tous les fonds de chaque thème, clair et sombre (vérifié par scripts/check-contrast.mjs).
 
 const SEMANTIC_LIGHT = {
-  amber600:"#9A5B10", amber500:"#C1831E", amber100:"#F8EEDD",
-  emerald600:"#157A5E", emerald500:"#2B9C78", emerald100:"#E4F3EC",
+  // v177 : nouvelle palette (Orange #F9A620, Forest Green #548C2F, Tomato #F95738, Sandy Brown #EE964B) ; les variantes « 600 » sont les encres lisibles.
+  amber600:"#8A5700", amber500:"#F9A620", amber100:"#FDF0D5",
+  emerald600:"#3B6620", emerald500:"#548C2F", emerald100:"#E6F0DF",
   violet600:"#6249A3", violet500:"#7C63B8", violet100:"#EEEAF8",
-  red600:"#AE3434", red500:"#BE3A3A", red100:"#FBEAEA", redFill:"#BE3A3A", // v127 : red500 ≥ 4,9:1 (texte rouge lisible), texte blanc dessus 5,7:1
-  ember600:"#9E5226", ember500:"#DB6B2C", ember100:"#F9EAE0",
+  red600:"#A82F15", red500:"#B8331A", red100:"#FEE6DF", redFill:"#B8331A", // v177 : tomate assombrie pour rester lisible en texte (≥ 4,5:1) et sous texte blanc
+  ember600:"#8E4A12", ember500:"#EE964B", ember100:"#FCEBDD",
   info600:"#2557B8", info500:"#3F72D6", info100:"#E6EEFC", // v139 : bleu = information (identique dans tous les thèmes)
   // v140 : TROIS niveaux d'élévation seulement (les anciens noms restent des alias).
   //   plat      = simple filet (boutons, champs, pastilles)
@@ -37,11 +38,11 @@ const SEMANTIC_LIGHT = {
   neuInSm:"inset 0 0 0 1px rgba(16,24,34,.08)",
 };
 const SEMANTIC_DARK = {
-  amber600:"#DDB878", amber500:"#C8A054", amber100:"#373022",
-  emerald600:"#7FCFB0", emerald500:"#4BA98A", emerald100:"#1F3731",
+  amber600:"#FFD27A", amber500:"#F9A620", amber100:"#3A3020",
+  emerald600:"#A8D68A", emerald500:"#7FB55A", emerald100:"#22331C",
   violet600:"#BBA9EE", violet500:"#8A72C8", violet100:"#312A50",
-  red600:"#E8A3A3", red500:"#E39595", red100:"#3E2A2D", redFill:"#B24848", // v139 : red500 éclairci (texte rouge ≥ 4,5:1 sur les fonds sombres) ; redFill = fond plein sous texte blanc
-  ember600:"#E0AA85", ember500:"#D4875A", ember100:"#3C2D25",
+  red600:"#FFAE9C", red500:"#FF957D", red100:"#432823", redFill:"#B83A20", // v139 : red500 éclairci (texte rouge ≥ 4,5:1 sur les fonds sombres) ; redFill = fond plein sous texte blanc
+  ember600:"#F5B888", ember500:"#EE964B", ember100:"#3D2D21",
   info600:"#A5BEEE", info500:"#6E93DC", info100:"#232F4A",
   // v141 : en sombre, le relief vient d'un filet clair (et du fond un peu plus clair des cartes), pas d'ombres noires.
   shadowFlat:"0 0 0 1px rgba(255,255,255,.09)",
@@ -64,21 +65,21 @@ const grad = (a,b,c) => ({
 export const THEMES = {
   // ── Atelier (v173, maquette « Éditorial industriel » validée) : fond crème éditorial, marine ENOGIA, signal jaune d'atelier ──
   // Le marine porte la structure (menu, plaques de n° de PJ, filets épais) ; le jaune ne sert que de repère sur fond marine.
-  atelier: { label:"Atelier", desc:"Crème éditorial, marine industriel", swatch:["#1B2A55","#FAF7F1","#F3C35B"],
+  atelier: { label:"Atelier", desc:"Crème, bleu marine et or", swatch:["#0D3B66","#FCF8EA","#F4D35E"],
     light:{ ...grad("#0B1130","#1B2A55","#46587F"),
-      navy900:"#0B1130", navy800:"#131B49", navy700:"#1B2A55", navy600:"#2C3F8C",
-      teal600:"#14203F", teal500:"#1B2A55", teal400:"#4B5D85", teal100:"#ECE6D8",
-      surface:"#FAF7F1", surfaceAlt:"#F1EBDF", card:"#FFFFFF",
-      ink900:"#14203F", ink700:"#33405E", ink500:"#4F5B73", ink300:"#566279", ink100:"#ECE5D8",
-      line:"#E4DCCB", neuPanel:"#F5F0E6", neuPanelDim:"#EDE6D8",
-      accent:"#7A5C12", accentInk:"#6A4F0F", accentSoft:"#F6EBCB" },
+      navy900:"#082440", navy800:"#0A2D50", navy700:"#0D3B66", navy600:"#1E5A8C",
+      teal600:"#0A2A49", teal500:"#0D3B66", teal400:"#4A6F92", teal100:"#E4ECF3",
+      surface:"#FCF8EA", surfaceAlt:"#F5EDD3", card:"#FFFFFF",
+      ink900:"#0D2238", ink700:"#2E3E52", ink500:"#4E5A68", ink300:"#55606E", ink100:"#F0E8CC",
+      line:"#EBE2C4", neuPanel:"#F8F2DE", neuPanelDim:"#F1E9CF",
+      accent:"#8A6400", accentInk:"#7A5800", accentSoft:"#FCF0BE" },
     dark:{ ...grad("#0B1130","#1D2C4E","#46587F"),
       navy900:"#0B1130", navy800:"#C9D3F0", navy700:"#3B4F94", navy600:"#6F86CC",
       teal600:"#C6D0EE", teal500:"#5C73B8", teal400:"#9AABDC", teal100:"#33406A",
       surface:"#1C2536", surfaceAlt:"#2A3550", card:"#27324A",
       ink900:"#EEF2F9", ink700:"#CDD6E6", ink500:"#B5C1D6", ink300:"#AAB7CF", ink100:"#3C4A68",
       line:"#3C4A68", neuPanel:"#2B3650", neuPanelDim:"#33405E",
-      accent:"#F3C35B", accentInk:"#F6D98E", accentSoft:"#4A3E22" } },
+      accent:"#F4D35E", accentInk:"#F7DE84", accentSoft:"#4A3E22" } },
   // ── Ardoise (v161, ex-Marine) : l'identité ENOGIA (RAL 5011 « bleu acier ») sur fond gris froid + accent sarcelle ──
   marine: { label:"Ardoise", desc:"Bleu acier, fond gris froid", swatch:["#1D2C4E","#F3F5F8","#0A9DB5"],
     light:{ ...grad("#0B1130","#1D2C4E","#46587F"),
@@ -106,17 +107,18 @@ export const THEME_KEY = "enogia_theme2";
 export function navTokens(){
   if (T.themeId !== "atelier") return { industrial:false, bg:T.card, border:T.line, ink:T.ink500, inkOn:T.teal600, bgOn:T.teal100, hover:T.surface, hoverInk:T.ink900, group:T.ink500, mark:"currentColor" };
   const dark = T.mode === "dark";
-  return { industrial:true, bg:dark?"#121A2E":"#1B2A55", border:dark?"#2A3550":"#1B2A55", ink:"#C3CCE0", inkOn:"#FFFFFF", bgOn:"rgba(255,255,255,.10)", hover:"rgba(255,255,255,.06)", hoverInk:"#FFFFFF", group:"#F3C35B", mark:"#F3C35B" };
+  return { industrial:true, bg:dark?"#0B2440":"#0D3B66", border:dark?"#1E3A5A":"#0D3B66", ink:"#D6E2EE", inkOn:"#FFFFFF", bgOn:"rgba(244,211,94,.14)", hover:"rgba(255,255,255,.07)", hoverInk:"#FFFFFF", group:"#F4D35E", mark:"#F4D35E" };
 }
 
 // Polices et jetons non colorés, communs à tous les thèmes
 const SHARED = {
   // Fraunces/Inter abandonnées : Roboto partout (demandé explicitement) ; un seul token « display » et un seul token « corps ».
-  fontDisplay:"'Roboto',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
-  font:"'Roboto',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
+  // v177 (choix de Gabriel, police A) : Cabinet Grotesk pour les titres et grands chiffres, Satoshi pour le texte.
+  fontDisplay:"'Cabinet Grotesk','Satoshi',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
+  font:"'Satoshi',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
   fontMono:"'JetBrains Mono','SF Mono',Consolas,monospace",
   // v162 : Montserrat abandonnée — une seule famille (Roboto) pour toute l'app ; le token reste pour compatibilité.
-  fontMontserrat:"'Roboto',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
+  fontMontserrat:"'Satoshi',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
 };
 
 export function buildPalette(themeId, dark){
@@ -199,11 +201,12 @@ export function isDarkMode(){
 // bg = fond de tuile, ring = liseré / anneau un cran plus soutenu, ink = texte foncé (clair) ou clair (sombre), tous ≥ 4,5:1 sur bg.
 const STAGE_HUES = {
   // v162 : palette B « cinq teintes distinctes » (violet · bleu · cyan · émeraude · vert). Fond = 16 % de la couleur (clair), liseré = la couleur pleine ; en sombre, fond sombre teinté et liseré éclairci.
-  arrivee   : { light: { bg: "#EAE3F9", ring: "#7C4DDB", ink: "#2A1A4A" }, dark: { bg: "#686195", ring: "#B094E9", ink: "#F5F7FC" } },
-  production: { light: { bg: "#DBE6FA", ring: "#1D63E0", ink: "#0A224C" }, dark: { bg: "#4D6797", ring: "#77A1EC", ink: "#F5F7FC" } },
-  tests     : { light: { bg: "#D8ECF1", ring: "#0C8AA8", ink: "#042F39" }, dark: { bg: "#456C81", ring: "#6DB9CB", ink: "#F5F7FC" } },
-  finProd   : { light: { bg: "#D9EFE9", ring: "#0F9D74", ink: "#053527" }, dark: { bg: "#446E72", ring: "#6FC4AC", ink: "#F5F7FC" } },
-  depart    : { light: { bg: "#E2F1DB", ring: "#4CA81E", ink: "#1A390A" }, dark: { bg: "#516E5C", ring: "#94CB78", ink: "#F5F7FC" } },
+  // v177 : nouvelle palette — arrivée Light Blue #A8D5E2 · production Regal Navy #0D3B66 · tests Royal Gold #F4D35E · fin prod Forest Green #548C2F · départ Black Forest #104911.
+  arrivee   : { light: { bg: "#E3F2F6", ring: "#A8D5E2", ink: "#1E5263", solid: "#A8D5E2" }, dark: { bg: "#3D5F69", ring: "#A8D5E2", ink: "#F5F7FC", solid: "#A8D5E2" } },
+  production: { light: { bg: "#DCE6F0", ring: "#0D3B66", ink: "#0D3B66", solid: "#0D3B66" }, dark: { bg: "#34507A", ring: "#8FB0D6", ink: "#F5F7FC", solid: "#5A84B8" } },
+  tests     : { light: { bg: "#FCF0BE", ring: "#F4D35E", ink: "#5C4600", solid: "#F4D35E" }, dark: { bg: "#6B5A1E", ring: "#F4D35E", ink: "#F5F7FC", solid: "#F4D35E" } },
+  finProd   : { light: { bg: "#E2EEDA", ring: "#548C2F", ink: "#2E5418", solid: "#4A7D29" }, dark: { bg: "#3F6128", ring: "#8DC06A", ink: "#F5F7FC", solid: "#7FB55A" } },
+  depart    : { light: { bg: "#D8E6D3", ring: "#104911", ink: "#104911", solid: "#104911" }, dark: { bg: "#2C4F2A", ring: "#7FB77A", ink: "#F5F7FC", solid: "#3E7A3A" } },
 };
 // « Payé » (Cash in) garde son vert : ce n'est pas une étape du Calendrier.
 const PAID_HUE = { light: { bg: "#B4DDB9", ring: "#89BA91", ink: "#17321D" }, dark: { bg: "#376E4C", ring: "#6FB088", ink: "#FFFFFF" } };
@@ -226,7 +229,7 @@ export function ganttSoft() {
 export function stripeBg(color, base, h = 4) { return "linear-gradient(" + color + "," + color + ") top/100% " + h + "px no-repeat, " + base; }
 // Couleurs « sémantiques » des liserés : attention, retard, mention, marque (clair / sombre).
 export function stripeHues() {
-  return T.mode === "dark" ? { warn: "#F0B35A", late: "#F28B8B", note: "#E07BD0", brand: "#8FA2D6" } : { warn: "#E08A00", late: "#DC2626", note: "#C026A3", brand: "#1B2A55" };
+  return T.mode === "dark" ? { warn: "#FFD27A", late: "#FF957D", note: "#E07BD0", brand: "#8FB0D6" } : { warn: "#F9A620", late: "#F95738", note: "#C026A3", brand: "#0D3B66" };
 }
 export function stageSoft() {
   const m = T.mode === "dark" ? "dark" : "light";
@@ -260,10 +263,10 @@ export function statusSoft() {
 export function stagePalette() {
   const S = stageSoft();
   return {
-    "Arrivée":    { c: S.arrivee.bg,    t: S.arrivee.ink,    bold: false },
-    "Production": { c: S.production.bg, t: S.production.ink, bold: false },
-    "Tests":      { c: S.tests.bg,      t: S.tests.ink,      bold: false },
-    "Fin prod":   { c: S.finProd.bg,    t: S.finProd.ink,    bold: false },
-    "Départ":     { c: S.depart.bg,     t: S.depart.ink,     bold: true },
+    "Arrivée":    { c: S.arrivee.solid,    t: inkOn(S.arrivee.solid),    bold: true },
+    "Production": { c: S.production.solid, t: inkOn(S.production.solid), bold: true },
+    "Tests":      { c: S.tests.solid,      t: inkOn(S.tests.solid),      bold: true },
+    "Fin prod":   { c: S.finProd.solid,    t: inkOn(S.finProd.solid),    bold: true },
+    "Départ":     { c: S.depart.solid,     t: inkOn(S.depart.solid),     bold: true },
   };
 }

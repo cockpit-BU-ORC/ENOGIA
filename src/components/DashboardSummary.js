@@ -20,7 +20,7 @@ const DIMENSIONS=[
 ];
 const TOP_N=4;
 // Palette douce des camemberts (demandée explicitement : « couleurs plus douces et légères ») — gammes et états gardent leurs couleurs propres.
-const PALETTE=["#6E99B0","#A090C4","#D1A468","#80A98A","#C4847F","#8C93C2","#6FACA3","#A3AE78","#C09468","#7391BC","#BD84A0","#6FA095"];
+const PALETTE=["#0D3B66","#A8D5E2","#F4D35E","#EE964B","#548C2F","#F95738","#FFD449","#104911","#F9A620"]; // v177 : nouvelle palette
 
 export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}){
   // Le compteur "expédiées depuis le 1er janvier" doit rester lié au nombre réel d'unités
@@ -73,7 +73,7 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
     {/* Pas de carte ici : le bandeau est posé directement sur le fond de page (direction "Piste A"),
         séparé du reste par un simple filet. L'en-tête reste fixe, avec le contrôle d'affichage ancré à droite. */}
     <div style={{display:"flex",alignItems:"center",gap:12}}>
-      <h2 style={{margin:0,fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk}}>Vue d'ensemble</h2>
+      <h2 style={{margin:0,fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>Vue d'ensemble</h2>
       {collapsed&&<span style={{fontSize:FZ.sm,color:T.ink700}}><strong style={{color:T.teal600}}>{shippedYTD}</strong> expédiée{shippedYTD>1?"s":""} depuis le {SHIPPED_SINCE_LABEL}</span>}
       <button onClick={toggleCollapsed} title={collapsed?"Afficher la répartition":"Masquer la répartition"} aria-label={collapsed?"Afficher la répartition":"Masquer la répartition"} aria-expanded={!collapsed} style={{marginLeft:"auto",flexShrink:0,width:26,height:26,borderRadius:8,border:"none",background:"transparent",cursor:"pointer",color:T.ink300,display:"flex",alignItems:"center",justifyContent:"center"}}
         onMouseEnter={e=>{e.currentTarget.style.background=T.surface;}}

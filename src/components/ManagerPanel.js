@@ -505,7 +505,7 @@ export function ManagerPanel({jumpFiche,changeLog,data,progress,setProgress,rele
               <div style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,marginBottom:8}}>Détail par PJ</div>
               <table style={{width:"100%",borderCollapse:"collapse",fontSize:FZ.sm}}>
                 <thead><tr style={{borderBottom:"1px solid "+T.line,position:"sticky",top:0,background:T.surface}}>
-                  {["N° PJ","Gamme","Atelier","Autom"].map(h=><th key={h} style={{fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk,padding:"6px 8px",textAlign:h==="N° PJ"||h==="Gamme"?"left":"right"}}>{h}</th>)}
+                  {["N° PJ","Gamme","Atelier","Autom"].map(h=><th key={h} style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk,padding:"6px 8px",textAlign:h==="N° PJ"||h==="Gamme"?"left":"right"}}>{h}</th>)}
                 </tr></thead>
                 <tbody>{workloadByPJ.map(r=>(
                   <tr key={r.pj} style={{borderBottom:"1px solid "+T.surfaceAlt}}>
@@ -793,7 +793,7 @@ export function ManagerPanel({jumpFiche,changeLog,data,progress,setProgress,rele
       <ManagerAccessManager managerEmails={managerEmails} setManagerEmails={setManagerEmails} currentUserEmail={currentUserEmail}/>
       {/* Nom du build : réservé au propriétaire (demandé : « uniquement visible par moi, dans l'onglet manager »). */}
       {buildVersion&&<div style={{...CARD,padding:"8px 12px",marginTop:14,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-        <span style={{fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk}}>Version du site</span>
+        <span style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>Version du site</span>
         <span style={{fontFamily:"monospace",fontSize:FZ.xs,fontWeight:600,color:T.ink700,background:T.ink100,borderRadius:8,padding:"3px 8px"}}>build {buildVersion}</span>
       </div>}
     </>}

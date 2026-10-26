@@ -163,7 +163,7 @@ export function CommentsView({data,comments,addComment,deleteComment,pinOk,addCo
       </div>}
 
       {groupsList.length>0&&<div style={{borderBottom:"1px solid "+T.line}}>
-        <div style={{fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk,padding:"8px 12px 4px"}}>Commentaires groupés ({groupsList.length})</div>
+        <div style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk,padding:"8px 12px 4px"}}>Commentaires groupés ({groupsList.length})</div>
         <div style={{maxHeight:180,overflowY:"auto"}}>
           {groupsList.map(g=>{
             const active=!viewAll&&g.groupPjs.every(p=>viewPjs.has(p))&&viewPjs.size===g.groupPjs.length;

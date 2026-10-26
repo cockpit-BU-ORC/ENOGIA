@@ -270,7 +270,8 @@ export function CountryFlag({pays,size}){
 
 // Palette de gammes volontairement sourdes (tons rompus plutôt que couleurs vives) pour un rendu plus classe, à
 // l'identique en clair/sombre puisqu'utilisée uniquement comme petit point indicateur, jamais en aplat.
-export const GAMME_COLORS={"180LTV3":"#5068b0","100LTV3":"#8a76b5","40LTV3":"#5a9e85","180MT":"#b86a63","100MT":"#b68a56","20LTV3":"#4f8f96","10LTV3":"#7c9a5a","40LTV2R":"#bb9456","100LTV2R":"#9479ab","CONTENEUR":"#8a9199"};
+// v177 : gammes sur la nouvelle palette.
+export const GAMME_COLORS={"180LTV3":"#0D3B66","180MT":"#A8D5E2","100LTV3":"#FFD449","40LTV2R":"#EE964B","100MT":"#548C2F","40LTV3":"#F9A620","20LTV3":"#F95738","10LTV3":"#104911","100LTV2R":"#F4D35E","CONTENEUR":"#8A97A6"};
 // Couleurs d'état sensibles au thème : T est muté en place au changement de mode, mais un objet figé
 // à l'import garderait les valeurs claires — d'où les accesseurs (lus à chaque rendu). En sombre : fonds
 // teintés très foncés + texte clair, au lieu des pastels clairs qui éblouissaient.
@@ -283,25 +284,7 @@ const etatThemed=(light,dark,label)=>({
   get bar(){return T.mode==="dark"?dark.bar:mixHex(light.bar,T.card,.06);}, // v144 : point et camembert plus doux en clair
   label,
 });
-export const ETAT_META={
-  // v162 : palette B (teintes franches : fond = 18 % de la couleur en clair, point/liseré = couleur pleine). Ancien : v146.10 : teintes plus soutenues (fonds, liserés et texte un cran plus foncés). « Production ENOGIA » est remplacée par les 4 étapes de production.
-  "SHIPPED":etatThemed({bg:"#DFEFD6",text:"#1A390A",border:"#B4DAA0",bar:"#4CA81E"},{bg:"#4A6359",text:"#F5F7FC",border:"#6F9768",bar:"#94CB78"},"Expédiée"),
-  "MONTAGE":etatThemed({bg:"#E7DFF9",text:"#2A1A4A",border:"#C8B4F0",bar:"#7C4DDB"},{bg:"#5C5887",text:"#F5F7FC",border:"#8676B8",bar:"#B094E9"},"Montage Méca"),
-  "ELEC":etatThemed({bg:"#D6E3F9",text:"#0A224C",border:"#A0BDF2",bar:"#1D63E0"},{bg:"#465E89",text:"#F5F7FC",border:"#5E80BA",bar:"#77A1EC"},"Montage Élec"),
-  "TESTS":etatThemed({bg:"#D3EAEF",text:"#042F39",border:"#99CEDA",bar:"#0C8AA8"},{bg:"#406277",text:"#F5F7FC",border:"#568EA1",bar:"#6DB9CB"},"Tests"),
-  "PACKAGING":etatThemed({bg:"#D4EDE6",text:"#053527",border:"#9AD6C5",bar:"#0F9D74"},{bg:"#3F636B",text:"#F5F7FC",border:"#57948C",bar:"#6FC4AC"},"Packaging"),
-  "En fabrication":etatThemed({bg:"#E4E7EB",text:"#242831",border:"#C1C6D0",bar:"#6B778F"},{bg:"#545E72",text:"#F5F7FC",border:"#7D8697",bar:"#A6ADBC"},"Fabrication FNR"),
-  "STOCKAGE_EXT":etatThemed({bg:"#DFE1E6",text:"#1B1F27",border:"#B5BAC4",bar:"#4F5B72"},{bg:"#545E71",text:"#F5F7FC",border:"#747E8E",bar:"#959DAA"},"Stockage Externe"),
-  "NOT ORDERED":etatThemed({bg:"#F9EAD1",text:"#4C2F00",border:"#F2CE94",bar:"#E08A00"},{bg:"#655C53",text:"#F5F7FC",border:"#A88A5C",bar:"#ECB966"},"Non commandée"),
-  "NON_DESIGNEE":etatThemed({bg:"#EAECEF",text:"#303339",border:"#CFD2DA",bar:"#8C95A8"},{bg:"#545E72",text:"#F5F7FC",border:"#878E9E",bar:"#BABFCB"},"Non Designée"),
-  "SLOT_LIBRE":etatThemed({bg:"#D6D9E0",text:"#090E1D",border:"#9FA6B8",bar:"#1B2A55"},{bg:"#545D77",text:"#F5F7FC",border:"#656E88",bar:"#767F99"},"Slot libre"),
-  "A_DEFINIR":{get bg(){return T.surfaceAlt;},get text(){return T.ink500;},get border(){return T.ink100;},get bar(){return T.ink300;},label:"À définir"},
-};
-export const ALL_ETATS=Object.keys(ETAT_META);
-export const ASSIGNABLE_ETATS=ALL_ETATS.filter(e=>e!=="A_DEFINIR");
-
-// ── v146.18 : états créés par l'utilisateur (Manager › Réglages › États). Stockés dans planning/overrides.customEtats : [{id,label,color}].
-// ETAT_META / ALL_ETATS / ASSIGNABLE_ETATS sont complétés sur place : tous les écrans qui les lisent voient les nouveaux états.
+// v177 : outils de contraste remontés ici — ETAT_META les utilise dès le chargement (via etatColors).
 const lum=h=>{const p=String(h).replace("#","");const c=[0,2,4].map(i=>parseInt(p.slice(i,i+2),16)/255).map(v=>v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4));return .2126*c[0]+.7152*c[1]+.0722*c[2];};
 export const contrastRatio=(a,b)=>{const x=lum(a),y=lum(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05);};
 const readable=(color,bg,toward)=>{for(let t=.3;t<=1.001;t+=.05){const c=mixHex(color,toward,t);if(contrastRatio(c,bg)>=4.6)return c;}return toward;};
@@ -310,6 +293,27 @@ export function etatColors(color){
   const lbg=mixHex(c,"#ffffff",.8),dbg=mixHex(c,"#101826",.64);
   return{light:{bg:lbg,text:readable(c,lbg,"#000000"),border:mixHex(c,"#ffffff",.5),bar:c},dark:{bg:dbg,text:readable(c,dbg,"#ffffff"),border:mixHex(c,"#101826",.3),bar:mixHex(c,"#ffffff",.12)}};
 }
+const etatFromColor=(c,label)=>{const k=etatColors(c);return etatThemed(k.light,k.dark,label);};
+export const ETAT_META={
+  // v162 : palette B (teintes franches : fond = 18 % de la couleur en clair, point/liseré = couleur pleine). Ancien : v146.10 : teintes plus soutenues (fonds, liserés et texte un cran plus foncés). « Production ENOGIA » est remplacée par les 4 étapes de production.
+  // v177 : nouvelle palette (Regal Navy, Light Blue, Royal Gold, Forest Green, Black Forest, Sandy Brown, Mustard, Tomato, Orange) — dérivée par etatColors().
+  "SHIPPED":etatFromColor("#104911","Expédiée"),
+  "MONTAGE":etatFromColor("#0D3B66","Montage Méca"),
+  "ELEC":etatFromColor("#A8D5E2","Montage Élec"),
+  "TESTS":etatFromColor("#F4D35E","Tests"),
+  "PACKAGING":etatFromColor("#548C2F","Packaging"),
+  "En fabrication":etatFromColor("#EE964B","Fabrication FNR"),
+  "STOCKAGE_EXT":etatFromColor("#FFD449","Stockage Externe"),
+  "NOT ORDERED":etatFromColor("#F95738","Non commandée"),
+  "NON_DESIGNEE":etatFromColor("#F9A620","Non Designée"),
+  "SLOT_LIBRE":etatFromColor("#8A97A6","Slot libre"),
+  "A_DEFINIR":{get bg(){return T.surfaceAlt;},get text(){return T.ink500;},get border(){return T.ink100;},get bar(){return T.ink300;},label:"À définir"},
+};
+export const ALL_ETATS=Object.keys(ETAT_META);
+export const ASSIGNABLE_ETATS=ALL_ETATS.filter(e=>e!=="A_DEFINIR");
+
+// ── v146.18 : états créés par l'utilisateur (Manager › Réglages › États). Stockés dans planning/overrides.customEtats : [{id,label,color}].
+// ETAT_META / ALL_ETATS / ASSIGNABLE_ETATS sont complétés sur place : tous les écrans qui les lisent voient les nouveaux états.
 let CUSTOM_IDS=[];
 export function registerCustomEtats(list){
   CUSTOM_IDS.forEach(id=>{delete ETAT_META[id];});
@@ -337,7 +341,7 @@ export function SerieTag({pj,size=10.5,style}){
 }
 // v173-v176 : plaque de n° de PJ (plaque signalétique de machine) — police d'identifiant ; v176 : fond clair + filet au lieu du marine plein (jugé « bizarre »).
 export function PjPlate({pj,size="sm",style}){
-  return <span className="enogia-plate" style={{fontFamily:T.fontMono,fontWeight:700,fontSize:size==="lg"?14:12,lineHeight:1,letterSpacing:".04em",background:T.surfaceAlt,color:T.ink900,border:"1px solid "+T.line,padding:size==="lg"?"5px 8px":"3px 7px",borderRadius:3,whiteSpace:"nowrap",display:"inline-block",flexShrink:0,fontVariantNumeric:"tabular-nums",...style}}>{pj}</span>;
+  return <span className="enogia-plate" style={{fontFamily:T.fontDisplay,fontWeight:800,fontSize:size==="lg"?15:13,lineHeight:1,letterSpacing:".02em",background:T.surfaceAlt,color:T.ink900,border:"1px solid "+T.line,padding:size==="lg"?"5px 8px":"3px 7px",borderRadius:3,whiteSpace:"nowrap",display:"inline-block",flexShrink:0,fontVariantNumeric:"tabular-nums",...style}}>{pj}</span>;
 }
 export function ProjectLabelCell({pj,r,meta,mark}){
   const c=ETAT_META[r.etat]||ETAT_META["NOT ORDERED"];

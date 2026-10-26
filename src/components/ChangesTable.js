@@ -88,7 +88,7 @@ export function ChangesTable({ summary, refs, refId, setRefId, refLabel, q, onOp
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 8, marginBottom: 12 }}>
       {tiles.map(([k, label, n, sub, col]) => (<button key={k} onClick={() => setFilter(filter === k && k !== "all" ? "all" : k)} aria-pressed={filter === k}
         style={{ textAlign: "left", cursor: "pointer", fontFamily: T.font, background: filter === k ? T.teal100 : T.card, border: "1px solid " + (filter === k ? T.teal500 : T.line), borderRadius: 12, padding: "8px 12px" }}>
-        <div style={{fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk}}>{label}</div>
+        <div style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>{label}</div>
         <div style={{ fontSize: FZ.xl, fontWeight: 700, color: n ? col : T.ink300, lineHeight: 1.15 }}>{n}</div>
         <div style={{ fontSize: FZ.xs, color: T.ink500 }}>{sub}</div>
       </button>))}

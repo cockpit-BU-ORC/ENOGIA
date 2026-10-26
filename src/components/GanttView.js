@@ -191,7 +191,7 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
 
   return(<div className="enogia-view-in" style={{background:stripeBg(T.teal500,T.surface,4),borderRadius:12,overflow:"hidden",border:"1px solid "+T.line,fontFamily:T.font}}>
     <div style={{display:"flex",gap:10,padding:"14px 18px",borderBottom:"1px solid "+T.line,alignItems:"center",flexWrap:"wrap",background:T.surface}}>
-      <span style={{display:"inline-flex",alignItems:"baseline",gap:8}}><span style={{fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk}}>Planning</span><span style={{fontSize:22,fontWeight:300,letterSpacing:"-.02em",color:T.ink900,fontVariantNumeric:"tabular-nums"}}>{multiYear?yearStart.getFullYear()+" – "+yearEnd.getFullYear():yearStart.getFullYear()}</span></span>
+      <span style={{display:"inline-flex",alignItems:"baseline",gap:8}}><span style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>Planning</span><span style={{fontSize:22,fontWeight:300,letterSpacing:"-.02em",color:T.ink900,fontVariantNumeric:"tabular-nums"}}>{multiYear?yearStart.getFullYear()+" – "+yearEnd.getFullYear():yearStart.getFullYear()}</span></span>
       {/* Plus petite + italique (demandé explicitement) : une note d'usage secondaire, pas un titre. */}
       <span style={{fontSize:FZF.sm,color:T.ink500}}>Molette pour défiler · Ctrl + molette pour zoomer · cliquez une ligne pour la fiche projet</span>
       {/* Filtres État + PJ (demandé explicitement : "système de filtre pour enlever certain PJ ou
@@ -216,7 +216,7 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
 
     <div ref={scrollRef} onScroll={syncFromBottom} style={{display:"flex",overflowX:"auto",overflowY:"auto",maxHeight:"calc(100dvh - 300px)",position:"relative"}}>
       <div style={{width:colW,height:ganttH,flexShrink:0,position:"sticky",left:0,zIndex:8,background:T.surface,borderRight:"1px solid "+T.line,boxShadow:"2px 0 6px rgba(15,40,60,.04)"}}>
-        <div className="enogia-lblcell" style={{height:HEADER_H,padding:"0 16px",display:"flex",alignItems:"center",fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk,borderBottom:"1px solid "+T.line,background:T.surface,position:"sticky",top:0,zIndex:9}}>Machine</div>
+        <div className="enogia-lblcell" style={{height:HEADER_H,padding:"0 16px",display:"flex",alignItems:"center",fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk,borderBottom:"1px solid "+T.line,background:T.surface,position:"sticky",top:0,zIndex:9}}>Machine</div>
         {items.map((it,ri)=>{
           if(it.g)return(<div key={"g"+ri} className="enogia-lblcell" style={{height:GROUP_H,padding:"0 16px",display:"flex",alignItems:"center",gap:8,background:T.surfaceAlt,borderBottom:"1px solid "+T.line,fontSize:FZF.sm,fontWeight:700,color:T.ink700,overflow:"hidden"}}>
             <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{it.g}</span><span style={{fontWeight:600,color:T.ink500,flexShrink:0}}>{it.n}</span></div>);

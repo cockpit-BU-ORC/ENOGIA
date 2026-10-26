@@ -1003,3 +1003,18 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - **Thèmes** : Forêt et Cuivre retirés de `THEMES`. Un thème enregistré qui n'existe plus (`enogia_theme2` = foret/cuivre) retombe sur « Atelier ». `check:contrast` : 781 vérifications (2 thèmes en moins), 0 échec.
 - Aucune nouvelle clé `localStorage`.
 - Fichiers : components/{DashboardSummary,ProjectModal}.js, pjMeta.js, theme.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
+
+## v177 — Nouvelle palette, police Cabinet Grotesk + Satoshi, icônes Phosphor (maquette validée, police A)
+
+- **Palette** (deux nuanciers fournis par Gabriel : Regal Navy #0D3B66, Cornsilk #FAF0CA, Royal Gold #F4D35E, Sandy Brown #EE964B, Tomato #F95738, Light Blue #A8D5E2, Orange #F9A620, Mustard #FFD449, Forest Green #548C2F, Black Forest #104911) :
+  - Thème Atelier (`theme.js`) : fond `#FCF8EA` (Cornsilk adouci), filets `#EBE2C4`, marine `#0D3B66` (structure, `teal500`/`navy700`), encres `#0D2238`…, accent or/ocre (`#8A6400`, sombre `#F4D35E`) ; menu latéral `#0D3B66` (sombre `#0B2440`) avec repère et titres de groupe or `#F4D35E`.
+  - Étapes (`STAGE_HUES`, champ `solid` ajouté) : arrivée Light Blue · production Regal Navy · tests Royal Gold · fin prod Forest Green (aplat `#4A7D29` pour le contraste) · départ Black Forest. `stagePalette()` = aplats pleins (calendrier) avec encre `inkOn()`.
+  - États (`pjMeta.js`) : une couleur par état via `etatFromColor()` → `etatColors()` (fond, encre, liseré dérivés, lisibles en clair et en sombre) : Expédiée Black Forest, Montage méca Regal Navy, Montage élec Light Blue, Tests Royal Gold, Packaging Forest Green, Fabrication FNR Sandy Brown, Stockage externe Mustard, Non commandée Tomato, Non désignée Orange, Slot libre gris.
+  - Gammes (`GAMME_COLORS`) et camemberts (`PALETTE` de `DashboardSummary`) sur la même palette.
+  - Alertes (communes aux thèmes) : `amber500` Orange, `emerald500` Forest Green, `ember500` Sandy Brown, `red500`/`redFill` tomate assombrie `#B8331A` (texte ≥ 4,5:1) ; variantes sombres éclaircies ; `stripeHues()` mis à jour.
+  - **Correctif** : `lum`/`contrastRatio`/`readable`/`etatColors` remontés au-dessus de `ETAT_META` dans `pjMeta.js` (ils sont désormais appelés au chargement ; sinon l'appli plantait au démarrage — détecté par les tests).
+- **Police** : Fontshare chargé dans `public/index.html` (Cabinet Grotesk 400–800, Satoshi 400–700) ; `T.fontDisplay` = Cabinet Grotesk, `T.font` = Satoshi (et `ROBOTO` de l'écran de connexion). JetBrains Mono reste chargé pour les identifiants, Roboto pour les rapports imprimés. Plaques de PJ en Cabinet Grotesk 800 ; sur-titres d'atelier (27) en Satoshi gras ocre, sans capitales (maquette) ; titres de groupe du menu en casse normale.
+- **Icônes** : dépendance `@phosphor-icons/react` **2.1.7** (version fixée, intégrée au build) ; `NavIcon` garde ses 42 noms et rend l'icône Phosphor correspondante (`PH_ICONS`), aucun appel modifié.
+- `check:contrast` : 731 vérifications, 0 échec. Bundle : 538 kB gzip.
+- Vérifié par rendu statique (accueil, liste, calendrier) en clair et en sombre avec les vraies polices ; pas testé dans l'appli connectée.
+- Fichiers : theme.js, pjMeta.js, App.js, public/index.html, package.json, package-lock.json, components/{SharedUI,LoginScreen,DashboardSummary,HomeView,CalendarView,GanttView,ChangesTable,ChangesView,CommentsView,CompareFiles,ManagerFiche,ManagerNav,ManagerPanel,ManagerParts,TestsTab}.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.

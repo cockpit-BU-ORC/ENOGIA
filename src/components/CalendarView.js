@@ -311,7 +311,7 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
           ));
         })()}
 
-        <div className="enogia-lblcell" style={{padding:"6px 14px",fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk,background:T.surface,borderBottom:"1px solid "+T.line,borderRight:"1px solid "+T.line,position:"sticky",left:0,top:headerTop,zIndex:12,width:LEFT_W,minWidth:LEFT_W,maxWidth:LEFT_W,boxSizing:"border-box",gridColumn:1,gridRow:HEAD_ROW}}>Machine</div>
+        <div className="enogia-lblcell" style={{padding:"6px 14px",fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk,background:T.surface,borderBottom:"1px solid "+T.line,borderRight:"1px solid "+T.line,position:"sticky",left:0,top:headerTop,zIndex:12,width:LEFT_W,minWidth:LEFT_W,maxWidth:LEFT_W,boxSizing:"border-box",gridColumn:1,gridRow:HEAD_ROW}}>Machine</div>
         {mode==="week"?weeks.map((w,wi)=>{
           const we=new Date(w);we.setDate(we.getDate()+7);
           const closed=isClosurePeriod(w,we);
@@ -394,13 +394,13 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
     </div>
 
     <div style={{padding:"11px 18px",borderTop:"1px solid "+T.line,display:"flex",gap:16,flexWrap:"wrap",background:T.surface,alignItems:"center"}}>
-      <span style={{fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk}}>Étapes</span>
+      <span style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>Étapes</span>
       {Object.entries(SEGMENT_STYLE).map(([label,st])=><span key={label} style={{display:"flex",alignItems:"center",gap:6,fontSize:FZF.md}}>
         <span style={{width:14,height:14,borderRadius:4,background:st.c,boxShadow:"inset 0 0 0 1.5px "+stageSoft()[{"Arrivée":"arrivee","Production":"production","Tests":"tests","Fin prod":"finProd","Départ":"depart"}[label]].ring}}/>
         <span style={{color:T.ink700,fontWeight:500}}>{label}</span>
       </span>)}
       <span style={{display:"flex",alignItems:"center",gap:8,paddingLeft:16,borderLeft:"1px solid "+T.line}}>
-        <span style={{fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk}}>Présence tests</span>
+        <span style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>Présence tests</span>
         <PresenceChip kind="client" compact fontSize={12}/><PresenceChip kind="nobo" compact fontSize={12}/><PresenceChip kind="both" compact fontSize={12}/>
       </span>
       <span style={{fontSize:FZF.md,color:T.ink300,marginLeft:"auto"}}>Couleur de la tuile = étape · Colonne rouge = aujourd'hui · Clic = détail</span>

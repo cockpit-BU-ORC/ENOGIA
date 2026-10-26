@@ -290,4 +290,9 @@ export const RELEASE_CATALOG = [
     ["Fiche synthèse", "Bouton dans la fiche projet pour ouvrir la fiche synthèse (admins)."],
     ["Thèmes", "Forêt et Cuivre retirés."],
   ] },
+  { v: "177", t: "Nouvelles couleurs, police et icônes", items: [
+    ["Couleurs", "Nouvelle palette pour les étapes, états, gammes et alertes, sur toutes les pages."],
+    ["Police", "Cabinet Grotesk (titres, chiffres) et Satoshi (texte)."],
+    ["Icônes", "Famille Phosphor partout."],
+  ] },
 ];

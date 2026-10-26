@@ -33,7 +33,7 @@ const signed=d=>d==null?"—":(d>0?"+":"")+d+"j";
 // Mise en page éditoriale (même langage visuel que le rapport CODIR) : une grande carte unique, des blocs
 // séparés par un filet fin, des chiffres généreux, un seul accent (laiton). Les textes saisis ici
 // (commentaires de feux / d'indicateurs, actions de la semaine) sont repris tels quels dans les rapports (CODIR, chef de projet).
-const Cap=({children,style})=><div style={{fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk,...style}}>{children}</div>;
+const Cap=({children,style})=><div style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk,...style}}>{children}</div>;
 function Section({title,right,children,style}){
   // v129 : sous-titre de bloc (niveau 2) — la phrase en gras, sans majuscules ; le cadre thématique (Frame) porte le niveau 1.
   return(<div style={{minWidth:0,...style}}>
@@ -234,7 +234,7 @@ function DateField({label,value,onSave,hint}){
   React.useEffect(()=>{setV(value||"");},[value]);
   const dirty=(v||"")!==(value||"");
   return(<div style={{minWidth:0}}>
-    <div style={{fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk}}>{label}</div>
+    <div style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>{label}</div>
     <div style={{display:"flex",alignItems:"center",gap:4,marginTop:3}}>
       <input type="date" value={v} onChange={e=>setV(e.target.value)} onBlur={()=>{if(dirty)onSave(v||null);}}
         onKeyDown={e=>{if(e.key==="Enter"&&dirty){onSave(v||null);e.currentTarget.blur();}}}
@@ -251,7 +251,7 @@ function MontantField({value,onSave}){
   const dirty=(num||null)!==(value||null);
   const commit=()=>{if(!dirty||(num!=null&&(isNaN(num)||num<0)))return;onSave(num);};
   return(<div style={{minWidth:0}}>
-    <div style={{fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk}}>Montant global</div>
+    <div style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>Montant global</div>
     <div style={{display:"flex",alignItems:"center",gap:4,marginTop:3}}>
       <input type="text" inputMode="decimal" value={v} onChange={e=>setV(e.target.value)} onBlur={commit} onKeyDown={e=>{if(e.key==="Enter")e.currentTarget.blur();}} placeholder="0"
         style={{padding:"4px 8px",borderRadius:8,border:"1.5px solid "+(dirty?T.teal500:T.line),background:T.card,color:T.ink900,fontSize:FZ.sm,fontWeight:700,fontFamily:T.font,minWidth:0,width:"100%",maxWidth:120,textAlign:"right"}}/>
@@ -282,12 +282,12 @@ function ContratSection({r,meta,onSave,onNote}){
       <DateField label="Livraison contr." value={meta.contratLivr||""} onSave={v=>onSave({contratLivr:v||undefined})} hint={meta.contratLivr?"transport inclus":"non renseignée"}/>
       <DateField label="Livraison prévue" value={meta.livrPrevue||""} onSave={v=>onSave({livrPrevue:v||undefined})} hint={meta.livrPrevue?"":"à saisir"}/>
       <div style={{minWidth:0}}>
-        <div style={{fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk}}>{endLab}</div>
+        <div style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>{endLab}</div>
         <div style={{fontWeight:600,fontSize:FZ.sm,letterSpacing:"-.01em",color:late?T.red500:T.ink900,marginTop:4}}>{dep?fmt(dep):"—"}</div>
         <div style={{fontSize:FZ.xs,color:T.ink300,marginTop:2}}>{shipped?"départ effectif":"départ prévu du planning"}</div>
       </div>
       <div style={{minWidth:0}}>
-        <div style={{fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk}}>Écart vs MaD ORC</div>
+        <div style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>Écart vs MaD ORC</div>
         <div style={{fontWeight:600,fontSize:FZ.sm,letterSpacing:"-.01em",color:ecart==null?T.ink300:late?T.red500:T.emerald600,marginTop:4}}>{ecart==null?"—":ecart===0?"dans les temps":signed(ecart)}</div>
         <div style={{fontSize:FZ.xs,color:T.ink300,marginTop:2}}>{duree!=null?"durée contrat "+duree+" j":bad?"MaD ORC avant T0 ?":"renseignez T0 et MaD ORC"}</div>
       </div>
@@ -428,7 +428,7 @@ function ComposantsSection({meta,onSave,catalog,setCatalog,pjsToComplete,onApply
     <div style={{border:"1px solid "+T.line,borderRadius:8,overflow:"hidden"}}>
       <div style={{display:"grid",gridTemplateColumns:GRID,background:T.card,alignItems:"center",padding:"4px 8px",gap:4}}>
         <Cap>Composant</Cap>
-        {COMP_STEPS.map(([f,l])=><button key={f} onClick={()=>colAll(f)} title={"Cocher / décocher toute la colonne « "+l+" »"+(f==="inst"?" — pièce reçue à ENOGIA ou installée sur la machine":"")} style={{fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk,border:"none",background:"transparent",cursor:"pointer",padding:0,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:4}}><span style={{width:7,height:7,borderRadius:4,background:stepColor(f)}}/>{l}</button>)}
+        {COMP_STEPS.map(([f,l])=><button key={f} onClick={()=>colAll(f)} title={"Cocher / décocher toute la colonne « "+l+" »"+(f==="inst"?" — pièce reçue à ENOGIA ou installée sur la machine":"")} style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk,border:"none",background:"transparent",cursor:"pointer",padding:0,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:4}}><span style={{width:7,height:7,borderRadius:4,background:stepColor(f)}}/>{l}</button>)}
         <span/>
       </div>
       {list.map(c=>{const all=COMP_STEPS.every(([f])=>c[f]);return(<div key={c.id} style={{display:"grid",gridTemplateColumns:GRID,alignItems:"center",padding:"3px 8px",gap:4,borderTop:"1px solid "+T.line,background:all?T.emerald100:"transparent"}}>
@@ -678,7 +678,7 @@ export function ProjectFileManager({compCatalog,setCompCatalog,managerEmails,cur
     <div className="enogia-mlist" style={{...CARD,width:listMini?76:listW,transition:"width .2s ease",flexShrink:0,maxHeight:"calc(100dvh - 200px)",minHeight:300,display:"flex",flexDirection:"column",overflow:"hidden"}}>
       <div style={{padding:8,borderBottom:"1px solid "+T.line}}>
         <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:listMini?0:6,justifyContent:listMini?"center":"flex-end"}}>
-          {!listMini&&<span style={{fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk,marginRight:"auto"}}>Projets</span>}
+          {!listMini&&<span style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk,marginRight:"auto"}}>Projets</span>}
           <button type="button" onClick={()=>setListMini(v=>!v)} aria-label={listMini?"Agrandir la liste":"Réduire la liste"} title={listMini?"Agrandir la liste":"Réduire la liste pour laisser plus de place à la fiche"} style={{border:"1px solid "+T.line,background:"transparent",color:T.ink500,borderRadius:8,width:28,height:28,cursor:"pointer",display:"inline-flex",alignItems:"center",justifyContent:"center",padding:0}}><span style={{display:"inline-flex",transform:"rotate("+(listMini?"-90deg":"90deg")+")"}}><NavIcon name="chevronDown" size={15}/></span></button>
         </div>
         {!listMini&&<input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher un PJ, projet, pays, chef, gamme…" style={{width:"100%",padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.xs,fontFamily:T.font,color:T.ink700,boxSizing:"border-box"}}/>}

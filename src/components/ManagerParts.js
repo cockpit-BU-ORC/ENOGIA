@@ -141,7 +141,7 @@ export function StatutTab({rows,etatChoice,setEtatFor,clientPresence,setClientPr
       <div style={H_TITLE}>Statut & état des machines</div>
       <div style={H_SUB}>L'état choisi ici est celui affiché partout sur le site, immédiatement visible par tous. En Montage, Élec, Tests, Packaging et Expédiée, l'avancement de production s'en déduit automatiquement (voir le « i » des filtres d'état).</div>
     </div>
-    <div style={{fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk,display:"grid",gridTemplateColumns:COLS,gap:12,padding:"8px 16px",background:T.surface,borderTop:"1px solid "+T.line,borderBottom:"1px solid "+T.line}}>
+    <div style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk,display:"grid",gridTemplateColumns:COLS,gap:12,padding:"8px 16px",background:T.surface,borderTop:"1px solid "+T.line,borderBottom:"1px solid "+T.line}}>
       <span>PJ</span><span>S/N</span><span>Gamme</span><span>État</span><span>Présence client / NOBO aux tests</span>
     </div>
     {rows.length===0&&<EmptyNote>Aucun PJ à afficher.</EmptyNote>}

@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v177",
+    date: "2026-10-26",
+    title: "V177 : nouvelles couleurs, nouvelle police, nouvelles icônes",
+    items: [
+      { t: "Une palette pour tout le site", d: "Bleu marine, bleu clair, or, vert forêt et vert sombre pour les étapes ; orange et tomate pour les alertes ; chaque état et chaque gamme a sa couleur, partout la même." },
+      { t: "Nouvelle police", d: "Cabinet Grotesk pour les titres et les chiffres, Satoshi pour le texte." },
+      { t: "Nouvelles icônes", d: "Toutes les icônes viennent désormais de la famille Phosphor, plus nettes et homogènes." },
+    ],
+  },
+  {
     id: "2026-10-v176",
     date: "2026-10-26",
     title: "V176 : vue d'ensemble compacte, accès à la fiche synthèse",

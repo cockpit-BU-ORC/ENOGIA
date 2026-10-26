@@ -64,7 +64,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-26-v176-retours-beta";
+const APP_BUILD_VERSION = "2026-10-26-v177-palette-police-icones";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -994,7 +994,7 @@ export default function App(){
       {/* Plus de logo ici (demandé explicitement : trop petit pour être lisible) — il ne reste
           qu'au seul endroit où il est bien lisible, agrandi, dans l'en-tête. */}
       {[["Planning",["home","table","gantt","calendar"]],["Suivi",["changes","comments","tests"]]].map(([gl,ids])=>{const items=VIEWS.filter(v=>ids.includes(v.id));if(!items.length)return null;return(<React.Fragment key={gl}>
-        {!navCompact&&<div className="enogia-nav-grp" style={{fontSize:11,fontWeight:700,letterSpacing:".09em",textTransform:"uppercase",color:NAV.group,fontFamily:NAV.industrial?T.fontMono:T.font,padding:"10px 10px 3px",whiteSpace:"nowrap"}}>{gl}</div>}
+        {!navCompact&&<div className="enogia-nav-grp" style={{fontSize:12,fontWeight:700,color:NAV.group,fontFamily:T.font,padding:"12px 10px 4px",whiteSpace:"nowrap"}}>{gl}</div>}
         {navCompact&&<div className="enogia-nav-grp" style={{width:18,height:1,background:NAV.industrial?"rgba(255,255,255,.18)":T.line,margin:"4px 0"}}/>}
         {items.map(v=>{const on=view===v.id;const ttl=v.id==="changes"&&unseenChanges.length?"Modifications — "+unseenChanges.length+" nouvelle"+(unseenChanges.length>1?"s":"")+" version"+(unseenChanges.length>1?"s":""):v.l;return(
           <button key={v.id} className="enogia-nav-btn" onClick={()=>setView(v.id)} title={ttl} aria-label={v.id==="changes"&&unseenChanges.length?"Modifications, "+unseenChanges.length+" nouvelle"+(unseenChanges.length>1?"s":""):v.l} aria-current={on?"page":undefined}

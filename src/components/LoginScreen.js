@@ -4,7 +4,7 @@ import { auth, googleProvider, ALLOWED_EMAIL_DOMAIN } from "../firebase";
 import { T, FZ } from "../theme";
 import { NavIcon } from "./SharedUI";
 
-export const ROBOTO="'Roboto',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif";
+export const ROBOTO="'Satoshi',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"; // v177 : Satoshi (nom de constante conservé)
 // Transition d'ouverture/fermeture (demandé explicitement) : durée du fondu de sortie avant de
 // basculer réellement de vue — doit correspondre aux keyframes enogiaModalPopOut/enogiaFadeOutDown
 // (styles.css, .18s) pour ne pas couper l'animation en cours de route.
