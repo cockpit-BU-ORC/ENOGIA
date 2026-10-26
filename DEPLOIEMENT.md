@@ -879,3 +879,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - **Textes < 11 px** remontés à 11 px dans l'interface (hors rapports PDF/PowerPoint) ; `✕`/`⚠` remplacés par `NavIcon` (TableView, ReleaseNotes, TurbinesTab). Les caractères `✓ ⚠` placés dans des libellés texte (options de listes, infobulles) sont conservés.
 - **Claude Code** : `CLAUDE.md` (règles du projet, version, design) et `.claude/settings.json` (refus de `git push`, `npm run deploy*`, `npm run predeploy*`, `node scripts/deploy.js`, `gh-pages`) ajoutés à la racine.
 - Fichiers : a11yFallback.js, App.js, styles.css, components/{ManagerFiche,ManagerNav,TestsTab,FicheContrat,TableView,ReleaseNotes,MentionBell,ChangesNotice,RowPops,TurbinesTab}.js, pjMeta.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, .claude/settings.json.
+
+## v166 — Correction du crash de l'onglet Calendrier
+
+- **Cause** : le zoom du calendrier (`localStorage` `enogia_calZoom`) était relu par `parseInt` sans contrôle. Une valeur illisible donnait `NaN` → `nWeeks`/`nDays` indéfinis → l'en-tête (`weekNum(weeks[NaN])`) levait `TypeError: Cannot read properties of undefined (reading 'getFullYear')`. La valeur `NaN` étant réenregistrée, l'onglet plantait à chaque ouverture sur le poste concerné.
+- **Correction** : `App.js` ignore un zoom non numérique ou négatif (défaut 2) et une date d'ancre illisible (`enogia_calAnchor`, `enogia_calDayAnchor`) ; `CalendarView.js` normalise aussi le zoom reçu (défaut 2) et les boutons + / − partent de la valeur normalisée. Aucune clé `localStorage` nouvelle ; les postes touchés se réparent seuls au premier affichage.
+- **Outil** : `.claude/launch.json` (configuration `dev` = `npm start`, port 3000) pour l'aperçu local.
+- Fichiers : App.js, components/CalendarView.js, releaseNotes.js, releaseCatalog.js(+test), .claude/launch.json.

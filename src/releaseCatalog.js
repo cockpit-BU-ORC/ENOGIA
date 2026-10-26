@@ -243,4 +243,7 @@ export const RELEASE_CATALOG = [
     ["Accessibilité", "Champs, listes et boutons nommés ; zones de clic élargies ; plus de texte sous 11 px."],
     ["Manager", "Un titre de page sur chaque onglet."],
   ] },
+  { v: "166", t: "Calendrier réparé", items: [
+    ["Calendrier", "Ne plante plus à l'ouverture quand le zoom mémorisé est illisible."],
+  ] },
 ];

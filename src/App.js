@@ -64,7 +64,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-26-v165-a11y";
+const APP_BUILD_VERSION = "2026-10-26-v166-calendrier";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -201,15 +201,16 @@ export default function App(){
     try{return localStorage.getItem("enogia_calMode")||"week";}catch(e){return"week";}
   });
   const [calAnchor,setCalAnchor]=useState(()=>{
-    try{const s=localStorage.getItem("enogia_calAnchor");if(s)return new Date(s);}catch(e){}
+    try{const s=localStorage.getItem("enogia_calAnchor");if(s&&!isNaN(new Date(s)))return new Date(s);}catch(e){}
     return weekStartOf(today);
   });
   const [calDayAnchor,setCalDayAnchor]=useState(()=>{
-    try{const s=localStorage.getItem("enogia_calDayAnchor");if(s)return new Date(s);}catch(e){}
+    try{const s=localStorage.getItem("enogia_calDayAnchor");if(s&&!isNaN(new Date(s)))return new Date(s);}catch(e){}
     const d=new Date(today);d.setHours(0,0,0,0);return d;
   });
   const [calZoom,setCalZoom]=useState(()=>{
-    try{const s=localStorage.getItem("enogia_calZoom");if(s!=null)return parseInt(s,10);}catch(e){}
+    // Valeur illisible (« NaN »…) ignorée : elle faisait planter l'onglet Calendrier à chaque ouverture.
+    try{const n=parseInt(localStorage.getItem("enogia_calZoom"),10);if(Number.isFinite(n)&&n>=0)return n;}catch(e){}
     return 2; // dézoomé par défaut pour une vue d'ensemble plus large à l'ouverture
   });
   useEffect(()=>{

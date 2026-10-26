@@ -72,7 +72,7 @@ export function getDayStatus(r,day,excludedDates){
   });
   return milestones.length?milestones.join(" + "):null;
 }
-export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayAnchor,setDayAnchor,closurePeriods,productionExclusions,comments,addComment,zoomLevel,setZoomLevel,pinOk,authorName,selEtats,setSelEtats,allPJs,selPJs,setSelPJs}){
+export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayAnchor,setDayAnchor,closurePeriods,productionExclusions,comments,addComment,zoomLevel:zoomRaw,setZoomLevel,pinOk,authorName,selEtats,setSelEtats,allPJs,selPJs,setSelPJs}){
   const {marks}=useMarks();
   const isClosurePeriod=(colStart,colEnd)=>{
     if(!closurePeriods||!closurePeriods.length)return false;
@@ -112,6 +112,8 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
   // niveau par défaut (App.js) vers des colonnes plus larges sans changer son code.
   const DAY_COUNTS=[6,9,14,21,35,52,84,168,252];
   const maxZoomLevel=mode==="week"?WEEK_COUNTS.length-1:DAY_COUNTS.length-1;
+  // Zoom invalide (NaN, négatif) → niveau par défaut, sinon nWeeks/nDays indéfinis font planter l'en-tête.
+  const zoomLevel=Number.isFinite(zoomRaw)&&zoomRaw>=0?Math.round(zoomRaw):2;
   const nWeeks=WEEK_COUNTS[Math.min(zoomLevel,WEEK_COUNTS.length-1)];
   const nDays=DAY_COUNTS[Math.min(zoomLevel,DAY_COUNTS.length-1)];
   // Le défilement horizontal ne marchait pas (demandé explicitement : "je n'arrive pas à voir les
@@ -122,8 +124,8 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
   const TOTAL_WEEKS=60, TOTAL_DAYS=300;
   const [viewW,setViewW]=useState(1100);
   const [viewMeasured,setViewMeasured]=useState(false);
-  const zoomIn=()=>setZoomLevel(z=>Math.max(0,z-1));
-  const zoomOut=()=>setZoomLevel(z=>Math.min(maxZoomLevel,z+1));
+  const zoomIn=()=>setZoomLevel(Math.max(0,Math.min(maxZoomLevel,zoomLevel)-1));
+  const zoomOut=()=>setZoomLevel(Math.min(maxZoomLevel,zoomLevel+1));
 
   const weeks=useMemo(()=>{
     const out=[];

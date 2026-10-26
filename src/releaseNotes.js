@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v166",
+    date: "2026-10-26",
+    title: "V166 : le Calendrier ne plante plus",
+    items: [
+      { t: "Calendrier réparé", d: "L'onglet Calendrier pouvait planter à l'ouverture quand le zoom mémorisé sur le poste était illisible ; il reprend maintenant le zoom par défaut." },
+    ],
+  },
+  {
     id: "2026-10-v165",
     date: "2026-10-26",
     title: "V165 : fiche pleine largeur et accessibilité partout",
