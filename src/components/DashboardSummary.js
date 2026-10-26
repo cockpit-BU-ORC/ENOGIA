@@ -76,7 +76,7 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
   // 5 premières valeurs + « Autres » regroupées, pour que chaque bloc reste lisible d'un coup d'œil.
   const topOf=list=>{if(list.length<=TOP_N+1)return list;const rest=list.slice(TOP_N).reduce((a,x)=>a+x.value,0);return[...list.slice(0,TOP_N),{name:"Autres ("+(list.length-TOP_N)+")",value:rest,other:true}];};
 
-  return(<div style={{paddingBottom:folded?10:16,marginBottom:folded?12:16,transition:"padding .3s ease, margin .3s ease",borderBottom:"1px solid "+T.line,fontFamily:T.font}}>
+  return(<div style={{paddingBottom:folded?10:16,marginBottom:folded?12:16,borderBottom:"1px solid "+T.line,fontFamily:T.font}}>
     {/* Pas de carte ici : le bandeau est posé directement sur le fond de page (direction "Piste A"),
         séparé du reste par un simple filet. L'en-tête reste fixe, avec le contrôle d'affichage ancré à droite. */}
     <div style={{display:"flex",alignItems:"center",gap:12}}>
@@ -91,7 +91,7 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
       </button>
     </div>
 
-    <div className="enogia-fold" style={{display:"grid",gridTemplateRows:folded?"0fr":"1fr",opacity:folded?0:1,transition:"grid-template-rows .32s var(--e-ease), opacity .24s ease"}} aria-hidden={folded?"true":undefined}><div style={{overflow:"hidden",minHeight:0}}>
+    <div className="enogia-fold" style={{display:"grid",gridTemplateRows:folded?"0fr":"1fr",opacity:folded?0:1,transform:folded?"translateY(-6px)":"none",transition:"opacity .22s ease, transform .22s var(--e-ease)"}} aria-hidden={folded?"true":undefined}><div style={{overflow:"hidden",minHeight:0}}>
     {<div className="enogia-dash" style={{display:"flex",alignItems:"center",gap:24,flexWrap:"wrap",marginTop:12}}>
       <div style={{display:"flex",flexDirection:"column",gap:2,minWidth:120,flexShrink:0}}>
         <div style={{fontSize:"clamp(36px,4vw,46px)",fontWeight:300,letterSpacing:"-.03em",color:T.ink900,fontFamily:T.fontDisplay,lineHeight:.95,fontVariantNumeric:"tabular-nums"}}><AnimatedNumber value={shippedYTD}/></div>

@@ -1051,3 +1051,20 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Reste à faire (audit) : vue tablette dédiée « mes machines du jour », abonnements Firestore secondaires sans gestion d'erreur (14), couleurs codées en dur hors thème (65, dont logo Google, nuancier et rapports).
 - Vérifié : test isolé des notifications ; build, tests, contraste. Pas testé dans l'appli connectée.
 - Fichiers : App.js, components/{SharedUI,ManagerPanel,TableView,GanttView,CalendarView}.js, releaseNotes.js, releaseCatalog.js(+test).
+
+## v181 — Mouvement sobre et fonctionnel (ui-ux-pro-max)
+
+- **Règles** (`styles.css`, bloc « v181 ») : 150–300 ms, uniquement `transform` / `opacity` / `scale`, fin sans transform résiduel, tout coupé par `prefers-reduced-motion` (règle globale existante).
+- **Animations prévues et appliquées** :
+  1. Changement de vue (`.enogia-main > *`) : fondu + glissement de 8 px, 240 ms.
+  2. Barres (avancement, Gantt, répartition, parcours) : déploiement par `scale` depuis la gauche, 300 ms (remplace `clip-path` 700 ms) ; plus de transition de `width`.
+  3. Anneaux d'avancement : fondu 300 ms (remplace le tracé `stroke-dasharray` 800 ms).
+  4. Liste : les 12 premières lignes apparaissent avec 20 ms d'écart (`.enogia-table`).
+  5. Squelettes de chargement : respiration d'opacité (remplace le reflet `background-position`).
+  6. Clic : enfoncement `scale(.97)` ; survol des lignes et cartes conservé.
+  7. Notifications : glissement depuis la droite 240 ms ; panneau des sous-pages du Manager : ouverture depuis l'icône 180 ms.
+  8. Alertes (« Non commandée », pastille nouveautés) : 3 pulsations d'échelle puis immobiles (remplace le halo `box-shadow` infini).
+- **Transitions de taille retirées** : largeur du menu latéral, du menu Manager et de la liste des fiches ; hauteur de la vue d'ensemble (désormais opacité + glissement) ; accordéon des sous-pages du menu Manager (fondu).
+- Restent hors règle : transitions de couleur au survol (peinture seule, sans recalcul de mise en page) ; indicateur de diapositive de l'écran atelier (largeur).
+- Aucune modification de logique ni de Firebase.
+- Fichiers : styles.css, App.js, components/{ManagerNav,ManagerFiche,DashboardSummary,TableView}.js, releaseNotes.js, releaseCatalog.js(+test).

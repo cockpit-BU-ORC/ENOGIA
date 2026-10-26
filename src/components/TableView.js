@@ -385,7 +385,7 @@ export function TableView({data,progress,df,setDf,selEtats,setSelEtats,selGammes
         rentre pas, au lieu de le tronquer avec "..." ("ajuster automatiquement les colonnes pour
         qu'on puisse voir toutes les données"). Le défilement horizontal du conteneur parent prend
         le relais si la somme dépasse la largeur visible. */}
-    <table style={{width:"100%",borderCollapse:"collapse",tableLayout:"auto",fontVariantNumeric:"tabular-nums"}}>
+    <table className="enogia-table" style={{width:"100%",borderCollapse:"collapse",tableLayout:"auto",fontVariantNumeric:"tabular-nums"}}>
       <colgroup>
         <col style={{width:cw("pj")}}/>
         {show("projet")&&<col style={{width:cw("projet")}}/>}

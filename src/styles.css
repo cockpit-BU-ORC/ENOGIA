@@ -277,3 +277,56 @@ body.enogia-present tbody td { font-size: 1.08em; }
 /* v179 : écran de connexion — le bouton Google se remplit en marine au survol (texte blanc). */
 .enogia-login-btn:not(:disabled):hover { background: var(--e-ind-bg, #0D3B66) !important; color: var(--e-ind-ink, #FFFFFF) !important; }
 @media (max-width: 760px) { .enogia-login-side { padding: 28px 20px !important; gap: 18px !important; } }
+
+/* ── v181 : mouvement sobre et fonctionnel (ui-ux-pro-max) ───────────────────────────────────────────────────────
+   Règles : 150–300 ms, uniquement transform et opacity (composées par la carte graphique, 60 i/s), fin sans transform
+   résiduel (backwards), tout coupé par « réduire les animations » (règle globale plus haut). Ces règles remplacent les
+   anciennes animations qui touchaient clip-path, stroke-dasharray, box-shadow ou background-position. */
+@keyframes enogiaBarScale { from { scale: 0 1; } to { scale: 1 1; } }
+@keyframes enogiaFade     { from { opacity: 0; } to { opacity: 1; } }
+@keyframes enogiaSkel     { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+@keyframes enogiaRowIn    { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes enogiaToastIn  { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+@keyframes enogiaPopIn    { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes enogiaNudge    { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+
+/* 1. Changement de vue (accueil, liste, Gantt, calendrier, suivi…) : la nouvelle vue arrive en fondu + léger glissement. */
+.enogia-main > * { animation: enogiaViewIn .24s var(--e-ease) backwards; }
+.enogia-view-in  { animation-duration: .24s; }
+.enogia-fade-in  { animation-duration: .28s; }
+
+/* 2. Barres d'avancement, de Gantt et de répartition : elles se déploient depuis la gauche (échelle, pas largeur). */
+.enogia-bar-fill { animation: enogiaBarScale .3s var(--e-ease) backwards; transform-origin: left center; transition: background-color .2s ease; }
+/* Anneaux d'avancement : simple fondu (le tracé progressif animait stroke-dasharray). */
+.enogia-ring     { animation: enogiaFade .3s ease backwards; transition: stroke .2s ease; }
+
+/* 3. Données qui arrivent : les 12 premières lignes de la liste apparaissent l'une après l'autre (20 ms d'écart). */
+.enogia-table tbody tr { animation: enogiaRowIn .22s var(--e-ease) backwards; }
+.enogia-table tbody tr:nth-child(2) { animation-delay: 20ms; }
+.enogia-table tbody tr:nth-child(3) { animation-delay: 40ms; }
+.enogia-table tbody tr:nth-child(4) { animation-delay: 60ms; }
+.enogia-table tbody tr:nth-child(5) { animation-delay: 80ms; }
+.enogia-table tbody tr:nth-child(6) { animation-delay: 100ms; }
+.enogia-table tbody tr:nth-child(7) { animation-delay: 120ms; }
+.enogia-table tbody tr:nth-child(8) { animation-delay: 140ms; }
+.enogia-table tbody tr:nth-child(9) { animation-delay: 160ms; }
+.enogia-table tbody tr:nth-child(10) { animation-delay: 180ms; }
+.enogia-table tbody tr:nth-child(11) { animation-delay: 200ms; }
+.enogia-table tbody tr:nth-child(12) { animation-delay: 220ms; }
+.enogia-table tbody tr:nth-child(n+13) { animation: none; }
+
+/* 4. Chargement : squelettes qui « respirent » (opacité) au lieu d'un reflet qui défile. */
+.enogia-skeleton { animation: enogiaSkel 1.2s ease-in-out infinite !important; background: rgba(128,138,150,.18) !important; }
+
+/* 5. Survol et clic : léger enfoncement au clic, lignes et cartes cliquables qui répondent au survol. */
+button:not(:disabled):active { transform: scale(.97); }
+.enogia-table tbody tr { transition: background-color .12s ease; }
+.enogia-kpi { transition: transform .18s var(--e-ease); }
+
+/* 6. Éléments qui s'ouvrent : notifications (glissent depuis la droite), panneau des sous-pages du Manager (s'ouvre depuis l'icône). */
+.enogia-toast  { animation: enogiaToastIn .24s var(--e-ease) backwards; }
+.enogia-flyout { animation: enogiaPopIn .18s var(--e-ease) backwards; transform-origin: left top; }
+
+/* 7. Alertes qui doivent attirer l'œil : 3 pulsations d'échelle puis immobiles (plus de halo infini en box-shadow). */
+.enogia-pulse-urgent { animation: enogiaNudge .6s ease-in-out 3; }
+.enogia-badge-pop    { animation: enogiaBadgePop .3s var(--e-ease) both, enogiaNudge .6s ease-in-out .4s 3; }

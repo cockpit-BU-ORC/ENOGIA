@@ -309,4 +309,7 @@ export const RELEASE_CATALOG = [
     ["Liste", "Vues prêtes Atelier et Direction dans le menu Colonnes."],
     ["Gantt et calendrier", "Prochain jalon mis en avant ; abréviations rappelées dans la légende."],
   ] },
+  { v: "181", t: "Des mouvements plus fluides", items: [
+    ["Animations", "Fondu entre les vues, lignes et barres qui arrivent, retour au clic ; courtes et désactivables."],
+  ] },
 ];

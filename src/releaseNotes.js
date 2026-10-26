@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v181",
+    date: "2026-10-26",
+    title: "V181 : des mouvements plus fluides",
+    items: [
+      { t: "Passage d'une vue à l'autre", d: "Accueil, liste, Gantt et calendrier apparaissent en fondu ; les lignes de la liste arrivent l'une après l'autre." },
+      { t: "Réponse au clic", d: "Les boutons s'enfoncent légèrement, les barres se déploient, les messages glissent depuis la droite." },
+      { t: "Plus léger pour l'ordinateur", d: "Toutes les animations sont courtes et désactivées si l'ordinateur demande moins de mouvement." },
+    ],
+  },
+  {
     id: "2026-10-v180",
     date: "2026-10-26",
     title: "V180 : messages clairs et planning plus lisible",

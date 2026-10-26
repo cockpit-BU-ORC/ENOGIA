@@ -42,7 +42,7 @@ export function ManagerRail({ groups, activeId, activeSub, onGo, collapsed, setC
     {groups.flatMap(g => g.entries).map(e => { const on = e.id === activeId; return (
       <button key={e.id} onClick={() => onGo(e.go)} aria-current={on ? "page" : undefined} style={{ flex: "none", display: "flex", alignItems: "center", gap: 6, padding: "7px 11px", border: "none", borderBottom: "2px solid " + (on ? T.teal500 : "transparent"), background: "transparent", color: on ? T.teal600 : T.ink500, fontWeight: on ? 700 : 600, fontSize: FZ.sm, cursor: "pointer", fontFamily: T.font }}><NavIcon name={e.icon} size={15} />{e.label}</button>); })}
   </nav>);
-  return (<>{flyout}<nav aria-label="Navigation Manager" style={{ width: w, flex: "none", transition: "width .28s var(--e-ease)", position: "sticky", top: 8, alignSelf: "flex-start", background: T.surface, border: "1px solid " + T.line, borderRadius: 14, padding: "8px 8px 10px", display: "flex", flexDirection: "column", gap: 2, overflow: "hidden", fontFamily: T.font }}>
+  return (<>{flyout}<nav aria-label="Navigation Manager" style={{ width: w, flex: "none", position: "sticky", top: 8, alignSelf: "flex-start", background: T.surface, border: "1px solid " + T.line, borderRadius: 14, padding: "8px 8px 10px", display: "flex", flexDirection: "column", gap: 2, overflow: "hidden", fontFamily: T.font }}>
     {groups.map(g => (<div key={g.label} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
       <div style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk,padding: collapsed ? "6px 0 2px" : "10px 10px 3px",whiteSpace: "nowrap",textAlign: collapsed ? "center" : "left",overflow: "hidden",height: collapsed ? 14 : "auto",transition: "padding .2s"}}>{collapsed ? "·" : g.label}</div>
       {g.entries.map(e => { const on = e.id === activeId; return (<React.Fragment key={e.id}>
@@ -55,7 +55,7 @@ export function ManagerRail({ groups, activeId, activeSub, onGo, collapsed, setC
           {!collapsed && e.badge > 0 && <span style={{ fontSize: 11, fontWeight: 700, background: T.red500, color: "#fff", borderRadius: 99, padding: "0 6px", minWidth: 18, textAlign: "center" }}>{e.badge}</span>}
           {!collapsed && e.lock && <span style={{ fontSize:11, fontWeight: 700, color: T.amber600, background: T.amber100, padding: "1px 6px", borderRadius: 99 }}>Admin</span>}
         </button>
-        {e.subs && !collapsed && <div style={{ display: "grid", gridTemplateRows: on ? "1fr" : "0fr", transition: "grid-template-rows .28s var(--e-ease)" }}>
+        {e.subs && !collapsed && <div style={{ display: "grid", gridTemplateRows: on ? "1fr" : "0fr", opacity: on ? 1 : 0, transition: "opacity .2s ease" }}>
           <div style={{ overflow: "hidden", minHeight: 0 }}>
             <div style={{ display: "flex", flexDirection: "column", margin: "2px 0 4px 19px", paddingLeft: 6, borderLeft: "2px solid " + T.line }}>
               {e.subs.map(s => { const sOn = on && s.id === activeSub; return (

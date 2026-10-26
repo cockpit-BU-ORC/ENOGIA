@@ -64,7 +64,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-26-v180-audit-messages";
+const APP_BUILD_VERSION = "2026-10-26-v181-mouvement";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -1015,10 +1015,10 @@ export default function App(){
 
     {/* ── Rail de navigation : icônes de vue + accès Manager + mode sombre ── */}
     <a href="#enogia-main" className="enogia-skip" onClick={e=>{e.preventDefault();const m=document.getElementById("enogia-main");if(m){m.focus();m.scrollIntoView&&m.scrollIntoView({block:"start"});}}}>Aller au contenu</a>
-    <nav className={"enogia-nav"+(NAV.industrial?" enogia-nav-ind":"")} aria-label="Pages" style={{width:navCompact?64:216,transition:"width .28s var(--e-ease)",flexShrink:0,background:NAV.bg,borderRight:"1px solid "+NAV.border,display:"flex",flexDirection:"column",alignItems:navCompact?"center":"stretch",padding:navCompact?"16px 0":"16px 10px",gap:4,position:"sticky",top:0,zIndex:30,height:"100vh",overflowY:"auto",overflowX:"hidden",scrollbarWidth:"none"}}>
+    <nav className={"enogia-nav"+(NAV.industrial?" enogia-nav-ind":"")} aria-label="Pages" style={{width:navCompact?64:216,flexShrink:0,background:NAV.bg,borderRight:"1px solid "+NAV.border,display:"flex",flexDirection:"column",alignItems:navCompact?"center":"stretch",padding:navCompact?"16px 0":"16px 10px",gap:4,position:"sticky",top:0,zIndex:30,height:"100vh",overflowY:"auto",overflowX:"hidden",scrollbarWidth:"none"}}>
       {/* v179 (demandé : « le logo en haut à gauche pour avoir le début de la page au même niveau ») : le logo ouvre le menu, en blanc sur le marine. */}
       <button type="button" onClick={()=>setView("home")} aria-label="ENOGIA — accueil" title="Accueil" style={{border:"none",background:"transparent",cursor:"pointer",padding:navCompact?"2px 0 10px":"2px 10px 12px",display:"flex",justifyContent:navCompact?"center":"flex-start",alignItems:"center",minHeight:44}}>
-        <img src={process.env.PUBLIC_URL+"/enogia-logo-color-crop.svg"} alt="" aria-hidden="true" width="105" height="42" style={{height:navCompact?24:34,width:"auto",maxWidth:navCompact?44:170,objectFit:"contain",objectPosition:"left center",filter:NAV.industrial||darkMode?"brightness(0) invert(1)":"none",transition:"height .28s var(--e-ease)"}}/>
+        <img src={process.env.PUBLIC_URL+"/enogia-logo-color-crop.svg"} alt="" aria-hidden="true" width="105" height="42" style={{height:navCompact?24:34,width:"auto",maxWidth:navCompact?44:170,objectFit:"contain",objectPosition:"left center",filter:NAV.industrial||darkMode?"brightness(0) invert(1)":"none"}}/>
       </button>
       {[["Planning",["home","table","gantt","calendar"]],["Suivi",["changes","comments","tests"]]].map(([gl,ids])=>{const items=VIEWS.filter(v=>ids.includes(v.id));if(!items.length)return null;return(<React.Fragment key={gl}>
         {!navCompact&&<div className="enogia-nav-grp" style={{fontSize:12,fontWeight:700,color:NAV.group,fontFamily:T.font,padding:"12px 10px 4px",whiteSpace:"nowrap"}}>{gl}</div>}
