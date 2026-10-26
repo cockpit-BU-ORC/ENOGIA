@@ -269,3 +269,6 @@ body.enogia-present tbody td { font-size: 1.08em; }
 @media (prefers-reduced-motion: reduce) {
   .enogia-homeline, .enogia-homeline:hover, .enogia-kpi-ed:hover, .enogia-plate { transition: none !important; transform: none !important; }
 }
+/* v174 : boutons d'action « industriels » (Aujourd'hui…) — remplissage marine au survol. */
+.enogia-btn-ind { transition: background-color .15s ease, color .15s ease; }
+.enogia-btn-ind:hover { background: var(--e-ind-bg, #1B2A55) !important; color: var(--e-ind-ink, #FFFFFF) !important; }

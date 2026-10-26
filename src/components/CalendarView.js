@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { isPhone } from "../useIsPhone";
 import { EtatInfoButton } from "./ProdStagesUI";
-import { T, FZF, stagePalette, stageSoft } from "../theme";
+import { T, FZF, stagePalette, stageSoft, stripeBg } from "../theme";
 import { useMarks, NewMark } from "./ChangesNotice";
 import { getPjMeta, PresenceChip, presenceKind, presenceKindAt, presenceRing, MONTHS_FULL, today, ETAT_META, ALL_ETATS, ProjectLabelCell } from "../pjMeta";
 import { DropFilter, pressable } from "./SharedUI";
@@ -242,13 +242,13 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
   // Page précédente / suivante : défile d'environ une largeur d'écran.
   const pageScroll=dir=>{if(scrollRef.current)scrollRef.current.scrollBy({left:dir*Math.round((viewW-LEFT_W)*0.85),behavior:"smooth"});};
 
-  return(<div style={{background:T.surface,borderRadius:12,overflow:"hidden",border:"1px solid "+T.line,fontFamily:T.font}}>
+  return(<div className="enogia-view-in" style={{background:stripeBg(T.teal500,T.surface,4),borderRadius:12,overflow:"hidden",border:"1px solid "+T.line,fontFamily:T.font}}>
     <div style={{display:"flex",alignItems:"center",gap:10,padding:"14px 18px",borderBottom:"1px solid "+T.line,background:T.surface,flexWrap:"wrap"}}>
       <div style={{display:"flex",gap:4,background:T.surfaceAlt,borderRadius:9,padding:3}}>
-        <button onClick={()=>setMode("week")} style={{padding:"6px 14px",borderRadius:7,border:"none",background:mode==="week"?T.card:"transparent",color:mode==="week"?T.ink900:T.ink500,fontWeight:700,fontSize:FZF.md,cursor:"pointer",boxShadow:mode==="week"?T.shadowSm:"none"}}>Semaine</button>
-        <button onClick={()=>setMode("day")} style={{padding:"6px 14px",borderRadius:7,border:"none",background:mode==="day"?T.card:"transparent",color:mode==="day"?T.ink900:T.ink500,fontWeight:700,fontSize:FZF.md,cursor:"pointer",boxShadow:mode==="day"?T.shadowSm:"none"}}>Jour</button>
+        <button onClick={()=>setMode("week")} style={{padding:"6px 14px",borderRadius:7,border:"none",background:mode==="week"?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:mode==="week"?(T.mode==="dark"?"#0B1130":"#FFFFFF"):T.ink500,transition:"background-color .15s ease, color .15s ease",fontWeight:700,fontSize:FZF.md,cursor:"pointer",boxShadow:mode==="week"?T.shadowSm:"none"}}>Semaine</button>
+        <button onClick={()=>setMode("day")} style={{padding:"6px 14px",borderRadius:7,border:"none",background:mode==="day"?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:mode==="day"?(T.mode==="dark"?"#0B1130":"#FFFFFF"):T.ink500,transition:"background-color .15s ease, color .15s ease",fontWeight:700,fontSize:FZF.md,cursor:"pointer",boxShadow:mode==="day"?T.shadowSm:"none"}}>Jour</button>
       </div>
-      <span style={{fontFamily:T.fontDisplay,fontWeight:700,fontSize:FZF.lg,color:T.ink900,minWidth:220,textAlign:"center"}}>
+      <span style={{fontFamily:T.fontDisplay,fontWeight:300,fontSize:22,letterSpacing:"-.02em",color:T.ink900,minWidth:220,textAlign:"center",fontVariantNumeric:"tabular-nums"}}>
         {mode==="week"
           ?"Sem. "+weekNum(weeks[0])+" → "+weekNum(weeks[Math.min(effCount,weeks.length)-1])+", "+weeks[0].getFullYear()
           :days[0].toLocaleDateString("fr-FR",{day:"numeric",month:"short"})+" → "+days[Math.min(effCount,days.length)-1].toLocaleDateString("fr-FR",{day:"numeric",month:"short",year:"numeric"})}
@@ -269,7 +269,7 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
           <button onClick={zoomOut} disabled={zoomLevel>=maxZoomLevel} style={{padding:"5px 9px",borderRadius:7,border:"1px solid "+T.line,background:"transparent",color:zoomLevel>=maxZoomLevel?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:700,cursor:zoomLevel>=maxZoomLevel?"default":"pointer"}}>−</button>
           <button onClick={zoomIn} disabled={zoomLevel<=0} style={{padding:"5px 9px",borderRadius:7,border:"1px solid "+T.line,background:"transparent",color:zoomLevel<=0?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:700,cursor:zoomLevel<=0?"default":"pointer"}}>+</button>
         </div>
-        <button onClick={goToday} style={{padding:"5px 11px",borderRadius:7,border:"1px solid "+T.teal400,background:"transparent",color:T.teal600,fontSize:FZF.sm,fontWeight:700,cursor:"pointer"}}>Aujourd'hui</button>
+        <button onClick={goToday} className="enogia-btn-ind" style={{padding:"5px 11px",borderRadius:7,border:"1.5px solid "+T.teal500,background:"transparent",color:T.teal600,fontSize:FZF.sm,fontWeight:700,cursor:"pointer"}}>Aujourd'hui</button>
       </div>
     </div>
 
@@ -311,7 +311,7 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
           ));
         })()}
 
-        <div className="enogia-lblcell" style={{padding:"6px 14px",fontSize:FZF.xs,fontWeight:700,color:T.ink500,textTransform:"uppercase",letterSpacing:".03em",background:T.surface,borderBottom:"1px solid "+T.line,borderRight:"1px solid "+T.line,position:"sticky",left:0,top:headerTop,zIndex:12,width:LEFT_W,minWidth:LEFT_W,maxWidth:LEFT_W,boxSizing:"border-box",gridColumn:1,gridRow:HEAD_ROW}}>Machine</div>
+        <div className="enogia-lblcell" style={{padding:"6px 14px",fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk,background:T.surface,borderBottom:"1px solid "+T.line,borderRight:"1px solid "+T.line,position:"sticky",left:0,top:headerTop,zIndex:12,width:LEFT_W,minWidth:LEFT_W,maxWidth:LEFT_W,boxSizing:"border-box",gridColumn:1,gridRow:HEAD_ROW}}>Machine</div>
         {mode==="week"?weeks.map((w,wi)=>{
           const we=new Date(w);we.setDate(we.getDate()+7);
           const closed=isClosurePeriod(w,we);
@@ -394,13 +394,13 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
     </div>
 
     <div style={{padding:"11px 18px",borderTop:"1px solid "+T.line,display:"flex",gap:16,flexWrap:"wrap",background:T.surface,alignItems:"center"}}>
-      <span style={{fontSize:FZF.md,fontWeight:700,color:T.ink500,textTransform:"uppercase",letterSpacing:".03em"}}>Étapes :</span>
+      <span style={{fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk}}>Étapes</span>
       {Object.entries(SEGMENT_STYLE).map(([label,st])=><span key={label} style={{display:"flex",alignItems:"center",gap:6,fontSize:FZF.md}}>
         <span style={{width:14,height:14,borderRadius:4,background:st.c,boxShadow:"inset 0 0 0 1.5px "+stageSoft()[{"Arrivée":"arrivee","Production":"production","Tests":"tests","Fin prod":"finProd","Départ":"depart"}[label]].ring}}/>
         <span style={{color:T.ink700,fontWeight:500}}>{label}</span>
       </span>)}
       <span style={{display:"flex",alignItems:"center",gap:8,paddingLeft:16,borderLeft:"1px solid "+T.line}}>
-        <span style={{fontSize:FZF.md,fontWeight:700,color:T.ink500,textTransform:"uppercase",letterSpacing:".03em"}}>Présence tests :</span>
+        <span style={{fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk}}>Présence tests</span>
         <PresenceChip kind="client" compact fontSize={12}/><PresenceChip kind="nobo" compact fontSize={12}/><PresenceChip kind="both" compact fontSize={12}/>
       </span>
       <span style={{fontSize:FZF.md,color:T.ink300,marginLeft:"auto"}}>Couleur de la tuile = étape · Colonne rouge = aujourd'hui · Clic = détail</span>

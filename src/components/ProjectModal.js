@@ -5,7 +5,7 @@ import { fmt, fmtMode } from "../parsers";
 import { MentionPicker, MentionTextarea } from "./MentionPicker";
 import { useMentions } from "../mentionContext";
 import { typedMentions } from "../mentions";
-import { Badge, NavIcon, Select, DelayScopeNote, EmptyState, SuperOnly, NewDelayType } from "./SharedUI";
+import { Badge, NavIcon, Select, DelayScopeNote, EmptyState, SuperOnly, NewDelayType, PjPlate } from "./SharedUI";
 import { PHASES } from "./GanttView";
 import { useDetailMode } from "../detailMode";
 
@@ -81,8 +81,8 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
           {/* v129 : une seule police dans la liste, le volet et la fiche (T.font, chiffres tabulaires) ; le volet garde un titre plus marqué. */}
           {/* v171 (maquette validée) : n° de PJ en police d'identifiant, nom du projet à côté, état en pastille. */}
           <div style={{display:"flex",alignItems:"baseline",gap:10,flexWrap:"wrap",minWidth:0}}>
-            <span style={{fontFamily:T.fontMono,fontVariantNumeric:"tabular-nums",fontWeight:700,fontSize:FZ.md,color:T.teal600,whiteSpace:"nowrap"}}>{pj}</span>
-            {!editingMeta&&meta.nomProjet&&meta.nomProjet!=="—"&&<span style={{fontSize:FZ.lg,fontWeight:600,color:T.ink900,minWidth:0}}>{meta.nomProjet}</span>}
+            <PjPlate pj={pj} size="lg"/>
+            {!editingMeta&&meta.nomProjet&&meta.nomProjet!=="—"&&<span style={{fontSize:24,fontWeight:300,letterSpacing:"-.02em",color:T.ink900,minWidth:0,lineHeight:1.15}}>{meta.nomProjet}</span>}
             <span style={{alignSelf:"center",display:"inline-flex",gap:6,alignItems:"center"}}><Badge etat={r.etat}/><SerieTag pj={pj} size={11}/></span>
           </div>
           {editingMeta?
@@ -110,12 +110,12 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
 
       {/* ── Onglets : séparer la vue d'ensemble des commentaires évite d'avoir à
           descendre tout le panneau pour trouver/écrire un commentaire. ── */}
-      <div style={{display:"flex",gap:4,marginBottom:14,background:T.neuPanel,borderRadius:12,padding:4}}>
+      <div role="tablist" aria-label="Sections de la fiche" style={{display:"flex",gap:4,marginBottom:14,borderBottom:"1px solid "+T.line}}>
         {[
           {key:"apercu",label:"Aperçu",icon:"calendar"},
           {key:"commentaires",label:"Commentaires",icon:"comments",count:(comments?.[pj]||[]).filter(c=>!c.private).length},
           ...(pinOk&&delayTypes?[{key:"retards",label:"Retards",icon:"clock",count:(delays?.[pj]||[]).length}]:[]),
-        ].map(t=><button key={t.key} onClick={()=>setTab(t.key)} style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:4,padding:"8px 6px",borderRadius:8,border:"none",cursor:"pointer",background:tab===t.key?T.card:"transparent",boxShadow:tab===t.key?T.shadowSm:"none",color:tab===t.key?T.teal600:T.ink500,fontSize:FZ.xs,fontWeight:700,transition:"background .15s ease,color .15s ease"}}>
+        ].map(t=><button key={t.key} role="tab" aria-selected={tab===t.key} onClick={()=>setTab(t.key)} style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:4,padding:"9px 6px",marginBottom:-1,border:"none",borderBottom:"3px solid "+(tab===t.key?T.teal500:"transparent"),borderRadius:0,cursor:"pointer",background:"transparent",color:tab===t.key?T.ink900:T.ink500,fontSize:FZ.xs,fontWeight:700,transition:"border-color .18s ease,color .15s ease"}}>
           <NavIcon name={t.icon} size={12}/>{t.label}{t.count>0&&<span style={{fontSize:FZ.xs,fontWeight:700,color:tab===t.key?"#fff":T.ink500,background:tab===t.key?T.teal500:T.ink100,borderRadius:999,padding:"1px 6px"}}>{t.count}</span>}
         </button>)}
       </div>

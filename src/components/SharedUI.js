@@ -37,10 +37,7 @@ export function useCloseOnSignal(setOpen){
 }
 // v170 : rend une zone cliquable utilisable au clavier (Tab puis Entrée ou Espace), avec son rôle et son état.
 export const pressable=(fn,extra={})=>({role:"button",tabIndex:0,onClick:fn,onKeyDown:e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();fn(e);}},...extra});
-// v173 : plaque de n° de PJ (plaque signalétique de machine) — police d'identifiant, fond marine, texte blanc.
-export function PjPlate({pj,size="sm",style}){
-  return <span className="enogia-plate" style={{fontFamily:T.fontMono,fontWeight:700,fontSize:size==="lg"?14:12,lineHeight:1,letterSpacing:".04em",background:T.mode==="dark"?T.teal600:T.teal500,color:T.mode==="dark"?"#0B1130":"#FFFFFF",padding:size==="lg"?"5px 8px":"3px 7px",borderRadius:3,whiteSpace:"nowrap",display:"inline-block",flexShrink:0,fontVariantNumeric:"tabular-nums",...style}}>{pj}</span>;
-}
+export { PjPlate } from "../pjMeta"; // v174 : défini dans pjMeta (partagé avec ProjectLabelCell)
 export function DropFilter({label,options,selected,onChange,getLabel,icon,sort}){
   const [open,setOpen]=useState(false);
   useCloseOnSignal(setOpen);

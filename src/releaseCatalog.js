@@ -277,4 +277,9 @@ export const RELEASE_CATALOG = [
     ["Accueil et liste", "N° de PJ en plaques, couleur d'état sur chaque ligne, chiffres animés."],
     ["Transitions", "Fondus, barres qui se remplissent, désactivés si l'ordinateur demande moins d'animations."],
   ] },
+  { v: "174", t: "Gantt, Calendrier et fiche au style « Atelier »", items: [
+    ["Plaques", "N° de PJ en plaques dans le Gantt et le Calendrier."],
+    ["Commandes", "Boutons actifs et « Aujourd'hui » en bleu marine."],
+    ["Fiche projet", "Grande plaque, nom du projet en titre, onglets soulignés."],
+  ] },
 ];

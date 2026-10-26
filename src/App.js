@@ -64,7 +64,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-26-v173-atelier";
+const APP_BUILD_VERSION = "2026-10-26-v174-atelier-gantt-cal-fiche";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -171,6 +171,7 @@ export default function App(){
     root.style.setProperty("--e-ink700",T.ink700);
     root.style.setProperty("--e-ink300",T.ink300);
     root.style.setProperty("--e-accent",T.accent);
+    root.style.setProperty("--e-ind-bg",T.mode==="dark"?T.teal600:T.teal500);root.style.setProperty("--e-ind-ink",T.mode==="dark"?"#0B1130":"#FFFFFF"); // v174 : survol des boutons d'action
     root.style.setProperty("--e-teal500",T.teal500);
     root.style.setProperty("--e-scroll",mixHex(T.surface,T.ink900,T.mode==="dark"?.32:.25)); // barres de défilement : teinte du thème (v141)
     root.style.setProperty("--e-scroll-hover",mixHex(T.surface,T.ink900,T.mode==="dark"?.5:.45));

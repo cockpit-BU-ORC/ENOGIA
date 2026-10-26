@@ -189,11 +189,11 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
   },[data,grouped]);
   const ganttH=HEADER_H+items.reduce((n,it)=>n+(it.g?GROUP_H:rowH),0);
 
-  return(<div style={{background:stripeBg(stageSoft().production.ring,T.surface,4),borderRadius:12,overflow:"hidden",border:"1px solid "+T.line,fontFamily:T.font}}>
+  return(<div className="enogia-view-in" style={{background:stripeBg(T.teal500,T.surface,4),borderRadius:12,overflow:"hidden",border:"1px solid "+T.line,fontFamily:T.font}}>
     <div style={{display:"flex",gap:10,padding:"14px 18px",borderBottom:"1px solid "+T.line,alignItems:"center",flexWrap:"wrap",background:T.surface}}>
-      <span style={{fontSize:FZF.md,fontWeight:700,color:T.ink900}}>Planning {multiYear?yearStart.getFullYear()+" – "+yearEnd.getFullYear():yearStart.getFullYear()}</span>
+      <span style={{display:"inline-flex",alignItems:"baseline",gap:8}}><span style={{fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk}}>Planning</span><span style={{fontSize:22,fontWeight:300,letterSpacing:"-.02em",color:T.ink900,fontVariantNumeric:"tabular-nums"}}>{multiYear?yearStart.getFullYear()+" – "+yearEnd.getFullYear():yearStart.getFullYear()}</span></span>
       {/* Plus petite + italique (demandé explicitement) : une note d'usage secondaire, pas un titre. */}
-      <span style={{fontSize:FZF.sm,fontStyle:"italic",color:T.ink500}}>Molette pour défiler · Ctrl + molette pour zoomer · cliquez une ligne pour la fiche projet</span>
+      <span style={{fontSize:FZF.sm,color:T.ink500}}>Molette pour défiler · Ctrl + molette pour zoomer · cliquez une ligne pour la fiche projet</span>
       {/* Filtres État + PJ (demandé explicitement : "système de filtre pour enlever certain PJ ou
           certain état") — même état que la liste (App.js), donc filtrer ici filtre aussi la liste. */}
       <div style={{display:"flex",gap:8,marginLeft:"auto",alignItems:"center",flexWrap:"wrap"}}>
@@ -201,12 +201,12 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
         {setSelEtats&&<EtatInfoButton/>}
         {allPJs&&<DropFilter label="PJ" options={allPJs} selected={selPJs||new Set(allPJs)} onChange={setSelPJs}/>}
         <button type="button" onClick={()=>setGrouped(!grouped)} aria-pressed={grouped} title="Regrouper les lignes par projet"
-          style={{padding:"5px 11px",borderRadius:7,border:"1px solid "+(grouped?T.teal400:T.line),background:grouped?T.teal100:"transparent",color:grouped?T.teal600:T.ink700,fontSize:FZF.sm,fontWeight:700,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6}}><NavIcon name="layers" size={15}/>Par projet</button>
+          style={{padding:"5px 11px",borderRadius:7,border:"1px solid "+(grouped?T.teal400:T.line),background:grouped?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:grouped?(T.mode==="dark"?"#0B1130":"#FFFFFF"):T.ink700,fontSize:FZF.sm,fontWeight:700,cursor:"pointer",transition:"background-color .15s ease, color .15s ease",display:"inline-flex",alignItems:"center",gap:6}}><NavIcon name="layers" size={15}/>Par projet</button>
         <div style={{display:"flex",gap:4}}>
           <button onClick={zoomOut} disabled={dayW<=ZMIN} style={{padding:"5px 9px",borderRadius:7,border:"1px solid "+T.line,background:"transparent",color:dayW<=ZMIN?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:700,cursor:dayW<=ZMIN?"default":"pointer"}}>−</button>
           <button onClick={zoomIn} disabled={dayW>=ZMAX} style={{padding:"5px 9px",borderRadius:7,border:"1px solid "+T.line,background:"transparent",color:dayW>=ZMAX?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:700,cursor:dayW>=ZMAX?"default":"pointer"}}>+</button>
         </div>
-        <button onClick={()=>scrollToDay(dayOf(today))} style={{padding:"5px 11px",borderRadius:7,border:"1px solid "+T.teal400,background:"transparent",color:T.teal600,fontSize:FZF.sm,fontWeight:700,cursor:"pointer"}}>Aujourd'hui</button>
+        <button onClick={()=>scrollToDay(dayOf(today))} className="enogia-btn-ind" style={{padding:"5px 11px",borderRadius:7,border:"1.5px solid "+T.teal500,background:"transparent",color:T.teal600,fontSize:FZF.sm,fontWeight:700,cursor:"pointer"}}>Aujourd'hui</button>
       </div>
     </div>
 
@@ -216,7 +216,7 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
 
     <div ref={scrollRef} onScroll={syncFromBottom} style={{display:"flex",overflowX:"auto",overflowY:"auto",maxHeight:"calc(100dvh - 300px)",position:"relative"}}>
       <div style={{width:colW,height:ganttH,flexShrink:0,position:"sticky",left:0,zIndex:8,background:T.surface,borderRight:"1px solid "+T.line,boxShadow:"2px 0 6px rgba(15,40,60,.04)"}}>
-        <div className="enogia-lblcell" style={{height:HEADER_H,padding:"0 16px",display:"flex",alignItems:"center",fontSize:FZF.md,fontWeight:700,color:T.ink500,textTransform:"uppercase",letterSpacing:".04em",borderBottom:"1px solid "+T.line,background:T.surface,position:"sticky",top:0,zIndex:9}}>Projet</div>
+        <div className="enogia-lblcell" style={{height:HEADER_H,padding:"0 16px",display:"flex",alignItems:"center",fontFamily:T.fontMono,fontSize:11,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:T.accentInk,borderBottom:"1px solid "+T.line,background:T.surface,position:"sticky",top:0,zIndex:9}}>Machine</div>
         {items.map((it,ri)=>{
           if(it.g)return(<div key={"g"+ri} className="enogia-lblcell" style={{height:GROUP_H,padding:"0 16px",display:"flex",alignItems:"center",gap:8,background:T.surfaceAlt,borderBottom:"1px solid "+T.line,fontSize:FZF.sm,fontWeight:700,color:T.ink700,overflow:"hidden"}}>
             <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{it.g}</span><span style={{fontWeight:600,color:T.ink500,flexShrink:0}}>{it.n}</span></div>);

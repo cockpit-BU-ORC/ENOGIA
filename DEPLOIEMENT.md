@@ -974,3 +974,13 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - `CLAUDE.md` : section Design mise à jour (direction validée, taste-skill n'est plus la direction principale).
 - Vérifié par rendu statique (jsdom → HTML, 1 100 px) en clair et en sombre ; pas testé dans l'appli connectée.
 - Fichiers : theme.js, App.js, styles.css, components/{SharedUI,ThemePicker,HomeView,TableView,DashboardSummary}.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
+
+## v174 — Direction « Éditorial industriel » : Gantt, Calendrier, fiche projet
+
+- **Plaque partagée** : `PjPlate` déplacé de `SharedUI.js` vers `pjMeta.js` (ré-exporté par `SharedUI`) pour servir `ProjectLabelCell`, la colonne « Machine » du Gantt et du Calendrier : plaque marine + liseré intérieur de 3 px à la couleur d'état (remplace la pastille ronde).
+- **Gantt** (`GanttView.js`) : liseré marine en haut du cadre, titre « PLANNING » en sur-titre d'atelier + année en Roboto 300, note d'usage sans italique, en-tête de colonne « MACHINE » en sur-titre d'atelier ; « Par projet » actif en marine plein ; « Aujourd'hui » en bouton contour marine qui se remplit au survol.
+- **Calendrier** (`CalendarView.js`) : cadre à liseré marine, apparition en fondu ; Semaine / Jour actif en marine plein ; période en Roboto 300 ; « MACHINE », « ÉTAPES » et « PRÉSENCE TESTS » en sur-titres d'atelier ; « Aujourd'hui » comme dans le Gantt.
+- **Fiche projet** (`ProjectModal.js`) : grande plaque (`size="lg"`), nom du projet en Roboto 300 de 24 px, onglets soulignés (`role="tab"`, `aria-selected`, trait marine de 3 px) au lieu de pastilles.
+- **Mode sombre** : les fonds marine pleins passent à `teal600` (`#C6D0EE`) avec texte `#0B1130` (12:1) ; survol des boutons via `--e-ind-bg` / `--e-ind-ink` posées par `App.js` (`.enogia-btn-ind`).
+- Vérifié par rendu statique (jsdom → HTML, 1 100 px) en clair et en sombre ; pas testé dans l'appli connectée.
+- Fichiers : pjMeta.js, App.js, styles.css, components/{SharedUI,GanttView,CalendarView,ProjectModal}.js, releaseNotes.js, releaseCatalog.js(+test).

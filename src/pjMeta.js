@@ -335,6 +335,10 @@ export function SerieTag({pj,size=10.5,style}){
   if(!n)return null;
   return <span title={"N° de série : "+n} style={{display:"inline-block",fontVariantNumeric:"tabular-nums",fontSize:size,fontWeight:600,color:T.ink500,background:T.surfaceAlt,borderRadius:4,padding:"0 6px",lineHeight:"17px",whiteSpace:"nowrap",flexShrink:1,minWidth:0,maxWidth:"100%",overflow:"hidden",textOverflow:"ellipsis",...style}}>S/N {n}</span>;
 }
+// v173-v174 : plaque de n° de PJ (plaque signalétique de machine) — police d'identifiant, fond marine, texte blanc.
+export function PjPlate({pj,size="sm",style}){
+  return <span className="enogia-plate" style={{fontFamily:T.fontMono,fontWeight:700,fontSize:size==="lg"?14:12,lineHeight:1,letterSpacing:".04em",background:T.mode==="dark"?T.teal600:T.teal500,color:T.mode==="dark"?"#0B1130":"#FFFFFF",padding:size==="lg"?"5px 8px":"3px 7px",borderRadius:3,whiteSpace:"nowrap",display:"inline-block",flexShrink:0,fontVariantNumeric:"tabular-nums",...style}}>{pj}</span>;
+}
 export function ProjectLabelCell({pj,r,meta,mark}){
   const c=ETAT_META[r.etat]||ETAT_META["NOT ORDERED"];
   // Le numéro de PJ et le nom du projet doivent TOUJOURS être lisibles (demandé explicitement) :
@@ -345,8 +349,8 @@ export function ProjectLabelCell({pj,r,meta,mark}){
   const sn=(meta&&meta.numSerie)||(getPjMeta(pj)||{}).numSerie;
   return(<>
     <div style={{display:"flex",alignItems:"center",gap:7,minWidth:0}}>
-      <div style={{width:8,height:8,borderRadius:"50%",background:c.bar,flexShrink:0}}/>
-      <span style={{fontSize:FZ.sm,fontWeight:700,color:T.teal600,fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap",flexShrink:0}}>{pj}</span>
+      {/* v174 : n° de PJ en plaque, liseré intérieur à la couleur de l'état (remplace la pastille ronde). */}
+      <PjPlate pj={pj} style={{boxShadow:"inset 3px 0 0 "+c.bar,paddingLeft:9}}/>
       {r.gamme&&<span className="enogia-hide-phone" title={"Gamme "+r.gamme} style={{fontSize:FZ.xs,fontWeight:700,color:T.ink700,background:T.surfaceAlt,borderRadius:4,padding:"0 6px",lineHeight:"16px",whiteSpace:"nowrap",flexShrink:0}}>{r.gamme}</span>}
       {mark&&<span style={{marginLeft:"auto",flexShrink:0}}>{mark}</span>}
     </div>

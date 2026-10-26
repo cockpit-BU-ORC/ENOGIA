@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v174",
+    date: "2026-10-26",
+    title: "V174 : Gantt, Calendrier et fiche au style « Atelier »",
+    items: [
+      { t: "Plaques de machine partout", d: "Dans le Gantt et le Calendrier, chaque n° de PJ est sur sa plaque, avec un liseré à la couleur de son état." },
+      { t: "Commandes plus franches", d: "Semaine / Jour, « Par projet » et « Aujourd'hui » passent en bleu marine quand ils sont actifs ou survolés." },
+      { t: "Fiche projet", d: "Grande plaque de PJ, nom du projet en titre, onglets soulignés." },
+    ],
+  },
+  {
     id: "2026-10-v173",
     date: "2026-10-26",
     title: "V173 : nouveau style « Atelier »",
