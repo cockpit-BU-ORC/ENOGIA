@@ -95,43 +95,11 @@ export const THEMES = {
       ink900:"#EEF2F9", ink700:"#CDD6E6", ink500:"#B5C1D6", ink300:"#AAB7CF", ink100:"#3C4A68",
       line:"#3C4A68", neuPanel:"#2B3650", neuPanelDim:"#33405E",
       accent:"#2FD0E6", accentInk:"#7FE0EE", accentSoft:"#1F4A57" } },
-  // ── Forêt : vert foncé ──
-  foret: { label:"Forêt", desc:"Vert foncé, fond sauge très clair", swatch:["#1B6B48","#EFF6F0","#D6336C"],
-    light:{ ...grad("#0A1F17","#17402F","#5A8473"),
-      navy900:"#08241A", navy800:"#0F3F2B", navy700:"#1B6B48", navy600:"#2E8A63",
-      teal600:"#0C3A27", teal500:"#1B6B48", teal400:"#4F9473", teal100:"#DAEEE2",
-      surface:"#EFF6F0", surfaceAlt:"#DFEDE1", card:"#FFFFFF",
-      ink900:"#131A16", ink700:"#38433D", ink500:"#55615A", ink300:"#5F6B63", ink100:"#E4E9E3",
-      line:"#C6DBC9", neuPanel:"#E9F2EA", neuPanelDim:"#DDEBDF",
-      accent:"#D6336C", accentInk:"#A8214F", accentSoft:"#FBDFE8" },
-    dark:{ ...grad("#0A1F17","#17402F","#5A8473"),
-      navy900:"#0A1F17", navy800:"#CBE5D8", navy700:"#2F6B54", navy600:"#6FB296",
-      teal600:"#C2E8D4", teal500:"#357D5D", teal400:"#86C9A8", teal100:"#1F4231",
-      surface:"#1C2621", surfaceAlt:"#2B382F", card:"#242F29",
-      ink900:"#E8EFEA", ink700:"#C2CEC6", ink500:"#B0BCB4", ink300:"#9EAAA2", ink100:"#33413A",
-      line:"#384639", neuPanel:"#2C382F", neuPanelDim:"#333F37",
-      accent:"#F0608F", accentInk:"#F7A6C0", accentSoft:"#4B2233" } },
-  // ── Cuivre : marron chaud, fond sable ──
-  cuivre: { label:"Cuivre", desc:"Marron chaud, fond sable", swatch:["#7A4526","#FAF2E8","#0F9D94"],
-    light:{ ...grad("#24150E","#43291C","#8C6A58"),
-      navy900:"#2A1409", navy800:"#47260F", navy700:"#7A4526", navy600:"#9C5E38",
-      teal600:"#44230F", teal500:"#7A4526", teal400:"#A8744F", teal100:"#F3E4D8",
-      surface:"#FAF2E8", surfaceAlt:"#F1E2CF", card:"#FFFFFF",
-      ink900:"#1D1713", ink700:"#473B33", ink500:"#655850", ink300:"#6D6056", ink100:"#EBE3DB",
-      line:"#E2CBAF", neuPanel:"#F5ECE0", neuPanelDim:"#ECDECC",
-      accent:"#0F9D94", accentInk:"#0A6B65", accentSoft:"#D3F0ED" },
-    dark:{ ...grad("#24150E","#43291C","#8C6A58"),
-      navy900:"#24150E", navy800:"#EBD3C5", navy700:"#8A5E48", navy600:"#BD9078",
-      teal600:"#F0D3BF", teal500:"#9A6446", teal400:"#D9A988", teal100:"#4A3022",
-      surface:"#28211D", surfaceAlt:"#3A302A", card:"#312823",
-      ink900:"#F1EAE5", ink700:"#D0C4BB", ink500:"#BDB0A6", ink300:"#AFA399", ink100:"#42372F",
-      line:"#483B33", neuPanel:"#3A3029", neuPanelDim:"#42372F",
-      accent:"#2FD3C8", accentInk:"#8DE4DD", accentSoft:"#133F3C" } },
 };
 export const THEME_IDS = Object.keys(THEMES);
 export const DEFAULT_THEME = "atelier";
 // v173 : nouvelle clé de stockage du thème — l'ancienne (« enogia_theme ») était écrite pour tout le monde à chaque visite,
-// donc changer le thème par défaut n'aurait touché personne. Chacun peut toujours repasser en Ardoise, Forêt ou Cuivre.
+// donc changer le thème par défaut n'aurait touché personne. Chacun peut toujours repasser en Ardoise (Forêt et Cuivre retirés en v176).
 export const THEME_KEY = "enogia_theme2";
 
 // v173 : menu latéral « industriel » (fond marine, repère jaune) pour le thème Atelier ; les autres thèmes gardent leur menu clair.

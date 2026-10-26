@@ -994,3 +994,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - **Modifications** : le titre interne (doublon de l'en-tête de page) devient le sur-titre « JOURNAL DES IMPORTS » ; carte à liseré marine, sans ombre.
 - Vérifié : rendu statique des chiffres clés et des Commentaires (thème Atelier, clair) ; build, tests, contraste. Pas testé dans l'appli connectée.
 - Fichiers : components/{ChangesView,ChangesTable,CompareFiles,CommentsView,CommentsKanban,TestsTab,ManagerPanel,ManagerParts,ManagerNav,ManagerFiche}.js, App.js (version), releaseNotes.js, releaseCatalog.js(+test).
+
+## v176 — Retours bêta : vue d'ensemble compacte, plaques claires, accès fiche synthèse, thèmes
+
+- **Vue d'ensemble de la Liste** (`DashboardSummary.js`) : retour aux camemberts colorés (demandé : « hauteur trop importante, je préfère les camemberts avec les couleurs »). Anneau Recharts de 76 px avec la légende à côté (4 valeurs + « Autres »), compteur des livraisons réduit (36–46 px), marges réduites. Couleurs : gammes `GAMME_COLORS`, états `ETAT_META[].bar`, pays et chefs de projet palette douce `PALETTE` (rétablie).
+- **Plaques de PJ** (`PjPlate`, `pjMeta.js`) : fond `T.surfaceAlt` + filet `T.line` + texte `T.ink900` au lieu du marine plein (jugé « fond bleu bizarre »). Le liseré intérieur couleur d'état reste.
+- **Accès direct à la fiche synthèse** (`ProjectModal.js`, `App.js`) : si `pinOk`, bouton « Fiche synthèse » dans l'en-tête de la fiche projet (Liste, Gantt, Calendrier) ; il émet l'événement `enogia:openSynthese` { pj } qu'`App` écoute pour ouvrir Manager › Fiche sur ce PJ (même mécanisme que la cloche des mentions : `managerJump`).
+- **Thèmes** : Forêt et Cuivre retirés de `THEMES`. Un thème enregistré qui n'existe plus (`enogia_theme2` = foret/cuivre) retombe sur « Atelier ». `check:contrast` : 781 vérifications (2 thèmes en moins), 0 échec.
+- Aucune nouvelle clé `localStorage`.
+- Fichiers : components/{DashboardSummary,ProjectModal}.js, pjMeta.js, theme.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.

@@ -285,4 +285,9 @@ export const RELEASE_CATALOG = [
   { v: "175", t: "Le style « Atelier » sur tout le site", items: [
     ["Suivi et Manager", "Plaques de PJ, intitulés d'atelier et grands chiffres sur Modifications, Commentaires, Tests et Manager."],
   ] },
+  { v: "176", t: "Vue d'ensemble compacte, accès à la fiche synthèse", items: [
+    ["Liste", "Camemberts colorés de retour, en plus compact ; plaques de PJ sur fond clair."],
+    ["Fiche synthèse", "Bouton dans la fiche projet pour ouvrir la fiche synthèse (admins)."],
+    ["Thèmes", "Forêt et Cuivre retirés."],
+  ] },
 ];

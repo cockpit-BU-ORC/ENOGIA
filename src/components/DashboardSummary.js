@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from "react";
 import { isPhone } from "../useIsPhone";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { T, FZ } from "../theme";
-import { getPjMeta, ETAT_META, countShippedYTD } from "../pjMeta";
+import { getPjMeta, ETAT_META, GAMME_COLORS, countShippedYTD } from "../pjMeta";
 import { AnimatedNumber } from "./SharedUI";
 
-// v171 (maquette validée) : les 4 répartitions passent de camemberts à des barres horizontales triées (une teinte),
-// l'état en une barre découpée aux couleurs d'état ; 5 valeurs max par dimension + « Autres ».
+// v176 : retour aux camemberts colorés (demandé), en version basse : anneau de 76 px + légende à côté, 4 valeurs + « Autres ».
 // Bandeau de synthèse en haut de la page : nombre de machines expédiées depuis le 1er janvier +
 // répartition de l'ensemble du portefeuille par gamme / pays / chef de projet / état. Les 4
 // répartitions sont affichées en petits camemberts côte à côte (plutôt qu'un seul gros camembert
@@ -18,7 +18,9 @@ const DIMENSIONS=[
   {key:"chef",label:"Chef de projet"},
   {key:"etat",label:"État"},
 ];
-const TOP_N=5;
+const TOP_N=4;
+// Palette douce des camemberts (demandée explicitement : « couleurs plus douces et légères ») — gammes et états gardent leurs couleurs propres.
+const PALETTE=["#6E99B0","#A090C4","#D1A468","#80A98A","#C4847F","#8C93C2","#6FACA3","#A3AE78","#C09468","#7391BC","#BD84A0","#6FA095"];
 
 export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}){
   // Le compteur "expédiées depuis le 1er janvier" doit rester lié au nombre réel d'unités
@@ -63,10 +65,11 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
   },[data]);
 
   const etatColor=name=>{const e=Object.entries(ETAT_META).find(([,v])=>v.label===name);return e?e[1].bar:T.ink300;};
+  const colorFor=(dimKey,name,i)=>dimKey==="gamme"&&GAMME_COLORS[name]?GAMME_COLORS[name]:dimKey==="etat"?etatColor(name):PALETTE[i%PALETTE.length];
   // 5 premières valeurs + « Autres » regroupées, pour que chaque bloc reste lisible d'un coup d'œil.
   const topOf=list=>{if(list.length<=TOP_N+1)return list;const rest=list.slice(TOP_N).reduce((a,x)=>a+x.value,0);return[...list.slice(0,TOP_N),{name:"Autres ("+(list.length-TOP_N)+")",value:rest,other:true}];};
 
-  return(<div style={{paddingBottom:collapsed?14:22,marginBottom:22,borderBottom:"1px solid "+T.line,fontFamily:T.font}}>
+  return(<div style={{paddingBottom:collapsed?12:16,marginBottom:16,borderBottom:"1px solid "+T.line,fontFamily:T.font}}>
     {/* Pas de carte ici : le bandeau est posé directement sur le fond de page (direction "Piste A"),
         séparé du reste par un simple filet. L'en-tête reste fixe, avec le contrôle d'affichage ancré à droite. */}
     <div style={{display:"flex",alignItems:"center",gap:12}}>
@@ -81,44 +84,50 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
       </button>
     </div>
 
-    {!collapsed&&<div className="enogia-dash" style={{display:"flex",alignItems:"center",gap:28,flexWrap:"wrap",marginTop:18}}>
-      <div style={{display:"flex",flexDirection:"column",gap:4,minWidth:150,flexShrink:0}}>
-        <div style={{fontSize:"clamp(44px,5vw,60px)",fontWeight:300,letterSpacing:"-.03em",color:T.ink900,fontFamily:T.fontDisplay,lineHeight:.95,fontVariantNumeric:"tabular-nums"}}><AnimatedNumber value={shippedYTD}/></div>
-        <div style={{fontSize:FZ.sm,color:T.ink500}}>machine{shippedYTD>1?"s":""} livrée{shippedYTD>1?"s":""}<br/>depuis le {SHIPPED_SINCE_LABEL}</div>
+    {!collapsed&&<div className="enogia-dash" style={{display:"flex",alignItems:"center",gap:24,flexWrap:"wrap",marginTop:12}}>
+      <div style={{display:"flex",flexDirection:"column",gap:2,minWidth:120,flexShrink:0}}>
+        <div style={{fontSize:"clamp(36px,4vw,46px)",fontWeight:300,letterSpacing:"-.03em",color:T.ink900,fontFamily:T.fontDisplay,lineHeight:.95,fontVariantNumeric:"tabular-nums"}}><AnimatedNumber value={shippedYTD}/></div>
+        <div style={{fontSize:FZ.xs,color:T.ink500}}>machine{shippedYTD>1?"s":""} livrée{shippedYTD>1?"s":""}<br/>depuis le {SHIPPED_SINCE_LABEL}</div>
       </div>
 
       <div className="enogia-dash-sep" style={{width:3,alignSelf:"stretch",background:T.teal500,flexShrink:0,borderRadius:1}}/>
 
-      <div className="enogia-stagger" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:"16px 28px",flex:1,minWidth:0}}>
+      {/* v176 (demandé : « la hauteur est trop importante, je préfère les camemberts avec les couleurs ») :
+          un petit anneau coloré par répartition, légende à côté (et non dessous) pour limiter la hauteur. */}
+      <div className="enogia-stagger" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:"12px 24px",flex:1,minWidth:0}}>
         {DIMENSIONS.map(d=>{
-          const all=breakdownsByDim[d.key],list=topOf(all),total=all.reduce((a,x)=>a+x.value,0),max=Math.max(1,...list.map(x=>x.value));
-          return(<section key={d.key} aria-label={"Répartition par "+d.label.toLowerCase()} style={{minWidth:0}}>
-            <div style={{display:"flex",alignItems:"baseline",marginBottom:8}}>
-              <h3 style={{margin:0,fontSize:FZ.sm,fontWeight:500,color:T.ink900}}>Par {d.label.toLowerCase()}</h3>
-              <span style={{marginLeft:"auto",fontSize:FZ.xs,color:T.ink500,fontVariantNumeric:"tabular-nums"}}>{total}</span>
+          const all=breakdownsByDim[d.key],list=topOf(all),total=all.reduce((a,x)=>a+x.value,0);
+          const pie=list.map((x,i)=>({...x,color:x.other?T.ink300:colorFor(d.key,x.name,i)}));
+          return(<section key={d.key} aria-label={"Répartition par "+d.label.toLowerCase()} style={{minWidth:0,display:"flex",alignItems:"center",gap:12}}>
+            <div role="img" aria-label={"Par "+d.label.toLowerCase()+" : "+all.map(x=>x.name+" "+x.value).join(", ")} style={{width:76,height:76,flexShrink:0}}>
+              {total>0&&<ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={pie} dataKey="value" nameKey="name" innerRadius={22} outerRadius={37} paddingAngle={pie.length>1?2:0} stroke="none" isAnimationActive={true} animationDuration={600}>
+                    {pie.map(x=><Cell key={x.name} fill={x.color}/>)}
+                  </Pie>
+                  <Tooltip content={({active,payload})=>{
+                    if(!active||!payload||!payload.length)return null;const p=payload[0];
+                    return(<div style={{background:T.card,border:"1px solid "+T.line,borderRadius:8,padding:"4px 8px",fontSize:FZ.xs,fontFamily:T.font,color:T.ink900,display:"flex",alignItems:"center",gap:6}}>
+                      <span style={{width:7,height:7,borderRadius:2,background:p.payload&&p.payload.color,flexShrink:0}}/><span>{p.name}</span><strong>{p.value}</strong>
+                    </div>);
+                  }}/>
+                </PieChart>
+              </ResponsiveContainer>}
             </div>
-            {total===0?<div style={{fontSize:FZ.xs,color:T.ink500}}>Aucune machine avec ces filtres.</div>:d.key==="etat"?(<>
-              {/* État : une barre découpée (part de chaque état), aux couleurs d'état. */}
-              <div role="img" aria-label={all.map(x=>x.name+" "+x.value).join(", ")} className="enogia-bar-fill" style={{display:"flex",height:12,gap:3,marginBottom:8}}>
-                {all.map(x=><div key={x.name} title={x.name+" : "+x.value} style={{flex:x.value,background:etatColor(x.name),borderRadius:2}}/>)}
+            <div style={{minWidth:0,flex:1}}>
+              <div style={{display:"flex",alignItems:"baseline",marginBottom:4}}>
+                <h3 style={{margin:0,fontSize:FZ.xs,fontWeight:700,color:T.ink900}}>Par {d.label.toLowerCase()}</h3>
+                <span style={{marginLeft:"auto",fontSize:FZ.xs,color:T.ink500,fontVariantNumeric:"tabular-nums"}}>{total}</span>
               </div>
-              <div style={{display:"flex",flexDirection:"column",gap:3}}>
-                {list.map(x=><div key={x.name} style={{display:"flex",alignItems:"center",gap:7,fontSize:FZ.xs,color:T.ink700}}>
-                  <span aria-hidden="true" style={{width:8,height:8,borderRadius:2,flexShrink:0,background:x.other?T.ink100:etatColor(x.name)}}/>
-                  <span title={x.name} style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",minWidth:0}}>{x.name}</span>
-                  <span style={{marginLeft:"auto",fontWeight:700,color:T.ink900,fontVariantNumeric:"tabular-nums"}}>{x.value}</span>
-                </div>)}
-              </div>
-            </>):(
-              /* Gamme, pays, chef de projet : classement en barres horizontales triées, une seule teinte. */
-              <div style={{display:"grid",gridTemplateColumns:"minmax(0,max-content) minmax(40px,1fr) max-content",alignItems:"center",gap:"5px 8px"}}>
-                {list.map(x=><React.Fragment key={x.name}>
-                  <span title={x.name} style={{fontSize:FZ.xs,color:T.ink700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:140}}>{x.name}</span>
-                  <span aria-hidden="true" style={{height:10,borderRadius:2,background:T.surfaceAlt,overflow:"hidden"}}><span className="enogia-bar-fill" style={{display:"block",height:"100%",width:(x.value/max*100)+"%",background:x.other?T.ink300:T.teal500}}/></span>
-                  <span style={{fontSize:FZ.xs,fontWeight:700,color:T.ink900,fontVariantNumeric:"tabular-nums",textAlign:"right"}}>{x.value}</span>
-                </React.Fragment>)}
-              </div>
-            )}
+              {total===0?<div style={{fontSize:FZ.xs,color:T.ink500}}>Aucune machine avec ces filtres.</div>:
+                <div style={{display:"flex",flexDirection:"column",gap:1}}>
+                  {pie.map(x=><div key={x.name} style={{display:"flex",alignItems:"center",gap:6,fontSize:FZ.xs,color:T.ink700,lineHeight:1.35}}>
+                    <span aria-hidden="true" style={{width:8,height:8,borderRadius:2,flexShrink:0,background:x.color}}/>
+                    <span title={x.name} style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",minWidth:0}}>{x.name}</span>
+                    <span style={{marginLeft:"auto",fontWeight:700,color:T.ink900,fontVariantNumeric:"tabular-nums"}}>{x.value}</span>
+                  </div>)}
+                </div>}
+            </div>
           </section>);
         })}
       </div>

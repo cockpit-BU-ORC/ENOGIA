@@ -7,6 +7,17 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v176",
+    date: "2026-10-26",
+    title: "V176 : vue d'ensemble compacte, accès à la fiche synthèse",
+    items: [
+      { t: "Camemberts de retour", d: "La vue d'ensemble de la liste reprend ses camemberts en couleur, en plus compact : légende à côté de chaque anneau." },
+      { t: "Plaques plus claires", d: "Les n° de PJ gardent leur plaque, sur fond clair au lieu du bleu marine." },
+      { t: "Vers la fiche synthèse", d: "Depuis la fiche d'un projet, un bouton « Fiche synthèse » ouvre directement sa fiche dans le Manager.", admin: true },
+      { t: "Thèmes", d: "Les thèmes Forêt et Cuivre sont retirés ; Atelier et Ardoise restent au choix." },
+    ],
+  },
+  {
     id: "2026-10-v175",
     date: "2026-10-26",
     title: "V175 : le style « Atelier » sur tout le site",

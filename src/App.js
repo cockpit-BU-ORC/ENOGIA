@@ -64,7 +64,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-26-v175-atelier-suivi-manager";
+const APP_BUILD_VERSION = "2026-10-26-v176-retours-beta";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -565,6 +565,9 @@ export default function App(){
 
   // v148 : la personne taguée marque la demande « traitée » (ou la rouvre)
   useEffect(()=>{if(view!=="manager")setManagerJump(null);},[view]);
+  // v176 : bouton « Fiche synthèse » de la fiche projet (admins) — ouvre le PJ dans Manager › Fiche, comme la cloche des mentions.
+  const pinOkRef=useRef(pinOk);pinOkRef.current=pinOk;
+  useEffect(()=>{const h=e=>{const pj=e.detail&&e.detail.pj;if(!pj||!pinOkRef.current)return;setCalSel(null);setManagerJump({pj,n:Date.now()});setManagerTab("fiche");setView("manager");};window.addEventListener("enogia:openSynthese",h);return()=>window.removeEventListener("enogia:openSynthese",h);},[]);
   // v153 : registre des comptes déjà connectés au site (planning/knownUsers) → personnes que l'on peut taguer avec @
   const [knownUsers,setKnownUsers]=useState([]);
   useEffect(()=>{

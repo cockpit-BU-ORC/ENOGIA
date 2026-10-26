@@ -99,6 +99,8 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
             </div>}
         </div>
         <div style={{display:"flex",gap:6,alignItems:"flex-start",flexShrink:0}}>
+        {/* v176 : accès direct à la fiche synthèse (Manager › Fiche) pour les admins. */}
+        {pinOk&&<button type="button" className="enogia-btn-ind" onClick={()=>{try{window.dispatchEvent(new CustomEvent("enogia:openSynthese",{detail:{pj}}));}catch(e){}if(onClose)onClose();}} title="Ouvrir la fiche synthèse de ce PJ (Manager)" style={{background:"transparent",border:"1.5px solid "+T.teal500,borderRadius:8,height:30,padding:"0 10px",fontSize:FZ.xs,fontWeight:700,cursor:"pointer",color:T.teal600,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font,whiteSpace:"nowrap"}}><NavIcon name="arrow" size={13}/>Fiche synthèse</button>}
         <button onClick={()=>setDetailMode(detailMode==="popup"?"panel":"popup")} title={detailMode==="popup"?"Afficher les fiches dans un volet à droite":"Afficher les fiches dans une fenêtre centrale"} aria-label={detailMode==="popup"?"Passer en volet latéral":"Passer en pop-up central"} style={{background:T.neuPanel,border:"none",borderRadius:8,height:30,padding:"0 9px",fontSize:FZ.xs,fontWeight:700,cursor:"pointer",color:T.ink700,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font}}><NavIcon name={detailMode==="popup"?"sidepanel":"popup"} size={13}/>{detailMode==="popup"?"Volet":"Pop-up"}</button>
         <button onClick={onClose} title={inline?"Désélectionner":"Fermer"} style={{background:T.neuPanel,border:"none",borderRadius:8,width:30,height:30,fontSize:FZ.md,cursor:"pointer",color:T.ink700,flexShrink:0}}><NavIcon name="close" size={11}/></button>
         </div>
