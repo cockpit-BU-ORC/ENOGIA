@@ -7,6 +7,18 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v195",
+    date: "2026-10-27",
+    title: "V195 : menu, signatures en image, accueil plus fluide",
+    items: [
+      { t: "Menu de gauche", d: "Il reste en mini-barre ; la flèche du bas l'ouvre en entier, et il se replie dès que vous choisissez une page." },
+      { t: "Signer une fiche de tests", d: "Chaque testeur indique son nom, sa fonction et dépose l'image de sa signature. La fiche PDF ne garde que ces signatures." },
+      { t: "Accueil", d: "Les tuiles apparaissent plus en douceur et prennent la place qu'il leur faut." },
+      { t: "Chefs de projet", d: "Le chef de projet d'une fiche se saisit librement : un nouveau nom peut être ajouté." },
+      { t: "Cash in", d: "Le Cash in retrouve le format de l'artefact ; la nouvelle présentation reste à un clic.", admin: true },
+    ],
+  },
+  {
     id: "2026-10-v194",
     date: "2026-10-27",
     title: "V194 : Cash in complet dans le site",

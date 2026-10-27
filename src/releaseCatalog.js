@@ -363,4 +363,9 @@ export const RELEASE_CATALOG = [
   { v: "194", t: "Cash in complet dans le site", items: [
     ["Cash in", "Vues Projets, Cash par mois et Écarts intégrées."],
   ] },
+  { v: "195", t: "Menu, signatures en image, accueil plus fluide", items: [
+    ["Menu", "Mini-barre ; la flèche l'ouvre en entier."],
+    ["Tests", "Signature : nom, fonction et image ; PDF simplifié."],
+    ["Accueil", "Tuiles dimensionnées et apparition plus douce."],
+  ] },
 ];

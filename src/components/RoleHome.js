@@ -30,7 +30,7 @@ export function RoleHome({ role, profile, ui, rows, open, late, mentions, myPjs,
   const prog = r => progressOf(planOf(testsDoc || {}, r.pj), catalog, activeSections(presenceKind(r.clientPresence || null)));
   const tStart = r => dIso(r.tests), tEnd = r => dIso(r.testsFin) || dIso(r.tests);
   const inTest = (r, day) => !!r.tests && tStart(r) <= day && tEnd(r) >= day;
-  const wrap = { display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 12, alignItems: "flex-start" };
+  const wrap = {}; // v195 : grille .enogia-home-grid (styles.css) — tuiles dimensionnées selon leur contenu
   const more = (label, go) => <button type="button" onClick={go} className="enogia-homelink" style={{ ...link, marginTop: 2 }}>{label} <NavIcon name="arrow" size={15} /></button>;
   const progPill = q => <span style={{ fontVariantNumeric: "tabular-nums" }}>{q.done} / {q.total}{q.ko ? " · " + q.ko + " échec" + (q.ko > 1 ? "s" : "") : ""}</span>;
   const mentionsBlock = (title, flex) => (
@@ -49,8 +49,8 @@ export function RoleHome({ role, profile, ui, rows, open, late, mentions, myPjs,
     const toSign = mineT.filter(r => { const q = prog(r), p = planOf(testsDoc, r.pj); return !(p.signs || {})["t:" + myTester.id] && (tEnd(r) < today || (q.total > 0 && q.done === q.total)); }); // v189 : pas encore signée par moi
     const w0 = monday(today), days = DOW.map((l, i) => ({ l, d: addD(w0, i) }));
     if (!myTester) return <section style={{ ...cardS(S.tests.ring), marginBottom: 12 }}>{empty("check", "Vous n'êtes pas dans la liste des testeurs", "Un administrateur vous ajoute depuis la page Tests.")}</section>;
-    return (<div className="enogia-stagger" style={wrap}>
-      {on("today") && <section aria-label="Mes tests du jour" style={{ ...cardS(S.tests.ring), flex: "3 1 420px" }}>
+    return (<div className="enogia-home-grid" style={wrap}>
+      {on("today") && <section aria-label="Mes tests du jour" className="enogia-home-wide" style={{ ...cardS(S.tests.ring), flex: "3 1 420px" }}>
         <Head title="Mes tests du jour" sub={fmtD(today)} count={todayT.length} />
         {todayT.length === 0 ? empty("check", "Pas de test aujourd'hui", "Vos prochaines machines sont dans « Ma semaine ».") :
           todayT.map((r, i) => <Row key={r.pj} first={i === 0} pj={r.pj} pill={<Pill tone={S.tests}>{r.gamme || "Test"}</Pill>} main={nomOf(r) || "Tests"} presence={presenceOf(r)} right={progPill(prog(r))} />)}
@@ -61,7 +61,7 @@ export function RoleHome({ role, profile, ui, rows, open, late, mentions, myPjs,
         {toSign.length === 0 ? empty("check", "Rien à signer", "Les fiches de test à signer apparaîtront ici.") :
           toSign.slice(0, 5).map((r, i) => <Row key={r.pj} first={i === 0} pj={r.pj} main={nomOf(r) || r.gamme || ""} right={progPill(prog(r))} />)}
       </section>}
-      {on("week") && <section aria-label="Ma semaine" style={{ ...cardS(S.production.ring), flex: "3 1 420px" }}>
+      {on("week") && <section aria-label="Ma semaine" className="enogia-home-wide" style={{ ...cardS(S.production.ring), flex: "3 1 420px" }}>
         <Head title="Ma semaine" sub={"du " + fmtD(days[0].d) + " au " + fmtD(days[4].d)} />
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5,minmax(0,1fr))", gap: 6, marginTop: 6 }}>
           {days.map(({ l, d }) => { const list = mineT.filter(r => { const e = effOf(r); return e.from <= d && e.to >= d; }); return (
@@ -85,8 +85,8 @@ export function RoleHome({ role, profile, ui, rows, open, late, mentions, myPjs,
     const fats = [];
     mine.forEach(r => { const pd = presenceDates(r.clientPresence); [["client", "FAT client"], ["nobo", "FAT NOBO"]].forEach(([k, l]) => { const d = dIso(pd[k]) || (pd[k] === "" ? "" : null); if (pd[k] !== undefined && (!d || d >= today)) fats.push({ r, l, d }); }); });
     fats.sort((a, b) => (a.d || "9").localeCompare(b.d || "9"));
-    return (<div className="enogia-stagger" style={wrap}>
-      {on("pjs") && <section aria-label="Mes PJ et retards" style={{ ...cardS(S.production.ring), flex: "3 1 420px" }}>
+    return (<div className="enogia-home-grid" style={wrap}>
+      {on("pjs") && <section aria-label="Mes PJ et retards" className="enogia-home-wide" style={{ ...cardS(S.production.ring), flex: "3 1 420px" }}>
         <Head title="Mes PJ et retards" sub={mine.filter(r => r.drift > 0).length + " en retard sur l'initial"} count={mine.length} />
         {mine.length === 0 ? empty("inbox", "Aucun PJ associé", "Les PJ vous sont associés dans Manager › Réglages › Personnes et rôles.") :
           mine.slice(0, 8).map((r, i) => <Row key={r.pj} first={i === 0} pj={r.pj} pill={r.drift > 0 ? <Pill tone={r.drift > 10 ? A.red : A.orange}>+{r.drift} j</Pill> : <Pill tone={S.finProd}>À l'heure</Pill>} main={nomOf(r)} presence={presenceOf(r)} right={"départ " + fmtD(r.depart)} />)}
@@ -119,8 +119,8 @@ export function RoleHome({ role, profile, ui, rows, open, late, mentions, myPjs,
           <Row key={r.pj} first={i === 0} pj={r.pj} pill={<Pill tone={names.length ? S.tests : A.orange}>{names.length ? names.map(n => n.split(" ")[0]).join(", ") : "Sans testeur"}</Pill>} main={nomOf(r) || r.gamme || ""} presence={presenceOf(r)} right={testsDoc ? progPill(prog(r)) : fmtD(r.testsFin)} />); })}
       {testsDoc && more("Ouvrir les tests", () => onGo && onGo("tests"))}
     </section>);
-  if (role === "atelier") return (<div className="enogia-stagger" style={wrap}>
-    {on("arrdep") && <section aria-label="Arrivées et départs" style={{ ...cardS(S.depart.ring), flex: "3 1 420px" }}>
+  if (role === "atelier") return (<div className="enogia-home-grid" style={wrap}>
+    {on("arrdep") && <section aria-label="Arrivées et départs" className="enogia-home-wide" style={{ ...cardS(S.depart.ring), flex: "3 1 420px" }}>
       <Head title="Arrivées et départs" sub="aujourd'hui et cette semaine" count={arrDep.length} />
       {arrDep.length === 0 ? empty("check", "Ni arrivée ni départ cette semaine", "") :
         arrDep.map((x, i) => <Row key={x.r.pj + x.l} first={i === 0} pj={x.r.pj} pill={<Pill tone={x.tone}>{x.l}</Pill>} main={nomOf(x.r) || x.r.gamme || ""} presence={presenceOf(x.r)} right={x.d === today ? "aujourd'hui" : fmtD(x.d)} rightColor={x.d === today ? T.teal600 : undefined} />)}
@@ -149,7 +149,7 @@ export function RoleHome({ role, profile, ui, rows, open, late, mentions, myPjs,
       ...bigLate.slice(0, 4).map(r => ({ id: "d" + r.pj, pj: r.pj, pill: <Pill tone={A.orange}>Dérive</Pill>, main: nomOf(r) || "Départ " + fmtD(r.depart), right: "+" + r.drift + " j" })),
       ...noTester.slice(0, 3).map(r => ({ id: "t" + r.pj, pj: r.pj, pill: <Pill tone={S.tests}>Sans testeur</Pill>, main: nomOf(r) || r.gamme || "", right: fmtD(r.tests) })),
     ];
-    return (<div className="enogia-stagger" style={wrap}>
+    return (<div className="enogia-home-grid" style={wrap}>
       {on("tests") && <section aria-label="Tests" style={{ ...cardS(S.tests.ring), flex: "1 1 300px" }}>
         <Head title="Tests" sub="3 prochaines semaines" />
         {testsDoc ? <div style={grid}><Stat label="machines en test" value={soon.length} onClick={() => onGo("tests")} /><Stat label="sans testeur" value={noTester.length} tone={noTester.length ? T.red500 : undefined} onClick={() => onGo("tests")} /><Stat label="échecs" value={fails} tone={fails ? T.red500 : undefined} /><Stat label="en retard" value={lateT} tone={lateT ? T.amber600 : undefined} /><Stat label="conflits" value={conflicts} tone={conflicts ? T.amber600 : undefined} /></div> : <div style={grey}>Page Tests non disponible.</div>}
@@ -166,7 +166,7 @@ export function RoleHome({ role, profile, ui, rows, open, late, mentions, myPjs,
         </>}
         {onOpenCash && more("Ouvrir le Cash in", onOpenCash)}
       </section>); })()}
-      {on("alertes") && <section aria-label="Alertes" style={{ ...cardS(A.orange.ring), flex: "3 1 420px" }}>
+      {on("alertes") && <section aria-label="Alertes" className="enogia-home-wide" style={{ ...cardS(A.orange.ring), flex: "3 1 420px" }}>
         <Head title="Alertes" sub="dérives > 10 j, tests sans testeur" count={bigLate.length + noTester.length} />
         {alerts.length === 0 ? empty("check", "Aucune alerte", "Pas de grosse dérive ni de test sans testeur.") : alerts.map((a, i) => <Row key={a.id} first={i === 0} pj={a.pj} pill={a.pill} main={a.main} right={a.right} />)}
       </section>}

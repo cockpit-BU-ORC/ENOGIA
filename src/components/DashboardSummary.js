@@ -126,14 +126,14 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
             <div style={{minWidth:0,flex:1}}>
               <div style={{display:"flex",alignItems:"baseline",marginBottom:4}}>
                 <h3 style={{margin:0,fontSize:FZ.xs,fontWeight:700,color:T.ink900}}>Par {d.label.toLowerCase()}</h3>
-                <span style={{marginLeft:"auto",fontSize:FZ.xs,fontWeight:700,color:T.ink900,fontVariantNumeric:"tabular-nums"}}>{total}</span>
+                <span style={{marginLeft:8,fontSize:FZ.xs,fontWeight:700,color:T.ink900,fontVariantNumeric:"tabular-nums"}}>{total}</span>
               </div>
               {total===0?<div style={{fontSize:FZ.xs,color:T.ink500}}>Aucune machine avec ces filtres.</div>:
-                <div style={{display:"flex",flexDirection:"column",gap:1}}>
-                  {pie.map((x,xi)=><div key={x.name} className="enogia-pie-leg" style={{display:"flex",alignItems:"center",gap:6,fontSize:FZ.xs,color:T.ink700,lineHeight:1.35,animationDelay:(200+di*120+xi*40)+"ms"}}>
+                <div style={{display:"flex",flexDirection:"column",gap:1,"--lw":/* v195 : noms à la largeur du plus long (max 18 car.), chiffre juste après */Math.min(18,Math.max(...pie.map(x=>String(x.name).length)))+1+"ch"}}>
+                  {pie.map((x,xi)=><div key={x.name} className="enogia-pie-leg" style={{display:"grid",gridTemplateColumns:"8px var(--lw) auto",justifyContent:"start",alignItems:"center",columnGap:6,fontSize:FZ.xs,color:T.ink700,lineHeight:1.35,animationDelay:(200+di*120+xi*40)+"ms"}}>
                     <span aria-hidden="true" style={{width:8,height:8,borderRadius:2,flexShrink:0,background:x.color}}/>
                     <span title={x.name} style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",minWidth:0,fontWeight:500}}>{x.name}</span>
-                    <span style={{marginLeft:"auto",fontWeight:700,color:T.ink900,fontVariantNumeric:"tabular-nums"}}>{x.value}</span>
+                    <span style={{fontWeight:700,color:T.ink900,fontVariantNumeric:"tabular-nums",textAlign:"right",minWidth:"2ch"}}>{x.value}</span>
                   </div>)}
                 </div>}
             </div>

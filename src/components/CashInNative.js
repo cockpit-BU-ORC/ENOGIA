@@ -102,7 +102,7 @@ export function CashInNative({ authorName, focus, onLegacy }) {
         <button type="button" style={btn(false)} onClick={() => fileRef.current && fileRef.current.click()}>Importer un fichier…</button>
         <input ref={fileRef} type="file" accept="application/json,.json" onChange={onFile} style={{ display: "none" }} aria-label="Fichier de sauvegarde Cash in" />
         <button type="button" style={btn(true)} onClick={exportXlsx}><NavIcon name="copy" size={14} />Exporter en Excel</button>
-        {onLegacy && <button type="button" style={{ ...btn(false), border: "none", background: "transparent", color: T.ink500 }} onClick={onLegacy}>Ancienne page</button>}
+        {onLegacy && <button type="button" style={{ ...btn(false), border: "none", background: "transparent", color: T.ink500 }} onClick={onLegacy}>Format artefact</button>}
       </span>
     </div>
     {info.err && banner("err", info.err)}

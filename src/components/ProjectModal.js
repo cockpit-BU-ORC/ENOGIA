@@ -225,10 +225,9 @@ function EditMetaForm({meta,gamme,onSave,onCancel}){
         {/* Liste déroulante (plutôt qu'un texte libre) construite à partir des chefs de projet
             connus (référentiel + synchro Suivi ORC + corrections manuelles), déjà stockés en
             "Prénom NOM" complet — demandé explicitement. */}
-        <select value={chefProjet} onChange={e=>setChefProjet(e.target.value)} style={fieldStyle}>
-          {!allChefs.includes(chefProjet)&&chefProjet&&<option value={chefProjet}>{chefProjet}</option>}
-          {allChefs.map(c=><option key={c} value={c}>{c}</option>)}
-        </select>
+        {/* v195 : nom libre (nouveau chef possible) avec la liste des chefs connus en suggestion */}
+        <input list="enogia-chef-main" value={chefProjet} onChange={e=>setChefProjet(e.target.value)} placeholder="Nom du chef de projet" style={fieldStyle}/>
+        <datalist id="enogia-chef-main">{allChefs.map(c=><option key={c} value={c}/>)}</datalist>
       </label>
       <label style={{display:"flex",flexDirection:"column",gap:3,fontSize:FZ.xs,fontWeight:600,color:T.ink500}}>Gamme
         <select value={gammeVal} onChange={e=>setGammeVal(e.target.value)} style={fieldStyle}>

@@ -279,7 +279,7 @@ function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdi
       {panel && <Step n="3" title="Tests" hint={canMark ? "Indiquez pour chaque test : en cours, réussi ou en échec." : "Consultation : seuls le testeur affecté et les administrateurs renseignent les tests."}>
         <Checklist {...{ r, plan, catalog, act, canEdit: canTest, canMark, saveTests, who }} />
       </Step>}
-      {panel && <Step n="4" title="Signatures et fiche PDF" hint="Chaque testeur signe au doigt ou à la souris ; la fiche PDF reprend tous les tests, les heures et les signatures.">
+      {panel && <Step n="4" title="Signatures et fiche PDF" hint="Chaque testeur indique son nom, sa fonction et dépose l'image de sa signature ; la fiche PDF reprend tous les tests, les heures et les signatures.">
         <Signatures {...{ r, plan, assigned, mine, myTester, canEdit, who, signApi, saveTests, catalog, act, testers, meta, myCerts, kind, pd }} />
       </Step>}
       {!panel && <Step n="3" title="Tests à réaliser" hint={canTest ? "Cochez / décochez les tests à réaliser pour cette machine ; les commentaires sont propres à ce PJ." : "Consultation : seuls les administrateurs modifient les tests."}>
@@ -354,18 +354,18 @@ function Checklist({ r, plan, catalog, act, canEdit, canMark, saveTests, who }) 
   </div>);
 }
 
-// v189 : signatures (« Réalisé par » = chaque testeur affecté, « Vérifié par » = un administrateur) et fiche PDF.
-// Le tracé est stocké à part (planning/testsign_<PJ>, via signApi) ; plan.signs ne garde que { name, at } pour l'état « à signer ».
+// v195 (demandé) : chaque testeur affecté indique son nom et sa fonction et dépose l'image de sa signature (PNG / JPG, comme sur
+// un PDF) ; plus de « Vérifié par » ni de case Client / NOBO. L'image (réduite à 360 × 120 max) va dans planning/testsign_<PJ> via signApi ;
+// plan.signs garde { name, fn, at } pour l'état « signé ».
 function Signatures({ r, plan, assigned, mine, myTester, canEdit, who, signApi, saveTests, catalog, act, testers, meta, myCerts, kind, pd }) {
-  const [pad, setPad] = useState(null), [busy, setBusy] = useState(false), [err, setErr] = useState("");
+  const [form, setForm] = useState(null), [busy, setBusy] = useState(false), [err, setErr] = useState("");
   const signs = (plan && plan.signs) || {};
-  const keyV = "v:" + String(who || "admin").toLowerCase().replace(/[^a-z0-9]+/g, "_");
-  const sign = async (key, name, fn, paths) => {
+  const sign = async (key, name, fn, img) => {
     if (!signApi) { setErr("Signature indisponible."); return; }
     setBusy(true); setErr("");
-    const entry = { name, fn, at: new Date().toISOString(), paths };
+    const entry = { name, fn, at: new Date().toISOString(), img };
     const ok = await signApi.save(r.pj, key, entry);
-    if (ok !== false) { await saveTests({ ...plan, signs: { ...signs, [key]: { name, fn, at: entry.at } } }); setPad(null); } else setErr("La signature n'a pas pu être enregistrée.");
+    if (ok !== false) { await saveTests({ ...plan, signs: { ...signs, [key]: { name, fn, at: entry.at } } }); setForm(null); } else setErr("La signature n'a pas pu être enregistrée.");
     setBusy(false);
   };
   const pdf = async () => {
@@ -377,18 +377,18 @@ function Signatures({ r, plan, assigned, mine, myTester, canEdit, who, signApi, 
     if (!ok) setErr("Le navigateur a bloqué la nouvelle fenêtre : autorisez les fenêtres pour ce site.");
     setBusy(false);
   };
-  const row = (key, role, name, canSign, fn) => { const s = signs[key]; return (
-    <div key={key} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "8px 10px", background: T.card, border: "1px solid " + T.line, borderRadius: 10 }}>
-      <div style={{ flex: "1 1 180px", minWidth: 0 }}><div style={{ fontFamily: T.fontLabel, fontSize: 12, color: T.ink500 }}>{role}</div><div style={{ fontSize: FZ.sm, fontWeight: 700, color: T.ink900 }}>{name || "—"}</div></div>
-      {s ? <span style={{ fontFamily: T.fontLabel, fontSize: 12, fontWeight: 600, color: T.emerald600, background: T.emerald100, borderRadius: 999, padding: "2px 10px" }}>Signé le {fd(dIso(s.at))}</span>
-        : canSign ? <button type="button" disabled={busy} onClick={() => setPad({ key, name, fn })} style={btn(true)}>Signer</button>
-        : <span style={{ fontSize: FZ.xs, color: T.ink500 }}>Pas encore signé</span>}
-    </div>); };
   return (<div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
     {assigned.length === 0 && <span style={{ fontSize: FZ.xs, color: T.ink500 }}>Aucun testeur affecté.</span>}
-    {assigned.map(t => row("t:" + t.id, "Réalisé par", t.name, !!myTester && myTester.id === t.id, "Testeur"))}
-    {canEdit && row(keyV, "Vérifié par", who, true, "Vérification")}
-    {pad && <SignaturePad name={pad.name} busy={busy} onCancel={() => setPad(null)} onSave={paths => sign(pad.key, pad.name, pad.fn, paths)} />}
+    {assigned.map(t => { const key = "t:" + t.id, sg = signs[key], canSign = (!!myTester && myTester.id === t.id) || canEdit; return (
+      <div key={key} style={{ display: "flex", flexDirection: "column", gap: 8, padding: "8px 10px", background: T.card, border: "1px solid " + T.line, borderRadius: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <div style={{ flex: "1 1 180px", minWidth: 0 }}><div style={{ fontFamily: T.fontLabel, fontSize: 12, color: T.ink500 }}>Réalisé par</div><div style={{ fontSize: FZ.sm, fontWeight: 700, color: T.ink900 }}>{(sg && sg.name) || t.name}{sg && sg.fn ? <span style={{ fontWeight: 500, color: T.ink500 }}> · {sg.fn}</span> : null}</div></div>
+          {sg && <span style={{ fontFamily: T.fontLabel, fontSize: 12, fontWeight: 600, color: T.emerald600, background: T.emerald100, borderRadius: 999, padding: "2px 10px" }}>Signé le {fd(dIso(sg.at))}</span>}
+          {canSign && (!form || form.key !== key) && <button type="button" disabled={busy} onClick={() => setForm({ key, name: (sg && sg.name) || t.name, fn: (sg && sg.fn) || "" })} style={btn(true, sg ? "ghost" : undefined)}>{sg ? "Remplacer la signature" : "Signer"}</button>}
+          {!canSign && !sg && <span style={{ fontSize: FZ.xs, color: T.ink500 }}>Pas encore signé</span>}
+        </div>
+        {form && form.key === key && <SignForm init={form} busy={busy} onCancel={() => setForm(null)} onSave={(name, fn, img) => sign(key, name, fn, img)} />}
+      </div>); })}
     <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
       <button type="button" onClick={pdf} disabled={busy} className="enogia-btn-ind" style={{ border: "none", background: T.ink900, color: T.card, borderRadius: 8, padding: "7px 14px", minHeight: 32, fontSize: FZ.sm, fontWeight: 700, cursor: "pointer", fontFamily: T.font, display: "inline-flex", alignItems: "center", gap: 6 }}><NavIcon name="copy" size={15} />Fiche PDF signée</button>
       <span style={{ fontSize: FZ.xs, color: T.ink500 }}>S'ouvre dans un nouvel onglet : Imprimer → « Enregistrer au format PDF ».</span>
@@ -396,25 +396,36 @@ function Signatures({ r, plan, assigned, mine, myTester, canEdit, who, signApi, 
     {err && <div role="alert" style={{ fontSize: FZ.xs, color: T.red500, fontWeight: 600 }}>{err}</div>}
   </div>);
 }
-// Bloc de signature au doigt / à la souris (pointer events), repère 300 × 100, tracés arrondis à l'entier.
-function SignaturePad({ name, onSave, onCancel, busy }) {
-  const cv = useRef(null), strokes = useRef([]), drawing = useRef(false);
-  const [n, setN] = useState(0);
-  const pt = e => { const b = cv.current.getBoundingClientRect(); return [Math.round((e.clientX - b.left) / b.width * 300), Math.round((e.clientY - b.top) / b.height * 100)]; };
-  const paint = () => { const c = cv.current; if (!c) return; const g = c.getContext("2d"); g.clearRect(0, 0, 300, 100); g.strokeStyle = T.ink900; g.lineWidth = 2.2; g.lineCap = "round"; g.lineJoin = "round"; strokes.current.forEach(s => { g.beginPath(); s.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.stroke(); }); };
-  const down = e => { e.preventDefault(); cv.current.setPointerCapture && cv.current.setPointerCapture(e.pointerId); drawing.current = true; strokes.current.push([pt(e)]); paint(); };
-  const move = e => { if (!drawing.current) return; const s = strokes.current[strokes.current.length - 1], p2 = pt(e), l = s[s.length - 1]; if (Math.abs(p2[0] - l[0]) + Math.abs(p2[1] - l[1]) >= 2) { s.push(p2); paint(); } };
-  const up = () => { if (drawing.current) { drawing.current = false; setN(strokes.current.length); } };
-  const clear = () => { strokes.current = []; setN(0); paint(); };
-  const enc = () => strokes.current.filter(s => s.length > 1).map(s => s.map(p => p.join(",")).join(" ")).join("|");
-  return (<div className="enogia-view-in" style={{ border: "1.5px solid " + T.teal500, borderRadius: 12, padding: 10, background: T.surface, display: "flex", flexDirection: "column", gap: 8 }}>
-    <div style={{ fontSize: FZ.xs, color: T.ink700, fontWeight: 600 }}>Signature de {name} — signez dans le cadre</div>
-    <canvas ref={cv} width={300} height={100} aria-label={"Zone de signature de " + name} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerLeave={up}
-      style={{ width: "100%", maxWidth: 480, aspectRatio: "3 / 1", background: T.card, border: "1px dashed " + T.ink300, borderRadius: 8, touchAction: "none", cursor: "crosshair" }} />
+// Réduit l'image de signature (PNG / JPG) à 360 × 120 au plus, en PNG, pour rester léger dans Firestore.
+const shrinkImage = file => new Promise((res, rej) => {
+  if (!/^image\/(png|jpe?g|webp)$/i.test(file.type)) { rej(new Error("Choisissez une image PNG ou JPG.")); return; }
+  const fr = new FileReader();
+  fr.onerror = () => rej(new Error("Lecture de l'image impossible."));
+  fr.onload = () => { const im = new Image(); im.onerror = () => rej(new Error("Image illisible.")); im.onload = () => {
+    const k = Math.min(1, 360 / im.width, 120 / im.height), w = Math.max(1, Math.round(im.width * k)), h = Math.max(1, Math.round(im.height * k));
+    const c = document.createElement("canvas"); c.width = w; c.height = h; c.getContext("2d").drawImage(im, 0, 0, w, h);
+    const url = c.toDataURL("image/png"); if (url.length > 150000) { rej(new Error("Image trop lourde : recadrez la signature.")); return; } res(url); };
+    im.src = fr.result; };
+  fr.readAsDataURL(file);
+});
+function SignForm({ init, onSave, onCancel, busy }) {
+  const [name, setName] = useState(init.name || ""), [fn, setFn] = useState(init.fn || ""), [img, setImg] = useState(null), [err, setErr] = useState("");
+  const pick = async e => { const f = e.target.files && e.target.files[0]; e.target.value = ""; if (!f) return; try { setImg(await shrinkImage(f)); setErr(""); } catch (x) { setErr(x.message); } };
+  const ok = name.trim() && fn.trim() && img;
+  return (<div className="enogia-view-in" style={{ border: "1.5px solid " + T.teal500, borderRadius: 10, padding: 10, background: T.surface, display: "flex", flexDirection: "column", gap: 8 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 8 }}>
+      <label style={{ display: "flex", flexDirection: "column", gap: 3, fontFamily: T.fontLabel, fontSize: 12, color: T.ink500 }}>Nom<input value={name} onChange={e => setName(e.target.value)} style={field()} /></label>
+      <label style={{ display: "flex", flexDirection: "column", gap: 3, fontFamily: T.fontLabel, fontSize: 12, color: T.ink500 }}>Fonction<input value={fn} onChange={e => setFn(e.target.value)} placeholder="Technicien d'essais" style={field()} /></label>
+    </div>
+    <label style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: FZ.xs, fontWeight: 700, color: T.teal600, cursor: "pointer", minHeight: 28 }}>
+      <input type="file" accept="image/png,image/jpeg,image/webp" onChange={pick} style={{ fontSize: FZ.xs }} aria-label="Image de la signature" />
+    </label>
+    {img && <img src={img} alt="Aperçu de la signature" style={{ maxWidth: 240, maxHeight: 80, background: "#fff", border: "1px solid " + T.line, borderRadius: 6, padding: 4, alignSelf: "flex-start" }} />}
+    {err && <div role="alert" style={{ fontSize: FZ.xs, color: T.red500, fontWeight: 600 }}>{err}</div>}
     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-      <button type="button" disabled={busy || n === 0} onClick={() => onSave(enc())} style={btn(n > 0)}>Valider la signature</button>
-      <button type="button" onClick={clear} style={btn(true, "ghost")}>Effacer</button>
+      <button type="button" disabled={busy || !ok} onClick={() => onSave(name.trim(), fn.trim(), img)} style={btn(!!ok)}>Valider la signature</button>
       <button type="button" onClick={onCancel} style={btn(true, "ghost")}>Annuler</button>
+      {!ok && <span style={{ fontSize: FZ.xs, color: T.ink500, alignSelf: "center" }}>Nom, fonction et image de la signature sont nécessaires.</span>}
     </div>
   </div>);
 }

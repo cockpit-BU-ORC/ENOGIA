@@ -33,9 +33,10 @@ export function testReportHtml({ r, meta, plan, catalog, act, testers, signs, ce
   stamps.sort();
   const assigned = plan.assign.map(a => testers.find(t => t.id === a.tid)).filter(Boolean);
   const docName = "PV-FAT-" + r.pj;
-  const sigRow = (role, name, fn, s) => `<tr><td>${esc(role)}</td><td><b>${esc(name || "")}</b></td><td>${esc(fn || "")}</td><td class="visa">${s && s.paths ? sigToSvg(s.paths) + `<div class="when">Signé le ${esc(frDT(s.at))}</div>` : ""}</td></tr>`;
-  const testerRows = (assigned.length ? assigned : [{ id: "", name: "" }]).map(t => sigRow("Réalisé par", t.name, "Testeur", signs["t:" + t.id])).join("");
-  const verif = Object.entries(signs).filter(([k]) => k.startsWith("v:")).map(([, s]) => sigRow("Vérifié par", s.name, s.fn || "", s)).join("") || sigRow("Vérifié par", "", "", null);
+  // v195 : la personne saisit son nom et sa fonction ; la signature est une image déposée (s.img), à défaut l'ancien tracé (s.paths).
+  const visa = s => !s ? "" : (s.img ? `<img src="${esc(s.img)}" alt="Signature" style="max-width:200px;max-height:70px;display:block">` : s.paths ? sigToSvg(s.paths) : "") + `<div class="when">Signé le ${esc(frDT(s.at))}</div>`;
+  const sigRow = (role, name, fn, s) => `<tr><td>${esc(role)}</td><td><b>${esc((s && s.name) || name || "")}</b></td><td>${esc((s && s.fn) || fn || "")}</td><td class="visa">${visa(s)}</td></tr>`;
+  const testerRows = (assigned.length ? assigned : [{ id: "", name: "" }]).map(t => sigRow("Réalisé par", t.name, "", signs["t:" + t.id])).join("");
   const nom = meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : "";
   return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="color-scheme" content="light"><title>${esc(docName)}${nom ? " – " + esc(nom) : ""}</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
@@ -71,16 +72,16 @@ table{border-collapse:collapse;width:100%}
 <table class="id">
 <tr><td class="k">Document</td><td>${esc(docName)}</td><td class="k">Date d'édition</td><td>${esc(frD(new Date().toISOString()))}</td></tr>
 <tr><td class="k">Projet</td><td>${esc(nom || "—")}</td><td class="k">Gamme</td><td>${esc(r.gamme || "—")}</td></tr>
-<tr><td class="k">Client</td><td>${esc(meta.client || r.client || "—")}</td><td class="k">Chef de projet</td><td>${esc(meta.chefProjet && meta.chefProjet !== "—" ? meta.chefProjet : "—")}</td></tr>
+<tr><td class="k">Chef de projet</td><td colspan="3">${esc(meta.chefProjet && meta.chefProjet !== "—" ? meta.chefProjet : "—")}</td></tr>
 <tr><td class="k">Période de tests</td><td>${esc(frD(r.tests))}${r.testsFin ? " → " + esc(frD(r.testsFin)) : ""}</td><td class="k">Présence</td><td>${esc(kindLabel)}${presence ? " · " + esc(presence) : ""}</td></tr>
 <tr><td class="k">Début / fin des saisies</td><td>${stamps.length ? esc(frDT(stamps[0])) + " → " + esc(frDT(stamps[stamps.length - 1])) : "—"}</td><td class="k">Certification</td><td>${esc((certs || []).join(", ") || "N/A")}</td></tr>
 <tr><td class="k">Testeurs</td><td colspan="3">${esc(assigned.map(t => t.name).join(", ") || "—")}${plan.forced ? " · validation forcée par " + esc(plan.forced.by || "") + " le " + esc(frD(plan.forced.at)) : ""}</td></tr>
 </table>
 <div class="sum"><div>Réussis<b style="color:#3B6620">${n.ok}</b></div><div>Échecs<b style="color:#B8331A">${n.ko}</b></div><div>En cours<b style="color:#8A5700">${n.wip}</b></div><div>Non réalisés<b>${n.todo}</b></div></div>
 ${sections}
-<h2>Tableau de validation</h2>
+<h2>Signatures</h2>
 <table class="val"><thead><tr><th style="width:16%"></th><th>Nom</th><th>Fonction</th><th>Visa</th></tr></thead><tbody>
-${testerRows}${verif}${sigRow("Client / NOBO", "", "", null)}
+${testerRows}
 </tbody></table>
 <div class="foot"><span>Document : ${esc(docName)} · Projet : ${esc(r.pj)} · Version : A</span><span>Siège social : 19 Avenue Paul Héroult 13015 Marseille – www.enogia.com · Enogia – S.A. au capital de 628 753,20 € · Siren 514 692 045 RCS Marseille</span></div>
 </body></html>`;

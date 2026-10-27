@@ -11,8 +11,9 @@ const btn = (primary) => ({ padding: "6px 12px", borderRadius: 8, border: "1px s
 
 // v193 : l'onglet affiche la version intégrée (CashInNative) ; l'ancienne page en cadre reste accessible le temps de comparer.
 export function CashInTab({ authorName, focus }) {
-  const [legacy, setLegacy] = useState(() => { try { return localStorage.getItem("enogia_cashin_legacy") === "1"; } catch (e) { return false; } });
-  const pick = v => { setLegacy(v); try { localStorage.setItem("enogia_cashin_legacy", v ? "1" : "0"); } catch (e) {} };
+  // v195 (demandé : « reprendre le même format que la version artefact ») : le format de l'artefact est affiché par défaut ; « Nouvelle version » reste à un clic.
+  const [legacy, setLegacy] = useState(() => { try { return localStorage.getItem("enogia_cashin_format") !== "nouveau"; } catch (e) { return true; } });
+  const pick = v => { setLegacy(v); try { localStorage.setItem("enogia_cashin_format", v ? "artefact" : "nouveau"); } catch (e) {} };
   return legacy ? <CashInLegacy authorName={authorName} focus={focus} onNative={() => pick(false)} /> : <CashInNative authorName={authorName} focus={focus} onLegacy={() => pick(true)} />;
 }
 function CashInLegacy({ authorName, focus, onNative }) {
@@ -124,7 +125,7 @@ function CashInLegacy({ authorName, focus, onNative }) {
     <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", justifyContent: "space-between" }}>
       <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Réservé au super admin. Données : document « planning/{CASHIN_DOC_REF().id} ».</div>
       <div style={{ display: "flex", gap: 8 }}>
-        <button style={btn(false)} onClick={onNative} title="Revenir au Cash in intégré au site">Version intégrée</button>
+        <button style={btn(false)} onClick={onNative} title="Afficher la nouvelle présentation du Cash in">Nouvelle présentation</button>
         <button style={btn(true)} onClick={() => setLinksOpen(true)} disabled={!info.exists} title="Choisir à quel(s) PJ de l'ordo chaque PJ du Cash in se rattache">Liaisons avec l'ordo</button>
         <button style={btn(false)} onClick={download} disabled={!info.exists} title="Télécharge l'état actuel au format JSON">Sauvegarde JSON</button>
         <button style={btn(false)} onClick={() => fileRef.current && fileRef.current.click()} title="Reprend un fichier de sauvegarde Cash in">Reprendre un fichier…</button>

@@ -66,7 +66,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-27-v194-cashin-complet";
+const APP_BUILD_VERSION = "2026-10-27-v195-menu-signatures";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -1017,12 +1017,11 @@ export default function App(){
   // v159 : menu principal libellé (réductible, mémorisé) + recherche « Aller à… » (Ctrl K) sur toutes les pages
   // v191 (demandé : « l'onglet à gauche doit se masquer automatiquement ») : menu réduit par défaut, il s'ouvre par-dessus la page au survol
   // (ou au clavier) et se referme en sortant ; le bouton du bas l'épingle ouvert (enogia_nav_pin).
-  const [navPin,setNavPinS]=useState(()=>{try{return localStorage.getItem("enogia_nav_pin")==="1";}catch(e){return false;}});
+  // v195 (demandé : « garder la mini-barre en auto ; la flèche du bas ouvre la barre en entier ») : plus d'ouverture au survol.
+  // La flèche ouvre le menu complet par-dessus la page ; il se replie seul quand on choisit une page ou quand la souris le quitte.
   const [navPeek,setNavPeek]=useState(false),navPeekT=useRef(0);
-  const navMin=!navPin;
-  const setNavMin=v=>{setNavPinS(!v);setNavPeek(false);try{localStorage.setItem("enogia_nav_pin",v?"0":"1");}catch(e){}};
-  const peek=on=>{clearTimeout(navPeekT.current);navPeekT.current=setTimeout(()=>setNavPeek(on),on?120:180);};
-  const navOverlay=navMin||view==="manager"; // menu réduit dans la mise en page (64 px), ouvert par-dessus au survol
+  const closePeek=delay=>{clearTimeout(navPeekT.current);navPeekT.current=setTimeout(()=>setNavPeek(false),delay||0);};
+  const navOverlay=true;
   const navCompact=navOverlay&&!navPeek; // dans l'espace Manager, un seul menu large : celui du Manager
   const [navPal,setNavPal]=useState(false);
   useEffect(()=>{const f=e=>{if((e.ctrlKey||e.metaKey)&&!e.altKey&&String(e.key).toLowerCase()==="k"&&view!=="manager"&&loggedIn){e.preventDefault();setNavPal(o=>!o);}};window.addEventListener("keydown",f);return()=>window.removeEventListener("keydown",f);},[view,loggedIn]);
@@ -1047,8 +1046,8 @@ export default function App(){
 
     {/* ── Rail de navigation : icônes de vue + accès Manager + mode sombre ── */}
     <a href="#enogia-main" className="enogia-skip" onClick={e=>{e.preventDefault();const m=document.getElementById("enogia-main");if(m){m.focus();m.scrollIntoView&&m.scrollIntoView({block:"start"});}}}>Aller au contenu</a>
-    <div style={{width:navOverlay?64:216,flexShrink:0,position:"relative",zIndex:30}}>
-    <nav className={"enogia-nav"+(NAV.industrial?" enogia-nav-ind":"")} aria-label="Pages" onMouseEnter={navOverlay?()=>peek(true):undefined} onMouseLeave={navOverlay?()=>peek(false):undefined} onFocus={navOverlay?()=>peek(true):undefined} onBlur={navOverlay?e=>{if(!e.currentTarget.contains(e.relatedTarget))peek(false);}:undefined} style={{width:navCompact?64:216,boxShadow:navOverlay&&navPeek?"8px 0 28px rgba(8,12,28,.28)":"none",transition:"box-shadow .18s ease",flexShrink:0,background:NAV.bg,borderRight:"1px solid "+NAV.border,display:"flex",flexDirection:"column",alignItems:navCompact?"center":"stretch",padding:navCompact?"16px 0":"16px 10px",gap:4,position:"sticky",top:0,zIndex:30,height:"100vh",overflowY:"auto",overflowX:"hidden",scrollbarWidth:"none"}}>
+    <div style={{width:64,flexShrink:0,position:"relative",zIndex:30}}>
+    <nav className={"enogia-nav"+(NAV.industrial?" enogia-nav-ind":"")} aria-label="Pages" onMouseEnter={()=>clearTimeout(navPeekT.current)} onMouseLeave={()=>{if(navPeek)closePeek(350);}} onKeyDown={e=>{if(e.key==="Escape"&&navPeek)setNavPeek(false);}} style={{width:navCompact?64:216,boxShadow:navOverlay&&navPeek?"8px 0 28px rgba(8,12,28,.28)":"none",transition:"box-shadow .18s ease",flexShrink:0,background:NAV.bg,borderRight:"1px solid "+NAV.border,display:"flex",flexDirection:"column",alignItems:navCompact?"center":"stretch",padding:navCompact?"16px 0":"16px 10px",gap:4,position:"sticky",top:0,zIndex:30,height:"100vh",overflowY:"auto",overflowX:"hidden",scrollbarWidth:"none"}}>
       {/* v179 (demandé : « le logo en haut à gauche pour avoir le début de la page au même niveau ») : le logo ouvre le menu, en blanc sur le marine. */}
       <button type="button" onClick={()=>setView("home")} aria-label={SITE_TITLE+" — accueil"} title="Accueil" style={{border:"none",background:"transparent",cursor:"pointer",padding:navCompact?"2px 0 10px":"2px 10px 12px",display:"flex",justifyContent:navCompact?"center":"flex-start",alignItems:"center",minHeight:44}}>
         <span style={{display:"flex",flexDirection:"column",alignItems:navCompact?"center":"flex-start",gap:6,minWidth:0}}>
@@ -1060,7 +1059,7 @@ export default function App(){
         {!navCompact&&<div className="enogia-nav-grp" style={{fontSize:12,fontWeight:700,color:NAV.group,fontFamily:T.font,padding:"12px 10px 4px",whiteSpace:"nowrap"}}>{gl}</div>}
         {navCompact&&<div className="enogia-nav-grp" style={{width:18,height:1,background:NAV.industrial?"rgba(255,255,255,.18)":T.line,margin:"4px 0"}}/>}
         {items.map(v=>{const on=view===v.id;const ttl=v.id==="changes"&&unseenChanges.length?"Modifications — "+unseenChanges.length+" nouvelle"+(unseenChanges.length>1?"s":"")+" version"+(unseenChanges.length>1?"s":""):v.l;return(
-          <button key={v.id} className="enogia-nav-btn" onClick={()=>setView(v.id)} title={ttl} aria-label={v.id==="changes"&&unseenChanges.length?"Modifications, "+unseenChanges.length+" nouvelle"+(unseenChanges.length>1?"s":""):v.l} aria-current={on?"page":undefined}
+          <button key={v.id} className="enogia-nav-btn" onClick={()=>{setView(v.id);setNavPeek(false);}} title={ttl} aria-label={v.id==="changes"&&unseenChanges.length?"Modifications, "+unseenChanges.length+" nouvelle"+(unseenChanges.length>1?"s":""):v.l} aria-current={on?"page":undefined}
             style={{position:"relative",width:navCompact?40:"100%",height:40,borderRadius:navCompact?12:10,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:navCompact?"center":"flex-start",gap:12,padding:navCompact?0:"0 12px",background:on?NAV.bgOn:"transparent",color:on?NAV.inkOn:NAV.ink,fontFamily:T.font,fontSize:FZ.sm,fontWeight:on?700:500,whiteSpace:"nowrap",transition:"background .15s ease, color .15s ease","--nav-mark":NAV.mark}}
             onMouseEnter={e=>{if(!on){e.currentTarget.style.background=NAV.hover;e.currentTarget.style.color=NAV.hoverInk;}}}
             onMouseLeave={e=>{if(!on){e.currentTarget.style.background="transparent";e.currentTarget.style.color=NAV.ink;}}}>
@@ -1071,7 +1070,7 @@ export default function App(){
         onMouseEnter={e=>{e.currentTarget.style.background=NAV.hover;}}
         onMouseLeave={e=>{e.currentTarget.style.background="transparent";}}><NavIcon name="screen" size={18}/>{!navCompact&&<span className="enogia-nav-lab">Écran atelier</span>}</button>
       <div style={{display:"flex",justifyContent:navCompact?"center":"flex-start",paddingLeft:navCompact?0:2}}><ThemePicker ink={NAV.industrial?NAV.ink:undefined} darkMode={darkMode} onDarkMode={setDarkMode} themeId={themeId} onPick={setThemeId} density={density} onDensity={setDensityState} presentation={presentation} onPresentation={setPresentation}/></div>
-      {view!=="manager"&&!navCompact&&<button className="enogia-nav-toggle" onClick={()=>setNavMin(!navMin)} aria-label={navMin?"Garder le menu ouvert":"Masquer le menu automatiquement"} title={navMin?"Garder le menu ouvert":"Masquer le menu automatiquement"} style={{width:navCompact?40:"100%",height:30,marginTop:4,border:"1px solid "+(NAV.industrial?"rgba(255,255,255,.18)":T.line),background:NAV.industrial?"transparent":T.card,borderRadius:9,display:"flex",justifyContent:"center",alignItems:"center",color:NAV.ink,cursor:"pointer",alignSelf:"center"}}><span style={{display:"inline-flex",transform:"rotate("+(navMin?"-90deg":"90deg")+")",transition:"transform .28s var(--e-ease)"}}><NavIcon name="chevronDown" size={14}/></span></button>}
+      {<button className="enogia-nav-toggle" onClick={()=>{clearTimeout(navPeekT.current);setNavPeek(v=>!v);}} aria-expanded={navPeek} aria-label={navPeek?"Réduire le menu":"Ouvrir le menu en entier"} title={navPeek?"Réduire le menu":"Ouvrir le menu en entier"} style={{width:navCompact?40:"100%",height:30,marginTop:4,border:"1px solid "+(NAV.industrial?"rgba(255,255,255,.18)":T.line),background:NAV.industrial?"transparent":T.card,borderRadius:9,display:"flex",justifyContent:"center",alignItems:"center",color:NAV.ink,cursor:"pointer",alignSelf:"center"}}><span style={{display:"inline-flex",transform:"rotate("+(navPeek?"90deg":"-90deg")+")",transition:"transform .28s var(--e-ease)"}}><NavIcon name="chevronDown" size={14}/></span></button>}
     </nav>
     </div>
     {navPal&&<ManagerPalette groups={navGroups} data={palettePjs} activeKey={view+":"} storageKey="enogia_nav_recent" onGo={f=>f()} onOpenPj={pj=>setCalSel(pj)} onClose={()=>setNavPal(false)}/>}
