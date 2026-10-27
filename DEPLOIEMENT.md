@@ -1248,3 +1248,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Gantt et Calendrier gardent leur fiche (volet ou pop-up, au choix).
 - Pas de nouvelle donnée. Vérifié : clic → détail déplié, re-clic → replié, aucune fenêtre (jsdom) ; build (13 avertissements existants), tests, contraste. Pas testé dans l'appli connectée.
 - Fichiers : components/{TableView,ProjectModal}.js, App.js (version), releaseNotes.js, releaseCatalog.js(+test).
+
+## v200 — Fiche PDF des tests en trois pages, colonne « Terminés »
+
+- **Fiche PDF** (`testReport.js`) : 1) **page de garde** — bandeau ENOGIA, « Procès-verbal de tests FAT », PJ et projet, gamme et période, **résultat** encadré (Conforme si tous les tests sont réussis, Non conforme s'il y a un échec, Tests non terminés sinon, Validé manuellement si la validation a été forcée) avec les compteurs, tableau « Suivi du document » (document, version A, date, objet, rédigé par, pages) ; 2) **informations de la machine** — PJ, gamme, projet, n° de série, chef de projet, pays, certification ; planning (arrivée, tests, fin de production, départ, présence) ; équipe de test (testeurs, début / fin des saisies, validation forcée) ; 3) **résultats des tests et validation** — compteurs, tableaux par partie, puis « Validation » (phrase d'attestation et signatures). Saut de page entre chaque partie à l'impression.
+- **Page Tests** (`TestsTab.js`, `WeekBoard`) : 4e colonne **« Terminés »** (liseré vert) — une machine dont tous les tests retenus sont faits, ou dont la validation a été forcée, quitte les colonnes de semaine et y passe (fins de tests des 60 derniers jours, la plus récente en haut). Colonnes de 260 px min.
+- Pas de nouvelle donnée. Vérifié : rendu du PDF (3 pages, « Conforme ») et de la colonne (jsdom / aperçu) ; build (13 avertissements existants), tests, contraste.
+- Fichiers : testReport.js, components/TestsTab.js, App.js (version), releaseNotes.js, releaseCatalog.js(+test).

@@ -86,29 +86,36 @@ function WeekBoard({ doc, rows, testers, catalog, conflicts, commit, certifs, ca
   const pr = r => progressOf(planOf(doc, r.pj), catalog, activeSections(presenceKind(r.clientPresence || null)));
   const withP = rows.filter(r => r.tests && r.etat !== "SHIPPED" && (!onlyMine || isMine(r)));
   const cols = weeks.map(w => ({ ...w, items: [] }));
+  // v200 (demandé : « une colonne de tests finis, comme dans un Kanban ») : une machine dont tous les tests sont faits (ou validée) passe dans « Terminés » (60 derniers jours).
+  const isDone = r => { const pl = planOf(doc, r.pj), q = pr(r); return isForced(pl) || (q.total > 0 && q.done === q.total); };
+  const lim = new Date(w0); lim.setDate(lim.getDate() - 60);
+  const doneCol = { a: null, b: null, i: 3, done: true, items: [] };
   withP.forEach(r => {
+    if (isDone(r)) { if (endOf(r) >= lim) doneCol.items.push({ r, late: false }); return; }
     const c = cols.find(w => startOf(r) < w.b && endOf(r) >= w.a);
     if (c) c.items.push({ r, late: false });
     else if (endOf(r) < weeks[0].a) { const q = pr(r); if (q.total > q.done && !isForced(planOf(doc, r.pj))) cols[0].items.push({ r, late: true }); }
   });
   cols.forEach(c => c.items.sort((x, y) => (y.late - x.late) || (startOf(x.r) - startOf(y.r))));
+  doneCol.items.sort((x, y) => endOf(y.r) - endOf(x.r));
+  cols.push(doneCol);
   const later = withP.filter(r => startOf(r) >= weeks[2].b).length, noPeriod = rows.filter(r => !r.tests && r.etat !== "SHIPPED").length;
   const all = cols.flatMap(c => c.items.map(x => x.r));
   const cur = sel ? (all.find(r => r.pj === sel) || rows.find(r => r.pj === sel) || null) : null;
-  const COL_TITLE = ["Cette semaine", "Semaine prochaine", "Dans 2 semaines"];
+  const COL_TITLE = ["Cette semaine", "Semaine prochaine", "Dans 2 semaines", "Terminés"];
   return (<div className="enogia-tests-board">
     <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 8 }}>
       <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", fontSize: FZ.xs, color: T.ink500 }}>
         <span>S{isoWeek(weeks[0].a)} → S{isoWeek(weeks[2].a)} · {all.length} machine{all.length > 1 ? "s" : ""}{later ? " · " + later + " plus tard" : ""}{noPeriod ? " · " + noPeriod + " sans période de tests" : ""}</span>
         {myTester && <label style={{ display: "inline-flex", alignItems: "center", gap: 6, marginLeft: "auto", minHeight: 24, cursor: "pointer", color: T.ink700, fontWeight: 600 }}><input type="checkbox" checked={onlyMine} onChange={e => setOnlyMine(e.target.checked)} />Seulement mes tests</label>}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 12, alignItems: "start" }}>
-        {cols.map((c, ci) => (<section key={ci} aria-label={COL_TITLE[ci]} style={{ background: T.card, border: "1px solid " + T.line, borderTop: "3px solid " + (ci === 0 ? stageSoft().tests.solid : T.line), borderRadius: "0 0 10px 10px", minWidth: 0, overflow: "hidden" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 12, alignItems: "start" }}>
+        {cols.map((c, ci) => (<section key={ci} aria-label={COL_TITLE[ci]} style={{ background: T.card, border: "1px solid " + T.line, borderTop: "3px solid " + (c.done ? stageSoft().finProd.solid : ci === 0 ? stageSoft().tests.solid : T.line), borderRadius: "0 0 10px 10px", minWidth: 0, overflow: "hidden" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 6, padding: "8px 12px", borderBottom: "1px solid " + T.line }}>
             <h3 style={{ margin: 0, fontSize: FZ.sm, fontWeight: 700, color: T.ink900 }}>{COL_TITLE[ci]}</h3>
-            <span style={{ marginLeft: "auto", fontSize: FZ.xs, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>S{isoWeek(c.a)} · {c.items.length}</span>
+            <span style={{ marginLeft: "auto", fontSize: FZ.xs, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{c.done ? "60 derniers jours · " : "S" + isoWeek(c.a) + " · "}{c.items.length}</span>
           </div>
-          {c.items.length === 0 && <div style={{ fontSize: FZ.xs, color: T.ink500, padding: "10px 12px" }}>Aucun test prévu.</div>}
+          {c.items.length === 0 && <div style={{ fontSize: FZ.xs, color: T.ink500, padding: "10px 12px" }}>{c.done ? "Aucune machine terminée ces 60 derniers jours." : "Aucun test prévu."}</div>}
           <div className="enogia-stagger" style={{ display: "flex", flexDirection: "column" }}>
             {c.items.map(({ r, late }) => <TestCard key={r.pj} {...{ r, doc, testers, catalog, conflicts, late }} on={cur && cur.pj === r.pj} onPick={() => setSel(r.pj)} />)}
           </div>

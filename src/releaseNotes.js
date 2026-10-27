@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v200",
+    date: "2026-10-27",
+    title: "V200 : fiche PDF en trois pages, tests terminés",
+    items: [
+      { t: "Fiche PDF des tests", d: "Une page de garde avec le résultat (conforme, non conforme ou non terminé), une page d'informations sur la machine, puis les résultats des tests et la validation signée." },
+      { t: "Colonne « Terminés »", d: "Sur la page Tests, une machine dont tous les tests sont faits (ou validée) passe dans une colonne « Terminés », comme dans un Kanban." },
+    ],
+  },
+  {
     id: "2026-10-v199",
     date: "2026-10-27",
     title: "V199 : le détail d'un PJ se déplie dans la Liste",

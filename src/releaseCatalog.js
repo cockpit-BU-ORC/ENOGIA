@@ -382,4 +382,7 @@ export const RELEASE_CATALOG = [
   { v: "199", t: "Le détail d'un PJ se déplie dans la Liste", items: [
     ["Liste", "Détail déplié sous la ligne, à la place du pop-up et du volet."],
   ] },
+  { v: "200", t: "Fiche PDF en trois pages, tests terminés", items: [
+    ["Tests", "PDF : page de garde, informations machine, résultats et validation ; colonne « Terminés »."],
+  ] },
 ];
