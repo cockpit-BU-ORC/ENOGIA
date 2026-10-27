@@ -4,7 +4,7 @@ import { useSheetJS } from "../components/SharedUI";
 import { guessGamme } from "../parsers";
 import {
   STEPS, splitKey, makeCalendar, schedule, planToRows, diffRows, initPlanFromRows,
-  addPj, initBlankPlan, setStep, rulesOf, summarizeChanges, diffPlans, DEFAULT_CAP, releasePins, setCap, setRules, loadModel, levelPlan, fitDurations, hasLevel, clearLevel, sortPjsByStart, capWeek,
+  addPj, initBlankPlan, setStep, rulesOf, summarizeChanges, diffPlans, DEFAULT_CAP, releasePins, setCap, setRules, loadModel, levelPlan, fitDurations, hasLevel, clearLevel, sortPjsByStart, capWeek, fillMissingHours, refreshPlanFromRows,
 } from "./engine";
 import { parseMsPlan, compareWithMs, applyCalibration } from "./importPlan";
 import { PlannerGantt, fmtIso, makeTimeline, leftWidth, STEP_COLOR } from "./PlannerGantt";
@@ -345,7 +345,7 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, authorN
         {plan && plan.v !== 2 && <div style={{ background: T.amber100, color: T.amber600, borderRadius: 10, padding: "8px 14px", margin: "12px 0", fontWeight: 600, fontSize: 13 }}>Le plan enregistré date d'une ancienne version. Recréez-le : le planning actuel n'est pas modifié tant que vous ne publiez pas.</div>}
         <p style={{ fontSize: 14.5, lineHeight: 1.65, color: T.ink700, margin: "14px 0 20px" }}>Un Gantt modifiable en direct, à la place de MS Project : chaque PJ suit <b>Arrivée, Production, Tests, Fin de production, Départ</b>, avec ses dates, durées, travail (heures), liens entre tâches et priorité. La charge atelier est comparée à la capacité par semaine ou par mois. À la création, <b>toutes les dates sont reprises à l'identique</b> du planning actuel.</p>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <button style={{ ...BTN_P, padding: "10px 18px", fontSize: 14 }} onClick={() => { setPlanState(initPlanFromRows(rows || [], cal)); setUndo([]); setRedo([]); }}>Créer le plan depuis le planning actuel ({(rows || []).length} PJ)</button>
+          <button style={{ ...BTN_P, padding: "10px 18px", fontSize: 14 }} onClick={() => { setPlanState(fillMissingHours(initPlanFromRows(rows || [], cal), rows || [], null).plan); setUndo([]); setRedo([]); }}>Créer le plan depuis le planning actuel ({(rows || []).length} PJ)</button>
           <button style={{ ...BTN, padding: "10px 18px", fontSize: 14 }} onClick={() => setDlg("blank")}>Plan vierge (quelques PJ, sans dates)</button>
           <button style={{ ...BTN, padding: "10px 18px", fontSize: 14 }} onClick={() => setDlg("import")}>Importer un export MS Project</button>
         </div>
@@ -354,6 +354,7 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, authorN
       {dlg === "blank" && <BlankDialog rows={rows} hasPlan={false} onClose={() => setDlg(null)} onApply={np => { setPlanState(np); setUndo([]); setRedo([]); }} />}
     </div>);
   }
+  const nEst = plan.pjs.filter(p => p.hEst).length, nNoH = plan.pjs.filter(p => !(Number(p.hAt) > 0) && (p.steps.production || p.steps.finProd)).length;
   const nLinks = (plan.links || []).length; const rules = rulesOf(plan); const cap = plan.cap || DEFAULT_CAP;
   const rowsNotInPlan = (rows || []).filter(r => !plan.pjs.some(p => p.pj === r.pj));
   const selPj = sel && plan.pjs.some(p => p.pj === sel.pj) ? sel : null;
@@ -365,6 +366,7 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, authorN
     <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
       <div style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: 22, color: T.ink900 }}>Planification</div>
       <span style={{ fontSize: 12.5, color: T.ink500 }}>{plan.pjs.length} PJ · {nLinks} lien{nLinks > 1 ? "s" : ""}</span>
+      {nEst + nNoH > 0 && <span title="La charge vient des heures atelier du planning importé. Sans heures, un PJ reprend le modèle de sa gamme ou la moyenne des PJ de la même gamme." style={{ fontSize: 12, color: T.amber600 }}>{nEst ? nEst + " PJ aux heures estimées" : ""}{nEst && nNoH ? " · " : ""}{nNoH ? nNoH + " PJ sans heures (hors charge)" : ""}</span>}
       <span role="button" tabIndex={0} onClick={() => { setRefId("pub"); setUi({ view: "changes" }); }} onKeyDown={e => { if (e.key === "Enter") { setRefId("pub"); setUi({ view: "changes" }); } }} title="Voir la synthèse des modifications" style={{ cursor: "pointer", borderRadius: 99, padding: "3px 12px", fontSize: 12.5, fontWeight: 700, background: changes.length ? T.amber100 : T.emerald100, color: changes.length ? T.amber600 : T.emerald600 }}>{changes.length ? changes.length + " modification" + (changes.length > 1 ? "s" : "") + " non publiée" + (changes.length > 1 ? "s" : "") : "À jour avec le planning actuel"}</span>
       <span style={{ fontSize: 12, color: T.ink500 }} aria-live="polite">{saveSt}</span>
       <span style={{ flex: 1 }} />
@@ -372,6 +374,7 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, authorN
       {!ui.lock && <>
         <button className="pg-tb" disabled={!undo.length} onClick={doUndo} aria-label="Annuler la dernière modification">↶ Annuler</button>
         <button className="pg-tb" disabled={!redo.length} onClick={doRedo} aria-label="Rétablir">↷ Rétablir</button>
+        <button className="pg-tb" onClick={() => { if (window.confirm("Reprendre toutes les dates du planning actuel (" + (rows || []).length + " PJ) ? Le plan en cours est remplacé ; la capacité et les modèles par gamme sont gardés. Annuler (Ctrl+Z) reste possible.")) { const np = refreshPlanFromRows(plan, rows || [], cal); setSel(null); apply(np); setNotice({ tone: "warn", text: "Plan recréé depuis le planning actuel : " + np.pjs.length + " PJ, dates reprises telles quelles." }); } }} title="Recrée le plan avec les dates du planning actuel (la capacité et les modèles par gamme sont gardés)">Reprendre les dates du planning</button>
         <button className="pg-tb" onClick={() => setDlg("templates")} title="Durées et heures habituelles par gamme, applicables aux PJ">Modèles par gamme…</button>
         <button className="pg-tb" onClick={() => setDlg("blank")} title="Repartir de zéro avec quelques PJ, sans dates ni durées">Plan vierge…</button>
         <button className="pg-tb" onClick={() => setDlg("import")}>Importer</button>

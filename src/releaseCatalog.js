@@ -402,4 +402,7 @@ export const RELEASE_CATALOG = [
   { v: "205", t: "La page Tests prend vie", items: [
     ["Tests", "Bandeau « Au banc maintenant », barre découpée test par test, fil des derniers résultats."],
   ] },
+  { v: "206", t: "Le planificateur repart de vos dates", items: [
+    ["Planificateur", "Reprise des dates du planning ; heures manquantes estimées par gamme pour la charge."],
+  ] },
 ];

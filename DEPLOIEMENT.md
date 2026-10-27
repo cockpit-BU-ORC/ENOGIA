@@ -1296,3 +1296,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - **Derniers résultats** (`ResultsFeed`, à droite du bandeau, dessous sur téléphone et tablette) : les 7 derniers tests marqués réussis ou en échec sur 14 jours (d'après l'horodatage des statuts), avec le test, le PJ, le testeur et l'heure ; un clic ouvre la fiche.
 - Pas de nouvelle donnée ni clé `localStorage` (lecture de `planning/tests`). Vérifié : rendu en clair, sombre et téléphone (jsdom + aperçu, pas de défilement horizontal à 375 px) ; build (13 avertissements existants), tests, contraste.
 - Fichiers : components/TestsTab.js, styles.css, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
+
+## v206 — Planificateur : reprendre les dates du planning, charge complétée par gamme
+
+- **« Reprendre les dates du planning »** (`Planner.js`, barre d'en-tête) : après confirmation, recrée le plan depuis le planning actuel (`refreshPlanFromRows` : mêmes dates qu'aujourd'hui, liens de chaîne de chaque PJ) en gardant la **capacité**, les **modèles par gamme** et le réglage des jours fériés ; les règles « un à la fois » repartent désactivées pour ne rien décaler. Annulable (Ctrl+Z). Le brouillon est enregistré ; rien ne change pour les autres avant « Publier ».
+- **Charge complétée** (`engine.js`, `fillMissingHours`) : à la création du plan et à la reprise, un PJ sans heures atelier prend les heures du modèle de sa gamme (Production + Fin de production), sinon la moyenne des PJ de la même gamme qui en ont. Ces PJ sont marqués `hEst` et signalés en tête (« N PJ aux heures estimées · N PJ sans heures (hors charge) ») ; **les heures estimées ne sont jamais publiées** dans le planning, et saisir des heures efface l'estimation.
+- Vérifié avec 14 PJ sur sept.–févr. : plan identique au planning (aucune modification à publier), Gantt et charge hebdomadaire avec surcharges ; +1 test (`engine.test.js`). Build (13 avertissements existants), 130 tests, contraste.
+- Fichiers : planner/{engine.js, engine.test.js, Planner.js}, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.

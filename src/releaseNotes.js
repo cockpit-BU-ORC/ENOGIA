@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v206",
+    date: "2026-10-27",
+    title: "V206 : le planificateur repart de vos dates",
+    items: [
+      { t: "Reprendre les dates du planning", d: "Un bouton recrée le plan avec les dates actuelles de tous les PJ, en gardant la capacité et les modèles par gamme (Ctrl+Z pour revenir).", admin: true },
+      { t: "Une charge plus complète", d: "Un PJ sans heures atelier reprend le modèle de sa gamme, sinon la moyenne des PJ de la même gamme ; c'est signalé en tête et ces estimations ne sont jamais publiées.", admin: true },
+    ],
+  },
+  {
     id: "2026-10-v205",
     date: "2026-10-27",
     title: "V205 : la page Tests prend vie",

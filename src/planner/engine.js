@@ -193,10 +193,10 @@ export function setWork(plan, pj, step, hours) {
   if (step === "tests") { p.hAu = h; return np; }
   if (step !== "production" && step !== "finProd") return plan;
   const other = step === "production" ? "finProd" : "production"; const cur = phaseHours(p);
-  if (!p.steps[other]) { p.hAt = h; p.steps[step] = { ...p.steps[step], work: null }; return np; }
+  if (!p.steps[other]) { p.hAt = h; delete p.hEst; p.steps[step] = { ...p.steps[step], work: null }; return np; }
   const o = Math.round((cur[other] || 0) * 10) / 10;
   p.steps[step] = { ...p.steps[step], work: h }; p.steps[other] = { ...p.steps[other], work: o };
-  p.hAt = Math.round((h + o) * 10) / 10; return np;
+  p.hAt = Math.round((h + o) * 10) / 10; delete p.hEst; return np;
 }
 export function atelierPhases(plan, sched) {
   const out = []; const ord = orderOf(plan, "prod");
@@ -249,7 +249,7 @@ export function planToRows(plan, sched, currentRows, guessGamme, cal) {
       if (cal && v && old && old !== v && !cal.isWork(old) && (cal.dateOf(cal.idxOnOrAfter(old)) === v || cal.dateOf(cal.idxOnOrBefore(old)) === v)) v = old;
       base[f] = v;
     });
-    if (p.hAt != null) base.heuresAtelier = p.hAt;
+    if (p.hAt != null && !p.hEst) base.heuresAtelier = p.hAt; // v206 : des heures estimées (hEst) servent à la charge, pas au planning publié
     if (p.hAu != null) base.heuresAutom = p.hAu;
     if (idx[p.pj] != null) rows[idx[p.pj]] = base; else rows.push(base);
   });
@@ -423,7 +423,7 @@ export function movePj(plan, pj, delta) {
   [np.pjs[i], np.pjs[j]] = [np.pjs[j], np.pjs[i]]; return np;
 }
 export function setPjField(plan, pj, patch) {
-  const np = clonePlan(plan); const p = np.pjs.find(x => x.pj === pj); if (!p) return plan; Object.assign(p, patch);
+  const np = clonePlan(plan); const p = np.pjs.find(x => x.pj === pj); if (!p) return plan; Object.assign(p, patch); if (patch && patch.hAt !== undefined) delete p.hEst;
   if (patch && patch.hAt !== undefined) ['production', 'finProd'].forEach(k => { if (p.steps[k] && p.steps[k].work != null) p.steps[k] = { ...p.steps[k], work: null }; });
   return np;
 }
@@ -533,4 +533,28 @@ export function levelPlan(plan, cal) {
     cur = setStep(cur, sp.pj, sp.step, { lvl: cal.dateOf(ns) }); moved.add(x.key);
   }
   return { plan: cur, moved: moved.size, iterations: iter, stuck: iter >= 4000 };
+}
+
+// v206 (demandé : « reprendre les dates qui existent déjà pour voir comment ça rend avec la charge ») :
+// heures atelier manquantes = modèle de la gamme (Production + Fin de production), sinon moyenne des PJ de la même gamme
+// qui en ont ; ces PJ sont marqués hEst (heures estimées) pour le dire à l'écran.
+export function fillMissingHours(plan, rows, templates) {
+  const R = rows || [], gOf = pj => { const r = R.find(x => x.pj === pj); return (r && r.gamme) || "Sans gamme"; };
+  const avg = {}; R.forEach(r => { if (Number(r.heuresAtelier) > 0) { const g = r.gamme || "Sans gamme"; (avg[g] = avg[g] || []).push(Number(r.heuresAtelier)); } });
+  const np = clonePlan(plan); let n = 0;
+  np.pjs = np.pjs.map(p => {
+    if (Number(p.hAt) > 0) return p;
+    const g = gOf(p.pj), t = templates && templates[g]; let h = 0;
+    if (t && t.production && t.production.work != null) h = (Number(t.production.work) || 0) + (Number(t.finProd && t.finProd.work) || 0);
+    else if (avg[g]) h = Math.round(avg[g].reduce((a, b) => a + b, 0) / avg[g].length);
+    if (h > 0) { n++; return { ...p, hAt: h, hEst: true }; }
+    return p;
+  });
+  return { plan: np, n };
+}
+// Recrée le plan depuis le planning actuel (dates exactes) en gardant la capacité, les modèles par gamme et le calendrier.
+export function refreshPlanFromRows(plan, rows, cal) {
+  const base = initPlanFromRows(rows, cal);
+  const kept = { ...base, cap: (plan && plan.cap) || base.cap, cal: (plan && plan.cal) || base.cal, ...(plan && plan.templates ? { templates: plan.templates } : {}) };
+  return fillMissingHours(kept, rows, kept.templates).plan;
 }
