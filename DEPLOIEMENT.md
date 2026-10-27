@@ -1116,3 +1116,15 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - **Données** (`testPlan.js`) : nouveau champ `plans[pj].done = { interne: [ids], client: [ids], nobo: [ids] }` dans le document Tests existant ; helpers `doneIds`, `toggleDone`, `progressOf` (+2 tests). Rétrocompatible, aucune migration ; pas de nouvelle clé `localStorage`.
 - Vérifié : rendu statique clair/sombre, build (13 avertissements existants), 115 tests, contraste 0 échec. Pas testé dans l'appli connectée.
 - Fichiers : testPlan.js(+test), components/TestsTab.js, App.js (version), releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
+
+## v187 — Les testeurs renseignent leurs tests, validation forcée, gamme, titres
+
+- **Statut par test** (`testPlan.js`) : `plans[pj].st = { interne: { idTest: "wip"|"ok"|"ko" } }` et `plans[pj].stBy = { interne: { idTest: { by, at } } }` (nom et horodatage, pour la future fiche PDF). « Fait » = réussi ou échec ; `progressOf` renvoie aussi `ok`, `ko`, `wip`. Les listes `plans[pj].done` de la V186 (non publiée) restent lues comme « réussi ». +2 tests.
+- **Droits** (`TestsTab.js`) : le testeur affecté à une machine renseigne le statut et les commentaires de ses tests (sélecteur À faire / En cours / Réussi / Échec) ; le choix des tests et des testeurs reste aux admins. L'écriture passe par le même document `planning/tests` : **à vérifier côté règles Firestore** que les testeurs (non admins) ont le droit d'y écrire, sinon leur enregistrement échouera avec un message.
+- **Validation forcée** (admins) : `plans[pj].forced = { by, at }`, proposée dans le volet quand la période de tests est terminée ; la carte passe « Validé (forcé) » (liseré vert), sort de « En retard » et de « Sans testeur ». Annulable.
+- **Cartes** : gamme affichée (pastille) ; pastille « N échecs ». Volet : gamme à côté du nom du projet.
+- **Étiquettes** de la fiche (PJ, ORC, Certification, FAT client…) : Cabinet Grotesk 500 grise au lieu de Satoshi gras ocre.
+- **Titres** : `PageHead` 32–44 px (au lieu de 28–36) ; le titre « Tests (FAT) » répété sous l'en-tête de la page Tests est retiré.
+- Pas de nouvelle clé `localStorage`, pas de migration.
+- Vérifié : rendu statique (vue testeur), build (13 avertissements existants), 117 tests, contraste. Pas testé dans l'appli connectée.
+- Fichiers : testPlan.js(+test), components/{TestsTab,SharedUI}.js, App.js (version), releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.

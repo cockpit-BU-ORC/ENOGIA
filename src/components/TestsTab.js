@@ -10,7 +10,8 @@ import { useMentions } from "../mentionContext";
 import { CARD, H_TITLE, H_SUB, EmptyNote } from "./ManagerParts";
 import { CertifChip } from "./FicheContrat";
 import { NavIcon, PjPlate, pressable } from "./SharedUI";
-import { SECTIONS, DEFAULT_TEST_CATALOG, catalogOf, testersOf, planOf, activeSections, selectedIds, toggleTest, setExtra, setNote, assignTester, unassignTester, setAssignDates, effRange, findConflicts, assignmentsOf, dropTester, dropTestFromPlans, newId, packLanes, dayDiffIso, addDaysIso, mondayOf, testerOfEmail, doneIds, toggleDone, progressOf } from "../testPlan";
+import { SECTIONS, DEFAULT_TEST_CATALOG, catalogOf, testersOf, planOf, activeSections, selectedIds, toggleTest, setExtra, setNote, assignTester, unassignTester, setAssignDates, effRange, findConflicts, assignmentsOf, dropTester, dropTestFromPlans, newId, packLanes, dayDiffIso, addDaysIso, mondayOf, testerOfEmail, doneIds, progressOf, TEST_STATUS, statusOf, statusByOf, setStatus, isForced, setForced } from "../testPlan";
+import { nameFromEmail } from "../mentions";
 
 const field = () => ({ padding: "5px 9px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, minWidth: 0 });
 const btn = (on = true, kind) => ({ border: kind === "ghost" ? "1px solid " + T.line : "none", borderRadius: 8, padding: "5px 12px", fontSize: FZ.xs, fontWeight: 700, fontFamily: T.font, cursor: on ? "pointer" : "default", background: kind === "ghost" ? T.card : on ? T.navy700 : T.ink100, color: kind === "ghost" ? T.ink700 : "#fff", flexShrink: 0 });
@@ -22,7 +23,7 @@ const dIso = x => { if (!x) return ""; const d = new Date(x); return isNaN(d) ? 
 const fd = iso => iso ? fmt(new Date(iso + "T12:00:00")) : "—";
 const fdm = iso => iso ? iso.slice(8, 10) + "/" + iso.slice(5, 7) : "";
 const period = r => r.tests ? fd(dIso(r.tests)) + (r.testsFin ? " → " + fd(dIso(r.testsFin)) : "") : "Période non définie";
-const Cap = ({ children, style }) => <div style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk,...style}}>{children}</div>;
+const Cap = ({ children, style }) => <div style={{fontFamily:T.fontDisplay,fontSize:12,fontWeight:500,letterSpacing:".01em",color:T.ink500,...style}}>{children}</div>; // v187 : police des étiquettes
 
 function TesterChip({ t, warn, on, onClick, disabled, small }) {
   const interactive = !!onClick;
@@ -42,14 +43,14 @@ export function TestsTab({ doc, save, data, certifs, canEdit, me }) {
   const myTester = testerOfEmail(doc, me);
   const rows = useMemo(() => (data || []).filter(r => r && r.pj && r.etat !== "SLOT_LIBRE"), [data]);
   const conflicts = useMemo(() => findConflicts(doc, rows), [doc, rows]);
-  const commit = async next => { if (!canEdit) return false; const ok = await save({ ...doc, ...next }); setMsg(ok === false ? "L'enregistrement a échoué." : null); return ok; };
+  const who = (myTester && myTester.name) || nameFromEmail(me || "");
+  const commit = async next => { if (!canEdit && !myTester) return false; const ok = await save({ ...doc, ...next }); setMsg(ok === false ? "L'enregistrement a échoué." : null); return ok; };
   const SUBS = [["semaine", "Par semaine"], ["testers", "Par testeur"], ...(canEdit ? [["catalog", "Catalogue"]] : [])];
   const openPj = pj => { setFocus({ pj, n: Date.now() }); setSub("semaine"); };
   return (<div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
       <div>
-        <span style={{ fontFamily: T.fontDisplay, fontWeight: 600, color: T.ink900, fontSize: FZ.lg, display: "flex", alignItems: "center", gap: 8 }}><NavIcon name="check" size={20} />Tests (FAT)</span>
-        <div style={H_SUB}>{canEdit ? "Qui teste quelle machine, quand, et quels tests faire en interne, avec le client et avec NOBO." : "Consultation : vos affectations et les tests à réaliser. Seuls les administrateurs modifient cette page."}</div>
+        <div style={H_SUB}>{canEdit ? "Qui teste quelle machine, quand, et quels tests faire en interne, avec le client et avec NOBO." : "Vos machines en test : indiquez l'avancement et le résultat de chaque test."}</div>
       </div>
       <div role="tablist" style={{ display: "inline-flex", background: T.surface, border: "1px solid " + T.line, borderRadius: 10, padding: 2, gap: 2 }}>
         {SUBS.map(([id, l]) => <button key={id} role="tab" aria-selected={sub === id} onClick={() => setSub(id)} style={{ border: "none", cursor: "pointer", borderRadius: 8, padding: "6px 14px", fontSize: FZ.sm, fontWeight: 700, fontFamily: T.font, background: sub === id ? T.card : "transparent", color: sub === id ? T.teal600 : T.ink500, boxShadow: sub === id ? T.shadowSm : "none" }}>{l}</button>)}
@@ -59,7 +60,7 @@ export function TestsTab({ doc, save, data, certifs, canEdit, me }) {
     {conflicts.length > 0 && sub !== "catalog" && <div role="status" style={{ background: T.amber100, color: T.amber600, borderRadius: 10, padding: "8px 12px", fontSize: FZ.sm, fontWeight: 600 }}>
       <span style={{ display: "inline-flex", verticalAlign: "-3px", marginRight: 6 }}><NavIcon name="warning" size={16} /></span>{conflicts.length} chevauchement{conflicts.length > 1 ? "s" : ""} : {conflicts.slice(0, 4).map(c => { const t = testers.find(x => x.id === c.tid); return (t ? t.name : "Testeur") + " sur " + c.a.pj + " et " + c.b.pj; }).join(" · ")}{conflicts.length > 4 ? " …" : ""}
     </div>}
-    {sub === "semaine" && <WeekBoard {...{ doc, rows, testers, catalog, conflicts, commit, certifs, canEdit, myTester, focus }} />}
+    {sub === "semaine" && <WeekBoard {...{ doc, rows, testers, catalog, conflicts, commit, certifs, canEdit, myTester, focus, who }} />}
     {sub === "testers" && <TesterTimeline {...{ doc, rows, testers, conflicts, commit, canEdit, myTester, openPj }} />}
     {sub === "catalog" && canEdit && <CatalogView {...{ doc, catalog, commit }} />}
   </div>);
@@ -72,7 +73,7 @@ export function TestsTab({ doc, save, data, certifs, canEdit, me }) {
 // première colonne, signalées « En retard ».
 const mondayD = d => { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; };
 const isoWeek = d => { const x = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const n = x.getUTCDay() || 7; x.setUTCDate(x.getUTCDate() + 4 - n); const y = new Date(Date.UTC(x.getUTCFullYear(), 0, 1)); return Math.ceil(((x - y) / 86400000 + 1) / 7); };
-function WeekBoard({ doc, rows, testers, catalog, conflicts, commit, certifs, canEdit, myTester, focus }) {
+function WeekBoard({ doc, rows, testers, catalog, conflicts, commit, certifs, canEdit, myTester, focus, who }) {
   const [sel, setSel] = useState(null);
   const [onlyMine, setOnlyMine] = useState(!!myTester && !canEdit);
   useEffect(() => { if (focus && focus.pj) setSel(focus.pj); }, [focus]);
@@ -86,7 +87,7 @@ function WeekBoard({ doc, rows, testers, catalog, conflicts, commit, certifs, ca
   withP.forEach(r => {
     const c = cols.find(w => startOf(r) < w.b && endOf(r) >= w.a);
     if (c) c.items.push({ r, late: false });
-    else if (endOf(r) < weeks[0].a) { const q = pr(r); if (q.total > q.done) cols[0].items.push({ r, late: true }); }
+    else if (endOf(r) < weeks[0].a) { const q = pr(r); if (q.total > q.done && !isForced(planOf(doc, r.pj))) cols[0].items.push({ r, late: true }); }
   });
   cols.forEach(c => c.items.sort((x, y) => (y.late - x.late) || (startOf(x.r) - startOf(y.r))));
   const later = withP.filter(r => startOf(r) >= weeks[2].b).length, noPeriod = rows.filter(r => !r.tests && r.etat !== "SHIPPED").length;
@@ -113,7 +114,7 @@ function WeekBoard({ doc, rows, testers, catalog, conflicts, commit, certifs, ca
       </div>
     </div>
     <aside aria-label="Détail des tests de la machine" style={{ flex: "1 1 340px", maxWidth: 460, minWidth: 0, position: "sticky", top: 56, maxHeight: "calc(100dvh - 80px)", overflowY: "auto" }}>
-      {cur ? <FatSheet key={cur.pj} panel r={cur} {...{ doc, testers, catalog, conflicts, commit, certifs, canEdit, myTester }} open onToggle={() => {}} />
+      {cur ? <FatSheet key={cur.pj} panel r={cur} {...{ doc, testers, catalog, conflicts, commit, certifs, canEdit, myTester, who }} open onToggle={() => {}} />
         : <EmptyNote>Aucune machine en test sur ces trois semaines.</EmptyNote>}
     </aside>
   </div>);
@@ -123,21 +124,24 @@ function WeekBoard({ doc, rows, testers, catalog, conflicts, commit, certifs, ca
 function TestCard({ r, doc, testers, catalog, conflicts, late, on, onPick }) {
   const plan = planOf(doc, r.pj), kind = presenceKind(r.clientPresence || null), act = activeSections(kind), q = progressOf(plan, catalog, act);
   const assigned = plan.assign.map(a => testers.find(t => t.id === a.tid)).filter(Boolean);
-  const conf = conflicts.some(c => c.a.pj === r.pj || c.b.pj === r.pj), noTester = assigned.length === 0, full = q.total > 0 && q.done === q.total;
+  const forced = isForced(plan), conf = conflicts.some(c => c.a.pj === r.pj || c.b.pj === r.pj), noTester = assigned.length === 0 && !forced, full = forced || (q.total > 0 && q.done === q.total);
   const S = stageSoft(), edge = noTester || late ? T.red500 : full ? S.finProd.solid : S.tests.solid;
   const meta = getPjMeta(r.pj, r), pct = q.total ? Math.round(q.done / q.total * 100) : 0;
   return (<div {...pressable(onPick, { "aria-pressed": !!on, "aria-label": r.pj + " — " + (meta.nomProjet || "") + " — " + q.done + " tests faits sur " + q.total })} className="enogia-test-card"
     style={{ background: T.card, border: "1px solid " + (on ? T.teal500 : T.line), borderLeft: "4px solid " + edge, borderRadius: "0 8px 8px 0", padding: "8px 10px", cursor: "pointer", boxShadow: on ? "0 0 0 1px " + T.teal500 : "none", minWidth: 0 }}>
     <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
       <PjPlate pj={r.pj} />
+      {r.gamme && <span style={{ fontFamily: T.fontDisplay, fontSize: 12, fontWeight: 600, color: T.ink700, border: "1px solid " + T.line, borderRadius: 6, padding: "0 6px" }}>{r.gamme}</span>}
       {kind && <PresenceChip kind={kind} compact tiny />}
       <span style={{ marginLeft: "auto", fontSize: FZ.xs, color: T.ink500, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{fdm(dIso(r.tests))}{r.testsFin ? " → " + fdm(dIso(r.testsFin)) : ""}</span>
     </div>
-    <div title={meta.nomProjet || ""} style={{ margin: "6px 0 4px", fontSize: FZ.sm, fontWeight: 600, color: T.ink900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : r.gamme || "—"}</div>
+    <div title={meta.nomProjet || ""} style={{ margin: "6px 0 4px", fontSize: FZ.sm, fontWeight: 600, color: T.ink900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : "Projet sans nom"}</div>
     <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
       {noTester ? <span style={{ fontSize: 11, fontWeight: 700, color: T.red600, background: T.red100, borderRadius: 999, padding: "1px 8px" }}>Sans testeur</span>
         : <span style={{ display: "inline-flex" }}>{assigned.slice(0, 4).map((t, i) => <span key={t.id} title={t.name} style={{ marginLeft: i ? -6 : 0, borderRadius: "50%", boxShadow: "0 0 0 2px " + T.card, display: "inline-flex" }}><Avatar name={t.name} tint={personTint(t.name)[0]} size={22} /></span>)}</span>}
       {late && <span style={{ fontSize: 11, fontWeight: 700, color: T.red600, background: T.red100, borderRadius: 999, padding: "1px 8px" }}>En retard</span>}
+      {forced && <span style={{ fontSize: 11, fontWeight: 700, color: T.emerald600, background: T.emerald100, borderRadius: 999, padding: "1px 8px" }}>Validé (forcé)</span>}
+      {q.ko > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: T.red600, background: T.red100, borderRadius: 999, padding: "1px 8px" }}>{q.ko} échec{q.ko > 1 ? "s" : ""}</span>}
       {conf && <span style={{ fontSize: 11, fontWeight: 700, color: T.amber600, background: T.amber100, borderRadius: 999, padding: "1px 8px" }}>Conflit</span>}
       <span style={{ marginLeft: "auto", fontSize: FZ.xs, fontWeight: 700, color: full ? T.emerald600 : T.ink700, fontVariantNumeric: "tabular-nums" }}>{q.done} / {q.total} test{q.total > 1 ? "s" : ""}</span>
     </div>
@@ -145,7 +149,7 @@ function TestCard({ r, doc, testers, catalog, conflicts, late, on, onPick }) {
   </div>);
 }
 
-function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdit, open, onToggle, myTester, panel }) {
+function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdit, open, onToggle, myTester, panel, who }) {
   const [newName, setNewName] = useState(""), [limit, setLimit] = useState({});
   const ctx = useMentions();
   const plan = planOf(doc, r.pj);
@@ -170,11 +174,18 @@ function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdi
     if (ok !== false) setNewName("");
   };
   const mine = !!myTester && plan.assign.some(a => a.tid === myTester.id);
-  const canTest = canEdit; // seuls les administrateurs modifient les tests ; les testeurs consultent
+  const canTest = canEdit; // seuls les administrateurs choisissent les tests et les testeurs
+  const canMark = canEdit || mine; // v187 : le testeur affecté renseigne l'avancement et le résultat de ses tests
+  const forced = isForced(plan), ended = !!r.tests && (dIso(r.testsFin) || dIso(r.tests)) < dIso(new Date());
   return (<div id={"fat-" + r.pj} className={panel ? "enogia-view-in" : undefined} style={{ ...CARD, overflow: "hidden", borderColor: mine ? T.teal500 : undefined }}>
     {panel && <div style={{ padding: "10px 14px", borderBottom: "1px solid " + T.line, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-      <PjPlate pj={r.pj} size="lg" /><span style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: FZ.lg, color: T.ink900 }}>{meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : r.gamme || ""}</span>
+      <PjPlate pj={r.pj} size="lg" /><span style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: FZ.lg, color: T.ink900 }}>{meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : ""}</span>
+      {r.gamme && <span style={{ fontFamily: T.fontDisplay, fontSize: FZ.sm, fontWeight: 600, color: T.ink700, border: "1px solid " + T.line, borderRadius: 6, padding: "1px 8px" }}>{r.gamme}</span>}
       <span style={{ width: "100%", fontSize: FZ.xs, color: T.ink500 }}>Tests {period(r)}{mine ? " · vous êtes testeur" : ""}</span>
+      {canEdit && (ended || forced) && <div style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", background: forced ? T.emerald100 : T.surface, borderRadius: 8, padding: "6px 10px", marginTop: 2 }}>
+        <span style={{ fontSize: FZ.xs, color: forced ? T.emerald600 : T.ink700, fontWeight: 600, flex: "1 1 180px" }}>{forced ? "Validée manuellement" + (plan.forced.by ? " par " + plan.forced.by : "") + " le " + fd(dIso(plan.forced.at)) + "." : "Période terminée : vous pouvez valider ces tests sans testeur ni test coché (anciennes machines)."}</span>
+        <button type="button" onClick={() => saveTests(setForced(plan, !forced, who))} className="enogia-btn-ind" style={{ border: "1.5px solid " + (forced ? T.ink300 : T.emerald600), background: forced ? "transparent" : T.emerald600, color: forced ? T.ink700 : T.card, borderRadius: 8, padding: "4px 10px", minHeight: 28, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>{forced ? "Annuler la validation" : "Forcer la validation"}</button>
+      </div>}
     </div>}
     {!panel && <div onClick={onToggle} role="button" aria-expanded={open} tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(); } }}
       style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 14px", cursor: "pointer", flexWrap: "wrap" }}>
@@ -229,8 +240,8 @@ function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdi
           : <span style={{ fontSize: FZ.xs, color: T.ink500 }}>Ni client ni NOBO : seuls les tests internes sont à réaliser.</span>}
       </Step>
       {/* ③ Tests : dans le volet, checklist « fait » (et choix des tests à réaliser via « Modifier la liste ») */}
-      {panel && <Step n="3" title="Tests" hint={canTest ? "Cochez chaque test une fois réalisé." : "Consultation : seuls les administrateurs cochent les tests."}>
-        <Checklist {...{ r, plan, catalog, act, canEdit: canTest, saveTests }} />
+      {panel && <Step n="3" title="Tests" hint={canMark ? "Indiquez pour chaque test : en cours, réussi ou en échec." : "Consultation : seuls le testeur affecté et les administrateurs renseignent les tests."}>
+        <Checklist {...{ r, plan, catalog, act, canEdit: canTest, canMark, saveTests, who }} />
       </Step>}
       {!panel && <Step n="3" title="Tests à réaliser" hint={canTest ? "Cochez / décochez les tests à réaliser pour cette machine ; les commentaires sont propres à ce PJ." : "Consultation : seuls les administrateurs modifient les tests."}>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -268,7 +279,7 @@ function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdi
 
 // v186 : checklist du volet — par défaut, seulement les tests à réaliser, avec une case « fait » ; « Modifier la liste » affiche
 // tout le catalogue de la partie pour choisir les tests à réaliser (comme avant). Commentaire par test et test libre conservés.
-function Checklist({ r, plan, catalog, act, canEdit, saveTests }) {
+function Checklist({ r, plan, catalog, act, canEdit, canMark, saveTests, who }) {
   const [edit, setEdit] = useState(false);
   return (<div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
     {canEdit && <button type="button" onClick={() => setEdit(v => !v)} aria-pressed={edit} className="enogia-btn-ind" style={{ alignSelf: "flex-start", border: "1.5px solid " + T.teal500, background: "transparent", color: T.teal600, borderRadius: 8, padding: "4px 10px", minHeight: 28, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>{edit ? "Terminer" : "Modifier la liste des tests"}</button>}
@@ -281,17 +292,19 @@ function Checklist({ r, plan, catalog, act, canEdit, saveTests }) {
           <span style={{ marginLeft: "auto", fontSize: FZ.xs, fontWeight: 700, color: nDone === sel.length && sel.length ? T.emerald600 : T.ink700, fontVariantNumeric: "tabular-nums" }}>{edit ? sel.length + " retenu" + (sel.length > 1 ? "s" : "") : nDone + " / " + sel.length}</span>
         </div>
         {items.length === 0 && <div style={{ padding: "8px 12px", fontSize: FZ.xs, color: T.ink500 }}>Aucun test retenu.</div>}
-        {items.map(tst => { const chk = edit ? sel.includes(tst.id) : done.includes(tst.id); return (
-          <div key={tst.id} style={{ display: "flex", gap: 10, padding: "8px 12px", borderTop: "1px solid " + T.surface, alignItems: "flex-start" }}>
-            <input type="checkbox" checked={chk} disabled={!canEdit} aria-label={(edit ? "À réaliser : " : "Fait : ") + tst.name}
-              onChange={() => saveTests(edit ? toggleTest(plan, catalog, k, tst.id) : toggleDone(plan, k, tst.id))} style={{ marginTop: 3, width: 16, height: 16, accentColor: stageSoft().finProd.solid }} />
-            <div style={{ flex: 1, minWidth: 0 }}>
+        {items.map(tst => { const stv = statusOf(plan, k, tst.id), by = statusByOf(plan, k, tst.id), chk = edit ? sel.includes(tst.id) : stv === "ok"; return (
+          <div key={tst.id} style={{ display: "flex", gap: 10, padding: "8px 12px", borderTop: "1px solid " + T.surface, alignItems: "flex-start", flexWrap: "wrap" }}>
+            {edit && <input type="checkbox" checked={chk} disabled={!canEdit} aria-label={"À réaliser : " + tst.name}
+              onChange={() => saveTests(toggleTest(plan, catalog, k, tst.id))} style={{ marginTop: 3, width: 16, height: 16, accentColor: stageSoft().finProd.solid }} />}
+            <div style={{ flex: "1 1 180px", minWidth: 0 }}>
               <div style={{ fontSize: FZ.sm, fontWeight: 700, color: T.ink900, textDecoration: !edit && chk ? "line-through" : "none", textDecorationColor: T.ink300 }}>{tst.name}</div>
+              {!edit && by && stv !== "todo" && <div style={{ fontSize: 11, color: T.ink500, marginTop: 2 }}>{(TEST_STATUS.find(x => x[0] === stv) || [])[1]}{by.by ? " · " + by.by : ""}{by.at ? " · " + stamp(by.at) : ""}</div>}
               {(edit || !chk) && tst.obj && <div style={{ fontSize: FZ.xs, color: T.ink500, whiteSpace: "pre-line", lineHeight: 1.45, marginTop: 2 }}>{tst.obj}</div>}
-              {!edit && (canEdit
+              {!edit && (canMark
                 ? <input defaultValue={plan.notes[tst.id] || ""} key={r.pj + tst.id + (plan.notes[tst.id] || "")} onBlur={e => { if (e.target.value !== (plan.notes[tst.id] || "")) saveTests(setNote(plan, tst.id, e.target.value)); }} placeholder="Commentaire" aria-label={"Commentaire : " + tst.name} maxLength={300} style={{ ...field(), fontSize: FZ.xs, width: "100%", boxSizing: "border-box", marginTop: 6 }} />
                 : plan.notes[tst.id] ? <div style={{ fontSize: FZ.xs, color: T.ink700, marginTop: 4 }}>{plan.notes[tst.id]}</div> : null)}
             </div>
+            {!edit && <StatusPick value={stv} disabled={!canMark} label={tst.name} onPick={v => { if (v !== stv) saveTests(setStatus(plan, k, tst.id, v, who)); }} />}
           </div>); })}
         {(edit || plan.extra[k]) && <div style={{ padding: "8px 12px", borderTop: "1px solid " + T.surface }}>
           {canEdit ? <input defaultValue={plan.extra[k] || ""} key={r.pj + k + (plan.extra[k] || "")} onBlur={e => { if (e.target.value !== (plan.extra[k] || "")) saveTests(setExtra(plan, k, e.target.value)); }} placeholder="Test supplémentaire (texte libre)" aria-label={"Test supplémentaire : " + label} maxLength={300} style={{ ...field(), fontSize: FZ.xs, width: "100%", boxSizing: "border-box" }} />
@@ -299,6 +312,17 @@ function Checklist({ r, plan, catalog, act, canEdit, saveTests }) {
         </div>}
       </div>);
     })}
+  </div>);
+}
+
+// v187 : sélecteur de statut d'un test (À faire / En cours / Réussi / Échec), cibles de 28 px.
+const stamp = iso => { const d = new Date(iso); return isNaN(d) ? "" : fd(dIso(d)) + " " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); };
+const STATUS_TONE = { todo: () => [T.ink700, T.card], wip: () => [T.amber600, T.amber100], ok: () => [T.emerald600, T.emerald100], ko: () => [T.red600, T.red100] };
+function StatusPick({ value, onPick, disabled, label }) {
+  return (<div role="radiogroup" aria-label={"Statut : " + label} style={{ display: "inline-flex", gap: 2, background: T.surface, borderRadius: 8, padding: 2, flex: "0 0 auto" }}>
+    {TEST_STATUS.map(([v, l]) => { const on = value === v, [ink, bg] = STATUS_TONE[v](); return (
+      <button key={v} type="button" role="radio" aria-checked={on} disabled={disabled} onClick={() => onPick(v)}
+        style={{ border: "none", borderRadius: 6, padding: "4px 8px", minHeight: 28, fontSize: 12, fontWeight: 700, fontFamily: T.font, cursor: disabled ? "default" : "pointer", background: on ? bg : "transparent", color: on ? ink : T.ink500, opacity: disabled && !on ? .55 : 1, transition: "background-color .15s ease, color .15s ease" }}>{l}</button>); })}
   </div>);
 }
 

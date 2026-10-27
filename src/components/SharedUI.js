@@ -437,7 +437,7 @@ export function PageHead({kicker,title,sub,right,style,accent}){ // v185 : accen
   return(<div className="enogia-view-in" style={{display:"flex",alignItems:"flex-end",gap:12,flexWrap:"wrap",marginBottom:12,paddingBottom:6,borderBottom:"3px solid "+T.teal500,...style}}>
     <div style={{minWidth:0,flex:1,display:"flex",alignItems:"baseline",gap:"4px 14px",flexWrap:"wrap"}}>
       {kicker&&<span style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>{kicker}</span>}
-      <h1 style={{margin:0,fontFamily:T.fontDisplay,fontSize:"clamp(28px,3vw,36px)",fontWeight:600,letterSpacing:"-.02em",color:T.ink900,lineHeight:1.1}}><Hl color={accent}>{title}</Hl></h1>
+      <h1 style={{margin:0,fontFamily:T.fontDisplay,fontSize:"clamp(32px,3.6vw,44px)",fontWeight:600,letterSpacing:"-.02em",color:T.ink900,lineHeight:1.1}}><Hl color={accent}>{title}</Hl></h1>
       {sub&&<span style={{fontSize:FZ.sm,color:T.ink500}}>{sub}</span>}
     </div>
     {right}

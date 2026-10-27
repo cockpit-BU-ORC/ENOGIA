@@ -40,7 +40,7 @@ export function catalogOf(doc) {
 export const testersOf = doc => (doc && Array.isArray(doc.testers) ? doc.testers : []);
 export const planOf = (doc, pj) => {
   const p = doc && doc.plans && doc.plans[pj];
-  return { assign: Array.isArray(p && p.assign) ? p.assign : [], sel: (p && p.sel) || {}, extra: (p && p.extra) || {}, notes: (p && p.notes) || {}, done: (p && p.done) || {} };
+  return { assign: Array.isArray(p && p.assign) ? p.assign : [], sel: (p && p.sel) || {}, extra: (p && p.extra) || {}, notes: (p && p.notes) || {}, done: (p && p.done) || {}, st: (p && p.st) || {}, stBy: (p && p.stBy) || {}, forced: (p && p.forced) || null };
 };
 
 // Parties présentes selon la présence aux tests (null | "client" | "nobo" | "both") : l'interne est toujours fait.
@@ -60,17 +60,37 @@ export function toggleTest(plan, catalog, section, id) {
   return { ...plan, sel: { ...plan.sel, [section]: next } };
 }
 // v186 : tests réalisés (« fait »), par partie — plan.done = { interne:[ids], client:[ids], nobo:[ids] }. Champ ajouté, rétrocompatible.
-export const doneIds = (plan, section) => (plan.done && Array.isArray(plan.done[section]) ? plan.done[section] : []);
-export function toggleDone(plan, section, id) {
-  const cur = doneIds(plan, section);
-  return { ...plan, done: { ...(plan.done || {}), [section]: cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id] } };
+// v187 : statut de chaque test, renseigné par le testeur — plan.st = { interne: { id: "wip"|"ok"|"ko" } }, plan.stBy = { interne: { id: { by, at } } }.
+// « Fait » = réussi ou en échec. Les listes plan.done de la V186 (jamais publiée) restent lues comme « réussi ».
+export const TEST_STATUS = [["todo", "À faire"], ["wip", "En cours"], ["ok", "Réussi"], ["ko", "Échec"]];
+export const statusOf = (plan, section, id) => {
+  const v = plan.st && plan.st[section] && plan.st[section][id];
+  if (v) return v;
+  return plan.done && Array.isArray(plan.done[section]) && plan.done[section].includes(id) ? "ok" : "todo";
+};
+export const statusByOf = (plan, section, id) => (plan.stBy && plan.stBy[section] && plan.stBy[section][id]) || null;
+export function setStatus(plan, section, id, value, by, at) {
+  const st = { ...(plan.st || {}), [section]: { ...((plan.st || {})[section] || {}), [id]: value } };
+  const stBy = { ...(plan.stBy || {}), [section]: { ...((plan.stBy || {})[section] || {}), [id]: { by: by || "", at: at || new Date().toISOString() } } };
+  return { ...plan, st, stBy };
 }
-// Avancement d'une machine : tests faits / tests à réaliser, sur les parties actives (interne, + client / NOBO si présents).
+export const doneIds = (plan, section) => {
+  const ids = new Set([...(plan.done && Array.isArray(plan.done[section]) ? plan.done[section] : []), ...Object.keys((plan.st && plan.st[section]) || {})]);
+  return [...ids].filter(id => ["ok", "ko"].includes(statusOf(plan, section, id)));
+};
+export const toggleDone = (plan, section, id, by, at) => setStatus(plan, section, id, ["ok", "ko"].includes(statusOf(plan, section, id)) ? "todo" : "ok", by, at);
+// Avancement d'une machine sur les parties actives (interne, + client / NOBO si présents) : faits (réussis + échecs) / à réaliser.
 export function progressOf(plan, catalog, sections) {
-  let done = 0, total = 0;
-  sections.forEach(k => { const sel = selectedIds(plan, catalog, k), d = doneIds(plan, k); total += sel.length; done += sel.filter(id => d.includes(id)).length; });
-  return { done, total };
+  let done = 0, total = 0, ok = 0, ko = 0, wip = 0;
+  sections.forEach(k => selectedIds(plan, catalog, k).forEach(id => {
+    const v = statusOf(plan, k, id); total++;
+    if (v === "ok") { ok++; done++; } else if (v === "ko") { ko++; done++; } else if (v === "wip") wip++;
+  }));
+  return { done, total, ok, ko, wip };
 }
+// v187 : validation forcée d'une ancienne période de tests (admin), même sans testeur ni test coché.
+export const isForced = plan => !!(plan && plan.forced && plan.forced.at);
+export const setForced = (plan, on, by, at) => ({ ...plan, forced: on ? { by: by || "", at: at || new Date().toISOString() } : null });
 export const setNote = (plan, testId, text) => { const notes = { ...plan.notes }; if (text) notes[testId] = text; else delete notes[testId]; return { ...plan, notes }; };
 export const setExtra = (plan, section, text) => ({ ...plan, extra: { ...plan.extra, [section]: text } });
 

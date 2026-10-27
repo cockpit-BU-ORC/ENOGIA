@@ -7,6 +7,17 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v187",
+    date: "2026-10-27",
+    title: "V187 : les testeurs renseignent leurs tests",
+    items: [
+      { t: "Avancement par les testeurs", d: "Le testeur affecté indique pour chaque test : à faire, en cours, réussi ou échec. Son nom, la date et l'heure sont enregistrés." },
+      { t: "Gamme sur chaque carte", d: "La gamme de la machine (ORC 50, ORC 100…) apparaît sur la carte et dans le volet de détail." },
+      { t: "Anciennes machines", d: "Une fois la période de tests passée, un admin peut forcer la validation, même sans testeur ni test coché.", admin: true },
+      { t: "Titres", d: "Titres de page plus grands ; le titre répété sous l'en-tête de la page Tests est retiré." },
+    ],
+  },
+  {
     id: "2026-10-v186",
     date: "2026-10-27",
     title: "V186 : une page Tests par semaine",

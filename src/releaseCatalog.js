@@ -332,4 +332,8 @@ export const RELEASE_CATALOG = [
     ["Tests", "Colonnes par semaine, une carte par machine, avancement des tests."],
     ["Volet de détail", "Testeurs et tests à cocher une fois réalisés."],
   ] },
+  { v: "187", t: "Les testeurs renseignent leurs tests", items: [
+    ["Tests", "Statut par test (en cours, réussi, échec) avec nom, date et heure ; gamme sur les cartes."],
+    ["Titres", "Plus grands ; plus de titre répété sur la page Tests."],
+  ] },
 ];

@@ -89,7 +89,25 @@ describe("tests réalisés (v186)", () => {
     const cat = catalogOf({});
     let p = planOf({ plans: {} }, "PJ1");
     p = toggleDone(p, "interne", "i1"); p = toggleDone(p, "client", "c1");
-    expect(progressOf(p, cat, ["interne"])).toEqual({ done: 1, total: cat.interne.length });
-    expect(progressOf(p, cat, ["interne", "client"])).toEqual({ done: 2, total: cat.interne.length + cat.client.length });
+    expect(progressOf(p, cat, ["interne"])).toMatchObject({ done: 1, total: cat.interne.length });
+    expect(progressOf(p, cat, ["interne", "client"])).toMatchObject({ done: 2, total: cat.interne.length + cat.client.length });
+  });
+});
+
+describe("statuts des tests et validation forcée (v187)", () => {
+  const { setStatus, statusOf, statusByOf, doneIds, progressOf, planOf, catalogOf, setForced, isForced } = require("./testPlan");
+  test("en cours, réussi, échec : seuls réussi et échec comptent comme faits", () => {
+    const cat = catalogOf({}), [a, b, c] = cat.interne.map(x => x.id);
+    let p = planOf({ plans: {} }, "PJ1");
+    p = setStatus(p, "interne", a, "ok", "Marc", "2026-10-27T10:00:00Z"); p = setStatus(p, "interne", b, "ko", "Marc"); p = setStatus(p, "interne", c, "wip", "Marc");
+    expect(statusOf(p, "interne", a)).toBe("ok");
+    expect(statusByOf(p, "interne", a)).toEqual({ by: "Marc", at: "2026-10-27T10:00:00Z" });
+    expect(doneIds(p, "interne").sort()).toEqual([a, b].sort());
+    expect(progressOf(p, cat, ["interne"])).toEqual({ done: 2, total: cat.interne.length, ok: 1, ko: 1, wip: 1 });
+  });
+  test("validation forcée", () => {
+    const p = setForced(planOf({ plans: {} }, "PJ1"), true, "Gabriel");
+    expect(isForced(p)).toBe(true);
+    expect(isForced(setForced(p, false))).toBe(false);
   });
 });
