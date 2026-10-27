@@ -1220,3 +1220,14 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - **Règles communes** : contenu du Manager limité à 1 440 px de large.
 - Pas de nouvelle donnée ni clé `localStorage`. Vérifié : rendu de l'espace Manager (jsdom : menu publié, titre, phrase, onglets), build (13 avertissements existants), tests, contraste. Pas testé dans l'appli connectée.
 - Fichiers : App.js, components/{ManagerPanel,ManagerFiche}.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
+
+## v197 — Thème unique, Manager pleine largeur, tests compacts, Liste sans point de dérive, EPC → chef ORC
+
+- **Thème unique** (`theme.js`) : `THEMES` ne contient plus que `marine` (libellé « ENOGIA ») — clair = Ardoise, sombre = ex-« Salle de contrôle » ; `navTokens` : menu clair en clair, menu ardoise très sombre à repère or en sombre. Le choix de thème disparaît du sélecteur (`ThemePicker`), il reste clair / sombre. Une ancienne préférence `controle` retombe sur le thème unique. `check:contrast` : 367 vérifications (1 thème), 0 échec.
+- **Accueil** : la phrase du jour tient sur une ligne (taille 18–28 px, plus de largeur max) ; les montants des tuiles ne passent plus à la ligne (« € » collé au nombre, tuile Cash in en colonnes de 150 px min.).
+- **Manager** : plus de largeur max (pleine largeur) ; règles communes dans toutes les sous-pages (`styles.css`, `.enogia-mgr-main`) — en-têtes de tableau 12 px gris, casse normale, collés en haut au défilement ; lignes ≥ 36 px ; chiffres tabulaires ; filets de 1 px ; grilles au pas de 12 px.
+- **Tests** (`TestsTab.js`, `TestCard`) : chaque semaine est une carte, chaque machine une ligne compacte (≈ 44 px) — plaque, gamme, projet, dates ; puis testeurs, présence, signaux (sans testeur, en retard, échecs, conflit, validé), barre et « faits/total » à droite. Colonnes de 300 px min.
+- **Liste** (`TableView.js`) : le point de dérive à côté du PJ est retiré (l'écart est déjà affiché dans la colonne Départ) ; l'étiquette de l'import (nouveau / modifié) reste.
+- **EPC** (`pjMeta.js`, `chefsOf`) : pour un projet EPC avec un chef de projet ORC, c'est lui qui figure dans les listes, regroupements par chef, filtres et accueil, à la place du chef classique (les autres chefs restent).
+- Vérifié : rendu de la page Tests en clair / sombre, build (13 avertissements existants), tests, contraste. Pas testé dans l'appli connectée.
+- Fichiers : theme.js, pjMeta.js, styles.css, App.js (version), components/{ThemePicker,HomeView,RoleHome,ManagerPanel,TestsTab,TableView}.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.

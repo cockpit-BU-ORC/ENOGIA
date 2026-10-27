@@ -102,14 +102,14 @@ function WeekBoard({ doc, rows, testers, catalog, conflicts, commit, certifs, ca
         <span>S{isoWeek(weeks[0].a)} → S{isoWeek(weeks[2].a)} · {all.length} machine{all.length > 1 ? "s" : ""}{later ? " · " + later + " plus tard" : ""}{noPeriod ? " · " + noPeriod + " sans période de tests" : ""}</span>
         {myTester && <label style={{ display: "inline-flex", alignItems: "center", gap: 6, marginLeft: "auto", minHeight: 24, cursor: "pointer", color: T.ink700, fontWeight: 600 }}><input type="checkbox" checked={onlyMine} onChange={e => setOnlyMine(e.target.checked)} />Seulement mes tests</label>}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 10, alignItems: "start" }}>
-        {cols.map((c, ci) => (<section key={ci} aria-label={COL_TITLE[ci]} style={{ background: T.surfaceAlt, borderRadius: 12, padding: 10, minWidth: 0, borderTop: "3px solid " + (ci === 0 ? stageSoft().tests.solid : T.line) }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 6, margin: "2px 4px 8px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 12, alignItems: "start" }}>
+        {cols.map((c, ci) => (<section key={ci} aria-label={COL_TITLE[ci]} style={{ background: T.card, border: "1px solid " + T.line, borderTop: "3px solid " + (ci === 0 ? stageSoft().tests.solid : T.line), borderRadius: "0 0 10px 10px", minWidth: 0, overflow: "hidden" }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 6, padding: "8px 12px", borderBottom: "1px solid " + T.line }}>
             <h3 style={{ margin: 0, fontSize: FZ.sm, fontWeight: 700, color: T.ink900 }}>{COL_TITLE[ci]}</h3>
             <span style={{ marginLeft: "auto", fontSize: FZ.xs, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>S{isoWeek(c.a)} · {c.items.length}</span>
           </div>
-          {c.items.length === 0 && <div style={{ fontSize: FZ.xs, color: T.ink500, padding: "8px 4px" }}>Aucun test prévu.</div>}
-          <div className="enogia-stagger" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {c.items.length === 0 && <div style={{ fontSize: FZ.xs, color: T.ink500, padding: "10px 12px" }}>Aucun test prévu.</div>}
+          <div className="enogia-stagger" style={{ display: "flex", flexDirection: "column" }}>
             {c.items.map(({ r, late }) => <TestCard key={r.pj} {...{ r, doc, testers, catalog, conflicts, late }} on={cur && cur.pj === r.pj} onPick={() => setSel(r.pj)} />)}
           </div>
         </section>))}
@@ -152,30 +152,33 @@ export function TestDialog({ r, onClose, doc, testers, catalog, conflicts, commi
 
 // Carte d'une machine dans une colonne : PJ, présence, dates, testeurs, avancement « faits / à réaliser ».
 function TestCard({ r, doc, testers, catalog, conflicts, late, on, onPick }) {
+  // v197 (taste-skill : lignes de 44 px, une seule marque d'état, chiffres tabulaires à droite) : ligne de liste compacte, plus de grande tuile.
   const plan = planOf(doc, r.pj), kind = presenceKind(r.clientPresence || null), act = activeSections(kind), q = progressOf(plan, catalog, act);
   const assigned = plan.assign.map(a => testers.find(t => t.id === a.tid)).filter(Boolean);
   const forced = isForced(plan), conf = conflicts.some(c => c.a.pj === r.pj || c.b.pj === r.pj), noTester = assigned.length === 0 && !forced, full = forced || (q.total > 0 && q.done === q.total);
   const S = stageSoft(), edge = noTester || late ? T.red500 : full ? S.finProd.solid : S.tests.solid;
   const meta = getPjMeta(r.pj, r), pct = q.total ? Math.round(q.done / q.total * 100) : 0;
-  return (<div {...pressable(onPick, { "aria-pressed": !!on, "aria-label": r.pj + " — " + (meta.nomProjet || "") + " — " + q.done + " tests faits sur " + q.total })} className="enogia-test-card"
-    style={{ background: T.card, border: "1px solid " + (on ? T.teal500 : T.line), borderLeft: "4px solid " + edge, borderRadius: "0 8px 8px 0", padding: "8px 10px", cursor: "pointer", boxShadow: on ? "0 0 0 1px " + T.teal500 : "none", minWidth: 0 }}>
-    <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+  const tag = (txt, ink, bg) => <span style={{ fontFamily: T.fontLabel, fontSize: 11, fontWeight: 600, color: ink, background: bg, borderRadius: 999, padding: "0 7px", lineHeight: "18px", whiteSpace: "nowrap" }}>{txt}</span>;
+  return (<div {...pressable(onPick, { "aria-pressed": !!on, "aria-label": r.pj + " — " + (meta.nomProjet || "") + " — " + q.done + " tests faits sur " + q.total })} className="enogia-test-row"
+    style={{ borderLeft: "3px solid " + edge, borderTop: "1px solid " + T.line, background: on ? T.teal100 : T.card, padding: "6px 12px 7px 10px", cursor: "pointer", minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
       <PjPlate pj={r.pj} />
-      {r.gamme && <span style={{ fontFamily: T.fontLabel, fontSize: 12, fontWeight: 600, color: T.ink700, border: "1px solid " + T.line, borderRadius: 6, padding: "0 6px" }}>{r.gamme}</span>}
+      {r.gamme && <span style={{ fontFamily: T.fontLabel, fontSize: 12, fontWeight: 600, color: T.ink700, whiteSpace: "nowrap" }}>{r.gamme}</span>}
+      <span title={meta.nomProjet || ""} style={{ flex: 1, minWidth: 0, fontSize: FZ.sm, color: T.ink700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : ""}</span>
+      <span style={{ fontSize: FZ.xs, color: T.ink500, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{fdm(dIso(r.tests))}{r.testsFin ? " → " + fdm(dIso(r.testsFin)) : ""}</span>
+    </div>
+    <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, flexWrap: "wrap" }}>
+      {noTester ? tag("Sans testeur", T.red600, T.red100) : <span style={{ display: "inline-flex" }}>{assigned.slice(0, 4).map((t, i) => <span key={t.id} title={t.name} style={{ marginLeft: i ? -5 : 0, borderRadius: "50%", boxShadow: "0 0 0 2px " + (on ? T.teal100 : T.card), display: "inline-flex" }}><Avatar name={t.name} tint={personTint(t.name)[0]} size={18} /></span>)}</span>}
       {kind && <PresenceChip kind={kind} compact tiny />}
-      <span style={{ marginLeft: "auto", fontSize: FZ.xs, color: T.ink500, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{fdm(dIso(r.tests))}{r.testsFin ? " → " + fdm(dIso(r.testsFin)) : ""}</span>
+      {late && tag("En retard", T.red600, T.red100)}
+      {forced && tag("Validé (forcé)", T.emerald600, T.emerald100)}
+      {q.ko > 0 && tag(q.ko + " échec" + (q.ko > 1 ? "s" : ""), T.red600, T.red100)}
+      {conf && tag("Conflit", T.amber600, T.amber100)}
+      <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6 }}>
+        <span aria-hidden="true" style={{ width: 48, height: 4, borderRadius: 2, background: T.surfaceAlt, overflow: "hidden" }}><i className="enogia-bar-fill" style={{ display: "block", width: pct + "%", height: "100%", background: S.finProd.solid }} /></span>
+        <span style={{ fontSize: FZ.xs, fontWeight: 700, color: full ? T.emerald600 : T.ink700, fontVariantNumeric: "tabular-nums", minWidth: 34, textAlign: "right" }}>{q.done}/{q.total}</span>
+      </span>
     </div>
-    <div title={meta.nomProjet || ""} style={{ margin: "6px 0 4px", fontSize: FZ.sm, fontWeight: 600, color: T.ink900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : "Projet sans nom"}</div>
-    <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-      {noTester ? <span style={{ fontFamily: T.fontLabel, fontSize: 11, fontWeight: 600, color: T.red600, background: T.red100, borderRadius: 999, padding: "1px 8px" }}>Sans testeur</span>
-        : <span style={{ display: "inline-flex" }}>{assigned.slice(0, 4).map((t, i) => <span key={t.id} title={t.name} style={{ marginLeft: i ? -6 : 0, borderRadius: "50%", boxShadow: "0 0 0 2px " + T.card, display: "inline-flex" }}><Avatar name={t.name} tint={personTint(t.name)[0]} size={22} /></span>)}</span>}
-      {late && <span style={{ fontFamily: T.fontLabel, fontSize: 11, fontWeight: 600, color: T.red600, background: T.red100, borderRadius: 999, padding: "1px 8px" }}>En retard</span>}
-      {forced && <span style={{ fontFamily: T.fontLabel, fontSize: 11, fontWeight: 600, color: T.emerald600, background: T.emerald100, borderRadius: 999, padding: "1px 8px" }}>Validé (forcé)</span>}
-      {q.ko > 0 && <span style={{ fontFamily: T.fontLabel, fontSize: 11, fontWeight: 600, color: T.red600, background: T.red100, borderRadius: 999, padding: "1px 8px" }}>{q.ko} échec{q.ko > 1 ? "s" : ""}</span>}
-      {conf && <span style={{ fontFamily: T.fontLabel, fontSize: 11, fontWeight: 600, color: T.amber600, background: T.amber100, borderRadius: 999, padding: "1px 8px" }}>Conflit</span>}
-      <span style={{ marginLeft: "auto", fontSize: FZ.xs, fontWeight: 700, color: full ? T.emerald600 : T.ink700, fontVariantNumeric: "tabular-nums" }}>{q.done} / {q.total} test{q.total > 1 ? "s" : ""}</span>
-    </div>
-    <div aria-hidden="true" style={{ height: 6, borderRadius: 3, background: T.surfaceAlt, overflow: "hidden", marginTop: 6 }}><div className="enogia-bar-fill" style={{ width: pct + "%", height: "100%", background: S.finProd.solid }} /></div>
   </div>);
 }
 

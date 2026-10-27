@@ -65,7 +65,7 @@ const grad = (a,b,c) => ({
 
 export const THEMES = {
   // ── Ardoise (v161, ex-Marine) : l'identité ENOGIA (RAL 5011 « bleu acier ») sur fond gris froid + accent sarcelle ──
-  marine: { label:"Ardoise", desc:"Clair : gris froid · sombre : marine et or", swatch:["#1D2C4E","#F3F5F8","#F4D35E"],
+  marine: { label:"ENOGIA", desc:"Clair : gris froid · sombre : ardoise dense", swatch:["#1D2C4E","#F3F5F8","#F4D35E"],
     light:{ ...grad("#0B1130","#1D2C4E","#46587F"),
       navy900:"#0B1130", navy800:"#131B49", navy700:"#1E2C66", navy600:"#2C3F8C",
       teal600:"#121B30", teal500:"#1D2C4E", teal400:"#4B5D85", teal100:"#E8EAF0",
@@ -73,43 +73,24 @@ export const THEMES = {
       ink900:"#101828", ink700:"#344054", ink500:"#52607A", ink300:"#5B6880", ink100:"#E4E8EF",
       line:"#DDE2EA", panel:"#F1F3F7", panelDim:"#E7EAF0",
       accent:"#0A9DB5", accentInk:"#076477", accentSoft:"#D3F0F6" },
-    dark:{ ...grad("#0B1130","#1D2C4E","#46587F"),
-      navy900:"#0B1130", navy800:"#C9D3F0", navy700:"#3B4F94", navy600:"#6F86CC",
-      teal600:"#C6D0EE", teal500:"#5C73B8", teal400:"#9AABDC", teal100:"#33406A",
-      surface:"#1C2536", surfaceAlt:"#2A3550", card:"#27324A",
-      ink900:"#EEF2F9", ink700:"#CDD6E6", ink500:"#B5C1D6", ink300:"#AAB7CF", ink100:"#3C4A68",
-      line:"#3C4A68", panel:"#2B3650", panelDim:"#33405E",
-      accent:"#F4D35E", accentInk:"#F7DE84", accentSoft:"#4A3E22" } }, // v185 : sombre = celui de l'ex-thème Atelier (accent or), demandé
-  // ── Salle de contrôle (v182, 2e direction de l'audit) : pensé pour l'écran d'atelier et la tablette — ardoise dense en sombre,
-  // gris industriel clair en clair ; mêmes couleurs d'étapes et d'alertes que le thème Atelier ; accent or pour les repères.
-  controle: { label:"Salle de contrôle", desc:"Ardoise dense, pour l'écran d'atelier", swatch:["#16202E","#1F2B3D","#F4D35E"],
-    light:{ ...grad("#082440","#0D3B66","#4A6F92"),
-      navy900:"#082440", navy800:"#0A2D50", navy700:"#0D3B66", navy600:"#1E5A8C",
-      teal600:"#0A2A49", teal500:"#0D3B66", teal400:"#4A6F92", teal100:"#E1E8EF",
-      surface:"#EEF1F4", surfaceAlt:"#E2E7ED", card:"#FFFFFF",
-      ink900:"#0E1824", ink700:"#2C3A4B", ink500:"#4A5869", ink300:"#526072", ink100:"#DCE2E9",
-      line:"#D3DAE2", panel:"#F3F5F8", panelDim:"#E7EBF0",
-      accent:"#8A6400", accentInk:"#7A5800", accentSoft:"#FCF0BE" },
     dark:{ ...grad("#082440","#0D3B66","#4A6F92"),
       navy900:"#0B1220", navy800:"#C9D6E6", navy700:"#2E5A88", navy600:"#6F93BD",
       teal600:"#D0DCEB", teal500:"#4A73A3", teal400:"#9DB6D3", teal100:"#24364F",
       surface:"#16202E", surfaceAlt:"#22304A", card:"#1F2B3D",
       ink900:"#F1F5FA", ink700:"#D2DCE8", ink500:"#B6C3D3", ink300:"#A7B5C7", ink100:"#33435C",
       line:"#33435C", panel:"#243247", panelDim:"#2B3B55",
-      accent:"#F4D35E", accentInk:"#F7DE84", accentSoft:"#4A3E22" } },
+      accent:"#F4D35E", accentInk:"#F7DE84", accentSoft:"#4A3E22" } }, // v197 (demandé : « garder un seul thème ») : clair d'Ardoise + sombre de Salle de contrôle};
 };
 export const THEME_IDS = Object.keys(THEMES);
-export const DEFAULT_THEME = "marine"; // v185 : clair d'Ardoise + sombre de l'ex-Atelier (demandé) ; « Salle de contrôle » reste au choix
+export const DEFAULT_THEME = "marine"; // v197 : thème unique (clair d'Ardoise + sombre de Salle de contrôle)
 // v173 : nouvelle clé de stockage du thème — l'ancienne (« enogia_theme ») était écrite pour tout le monde à chaque visite,
 // donc changer le thème par défaut n'aurait touché personne. Chacun peut toujours repasser en Ardoise (Forêt et Cuivre retirés en v176).
 export const THEME_KEY = "enogia_theme3"; // v185 : nouvelle clé pour que le nouveau thème par défaut s'applique à tous
 
 // v173 : menu latéral « industriel » (fond marine, repère jaune) pour le thème Atelier ; les autres thèmes gardent leur menu clair.
 export function navTokens(){
-  // v182 : menu « Salle de contrôle » — ardoise très sombre, repère or.
-  if (T.themeId === "controle") return { industrial:true, bg:T.mode==="dark"?"#0E1622":"#16202E", border:T.mode==="dark"?"#22304A":"#16202E", ink:"#C9D4E2", inkOn:"#FFFFFF", bgOn:"rgba(244,211,94,.14)", hover:"rgba(255,255,255,.07)", hoverInk:"#FFFFFF", group:"#F4D35E", mark:"#F4D35E" };
-  // v185 : Ardoise en sombre = menu marine à repère or de l'ex-thème Atelier.
-  if (T.themeId === "marine" && T.mode === "dark") return { industrial:true, bg:"#0B2440", border:"#1E3A5A", ink:"#D6E2EE", inkOn:"#FFFFFF", bgOn:"rgba(244,211,94,.14)", hover:"rgba(255,255,255,.07)", hoverInk:"#FFFFFF", group:"#F4D35E", mark:"#F4D35E" };
+  // v197 : thème unique — en sombre, menu « Salle de contrôle » (ardoise très sombre, repère or) ; en clair, menu clair.
+  if (T.mode === "dark") return { industrial:true, bg:"#0E1622", border:"#22304A", ink:"#C9D4E2", inkOn:"#FFFFFF", bgOn:"rgba(244,211,94,.14)", hover:"rgba(255,255,255,.07)", hoverInk:"#FFFFFF", group:"#F4D35E", mark:"#F4D35E" };
   if (T.themeId !== "atelier") return { // (le thème « atelier » n'existe plus depuis v183 : branche conservée pour Ardoise)
  industrial:false, bg:T.card, border:T.line, ink:T.ink500, inkOn:T.teal600, bgOn:T.teal100, hover:T.surface, hoverInk:T.ink900, group:T.ink500, mark:"currentColor" };
   const dark = T.mode === "dark";

@@ -350,7 +350,7 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",suivi:"St
   return(<div style={{display:"flex",flexDirection:phone?"column":"row",alignItems:phone?"stretch":"flex-start",gap:phone?10:16,fontFamily:T.font}}>
     {phone&&<ManagerRail groups={navGroups} activeId={activeEntry.id} activeSub={subValue} onGo={f=>f()} collapsed={railMin||focusFiche} setCollapsed={v=>{if(focusFiche&&!v)setFocusFiche(false);setRailMin(v);}} phone={phone}/>}
     {palOpen&&<ManagerPalette groups={navGroups} data={palettePjs} activeKey={activeEntry.id+":"+(activeEntry.subs?subValue:"")} onGo={f=>f()} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}} onClose={()=>setPalOpen(false)}/>}
-    <div className="enogia-mgr-main" style={{flex:1,minWidth:0,width:"100%",maxWidth:1440,display:"flex",flexDirection:"column",gap:12}}>
+    <div className="enogia-mgr-main" style={{flex:1,minWidth:0,width:"100%",display:"flex",flexDirection:"column",gap:12,"--mgr-th":T.surface,"--mgr-ink":T.ink500,"--mgr-line":T.line}}>
     {/* ── v196 (maquette validée) : en-tête commun à toutes les sous-pages — titre, une phrase, actions à droite ; sous-pages en onglets ;
          filtres repliés dans un bouton (nombre de filtres actifs). « Planning initial » est passé dans Réglages › Imports. ── */}
     <header className="enogia-mgr-head" style={{display:"flex",flexDirection:"column",gap:8}}>

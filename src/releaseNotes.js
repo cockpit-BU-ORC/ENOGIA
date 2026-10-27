@@ -7,6 +7,18 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v197",
+    date: "2026-10-27",
+    title: "V197 : un seul thème, tests plus compacts",
+    items: [
+      { t: "Un seul thème", d: "Le clair d'Ardoise et le sombre de Salle de contrôle forment désormais un thème unique ; il ne reste que le choix clair / sombre." },
+      { t: "Page Tests plus compacte", d: "Chaque machine tient sur deux lignes : PJ, gamme, projet, dates, testeurs, signaux et avancement." },
+      { t: "Liste plus lisible", d: "Le point de dérive à côté du PJ disparaît (l'écart est déjà dans la colonne Départ) ; les étiquettes de l'import restent." },
+      { t: "Projets EPC", d: "Pour un projet EPC, c'est le chef de projet ORC qui apparaît dans les listes et les regroupements." },
+      { t: "Manager en pleine largeur", d: "Les pages du Manager prennent tout l'écran, avec des tableaux plus réguliers.", admin: true },
+    ],
+  },
+  {
     id: "2026-10-v196",
     date: "2026-10-27",
     title: "V196 : un espace Manager plus aéré",

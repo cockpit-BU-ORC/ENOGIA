@@ -383,3 +383,16 @@ button:not(:disabled):active { transform: scale(.97); }
 .enogia-home-grid > *:nth-child(5) { animation-delay: .28s; }
 .enogia-home-grid > *:nth-child(n+6) { animation-delay: .35s; }
 @media (prefers-reduced-motion: reduce) { .enogia-home-grid > * { animation: none; } }
+
+/* v197 — règles communes des sous-pages du Manager (ui-ux-pro-max / taste-skill), pleine largeur :
+   en-têtes de tableau 12 px gris en casse normale, collés en haut au défilement ; lignes ≥ 36 px ; chiffres en tabulaires ;
+   filets de 1 px ; cartes et grilles au même pas de 12 px. */
+.enogia-mgr-main table { border-collapse: collapse; }
+.enogia-mgr-main table thead th { position: sticky; top: 0; z-index: 2; background: var(--mgr-th); color: var(--mgr-ink); font-size: 12px; font-weight: 600; text-transform: none; letter-spacing: 0; }
+.enogia-mgr-main table tbody td { height: 36px; font-variant-numeric: tabular-nums; }
+.enogia-mgr-main table tbody tr + tr td { border-top: 1px solid var(--mgr-line); }
+.enogia-mgr-main [style*="grid-template-columns"] { gap: 12px; }
+
+/* v197 — Tests : lignes de machine (survol = léger fond, transform interdit sur une liste) */
+.enogia-test-row { transition: background-color .15s ease-out; }
+.enogia-test-row:first-child { border-top: none !important; }

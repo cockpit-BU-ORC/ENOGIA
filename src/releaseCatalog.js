@@ -371,4 +371,9 @@ export const RELEASE_CATALOG = [
   { v: "196", t: "Un espace Manager plus aéré", items: [
     ["Manager", "Un seul menu, en-tête commun, sous-pages en onglets, filtres repliés, liste des fiches en tiroir."],
   ] },
+  { v: "197", t: "Un seul thème, tests plus compacts", items: [
+    ["Thème", "Un thème unique (clair Ardoise, sombre Salle de contrôle)."],
+    ["Tests", "Machines sur deux lignes, proportionnées au contenu."],
+    ["Liste", "Point de dérive retiré ; chef ORC pour les projets EPC."],
+  ] },
 ];

@@ -153,7 +153,7 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
           {/* v183 : nom du site en titre de l'accueil, avec son sous-titre (demandé) */}
           <h1 style={{ margin: "0 0 2px", fontFamily: T.fontDisplay, fontWeight: 800, fontSize: "clamp(28px,3vw,36px)", letterSpacing: "-.01em", color: T.ink900, lineHeight: 1.1 }}><Hl color={T.amber500}>{SITE_NAME}</Hl> <span style={{ fontWeight: 500, color: T.ink500 }}>– {SITE_SCOPE}</span></h1>
           <div style={{ fontSize: FZ.sm, color: T.ink500, marginBottom: 14 }}>{SITE_SUB}</div>
-          <p className="enogia-view-in" style={{ margin: 0, fontFamily: T.fontDisplay, fontWeight: 300, fontSize: "clamp(24px,3.2vw,34px)", lineHeight: 1.18, letterSpacing: "-.02em", color: T.ink900, maxWidth: 820 }}>
+          <p className="enogia-view-in" style={{ margin: 0, fontFamily: T.fontDisplay, fontWeight: 300, fontSize: "clamp(18px,1.9vw,28px)", lineHeight: 1.25, letterSpacing: "-.015em", color: T.ink900, maxWidth: "none" }}>
             {hello()}{firstName ? " " + firstName : ""}. {num(inProd + " machine" + (inProd > 1 ? "s" : ""), S.production.ring)} avance{inProd > 1 ? "nt" : ""}, {num(late.length, T.amber500)} glisse{late.length > 1 ? "nt" : ""}, {num(next30, S.finProd.ring)} part{next30 > 1 ? "ent" : ""} d'ici un mois.
           </p>
         </div>

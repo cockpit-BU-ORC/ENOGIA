@@ -28,6 +28,7 @@ export function ThemePicker({ ink, themeId, onPick, density = "comfortable", onD
             <button key={l} role="radio" aria-checked={on} onClick={() => onDarkMode(k)} style={{ flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, border: "none", borderRadius: 8, padding: "6px 8px", cursor: "pointer", fontFamily: T.font, fontSize: FZ.xs, fontWeight: 700, background: on ? T.card : "transparent", color: on ? T.teal600 : T.ink500, boxShadow: on ? T.shadowCard : "none" }}><NavIcon name={ic} size={14} />{l}</button>); })}
         </div>
       </>}
+      {THEME_IDS.length > 1 && <>{/* v197 : un seul thème — le choix de thème disparaît */}
       <div style={{ fontSize: FZ.sm, fontWeight: 700, marginBottom: 8 }}>Thème de couleurs</div>
       <div role="radiogroup" aria-label="Thème" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
         {THEME_IDS.map(id => {
@@ -40,7 +41,7 @@ export function ThemePicker({ ink, themeId, onPick, density = "comfortable", onD
             {on && <span aria-hidden="true" style={{ marginLeft: "auto", color: T.teal600, fontWeight: 800 }}>✓</span>}
           </button>);
         })}
-      </div>
+      </div></>}
       <div style={{ fontSize: FZ.sm, fontWeight: 700, margin: "12px 0 6px" }}>Densité</div>
       <div role="radiogroup" aria-label="Densité d'affichage" style={{ display: "flex", gap: 4, background: T.surfaceAlt, borderRadius: 12, padding: 4 }}>
         {[["comfortable", "Confortable"], ["compact", "Compacte"]].map(([k, l]) => { const on = density === k; return (
