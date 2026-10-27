@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v190",
+    date: "2026-10-27",
+    title: "V190 : fiches par chef de projet, fiche PJ plus claire",
+    items: [
+      { t: "Une fiche PJ plus claire", d: "En-tête sur une ligne, parcours en 5 étapes avec l'étape en cours, prochain jalon, écart, client / NOBO et dernier commentaire ; actions en bas." },
+      { t: "Tous les projets d'un chef d'un coup", d: "Dans les fiches projet, la liste se range par chef de projet ; un clic sur son nom affiche tous ses projets en cartes.", admin: true },
+    ],
+  },
+  {
     id: "2026-10-v189",
     date: "2026-10-27",
     title: "V189 : tests en pop-up, calendrier et fiche PDF signée",

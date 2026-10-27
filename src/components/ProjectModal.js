@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { T, FZF as FZ, stripeBg, stripeHues } from "../theme";
+import { T, FZF as FZ, stripeBg, stripeHues, stageSoft, inkOn } from "../theme";
 import { SerieTag, getPjMeta, PresenceChip, presenceKind, presenceDates, presenceFirstDate, CountryFlag, MONTHS_FULL, today, ALL_GAMMES, getAllChefs, ALL_PAYS, relTime, Avatar, ETAT_META } from "../pjMeta";
 import { fmt, fmtMode } from "../parsers";
 import { MentionPicker, MentionTextarea } from "./MentionPicker";
@@ -67,7 +67,7 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
   // Pas de fond assombri, pas de position fixe, pas d'animation : c'est un simple bloc du flux de
   // page (position:sticky pour rester visible pendant le scroll de la liste), plus petit et dont
   // la largeur s'adapte (responsive) à la place disponible à côté du tableau.
-  const pad=18;
+  const pad=18,fp=center?pad+4:pad; // fp : marge intérieure réelle (barre d'actions collée au bas)
   // height:"100%" ici (avec le parent étiré en pleine hauteur de la liste dans TableView) : c'est
   // ce qui donne au panneau position:sticky ci-dessous assez de hauteur de défilement pour suivre
   // la page jusqu'en bas, au lieu de décrocher après le premier écran.
@@ -76,39 +76,55 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
   // cliquable pour fermer en cliquant à l'extérieur) mais transparent.
   return(<div className={inline?"":"enogia-panel-backdrop"} onClick={inline?undefined:onClose} style={inline?{width:"100%",height:"100%"}:center?{position:"fixed",inset:0,background:"rgba(8,12,28,.45)",backdropFilter:"blur(3px)",WebkitBackdropFilter:"blur(3px)",zIndex:9998,fontFamily:T.font,display:"flex",alignItems:"center",justifyContent:"center",padding:16}:{position:"fixed",inset:0,background:"transparent",zIndex:9998,fontFamily:T.font}}>
     <div role={inline?undefined:"dialog"} aria-modal={inline?undefined:"true"} aria-label={inline?undefined:"Fiche "+pj} className={inline?"":center?"enogia-pop-in":"enogia-panel-slide"} onClick={inline?undefined:e=>e.stopPropagation()} style={inline?{position:"sticky",top:16,width:"100%",maxHeight:"calc(100dvh - 32px)",background:stripeBg(((r&&ETAT_META[r.etat])||{}).bar||stripeHues().brand,T.card,4),padding:pad,overflowY:"auto",border:"1px solid "+T.line,borderRadius:12,boxSizing:"border-box"}:center?{position:"relative",width:"min(600px,100%)",maxHeight:"min(90vh,860px)",background:stripeBg(((r&&ETAT_META[r.etat])||{}).bar||stripeHues().brand,T.card,4),padding:pad+4,overflowY:"auto",border:"1px solid "+T.line,borderRadius:16,boxShadow:"0 24px 70px rgba(0,0,0,.35)",boxSizing:"border-box"}:{position:"fixed",top:0,right:0,bottom:0,width:"min(440px,100vw)",background:stripeBg(((r&&ETAT_META[r.etat])||{}).bar||stripeHues().brand,T.card,4),padding:pad,overflowY:"auto",boxShadow:"-10px 0 36px rgba(12,36,54,.28)"}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
-        <div style={{flex:1,minWidth:0}}>
-          {/* v129 : une seule police dans la liste, le volet et la fiche (T.font, chiffres tabulaires) ; le volet garde un titre plus marqué. */}
-          {/* v171 (maquette validée) : n° de PJ en police d'identifiant, nom du projet à côté, état en pastille. */}
-          <div style={{display:"flex",alignItems:"baseline",gap:10,flexWrap:"wrap",minWidth:0}}>
-            <PjPlate pj={pj} size="lg"/>
-            {!editingMeta&&meta.nomProjet&&meta.nomProjet!=="—"&&<span style={{fontSize:24,fontWeight:300,letterSpacing:"-.02em",color:T.ink900,minWidth:0,lineHeight:1.15}}>{meta.nomProjet}</span>}
-            <span style={{alignSelf:"center",display:"inline-flex",gap:6,alignItems:"center"}}><Badge etat={r.etat}/><SerieTag pj={pj} size={11}/></span>
-          </div>
-          {editingMeta?
-            <EditMetaForm meta={meta} gamme={r.gamme} onCancel={()=>setEditingMeta(false)} onSave={async fields=>{const ok=await savePjMetaOverride(pj,fields);if(ok)setEditingMeta(false);}}/>
-            :<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))",gap:"8px 14px",marginTop:12,fontSize:FZ.sm,color:T.ink900,alignItems:"end"}}>
-              <div style={{minWidth:0}}><div style={{fontSize:FZ.xs,color:T.ink500}}>Chef de projet</div><div style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{meta.chefProjet||"—"}</div></div>
-              <div style={{minWidth:0}}><div style={{fontSize:FZ.xs,color:T.ink500}}>Gamme</div><div>{r.gamme||"—"}</div></div>
-              <div style={{minWidth:0}}><div style={{fontSize:FZ.xs,color:T.ink500}}>Pays</div><div style={{display:"flex",alignItems:"center",gap:5}}><CountryFlag pays={meta.pays} size={14}/>{meta.pays||"—"}</div></div>
-              <div style={{minWidth:0}}><div style={{fontSize:FZ.xs,color:T.ink500}}>Départ</div><div style={{whiteSpace:"nowrap"}}>{r.depart?fmtMode(new Date(r.depart),df):"—"}{r.drift>0&&<span style={{color:T.amber600,fontWeight:700,marginLeft:6}}>+{r.drift} j</span>}{r.drift<0&&<span style={{color:T.emerald600,fontWeight:700,marginLeft:6}}>{r.drift} j</span>}</div></div>
-              {/* Restreint à canEditMeta (l'email de connexion de Gabriel), pas à pinOk — demandé
-                  explicitement : d'autres membres de la BU ORC peuvent avoir pinOk via le code
-                  Manager sans devoir pour autant pouvoir modifier la fiche projet. */}
-              {canEditMeta&&savePjMetaOverride&&<button onClick={()=>setEditingMeta(true)} title="Modifier le nom, le pays, le chef de projet, la gamme" style={{background:T.panel,border:"none",borderRadius:8,padding:"3px 8px",fontSize:FZ.xs,fontWeight:700,color:T.teal600,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:5}}><NavIcon name="edit" size={13}/>Modifier</button>}
-            </div>}
-        </div>
-        <div style={{display:"flex",gap:6,alignItems:"flex-start",flexShrink:0}}>
-        {/* v176 : accès direct à la fiche synthèse (Manager › Fiche) pour les admins. */}
-        {pinOk&&<button type="button" className="enogia-btn-ind" onClick={()=>{try{window.dispatchEvent(new CustomEvent("enogia:openSynthese",{detail:{pj}}));}catch(e){}if(onClose)onClose();}} title="Ouvrir la fiche synthèse de ce PJ (Manager)" style={{background:"transparent",border:"1.5px solid "+T.teal500,borderRadius:8,height:30,padding:"0 10px",fontSize:FZ.xs,fontWeight:700,cursor:"pointer",color:T.teal600,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font,whiteSpace:"nowrap"}}><NavIcon name="arrow" size={13}/>Fiche synthèse</button>}
-        <button onClick={()=>setDetailMode(detailMode==="popup"?"panel":"popup")} title={detailMode==="popup"?"Afficher les fiches dans un volet à droite":"Afficher les fiches dans une fenêtre centrale"} aria-label={detailMode==="popup"?"Passer en volet latéral":"Passer en pop-up central"} style={{background:T.panel,border:"none",borderRadius:8,height:30,padding:"0 9px",fontSize:FZ.xs,fontWeight:700,cursor:"pointer",color:T.ink700,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font}}><NavIcon name={detailMode==="popup"?"sidepanel":"popup"} size={13}/>{detailMode==="popup"?"Volet":"Pop-up"}</button>
-        <button onClick={onClose} title={inline?"Désélectionner":"Fermer"} style={{background:T.panel,border:"none",borderRadius:8,width:30,height:30,fontSize:FZ.md,cursor:"pointer",color:T.ink700,flexShrink:0}}><NavIcon name="close" size={11}/></button>
-        </div>
+      {/* v190 (maquette B validée) : en-tête sur une ligne, parcours en 5 étapes (étape en cours encadrée, écart au départ),
+          4 chiffres clés, onglets, actions en bas. */}
+      <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:4}}>
+        <PjPlate pj={pj} size="lg"/>
+        <Badge etat={r.etat}/>
+        {r.gamme&&<span style={{fontFamily:T.fontLabel,fontSize:12,fontWeight:600,color:T.ink700,border:"1px solid "+T.line,borderRadius:6,padding:"1px 7px"}}>{r.gamme}</span>}
+        {!editingMeta&&meta.nomProjet&&meta.nomProjet!=="—"&&<span style={{fontFamily:T.fontDisplay,fontSize:20,fontWeight:600,letterSpacing:"-.01em",color:T.ink900,minWidth:0,lineHeight:1.15,flex:"1 1 140px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} title={meta.nomProjet}>{meta.nomProjet}</span>}
+        <span style={{display:"inline-flex",gap:6,alignItems:"center",marginLeft:"auto",flexShrink:0}}>
+          <button onClick={()=>setDetailMode(detailMode==="popup"?"panel":"popup")} title={detailMode==="popup"?"Afficher les fiches dans un volet à droite":"Afficher les fiches dans une fenêtre centrale"} aria-label={detailMode==="popup"?"Passer en volet latéral":"Passer en pop-up central"} style={{background:T.panel,border:"none",borderRadius:8,height:30,padding:"0 9px",fontSize:FZ.xs,fontWeight:700,cursor:"pointer",color:T.ink700,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font}}><NavIcon name={detailMode==="popup"?"sidepanel":"popup"} size={13}/>{detailMode==="popup"?"Volet":"Pop-up"}</button>
+          <button onClick={onClose} title={inline?"Désélectionner":"Fermer"} aria-label={inline?"Désélectionner":"Fermer"} style={{background:T.panel,border:"none",borderRadius:8,width:30,height:30,fontSize:FZ.md,cursor:"pointer",color:T.ink700,flexShrink:0}}><NavIcon name="close" size={11}/></button>
+        </span>
       </div>
-
-      {presenceKind(r.clientPresence)&&<div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap",alignItems:"center"}}>
-        <PresenceChip kind={presenceKind(r.clientPresence)} date={presenceFirstDate(r.clientPresence)} dates={presenceDates(r.clientPresence)} fontSize={13}/>
-      </div>}
+      {editingMeta
+        ?<EditMetaForm meta={meta} gamme={r.gamme} onCancel={()=>setEditingMeta(false)} onSave={async fields=>{const ok=await savePjMetaOverride(pj,fields);if(ok)setEditingMeta(false);}}/>
+        :<div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",fontSize:FZ.xs,color:T.ink500,marginBottom:12}}>
+          {meta.pays&&meta.pays!=="—"&&<span style={{display:"inline-flex",alignItems:"center",gap:5}}><CountryFlag pays={meta.pays} size={13}/>{meta.pays}</span>}
+          {meta.chefProjet&&meta.chefProjet!=="—"&&<span style={{display:"inline-flex",alignItems:"center",gap:5}}><Avatar name={meta.chefProjet} size={16}/>{meta.chefProjet}</span>}
+          <SerieTag pj={pj} size={11}/>
+          {presenceKind(r.clientPresence)&&<PresenceChip kind={presenceKind(r.clientPresence)} date={presenceFirstDate(r.clientPresence)} dates={presenceDates(r.clientPresence)} compact tiny/>}
+          {canEditMeta&&savePjMetaOverride&&<button onClick={()=>setEditingMeta(true)} title="Modifier le nom, le pays, le chef de projet, la gamme" style={{background:"transparent",border:"none",padding:"2px 4px",minHeight:24,fontSize:FZ.xs,fontWeight:700,color:T.teal600,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4,fontFamily:T.font}}><NavIcon name="edit" size={12}/>Modifier</button>}
+        </div>}
+      {(()=>{
+        const S=stageSoft(),d=k=>r[k]?new Date(r[k]):null,t0=new Date(today);t0.setHours(0,0,0,0);
+        const steps=[["arrivee","Arrivée",d("arrivee"),S.arrivee],["production","Production",d("arrivee"),S.production],["tests","Tests",d("tests"),S.tests],["finProd","Fin prod",d("finProd"),S.finProd],["depart","Départ",d("depart"),S.depart]];
+        const reached=i=>{const x=steps[i][2];return !!x&&x<=t0;};
+        let curI=-1;steps.forEach((st,i)=>{if(i>0&&reached(i))curI=i;else if(i===1&&reached(0))curI=Math.max(curI,1);});
+        if(r.etat==="SHIPPED")curI=4;
+        const next=steps.find((st,i)=>i!==1&&st[2]&&st[2]>t0);
+        const nDays=next?Math.round((next[2]-t0)/86400000):null;
+        const pd=presenceDates(r.clientPresence),pres=pd.client||pd.nobo;
+        const nCom=(comments?.[pj]||[]).filter(c=>!c.private).length;
+        const Num=({l,v,c})=><div style={{background:T.panel,borderRadius:10,padding:"7px 10px",minWidth:0}}><div style={{fontFamily:T.fontLabel,fontSize:12,color:T.ink500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{l}</div><div style={{fontFamily:T.fontDisplay,fontSize:17,fontWeight:600,color:c||T.ink900,fontVariantNumeric:"tabular-nums",lineHeight:1.2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{v}</div></div>;
+        return(<>
+          <div role="list" aria-label="Parcours de la machine" style={{display:"grid",gridTemplateColumns:"repeat(5,minmax(0,1fr))",gap:3,marginBottom:10}}>
+            {steps.map(([k,l,dt,tone],i)=>{const done=i<curI||(i===curI&&i===4),on=i===curI&&i!==4,fill=done||on;return(
+              <div role="listitem" key={k} className="enogia-bar-fill" aria-current={on?"step":undefined} style={{background:fill?tone.solid:T.panel,color:fill?inkOn(tone.solid):T.ink500,borderRadius:i===0?"6px 0 0 6px":i===4?"0 6px 6px 0":0,padding:"5px 4px",textAlign:"center",minWidth:0,outline:on?"2px solid "+T.ink900:"none",outlineOffset:-2}}>
+                <div style={{fontFamily:T.fontLabel,fontSize:11,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{l}</div>
+                <div style={{fontSize:FZ.xs,fontWeight:700,fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{k==="production"?"":dt?fmtMode(dt,df):"—"}{k==="depart"&&r.drift>0?" +"+r.drift+" j":""}</div>
+                {on&&<div style={{fontFamily:T.fontLabel,fontSize:11,fontWeight:600}}>en cours</div>}
+              </div>);})}
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(90px,1fr))",gap:6,marginBottom:14}}>
+            <Num l="Prochain jalon" v={next?next[1]+(nDays!=null?(nDays===0?" · auj.":" · "+nDays+" j"):""):"—"}/>
+            <Num l="Écart initial" v={r.drift>0?"+"+r.drift+" j":r.drift<0?r.drift+" j":"à l'heure"} c={r.drift>10?T.red500:r.drift>0?T.amber600:T.emerald600}/>
+            <Num l="Client / NOBO" v={presenceKind(r.clientPresence)?(pd.client&&pd.nobo?"Les deux":pd.nobo?"NOBO":"Client")+(pres?" · "+fmtMode(new Date(pres),df):""):"Non"}/>
+            <Num l="Commentaires" v={nCom}/>
+          </div>
+        </>);
+      })()}
 
       {/* ── Onglets : séparer la vue d'ensemble des commentaires évite d'avoir à
           descendre tout le panneau pour trouver/écrire un commentaire. ── */}
@@ -123,23 +139,10 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
       </div>
 
       {tab==="apercu"&&<>
-        {/* repeat(4,1fr) forcé en mode inline (plus de auto-fit) : les 4 tuiles doivent toujours
-            rester sur une seule ligne quelle que soit la largeur du panneau — demandé explicitement
-            ("il faut que les 4 tuiles soient sur la même ligne avec la même taille"). Police et
-            padding réduits en conséquence pour que ça tienne même à ~260-300px de large. */}
-        {/* v171 (maquette validée) : les 4 étapes restent sur une ligne, à largeur égale (demande d'origine), en barre segmentée :
-            segment plein = étape atteinte (date passée), segment gris = à venir ; libellé et date dessous, en casse normale. */}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(4,minmax(0,1fr))",gap:"6px 4px",marginBottom:14}}>
-          {PHASES.map(ph=>{const d=r[ph.k]?new Date(r[ph.k]):null;const done=d&&d<=today;return <div key={ph.k+"b"} aria-hidden="true" style={{height:6,borderRadius:2,background:done?ph.c:T.ink100}}/>;})}
-          {PHASES.map(ph=>{const d=r[ph.k]?new Date(r[ph.k]):null;const showPresence=ph.k==="tests"&&presenceKind(r.clientPresence);return(
-            <div key={ph.k} style={{minWidth:0}}>
-              <div style={{color:T.ink500,fontSize:FZ.xs,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{ph.t}</div>
-              <div style={{fontWeight:600,color:T.ink900,fontSize:FZ.xs,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",fontVariantNumeric:"tabular-nums"}}>{d?fmtMode(d,df):"—"}</div>
-              {showPresence&&<div style={{marginTop:3,minWidth:0,overflow:"hidden"}}><PresenceChip kind={presenceKind(r.clientPresence)} compact tiny fontSize={9}/></div>}
-            </div>
-          );})}
-        </div>
-
+        {(()=>{const L=(comments?.[pj]||[]).filter(c=>!c.private);const c=L.slice().sort((a,b)=>String(a.date||"").localeCompare(String(b.date||""))).pop();return c?(
+          <button type="button" onClick={()=>setTab("commentaires")} style={{display:"block",width:"100%",textAlign:"left",background:T.panel,border:"none",borderRadius:10,padding:"8px 10px",marginBottom:14,cursor:"pointer",fontFamily:T.font,color:T.ink700,fontSize:FZ.xs,lineHeight:1.45}}>
+            <span style={{color:T.ink500}}>Dernier commentaire · {c.author||"—"} · {relTime(c.date)} : </span>« {String(c.text||"").replace(/\s+/g," ").slice(0,160)}{String(c.text||"").length>160?"…":""} »
+          </button>):null;})()}
         <div style={{display:"grid",gridTemplateColumns:"repeat("+months.length+",minmax(0,1fr))",gap:8}}>
           {months.map((mo,mi)=>{
             const y=mo.getFullYear(),m=mo.getMonth();
@@ -173,6 +176,11 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
 
       {tab==="commentaires"&&<ProjectComments pj={pj} comments={comments?.[pj]||[]} addComment={addComment} deleteComment={deleteComment} pinOk={pinOk} authorName={authorName}/>}
       {tab==="retards"&&pinOk&&delayTypes&&<DelayAllocations pj={pj} delays={delays?.[pj]||[]} delayTypes={delayTypes} setDelayTypes={setDelayTypes} addDelayAllocation={addDelayAllocation} deleteDelayAllocation={deleteDelayAllocation} addDelayComment={addDelayComment} deleteDelayComment={deleteDelayComment} authorName={authorName}/>}
+      <div style={{position:"sticky",bottom:-fp,margin:"16px -"+fp+"px -"+fp+"px",padding:"10px "+fp+"px",background:T.card,borderTop:"1px solid "+T.line,display:"flex",gap:6,flexWrap:"wrap",alignItems:"center",zIndex:3}}>
+        <button type="button" onClick={()=>setTab("commentaires")} className="enogia-btn-ind" style={{background:"transparent",border:"1px solid "+T.line,borderRadius:8,minHeight:30,padding:"0 10px",fontSize:FZ.xs,fontWeight:700,cursor:"pointer",color:T.ink700,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font}}><NavIcon name="comments" size={13}/>Commenter</button>
+        {pinOk&&delayTypes&&<button type="button" onClick={()=>setTab("retards")} className="enogia-btn-ind" style={{background:"transparent",border:"1px solid "+T.line,borderRadius:8,minHeight:30,padding:"0 10px",fontSize:FZ.xs,fontWeight:700,cursor:"pointer",color:T.ink700,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font}}><NavIcon name="clock" size={13}/>Déclarer un retard</button>}
+        {pinOk&&<button type="button" className="enogia-btn-ind" onClick={()=>{try{window.dispatchEvent(new CustomEvent("enogia:openSynthese",{detail:{pj}}));}catch(e){}if(onClose)onClose();}} title="Ouvrir la fiche synthèse de ce PJ (Manager)" style={{marginLeft:"auto",background:T.ink900,border:"none",borderRadius:8,minHeight:30,padding:"0 12px",fontSize:FZ.xs,fontWeight:700,cursor:"pointer",color:T.card,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font,whiteSpace:"nowrap"}}><NavIcon name="arrow" size={13}/>Fiche synthèse</button>}
+      </div>
     </div>
   </div>);
 }

@@ -7,6 +7,7 @@ import { CARD, EmptyNote, PieBlock, getDelayColors } from "./ManagerParts";
 import { cashSummary, STATUS_LABEL, getCashinDoc } from "../cashinLink";
 import { useCashin } from "../useCashin";
 import { isSuperAdmin } from "../roles";
+import { profileOf, pjsOfProfile } from "../profiles";
 import { CdpDialog } from "./CdpReport";
 import { CompCatalogDialog } from "./CompCatalog";
 import { MentionPicker, MentionTextarea } from "./MentionPicker";
@@ -552,7 +553,40 @@ function GlobalTile({gp,onSave}){
   </div>);
 }
 
-export function ProjectFileManager({focus,compCatalog,setCompCatalog,managerEmails,currentUserEmail,resolveComment,certifs,setCertifs,openPj,openNonce,lastChange,data,initialData,comments,delays,progress,savePjMetaOverride,savePjMetaMulti,addCommentMulti,addComment,deleteComment,addDelayAllocationMulti,deleteDelayAllocation,delayTypes,setDelayTypes,changeLog,authorName,onOpenCash}){
+// v190 — vue d'ensemble d'un chef de projet : tous ses PJ en cartes (étape, gamme, pays, écart, avancement, prochain jalon).
+function ChefOverview({name,rows,pvOf,onPick,onClose}){
+  const t0=new Date(today);t0.setHours(0,0,0,0);
+  const open=rows.filter(x=>x.etat!=="SHIPPED"),late=open.filter(x=>x.drift>0).length;
+  const fats=open.filter(x=>{const pd=presenceDates(x.clientPresence);const d=pd.client||pd.nobo;return presenceKind(x.clientPresence)&&(!d||new Date(d)>=t0);}).length;
+  const nextOf=x=>{const L=[["arrivee","Arrivée"],["tests","Tests"],["finProd","Fin prod"],["depart","Départ"]].map(([k,l])=>[l,x[k]?new Date(x[k]):null]).filter(([,d])=>d&&d>=t0).sort((a,b)=>a[1]-b[1]);return L[0]||null;};
+  const sorted=rows.slice().sort((a,b)=>(a.etat==="SHIPPED")-(b.etat==="SHIPPED")||(b.drift||0)-(a.drift||0));
+  return(<div className="enogia-view-in" style={{...CARD,padding:16}}>
+    <div style={{display:"flex",alignItems:"baseline",gap:10,flexWrap:"wrap",marginBottom:12}}>
+      <Avatar name={name} size={26}/>
+      <h2 style={{margin:0,fontFamily:T.fontDisplay,fontSize:FZ.xl,fontWeight:600,color:T.ink900}}>{name}</h2>
+      <span style={{fontSize:FZ.sm,color:T.ink500}}>{rows.length} projet{rows.length>1?"s":""} · {open.length} en cours · <b style={{color:late?T.red500:T.ink700}}>{late} en retard</b>{fats?" · "+fats+" FAT client/NOBO à venir":""}</span>
+      <span style={{marginLeft:"auto",display:"inline-flex",gap:6}}>
+        {sorted[0]&&<button type="button" onClick={()=>onPick(sorted[0].pj)} style={{border:"1px solid "+T.line,background:T.card,color:T.ink700,borderRadius:8,minHeight:30,padding:"0 10px",fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font}}>Ouvrir la 1re fiche</button>}
+        <button type="button" onClick={onClose} aria-label="Fermer la vue d'ensemble" style={{border:"none",background:T.surface,color:T.ink700,borderRadius:8,width:30,height:30,cursor:"pointer"}}><NavIcon name="close" size={11}/></button>
+      </span>
+    </div>
+    <div className="enogia-stagger" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(210px,1fr))",gap:10}}>
+      {sorted.map(x=>{const m=getPjMeta(x.pj,x),ec=ETAT_META[x.etat]||ETAT_META["NOT ORDERED"],pv=pvOf(x),nx=nextOf(x),edge=x.etat!=="SHIPPED"&&x.drift>10?T.red500:ec.bar;return(
+        <div key={x.pj} {...pressable(()=>onPick(x.pj),{"aria-label":"Ouvrir la fiche "+x.pj})} className="enogia-test-card" style={{background:T.card,border:"1px solid "+T.line,borderTop:"4px solid "+edge,borderRadius:"0 0 10px 10px",padding:"10px 12px",cursor:"pointer",minWidth:0}}>
+          <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}><PjPlate pj={x.pj}/>{x.gamme&&<span style={{fontFamily:T.fontLabel,fontSize:12,fontWeight:600,color:T.ink700}}>{x.gamme}</span>}<span style={{marginLeft:"auto"}}><CountryFlag pays={m.pays} size={13}/></span></div>
+          <div title={m.nomProjet||""} style={{margin:"6px 0 2px",fontSize:FZ.sm,fontWeight:700,color:T.ink900,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{m.nomProjet&&m.nomProjet!=="—"?m.nomProjet:"—"}</div>
+          <div style={{display:"flex",alignItems:"center",gap:6,fontSize:FZ.xs,color:T.ink500,flexWrap:"wrap"}}>
+            <span style={{color:etatInk(x.etat),fontWeight:700}}>{ec.label}</span>
+            {x.etat!=="SHIPPED"&&x.drift>0&&<span style={{fontFamily:T.fontLabel,fontWeight:600,color:x.drift>10?T.red600:T.amber600}}>+{x.drift} j</span>}
+            <span style={{marginLeft:"auto",fontVariantNumeric:"tabular-nums"}}>{nx?nx[0]+" "+fmt(nx[1]):x.depart?"Départ "+fmt(new Date(x.depart)):""}</span>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginTop:6}}><div style={{flex:1}}><ProgressBar value={pv} height={4} color={ec.bar}/></div><span style={{fontSize:FZ.xs,fontWeight:700,color:etatInk(x.etat),fontVariantNumeric:"tabular-nums"}}>{pv}%</span></div>
+        </div>);})}
+    </div>
+  </div>);
+}
+
+export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,managerEmails,currentUserEmail,resolveComment,certifs,setCertifs,openPj,openNonce,lastChange,data,initialData,comments,delays,progress,savePjMetaOverride,savePjMetaMulti,addCommentMulti,addComment,deleteComment,addDelayAllocationMulti,deleteDelayAllocation,delayTypes,setDelayTypes,changeLog,authorName,onOpenCash}){
   const [search,setSearch]=useState("");
   // v164 : colonne de gauche redimensionnable (glisser la poignée) et réductible en mini-liste (n° de PJ + état), mémorisées sur ce poste
   const [listW,setListW]=useState(()=>{try{const v=parseInt(localStorage.getItem("enogia_mlist_w"),10);return v>=220&&v<=640?v:340;}catch(e){return 340;}});
@@ -566,6 +600,11 @@ export function ProjectFileManager({focus,compCatalog,setCompCatalog,managerEmai
   };
   const onHandleKey=e=>{if(e.key==="ArrowLeft")setListW(w=>Math.max(220,w-24));else if(e.key==="ArrowRight")setListW(w=>Math.min(640,w+24));};
   const [showSlots,setShowSlots]=useState(false); // les slots libres sont masqués de base
+  // v190 (maquette A validée) : liste regroupée par chef de projet ; un clic sur le nom affiche toutes ses fiches d'un coup.
+  const [groupBy,setGroupBy]=useState(()=>{try{const v=localStorage.getItem("enogia_mlist_group");return ["chef","all","mine"].includes(v)?v:"chef";}catch(e){return "chef";}});
+  useEffect(()=>{try{localStorage.setItem("enogia_mlist_group",groupBy);}catch(e){}},[groupBy]);
+  const [folded,setFolded]=useState(()=>new Set()),[chefView,setChefView]=useState(null);
+  const toggleFold=k=>setFolded(f=>{const n=new Set(f);if(n.has(k))n.delete(k);else n.add(k);return n;});
   const [showLegend,setShowLegend]=useState(false); // v123 : la légende des commentaires est repliée de base
   const [selPj,setSelPj]=useState((data.find(x=>x.etat!=="SLOT_LIBRE")||data[0]||{}).pj||null);
   const [showPrivate,setShowPrivate]=useState(false),[onlyMine,setOnlyMine]=useState(false); // v151 : les commentaires privés sont masqués à l'ouverture d'un PJ, affichés sur demande
@@ -588,6 +627,15 @@ export function ProjectFileManager({focus,compCatalog,setCompCatalog,managerEmai
       return row.pj.toLowerCase().includes(q)||(m.nomProjet||"").toLowerCase().includes(q)||(m.pays||"").toLowerCase().includes(q)||(m.chefProjet||"").toLowerCase().includes(q)||(row.gamme||"").toLowerCase().includes(q);
     });
   },[data,search,showSlots]);
+  const myPjs=useMemo(()=>{const pr=profileOf(profiles,currentUserEmail);const set=new Set(pjsOfProfile(pr,data));const nm=lc(pr.name||nameFromEmail(currentUserEmail||""));data.forEach(x=>{if(nm&&lc(getPjMeta(x.pj,x).chefProjet)===nm)set.add(x.pj);});return set;},[profiles,currentUserEmail,data]);
+  const chefOfRow=row=>{const c=String(getPjMeta(row.pj,row).chefProjet||"").trim();return c&&c!=="—"?c:"";};
+  const groups=useMemo(()=>{
+    if(groupBy==="mine")return [{key:"mine",head:null,rows:filteredList.filter(x=>myPjs.has(x.pj))}];
+    if(groupBy!=="chef")return [{key:"all",head:null,rows:filteredList}];
+    const m=new Map();filteredList.forEach(x=>{const c=chefOfRow(x)||"Sans chef de projet";if(!m.has(c))m.set(c,[]);m.get(c).push(x);});
+    return [...m.entries()].sort((a,b)=>a[0]==="Sans chef de projet"?1:b[0]==="Sans chef de projet"?-1:a[0].localeCompare(b[0],"fr")).map(([c,rows])=>({key:"c:"+c,head:c,rows,late:rows.filter(x=>x.drift>0&&x.etat!=="SHIPPED").length}));
+  },[filteredList,groupBy,myPjs]); // eslint-disable-line
+  const pick=pj=>{setSelPj(pj);setChefView(null);};
   const r=data.find(x=>x.pj===selPj);
   const meta=r?getPjMeta(r.pj,r):null;
   // v146.18 : applique la clôture / réouverture d'une ligne commune aux autres projets du même envoi (même groupId)
@@ -683,9 +731,21 @@ export function ProjectFileManager({focus,compCatalog,setCompCatalog,managerEmai
         </div>
         {!listMini&&<input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher un PJ, projet, pays, chef, gamme…" style={{width:"100%",padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.xs,fontFamily:T.font,color:T.ink700,boxSizing:"border-box"}}/>}
         {!listMini&&<div style={{fontSize:FZ.xs,color:T.ink300,marginTop:4,display:"flex",alignItems:"center",justifyContent:"space-between",gap:6}}><span>{filteredList.length} PJ</span><label style={{display:"inline-flex",alignItems:"center",gap:4,cursor:"pointer"}}><input type="checkbox" checked={showSlots} onChange={e=>setShowSlots(e.target.checked)}/>Slots libres</label></div>}
+        {!listMini&&<div role="tablist" aria-label="Regrouper la liste" style={{display:"flex",gap:2,marginTop:6,background:T.surface,borderRadius:8,padding:2}}>
+          {[["chef","Par chef"],["all","Tous"],["mine","Mes PJ"]].map(([id,l])=><button key={id} type="button" role="tab" aria-selected={groupBy===id} onClick={()=>setGroupBy(id)} style={{flex:1,border:"none",borderRadius:6,minHeight:26,fontSize:FZ.xs,fontWeight:700,fontFamily:T.font,cursor:"pointer",background:groupBy===id?T.card:"transparent",color:groupBy===id?T.teal600:T.ink500,boxShadow:groupBy===id?T.shadowSm:"none"}}>{l}{id==="mine"&&myPjs.size?" "+myPjs.size:""}</button>)}
+        </div>}
       </div>
       <div style={{overflowY:"auto",overflowX:"hidden",flex:1}}>
-        {filteredList.map(row=>{
+        {groups.map(g=>(<React.Fragment key={g.key}>
+        {g.head&&(listMini
+          ?<div title={g.head} style={{fontFamily:T.fontLabel,fontSize:11,fontWeight:600,color:T.ink500,textAlign:"center",padding:"4px 2px",background:T.surface,borderBottom:"1px solid "+T.line}}>{g.head.split(" ").map(w=>w[0]).join("").slice(0,3)}</div>
+          :<div style={{display:"flex",alignItems:"center",gap:4,padding:"4px 6px",background:chefView===g.head?T.teal100:T.surface,borderBottom:"1px solid "+T.line,position:"sticky",top:0,zIndex:1}}>
+            <button type="button" onClick={()=>toggleFold(g.key)} aria-expanded={!folded.has(g.key)} aria-label={(folded.has(g.key)?"Déplier ":"Replier ")+g.head} style={{border:"none",background:"transparent",cursor:"pointer",color:T.ink500,minWidth:24,minHeight:24,display:"inline-flex",alignItems:"center",justifyContent:"center",padding:0}}><span style={{display:"inline-flex",transform:folded.has(g.key)?"rotate(-90deg)":"none",transition:"transform .15s ease"}}><NavIcon name="chevronDown" size={13}/></span></button>
+            <button type="button" onClick={()=>setChefView(g.head)} title={"Voir tous les projets de "+g.head} style={{flex:1,minWidth:0,border:"none",background:"transparent",cursor:"pointer",textAlign:"left",padding:"2px 0",fontFamily:T.font,fontSize:FZ.sm,fontWeight:700,color:T.ink900,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{g.head}</button>
+            {g.late>0&&<span title="En retard sur l'initial" style={{fontFamily:T.fontLabel,fontSize:11,fontWeight:600,color:T.red600,background:T.red100,borderRadius:999,padding:"0 6px"}}>{g.late} en retard</span>}
+            <span style={{fontSize:FZ.xs,fontWeight:700,color:T.ink500,fontVariantNumeric:"tabular-nums"}}>{g.rows.length}</span>
+          </div>)}
+        {(!g.head||!folded.has(g.key))&&g.rows.map(row=>{
           const m=getPjMeta(row.pj,row);
           const nCom=(comments?.[row.pj]||[]).length;
           const nDel=(delays?.[row.pj]||[]).length;
@@ -693,12 +753,12 @@ export function ProjectFileManager({focus,compCatalog,setCompCatalog,managerEmai
           const sel=selPj===row.pj;
           const ec=(ETAT_META[row.etat]||ETAT_META["NOT ORDERED"]);
           const pv=pvOf(row);
-          if(listMini)return(<button key={row.pj} type="button" onClick={()=>setSelPj(row.pj)} title={row.pj+" · "+(m.nomProjet||"")+" · "+ec.label+" · "+pv+"%"} aria-current={sel?"true":undefined}
+          if(listMini)return(<button key={row.pj} type="button" onClick={()=>pick(row.pj)} title={row.pj+" · "+(m.nomProjet||"")+" · "+ec.label+" · "+pv+"%"} aria-current={sel?"true":undefined}
             style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,width:"100%",padding:"6px 2px",cursor:"pointer",border:"none",borderBottom:"1px solid "+T.line,borderLeft:"3px solid "+(sel?ec.bar:"transparent"),background:sel?T.teal100:"transparent",fontFamily:T.font}}>
             <span style={{fontWeight:700,fontSize:FZ.xs,fontVariantNumeric:"tabular-nums",color:etatInk(row.etat)}}>{row.pj.replace(/^PJ/,"")}</span>
             <span style={{width:"70%",height:3,borderRadius:2,background:T.surfaceAlt,overflow:"hidden"}}><span style={{display:"block",height:"100%",width:Math.min(100,pv)+"%",background:ec.bar}}/></span>
           </button>);
-          return(<div key={row.pj} {...pressable(()=>setSelPj(row.pj),{"aria-current":sel?"true":undefined})} style={{padding:"6px 8px 6px 8px",cursor:"pointer",background:sel?T.teal100:"transparent",borderLeft:"3px solid "+(sel?T.teal500:"transparent"),borderBottom:"1px solid "+T.line}}>
+          return(<div key={row.pj} {...pressable(()=>pick(row.pj),{"aria-current":sel?"true":undefined})} style={{padding:"6px 8px 6px 8px",cursor:"pointer",background:sel?T.teal100:"transparent",borderLeft:"3px solid "+(sel?T.teal500:"transparent"),borderBottom:"1px solid "+T.line}}>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
               <span style={{width:8,height:8,borderRadius:"50%",background:ec.bar,flexShrink:0}} title={ec.label}/>
               <span style={{fontWeight:700,fontVariantNumeric:"tabular-nums",color:etatInk(row.etat),fontSize:FZ.sm,whiteSpace:"nowrap",flexShrink:0}}><PjPlate pj={row.pj}/></span>
@@ -717,8 +777,9 @@ export function ProjectFileManager({focus,compCatalog,setCompCatalog,managerEmai
               <span style={{fontSize:FZ.xs,color:T.ink300}}>{row.depart?fmt(new Date(row.depart)):"—"}</span>
             </div>
           </div>);
-        })}
+        })}</React.Fragment>))}
         {filteredList.length===0&&<EmptyNote>Aucun résultat.</EmptyNote>}
+        {groupBy==="mine"&&filteredList.length>0&&groups[0].rows.length===0&&<EmptyNote>Aucun PJ à votre nom. Associez vos PJ dans Réglages › Personnes et rôles.</EmptyNote>}
       </div>
     </div>
 
@@ -726,13 +787,14 @@ export function ProjectFileManager({focus,compCatalog,setCompCatalog,managerEmai
       style={{width:10,alignSelf:"stretch",minHeight:300,margin:"0 -6px",cursor:"col-resize",flexShrink:0,display:"flex",justifyContent:"center",touchAction:"none"}}><span style={{width:3,borderRadius:2,background:T.line,margin:"8px 0"}}/></div>}
     <div style={{flex:"1 1 560px",minWidth:340,maxWidth:"none"}}>
       {/* v146.15 : les rapports se lancent depuis une barre AU-DESSUS de la fiche, pas dedans (lecture de la synthèse) */}
-      {r&&<div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:8,flexWrap:"wrap",marginBottom:8}}>
+      {chefView&&<ChefOverview name={chefView} rows={(groups.find(g=>g.head===chefView)||{rows:data.filter(x=>x.etat!=="SLOT_LIBRE"&&(chefOfRow(x)||"Sans chef de projet")===chefView)}).rows} pvOf={pvOf} onPick={pick} onClose={()=>setChefView(null)}/>}
+      {!chefView&&r&&<div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:8,flexWrap:"wrap",marginBottom:8}}>
         <span style={{fontSize:FZ.xs,color:T.ink300,marginRight:"auto"}}>Rapports pour {r.pj}</span>
         {savePjMetaMulti&&<button onClick={()=>setMultiOpen(true)} title="Ajouter une action, un plan de mitigation, un commentaire ou un statut à plusieurs projets en une fois" style={{display:"inline-flex",alignItems:"center",gap:6,padding:"5px 10px",border:"1px solid "+T.line,borderRadius:10,background:T.card,color:T.ink700,fontWeight:700,fontSize:FZ.xs,fontFamily:T.font,cursor:"pointer"}}>＋ Sur plusieurs projets…</button>}
         <button onClick={()=>setCdpOpen(true)} title="Générer le rapport PowerPoint du chef de projet" style={{display:"inline-flex",alignItems:"center",gap:6,padding:"5px 10px",border:"1px solid "+T.line,borderRadius:10,background:T.card,color:T.ink700,fontWeight:700,fontSize:FZ.xs,fontFamily:T.font,cursor:"pointer"}}><NavIcon name="chart" size={13}/>Rapport chef de projet</button>
         {isSuperAdmin()&&<button onClick={()=>setCodirOpen(true)} title="Générer la synthèse CODIR (PDF)" style={{display:"inline-flex",alignItems:"center",gap:6,padding:"5px 10px",border:"none",borderRadius:10,background:T.navy700,color:"#fff",fontWeight:700,fontSize:FZ.xs,fontFamily:T.font,cursor:"pointer"}}><NavIcon name="chart" size={13}/>Rapport CODIR</button>}
       </div>}
-      {!r?<div style={{...CARD,padding:28,textAlign:"center",color:T.ink300}}>Sélectionnez un PJ dans la liste.</div>:
+      {chefView?null:!r?<div style={{...CARD,padding:28,textAlign:"center",color:T.ink300}}>Sélectionnez un PJ dans la liste.</div>:
       <div key={r.pj} className="enogia-view-in enogia-mcard" style={{...CARD,overflow:"hidden",display:"flex",flexDirection:"column",height:"calc(100dvh - 244px)",minHeight:420}}>
         <div style={{height:4,flexShrink:0,background:T.navy800,position:"relative"}}><span style={{position:"absolute",left:26,top:0,bottom:0,width:56,background:T.accent}}/></div>
         {/* v134 : la fiche prend la hauteur de l'écran ; elle défile à l'intérieur, l'en-tête (PJ, état, statut) reste figé en haut */}

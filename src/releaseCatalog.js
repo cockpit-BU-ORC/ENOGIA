@@ -345,4 +345,8 @@ export const RELEASE_CATALOG = [
     ["Tests", "Fiche de la machine en pop-up central ; signature des testeurs ; fiche PDF au format ENOGIA."],
     ["Calendrier", "Deux semaines par testeur, avancement dans les barres, affectation par glisser-déposer."],
   ] },
+  { v: "190", t: "Fiches par chef de projet, fiche PJ plus claire", items: [
+    ["Fiche PJ", "En-tête sur une ligne, parcours en 5 étapes, chiffres clés, actions en bas."],
+    ["Fiches projet", "Liste par chef de projet, vue d'ensemble de tous ses projets."],
+  ] },
 ];
