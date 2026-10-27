@@ -399,4 +399,7 @@ export const RELEASE_CATALOG = [
   { v: "204", t: "Le planificateur, rien que pour vous", items: [
     ["Planificateur", "Onglet réservé : ordre, dates, durées, liens, forçages, charge ; modèles par gamme."],
   ] },
+  { v: "205", t: "La page Tests prend vie", items: [
+    ["Tests", "Bandeau « Au banc maintenant », barre découpée test par test, fil des derniers résultats."],
+  ] },
 ];

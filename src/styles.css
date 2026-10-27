@@ -445,3 +445,12 @@ button:not(:disabled):active { transform: scale(.97); }
   .enogia-dlg ol > li { flex: 1 1 30% !important; }
 }
 @media (prefers-reduced-motion: reduce) { .enogia-rib, .enogia-rib:hover { transition: none; transform: none; } .enogia-ring { animation: none; } }
+
+/* v205 : page Tests — bandeau « Au banc maintenant » + fil des derniers résultats, barre découpée test par test */
+.enogia-bench { display: grid; grid-template-columns: minmax(0,1fr) minmax(260px,320px); gap: 12px; align-items: start; margin-bottom: 4px; }
+@media (max-width: 900px) { .enogia-bench { grid-template-columns: minmax(0,1fr); } }
+.enogia-bench-card { transition: transform .18s var(--e-ease); }
+.enogia-bench-card:hover { transform: translateY(-2px); }
+.enogia-segbar > i { transform-origin: left center; animation: enogiaSegIn .26s var(--e-ease) backwards; }
+@keyframes enogiaSegIn { from { transform: scaleX(0); opacity: 0; } to { transform: scaleX(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .enogia-segbar > i { animation: none; } .enogia-bench-card, .enogia-bench-card:hover { transition: none; transform: none; } }

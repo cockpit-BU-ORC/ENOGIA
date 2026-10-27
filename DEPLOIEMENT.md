@@ -1288,3 +1288,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - **Fiche PJ** (`RowDetail.js`) : les sous-étapes d'une étape du ruban s'affichent au **clic** seulement (plus au survol).
 - +2 tests (`src/planner/engine.test.js` : plan depuis le planning, calcul, charge, lissage, décalage d'un PJ). Vérifié : onglet et dialogue des modèles (jsdom + aperçu), build (13 avertissements existants), 129 tests, contraste. Pas testé dans l'appli connectée ; la présentation du module garde son ancien style (à rafraîchir).
 - Fichiers : App.js, planner/{Planner.js, engine.test.js}, components/RowDetail.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
+
+## v205 — Page Tests plus vivante : « Au banc maintenant », barre découpée test par test, derniers résultats (maquette validée)
+
+- **Bandeau « Au banc maintenant »** (`TestsTab.js`, `BenchStrip`, en tête de la vue « Par semaine », respecte « Seulement mes tests ») : une carte par machine dont la période de tests couvre aujourd'hui, ou terminée depuis 30 jours au plus sans que tout soit fait (« en retard N j », liseré rouge). Carte : plaque, gamme, projet, « jour N / M » de la période, anneau d'avancement (faits / à réaliser), test en cours (sinon le prochain à faire), testeurs (ou « sans testeur » en rouge), barre découpée et décompte « réussis · en cours · échecs · à faire ». Une carte en pointillés annonce la **prochaine machine au banc** et sa date. Un clic ouvre la fiche de tests.
+- **Barre découpée** (`SegBar`) : un segment par test retenu — réussi vert forêt, en cours or, échec rouge, à faire gris ; remplace la barre fine des cartes des colonnes et la barre du pop-up. Les segments se déroulent à l'ouverture (transform, `prefers-reduced-motion` respecté).
+- **Derniers résultats** (`ResultsFeed`, à droite du bandeau, dessous sur téléphone et tablette) : les 7 derniers tests marqués réussis ou en échec sur 14 jours (d'après l'horodatage des statuts), avec le test, le PJ, le testeur et l'heure ; un clic ouvre la fiche.
+- Pas de nouvelle donnée ni clé `localStorage` (lecture de `planning/tests`). Vérifié : rendu en clair, sombre et téléphone (jsdom + aperçu, pas de défilement horizontal à 375 px) ; build (13 avertissements existants), tests, contraste.
+- Fichiers : components/TestsTab.js, styles.css, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.

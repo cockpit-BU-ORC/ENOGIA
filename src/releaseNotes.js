@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v205",
+    date: "2026-10-27",
+    title: "V205 : la page Tests prend vie",
+    items: [
+      { t: "Au banc maintenant", d: "En tête de la vue par semaine, une carte par machine en test aujourd'hui : avancement en anneau, test en cours, testeurs, « jour 3 / 5 » ou le retard, et la prochaine machine attendue." },
+      { t: "Une barre par test", d: "La barre d'avancement est découpée test par test : vert réussi, or en cours, rouge échec, gris à faire (cartes, bandeau et fiche de tests)." },
+      { t: "Derniers résultats", d: "Le fil des réussites et des échecs des 14 derniers jours, avec le testeur et l'heure ; un clic ouvre la fiche de la machine." },
+    ],
+  },
+  {
     id: "2026-10-v204",
     date: "2026-10-27",
     title: "V204 : le planificateur, rien que pour vous",

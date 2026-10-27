@@ -109,6 +109,10 @@ function WeekBoard({ doc, rows, testers, catalog, conflicts, commit, certifs, ca
         <span>S{isoWeek(weeks[0].a)} → S{isoWeek(weeks[2].a)} · {all.length} machine{all.length > 1 ? "s" : ""}{later ? " · " + later + " plus tard" : ""}{noPeriod ? " · " + noPeriod + " sans période de tests" : ""}</span>
         {myTester && <label style={{ display: "inline-flex", alignItems: "center", gap: 6, marginLeft: "auto", minHeight: 24, cursor: "pointer", color: T.ink700, fontWeight: 600 }}><input type="checkbox" checked={onlyMine} onChange={e => setOnlyMine(e.target.checked)} />Seulement mes tests</label>}
       </div>
+      <div className="enogia-bench">
+        <BenchStrip rows={withP} {...{ doc, catalog, testers }} on={cur && cur.pj} onPick={setSel} />
+        <ResultsFeed rows={withP} {...{ doc, catalog }} onPick={setSel} />
+      </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 12, alignItems: "start" }}>
         {cols.map((c, ci) => (<section key={ci} aria-label={COL_TITLE[ci]} style={{ background: T.card, border: "1px solid " + T.line, borderTop: "3px solid " + (c.done ? stageSoft().finProd.solid : ci === 0 ? stageSoft().tests.solid : T.line), borderRadius: "0 0 10px 10px", minWidth: 0, overflow: "hidden" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 6, padding: "8px 12px", borderBottom: "1px solid " + T.line }}>
@@ -127,6 +131,110 @@ function WeekBoard({ doc, rows, testers, catalog, conflicts, commit, certifs, ca
   </div>);
 }
 
+// ── v205 (maquette A + fil de B validés : « la page de tests manque de saveur ») ──────────────────────────────────
+// Bandeau « Au banc maintenant » : une carte par machine dont la période de tests couvre aujourd'hui (ou finie depuis
+// moins de 30 jours sans que tout soit fait = en retard) — anneau d'avancement, test en cours, testeurs, compteur
+// « jour N / M » et barre découpée test par test (réussi / en cours / échec / à faire). À côté, le fil des derniers
+// résultats (réussis et échecs des 14 derniers jours, d'après l'horodatage des statuts).
+const DAY = 86400000;
+const segsOf = (plan, catalog, act) => { const out = []; act.forEach(k => selectedIds(plan, catalog, k).forEach(id => { const t = (catalog[k] || []).find(x => x.id === id); out.push({ k, id, name: t ? t.name : id, v: statusOf(plan, k, id) }); })); return out; };
+const SEG_FILL = { ok: () => stageSoft().finProd.solid, wip: () => stageSoft().tests.solid, ko: () => T.red500, todo: () => T.line };
+const ST_LABEL = Object.fromEntries(TEST_STATUS);
+function SegBar({ segs, h = 8, gap = 2, width }) {
+  if (!segs.length) return <span aria-hidden="true" style={{ width: width || "100%", height: h, borderRadius: 2, background: T.surfaceAlt, display: "block" }} />;
+  return (<span aria-hidden="true" className="enogia-segbar" style={{ display: "flex", gap, height: h, width: width || "100%", flexShrink: 0 }}>
+    {segs.map((s, i) => <i key={s.k + s.id} title={s.name + " — " + ST_LABEL[s.v]} style={{ flex: 1, minWidth: 2, borderRadius: 2, background: SEG_FILL[s.v](), animationDelay: (i * 25) + "ms" }} />)}
+  </span>);
+}
+function Ring({ pct, size = 54 }) {
+  const r = size / 2 - 5, c = 2 * Math.PI * r;
+  return (<svg width={size} height={size} viewBox={"0 0 " + size + " " + size} aria-hidden="true" style={{ flexShrink: 0 }}>
+    <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={T.line} strokeWidth={6} />
+    <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={stageSoft().finProd.solid} strokeWidth={6} strokeLinecap="round" strokeDasharray={(c * pct / 100) + " " + c} transform={"rotate(-90 " + size / 2 + " " + size / 2 + ")"} />
+    <text x={size / 2} y={size / 2 + 5} textAnchor="middle" style={{ fontFamily: T.fontDisplay || T.font, fontSize: 14, fontWeight: 600, fill: T.ink900, fontVariantNumeric: "tabular-nums" }}>{pct}%</text>
+  </svg>);
+}
+const dayStart = d => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
+function BenchStrip({ rows, doc, catalog, testers, on, onPick }) {
+  const today = dayStart(new Date());
+  const startOf = r => dayStart(new Date(dIso(r.tests) + "T12:00:00")), endOf = r => dayStart(new Date((dIso(r.testsFin) || dIso(r.tests)) + "T12:00:00"));
+  const items = [];
+  rows.forEach(r => {
+    const plan = planOf(doc, r.pj), act = activeSections(presenceKind(r.clientPresence || null)), q = progressOf(plan, catalog, act);
+    const full = isForced(plan) || (q.total > 0 && q.done === q.total), a = startOf(r), b = endOf(r);
+    if (full || a > today) return;
+    const lateD = b < today ? Math.round((today - b) / DAY) : 0;
+    if (lateD > 30) return;
+    items.push({ r, plan, act, q, lateD, n: Math.round((today - a) / DAY) + 1, m: Math.round((b - a) / DAY) + 1 });
+  });
+  items.sort((x, y) => (y.lateD > 0) - (x.lateD > 0) || endOf(x.r) - endOf(y.r));
+  const next = rows.filter(r => startOf(r) > today).sort((x, y) => startOf(x) - startOf(y))[0];
+  return (<section aria-label="Au banc maintenant" style={{ minWidth: 0 }}>
+    <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 6 }}>
+      <h3 style={{ margin: 0, fontSize: FZ.sm, fontWeight: 700, color: T.ink900 }}>Au banc maintenant</h3>
+      <Cap>{items.length ? items.length + " machine" + (items.length > 1 ? "s" : "") : "aucune machine aujourd'hui"}</Cap>
+    </div>
+    <div className="enogia-stagger" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%,240px),1fr))", gap: 10 }}>
+      {items.map(({ r, plan, act, q, lateD, n, m }) => {
+        const segs = segsOf(plan, catalog, act), cur = segs.find(s => s.v === "wip") || segs.find(s => s.v === "todo") || segs.find(s => s.v === "ko");
+        const names = plan.assign.map(x => testers.find(t => t.id === x.tid)).filter(Boolean).map(t => t.name.split(" ")[0]);
+        const pct = q.total ? Math.round(q.done / q.total * 100) : 0, meta = getPjMeta(r.pj, r), todo = q.total - q.done - q.wip;
+        const sum = [q.ok && q.ok + " réussi" + (q.ok > 1 ? "s" : ""), q.wip && q.wip + " en cours", q.ko && q.ko + " échec" + (q.ko > 1 ? "s" : ""), todo > 0 && todo + " à faire"].filter(Boolean).join(" · ");
+        return (<div key={r.pj} {...pressable(() => onPick(r.pj), { "aria-pressed": on === r.pj, "aria-label": r.pj + " au banc — " + q.done + " tests faits sur " + q.total + (lateD ? " — en retard de " + lateD + " jours" : "") })}
+          className="enogia-bench-card" style={{ background: on === r.pj ? T.teal100 : T.card, border: "1px solid " + T.line, borderTop: "4px solid " + (lateD ? T.red500 : stageSoft().tests.solid), borderRadius: "0 0 10px 10px", padding: "10px 12px", cursor: "pointer", minWidth: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+            <PjPlate pj={r.pj} />
+            {r.gamme && <span style={{ fontFamily: T.fontLabel, fontSize: 12, fontWeight: 600, color: T.ink700, whiteSpace: "nowrap" }}>{r.gamme}</span>}
+            <span title={meta.nomProjet || ""} style={{ flex: 1, minWidth: 0, fontSize: FZ.xs, color: T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : ""}</span>
+            <span style={{ fontSize: FZ.xs, fontWeight: lateD ? 700 : 600, color: lateD ? T.red600 : T.ink500, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{lateD ? "en retard " + lateD + " j" : "jour " + n + " / " + m}</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+            <Ring pct={pct} />
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: FZ.md || 14, fontWeight: 700, color: T.ink900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{cur ? cur.name : q.total ? "Tous les tests sont faits" : "Aucun test retenu"}</div>
+              <div style={{ fontSize: FZ.xs, color: names.length ? T.ink500 : T.red600, marginTop: 2 }}>{cur ? ST_LABEL[cur.v].toLowerCase() : ""}{cur ? " · " : ""}{names.length ? names.join(", ") : "sans testeur"}</div>
+            </div>
+          </div>
+          <SegBar segs={segs} />
+          <div style={{ fontSize: FZ.xs, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{sum || "Aucun test retenu"}</div>
+        </div>);
+      })}
+      {next && <div {...pressable(() => onPick(next.pj), { "aria-label": "Prochaine machine au banc : " + next.pj })} style={{ border: "1px dashed " + T.line, borderRadius: 10, padding: "10px 12px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 4, cursor: "pointer", minHeight: 72 }}>
+        <Cap>Prochaine au banc</Cap>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}><PjPlate pj={next.pj} /><span style={{ fontSize: FZ.sm, color: T.ink700, fontVariantNumeric: "tabular-nums" }}>{fd(dIso(next.tests))}</span></div>
+      </div>}
+    </div>
+  </section>);
+}
+const whenTxt = at => { const d = new Date(at); if (isNaN(d)) return ""; const t = String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"), k = Math.round((dayStart(new Date()) - dayStart(d)) / DAY); return (k === 0 ? "aujourd'hui" : k === 1 ? "hier" : fdm(toLocalISO(d))) + " " + t; };
+function ResultsFeed({ rows, doc, catalog, onPick }) {
+  const lim = Date.now() - 14 * DAY, ev = [];
+  rows.forEach(r => {
+    const plan = planOf(doc, r.pj);
+    activeSections(presenceKind(r.clientPresence || null)).forEach(k => selectedIds(plan, catalog, k).forEach(id => {
+      const v = statusOf(plan, k, id), by = statusByOf(plan, k, id);
+      if (!["ok", "ko"].includes(v) || !by || !by.at || new Date(by.at) < lim) return;
+      const t = (catalog[k] || []).find(x => x.id === id);
+      ev.push({ pj: r.pj, v, name: t ? t.name : id, by: by.by, at: by.at });
+    }));
+  });
+  ev.sort((a, b) => new Date(b.at) - new Date(a.at));
+  return (<section aria-label="Derniers résultats" style={{ minWidth: 0, background: T.card, border: "1px solid " + T.line, borderRadius: 10, padding: "10px 12px" }}>
+    <h3 style={{ margin: "0 0 6px", fontSize: FZ.sm, fontWeight: 700, color: T.ink900 }}>Derniers résultats</h3>
+    {ev.length === 0 && <div style={{ fontSize: FZ.xs, color: T.ink500 }}>Aucun résultat ces 14 derniers jours. Ils apparaissent ici dès qu'un test est marqué réussi ou en échec.</div>}
+    <ol className="enogia-stagger" style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column" }}>
+      {ev.slice(0, 7).map((e, i) => <li key={e.pj + e.name + e.at} style={{ borderTop: i ? "1px solid " + T.line : "none" }}>
+        <button type="button" onClick={() => onPick(e.pj)} style={{ all: "unset", boxSizing: "border-box", width: "100%", cursor: "pointer", padding: "6px 0", display: "grid", gridTemplateColumns: "auto minmax(0,1fr)", columnGap: 8, rowGap: 1, alignItems: "baseline", minHeight: 36 }}>
+          <span style={{ fontSize: FZ.xs, fontWeight: 700, color: e.v === "ok" ? T.emerald600 : T.red600 }}>{e.v === "ok" ? "Réussi" : "Échec"}</span>
+          <span style={{ fontSize: FZ.xs, color: T.ink900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.name}</span>
+          <span />
+          <span style={{ fontSize: 11, color: T.ink500, fontVariantNumeric: "tabular-nums" }}><span style={{ fontFamily: T.fontMono || "monospace" }}>{e.pj}</span>{e.by ? " · " + e.by : ""} · {whenTxt(e.at)}</span>
+        </button>
+      </li>)}
+    </ol>
+  </section>);
+}
+
 // v189 — pop-up central de la fiche de tests (fond assombri, entrée 200 ms, Échap pour fermer, focus gardé dans le pop-up).
 export function TestDialog({ r, onClose, doc, testers, catalog, conflicts, commit, certifs, canEdit, myTester, who, signApi }) {
   const box = useRef(null);
@@ -137,7 +245,6 @@ export function TestDialog({ r, onClose, doc, testers, catalog, conflicts, commi
     return () => { window.removeEventListener("keydown", k); document.body.style.overflow = ov; if (prev && prev.focus) prev.focus(); };
   }, [onClose]);
   const plan = planOf(doc, r.pj), kind = presenceKind(r.clientPresence || null), q = progressOf(plan, catalog, activeSections(kind)), meta = getPjMeta(r.pj, r);
-  const pct = q.total ? Math.round(q.done / q.total * 100) : 0, S = stageSoft();
   const Num = ({ l, v, c }) => <div style={{ background: T.surface, borderRadius: 10, padding: "8px 12px", minWidth: 0 }}><div style={{ fontFamily: T.fontLabel, fontSize: 12, color: T.ink500 }}>{l}</div><div style={{ fontFamily: T.fontDisplay, fontSize: 24, fontWeight: 600, color: c || T.ink900, fontVariantNumeric: "tabular-nums", lineHeight: 1.1 }}>{v}</div></div>;
   return (<div className="enogia-test-overlay" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(8,12,28,.5)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "4vh 12px", overflowY: "auto" }}>
     <div ref={box} tabIndex={-1} role="dialog" aria-modal="true" aria-label={"Tests de " + r.pj} className="enogia-test-dialog" style={{ width: "min(880px,100%)", background: T.card, borderRadius: 16, border: "1px solid " + T.line, boxShadow: "0 24px 70px rgba(0,0,0,.28)", outline: "none", overflow: "hidden" }}>
@@ -151,7 +258,7 @@ export function TestDialog({ r, onClose, doc, testers, catalog, conflicts, commi
       <div style={{ padding: "12px 18px 0", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(130px,1fr))", gap: 8 }}>
         <Num l="Avancement" v={q.done + " / " + q.total} /><Num l="Réussis" v={q.ok} c={T.emerald600} /><Num l="Échecs" v={q.ko} c={q.ko ? T.red600 : undefined} /><Num l="En cours" v={q.wip} c={q.wip ? T.amber600 : undefined} />
       </div>
-      <div aria-hidden="true" style={{ margin: "10px 18px 0", height: 6, borderRadius: 3, background: T.surfaceAlt, overflow: "hidden" }}><div className="enogia-bar-fill" style={{ width: pct + "%", height: "100%", background: S.finProd.solid, transition: "width .3s cubic-bezier(.16,1,.3,1)" }} /></div>
+      <div style={{ margin: "10px 18px 0" }}><SegBar segs={segsOf(plan, catalog, activeSections(kind))} h={7} /></div>
       <FatSheet panel bare r={r} {...{ doc, testers, catalog, conflicts, commit, certifs, canEdit, myTester, who, signApi }} open onToggle={() => {}} />
     </div>
   </div>);
@@ -164,7 +271,7 @@ function TestCard({ r, doc, testers, catalog, conflicts, late, on, onPick }) {
   const assigned = plan.assign.map(a => testers.find(t => t.id === a.tid)).filter(Boolean);
   const forced = isForced(plan), conf = conflicts.some(c => c.a.pj === r.pj || c.b.pj === r.pj), noTester = assigned.length === 0 && !forced, full = forced || (q.total > 0 && q.done === q.total);
   const S = stageSoft(), edge = noTester || late ? T.red500 : full ? S.finProd.solid : S.tests.solid;
-  const meta = getPjMeta(r.pj, r), pct = q.total ? Math.round(q.done / q.total * 100) : 0;
+  const meta = getPjMeta(r.pj, r);
   const tag = (txt, ink, bg) => <span style={{ fontFamily: T.fontLabel, fontSize: 11, fontWeight: 600, color: ink, background: bg, borderRadius: 999, padding: "0 7px", lineHeight: "18px", whiteSpace: "nowrap" }}>{txt}</span>;
   return (<div {...pressable(onPick, { "aria-pressed": !!on, "aria-label": r.pj + " — " + (meta.nomProjet || "") + " — " + q.done + " tests faits sur " + q.total })} className="enogia-test-row"
     style={{ borderLeft: "3px solid " + edge, borderTop: "1px solid " + T.line, background: on ? T.teal100 : T.card, padding: "6px 12px 7px 10px", cursor: "pointer", minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}>
@@ -182,7 +289,7 @@ function TestCard({ r, doc, testers, catalog, conflicts, late, on, onPick }) {
       {q.ko > 0 && tag(q.ko + " échec" + (q.ko > 1 ? "s" : ""), T.red600, T.red100)}
       {conf && tag("Conflit", T.amber600, T.amber100)}
       <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6 }}>
-        <span aria-hidden="true" style={{ width: 48, height: 4, borderRadius: 2, background: T.surfaceAlt, overflow: "hidden" }}><i className="enogia-bar-fill" style={{ display: "block", width: pct + "%", height: "100%", background: S.finProd.solid }} /></span>
+        <SegBar segs={segsOf(plan, catalog, act)} h={5} gap={1} width={72} />
         <span style={{ fontSize: FZ.xs, fontWeight: 700, color: full ? T.emerald600 : T.ink700, fontVariantNumeric: "tabular-nums", minWidth: 34, textAlign: "right" }}>{q.done}/{q.total}</span>
       </span>
     </div>
