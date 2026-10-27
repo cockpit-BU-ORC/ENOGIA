@@ -11,7 +11,7 @@ Tableau de bord interne (React 18 + Create React App 5 + Firebase/Firestore) qui
 ## Commandes
 - Développement : `npm start`
 - Build propre : `npm run build` (sous Windows cmd : `set CI=false&& npm run build`). Seuls les avertissements ESLint déjà existants sont tolérés : **aucun nouvel avertissement**.
-- Tests : `set CI=true&& npx react-scripts test --watchAll=false` (113 tests / 16 suites attendus).
+- Tests : `set CI=true&& npx react-scripts test --watchAll=false` (115 tests / 16 suites attendus).
 - Contraste : `npm run check:contrast` (doit afficher 0 échec ; le script lit les couleurs littérales de `theme.js` et `pjMeta.js`).
 
 ## À chaque version (V165, V166…)

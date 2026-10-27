@@ -3,14 +3,14 @@
 // Les dates de venue du client / de NOBO se règlent dans la Liste : ici elles sont en lecture seule.
 // Les données vivent dans planning/tests (un seul document).
 import React, { useMemo, useState, useEffect } from "react";
-import { T, FZF as FZ } from "../theme";
+import { T, FZF as FZ, stageSoft } from "../theme";
 import { getPjMeta, PRESENCE_META, PresenceChip, presenceKind, presenceDates, presenceFirstDate, Avatar, personTint } from "../pjMeta";
 import { fmt, toLocalISO } from "../parsers";
 import { useMentions } from "../mentionContext";
 import { CARD, H_TITLE, H_SUB, EmptyNote } from "./ManagerParts";
 import { CertifChip } from "./FicheContrat";
-import { NavIcon } from "./SharedUI";
-import { SECTIONS, DEFAULT_TEST_CATALOG, catalogOf, testersOf, planOf, activeSections, selectedIds, toggleTest, setExtra, setNote, assignTester, unassignTester, setAssignDates, effRange, findConflicts, assignmentsOf, dropTester, dropTestFromPlans, newId, packLanes, dayDiffIso, addDaysIso, mondayOf, testerOfEmail } from "../testPlan";
+import { NavIcon, PjPlate, pressable } from "./SharedUI";
+import { SECTIONS, DEFAULT_TEST_CATALOG, catalogOf, testersOf, planOf, activeSections, selectedIds, toggleTest, setExtra, setNote, assignTester, unassignTester, setAssignDates, effRange, findConflicts, assignmentsOf, dropTester, dropTestFromPlans, newId, packLanes, dayDiffIso, addDaysIso, mondayOf, testerOfEmail, doneIds, toggleDone, progressOf } from "../testPlan";
 
 const field = () => ({ padding: "5px 9px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, minWidth: 0 });
 const btn = (on = true, kind) => ({ border: kind === "ghost" ? "1px solid " + T.line : "none", borderRadius: 8, padding: "5px 12px", fontSize: FZ.xs, fontWeight: 700, fontFamily: T.font, cursor: on ? "pointer" : "default", background: kind === "ghost" ? T.card : on ? T.navy700 : T.ink100, color: kind === "ghost" ? T.ink700 : "#fff", flexShrink: 0 });
@@ -35,7 +35,7 @@ function TesterChip({ t, warn, on, onClick, disabled, small }) {
 }
 
 export function TestsTab({ doc, save, data, certifs, canEdit, me }) {
-  const [sub, setSub] = useState("machines");
+  const [sub, setSub] = useState("semaine"); // v186 : vue par semaine par défaut (maquette validée)
   const [focus, setFocus] = useState(null);
   const [msg, setMsg] = useState(null);
   const testers = testersOf(doc), catalog = catalogOf(doc);
@@ -43,8 +43,8 @@ export function TestsTab({ doc, save, data, certifs, canEdit, me }) {
   const rows = useMemo(() => (data || []).filter(r => r && r.pj && r.etat !== "SLOT_LIBRE"), [data]);
   const conflicts = useMemo(() => findConflicts(doc, rows), [doc, rows]);
   const commit = async next => { if (!canEdit) return false; const ok = await save({ ...doc, ...next }); setMsg(ok === false ? "L'enregistrement a échoué." : null); return ok; };
-  const SUBS = [["machines", "Fiches par machine"], ["testers", "Planning des testeurs"], ...(canEdit ? [["catalog", "Catalogue des tests"]] : [])];
-  const openPj = pj => { setFocus({ pj, n: Date.now() }); setSub("machines"); };
+  const SUBS = [["semaine", "Par semaine"], ["testers", "Par testeur"], ...(canEdit ? [["catalog", "Catalogue"]] : [])];
+  const openPj = pj => { setFocus({ pj, n: Date.now() }); setSub("semaine"); };
   return (<div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
       <div>
@@ -59,43 +59,93 @@ export function TestsTab({ doc, save, data, certifs, canEdit, me }) {
     {conflicts.length > 0 && sub !== "catalog" && <div role="status" style={{ background: T.amber100, color: T.amber600, borderRadius: 10, padding: "8px 12px", fontSize: FZ.sm, fontWeight: 600 }}>
       <span style={{ display: "inline-flex", verticalAlign: "-3px", marginRight: 6 }}><NavIcon name="warning" size={16} /></span>{conflicts.length} chevauchement{conflicts.length > 1 ? "s" : ""} : {conflicts.slice(0, 4).map(c => { const t = testers.find(x => x.id === c.tid); return (t ? t.name : "Testeur") + " sur " + c.a.pj + " et " + c.b.pj; }).join(" · ")}{conflicts.length > 4 ? " …" : ""}
     </div>}
-    {sub === "machines" && <MachinesView {...{ doc, rows, testers, catalog, conflicts, commit, certifs, canEdit, myTester, focus }} />}
+    {sub === "semaine" && <WeekBoard {...{ doc, rows, testers, catalog, conflicts, commit, certifs, canEdit, myTester, focus }} />}
     {sub === "testers" && <TesterTimeline {...{ doc, rows, testers, conflicts, commit, canEdit, myTester, openPj }} />}
     {sub === "catalog" && canEdit && <CatalogView {...{ doc, catalog, commit }} />}
   </div>);
 }
 
-// ── Fiches par machine ──────────────────────────────────────────────────────────────────────
-function MachinesView({ doc, rows, testers, catalog, conflicts, commit, certifs, canEdit, myTester, focus }) {
-  const [filter, setFilter] = useState(myTester && !canEdit ? "mine" : "soon"), [q, setQ] = useState("");
-  const [openId, setOpenId] = useState(null);
-  const todayIso = toLocalISO(new Date());
-  useEffect(() => { if (focus && focus.pj) { setFilter("all"); setQ(""); setOpenId(focus.pj); setTimeout(() => { const el = document.getElementById("fat-" + focus.pj); if (el && el.scrollIntoView) el.scrollIntoView({ block: "start", behavior: "smooth" }); }, 60); } }, [focus]);
-  const withPeriod = rows.filter(r => r.tests);
-  const isSoon = r => r.etat !== "SHIPPED" && dIso(r.testsFin || r.tests) >= todayIso;
+// ── v186 : Tests par semaine (maquette validée) ─────────────────────────────────────────────────────────────────
+// Trois colonnes (cette semaine, la suivante, dans deux semaines), une carte par machine dont la période de tests touche la
+// semaine (rangée dans la première semaine concernée) ; un volet à droite reprend la fiche de la machine choisie, avec la
+// checklist des tests à cocher « fait ». Les machines dont la période est passée sans que tout soit fait restent dans la
+// première colonne, signalées « En retard ».
+const mondayD = d => { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; };
+const isoWeek = d => { const x = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const n = x.getUTCDay() || 7; x.setUTCDate(x.getUTCDate() + 4 - n); const y = new Date(Date.UTC(x.getUTCFullYear(), 0, 1)); return Math.ceil(((x - y) / 86400000 + 1) / 7); };
+function WeekBoard({ doc, rows, testers, catalog, conflicts, commit, certifs, canEdit, myTester, focus }) {
+  const [sel, setSel] = useState(null);
+  const [onlyMine, setOnlyMine] = useState(!!myTester && !canEdit);
+  useEffect(() => { if (focus && focus.pj) setSel(focus.pj); }, [focus]);
+  const w0 = mondayD(new Date());
+  const weeks = [0, 1, 2].map(i => { const a = new Date(w0); a.setDate(a.getDate() + 7 * i); const b = new Date(a); b.setDate(b.getDate() + 7); return { a, b, i }; });
+  const startOf = r => new Date(dIso(r.tests) + "T00:00:00"), endOf = r => new Date((dIso(r.testsFin) || dIso(r.tests)) + "T23:59:59");
   const isMine = r => !!myTester && planOf(doc, r.pj).assign.some(a => a.tid === myTester.id);
-  const noTester = r => planOf(doc, r.pj).assign.length === 0;
-  const FILTERS = [["soon", "À venir", withPeriod.filter(isSoon).length], ["free", "Sans testeur", withPeriod.filter(r => isSoon(r) && noTester(r)).length], ...(myTester ? [["mine", "Mes tests", withPeriod.filter(isMine).length]] : []), ["all", "Tous", withPeriod.length]];
-  const list = useMemo(() => withPeriod.filter(r => filter === "all" || (filter === "soon" && isSoon(r)) || (filter === "free" && isSoon(r) && noTester(r)) || (filter === "mine" && isMine(r)))
-    .filter(r => { const s = q.trim().toLowerCase(); return !s || r.pj.toLowerCase().includes(s) || String(getPjMeta(r.pj, r).nomProjet || "").toLowerCase().includes(s); })
-    .sort((a, b) => dIso(a.tests).localeCompare(dIso(b.tests))),
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  [rows, doc, filter, q, todayIso, myTester]);
-  const noPeriod = rows.filter(r => !r.tests && r.etat !== "SHIPPED").length;
-  return (<div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-    <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-      <input value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher un PJ, un projet…" style={{ ...field(), width: 240 }} />
-      <div style={{ display: "inline-flex", gap: 6, flexWrap: "wrap" }}>
-        {FILTERS.map(([id, l, n]) => <button key={id} onClick={() => setFilter(id)} aria-pressed={filter === id} style={{ border: "1px solid " + (filter === id ? T.teal500 : T.line), background: filter === id ? T.teal100 : T.card, color: filter === id ? T.teal600 : T.ink700, borderRadius: 999, padding: "3px 12px", fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>{l} <span style={{ opacity: .7 }}>{n}</span></button>)}
+  const pr = r => progressOf(planOf(doc, r.pj), catalog, activeSections(presenceKind(r.clientPresence || null)));
+  const withP = rows.filter(r => r.tests && r.etat !== "SHIPPED" && (!onlyMine || isMine(r)));
+  const cols = weeks.map(w => ({ ...w, items: [] }));
+  withP.forEach(r => {
+    const c = cols.find(w => startOf(r) < w.b && endOf(r) >= w.a);
+    if (c) c.items.push({ r, late: false });
+    else if (endOf(r) < weeks[0].a) { const q = pr(r); if (q.total > q.done) cols[0].items.push({ r, late: true }); }
+  });
+  cols.forEach(c => c.items.sort((x, y) => (y.late - x.late) || (startOf(x.r) - startOf(y.r))));
+  const later = withP.filter(r => startOf(r) >= weeks[2].b).length, noPeriod = rows.filter(r => !r.tests && r.etat !== "SHIPPED").length;
+  const all = cols.flatMap(c => c.items.map(x => x.r));
+  const cur = all.find(r => r.pj === sel) || rows.find(r => r.pj === sel) || all[0] || null;
+  const COL_TITLE = ["Cette semaine", "Semaine prochaine", "Dans 2 semaines"];
+  return (<div className="enogia-tests-board" style={{ display: "flex", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
+    <div style={{ flex: "1 1 560px", minWidth: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", fontSize: FZ.xs, color: T.ink500 }}>
+        <span>S{isoWeek(weeks[0].a)} → S{isoWeek(weeks[2].a)} · {all.length} machine{all.length > 1 ? "s" : ""}{later ? " · " + later + " plus tard" : ""}{noPeriod ? " · " + noPeriod + " sans période de tests" : ""}</span>
+        {myTester && <label style={{ display: "inline-flex", alignItems: "center", gap: 6, marginLeft: "auto", minHeight: 24, cursor: "pointer", color: T.ink700, fontWeight: 600 }}><input type="checkbox" checked={onlyMine} onChange={e => setOnlyMine(e.target.checked)} />Seulement mes tests</label>}
       </div>
-      {noPeriod > 0 && <span style={{ fontSize: FZ.xs, color: T.ink300 }}>{noPeriod} PJ sans période de tests (non listés)</span>}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 10, alignItems: "start" }}>
+        {cols.map((c, ci) => (<section key={ci} aria-label={COL_TITLE[ci]} style={{ background: T.surfaceAlt, borderRadius: 10, padding: 8, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 6, margin: "2px 4px 8px" }}>
+            <h3 style={{ margin: 0, fontSize: FZ.sm, fontWeight: 700, color: T.ink900 }}>{COL_TITLE[ci]}</h3>
+            <span style={{ marginLeft: "auto", fontSize: FZ.xs, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>S{isoWeek(c.a)} · {c.items.length}</span>
+          </div>
+          {c.items.length === 0 && <div style={{ fontSize: FZ.xs, color: T.ink500, padding: "8px 4px" }}>Aucun test prévu.</div>}
+          <div className="enogia-stagger" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {c.items.map(({ r, late }) => <TestCard key={r.pj} {...{ r, doc, testers, catalog, conflicts, late }} on={cur && cur.pj === r.pj} onPick={() => setSel(r.pj)} />)}
+          </div>
+        </section>))}
+      </div>
     </div>
-    {list.length === 0 && <EmptyNote>Aucune machine à afficher avec ce filtre.</EmptyNote>}
-    {list.map(r => <FatSheet key={r.pj} {...{ r, doc, testers, catalog, conflicts, commit, certifs, canEdit, open: openId === r.pj, onToggle: () => setOpenId(openId === r.pj ? null : r.pj), myTester }} />)}
+    <aside aria-label="Détail des tests de la machine" style={{ flex: "1 1 340px", maxWidth: 460, minWidth: 0, position: "sticky", top: 56, maxHeight: "calc(100dvh - 80px)", overflowY: "auto" }}>
+      {cur ? <FatSheet key={cur.pj} panel r={cur} {...{ doc, testers, catalog, conflicts, commit, certifs, canEdit, myTester }} open onToggle={() => {}} />
+        : <EmptyNote>Aucune machine en test sur ces trois semaines.</EmptyNote>}
+    </aside>
   </div>);
 }
 
-function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdit, open, onToggle, myTester }) {
+// Carte d'une machine dans une colonne : PJ, présence, dates, testeurs, avancement « faits / à réaliser ».
+function TestCard({ r, doc, testers, catalog, conflicts, late, on, onPick }) {
+  const plan = planOf(doc, r.pj), kind = presenceKind(r.clientPresence || null), act = activeSections(kind), q = progressOf(plan, catalog, act);
+  const assigned = plan.assign.map(a => testers.find(t => t.id === a.tid)).filter(Boolean);
+  const conf = conflicts.some(c => c.a.pj === r.pj || c.b.pj === r.pj), noTester = assigned.length === 0, full = q.total > 0 && q.done === q.total;
+  const S = stageSoft(), edge = noTester || late ? T.red500 : full ? S.finProd.solid : S.tests.solid;
+  const meta = getPjMeta(r.pj, r), pct = q.total ? Math.round(q.done / q.total * 100) : 0;
+  return (<div {...pressable(onPick, { "aria-pressed": !!on, "aria-label": r.pj + " — " + (meta.nomProjet || "") + " — " + q.done + " tests faits sur " + q.total })} className="enogia-test-card"
+    style={{ background: T.card, border: "1px solid " + (on ? T.teal500 : T.line), borderLeft: "4px solid " + edge, borderRadius: "0 8px 8px 0", padding: "8px 10px", cursor: "pointer", boxShadow: on ? "0 0 0 1px " + T.teal500 : "none", minWidth: 0 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+      <PjPlate pj={r.pj} />
+      {kind && <PresenceChip kind={kind} compact tiny />}
+      <span style={{ marginLeft: "auto", fontSize: FZ.xs, color: T.ink500, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{fdm(dIso(r.tests))}{r.testsFin ? " → " + fdm(dIso(r.testsFin)) : ""}</span>
+    </div>
+    <div title={meta.nomProjet || ""} style={{ margin: "6px 0 4px", fontSize: FZ.sm, fontWeight: 600, color: T.ink900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : r.gamme || "—"}</div>
+    <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+      {noTester ? <span style={{ fontSize: 11, fontWeight: 700, color: T.red600, background: T.red100, borderRadius: 999, padding: "1px 8px" }}>Sans testeur</span>
+        : <span style={{ display: "inline-flex" }}>{assigned.slice(0, 4).map((t, i) => <span key={t.id} title={t.name} style={{ marginLeft: i ? -6 : 0, borderRadius: "50%", boxShadow: "0 0 0 2px " + T.card, display: "inline-flex" }}><Avatar name={t.name} tint={personTint(t.name)[0]} size={22} /></span>)}</span>}
+      {late && <span style={{ fontSize: 11, fontWeight: 700, color: T.red600, background: T.red100, borderRadius: 999, padding: "1px 8px" }}>En retard</span>}
+      {conf && <span style={{ fontSize: 11, fontWeight: 700, color: T.amber600, background: T.amber100, borderRadius: 999, padding: "1px 8px" }}>Conflit</span>}
+      <span style={{ marginLeft: "auto", fontSize: FZ.xs, fontWeight: 700, color: full ? T.emerald600 : T.ink700, fontVariantNumeric: "tabular-nums" }}>{q.done} / {q.total} test{q.total > 1 ? "s" : ""}</span>
+    </div>
+    <div aria-hidden="true" style={{ height: 6, borderRadius: 3, background: T.surfaceAlt, overflow: "hidden", marginTop: 6 }}><div className="enogia-bar-fill" style={{ width: pct + "%", height: "100%", background: S.finProd.solid }} /></div>
+  </div>);
+}
+
+function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdit, open, onToggle, myTester, panel }) {
   const [newName, setNewName] = useState(""), [limit, setLimit] = useState({});
   const ctx = useMentions();
   const plan = planOf(doc, r.pj);
@@ -121,8 +171,12 @@ function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdi
   };
   const mine = !!myTester && plan.assign.some(a => a.tid === myTester.id);
   const canTest = canEdit; // seuls les administrateurs modifient les tests ; les testeurs consultent
-  return (<div id={"fat-" + r.pj} style={{ ...CARD, overflow: "hidden", borderColor: mine ? T.teal500 : undefined }}>
-    <div onClick={onToggle} role="button" aria-expanded={open} tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(); } }}
+  return (<div id={"fat-" + r.pj} className={panel ? "enogia-view-in" : undefined} style={{ ...CARD, overflow: "hidden", borderColor: mine ? T.teal500 : undefined }}>
+    {panel && <div style={{ padding: "10px 14px", borderBottom: "1px solid " + T.line, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+      <PjPlate pj={r.pj} size="lg" /><span style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: FZ.lg, color: T.ink900 }}>{meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : r.gamme || ""}</span>
+      <span style={{ width: "100%", fontSize: FZ.xs, color: T.ink500 }}>Tests {period(r)}{mine ? " · vous êtes testeur" : ""}</span>
+    </div>}
+    {!panel && <div onClick={onToggle} role="button" aria-expanded={open} tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(); } }}
       style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 14px", cursor: "pointer", flexWrap: "wrap" }}>
       <div style={{ minWidth: 150, flex: "0 1 190px" }}>
         <div style={{ fontFamily: T.fontMono, fontWeight: 700, fontSize: FZ.sm, color: T.teal600 }}>{r.pj}{mine && <span style={{ marginLeft: 6, fontFamily: T.font, fontSize:11, background: T.teal100, color: T.teal600, borderRadius: 999, padding: "1px 7px" }}>Mon test</span>}</div>
@@ -136,7 +190,7 @@ function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdi
           : assigned.map(t => <TesterChip key={t.id} t={t} small warn={myConf.has(t.id)} />)}
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 8, color: T.ink500, fontSize: FZ.xs, fontWeight: 600 }}>{nTests} test{nTests > 1 ? "s" : ""}<span style={{ transform: open ? "rotate(180deg)" : "none", display: "inline-flex" }}><NavIcon name="chevronDown" size={12} /></span></div>
-    </div>
+    </div>}
     {open && <div style={{ borderTop: "1px solid " + T.line, background: T.surface, padding: 14, display: "flex", flexDirection: "column", gap: 16 }}>
       {/* En-tête de fiche : le haut du tableau « PJ / ORC / Certification / FAT client / FAT NOBO » du fichier de checklist */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 8 }}>
@@ -174,8 +228,11 @@ function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdi
             {pd.client && <span style={{ fontSize: FZ.xs, color: PRESENCE_META.client.ink, fontWeight: 700 }}>Client le {fd(pd.client)}</span>}{pd.nobo && <span style={{ fontSize: FZ.xs, color: PRESENCE_META.nobo.ink, fontWeight: 700 }}>NOBO le {fd(pd.nobo)}</span>}</div>
           : <span style={{ fontSize: FZ.xs, color: T.ink500 }}>Ni client ni NOBO : seuls les tests internes sont à réaliser.</span>}
       </Step>
-      {/* ③ Tests à réaliser */}
-      <Step n="3" title="Tests à réaliser" hint={canTest ? "Cochez / décochez les tests à réaliser pour cette machine ; les commentaires sont propres à ce PJ." : "Consultation : seuls les administrateurs modifient les tests."}>
+      {/* ③ Tests : dans le volet, checklist « fait » (et choix des tests à réaliser via « Modifier la liste ») */}
+      {panel && <Step n="3" title="Tests" hint={canTest ? "Cochez chaque test une fois réalisé." : "Consultation : seuls les administrateurs cochent les tests."}>
+        <Checklist {...{ r, plan, catalog, act, canEdit: canTest, saveTests }} />
+      </Step>}
+      {!panel && <Step n="3" title="Tests à réaliser" hint={canTest ? "Cochez / décochez les tests à réaliser pour cette machine ; les commentaires sont propres à ce PJ." : "Consultation : seuls les administrateurs modifient les tests."}>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {SECTIONS.map(([k, label]) => {
             const on = act.includes(k), ids = selectedIds(plan, catalog, k), col = SEC_COLOR[k]();
@@ -204,8 +261,44 @@ function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdi
             </div>);
           })}
         </div>
-      </Step>
+      </Step>}
     </div>}
+  </div>);
+}
+
+// v186 : checklist du volet — par défaut, seulement les tests à réaliser, avec une case « fait » ; « Modifier la liste » affiche
+// tout le catalogue de la partie pour choisir les tests à réaliser (comme avant). Commentaire par test et test libre conservés.
+function Checklist({ r, plan, catalog, act, canEdit, saveTests }) {
+  const [edit, setEdit] = useState(false);
+  return (<div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+    {canEdit && <button type="button" onClick={() => setEdit(v => !v)} aria-pressed={edit} className="enogia-btn-ind" style={{ alignSelf: "flex-start", border: "1.5px solid " + T.teal500, background: "transparent", color: T.teal600, borderRadius: 8, padding: "4px 10px", minHeight: 28, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>{edit ? "Terminer" : "Modifier la liste des tests"}</button>}
+    {act.map(k => {
+      const label = (SECTIONS.find(x => x[0] === k) || [])[1], sel = selectedIds(plan, catalog, k), done = doneIds(plan, k), items = edit ? catalog[k] : catalog[k].filter(t => sel.includes(t.id));
+      const nDone = sel.filter(id => done.includes(id)).length;
+      return (<div key={k} style={{ background: T.card, border: "1px solid " + SEC_BORDER[k](), borderRadius: 10, overflow: "hidden" }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8, padding: "7px 12px", borderBottom: "1px solid " + T.line }}>
+          <b style={{ color: SEC_COLOR[k](), fontSize: FZ.sm }}>{label}</b>
+          <span style={{ marginLeft: "auto", fontSize: FZ.xs, fontWeight: 700, color: nDone === sel.length && sel.length ? T.emerald600 : T.ink700, fontVariantNumeric: "tabular-nums" }}>{edit ? sel.length + " retenu" + (sel.length > 1 ? "s" : "") : nDone + " / " + sel.length}</span>
+        </div>
+        {items.length === 0 && <div style={{ padding: "8px 12px", fontSize: FZ.xs, color: T.ink500 }}>Aucun test retenu.</div>}
+        {items.map(tst => { const chk = edit ? sel.includes(tst.id) : done.includes(tst.id); return (
+          <div key={tst.id} style={{ display: "flex", gap: 10, padding: "8px 12px", borderTop: "1px solid " + T.surface, alignItems: "flex-start" }}>
+            <input type="checkbox" checked={chk} disabled={!canEdit} aria-label={(edit ? "À réaliser : " : "Fait : ") + tst.name}
+              onChange={() => saveTests(edit ? toggleTest(plan, catalog, k, tst.id) : toggleDone(plan, k, tst.id))} style={{ marginTop: 3, width: 16, height: 16, accentColor: stageSoft().finProd.solid }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: FZ.sm, fontWeight: 700, color: T.ink900, textDecoration: !edit && chk ? "line-through" : "none", textDecorationColor: T.ink300 }}>{tst.name}</div>
+              {(edit || !chk) && tst.obj && <div style={{ fontSize: FZ.xs, color: T.ink500, whiteSpace: "pre-line", lineHeight: 1.45, marginTop: 2 }}>{tst.obj}</div>}
+              {!edit && (canEdit
+                ? <input defaultValue={plan.notes[tst.id] || ""} key={r.pj + tst.id + (plan.notes[tst.id] || "")} onBlur={e => { if (e.target.value !== (plan.notes[tst.id] || "")) saveTests(setNote(plan, tst.id, e.target.value)); }} placeholder="Commentaire" aria-label={"Commentaire : " + tst.name} maxLength={300} style={{ ...field(), fontSize: FZ.xs, width: "100%", boxSizing: "border-box", marginTop: 6 }} />
+                : plan.notes[tst.id] ? <div style={{ fontSize: FZ.xs, color: T.ink700, marginTop: 4 }}>{plan.notes[tst.id]}</div> : null)}
+            </div>
+          </div>); })}
+        {(edit || plan.extra[k]) && <div style={{ padding: "8px 12px", borderTop: "1px solid " + T.surface }}>
+          {canEdit ? <input defaultValue={plan.extra[k] || ""} key={r.pj + k + (plan.extra[k] || "")} onBlur={e => { if (e.target.value !== (plan.extra[k] || "")) saveTests(setExtra(plan, k, e.target.value)); }} placeholder="Test supplémentaire (texte libre)" aria-label={"Test supplémentaire : " + label} maxLength={300} style={{ ...field(), fontSize: FZ.xs, width: "100%", boxSizing: "border-box" }} />
+            : <span style={{ fontSize: FZ.xs, color: T.ink700 }}>Autre : {plan.extra[k]}</span>}
+        </div>}
+      </div>);
+    })}
   </div>);
 }
 

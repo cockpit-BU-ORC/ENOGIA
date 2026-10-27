@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v186",
+    date: "2026-10-27",
+    title: "V186 : une page Tests par semaine",
+    items: [
+      { t: "Les tests de la semaine en un coup d'œil", d: "Trois colonnes : cette semaine, la semaine prochaine, dans deux semaines. Chaque machine en test y a sa carte : testeurs, présence client ou NOBO, avancement." },
+      { t: "Cocher les tests faits", d: "Cliquez une carte : le volet de droite montre les testeurs et la liste des tests à réaliser, à cocher une fois faits." },
+      { t: "Rien n'est oublié", d: "Les cartes signalent « Sans testeur », « Conflit » et « En retard » (période passée, tests pas tous faits). « Seulement mes tests » pour les testeurs." },
+    ],
+  },
+  {
     id: "2026-10-v185",
     date: "2026-10-27",
     title: "V185 : thème mixte, titres en couleur, droits des admins",

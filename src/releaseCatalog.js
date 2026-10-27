@@ -328,4 +328,8 @@ export const RELEASE_CATALOG = [
     ["Titres", "Une couleur de trait par page ; camemberts animés, totaux en gras."],
     ["Admins", "Mêmes droits que le super admin, sauf le Cash in."],
   ] },
+  { v: "186", t: "Une page Tests par semaine", items: [
+    ["Tests", "Colonnes par semaine, une carte par machine, avancement des tests."],
+    ["Volet de détail", "Testeurs et tests à cocher une fois réalisés."],
+  ] },
 ];

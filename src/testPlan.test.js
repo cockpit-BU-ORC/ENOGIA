@@ -76,3 +76,20 @@ test("accès à l'onglet : un testeur de la liste est reconnu par son adresse, n
   expect(p.notes).toEqual({ i1: "ok" });
   expect(setNote(p, "i1", "").notes).toEqual({});
 });
+
+describe("tests réalisés (v186)", () => {
+  const { toggleDone, doneIds, progressOf, planOf, catalogOf } = require("./testPlan");
+  test("cocher puis décocher un test fait", () => {
+    const p0 = planOf({ plans: {} }, "PJ1");
+    const p1 = toggleDone(p0, "interne", "i1");
+    expect(doneIds(p1, "interne")).toEqual(["i1"]);
+    expect(doneIds(toggleDone(p1, "interne", "i1"), "interne")).toEqual([]);
+  });
+  test("l'avancement ne compte que les tests retenus des parties actives", () => {
+    const cat = catalogOf({});
+    let p = planOf({ plans: {} }, "PJ1");
+    p = toggleDone(p, "interne", "i1"); p = toggleDone(p, "client", "c1");
+    expect(progressOf(p, cat, ["interne"])).toEqual({ done: 1, total: cat.interne.length });
+    expect(progressOf(p, cat, ["interne", "client"])).toEqual({ done: 2, total: cat.interne.length + cat.client.length });
+  });
+});

@@ -40,7 +40,7 @@ export function catalogOf(doc) {
 export const testersOf = doc => (doc && Array.isArray(doc.testers) ? doc.testers : []);
 export const planOf = (doc, pj) => {
   const p = doc && doc.plans && doc.plans[pj];
-  return { assign: Array.isArray(p && p.assign) ? p.assign : [], sel: (p && p.sel) || {}, extra: (p && p.extra) || {}, notes: (p && p.notes) || {} };
+  return { assign: Array.isArray(p && p.assign) ? p.assign : [], sel: (p && p.sel) || {}, extra: (p && p.extra) || {}, notes: (p && p.notes) || {}, done: (p && p.done) || {} };
 };
 
 // Parties présentes selon la présence aux tests (null | "client" | "nobo" | "both") : l'interne est toujours fait.
@@ -58,6 +58,18 @@ export function toggleTest(plan, catalog, section, id) {
   const cur = selectedIds(plan, catalog, section);
   const next = cur.includes(id) ? cur.filter(x => x !== id) : (catalog[section] || []).map(t => t.id).filter(x => cur.includes(x) || x === id);
   return { ...plan, sel: { ...plan.sel, [section]: next } };
+}
+// v186 : tests réalisés (« fait »), par partie — plan.done = { interne:[ids], client:[ids], nobo:[ids] }. Champ ajouté, rétrocompatible.
+export const doneIds = (plan, section) => (plan.done && Array.isArray(plan.done[section]) ? plan.done[section] : []);
+export function toggleDone(plan, section, id) {
+  const cur = doneIds(plan, section);
+  return { ...plan, done: { ...(plan.done || {}), [section]: cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id] } };
+}
+// Avancement d'une machine : tests faits / tests à réaliser, sur les parties actives (interne, + client / NOBO si présents).
+export function progressOf(plan, catalog, sections) {
+  let done = 0, total = 0;
+  sections.forEach(k => { const sel = selectedIds(plan, catalog, k), d = doneIds(plan, k); total += sel.length; done += sel.filter(id => d.includes(id)).length; });
+  return { done, total };
 }
 export const setNote = (plan, testId, text) => { const notes = { ...plan.notes }; if (text) notes[testId] = text; else delete notes[testId]; return { ...plan, notes }; };
 export const setExtra = (plan, section, text) => ({ ...plan, extra: { ...plan.extra, [section]: text } });
