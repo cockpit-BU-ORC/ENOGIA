@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v203",
+    date: "2026-10-27",
+    title: "V203 : une seule fiche PJ, qui explique où en est la machine",
+    items: [
+      { t: "La même fiche partout", d: "Liste, Gantt, Calendrier et accueil ouvrent la même fiche au centre de l'écran (sur téléphone, elle monte du bas)." },
+      { t: "Où en est la machine", d: "L'avancement en anneau, le nom de l'étape et ce qu'elle signifie, l'étape suivante, puis les sous-étapes (survolez une étape pour voir les siennes)." },
+      { t: "Le calendrier en un coup d'œil", d: "Une mini-frise avec aujourd'hui, le départ et l'écart au planning initial, et les pastilles utiles : présence, tests, turbine." },
+    ],
+  },
+  {
     id: "2026-10-v202",
     date: "2026-10-27",
     title: "V202 : la fiche PJ en pop-up central, PV de debug au format ENOGIA",

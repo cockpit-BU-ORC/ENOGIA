@@ -393,4 +393,7 @@ export const RELEASE_CATALOG = [
     ["Liste", "Fiche au centre avec flou, ouverture et fermeture animées."],
     ["Tests", "PV de debug machine interne au format du modèle ENOGIA."],
   ] },
+  { v: "203", t: "Une seule fiche PJ, qui explique où en est la machine", items: [
+    ["Fiche PJ", "Même fenêtre partout ; avancement, étape expliquée, sous-étapes, mini-frise, pastilles."],
+  ] },
 ];

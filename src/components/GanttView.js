@@ -5,7 +5,7 @@ import { T, FZF, mixHex, ganttSoft, stageSoft, stripeBg } from "../theme";
 import { fmt } from "../parsers";
 import { getPjMeta, ETAT_META, ALL_ETATS, MONTHS, today, ProjectLabelCell } from "../pjMeta";
 import { DropFilter, NavIcon, pressable } from "./SharedUI";
-import { ProjectModal } from "./ProjectModal";
+import { PjDialog } from "./RowDetail";
 
 // Couleurs lues à chaque rendu (accesseurs) : un tableau figé à l'import garderait le thème clair.
 export const PHASES=[
@@ -338,7 +338,7 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
       </div>);
     })()}
 
-    {sel&&<ProjectModal pj={sel} data={data} df={df} onClose={()=>setSel(null)} comments={comments} addComment={addComment} deleteComment={deleteComment}
+    {sel&&<PjDialog pj={sel} data={data} df={df} onClose={()=>setSel(null)} comments={comments} addComment={addComment} deleteComment={deleteComment}
       pinOk={pinOk} delays={delays} delayTypes={delayTypes} setDelayTypes={setDelayTypes} addDelayAllocation={addDelayAllocation} deleteDelayAllocation={deleteDelayAllocation}
       addDelayComment={addDelayComment} deleteDelayComment={deleteDelayComment} authorName={authorName} savePjMetaOverride={savePjMetaOverride} canEditMeta={canEditMeta}/>}
   </div>);

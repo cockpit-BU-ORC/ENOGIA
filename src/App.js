@@ -22,7 +22,7 @@ import { HomeView } from "./components/HomeView";
 import { useA11yFallback } from "./a11yFallback";
 import { ImportButton, ManagerAccessNotice, PIN, NavIcon, EmptyState, LoadingSkeleton, PageHead, notify, Toaster } from "./components/SharedUI";
 import { GanttView } from "./components/GanttView";
-import { ProjectModal } from "./components/ProjectModal";
+import { PjDialog, PjDialogCtx } from "./components/RowDetail";
 import { CommentsView } from "./components/CommentsView";
 import { TableView } from "./components/TableView";
 import { CalendarView } from "./components/CalendarView";
@@ -66,7 +66,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-27-v202-popup-pv-debug";
+const APP_BUILD_VERSION = "2026-10-27-v203-fiche-unique";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -1020,7 +1020,8 @@ export default function App(){
   // v195 (demandé : « garder la mini-barre en auto ; la flèche du bas ouvre la barre en entier ») : plus d'ouverture au survol.
   // La flèche ouvre le menu complet par-dessus la page ; il se replie seul quand on choisit une page ou quand la souris le quitte.
   const [navPeek,setNavPeek]=useState(false),navPeekT=useRef(0);
-  const [mgrNav,setMgrNav]=useState(null); // v196 : entrées du Manager affichées dans ce menu (fournies par ManagerPanel)
+  const [mgrNav,setMgrNav]=useState(null);
+  const pjCtxTests=canSeeTests?testsDoc:null,pjCtx=useMemo(()=>({testsDoc:pjCtxTests,turbineDoc}),[pjCtxTests,turbineDoc]); // v203 : pastilles de la fiche d'un PJ // v196 : entrées du Manager affichées dans ce menu (fournies par ManagerPanel)
   const closePeek=delay=>{clearTimeout(navPeekT.current);navPeekT.current=setTimeout(()=>setNavPeek(false),delay||0);};
   const navOverlay=true;
   const navCompact=navOverlay&&!navPeek; // dans l'espace Manager, un seul menu large : celui du Manager
@@ -1117,6 +1118,7 @@ export default function App(){
         </div>
       </div>
 
+      <PjDialogCtx.Provider value={pjCtx}>
       <main id="enogia-main" tabIndex={-1} className="enogia-main" style={{padding:D.main,flex:1,outline:"none"}}>
         {(syncLost||offline)&&<div role="alert" style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",marginBottom:12,padding:"10px 14px",borderRadius:10,background:T.amber100,borderLeft:"4px solid "+T.amber500,color:T.ink900,fontSize:FZ.sm,fontFamily:T.font}}>
           <NavIcon name="warning" size={18}/>
@@ -1196,10 +1198,12 @@ export default function App(){
         )}
       </>
     )}
-    {calSel&&<ProjectModal pj={calSel} data={dataWithOverrides} df={df} onClose={()=>setCalSel(null)} comments={comments} addComment={addComment} deleteComment={deleteComment}
+    {/* v203 : fiche unique d'un PJ (même pop-up que la Liste et le Gantt) */}
+    {calSel&&<PjDialog pj={calSel} data={dataWithOverrides} df={df} onClose={()=>setCalSel(null)} comments={comments} addComment={addComment} deleteComment={deleteComment}
       pinOk={pinOk} delays={delays} delayTypes={delayTypes} setDelayTypes={setDelayTypesAndSave} addDelayAllocation={addDelayAllocation} deleteDelayAllocation={deleteDelayAllocation}
       addDelayComment={addDelayComment} deleteDelayComment={deleteDelayComment} authorName={authorName} savePjMetaOverride={savePjMetaOverride} canEditMeta={canEditMeta}/>}
       </main>
+      </PjDialogCtx.Provider>
     </div>
   </div></ChangeMarksContext.Provider></MentionCtx.Provider>);
 }
