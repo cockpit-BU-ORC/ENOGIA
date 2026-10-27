@@ -393,11 +393,18 @@ export const EXCLUDED_CHEFS={has:name=>EXCLUDED_CHEFS_NORM.has(normChefName(name
 // projet plutôt qu'un champ texte libre — fusionne le référentiel figé, la synchro Suivi ORC
 // et les corrections manuelles, donc fonction (pas une const) puisque ces deux dernières sources
 // changent en cours de session.
+// v191 : plusieurs chefs de projet par PJ (chefProjet + chefsExtra) et projet EPC (epc) avec son chef de projet ORC (chefOrc).
+const clean=c=>{const v=String(c||"").trim();return v&&v!=="—"?v:"";};
+export function chefsOf(meta){const m=meta||{};const out=[clean(m.chefProjet),...(Array.isArray(m.chefsExtra)?m.chefsExtra.map(clean):[]),m.epc?clean(m.chefOrc):""].filter(Boolean);return [...new Set(out)];}
+export const isEpc=meta=>!!(meta&&meta.epc);
+export function EpcTag({meta,short}){
+  if(!isEpc(meta))return null;
+  const orc=clean(meta.chefOrc);
+  return <span title={"Projet EPC"+(orc?" · chef de projet ORC : "+orc:"")} style={{display:"inline-flex",alignItems:"center",gap:4,fontFamily:T.fontLabel,fontSize:11,fontWeight:700,lineHeight:"16px",padding:"0 6px",borderRadius:4,background:T.violet100,color:T.violet600,border:"1px solid "+T.violet500,whiteSpace:"nowrap",flexShrink:0}}>EPC{!short&&orc?<span style={{fontWeight:500}}>· {orc}</span>:null}</span>;
+}
 export function getAllChefs(){
   const set=new Set();
-  Object.values(PJ_META).forEach(m=>{if(m.chefProjet)set.add(m.chefProjet);});
-  Object.values(SYNCED_PJ_META).forEach(m=>{if(m.chefProjet)set.add(m.chefProjet);});
-  Object.values(PJ_META_OVERRIDES).forEach(m=>{if(m.chefProjet)set.add(m.chefProjet);});
+  [PJ_META,SYNCED_PJ_META,PJ_META_OVERRIDES].forEach(src=>Object.values(src).forEach(m=>{chefsOf(m).forEach(c=>set.add(c));}));
   return [...set].filter(c=>!EXCLUDED_CHEFS.has(c)).sort();
 }
 

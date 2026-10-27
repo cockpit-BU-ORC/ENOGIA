@@ -16,7 +16,7 @@ import { setSuperAdmin, isSuperAdmin, setOwner } from "./roles";
 import { setCashinDoc, setCashinLinks, setOrdoPjs, getCashinDoc, getCashinLinks, getOrdoPjs, cashGroupsFor } from "./cashinLink";
 import { useCashin } from "./useCashin";
 import { CASHIN_DOC_REF, CASHIN_LINKS_REF, CASHIN_SHARED_REF, buildSharedCashin } from "./cashinData";
-import { getPjMeta, ALL_GAMMES, ALL_ETATS, ETAT_META, registerCustomEtats, MONTHS, today, setSyncedPjMeta, setPjMetaOverrides, GAMME_OVERRIDE, EXCLUDED_CHEFS } from "./pjMeta";
+import { getPjMeta, chefsOf, ALL_GAMMES, ALL_ETATS, ETAT_META, registerCustomEtats, MONTHS, today, setSyncedPjMeta, setPjMetaOverrides, GAMME_OVERRIDE, EXCLUDED_CHEFS } from "./pjMeta";
 import { weekStartOf } from "./parsers";
 import { HomeView } from "./components/HomeView";
 import { useA11yFallback } from "./a11yFallback";
@@ -66,7 +66,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-27-v190-fiches-chef-popup";
+const APP_BUILD_VERSION = "2026-10-27-v191-menus-epc-chefs";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -1002,7 +1002,7 @@ export default function App(){
     const meta=getPjMeta(r.pj,r);
     if(selProjets&&!selProjets.has(meta.nomProjet))return false;
     if(selPays&&!selPays.has(meta.pays))return false;
-    if(selChefs&&!selChefs.has(meta.chefProjet))return false;
+    if(selChefs&&!(selChefs.has(meta.chefProjet)||chefsOf(meta).some(c=>selChefs.has(c))))return false; // v191 : tous les chefs du PJ
     if(onlyDrift&&!(r.drift>0))return false;
     if(onlyChanged&&!changeMarks.marks.has(r.pj))return false;
     if(selMoisArrivee.size<MONTHS.length){const m=r.arrivee?MONTHS[new Date(r.arrivee).getMonth()]:null;if(!m||!selMoisArrivee.has(m))return false;}
@@ -1015,9 +1015,15 @@ export default function App(){
   const VIEWS=[{id:"home",icon:"home",l:"Aujourd'hui"},{id:"table",icon:"list",l:"Liste"},{id:"gantt",icon:"gantt",l:"Gantt"},{id:"calendar",icon:"calendar",l:"Calendrier"},{id:"changes",icon:"changes",l:"Modifications"},{id:"comments",icon:"comments",l:"Commentaires"},...(canSeeTests?[{id:"tests",icon:"check",l:"Tests"}]:[])];
 
   // v159 : menu principal libellé (réductible, mémorisé) + recherche « Aller à… » (Ctrl K) sur toutes les pages
-  const [navMin,setNavMinS]=useState(()=>{try{return localStorage.getItem("enogia_nav_min")==="1";}catch(e){return false;}});
-  const setNavMin=v=>{setNavMinS(v);try{localStorage.setItem("enogia_nav_min",v?"1":"0");}catch(e){}};
-  const navCompact=navMin||view==="manager"; // dans l'espace Manager, un seul menu large : celui du Manager
+  // v191 (demandé : « l'onglet à gauche doit se masquer automatiquement ») : menu réduit par défaut, il s'ouvre par-dessus la page au survol
+  // (ou au clavier) et se referme en sortant ; le bouton du bas l'épingle ouvert (enogia_nav_pin).
+  const [navPin,setNavPinS]=useState(()=>{try{return localStorage.getItem("enogia_nav_pin")==="1";}catch(e){return false;}});
+  const [navPeek,setNavPeek]=useState(false),navPeekT=useRef(0);
+  const navMin=!navPin;
+  const setNavMin=v=>{setNavPinS(!v);setNavPeek(false);try{localStorage.setItem("enogia_nav_pin",v?"0":"1");}catch(e){}};
+  const peek=on=>{clearTimeout(navPeekT.current);navPeekT.current=setTimeout(()=>setNavPeek(on),on?120:180);};
+  const navOverlay=navMin||view==="manager"; // menu réduit dans la mise en page (64 px), ouvert par-dessus au survol
+  const navCompact=navOverlay&&!navPeek; // dans l'espace Manager, un seul menu large : celui du Manager
   const [navPal,setNavPal]=useState(false);
   useEffect(()=>{const f=e=>{if((e.ctrlKey||e.metaKey)&&!e.altKey&&String(e.key).toLowerCase()==="k"&&view!=="manager"&&loggedIn){e.preventDefault();setNavPal(o=>!o);}};window.addEventListener("keydown",f);return()=>window.removeEventListener("keydown",f);},[view,loggedIn]);
   const palettePjs=useMemo(()=>dataWithOverrides.filter(r=>r&&r.pj).map(r=>({pj:r.pj,etat:r.etat,nomProjet:getPjMeta(r.pj,r).nomProjet||""})),[dataWithOverrides]);
@@ -1041,7 +1047,8 @@ export default function App(){
 
     {/* ── Rail de navigation : icônes de vue + accès Manager + mode sombre ── */}
     <a href="#enogia-main" className="enogia-skip" onClick={e=>{e.preventDefault();const m=document.getElementById("enogia-main");if(m){m.focus();m.scrollIntoView&&m.scrollIntoView({block:"start"});}}}>Aller au contenu</a>
-    <nav className={"enogia-nav"+(NAV.industrial?" enogia-nav-ind":"")} aria-label="Pages" style={{width:navCompact?64:216,flexShrink:0,background:NAV.bg,borderRight:"1px solid "+NAV.border,display:"flex",flexDirection:"column",alignItems:navCompact?"center":"stretch",padding:navCompact?"16px 0":"16px 10px",gap:4,position:"sticky",top:0,zIndex:30,height:"100vh",overflowY:"auto",overflowX:"hidden",scrollbarWidth:"none"}}>
+    <div style={{width:navOverlay?64:216,flexShrink:0,position:"relative",zIndex:30}}>
+    <nav className={"enogia-nav"+(NAV.industrial?" enogia-nav-ind":"")} aria-label="Pages" onMouseEnter={navOverlay?()=>peek(true):undefined} onMouseLeave={navOverlay?()=>peek(false):undefined} onFocus={navOverlay?()=>peek(true):undefined} onBlur={navOverlay?e=>{if(!e.currentTarget.contains(e.relatedTarget))peek(false);}:undefined} style={{width:navCompact?64:216,boxShadow:navOverlay&&navPeek?"8px 0 28px rgba(8,12,28,.28)":"none",transition:"box-shadow .18s ease",flexShrink:0,background:NAV.bg,borderRight:"1px solid "+NAV.border,display:"flex",flexDirection:"column",alignItems:navCompact?"center":"stretch",padding:navCompact?"16px 0":"16px 10px",gap:4,position:"sticky",top:0,zIndex:30,height:"100vh",overflowY:"auto",overflowX:"hidden",scrollbarWidth:"none"}}>
       {/* v179 (demandé : « le logo en haut à gauche pour avoir le début de la page au même niveau ») : le logo ouvre le menu, en blanc sur le marine. */}
       <button type="button" onClick={()=>setView("home")} aria-label={SITE_TITLE+" — accueil"} title="Accueil" style={{border:"none",background:"transparent",cursor:"pointer",padding:navCompact?"2px 0 10px":"2px 10px 12px",display:"flex",justifyContent:navCompact?"center":"flex-start",alignItems:"center",minHeight:44}}>
         <span style={{display:"flex",flexDirection:"column",alignItems:navCompact?"center":"flex-start",gap:6,minWidth:0}}>
@@ -1064,8 +1071,9 @@ export default function App(){
         onMouseEnter={e=>{e.currentTarget.style.background=NAV.hover;}}
         onMouseLeave={e=>{e.currentTarget.style.background="transparent";}}><NavIcon name="screen" size={18}/>{!navCompact&&<span className="enogia-nav-lab">Écran atelier</span>}</button>
       <div style={{display:"flex",justifyContent:navCompact?"center":"flex-start",paddingLeft:navCompact?0:2}}><ThemePicker ink={NAV.industrial?NAV.ink:undefined} darkMode={darkMode} onDarkMode={setDarkMode} themeId={themeId} onPick={setThemeId} density={density} onDensity={setDensityState} presentation={presentation} onPresentation={setPresentation}/></div>
-      {view!=="manager"&&<button className="enogia-nav-toggle" onClick={()=>setNavMin(!navMin)} aria-label={navMin?"Agrandir le menu":"Réduire le menu"} title={navMin?"Agrandir le menu":"Réduire le menu"} style={{width:navCompact?40:"100%",height:30,marginTop:4,border:"1px solid "+(NAV.industrial?"rgba(255,255,255,.18)":T.line),background:NAV.industrial?"transparent":T.card,borderRadius:9,display:"flex",justifyContent:"center",alignItems:"center",color:NAV.ink,cursor:"pointer",alignSelf:"center"}}><span style={{display:"inline-flex",transform:"rotate("+(navMin?"-90deg":"90deg")+")",transition:"transform .28s var(--e-ease)"}}><NavIcon name="chevronDown" size={14}/></span></button>}
+      {view!=="manager"&&!navCompact&&<button className="enogia-nav-toggle" onClick={()=>setNavMin(!navMin)} aria-label={navMin?"Garder le menu ouvert":"Masquer le menu automatiquement"} title={navMin?"Garder le menu ouvert":"Masquer le menu automatiquement"} style={{width:navCompact?40:"100%",height:30,marginTop:4,border:"1px solid "+(NAV.industrial?"rgba(255,255,255,.18)":T.line),background:NAV.industrial?"transparent":T.card,borderRadius:9,display:"flex",justifyContent:"center",alignItems:"center",color:NAV.ink,cursor:"pointer",alignSelf:"center"}}><span style={{display:"inline-flex",transform:"rotate("+(navMin?"-90deg":"90deg")+")",transition:"transform .28s var(--e-ease)"}}><NavIcon name="chevronDown" size={14}/></span></button>}
     </nav>
+    </div>
     {navPal&&<ManagerPalette groups={navGroups} data={palettePjs} activeKey={view+":"} storageKey="enogia_nav_recent" onGo={f=>f()} onOpenPj={pj=>setCalSel(pj)} onClose={()=>setNavPal(false)}/>}
 
     {/* ── Colonne principale ── */}

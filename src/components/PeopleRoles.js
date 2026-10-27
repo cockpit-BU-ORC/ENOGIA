@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { T, FZ } from "../theme";
 import { PjPlate } from "./SharedUI";
 import { useMentions } from "../mentionContext";
-import { ROLES, profileOf, setProfile, chefNames, pjsOfProfile } from "../profiles";
+import { ROLES, ROLE_BLOCKS, profileOf, setProfile, chefNames, pjsOfProfile } from "../profiles";
 import { nameFromEmail } from "../mentions";
 
 // v188 — Manager › Réglages › Personnes et rôles : pour chaque compte, le rôle (donc l'accueil qu'il voit) et ses PJ.
@@ -57,9 +57,16 @@ export function PeopleRoles({ profiles, saveProfiles, data }) {
               <option value="">Automatique</option>
               {ROLES.map(([id, l]) => <option key={id} value={id}>{l}</option>)}
             </select>
-            <button type="button" onClick={() => setOpen(isOpen ? null : p.email)} aria-expanded={isOpen} style={{ ...field(), cursor: "pointer", fontWeight: 700, color: T.ink700, minWidth: 120 }}>{mine.length} PJ {isOpen ? "▴" : "▾"}</button>
+            <button type="button" onClick={() => setOpen(isOpen ? null : p.email)} aria-expanded={isOpen} style={{ ...field(), cursor: "pointer", fontWeight: 700, color: T.ink700, minWidth: 120 }}>Accueil · {mine.length} PJ {isOpen ? "▴" : "▾"}</button>
           </div>
           {isOpen && <div style={{ padding: "4px 14px 14px", display: "flex", flexDirection: "column", gap: 10, background: T.surface }}>
+            {/* v191 : le super admin choisit les blocs de l'accueil de chaque personne (plus de sélecteur sur l'accueil lui-même) */}
+            <div>
+              <div style={{ fontSize: FZ.xs, fontWeight: 700, color: T.ink700, margin: "8px 0 6px" }}>Blocs de son accueil</div>
+              {!pr.role ? <span style={{ fontSize: FZ.xs, color: T.ink500 }}>Choisissez d'abord un rôle : « Automatique » garde l'accueil général.</span>
+                : <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>{(ROLE_BLOCKS[pr.role] || []).map(([id, l]) => { const all = (ROLE_BLOCKS[pr.role] || []).map(x => x[0]), cur = pr.blocks || all, on = cur.includes(id); return (
+                  <button key={id} type="button" aria-pressed={on} onClick={() => save(p.email, { name: pr.name || p.name, blocks: on ? cur.filter(x => x !== id) : [...cur, id] })} style={chip(on)}>{on ? "✓ " : ""}{l}</button>); })}</div>}
+            </div>
             <div>
               <div style={{ fontSize: FZ.xs, fontWeight: 700, color: T.ink700, margin: "8px 0 6px" }}>Tous les PJ d'un chef de projet</div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>

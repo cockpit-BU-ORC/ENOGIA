@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { T, FZF as FZ, stripeBg, stripeHues, stageSoft, inkOn } from "../theme";
-import { SerieTag, getPjMeta, PresenceChip, presenceKind, presenceDates, presenceFirstDate, CountryFlag, MONTHS_FULL, today, ALL_GAMMES, getAllChefs, ALL_PAYS, relTime, Avatar, ETAT_META } from "../pjMeta";
+import { SerieTag, getPjMeta, PresenceChip, presenceKind, presenceDates, presenceFirstDate, CountryFlag, MONTHS_FULL, today, ALL_GAMMES, getAllChefs, ALL_PAYS, relTime, Avatar, ETAT_META, chefsOf, EpcTag } from "../pjMeta";
+import { ChefsEpcFields, chefsEpcOf } from "./ChefsEpc";
 import { fmt, fmtMode } from "../parsers";
 import { MentionPicker, MentionTextarea } from "./MentionPicker";
 import { useMentions } from "../mentionContext";
@@ -81,6 +82,7 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
       <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:4}}>
         <PjPlate pj={pj} size="lg"/>
         <Badge etat={r.etat}/>
+        <EpcTag meta={meta}/>
         {r.gamme&&<span style={{fontFamily:T.fontLabel,fontSize:12,fontWeight:600,color:T.ink700,border:"1px solid "+T.line,borderRadius:6,padding:"1px 7px"}}>{r.gamme}</span>}
         {!editingMeta&&meta.nomProjet&&meta.nomProjet!=="—"&&<span style={{fontFamily:T.fontDisplay,fontSize:20,fontWeight:600,letterSpacing:"-.01em",color:T.ink900,minWidth:0,lineHeight:1.15,flex:"1 1 140px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} title={meta.nomProjet}>{meta.nomProjet}</span>}
         <span style={{display:"inline-flex",gap:6,alignItems:"center",marginLeft:"auto",flexShrink:0}}>
@@ -92,7 +94,7 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
         ?<EditMetaForm meta={meta} gamme={r.gamme} onCancel={()=>setEditingMeta(false)} onSave={async fields=>{const ok=await savePjMetaOverride(pj,fields);if(ok)setEditingMeta(false);}}/>
         :<div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",fontSize:FZ.xs,color:T.ink500,marginBottom:12}}>
           {meta.pays&&meta.pays!=="—"&&<span style={{display:"inline-flex",alignItems:"center",gap:5}}><CountryFlag pays={meta.pays} size={13}/>{meta.pays}</span>}
-          {meta.chefProjet&&meta.chefProjet!=="—"&&<span style={{display:"inline-flex",alignItems:"center",gap:5}}><Avatar name={meta.chefProjet} size={16}/>{meta.chefProjet}</span>}
+          {chefsOf(meta).map(c=><span key={c} style={{display:"inline-flex",alignItems:"center",gap:5}}><Avatar name={c} size={16}/>{c}{meta.epc&&c===meta.chefOrc?" (ORC)":""}</span>)}
           <SerieTag pj={pj} size={11}/>
           {presenceKind(r.clientPresence)&&<PresenceChip kind={presenceKind(r.clientPresence)} date={presenceFirstDate(r.clientPresence)} dates={presenceDates(r.clientPresence)} compact tiny/>}
           {canEditMeta&&savePjMetaOverride&&<button onClick={()=>setEditingMeta(true)} title="Modifier le nom, le pays, le chef de projet, la gamme" style={{background:"transparent",border:"none",padding:"2px 4px",minHeight:24,fontSize:FZ.xs,fontWeight:700,color:T.teal600,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4,fontFamily:T.font}}><NavIcon name="edit" size={12}/>Modifier</button>}
@@ -191,11 +193,12 @@ function EditMetaForm({meta,gamme,onSave,onCancel}){
   const [pays,setPays]=useState(meta.pays||"");
   const [chefProjet,setChefProjet]=useState(meta.chefProjet||"");
   const [gammeVal,setGammeVal]=useState(gamme||"");
+  const [extra,setExtra]=useState(()=>chefsEpcOf(meta)); // v191 : autres chefs, EPC, chef ORC
   const allChefs=getAllChefs();
   const [saving,setSaving]=useState(false);
   const submit=async ()=>{
     setSaving(true);
-    await onSave({nomProjet:nomProjet.trim(),pays:pays.trim(),chefProjet:chefProjet.trim(),gamme:gammeVal});
+    await onSave({nomProjet:nomProjet.trim(),pays:pays.trim(),chefProjet:chefProjet.trim(),gamme:gammeVal,chefsExtra:extra.chefsExtra.filter(c=>c!==chefProjet.trim()),epc:extra.epc,chefOrc:extra.epc?extra.chefOrc.trim():""});
     setSaving(false);
   };
   const fieldStyle={padding:"8px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink900,background:T.card};
@@ -234,6 +237,7 @@ function EditMetaForm({meta,gamme,onSave,onCancel}){
         </select>
       </label>
     </div>
+    <ChefsEpcFields value={extra} onChange={setExtra} mainChef={chefProjet}/>
     <div style={{display:"flex",gap:8,marginTop:2}}>
       <button onClick={submit} disabled={saving} style={{padding:"8px 16px",borderRadius:8,border:"none",background:T.teal500,color:"#fff",fontSize:FZ.sm,fontWeight:700,cursor:saving?"default":"pointer",opacity:saving?.6:1}}>{saving?"Enregistrement…":"Enregistrer"}</button>
       <button onClick={onCancel} style={{padding:"8px 12px",borderRadius:8,border:"none",background:T.panel,color:T.ink700,fontSize:FZ.sm,fontWeight:600,cursor:"pointer"}}>Annuler</button>

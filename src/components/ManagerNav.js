@@ -4,10 +4,11 @@ import { createPortal } from "react-dom";
 import { T, FZ } from "../theme";
 import { NavIcon } from "./SharedUI";
 
-const LS_COLLAPSED = "enogia_manager_rail_min", LS_RECENT = "enogia_manager_recent";
+const LS_PIN = "enogia_manager_rail_pin", LS_RECENT = "enogia_manager_recent";
 const lsGet = (k, d) => { try { const v = window.localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
 const lsSet = (k, v) => { try { window.localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* stockage indisponible : sans effet */ } };
-export const useRailCollapsed = () => { const [m, setM] = useState(() => !!lsGet(LS_COLLAPSED, false)); return [m, v => { setM(v); lsSet(LS_COLLAPSED, v); }]; };
+// v191 (demandé : « le menu doit se masquer automatiquement ») : réduit par défaut (icônes + sous-pages au survol) ; « agrandir » l'épingle ouvert.
+export const useRailCollapsed = () => { const [pin, setPin] = useState(() => !!lsGet(LS_PIN, false)); return [!pin, v => { setPin(!v); lsSet(LS_PIN, !v); }]; };
 const fold = s => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 // Aplatit les entrées du menu en « destinations » (une par sous-onglet, ou une par onglet sans sous-onglet), utilisées par la palette.

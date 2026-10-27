@@ -7,6 +7,18 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v191",
+    date: "2026-10-27",
+    title: "V191 : menus discrets, projets EPC, plusieurs chefs de projet",
+    items: [
+      { t: "Menus qui se replient seuls", d: "Le menu de gauche et celui du Manager restent réduits et s'ouvrent au survol ; une épingle les garde ouverts." },
+      { t: "Plusieurs chefs de projet", d: "Un projet peut avoir plusieurs chefs ; il apparaît chez chacun d'eux (fiches, filtres, accueil)." },
+      { t: "Projets EPC", d: "Une pastille EPC, avec le chef de projet ORC, signale les projets EPC dans la liste et les fiches." },
+      { t: "Machines expédiées masquées", d: "Les machines expédiées n'apparaissent plus dans la liste des fiches projet (case « Expédiées » pour les revoir)." },
+      { t: "Accueil réglé par le super admin", d: "Rôle et blocs de l'accueil de chaque personne dans Manager › Réglages › Personnes et rôles ; le Cash in apparaît sur l'accueil direction.", admin: true },
+    ],
+  },
+  {
     id: "2026-10-v190",
     date: "2026-10-27",
     title: "V190 : fiches par chef de projet, fiche PJ plus claire",

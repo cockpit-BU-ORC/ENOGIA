@@ -121,7 +121,7 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
                   }}/>
                 </PieChart>
               </ResponsiveContainer>}
-              {total>0&&<span aria-hidden="true" className="enogia-pie-total" style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:T.fontDisplay,fontWeight:800,fontSize:15,color:T.ink900,pointerEvents:"none",fontVariantNumeric:"tabular-nums",animationDelay:(420+di*120)+"ms"}}>{total}</span>}
+              {/* v191 : total au centre retiré (demandé) */}
             </div>
             <div style={{minWidth:0,flex:1}}>
               <div style={{display:"flex",alignItems:"baseline",marginBottom:4}}>

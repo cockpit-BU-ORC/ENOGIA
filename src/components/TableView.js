@@ -2,7 +2,7 @@ import React, { useState, useLayoutEffect, useRef, useEffect } from "react";
 import { T, FZ, D, mixHex } from "../theme";
 import { useMarks, NewMark } from "./ChangesNotice";
 import { EtatInfoButton } from "./ProdStagesUI";
-import { getPjMeta, initials, personTint, DriftDot, PresenceChip, presenceKind, presenceDates, presenceFirstDate, CountryFlag, ETAT_META, ALL_ETATS, ALL_GAMMES, GAMME_COLORS, MONTHS, today } from "../pjMeta";
+import { getPjMeta, initials, personTint, DriftDot, PresenceChip, presenceKind, presenceDates, presenceFirstDate, CountryFlag, ETAT_META, ALL_ETATS, ALL_GAMMES, GAMME_COLORS, MONTHS, today, EpcTag } from "../pjMeta";
 import { diffDays, fmtMode } from "../parsers";
 import { HoverPop, useSheetJS, Badge, DropFilter, NavIcon, useCloseOnSignal, EmptyState, pressable, PjPlate, notify } from "./SharedUI";
 import { ProjectModal } from "./ProjectModal";
@@ -432,7 +432,7 @@ export function TableView({data,progress,df,setDf,selEtats,setSelEtats,selGammes
           onMouseLeave={e=>{if(!isSel)e.currentTarget.style.background=rowBg;}}>
           <td style={{padding:D.cellY+"px "+PX+"px",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",position:"sticky",left:0,zIndex:5,background:"inherit",boxShadow:scrolledX?"4px 0 6px -4px rgba(15,40,60,.22)":"none"}}>
             <span style={{display:"inline-flex",alignItems:"center",gap:8}}>
-              <PjPlate pj={r.pj}/>
+              <PjPlate pj={r.pj}/><EpcTag meta={getPjMeta(r.pj,r)} short/>
               {r.drift>0?<HoverPop width={250} render={()=><DriftPopBody r={r} df={df}/>}><DriftDot drift={r.drift}/></HoverPop>:null}
               <NewMark mark={marks.get(r.pj)}/>
               <button type="button" className="enogia-rowact" aria-label={"Actions pour "+r.pj} aria-haspopup="menu" aria-expanded={!!rowMenu&&rowMenu.pj===r.pj} title="Actions rapides (clic droit)"

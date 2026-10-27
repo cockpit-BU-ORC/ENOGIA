@@ -349,4 +349,9 @@ export const RELEASE_CATALOG = [
     ["Fiche PJ", "En-tête sur une ligne, parcours en 5 étapes, chiffres clés, actions en bas."],
     ["Fiches projet", "Liste par chef de projet, vue d'ensemble de tous ses projets."],
   ] },
+  { v: "191", t: "Menus discrets, projets EPC, plusieurs chefs de projet", items: [
+    ["Menus", "Repliés par défaut, ouverts au survol."],
+    ["Projets", "Plusieurs chefs de projet ; pastille EPC avec le chef de projet ORC ; expédiées masquées."],
+    ["Accueil", "Réglé par personne dans le Manager ; chiffres du Cash in pour la direction."],
+  ] },
 ];

@@ -136,6 +136,22 @@ export function linkedPayments(pj, doc = DOC, today = todayISO()) {
   }));
   return out;
 }
+// v191 : synthèse globale du Cash in (accueil direction) — montants hors EPC ; lateRows = paiements en retard, du plus ancien au plus récent.
+export function cashOverview(doc = DOC, today = todayISO()) {
+  if (!doc || !Array.isArray(doc.rows) || !doc.rows.length) return null;
+  const o = { paid: 0, invoiced: 0, late: 0, toBill: 0, next30: 0, lateRows: [] }, lim = addDays(today, 30);
+  doc.rows.forEach(r => {
+    if (!r || r.epc) return;
+    const m = Number(r.montant) || 0, st = statusOf(r, today);
+    if (st.k === "paid") o.paid += m;
+    else if (st.k === "late") { o.late += m; o.invoiced += m; o.lateRows.push({ pj: r.pj || r.projet || "", label: r.jalon || "", montant: m, days: st.days || 0 }); }
+    else if (st.k === "invoiced") o.invoiced += m;
+    else if (st.k === "tobill") o.toBill += m;
+    if (st.k !== "paid" && r.encPrevue && r.encPrevue >= today && r.encPrevue <= lim) o.next30 += m;
+  });
+  o.lateRows.sort((a, b) => b.days - a.days);
+  return o;
+}
 // Synthèse d'un PJ : montants et prochaine échéance (pour la tuile « Prochain paiement »). null si rien n'est lié.
 export function cashSummary(items) {
   const l = (items || []).filter(i => i.linked);

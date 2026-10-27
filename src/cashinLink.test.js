@@ -103,3 +103,20 @@ describe("liaisons choisies à la main et répartition ÷ X", () => {
     expect(l).toEqual({ PJ460: ["PJ470"] });
   });
 });
+
+describe("synthèse globale du Cash in (v191)", () => {
+  const { cashOverview } = require("./cashinLink");
+  test("payé, facturé, en retard, à facturer, hors EPC", () => {
+    const doc = { rows: [
+      { id: 1, montant: 100, encReelle: "2026-10-01" },
+      { id: 2, montant: 50, factReelle: "2026-09-01", encPrevue: "2026-10-10", pj: "PJ1", jalon: "Solde" },
+      { id: 3, montant: 30, factReelle: "2026-10-20", encPrevue: "2026-11-15" },
+      { id: 4, montant: 20, factPrevue: "2026-10-20" },
+      { id: 5, montant: 999, epc: true },
+    ] };
+    const o = cashOverview(doc, "2026-10-27");
+    expect([o.paid, o.invoiced, o.late, o.toBill, o.next30]).toEqual([100, 80, 50, 20, 30]);
+    expect(o.lateRows[0]).toMatchObject({ pj: "PJ1", days: 17 });
+    expect(cashOverview({ rows: [] })).toBeNull();
+  });
+});

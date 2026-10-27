@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from "react";
 import { T, FZ, R, stageSoft, stripeBg, stripeHues, alertSoft, inkOn } from "../theme";
-import { getPjMeta, ETAT_META, PresenceChip, presenceKind, presenceFirstDate, presenceDates, countShippedYTD } from "../pjMeta";
+import { getPjMeta, chefsOf, ETAT_META, PresenceChip, presenceKind, presenceFirstDate, presenceDates, countShippedYTD } from "../pjMeta";
 import { NavIcon, AnimatedNumber, EmptyState, PjPlate, Hl } from "./SharedUI";
 import { openMentionsFor, chefAccount, nameFromEmail } from "../mentions";
 import { SITE_NAME, SITE_SCOPE, SITE_SUB } from "../siteName";
 import { testerOfEmail, planOf } from "../testPlan";
 import { RoleHome } from "./RoleHome";
-import { ROLES, profileOf, effectiveRole, pjsOfProfile } from "../profiles";
+import { profileOf, effectiveRole, pjsOfProfile, blockOn } from "../profiles";
 
 // v173 — direction « Éditorial industriel » : sur-titre d'atelier en mono, grande phrase légère, chiffres géants sous un filet marine,
 //   n° de PJ en plaques, parcours en blocs pleins étiquetés.
@@ -56,7 +56,7 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
 
   const mine = useMemo(() => {
     if (!fullName) return [];
-    return open.filter(r => { const c = getPjMeta(r.pj, r).chefProjet; const a = c && chefAccount(c, [{ name: fullName, email: myEmail }]); return !!a; })
+    return open.filter(r => chefsOf(getPjMeta(r.pj, r)).some(c => !!chefAccount(c, [{ name: fullName, email: myEmail }])))
       .sort((a, b) => (a.depart ? new Date(a.depart) : 9e15) - (b.depart ? new Date(b.depart) : 9e15));
   }, [open, fullName, myEmail]);
 
@@ -72,10 +72,8 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
   const profile = useMemo(() => profileOf(profiles, myEmail), [profiles, myEmail]);
   const myPjs = useMemo(() => [...new Set([...pjsOfProfile(profile, rows), ...mine.map(r => r.pj)])], [profile, rows, mine]);
   const autoRole = effectiveRole(profile, { owner, tester: !!myTester, hasProjects: myPjs.length > 0 });
-  const previewKey = "enogia_home_role_" + String(myEmail || "").toLowerCase();
-  const [preview, setPreview] = useState(() => { try { return localStorage.getItem(previewKey) || ""; } catch (e) { return ""; } });
-  const role = (pinOk && preview) ? (preview === "general" ? "" : preview) : autoRole;
-  const pickPreview = v => { setPreview(v); try { localStorage.setItem(previewKey, v); } catch (e) {} };
+  const role = autoRole; // v191 : l'accueil se règle par personne dans Manager › Réglages › Personnes et rôles (plus de sélecteur ici)
+  const bOn = id => blockOn(profile, id);
   const nChanged = (unseenChanges || []).reduce((n, e) => n + ((e.stats && e.stats.nPj) || 0), 0);
   const nNew = (unseenChanges || []).reduce((n, e) => n + ((e.stats && e.stats.nNew) || 0), 0);
 
@@ -165,11 +163,6 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
         </button>}
       </div>
 
-      {pinOk && <div role="tablist" aria-label="Afficher l'accueil de" style={{ display: "inline-flex", flexWrap: "wrap", gap: 2, background: T.surface, border: "1px solid " + T.line, borderRadius: 10, padding: 2, marginBottom: 12 }}>
-        {[["", "Mon accueil"], ...ROLES.map(([id, l]) => [id, l]), ["general", "Général"]].map(([id, l]) => { const on = (preview || "") === id; return (
-          <button key={id || "auto"} type="button" role="tab" aria-selected={on} onClick={() => pickPreview(id)} style={{ border: "none", cursor: "pointer", borderRadius: 8, padding: "5px 12px", minHeight: 28, fontSize: FZ.xs, fontWeight: 700, fontFamily: T.font, background: on ? T.card : "transparent", color: on ? T.teal600 : T.ink500, boxShadow: on ? T.shadowSm : "none" }}>{l}</button>); })}
-      </div>}
-
       {customize && !role && (
         <div style={{ ...card, marginBottom: 12, display: "flex", flexWrap: "wrap", gap: "8px 18px" }}>
           <div style={{ width: "100%", ...grey }}>Choisissez ce qui apparaît sur votre page d'accueil (enregistré sur ce poste).</div>
@@ -181,16 +174,16 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
         </div>
       )}
 
-      {role !== "testeur" && <div className="enogia-stagger enogia-kpis-ed" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: "0 16px", borderTop: "3px solid " + T.teal500, marginBottom: 20 }}>
+      {role !== "testeur" && (!role || bOn("kpis")) && <div className="enogia-stagger enogia-kpis-ed" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: "0 16px", borderTop: "3px solid " + T.teal500, marginBottom: 20 }}>
         <Kpi color={S.depart.ring} label="Livrées cette année" value={shipped} sub={shipped28 > 0 ? shipped28 + " sur les 28 derniers jours" : open.length + " encore en cours"} onClick={() => onGo && onGo("table")} hint="Ouvrir la liste" />
         <Kpi color={S.production.ring} label="En production" value={inProd} sub={"sur " + open.length + " projet" + (open.length > 1 ? "s" : "") + " ouvert" + (open.length > 1 ? "s" : "")} onClick={() => onGo && onGo("table")} hint="Ouvrir la liste" />
         <Kpi color={S.tests.ring} label="Départs sous 30 j" value={next30} tone={S.depart.ring} sub={nextDep ? "prochain " + nextDep.pj + " · " + fmtD(nextDep.depart) : "Aucun départ à venir"} onClick={() => onGo && onGo("calendar")} hint="Ouvrir le calendrier" />
         <Kpi color={H.warn} label="En retard sur l'initial" value={late.length} tone={late.length ? T.amber600 : T.ink900} sub={maxLate ? "max " + maxLate.pj + " · +" + maxLate.drift + " j" : "Aucune dérive"} onClick={() => onGo && onGo("table")} hint="Ouvrir la liste" />
       </div>}
 
-      {role && <RoleHome key={role} role={role} rows={rows} open={open} late={late} mentions={mentions} myPjs={myPjs} testsDoc={testsDoc} myTester={myTester} turbineDoc={turbineDoc} owner={owner} onOpenPj={onOpenPj} onGo={onGo} onOpenCash={onOpenCash}
+      {role && <RoleHome key={role} role={role} profile={profile} rows={rows} open={open} late={late} mentions={mentions} myPjs={myPjs} testsDoc={testsDoc} myTester={myTester} turbineDoc={turbineDoc} owner={owner} onOpenPj={onOpenPj} onGo={onGo} onOpenCash={onOpenCash}
         ui={{ Row, Head, cardS, Pill, presenceOf, nomOf, empty, grey, link, S, H, A }} />}
-      {role === "direction" && showSide && <section aria-label="Départs à venir" style={{ ...cardS(S.depart.ring), marginBottom: 12 }}>
+      {role === "direction" && bOn("departs") && <section aria-label="Départs à venir" style={{ ...cardS(S.depart.ring), marginBottom: 12 }}>
         <Head title="Ordo · départs à venir" count={departs.length} />
         {departs.length === 0 ? empty("inbox", "Aucun départ prévu", "Aucune machine n'a de date de départ à venir.") :
           departs.slice(0, 5).map((r, i) => { const n = inDays(r.depart); return <Row key={r.pj} first={i === 0} pj={r.pj} main={<span style={{ color: T.ink500 }}>{nomOf(r)}</span>} presence={presenceOf(r)} right={fmtD(r.depart) + (n != null && n <= 7 ? " · " + relDays(n) : "")} />; })}
@@ -233,7 +226,7 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
         </section>
       )}
 
-      {(!role || role === "direction") && on("journey") && (
+      {(!role ? on("journey") : role === "direction" && bOn("parcours")) && (
         <section aria-label="Où en sont les machines" style={cardS(H.brand)}>
           <Head title={"Où en sont les " + open.length + " machine" + (open.length > 1 ? "s" : "") + " ouverte" + (open.length > 1 ? "s" : "")} />
           <div style={{ ...grey, marginBottom: 10 }}>+ {shipped} expédiée{shipped > 1 ? "s" : ""} depuis janvier</div>

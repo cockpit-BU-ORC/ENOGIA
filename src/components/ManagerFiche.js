@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useLayoutEffect, useRef } from "react";
 import { T, FZF as FZ, D, statusSoft, stripeBg, stripeHues } from "../theme";
-import { SerieTag, getPjMeta, CountryFlag, Avatar, GAMME_COLORS, ETAT_META, etatInk, PresenceChip, PRESENCE_META, presenceKind, presenceDates, presenceFirstDate, today, PjPlate } from "../pjMeta";
+import { SerieTag, getPjMeta, CountryFlag, Avatar, GAMME_COLORS, ETAT_META, etatInk, PresenceChip, PRESENCE_META, presenceKind, presenceDates, presenceFirstDate, today, PjPlate, chefsOf, EpcTag } from "../pjMeta";
+import { ChefsEpcEditor } from "./ChefsEpc";
 import { fmt, diffDays } from "../parsers";
 import { Badge, NavIcon, EmptyState, SuperOnly, pressable } from "./SharedUI";
 import { CARD, EmptyNote, PieBlock, getDelayColors } from "./ManagerParts";
@@ -573,7 +574,7 @@ function ChefOverview({name,rows,pvOf,onPick,onClose}){
     <div className="enogia-stagger" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(210px,1fr))",gap:10}}>
       {sorted.map(x=>{const m=getPjMeta(x.pj,x),ec=ETAT_META[x.etat]||ETAT_META["NOT ORDERED"],pv=pvOf(x),nx=nextOf(x),edge=x.etat!=="SHIPPED"&&x.drift>10?T.red500:ec.bar;return(
         <div key={x.pj} {...pressable(()=>onPick(x.pj),{"aria-label":"Ouvrir la fiche "+x.pj})} className="enogia-test-card" style={{background:T.card,border:"1px solid "+T.line,borderTop:"4px solid "+edge,borderRadius:"0 0 10px 10px",padding:"10px 12px",cursor:"pointer",minWidth:0}}>
-          <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}><PjPlate pj={x.pj}/>{x.gamme&&<span style={{fontFamily:T.fontLabel,fontSize:12,fontWeight:600,color:T.ink700}}>{x.gamme}</span>}<span style={{marginLeft:"auto"}}><CountryFlag pays={m.pays} size={13}/></span></div>
+          <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}><PjPlate pj={x.pj}/><EpcTag meta={m} short/>{x.gamme&&<span style={{fontFamily:T.fontLabel,fontSize:12,fontWeight:600,color:T.ink700}}>{x.gamme}</span>}<span style={{marginLeft:"auto"}}><CountryFlag pays={m.pays} size={13}/></span></div>
           <div title={m.nomProjet||""} style={{margin:"6px 0 2px",fontSize:FZ.sm,fontWeight:700,color:T.ink900,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{m.nomProjet&&m.nomProjet!=="—"?m.nomProjet:"—"}</div>
           <div style={{display:"flex",alignItems:"center",gap:6,fontSize:FZ.xs,color:T.ink500,flexWrap:"wrap"}}>
             <span style={{color:etatInk(x.etat),fontWeight:700}}>{ec.label}</span>
@@ -600,13 +601,16 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
   };
   const onHandleKey=e=>{if(e.key==="ArrowLeft")setListW(w=>Math.max(220,w-24));else if(e.key==="ArrowRight")setListW(w=>Math.min(640,w+24));};
   const [showSlots,setShowSlots]=useState(false); // les slots libres sont masqués de base
+  const [chefEdit,setChefEdit]=useState(false); // v191 : édition des autres chefs / EPC / chef ORC
+  const [showShipped,setShowShipped]=useState(false); // v191 : machines expédiées masquées de base (demandé)
   // v190 (maquette A validée) : liste regroupée par chef de projet ; un clic sur le nom affiche toutes ses fiches d'un coup.
   const [groupBy,setGroupBy]=useState(()=>{try{const v=localStorage.getItem("enogia_mlist_group");return ["chef","all","mine"].includes(v)?v:"chef";}catch(e){return "chef";}});
   useEffect(()=>{try{localStorage.setItem("enogia_mlist_group",groupBy);}catch(e){}},[groupBy]);
   const [folded,setFolded]=useState(()=>new Set()),[chefView,setChefView]=useState(null);
   const toggleFold=k=>setFolded(f=>{const n=new Set(f);if(n.has(k))n.delete(k);else n.add(k);return n;});
   const [showLegend,setShowLegend]=useState(false); // v123 : la légende des commentaires est repliée de base
-  const [selPj,setSelPj]=useState((data.find(x=>x.etat!=="SLOT_LIBRE")||data[0]||{}).pj||null);
+  const [selPj,setSelPj]=useState((data.find(x=>x.etat!=="SLOT_LIBRE"&&x.etat!=="SHIPPED")||data.find(x=>x.etat!=="SLOT_LIBRE")||data[0]||{}).pj||null);
+  useEffect(()=>{setChefEdit(false);},[selPj]); // eslint-disable-line
   const [showPrivate,setShowPrivate]=useState(false),[onlyMine,setOnlyMine]=useState(false); // v151 : les commentaires privés sont masqués à l'ouverture d'un PJ, affichés sur demande
   const [multiOpen,setMultiOpen]=useState(false); // v146.18 : saisie sur plusieurs projets
   const [cdpOpen,setCdpOpen]=useState(false),[codirOpen,setCodirOpen]=useState(false); // v146.14 : rapports générés depuis la fiche projet (CODIR : super admin seulement)
@@ -620,19 +624,19 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
   const pvOf=row=>progress&&progress[row.pj]!=null?progress[row.pj]:row.etat==="SHIPPED"?100:0;
   const filteredList=useMemo(()=>{
     const q=search.trim().toLowerCase();
-    const base=showSlots?data:data.filter(row=>row.etat!=="SLOT_LIBRE");
+    const base=data.filter(row=>(showSlots||row.etat!=="SLOT_LIBRE")&&(showShipped||row.etat!=="SHIPPED"));
     if(!q)return base;
     return base.filter(row=>{
       const m=getPjMeta(row.pj,row);
       return row.pj.toLowerCase().includes(q)||(m.nomProjet||"").toLowerCase().includes(q)||(m.pays||"").toLowerCase().includes(q)||(m.chefProjet||"").toLowerCase().includes(q)||(row.gamme||"").toLowerCase().includes(q);
     });
-  },[data,search,showSlots]);
-  const myPjs=useMemo(()=>{const pr=profileOf(profiles,currentUserEmail);const set=new Set(pjsOfProfile(pr,data));const nm=lc(pr.name||nameFromEmail(currentUserEmail||""));data.forEach(x=>{if(nm&&lc(getPjMeta(x.pj,x).chefProjet)===nm)set.add(x.pj);});return set;},[profiles,currentUserEmail,data]);
-  const chefOfRow=row=>{const c=String(getPjMeta(row.pj,row).chefProjet||"").trim();return c&&c!=="—"?c:"";};
+  },[data,search,showSlots,showShipped]);
+  const myPjs=useMemo(()=>{const pr=profileOf(profiles,currentUserEmail);const set=new Set(pjsOfProfile(pr,data));const nm=lc(pr.name||nameFromEmail(currentUserEmail||""));data.forEach(x=>{if(nm&&chefsOf(getPjMeta(x.pj,x)).some(c=>lc(c)===nm))set.add(x.pj);});return set;},[profiles,currentUserEmail,data]);
+  const chefOfRow=row=>chefsOf(getPjMeta(row.pj,row))[0]||"";
   const groups=useMemo(()=>{
     if(groupBy==="mine")return [{key:"mine",head:null,rows:filteredList.filter(x=>myPjs.has(x.pj))}];
     if(groupBy!=="chef")return [{key:"all",head:null,rows:filteredList}];
-    const m=new Map();filteredList.forEach(x=>{const c=chefOfRow(x)||"Sans chef de projet";if(!m.has(c))m.set(c,[]);m.get(c).push(x);});
+    const m=new Map();filteredList.forEach(x=>{const cs=chefsOf(getPjMeta(x.pj,x));(cs.length?cs:["Sans chef de projet"]).forEach(c=>{if(!m.has(c))m.set(c,[]);m.get(c).push(x);});}); // v191 : un PJ figure chez chacun de ses chefs
     return [...m.entries()].sort((a,b)=>a[0]==="Sans chef de projet"?1:b[0]==="Sans chef de projet"?-1:a[0].localeCompare(b[0],"fr")).map(([c,rows])=>({key:"c:"+c,head:c,rows,late:rows.filter(x=>x.drift>0&&x.etat!=="SHIPPED").length}));
   },[filteredList,groupBy,myPjs]); // eslint-disable-line
   const pick=pj=>{setSelPj(pj);setChefView(null);};
@@ -730,7 +734,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
           <button type="button" onClick={()=>setListMini(v=>!v)} aria-label={listMini?"Agrandir la liste":"Réduire la liste"} title={listMini?"Agrandir la liste":"Réduire la liste pour laisser plus de place à la fiche"} style={{border:"1px solid "+T.line,background:"transparent",color:T.ink500,borderRadius:8,width:28,height:28,cursor:"pointer",display:"inline-flex",alignItems:"center",justifyContent:"center",padding:0}}><span style={{display:"inline-flex",transform:"rotate("+(listMini?"-90deg":"90deg")+")"}}><NavIcon name="chevronDown" size={15}/></span></button>
         </div>
         {!listMini&&<input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher un PJ, projet, pays, chef, gamme…" style={{width:"100%",padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.xs,fontFamily:T.font,color:T.ink700,boxSizing:"border-box"}}/>}
-        {!listMini&&<div style={{fontSize:FZ.xs,color:T.ink300,marginTop:4,display:"flex",alignItems:"center",justifyContent:"space-between",gap:6}}><span>{filteredList.length} PJ</span><label style={{display:"inline-flex",alignItems:"center",gap:4,cursor:"pointer"}}><input type="checkbox" checked={showSlots} onChange={e=>setShowSlots(e.target.checked)}/>Slots libres</label></div>}
+        {!listMini&&<div style={{fontSize:FZ.xs,color:T.ink300,marginTop:4,display:"flex",alignItems:"center",justifyContent:"space-between",gap:6}}><span>{filteredList.length} PJ</span><span style={{display:"inline-flex",gap:10}}><label style={{display:"inline-flex",alignItems:"center",gap:4,cursor:"pointer"}}><input type="checkbox" checked={showShipped} onChange={e=>setShowShipped(e.target.checked)}/>Expédiées</label><label style={{display:"inline-flex",alignItems:"center",gap:4,cursor:"pointer"}}><input type="checkbox" checked={showSlots} onChange={e=>setShowSlots(e.target.checked)}/>Slots libres</label></span></div>}
         {!listMini&&<div role="tablist" aria-label="Regrouper la liste" style={{display:"flex",gap:2,marginTop:6,background:T.surface,borderRadius:8,padding:2}}>
           {[["chef","Par chef"],["all","Tous"],["mine","Mes PJ"]].map(([id,l])=><button key={id} type="button" role="tab" aria-selected={groupBy===id} onClick={()=>setGroupBy(id)} style={{flex:1,border:"none",borderRadius:6,minHeight:26,fontSize:FZ.xs,fontWeight:700,fontFamily:T.font,cursor:"pointer",background:groupBy===id?T.card:"transparent",color:groupBy===id?T.teal600:T.ink500,boxShadow:groupBy===id?T.shadowSm:"none"}}>{l}{id==="mine"&&myPjs.size?" "+myPjs.size:""}</button>)}
         </div>}
@@ -770,7 +774,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
                 {nDel>0&&<span style={{display:"inline-flex",alignItems:"center",gap:2,color:T.red500}}><NavIcon name="clock" size={11}/>{nDel}</span>}
               </span>
             </div>
-            <div style={{display:"flex",alignItems:"center",gap:6,marginTop:2,minWidth:0}}><SerieTag pj={row.pj} size={10}/><span style={{fontSize:FZ.xs,color:T.ink500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",minWidth:0,flex:1}}>{m.nomProjet}</span></div>
+            <div style={{display:"flex",alignItems:"center",gap:6,marginTop:2,minWidth:0}}><SerieTag pj={row.pj} size={10}/><EpcTag meta={m} short/><span style={{fontSize:FZ.xs,color:T.ink500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",minWidth:0,flex:1}}>{m.nomProjet}</span></div>
             <div style={{display:"flex",alignItems:"center",gap:8,marginTop:3}}>
               <div style={{flex:1}}><ProgressBar value={pv} height={3} color={ec.bar}/></div>
               <span style={{fontSize:FZ.xs,fontWeight:700,color:etatInk(row.etat),width:30,textAlign:"right"}}>{pv}%</span>
@@ -787,7 +791,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
       style={{width:10,alignSelf:"stretch",minHeight:300,margin:"0 -6px",cursor:"col-resize",flexShrink:0,display:"flex",justifyContent:"center",touchAction:"none"}}><span style={{width:3,borderRadius:2,background:T.line,margin:"8px 0"}}/></div>}
     <div style={{flex:"1 1 560px",minWidth:340,maxWidth:"none"}}>
       {/* v146.15 : les rapports se lancent depuis une barre AU-DESSUS de la fiche, pas dedans (lecture de la synthèse) */}
-      {chefView&&<ChefOverview name={chefView} rows={(groups.find(g=>g.head===chefView)||{rows:data.filter(x=>x.etat!=="SLOT_LIBRE"&&(chefOfRow(x)||"Sans chef de projet")===chefView)}).rows} pvOf={pvOf} onPick={pick} onClose={()=>setChefView(null)}/>}
+      {chefView&&<ChefOverview name={chefView} rows={(groups.find(g=>g.head===chefView)||{rows:data.filter(x=>x.etat!=="SLOT_LIBRE"&&x.etat!=="SHIPPED"&&(chefsOf(getPjMeta(x.pj,x)).includes(chefView)||(!chefOfRow(x)&&chefView==="Sans chef de projet")))}).rows} pvOf={pvOf} onPick={pick} onClose={()=>setChefView(null)}/>}
       {!chefView&&r&&<div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:8,flexWrap:"wrap",marginBottom:8}}>
         <span style={{fontSize:FZ.xs,color:T.ink300,marginRight:"auto"}}>Rapports pour {r.pj}</span>
         {savePjMetaMulti&&<button onClick={()=>setMultiOpen(true)} title="Ajouter une action, un plan de mitigation, un commentaire ou un statut à plusieurs projets en une fois" style={{display:"inline-flex",alignItems:"center",gap:6,padding:"5px 10px",border:"1px solid "+T.line,borderRadius:10,background:T.card,color:T.ink700,fontWeight:700,fontSize:FZ.xs,fontFamily:T.font,cursor:"pointer"}}>＋ Sur plusieurs projets…</button>}
@@ -811,8 +815,11 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
               </div>
               <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginTop:4,fontSize:FZ.sm,fontWeight:500,color:T.ink500}}>
                 <span>{meta.nomProjet}</span>
-                {meta.chefProjet&&meta.chefProjet!=="—"&&<span style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:FZ.xs,fontWeight:400}}><Avatar name={meta.chefProjet} size={16}/>{meta.chefProjet}</span>}
+                {chefsOf(meta).map(c=><span key={c} style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:FZ.xs,fontWeight:400}}><Avatar name={c} size={16}/>{c}{meta.epc&&c===meta.chefOrc?" (ORC)":""}</span>)}
+                <EpcTag meta={meta}/>
+                {isSuperAdmin()&&savePjMetaOverride&&<button type="button" onClick={()=>setChefEdit(v=>!v)} aria-expanded={chefEdit} style={{border:"none",background:"transparent",color:T.teal600,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",minHeight:24,fontFamily:T.font}}>Chefs / EPC</button>}
               </div>
+              {chefEdit&&<ChefsEpcEditor meta={meta} onSave={f=>savePjMetaOverride(r.pj,f)} onCancel={()=>setChefEdit(false)}/>}
               <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",marginTop:5,fontSize:FZ.xs,color:T.ink500}}>
                 <Badge etat={r.etat}/>
                 <CertifTag r={r} meta={meta} rows={data} getMeta={getPjMeta} save={savePjMetaOverride&&savePjMetaMulti?(f=>savePjMetaOverride(r.pj,f)):null} saveMulti={savePjMetaMulti} certifs={certifs||[]} setCertifs={setCertifs||(async()=>false)}/>
