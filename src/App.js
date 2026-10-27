@@ -66,7 +66,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-27-v195-menu-signatures";
+const APP_BUILD_VERSION = "2026-10-27-v196-espace-manager";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -1020,6 +1020,7 @@ export default function App(){
   // v195 (demandé : « garder la mini-barre en auto ; la flèche du bas ouvre la barre en entier ») : plus d'ouverture au survol.
   // La flèche ouvre le menu complet par-dessus la page ; il se replie seul quand on choisit une page ou quand la souris le quitte.
   const [navPeek,setNavPeek]=useState(false),navPeekT=useRef(0);
+  const [mgrNav,setMgrNav]=useState(null); // v196 : entrées du Manager affichées dans ce menu (fournies par ManagerPanel)
   const closePeek=delay=>{clearTimeout(navPeekT.current);navPeekT.current=setTimeout(()=>setNavPeek(false),delay||0);};
   const navOverlay=true;
   const navCompact=navOverlay&&!navPeek; // dans l'espace Manager, un seul menu large : celui du Manager
@@ -1055,7 +1056,7 @@ export default function App(){
         {!navCompact&&<span style={{textAlign:"left",lineHeight:1.25}}><span style={{display:"block",fontFamily:T.fontDisplay,fontWeight:800,fontSize:14,letterSpacing:".02em",color:NAV.industrial?"#FFFFFF":T.ink900}}>{SITE_NAME} <span style={{color:NAV.group}}>· {SITE_SCOPE}</span></span><span style={{display:"block",fontSize:11,color:NAV.ink,marginTop:2,whiteSpace:"normal"}}>{SITE_SUB}</span></span>}
         </span>
       </button>
-      {[["Planning",["home","table","gantt","calendar"]],["Suivi",["changes","comments","tests"]]].map(([gl,ids])=>{const items=VIEWS.filter(v=>ids.includes(v.id));if(!items.length)return null;return(<React.Fragment key={gl}>
+      {!(view==="manager"&&mgrNav)&&[["Planning",["home","table","gantt","calendar"]],["Suivi",["changes","comments","tests"]]].map(([gl,ids])=>{const items=VIEWS.filter(v=>ids.includes(v.id));if(!items.length)return null;return(<React.Fragment key={gl}>
         {!navCompact&&<div className="enogia-nav-grp" style={{fontSize:12,fontWeight:700,color:NAV.group,fontFamily:T.font,padding:"12px 10px 4px",whiteSpace:"nowrap"}}>{gl}</div>}
         {navCompact&&<div className="enogia-nav-grp" style={{width:18,height:1,background:NAV.industrial?"rgba(255,255,255,.18)":T.line,margin:"4px 0"}}/>}
         {items.map(v=>{const on=view===v.id;const ttl=v.id==="changes"&&unseenChanges.length?"Modifications — "+unseenChanges.length+" nouvelle"+(unseenChanges.length>1?"s":"")+" version"+(unseenChanges.length>1?"s":""):v.l;return(
@@ -1065,6 +1066,20 @@ export default function App(){
             onMouseLeave={e=>{if(!on){e.currentTarget.style.background="transparent";e.currentTarget.style.color=NAV.ink;}}}>
             <NavIcon name={v.icon} size={19}/>{!navCompact&&<span className="enogia-nav-lab" style={{flex:1,textAlign:"left"}}>{v.l}</span>}{v.id==="changes"&&<ChangesBadge n={unseenChanges.length}/>}</button>);})}
       </React.Fragment>);})}
+      {/* v196 (maquette validée « un seul menu ») : dans le Manager, le menu du site porte les entrées du Manager ; ses sous-pages sont des onglets sous le titre. */}
+      {view==="manager"&&mgrNav&&<>
+        <button className="enogia-nav-btn" onClick={()=>{setView("home");setNavPeek(false);}} title="Revenir au planning" aria-label="Revenir au planning" style={{width:navCompact?40:"100%",height:34,borderRadius:navCompact?12:10,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:navCompact?"center":"flex-start",gap:12,padding:navCompact?0:"0 12px",background:"transparent",color:NAV.ink,fontFamily:T.font,fontSize:FZ.xs,fontWeight:600,whiteSpace:"nowrap"}}><span style={{display:"inline-flex",transform:"rotate(90deg)"}}><NavIcon name="chevronDown" size={15}/></span>{!navCompact&&<span className="enogia-nav-lab">Revenir au planning</span>}</button>
+        {mgrNav.groups.map(g=><React.Fragment key={g.label}>
+          {!navCompact&&<div className="enogia-nav-grp" style={{fontSize:12,fontWeight:700,color:NAV.group,fontFamily:T.font,padding:"12px 10px 4px",whiteSpace:"nowrap"}}>{g.label}</div>}
+          {navCompact&&<div className="enogia-nav-grp" style={{width:18,height:1,background:NAV.industrial?"rgba(255,255,255,.18)":T.line,margin:"4px 0"}}/>}
+          {g.entries.map(e=>{const on=e.id===mgrNav.activeId;return(
+            <button key={e.id} className="enogia-nav-btn" onClick={()=>{e.go();setNavPeek(false);}} title={e.label} aria-label={e.label} aria-current={on?"page":undefined}
+              style={{position:"relative",width:navCompact?40:"100%",height:40,borderRadius:navCompact?12:10,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:navCompact?"center":"flex-start",gap:12,padding:navCompact?0:"0 12px",background:on?NAV.bgOn:"transparent",color:on?NAV.inkOn:NAV.ink,fontFamily:T.font,fontSize:FZ.sm,fontWeight:on?700:500,whiteSpace:"nowrap"}}
+              onMouseEnter={x=>{if(!on){x.currentTarget.style.background=NAV.hover;x.currentTarget.style.color=NAV.hoverInk;}}}
+              onMouseLeave={x=>{if(!on){x.currentTarget.style.background="transparent";x.currentTarget.style.color=NAV.ink;}}}>
+              <NavIcon name={e.icon} size={19}/>{!navCompact&&<span className="enogia-nav-lab" style={{flex:1,textAlign:"left"}}>{e.label}</span>}{e.lock&&!navCompact&&<NavIcon name="lock" size={12}/>}</button>);})}
+        </React.Fragment>)}
+      </>}
       <div style={{flex:1}}/>
       <button className="enogia-nav-btn" onClick={()=>setScreenOpen(true)} title="Écran atelier : diaporama plein écran pour un téléviseur" aria-label="Écran atelier" style={{width:navCompact?40:"100%",height:36,borderRadius:12,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:navCompact?"center":"flex-start",gap:12,padding:navCompact?0:"0 12px",background:"transparent",color:NAV.ink,fontFamily:T.font,fontSize:FZ.sm,fontWeight:500,whiteSpace:"nowrap"}}
         onMouseEnter={e=>{e.currentTarget.style.background=NAV.hover;}}
@@ -1122,7 +1137,7 @@ export default function App(){
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
               <span style={{fontFamily:T.fontDisplay,fontWeight:600,color:T.ink900,fontSize:FZ.lg,display:"flex",alignItems:"center",gap:8}}><NavIcon name="manager" size={20}/>Espace Manager</span>
             </div>
-            <ManagerPanel changeLog={changeLog} data={dataWithOverrides} progress={progressEff} setProgress={setProgress} releases={releasesAll} saveReleaseNotes={saveReleaseNotes} releaseSelection={releaseSelection} saveReleaseSelection={saveReleaseSelection} publishRelease={publishRelease} isBeta={IS_BETA} initialData={initialData} lastInitialImport={lastInitialImport} lastInitialAdd={lastInitialAdd} onInitialImport={handleInitialImport} onInitialAdd={handleInitialAdd} initialImporting={initialImporting}
+            <ManagerPanel onNav={setMgrNav} changeLog={changeLog} data={dataWithOverrides} progress={progressEff} setProgress={setProgress} releases={releasesAll} saveReleaseNotes={saveReleaseNotes} releaseSelection={releaseSelection} saveReleaseSelection={saveReleaseSelection} publishRelease={publishRelease} isBeta={IS_BETA} initialData={initialData} lastInitialImport={lastInitialImport} lastInitialAdd={lastInitialAdd} onInitialImport={handleInitialImport} onInitialAdd={handleInitialAdd} initialImporting={initialImporting}
               etatChoice={etatChoiceEff} setEtatFor={setEtatFor} saveProgress={saveProgress} savingProgress={savingProgress} progressSaved={progressSaved}
               tab={managerTab} setTab={setManagerTab} jumpFiche={managerJump} clientPresence={clientPresence} setClientPresenceFor={setClientPresenceFor}
               closurePeriods={closurePeriods} setClosurePeriods={setClosurePeriodsAndSave}

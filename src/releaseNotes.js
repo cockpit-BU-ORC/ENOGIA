@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v196",
+    date: "2026-10-27",
+    title: "V196 : un espace Manager plus aéré",
+    items: [
+      { t: "Un seul menu", d: "Dans le Manager, le menu de gauche affiche directement ses rubriques (KPI, Suivi, Retards, Fiches…) ; « Revenir au planning » en haut.", admin: true },
+      { t: "Sous-pages en onglets", d: "Chaque page a le même en-tête : titre, une phrase, actions à droite, puis ses sous-pages en onglets. Les filtres se rangent dans un bouton.", admin: true },
+      { t: "Fiches projet", d: "La liste des projets se replie en languette : la fiche prend toute la largeur.", admin: true },
+    ],
+  },
+  {
     id: "2026-10-v195",
     date: "2026-10-27",
     title: "V195 : menu, signatures en image, accueil plus fluide",

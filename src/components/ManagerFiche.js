@@ -727,10 +727,11 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
     {cdpOpen&&<CdpDialog certifs={certifs} data={data} initialData={initialData} delays={delays} comments={comments} progress={progress} changeLog={changeLog} initialChef={meta&&meta.chefProjet&&meta.chefProjet!=="—"?meta.chefProjet:undefined} onClose={()=>setCdpOpen(false)}/>}
     {codirOpen&&isSuperAdmin()&&<CodirDialog data={data} initialData={initialData} comments={comments} delays={delays} progress={progress} initialPj={r&&r.pj} onClose={()=>setCodirOpen(false)}/>}
     {/* ── Liste : avancement, état et compteurs visibles sans ouvrir la fiche ── */}
-    <div className="enogia-mlist" aria-hidden={focus?"true":undefined} style={{...CARD,width:focus?0:listMini?76:listW,opacity:focus?0:1,pointerEvents:focus?"none":"auto",visibility:focus?"hidden":"visible",padding:focus?0:CARD.padding,borderWidth:focus?0:undefined,marginRight:focus?-12:0,transition:"opacity .22s ease, visibility 0s linear "+(focus?".22s":"0s"),flexShrink:0,maxHeight:"calc(100dvh - 200px)",minHeight:300,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+    <div className="enogia-mlist" aria-hidden={focus?"true":undefined} style={{...CARD,width:focus?0:listMini?44:listW,opacity:focus?0:1,pointerEvents:focus?"none":"auto",visibility:focus?"hidden":"visible",padding:focus?0:CARD.padding,borderWidth:focus?0:undefined,marginRight:focus?-12:0,transition:"opacity .22s ease, visibility 0s linear "+(focus?".22s":"0s"),flexShrink:0,maxHeight:"calc(100dvh - 200px)",minHeight:300,display:"flex",flexDirection:"column",overflow:"hidden"}}>
       <div style={{padding:8,borderBottom:"1px solid "+T.line}}>
         <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:listMini?0:6,justifyContent:listMini?"center":"flex-end"}}>
           {!listMini&&<span style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk,marginRight:"auto"}}>Projets</span>}
+          {listMini&&<button type="button" onClick={()=>setListMini(false)} aria-label="Ouvrir la liste des projets" title="Ouvrir la liste des projets" style={{border:"none",background:"transparent",color:T.ink700,cursor:"pointer",writingMode:"vertical-rl",transform:"rotate(180deg)",fontFamily:T.font,fontSize:FZ.xs,fontWeight:700,padding:"10px 0",minHeight:120,letterSpacing:".04em"}}>Projets · {filteredList.length}</button>}
           <button type="button" onClick={()=>setListMini(v=>!v)} aria-label={listMini?"Agrandir la liste":"Réduire la liste"} title={listMini?"Agrandir la liste":"Réduire la liste pour laisser plus de place à la fiche"} style={{border:"1px solid "+T.line,background:"transparent",color:T.ink500,borderRadius:8,width:28,height:28,cursor:"pointer",display:"inline-flex",alignItems:"center",justifyContent:"center",padding:0}}><span style={{display:"inline-flex",transform:"rotate("+(listMini?"-90deg":"90deg")+")"}}><NavIcon name="chevronDown" size={15}/></span></button>
         </div>
         {!listMini&&<input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher un PJ, projet, pays, chef, gamme…" style={{width:"100%",padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.xs,fontFamily:T.font,color:T.ink700,boxSizing:"border-box"}}/>}
@@ -741,9 +742,8 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
       </div>
       <div style={{overflowY:"auto",overflowX:"hidden",flex:1}}>
         {groups.map(g=>(<React.Fragment key={g.key}>
-        {g.head&&(listMini
-          ?<div title={g.head} style={{fontFamily:T.fontLabel,fontSize:11,fontWeight:600,color:T.ink500,textAlign:"center",padding:"4px 2px",background:T.surface,borderBottom:"1px solid "+T.line}}>{g.head.split(" ").map(w=>w[0]).join("").slice(0,3)}</div>
-          :<div style={{display:"flex",alignItems:"center",gap:4,padding:"4px 6px",background:chefView===g.head?T.teal100:T.surface,borderBottom:"1px solid "+T.line,position:"sticky",top:0,zIndex:1}}>
+        {g.head&&!listMini&&(
+          <div style={{display:"flex",alignItems:"center",gap:4,padding:"4px 6px",background:chefView===g.head?T.teal100:T.surface,borderBottom:"1px solid "+T.line,position:"sticky",top:0,zIndex:1}}>
             <button type="button" onClick={()=>toggleFold(g.key)} aria-expanded={!folded.has(g.key)} aria-label={(folded.has(g.key)?"Déplier ":"Replier ")+g.head} style={{border:"none",background:"transparent",cursor:"pointer",color:T.ink500,minWidth:24,minHeight:24,display:"inline-flex",alignItems:"center",justifyContent:"center",padding:0}}><span style={{display:"inline-flex",transform:folded.has(g.key)?"rotate(-90deg)":"none",transition:"transform .15s ease"}}><NavIcon name="chevronDown" size={13}/></span></button>
             <button type="button" onClick={()=>setChefView(g.head)} title={"Voir tous les projets de "+g.head} style={{flex:1,minWidth:0,border:"none",background:"transparent",cursor:"pointer",textAlign:"left",padding:"2px 0",fontFamily:T.font,fontSize:FZ.sm,fontWeight:700,color:T.ink900,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{g.head}</button>
             {g.late>0&&<span title="En retard sur l'initial" style={{fontFamily:T.fontLabel,fontSize:11,fontWeight:600,color:T.red600,background:T.red100,borderRadius:999,padding:"0 6px"}}>{g.late} en retard</span>}
@@ -757,11 +757,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
           const sel=selPj===row.pj;
           const ec=(ETAT_META[row.etat]||ETAT_META["NOT ORDERED"]);
           const pv=pvOf(row);
-          if(listMini)return(<button key={row.pj} type="button" onClick={()=>pick(row.pj)} title={row.pj+" · "+(m.nomProjet||"")+" · "+ec.label+" · "+pv+"%"} aria-current={sel?"true":undefined}
-            style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,width:"100%",padding:"6px 2px",cursor:"pointer",border:"none",borderBottom:"1px solid "+T.line,borderLeft:"3px solid "+(sel?ec.bar:"transparent"),background:sel?T.teal100:"transparent",fontFamily:T.font}}>
-            <span style={{fontWeight:700,fontSize:FZ.xs,fontVariantNumeric:"tabular-nums",color:etatInk(row.etat)}}>{row.pj.replace(/^PJ/,"")}</span>
-            <span style={{width:"70%",height:3,borderRadius:2,background:T.surfaceAlt,overflow:"hidden"}}><span style={{display:"block",height:"100%",width:Math.min(100,pv)+"%",background:ec.bar}}/></span>
-          </button>);
+          if(listMini)return null; // v196 : liste en tiroir — repliée, seule la languette « Projets » reste
           return(<div key={row.pj} {...pressable(()=>pick(row.pj),{"aria-current":sel?"true":undefined})} style={{padding:"6px 8px 6px 8px",cursor:"pointer",background:sel?T.teal100:"transparent",borderLeft:"3px solid "+(sel?T.teal500:"transparent"),borderBottom:"1px solid "+T.line}}>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
               <span style={{width:8,height:8,borderRadius:"50%",background:ec.bar,flexShrink:0}} title={ec.label}/>

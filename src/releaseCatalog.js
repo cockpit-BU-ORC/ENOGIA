@@ -368,4 +368,7 @@ export const RELEASE_CATALOG = [
     ["Tests", "Signature : nom, fonction et image ; PDF simplifié."],
     ["Accueil", "Tuiles dimensionnées et apparition plus douce."],
   ] },
+  { v: "196", t: "Un espace Manager plus aéré", items: [
+    ["Manager", "Un seul menu, en-tête commun, sous-pages en onglets, filtres repliés, liste des fiches en tiroir."],
+  ] },
 ];

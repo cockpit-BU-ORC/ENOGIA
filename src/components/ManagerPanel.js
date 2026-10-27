@@ -7,7 +7,7 @@ import { DropFilter, ImportButton, NavIcon, Select, notify } from "./SharedUI";
 import { CARD, KpiRow, PieBlock, EmptyNote, StatutTab, KpiAvancement, DelayInsights, DelaysTab, ProductionCalendarManager } from "./ManagerParts";
 import { ProjectFileManager } from "./ManagerFiche";
 import { EtatInfoButton } from "./ProdStagesUI";
-import { ManagerRail, ManagerCrumb, ManagerPalette, useRailCollapsed } from "./ManagerNav";
+import { ManagerRail, ManagerPalette, useRailCollapsed } from "./ManagerNav";
 import { useIsPhone } from "../useIsPhone";
 import { ReleaseEditor, ReleaseCatalog } from "./ReleaseNotes";
 import { PointHebdo } from "./PointHebdo";
@@ -27,7 +27,7 @@ export function PeriodFilter({yearsAvailable,year,setYear,month,setMonth,showMon
     {showMonth&&<div style={{width:128}}><Select compact value={month==null?"":month} onChange={e=>setMonth(e.target.value===""?null:+e.target.value)} options={[{value:"",label:"Tous les mois"},...MONTHS.map((m,i)=>({value:i,label:m}))]}/></div>}
   </div>);
 }
-export function ManagerPanel({profiles,saveProfiles,jumpFiche,changeLog,data,progress,setProgress,releases,saveReleaseNotes,releaseSelection,saveReleaseSelection,publishRelease,isBeta,initialData,lastInitialImport,lastInitialAdd,onInitialImport,onInitialAdd,initialImporting,etatChoice,setEtatFor,saveProgress,savingProgress,progressSaved,tab,setTab,clientPresence,setClientPresenceFor,closurePeriods,setClosurePeriods,customEtats,setCustomEtats,productionExclusions,setProductionExclusionDays,comments,delays,delayTypes,setDelayTypes,addDelayAllocationMulti,deleteDelayAllocation,managerEmails,setManagerEmails,currentUserEmail,authorName,buildVersion,savePjMetaOverride,savePjMetaMulti,addCommentMulti,addComment,resolveComment,deleteComment,turbineDoc,saveTurbines,certifs,setCertifs,compCatalog,setCompCatalog}){
+export function ManagerPanel({onNav,profiles,saveProfiles,jumpFiche,changeLog,data,progress,setProgress,releases,saveReleaseNotes,releaseSelection,saveReleaseSelection,publishRelease,isBeta,initialData,lastInitialImport,lastInitialAdd,onInitialImport,onInitialAdd,initialImporting,etatChoice,setEtatFor,saveProgress,savingProgress,progressSaved,tab,setTab,clientPresence,setClientPresenceFor,closurePeriods,setClosurePeriods,customEtats,setCustomEtats,productionExclusions,setProductionExclusionDays,comments,delays,delayTypes,setDelayTypes,addDelayAllocationMulti,deleteDelayAllocation,managerEmails,setManagerEmails,currentUserEmail,authorName,buildVersion,savePjMetaOverride,savePjMetaMulti,addCommentMulti,addComment,resolveComment,deleteComment,turbineDoc,saveTurbines,certifs,setCertifs,compCatalog,setCompCatalog}){
   const [fEtat,setFEtat]=useState(new Set(ALL_ETATS));
   const [kpiStep,setKpiStep]=useState("depart");
   const [kpiTab,setKpiTab]=useState("synthese"); // sous-onglet KPI par famille
@@ -308,6 +308,8 @@ export function ManagerPanel({profiles,saveProfiles,jumpFiche,changeLog,data,pro
 
   // ── Navigation Manager : onglets horizontaux + sous-onglets par famille ──
   // « Il y a bcp de KPI… plusieurs petits onglets par famille de KPI ? » → un sous-onglet par famille.
+  // v196 : une phrase sous le titre de chaque page du Manager
+const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",suivi:"Statut, état et santé des projets",retards:"Retards déclarés et leurs causes",fiche:"Tout un projet sur une page : dates, actions, composants, paiements",hebdo:"Ce qui a changé cette semaine",turbines:"Pool de turbines et attributions",cash:"Encaissements et facturation (réservé)",reglages:"Paramètres du site, accès et imports"};
   const GROUP_OF={fiche:"fiche",hebdo:"hebdo",derives:"derives",statut:"suivi",sante:"suivi",retards:"retards",acces:"reglages",personnes:"reglages",imports:"reglages",serie:"reglages",vacances:"reglages",production:"reglages",nouveautes:"reglages",cash:"cash",turbines:"turbines"};
   const superAdmin=isSuperAdmin(),owner=isOwner(); // v185 : superAdmin = propriétaire ou admin ; owner = propriétaire (Cash in) // v143 : seul le super admin voit l'onglet « Réglages » (changer le site) ; un admin n'a que les onglets d'usage
   // v158 : menu groupé (rail latéral) ; chaque entrée sait où aller. Cash in et Réglages : super admin seulement.
@@ -333,71 +335,47 @@ export function ManagerPanel({profiles,saveProfiles,jumpFiche,changeLog,data,pro
     ...(superAdmin?[{label:"Admin",entries:[...(owner?[entry("cash","Cash in","euro","encaissement facturation",{lock:true})]:[]),entry("reglages","Réglages","lock","série production vacances imports nouveautés accès",{lock:true,go:goSub("reglages","production")})]}]:[]),
   ];
   const activeEntry=navGroups.flatMap(g=>g.entries).find(e=>e.id===group)||navGroups[0].entries[0];
-  const activeSubLabel=activeEntry.subs?((activeEntry.subs.find(x=>x.id===subValue)||{}).label||""):"";
+  // v196 : publie les entrées du Manager vers le menu du site (une seule barre de navigation) ; retirées en quittant le Manager.
+  const navKey=activeEntry.id+"|"+navGroups.map(g=>g.label+":"+g.entries.map(e=>e.id).join(",")).join(";");
+  useEffect(()=>{if(onNav&&!phone)onNav({groups:navGroups,activeId:activeEntry.id});},[navKey,phone]); // eslint-disable-line
+  useEffect(()=>()=>{if(onNav)onNav(null);},[]); // eslint-disable-line
   const palettePjs=useMemo(()=>(data||[]).filter(r=>r&&r.pj).map(r=>({pj:r.pj,etat:r.etat,nomProjet:getPjMeta(r.pj,r).nomProjet||""})),[data]);
   useEffect(()=>{const f=e=>{if((e.ctrlKey||e.metaKey)&&!e.altKey&&String(e.key).toLowerCase()==="k"){e.preventDefault();setPalOpen(o=>!o);}};window.addEventListener("keydown",f);return()=>window.removeEventListener("keydown",f);},[]);
   const showFilters=tab==="derives"||tab==="statut"||tab==="sante";
+  const [filtersOpen,setFiltersOpen]=useState(false);
+  const nFilters=(fEtat.size<ALL_ETATS.length?1:0)+(fGamme.size<ALL_GAMMES.length?1:0);
   const hasInitial=initialData.length>0;
   const [pendingAdd,setPendingAdd]=useState(null); // lignes du fichier en cours d'examen pour l'ajout à l'initial
 
   return(<div style={{display:"flex",flexDirection:phone?"column":"row",alignItems:phone?"stretch":"flex-start",gap:phone?10:16,fontFamily:T.font}}>
-    <ManagerRail groups={navGroups} activeId={activeEntry.id} activeSub={subValue} onGo={f=>f()} collapsed={railMin||focusFiche} setCollapsed={v=>{if(focusFiche&&!v)setFocusFiche(false);setRailMin(v);}} phone={phone}/>
+    {phone&&<ManagerRail groups={navGroups} activeId={activeEntry.id} activeSub={subValue} onGo={f=>f()} collapsed={railMin||focusFiche} setCollapsed={v=>{if(focusFiche&&!v)setFocusFiche(false);setRailMin(v);}} phone={phone}/>}
     {palOpen&&<ManagerPalette groups={navGroups} data={palettePjs} activeKey={activeEntry.id+":"+(activeEntry.subs?subValue:"")} onGo={f=>f()} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}} onClose={()=>setPalOpen(false)}/>}
-    <div style={{flex:1,minWidth:0,width:"100%",display:"flex",flexDirection:"column",gap:12}}>
-    {/* ── Fil d'Ariane + « Aller à… » + petite tuile « planning initial » ── */}
-    <div style={{display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
-      <div style={{flex:"1 1 280px",minWidth:0}}><ManagerCrumb parts={["Manager",activeEntry.label,...(activeSubLabel?[activeSubLabel]:[])]} onOpenPalette={()=>setPalOpen(true)}/></div>
-      {!phone&&<button type="button" className="enogia-btn-ind" onClick={()=>setFocusFiche(v=>!v)} aria-pressed={focusFiche} title={focusFiche?"Réafficher le menu complet et la liste des projets":"Replier le menu et la liste pour laisser toute la place à la fiche"}
-        style={{marginBottom:6,display:"inline-flex",alignItems:"center",gap:6,height:30,padding:"0 10px",borderRadius:8,border:"1.5px solid "+T.teal500,background:focusFiche?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:focusFiche?(T.mode==="dark"?"#0B1130":"#FFFFFF"):T.teal600,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font,whiteSpace:"nowrap"}}><NavIcon name="sidepanel" size={15}/>{focusFiche?"Afficher les colonnes":"Fiche plein écran"}</button>}
-      <div style={{marginBottom:6,display:"flex",alignItems:"center",gap:8,padding:"4px 4px 4px 12px",border:"1px solid "+(hasInitial?T.line:T.amber500),borderRadius:12,background:hasInitial?T.card:T.amber100}}>
-        <span style={{color:hasInitial?T.teal600:T.amber600,display:"inline-flex"}}><NavIcon name={hasInitial?"pin":"warning"} size={13}/></span>
-        <div style={{lineHeight:1.25}}>
-          <div style={{fontSize:FZ.xs,fontWeight:700,color:T.ink900}}>Planning initial</div>
-          <div style={{fontSize:FZ.xs,color:hasInitial?T.ink500:T.amber600}}>{hasInitial?initialData.length+" unités"+(lastInitialImport?" · "+lastInitialImport:" · figé")+(lastInitialAdd?" · ajout "+lastInitialAdd:""):"non importé — dérives indisponibles"}</div>
+    <div className="enogia-mgr-main" style={{flex:1,minWidth:0,width:"100%",maxWidth:1440,display:"flex",flexDirection:"column",gap:12}}>
+    {/* ── v196 (maquette validée) : en-tête commun à toutes les sous-pages — titre, une phrase, actions à droite ; sous-pages en onglets ;
+         filtres repliés dans un bouton (nombre de filtres actifs). « Planning initial » est passé dans Réglages › Imports. ── */}
+    <header className="enogia-mgr-head" style={{display:"flex",flexDirection:"column",gap:8}}>
+      <div style={{display:"flex",alignItems:"flex-end",gap:10,flexWrap:"wrap"}}>
+        <div style={{flex:"1 1 260px",minWidth:0}}>
+          <h1 style={{margin:0,fontFamily:T.fontDisplay,fontSize:"clamp(24px,2.4vw,30px)",fontWeight:600,letterSpacing:"-.01em",color:T.ink900,lineHeight:1.15}}>{activeEntry.label}</h1>
+          <div style={{fontSize:FZ.sm,color:T.ink500,marginTop:2}}>{PAGE_DESC[activeEntry.id]||""}</div>
         </div>
-        {/* Import initial complet (⋯) : seulement tant qu'aucun initial n'existe (première mise en place). Ensuite on n'ajoute que de nouveaux PJ avec ＋, les PJ ancrés ne sont plus écrasables par erreur. */}
-        {superAdmin&&!hasInitial&&<ImportButton
-          iconOnly
-          onImport={onInitialImport}
-          busy={initialImporting}
-          label="Importer planning initial"
-          accent={T.navy700}
-          hasExisting={hasInitial}
-          inputId="msp-file-initial"
-          confirmMessage={"Un planning initial a déjà été importé"+(lastInitialImport?(" le "+lastInitialImport):"")+".\n\nCe planning sert de référence figée pour calculer les dérives — il ne devrait normalement être importé qu'une seule fois.\n\nÊtes-vous sûr de vouloir l'écraser ?"}
-          helpText={<>Export Excel (.xlsx) avec colonnes <b>Nom, Début, Niveau hiérarchique</b>.<br/>Ce planning sera <b>figé</b> et servira de référence pour calculer les dérives par rapport au planning révisé.</>}
-          warnText="Ce planning devient la référence figée (dates initiales) — à importer une seule fois normalement."
-        />}
-        {superAdmin&&hasInitial&&<ImportButton
-          iconOnly
-          iconGlyph="＋"
-          onImport={rows=>setPendingAdd(rows)}
-          busy={initialImporting}
-          label="Ajouter des projets à l'initial"
-          accent={T.navy700}
-          hasExisting={false}
-          inputId="msp-file-initial-add"
-          helpText={<>Même format que l'import initial. Le site repère les <b>nouveaux PJ</b> du fichier et vous propose de les ancrer.<br/>Les PJ déjà dans l'initial ne sont <b>jamais modifiés</b>.</>}
-          warnText="Rien n'est enregistré avant votre validation."
-        />}
+        {!phone&&tab==="fiche"&&<button type="button" className="enogia-btn-ind" onClick={()=>setFocusFiche(v=>!v)} aria-pressed={focusFiche} title={focusFiche?"Réafficher le menu complet et la liste des projets":"Replier le menu et la liste pour laisser toute la place à la fiche"}
+        style={{display:"inline-flex",alignItems:"center",gap:6,height:30,padding:"0 10px",borderRadius:8,border:"1.5px solid "+T.teal500,background:focusFiche?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:focusFiche?(T.mode==="dark"?"#0B1130":"#FFFFFF"):T.teal600,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font,whiteSpace:"nowrap"}}><NavIcon name="sidepanel" size={15}/>{focusFiche?"Afficher les colonnes":"Fiche plein écran"}</button>}
+        {showFilters&&<button type="button" onClick={()=>setFiltersOpen(v=>!v)} aria-expanded={filtersOpen} style={{display:"inline-flex",alignItems:"center",gap:6,height:32,padding:"0 12px",borderRadius:8,border:"1px solid "+(nFilters?T.teal500:T.line),background:nFilters?T.teal100:T.card,color:nFilters?T.teal600:T.ink700,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font}}><NavIcon name="layers" size={14}/>Filtres{nFilters?" · "+nFilters:""}</button>}
+        <button type="button" onClick={()=>setPalOpen(true)} aria-label="Aller à… (Ctrl K)" style={{display:"inline-flex",alignItems:"center",gap:8,height:32,padding:"0 12px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink500,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font}}><NavIcon name="search" size={14}/>Aller à…<kbd style={{fontFamily:T.fontMono,fontSize:11,color:T.ink500,border:"1px solid "+T.line,borderRadius:4,padding:"0 4px"}}>Ctrl K</kbd></button>
       </div>
-    </div>
-
-    {/* ── Sous-onglets (famille de KPI, pages de suivi, réglages) + filtres ── */}
-    {((phone&&subItems)||showFilters)&&<div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
-      {phone&&subItems&&<div style={{display:"inline-flex",gap:2,padding:3,background:T.surface,border:"1px solid "+T.line,borderRadius:12}}>
+      {subItems&&<div role="tablist" aria-label={"Sous-pages : "+activeEntry.label} style={{display:"flex",gap:2,borderBottom:"1px solid "+T.line,overflowX:"auto"}}>
         {subItems.map(([id,l])=>{const on=subValue===id;return(
-          <button key={id} onClick={()=>onSub(id)} aria-pressed={on} style={{padding:"4px 12px",borderRadius:8,border:"none",background:on?T.card:"transparent",boxShadow:on?T.shadowSm:"none",color:on?T.teal600:T.ink500,fontWeight:on?700:600,fontSize:FZ.sm,cursor:"pointer",fontFamily:T.font,transition:"background .12s ease"}}>{l}</button>
-        );})}
+          <button key={id} type="button" role="tab" aria-selected={on} onClick={()=>onSub(id)} style={{border:"none",background:"transparent",borderBottom:"3px solid "+(on?T.ink900:"transparent"),marginBottom:-1,padding:"8px 14px",minHeight:36,fontSize:FZ.sm,fontWeight:on?700:600,color:on?T.ink900:T.ink500,cursor:"pointer",fontFamily:T.font,whiteSpace:"nowrap"}}>{l}</button>);})}
       </div>}
-      {showFilters&&<div style={{marginLeft:phone&&subItems?"auto":0,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+      {showFilters&&filtersOpen&&<div className="enogia-view-in" style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",padding:"8px 10px",background:T.surface,border:"1px solid "+T.line,borderRadius:10}}>
         <DropFilter label="Statut" options={ALL_ETATS} selected={fEtat} onChange={setFEtat} getLabel={o=>ETAT_META[o]?.label||o}/>
         <EtatInfoButton/>
         <DropFilter label="Gamme" options={ALL_GAMMES} selected={fGamme} onChange={setFGamme}/>
         <button onClick={()=>{setFEtat(new Set(ALL_ETATS));setFGamme(new Set(ALL_GAMMES));}} title="Réinitialiser les filtres" style={{background:"none",border:"none",padding:"0 4px",minHeight:24,fontSize:FZ.xs,color:T.ink300,cursor:"pointer",textDecoration:"underline",fontFamily:T.font}}>Effacer</button>
         <span style={{fontSize:FZ.xs,color:T.ink500,fontWeight:500}}>{fk.length} unités</span>
       </div>}
-    </div>}
+    </header>
 
     <div key={tab+(tab==="derives"?"/"+kpiTab:"")} className="enogia-view-in" style={{minWidth:0}}>
     {tab==="derives"&&kpiTab==="synthese"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
@@ -806,7 +784,40 @@ export function ManagerPanel({profiles,saveProfiles,jumpFiche,changeLog,data,pro
     </>}
     {owner&&tab==="cash"&&<CashInTab authorName={authorName} focus={cashFocus}/>}
     {superAdmin&&tab==="nouveautes"&&<><ReleaseCatalog isBeta={!!isBeta} selection={releaseSelection} onSaveSelection={saveReleaseSelection} onPublish={publishRelease} authorName={authorName}/><ReleaseEditor key={((releases||[])[0]||{}).id+":"+!!((releases||[])[0]||{}).off} releases={releases||[]} onSave={saveReleaseNotes} authorName={authorName}/></>}
-    {superAdmin&&tab==="imports"&&<ImportHistory authorName={authorName}/>}
+    {superAdmin&&tab==="imports"&&<><div style={{marginBottom:12}}>
+      <div style={{display:"inline-flex",alignItems:"center",gap:8,padding:"4px 4px 4px 12px",border:"1px solid "+(hasInitial?T.line:T.amber500),borderRadius:12,background:hasInitial?T.card:T.amber100}}>
+        <span style={{color:hasInitial?T.teal600:T.amber600,display:"inline-flex"}}><NavIcon name={hasInitial?"pin":"warning"} size={13}/></span>
+        <div style={{lineHeight:1.25}}>
+          <div style={{fontSize:FZ.xs,fontWeight:700,color:T.ink900}}>Planning initial</div>
+          <div style={{fontSize:FZ.xs,color:hasInitial?T.ink500:T.amber600}}>{hasInitial?initialData.length+" unités"+(lastInitialImport?" · "+lastInitialImport:" · figé")+(lastInitialAdd?" · ajout "+lastInitialAdd:""):"non importé — dérives indisponibles"}</div>
+        </div>
+        {/* Import initial complet (⋯) : seulement tant qu'aucun initial n'existe (première mise en place). Ensuite on n'ajoute que de nouveaux PJ avec ＋, les PJ ancrés ne sont plus écrasables par erreur. */}
+        {superAdmin&&!hasInitial&&<ImportButton
+          iconOnly
+          onImport={onInitialImport}
+          busy={initialImporting}
+          label="Importer planning initial"
+          accent={T.navy700}
+          hasExisting={hasInitial}
+          inputId="msp-file-initial"
+          confirmMessage={"Un planning initial a déjà été importé"+(lastInitialImport?(" le "+lastInitialImport):"")+".\n\nCe planning sert de référence figée pour calculer les dérives — il ne devrait normalement être importé qu'une seule fois.\n\nÊtes-vous sûr de vouloir l'écraser ?"}
+          helpText={<>Export Excel (.xlsx) avec colonnes <b>Nom, Début, Niveau hiérarchique</b>.<br/>Ce planning sera <b>figé</b> et servira de référence pour calculer les dérives par rapport au planning révisé.</>}
+          warnText="Ce planning devient la référence figée (dates initiales) — à importer une seule fois normalement."
+        />}
+        {superAdmin&&hasInitial&&<ImportButton
+          iconOnly
+          iconGlyph="＋"
+          onImport={rows=>setPendingAdd(rows)}
+          busy={initialImporting}
+          label="Ajouter des projets à l'initial"
+          accent={T.navy700}
+          hasExisting={false}
+          inputId="msp-file-initial-add"
+          helpText={<>Même format que l'import initial. Le site repère les <b>nouveaux PJ</b> du fichier et vous propose de les ancrer.<br/>Les PJ déjà dans l'initial ne sont <b>jamais modifiés</b>.</>}
+          warnText="Rien n'est enregistré avant votre validation."
+        />}
+      </div>
+      </div><ImportHistory authorName={authorName}/></>}
     {superAdmin&&tab==="serie"&&<SerieTab data={data} savePjMetaOverride={savePjMetaOverride}/>}
     {superAdmin&&tab==="vacances"&&<ClosurePeriodsManager closurePeriods={closurePeriods} setClosurePeriods={setClosurePeriods}/>}
     {superAdmin&&tab==="production"&&<ProductionCalendarManager data={data} productionExclusions={productionExclusions} setProductionExclusionDays={setProductionExclusionDays}/>}

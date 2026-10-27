@@ -1208,3 +1208,15 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - **Cash in** (`CashInTab.js`) : le format de l'artefact (page `public/cashin.html` dans le site) est de nouveau affiché par défaut ; « Nouvelle présentation » ouvre la version refaite (V193-V194), « Format artefact » y revient. Nouvelle clé `localStorage` **`enogia_cashin_format`** (`artefact` / `nouveau`), qui remplace `enogia_cashin_legacy`.
 - Vérifié : build (13 avertissements existants), tests, contraste. Pas testé dans l'appli connectée (dépôt d'une image de signature à essayer).
 - Fichiers : App.js, styles.css, testReport.js, components/{DashboardSummary,TestsTab,ProjectModal,RoleHome,CashInTab,CashInNative}.js, releaseNotes.js, releaseCatalog.js(+test).
+
+## v196 — Espace Manager réorganisé (maquette validée)
+
+- **Un seul menu** (`App.js`, `ManagerPanel.js`) : sur ordinateur, le rail du Manager n'est plus affiché ; `ManagerPanel` publie ses rubriques (`onNav` → état `mgrNav` d'App) et le menu du site les affiche à la place des pages du planning (icônes en mini-barre, libellés quand on l'ouvre avec la flèche), avec « Revenir au planning » en haut. En quittant le Manager, le menu redevient celui du site. Sur téléphone, le rail horizontal reste.
+- **En-tête commun** à toutes les sous-pages : titre de la rubrique, une phrase de description (`PAGE_DESC`), à droite « Plein écran » (Fiche projet), « Filtres · N » (KPI et Suivi) et « Aller à… Ctrl K ». Le fil d'Ariane est retiré.
+- **Sous-pages en onglets soulignés** sous le titre (KPI : Synthèse, Dérives, Charge, Avancement, Retards ; Suivi ; Réglages…), défilables horizontalement si besoin.
+- **Filtres** (Statut, Gamme) repliés dans le bouton « Filtres », qui affiche le nombre de filtres actifs.
+- **Planning initial** : la tuile (état, import initial, ajout de PJ) passe en haut de **Réglages › Imports**.
+- **Fiche projet** : la liste se replie en languette verticale « Projets · N » (44 px) ; la fiche prend alors toute la largeur. (Le mode « mini-liste » de numéros est remplacé par cette languette.)
+- **Règles communes** : contenu du Manager limité à 1 440 px de large.
+- Pas de nouvelle donnée ni clé `localStorage`. Vérifié : rendu de l'espace Manager (jsdom : menu publié, titre, phrase, onglets), build (13 avertissements existants), tests, contraste. Pas testé dans l'appli connectée.
+- Fichiers : App.js, components/{ManagerPanel,ManagerFiche}.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
