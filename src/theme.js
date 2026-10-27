@@ -123,6 +123,7 @@ const SHARED = {
   fontDisplay:"'Cabinet Grotesk','Satoshi',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
   font:"'Satoshi',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
   fontMono:"'JetBrains Mono','SF Mono',Consolas,monospace",
+  fontLabel:"'IBM Plex Sans','Satoshi',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif", // v188 : étiquettes (choix de Gabriel)
   // v162 : Montserrat abandonnée — une seule famille (Roboto) pour toute l'app ; le token reste pour compatibilité.
   fontMontserrat:"'Satoshi',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
 };

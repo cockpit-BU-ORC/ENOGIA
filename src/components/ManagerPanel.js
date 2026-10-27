@@ -18,6 +18,7 @@ import { SerieTab } from "./Series";
 import { CashInTab } from "./CashInTab";
 import { ImportHistory } from "./ImportHistory";
 import { isSuperAdmin, isOwner } from "../roles";
+import { PeopleRoles } from "./PeopleRoles";
 
 // Filtre de période (mois et/ou année) réutilisable sur chaque graphique temporel
 export function PeriodFilter({yearsAvailable,year,setYear,month,setMonth,showMonth=true}){
@@ -26,7 +27,7 @@ export function PeriodFilter({yearsAvailable,year,setYear,month,setMonth,showMon
     {showMonth&&<div style={{width:128}}><Select compact value={month==null?"":month} onChange={e=>setMonth(e.target.value===""?null:+e.target.value)} options={[{value:"",label:"Tous les mois"},...MONTHS.map((m,i)=>({value:i,label:m}))]}/></div>}
   </div>);
 }
-export function ManagerPanel({jumpFiche,changeLog,data,progress,setProgress,releases,saveReleaseNotes,releaseSelection,saveReleaseSelection,publishRelease,isBeta,initialData,lastInitialImport,lastInitialAdd,onInitialImport,onInitialAdd,initialImporting,etatChoice,setEtatFor,saveProgress,savingProgress,progressSaved,tab,setTab,clientPresence,setClientPresenceFor,closurePeriods,setClosurePeriods,customEtats,setCustomEtats,productionExclusions,setProductionExclusionDays,comments,delays,delayTypes,setDelayTypes,addDelayAllocationMulti,deleteDelayAllocation,managerEmails,setManagerEmails,currentUserEmail,authorName,buildVersion,savePjMetaOverride,savePjMetaMulti,addCommentMulti,addComment,resolveComment,deleteComment,turbineDoc,saveTurbines,certifs,setCertifs,compCatalog,setCompCatalog}){
+export function ManagerPanel({profiles,saveProfiles,jumpFiche,changeLog,data,progress,setProgress,releases,saveReleaseNotes,releaseSelection,saveReleaseSelection,publishRelease,isBeta,initialData,lastInitialImport,lastInitialAdd,onInitialImport,onInitialAdd,initialImporting,etatChoice,setEtatFor,saveProgress,savingProgress,progressSaved,tab,setTab,clientPresence,setClientPresenceFor,closurePeriods,setClosurePeriods,customEtats,setCustomEtats,productionExclusions,setProductionExclusionDays,comments,delays,delayTypes,setDelayTypes,addDelayAllocationMulti,deleteDelayAllocation,managerEmails,setManagerEmails,currentUserEmail,authorName,buildVersion,savePjMetaOverride,savePjMetaMulti,addCommentMulti,addComment,resolveComment,deleteComment,turbineDoc,saveTurbines,certifs,setCertifs,compCatalog,setCompCatalog}){
   const [fEtat,setFEtat]=useState(new Set(ALL_ETATS));
   const [kpiStep,setKpiStep]=useState("depart");
   const [kpiTab,setKpiTab]=useState("synthese"); // sous-onglet KPI par famille
@@ -307,7 +308,7 @@ export function ManagerPanel({jumpFiche,changeLog,data,progress,setProgress,rele
 
   // ── Navigation Manager : onglets horizontaux + sous-onglets par famille ──
   // « Il y a bcp de KPI… plusieurs petits onglets par famille de KPI ? » → un sous-onglet par famille.
-  const GROUP_OF={fiche:"fiche",hebdo:"hebdo",derives:"derives",statut:"suivi",sante:"suivi",retards:"retards",acces:"reglages",imports:"reglages",serie:"reglages",vacances:"reglages",production:"reglages",nouveautes:"reglages",cash:"cash",turbines:"turbines"};
+  const GROUP_OF={fiche:"fiche",hebdo:"hebdo",derives:"derives",statut:"suivi",sante:"suivi",retards:"retards",acces:"reglages",personnes:"reglages",imports:"reglages",serie:"reglages",vacances:"reglages",production:"reglages",nouveautes:"reglages",cash:"cash",turbines:"turbines"};
   const superAdmin=isSuperAdmin(),owner=isOwner(); // v185 : superAdmin = propriétaire ou admin ; owner = propriétaire (Cash in) // v143 : seul le super admin voit l'onglet « Réglages » (changer le site) ; un admin n'a que les onglets d'usage
   // v158 : menu groupé (rail latéral) ; chaque entrée sait où aller. Cash in et Réglages : super admin seulement.
   const [railMin,setRailMin]=useRailCollapsed(),[palOpen,setPalOpen]=useState(false),phone=useIsPhone();
@@ -317,7 +318,7 @@ export function ManagerPanel({jumpFiche,changeLog,data,progress,setProgress,rele
   const SUBS={
     derives:[["synthese","Synthèse"],["derives","Dérives"],["charge","Charge"],["avancement","Avancement"],["retards","Retards"]],
     suivi:[["statut","Statut & état"],["sante","Santé projets"]],
-    reglages:[["serie","N° de série"],["production","Production"],["vacances","Vacances"],["imports","Imports"],["nouveautes","Nouveautés"],["acces","Accès Manager"]],
+    reglages:[["serie","N° de série"],["production","Production"],["vacances","Vacances"],["imports","Imports"],["nouveautes","Nouveautés"],["acces","Accès Manager"],["personnes","Personnes et rôles"]],
   };
   const group=GROUP_OF[tab]||"derives";
   useEffect(()=>{if((!superAdmin&&GROUP_OF[tab]==="reglages")||(!owner&&GROUP_OF[tab]==="cash"))setTab("derives");},[superAdmin,owner,tab]); // un admin qui arrive sur un onglet Réglages (ancien état mémorisé) est ramené aux KPI
@@ -794,6 +795,7 @@ export function ManagerPanel({jumpFiche,changeLog,data,progress,setProgress,rele
     {tab==="hebdo"&&<PointHebdo data={data} savePjMetaOverride={savePjMetaOverride} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}}/>}
     {tab==="fiche"&&<ProjectFileManager focus={focusFiche} compCatalog={compCatalog} setCompCatalog={setCompCatalog} managerEmails={managerEmails} currentUserEmail={currentUserEmail} resolveComment={resolveComment} certifs={certifs} setCertifs={setCertifs} openPj={fichePj&&fichePj.pj} openNonce={fichePj&&fichePj.n} lastChange={changeLog&&changeLog[0]} data={data} initialData={initialData} comments={comments} delays={delays} progress={progress} savePjMetaOverride={savePjMetaOverride} savePjMetaMulti={savePjMetaMulti} addCommentMulti={addCommentMulti} addComment={addComment} deleteComment={deleteComment} addDelayAllocationMulti={addDelayAllocationMulti} deleteDelayAllocation={deleteDelayAllocation} delayTypes={delayTypes} setDelayTypes={setDelayTypes} changeLog={changeLog} authorName={authorName} onOpenCash={owner?(pj=>{setCashFocus({pj,n:Date.now()});setTab("cash");}):null}/>}
     {tab==="retards"&&<DelaysTab data={data} delays={delays} delayTypes={delayTypes} setDelayTypes={setDelayTypes} addDelayAllocationMulti={addDelayAllocationMulti} deleteDelayAllocation={deleteDelayAllocation} authorName={authorName}/>}
+    {superAdmin&&tab==="personnes"&&<PeopleRoles profiles={profiles} saveProfiles={saveProfiles} data={data}/>}
     {superAdmin&&tab==="acces"&&<>
       <ManagerAccessManager managerEmails={managerEmails} setManagerEmails={setManagerEmails} currentUserEmail={currentUserEmail}/>
       {/* Nom du build : réservé au propriétaire (demandé : « uniquement visible par moi, dans l'onglet manager »). */}

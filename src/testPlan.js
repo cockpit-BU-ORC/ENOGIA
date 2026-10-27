@@ -100,9 +100,17 @@ export function effRange(a, row) {
   const from = a.from || iso(row && row.tests), to = a.to || iso(row && row.testsFin) || from;
   return { from, to: to < from ? from : to };
 }
-export function assignTester(plan, tid) {
+export function assignTester(plan, tid, by, at) {
   if (plan.assign.some(a => a.tid === tid)) return plan;
-  return { ...plan, assign: [...plan.assign, { tid, from: "", to: "" }] };
+  return { ...plan, assign: [...plan.assign, { tid, from: "", to: "", by: by || "", at: at || new Date().toISOString() }] }; // v188 : by / at → notification au testeur
+}
+// v188 : affectations d'un testeur faites après « since » (ISO) → cloche de l'en-tête. Les affectations d'avant la v188 n'ont pas de date.
+export function assignmentsSince(doc, tid, since) {
+  const out = [];
+  Object.entries((doc && doc.plans) || {}).forEach(([pj, p]) => (Array.isArray(p && p.assign) ? p.assign : []).forEach(a => {
+    if (a.tid === tid && a.at && (!since || a.at > since)) out.push({ pj, at: a.at, by: a.by || "", from: a.from || "", to: a.to || "" });
+  }));
+  return out.sort((x, y) => y.at.localeCompare(x.at));
 }
 export const unassignTester = (plan, tid) => ({ ...plan, assign: plan.assign.filter(a => a.tid !== tid) });
 export const setAssignDates = (plan, tid, from, to) => ({ ...plan, assign: plan.assign.map(a => a.tid === tid ? { ...a, from: from || "", to: to || "" } : a) });

@@ -5,6 +5,8 @@ import { NavIcon, AnimatedNumber, EmptyState, PjPlate, Hl } from "./SharedUI";
 import { openMentionsFor, chefAccount, nameFromEmail } from "../mentions";
 import { SITE_NAME, SITE_SCOPE, SITE_SUB } from "../siteName";
 import { testerOfEmail, planOf } from "../testPlan";
+import { RoleHome } from "./RoleHome";
+import { ROLES, profileOf, effectiveRole, pjsOfProfile } from "../profiles";
 
 // v173 — direction « Éditorial industriel » : sur-titre d'atelier en mono, grande phrase légère, chiffres géants sous un filet marine,
 //   n° de PJ en plaques, parcours en blocs pleins étiquetés.
@@ -34,7 +36,7 @@ const BLOCKS = [
 const prefKey = email => "enogia_home_" + String(email || "anon").toLowerCase();
 const loadPrefs = email => { try { return JSON.parse(localStorage.getItem(prefKey(email)) || "{}") || {}; } catch (e) { return {}; } };
 
-export function HomeView({ data, comments, myEmail, myName, people, unseenChanges, lastImport, onOpenPj, onGo, pinOk, testsDoc }) {
+export function HomeView({ data, comments, myEmail, myName, people, unseenChanges, lastImport, onOpenPj, onGo, pinOk, testsDoc, profiles, owner, turbineDoc, onOpenCash }) {
   const rows = useMemo(() => (data || []).filter(r => r && r.pj && r.etat !== "SLOT_LIBRE"), [data]);
   const today0 = startOfToday();
 
@@ -66,6 +68,14 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
       .sort((a, b) => String(a.tests).localeCompare(String(b.tests)));
   }, [open, myTester, testsDoc]); // eslint-disable-line
 
+  // v188 : accueil selon le rôle (Manager › Réglages › Personnes et rôles, sinon déduit) ; les admins peuvent afficher chaque accueil.
+  const profile = useMemo(() => profileOf(profiles, myEmail), [profiles, myEmail]);
+  const myPjs = useMemo(() => [...new Set([...pjsOfProfile(profile, rows), ...mine.map(r => r.pj)])], [profile, rows, mine]);
+  const autoRole = effectiveRole(profile, { owner, tester: !!myTester, hasProjects: myPjs.length > 0 });
+  const previewKey = "enogia_home_role_" + String(myEmail || "").toLowerCase();
+  const [preview, setPreview] = useState(() => { try { return localStorage.getItem(previewKey) || ""; } catch (e) { return ""; } });
+  const role = (pinOk && preview) ? (preview === "general" ? "" : preview) : autoRole;
+  const pickPreview = v => { setPreview(v); try { localStorage.setItem(previewKey, v); } catch (e) {} };
   const nChanged = (unseenChanges || []).reduce((n, e) => n + ((e.stats && e.stats.nPj) || 0), 0);
   const nNew = (unseenChanges || []).reduce((n, e) => n + ((e.stats && e.stats.nNew) || 0), 0);
 
@@ -149,13 +159,18 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
             {hello()}{firstName ? " " + firstName : ""}. {num(inProd + " machine" + (inProd > 1 ? "s" : ""), S.production.ring)} avance{inProd > 1 ? "nt" : ""}, {num(late.length, T.amber500)} glisse{late.length > 1 ? "nt" : ""}, {num(next30, S.finProd.ring)} part{next30 > 1 ? "ent" : ""} d'ici un mois.
           </p>
         </div>
-        <button type="button" className="enogia-ui-edit" onClick={() => setCustomize(v => !v)} aria-expanded={customize}
+        {!role && <button type="button" className="enogia-ui-edit" onClick={() => setCustomize(v => !v)} aria-expanded={customize}
           style={{ border: "1px solid " + T.line, background: customize ? T.teal100 : "transparent", color: T.ink700, borderRadius: R.pill, padding: "6px 12px", minHeight: 28, fontSize: FZ.xs, fontWeight: 600, cursor: "pointer", fontFamily: T.font, display: "inline-flex", alignItems: "center", gap: 6 }}>
           <NavIcon name="edit" size={13} />Personnaliser
-        </button>
+        </button>}
       </div>
 
-      {customize && (
+      {pinOk && <div role="tablist" aria-label="Afficher l'accueil de" style={{ display: "inline-flex", flexWrap: "wrap", gap: 2, background: T.surface, border: "1px solid " + T.line, borderRadius: 10, padding: 2, marginBottom: 12 }}>
+        {[["", "Mon accueil"], ...ROLES.map(([id, l]) => [id, l]), ["general", "Général"]].map(([id, l]) => { const on = (preview || "") === id; return (
+          <button key={id || "auto"} type="button" role="tab" aria-selected={on} onClick={() => pickPreview(id)} style={{ border: "none", cursor: "pointer", borderRadius: 8, padding: "5px 12px", minHeight: 28, fontSize: FZ.xs, fontWeight: 700, fontFamily: T.font, background: on ? T.card : "transparent", color: on ? T.teal600 : T.ink500, boxShadow: on ? T.shadowSm : "none" }}>{l}</button>); })}
+      </div>}
+
+      {customize && !role && (
         <div style={{ ...card, marginBottom: 12, display: "flex", flexWrap: "wrap", gap: "8px 18px" }}>
           <div style={{ width: "100%", ...grey }}>Choisissez ce qui apparaît sur votre page d'accueil (enregistré sur ce poste).</div>
           {BLOCKS.filter(([id]) => available(id)).map(([id, l, d]) => (
@@ -166,14 +181,22 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
         </div>
       )}
 
-      <div className="enogia-stagger enogia-kpis-ed" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: "0 16px", borderTop: "3px solid " + T.teal500, marginBottom: 20 }}>
+      {role !== "testeur" && <div className="enogia-stagger enogia-kpis-ed" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: "0 16px", borderTop: "3px solid " + T.teal500, marginBottom: 20 }}>
         <Kpi color={S.depart.ring} label="Livrées cette année" value={shipped} sub={shipped28 > 0 ? shipped28 + " sur les 28 derniers jours" : open.length + " encore en cours"} onClick={() => onGo && onGo("table")} hint="Ouvrir la liste" />
         <Kpi color={S.production.ring} label="En production" value={inProd} sub={"sur " + open.length + " projet" + (open.length > 1 ? "s" : "") + " ouvert" + (open.length > 1 ? "s" : "")} onClick={() => onGo && onGo("table")} hint="Ouvrir la liste" />
         <Kpi color={S.tests.ring} label="Départs sous 30 j" value={next30} tone={S.depart.ring} sub={nextDep ? "prochain " + nextDep.pj + " · " + fmtD(nextDep.depart) : "Aucun départ à venir"} onClick={() => onGo && onGo("calendar")} hint="Ouvrir le calendrier" />
         <Kpi color={H.warn} label="En retard sur l'initial" value={late.length} tone={late.length ? T.amber600 : T.ink900} sub={maxLate ? "max " + maxLate.pj + " · +" + maxLate.drift + " j" : "Aucune dérive"} onClick={() => onGo && onGo("table")} hint="Ouvrir la liste" />
-      </div>
+      </div>}
 
-      {(showTodo || showSide) && (
+      {role && <RoleHome key={role} role={role} rows={rows} open={open} late={late} mentions={mentions} myPjs={myPjs} testsDoc={testsDoc} myTester={myTester} turbineDoc={turbineDoc} owner={owner} onOpenPj={onOpenPj} onGo={onGo} onOpenCash={onOpenCash}
+        ui={{ Row, Head, cardS, Pill, presenceOf, nomOf, empty, grey, link, S, H, A }} />}
+      {role === "direction" && showSide && <section aria-label="Départs à venir" style={{ ...cardS(S.depart.ring), marginBottom: 12 }}>
+        <Head title="Ordo · départs à venir" count={departs.length} />
+        {departs.length === 0 ? empty("inbox", "Aucun départ prévu", "Aucune machine n'a de date de départ à venir.") :
+          departs.slice(0, 5).map((r, i) => { const n = inDays(r.depart); return <Row key={r.pj} first={i === 0} pj={r.pj} main={<span style={{ color: T.ink500 }}>{nomOf(r)}</span>} presence={presenceOf(r)} right={fmtD(r.depart) + (n != null && n <= 7 ? " · " + relDays(n) : "")} />; })}
+      </section>}
+
+      {!role && (showTodo || showSide) && (
         <div className="enogia-stagger" style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 12, alignItems: "flex-start" }}>
           {showTodo && (
             <section aria-label="À traiter" style={{ ...cardS(H.note), flex: "3 1 420px" }}>
@@ -202,7 +225,7 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
         </div>
       )}
 
-      {on("projects") && (
+      {!role && on("projects") && (
         <section aria-label="Mes projets" style={{ ...cardS(S.production.ring), marginBottom: 12 }}>
           <Head title="Mes projets" sub="dont vous êtes chef de projet" count={mine.length} />
           {mine.length === 0 ? empty("inbox", "Aucun projet à votre nom", "Les projets dont vous êtes chef de projet apparaîtront ici.") :
@@ -210,7 +233,7 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
         </section>
       )}
 
-      {on("journey") && (
+      {(!role || role === "direction") && on("journey") && (
         <section aria-label="Où en sont les machines" style={cardS(H.brand)}>
           <Head title={"Où en sont les " + open.length + " machine" + (open.length > 1 ? "s" : "") + " ouverte" + (open.length > 1 ? "s" : "")} />
           <div style={{ ...grey, marginBottom: 10 }}>+ {shipped} expédiée{shipped > 1 ? "s" : ""} depuis janvier</div>

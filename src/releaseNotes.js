@@ -7,6 +7,17 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v188",
+    date: "2026-10-27",
+    title: "V188 : un accueil pour chaque rôle",
+    items: [
+      { t: "Votre accueil selon votre rôle", d: "Testeur : vos tests du jour, fiches à signer, votre semaine. Chef de projet : vos PJ et retards, jalons des 3 semaines, FAT client. Chef d'atelier : arrivées, départs et postes de test." },
+      { t: "Affecté aux tests ? Vous êtes prévenu", d: "La cloche signale les nouvelles affectations aux tests, avec un lien pour les ajouter à votre agenda Google." },
+      { t: "Personnes et rôles", d: "Manager › Réglages : rôle de chaque compte et ses PJ, un par un ou tous ceux d'un chef de projet d'un coup.", admin: true },
+      { t: "Invitations Google Agenda", d: "Sur la fiche de tests, « Inviter les testeurs » ouvre Google Agenda avec la période et les testeurs déjà invités.", admin: true },
+    ],
+  },
+  {
     id: "2026-10-v187",
     date: "2026-10-27",
     title: "V187 : les testeurs renseignent leurs tests",

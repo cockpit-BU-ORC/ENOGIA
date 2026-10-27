@@ -111,3 +111,19 @@ describe("statuts des tests et validation forcée (v187)", () => {
     expect(isForced(setForced(p, false))).toBe(false);
   });
 });
+
+describe("affectations notifiées (v188)", () => {
+  const { assignTester, assignmentsSince, planOf } = require("./testPlan");
+  const { gcalUrl } = require("./gcal");
+  test("une affectation datée apparaît après la dernière visite, pas avant", () => {
+    const p = assignTester(planOf({}, "PJ1"), "t1", "Gabriel", "2026-10-27T10:00:00Z");
+    const doc = { plans: { PJ1: p, PJ2: { assign: [{ tid: "t1" }] } } };
+    expect(assignmentsSince(doc, "t1", "2026-10-26T00:00:00Z").map(x => x.pj)).toEqual(["PJ1"]);
+    expect(assignmentsSince(doc, "t1", "2026-10-28T00:00:00Z")).toEqual([]);
+  });
+  test("lien Google Agenda sur la journée entière, fin exclue", () => {
+    const u = new URL(gcalUrl({ title: "Tests PJ1", from: "2026-11-02", to: "2026-11-06", guests: ["a@x.fr", "b@x.fr"] }));
+    expect(u.searchParams.get("dates")).toBe("20261102/20261107");
+    expect(u.searchParams.get("add")).toBe("a@x.fr,b@x.fr");
+  });
+});

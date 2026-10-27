@@ -12,6 +12,7 @@ import { CertifChip } from "./FicheContrat";
 import { NavIcon, PjPlate, pressable } from "./SharedUI";
 import { SECTIONS, DEFAULT_TEST_CATALOG, catalogOf, testersOf, planOf, activeSections, selectedIds, toggleTest, setExtra, setNote, assignTester, unassignTester, setAssignDates, effRange, findConflicts, assignmentsOf, dropTester, dropTestFromPlans, newId, packLanes, dayDiffIso, addDaysIso, mondayOf, testerOfEmail, doneIds, progressOf, TEST_STATUS, statusOf, statusByOf, setStatus, isForced, setForced } from "../testPlan";
 import { nameFromEmail } from "../mentions";
+import { gcalUrl } from "../gcal";
 
 const field = () => ({ padding: "5px 9px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, minWidth: 0 });
 const btn = (on = true, kind) => ({ border: kind === "ghost" ? "1px solid " + T.line : "none", borderRadius: 8, padding: "5px 12px", fontSize: FZ.xs, fontWeight: 700, fontFamily: T.font, cursor: on ? "pointer" : "default", background: kind === "ghost" ? T.card : on ? T.navy700 : T.ink100, color: kind === "ghost" ? T.ink700 : "#fff", flexShrink: 0 });
@@ -23,7 +24,7 @@ const dIso = x => { if (!x) return ""; const d = new Date(x); return isNaN(d) ? 
 const fd = iso => iso ? fmt(new Date(iso + "T12:00:00")) : "—";
 const fdm = iso => iso ? iso.slice(8, 10) + "/" + iso.slice(5, 7) : "";
 const period = r => r.tests ? fd(dIso(r.tests)) + (r.testsFin ? " → " + fd(dIso(r.testsFin)) : "") : "Période non définie";
-const Cap = ({ children, style }) => <div style={{fontFamily:T.fontDisplay,fontSize:12,fontWeight:500,letterSpacing:".01em",color:T.ink500,...style}}>{children}</div>; // v187 : police des étiquettes
+const Cap = ({ children, style }) => <div style={{fontFamily:T.fontLabel,fontSize:12,fontWeight:500,color:T.ink500,...style}}>{children}</div>; // v188 : étiquettes en IBM Plex Sans
 
 function TesterChip({ t, warn, on, onClick, disabled, small }) {
   const interactive = !!onClick;
@@ -131,18 +132,18 @@ function TestCard({ r, doc, testers, catalog, conflicts, late, on, onPick }) {
     style={{ background: T.card, border: "1px solid " + (on ? T.teal500 : T.line), borderLeft: "4px solid " + edge, borderRadius: "0 8px 8px 0", padding: "8px 10px", cursor: "pointer", boxShadow: on ? "0 0 0 1px " + T.teal500 : "none", minWidth: 0 }}>
     <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
       <PjPlate pj={r.pj} />
-      {r.gamme && <span style={{ fontFamily: T.fontDisplay, fontSize: 12, fontWeight: 600, color: T.ink700, border: "1px solid " + T.line, borderRadius: 6, padding: "0 6px" }}>{r.gamme}</span>}
+      {r.gamme && <span style={{ fontFamily: T.fontLabel, fontSize: 12, fontWeight: 600, color: T.ink700, border: "1px solid " + T.line, borderRadius: 6, padding: "0 6px" }}>{r.gamme}</span>}
       {kind && <PresenceChip kind={kind} compact tiny />}
       <span style={{ marginLeft: "auto", fontSize: FZ.xs, color: T.ink500, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{fdm(dIso(r.tests))}{r.testsFin ? " → " + fdm(dIso(r.testsFin)) : ""}</span>
     </div>
     <div title={meta.nomProjet || ""} style={{ margin: "6px 0 4px", fontSize: FZ.sm, fontWeight: 600, color: T.ink900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : "Projet sans nom"}</div>
     <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-      {noTester ? <span style={{ fontSize: 11, fontWeight: 700, color: T.red600, background: T.red100, borderRadius: 999, padding: "1px 8px" }}>Sans testeur</span>
+      {noTester ? <span style={{ fontFamily: T.fontLabel, fontSize: 11, fontWeight: 600, color: T.red600, background: T.red100, borderRadius: 999, padding: "1px 8px" }}>Sans testeur</span>
         : <span style={{ display: "inline-flex" }}>{assigned.slice(0, 4).map((t, i) => <span key={t.id} title={t.name} style={{ marginLeft: i ? -6 : 0, borderRadius: "50%", boxShadow: "0 0 0 2px " + T.card, display: "inline-flex" }}><Avatar name={t.name} tint={personTint(t.name)[0]} size={22} /></span>)}</span>}
-      {late && <span style={{ fontSize: 11, fontWeight: 700, color: T.red600, background: T.red100, borderRadius: 999, padding: "1px 8px" }}>En retard</span>}
-      {forced && <span style={{ fontSize: 11, fontWeight: 700, color: T.emerald600, background: T.emerald100, borderRadius: 999, padding: "1px 8px" }}>Validé (forcé)</span>}
-      {q.ko > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: T.red600, background: T.red100, borderRadius: 999, padding: "1px 8px" }}>{q.ko} échec{q.ko > 1 ? "s" : ""}</span>}
-      {conf && <span style={{ fontSize: 11, fontWeight: 700, color: T.amber600, background: T.amber100, borderRadius: 999, padding: "1px 8px" }}>Conflit</span>}
+      {late && <span style={{ fontFamily: T.fontLabel, fontSize: 11, fontWeight: 600, color: T.red600, background: T.red100, borderRadius: 999, padding: "1px 8px" }}>En retard</span>}
+      {forced && <span style={{ fontFamily: T.fontLabel, fontSize: 11, fontWeight: 600, color: T.emerald600, background: T.emerald100, borderRadius: 999, padding: "1px 8px" }}>Validé (forcé)</span>}
+      {q.ko > 0 && <span style={{ fontFamily: T.fontLabel, fontSize: 11, fontWeight: 600, color: T.red600, background: T.red100, borderRadius: 999, padding: "1px 8px" }}>{q.ko} échec{q.ko > 1 ? "s" : ""}</span>}
+      {conf && <span style={{ fontFamily: T.fontLabel, fontSize: 11, fontWeight: 600, color: T.amber600, background: T.amber100, borderRadius: 999, padding: "1px 8px" }}>Conflit</span>}
       <span style={{ marginLeft: "auto", fontSize: FZ.xs, fontWeight: 700, color: full ? T.emerald600 : T.ink700, fontVariantNumeric: "tabular-nums" }}>{q.done} / {q.total} test{q.total > 1 ? "s" : ""}</span>
     </div>
     <div aria-hidden="true" style={{ height: 6, borderRadius: 3, background: T.surfaceAlt, overflow: "hidden", marginTop: 6 }}><div className="enogia-bar-fill" style={{ width: pct + "%", height: "100%", background: S.finProd.solid }} /></div>
@@ -164,12 +165,12 @@ function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdi
   const nTests = act.reduce((n, s) => n + selectedIds(plan, catalog, s).length, 0);
   const minD = dIso(r.tests), maxD = dIso(r.testsFin) || minD;
   const myCerts = (Array.isArray(meta.certifs) ? meta.certifs : []).map(id => (certifs || []).find(c => c.id === id)).filter(Boolean);
-  const toggle = t => { const on = plan.assign.some(a => a.tid === t.id); savePlan(on ? unassignTester(plan, t.id) : assignTester(plan, t.id)); };
+  const toggle = t => { const on = plan.assign.some(a => a.tid === t.id); savePlan(on ? unassignTester(plan, t.id) : assignTester(plan, t.id, who)); };
   const addNew = async () => {
     const n = newName.trim(); if (!n) return;
     let t = testers.find(x => x.name.toLowerCase() === n.toLowerCase()), tl = testers;
     if (!t) { const acct = ctx.options.find(o => o.name.toLowerCase() === n.toLowerCase()); t = { id: newId("t"), name: n, email: acct ? acct.email : "" }; tl = [...testers, t]; }
-    const p = assignTester(plan, t.id);
+    const p = assignTester(plan, t.id, who);
     const ok = await commit({ testers: tl, plans: { ...(doc.plans || {}), [r.pj]: p } });
     if (ok !== false) setNewName("");
   };
@@ -180,7 +181,7 @@ function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdi
   return (<div id={"fat-" + r.pj} className={panel ? "enogia-view-in" : undefined} style={{ ...CARD, overflow: "hidden", borderColor: mine ? T.teal500 : undefined }}>
     {panel && <div style={{ padding: "10px 14px", borderBottom: "1px solid " + T.line, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
       <PjPlate pj={r.pj} size="lg" /><span style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: FZ.lg, color: T.ink900 }}>{meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : ""}</span>
-      {r.gamme && <span style={{ fontFamily: T.fontDisplay, fontSize: FZ.sm, fontWeight: 600, color: T.ink700, border: "1px solid " + T.line, borderRadius: 6, padding: "1px 8px" }}>{r.gamme}</span>}
+      {r.gamme && <span style={{ fontFamily: T.fontLabel, fontSize: FZ.sm, fontWeight: 600, color: T.ink700, border: "1px solid " + T.line, borderRadius: 6, padding: "1px 8px" }}>{r.gamme}</span>}
       <span style={{ width: "100%", fontSize: FZ.xs, color: T.ink500 }}>Tests {period(r)}{mine ? " · vous êtes testeur" : ""}</span>
       {canEdit && (ended || forced) && <div style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", background: forced ? T.emerald100 : T.surface, borderRadius: 8, padding: "6px 10px", marginTop: 2 }}>
         <span style={{ fontSize: FZ.xs, color: forced ? T.emerald600 : T.ink700, fontWeight: 600, flex: "1 1 180px" }}>{forced ? "Validée manuellement" + (plan.forced.by ? " par " + plan.forced.by : "") + " le " + fd(dIso(plan.forced.at)) + "." : "Période terminée : vous pouvez valider ces tests sans testeur ni test coché (anciennes machines)."}</span>
@@ -220,6 +221,12 @@ function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdi
           </span>}
           {!canEdit && testers.length === 0 && <span style={{ fontSize: FZ.xs, color: T.ink300 }}>Aucun testeur dans la liste.</span>}
         </div>
+        {/* v188 : invitation Google Agenda préremplie (période de tests, testeurs invités) */}
+        {canEdit && assigned.length > 0 && r.tests && <a href={gcalUrl({ title: "Tests FAT " + r.pj + (r.gamme ? " · " + r.gamme : "") + (meta.nomProjet && meta.nomProjet !== "—" ? " · " + meta.nomProjet : ""), from: minD, to: maxD,
+            details: "Tests FAT de la machine " + r.pj + (r.gamme ? " (" + r.gamme + ")" : "") + ".\nTesteurs : " + assigned.map(t => t.name).join(", ") + (kind ? "\nPrésence : " + (kind === "both" ? "client et NOBO" : kind === "nobo" ? "NOBO" : "client") : "") + "\nTests à réaliser : " + nTests + ".",
+            location: "ENOGIA, 43 avenue de Boisbaudran, 13015 Marseille", guests: assigned.map(t => t.email) })}
+          target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 8, fontSize: FZ.xs, fontWeight: 700, color: T.teal600, textDecoration: "none", border: "1.5px solid " + T.teal500, borderRadius: 8, padding: "4px 10px", minHeight: 28, boxSizing: "border-box" }}>
+          <NavIcon name="calendar" size={14} />Inviter les testeurs (Google Agenda)</a>}
         {plan.assign.length > 0 && <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 8 }}>
           {plan.assign.map(a => { const t = testers.find(x => x.id === a.tid); if (!t) return null; const eff = effRange(a, r), custom = !!(a.from || a.to), showDates = custom || limit[a.tid]; return (
             <div key={a.tid} style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", fontSize: FZ.xs, color: T.ink500 }}>
@@ -322,7 +329,7 @@ function StatusPick({ value, onPick, disabled, label }) {
   return (<div role="radiogroup" aria-label={"Statut : " + label} style={{ display: "inline-flex", gap: 2, background: T.surface, borderRadius: 8, padding: 2, flex: "0 0 auto" }}>
     {TEST_STATUS.map(([v, l]) => { const on = value === v, [ink, bg] = STATUS_TONE[v](); return (
       <button key={v} type="button" role="radio" aria-checked={on} disabled={disabled} onClick={() => onPick(v)}
-        style={{ border: "none", borderRadius: 6, padding: "4px 8px", minHeight: 28, fontSize: 12, fontWeight: 700, fontFamily: T.font, cursor: disabled ? "default" : "pointer", background: on ? bg : "transparent", color: on ? ink : T.ink500, opacity: disabled && !on ? .55 : 1, transition: "background-color .15s ease, color .15s ease" }}>{l}</button>); })}
+        style={{ border: "none", borderRadius: 6, padding: "4px 8px", minHeight: 28, fontSize: 12, fontWeight: 600, fontFamily: T.fontLabel, cursor: disabled ? "default" : "pointer", background: on ? bg : "transparent", color: on ? ink : T.ink500, opacity: disabled && !on ? .55 : 1, transition: "background-color .15s ease, color .15s ease" }}>{l}</button>); })}
   </div>);
 }
 

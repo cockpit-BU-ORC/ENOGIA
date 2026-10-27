@@ -4,7 +4,7 @@ import { setResolved as setCommentResolved, peopleOptions, userKey, chefAccount,
 import { MentionCtx } from "./mentionContext";
 import { MentionBell } from "./components/MentionBell";
 import { TestsTab } from "./components/TestsTab";
-import { testerOfEmail } from "./testPlan";
+import { testerOfEmail, assignmentsSince } from "./testPlan";
 import { setDefaultComposants } from "./pjProgress";
 import { doc, setDoc, getDoc, onSnapshot, updateDoc, FieldPath, deleteField } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -46,7 +46,7 @@ import { saveBackup } from "./importBackups";
 const IS_BETA=process.env.REACT_APP_BETA==="1";
 const DOC_PFX=IS_BETA?"beta_":"";
 if(IS_BETA&&typeof document!=="undefined")document.title="[BÊTA] ORDO & OPS – BU ORC";
-const BETA_DOCS=["current","initial","overrides","comments","pjMetaSync","pjMetaOverrides","delays","delayTypes","managerEmails","changeLog","cashin","cashinLinks","turbines","tests"];
+const BETA_DOCS=["current","initial","overrides","comments","pjMetaSync","pjMetaOverrides","delays","delayTypes","managerEmails","changeLog","cashin","cashinLinks","turbines","tests","profiles"];
 const DOC_REF=()=>doc(db,"planning",DOC_PFX+"current");
 const INITIAL_DOC_REF=()=>doc(db,"planning",DOC_PFX+"initial");
 const OVERRIDES_DOC_REF=()=>doc(db,"planning",DOC_PFX+"overrides");
@@ -58,6 +58,7 @@ const DELAY_TYPES_DOC_REF=()=>doc(db,"planning",DOC_PFX+"delayTypes");
 const TURBINES_DOC_REF=()=>doc(db,"planning",DOC_PFX+"turbines"); // v146.22 : pool de turbines
 const TESTS_DOC_REF=()=>doc(db,"planning",DOC_PFX+"tests"); // v154 : testeurs, affectations aux périodes de tests, catalogue FAT
 const MANAGER_EMAILS_DOC_REF=()=>doc(db,"planning",DOC_PFX+"managerEmails");
+const PROFILES_DOC_REF=()=>doc(db,"planning",DOC_PFX+"profiles"); // v188 : rôle et PJ de chaque compte (Manager › Réglages › Personnes et rôles)
 
 // Types de retard génériques par défaut — éditables depuis le panel Manager (onglet Retards)
 const DEFAULT_DELAY_TYPES=[
@@ -65,7 +66,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-27-v187-tests-testeurs";
+const APP_BUILD_VERSION = "2026-10-27-v188-accueils-roles";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -679,6 +680,22 @@ export default function App(){
     const unsub=onSnapshot(TESTS_DOC_REF(),snap=>{const d=snap.exists()?snap.data():{};setTestsDoc({...d,testers:Array.isArray(d.testers)?d.testers:[],plans:d.plans&&typeof d.plans==="object"?d.plans:{}});setTestsLoaded(true);},err=>{console.error("Erreur Firestore (tests):",err);setTestsLoaded(true);});
     return ()=>unsub();
   },[currentUser]);
+  // v188 : profils (rôle → accueil, PJ associés), lus par tous les comptes connectés, modifiés depuis le Manager
+  const [profiles,setProfiles]=useState({byEmail:{}});
+  useEffect(()=>{
+    if(!currentUser)return undefined;
+    return onSnapshot(PROFILES_DOC_REF(),snap=>{const d=snap.exists()?snap.data():{};setProfiles({...d,byEmail:d.byEmail&&typeof d.byEmail==="object"?d.byEmail:{}});},err=>console.warn("profiles (lecture) :",err&&err.message));
+  },[currentUser]);
+  const saveProfiles=useCallback(async next=>{
+    try{await setDoc(PROFILES_DOC_REF(),{...next,updatedAt:new Date().toISOString(),updatedBy:authorName||""});return true;}
+    catch(e){console.error(e);notify("Erreur lors de l'enregistrement des profils : "+e.message);return false;}
+  },[authorName]);
+  // v188 : nouvelles affectations aux tests depuis le dernier « Vu » (mémorisé sur ce poste, par compte)
+  const assignSeenKey="enogia_assign_seen_"+String((currentUser&&currentUser.email)||"").toLowerCase();
+  const [assignSeen,setAssignSeen]=useState(()=>{try{return localStorage.getItem(assignSeenKey)||"";}catch(e){return "";}});
+  useEffect(()=>{try{setAssignSeen(localStorage.getItem(assignSeenKey)||"");}catch(e){}},[assignSeenKey]);
+  const myNewAssign=useMemo(()=>{const t=testerOfEmail(testsDoc,currentUser&&currentUser.email);return t?assignmentsSince(testsDoc,t.id,assignSeen):[];},[testsDoc,currentUser,assignSeen]);
+  const seeAssign=()=>{const v=new Date().toISOString();setAssignSeen(v);try{localStorage.setItem(assignSeenKey,v);}catch(e){}};
   // Page « Tests » (rail de gauche) : administrateurs + testeurs de la liste (adresse renseignée) ; les testeurs consultent seulement
   const canSeeTests=!!(pinOk||testerOfEmail(testsDoc,currentUser&&currentUser.email));
   useEffect(()=>{if(view==="tests"&&testsLoaded&&!canSeeTests)setView("table");},[view,testsLoaded,canSeeTests]); // accès retiré ou ancien choix mémorisé
@@ -1067,7 +1084,7 @@ export default function App(){
           />}
           {currentUser&&<div className="enogia-hide-phone" style={{width:1,height:22,background:T.line}}/>}
           {currentUser&&<button onClick={()=>setNavPal(true)} title="Aller à… (Ctrl K)" aria-label="Aller à… (Ctrl K)" style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:32,height:32,padding:0,border:"1px solid transparent",borderRadius:9,cursor:"pointer",background:"transparent",color:T.ink500}} onMouseEnter={e=>{e.currentTarget.style.background=T.surfaceAlt;e.currentTarget.style.color=T.ink900;}} onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=T.ink500;}}><NavIcon name="search" size={18}/></button>}
-          {currentUser&&<MentionBell comments={comments} me={mentionCtx.me} data={dataWithOverrides} resolveComment={resolveComment} canSeePrivate={pinOk} onOpen={pj=>{if(pinOk){setManagerJump({pj,n:Date.now()});setManagerTab("fiche");setView("manager");}else jumpToPj(pj);}}/>}
+          {currentUser&&<MentionBell assignments={myNewAssign} onSeenAssign={seeAssign} onOpenTests={()=>setView("tests")} comments={comments} me={mentionCtx.me} data={dataWithOverrides} resolveComment={resolveComment} canSeePrivate={pinOk} onOpen={pj=>{if(pinOk){setManagerJump({pj,n:Date.now()});setManagerTab("fiche");setView("manager");}else jumpToPj(pj);}}/>}
           <button onClick={()=>{setManagerTab("fiche");setView("manager");}} title="Espace Manager" aria-label="Espace Manager" aria-pressed={view==="manager"} style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:32,height:32,padding:0,border:"1px solid "+(view==="manager"?T.teal500+"66":"transparent"),borderRadius:9,cursor:"pointer",background:view==="manager"?T.teal100:"transparent",color:view==="manager"?T.teal600:T.ink500,transition:"background .15s ease, color .15s ease"}} onMouseEnter={e=>{if(view!=="manager"){e.currentTarget.style.background=T.surfaceAlt;e.currentTarget.style.color=T.ink900;}}} onMouseLeave={e=>{if(view!=="manager"){e.currentTarget.style.background="transparent";e.currentTarget.style.color=T.ink500;}}}><NavIcon name="manager" size={19}/></button>
           {currentUser&&<UserChip user={currentUser} onSignOut={()=>signOut(auth)} role={isOwner?"Super admin":pinOk?"Admin":null}/>}
         </div>
@@ -1099,7 +1116,7 @@ export default function App(){
               closurePeriods={closurePeriods} setClosurePeriods={setClosurePeriodsAndSave}
               productionExclusions={productionExclusions} setProductionExclusionDays={setProductionExclusionDays} customEtats={customEtats} setCustomEtats={setCustomEtatsAndSave} certifs={certifs} setCertifs={setCertifsAndSave} compCatalog={compCatalog} setCompCatalog={setCompCatalogAndSave}
               comments={comments} delays={delays} delayTypes={delayTypes} setDelayTypes={setDelayTypesAndSave} addDelayAllocationMulti={addDelayAllocationMulti} deleteDelayAllocation={(pj,id)=>deleteDelayAllocation(pj,id,PIN)}
-              turbineDoc={turbineDoc} saveTurbines={saveTurbines} managerEmails={managerEmails} setManagerEmails={setManagerEmailsAndSave} currentUserEmail={currentUser?.email} authorName={authorName} buildVersion={canEditMeta?APP_BUILD_VERSION:null} savePjMetaOverride={savePjMetaOverride} savePjMetaMulti={savePjMetaMulti} addCommentMulti={addCommentMulti} addComment={addComment} resolveComment={resolveComment} deleteComment={(pj,idx)=>deleteComment(pj,idx,PIN)}/>
+              turbineDoc={turbineDoc} saveTurbines={saveTurbines} managerEmails={managerEmails} setManagerEmails={setManagerEmailsAndSave} currentUserEmail={currentUser?.email} authorName={authorName} buildVersion={canEditMeta?APP_BUILD_VERSION:null} profiles={profiles} saveProfiles={saveProfiles} savePjMetaOverride={savePjMetaOverride} savePjMetaMulti={savePjMetaMulti} addCommentMulti={addCommentMulti} addComment={addComment} resolveComment={resolveComment} deleteComment={(pj,idx)=>deleteComment(pj,idx,PIN)}/>
           </div>
           :<ManagerAccessNotice email={currentUser?.email}/>)
         :(
@@ -1110,7 +1127,7 @@ export default function App(){
             {view!=="home"&&(()=>{const v=VIEWS.find(x=>x.id===view);if(!v)return null;
               const subs={table:filtered.length+" machine"+(filtered.length>1?"s":"")+" affichée"+(filtered.length>1?"s":"")+" · survolez un état ou un écart pour le détail",gantt:"Chaque machine, étape par étape · Ctrl + molette pour zoomer",calendar:"Arrivées, tests, fins de production et départs",changes:"Ce qui a changé à chaque mise à jour du planning",comments:"Les échanges, machine par machine",tests:"Plans d'essais et affectations des testeurs"};
               /* v183 : plus de sur-titre ; v185 : une couleur de trait par page (demandé) */const SS=stageSoft(),HH=stripeHues(),acc={table:SS.production.solid,gantt:SS.tests.solid,calendar:SS.finProd.solid,changes:T.ember500,comments:HH.note,tests:SS.arrivee.solid}[view];return <PageHead title={v.l} sub={subs[view]} accent={acc}/>;})()}
-            {view==="home"&&<HomeView pinOk={pinOk} testsDoc={canSeeTests?testsDoc:null} data={dataWithOverrides} comments={comments} myEmail={currentUser&&currentUser.email} myName={authorName} people={peopleAll} unseenChanges={unseenChanges} lastImport={lastImport} onOpenPj={setCalSel} onGo={setView}/>}
+            {view==="home"&&<HomeView pinOk={pinOk} testsDoc={canSeeTests?testsDoc:null} data={dataWithOverrides} comments={comments} myEmail={currentUser&&currentUser.email} myName={authorName} people={peopleAll} unseenChanges={unseenChanges} lastImport={lastImport} onOpenPj={setCalSel} onGo={setView} profiles={profiles} owner={isOwner} turbineDoc={turbineDoc} onOpenCash={isOwner?()=>{setManagerTab("cash");setView("manager");}:null}/>}
             {view==="table"&&<DashboardSummary data={filtered} allData={dataWithOverrides} progress={progressEff} changeLog={changeLog} onOpenChanges={()=>setView("changes")}/>}
             {view==="table"&&<TableView data={filtered} progress={progressEff} df={df} setDf={setDf} setEtatFor={setEtatFor} setClientPresenceFor={setClientPresenceFor}
               selEtats={selEtats} setSelEtats={setSelEtats}

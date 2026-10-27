@@ -336,4 +336,9 @@ export const RELEASE_CATALOG = [
     ["Tests", "Statut par test (en cours, réussi, échec) avec nom, date et heure ; gamme sur les cartes."],
     ["Titres", "Plus grands ; plus de titre répété sur la page Tests."],
   ] },
+  { v: "188", t: "Un accueil pour chaque rôle", items: [
+    ["Accueil", "Testeur, chef de projet, chef d'atelier, direction : chacun ses blocs."],
+    ["Notifications", "Nouvelles affectations aux tests dans la cloche, ajout à l'agenda Google."],
+    ["Manager", "Personnes et rôles : rôle et PJ de chaque compte."],
+  ] },
 ];
