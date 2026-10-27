@@ -7,13 +7,14 @@ import { T, FZF as FZ, stageSoft, inkOn } from "../theme";
 import { getPjMeta, PRESENCE_META, PresenceChip, presenceKind, presenceDates, presenceFirstDate, Avatar, personTint } from "../pjMeta";
 import { fmt, toLocalISO } from "../parsers";
 import { useMentions } from "../mentionContext";
-import { CARD, H_TITLE, H_SUB, EmptyNote } from "./ManagerParts";
+import { CARD, H_TITLE, H_SUB } from "./ManagerParts";
 import { CertifChip } from "./FicheContrat";
 import { NavIcon, PjPlate, pressable } from "./SharedUI";
 import { SECTIONS, DEFAULT_TEST_CATALOG, catalogOf, testersOf, planOf, activeSections, selectedIds, toggleTest, setExtra, setNote, assignTester, unassignTester, setAssignDates, effRange, findConflicts, assignmentsOf, dropTester, dropTestFromPlans, newId, packLanes, addDaysIso, mondayOf, testerOfEmail, doneIds, progressOf, TEST_STATUS, statusOf, statusByOf, setStatus, isForced, setForced } from "../testPlan";
 import { nameFromEmail } from "../mentions";
 import { gcalUrl } from "../gcal";
 import { openTestReport } from "../testReport";
+import { makeCalendar } from "../planner/engine";
 
 const field = () => ({ padding: "5px 9px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, minWidth: 0 });
 const btn = (on = true, kind) => ({ border: kind === "ghost" ? "1px solid " + T.line : "none", borderRadius: 8, padding: "5px 12px", fontSize: FZ.xs, fontWeight: 700, fontFamily: T.font, cursor: on ? "pointer" : "default", background: kind === "ghost" ? T.card : on ? T.navy700 : T.ink100, color: kind === "ghost" ? T.ink700 : "#fff", flexShrink: 0 });
@@ -102,7 +103,6 @@ function WeekBoard({ doc, rows, testers, catalog, conflicts, commit, certifs, ca
   const later = withP.filter(r => startOf(r) >= weeks[2].b).length, noPeriod = rows.filter(r => !r.tests && r.etat !== "SHIPPED").length;
   const all = cols.flatMap(c => c.items.map(x => x.r));
   const cur = sel ? (all.find(r => r.pj === sel) || rows.find(r => r.pj === sel) || null) : null;
-  const COL_TITLE = ["Cette semaine", "Semaine prochaine", "Dans 2 semaines", "Terminés"];
   return (<div className="enogia-tests-board">
     <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 8 }}>
       <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", fontSize: FZ.xs, color: T.ink500 }}>
@@ -113,20 +113,8 @@ function WeekBoard({ doc, rows, testers, catalog, conflicts, commit, certifs, ca
         <BenchStrip rows={withP} {...{ doc, catalog, testers }} on={cur && cur.pj} onPick={setSel} />
         <ResultsFeed rows={withP} {...{ doc, catalog }} onPick={setSel} />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 12, alignItems: "start" }}>
-        {cols.map((c, ci) => (<section key={ci} aria-label={COL_TITLE[ci]} style={{ background: T.card, border: "1px solid " + T.line, borderTop: "3px solid " + (c.done ? stageSoft().finProd.solid : ci === 0 ? stageSoft().tests.solid : T.line), borderRadius: "0 0 10px 10px", minWidth: 0, overflow: "hidden" }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 6, padding: "8px 12px", borderBottom: "1px solid " + T.line }}>
-            <h3 style={{ margin: 0, fontSize: FZ.sm, fontWeight: 700, color: T.ink900 }}>{COL_TITLE[ci]}</h3>
-            <span style={{ marginLeft: "auto", fontSize: FZ.xs, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{c.done ? "60 derniers jours · " : "S" + isoWeek(c.a) + " · "}{c.items.length}</span>
-          </div>
-          {c.items.length === 0 && <div style={{ fontSize: FZ.xs, color: T.ink500, padding: "10px 12px" }}>{c.done ? "Aucune machine terminée ces 60 derniers jours." : "Aucun test prévu."}</div>}
-          <div className="enogia-stagger" style={{ display: "flex", flexDirection: "column" }}>
-            {c.items.map(({ r, late }) => <TestCard key={r.pj} {...{ r, doc, testers, catalog, conflicts, late }} on={cur && cur.pj === r.pj} onPick={() => setSel(r.pj)} />)}
-          </div>
-        </section>))}
-      </div>
+      <TestCalendar rows={withP} {...{ doc, catalog, testers, conflicts }} weeks={weeks} on={cur && cur.pj} onPick={setSel} />
     </div>
-    {all.length === 0 && <EmptyNote>Aucune machine en test sur ces trois semaines.</EmptyNote>}
     {cur && <TestDialog r={cur} onClose={() => setSel(null)} {...{ doc, testers, catalog, conflicts, commit, certifs, canEdit, myTester, who, signApi }} />}
   </div>);
 }
@@ -235,6 +223,71 @@ function ResultsFeed({ rows, doc, catalog, onPick }) {
   </section>);
 }
 
+// ── v207 (demandé : « le style Kanban manque de clarté, mettre sous forme de gros calendrier ») ──────────────────
+// Trois semaines du lundi au vendredi ; chaque machine est une barre posée sur ses jours de tests (rangée sur la première
+// ligne libre de la semaine), couleur selon l'état : or en cours, rouge en retard (étalée de lundi à aujourd'hui), vert
+// terminé, neutre à venir ; contour orange si un testeur est en conflit. Les venues client / NOBO sont des pastilles d'un jour.
+// Aujourd'hui surligné, jours fériés grisés.
+const HOLI = makeCalendar({ closurePeriods: [] });
+const DAYS_FR = ["lun.", "mar.", "mer.", "jeu.", "ven."];
+function TestCalendar({ rows, doc, catalog, testers, conflicts, weeks, on, onPick }) {
+  const S = stageSoft(), todayIso = toLocalISO(new Date());
+  const items = [];
+  rows.forEach(r => {
+    const a = dIso(r.tests), b = dIso(r.testsFin) || a; if (!a) return;
+    const plan = planOf(doc, r.pj), act = activeSections(presenceKind(r.clientPresence || null)), q = progressOf(plan, catalog, act);
+    const full = isForced(plan) || (q.total > 0 && q.done === q.total), late = !full && b < todayIso;
+    const st = full ? "done" : late ? "late" : a <= todayIso ? "wip" : "next";
+    const names = plan.assign.map(x => testers.find(t => t.id === x.tid)).filter(Boolean).map(t => t.name.split(" ")[0]);
+    const conf = conflicts.some(c => c.a.pj === r.pj || c.b.pj === r.pj);
+    const lateD = late ? Math.round((new Date(todayIso + "T12:00:00") - new Date(b + "T12:00:00")) / DAY) : 0;
+    const n = Math.round((new Date(todayIso + "T12:00:00") - new Date(a + "T12:00:00")) / DAY) + 1, m = Math.round((new Date(b + "T12:00:00") - new Date(a + "T12:00:00")) / DAY) + 1;
+    items.push({ kind: "pj", r, a: late ? toLocalISO(weeks[0].a) : a, b: late ? todayIso : b, st, q, segs: segsOf(plan, catalog, act), names, conf, lateD, n, m });
+    const pd = presenceDates(r.clientPresence || null);
+    ["client", "nobo"].forEach(k => { if (pd[k]) items.push({ kind: "pres", who: k, r, a: dIso(pd[k]), b: dIso(pd[k]) }); });
+  });
+  const tone = it => it.st === "late" ? { bg: T.red100, ink: T.red600, edge: T.red500 } : it.st === "done" ? { bg: S.finProd.bg, ink: S.finProd.ink, edge: S.finProd.solid } : it.st === "wip" ? { bg: S.tests.bg, ink: S.tests.ink, edge: S.tests.solid } : { bg: T.surface, ink: T.ink900, edge: T.line };
+  return (<section aria-label="Calendrier des tests" className="enogia-tcal">
+    {weeks.map(w => {
+      const days = [0, 1, 2, 3, 4].map(k => { const d = new Date(w.a); d.setDate(d.getDate() + k); return toLocalISO(d); });
+      const segs = items.filter(it => it.a <= days[4] && it.b >= days[0]).map(it => ({ it, c0: Math.max(0, days.findIndex(d => d >= it.a)), c1: (() => { let k = 4; while (k > 0 && days[k] > it.b) k--; return k; })() }))
+        .filter(x => x.c0 <= x.c1)
+        .sort((x, y) => (x.it.kind === "pres") - (y.it.kind === "pres") || (y.it.st === "late") - (x.it.st === "late") || x.c0 - y.c0 || (y.c1 - y.c0) - (x.c1 - x.c0));
+      const lanes = []; segs.forEach(x => { let l = lanes.findIndex(e => e < x.c0); if (l < 0) { l = lanes.length; lanes.push(-1); } lanes[l] = x.c1; x.lane = l; });
+      const nL = Math.max(lanes.length, 1), nPj = new Set(segs.filter(x => x.it.kind === "pj").map(x => x.it.r.pj)).size;
+      return (<div key={w.i} className="enogia-tcal-week" style={{ background: T.card, border: "1px solid " + T.line, borderTop: "3px solid " + (w.i === 0 ? S.tests.solid : T.line), borderRadius: "0 0 10px 10px" }}>
+        <div className="enogia-tcal-wk" style={{ color: T.ink900, borderBottom: "1px solid " + T.line }}><b>S{isoWeek(w.a)}</b>{w.i === 0 ? " · cette semaine" : w.i === 1 ? " · semaine prochaine" : ""}<span>{nPj ? nPj + " machine" + (nPj > 1 ? "s" : "") : "aucun test prévu"}</span></div>
+        <div className="enogia-tcal-grid" style={{ gridTemplateRows: "auto repeat(" + nL + ", minmax(34px, auto))" }}>
+          {days.map((d, k) => { const today = d === todayIso, off = !HOLI.isWork(d); return (<React.Fragment key={d}>
+            <div aria-hidden="true" className="enogia-tcal-col" style={{ gridColumn: k + 1, gridRow: "1 / span " + (nL + 1), background: today ? S.tests.bg : off ? T.surfaceAlt : "transparent", borderRight: k < 4 ? "1px solid " + T.line : "none" }} />
+            <div className="enogia-tcal-day" style={{ gridColumn: k + 1, gridRow: 1, color: today ? S.tests.ink : T.ink500, fontWeight: today ? 700 : 500 }}>{DAYS_FR[k]} {d.slice(8, 10)}{today ? " · aujourd'hui" : off ? " · férié" : ""}</div>
+          </React.Fragment>); })}
+          {segs.map(({ it, c0, c1, lane }) => {
+            const pos = { gridColumn: (c0 + 1) + " / " + (c1 + 2), gridRow: lane + 2 };
+            if (it.kind === "pres") { const M = PRESENCE_META[it.who]; return <button key={"p" + it.who + it.r.pj} type="button" onClick={() => onPick(it.r.pj)} className="enogia-tcal-bar" aria-label={M.label + " présent pour " + it.r.pj + " le " + fd(it.a)} style={{ ...pos, background: M.bg, color: M.ink, borderLeft: "4px solid " + M.color }}><b>{M.label}</b><span className="enogia-tcal-pj">{it.r.pj}</span></button>; }
+            const tn = tone(it), cont = it.a < days[0] && it.st !== "late";
+            const info = it.st === "late" ? "en retard " + it.lateD + " j" : it.st === "done" ? (isForced(planOf(doc, it.r.pj)) ? "validé" : "terminé") : it.st === "wip" ? "jour " + it.n + " / " + it.m : "";
+            return (<button key={it.r.pj} type="button" onClick={() => onPick(it.r.pj)} aria-pressed={on === it.r.pj} className="enogia-tcal-bar"
+              aria-label={it.r.pj + " — tests du " + fd(dIso(it.r.tests)) + (it.r.testsFin ? " au " + fd(dIso(it.r.testsFin)) : "") + " — " + it.q.done + " faits sur " + it.q.total + (info ? " — " + info : "")}
+              style={{ ...pos, background: on === it.r.pj ? T.teal100 : tn.bg, color: tn.ink, borderLeft: "4px solid " + tn.edge, boxShadow: it.conf ? "inset 0 0 0 1.5px " + T.amber600 : it.st === "next" ? "inset 0 0 0 1px " + T.line : "none" }}>
+              <span className="enogia-tcal-pj">{it.r.pj}</span>
+              {cont && <span aria-hidden="true">suite</span>}
+              {it.r.gamme && <span className="enogia-tcal-meta">{it.r.gamme}</span>}
+              <span className="enogia-tcal-meta" style={{ color: it.names.length ? undefined : T.red600, fontWeight: it.names.length ? undefined : 700 }}>{it.names.length ? it.names.join(", ") : "sans testeur"}</span>
+              {info && <span className="enogia-tcal-meta" style={{ fontWeight: 700 }}>{info}</span>}
+              {it.segs.length > 0 && <span className="enogia-tcal-seg"><SegBar segs={it.segs} h={6} gap={1} width={Math.min(84, it.segs.length * 7)} /></span>}
+            </button>);
+          })}
+        </div>
+      </div>);
+    })}
+    <div className="enogia-tcal-legend" aria-hidden="true" style={{ color: T.ink500 }}>
+      {[[S.tests.solid, "en cours"], [T.red500, "en retard"], [S.finProd.solid, "terminé"], [T.line, "à venir"], [PRESENCE_META.client.color, "client"], [PRESENCE_META.nobo.color, "NOBO"]].map(([c, l]) => <span key={l}><i style={{ background: c }} />{l}</span>)}
+      <span>contour orange = testeur en conflit</span>
+    </div>
+  </section>);
+}
+
 // v189 — pop-up central de la fiche de tests (fond assombri, entrée 200 ms, Échap pour fermer, focus gardé dans le pop-up).
 export function TestDialog({ r, onClose, doc, testers, catalog, conflicts, commit, certifs, canEdit, myTester, who, signApi }) {
   const box = useRef(null);
@@ -265,37 +318,6 @@ export function TestDialog({ r, onClose, doc, testers, catalog, conflicts, commi
 }
 
 // Carte d'une machine dans une colonne : PJ, présence, dates, testeurs, avancement « faits / à réaliser ».
-function TestCard({ r, doc, testers, catalog, conflicts, late, on, onPick }) {
-  // v197 (taste-skill : lignes de 44 px, une seule marque d'état, chiffres tabulaires à droite) : ligne de liste compacte, plus de grande tuile.
-  const plan = planOf(doc, r.pj), kind = presenceKind(r.clientPresence || null), act = activeSections(kind), q = progressOf(plan, catalog, act);
-  const assigned = plan.assign.map(a => testers.find(t => t.id === a.tid)).filter(Boolean);
-  const forced = isForced(plan), conf = conflicts.some(c => c.a.pj === r.pj || c.b.pj === r.pj), noTester = assigned.length === 0 && !forced, full = forced || (q.total > 0 && q.done === q.total);
-  const S = stageSoft(), edge = noTester || late ? T.red500 : full ? S.finProd.solid : S.tests.solid;
-  const meta = getPjMeta(r.pj, r);
-  const tag = (txt, ink, bg) => <span style={{ fontFamily: T.fontLabel, fontSize: 11, fontWeight: 600, color: ink, background: bg, borderRadius: 999, padding: "0 7px", lineHeight: "18px", whiteSpace: "nowrap" }}>{txt}</span>;
-  return (<div {...pressable(onPick, { "aria-pressed": !!on, "aria-label": r.pj + " — " + (meta.nomProjet || "") + " — " + q.done + " tests faits sur " + q.total })} className="enogia-test-row"
-    style={{ borderLeft: "3px solid " + edge, borderTop: "1px solid " + T.line, background: on ? T.teal100 : T.card, padding: "6px 12px 7px 10px", cursor: "pointer", minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}>
-    <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
-      <PjPlate pj={r.pj} />
-      {r.gamme && <span style={{ fontFamily: T.fontLabel, fontSize: 12, fontWeight: 600, color: T.ink700, whiteSpace: "nowrap" }}>{r.gamme}</span>}
-      <span title={meta.nomProjet || ""} style={{ flex: 1, minWidth: 0, fontSize: FZ.sm, color: T.ink700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : ""}</span>
-      <span style={{ fontSize: FZ.xs, color: T.ink500, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{fdm(dIso(r.tests))}{r.testsFin ? " → " + fdm(dIso(r.testsFin)) : ""}</span>
-    </div>
-    <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, flexWrap: "wrap" }}>
-      {noTester ? tag("Sans testeur", T.red600, T.red100) : <span style={{ display: "inline-flex" }}>{assigned.slice(0, 4).map((t, i) => <span key={t.id} title={t.name} style={{ marginLeft: i ? -5 : 0, borderRadius: "50%", boxShadow: "0 0 0 2px " + (on ? T.teal100 : T.card), display: "inline-flex" }}><Avatar name={t.name} tint={personTint(t.name)[0]} size={18} /></span>)}</span>}
-      {kind && <PresenceChip kind={kind} compact tiny />}
-      {late && tag("En retard", T.red600, T.red100)}
-      {forced && tag("Validé (forcé)", T.emerald600, T.emerald100)}
-      {q.ko > 0 && tag(q.ko + " échec" + (q.ko > 1 ? "s" : ""), T.red600, T.red100)}
-      {conf && tag("Conflit", T.amber600, T.amber100)}
-      <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6 }}>
-        <SegBar segs={segsOf(plan, catalog, act)} h={5} gap={1} width={72} />
-        <span style={{ fontSize: FZ.xs, fontWeight: 700, color: full ? T.emerald600 : T.ink700, fontVariantNumeric: "tabular-nums", minWidth: 34, textAlign: "right" }}>{q.done}/{q.total}</span>
-      </span>
-    </div>
-  </div>);
-}
-
 function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdit, open, onToggle, myTester, panel, who, bare, signApi }) {
   const [newName, setNewName] = useState(""), [limit, setLimit] = useState({});
   const ctx = useMentions();

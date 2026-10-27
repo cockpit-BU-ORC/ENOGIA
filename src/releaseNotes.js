@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v207",
+    date: "2026-10-27",
+    title: "V207 : les tests en grand calendrier",
+    items: [
+      { t: "Un calendrier à la place des colonnes", d: "Trois semaines du lundi au vendredi : chaque machine est une barre posée sur ses jours de tests, avec la gamme, le testeur, « jour 2 / 4 » ou le retard et sa barre test par test." },
+      { t: "Lisible d'un coup d'œil", d: "Or en cours, rouge en retard, vert terminé, neutre à venir ; contour orange si un testeur est pris ailleurs. Aujourd'hui est surligné, les jours fériés grisés, les venues client et NOBO posées sur leur jour." },
+      { t: "Toujours en tête", d: "Le bandeau « Au banc maintenant » et les derniers résultats restent au-dessus du calendrier ; un clic sur une barre ouvre la fiche de tests." },
+    ],
+  },
+  {
     id: "2026-10-v206",
     date: "2026-10-27",
     title: "V206 : le planificateur repart de vos dates",

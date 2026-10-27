@@ -405,4 +405,7 @@ export const RELEASE_CATALOG = [
   { v: "206", t: "Le planificateur repart de vos dates", items: [
     ["Planificateur", "Reprise des dates du planning ; heures manquantes estimées par gamme pour la charge."],
   ] },
+  { v: "207", t: "Les tests en grand calendrier", items: [
+    ["Tests", "Calendrier de 3 semaines à la place des colonnes ; barres par machine, venues client / NOBO, fériés."],
+  ] },
 ];
