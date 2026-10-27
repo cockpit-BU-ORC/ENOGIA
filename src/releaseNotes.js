@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v201",
+    date: "2026-10-27",
+    title: "V201 : la fiche suiveuse, des cadres à la bonne taille",
+    items: [
+      { t: "Fiche suiveuse dans la Liste", d: "Le détail d'un PJ montre le parcours avec le nom de chaque étape (faites, en cours, à venir et leurs dates), puis le chef de projet, la présence, le dernier commentaire et trois actions." },
+      { t: "Moins de blanc", d: "Les cadres prennent la taille de leur contenu : marges réduites, graphiques à la hauteur de leurs données, angles harmonisés." },
+    ],
+  },
+  {
     id: "2026-10-v200",
     date: "2026-10-27",
     title: "V200 : fiche PDF en trois pages, tests terminés",

@@ -380,11 +380,11 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",suivi:"St
     <div key={tab+(tab==="derives"?"/"+kpiTab:"")} className="enogia-view-in" style={{minWidth:0}}>
     {tab==="derives"&&kpiTab==="synthese"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
       <KpiRow items={[[fk.length,"Total",T.teal500],[shipped.length,"Expédiées",T.emerald500],[inProd.length,"En production",T.amber500],[upcoming.length,"Départs < 30j",T.red500],[avgDureeProd==null?"—":avgDureeProd+"j","Durée moy. production",T.violet500]]}/>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(380px,1fr))",gap:12}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(320px,1fr))",gap:12}}>
         {countByEtat.length>0&&<div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line}}>
           <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:4}}>Répartition par état</div>
           <div style={{fontSize:FZ.sm,color:T.ink300,marginBottom:10}}>Volumétrie actuelle du portefeuille</div>
-          <ResponsiveContainer width="100%" height={Math.max(160,countByEtat.length*40)}>
+          <ResponsiveContainer width="100%" height={Math.max(80,countByEtat.length*28+24)}>
             <BarChart data={countByEtat} layout="vertical" margin={{left:10,right:20}}>
               <CartesianGrid strokeDasharray="3 3" stroke={T.surface}/>
               <XAxis type="number" allowDecimals={false} tick={{fontSize:FZ.xs,fill:T.ink500}}/>
@@ -400,7 +400,7 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",suivi:"St
         {countByPays.length>0&&<div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line}}>
           <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:4}}>Répartition par pays</div>
           <div style={{fontSize:FZ.sm,color:T.ink300,marginBottom:10}}>Destinations des machines du portefeuille</div>
-          <ResponsiveContainer width="100%" height={Math.max(160,countByPays.length*36)}>
+          <ResponsiveContainer width="100%" height={Math.max(80,countByPays.length*28+24)}>
             <BarChart data={countByPays} layout="vertical" margin={{left:10,right:20}}>
               <CartesianGrid strokeDasharray="3 3" stroke={T.surface}/>
               <XAxis type="number" allowDecimals={false} tick={{fontSize:FZ.xs,fill:T.ink500}}/>
@@ -422,7 +422,7 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",suivi:"St
               <div style={{width:200}}><Select compact value={exploreMetric} onChange={e=>setExploreMetric(e.target.value)} options={[{value:"count",label:"Nombre de PJ"},{value:"drift",label:"Dérive moyenne départ"},{value:"duree",label:"Durée moyenne production"}]}/></div>
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={Math.max(180,exploreData.length*36)}>
+          <ResponsiveContainer width="100%" height={Math.max(80,exploreData.length*28+24)}>
             <BarChart data={exploreData} layout="vertical" margin={{left:10,right:20}}>
               <CartesianGrid strokeDasharray="3 3" stroke={T.surface}/>
               <XAxis type="number" tick={{fontSize:FZ.xs,fill:T.ink500}}/>
@@ -484,7 +484,7 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",suivi:"St
 
           <KpiRow items={[[totalHeuresAtelier+"h","Total Atelier",T.teal500],[totalHeuresAutom+"h","Total Autom",T.violet500],[workloadByPJ.length,"PJ avec charge connue",T.ink500]]} min={150}/>
 
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(380px,1fr))",gap:16}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(320px,1fr))",gap:16}}>
             <div style={{background:T.surface,borderRadius:12,padding:12,overflow:"auto",maxHeight:380}}>
               <div style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,marginBottom:8}}>Détail par PJ</div>
               <table style={{width:"100%",borderCollapse:"collapse",fontSize:FZ.sm}}>
@@ -677,11 +677,11 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",suivi:"St
           </div>
         </div>
 
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(380px,1fr))",gap:16}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(320px,1fr))",gap:16}}>
           {driftByGamme.length>0&&<div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line}}>
             <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:4}}>Dérive moyenne par gamme</div>
             <div style={{fontSize:FZ.sm,color:T.ink300,marginBottom:10}}>Écart moyen (jours) entre départ initial et révisé, par gamme</div>
-            <ResponsiveContainer width="100%" height={Math.max(180,driftByGamme.length*38)}>
+            <ResponsiveContainer width="100%" height={Math.max(80,driftByGamme.length*28+24)}>
               <BarChart data={driftByGamme} layout="vertical" margin={{left:10,right:20}}>
                 <CartesianGrid strokeDasharray="3 3" stroke={T.surface}/>
                 <XAxis type="number" tick={{fontSize:FZ.xs,fill:T.ink500}}/>

@@ -196,7 +196,7 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
 }
 
 // ── Édition rapide des infos projet (nom / pays / chef de projet / gamme) depuis la fiche ──
-function EditMetaForm({meta,gamme,onSave,onCancel}){
+export function EditMetaForm({meta,gamme,onSave,onCancel}){
   const [nomProjet,setNomProjet]=useState(meta.nomProjet||"");
   const [pays,setPays]=useState(meta.pays||"");
   const [chefProjet,setChefProjet]=useState(meta.chefProjet||"");
@@ -334,7 +334,7 @@ export function ProjectComments({pj,comments,addComment,deleteComment,pinOk,auth
 }
 
 // ── Allocation des jours de retard par cause générique, pour un PJ donné (visible Manager uniquement) ──
-function DelayAllocations({pj,delays,delayTypes,setDelayTypes,addDelayAllocation,deleteDelayAllocation,addDelayComment,deleteDelayComment,authorName}){
+export function DelayAllocations({pj,delays,delayTypes,setDelayTypes,addDelayAllocation,deleteDelayAllocation,addDelayComment,deleteDelayComment,authorName}){
   const [type,setType]=useState(delayTypes[0]||"");
   const [days,setDays]=useState("");
   const [note,setNote]=useState("");

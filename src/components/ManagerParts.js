@@ -13,7 +13,7 @@ import { Select, NavIcon, PjChecklist, DelayScopeNote, EmptyState, SuperOnly, Ne
 
 // Accesseurs (et non valeurs figées) : ces objets sont créés une seule fois à l'import, avant que le
 // thème sombre ne soit appliqué — des valeurs fixes resteraient blanches en mode sombre.
-export const CARD={get background(){return T.card;},borderRadius:12,get border(){return "1px solid "+T.line;}};
+export const CARD={get background(){return T.card;},borderRadius:10,get border(){return "1px solid "+T.line;}};
 export const H_TITLE={get fontFamily(){return T.fontDisplay;},fontWeight:600,fontSize:FZ.md,get color(){return T.ink900;}};
 export const H_SUB={fontSize:FZ.xs,get color(){return T.ink300;},marginTop:2};
 

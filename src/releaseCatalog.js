@@ -385,4 +385,8 @@ export const RELEASE_CATALOG = [
   { v: "200", t: "Fiche PDF en trois pages, tests terminés", items: [
     ["Tests", "PDF : page de garde, informations machine, résultats et validation ; colonne « Terminés »."],
   ] },
+  { v: "201", t: "La fiche suiveuse, des cadres à la bonne taille", items: [
+    ["Liste", "Détail en fiche suiveuse : étapes nommées, infos utiles, trois actions."],
+    ["Tous les écrans", "Cadres proportionnés au contenu."],
+  ] },
 ];

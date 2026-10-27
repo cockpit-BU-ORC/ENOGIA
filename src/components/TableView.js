@@ -5,7 +5,7 @@ import { EtatInfoButton } from "./ProdStagesUI";
 import { getPjMeta, initials, personTint, PresenceChip, presenceKind, presenceDates, presenceFirstDate, CountryFlag, ETAT_META, ALL_ETATS, ALL_GAMMES, GAMME_COLORS, MONTHS, today, EpcTag } from "../pjMeta";
 import { diffDays, fmtMode } from "../parsers";
 import { HoverPop, useSheetJS, Badge, DropFilter, NavIcon, useCloseOnSignal, EmptyState, pressable, PjPlate, notify } from "./SharedUI";
-import { ProjectModal } from "./ProjectModal";
+import { RowDetail } from "./RowDetail";
 import { RowMenu } from "./RowMenu";
 import { EtatPopBody, DriftPopBody, AvPopBody } from "./RowPops";
 import { EtatSelect, PresenceEditor } from "./ManagerParts";
@@ -470,10 +470,10 @@ export function TableView({data,progress,df,setDf,selEtats,setSelEtats,selGammes
               :<span style={{color:T.ink100,fontSize:FS}}>—</span>;})()}
           </td>}
         </tr>
-        {/* v199 (maquette A validée) : le détail se déplie sous la ligne — plus de pop-up ni de volet dans la Liste */}
+        {/* v199 → v201 : le détail se déplie sous la ligne — la « fiche suiveuse » (RowDetail), maquette validée */}
         {isSel&&<tr className="enogia-row-detail"><td colSpan={99} style={{padding:0,borderBottom:"1px solid "+T.line}}>
           <div style={{position:"sticky",left:0,width:"min(100%, calc(100vw - 120px))",maxWidth:1100}}>
-            <ProjectModal embedded pj={r.pj} data={data} df={df} onClose={()=>setSel(null)} comments={comments} addComment={addComment} deleteComment={deleteComment}
+            <RowDetail r={r} onClose={()=>setSel(null)} comments={comments} addComment={addComment} deleteComment={deleteComment}
               pinOk={pinOk} delays={delays} delayTypes={delayTypes} setDelayTypes={setDelayTypes} addDelayAllocation={addDelayAllocation} deleteDelayAllocation={deleteDelayAllocation}
               addDelayComment={addDelayComment} deleteDelayComment={deleteDelayComment} authorName={authorName} savePjMetaOverride={savePjMetaOverride} canEditMeta={canEditMeta}/>
           </div>
