@@ -4,7 +4,7 @@ import { useSheetJS } from "../components/SharedUI";
 import { guessGamme } from "../parsers";
 import {
   STEPS, splitKey, makeCalendar, schedule, planToRows, diffRows, initPlanFromRows,
-  addPj, initBlankPlan, rulesOf, summarizeChanges, diffPlans, DEFAULT_CAP, releasePins, setCap, setRules, loadModel, levelPlan, fitDurations, hasLevel, clearLevel, sortPjsByStart, capWeek,
+  addPj, initBlankPlan, setStep, rulesOf, summarizeChanges, diffPlans, DEFAULT_CAP, releasePins, setCap, setRules, loadModel, levelPlan, fitDurations, hasLevel, clearLevel, sortPjsByStart, capWeek,
 } from "./engine";
 import { parseMsPlan, compareWithMs, applyCalibration } from "./importPlan";
 import { PlannerGantt, fmtIso, makeTimeline, leftWidth, STEP_COLOR } from "./PlannerGantt";
@@ -107,6 +107,40 @@ function ImportDialog({ cal, rows, plan, onClose, onApply }) {
   </Modal>);
 }
 
+
+// v204 (demandé : « modifier en live les tâches types par gamme avec leur durée habituelle ») : modèles par gamme —
+// durée (jours ouvrés) et travail (heures) des phases Production, Tests et Fin de production. « Proposer » part de la moyenne
+// des PJ de la gamme dans le plan ; « Appliquer » écrit ces durées sur les PJ de la gamme (les dates imposées sont gardées).
+const TPL_STEPS = [["production", "Production"], ["tests", "Tests"], ["finProd", "Fin de production"]];
+function gammeOfPj(pj, rows) { const r = (rows || []).find(x => x.pj === pj); return (r && r.gamme) || "Sans gamme"; }
+function TemplatesDialog({ plan, rows, onClose, onApply }) {
+  const gammes = [...new Set((plan.pjs || []).map(x => gammeOfPj(x.pj, rows)))].sort();
+  const avg = g => { const L = (plan.pjs || []).filter(x => gammeOfPj(x.pj, rows) === g), o = {}; TPL_STEPS.forEach(([k]) => { const v = L.map(x => x.steps && x.steps[k]).filter(Boolean); o[k] = { dur: v.length ? Math.round(v.reduce((a, b) => a + (Number(b.dur) || 0), 0) / v.length) : 0, work: v.some(b => b.work != null) ? Math.round(v.reduce((a, b) => a + (Number(b.work) || 0), 0) / v.length) : null }; }); return o; };
+  const [tpl, setTpl] = useState(() => { const t = { ...(plan.templates || {}) }; gammes.forEach(g => { if (!t[g]) t[g] = avg(g); }); return t; });
+  const set = (g, k, f, v) => setTpl(t => ({ ...t, [g]: { ...t[g], [k]: { ...(t[g] && t[g][k]), [f]: v === "" ? null : Math.max(0, Number(v) || 0) } } }));
+  const applyG = (g, np) => { let out = np; (out.pjs || []).filter(x => gammeOfPj(x.pj, rows) === g).forEach(x => TPL_STEPS.forEach(([k]) => { const m = tpl[g] && tpl[g][k]; if (!m || !x.steps || !x.steps[k]) return; const patch = { dur: m.dur }; if (m.work != null) patch.work = m.work; out = setStep(out, x.pj, k, patch); })); return out; };
+  const save = (all, g) => { let np = { ...plan, templates: tpl }; if (all) gammes.forEach(x => { np = applyG(x, np); }); else if (g) np = applyG(g, np); onApply(np); };
+  const n = g => (plan.pjs || []).filter(x => gammeOfPj(x.pj, rows) === g).length;
+  return (<Modal title="Modèles par gamme" onClose={onClose} width={860}>
+    <div style={{ fontSize: 13, color: T.ink500, lineHeight: 1.5, marginBottom: 10 }}>Durée habituelle (jours ouvrés) et travail (heures atelier) de chaque phase, par gamme. « Appliquer » recalcule les PJ de la gamme ; les dates imposées restent.</div>
+    <div style={{ overflowX: "auto" }}><table style={{ borderCollapse: "collapse", width: "100%", fontSize: 12.5 }}>
+      <thead><tr><th style={{ textAlign: "left", padding: "6px 8px", color: T.ink500, fontWeight: 600 }}>Gamme</th>{TPL_STEPS.map(([k, l]) => <th key={k} colSpan={2} style={{ textAlign: "left", padding: "6px 8px", color: T.ink500, fontWeight: 600 }}>{l} <span style={{ fontWeight: 400 }}>(j · h)</span></th>)}<th /></tr></thead>
+      <tbody>{gammes.map(g => <tr key={g} style={{ borderTop: "1px solid " + T.line }}>
+        <td style={{ padding: "6px 8px", fontWeight: 700, whiteSpace: "nowrap" }}>{g} <span style={{ fontWeight: 400, color: T.ink500 }}>· {n(g)} PJ</span></td>
+        {TPL_STEPS.map(([k]) => <React.Fragment key={k}>
+          <td style={{ padding: "4px 4px" }}><input type="number" min={0} aria-label={g + " " + k + " durée"} value={(tpl[g] && tpl[g][k] && tpl[g][k].dur != null) ? tpl[g][k].dur : ""} onChange={e => set(g, k, "dur", e.target.value)} style={{ ...INP, width: 64 }} /></td>
+          <td style={{ padding: "4px 4px" }}><input type="number" min={0} aria-label={g + " " + k + " travail"} value={(tpl[g] && tpl[g][k] && tpl[g][k].work != null) ? tpl[g][k].work : ""} placeholder="h" onChange={e => set(g, k, "work", e.target.value)} style={{ ...INP, width: 64 }} /></td>
+        </React.Fragment>)}
+        <td style={{ padding: "4px 4px", whiteSpace: "nowrap" }}><button style={BTN} onClick={() => setTpl(t => ({ ...t, [g]: avg(g) }))} title="Reprendre la moyenne des PJ de cette gamme dans le plan">Proposer</button> <button style={BTN} onClick={() => { save(false, g); }}>Appliquer</button></td>
+      </tr>)}</tbody>
+    </table></div>
+    <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 14 }}>
+      <button style={BTN} onClick={onClose}>Fermer</button>
+      <button style={BTN} onClick={() => { save(false); onClose(); }}>Enregistrer les modèles</button>
+      <button style={BTN_P} onClick={() => { save(true); onClose(); }}>Appliquer à tous les PJ</button>
+    </div>
+  </Modal>);
+}
 
 function BlankDialog({ rows, onClose, onApply, hasPlan }) {
   const [txt, setTxt] = useState("PJ479-1, PJ479-2, PJ456, PJ472");
@@ -338,6 +372,7 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, authorN
       {!ui.lock && <>
         <button className="pg-tb" disabled={!undo.length} onClick={doUndo} aria-label="Annuler la dernière modification">↶ Annuler</button>
         <button className="pg-tb" disabled={!redo.length} onClick={doRedo} aria-label="Rétablir">↷ Rétablir</button>
+        <button className="pg-tb" onClick={() => setDlg("templates")} title="Durées et heures habituelles par gamme, applicables aux PJ">Modèles par gamme…</button>
         <button className="pg-tb" onClick={() => setDlg("blank")} title="Repartir de zéro avec quelques PJ, sans dates ni durées">Plan vierge…</button>
         <button className="pg-tb" onClick={() => setDlg("import")}>Importer</button>
         <button className="pg-tb" onClick={() => setDlg("history")}>Historique</button>
@@ -406,6 +441,7 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, authorN
     {ui.view !== "changes" && <div style={{ fontSize: 12, color: T.ink500, marginTop: 8, lineHeight: 1.6 }}>
       Cliquez une date, une durée, un travail ou un prédécesseur pour la modifier (Entrée valide, Échap annule) · glissez une barre pour la déplacer, sa poignée pour changer la durée · glissez ⋮⋮ pour changer la priorité d'un PJ · prédécesseurs : numéros de ligne, <b>2 ; 7SS+3j</b> (FS par défaut, SS, FF, SF, décalage en jours ouvrés).
     </div>}
+    {dlg === "templates" && <TemplatesDialog plan={plan} rows={rows} onClose={() => setDlg(null)} onApply={np => apply(np)} />}
     {dlg === "blank" && <BlankDialog rows={rows} hasPlan onClose={() => setDlg(null)} onApply={np => { setSel(null); setExp(new Set(np.pjs.map(p => p.pj))); apply(np); }} />}
     {dlg === "import" && <ImportDialog cal={cal} rows={rows} plan={plan} onClose={() => setDlg(null)} onApply={np => apply(np)} />}
     {dlg === "publish" && <PublishDialog plan={plan} sched={sched} rows={rows} pubRows={pubRows} changes={changes} onClose={() => setDlg(null)} onPublish={note => onPublish(plan, note)} />}

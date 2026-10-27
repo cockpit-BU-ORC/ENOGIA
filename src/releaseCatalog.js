@@ -396,4 +396,7 @@ export const RELEASE_CATALOG = [
   { v: "203", t: "Une seule fiche PJ, qui explique où en est la machine", items: [
     ["Fiche PJ", "Même fenêtre partout ; avancement, étape expliquée, sous-étapes, mini-frise, pastilles."],
   ] },
+  { v: "204", t: "Le planificateur, rien que pour vous", items: [
+    ["Planificateur", "Onglet réservé : ordre, dates, durées, liens, forçages, charge ; modèles par gamme."],
+  ] },
 ];

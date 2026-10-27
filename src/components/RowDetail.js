@@ -1,6 +1,6 @@
 // ── v203 : fiche d'un PJ en pop-up unique (maquette validée) — la même depuis la Liste, le Gantt, le Calendrier et l'accueil ────
 // D'abord la réponse à « où en est la machine ? » : anneau d'avancement, nom de l'étape et ce qu'elle signifie, étape suivante.
-// Puis le ruban des étapes (clic ou survol : ses sous-étapes s'affichent), les sous-étapes reprises de prodStages.js, une mini-frise
+// Puis le ruban des étapes (clic : ses sous-étapes s'affichent), les sous-étapes reprises de prodStages.js, une mini-frise
 // (aujourd'hui, départ, écart à l'initial), des pastilles de contexte (présence, tests, cash pour le propriétaire, turbine),
 // le dernier commentaire et trois actions (commentaires, retard, fiche projet) qui s'ouvrent dans la fenêtre.
 // Fenêtre centrale floutée (téléphone : monte du bas), entrée 240 ms / sortie 180 ms, Échap / clic à côté / croix pour fermer.
@@ -99,7 +99,7 @@ export function RowDetail({ r, onClose, comments, addComment, deleteComment, pin
         const isDone = shipped || i < cur, isCur = !shipped && i === cur, sb = (ETAT_META[s.color] || {}).bar || T.teal500, on = focus === s.id;
         const f = s.from ? dmy(r[s.from]) : "", t = s.to ? dmy(r[s.to]) : "", date = f && t ? f + " → " + t : f || t;
         return (<li key={s.id} aria-current={isCur ? "step" : undefined} style={{ flex: 1, minWidth: 0 }}>
-          <button type="button" onClick={() => setFocus(s.id)} onMouseEnter={() => setFocus(s.id)} aria-pressed={on} title={(STAGES.find(x => x.id === s.id) || { steps: [] }).steps.join(" · ") || s.label}
+          <button type="button" onClick={() => setFocus(s.id)} aria-pressed={on} title={(STAGES.find(x => x.id === s.id) || { steps: [] }).steps.join(" · ") || s.label}
             className="enogia-rib" style={{ width: "100%", border: "none", borderRadius: 10, padding: "8px 6px 9px", cursor: "pointer", textAlign: "center", fontFamily: T.font, background: isCur ? sb : isDone ? doneBg : T.surface, color: isCur ? inkOn(sb) : T.ink500, boxShadow: on ? "0 0 0 2px " + (isCur ? T.ink900 : sb) : !isCur && !isDone ? "inset 0 0 0 1px " + T.line : "none", transform: isCur ? "translateY(-2px)" : "none" }}>
             <span style={{ display: "block", fontFamily: T.fontLabel, fontSize: 12, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: isCur ? inkOn(sb) : T.ink900 }}>{isDone ? "✓ " : ""}{s.label}</span>
             <span style={{ display: "block", fontSize: 11, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{isCur ? "en cours" : date || (isDone ? "fait" : "—")}{s.id === "SHIPPED" && drift > 0 && !shipped ? <b style={{ color: T.red500 }}> +{drift} j</b> : null}</span>
@@ -115,7 +115,7 @@ export function RowDetail({ r, onClose, comments, addComment, deleteComment, pin
           <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: "50%", flexShrink: 0, background: fsState === "done" ? ETAT_META.SHIPPED.bar : fsState === "cur" ? bar : "transparent", boxShadow: fsState === "todo" ? "inset 0 0 0 1.5px " + T.ink300 : "none" }} />{st}</div>)
           : <div style={{ fontSize: FZ.xs, color: T.ink700, lineHeight: 1.5 }}>{fs.id === "PRE" ? "Commande, désignation du client, fabrication des pièces chez les fournisseurs (FNR) ou stockage externe." : (MEANING.SHIPPED[1])}</div>}
         {stage && stage.steps.some(x => x.endsWith("*")) && <div style={{ fontSize: 11, color: T.ink500, marginTop: 4, lineHeight: 1.4 }}>{STEP_NOTE}</div>}
-        <div style={{ fontSize: 11, color: T.ink500, marginTop: 4 }}>{fsState === "done" ? "Étape terminée." : fsState === "cur" ? "Étape en cours." : "À venir."} Survolez une autre étape pour voir la sienne.</div>
+        <div style={{ fontSize: 11, color: T.ink500, marginTop: 4 }}>{fsState === "done" ? "Étape terminée." : fsState === "cur" ? "Étape en cours." : "À venir."} Cliquez une autre étape pour voir la sienne.</div>
       </div>
       <div style={box}>
         <div style={{ fontSize: FZ.sm, fontWeight: 700, color: T.ink900, marginBottom: 8 }}>Calendrier</div>

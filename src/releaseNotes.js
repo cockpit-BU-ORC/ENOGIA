@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v204",
+    date: "2026-10-27",
+    title: "V204 : le planificateur, rien que pour vous",
+    items: [
+      { t: "Onglet Planificateur", d: "Sous Tests, réservé au propriétaire : ordre des machines, arrivées, durées, liens entre PJ, dates forcées et charge par semaine, dans un brouillon qui ne change rien pour les autres avant « Publier ».", admin: true },
+      { t: "Modèles par gamme", d: "Durées et heures habituelles de chaque phase par gamme, modifiables et applicables aux PJ en un clic.", admin: true },
+      { t: "Fiche PJ", d: "Les sous-étapes d'une étape s'affichent quand on clique dessus (plus au survol)." },
+    ],
+  },
+  {
     id: "2026-10-v203",
     date: "2026-10-27",
     title: "V203 : une seule fiche PJ, qui explique où en est la machine",
