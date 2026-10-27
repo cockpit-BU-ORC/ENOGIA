@@ -357,4 +357,7 @@ export const RELEASE_CATALOG = [
   { v: "192", t: "Des couleurs d'état bien distinctes", items: [
     ["Couleurs", "Nouvelle palette d'état, étiquettes Client / NOBO, camemberts plus contrastés."],
   ] },
+  { v: "193", t: "Le Cash in intégré au site", items: [
+    ["Cash in", "Chiffres, À traiter, jalons et volet d'édition dans le Manager ; import et export Excel."],
+  ] },
 ];

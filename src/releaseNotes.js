@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v193",
+    date: "2026-10-27",
+    title: "V193 : le Cash in intégré au site",
+    items: [
+      { t: "Cash in dans le site", d: "Plus de page à part : chiffres clés, « À traiter », jalons par PJ et volet d'édition, aux couleurs du site. Import, sauvegarde et export Excel conservés.", admin: true },
+    ],
+  },
+  {
     id: "2026-10-v192",
     date: "2026-10-27",
     title: "V192 : des couleurs d'état bien distinctes",
