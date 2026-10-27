@@ -5,7 +5,7 @@ import { EtatInfoButton } from "./ProdStagesUI";
 import { getPjMeta, initials, personTint, PresenceChip, presenceKind, presenceDates, presenceFirstDate, CountryFlag, ETAT_META, ALL_ETATS, ALL_GAMMES, GAMME_COLORS, MONTHS, today, EpcTag } from "../pjMeta";
 import { diffDays, fmtMode } from "../parsers";
 import { HoverPop, useSheetJS, Badge, DropFilter, NavIcon, useCloseOnSignal, EmptyState, pressable, PjPlate, notify } from "./SharedUI";
-import { RowDetail } from "./RowDetail";
+import { RowDialog } from "./RowDetail";
 import { RowMenu } from "./RowMenu";
 import { EtatPopBody, DriftPopBody, AvPopBody } from "./RowPops";
 import { EtatSelect, PresenceEditor } from "./ManagerParts";
@@ -186,7 +186,6 @@ export function TableView({data,progress,df,setDf,selEtats,setSelEtats,selGammes
   const [rowMenu,setRowMenu]=useState(null); // v162 : menu d'actions rapides {pj,x,y}
   const closeRowMenu=React.useCallback(()=>setRowMenu(null),[]);
   const focusComment=()=>{let n=0;const t=setInterval(()=>{const el=document.querySelector("textarea");n++;if(el){clearInterval(t);try{el.scrollIntoView({block:"center",behavior:"smooth"});el.focus({preventScroll:true});}catch(e){}}else if(n>12)clearInterval(t);},120);};
-  useEffect(()=>{if(!sel||typeof document==="undefined")return;const el=document.querySelector(".enogia-row-detail");if(el&&el.scrollIntoView)el.scrollIntoView({behavior:"smooth",block:"nearest"});},[sel]); // v199 : amène le détail déplié à l'écran
   const phone=useIsPhone();
   const [hiddenCols,setHiddenCols]=useState(new Set());
   const [colWidths,setColWidths]=useState(DEFAULT_COL_WIDTHS_PCT);
@@ -470,19 +469,15 @@ export function TableView({data,progress,df,setDf,selEtats,setSelEtats,selGammes
               :<span style={{color:T.ink100,fontSize:FS}}>—</span>;})()}
           </td>}
         </tr>
-        {/* v199 → v201 : le détail se déplie sous la ligne — la « fiche suiveuse » (RowDetail), maquette validée */}
-        {isSel&&<tr className="enogia-row-detail"><td colSpan={99} style={{padding:0,borderBottom:"1px solid "+T.line}}>
-          <div style={{position:"sticky",left:0,width:"min(100%, calc(100vw - 120px))",maxWidth:1100}}>
-            <RowDetail r={r} onClose={()=>setSel(null)} comments={comments} addComment={addComment} deleteComment={deleteComment}
-              pinOk={pinOk} delays={delays} delayTypes={delayTypes} setDelayTypes={setDelayTypes} addDelayAllocation={addDelayAllocation} deleteDelayAllocation={deleteDelayAllocation}
-              addDelayComment={addDelayComment} deleteDelayComment={deleteDelayComment} authorName={authorName} savePjMetaOverride={savePjMetaOverride} canEditMeta={canEditMeta}/>
-          </div>
-        </td></tr>}
         </React.Fragment>);
       })}</tbody>
     </table>
     </div>
   </div>
+  {/* v202 : fiche du PJ en pop-up central (flou derrière, ouverture et fermeture animées) — demandé */}
+  {sel&&data.some(x=>x.pj===sel)&&<RowDialog key={sel} r={data.find(x=>x.pj===sel)} onClose={()=>setSel(null)} comments={comments} addComment={addComment} deleteComment={deleteComment}
+    pinOk={pinOk} delays={delays} delayTypes={delayTypes} setDelayTypes={setDelayTypes} addDelayAllocation={addDelayAllocation} deleteDelayAllocation={deleteDelayAllocation}
+    addDelayComment={addDelayComment} deleteDelayComment={deleteDelayComment} authorName={authorName} savePjMetaOverride={savePjMetaOverride} canEditMeta={canEditMeta}/>}
   {rowMenu&&(()=>{const mr=data.find(x=>x.pj===rowMenu.pj);return <RowMenu pj={rowMenu.pj} x={rowMenu.x} y={rowMenu.y} etat={mr&&mr.etat} canSetEtat={!!(pinOk&&setEtatFor)}
     onOpen={()=>setSel(rowMenu.pj)} onComment={()=>{setSel(rowMenu.pj);focusComment();}} onSetEtat={id=>setEtatFor(rowMenu.pj,id)} onClose={closeRowMenu}/>;})()}
   </div>);

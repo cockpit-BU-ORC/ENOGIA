@@ -389,4 +389,8 @@ export const RELEASE_CATALOG = [
     ["Liste", "Détail en fiche suiveuse : étapes nommées, infos utiles, trois actions."],
     ["Tous les écrans", "Cadres proportionnés au contenu."],
   ] },
+  { v: "202", t: "Fiche PJ en pop-up central, PV de debug au format ENOGIA", items: [
+    ["Liste", "Fiche au centre avec flou, ouverture et fermeture animées."],
+    ["Tests", "PV de debug machine interne au format du modèle ENOGIA."],
+  ] },
 ];

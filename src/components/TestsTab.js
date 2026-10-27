@@ -400,7 +400,7 @@ function Signatures({ r, plan, assigned, mine, myTester, canEdit, who, signApi, 
         {form && form.key === key && <SignForm init={form} busy={busy} onCancel={() => setForm(null)} onSave={(name, fn, img) => sign(key, name, fn, img)} />}
       </div>); })}
     <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-      <button type="button" onClick={pdf} disabled={busy} className="enogia-btn-ind" style={{ border: "none", background: T.ink900, color: T.card, borderRadius: 8, padding: "7px 14px", minHeight: 32, fontSize: FZ.sm, fontWeight: 700, cursor: "pointer", fontFamily: T.font, display: "inline-flex", alignItems: "center", gap: 6 }}><NavIcon name="copy" size={15} />Fiche PDF signée</button>
+      <button type="button" onClick={pdf} disabled={busy} className="enogia-btn-ind" style={{ border: "none", background: T.ink900, color: T.card, borderRadius: 8, padding: "7px 14px", minHeight: 32, fontSize: FZ.sm, fontWeight: 700, cursor: "pointer", fontFamily: T.font, display: "inline-flex", alignItems: "center", gap: 6 }}><NavIcon name="copy" size={15} />PV de debug (PDF)</button>
       <span style={{ fontSize: FZ.xs, color: T.ink500 }}>S'ouvre dans un nouvel onglet : Imprimer → « Enregistrer au format PDF ».</span>
     </div>
     {err && <div role="alert" style={{ fontSize: FZ.xs, color: T.red500, fontWeight: 600 }}>{err}</div>}

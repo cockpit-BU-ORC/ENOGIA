@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v202",
+    date: "2026-10-27",
+    title: "V202 : la fiche PJ en pop-up central, PV de debug au format ENOGIA",
+    items: [
+      { t: "Fiche PJ au centre de l'écran", d: "Dans la Liste, la fiche s'ouvre au centre avec un flou derrière, en douceur, et se referme de la même façon. On y retrouve le parcours avec le nom de chaque étape." },
+      { t: "PV de debug machine", d: "Le PDF des tests devient le PV de debug machine interne, à la forme du modèle ENOGIA : page de garde, informations de la machine, résultats et validation." },
+      { t: "Écrans mieux proportionnés", d: "Les graphiques et les grilles du Manager reprennent une taille adaptée à l'écran." },
+    ],
+  },
+  {
     id: "2026-10-v201",
     date: "2026-10-27",
     title: "V201 : la fiche suiveuse, des cadres à la bonne taille",

@@ -112,7 +112,7 @@ export function PointHebdo({ data, savePjMetaOverride, onOpenPj }) {
     {groups.length === 0 ? <div style={{ background: T.card, boxShadow: T.shadowCard, borderRadius: 12 }}>
       {old7 || kind !== "all" || needle ? <EmptyState icon="search" title="Aucun point ouvert avec ces filtres." /> : <EmptyState icon="check" tone="ok" title="Aucune action ni mitigation ouverte" hint="Tout est clôturé." />}
     </div> :
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(360px,1fr))", gap: 12, alignItems: "start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%,420px),1fr))", gap: 12, alignItems: "start" }}>
         {groups.map(g => {
           const { r, meta } = g;
           const dl = r.depart ? new Date(r.depart) : null;
