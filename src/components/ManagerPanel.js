@@ -17,7 +17,7 @@ import { TurbinesTab } from "./TurbinesTab";
 import { SerieTab } from "./Series";
 import { CashInTab } from "./CashInTab";
 import { ImportHistory } from "./ImportHistory";
-import { isSuperAdmin } from "../roles";
+import { isSuperAdmin, isOwner } from "../roles";
 
 // Filtre de période (mois et/ou année) réutilisable sur chaque graphique temporel
 export function PeriodFilter({yearsAvailable,year,setYear,month,setMonth,showMonth=true}){
@@ -308,7 +308,7 @@ export function ManagerPanel({jumpFiche,changeLog,data,progress,setProgress,rele
   // ── Navigation Manager : onglets horizontaux + sous-onglets par famille ──
   // « Il y a bcp de KPI… plusieurs petits onglets par famille de KPI ? » → un sous-onglet par famille.
   const GROUP_OF={fiche:"fiche",hebdo:"hebdo",derives:"derives",statut:"suivi",sante:"suivi",retards:"retards",acces:"reglages",imports:"reglages",serie:"reglages",vacances:"reglages",production:"reglages",nouveautes:"reglages",cash:"cash",turbines:"turbines"};
-  const superAdmin=isSuperAdmin(); // v143 : seul le super admin voit l'onglet « Réglages » (changer le site) ; un admin n'a que les onglets d'usage
+  const superAdmin=isSuperAdmin(),owner=isOwner(); // v185 : superAdmin = propriétaire ou admin ; owner = propriétaire (Cash in) // v143 : seul le super admin voit l'onglet « Réglages » (changer le site) ; un admin n'a que les onglets d'usage
   // v158 : menu groupé (rail latéral) ; chaque entrée sait où aller. Cash in et Réglages : super admin seulement.
   const [railMin,setRailMin]=useRailCollapsed(),[palOpen,setPalOpen]=useState(false),phone=useIsPhone();
   // v178 : « fiche plein écran » — menu réduit aux icônes (sous-pages au survol) et liste des projets masquée en fondu.
@@ -320,7 +320,7 @@ export function ManagerPanel({jumpFiche,changeLog,data,progress,setProgress,rele
     reglages:[["serie","N° de série"],["production","Production"],["vacances","Vacances"],["imports","Imports"],["nouveautes","Nouveautés"],["acces","Accès Manager"]],
   };
   const group=GROUP_OF[tab]||"derives";
-  useEffect(()=>{if(!superAdmin&&(GROUP_OF[tab]==="reglages"||GROUP_OF[tab]==="cash"))setTab("derives");},[superAdmin,tab]); // un admin qui arrive sur un onglet Réglages (ancien état mémorisé) est ramené aux KPI
+  useEffect(()=>{if((!superAdmin&&GROUP_OF[tab]==="reglages")||(!owner&&GROUP_OF[tab]==="cash"))setTab("derives");},[superAdmin,owner,tab]); // un admin qui arrive sur un onglet Réglages (ancien état mémorisé) est ramené aux KPI
   const subItems=SUBS[group]||null;
   const subValue=group==="derives"?kpiTab:tab;
   const onSub=id=>{if(group==="derives")setKpiTab(id);else setTab(id);};
@@ -329,7 +329,7 @@ export function ManagerPanel({jumpFiche,changeLog,data,progress,setProgress,rele
   const navGroups=[
     {label:"Pilotage",entries:[entry("derives","KPI","chart","synthèse dérives charge avancement"),entry("suivi","Suivi","gauge","statut santé état"),entry("retards","Retards","warning","délais allocation")]},
     {label:"Projets",entries:[entry("fiche","Fiche projet","list","pj commentaires dates"),entry("hebdo","Point hebdo","clock","semaine changements"),entry("turbines","Turbines","factory","machines")]},
-    ...(superAdmin?[{label:"Admin",entries:[entry("cash","Cash in","euro","encaissement facturation",{lock:true}),entry("reglages","Réglages","lock","série production vacances imports nouveautés accès",{lock:true,go:goSub("reglages","production")})]}]:[]),
+    ...(superAdmin?[{label:"Admin",entries:[...(owner?[entry("cash","Cash in","euro","encaissement facturation",{lock:true})]:[]),entry("reglages","Réglages","lock","série production vacances imports nouveautés accès",{lock:true,go:goSub("reglages","production")})]}]:[]),
   ];
   const activeEntry=navGroups.flatMap(g=>g.entries).find(e=>e.id===group)||navGroups[0].entries[0];
   const activeSubLabel=activeEntry.subs?((activeEntry.subs.find(x=>x.id===subValue)||{}).label||""):"";
@@ -792,7 +792,7 @@ export function ManagerPanel({jumpFiche,changeLog,data,progress,setProgress,rele
     {tab==="turbines"&&<TurbinesTab doc={turbineDoc||{turbines:[]}} save={saveTurbines} data={data} authorName={authorName} superAdmin={superAdmin}/>}
     {tab==="statut"&&<StatutTab rows={fd} etatChoice={etatChoice} setEtatFor={setEtatFor} clientPresence={clientPresence} setClientPresenceFor={setClientPresenceFor} customEtats={customEtats||[]} setCustomEtats={superAdmin?setCustomEtats:null} data={data}/>}
     {tab==="hebdo"&&<PointHebdo data={data} savePjMetaOverride={savePjMetaOverride} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}}/>}
-    {tab==="fiche"&&<ProjectFileManager focus={focusFiche} compCatalog={compCatalog} setCompCatalog={setCompCatalog} managerEmails={managerEmails} currentUserEmail={currentUserEmail} resolveComment={resolveComment} certifs={certifs} setCertifs={setCertifs} openPj={fichePj&&fichePj.pj} openNonce={fichePj&&fichePj.n} lastChange={changeLog&&changeLog[0]} data={data} initialData={initialData} comments={comments} delays={delays} progress={progress} savePjMetaOverride={savePjMetaOverride} savePjMetaMulti={savePjMetaMulti} addCommentMulti={addCommentMulti} addComment={addComment} deleteComment={deleteComment} addDelayAllocationMulti={addDelayAllocationMulti} deleteDelayAllocation={deleteDelayAllocation} delayTypes={delayTypes} setDelayTypes={setDelayTypes} changeLog={changeLog} authorName={authorName} onOpenCash={superAdmin?(pj=>{setCashFocus({pj,n:Date.now()});setTab("cash");}):null}/>}
+    {tab==="fiche"&&<ProjectFileManager focus={focusFiche} compCatalog={compCatalog} setCompCatalog={setCompCatalog} managerEmails={managerEmails} currentUserEmail={currentUserEmail} resolveComment={resolveComment} certifs={certifs} setCertifs={setCertifs} openPj={fichePj&&fichePj.pj} openNonce={fichePj&&fichePj.n} lastChange={changeLog&&changeLog[0]} data={data} initialData={initialData} comments={comments} delays={delays} progress={progress} savePjMetaOverride={savePjMetaOverride} savePjMetaMulti={savePjMetaMulti} addCommentMulti={addCommentMulti} addComment={addComment} deleteComment={deleteComment} addDelayAllocationMulti={addDelayAllocationMulti} deleteDelayAllocation={deleteDelayAllocation} delayTypes={delayTypes} setDelayTypes={setDelayTypes} changeLog={changeLog} authorName={authorName} onOpenCash={owner?(pj=>{setCashFocus({pj,n:Date.now()});setTab("cash");}):null}/>}
     {tab==="retards"&&<DelaysTab data={data} delays={delays} delayTypes={delayTypes} setDelayTypes={setDelayTypes} addDelayAllocationMulti={addDelayAllocationMulti} deleteDelayAllocation={deleteDelayAllocation} authorName={authorName}/>}
     {superAdmin&&tab==="acces"&&<>
       <ManagerAccessManager managerEmails={managerEmails} setManagerEmails={setManagerEmails} currentUserEmail={currentUserEmail}/>
@@ -802,7 +802,7 @@ export function ManagerPanel({jumpFiche,changeLog,data,progress,setProgress,rele
         <span style={{fontFamily:"monospace",fontSize:FZ.xs,fontWeight:600,color:T.ink700,background:T.ink100,borderRadius:8,padding:"3px 8px"}}>build {buildVersion}</span>
       </div>}
     </>}
-    {superAdmin&&tab==="cash"&&<CashInTab authorName={authorName} focus={cashFocus}/>}
+    {owner&&tab==="cash"&&<CashInTab authorName={authorName} focus={cashFocus}/>}
     {superAdmin&&tab==="nouveautes"&&<><ReleaseCatalog isBeta={!!isBeta} selection={releaseSelection} onSaveSelection={saveReleaseSelection} onPublish={publishRelease} authorName={authorName}/><ReleaseEditor key={((releases||[])[0]||{}).id+":"+!!((releases||[])[0]||{}).off} releases={releases||[]} onSave={saveReleaseNotes} authorName={authorName}/></>}
     {superAdmin&&tab==="imports"&&<ImportHistory authorName={authorName}/>}
     {superAdmin&&tab==="serie"&&<SerieTab data={data} savePjMetaOverride={savePjMetaOverride}/>}

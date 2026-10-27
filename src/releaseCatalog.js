@@ -323,4 +323,9 @@ export const RELEASE_CATALOG = [
   { v: "184", t: "Un Gantt lisible", items: [
     ["Gantt", "Barres découpées par étape, écart écrit en clair, planning initial en pointillés, lignes alignées."],
   ] },
+  { v: "185", t: "Thème mixte, titres en couleur, droits des admins", items: [
+    ["Thème", "Ardoise : clair gris froid, sombre marine et or ; par défaut."],
+    ["Titres", "Une couleur de trait par page ; camemberts animés, totaux en gras."],
+    ["Admins", "Mêmes droits que le super admin, sauf le Cash in."],
+  ] },
 ];

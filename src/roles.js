@@ -8,6 +8,11 @@
 // Ce module ne fait que porter le rôle courant (posé par App à chaque rendu) pour que n'importe quel composant puisse
 // masquer une action sans repasser par les props. ATTENTION : c'est une protection d'interface ; pour qu'elle soit
 // aussi garantie côté base, les règles Firestore doivent refuser les suppressions aux autres comptes.
-export const ROLE = { superAdmin: false };
+// v185 (demandé : « les admins ont les mêmes droits et accès que le super admin, sauf pour le Cash in pour le moment ») :
+//  · isSuperAdmin() = droits d'administration complets → propriétaire OU admin (accès Manager) ;
+//  · isOwner()      = propriétaire (OWNER_EMAILS) → seul à voir et gérer le Cash in.
+export const ROLE = { superAdmin: false, owner: false };
 export function setSuperAdmin(v) { ROLE.superAdmin = !!v; }
 export function isSuperAdmin() { return ROLE.superAdmin; }
+export function setOwner(v) { ROLE.owner = !!v; }
+export function isOwner() { return ROLE.owner; }

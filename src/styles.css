@@ -344,3 +344,14 @@ button:not(:disabled):active { transform: scale(.97); }
 .enogia-tr > *:nth-child(3) { animation-delay: .12s; }
 .enogia-tr > *:nth-child(4) { animation-delay: .18s; }
 .enogia-tr-bar { transform-origin: left center; animation: enogiaLoad 1.8s linear .2s backwards; }
+
+/* v185 : vue d'ensemble — apparition plus marquée (demandé) : cartes en cascade, anneaux dessinés l'un après l'autre (Recharts,
+   600 ms + 120 ms d'écart), total qui « éclot » au centre, lignes de légende en cascade (40 ms). Exception assumée à la règle 150–300 ms. */
+@keyframes enogiaPieCard { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes enogiaPieTotal { 0% { opacity: 0; transform: scale(.6); } 70% { opacity: 1; transform: scale(1.08); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes enogiaPieLeg { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
+.enogia-pie-card  { animation: enogiaPieCard .42s var(--e-ease) backwards; }
+.enogia-pie-total { animation: enogiaPieTotal .4s var(--e-ease) backwards; }
+.enogia-pie-leg   { animation: enogiaPieLeg .28s var(--e-ease) backwards; }
+.enogia-pie-card .recharts-sector { transition: transform .18s var(--e-ease); transform-origin: center; transform-box: fill-box; }
+.enogia-pie-card .recharts-sector:hover { transform: scale(1.06); }

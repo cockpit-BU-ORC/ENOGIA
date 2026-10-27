@@ -103,14 +103,14 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
       {/* v176 (demandé : « la hauteur est trop importante, je préfère les camemberts avec les couleurs ») :
           un petit anneau coloré par répartition, légende à côté (et non dessous) pour limiter la hauteur. */}
       <div className="enogia-stagger" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:"12px 24px",flex:1,minWidth:0}}>
-        {DIMENSIONS.map(d=>{
+        {DIMENSIONS.map((d,di)=>{
           const all=breakdownsByDim[d.key],list=topOf(all),total=all.reduce((a,x)=>a+x.value,0);
           const pie=list.map((x,i)=>({...x,color:x.other?T.ink300:colorFor(d.key,x.name,i)}));
-          return(<section key={d.key} aria-label={"Répartition par "+d.label.toLowerCase()} style={{minWidth:0,display:"flex",alignItems:"center",gap:12}}>
-            <div role="img" aria-label={"Par "+d.label.toLowerCase()+" : "+all.map(x=>x.name+" "+x.value).join(", ")} style={{width:76,height:76,flexShrink:0}}>
+          return(<section key={d.key} className="enogia-pie-card" aria-label={"Répartition par "+d.label.toLowerCase()} style={{minWidth:0,display:"flex",alignItems:"center",gap:12,animationDelay:(di*90)+"ms"}}>
+            <div role="img" aria-label={"Par "+d.label.toLowerCase()+" : "+all.map(x=>x.name+" "+x.value).join(", ")} style={{width:76,height:76,flexShrink:0,position:"relative"}}>
               {total>0&&<ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={pie} dataKey="value" nameKey="name" innerRadius={22} outerRadius={37} paddingAngle={pie.length>1?2:0} stroke="none" isAnimationActive={true} animationDuration={600}>
+                  <Pie data={pie} dataKey="value" nameKey="name" innerRadius={22} outerRadius={37} paddingAngle={pie.length>1?2:0} stroke="none" isAnimationActive={true} animationBegin={120+di*120} animationDuration={600} animationEasing="ease-out">
                     {pie.map(x=><Cell key={x.name} fill={x.color}/>)}
                   </Pie>
                   <Tooltip content={({active,payload})=>{
@@ -121,17 +121,18 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
                   }}/>
                 </PieChart>
               </ResponsiveContainer>}
+              {total>0&&<span aria-hidden="true" className="enogia-pie-total" style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:T.fontDisplay,fontWeight:800,fontSize:15,color:T.ink900,pointerEvents:"none",fontVariantNumeric:"tabular-nums",animationDelay:(420+di*120)+"ms"}}>{total}</span>}
             </div>
             <div style={{minWidth:0,flex:1}}>
               <div style={{display:"flex",alignItems:"baseline",marginBottom:4}}>
                 <h3 style={{margin:0,fontSize:FZ.xs,fontWeight:700,color:T.ink900}}>Par {d.label.toLowerCase()}</h3>
-                <span style={{marginLeft:"auto",fontSize:FZ.xs,color:T.ink500,fontVariantNumeric:"tabular-nums"}}>{total}</span>
+                <span style={{marginLeft:"auto",fontSize:FZ.xs,fontWeight:700,color:T.ink900,fontVariantNumeric:"tabular-nums"}}>{total}</span>
               </div>
               {total===0?<div style={{fontSize:FZ.xs,color:T.ink500}}>Aucune machine avec ces filtres.</div>:
                 <div style={{display:"flex",flexDirection:"column",gap:1}}>
-                  {pie.map(x=><div key={x.name} style={{display:"flex",alignItems:"center",gap:6,fontSize:FZ.xs,color:T.ink700,lineHeight:1.35}}>
+                  {pie.map((x,xi)=><div key={x.name} className="enogia-pie-leg" style={{display:"flex",alignItems:"center",gap:6,fontSize:FZ.xs,color:T.ink700,lineHeight:1.35,animationDelay:(200+di*120+xi*40)+"ms"}}>
                     <span aria-hidden="true" style={{width:8,height:8,borderRadius:2,flexShrink:0,background:x.color}}/>
-                    <span title={x.name} style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",minWidth:0}}>{x.name}</span>
+                    <span title={x.name} style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",minWidth:0,fontWeight:500}}>{x.name}</span>
                     <span style={{marginLeft:"auto",fontWeight:700,color:T.ink900,fontVariantNumeric:"tabular-nums"}}>{x.value}</span>
                   </div>)}
                 </div>}

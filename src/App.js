@@ -10,9 +10,9 @@ import { doc, setDoc, getDoc, onSnapshot, updateDoc, FieldPath, deleteField } fr
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import "./styles.css";
 
-import { T, setThemeMode, setDensity, D, mixHex, FZ, R, THEMES, DEFAULT_THEME, THEME_KEY, navTokens } from "./theme";
+import { T, setThemeMode, setDensity, D, mixHex, FZ, R, THEMES, DEFAULT_THEME, THEME_KEY, navTokens, stageSoft, stripeHues } from "./theme";
 import { ThemePicker } from "./components/ThemePicker";
-import { setSuperAdmin, isSuperAdmin } from "./roles";
+import { setSuperAdmin, isSuperAdmin, setOwner } from "./roles";
 import { setCashinDoc, setCashinLinks, setOrdoPjs, getCashinDoc, getCashinLinks, getOrdoPjs, cashGroupsFor } from "./cashinLink";
 import { useCashin } from "./useCashin";
 import { CASHIN_DOC_REF, CASHIN_LINKS_REF, CASHIN_SHARED_REF, buildSharedCashin } from "./cashinData";
@@ -65,7 +65,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-26-v184-gantt-lisible";
+const APP_BUILD_VERSION = "2026-10-27-v185-theme-droits";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -148,8 +148,8 @@ export default function App(){
   // l'email de connexion de Gabriel, pas à pinOk (que d'autres membres de la BU ORC peuvent aussi
   // avoir en entrant le code Manager). À AJUSTER si ce n'est pas exactement ton adresse @enogia.com.
   const OWNER_EMAILS=["gabriel.vincent@enogia.com"];
-  const canEditMeta=!!(currentUser?.email&&OWNER_EMAILS.includes(currentUser.email.toLowerCase())); // = super admin (v143)
-  setSuperAdmin(canEditMeta); // pose le rôle avant que les composants ne le lisent (src/roles.js)
+  const isOwner=!!(currentUser?.email&&OWNER_EMAILS.includes(currentUser.email.toLowerCase())); // v185 : propriétaire (seul à voir le Cash in)
+  setOwner(isOwner);
 
   const [darkMode,setDarkMode]=useState(()=>{
     try{return localStorage.getItem("enogia_darkMode")==="1";}catch(e){return false;}
@@ -263,6 +263,9 @@ export default function App(){
   const [onlyDrift,setOnlyDrift]=useState(false); // v126 : « En dérive seulement » (départ plus tard que dans le planning initial)
   const [df,setDf]=useState("date");
   const [pinOk,setPinOk]=useState(false);
+  // v185 : droits d'administration complets pour le propriétaire et les admins (accès Manager) — sauf le Cash in (isOwner).
+  const canEditMeta=isOwner||pinOk;
+  setSuperAdmin(canEditMeta); // pose le rôle avant que les composants ne le lisent (src/roles.js)
   const [progress,setProgress]=useState({});
   const [calSel,setCalSel]=useState(null);
   const [etatChoice,setEtatChoice]=useState({});
@@ -286,8 +289,8 @@ export default function App(){
   // v146 : l'espace Manager s'ouvre uniquement pour les adresses autorisées (liste « Accès Manager ») et le super admin ;
   // plus de clavier PIN à l'entrée. Le PIN ne sert plus qu'à confirmer certaines suppressions.
   useEffect(()=>{
-    setPinOk(!!(currentUser?.email&&(managerEmails.some(e=>String(e).toLowerCase()===currentUser.email.toLowerCase())||canEditMeta))); // le super admin entre toujours ; un compte retiré de la liste perd l'accès
-  },[currentUser,managerEmails,canEditMeta]);
+    setPinOk(!!(currentUser?.email&&(managerEmails.some(e=>String(e).toLowerCase()===currentUser.email.toLowerCase())||isOwner))); // le propriétaire entre toujours ; un compte retiré de la liste perd l'accès
+  },[currentUser,managerEmails,isOwner]);
 
   // Lecture temps réel depuis Firestore
   useEffect(()=>{
@@ -316,7 +319,7 @@ export default function App(){
   const [onlyChanged,setOnlyChanged]=useState(false);
   // v146.9 : nouveautés de la version déployée, affichées une fois par personne et par poste (texte dans src/releaseNotes.js)
   const releasesAll=useMemo(()=>mergeReleases(releaseNotes),[releaseNotes]);
-  const {unseen:unseenReleases,markSeen:markReleasesSeen}=useUnseenReleases(currentUser&&currentUser.email,!!canEditMeta,releasesAll);
+  const {unseen:unseenReleases,markSeen:markReleasesSeen}=useUnseenReleases(currentUser&&currentUser.email,!!isOwner,releasesAll); // lignes « réservées » = Cash in → propriétaire
   const [screenOpen,setScreenOpen]=useState(false); // v146.8 : écran atelier (diaporama plein écran)
   useEffect(()=>{try{if(loggedIn&&!justLoggedIn&&new URLSearchParams(window.location.search).get("ecran")==="1")setScreenOpen(true);}catch(e){}},[loggedIn,justLoggedIn]);
   // v146.7 : le message revient à CHAQUE chargement de la page tant qu'il n'est pas lu (Ctrl+R ne le fait plus disparaître) et s'affiche
@@ -488,7 +491,7 @@ export default function App(){
   const lastSharedRef=useRef("");
   useEffect(()=>{
     // V146.12 — Administrateurs (pas le super admin) : le Cash in arrive par la copie réduite publiée par le super admin (lecture seule).
-    if(canEditMeta||!pinOk){ if(!canEditMeta){ setCashinDoc(null); setCashinLinks(null); setCashinVer(v=>v+1); } return; }
+    if(isOwner||!pinOk){ if(!isOwner){ setCashinDoc(null); setCashinLinks(null); setCashinVer(v=>v+1); } return; }
     const unsub = onSnapshot(CASHIN_SHARED_REF(), (snap)=>{
       const d=snap.exists()?snap.data():null;
       setCashinDoc(d&&Array.isArray(d.rows)?{rows:d.rows,labels:d.labels||{},totals:d.totals||{},owners:{},updatedAt:d.updatedAt||null}:null);
@@ -496,10 +499,10 @@ export default function App(){
       setCashinVer(v=>v+1);
     }, (err)=>{ console.warn("Cash in partagé indisponible :", err&&err.code); setCashinDoc(null); setCashinLinks({}); setCashinVer(v=>v+1); });
     return ()=>unsub();
-  },[canEditMeta,pinOk]);
+  },[isOwner,pinOk]);
   // Super admin : publie (avec un léger délai, seulement si le contenu a changé) la copie réduite du Cash in pour les administrateurs.
   useEffect(()=>{
-    if(!canEditMeta) return;
+    if(!isOwner) return;
     const d=getCashinDoc(); if(!d) return;
     const ordo=getOrdoPjs(); if(!ordo.length) return;
     const keys=new Set(); ordo.forEach(pj=>cashGroupsFor(pj).forEach(g=>keys.add(g.pj)));
@@ -511,9 +514,9 @@ export default function App(){
         .then(()=>{lastSharedRef.current=h;}).catch(e=>console.warn("Publication du Cash in pour les admins impossible :", e&&e.code));
     },2000);
     return ()=>clearTimeout(t);
-  },[canEditMeta,cashStoreVer]); // eslint-disable-line
+  },[isOwner,cashStoreVer]); // eslint-disable-line
   useEffect(()=>{
-    if(!canEditMeta){ return; }
+    if(!isOwner){ return; }
     const unsub = onSnapshot(CASHIN_DOC_REF(), (snap)=>{
       setCashinDoc(snap.exists()?snap.data():null); setCashinVer(v=>v+1);
     }, (err)=>{
@@ -527,7 +530,7 @@ export default function App(){
       setCashinLinks({}); setCashinVer(v=>v+1);
     });
     return ()=>{unsub();unsubL();};
-  },[canEditMeta]);
+  },[isOwner]);
   // N'écrit QUE les champs modifiés du PJ concerné (chemin meta.<PJ>.<champ>, valeur remplacée en bloc). Avant, on réécrivait
   // toute la table des PJ depuis l'état local : deux enregistrements rapprochés (saisie en série, collage de plusieurs
   // N° de série) pouvaient s'écraser l'un l'autre avec des valeurs périmées, et un feu effacé restait en base (fusion profonde).
@@ -1045,7 +1048,7 @@ export default function App(){
 
     {/* ── Colonne principale ── */}
     <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",minHeight:"100vh"}}>
-      {IS_BETA&&<BetaBanner canCopy={canEditMeta}/>}
+      {IS_BETA&&<BetaBanner canCopy={isOwner}/>}
 
       {/* Barre de marque — fine, claire, sans dégradé : l'identité tient au logo + à la typo, pas à un bloc de couleur */}
       {/* v179 : le logo passe en haut du menu (même ligne de départ que la page) ; la barre ne garde que les outils, sans fond ni filet. */}
@@ -1066,7 +1069,7 @@ export default function App(){
           {currentUser&&<button onClick={()=>setNavPal(true)} title="Aller à… (Ctrl K)" aria-label="Aller à… (Ctrl K)" style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:32,height:32,padding:0,border:"1px solid transparent",borderRadius:9,cursor:"pointer",background:"transparent",color:T.ink500}} onMouseEnter={e=>{e.currentTarget.style.background=T.surfaceAlt;e.currentTarget.style.color=T.ink900;}} onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=T.ink500;}}><NavIcon name="search" size={18}/></button>}
           {currentUser&&<MentionBell comments={comments} me={mentionCtx.me} data={dataWithOverrides} resolveComment={resolveComment} canSeePrivate={pinOk} onOpen={pj=>{if(pinOk){setManagerJump({pj,n:Date.now()});setManagerTab("fiche");setView("manager");}else jumpToPj(pj);}}/>}
           <button onClick={()=>{setManagerTab("fiche");setView("manager");}} title="Espace Manager" aria-label="Espace Manager" aria-pressed={view==="manager"} style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:32,height:32,padding:0,border:"1px solid "+(view==="manager"?T.teal500+"66":"transparent"),borderRadius:9,cursor:"pointer",background:view==="manager"?T.teal100:"transparent",color:view==="manager"?T.teal600:T.ink500,transition:"background .15s ease, color .15s ease"}} onMouseEnter={e=>{if(view!=="manager"){e.currentTarget.style.background=T.surfaceAlt;e.currentTarget.style.color=T.ink900;}}} onMouseLeave={e=>{if(view!=="manager"){e.currentTarget.style.background="transparent";e.currentTarget.style.color=T.ink500;}}}><NavIcon name="manager" size={19}/></button>
-          {currentUser&&<UserChip user={currentUser} onSignOut={()=>signOut(auth)} role={canEditMeta?"Super admin":pinOk?"Admin":null}/>}
+          {currentUser&&<UserChip user={currentUser} onSignOut={()=>signOut(auth)} role={isOwner?"Super admin":pinOk?"Admin":null}/>}
         </div>
       </div>
 
@@ -1106,7 +1109,7 @@ export default function App(){
                 les 4 répartitions en camembert, elles, continuent de suivre les filtres. */}
             {view!=="home"&&(()=>{const v=VIEWS.find(x=>x.id===view);if(!v)return null;
               const subs={table:filtered.length+" machine"+(filtered.length>1?"s":"")+" affichée"+(filtered.length>1?"s":"")+" · survolez un état ou un écart pour le détail",gantt:"Chaque machine, étape par étape · Ctrl + molette pour zoomer",calendar:"Arrivées, tests, fins de production et départs",changes:"Ce qui a changé à chaque mise à jour du planning",comments:"Les échanges, machine par machine",tests:"Plans d'essais et affectations des testeurs"};
-              /* v183 : plus de sur-titre « Planning / Suivi » (demandé) */return <PageHead title={v.l} sub={subs[view]}/>;})()}
+              /* v183 : plus de sur-titre ; v185 : une couleur de trait par page (demandé) */const SS=stageSoft(),HH=stripeHues(),acc={table:SS.production.solid,gantt:SS.tests.solid,calendar:SS.finProd.solid,changes:T.ember500,comments:HH.note,tests:SS.arrivee.solid}[view];return <PageHead title={v.l} sub={subs[view]} accent={acc}/>;})()}
             {view==="home"&&<HomeView pinOk={pinOk} testsDoc={canSeeTests?testsDoc:null} data={dataWithOverrides} comments={comments} myEmail={currentUser&&currentUser.email} myName={authorName} people={peopleAll} unseenChanges={unseenChanges} lastImport={lastImport} onOpenPj={setCalSel} onGo={setView}/>}
             {view==="table"&&<DashboardSummary data={filtered} allData={dataWithOverrides} progress={progressEff} changeLog={changeLog} onOpenChanges={()=>setView("changes")}/>}
             {view==="table"&&<TableView data={filtered} progress={progressEff} df={df} setDf={setDf} setEtatFor={setEtatFor} setClientPresenceFor={setClientPresenceFor}

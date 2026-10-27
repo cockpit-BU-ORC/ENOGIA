@@ -7,6 +7,17 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v185",
+    date: "2026-10-27",
+    title: "V185 : thème mixte, titres en couleur, droits des admins",
+    items: [
+      { t: "Thème Ardoise revu", d: "En clair, le gris froid d'Ardoise ; en sombre, le marine et l'or. C'est le thème par défaut ; « Salle de contrôle » reste au choix." },
+      { t: "Chaque page a sa couleur", d: "Le trait sous le titre change de couleur selon la page : liste, Gantt, calendrier, modifications, commentaires, tests." },
+      { t: "Vue d'ensemble animée", d: "Les camemberts se dessinent l'un après l'autre, avec leur total au centre ; les totaux sont en gras." },
+      { t: "Admins", d: "Les admins ont désormais les mêmes droits que le super admin (réglages, suppressions, fiches, rapport CODIR), sauf le Cash in.", admin: true },
+    ],
+  },
+  {
     id: "2026-10-v184",
     date: "2026-10-26",
     title: "V184 : un Gantt lisible",

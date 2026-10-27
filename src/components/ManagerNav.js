@@ -32,8 +32,11 @@ export function ManagerRail({ groups, activeId, activeSub, onGo, collapsed, setC
   const flyout = fly && typeof document !== "undefined" ? createPortal(
     <div role="menu" aria-label={fly.e.label} className="enogia-flyout" onMouseEnter={() => clearTimeout(flyT.current)} onMouseLeave={closeFly}
       style={{ position: "fixed", top: Math.max(8, fly.top - 6), left: fly.left, zIndex: 10040, minWidth: 200, background: T.card, border: "1px solid " + T.line, borderRadius: 10, boxShadow: T.shadowFloat, padding: 6, fontFamily: T.font }}>
-      <div style={{ fontSize: 12, fontWeight: 700, color: T.accentInk, padding: "4px 8px 6px" }}>{fly.e.label}</div>
-      {(fly.e.subs || [{ id: "", label: "Ouvrir", go: fly.e.go }]).map(s => { const sOn = fly.e.id === activeId && (!fly.e.subs || s.id === activeSub); return (
+      {/* v185 : le nom de la page est lui-même le lien (plus de bouton « Ouvrir ») ; les sous-pages suivent dessous. */}
+      <button type="button" role="menuitem" onClick={() => { onGo(fly.e.go); setFly(null); }} aria-current={fly.e.id === activeId && !fly.e.subs ? "page" : undefined}
+        style={{ display: "block", width: "100%", textAlign: "left", border: "none", background: "transparent", color: T.accentInk, fontWeight: 700, fontSize: FZ.sm, fontFamily: T.font, padding: "7px 10px", minHeight: 32, borderRadius: 7, cursor: "pointer" }}
+        onMouseEnter={x => { x.currentTarget.style.background = T.surface; }} onMouseLeave={x => { x.currentTarget.style.background = "transparent"; }}>{fly.e.label}</button>
+      {(fly.e.subs || []).map(s => { const sOn = fly.e.id === activeId && (!fly.e.subs || s.id === activeSub); return (
         <button key={s.id || "open"} role="menuitem" type="button" onClick={() => { onGo(s.go); setFly(null); }} aria-current={sOn ? "page" : undefined}
           style={{ display: "block", width: "100%", textAlign: "left", border: "none", background: sOn ? T.teal100 : "transparent", color: sOn ? T.teal600 : T.ink700, fontWeight: sOn ? 700 : 500, fontSize: FZ.sm, fontFamily: T.font, padding: "7px 10px", minHeight: 32, borderRadius: 7, cursor: "pointer" }}
           onMouseEnter={x => { if (!sOn) x.currentTarget.style.background = T.surface; }} onMouseLeave={x => { if (!sOn) x.currentTarget.style.background = "transparent"; }}>{s.label}</button>); })}
