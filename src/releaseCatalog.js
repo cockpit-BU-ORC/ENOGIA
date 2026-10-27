@@ -379,4 +379,7 @@ export const RELEASE_CATALOG = [
   { v: "198", t: "Le tableau du Cash in, comme dans l'artefact", items: [
     ["Cash in", "Grand tableau modifiable au format de l'artefact, dans le site."],
   ] },
+  { v: "199", t: "Le détail d'un PJ se déplie dans la Liste", items: [
+    ["Liste", "Détail déplié sous la ligne, à la place du pop-up et du volet."],
+  ] },
 ];

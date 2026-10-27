@@ -1240,3 +1240,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - **Affichage par défaut** (`CashInTab.js`) : le Cash in du site (avec ce tableau) ; « Ancienne page » ouvre toujours `public/cashin.html` ; clé `enogia_cashin_format` (`artefact` pour garder l'ancienne page).
 - Données inchangées (`planning/cashin`, même forme). Vérifié : rendu du tableau et parcours « Commentaire → Marquer payé », renommage d'un PJ, enregistrement (jsdom) ; build (13 avertissements existants), tests, contraste. Pas testé avec vos vraies données.
 - Fichiers : components/{CashInGrid,CashInNative,CashInTab}.js, styles.css, App.js (version), releaseNotes.js, releaseCatalog.js(+test).
+
+## v199 — Liste : détail déplié sous la ligne (maquette A validée)
+
+- **Liste** (`TableView.js`) : un clic sur une ligne insère, juste dessous, une ligne de détail (`.enogia-row-detail`, pleine largeur visible, 1 100 px max, collée à gauche au défilement horizontal) ; un second clic, la croix ou Échap la replie ; une seule ligne ouverte à la fois ; la page fait défiler jusqu'au détail. **Le volet de droite et le pop-up central sont retirés de la Liste** (la Liste prend toute la largeur ; le lien « Réduire le volet » des colonnes masquées disparaît ; clé `enogia_panelCollapsed` plus lue). Le menu « Actions » (clic droit) ouvre aussi le détail.
+- **Détail** (`ProjectModal.js`, mode `embedded`) : sans fenêtre ni en-tête répété (ni plaque, ni état, ni bascule Volet / Pop-up) ; liseré de la couleur d'état à gauche ; métadonnées (pays, chefs, n° de série, présence, Modifier), parcours en 5 étapes, chiffres clés, onglets Aperçu / Commentaires / Retards (dernier commentaire en aperçu, sans le calendrier des mois), actions Commenter / Déclarer un retard / Fiche synthèse.
+- Gantt et Calendrier gardent leur fiche (volet ou pop-up, au choix).
+- Pas de nouvelle donnée. Vérifié : clic → détail déplié, re-clic → replié, aucune fenêtre (jsdom) ; build (13 avertissements existants), tests, contraste. Pas testé dans l'appli connectée.
+- Fichiers : components/{TableView,ProjectModal}.js, App.js (version), releaseNotes.js, releaseCatalog.js(+test).

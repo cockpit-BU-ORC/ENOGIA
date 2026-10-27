@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v199",
+    date: "2026-10-27",
+    title: "V199 : le détail d'un PJ se déplie dans la Liste",
+    items: [
+      { t: "Plus de fenêtre ni de volet dans la Liste", d: "Un clic sur une ligne déplie le détail juste dessous : parcours, chiffres clés, commentaires, retards et actions. Un second clic ou Échap le replie." },
+      { t: "Plus de place pour les colonnes", d: "Sans le volet de droite, la Liste occupe toute la largeur." },
+    ],
+  },
+  {
     id: "2026-10-v198",
     date: "2026-10-27",
     title: "V198 : le tableau du Cash in, comme dans l'artefact",

@@ -1,4 +1,4 @@
-import React, { useState, useLayoutEffect, useRef, useEffect } from "react";
+import React, { useState, useLayoutEffect, useEffect } from "react";
 import { T, FZ, D, mixHex } from "../theme";
 import { useMarks, NewMark } from "./ChangesNotice";
 import { EtatInfoButton } from "./ProdStagesUI";
@@ -8,7 +8,6 @@ import { HoverPop, useSheetJS, Badge, DropFilter, NavIcon, useCloseOnSignal, Emp
 import { ProjectModal } from "./ProjectModal";
 import { RowMenu } from "./RowMenu";
 import { EtatPopBody, DriftPopBody, AvPopBody } from "./RowPops";
-import { useDetailMode } from "../detailMode";
 import { EtatSelect, PresenceEditor } from "./ManagerParts";
 import { exportPlanningXlsx } from "../exportExcel";
 import { useIsPhone } from "../useIsPhone";
@@ -182,20 +181,13 @@ function PresenceCell({r,tight,onChange}){
 export function TableView({data,progress,df,setDf,selEtats,setSelEtats,selGammes,setSelGammes,allPJs,selPJs,setSelPJs,allProjets,selProjets,setSelProjets,allPays,selPays,setSelPays,allChefs,selChefs,setSelChefs,selMoisArrivee,setSelMoisArrivee,selMoisTests,setSelMoisTests,selMoisFinProd,setSelMoisFinProd,selMoisDepart,setSelMoisDepart,comments,addComment,deleteComment,pinOk,delays,delayTypes,setDelayTypes,addDelayAllocation,deleteDelayAllocation,addDelayComment,deleteDelayComment,externalSel,setExternalSel,authorName,savePjMetaOverride,canEditMeta,onlyDrift,setOnlyDrift,onlyChanged,setOnlyChanged,setEtatFor,setClientPresenceFor}){
   const {marks,clear:clearMarks}=useMarks();
   const [selInternal,setSelInternal]=useState(null);
-  const panelRef=useRef(null);
   const sel=externalSel!==undefined?externalSel:selInternal;
   const setSel=setExternalSel||setSelInternal;
   const [rowMenu,setRowMenu]=useState(null); // v162 : menu d'actions rapides {pj,x,y}
   const closeRowMenu=React.useCallback(()=>setRowMenu(null),[]);
   const focusComment=()=>{let n=0;const t=setInterval(()=>{const el=document.querySelector("textarea");n++;if(el){clearInterval(t);try{el.scrollIntoView({block:"center",behavior:"smooth"});el.focus({preventScroll:true});}catch(e){}}else if(n>12)clearInterval(t);},120);};
-  // Téléphone : la fiche s'ouvre sous le tableau — on y amène l'écran au toucher d'une ligne.
-  useEffect(()=>{if(sel&&typeof window!=="undefined"&&window.innerWidth<=700&&panelRef.current)panelRef.current.scrollIntoView({behavior:"smooth",block:"start"});},[sel]);
-  // Volet de droite (fiche projet) réductible (demandé explicitement) — mémorisé entre les visites.
+  useEffect(()=>{if(!sel||typeof document==="undefined")return;const el=document.querySelector(".enogia-row-detail");if(el&&el.scrollIntoView)el.scrollIntoView({behavior:"smooth",block:"nearest"});},[sel]); // v199 : amène le détail déplié à l'écran
   const phone=useIsPhone();
-  const [detailMode]=useDetailMode(); // v159 : fiche en volet à droite ou en pop-up central (choix personnel)
-  const popupMode=detailMode==="popup";
-  const [panelCollapsed,setPanelCollapsed]=useState(()=>{try{return localStorage.getItem("enogia_panelCollapsed")==="1";}catch(e){return false;}});
-  const togglePanel=()=>setPanelCollapsed(v=>{const n=!v;try{localStorage.setItem("enogia_panelCollapsed",n?"1":"0");}catch(e){}return n;});
   const [hiddenCols,setHiddenCols]=useState(new Set());
   const [colWidths,setColWidths]=useState(DEFAULT_COL_WIDTHS_PCT);
   // Responsive : par défaut les colonnes sont élastiques (aucune largeur imposée) et se partagent
@@ -376,7 +368,6 @@ export function TableView({data,progress,df,setDf,selEtats,setSelEtats,selGammes
     </div>
     {autoHide.size>0&&!phone&&<div role="status" style={{padding:"0 4px 8px",fontSize:FZ.xs,color:T.ink500,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
       <span>{autoHide.size} colonne{autoHide.size>1?"s":""} masquée{autoHide.size>1?"s":""} faute de place ({autoCols.slice(0,nAuto).map(id=>TABLE_COLUMNS.find(c=>c.id===id)?.label||id).join(", ")}).</span>
-      {!panelCollapsed&&!popupMode&&<button onClick={togglePanel} style={{border:"none",background:"transparent",color:T.teal600,fontWeight:700,fontSize:FZ.xs,cursor:"pointer",padding:0,fontFamily:T.font,textDecoration:"underline"}}>Réduire le volet de droite pour les afficher</button>}
     </div>}
     {rows.length===0&&<EmptyState compact icon="search" title={onlyDrift?"Aucun PJ en dérive avec les filtres actuels.":"Aucun PJ ne correspond aux filtres actuels."} action="Tout afficher" onAction={()=>applyView(baseView())}/>}
     <div ref={boxRef} onScroll={e=>{const v=e.currentTarget.scrollLeft>0;if(v!==scrolledX)setScrolledX(v);}} style={{overflow:"auto",maxHeight:"calc(100dvh - 170px)",minHeight:240,padding:"0 4px"}}>
@@ -427,7 +418,7 @@ export function TableView({data,progress,df,setDf,selEtats,setSelEtats,selGammes
         const rowBg=isSel?T.teal100:T.surface; // v162 : plus de zébrage ; liseré + teinte 7 % de la couleur d'état au survol
         const rk=(ETAT_META[r.etat]||ETAT_META["NOT ORDERED"]).bar, tintBg=mixHex(T.surface,rk,T.mode==="dark"?.12:.07);
         const [avTint,avTintBg]=personTint(meta.chefProjet);
-        return(<tr key={i} onClick={()=>setSel(sel===r.pj?null:r.pj)} onContextMenu={e=>{e.preventDefault();setRowMenu({pj:r.pj,x:e.clientX,y:e.clientY});}} style={{height:rowH,borderLeft:"4px solid "+(isSel?T.teal500:rk),cursor:"pointer",background:rowBg,transition:"background .12s ease, border-color .12s ease"}}
+        return(<React.Fragment key={i}><tr aria-expanded={isSel} onClick={()=>setSel(sel===r.pj?null:r.pj)} onContextMenu={e=>{e.preventDefault();setRowMenu({pj:r.pj,x:e.clientX,y:e.clientY});}} style={{height:rowH,borderLeft:"4px solid "+(isSel?T.teal500:rk),cursor:"pointer",background:rowBg,transition:"background .12s ease, border-color .12s ease"}}
           onMouseEnter={e=>{if(!isSel)e.currentTarget.style.background=tintBg;}}
           onMouseLeave={e=>{if(!isSel)e.currentTarget.style.background=rowBg;}}>
           <td style={{padding:D.cellY+"px "+PX+"px",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",position:"sticky",left:0,zIndex:5,background:"inherit",boxShadow:scrolledX?"4px 0 6px -4px rgba(15,40,60,.22)":"none"}}>
@@ -478,29 +469,20 @@ export function TableView({data,progress,df,setDf,selEtats,setSelEtats,selGammes
               <span style={{display:"inline-flex",alignItems:"center",gap:4,color:T.ink500,fontSize:FS,fontWeight:600}}><NavIcon name="comments" size={11}/>{n}</span>
               :<span style={{color:T.ink100,fontSize:FS}}>—</span>;})()}
           </td>}
-        </tr>);
+        </tr>
+        {/* v199 (maquette A validée) : le détail se déplie sous la ligne — plus de pop-up ni de volet dans la Liste */}
+        {isSel&&<tr className="enogia-row-detail"><td colSpan={99} style={{padding:0,borderBottom:"1px solid "+T.line}}>
+          <div style={{position:"sticky",left:0,width:"min(100%, calc(100vw - 120px))",maxWidth:1100}}>
+            <ProjectModal embedded pj={r.pj} data={data} df={df} onClose={()=>setSel(null)} comments={comments} addComment={addComment} deleteComment={deleteComment}
+              pinOk={pinOk} delays={delays} delayTypes={delayTypes} setDelayTypes={setDelayTypes} addDelayAllocation={addDelayAllocation} deleteDelayAllocation={deleteDelayAllocation}
+              addDelayComment={addDelayComment} deleteDelayComment={deleteDelayComment} authorName={authorName} savePjMetaOverride={savePjMetaOverride} canEditMeta={canEditMeta}/>
+          </div>
+        </td></tr>}
+        </React.Fragment>);
       })}</tbody>
     </table>
     </div>
   </div>
-  {/* flex:"2 1 300px" + maxWidth: colonne nettement plus étroite que la liste, et qui peut
-      rétrécir jusqu'à 300px avant de repasser à la ligne — demandé explicitement ("la réduire
-      en taille aussi pour que cela soit responsive"). */}
-  {popupMode?(sel&&<ProjectModal pj={sel} data={data} df={df} onClose={()=>setSel(null)} comments={comments} addComment={addComment} deleteComment={deleteComment}
-      pinOk={pinOk} delays={delays} delayTypes={delayTypes} setDelayTypes={setDelayTypes} addDelayAllocation={addDelayAllocation} deleteDelayAllocation={deleteDelayAllocation}
-      addDelayComment={addDelayComment} deleteDelayComment={deleteDelayComment} authorName={authorName} savePjMetaOverride={savePjMetaOverride} canEditMeta={canEditMeta}/>)
-  :phone&&!sel?null:panelCollapsed&&!phone?
-    <div style={{flex:"0 0 36px",position:"sticky",top:16,alignSelf:"flex-start"}}>
-      <button onClick={togglePanel} title="Afficher le volet de droite" style={{width:36,height:36,borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink500,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:FZ.md,fontWeight:700}}>‹</button>
-    </div>
-  :<div ref={panelRef} className="enogia-panel" style={{flex:"2 1 300px",maxWidth:340,minWidth:260,scrollMarginTop:12}}>
-    <div className="enogia-hide-phone" style={{display:"flex",justifyContent:"flex-end",marginBottom:6}}>
-      <button onClick={togglePanel} title="Réduire le volet" style={{height:26,padding:"0 8px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:T.ink500,cursor:"pointer",fontSize:FZ.xs,fontWeight:700}}>Réduire ›</button>
-    </div>
-    <ProjectModal inline pj={sel} data={data} df={df} onClose={()=>setSel(null)} comments={comments} addComment={addComment} deleteComment={deleteComment}
-      pinOk={pinOk} delays={delays} delayTypes={delayTypes} setDelayTypes={setDelayTypes} addDelayAllocation={addDelayAllocation} deleteDelayAllocation={deleteDelayAllocation}
-      addDelayComment={addDelayComment} deleteDelayComment={deleteDelayComment} authorName={authorName} savePjMetaOverride={savePjMetaOverride} canEditMeta={canEditMeta}/>
-  </div>}
   {rowMenu&&(()=>{const mr=data.find(x=>x.pj===rowMenu.pj);return <RowMenu pj={rowMenu.pj} x={rowMenu.x} y={rowMenu.y} etat={mr&&mr.etat} canSetEtat={!!(pinOk&&setEtatFor)}
     onOpen={()=>setSel(rowMenu.pj)} onComment={()=>{setSel(rowMenu.pj);focusComment();}} onSetEtat={id=>setEtatFor(rowMenu.pj,id)} onClose={closeRowMenu}/>;})()}
   </div>);

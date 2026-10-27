@@ -25,10 +25,10 @@ function InlinePanelPlaceholder(){
   </div>);
 }
 
-export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComment,pinOk,delays,delayTypes,setDelayTypes,addDelayAllocation,deleteDelayAllocation,addDelayComment,deleteDelayComment,authorName,savePjMetaOverride,inline,canEditMeta}){
+export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComment,pinOk,delays,delayTypes,setDelayTypes,addDelayAllocation,deleteDelayAllocation,addDelayComment,deleteDelayComment,authorName,savePjMetaOverride,inline,canEditMeta,embedded}){
   const [editingMeta,setEditingMeta]=useState(false);
   const [detailMode,setDetailMode]=useDetailMode();
-  const center=!inline&&detailMode==="popup"; // v159 : fenêtre centrale au choix de la personne
+  const center=!inline&&!embedded&&detailMode==="popup"; // v159 : fenêtre centrale au choix de la personne
   const [tab,setTab]=useState("apercu");
   // Fermeture au clavier (Échap) — demandé explicitement, pour la fiche en mode "popup" (Gantt,
   // Calendrier) ; avant tout retour anticipé pour respecter l'ordre des hooks React. Le mode inline
@@ -46,6 +46,7 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
   // vide de même gabarit plutôt que de ne rien rendre, pour que la colonne ne disparaisse pas.
   if(!r||dates.length===0){
     if(inline)return <InlinePanelPlaceholder/>;
+    if(embedded)return <div style={{padding:"10px 16px",fontSize:FZ.sm,color:T.ink500}}>Pas encore de dates pour ce PJ.</div>;
     return null;
   }
   const meta=getPjMeta(pj,r);
@@ -75,18 +76,17 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
   // Plus de voile sombre derrière le panneau en mode popup (Gantt/Calendrier) — demandé
   // explicitement ("que cela ne grise pas l'arrière-plan") : le calque reste présent (zone
   // cliquable pour fermer en cliquant à l'extérieur) mais transparent.
-  return(<div className={inline?"":"enogia-panel-backdrop"} onClick={inline?undefined:onClose} style={inline?{width:"100%",height:"100%"}:center?{position:"fixed",inset:0,background:"rgba(8,12,28,.45)",backdropFilter:"blur(3px)",WebkitBackdropFilter:"blur(3px)",zIndex:9998,fontFamily:T.font,display:"flex",alignItems:"center",justifyContent:"center",padding:16}:{position:"fixed",inset:0,background:"transparent",zIndex:9998,fontFamily:T.font}}>
-    <div role={inline?undefined:"dialog"} aria-modal={inline?undefined:"true"} aria-label={inline?undefined:"Fiche "+pj} className={inline?"":center?"enogia-pop-in":"enogia-panel-slide"} onClick={inline?undefined:e=>e.stopPropagation()} style={inline?{position:"sticky",top:16,width:"100%",maxHeight:"calc(100dvh - 32px)",background:stripeBg(((r&&ETAT_META[r.etat])||{}).bar||stripeHues().brand,T.card,4),padding:pad,overflowY:"auto",border:"1px solid "+T.line,borderRadius:12,boxSizing:"border-box"}:center?{position:"relative",width:"min(600px,100%)",maxHeight:"min(90vh,860px)",background:stripeBg(((r&&ETAT_META[r.etat])||{}).bar||stripeHues().brand,T.card,4),padding:pad+4,overflowY:"auto",border:"1px solid "+T.line,borderRadius:16,boxShadow:"0 24px 70px rgba(0,0,0,.35)",boxSizing:"border-box"}:{position:"fixed",top:0,right:0,bottom:0,width:"min(440px,100vw)",background:stripeBg(((r&&ETAT_META[r.etat])||{}).bar||stripeHues().brand,T.card,4),padding:pad,overflowY:"auto",boxShadow:"-10px 0 36px rgba(12,36,54,.28)"}}>
+  const body=()=>(<>
       {/* v190 (maquette B validée) : en-tête sur une ligne, parcours en 5 étapes (étape en cours encadrée, écart au départ),
           4 chiffres clés, onglets, actions en bas. */}
       <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:4}}>
-        <PjPlate pj={pj} size="lg"/>
-        <Badge etat={r.etat}/>
+        {!embedded&&<><PjPlate pj={pj} size="lg"/>
+        <Badge etat={r.etat}/></>}
         <EpcTag meta={meta}/>
         {r.gamme&&<span style={{fontFamily:T.fontLabel,fontSize:12,fontWeight:600,color:T.ink700,border:"1px solid "+T.line,borderRadius:6,padding:"1px 7px"}}>{r.gamme}</span>}
         {!editingMeta&&meta.nomProjet&&meta.nomProjet!=="—"&&<span style={{fontFamily:T.fontDisplay,fontSize:20,fontWeight:600,letterSpacing:"-.01em",color:T.ink900,minWidth:0,lineHeight:1.15,flex:"1 1 140px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} title={meta.nomProjet}>{meta.nomProjet}</span>}
         <span style={{display:"inline-flex",gap:6,alignItems:"center",marginLeft:"auto",flexShrink:0}}>
-          <button onClick={()=>setDetailMode(detailMode==="popup"?"panel":"popup")} title={detailMode==="popup"?"Afficher les fiches dans un volet à droite":"Afficher les fiches dans une fenêtre centrale"} aria-label={detailMode==="popup"?"Passer en volet latéral":"Passer en pop-up central"} style={{background:T.panel,border:"none",borderRadius:8,height:30,padding:"0 9px",fontSize:FZ.xs,fontWeight:700,cursor:"pointer",color:T.ink700,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font}}><NavIcon name={detailMode==="popup"?"sidepanel":"popup"} size={13}/>{detailMode==="popup"?"Volet":"Pop-up"}</button>
+          {!embedded&&<button onClick={()=>setDetailMode(detailMode==="popup"?"panel":"popup")} title={detailMode==="popup"?"Afficher les fiches dans un volet à droite":"Afficher les fiches dans une fenêtre centrale"} aria-label={detailMode==="popup"?"Passer en volet latéral":"Passer en pop-up central"} style={{background:T.panel,border:"none",borderRadius:8,height:30,padding:"0 9px",fontSize:FZ.xs,fontWeight:700,cursor:"pointer",color:T.ink700,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font}}><NavIcon name={detailMode==="popup"?"sidepanel":"popup"} size={13}/>{detailMode==="popup"?"Volet":"Pop-up"}</button>}
           <button onClick={onClose} title={inline?"Désélectionner":"Fermer"} aria-label={inline?"Désélectionner":"Fermer"} style={{background:T.panel,border:"none",borderRadius:8,width:30,height:30,fontSize:FZ.md,cursor:"pointer",color:T.ink700,flexShrink:0}}><NavIcon name="close" size={11}/></button>
         </span>
       </div>
@@ -145,7 +145,7 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
           <button type="button" onClick={()=>setTab("commentaires")} style={{display:"block",width:"100%",textAlign:"left",background:T.panel,border:"none",borderRadius:10,padding:"8px 10px",marginBottom:14,cursor:"pointer",fontFamily:T.font,color:T.ink700,fontSize:FZ.xs,lineHeight:1.45}}>
             <span style={{color:T.ink500}}>Dernier commentaire · {c.author||"—"} · {relTime(c.date)} : </span>« {String(c.text||"").replace(/\s+/g," ").slice(0,160)}{String(c.text||"").length>160?"…":""} »
           </button>):null;})()}
-        <div style={{display:"grid",gridTemplateColumns:"repeat("+months.length+",minmax(0,1fr))",gap:8}}>
+        {!embedded&&<><div style={{display:"grid",gridTemplateColumns:"repeat("+months.length+",minmax(0,1fr))",gap:8}}>
           {months.map((mo,mi)=>{
             const y=mo.getFullYear(),m=mo.getMonth();
             const de=evByDay(y,m);
@@ -174,15 +174,23 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
         <div style={{display:"flex",gap:12,marginTop:18,paddingTop:14,borderTop:"1px solid "+T.line,flexWrap:"wrap"}}>
           {PHASES.map(ph=><span key={ph.k} style={{display:"flex",alignItems:"center",gap:4,fontSize:FZ.xs}}><span style={{width:13,height:13,borderRadius:4,background:ph.bg,border:"1.5px solid "+ph.c}}/><span style={{color:T.ink500}}>{ph.t}</span></span>)}
         </div>
+        </>}
       </>}
 
       {tab==="commentaires"&&<ProjectComments pj={pj} comments={comments?.[pj]||[]} addComment={addComment} deleteComment={deleteComment} pinOk={pinOk} authorName={authorName}/>}
       {tab==="retards"&&pinOk&&delayTypes&&<DelayAllocations pj={pj} delays={delays?.[pj]||[]} delayTypes={delayTypes} setDelayTypes={setDelayTypes} addDelayAllocation={addDelayAllocation} deleteDelayAllocation={deleteDelayAllocation} addDelayComment={addDelayComment} deleteDelayComment={deleteDelayComment} authorName={authorName}/>}
-      <div style={{position:"sticky",bottom:-fp,margin:"16px -"+fp+"px -"+fp+"px",padding:"10px "+fp+"px",background:T.card,borderTop:"1px solid "+T.line,display:"flex",gap:6,flexWrap:"wrap",alignItems:"center",zIndex:3}}>
+      <div style={embedded?{marginTop:12,display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}:{position:"sticky",bottom:-fp,margin:"16px -"+fp+"px -"+fp+"px",padding:"10px "+fp+"px",background:T.card,borderTop:"1px solid "+T.line,display:"flex",gap:6,flexWrap:"wrap",alignItems:"center",zIndex:3}}>
         <button type="button" onClick={()=>setTab("commentaires")} className="enogia-btn-ind" style={{background:"transparent",border:"1px solid "+T.line,borderRadius:8,minHeight:30,padding:"0 10px",fontSize:FZ.xs,fontWeight:700,cursor:"pointer",color:T.ink700,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font}}><NavIcon name="comments" size={13}/>Commenter</button>
         {pinOk&&delayTypes&&<button type="button" onClick={()=>setTab("retards")} className="enogia-btn-ind" style={{background:"transparent",border:"1px solid "+T.line,borderRadius:8,minHeight:30,padding:"0 10px",fontSize:FZ.xs,fontWeight:700,cursor:"pointer",color:T.ink700,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font}}><NavIcon name="clock" size={13}/>Déclarer un retard</button>}
         {pinOk&&<button type="button" className="enogia-btn-ind" onClick={()=>{try{window.dispatchEvent(new CustomEvent("enogia:openSynthese",{detail:{pj}}));}catch(e){}if(onClose)onClose();}} title="Ouvrir la fiche synthèse de ce PJ (Manager)" style={{marginLeft:"auto",background:T.ink900,border:"none",borderRadius:8,minHeight:30,padding:"0 12px",fontSize:FZ.xs,fontWeight:700,cursor:"pointer",color:T.card,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font,whiteSpace:"nowrap"}}><NavIcon name="arrow" size={13}/>Fiche synthèse</button>}
       </div>
+
+  </>);
+  // v199 : sous la ligne de la Liste, la fiche est un simple bloc déplié (liseré de l'état à gauche, fond légèrement teinté)
+  if(embedded)return(<div className="enogia-row-open" style={{padding:"10px 16px 12px",background:T.surface,borderLeft:"3px solid "+(((r&&ETAT_META[r.etat])||{}).bar||T.teal500),fontFamily:T.font}}>{body()}</div>);
+  return(<div className={inline?"":"enogia-panel-backdrop"} onClick={inline?undefined:onClose} style={inline?{width:"100%",height:"100%"}:center?{position:"fixed",inset:0,background:"rgba(8,12,28,.45)",backdropFilter:"blur(3px)",WebkitBackdropFilter:"blur(3px)",zIndex:9998,fontFamily:T.font,display:"flex",alignItems:"center",justifyContent:"center",padding:16}:{position:"fixed",inset:0,background:"transparent",zIndex:9998,fontFamily:T.font}}>
+    <div role={inline?undefined:"dialog"} aria-modal={inline?undefined:"true"} aria-label={inline?undefined:"Fiche "+pj} className={inline?"":center?"enogia-pop-in":"enogia-panel-slide"} onClick={inline?undefined:e=>e.stopPropagation()} style={inline?{position:"sticky",top:16,width:"100%",maxHeight:"calc(100dvh - 32px)",background:stripeBg(((r&&ETAT_META[r.etat])||{}).bar||stripeHues().brand,T.card,4),padding:pad,overflowY:"auto",border:"1px solid "+T.line,borderRadius:12,boxSizing:"border-box"}:center?{position:"relative",width:"min(600px,100%)",maxHeight:"min(90vh,860px)",background:stripeBg(((r&&ETAT_META[r.etat])||{}).bar||stripeHues().brand,T.card,4),padding:pad+4,overflowY:"auto",border:"1px solid "+T.line,borderRadius:16,boxShadow:"0 24px 70px rgba(0,0,0,.35)",boxSizing:"border-box"}:{position:"fixed",top:0,right:0,bottom:0,width:"min(440px,100vw)",background:stripeBg(((r&&ETAT_META[r.etat])||{}).bar||stripeHues().brand,T.card,4),padding:pad,overflowY:"auto",boxShadow:"-10px 0 36px rgba(12,36,54,.28)"}}>
+      {body()}
     </div>
   </div>);
 }
