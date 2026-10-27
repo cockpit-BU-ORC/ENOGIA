@@ -1231,3 +1231,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - **EPC** (`pjMeta.js`, `chefsOf`) : pour un projet EPC avec un chef de projet ORC, c'est lui qui figure dans les listes, regroupements par chef, filtres et accueil, à la place du chef classique (les autres chefs restent).
 - Vérifié : rendu de la page Tests en clair / sombre, build (13 avertissements existants), tests, contraste. Pas testé dans l'appli connectée.
 - Fichiers : theme.js, pjMeta.js, styles.css, App.js (version), components/{ThemePicker,HomeView,RoleHome,ManagerPanel,TestsTab,TableView}.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
+
+## v198 — Cash in : le grand tableau modifiable de l'artefact, reconstruit dans le site
+
+- **Onglet Jalons** (`components/CashInGrid.js`, nouveau, branché dans `CashInNative.js`) : mêmes colonnes que l'artefact — Jalon · Montant · % · EPC | **Prévu au départ** (facture, délai, encaissement calculé) | **Prévu, actualisé** (facture, encaissement) | **Réel** (facture émise, paiement client) | Statut · Commentaire · ✕. Toutes les cellules se modifient sur place (texte et nombres à la sortie du champ, dates et cases à cocher tout de suite), avec les règles de calcul de l'artefact (`cashinModel.applyEdit`). En-têtes collés en haut, colonne Jalon collée à gauche, tableau défilant (hauteur de l'écran).
+- **Ligne de groupe par PJ** : numéro modifiable (renomme le PJ : jalons, nom, montant du projet et chef suivent ; refusé si le numéro existe), nom du projet, montant du projet, chef de projet (`owners`, avec la liste des chefs connus), « PJ EPC » (tous les jalons du PJ), encaissé / total et %, « ＋ jalon », repli.
+- **Commentaire** : la cellule ouvre le volet du jalon (commentaire, causes, « Marquer payé aujourd'hui », suppression). Suppression aussi depuis la colonne ✕ (deux clics).
+- **Affichage par défaut** (`CashInTab.js`) : le Cash in du site (avec ce tableau) ; « Ancienne page » ouvre toujours `public/cashin.html` ; clé `enogia_cashin_format` (`artefact` pour garder l'ancienne page).
+- Données inchangées (`planning/cashin`, même forme). Vérifié : rendu du tableau et parcours « Commentaire → Marquer payé », renommage d'un PJ, enregistrement (jsdom) ; build (13 avertissements existants), tests, contraste. Pas testé avec vos vraies données.
+- Fichiers : components/{CashInGrid,CashInNative,CashInTab}.js, styles.css, App.js (version), releaseNotes.js, releaseCatalog.js(+test).

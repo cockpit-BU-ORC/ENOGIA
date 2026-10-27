@@ -376,4 +376,7 @@ export const RELEASE_CATALOG = [
     ["Tests", "Machines sur deux lignes, proportionnées au contenu."],
     ["Liste", "Point de dérive retiré ; chef ORC pour les projets EPC."],
   ] },
+  { v: "198", t: "Le tableau du Cash in, comme dans l'artefact", items: [
+    ["Cash in", "Grand tableau modifiable au format de l'artefact, dans le site."],
+  ] },
 ];

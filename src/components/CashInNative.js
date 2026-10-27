@@ -11,6 +11,7 @@ import { cashOverview, todayISO, STATUS_LABEL } from "../cashinLink";
 import { applyEdit, newRow, rowView, toTreat, groupInfo, pjList } from "../cashinModel";
 import { fmtEur } from "../pjProgress";
 import { ProjetsView, MoisView, EcartsView } from "./CashInViews";
+import { CashInGrid } from "./CashInGrid";
 
 const fd = iso => (iso ? String(iso).slice(8, 10) + "/" + String(iso).slice(5, 7) + "/" + String(iso).slice(2, 4) : "—");
 const btn = primary => ({ padding: "6px 12px", minHeight: 32, borderRadius: 8, border: "1px solid " + (primary ? T.ink900 : T.line), background: primary ? T.ink900 : T.card, color: primary ? T.card : T.ink700, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font, display: "inline-flex", alignItems: "center", gap: 6 });
@@ -59,6 +60,13 @@ export function CashInNative({ authorName, focus, onLegacy }) {
   };
   const addRow = pj => { const last = rows.reduce((a, r, i) => (r.pj === pj ? i : a), -1); const nr = { ...newRow(pj, ""), delai: last >= 0 && rows[last].delai != null ? rows[last].delai : 30 }; const next = [...rows]; next.splice(last + 1, 0, nr); commit({ ...(doc || { labels: {}, totals: {}, owners: {} }), rows: next }); setSel(nr.id); };
   const addPj = () => { const pj = (window.prompt("Numéro du PJ à ajouter au Cash in (ex. PJ2412) :") || "").trim().toUpperCase(); if (!pj) return; if (rows.some(r => r.pj === pj)) { notify(pj + " est déjà dans le Cash in."); return; } const nr = newRow(pj, "1er Jalon - Advance payment"); commit({ ...(doc || { labels: {}, totals: {}, owners: {} }), rows: [...rows, nr] }); setSel(nr.id); setQ(""); };
+  // v198 : renommer un PJ du Cash in (jalons, nom, montant, chef suivent) ; EPC pour tous les jalons d'un PJ.
+  const renamePj = (old, nv) => {
+    if (rows.some(r => r.pj === nv)) { notify(nv + " existe déjà dans le Cash in."); return; }
+    const mv = o => { const x = { ...(o || {}) }; if (x[old] !== undefined) { x[nv] = x[old]; delete x[old]; } return x; };
+    commit({ ...doc, rows: rows.map(r => (r.pj === old ? { ...r, pj: nv } : r)), labels: mv(doc.labels), totals: mv(doc.totals), owners: mv(doc.owners) });
+  };
+  const setPjEpc = (pj, on) => commit({ ...doc, rows: rows.map(r => (r.pj === pj ? { ...r, epc: !!on } : r)) });
   const delRow = id => { commit({ ...doc, rows: rows.filter(r => r.id !== id) }); setSel(null); notify("Jalon supprimé"); };
   const setGroup = (pj, k, v) => { const o = { ...((doc && doc[k]) || {}) }; if (v === "" || v == null || (k === "totals" && !(Number(v) > 0))) delete o[pj]; else o[pj] = k === "totals" ? Number(v) : v; commit({ ...doc, [k]: o }); };
 
@@ -102,7 +110,7 @@ export function CashInNative({ authorName, focus, onLegacy }) {
         <button type="button" style={btn(false)} onClick={() => fileRef.current && fileRef.current.click()}>Importer un fichier…</button>
         <input ref={fileRef} type="file" accept="application/json,.json" onChange={onFile} style={{ display: "none" }} aria-label="Fichier de sauvegarde Cash in" />
         <button type="button" style={btn(true)} onClick={exportXlsx}><NavIcon name="copy" size={14} />Exporter en Excel</button>
-        {onLegacy && <button type="button" style={{ ...btn(false), border: "none", background: "transparent", color: T.ink500 }} onClick={onLegacy}>Format artefact</button>}
+        {onLegacy && <button type="button" style={{ ...btn(false), border: "none", background: "transparent", color: T.ink500 }} onClick={onLegacy}>Ancienne page</button>}
       </span>
     </div>
     {info.err && banner("err", info.err)}
@@ -142,36 +150,8 @@ export function CashInNative({ authorName, focus, onLegacy }) {
         <button type="button" onClick={addPj} style={{ ...btn(false), marginLeft: "auto" }}>＋ PJ</button>
       </div>
       <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-        <div style={{ flex: 1, minWidth: 0, background: T.card, border: "1px solid " + T.line, borderRadius: 10, overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: FZ.sm, minWidth: 720 }}>
-            <thead><tr style={{ background: T.surface, textAlign: "left" }}>{["Jalon", "Montant", "Facture prévue → émise", "Paiement prévu → reçu", "Statut"].map(h => <th key={h} style={{ padding: "8px 10px", fontFamily: T.fontLabel, fontSize: 12, fontWeight: 600, color: T.ink500, borderBottom: "1px solid " + T.line, whiteSpace: "nowrap" }}>{h}</th>)}</tr></thead>
-            <tbody>
-              {groups.length === 0 && <tr><td colSpan={5} style={{ padding: 16, color: T.ink500 }}>{rows.length ? "Aucun jalon ne correspond." : "Aucun jalon pour l'instant."}</td></tr>}
-              {groups.map(({ pj, g, list }) => <React.Fragment key={pj}>
-                <tr style={{ background: T.surface }}>
-                  <td colSpan={5} style={{ padding: "6px 10px", borderTop: "1px solid " + T.line }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                      <button type="button" onClick={() => setFolded(f => { const n = new Set(f); n.has(pj) ? n.delete(pj) : n.add(pj); return n; })} aria-expanded={!folded.has(pj)} aria-label={(folded.has(pj) ? "Déplier " : "Replier ") + pj} style={{ border: "none", background: "transparent", cursor: "pointer", color: T.ink500, minWidth: 24, minHeight: 24, padding: 0 }}><span style={{ display: "inline-flex", transform: folded.has(pj) ? "rotate(-90deg)" : "none", transition: "transform .15s ease" }}><NavIcon name="chevronDown" size={13} /></span></button>
-                      <b style={{ fontFamily: T.fontMono, color: T.ink900 }}>{pj}</b>
-                      <span style={{ color: T.ink700, minWidth: 0 }}>{g.label}</span>
-                      {g.epc && <span style={{ fontFamily: T.fontLabel, fontSize: 11, fontWeight: 700, color: T.violet600, background: T.violet100, borderRadius: 4, padding: "0 6px" }}>EPC</span>}
-                      <span style={{ marginLeft: "auto", fontSize: FZ.xs, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{fmtEur(g.paid)} encaissés sur {fmtEur(g.total)}{g.total ? " · " + Math.round(g.paid / g.total * 100) + " %" : ""}</span>
-                      <button type="button" onClick={() => addRow(pj)} style={{ border: "none", background: "transparent", color: T.teal600, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", minHeight: 24, fontFamily: T.font }}>＋ jalon</button>
-                    </div>
-                  </td>
-                </tr>
-                {!folded.has(pj) && list.map(r => { const on = sel === r.id; return (
-                  <tr key={r.id} onClick={() => setSel(on ? null : r.id)} aria-selected={on} style={{ cursor: "pointer", background: on ? T.teal100 : "transparent", opacity: r.epc ? .6 : 1 }}>
-                    <td style={{ padding: "7px 10px 7px 36px", borderTop: "1px solid " + T.line, color: T.ink900, fontWeight: 600 }}>{r.jalon || <i style={{ color: T.ink500 }}>Jalon sans nom</i>}{r.ref ? <span style={{ fontFamily: T.fontMono, fontSize: 11, color: T.ink500, marginLeft: 6 }}>{r.ref}</span> : null}</td>
-                    <td style={{ padding: "7px 10px", borderTop: "1px solid " + T.line, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{fmtEur(r.montant)}</td>
-                    <td style={{ padding: "7px 10px", borderTop: "1px solid " + T.line, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", color: T.ink700 }}>{fd(r.factPrevue)} → {r.factReelle ? fd(r.factReelle) : "—"}</td>
-                    <td style={{ padding: "7px 10px", borderTop: "1px solid " + T.line, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", color: T.ink700 }}>{fd(r.encPrevue)} → {r.encReelle ? fd(r.encReelle) : "—"}</td>
-                    <td style={{ padding: "7px 10px", borderTop: "1px solid " + T.line }}>{pill(r)}</td>
-                  </tr>); })}
-              </React.Fragment>)}
-            </tbody>
-          </table>
-        </div>
+        {/* v198 : le grand tableau modifiable de l'artefact (CashInGrid) ; le volet s'ouvre depuis la colonne Commentaire */}
+        <CashInGrid {...{ doc: doc || { rows: [] }, groups, folded, setFolded, sel, setSel, today, rowView, S }} onEdit={editRow} onAddRow={addRow} onDelRow={delRow} setGroup={setGroup} renamePj={renamePj} setPjEpc={setPjEpc} />
         {cur && <JalonPanel key={cur.id} r={cur} doc={doc} onEdit={(f, v) => editRow(cur.id, f, v)} onDelete={() => delRow(cur.id)} onClose={() => setSel(null)} setGroup={setGroup} pill={pill(cur)} today={today} />}
       </div>
     </>}
