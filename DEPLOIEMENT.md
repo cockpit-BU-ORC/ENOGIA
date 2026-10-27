@@ -1184,3 +1184,15 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - **Ancienne page** : toujours disponible (bouton « Ancienne page », `localStorage` **`enogia_cashin_legacy`** ; « Version intégrée » pour revenir). À retirer après l'étape 2.
 - Vérifié : rendu de l'onglet (jsdom) et parcours « ouvrir un jalon → Marquer payé → enregistrement » ; build (13 avertissements existants), 124 tests, contraste. Pas testé dans l'appli connectée avec vos vraies données.
 - Fichiers : cashinModel.js(+test), components/{CashInNative,CashInTab}.js, App.js (version), releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
+
+## v194 — Cash in intégré au site, étape 2 : Projets, Cash par mois, Écarts
+
+- **Calculs** (`src/cashinModel.js`, +3 tests) repris de l'ancienne page : `groupStats` (payés, encaissé, facturé en attente, reste à facturer, prochain encaissement), `punctual` (tenue de la date vs encaissement initial), `monthKeys` / `monthly` (initial vs réel + actualisé par mois), `matrixItems` / `monthRange` (PJ × mois), `retard` / `retardFact`, les 6 indicateurs `ECARTS`, `ecartGroups` (mois, semaine, PJ, CdP, jalon ; moyenne ou pire écart) et `ecartKpis`.
+- **Vues** (`components/CashInViews.js`, nouveau), branchées dans `CashInNative.js` :
+  - **Projets** : une ligne par PJ (jalons payés, montant du projet dont EPC, encaissé, facturé en attente, reste à facturer, prochain encaissement, barre encaissé / facturé), total ; clic → onglet Jalons filtré sur le PJ.
+  - **Cash par mois** : initial vs réel et actualisé (encaissé + prévu), écart, tenue des dates ; mois passés regroupés par année (dépliables), « Sans date » ; clic sur un mois → jalons « réel et actualisé » et « prévu au départ ». **Cash par PJ et par mois** : tableau en k€ (vert = reçu, gris = prévu, mois en cours encadré), clic sur une case ou un total → jalons concernés.
+  - **Écarts** : 4 chiffres clés (retard moyen de paiement, % payés en retard, glissement moyen des encaissements, plus gros retard), barres divergentes par indicateur / regroupement / mesure (clic → jalons), détail par PJ et par jalon des 6 écarts.
+  - Un clic sur un jalon, dans n'importe quelle liste, l'ouvre dans l'onglet Jalons avec son volet.
+- L'ancienne page reste accessible (« Ancienne page ») le temps de comparer ; à retirer quand vous l'aurez validé.
+- Pas de nouvelle donnée ni clé `localStorage`. Vérifié : rendu et parcours des trois onglets (jsdom), build (13 avertissements existants), 127 tests, contraste. Pas testé avec vos vraies données.
+- Fichiers : cashinModel.js(+test), components/{CashInViews,CashInNative}.js, App.js (version), releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.

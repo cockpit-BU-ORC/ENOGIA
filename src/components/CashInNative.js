@@ -1,4 +1,4 @@
-// ── v193 : Manager › Cash in intégré au site (étape 1 : chiffres, À traiter, Jalons, volet d'édition, import / export) ────────
+// ── v193 / v194 : Manager › Cash in intégré au site (chiffres, À traiter, Jalons, volet d'édition, import / export ; Projets, Cash par mois, Écarts en v194) ──
 // Remplace l'affichage de public/cashin.html dans un cadre. Mêmes données (planning/cashin), mêmes règles de calcul (cashinModel.js),
 // même enregistrement (document entier, 500 ms après la dernière modification). L'ancienne page reste accessible (« Ancienne page »).
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -10,6 +10,7 @@ import { CASHIN_DOC_REF, CASHIN_MAX_BYTES, validateCashin, cleanCashin } from ".
 import { cashOverview, todayISO, STATUS_LABEL } from "../cashinLink";
 import { applyEdit, newRow, rowView, toTreat, groupInfo, pjList } from "../cashinModel";
 import { fmtEur } from "../pjProgress";
+import { ProjetsView, MoisView, EcartsView } from "./CashInViews";
 
 const fd = iso => (iso ? String(iso).slice(8, 10) + "/" + String(iso).slice(5, 7) + "/" + String(iso).slice(2, 4) : "—");
 const btn = primary => ({ padding: "6px 12px", minHeight: 32, borderRadius: 8, border: "1px solid " + (primary ? T.ink900 : T.line), background: primary ? T.ink900 : T.card, color: primary ? T.card : T.ink700, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font, display: "inline-flex", alignItems: "center", gap: 6 });
@@ -69,6 +70,7 @@ export function CashInNative({ authorName, focus, onLegacy }) {
   const S = statusSoft();
   const pill = r => { const v = rowView(r, today), k = r.epc ? "epc" : v.tone, c = S[k] || S.future; return <span style={{ fontFamily: T.fontLabel, fontSize: 11, fontWeight: 600, background: c.bg, color: c.ink, borderRadius: 999, padding: "1px 8px", whiteSpace: "nowrap" }}>{r.epc ? "EPC" : v.label}{v.st.days && (v.st.k === "late" || v.st.k === "tobill") ? " · " + v.st.days + " j" : v.tone === "warn" && v.due ? " · " + v.due.days + " j" : ""}</span>; };
   const cur = rows.find(r => r.id === sel) || null;
+  const openRow = id => { setTab("jalons"); setSel(id); setHidePaid(false); setFilter("all"); setQ(""); };
 
   const exportXlsx = async () => {
     if (!rows.length) { notify("Rien à exporter pour l'instant"); return; }
@@ -125,7 +127,9 @@ export function CashInNative({ authorName, focus, onLegacy }) {
       {[["jalons", "Jalons"], ["projets", "Projets"], ["mois", "Cash par mois"], ["ecarts", "Écarts"]].map(([id, l]) => <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)} style={{ border: "none", background: "transparent", borderBottom: "3px solid " + (tab === id ? T.ink900 : "transparent"), marginBottom: -1, padding: "8px 12px", fontSize: FZ.sm, fontWeight: 700, color: tab === id ? T.ink900 : T.ink500, cursor: "pointer", fontFamily: T.font }}>{l}</button>)}
     </div>
 
-    {tab !== "jalons" && <div style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 10, padding: 16, fontSize: FZ.sm, color: T.ink500 }}>Cette vue arrive à l'étape 2. En attendant, elle reste disponible dans l'ancienne page{onLegacy ? <> : <button type="button" onClick={onLegacy} style={{ border: "none", background: "transparent", color: T.teal600, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>ouvrir l'ancienne page</button></> : "."}</div>}
+    {tab === "projets" && <ProjetsView doc={doc} today={today} onOpenPj={pj => { setTab("jalons"); setQ(pj); setFilter("all"); setHidePaid(false); }} />}
+    {tab === "mois" && <MoisView doc={doc} today={today} onOpenRow={openRow} />}
+    {tab === "ecarts" && <EcartsView doc={doc} today={today} onOpenRow={openRow} />}
 
     {tab === "jalons" && <>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>

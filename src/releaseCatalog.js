@@ -360,4 +360,7 @@ export const RELEASE_CATALOG = [
   { v: "193", t: "Le Cash in intégré au site", items: [
     ["Cash in", "Chiffres, À traiter, jalons et volet d'édition dans le Manager ; import et export Excel."],
   ] },
+  { v: "194", t: "Cash in complet dans le site", items: [
+    ["Cash in", "Vues Projets, Cash par mois et Écarts intégrées."],
+  ] },
 ];

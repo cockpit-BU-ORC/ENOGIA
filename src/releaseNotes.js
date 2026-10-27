@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v194",
+    date: "2026-10-27",
+    title: "V194 : Cash in complet dans le site",
+    items: [
+      { t: "Projets, Cash par mois, Écarts", d: "Les trois vues du Cash in sont maintenant dans le site : synthèse par PJ, cash mois par mois (initial vs réel, tenue des dates, tableau PJ × mois) et écarts en jours.", admin: true },
+    ],
+  },
+  {
     id: "2026-10-v193",
     date: "2026-10-27",
     title: "V193 : le Cash in intégré au site",
