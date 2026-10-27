@@ -341,4 +341,8 @@ export const RELEASE_CATALOG = [
     ["Notifications", "Nouvelles affectations aux tests dans la cloche, ajout à l'agenda Google."],
     ["Manager", "Personnes et rôles : rôle et PJ de chaque compte."],
   ] },
+  { v: "189", t: "Tests en pop-up, calendrier et fiche PDF signée", items: [
+    ["Tests", "Fiche de la machine en pop-up central ; signature des testeurs ; fiche PDF au format ENOGIA."],
+    ["Calendrier", "Deux semaines par testeur, avancement dans les barres, affectation par glisser-déposer."],
+  ] },
 ];

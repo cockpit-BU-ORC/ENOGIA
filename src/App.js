@@ -66,7 +66,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-27-v188-accueils-roles";
+const APP_BUILD_VERSION = "2026-10-27-v189-tests-popup-pdf";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -696,6 +696,11 @@ export default function App(){
   useEffect(()=>{try{setAssignSeen(localStorage.getItem(assignSeenKey)||"");}catch(e){}},[assignSeenKey]);
   const myNewAssign=useMemo(()=>{const t=testerOfEmail(testsDoc,currentUser&&currentUser.email);return t?assignmentsSince(testsDoc,t.id,assignSeen):[];},[testsDoc,currentUser,assignSeen]);
   const seeAssign=()=>{const v=new Date().toISOString();setAssignSeen(v);try{localStorage.setItem(assignSeenKey,v);}catch(e){}};
+  // v189 : tracés de signature des fiches de test, un document par PJ (planning/testsign_<PJ>) pour ne pas alourdir planning/tests
+  const signApi=useMemo(()=>({
+    load:async pj=>{const snap=await getDoc(doc(db,"planning",DOC_PFX+"testsign_"+pj));return snap.exists()?snap.data():{};},
+    save:async(pj,key,entry)=>{try{await setDoc(doc(db,"planning",DOC_PFX+"testsign_"+pj),{[key]:entry},{merge:true});return true;}catch(e){console.error(e);notify("Erreur lors de l'enregistrement de la signature : "+e.message);return false;}},
+  }),[]);
   // Page « Tests » (rail de gauche) : administrateurs + testeurs de la liste (adresse renseignée) ; les testeurs consultent seulement
   const canSeeTests=!!(pinOk||testerOfEmail(testsDoc,currentUser&&currentUser.email));
   useEffect(()=>{if(view==="tests"&&testsLoaded&&!canSeeTests)setView("table");},[view,testsLoaded,canSeeTests]); // accès retiré ou ancien choix mémorisé
@@ -1161,7 +1166,7 @@ export default function App(){
               productionExclusions={productionExclusions}
               zoomLevel={calZoom} setZoomLevel={setCalZoom}
               selEtats={selEtats} setSelEtats={setSelEtats} allPJs={allPJs} selPJs={selPJs} setSelPJs={setSelPJs}/>}
-            {view==="tests"&&canSeeTests&&<TestsTab doc={testsDoc} save={saveTests} data={dataWithOverrides} certifs={certifs} canEdit={pinOk} me={currentUser&&currentUser.email}/>}
+            {view==="tests"&&canSeeTests&&<TestsTab doc={testsDoc} save={saveTests} data={dataWithOverrides} certifs={certifs} canEdit={pinOk} me={currentUser&&currentUser.email} signApi={signApi}/>}
             {view==="changes"&&<ChangesView entries={changeLog} onOpenPj={jumpToPj}/>}
             {view==="comments"&&<CommentsView data={filtered} comments={comments} addComment={addComment} deleteComment={deleteComment}
               pinOk={pinOk} addCommentMulti={addCommentMulti} jumpToPj={jumpToPj} authorName={authorName}/>}

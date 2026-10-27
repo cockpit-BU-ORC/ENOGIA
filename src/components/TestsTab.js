@@ -2,17 +2,18 @@
 // fiches de test par machine (modèle OP022-DP001-A), affectation des testeurs aux périodes de tests, frise des testeurs.
 // Les dates de venue du client / de NOBO se règlent dans la Liste : ici elles sont en lecture seule.
 // Les données vivent dans planning/tests (un seul document).
-import React, { useMemo, useState, useEffect } from "react";
-import { T, FZF as FZ, stageSoft } from "../theme";
+import React, { useMemo, useState, useEffect, useRef } from "react";
+import { T, FZF as FZ, stageSoft, inkOn } from "../theme";
 import { getPjMeta, PRESENCE_META, PresenceChip, presenceKind, presenceDates, presenceFirstDate, Avatar, personTint } from "../pjMeta";
 import { fmt, toLocalISO } from "../parsers";
 import { useMentions } from "../mentionContext";
 import { CARD, H_TITLE, H_SUB, EmptyNote } from "./ManagerParts";
 import { CertifChip } from "./FicheContrat";
 import { NavIcon, PjPlate, pressable } from "./SharedUI";
-import { SECTIONS, DEFAULT_TEST_CATALOG, catalogOf, testersOf, planOf, activeSections, selectedIds, toggleTest, setExtra, setNote, assignTester, unassignTester, setAssignDates, effRange, findConflicts, assignmentsOf, dropTester, dropTestFromPlans, newId, packLanes, dayDiffIso, addDaysIso, mondayOf, testerOfEmail, doneIds, progressOf, TEST_STATUS, statusOf, statusByOf, setStatus, isForced, setForced } from "../testPlan";
+import { SECTIONS, DEFAULT_TEST_CATALOG, catalogOf, testersOf, planOf, activeSections, selectedIds, toggleTest, setExtra, setNote, assignTester, unassignTester, setAssignDates, effRange, findConflicts, assignmentsOf, dropTester, dropTestFromPlans, newId, packLanes, addDaysIso, mondayOf, testerOfEmail, doneIds, progressOf, TEST_STATUS, statusOf, statusByOf, setStatus, isForced, setForced } from "../testPlan";
 import { nameFromEmail } from "../mentions";
 import { gcalUrl } from "../gcal";
+import { openTestReport } from "../testReport";
 
 const field = () => ({ padding: "5px 9px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, minWidth: 0 });
 const btn = (on = true, kind) => ({ border: kind === "ghost" ? "1px solid " + T.line : "none", borderRadius: 8, padding: "5px 12px", fontSize: FZ.xs, fontWeight: 700, fontFamily: T.font, cursor: on ? "pointer" : "default", background: kind === "ghost" ? T.card : on ? T.navy700 : T.ink100, color: kind === "ghost" ? T.ink700 : "#fff", flexShrink: 0 });
@@ -36,7 +37,7 @@ function TesterChip({ t, warn, on, onClick, disabled, small }) {
   </span>);
 }
 
-export function TestsTab({ doc, save, data, certifs, canEdit, me }) {
+export function TestsTab({ doc, save, data, certifs, canEdit, me, signApi }) {
   const [sub, setSub] = useState("semaine"); // v186 : vue par semaine par défaut (maquette validée)
   const [focus, setFocus] = useState(null);
   const [msg, setMsg] = useState(null);
@@ -61,8 +62,8 @@ export function TestsTab({ doc, save, data, certifs, canEdit, me }) {
     {conflicts.length > 0 && sub !== "catalog" && <div role="status" style={{ background: T.amber100, color: T.amber600, borderRadius: 10, padding: "8px 12px", fontSize: FZ.sm, fontWeight: 600 }}>
       <span style={{ display: "inline-flex", verticalAlign: "-3px", marginRight: 6 }}><NavIcon name="warning" size={16} /></span>{conflicts.length} chevauchement{conflicts.length > 1 ? "s" : ""} : {conflicts.slice(0, 4).map(c => { const t = testers.find(x => x.id === c.tid); return (t ? t.name : "Testeur") + " sur " + c.a.pj + " et " + c.b.pj; }).join(" · ")}{conflicts.length > 4 ? " …" : ""}
     </div>}
-    {sub === "semaine" && <WeekBoard {...{ doc, rows, testers, catalog, conflicts, commit, certifs, canEdit, myTester, focus, who }} />}
-    {sub === "testers" && <TesterTimeline {...{ doc, rows, testers, conflicts, commit, canEdit, myTester, openPj }} />}
+    {sub === "semaine" && <WeekBoard {...{ doc, rows, testers, catalog, conflicts, commit, certifs, canEdit, myTester, focus, who, signApi }} />}
+    {sub === "testers" && <TesterTimeline {...{ doc, rows, testers, catalog, conflicts, commit, canEdit, myTester, openPj, who }} />}
     {sub === "catalog" && canEdit && <CatalogView {...{ doc, catalog, commit }} />}
   </div>);
 }
@@ -74,7 +75,7 @@ export function TestsTab({ doc, save, data, certifs, canEdit, me }) {
 // première colonne, signalées « En retard ».
 const mondayD = d => { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; };
 const isoWeek = d => { const x = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const n = x.getUTCDay() || 7; x.setUTCDate(x.getUTCDate() + 4 - n); const y = new Date(Date.UTC(x.getUTCFullYear(), 0, 1)); return Math.ceil(((x - y) / 86400000 + 1) / 7); };
-function WeekBoard({ doc, rows, testers, catalog, conflicts, commit, certifs, canEdit, myTester, focus, who }) {
+function WeekBoard({ doc, rows, testers, catalog, conflicts, commit, certifs, canEdit, myTester, focus, who, signApi }) {
   const [sel, setSel] = useState(null);
   const [onlyMine, setOnlyMine] = useState(!!myTester && !canEdit);
   useEffect(() => { if (focus && focus.pj) setSel(focus.pj); }, [focus]);
@@ -93,16 +94,16 @@ function WeekBoard({ doc, rows, testers, catalog, conflicts, commit, certifs, ca
   cols.forEach(c => c.items.sort((x, y) => (y.late - x.late) || (startOf(x.r) - startOf(y.r))));
   const later = withP.filter(r => startOf(r) >= weeks[2].b).length, noPeriod = rows.filter(r => !r.tests && r.etat !== "SHIPPED").length;
   const all = cols.flatMap(c => c.items.map(x => x.r));
-  const cur = all.find(r => r.pj === sel) || rows.find(r => r.pj === sel) || all[0] || null;
+  const cur = sel ? (all.find(r => r.pj === sel) || rows.find(r => r.pj === sel) || null) : null;
   const COL_TITLE = ["Cette semaine", "Semaine prochaine", "Dans 2 semaines"];
-  return (<div className="enogia-tests-board" style={{ display: "flex", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
-    <div style={{ flex: "1 1 560px", minWidth: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+  return (<div className="enogia-tests-board">
+    <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 8 }}>
       <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", fontSize: FZ.xs, color: T.ink500 }}>
         <span>S{isoWeek(weeks[0].a)} → S{isoWeek(weeks[2].a)} · {all.length} machine{all.length > 1 ? "s" : ""}{later ? " · " + later + " plus tard" : ""}{noPeriod ? " · " + noPeriod + " sans période de tests" : ""}</span>
         {myTester && <label style={{ display: "inline-flex", alignItems: "center", gap: 6, marginLeft: "auto", minHeight: 24, cursor: "pointer", color: T.ink700, fontWeight: 600 }}><input type="checkbox" checked={onlyMine} onChange={e => setOnlyMine(e.target.checked)} />Seulement mes tests</label>}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 10, alignItems: "start" }}>
-        {cols.map((c, ci) => (<section key={ci} aria-label={COL_TITLE[ci]} style={{ background: T.surfaceAlt, borderRadius: 10, padding: 8, minWidth: 0 }}>
+        {cols.map((c, ci) => (<section key={ci} aria-label={COL_TITLE[ci]} style={{ background: T.surfaceAlt, borderRadius: 12, padding: 10, minWidth: 0, borderTop: "3px solid " + (ci === 0 ? stageSoft().tests.solid : T.line) }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 6, margin: "2px 4px 8px" }}>
             <h3 style={{ margin: 0, fontSize: FZ.sm, fontWeight: 700, color: T.ink900 }}>{COL_TITLE[ci]}</h3>
             <span style={{ marginLeft: "auto", fontSize: FZ.xs, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>S{isoWeek(c.a)} · {c.items.length}</span>
@@ -114,10 +115,38 @@ function WeekBoard({ doc, rows, testers, catalog, conflicts, commit, certifs, ca
         </section>))}
       </div>
     </div>
-    <aside aria-label="Détail des tests de la machine" style={{ flex: "1 1 340px", maxWidth: 460, minWidth: 0, position: "sticky", top: 56, maxHeight: "calc(100dvh - 80px)", overflowY: "auto" }}>
-      {cur ? <FatSheet key={cur.pj} panel r={cur} {...{ doc, testers, catalog, conflicts, commit, certifs, canEdit, myTester, who }} open onToggle={() => {}} />
-        : <EmptyNote>Aucune machine en test sur ces trois semaines.</EmptyNote>}
-    </aside>
+    {all.length === 0 && <EmptyNote>Aucune machine en test sur ces trois semaines.</EmptyNote>}
+    {cur && <TestDialog r={cur} onClose={() => setSel(null)} {...{ doc, testers, catalog, conflicts, commit, certifs, canEdit, myTester, who, signApi }} />}
+  </div>);
+}
+
+// v189 — pop-up central de la fiche de tests (fond assombri, entrée 200 ms, Échap pour fermer, focus gardé dans le pop-up).
+export function TestDialog({ r, onClose, doc, testers, catalog, conflicts, commit, certifs, canEdit, myTester, who, signApi }) {
+  const box = useRef(null);
+  useEffect(() => {
+    const prev = document.activeElement, k = e => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", k); if (box.current) box.current.focus();
+    const ov = document.body.style.overflow; document.body.style.overflow = "hidden";
+    return () => { window.removeEventListener("keydown", k); document.body.style.overflow = ov; if (prev && prev.focus) prev.focus(); };
+  }, [onClose]);
+  const plan = planOf(doc, r.pj), kind = presenceKind(r.clientPresence || null), q = progressOf(plan, catalog, activeSections(kind)), meta = getPjMeta(r.pj, r);
+  const pct = q.total ? Math.round(q.done / q.total * 100) : 0, S = stageSoft();
+  const Num = ({ l, v, c }) => <div style={{ background: T.surface, borderRadius: 10, padding: "8px 12px", minWidth: 0 }}><div style={{ fontFamily: T.fontLabel, fontSize: 12, color: T.ink500 }}>{l}</div><div style={{ fontFamily: T.fontDisplay, fontSize: 24, fontWeight: 600, color: c || T.ink900, fontVariantNumeric: "tabular-nums", lineHeight: 1.1 }}>{v}</div></div>;
+  return (<div className="enogia-test-overlay" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(8,12,28,.5)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "4vh 12px", overflowY: "auto" }}>
+    <div ref={box} tabIndex={-1} role="dialog" aria-modal="true" aria-label={"Tests de " + r.pj} className="enogia-test-dialog" style={{ width: "min(880px,100%)", background: T.card, borderRadius: 16, border: "1px solid " + T.line, boxShadow: "0 24px 70px rgba(0,0,0,.28)", outline: "none", overflow: "hidden" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 18px", borderBottom: "1px solid " + T.line, flexWrap: "wrap", background: T.card, position: "sticky", top: 0, zIndex: 2 }}>
+        <PjPlate pj={r.pj} size="lg" />
+        {r.gamme && <span style={{ fontFamily: T.fontLabel, fontSize: FZ.sm, fontWeight: 600, color: T.ink700, border: "1px solid " + T.line, borderRadius: 6, padding: "1px 8px" }}>{r.gamme}</span>}
+        <span style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: FZ.lg, color: T.ink900, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: "1 1 160px" }}>{meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : ""}</span>
+        <span style={{ fontSize: FZ.xs, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{period(r)}</span>
+        <button type="button" onClick={onClose} aria-label="Fermer" style={{ border: "none", background: T.surface, color: T.ink700, borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 18, lineHeight: 1 }}>×</button>
+      </div>
+      <div style={{ padding: "12px 18px 0", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(130px,1fr))", gap: 8 }}>
+        <Num l="Avancement" v={q.done + " / " + q.total} /><Num l="Réussis" v={q.ok} c={T.emerald600} /><Num l="Échecs" v={q.ko} c={q.ko ? T.red600 : undefined} /><Num l="En cours" v={q.wip} c={q.wip ? T.amber600 : undefined} />
+      </div>
+      <div aria-hidden="true" style={{ margin: "10px 18px 0", height: 6, borderRadius: 3, background: T.surfaceAlt, overflow: "hidden" }}><div className="enogia-bar-fill" style={{ width: pct + "%", height: "100%", background: S.finProd.solid, transition: "width .3s cubic-bezier(.16,1,.3,1)" }} /></div>
+      <FatSheet panel bare r={r} {...{ doc, testers, catalog, conflicts, commit, certifs, canEdit, myTester, who, signApi }} open onToggle={() => {}} />
+    </div>
   </div>);
 }
 
@@ -150,7 +179,7 @@ function TestCard({ r, doc, testers, catalog, conflicts, late, on, onPick }) {
   </div>);
 }
 
-function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdit, open, onToggle, myTester, panel, who }) {
+function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdit, open, onToggle, myTester, panel, who, bare, signApi }) {
   const [newName, setNewName] = useState(""), [limit, setLimit] = useState({});
   const ctx = useMentions();
   const plan = planOf(doc, r.pj);
@@ -178,11 +207,11 @@ function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdi
   const canTest = canEdit; // seuls les administrateurs choisissent les tests et les testeurs
   const canMark = canEdit || mine; // v187 : le testeur affecté renseigne l'avancement et le résultat de ses tests
   const forced = isForced(plan), ended = !!r.tests && (dIso(r.testsFin) || dIso(r.tests)) < dIso(new Date());
-  return (<div id={"fat-" + r.pj} className={panel ? "enogia-view-in" : undefined} style={{ ...CARD, overflow: "hidden", borderColor: mine ? T.teal500 : undefined }}>
-    {panel && <div style={{ padding: "10px 14px", borderBottom: "1px solid " + T.line, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-      <PjPlate pj={r.pj} size="lg" /><span style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: FZ.lg, color: T.ink900 }}>{meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : ""}</span>
+  return (<div id={"fat-" + r.pj} className={panel && !bare ? "enogia-view-in" : undefined} style={bare ? { overflow: "hidden" } : { ...CARD, overflow: "hidden", borderColor: mine ? T.teal500 : undefined }}>
+    {panel && (!bare || (canEdit && (ended || forced))) && <div style={{ padding: bare ? "10px 18px 0" : "10px 14px", borderBottom: bare ? "none" : "1px solid " + T.line, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+      {!bare && <><PjPlate pj={r.pj} size="lg" /><span style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: FZ.lg, color: T.ink900 }}>{meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : ""}</span>
       {r.gamme && <span style={{ fontFamily: T.fontLabel, fontSize: FZ.sm, fontWeight: 600, color: T.ink700, border: "1px solid " + T.line, borderRadius: 6, padding: "1px 8px" }}>{r.gamme}</span>}
-      <span style={{ width: "100%", fontSize: FZ.xs, color: T.ink500 }}>Tests {period(r)}{mine ? " · vous êtes testeur" : ""}</span>
+      <span style={{ width: "100%", fontSize: FZ.xs, color: T.ink500 }}>Tests {period(r)}{mine ? " · vous êtes testeur" : ""}</span></>}
       {canEdit && (ended || forced) && <div style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", background: forced ? T.emerald100 : T.surface, borderRadius: 8, padding: "6px 10px", marginTop: 2 }}>
         <span style={{ fontSize: FZ.xs, color: forced ? T.emerald600 : T.ink700, fontWeight: 600, flex: "1 1 180px" }}>{forced ? "Validée manuellement" + (plan.forced.by ? " par " + plan.forced.by : "") + " le " + fd(dIso(plan.forced.at)) + "." : "Période terminée : vous pouvez valider ces tests sans testeur ni test coché (anciennes machines)."}</span>
         <button type="button" onClick={() => saveTests(setForced(plan, !forced, who))} className="enogia-btn-ind" style={{ border: "1.5px solid " + (forced ? T.ink300 : T.emerald600), background: forced ? "transparent" : T.emerald600, color: forced ? T.ink700 : T.card, borderRadius: 8, padding: "4px 10px", minHeight: 28, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>{forced ? "Annuler la validation" : "Forcer la validation"}</button>
@@ -203,7 +232,7 @@ function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdi
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 8, color: T.ink500, fontSize: FZ.xs, fontWeight: 600 }}>{nTests} test{nTests > 1 ? "s" : ""}<span style={{ transform: open ? "rotate(180deg)" : "none", display: "inline-flex" }}><NavIcon name="chevronDown" size={12} /></span></div>
     </div>}
-    {open && <div style={{ borderTop: "1px solid " + T.line, background: T.surface, padding: 14, display: "flex", flexDirection: "column", gap: 16 }}>
+    {open && <div style={{ borderTop: bare ? "none" : "1px solid " + T.line, background: bare ? T.card : T.surface, padding: bare ? "14px 18px 18px" : 14, display: "flex", flexDirection: "column", gap: 16 }}>
       {/* En-tête de fiche : le haut du tableau « PJ / ORC / Certification / FAT client / FAT NOBO » du fichier de checklist */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 8 }}>
         {[["PJ", r.pj], ["ORC", r.gamme || "—"], ["Certification", myCerts.length ? myCerts.map(c => <span key={c.id} style={{ marginRight: 4 }}><CertifChip c={c} small /></span>) : "N/A"],
@@ -249,6 +278,9 @@ function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdi
       {/* ③ Tests : dans le volet, checklist « fait » (et choix des tests à réaliser via « Modifier la liste ») */}
       {panel && <Step n="3" title="Tests" hint={canMark ? "Indiquez pour chaque test : en cours, réussi ou en échec." : "Consultation : seuls le testeur affecté et les administrateurs renseignent les tests."}>
         <Checklist {...{ r, plan, catalog, act, canEdit: canTest, canMark, saveTests, who }} />
+      </Step>}
+      {panel && <Step n="4" title="Signatures et fiche PDF" hint="Chaque testeur signe au doigt ou à la souris ; la fiche PDF reprend tous les tests, les heures et les signatures.">
+        <Signatures {...{ r, plan, assigned, mine, myTester, canEdit, who, signApi, saveTests, catalog, act, testers, meta, myCerts, kind, pd }} />
       </Step>}
       {!panel && <Step n="3" title="Tests à réaliser" hint={canTest ? "Cochez / décochez les tests à réaliser pour cette machine ; les commentaires sont propres à ce PJ." : "Consultation : seuls les administrateurs modifient les tests."}>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -322,6 +354,70 @@ function Checklist({ r, plan, catalog, act, canEdit, canMark, saveTests, who }) 
   </div>);
 }
 
+// v189 : signatures (« Réalisé par » = chaque testeur affecté, « Vérifié par » = un administrateur) et fiche PDF.
+// Le tracé est stocké à part (planning/testsign_<PJ>, via signApi) ; plan.signs ne garde que { name, at } pour l'état « à signer ».
+function Signatures({ r, plan, assigned, mine, myTester, canEdit, who, signApi, saveTests, catalog, act, testers, meta, myCerts, kind, pd }) {
+  const [pad, setPad] = useState(null), [busy, setBusy] = useState(false), [err, setErr] = useState("");
+  const signs = (plan && plan.signs) || {};
+  const keyV = "v:" + String(who || "admin").toLowerCase().replace(/[^a-z0-9]+/g, "_");
+  const sign = async (key, name, fn, paths) => {
+    if (!signApi) { setErr("Signature indisponible."); return; }
+    setBusy(true); setErr("");
+    const entry = { name, fn, at: new Date().toISOString(), paths };
+    const ok = await signApi.save(r.pj, key, entry);
+    if (ok !== false) { await saveTests({ ...plan, signs: { ...signs, [key]: { name, fn, at: entry.at } } }); setPad(null); } else setErr("La signature n'a pas pu être enregistrée.");
+    setBusy(false);
+  };
+  const pdf = async () => {
+    setBusy(true); setErr("");
+    let imgs = {}; try { imgs = signApi ? (await signApi.load(r.pj)) || {} : {}; } catch (e) { imgs = {}; }
+    const kindLabel = kind === "both" ? "Client et NOBO" : kind === "client" ? "Client" : kind === "nobo" ? "NOBO" : "Interne seul";
+    const presence = [pd.client && "client le " + fd(pd.client), pd.nobo && "NOBO le " + fd(pd.nobo)].filter(Boolean).join(", ");
+    const ok = openTestReport({ r, meta, plan, catalog, act, testers, signs: imgs, certs: myCerts.map(c => c.label || c.name || c.id), base: window.location.origin + (process.env.PUBLIC_URL || "") + "/report/", kindLabel, presence });
+    if (!ok) setErr("Le navigateur a bloqué la nouvelle fenêtre : autorisez les fenêtres pour ce site.");
+    setBusy(false);
+  };
+  const row = (key, role, name, canSign, fn) => { const s = signs[key]; return (
+    <div key={key} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "8px 10px", background: T.card, border: "1px solid " + T.line, borderRadius: 10 }}>
+      <div style={{ flex: "1 1 180px", minWidth: 0 }}><div style={{ fontFamily: T.fontLabel, fontSize: 12, color: T.ink500 }}>{role}</div><div style={{ fontSize: FZ.sm, fontWeight: 700, color: T.ink900 }}>{name || "—"}</div></div>
+      {s ? <span style={{ fontFamily: T.fontLabel, fontSize: 12, fontWeight: 600, color: T.emerald600, background: T.emerald100, borderRadius: 999, padding: "2px 10px" }}>Signé le {fd(dIso(s.at))}</span>
+        : canSign ? <button type="button" disabled={busy} onClick={() => setPad({ key, name, fn })} style={btn(true)}>Signer</button>
+        : <span style={{ fontSize: FZ.xs, color: T.ink500 }}>Pas encore signé</span>}
+    </div>); };
+  return (<div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+    {assigned.length === 0 && <span style={{ fontSize: FZ.xs, color: T.ink500 }}>Aucun testeur affecté.</span>}
+    {assigned.map(t => row("t:" + t.id, "Réalisé par", t.name, !!myTester && myTester.id === t.id, "Testeur"))}
+    {canEdit && row(keyV, "Vérifié par", who, true, "Vérification")}
+    {pad && <SignaturePad name={pad.name} busy={busy} onCancel={() => setPad(null)} onSave={paths => sign(pad.key, pad.name, pad.fn, paths)} />}
+    <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+      <button type="button" onClick={pdf} disabled={busy} className="enogia-btn-ind" style={{ border: "none", background: T.ink900, color: T.card, borderRadius: 8, padding: "7px 14px", minHeight: 32, fontSize: FZ.sm, fontWeight: 700, cursor: "pointer", fontFamily: T.font, display: "inline-flex", alignItems: "center", gap: 6 }}><NavIcon name="copy" size={15} />Fiche PDF signée</button>
+      <span style={{ fontSize: FZ.xs, color: T.ink500 }}>S'ouvre dans un nouvel onglet : Imprimer → « Enregistrer au format PDF ».</span>
+    </div>
+    {err && <div role="alert" style={{ fontSize: FZ.xs, color: T.red500, fontWeight: 600 }}>{err}</div>}
+  </div>);
+}
+// Bloc de signature au doigt / à la souris (pointer events), repère 300 × 100, tracés arrondis à l'entier.
+function SignaturePad({ name, onSave, onCancel, busy }) {
+  const cv = useRef(null), strokes = useRef([]), drawing = useRef(false);
+  const [n, setN] = useState(0);
+  const pt = e => { const b = cv.current.getBoundingClientRect(); return [Math.round((e.clientX - b.left) / b.width * 300), Math.round((e.clientY - b.top) / b.height * 100)]; };
+  const paint = () => { const c = cv.current; if (!c) return; const g = c.getContext("2d"); g.clearRect(0, 0, 300, 100); g.strokeStyle = T.ink900; g.lineWidth = 2.2; g.lineCap = "round"; g.lineJoin = "round"; strokes.current.forEach(s => { g.beginPath(); s.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.stroke(); }); };
+  const down = e => { e.preventDefault(); cv.current.setPointerCapture && cv.current.setPointerCapture(e.pointerId); drawing.current = true; strokes.current.push([pt(e)]); paint(); };
+  const move = e => { if (!drawing.current) return; const s = strokes.current[strokes.current.length - 1], p2 = pt(e), l = s[s.length - 1]; if (Math.abs(p2[0] - l[0]) + Math.abs(p2[1] - l[1]) >= 2) { s.push(p2); paint(); } };
+  const up = () => { if (drawing.current) { drawing.current = false; setN(strokes.current.length); } };
+  const clear = () => { strokes.current = []; setN(0); paint(); };
+  const enc = () => strokes.current.filter(s => s.length > 1).map(s => s.map(p => p.join(",")).join(" ")).join("|");
+  return (<div className="enogia-view-in" style={{ border: "1.5px solid " + T.teal500, borderRadius: 12, padding: 10, background: T.surface, display: "flex", flexDirection: "column", gap: 8 }}>
+    <div style={{ fontSize: FZ.xs, color: T.ink700, fontWeight: 600 }}>Signature de {name} — signez dans le cadre</div>
+    <canvas ref={cv} width={300} height={100} aria-label={"Zone de signature de " + name} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerLeave={up}
+      style={{ width: "100%", maxWidth: 480, aspectRatio: "3 / 1", background: T.card, border: "1px dashed " + T.ink300, borderRadius: 8, touchAction: "none", cursor: "crosshair" }} />
+    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      <button type="button" disabled={busy || n === 0} onClick={() => onSave(enc())} style={btn(n > 0)}>Valider la signature</button>
+      <button type="button" onClick={clear} style={btn(true, "ghost")}>Effacer</button>
+      <button type="button" onClick={onCancel} style={btn(true, "ghost")}>Annuler</button>
+    </div>
+  </div>);
+}
 // v187 : sélecteur de statut d'un test (À faire / En cours / Réussi / Échec), cibles de 28 px.
 const stamp = iso => { const d = new Date(iso); return isNaN(d) ? "" : fd(dIso(d)) + " " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); };
 const STATUS_TONE = { todo: () => [T.ink700, T.card], wip: () => [T.amber600, T.amber100], ok: () => [T.emerald600, T.emerald100], ko: () => [T.red600, T.red100] };
@@ -343,59 +439,82 @@ function Step({ n, title, hint, children }) {
   </div>);
 }
 
-// ── Planning des testeurs : frise sur 6 semaines + équipe ───────────────────────────────────
-const DAY_W = 24, LABEL_W = 220, LANE_H = 28, WEEKS = 6;
-function TesterTimeline({ doc, rows, testers, conflicts, commit, canEdit, myTester, openPj }) {
+// ── v189 : calendrier des tests par testeur (maquette validée) ───────────────────────────────────────────
+// Deux semaines ouvrées, une ligne par testeur ; chaque barre = une machine (couleur : interne / client / NOBO),
+// avec le PJ, la gamme et l'avancement. Ligne « Sans testeur » en pointillés rouges. Les administrateurs glissent une
+// barre sur un testeur pour l'affecter (depuis un autre testeur : la machine passe de l'un à l'autre).
+const CAL_DAYS = 10, LANE_H = 30, LABEL_W = 200;
+export function TesterTimeline({ doc, rows, testers, catalog, conflicts, commit, canEdit, myTester, openPj, who }) {
   const ctx = useMentions();
-  const [offset, setOffset] = useState(0), [edit, setEdit] = useState(null), [del, setDel] = useState(null), [newName, setNewName] = useState("");
+  const [offset, setOffset] = useState(0), [edit, setEdit] = useState(null), [del, setDel] = useState(null), [newName, setNewName] = useState(""), [over, setOver] = useState(null);
   const todayIso = toLocalISO(new Date());
-  const start = addDaysIso(mondayOf(todayIso), offset * 7), N = WEEKS * 7, end = addDaysIso(start, N - 1);
+  const start = addDaysIso(mondayOf(todayIso), offset * 14);
+  const days = []; for (let i = 0; days.length < CAL_DAYS; i++) { const d = addDaysIso(start, i); const wd = (new Date(d + "T12:00:00").getDay() + 6) % 7; if (wd < 5) days.push(d); }
+  const end = days[days.length - 1];
   const byPj = useMemo(() => { const m = {}; rows.forEach(r => { m[r.pj] = r; }); return m; }, [rows]);
-  const inWin = it => it.to >= start && it.from <= end;
-  const bar = (it, lane, extra) => {
-    const a = Math.max(0, dayDiffIso(start, it.from)), b = Math.min(N - 1, dayDiffIso(start, it.to));
-    return { left: a * DAY_W + 1, width: (b - a + 1) * DAY_W - 2, top: lane * LANE_H + 3, height: LANE_H - 6, ...extra };
-  };
-  const trows = testers.map(t => {
-    const items = packLanes(assignmentsOf(doc, t.id, rows).filter(inWin));
-    return { t, items, lanes: Math.max(1, ...items.map(i => i.lane + 1)), conflict: items.some(i => i.lane > 0) };
-  });
-  const freeItems = packLanes(rows.filter(r => r.tests && r.etat !== "SHIPPED" && !planOf(doc, r.pj).assign.length).map(r => ({ pj: r.pj, from: dIso(r.tests), to: dIso(r.testsFin) || dIso(r.tests) })).filter(inWin));
-  const days = Array.from({ length: N }, (_, i) => addDaysIso(start, i));
+  const idxFrom = d => { const i = days.findIndex(x => x >= d); return i < 0 ? -1 : i; };
+  const idxTo = d => { let i = -1; days.forEach((x, k) => { if (x <= d) i = k; }); return i; };
+  const place = it => { const a = Math.max(0, idxFrom(it.from)), b = idxTo(it.to); return b < a || a < 0 ? null : { a, b }; };
+  const inWin = it => it.to >= days[0] && it.from <= end && !!place(it);
+  const trows = testers.map(t => { const items = packLanes(assignmentsOf(doc, t.id, rows).filter(inWin)); return { t, items, lanes: Math.max(1, ...items.map(i => i.lane + 1)), conflict: items.some(i => i.lane > 0) }; });
+  const freeItems = packLanes(rows.filter(r => r.tests && r.etat !== "SHIPPED" && !planOf(doc, r.pj).assign.length && !isForced(planOf(doc, r.pj))).map(r => ({ pj: r.pj, from: dIso(r.tests), to: dIso(r.testsFin) || dIso(r.tests) })).filter(inWin));
   const addTester = async () => { const n = newName.trim(); if (!n || testers.some(t => t.name.toLowerCase() === n.toLowerCase())) return; const acct = ctx.options.find(o => o.name.toLowerCase() === n.toLowerCase()); const ok = await commit({ testers: [...testers, { id: newId("t"), name: n, email: acct ? acct.email : "" }] }); if (ok !== false) setNewName(""); };
   const upd = (id, patch) => commit({ testers: testers.map(t => t.id === id ? { ...t, ...patch } : t) });
-  const rowStyle = h => ({ display: "flex", borderTop: "1px solid " + T.surface, minHeight: h });
-  const labelCell = { width: LABEL_W, flexShrink: 0, padding: "6px 10px", position: "sticky", left: 0, background: T.card, zIndex: 2, borderRight: "1px solid " + T.line };
-  const grid = (<div aria-hidden="true" style={{ position: "absolute", inset: 0, display: "flex", pointerEvents: "none" }}>
-    {days.map(d => { const wd = (new Date(d + "T12:00:00").getDay() + 6) % 7; return <div key={d} style={{ width: DAY_W, flexShrink: 0, background: wd >= 5 ? T.surface : "transparent", borderLeft: wd === 0 ? "1px solid " + T.line : "none", position: "relative" }}>{d === todayIso && <div style={{ position: "absolute", left: "50%", top: 0, bottom: 0, width: 2, background: T.teal500, opacity: .7 }} />}</div>; })}
+  const S = stageSoft();
+  const toneOf = pj => { const k = presenceKind((byPj[pj] || {}).clientPresence || null); const c = k === "nobo" ? PRESENCE_META.nobo.color : k ? S.arrivee.solid : S.tests.solid; return { bg: c, ink: inkOn(c), k }; };
+  const drop = (tid, e) => {
+    e.preventDefault(); setOver(null); if (!canEdit) return;
+    let d; try { d = JSON.parse(e.dataTransfer.getData("text/plain")); } catch (x) { return; }
+    if (!d || !d.pj || d.from === tid) return;
+    let plan = planOf(doc, d.pj); if (d.from) plan = unassignTester(plan, d.from); plan = assignTester(plan, tid, who);
+    commit({ plans: { ...(doc.plans || {}), [d.pj]: plan } });
+  };
+  const dropZone = tid => canEdit ? { onDragOver: e => { e.preventDefault(); setOver(tid); }, onDragLeave: () => setOver(o => (o === tid ? null : o)), onDrop: e => drop(tid, e) } : {};
+  const pct = i => (i / CAL_DAYS * 100) + "%";
+  const Bar = ({ it, fromTid, free }) => {
+    const pl = place(it); if (!pl) return null;
+    const r = byPj[it.pj] || {}, tn = toneOf(it.pj), q = progressOf(planOf(doc, it.pj), catalog, activeSections(tn.k)), warn = it.lane > 0;
+    return (<button type="button" className="enogia-cal-bar" draggable={canEdit} onDragStart={e => { e.dataTransfer.setData("text/plain", JSON.stringify({ pj: it.pj, from: fromTid || "" })); e.dataTransfer.effectAllowed = "move"; }}
+      onClick={() => openPj(it.pj)} title={it.pj + (r.gamme ? " · " + r.gamme : "") + " · " + (getPjMeta(it.pj, r).nomProjet || "") + " · " + fd(it.from) + " → " + fd(it.to) + " · " + q.done + "/" + q.total + " tests" + (warn ? " · chevauche un autre PJ" : "") + (canEdit ? " · glisser pour affecter" : "")}
+      style={{ position: "absolute", left: "calc(" + pct(pl.a) + " + 2px)", width: "calc(" + pct(pl.b - pl.a + 1) + " - 4px)", top: it.lane * LANE_H + 3, height: LANE_H - 6, boxSizing: "border-box",
+        background: free ? "transparent" : tn.bg, color: free ? T.red600 : tn.ink, border: free ? "1.5px dashed " + T.red500 : warn ? "2px solid " + T.amber500 : "none", borderRadius: 6,
+        fontFamily: T.fontLabel, fontSize: 11, fontWeight: 600, cursor: canEdit ? "grab" : "pointer", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", padding: "0 6px", textAlign: "left", display: "flex", alignItems: "center", gap: 6 }}>
+      <b style={{ fontFamily: T.fontMono }}>{it.pj}</b>{r.gamme && <span>{r.gamme}</span>}{q.total > 0 && <span style={{ marginLeft: "auto", fontVariantNumeric: "tabular-nums" }}>{q.done}/{q.total}</span>}
+    </button>);
+  };
+  const lanesBox = (items, lanes, tid, free) => (<div className="enogia-cal-drop" {...(free ? {} : dropZone(tid))} style={{ position: "relative", flex: 1, minWidth: 0, height: lanes * LANE_H, background: over === tid ? T.teal100 : "transparent" }}>
+    <div aria-hidden="true" style={{ position: "absolute", inset: 0, display: "grid", gridTemplateColumns: "repeat(" + CAL_DAYS + ",1fr)", pointerEvents: "none" }}>
+      {days.map((d, i) => <div key={d} style={{ borderLeft: i === 5 ? "2px solid " + T.line : i ? "1px solid " + T.surface : "none", background: d === todayIso ? T.teal100 : "transparent", opacity: d === todayIso ? .6 : 1 }} />)}
+    </div>
+    {items.map(it => <Bar key={it.pj} it={it} fromTid={free ? "" : tid} free={free} />)}
   </div>);
-  const Bar = ({ it, tone, h }) => { const [strong, soft] = personTint(it.pj); const warn = it.lane > 0; return (
-    <button onClick={() => openPj(it.pj)} title={it.pj + " · " + (getPjMeta(it.pj, byPj[it.pj] || {}).nomProjet || "") + " · " + fd(it.from) + " → " + fd(it.to) + (warn ? " · ⚠ chevauche un autre PJ" : "")}
-      style={{ position: "absolute", ...bar(it, it.lane), background: tone === "free" ? "transparent" : soft, border: (tone === "free" ? "1.5px dashed " + T.amber500 : "1.5px solid " + (warn ? T.amber500 : strong)), color: tone === "free" ? T.amber600 : T.ink900, borderRadius: 6, fontSize:11, fontWeight: 700, fontFamily: T.font, cursor: "pointer", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", padding: "0 5px", textAlign: "left" }}>{warn ? "⚠ " : ""}{it.pj}</button>); };
+  const labelCell = { width: LABEL_W, flexShrink: 0, padding: "6px 10px", borderRight: "1px solid " + T.line, boxSizing: "border-box" };
+  const rowStyle = { display: "flex", borderTop: "1px solid " + T.line, alignItems: "stretch" };
+  const DOWL = ["L", "M", "M", "J", "V"];
   return (<div style={{ ...CARD, overflow: "hidden" }}>
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "10px 14px", flexWrap: "wrap" }}>
-      <div><div style={H_TITLE}>Planning des testeurs</div><div style={H_SUB}>Chaque barre est une période de tests (cliquez pour ouvrir la fiche de la machine). Une ligne « À affecter » regroupe les tests encore sans testeur.</div></div>
-      <div style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
-        <button onClick={() => setOffset(o => o - 4)} style={btn(true, "ghost")} aria-label="Reculer de 4 semaines">◀</button>
+      <div><div style={H_TITLE}>Calendrier des tests</div><div style={H_SUB}>Du {fd(days[0])} au {fd(end)} · une barre par machine{canEdit ? " · glissez une barre sur un testeur pour l'affecter" : ""}</div></div>
+      <div style={{ display: "inline-flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+        <span style={{ display: "inline-flex", gap: 10, fontSize: FZ.xs, color: T.ink500, marginRight: 8 }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><i aria-hidden="true" style={{ width: 10, height: 10, borderRadius: 2, background: S.tests.solid }} />Interne</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><i aria-hidden="true" style={{ width: 10, height: 10, borderRadius: 2, background: S.arrivee.solid }} />Client</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><i aria-hidden="true" style={{ width: 10, height: 10, borderRadius: 2, background: PRESENCE_META.nobo.color }} />NOBO</span>
+        </span>
+        <button onClick={() => setOffset(o => o - 1)} style={btn(true, "ghost")} aria-label="Deux semaines plus tôt">◀</button>
         <button onClick={() => setOffset(0)} style={btn(true, "ghost")}>Aujourd'hui</button>
-        <button onClick={() => setOffset(o => o + 4)} style={btn(true, "ghost")} aria-label="Avancer de 4 semaines">▶</button>
+        <button onClick={() => setOffset(o => o + 1)} style={btn(true, "ghost")} aria-label="Deux semaines plus tard">▶</button>
       </div>
     </div>
     <div style={{ overflowX: "auto" }}>
-      <div style={{ minWidth: LABEL_W + N * DAY_W }}>
+      <div style={{ minWidth: LABEL_W + 520 }}>
         <div style={{ display: "flex", background: T.surface, borderTop: "1px solid " + T.line }}>
-          <div style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk,...labelCell,background: T.surface}}>Testeur</div>
-          <div style={{ display: "flex" }}>{Array.from({ length: WEEKS }, (_, w) => <div key={w} style={{ width: 7 * DAY_W, flexShrink: 0, padding: "6px 6px", borderLeft: "1px solid " + T.line, fontSize: FZ.xs, fontWeight: 700, color: T.ink500 }}>Sem. du {fdm(addDaysIso(start, w * 7))}</div>)}</div>
+          <div style={{ ...labelCell, fontFamily: T.fontLabel, fontSize: 12, fontWeight: 600, color: T.ink500 }}>Testeur</div>
+          <div style={{ flex: 1, display: "grid", gridTemplateColumns: "repeat(" + CAL_DAYS + ",1fr)" }}>{days.map((d, i) => <div key={d} style={{ padding: "6px 4px", fontSize: FZ.xs, fontWeight: 700, textAlign: "center", color: d === todayIso ? T.teal600 : T.ink500, borderLeft: i === 5 ? "2px solid " + T.line : "none", fontVariantNumeric: "tabular-nums" }}>{DOWL[i % 5]} {d.slice(8, 10)}</div>)}</div>
         </div>
-        {/* À affecter */}
-        <div style={rowStyle(LANE_H * Math.max(1, ...freeItems.map(i => i.lane + 1)))}>
-          <div style={{ ...labelCell, color: T.amber600, fontSize: FZ.sm, fontWeight: 800 }}>À affecter <span style={{ fontWeight: 600, color: T.ink300 }}>({freeItems.length})</span></div>
-          <div style={{ position: "relative", width: N * DAY_W }}>{grid}{freeItems.map(it => <Bar key={it.pj} it={it} tone="free" />)}</div>
-        </div>
-        {trows.length === 0 && <div style={{ padding: "14px 14px", fontSize: FZ.sm, color: T.ink500, borderTop: "1px solid " + T.surface }}>Aucun testeur pour l'instant{canEdit ? " : ajoutez-en un ci-dessous." : "."}</div>}
+        {trows.length === 0 && <div style={{ padding: "14px", fontSize: FZ.sm, color: T.ink500, borderTop: "1px solid " + T.line }}>Aucun testeur pour l'instant{canEdit ? " : ajoutez-en un ci-dessous." : "."}</div>}
         {trows.map(({ t, items, lanes, conflict }) => (
-          <div key={t.id} style={rowStyle(lanes * LANE_H)}>
-            <div style={{ ...labelCell, display: "flex", flexDirection: "column", gap: 4, justifyContent: "center" }}>
+          <div key={t.id} style={rowStyle}>
+            <div style={{ ...labelCell, display: "flex", flexDirection: "column", justifyContent: "center", gap: 4 }}>
               {edit === t.id
                 ? <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   <input defaultValue={t.name} onBlur={e => { const v = e.target.value.trim(); if (v && v !== t.name) upd(t.id, { name: v }); }} style={field()} aria-label="Nom" />
@@ -408,14 +527,18 @@ function TesterTimeline({ doc, rows, testers, conflicts, commit, canEdit, myTest
                 : <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <Avatar name={t.name} tint={personTint(t.name)[0]} size={24} />
                   <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontSize: FZ.sm, fontWeight: 700, color: myTester && myTester.id === t.id ? T.teal600 : T.ink900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}{conflict ? " ⚠" : ""}</div>
-                    <div style={{ fontSize:11, color: T.ink300, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.email || "sans e-mail : pas d'accès à l'onglet"}</div>
+                    <div style={{ fontSize: FZ.sm, fontWeight: 700, color: myTester && myTester.id === t.id ? T.teal600 : T.ink900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</div>
+                    {conflict ? <div style={{ fontFamily: T.fontLabel, fontSize: 11, fontWeight: 600, color: T.amber600 }}>Chevauchement</div> : !t.email && <div style={{ fontSize: 11, color: T.ink500 }}>sans e-mail</div>}
                   </div>
-                  {canEdit && <button onClick={() => setEdit(t.id)} aria-label={"Modifier " + t.name} title="Modifier / retirer" style={{ border: "none", background: "transparent", color: T.ink500, cursor: "pointer", fontSize: FZ.md, padding: 2, lineHeight: 0 }}><NavIcon name="edit" size={15} /></button>}
+                  {canEdit && <button onClick={() => setEdit(t.id)} aria-label={"Modifier " + t.name} title="Modifier / retirer" style={{ border: "none", background: "transparent", color: T.ink500, cursor: "pointer", minWidth: 24, minHeight: 24, padding: 2, lineHeight: 0 }}><NavIcon name="edit" size={15} /></button>}
                 </div>}
             </div>
-            <div style={{ position: "relative", width: N * DAY_W }}>{grid}{items.map(it => <Bar key={it.pj} it={it} />)}</div>
+            {lanesBox(items, lanes, t.id, false)}
           </div>))}
+        <div style={rowStyle}>
+          <div style={{ ...labelCell, display: "flex", alignItems: "center", fontFamily: T.fontLabel, fontSize: FZ.sm, fontWeight: 600, color: T.red600 }}>Sans testeur <span style={{ marginLeft: 6, color: T.ink500, fontWeight: 500 }}>{freeItems.length}</span></div>
+          {lanesBox(freeItems, Math.max(1, ...freeItems.map(i => i.lane + 1)), "__free", true)}
+        </div>
       </div>
     </div>
     {canEdit && <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", padding: "10px 14px", borderTop: "1px solid " + T.line, background: T.surface }}>
@@ -423,7 +546,7 @@ function TesterTimeline({ doc, rows, testers, conflicts, commit, canEdit, myTest
       <input list="tl-accounts" value={newName} onChange={e => setNewName(e.target.value)} onKeyDown={e => { if (e.key === "Enter") addTester(); }} placeholder="＋ Ajouter un testeur (nom ou compte connecté)" style={{ ...field(), width: 300 }} />
       <datalist id="tl-accounts">{ctx.options.map(o => <option key={o.email} value={o.name}>{o.email}</option>)}</datalist>
       <button onClick={addTester} disabled={!newName.trim()} style={btn(!!newName.trim())}>Ajouter</button>
-      <span style={{ fontSize: FZ.xs, color: T.ink300 }}>Un testeur choisi parmi les comptes connectés reçoit l'accès à cet onglet (consultation).</span>
+      <span style={{ fontSize: FZ.xs, color: T.ink500 }}>Un testeur choisi parmi les comptes connectés reçoit l'accès à cet onglet.</span>
     </div>}
   </div>);
 }

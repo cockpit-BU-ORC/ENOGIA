@@ -40,7 +40,7 @@ export function catalogOf(doc) {
 export const testersOf = doc => (doc && Array.isArray(doc.testers) ? doc.testers : []);
 export const planOf = (doc, pj) => {
   const p = doc && doc.plans && doc.plans[pj];
-  return { assign: Array.isArray(p && p.assign) ? p.assign : [], sel: (p && p.sel) || {}, extra: (p && p.extra) || {}, notes: (p && p.notes) || {}, done: (p && p.done) || {}, st: (p && p.st) || {}, stBy: (p && p.stBy) || {}, forced: (p && p.forced) || null };
+  return { assign: Array.isArray(p && p.assign) ? p.assign : [], sel: (p && p.sel) || {}, extra: (p && p.extra) || {}, notes: (p && p.notes) || {}, done: (p && p.done) || {}, st: (p && p.st) || {}, stBy: (p && p.stBy) || {}, forced: (p && p.forced) || null, signs: (p && p.signs) || {} };
 };
 
 // Parties présentes selon la présence aux tests (null | "client" | "nobo" | "both") : l'interne est toujours fait.

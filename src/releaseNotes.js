@@ -7,6 +7,17 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v189",
+    date: "2026-10-27",
+    title: "V189 : tests en pop-up, calendrier et fiche PDF signée",
+    items: [
+      { t: "La fiche de tests en grand", d: "Un clic sur une machine ouvre sa fiche au centre de l'écran : avancement, réussis, échecs, testeurs et tests." },
+      { t: "Signer ses tests", d: "Chaque testeur signe au doigt ou à la souris ; la fiche PDF reprend le projet, les tests, les heures et les signatures, au format ENOGIA." },
+      { t: "Nouveau calendrier des tests", d: "Deux semaines par testeur, une barre par machine avec sa gamme et son avancement ; ligne « Sans testeur » en évidence." },
+      { t: "Affecter en glissant", d: "Glissez une barre du calendrier sur un testeur pour lui confier la machine.", admin: true },
+    ],
+  },
+  {
     id: "2026-10-v188",
     date: "2026-10-27",
     title: "V188 : un accueil pour chaque rôle",

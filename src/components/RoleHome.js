@@ -40,7 +40,7 @@ export function RoleHome({ role, ui, rows, open, late, mentions, myPjs, testsDoc
   if (role === "testeur") {
     const effOf = r => { const a = planOf(testsDoc, r.pj).assign.find(x => x.tid === myTester.id); return effRange(a, r); };
     const todayT = mineT.filter(r => { const e = effOf(r); return e.from <= today && e.to >= today; });
-    const toSign = mineT.filter(r => { const q = prog(r); return !isForced(planOf(testsDoc, r.pj)) && (tEnd(r) < today || (q.total > 0 && q.done === q.total)); });
+    const toSign = mineT.filter(r => { const q = prog(r), p = planOf(testsDoc, r.pj); return !(p.signs || {})["t:" + myTester.id] && (tEnd(r) < today || (q.total > 0 && q.done === q.total)); }); // v189 : pas encore signée par moi
     const w0 = monday(today), days = DOW.map((l, i) => ({ l, d: addD(w0, i) }));
     if (!myTester) return <section style={{ ...cardS(S.tests.ring), marginBottom: 12 }}>{empty("check", "Vous n'êtes pas dans la liste des testeurs", "Un administrateur vous ajoute depuis la page Tests.")}</section>;
     return (<div className="enogia-stagger" style={wrap}>

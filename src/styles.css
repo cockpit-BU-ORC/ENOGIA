@@ -355,3 +355,17 @@ button:not(:disabled):active { transform: scale(.97); }
 .enogia-pie-leg   { animation: enogiaPieLeg .28s var(--e-ease) backwards; }
 .enogia-pie-card .recharts-sector { transition: transform .18s var(--e-ease); transform-origin: center; transform-box: fill-box; }
 .enogia-pie-card .recharts-sector:hover { transform: scale(1.06); }
+
+/* v189 — pop-up central des tests et cartes : entrée 200 ms (fondu + légère montée), survol des cartes (transform seul). */
+.enogia-test-overlay { animation: enogiaFade .18s ease-out both; }
+.enogia-test-dialog { animation: enogiaViewIn .22s var(--e-ease, cubic-bezier(.16,1,.3,1)) both; }
+.enogia-test-card { transition: transform .15s var(--e-ease, ease-out), box-shadow .15s ease-out; }
+.enogia-test-card:hover { transform: translateY(-2px); }
+.enogia-test-card:active { transform: translateY(0) scale(.99); }
+.enogia-cal-bar { transition: transform .15s ease-out; }
+.enogia-cal-bar:hover { transform: translateY(-1px); }
+.enogia-cal-drop { transition: background-color .15s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .enogia-test-overlay, .enogia-test-dialog { animation: none; }
+  .enogia-test-card, .enogia-test-card:hover, .enogia-test-card:active, .enogia-cal-bar, .enogia-cal-bar:hover { transition: none; transform: none; }
+}
