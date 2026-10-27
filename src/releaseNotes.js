@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v192",
+    date: "2026-10-27",
+    title: "V192 : des couleurs d'état bien distinctes",
+    items: [
+      { t: "Chaque état a sa couleur", d: "Plus de couleurs presque identiques : avant production en rouge, lilas et orange, montage en bleus, tests en or, packaging en sarcelle, expédiée en vert foncé." },
+      { t: "Étiquettes Client et NOBO", d: "Nouvelles étiquettes avec icône, liseré (bleu acier pour le client, rouge pour NOBO) et date." },
+      { t: "Camemberts plus lisibles", d: "Les parts par pays et par chef de projet ont chacune une teinte franche." },
+    ],
+  },
+  {
     id: "2026-10-v191",
     date: "2026-10-27",
     title: "V191 : menus discrets, projets EPC, plusieurs chefs de projet",

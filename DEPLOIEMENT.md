@@ -1167,3 +1167,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - **Camemberts** (`DashboardSummary.js`) : total au centre retiré.
 - Vérifié : build (13 avertissements existants), 120 tests, contraste ; rendu de la fiche EPC et de l'accueil direction avec Cash in. Pas testé dans l'appli connectée.
 - Fichiers : App.js, pjMeta.js, profiles.js, cashinLink.js(+test), components/{ChefsEpc,HomeView,RoleHome,PeopleRoles,ManagerNav,ManagerFiche,ProjectModal,TableView,DashboardSummary}.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
+
+## v192 — Palette d'état A, étiquettes Client / NOBO, palette des camemberts (choix de Gabriel)
+
+- **États** (`pjMeta.js`, `ETAT_META`) : Non commandée `#D62839`, Non désignée `#C77DFF`, Fabrication FNR `#E76F51`, Stockage externe `#8D99AE`, Montage méca `#1D3557`, Montage élec `#48CAE4`, Tests `#FFB703`, Packaging `#2A9D8F`, Expédiée `#2D6A4F`, Slot libre `#CED4DA`. Fonds et textes toujours dérivés par `etatColors()` ; en sombre, la barre / le point est désormais éclairci jusqu'à 3:1 sur la surface (`visibleOn`) — un marine foncé disparaissait. Les états créés dans Réglages gardent leur couleur. Les couleurs d'étape (Gantt, calendrier, accueil) ne changent pas.
+- **Présence** (`PresenceChip`, `PRESENCE_META`) : étiquette d'atelier — fond de carte, filet, liseré gauche bleu acier `#457B9D` (client) / rouge `#C1121F` (NOBO), icône personne / bouclier, libellé IBM Plex Sans et date ; « Client + NOBO » = deux étiquettes. `bg` / `ink` de `PRESENCE_META` ajustés aux nouvelles teintes (rapport CODIR, tests, Manager).
+- **Camemberts** (`DashboardSummary.js`) : palette catégorielle `#4E79A7 #F28E2B #E15759 #76B7B2 #59A14F #B07AA1 #EDC948 #FF9DA7 #9C755F` pour pays et chefs ; « État » suit la nouvelle palette d'état.
+- Pas de nouvelle donnée ni clé `localStorage`. Vérifié : rendu des états et des étiquettes en clair / sombre, build (13 avertissements existants), 120 tests, contraste 0 échec.
+- Fichiers : pjMeta.js, components/DashboardSummary.js, App.js (version), releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.

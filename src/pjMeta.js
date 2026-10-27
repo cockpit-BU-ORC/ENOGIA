@@ -203,9 +203,9 @@ export const PRESENCE_KINDS=["client","nobo","both"];
 // Teintes demandées « légères » : client = violet doux, NOBO = orange doux. « color » = liseré/accent
 // (moyen), « bg » = fond pastel de la pastille, « ink » = texte foncé lisible sur le pastel (clair ou sombre).
 export const PRESENCE_META={
-  client:{key:"client",label:"Client",short:"Client",color:"#B9AACD",bg:"#E8E2F0",ink:"#4B3F6B"},
-  nobo:{key:"nobo",label:"NOBO",short:"NOBO",color:"#E3B590",bg:"#F8E6D6",ink:"#7A4A20"},
-  both:{key:"both",label:"Client + NOBO",short:"Les deux",color:"#B9AACD",color2:"#E3B590",bg:"#E8E2F0",bg2:"#F8E6D6",ink:"#4B3F6B"},
+  client:{key:"client",label:"Client",short:"Client",color:"#457B9D",bg:"#DCE8F0",ink:"#1F4A63"}, // v192 : bleu acier
+  nobo:{key:"nobo",label:"NOBO",short:"NOBO",color:"#C1121F",bg:"#F6D9DB",ink:"#8A0F18"}, // v192 : rouge organisme
+  both:{key:"both",label:"Client + NOBO",short:"Les deux",color:"#457B9D",color2:"#C1121F",bg:"#DCE8F0",bg2:"#F6D9DB",ink:"#1F4A63"},
 };
 // Anciennes saisies (« present:true » sans « who », faites avant ce choix) = les deux, comme
 // l'ancien libellé « Client/NOBO présent » — aucune donnée n'est perdue ni réécrite.
@@ -244,17 +244,23 @@ export function presenceRing(kind){
   const m=PRESENCE_META[kind];
   return m.color2?"inset 4px 0 0 "+m.color+", inset -4px 0 0 "+m.color2:"inset 0 0 0 2px "+m.color;
 }
+// v192 (option 1 validée) : étiquette d'atelier — fond de carte, filet, liseré coloré à gauche (bleu acier = client,
+// rouge = NOBO), icône (personne / bouclier), libellé et date ; « Client + NOBO » = deux étiquettes côte à côte.
+function ShieldIcon({size,color}){
+  return <svg width={size} height={size} viewBox="0 0 256 256" fill={color||"currentColor"} aria-hidden="true" style={{flexShrink:0}}><path d="M208,40H48A16,16,0,0,0,32,56v56c0,52.72,25.52,84.67,46.93,102.19,23.06,18.86,46,25.27,47,25.53a8,8,0,0,0,4.2,0c1-.26,23.91-6.67,47-25.53C198.48,196.67,224,164.72,224,112V56A16,16,0,0,0,208,40Zm0,72c0,37.07-13.66,67.16-40.6,89.42A129.3,129.3,0,0,1,128,223.62a128.25,128.25,0,0,1-38.92-21.81C61.82,179.51,48,149.3,48,112l0-56,160,0ZM82.34,141.66a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35a8,8,0,0,1,11.32,11.32l-56,56a8,8,0,0,1-11.32,0Z"/></svg>;
+}
 export function PresenceChip({kind,date,dates,compact,fontSize,tiny,short}){
   if(!kind)return null;
-  const m=PRESENCE_META[kind];
   const fs=fontSize||(compact?11:12);
-  const two=dates&&dates.client&&dates.nobo&&dates.client!==dates.nobo;
-  const dd=two?"C "+fdmIso(dates.client)+" · N "+fdmIso(dates.nobo):date?String(date).slice(8,10)+"/"+String(date).slice(5,7)+"/"+String(date).slice(2,4):"";
-  return(
-    <span title={"Présence "+m.label+" aux tests"+(two?" — client le "+dates.client+", NOBO le "+dates.nobo:date?" le "+date:"")} style={{display:"inline-flex",alignItems:"center",gap:4,background:presenceBg(kind),color:m.ink,boxShadow:m.color2?"none":"inset 0 0 0 1px "+m.color,borderRadius:compact?5:6,padding:compact?"1px 6px":"2px 8px",fontSize:fs,fontWeight:800,lineHeight:1.3,whiteSpace:"nowrap",fontFamily:T.font}}>
-      {!short&&<PersonIcon size={fs+1} color={m.ink}/>}{short?(kind==="client"?"C":kind==="nobo"?"N":"C+N"):tiny&&kind==="both"?"C + N":m.label}{dd&&!compact?" · "+dd:""}
-    </span>
-  );
+  const parts=kind==="both"?["client","nobo"]:[kind];
+  const dOf=k=>{const d=(dates&&dates[k])||date;return d?fdmIso(d):"";};
+  const title="Présence "+PRESENCE_META[kind].label+" aux tests"+parts.map(k=>dOf(k)?" — "+PRESENCE_META[k].label+" le "+dOf(k):"").join("");
+  return(<span title={title} style={{display:"inline-flex",alignItems:"center",gap:4,flexShrink:0}}>
+    {parts.map(k=>{const m=PRESENCE_META[k],d=!compact&&!tiny?dOf(k):"";return(
+      <span key={k} style={{display:"inline-flex",alignItems:"center",gap:4,background:T.card,color:T.ink900,border:"1px solid "+T.ink300,borderLeft:"4px solid "+m.color,borderRadius:3,padding:"0 6px 0 4px",fontFamily:T.fontLabel,fontSize:fs,fontWeight:600,lineHeight:(fs+6)+"px",whiteSpace:"nowrap"}}>
+        {!short&&(k==="nobo"?<ShieldIcon size={fs+1} color={m.color}/>:<PersonIcon size={fs+1} color={m.color}/>)}{short?(k==="client"?"C":"N"):m.short}{d?" "+d:""}
+      </span>);})}
+  </span>);
 }
 // SVG vectoriel (plus la miniature PNG h20, qui devenait floue en l'agrandissant) — demandé
 // explicitement ("les drapeaux à gauche ne sont pas assez clairs") : flagcdn fournit le même
@@ -288,25 +294,28 @@ const etatThemed=(light,dark,label)=>({
 const lum=h=>{const p=String(h).replace("#","");const c=[0,2,4].map(i=>parseInt(p.slice(i,i+2),16)/255).map(v=>v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4));return .2126*c[0]+.7152*c[1]+.0722*c[2];};
 export const contrastRatio=(a,b)=>{const x=lum(a),y=lum(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05);};
 const readable=(color,bg,toward)=>{for(let t=.3;t<=1.001;t+=.05){const c=mixHex(color,toward,t);if(contrastRatio(c,bg)>=4.6)return c;}return toward;};
+// v192 : en sombre, la barre / le point d'état est éclairci jusqu'à 3:1 sur la surface sombre (un marine foncé disparaissait).
+const visibleOn=(color,bg)=>{for(let t=.12;t<=1.001;t+=.04){const c=mixHex(color,"#ffffff",t);if(contrastRatio(c,bg)>=3)return c;}return "#ffffff";};
 export function etatColors(color){
   const c=/^#[0-9a-f]{6}$/i.test(color||"")?color:"#6b7f99";
   const lbg=mixHex(c,"#ffffff",.8),dbg=mixHex(c,"#101826",.64);
-  return{light:{bg:lbg,text:readable(c,lbg,"#000000"),border:mixHex(c,"#ffffff",.5),bar:c},dark:{bg:dbg,text:readable(c,dbg,"#ffffff"),border:mixHex(c,"#101826",.3),bar:mixHex(c,"#ffffff",.12)}};
+  return{light:{bg:lbg,text:readable(c,lbg,"#000000"),border:mixHex(c,"#ffffff",.5),bar:c},dark:{bg:dbg,text:readable(c,dbg,"#ffffff"),border:mixHex(c,"#101826",.3),bar:visibleOn(c,"#1C2536")}};
 }
 const etatFromColor=(c,label)=>{const k=etatColors(c);return etatThemed(k.light,k.dark,label);};
 export const ETAT_META={
   // v162 : palette B (teintes franches : fond = 18 % de la couleur en clair, point/liseré = couleur pleine). Ancien : v146.10 : teintes plus soutenues (fonds, liserés et texte un cran plus foncés). « Production ENOGIA » est remplacée par les 4 étapes de production.
   // v177 : nouvelle palette (Regal Navy, Light Blue, Royal Gold, Forest Green, Black Forest, Sandy Brown, Mustard, Tomato, Orange) — dérivée par etatColors().
-  "SHIPPED":etatFromColor("#104911","Expédiée"),
-  "MONTAGE":etatFromColor("#0D3B66","Montage Méca"),
-  "ELEC":etatFromColor("#A8D5E2","Montage Élec"),
-  "TESTS":etatFromColor("#F4D35E","Tests"),
-  "PACKAGING":etatFromColor("#548C2F","Packaging"),
-  "En fabrication":etatFromColor("#EE964B","Fabrication FNR"),
-  "STOCKAGE_EXT":etatFromColor("#FFD449","Stockage Externe"),
-  "NOT ORDERED":etatFromColor("#F95738","Non commandée"),
-  "NON_DESIGNEE":etatFromColor("#F9A620","Non Designée"),
-  "SLOT_LIBRE":etatFromColor("#8A97A6","Slot libre"),
+  // v192 (palette A validée) : rouge / lilas / orange brûlé avant production, bleus pour le montage, or pour les tests, sarcelle puis vert foncé pour la fin.
+  "SHIPPED":etatFromColor("#2D6A4F","Expédiée"),
+  "MONTAGE":etatFromColor("#1D3557","Montage Méca"),
+  "ELEC":etatFromColor("#48CAE4","Montage Élec"),
+  "TESTS":etatFromColor("#FFB703","Tests"),
+  "PACKAGING":etatFromColor("#2A9D8F","Packaging"),
+  "En fabrication":etatFromColor("#E76F51","Fabrication FNR"),
+  "STOCKAGE_EXT":etatFromColor("#8D99AE","Stockage Externe"),
+  "NOT ORDERED":etatFromColor("#D62839","Non commandée"),
+  "NON_DESIGNEE":etatFromColor("#C77DFF","Non Designée"),
+  "SLOT_LIBRE":etatFromColor("#CED4DA","Slot libre"),
   "A_DEFINIR":{get bg(){return T.surfaceAlt;},get text(){return T.ink500;},get border(){return T.ink100;},get bar(){return T.ink300;},label:"À définir"},
 };
 export const ALL_ETATS=Object.keys(ETAT_META);

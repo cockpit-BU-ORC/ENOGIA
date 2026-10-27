@@ -354,4 +354,7 @@ export const RELEASE_CATALOG = [
     ["Projets", "Plusieurs chefs de projet ; pastille EPC avec le chef de projet ORC ; expédiées masquées."],
     ["Accueil", "Réglé par personne dans le Manager ; chiffres du Cash in pour la direction."],
   ] },
+  { v: "192", t: "Des couleurs d'état bien distinctes", items: [
+    ["Couleurs", "Nouvelle palette d'état, étiquettes Client / NOBO, camemberts plus contrastés."],
+  ] },
 ];

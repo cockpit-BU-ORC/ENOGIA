@@ -20,7 +20,7 @@ const DIMENSIONS=[
 ];
 const TOP_N=4;
 // Palette douce des camemberts (demandée explicitement : « couleurs plus douces et légères ») — gammes et états gardent leurs couleurs propres.
-const PALETTE=["#0D3B66","#A8D5E2","#F4D35E","#EE964B","#548C2F","#F95738","#FFD449","#104911","#F9A620"]; // v177 : nouvelle palette
+const PALETTE=["#4E79A7","#F28E2B","#E15759","#76B7B2","#59A14F","#B07AA1","#EDC948","#FF9DA7","#9C755F"]; // v192 : palette catégorielle bien distincte (pays, chefs) — validée
 
 export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}){
   // Le compteur "expédiées depuis le 1er janvier" doit rester lié au nombre réel d'unités
