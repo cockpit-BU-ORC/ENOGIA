@@ -448,4 +448,7 @@ export const RELEASE_CATALOG = [
   { v: "219", t: "KPI : charge du planificateur, camemberts, Explorer", items: [
     ["KPI", "Charge d'après le planificateur ; répartitions en camemberts ; sous-page Explorer."],
   ] },
+  { v: "220", t: "ENOGIA – BU ORC", items: [
+    ["Site", "Nouveau nom « ENOGIA – BU ORC » et nouveau sous-titre."],
+  ] },
 ];

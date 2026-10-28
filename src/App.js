@@ -49,7 +49,7 @@ import { saveBackup } from "./importBackups";
 // production vers la bêta. Build normal : préfixe vide, comportement strictement inchangé.
 const IS_BETA=process.env.REACT_APP_BETA==="1";
 const DOC_PFX=IS_BETA?"beta_":"";
-if(IS_BETA&&typeof document!=="undefined")document.title="[BÊTA] ORDO & OPS – BU ORC";
+if(IS_BETA&&typeof document!=="undefined")document.title="[BÊTA] ENOGIA – BU ORC";
 const BETA_DOCS=["current","initial","overrides","comments","pjMetaSync","pjMetaOverrides","delays","delayTypes","managerEmails","changeLog","cashin","cashinLinks","turbines","tests","profiles"];
 const DOC_REF=()=>doc(db,"planning",DOC_PFX+"current");
 const INITIAL_DOC_REF=()=>doc(db,"planning",DOC_PFX+"initial");
@@ -70,7 +70,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-28-v219-kpi-planificateur";
+const APP_BUILD_VERSION = "2026-10-28-v220-enogia-bu-orc";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -343,7 +343,7 @@ export default function App(){
   // Onglet du navigateur : pastille tant que des modifications n'ont pas été lues
   useEffect(()=>{
     if(typeof document==="undefined")return;
-    const base=(IS_BETA?"[BÊTA] ":"")+SITE_TITLE+" · ENOGIA"; // v183 : nouveau nom du site
+    const base=(IS_BETA?"[BÊTA] ":"")+SITE_TITLE; // v183 : nom du site ; v220 : « ENOGIA – BU ORC » (plus de « · ENOGIA » en double)
     document.title=(unseenChanges.length&&loggedIn?"● ("+unseenChanges.length+") ":"")+base;
   },[unseenChanges.length,loggedIn]);
   useEffect(()=>{if(view==="changes"&&changeLog&&changeLog.length){markChangesSeen();setNoticeOpen(false);}},[view,changeLog]); // eslint-disable-line

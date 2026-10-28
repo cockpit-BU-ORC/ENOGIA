@@ -1434,3 +1434,13 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - **Sous-page KPI « Explorer »** (`ManagerPanel.js`) : la Synthèse ne garde que le tableau de pilotage ; répartition par pays, départs par mois, par gamme et l'explorateur libre passent dans **KPI › Explorer**.
 - Pas de nouvelle clé `localStorage`. Vérifié : Synthèse avec un plan (jsdom) ; les camemberts Recharts ne se dessinent pas en jsdom — à regarder dans l'appli. Build (13 avertissements existants), tests, contraste.
 - Fichiers : components/{KpiPilotage,ManagerParts,ManagerPanel}.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
+
+## v220 — Nouveau nom du site : « ENOGIA – BU ORC »
+
+- **Nom** (`siteName.js`) : `SITE_NAME` = « ENOGIA », `SITE_SCOPE` = « BU ORC » → « ENOGIA – BU ORC » ; sous-titre « Ordonnancement · Production · Tests · Projets · Cash in ». Repris par le menu, la connexion, l'écran de transition et le titre de l'onglet (`App.js`, sans « · ENOGIA » en double ; bêta : « [BÊTA] ENOGIA – BU ORC »), `public/index.html` (titre, description) et `public/manifest.json` (nom de l'application installée).
+- **Dépôt GitHub — à faire par Gabriel, si vous voulez aussi le renommer** (je ne pousse rien) :
+  1. Sur GitHub : Settings › General › Repository name (ex. `bu-orc-enogia`). GitHub redirige l'ancien dépôt pour git, **mais pas l'adresse GitHub Pages** : l'ancienne adresse du site ne répondra plus.
+  2. Dans `package.json`, remplacer `"homepage": "https://Planning-ENOGIA-BU-ORC.github.io/planning-enogia-2026"` par la nouvelle adresse (`…github.io/<nouveau-nom>`), puis `git remote set-url origin https://github.com/Planning-ENOGIA-BU-ORC/<nouveau-nom>.git`.
+  3. Redéployer (`npm run deploy:beta` puis `npm run deploy`) et prévenir les utilisateurs de la nouvelle adresse. Firebase n'est pas concerné (même domaine `…github.io`, seul le chemin change) ; les données Firestore restent les mêmes.
+- Vérifié : build (13 avertissements existants), tests, contraste.
+- Fichiers : siteName.js, App.js, public/{index.html, manifest.json}, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.

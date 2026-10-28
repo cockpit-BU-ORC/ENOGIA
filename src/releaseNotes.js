@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v220",
+    date: "2026-10-28",
+    title: "V220 : le site devient « ENOGIA – BU ORC »",
+    items: [
+      { t: "Nouveau nom", d: "L'outil couvre maintenant toute la BU ORC : il s'appelle « ENOGIA – BU ORC », avec le sous-titre « Ordonnancement · Production · Tests · Projets · Cash in » (menu, connexion, titre de l'onglet, icône installée)." },
+    ],
+  },
+  {
     id: "2026-10-v219",
     date: "2026-10-28",
     title: "V219 : KPI — la charge du planificateur, des camemberts, une sous-page Explorer",
