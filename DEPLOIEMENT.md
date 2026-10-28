@@ -1407,3 +1407,15 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - `PieBlock` : anneau plus fin, total au centre seulement si on le demande explicitement.
 - Pas de nouvelle donnée ni clé `localStorage`. Vérifié : Avancement et Retards en clair et sombre (jsdom + aperçu) ; les graphiques Recharts de Charge et Dérives ne se dessinent pas en jsdom — à regarder dans l'appli. Build (13 avertissements existants), tests, contraste.
 - Fichiers : components/{ManagerParts,ManagerPanel}.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
+
+## v217 — Cash in et Turbines en pages ; Manager regroupé ; Machines ORC sur une page ; nouveaux PJ signalés à l'import
+
+- **Cash in et Turbines** (`App.js`) : les entrées de la rubrique **Gestion** du menu ouvrent de vraies pages du site (`view` = `cashin` / `turbines`, avec leur en-tête) au lieu des onglets du Manager. Cash in : comptes `canCash` ; Turbines : accès Manager (`pinOk`). « Ouvrir le Cash in » de l'accueil et le lien paiements d'une fiche projet ouvrent la page Cash in (sur le PJ). Ces deux onglets sont retirés du Manager (un ancien onglet mémorisé ramène aux KPI).
+- **Manager regroupé** (`ManagerPanel.js`) :
+  - **Pilotage** : KPI (Synthèse, Dérives, Charge, Avancement) ; **Retards** (Déclarer, **Analyse** — l'ancien KPI › Retards).
+  - **Projets** : Fiches projet (Fiches projet, Point hebdo) ; **Machines ORC**.
+  - **Réglages** : **Calendrier de production** (Jours sans production, Fermetures de l'atelier) ; **Personnes et site** (Personnes, rôles et accès ; Nouveautés).
+- **Machines ORC sur une page** (`Series.js`) : le tableau gagne la colonne **Présence aux tests** (client / NOBO et leurs dates, même éditeur que la Liste) et le bouton **Gérer les états** (états personnalisés) ; la sous-page « Statut & présence » disparaît.
+- **Nouveaux PJ à l'import** (`App.js`) : après l'import du planning révisé, les PJ (hors slots libres) absents du planning initial sont signalés par un bandeau pour les accès Manager ; « Les ancrer dans l'initial… » ouvre l'examen d'ajout à l'initial (`InitialAddReview`, les PJ déjà présents ne sont jamais modifiés), « Plus tard » le ferme. Avant, il fallait réimporter le fichier avec le bouton ＋ du repère « Planning initial ».
+- Pas de nouvelle donnée ni clé `localStorage` (`enogia_view` accepte `cashin` et `turbines`). Vérifié : build (13 avertissements existants), tests, contraste. Pas vérifié dans l'appli connectée (menu, Manager et import demandent la connexion).
+- Fichiers : App.js, components/{ManagerPanel,Series}.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.

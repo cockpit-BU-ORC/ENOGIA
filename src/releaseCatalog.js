@@ -437,4 +437,9 @@ export const RELEASE_CATALOG = [
   { v: "216", t: "Les pages KPI parlent la même langue", items: [
     ["KPI", "Charge, Dérives, Avancement, Retards : mêmes chiffres clés que la Synthèse, classements à une couleur, graphiques nets."],
   ] },
+  { v: "217", t: "Cash in et Turbines en pages, un Manager mieux rangé", items: [
+    ["Menu", "Cash in et Turbines sont des pages du site."],
+    ["Manager", "Machines ORC sur une page avec la présence ; Pilotage / Projets / Réglages regroupés ; Retards › Analyse."],
+    ["Import", "Les PJ absents du planning initial sont signalés après un import."],
+  ] },
 ];

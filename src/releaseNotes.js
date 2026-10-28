@@ -7,6 +7,17 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v217",
+    date: "2026-10-28",
+    title: "V217 : Cash in et Turbines en pages, un Manager mieux rangé",
+    items: [
+      { t: "Cash in et Turbines", d: "Dans le menu de gauche, ce sont maintenant de vraies pages du site (plus des onglets du Manager).", admin: true },
+      { t: "Machines ORC sur une page", d: "N° de série, chef de projet, pays, état et présence client / NOBO aux tests dans le même tableau ; « Gérer les états » y est aussi.", admin: true },
+      { t: "Manager regroupé", d: "Pilotage : KPI et Retards (Déclarer, Analyse). Projets : Fiches projet (et Point hebdo), Machines ORC. Réglages : Calendrier de production (jours sans production, fermetures) et Personnes et site.", admin: true },
+      { t: "Nouveaux PJ à l'import", d: "Après un import du planning, les PJ absents du planning initial sont signalés avec un bouton pour les y ancrer.", admin: true },
+    ],
+  },
+  {
     id: "2026-10-v216",
     date: "2026-10-28",
     title: "V216 : les pages KPI parlent la même langue",

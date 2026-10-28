@@ -20,6 +20,8 @@ import { getPjMeta, chefsOf, ALL_GAMMES, ALL_ETATS, ETAT_META, registerCustomEta
 import { weekStartOf } from "./parsers";
 import { HomeView } from "./components/HomeView";
 import { useA11yFallback } from "./a11yFallback";
+import { CashInTab } from "./components/CashInTab";
+import { TurbinesTab } from "./components/TurbinesTab";
 import { ImportButton, ManagerAccessNotice, PIN, NavIcon, EmptyState, LoadingSkeleton, PageHead, notify, Toaster } from "./components/SharedUI";
 import { GanttView } from "./components/GanttView";
 import { PjDialog, PjDialogCtx } from "./components/RowDetail";
@@ -68,7 +70,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-28-v216-kpi-sous-pages";
+const APP_BUILD_VERSION = "2026-10-28-v217-pages-manager";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -213,7 +215,7 @@ export default function App(){
   const [initialImporting,setInitialImporting]=useState(false);
   const [lastInitialImport,setLastInitialImport]=useState(null);
   const [lastInitialAdd,setLastInitialAdd]=useState(null);
-  const [view,setView]=useState(()=>{try{const v=localStorage.getItem("enogia_view");return ["home","table","gantt","calendar","changes","comments","tests","planner"].includes(v)?v:"home";}catch(e){return "home";}});
+  const [view,setView]=useState(()=>{try{const v=localStorage.getItem("enogia_view");return ["home","table","gantt","calendar","changes","comments","tests","planner","cashin","turbines"].includes(v)?v:"home";}catch(e){return "home";}});
   useEffect(()=>{try{localStorage.setItem("enogia_view",view);}catch(e){}},[view]);
   useEffect(()=>{
     const h=e=>{
@@ -892,6 +894,10 @@ export default function App(){
   // MS Project). Tout ce qui est saisi dans l'app — pays, chef de projet, nom, gamme (pjMetaOverrides),
   // état, avancement, présence aux tests, jours de production, retards, commentaires — vit dans des
   // documents Firestore séparés, clés par n° de PJ, et passe toujours PAR-DESSUS les données importées.
+  // v217 (demandé : « quand je fais un import, ça vérifie automatiquement s'il y a de nouveaux projets ? ») : après l'import du
+  // planning, les PJ absents du planning initial (base des dérives) sont signalés, avec un bouton pour les y ancrer.
+  const [newVsInitial,setNewVsInitial]=useState(null),[initialAddFromImport,setInitialAddFromImport]=useState(null);
+  const initialPjsRef=useRef(new Set()); initialPjsRef.current=new Set(initialData.map(r=>r.pj));
   const handleImport=useCallback(async (rows,indice)=>{
     setImporting(true);
     try{
@@ -914,6 +920,7 @@ export default function App(){
         }catch(e){console.warn("Journal des modifications non enregistré (l'import est bien fait) :",e);}
       }
       setSelPJs(rows.length?new Set(rows.map(r=>r.pj)):null);
+      if(initialPjsRef.current.size){const fresh=rows.filter(r=>r&&r.pj&&r.etat!=="SLOT_LIBRE"&&!initialPjsRef.current.has(r.pj));setNewVsInitial(fresh.length?{rows,pjs:fresh.map(r=>r.pj)}:null);}
       // Pas besoin de setData ici : onSnapshot va le faire automatiquement pour tout le monde
     }catch(e){
       console.error(e);
@@ -1006,7 +1013,7 @@ export default function App(){
     return true;
   }),[dataWithOverrides,selEtats,selGammes,selPJs,allPJs,selProjets,allProjets,selPays,allPays,selChefs,allChefs,onlyDrift,onlyChanged,changeMarks,selMoisArrivee,selMoisTests,selMoisFinProd,selMoisDepart]);
 
-  const VIEWS=[{id:"home",icon:"home",l:"Aujourd'hui"},{id:"table",icon:"list",l:"Liste"},{id:"gantt",icon:"gantt",l:"Gantt"},{id:"calendar",icon:"calendar",l:"Calendrier"},{id:"changes",icon:"changes",l:"Modifications"},{id:"comments",icon:"comments",l:"Commentaires"},...(canSeeTests?[{id:"tests",icon:"check",l:"Tests"}]:[]),...(isOwner?[{id:"planner",icon:"gantt",l:"Planificateur"}]:[]),...(canCash?[{id:"cashin",icon:"euro",l:"Cash in",mgr:"cash"}]:[]),...(isOwner?[{id:"turbinesNav",icon:"factory",l:"Turbines",mgr:"turbines"}]:[])]; // v204 : planificateur réservé au propriétaire ; v212 : Cash in et Turbines ouvrent leur page du Manager
+  const VIEWS=[{id:"home",icon:"home",l:"Aujourd'hui"},{id:"table",icon:"list",l:"Liste"},{id:"gantt",icon:"gantt",l:"Gantt"},{id:"calendar",icon:"calendar",l:"Calendrier"},{id:"changes",icon:"changes",l:"Modifications"},{id:"comments",icon:"comments",l:"Commentaires"},...(canSeeTests?[{id:"tests",icon:"check",l:"Tests"}]:[]),...(isOwner?[{id:"planner",icon:"gantt",l:"Planificateur"}]:[]),...(canCash?[{id:"cashin",icon:"euro",l:"Cash in"}]:[]),...(pinOk?[{id:"turbines",icon:"factory",l:"Turbines"}]:[])]; // v204 : planificateur réservé au propriétaire ; v217 (demandé : « Cash in et Turbines doivent ouvrir une nouvelle page, pas les pages du Manager ») : pages à part entière
 
   // v159 : menu principal libellé (réductible, mémorisé) + recherche « Aller à… » (Ctrl K) sur toutes les pages
   // v191 (demandé : « l'onglet à gauche doit se masquer automatiquement ») : menu réduit par défaut, il s'ouvre par-dessus la page au survol
@@ -1024,6 +1031,8 @@ export default function App(){
   const [planDoc,setPlanDoc]=useState(null),[planLoaded,setPlanLoaded]=useState(false);
   useEffect(()=>{if(!currentUser||!isOwner||view!=="planner")return undefined;return listenPlan(d=>{setPlanDoc(d);setPlanLoaded(true);});},[currentUser,isOwner,view]);
   useEffect(()=>{if(view==="planner"&&currentUser&&!isOwner)setView("table");},[view,currentUser,isOwner]);
+  useEffect(()=>{if(!currentUser)return;if((view==="cashin"&&!canCash)||(view==="turbines"&&!pinOk))setView("home");},[view,currentUser,canCash,pinOk]);
+  const [cashFocusApp,setCashFocusApp]=useState(null); // v217 : PJ à afficher dans la page Cash in (depuis une fiche projet)
   const pjCtxTests=canSeeTests?testsDoc:null,pjCtx=useMemo(()=>({testsDoc:pjCtxTests,turbineDoc}),[pjCtxTests,turbineDoc]); // v203 : pastilles de la fiche d'un PJ // v196 : entrées du Manager affichées dans ce menu (fournies par ManagerPanel)
   const closePeek=delay=>{clearTimeout(navPeekT.current);navPeekT.current=setTimeout(()=>setNavPeek(false),delay||0);};
   const navOverlay=true;
@@ -1060,7 +1069,7 @@ export default function App(){
         {!navCompact&&<span style={{textAlign:"left",lineHeight:1.25}}><span style={{display:"block",fontFamily:T.fontDisplay,fontWeight:800,fontSize:14,letterSpacing:".02em",color:NAV.industrial?"#FFFFFF":T.ink900}}>{SITE_NAME} <span style={{color:NAV.group}}>· {SITE_SCOPE}</span></span><span style={{display:"block",fontSize:11,color:NAV.ink,marginTop:2,whiteSpace:"normal"}}>{SITE_SUB}</span></span>}
         </span>
       </button>
-      {!(view==="manager"&&mgrNav)&&[["Planning",["home","table","gantt","calendar"]],["Suivi",["changes","comments","tests","planner"]],["Gestion",["cashin","turbinesNav"]]].map(([gl,ids])=>{const items=VIEWS.filter(v=>ids.includes(v.id));if(!items.length)return null;return(<React.Fragment key={gl}>
+      {!(view==="manager"&&mgrNav)&&[["Planning",["home","table","gantt","calendar"]],["Suivi",["changes","comments","tests","planner"]],["Gestion",["cashin","turbines"]]].map(([gl,ids])=>{const items=VIEWS.filter(v=>ids.includes(v.id));if(!items.length)return null;return(<React.Fragment key={gl}>
         {!navCompact&&<div className="enogia-nav-grp" style={{fontSize:12,fontWeight:700,color:NAV.group,fontFamily:T.font,padding:"12px 10px 4px",whiteSpace:"nowrap"}}>{gl}</div>}
         {navCompact&&<div className="enogia-nav-grp" style={{width:18,height:1,background:NAV.industrial?"rgba(255,255,255,.18)":T.line,margin:"4px 0"}}/>}
         {items.map(v=>{const on=v.mgr?(view==="manager"&&managerTab===v.mgr):view===v.id;const ttl=v.id==="changes"&&unseenChanges.length?"Modifications — "+unseenChanges.length+" nouvelle"+(unseenChanges.length>1?"s":"")+" version"+(unseenChanges.length>1?"s":""):v.l;return(
@@ -1128,6 +1137,12 @@ export default function App(){
 
       <PjDialogCtx.Provider value={pjCtx}>
       <main id="enogia-main" tabIndex={-1} className="enogia-main" style={{padding:D.main,flex:1,outline:"none"}}>
+        {newVsInitial&&pinOk&&<div role="status" style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",marginBottom:12,padding:"10px 14px",borderRadius:10,background:T.teal100,color:T.teal600,fontFamily:T.font,fontSize:FZ.sm,fontWeight:600}}>
+          <NavIcon name="pin" size={16}/>
+          <span style={{flex:"1 1 320px"}}>{newVsInitial.pjs.length} PJ de cet import {newVsInitial.pjs.length>1?"ne sont pas":"n'est pas"} dans le planning initial : {newVsInitial.pjs.slice(0,6).join(", ")}{newVsInitial.pjs.length>6?"…":""}. Sans initial, leur dérive ne se calcule pas.</span>
+          <button type="button" onClick={()=>{setInitialAddFromImport({rows:newVsInitial.rows,n:Date.now()});setNewVsInitial(null);setManagerTab("derives");setView("manager");}} style={{border:"none",borderRadius:8,padding:"6px 12px",background:T.ink900,color:T.card,fontWeight:700,cursor:"pointer",fontFamily:T.font,minHeight:32}}>Les ancrer dans l'initial…</button>
+          <button type="button" onClick={()=>setNewVsInitial(null)} style={{border:"1px solid "+T.line,borderRadius:8,padding:"6px 12px",background:T.card,color:T.ink700,fontWeight:700,cursor:"pointer",fontFamily:T.font,minHeight:32}}>Plus tard</button>
+        </div>}
         {(syncLost||offline)&&<div role="alert" style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",marginBottom:12,padding:"10px 14px",borderRadius:10,background:T.amber100,borderLeft:"4px solid "+T.amber500,color:T.ink900,fontSize:FZ.sm,fontFamily:T.font}}>
           <NavIcon name="warning" size={18}/>
           <span style={{flex:1,minWidth:200}}>{offline?"Vous êtes hors ligne : les données affichées ne se mettent plus à jour.":"La connexion aux données a été interrompue : les informations affichées peuvent être anciennes."}</span>
@@ -1147,13 +1162,13 @@ export default function App(){
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
               <span style={{fontFamily:T.fontDisplay,fontWeight:600,color:T.ink900,fontSize:FZ.lg,display:"flex",alignItems:"center",gap:8}}><NavIcon name="manager" size={20}/>Espace Manager</span>
             </div>
-            <ManagerPanel onNav={setMgrNav} changeLog={changeLog} data={dataWithOverrides} progress={progressEff} setProgress={setProgress} releases={releasesAll} saveReleaseNotes={saveReleaseNotes} releaseSelection={releaseSelection} saveReleaseSelection={saveReleaseSelection} publishRelease={publishRelease} isBeta={IS_BETA} initialData={initialData} lastInitialImport={lastInitialImport} lastInitialAdd={lastInitialAdd} onInitialImport={handleInitialImport} onInitialAdd={handleInitialAdd} initialImporting={initialImporting}
+            <ManagerPanel initialAddFromImport={initialAddFromImport} onNav={setMgrNav} changeLog={changeLog} data={dataWithOverrides} progress={progressEff} setProgress={setProgress} releases={releasesAll} saveReleaseNotes={saveReleaseNotes} releaseSelection={releaseSelection} saveReleaseSelection={saveReleaseSelection} publishRelease={publishRelease} isBeta={IS_BETA} initialData={initialData} lastInitialImport={lastInitialImport} lastInitialAdd={lastInitialAdd} onInitialImport={handleInitialImport} onInitialAdd={handleInitialAdd} initialImporting={initialImporting}
               etatChoice={etatChoiceEff} setEtatFor={setEtatFor} saveProgress={saveProgress} savingProgress={savingProgress} progressSaved={progressSaved}
               tab={managerTab} setTab={setManagerTab} jumpFiche={managerJump} clientPresence={clientPresence} setClientPresenceFor={setClientPresenceFor}
               closurePeriods={closurePeriods} setClosurePeriods={setClosurePeriodsAndSave}
               productionExclusions={productionExclusions} setProductionExclusionDays={setProductionExclusionDays} customEtats={customEtats} setCustomEtats={setCustomEtatsAndSave} certifs={certifs} setCertifs={setCertifsAndSave} compCatalog={compCatalog} setCompCatalog={setCompCatalogAndSave}
               comments={comments} delays={delays} delayTypes={delayTypes} setDelayTypes={setDelayTypesAndSave} addDelayAllocationMulti={addDelayAllocationMulti} deleteDelayAllocation={(pj,id)=>deleteDelayAllocation(pj,id,PIN)}
-              turbineDoc={turbineDoc} saveTurbines={saveTurbines} managerEmails={managerEmails} setManagerEmails={setManagerEmailsAndSave} currentUserEmail={currentUser?.email} authorName={authorName} buildVersion={canEditMeta?APP_BUILD_VERSION:null} profiles={profiles} saveProfiles={saveProfiles} savePjMetaOverride={savePjMetaOverride} savePjMetaMulti={savePjMetaMulti} addCommentMulti={addCommentMulti} addComment={addComment} resolveComment={resolveComment} deleteComment={(pj,idx)=>deleteComment(pj,idx,PIN)}/>
+              turbineDoc={turbineDoc} saveTurbines={saveTurbines} onOpenCashPage={canCash?(pj=>{setCashFocusApp({pj,n:Date.now()});setView("cashin");}):null} managerEmails={managerEmails} setManagerEmails={setManagerEmailsAndSave} currentUserEmail={currentUser?.email} authorName={authorName} buildVersion={canEditMeta?APP_BUILD_VERSION:null} profiles={profiles} saveProfiles={saveProfiles} savePjMetaOverride={savePjMetaOverride} savePjMetaMulti={savePjMetaMulti} addCommentMulti={addCommentMulti} addComment={addComment} resolveComment={resolveComment} deleteComment={(pj,idx)=>deleteComment(pj,idx,PIN)}/>
           </div>
           :<ManagerAccessNotice email={currentUser?.email}/>)
         :(
@@ -1162,9 +1177,9 @@ export default function App(){
                 jamais varier selon les filtres actifs sur la liste, demandé explicitement — seules
                 les 4 répartitions en camembert, elles, continuent de suivre les filtres. */}
             {view!=="home"&&(()=>{const v=VIEWS.find(x=>x.id===view);if(!v)return null;
-              const subs={planner:"Brouillon réservé à vous : déplacez, liez et forcez les PJ ; rien ne change pour les autres avant « Publier »",table:filtered.length+" machine"+(filtered.length>1?"s":"")+" affichée"+(filtered.length>1?"s":"")+" · survolez un état ou un écart pour le détail",gantt:"Chaque machine, étape par étape · Ctrl + molette pour zoomer",calendar:"Arrivées, tests, fins de production et départs",changes:"Ce qui a changé à chaque mise à jour du planning",comments:"Les échanges, machine par machine",tests:"Plans d'essais et affectations des testeurs"};
-              /* v183 : plus de sur-titre ; v185 : une couleur de trait par page (demandé) */const SS=stageSoft(),HH=stripeHues(),acc={table:SS.production.solid,gantt:SS.tests.solid,calendar:SS.finProd.solid,changes:T.ember500,comments:HH.note,tests:SS.arrivee.solid,planner:SS.production.solid}[view];return <PageHead title={v.l} sub={subs[view]} accent={acc}/>;})()}
-            {view==="home"&&<HomeView pinOk={pinOk} testsDoc={canSeeTests?testsDoc:null} data={dataWithOverrides} comments={comments} myEmail={currentUser&&currentUser.email} myName={authorName} people={peopleAll} unseenChanges={unseenChanges} lastImport={lastImport} onOpenPj={setCalSel} onGo={setView} profiles={profiles} owner={isOwner} cash={canCash} turbineDoc={turbineDoc} onOpenCash={canCash?()=>{setManagerTab("cash");setView("manager");}:null}/>}
+              const subs={planner:"Brouillon réservé à vous : déplacez, liez et forcez les PJ ; rien ne change pour les autres avant « Publier »",table:filtered.length+" machine"+(filtered.length>1?"s":"")+" affichée"+(filtered.length>1?"s":"")+" · survolez un état ou un écart pour le détail",gantt:"Chaque machine, étape par étape · Ctrl + molette pour zoomer",calendar:"Arrivées, tests, fins de production et départs",changes:"Ce qui a changé à chaque mise à jour du planning",comments:"Les échanges, machine par machine",tests:"Plans d'essais et affectations des testeurs",cashin:"Encaissements et facturation des PJ",turbines:"Pool de turbines et attributions"};
+              /* v183 : plus de sur-titre ; v185 : une couleur de trait par page (demandé) */const SS=stageSoft(),HH=stripeHues(),acc={table:SS.production.solid,gantt:SS.tests.solid,calendar:SS.finProd.solid,changes:T.ember500,comments:HH.note,tests:SS.arrivee.solid,planner:SS.production.solid,cashin:SS.finProd.solid,turbines:SS.depart.solid}[view];return <PageHead title={v.l} sub={subs[view]} accent={acc}/>;})()}
+            {view==="home"&&<HomeView pinOk={pinOk} testsDoc={canSeeTests?testsDoc:null} data={dataWithOverrides} comments={comments} myEmail={currentUser&&currentUser.email} myName={authorName} people={peopleAll} unseenChanges={unseenChanges} lastImport={lastImport} onOpenPj={setCalSel} onGo={setView} profiles={profiles} owner={isOwner} cash={canCash} turbineDoc={turbineDoc} onOpenCash={canCash?()=>setView("cashin"):null}/>}
             {view==="table"&&<DashboardSummary data={filtered} allData={dataWithOverrides} progress={progressEff} changeLog={changeLog} onOpenChanges={()=>setView("changes")}/>}
             {view==="table"&&<TableView data={filtered} progress={progressEff} df={df} setDf={setDf} setEtatFor={setEtatFor} setClientPresenceFor={setClientPresenceFor}
               selEtats={selEtats} setSelEtats={setSelEtats}
@@ -1200,6 +1215,8 @@ export default function App(){
               selEtats={selEtats} setSelEtats={setSelEtats} allPJs={allPJs} selPJs={selPJs} setSelPJs={setSelPJs}/>}
             {/* v204 (demandé : « un onglet uniquement pour moi, sous Tests ») : le module de planification (src/planner), brouillon séparé du planning ;
                 « Publier » seul modifie le planning lu par tous. Liens entre PJ, dates imposées, une production / un banc à la fois, charge par semaine. */}
+            {view==="cashin"&&canCash&&<CashInTab authorName={authorName} focus={cashFocusApp}/>}
+            {view==="turbines"&&pinOk&&<TurbinesTab doc={turbineDoc||{turbines:[]}} save={saveTurbines} data={dataWithOverrides} authorName={authorName} superAdmin={pinOk}/>}
             {view==="planner"&&isOwner&&<PlannerView testers={testsDoc&&Array.isArray(testsDoc.testers)?testsDoc.testers:[]} planLoaded={planLoaded} planDoc={planDoc} rows={dataWithOverrides} closurePeriods={closurePeriods} authorName={authorName}
               onSavePlan={p=>savePlan(p,authorName)} onPublish={(plan,note)=>publishPlan({plan,closurePeriods,by:authorName,note})} onLoadHistory={loadHistory} onRestorePublication={restorePublication}/>}
             {view==="tests"&&canSeeTests&&<TestsTab doc={testsDoc} save={saveTests} data={dataWithOverrides} certifs={certifs} canEdit={pinOk} me={currentUser&&currentUser.email} signApi={signApi}/>}
