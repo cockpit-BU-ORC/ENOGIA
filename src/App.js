@@ -68,7 +68,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-28-v210-cashin-admins";
+const APP_BUILD_VERSION = "2026-10-28-v211-planificateur-taches";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -1190,7 +1190,7 @@ export default function App(){
               selEtats={selEtats} setSelEtats={setSelEtats} allPJs={allPJs} selPJs={selPJs} setSelPJs={setSelPJs}/>}
             {/* v204 (demandé : « un onglet uniquement pour moi, sous Tests ») : le module de planification (src/planner), brouillon séparé du planning ;
                 « Publier » seul modifie le planning lu par tous. Liens entre PJ, dates imposées, une production / un banc à la fois, charge par semaine. */}
-            {view==="planner"&&isOwner&&<PlannerView planLoaded={planLoaded} planDoc={planDoc} rows={dataWithOverrides} closurePeriods={closurePeriods} authorName={authorName}
+            {view==="planner"&&isOwner&&<PlannerView testers={testsDoc&&Array.isArray(testsDoc.testers)?testsDoc.testers:[]} planLoaded={planLoaded} planDoc={planDoc} rows={dataWithOverrides} closurePeriods={closurePeriods} authorName={authorName}
               onSavePlan={p=>savePlan(p,authorName)} onPublish={(plan,note)=>publishPlan({plan,closurePeriods,by:authorName,note})} onLoadHistory={loadHistory} onRestorePublication={restorePublication}/>}
             {view==="tests"&&canSeeTests&&<TestsTab doc={testsDoc} save={saveTests} data={dataWithOverrides} certifs={certifs} canEdit={pinOk} me={currentUser&&currentUser.email} signApi={signApi}/>}
             {view==="changes"&&<ChangesView entries={changeLog} onOpenPj={jumpToPj}/>}

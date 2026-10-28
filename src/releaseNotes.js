@@ -7,6 +7,18 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v211",
+    date: "2026-10-28",
+    title: "V211 : planificateur — nouveaux PJ et tâches, 2 bancs, liens en deux clics",
+    items: [
+      { t: "Nouveau PJ", d: "« ＋ Nouveau PJ » crée un PJ avec ses tâches Arrivée → Production → Tests → Packing → Départ, enchaînées, durées du modèle de la gamme, ressources (atelier, banc, testeur) et tâches supplémentaires. Un PJ du planning reprend ses dates.", admin: true },
+      { t: "Tâches", d: "« ＋ Tâche » ajoute une tâche à un PJ (phase Production / Tests / Packing, ressource, durée, heures, placée après une autre) ; ⋮⋮ pour changer l'ordre des tâches ; « Fin de production » s'appelle Packing.", admin: true },
+      { t: "Liens en deux clics", d: "« Lier » sur une tâche, puis clic sur la tâche qui doit suivre ; un message confirme le lien.", admin: true },
+      { t: "2 bancs de tests", d: "Chaque PJ a son banc (Banc 1 / 2 sur la ligne Tests), deux couloirs de bancs, et « Répartir les tests sur les 2 bancs » dans Règles.", admin: true },
+      { t: "Navigation", d: "Clic droit maintenu pour faire glisser le Gantt et les couloirs ; tâche mère plus fine ; hauteur des couloirs au curseur ; la liste laisse la place au Gantt sur un petit écran.", admin: true },
+    ],
+  },
+  {
     id: "2026-10-v210",
     date: "2026-10-28",
     title: "V210 : Cash in pour les chefs de projet, tous les PJ dans le planning des bancs",

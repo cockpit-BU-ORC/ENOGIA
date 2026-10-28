@@ -14,7 +14,7 @@ export const STEPS = [
   ["arrivee", "Arrivée", true],       // jalon : le matériel est arrivé
   ["production", "Production", false], // phase atelier — une seule à la fois (règle)
   ["tests", "Tests", false],           // phase banc d'essai — un seul PJ à la fois (règle)
-  ["finProd", "Fin de production", false], // phase atelier — peut se faire en même temps qu'une autre production
+  ["finProd", "Packing", false], // phase atelier (ex « Fin de production », renommée Packing en V211) — peut se faire en même temps qu'une autre production
   ["depart", "Départ", true],          // jalon : le PJ part
 ];
 export const STEP_KIND = { arrivee: "jalon", production: "atelier", tests: "banc", finProd: "atelier", depart: "jalon" };
@@ -28,7 +28,16 @@ export const STEP_IS_MS = Object.fromEntries(STEPS.map(s => [s[0], s[2]]));
 export const LINK_TYPES = ["FS", "SS", "FF", "SF"];
 // Tâches libres (ajoutées à la main, clés « x1 », « x2 »…) : elles ne sont pas publiées, mais ordonnancées et reliables comme les autres
 export const isCustomKey = k => /^x\d+$/.test(k);
-export const stepKeysOf = p => { const st = (p && p.steps) || {}; return [...STEP_KEYS.filter(k => st[k]), ...Object.keys(st).filter(k => isCustomKey(k) && st[k]).sort((a, b) => Number(a.slice(1)) - Number(b.slice(1)))]; };
+export const stepKeysOf = p => {
+  const st = (p && p.steps) || {}; const all = [...STEP_KEYS.filter(k => st[k]), ...Object.keys(st).filter(k => isCustomKey(k) && st[k]).sort((a, b) => Number(a.slice(1)) - Number(b.slice(1)))];
+  // v211 : ordre d'affichage choisi par l'utilisateur (p.seq), les tâches absentes de la liste gardent leur place par défaut à la fin
+  if (!Array.isArray(p && p.seq)) return all; const set = new Set(all); const out = p.seq.filter(k => set.has(k)); all.forEach(k => { if (!out.includes(k)) out.push(k); }); return out;
+};
+// v211 : phases (Production, Tests, Packing) et ressources (atelier, testeur, banc 1 / 2)
+export const PHASES = [["production", "Production"], ["tests", "Tests"], ["finProd", "Packing"]];
+export const PHASE_LABEL = Object.fromEntries(PHASES);
+export const benchOf = p => (p && p.steps && p.steps.tests && Number(p.steps.tests.banc) === 2 ? 2 : 1);
+export const phaseOf = (p, k) => isCustomKey(k) ? ((p && p.steps && p.steps[k] && p.steps[k].phase) || null) : (k === "production" || k === "tests" || k === "finProd" ? k : null);
 export const stepLabel = (p, k) => isCustomKey(k) ? ((p && p.steps && p.steps[k] && p.steps[k].name) || "Tâche") : STEP_LABEL[k];
 export function addCustomStep(plan, pj, name) {
   const np = clonePlan(plan); const p = np.pjs.find(x => x.pj === pj); if (!p) return { plan, key: null };
@@ -99,7 +108,9 @@ export function allLinks(plan) {
   Object.keys(RES_STEP).forEach(res => {
     if (!r[res]) return;
     const o = orderOf(plan, res).filter(x => !(plan._free && plan._free[res] === x)); // _free : PJ laissé libre (calcul interne)
-    for (let i = 1; i < o.length; i++) out.push({ id: "seq:" + res + ":" + o[i], from: nodeKey(o[i - 1], RES_STEP[res]), to: nodeKey(o[i], RES_STEP[res]), type: "FS", lag: 0, seq: true, res });
+    // v211 : deux bancs de tests — une file d'attente par banc (le PJ suit le précédent du même banc)
+    const groups = res === "banc" ? [1, 2].map(b => o.filter(x => benchOf((plan.pjs || []).find(q => q.pj === x)) === b)) : [o];
+    groups.forEach(g => { for (let i = 1; i < g.length; i++) out.push({ id: "seq:" + res + ":" + g[i], from: nodeKey(g[i - 1], RES_STEP[res]), to: nodeKey(g[i], RES_STEP[res]), type: "FS", lag: 0, seq: true, res }); });
   });
   return out;
 }
@@ -185,12 +196,14 @@ export function phaseHours(p) {
 export function stepWork(p, step) {
   if (step === "tests") return p.steps && p.steps.tests ? (Number(p.hAu) || 0) : null;
   if (step === "production" || step === "finProd") { const h = phaseHours(p); return p.steps && p.steps[step] ? Math.round((h[step] || 0) * 10) / 10 : null; }
+  if (isCustomKey(step) && p.steps && p.steps[step]) return Number(p.steps[step].work) || 0; // v211 : heures d'une tâche libre
   return null;
 }
 export function setWork(plan, pj, step, hours) {
   const np = clonePlan(plan); const p = np.pjs.find(x => x.pj === pj); if (!p || !p.steps[step]) return plan;
   const h = Math.max(0, Math.round((Number(hours) || 0) * 10) / 10);
   if (step === "tests") { p.hAu = h; return np; }
+  if (isCustomKey(step)) { p.steps[step] = { ...p.steps[step], work: h }; return np; } // v211
   if (step !== "production" && step !== "finProd") return plan;
   const other = step === "production" ? "finProd" : "production"; const cur = phaseHours(p);
   if (!p.steps[other]) { p.hAt = h; delete p.hEst; p.steps[step] = { ...p.steps[step], work: null }; return np; }
@@ -206,6 +219,12 @@ export function atelierPhases(plan, sched) {
       const n = sched.nodes[nodeKey(p.pj, step)]; if (!n || n.s === null || !h[step]) return;
       const pos = ord.indexOf(p.pj);
       out.push({ key: nodeKey(p.pj, step), pj: p.pj, step, s: n.s, f: n.f, dur: n.dur, hours: h[step], daily: h[step] / n.dur, prio: pos >= 0 ? pos : 1000 + pi });
+    });
+    // v211 : une tâche libre affectée à l'atelier compte dans la charge avec ses heures
+    Object.keys(p.steps || {}).filter(isCustomKey).forEach(k => {
+      const st = p.steps[k], hrs = Number(st && st.work) || 0; if (!st || (st.res || "atelier") !== "atelier" || hrs <= 0) return;
+      const n = sched.nodes[nodeKey(p.pj, k)]; if (!n || n.s === null) return; const pos = ord.indexOf(p.pj);
+      out.push({ key: nodeKey(p.pj, k), pj: p.pj, step: k, s: n.s, f: n.f, dur: n.dur, hours: hrs, daily: hrs / Math.max(1, n.dur), prio: pos >= 0 ? pos : 1000 + pi });
     });
   });
   return out;
@@ -576,4 +595,51 @@ export function setCapWeek(plan, week, hours) {
   const capWeeks = { ...((plan && plan.capWeeks) || {}) };
   if (hours == null || hours === "") delete capWeeks[week]; else capWeeks[week] = Math.max(0, Math.round(Number(hours) || 0));
   return { ...clonePlan(plan), capWeeks };
+}
+
+// ── v211 (demandé : « bouger les tâches entre elles dans l'ordre ; un nouveau PJ garde des tâches initiales associées à la
+// production, aux tests ou au packing, avec une ressource atelier ou testeur ; il y a 2 bancs de tests ») ─────────────────
+export function moveStepOrder(plan, pj, key, beforeKey) {
+  const np = clonePlan(plan); const p = np.pjs.find(x => x.pj === pj); if (!p || key === beforeKey) return plan;
+  const cur = stepKeysOf(p).filter(k => k !== key); const i = beforeKey ? cur.indexOf(beforeKey) : -1;
+  if (i < 0) cur.push(key); else cur.splice(i, 0, key); p.seq = cur; return np;
+}
+export function setStepMeta(plan, pj, key, patch) {
+  const np = clonePlan(plan); const p = np.pjs.find(x => x.pj === pj); if (!p || !p.steps[key]) return plan;
+  p.steps[key] = { ...p.steps[key], ...patch }; return np;
+}
+// Répartit les tests sur les 2 bancs : dans l'ordre des débuts, chaque PJ va sur le banc libéré le plus tôt.
+export function splitBenches(plan, cal) {
+  const s = schedule({ ...plan, rules: { ...rulesOf(plan), banc: false } }, cal); const np = clonePlan(plan); const free = { 1: -Infinity, 2: -Infinity };
+  np.pjs.map(p => ({ p, n: s.nodes[nodeKey(p.pj, "tests")] })).filter(x => x.p.steps.tests && x.n && x.n.s !== null).sort((a, b) => a.n.s - b.n.s)
+    .forEach(({ p, n }) => { const b = free[1] < n.s ? 1 : free[2] < n.s ? 2 : (free[1] <= free[2] ? 1 : 2); p.steps.tests = { ...p.steps.tests, banc: b }; free[b] = Math.max(free[b], n.f); });
+  return np;
+}
+// Ajoute une tâche libre rattachée à une phase et une ressource, placée après une autre tâche du même PJ (lien fin → début).
+export function addPhaseTask(plan, pj, { name, phase, dur, work, res, after }) {
+  const r = addCustomStep(plan, pj, name); if (!r.key) return { plan, key: null };
+  const step = splitKey(r.key).step; let np = setStepMeta(r.plan, pj, step, { phase: phase || null, res: res || (phase === "tests" ? "testeur" : "atelier"), dur: Math.max(1, Number(dur) || 1), work: Number(work) || 0 });
+  if (after) { np = addLink(np, { from: nodeKey(pj, after), to: r.key, type: "FS", lag: 0 }); const p = np.pjs.find(x => x.pj === pj); const ks = stepKeysOf(p).filter(k => k !== step); ks.splice(ks.indexOf(after) + 1, 0, step); p.seq = ks; }
+  return { plan: np, key: r.key };
+}
+// Nouveau PJ complet : Arrivée → Production → Tests → Packing → Départ (durées du modèle de la gamme), enchaînés, avec leurs
+// ressources (atelier, banc + testeur) et des tâches supplémentaires rangées dans leur phase.
+export function newPjPlan(plan, cal, o) {
+  const pj = String(o.pj || "").trim().toUpperCase(); if (!pj || plan.pjs.some(x => x.pj === pj)) return plan;
+  const D = o.durs || {}, W = o.works || {}, start = o.start || cal.dateOf(cal.idxOnOrAfter(isoOfDay(dayNum(new Date().toISOString().slice(0, 10)))));
+  const steps = {
+    arrivee: { dur: 0, snet: start },
+    production: { dur: Math.max(1, Number(D.production) || 15), snet: null, res: "atelier", ...(W.production != null ? { work: Number(W.production) || 0 } : {}) },
+    tests: { dur: Math.max(1, Number(D.tests) || 3), snet: null, banc: Number(o.banc) === 2 ? 2 : 1, res: o.tester || "testeur" },
+    finProd: { dur: Math.max(1, Number(D.finProd) || 5), snet: null, res: "atelier", ...(W.finProd != null ? { work: Number(W.finProd) || 0 } : {}) },
+    depart: { dur: 0, snet: null },
+  };
+  const seq = ["arrivee", "production"]; let n = 1; const extra = (o.extra || []).filter(x => x && String(x.name || "").trim());
+  const byPhase = ph => extra.filter(x => (x.phase || "production") === ph).map(x => { const k = "x" + n++; steps[k] = { dur: Math.max(1, Number(x.dur) || 1), snet: null, name: String(x.name).trim(), custom: true, phase: x.phase || "production", res: x.res || (x.phase === "tests" ? "testeur" : "atelier"), work: Number(x.work) || 0 }; return k; });
+  seq.push(...byPhase("production"), "tests", ...byPhase("tests"), "finProd", ...byPhase("finProd"), "depart");
+  const links = []; for (let i = 1; i < seq.length; i++) links.push({ id: "c_" + pj + "_" + seq[i], from: nodeKey(pj, seq[i - 1]), to: nodeKey(pj, seq[i]), type: "FS", lag: 0 });
+  const hAt = (Number(W.production) || 0) + (Number(W.finProd) || 0);
+  let np = clonePlan(plan); np.pjs.push({ pj, nomProjet: o.nomProjet || null, gamme: o.gamme || null, hAt, hAu: Number(W.tests) || 0, steps, seq }); np.links.push(...links);
+  np = repositionInOrder(np, cal, "prod", pj, start); np = repositionInOrder(np, cal, "banc", pj, start);
+  return np;
 }

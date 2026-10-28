@@ -4,7 +4,7 @@ import { useSheetJS } from "../components/SharedUI";
 import { guessGamme } from "../parsers";
 import {
   STEPS, splitKey, makeCalendar, schedule, planToRows, diffRows, initPlanFromRows,
-  addPj, initBlankPlan, setStep, rulesOf, summarizeChanges, diffPlans, DEFAULT_CAP, releasePins, setCap, setRules, loadModel, levelPlan, fitDurations, hasLevel, clearLevel, sortPjsByStart, capWeek, fillMissingHours, refreshPlanFromRows, setCapWeek,
+  addPj, initBlankPlan, setStep, rulesOf, summarizeChanges, diffPlans, DEFAULT_CAP, releasePins, setCap, setRules, loadModel, levelPlan, fitDurations, hasLevel, clearLevel, sortPjsByStart, capWeek, fillMissingHours, refreshPlanFromRows, setCapWeek, newPjPlan, addPhaseTask, splitBenches, stepKeysOf, stepLabel, PHASES,
 } from "./engine";
 import { parseMsPlan, compareWithMs, applyCalibration } from "./importPlan";
 import { PlannerGantt, fmtIso, makeTimeline, leftWidthWith, STEP_COLOR } from "./PlannerGantt";
@@ -104,8 +104,8 @@ function ImportDialog({ cal, rows, plan, onClose, onApply }) {
         <label><input type="radio" checked={mode === "replace"} onChange={() => setMode("replace")} /> Tout remplacer</label></div>}
     </div>}
     <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 14 }}>
-      <button style={BTN} onClick={onClose}>Annuler</button>
-      <button style={BTN_P} disabled={!res} onClick={() => { onApply(finalPlan); onClose(); }}>Importer dans le plan</button>
+      <button style={{ ...BTN }} onClick={onClose}>Annuler</button>
+      <button style={{ ...BTN_P }} disabled={!res} onClick={() => { onApply(finalPlan); onClose(); }}>Importer dans le plan</button>
     </div>
   </Modal>);
 }
@@ -114,7 +114,7 @@ function ImportDialog({ cal, rows, plan, onClose, onApply }) {
 // v204 (demandé : « modifier en live les tâches types par gamme avec leur durée habituelle ») : modèles par gamme —
 // durée (jours ouvrés) et travail (heures) des phases Production, Tests et Fin de production. « Proposer » part de la moyenne
 // des PJ de la gamme dans le plan ; « Appliquer » écrit ces durées sur les PJ de la gamme (les dates imposées sont gardées).
-const TPL_STEPS = [["production", "Production"], ["tests", "Tests"], ["finProd", "Fin de production"]];
+const TPL_STEPS = [["production", "Production"], ["tests", "Tests"], ["finProd", "Packing"]];
 function gammeOfPj(pj, rows) { const r = (rows || []).find(x => x.pj === pj); return (r && r.gamme) || "Sans gamme"; }
 function TemplatesDialog({ plan, rows, onClose, onApply }) {
   const gammes = [...new Set((plan.pjs || []).map(x => gammeOfPj(x.pj, rows)))].sort();
@@ -134,14 +134,89 @@ function TemplatesDialog({ plan, rows, onClose, onApply }) {
           <td style={{ padding: "4px 4px" }}><input type="number" min={0} aria-label={g + " " + k + " durée"} value={(tpl[g] && tpl[g][k] && tpl[g][k].dur != null) ? tpl[g][k].dur : ""} onChange={e => set(g, k, "dur", e.target.value)} style={{ ...INP, width: 64 }} /></td>
           <td style={{ padding: "4px 4px" }}><input type="number" min={0} aria-label={g + " " + k + " travail"} value={(tpl[g] && tpl[g][k] && tpl[g][k].work != null) ? tpl[g][k].work : ""} placeholder="h" onChange={e => set(g, k, "work", e.target.value)} style={{ ...INP, width: 64 }} /></td>
         </React.Fragment>)}
-        <td style={{ padding: "4px 4px", whiteSpace: "nowrap" }}><button style={BTN} onClick={() => setTpl(t => ({ ...t, [g]: avg(g) }))} title="Reprendre la moyenne des PJ de cette gamme dans le plan">Proposer</button> <button style={BTN} onClick={() => { save(false, g); }}>Appliquer</button></td>
+        <td style={{ padding: "4px 4px", whiteSpace: "nowrap" }}><button style={{ ...BTN }} onClick={() => setTpl(t => ({ ...t, [g]: avg(g) }))} title="Reprendre la moyenne des PJ de cette gamme dans le plan">Proposer</button> <button style={{ ...BTN }} onClick={() => { save(false, g); }}>Appliquer</button></td>
       </tr>)}</tbody>
     </table></div>
     <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 14 }}>
-      <button style={BTN} onClick={onClose}>Fermer</button>
-      <button style={BTN} onClick={() => { save(false); onClose(); }}>Enregistrer les modèles</button>
-      <button style={BTN_P} onClick={() => { save(true); onClose(); }}>Appliquer à tous les PJ</button>
+      <button style={{ ...BTN }} onClick={onClose}>Fermer</button>
+      <button style={{ ...BTN }} onClick={() => { save(false); onClose(); }}>Enregistrer les modèles</button>
+      <button style={{ ...BTN_P }} onClick={() => { save(true); onClose(); }}>Appliquer à tous les PJ</button>
     </div>
+  </Modal>);
+}
+
+// ── v211 (demandé : « comment rajouter des tâches ? pourquoi je ne peux pas rajouter de PJ ? un nouveau PJ garde des tâches
+// initiales associées à la production, aux tests ou au packing, avec une ressource atelier ou testeur ») ───────────────────
+const RES_OPTS = (testers, phase) => [...(phase === "tests" ? [] : [["atelier", "Atelier"]]), ["testeur", "Testeur (à désigner)"], ...testers.map(t => [t.id, t.name])];
+function NewPjDialog({ plan, rows, cal, testers, onClose, onApply }) {
+  const known = (rows || []).filter(r => r && r.pj && !plan.pjs.some(p => p.pj === r.pj));
+  const gammes = [...new Set([...(rows || []).map(r => r && r.gamme).filter(Boolean), ...Object.keys(plan.templates || {})])].sort();
+  const [f, setF] = useState({ pj: "", nomProjet: "", gamme: "", start: "", banc: 1, tester: "testeur", durs: { production: 15, tests: 3, finProd: 5 }, works: { production: "", finProd: "" } });
+  const [extra, setExtra] = useState([]); const [err, setErr] = useState("");
+  const set = patch => setF(x => ({ ...x, ...patch }));
+  const fromRow = known.find(r => String(r.pj).toUpperCase() === f.pj.trim().toUpperCase());
+  const pickGamme = g => { const t = (plan.templates || {})[g]; set({ gamme: g, ...(t ? { durs: { production: (t.production && t.production.dur) || 15, tests: (t.tests && t.tests.dur) || 3, finProd: (t.finProd && t.finProd.dur) || 5 }, works: { production: t.production && t.production.work != null ? t.production.work : "", finProd: t.finProd && t.finProd.work != null ? t.finProd.work : "" } } : {}) }); };
+  const ok = () => {
+    const code = f.pj.trim().toUpperCase(); if (!code) { setErr("Saisissez le n° du PJ."); return; } if (plan.pjs.some(p => p.pj === code)) { setErr(code + " est déjà dans le plan."); return; }
+    if (fromRow) { onApply(addPj(plan, fromRow.pj, fromRow, cal), fromRow.pj); onClose(); return; }
+    if (!f.start) { setErr("Choisissez la date d'arrivée."); return; }
+    const W = { production: f.works.production === "" ? null : Number(f.works.production), finProd: f.works.finProd === "" ? null : Number(f.works.finProd) };
+    onApply(newPjPlan(plan, cal, { pj: code, nomProjet: f.nomProjet.trim() || null, gamme: f.gamme || null, start: f.start, banc: f.banc, tester: f.tester, durs: f.durs, works: { production: W.production == null ? undefined : W.production, finProd: W.finProd == null ? undefined : W.finProd }, extra }), code); onClose();
+  };
+  const L = { display: "flex", flexDirection: "column", gap: 4, fontSize: 12.5, fontWeight: 700, color: T.ink700 };
+  const num = (v, on, label) => <input type="number" min={0} value={v} onChange={e => on(e.target.value)} aria-label={label} className="pg-in" style={{ ...INP, width: 70 }} />;
+  return (<Modal title="Nouveau PJ" onClose={onClose} width={760}>
+    <div style={{ fontSize: 13, color: T.ink500, lineHeight: 1.5, marginBottom: 12 }}>Un PJ du planning reprend ses dates. Un nouveau PJ reçoit ses tâches : Arrivée → Production → Tests → Packing → Départ, enchaînées, avec leurs ressources ; les durées viennent du modèle de sa gamme.</div>
+    <datalist id="np-known">{known.map(r => <option key={r.pj} value={r.pj}>{r.nomProjet || ""}</option>)}</datalist>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 10 }}>
+      <label style={L}>N° du PJ<input list="np-known" value={f.pj} onChange={e => { set({ pj: e.target.value }); setErr(""); }} placeholder="PJ512" className="pg-in" style={{ ...INP, fontFamily: T.fontMono }} /></label>
+      {!fromRow && <label style={L}>Projet<input value={f.nomProjet} onChange={e => set({ nomProjet: e.target.value })} placeholder="Client / site" className="pg-in" style={{ ...INP }} /></label>}
+      {!fromRow && <label style={L}>Gamme<select value={f.gamme} onChange={e => pickGamme(e.target.value)} className="pg-in" style={{ ...INP }}><option value="">—</option>{gammes.map(g => <option key={g} value={g}>{g}</option>)}</select></label>}
+      {!fromRow && <label style={L}>Arrivée<input type="date" value={f.start} onChange={e => { set({ start: e.target.value }); setErr(""); }} className="pg-in" style={{ ...INP }} /></label>}
+    </div>
+    {fromRow ? <div style={{ marginTop: 12, fontSize: 13, color: T.emerald600, fontWeight: 600 }}>{fromRow.pj} est dans le planning : ses dates et ses heures sont reprises.</div> : <>
+      <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 14, fontSize: 12.5 }}>
+        <thead><tr>{["Tâche", "Durée (j ouvrés)", "Heures", "Ressource"].map(h => <th key={h} style={{ textAlign: "left", padding: "6px 6px", color: T.ink500, fontWeight: 600, borderBottom: "1px solid " + T.line }}>{h}</th>)}</tr></thead>
+        <tbody>
+          <tr><td style={{ padding: 6, fontWeight: 700 }}>Production</td><td>{num(f.durs.production, v => set({ durs: { ...f.durs, production: v } }), "Durée production")}</td><td>{num(f.works.production, v => set({ works: { ...f.works, production: v } }), "Heures production")}</td><td style={{ color: T.ink500 }}>Atelier</td></tr>
+          <tr><td style={{ padding: 6, fontWeight: 700 }}>Tests</td><td>{num(f.durs.tests, v => set({ durs: { ...f.durs, tests: v } }), "Durée tests")}</td><td />
+            <td style={{ display: "flex", gap: 6, padding: "4px 0" }}><select value={f.banc} onChange={e => set({ banc: Number(e.target.value) })} aria-label="Banc" className="pg-in" style={{ ...INP }}><option value={1}>Banc 1</option><option value={2}>Banc 2</option></select>
+              <select value={f.tester} onChange={e => set({ tester: e.target.value })} aria-label="Testeur" className="pg-in" style={{ ...INP }}>{RES_OPTS(testers, "tests").map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></td></tr>
+          <tr><td style={{ padding: 6, fontWeight: 700 }}>Packing</td><td>{num(f.durs.finProd, v => set({ durs: { ...f.durs, finProd: v } }), "Durée packing")}</td><td>{num(f.works.finProd, v => set({ works: { ...f.works, finProd: v } }), "Heures packing")}</td><td style={{ color: T.ink500 }}>Atelier</td></tr>
+          {extra.map((x, i) => <tr key={i}>
+            <td style={{ padding: "4px 0", display: "flex", gap: 6 }}><input value={x.name} onChange={e => setExtra(l => l.map((y, j) => j === i ? { ...y, name: e.target.value } : y))} placeholder="Nom de la tâche" aria-label="Nom de la tâche" className="pg-in" style={{ ...INP, flex: 1 }} />
+              <select value={x.phase} onChange={e => setExtra(l => l.map((y, j) => j === i ? { ...y, phase: e.target.value, res: e.target.value === "tests" ? "testeur" : "atelier" } : y))} aria-label="Phase" className="pg-in" style={{ ...INP }}>{PHASES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></td>
+            <td>{num(x.dur, v => setExtra(l => l.map((y, j) => j === i ? { ...y, dur: v } : y)), "Durée")}</td>
+            <td>{num(x.work, v => setExtra(l => l.map((y, j) => j === i ? { ...y, work: v } : y)), "Heures")}</td>
+            <td style={{ display: "flex", gap: 6, padding: "4px 0" }}><select value={x.res} onChange={e => setExtra(l => l.map((y, j) => j === i ? { ...y, res: e.target.value } : y))} aria-label="Ressource" className="pg-in" style={{ ...INP }}>{RES_OPTS(testers, x.phase).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
+              <button type="button" onClick={() => setExtra(l => l.filter((_, j) => j !== i))} aria-label="Retirer cette tâche" style={{ ...BTN, padding: "4px 8px" }}>×</button></td>
+          </tr>)}
+        </tbody>
+      </table>
+      <button type="button" onClick={() => setExtra(l => [...l, { name: "", phase: "production", dur: 2, work: "", res: "atelier" }])} style={{ ...BTN, marginTop: 8 }}>＋ Tâche supplémentaire</button>
+    </>}
+    {err && <div role="alert" style={{ color: T.red500, fontWeight: 600, fontSize: 13, marginTop: 10 }}>{err}</div>}
+    <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 14 }}><button style={{ ...BTN }} onClick={onClose}>Annuler</button><button style={{ ...BTN_P }} onClick={ok}>Ajouter le PJ</button></div>
+  </Modal>);
+}
+function TaskDialog({ plan, pj, after, testers, onClose, onApply }) {
+  const p = plan.pjs.find(x => x.pj === pj); const keys = p ? stepKeysOf(p) : [];
+  const [f, setF] = useState({ name: "", phase: "production", dur: 2, work: "", res: "atelier", after: after && keys.includes(after) ? after : (keys.includes("production") ? "production" : keys[keys.length - 1] || "") });
+  const [err, setErr] = useState(""); const set = patch => setF(x => ({ ...x, ...patch }));
+  const ok = () => { if (!f.name.trim()) { setErr("Donnez un nom à la tâche."); return; } const r = addPhaseTask(plan, pj, { name: f.name.trim(), phase: f.phase, dur: f.dur, work: f.work, res: f.res, after: f.after || null }); onApply(r.plan, r.key); onClose(); };
+  const L = { display: "flex", flexDirection: "column", gap: 4, fontSize: 12.5, fontWeight: 700, color: T.ink700 };
+  return (<Modal title={"Nouvelle tâche · " + pj} onClose={onClose} width={620}>
+    <div style={{ fontSize: 13, color: T.ink500, lineHeight: 1.5, marginBottom: 12 }}>La tâche est rangée dans sa phase et commence après la tâche choisie (lien fin → début). Ses heures comptent dans la charge si elle est faite par l'atelier.</div>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))", gap: 10 }}>
+      <label style={L}>Nom<input autoFocus value={f.name} onChange={e => { set({ name: e.target.value }); setErr(""); }} placeholder="Câblage armoire" className="pg-in" style={{ ...INP }} /></label>
+      <label style={L}>Phase<select value={f.phase} onChange={e => set({ phase: e.target.value, res: e.target.value === "tests" ? "testeur" : "atelier" })} className="pg-in" style={{ ...INP }}>{PHASES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
+      <label style={L}>Ressource<select value={f.res} onChange={e => set({ res: e.target.value })} className="pg-in" style={{ ...INP }}>{RES_OPTS(testers, f.phase).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
+      <label style={L}>Durée (j ouvrés)<input type="number" min={1} value={f.dur} onChange={e => set({ dur: e.target.value })} className="pg-in" style={{ ...INP }} /></label>
+      <label style={L}>Heures<input type="number" min={0} value={f.work} onChange={e => set({ work: e.target.value })} className="pg-in" style={{ ...INP }} /></label>
+      <label style={L}>Après<select value={f.after} onChange={e => set({ after: e.target.value })} className="pg-in" style={{ ...INP }}><option value="">— (sans lien)</option>{keys.map(k => <option key={k} value={k}>{stepLabel(p, k)}</option>)}</select></label>
+    </div>
+    {err && <div role="alert" style={{ color: T.red500, fontWeight: 600, fontSize: 13, marginTop: 10 }}>{err}</div>}
+    <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 14 }}><button style={{ ...BTN }} onClick={onClose}>Annuler</button><button style={{ ...BTN_P }} onClick={ok}>Ajouter la tâche</button></div>
   </Modal>);
 }
 
@@ -154,8 +229,8 @@ function BlankDialog({ rows, onClose, onApply, hasPlan }) {
     <input value={txt} onChange={e => setTxt(e.target.value)} style={{ ...INP, width: "100%", fontFamily: T.fontMono }} aria-label="Codes des PJ à garder" />
     <div style={{ fontSize: 12.5, color: T.ink500, marginTop: 6 }}>{codes.map(c => { const r = (rows || []).find(x => String(x.pj).toLowerCase() === c.toLowerCase()); return c.toUpperCase() + (r ? "" : " (nouveau)"); }).join(" · ")}</div>
     <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 14 }}>
-      <button style={BTN} onClick={onClose}>Annuler</button>
-      <button style={BTN_P} disabled={!codes.length} onClick={() => { onApply(initBlankPlan(codes, rows)); onClose(); }}>Créer le plan vierge ({codes.length} PJ)</button>
+      <button style={{ ...BTN }} onClick={onClose}>Annuler</button>
+      <button style={{ ...BTN_P }} disabled={!codes.length} onClick={() => { onApply(initBlankPlan(codes, rows)); onClose(); }}>Créer le plan vierge ({codes.length} PJ)</button>
     </div>
   </Modal>);
 }
@@ -167,7 +242,7 @@ function PublishDialog({ plan, sched, rows, pubRows, changes, onClose, onPublish
   const FL = { arrivee: "Arrivée", tests: "Tests", testsFin: "Fin tests", finProd: "Fin prod.", depart: "Départ", heuresAtelier: "Heures atelier", heuresAutom: "Heures autom", new: "Nouveau PJ" };
   const go = async () => { setBusy(true); setErr(""); try { const r = await onPublish(note.trim()); setDone(r); } catch (e) { setErr(e.message || String(e)); } setBusy(false); };
   return (<Modal title="Publier dans le planning actuel" onClose={onClose} width={760}>
-    {done ? <div style={{ fontSize: 14, color: T.emerald600, fontWeight: 700 }}>✓ Publié : {done.nChanges} changement(s) appliqués. Tous les écrans utilisent maintenant ces dates.<div style={{ marginTop: 12, textAlign: "right" }}><button style={BTN_P} onClick={onClose}>Fermer</button></div></div> : <>
+    {done ? <div style={{ fontSize: 14, color: T.emerald600, fontWeight: 700 }}>✓ Publié : {done.nChanges} changement(s) appliqués. Tous les écrans utilisent maintenant ces dates.<div style={{ marginTop: 12, textAlign: "right" }}><button style={{ ...BTN_P }} onClick={onClose}>Fermer</button></div></div> : <>
       <div style={{ fontSize: 13.5, color: T.ink500, lineHeight: 1.55 }}>{changes.length === 0 ? "Le planning actuel est déjà identique au plan : rien à publier." : <>Ces changements remplaceront les dates du planning actuel (calendrier, Gantt, liste, KPI, rapport CODIR). Le planning <b>initial</b> n'est pas modifié. Une copie de l'état actuel est gardée pour pouvoir annuler.</>}</div>
       {unscheduled > 0 && <div style={{ color: T.amber600, fontSize: 12.5, marginTop: 6 }}>⚠ {unscheduled} étape(s) du plan n'ont pas de date (ni date imposée ni prédécesseur) : les dates correspondantes seront vides.</div>}
       {changes.length > 0 && <div style={{ marginTop: 10, border: "1px solid " + T.line, borderRadius: 10, maxHeight: 300, overflow: "auto" }}>
@@ -181,8 +256,8 @@ function PublishDialog({ plan, sched, rows, pubRows, changes, onClose, onPublish
       {changes.length > 0 && <input value={note} onChange={e => setNote(e.target.value)} placeholder="Commentaire de publication (facultatif) : ex. « glissement PJ449 suite retard fournisseur »" style={{ ...INP, width: "100%", marginTop: 10 }} />}
       {err && <div style={{ color: T.red500, fontWeight: 700, fontSize: 13, marginTop: 8 }}>{err}</div>}
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 14 }}>
-        <button style={BTN} onClick={onClose}>Annuler</button>
-        <button style={BTN_P} disabled={busy || changes.length === 0 || !!sched.cycle} onClick={go}>{busy ? "Publication…" : "Publier " + changes.length + " changement" + (changes.length > 1 ? "s" : "")}</button>
+        <button style={{ ...BTN }} onClick={onClose}>Annuler</button>
+        <button style={{ ...BTN_P }} disabled={busy || changes.length === 0 || !!sched.cycle} onClick={go}>{busy ? "Publication…" : "Publier " + changes.length + " changement" + (changes.length > 1 ? "s" : "")}</button>
       </div></>}
   </Modal>);
 }
@@ -197,10 +272,10 @@ function HistoryDialog({ onClose, onLoad, onRestorePlan, onRestorePub }) {
     {items && items.map(e => (<div key={e.at} style={{ borderTop: "1px solid " + T.line, padding: "10px 0", display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
       <div style={{ flex: 1, minWidth: 220 }}><div style={{ fontWeight: 700, fontSize: 13.5, color: T.ink900 }}>{new Date(e.at).toLocaleString("fr-FR")} · {e.by || "—"}</div>
         <div style={{ fontSize: 12.5, color: T.ink500 }}>{e.nChanges} changement(s){e.note ? " · " + e.note : ""}</div></div>
-      <button style={BTN} title="Recharge le plan tel qu'il était à cette publication (n'est pas publié automatiquement)" onClick={() => { onRestorePlan(e.plan); setMsg("Plan rechargé dans l'éditeur (non publié)."); }}>Recharger ce plan</button>
+      <button style={{ ...BTN }} title="Recharge le plan tel qu'il était à cette publication (n'est pas publié automatiquement)" onClick={() => { onRestorePlan(e.plan); setMsg("Plan rechargé dans l'éditeur (non publié)."); }}>Recharger ce plan</button>
       <button style={{ ...BTN, color: T.red500 }} title="Remet dans le planning actuel les dates d'avant cette publication" onClick={async () => { if (!window.confirm("Annuler cette publication et remettre le planning actuel dans son état d'avant ?")) return; try { await onRestorePub(e.at); setMsg("Publication annulée : le planning actuel est revenu à l'état précédent."); } catch (x) { setErr(x.message); } }}>Annuler cette publication</button>
     </div>))}
-    <div style={{ textAlign: "right", marginTop: 10 }}><button style={BTN} onClick={onClose}>Fermer</button></div>
+    <div style={{ textAlign: "right", marginTop: 10 }}><button style={{ ...BTN }} onClick={onClose}>Fermer</button></div>
   </Modal>);
 }
 
@@ -228,11 +303,11 @@ function Banner({ tone, children }) {
   return <div role="status" style={{ background: c[0], color: c[1], borderRadius: 10, padding: "8px 14px", fontWeight: 600, fontSize: 13, marginBottom: 10 }}>{children}</div>;
 }
 
-export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, authorName, onSavePlan, onPublish, onLoadHistory, onRestorePublication }) {
+export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, authorName, onSavePlan, onPublish, onLoadHistory, onRestorePublication, testers }) {
   const [plan, setPlanState] = useState(null); const [preview, setPreview] = useState(null); const [proposal, setProposal] = useState(null);
   const [undo, setUndo] = useState([]); const [redo, setRedo] = useState([]);
   const [sel, setSel] = useState(null); const [exp, setExp] = useState(() => new Set());
-  const [q, setQ] = useState(""); const [dlg, setDlg] = useState(null); const [saveSt, setSaveSt] = useState(""); const [notice, setNotice] = useState(null); const [addCode, setAddCode] = useState("");
+  const [q, setQ] = useState(""); const [dlg, setDlg] = useState(null); const [saveSt, setSaveSt] = useState(""); const [notice, setNotice] = useState(null);
   const [ui, setUiState] = useState(loadUi); const [scrollX, setScrollX] = useState(0);
   const [refId, setRefId] = useState("pub"); const [hist, setHist] = useState(null); const baseRef = useRef(null);
   const lastSaved = useRef(null); const gref = useRef(null); const lref = useRef(null); const expInit = useRef(false);
@@ -324,7 +399,8 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, authorN
     if (kind === "level") { const r = levelPlan(plan, cal); np = r.plan; title = "Nivellement de la charge atelier (" + Math.round(capWeek(plan)) + " h / semaine)"; }
     else if (kind === "early") { np = releasePins(plan); title = "Dates au plus tôt : dates imposées libérées (sauf arrivées et départs)"; }
     else if (kind === "fit") { np = fitDurations(plan); title = "Durées allongées pour tenir la capacité"; }
-    else if (kind === "rules") { np = setRules(plan, patch); title = Object.keys(patch).map(k => (k === "prod" ? "Une production à la fois" : "Un test au banc à la fois") + (patch[k] ? " : activé" : " : désactivé")).join(", "); }
+    else if (kind === "bench") { np = splitBenches(plan, cal); title = "Répartition des tests sur les 2 bancs"; }
+    else if (kind === "rules") { np = setRules(plan, patch); title = Object.keys(patch).map(k => (k === "prod" ? "Une production à la fois" : "Un test à la fois par banc") + (patch[k] ? " : activé" : " : désactivé")).join(", "); }
     else if (kind === "sort") { apply(sortPjsByStart(plan, cal)); return; }
     else { np = clearLevel(plan); title = "Retrait du nivellement"; }
     const cmp = compareScheds(schedule(plan, cal), schedule(np, cal), cal);
@@ -361,8 +437,11 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, authorN
   const nLinks = (plan.links || []).length; const rules = rulesOf(plan); const cap = plan.cap || DEFAULT_CAP;
   const rowsNotInPlan = (rows || []).filter(r => !plan.pjs.some(p => p.pj === r.pj));
   const selPj = sel && plan.pjs.some(p => p.pj === sel.pj) ? sel : null;
+  const laneBH = typeof ui.laneH === "number" ? ui.laneH : ({ s: 11, m: 17, l: 22 }[ui.laneH] || 17);
+  // v211 : en Liste + Gantt, la liste prend au plus ~42 % de la largeur tant qu'on ne l'a pas réglée (sinon le Gantt n'apparaît pas sur un petit écran)
+  const listW = ui.listW || (ui.view === "both" && typeof window !== "undefined" ? Math.max(380, Math.min(736, Math.round(window.innerWidth * 0.42))) : null);
   const noT = ui.view === "list" || ui.view === "changes"; const cmp = proposal && proposal.cmp; const ro = ui.lock || !!proposal;
-  const loadEl = load ? <PlannerLoad plan={live} load={load} cal={cal} tl={tl} scrollX={scrollX} leftW={leftWidthWith(ui.view, ui.listW)} onCapWeek={(w, h) => apply(setCapWeek(plan, w, h))} small={!!ui.loadSmall} setSmall={v => setUi({ loadSmall: v })} standalone={ui.view === "list" || ui.view === "lanes"} mode={ui.loadMode} setMode={m => setUi({ loadMode: m })} cap={cap}
+  const loadEl = load ? <PlannerLoad plan={live} load={load} cal={cal} tl={tl} scrollX={scrollX} leftW={leftWidthWith(ui.view, listW)} onCapWeek={(w, h) => apply(setCapWeek(plan, w, h))} small={!!ui.loadSmall} setSmall={v => setUi({ loadSmall: v })} standalone={ui.view === "list" || ui.view === "lanes"} mode={ui.loadMode} setMode={m => setUi({ loadMode: m })} cap={cap}
         onCap={patch => apply(setCap(plan, patch))} readOnly={ro} onPropose={startProposal} hasLevelNow={hasLevel(plan)} nTooDense={load.tooDense.length} /> : null;
   return (<div className="pg-root">
     <style>{pgCss()}</style>
@@ -398,19 +477,19 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, authorN
 <div role="group" aria-label="Affichage" style={{ display: "inline-flex" }}>
         {[["list", "Liste"], ["both", "Liste + Gantt"], ["gantt", "Gantt"], ["lanes", "Couloirs"], ["changes", "Modifications"]].map(([k, l], i, arr) => <button key={k} className="pg-tb" aria-pressed={ui.view === k} onClick={() => setUi({ view: k })} style={{ borderRadius: i === 0 ? "8px 0 0 8px" : i === arr.length - 1 ? "0 8px 8px 0" : 0, marginLeft: i ? -1 : 0 }}>{l}{k === "changes" && nTouched > 0 && <span style={{ marginLeft: 6, background: ui.view === k ? "rgba(255,255,255,.25)" : T.amber100, color: ui.view === k ? "#fff" : T.amber600, borderRadius: 99, padding: "0 7px", fontSize: 11.5 }}>{nTouched}</span>}</button>)}
       </div>
-      {ui.view === "lanes" && <div role="group" aria-label="Hauteur des couloirs" style={{ display: "inline-flex" }}>
-        {[["s", "Serrés"], ["m", "Normaux"], ["l", "Larges"]].map(([k, l], i) => <button key={k} className="pg-tb" aria-pressed={(ui.laneH || "m") === k} onClick={() => setUi({ laneH: k })} title="Hauteur des couloirs" style={{ borderRadius: i === 0 ? "8px 0 0 8px" : i === 2 ? "0 8px 8px 0" : 0, marginLeft: i ? -1 : 0 }}>{l}</button>)}
-      </div>}
+      {ui.view === "lanes" && <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 700, color: T.ink700 }}>Hauteur des couloirs
+        <input type="range" min={8} max={30} step={1} value={laneBH} onChange={e => setUi({ laneH: Number(e.target.value) })} aria-label="Hauteur des couloirs" style={{ width: 120 }} /></label>}
       <input value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher un PJ…" aria-label="Rechercher un PJ" className="pg-in" style={{ ...INP, width: 160 }} />
       {!ui.lock && <>
         <span style={{ display: "inline-flex", gap: 4 }}>
-          <input list="plan-add" value={addCode} onChange={e => setAddCode(e.target.value)} placeholder="Ajouter un PJ…" aria-label="Code du PJ à ajouter" className="pg-in" style={{ ...INP, width: 130, fontFamily: T.fontMono }} />
-          <button className="pg-tb" disabled={!addCode.trim() || !!proposal} onClick={() => { const c = addCode.trim().toUpperCase(); apply(addPj(plan, c, (rows || []).find(r => r.pj === c) || null, cal)); setSel({ pj: c, step: null }); toggleExp(c, true); setAddCode(""); }}>＋ PJ</button>
+          <button className="pg-tb" disabled={!!proposal} onClick={() => setDlg("newpj")} title="Créer un PJ avec ses tâches (production, tests, packing) et ses ressources">＋ Nouveau PJ</button>
+          <button className="pg-tb" disabled={!!proposal || !selPj} onClick={() => setDlg("task")} title={selPj ? "Ajouter une tâche à " + selPj.pj : "Sélectionnez d'abord un PJ (clic sur sa ligne)"}>＋ Tâche{selPj ? " à " + selPj.pj : ""}</button>
         </span>
         <Pop width={330} align="left" trigger={(o, t) => <button className="pg-tb" aria-haspopup="menu" aria-expanded={o} onClick={t}>Règles ▾{overlaps && !rules.prod && !rules.banc ? <span style={{ color: T.amber600 }}> ⚠ {overlaps}</span> : null}</button>}>
           {close => (<div style={{ padding: 4, fontSize: 13, color: T.ink700, display: "flex", flexDirection: "column", gap: 8 }}>
             <label style={{ display: "flex", gap: 8, alignItems: "flex-start", cursor: "pointer" }}><input type="checkbox" checked={rules.prod} onChange={e => { close(); startProposal("rules", { prod: e.target.checked }); }} /><span><b>Une production à la fois</b><br /><span style={{ fontSize: 12, color: T.ink500 }}>Les productions passent l'une après l'autre (ordre = priorité). Aperçu avant application.</span></span></label>
-            <label style={{ display: "flex", gap: 8, alignItems: "flex-start", cursor: "pointer" }}><input type="checkbox" checked={rules.banc} onChange={e => { close(); startProposal("rules", { banc: e.target.checked }); }} /><span><b>Un test au banc à la fois</b><br /><span style={{ fontSize: 12, color: T.ink500 }}>Un seul PJ au banc d'essai en même temps.</span></span></label>
+            <label style={{ display: "flex", gap: 8, alignItems: "flex-start", cursor: "pointer" }}><input type="checkbox" checked={rules.banc} onChange={e => { close(); startProposal("rules", { banc: e.target.checked }); }} /><span><b>Un test à la fois par banc</b><br /><span style={{ fontSize: 12, color: T.ink500 }}>2 bancs : chaque banc enchaîne ses PJ. Le banc se choisit sur la ligne Tests (« Banc 1 / 2 »).</span></span></label>
+            <button type="button" className="pg-tb" onClick={() => { close(); startProposal("bench"); }} title="Répartit les tests sur le banc libéré le plus tôt (aperçu avant d'appliquer)">Répartir les tests sur les 2 bancs</button>
             <label style={{ display: "flex", gap: 8, alignItems: "flex-start", cursor: "pointer" }}><input type="checkbox" checked={holidays} onChange={e => { close(); apply({ ...plan, cal: { ...(plan.cal || {}), holidays: e.target.checked } }); }} /><span><b>Jours fériés non ouvrés</b><br /><span style={{ fontSize: 12, color: T.ink500 }}>Modifie le calendrier : les dates se recalculent (annulable).</span></span></label>
             <div style={{ fontSize: 12, color: overlaps ? T.amber600 : T.emerald600, borderTop: "1px solid " + T.line, paddingTop: 6 }}>{overlaps ? overlaps + " chevauchement" + (overlaps > 1 ? "s" : "") + " de Production / Tests dans le plan actuel." : "Aucun chevauchement de Production / Tests."}</div>
           </div>)}
@@ -418,7 +497,7 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, authorN
       </>}
       <span style={{ flex: 1 }} />
       <span style={{ display: "inline-flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: T.ink500, alignItems: "center" }}>
-        {[["arrivee", "Arrivée", 1], ["production", "Production"], ["tests", "Tests"], ["finProd", "Fin de prod."], ["depart", "Départ", 1]].map(([k, l, ms]) => <span key={k} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><span style={{ width: ms ? 9 : 16, height: 9, background: STEP_COLOR[k], transform: ms ? "rotate(45deg)" : "none", borderRadius: 2, display: "inline-block" }} />{l}</span>)}
+        {[["arrivee", "Arrivée", 1], ["production", "Production"], ["tests", "Tests"], ["finProd", "Packing"], ["depart", "Départ", 1]].map(([k, l, ms]) => <span key={k} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><span style={{ width: ms ? 9 : 16, height: 9, background: STEP_COLOR[k], transform: ms ? "rotate(45deg)" : "none", borderRadius: 2, display: "inline-block" }} />{l}</span>)}
         <span><span style={{ color: T.ink500 }}>→</span> lien</span>
         {(rules.prod || rules.banc) && <span style={{ color: T.teal600 }}>⇢ ordre de passage</span>}
       </span>
@@ -439,20 +518,22 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, authorN
 
     {/* v208 (demandé : « la charge atelier toujours visible en bas de l'écran ») : la charge colle au bas de l'écran ; en Couloirs elle suit les couloirs */}
     {ui.view === "lanes" && <div style={{ ...CARD, overflow: "clip", marginBottom: 12 }}>
-      <PlannerLanes laneH={ui.laneH || "m"} plan={live} basePlan={plan} sched={sched} cal={cal} closurePeriods={closurePeriods} load={load} tl={tl} sel={selPj} setSel={setSel} readOnly={ro} onPreview={setPreview} onCommit={onCommit} scrollRef={lref} />
+      <PlannerLanes laneH={laneBH} plan={live} basePlan={plan} sched={sched} cal={cal} closurePeriods={closurePeriods} load={load} tl={tl} sel={selPj} setSel={setSel} readOnly={ro} onPreview={setPreview} onCommit={onCommit} scrollRef={lref} />
       {loadEl}
     </div>}
     {ui.view === "changes" && chg && <div style={{ ...CARD, overflow: "hidden" }}>
       <PlannerChanges summary={chg.summary} planDiff={chg.planDiff || []} hasDetail={!!chg.planDiff} refs={chg.refs} refId={chg.id} setRefId={setRefId} refLabel={chg.label} loadingRefs={hist === null} q={q} onOpenPj={openPj} />
     </div>}
     {ui.view !== "changes" && <div style={{ ...CARD, overflow: "clip" }}>
-      <PlannerGantt listW={ui.listW} onListW={w => setUi({ listW: w })} plan={live} basePlan={plan} sched={sched} cal={cal} closurePeriods={closurePeriods} tl={tl} pjs={pjsShown} sel={selPj} setSel={setSel} expanded={exp} toggleExp={toggleExp}
+      <PlannerGantt listW={listW} onListW={w => setUi({ listW: w })} testers={testers} onInfo={t => setNotice({ tone: "ok", text: t })} plan={live} basePlan={plan} sched={sched} cal={cal} closurePeriods={closurePeriods} tl={tl} pjs={pjsShown} sel={selPj} setSel={setSel} expanded={exp} toggleExp={toggleExp}
         showLinks={ui.links} view={ui.view} readOnly={ro} onPreview={setPreview} onCommit={onCommit} onError={onError} onReorder={reorder} scrollRef={gref} onScrollX={setScrollX} />
       {ui.view !== "lanes" && loadEl}
     </div>}
     {ui.view !== "changes" && <div style={{ fontSize: 12, color: T.ink500, marginTop: 8, lineHeight: 1.6 }}>
       Cliquez une date, une durée, un travail ou un prédécesseur pour la modifier (Entrée valide, Échap annule) · glissez une barre pour la déplacer, sa poignée pour changer la durée · glissez ⋮⋮ pour changer la priorité d'un PJ · prédécesseurs : numéros de ligne, <b>2 ; 7SS+3j</b> (FS par défaut, SS, FF, SF, décalage en jours ouvrés).
     </div>}
+    {dlg === "newpj" && <NewPjDialog plan={plan} rows={rows} cal={cal} testers={testers || []} onClose={() => setDlg(null)} onApply={(np, pj) => { apply(np); setSel({ pj, step: null }); toggleExp(pj, true); setNotice({ tone: "ok", text: pj + " ajouté au plan avec ses tâches." }); }} />}
+    {dlg === "task" && selPj && <TaskDialog plan={plan} pj={selPj.pj} after={selPj.step} testers={testers || []} onClose={() => setDlg(null)} onApply={(np, key) => { apply(np); toggleExp(selPj.pj, true); setSel({ pj: selPj.pj, step: key ? key.split("|").pop() : null }); }} />}
     {dlg === "templates" && <TemplatesDialog plan={plan} rows={rows} onClose={() => setDlg(null)} onApply={np => apply(np)} />}
     {dlg === "blank" && <BlankDialog rows={rows} hasPlan onClose={() => setDlg(null)} onApply={np => { setSel(null); setExp(new Set(np.pjs.map(p => p.pj))); apply(np); }} />}
     {dlg === "import" && <ImportDialog cal={cal} rows={rows} plan={plan} onClose={() => setDlg(null)} onApply={np => apply(np)} />}

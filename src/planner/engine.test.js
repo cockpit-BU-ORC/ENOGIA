@@ -1,4 +1,4 @@
-import { makeCalendar, initPlanFromRows, schedule, loadModel, levelPlan, shiftPj, pjDates, refreshPlanFromRows, planToRows, diffRows, setCapWeek } from "./engine";
+import { makeCalendar, initPlanFromRows, schedule, loadModel, levelPlan, shiftPj, pjDates, refreshPlanFromRows, planToRows, diffRows, setCapWeek, newPjPlan, splitBenches, benchOf, allLinks, moveStepOrder, stepKeysOf, addPhaseTask, nodeKey } from "./engine";
 
 // v204 : le module de planification est rebranché (onglet Planificateur) — vérifie le calcul de base.
 const rows = [
@@ -33,5 +33,17 @@ describe("planificateur (v204)", () => {
     const w = lm.weeks.find(x => x.week === "2026-10-19"), n = lm.weeks.find(x => x.week === "2026-10-26");
     expect(w.cap).toBe(70); expect(w.special).toBe(true); expect(n.special).toBe(false);
     expect(setCapWeek(plan, "2026-10-19", null).capWeeks["2026-10-19"]).toBeUndefined();
+  });
+  test("v211 : nouveau PJ complet, 2 bancs, ordre des tâches", () => {
+    let plan = initPlanFromRows(rows, cal);
+    plan = newPjPlan(plan, cal, { pj: "pj9", start: "2026-11-02", durs: { production: 10, tests: 2, finProd: 3 }, works: { production: 80, finProd: 20 }, banc: 2, extra: [{ name: "Câblage", phase: "production", dur: 2, work: 16 }] });
+    const p = plan.pjs.find(x => x.pj === "PJ9");
+    expect(stepKeysOf(p)).toEqual(["arrivee", "production", "x1", "tests", "finProd", "depart"]);
+    expect(benchOf(p)).toBe(2); expect(p.hAt).toBe(100);
+    const s9 = schedule(plan, cal); expect(s9.cycle).toBeFalsy(); expect(pjDates(s9, "PJ9").depart > "2026-11-02").toBe(true);
+    expect(stepKeysOf(moveStepOrder(plan, "PJ9", "x1", "production").pjs.find(x => x.pj === "PJ9"))[1]).toBe("x1");
+    const t = addPhaseTask(plan, "PJ1", { name: "Essai froid", phase: "tests", dur: 1, after: "tests" }); expect(t.key).toBe(nodeKey("PJ1", "x1"));
+    const two = splitBenches({ ...plan, rules: { banc: true } }, cal); const seqB = allLinks(two).filter(l => l.res === "banc");
+    seqB.forEach(l => { const a = two.pjs.find(x => x.pj === l.from.split("|")[0]), b = two.pjs.find(x => x.pj === l.to.split("|")[0]); expect(benchOf(a)).toBe(benchOf(b)); });
   });
 });

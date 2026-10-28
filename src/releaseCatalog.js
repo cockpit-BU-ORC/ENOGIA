@@ -418,4 +418,7 @@ export const RELEASE_CATALOG = [
     ["Cash in", "Ouvert aux admins, bloc sur leur accueil ; plus de sauvegarde / reprise JSON."],
     ["Tests", "Tous les PJ en ligne, colonnes PJ · gamme · testeur · client · NOBO · tests."],
   ] },
+  { v: "211", t: "Planificateur : nouveaux PJ et tâches, 2 bancs, liens en deux clics", items: [
+    ["Planificateur", "Nouveau PJ avec tâches et ressources, ajout et ordre des tâches, Packing, 2 bancs, liens en deux clics, clic droit pour se déplacer."],
+  ] },
 ];

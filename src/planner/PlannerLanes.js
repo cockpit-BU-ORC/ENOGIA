@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import { T } from "../theme";
-import { STEP_LABEL, nodeKey, dayNum, isoOfDay, moveStepTo, setStep, orderOf, rulesOf, schedule } from "./engine";
+import { STEP_LABEL, nodeKey, dayNum, isoOfDay, moveStepTo, setStep, orderOf, rulesOf, schedule, benchOf } from "./engine";
 import { fmtIso, STEP_COLOR, headerCells } from "./PlannerGantt";
 
 // Vue « Couloirs » : le planning lu comme un atelier. Deux rails de jalons (Arrivées en haut, Départs en bas) encadrent
@@ -15,13 +15,16 @@ export const LANE_DENS = { s: [14, 11, 3, 28, 9.5], m: [21, 17, 7, 44, 10.5], l:
 const LANES = [
   { id: "arr", step: "arrivee", title: "Arrivées", ms: true },
   { id: "prod", step: "production", title: "Production", res: "prod" },
-  { id: "banc", step: "tests", title: "Banc d'essai", res: "banc" },
-  { id: "fin", step: "finProd", title: "Fin de production" },
+  { id: "banc1", step: "tests", title: "Banc 1", res: "banc", banc: 1 }, // v211 : deux bancs de tests
+  { id: "banc2", step: "tests", title: "Banc 2", res: "banc", banc: 2 },
+  { id: "fin", step: "finProd", title: "Packing" },
   { id: "dep", step: "depart", title: "Départs", ms: true },
 ];
 
 export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load, tl, sel, setSel, readOnly, onPreview, onCommit, scrollRef, laneH }) {
-  const C = pal(); const [TR, BH, PAD, MINH, FS] = LANE_DENS[laneH] || LANE_DENS.m;
+  // v211 : hauteur réglable en continu (curseur) — laneH = hauteur de barre en px (ou s / m / l des versions précédentes)
+  const C = pal(); const bh = typeof laneH === "number" ? laneH : ({ s: 11, m: 17, l: 22 }[laneH] || 17);
+  const [TR, BH, PAD, MINH, FS] = [bh + 4, bh, Math.max(3, Math.round(bh * 0.4)), Math.max(26, Math.round(bh * 2.6)), Math.max(9, Math.min(12, Math.round(bh * 0.62 * 2) / 2))];
   const { lo, px, W } = tl; const nodes = sched.nodes; const base = basePlan || plan;
   const rules = rulesOf(plan);
   const names = useMemo(() => { const m = {}; plan.pjs.forEach(p => { m[p.pj] = p.nomProjet || ""; }); return m; }, [plan]);
@@ -38,6 +41,7 @@ export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load,
     LANES.forEach(l => {
       const arr = [];
       plan.pjs.forEach(p => {
+        if (l.banc && benchOf(p) !== l.banc) return;
         const key = nodeKey(p.pj, l.step), n = nodes[key]; if (!n || n.s === null) return;
         const a = dayNum(n.start), b = dayNum(n.finish);
         if (l.ms) { const cx = (a - lo + 0.5) * px; arr.push({ pj: p.pj, key, n, cx, from: cx - 6, to: cx + 12 + p.pj.length * 6.4 }); }
@@ -111,7 +115,7 @@ export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load,
   const aria = (it, l) => it.pj + ", " + STEP_LABEL[l.step] + ", " + (l.ms ? "le " + fmtIso(it.n.start) : "du " + fmtIso(it.n.start) + " au " + fmtIso(it.n.finish));
 
   return (<div style={{ fontFamily: FONT, color: C.ink, background: C.bg }}>
-    <div ref={scrollRef} style={{ overflow: "auto", maxHeight: "calc(100dvh - 430px)", minHeight: 260, position: "relative", cursor: panning ? "grabbing" : "default", userSelect: dragKey || panning ? "none" : "auto" }}>
+    <div ref={scrollRef} onContextMenu={e => e.preventDefault()} onMouseDown={e => { if ((e.button !== 2 && e.button !== 1) || !scrollRef.current) return; e.preventDefault(); const el = scrollRef.current, x0 = e.clientX, y0 = e.clientY, sl = el.scrollLeft, st = el.scrollTop; const mv = ev => { el.scrollLeft = sl - (ev.clientX - x0); el.scrollTop = st - (ev.clientY - y0); }; const up = () => { window.removeEventListener("mousemove", mv); window.removeEventListener("mouseup", up); }; window.addEventListener("mousemove", mv); window.addEventListener("mouseup", up); }} style={{ overflow: "auto", maxHeight: "calc(100dvh - 430px)", minHeight: 260, position: "relative", cursor: panning ? "grabbing" : "default", userSelect: dragKey || panning ? "none" : "auto" }}>
       <div style={{ width: LABEL_W + W, position: "relative" }}>
         {/* en-tête */}
         <div style={{ display: "flex", position: "sticky", top: 0, zIndex: 8, height: HEAD, background: C.bg, borderBottom: "1px solid " + C.line }}>
@@ -138,12 +142,12 @@ export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load,
         {/* corps */}
         <div style={{ display: "flex", position: "relative", height: L.H }}>
           <div style={{ width: LABEL_W, flex: "none", position: "sticky", left: 0, zIndex: 6, background: C.bg, borderRight: "1px solid " + C.line }}>
-            {L.lanes.map(l => (<div key={l.id} style={{ position: "absolute", top: l.y, left: 0, right: 0, height: l.h, borderBottom: "1px solid " + C.line, background: l.ms ? C.panel : C.bg, padding: laneH === "s" ? "5px 12px" : "8px 12px", boxSizing: "border-box" }}>
+            {L.lanes.map(l => (<div key={l.id} style={{ position: "absolute", top: l.y, left: 0, right: 0, height: l.h, borderBottom: "1px solid " + C.line, background: l.ms ? C.panel : C.bg, padding: bh < 14 ? "5px 12px" : "8px 12px", boxSizing: "border-box" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
                 <span style={{ width: 8, height: 8, background: STEP_COLOR[l.step], borderRadius: l.ms ? 1 : 2, transform: l.ms ? "rotate(45deg)" : "none", flex: "none" }} />
                 <span style={{ fontSize: 12, fontWeight: 500, color: C.ink }}>{l.title}</span>
               </div>
-              {laneH !== "s" && <div style={{ fontSize: 10.5, color: C.ink3, marginTop: 3, paddingLeft: 15 }}>{l.items.length} PJ{l.res && rules[l.res] ? " · 1 à la fois" : ""}</div>}
+              {bh >= 14 && <div style={{ fontSize: 10.5, color: C.ink3, marginTop: 3, paddingLeft: 15 }}>{l.items.length} PJ{l.res && rules[l.res] ? " · 1 à la fois" : ""}</div>}
             </div>))}
           </div>
           <div style={{ position: "relative", width: W, flex: "none" }} onPointerDown={e => { if (e.target === e.currentTarget || e.target.dataset.bg) { setSel(null); if (scrollRef.current) { pan.current = { x0: e.clientX, s0: scrollRef.current.scrollLeft }; setPanning(true); } } }}>
@@ -185,7 +189,7 @@ export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load,
     </div>
     {dragKey && tip && <div ref={tipRef} style={{ position: "fixed", left: 0, top: 0, zIndex: 10001, background: C.ink, color: C.bg, borderRadius: 4, padding: "3px 8px", fontSize: 11.5, fontWeight: 500, pointerEvents: "none" }}>{tip}</div>}
     <div style={{ display: "flex", gap: 16, flexWrap: "wrap", padding: "6px 14px 8px", fontSize: 11, color: C.ink3, borderTop: "1px solid " + C.line }}>
-      <span>Glisser une barre : déplacer · bord droit : durée · glisser le fond : parcourir les dates · ← → au clavier</span>
+      <span>Glisser une barre : déplacer · bord droit : durée · glisser le fond ou clic droit maintenu : parcourir les dates · ← → au clavier</span>
       {(rules.prod || rules.banc) && <span>Chiffre dans la barre = rang de passage</span>}
       <span>Trait sombre à gauche = date imposée</span>
     </div>
