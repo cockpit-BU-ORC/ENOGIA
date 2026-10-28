@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend } from "recharts";
-import { T, FZ } from "../theme";
+import { T, FZ, stageSoft } from "../theme";
 import { SerieTag, getPjMeta, initials, GAMME_COLORS, ETAT_META, ALL_ETATS, ALL_GAMMES, MONTHS, today, PjPlate } from "../pjMeta";
 import { fmt, toLocalISO, diffDays, weekStartOf } from "../parsers";
 import { workDaysBetween } from "../workDays";
@@ -389,11 +389,11 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
           <div style={{fontSize:FZ.sm,color:T.ink300,marginBottom:10}}>Destinations des machines du portefeuille</div>
           <ResponsiveContainer width="100%" height={Math.max(180,countByPays.length*34)}>
             <BarChart data={countByPays} layout="vertical" margin={{left:10,right:20}}>
-              <CartesianGrid strokeDasharray="3 3" stroke={T.surface}/>
+              <CartesianGrid vertical={false} stroke={T.line} strokeOpacity={0.7}/>
               <XAxis type="number" allowDecimals={false} tick={{fontSize:FZ.xs,fill:T.ink500}}/>
               <YAxis type="category" dataKey="pays" width={90} tick={{fontSize:FZ.sm,fill:T.ink700,fontWeight:600}}/>
               <Tooltip contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
-              <Bar dataKey="n" radius={[0,6,6,0]} fill={T.teal500}/>
+              <Bar dataKey="n" radius={[0,2,2,0]} fill={T.teal500}/>
             </BarChart>
           </ResponsiveContainer>
         </div>}
@@ -411,11 +411,11 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
           </div>
           <ResponsiveContainer width="100%" height={Math.max(180,exploreData.length*34)}>
             <BarChart data={exploreData} layout="vertical" margin={{left:10,right:20}}>
-              <CartesianGrid strokeDasharray="3 3" stroke={T.surface}/>
+              <CartesianGrid vertical={false} stroke={T.line} strokeOpacity={0.7}/>
               <XAxis type="number" tick={{fontSize:FZ.xs,fill:T.ink500}}/>
               <YAxis type="category" dataKey="key" width={100} tick={{fontSize:FZ.sm,fill:T.ink700,fontWeight:600}}/>
               <Tooltip formatter={(v,n,p)=>[v,exploreMetricInfo[exploreMetric].label]} contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
-              <Bar dataKey={exploreMetric} radius={[0,6,6,0]} fill={T.violet500}/>
+              <Bar dataKey={exploreMetric} radius={[0,2,2,0]} fill={T.violet500}/>
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -451,16 +451,16 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
           </div>
           {chargeByMonthMulti.length>0?<ResponsiveContainer width="100%" height={260}>
             <BarChart data={chargeByMonthMulti}>
-              <CartesianGrid strokeDasharray="3 3" stroke={T.surface}/>
+              <CartesianGrid vertical={false} stroke={T.line} strokeOpacity={0.7}/>
               <XAxis dataKey="mois" tick={{fontSize:FZ.xs,fill:T.ink700,fontWeight:600}}/>
               <YAxis allowDecimals={false} tick={{fontSize:FZ.xs,fill:T.ink500}}/>
               <Tooltip contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
               <Legend wrapperStyle={{fontSize:FZ.sm}}/>
-              <Bar dataKey="Arrivée" fill={T.teal500} radius={[4,4,0,0]}/>
-              <Bar dataKey="Production" fill={T.info500} radius={[4,4,0,0]}/>
-              <Bar dataKey="Tests" fill={T.amber500} radius={[4,4,0,0]}/>
-              <Bar dataKey="Fin prod" fill={T.emerald500} radius={[4,4,0,0]}/>
-              <Bar dataKey="Départ" fill={T.red500} radius={[4,4,0,0]}/>
+              <Bar dataKey="Arrivée" fill={stageSoft().arrivee.solid} radius={[2,2,0,0]}/>
+              <Bar dataKey="Production" fill={stageSoft().production.solid} radius={[2,2,0,0]}/>
+              <Bar dataKey="Tests" fill={stageSoft().tests.solid} radius={[2,2,0,0]}/>
+              <Bar dataKey="Fin prod" fill={stageSoft().finProd.solid} radius={[2,2,0,0]}/>
+              <Bar dataKey="Départ" fill={stageSoft().depart.solid} radius={[2,2,0,0]}/>
             </BarChart>
           </ResponsiveContainer>:<div style={{padding:"40px 0",textAlign:"center",color:T.ink300,fontSize:FZ.sm}}>Aucune donnée pour cette période</div>}
         </div>}
@@ -469,21 +469,21 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
           <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:4,display:"flex",alignItems:"center",gap:8}}><NavIcon name="gauge" size={17}/>Charge de travail Atelier / Autom</div>
           <div style={{fontSize:FZ.sm,color:T.ink300,marginBottom:14}}>Heures de travail par PJ, issues de l'import Excel (feuille Table_affectation)</div>
 
-          <KpiRow items={[[totalHeuresAtelier+"h","Total Atelier",T.teal500],[totalHeuresAutom+"h","Total Autom",T.violet500],[workloadByPJ.length,"PJ avec charge connue",T.ink500]]} min={150}/>
+          <KpiRow items={[[totalHeuresAtelier+" h","Heures atelier",null,"total du portefeuille filtré"],[totalHeuresAutom+" h","Heures autom",null,"total du portefeuille filtré"],[workloadByPJ.length,"PJ avec charge connue",null,"heures issues de l'import"]]} min={150}/>
 
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,380px),1fr))",gap:16}}>
             <div style={{background:T.surface,borderRadius:12,padding:12,overflow:"auto",maxHeight:380}}>
               <div style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,marginBottom:8}}>Détail par PJ</div>
               <table style={{width:"100%",borderCollapse:"collapse",fontSize:FZ.sm}}>
                 <thead><tr style={{borderBottom:"1px solid "+T.line,position:"sticky",top:0,background:T.surface}}>
-                  {["N° PJ","Gamme","Atelier","Autom"].map(h=><th key={h} style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk,padding:"6px 8px",textAlign:h==="N° PJ"||h==="Gamme"?"left":"right"}}>{h}</th>)}
+                  {["N° PJ","Gamme","Atelier","Autom"].map(h=><th key={h} style={{fontFamily:T.font,fontSize:12,fontWeight:500,color:T.ink500,padding:"6px 8px",textAlign:h==="N° PJ"||h==="Gamme"?"left":"right"}}>{h}</th>)}
                 </tr></thead>
                 <tbody>{workloadByPJ.map(r=>(
                   <tr key={r.pj} style={{borderBottom:"1px solid "+T.surfaceAlt}}>
                     <td style={{padding:"8px 8px",fontWeight:700,color:T.teal600}}>{r.pj} <SerieTag pj={r.pj}/></td>
                     <td style={{padding:"8px 8px",color:T.ink500}}>{r.gamme}</td>
-                    <td style={{padding:"8px 8px",textAlign:"right",fontWeight:600,color:T.ink900}}>{r.heuresAtelier}h</td>
-                    <td style={{padding:"8px 8px",textAlign:"right",fontWeight:600,color:T.violet600}}>{r.heuresAutom}h</td>
+                    <td style={{padding:"8px 8px",textAlign:"right",fontWeight:600,color:T.ink900,fontVariantNumeric:"tabular-nums"}}>{r.heuresAtelier} h</td>
+                    <td style={{padding:"8px 8px",textAlign:"right",fontWeight:600,color:T.ink700,fontVariantNumeric:"tabular-nums"}}>{r.heuresAutom} h</td>
                   </tr>
                 ))}</tbody>
               </table>
@@ -500,13 +500,13 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
                 </div>
                 {saturationByWeek.length>0?<ResponsiveContainer width="100%" height={220}>
                   <LineChart data={saturationByWeek}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={T.line}/>
+                    <CartesianGrid vertical={false} stroke={T.line} strokeOpacity={0.7}/>
                     <XAxis dataKey="semaineMois" tick={{fontSize:FZ.xs,fill:T.ink500}} angle={-35} textAnchor="end" height={55}/>
                     <YAxis tick={{fontSize:FZ.xs,fill:T.ink500}} tickFormatter={v=>v+"%"}/>
                     <Tooltip formatter={(v,n)=>[v+"%",n]} contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
                     <Legend wrapperStyle={{fontSize:FZ.sm}}/>
-                    <Line type="monotone" dataKey="satAtelier" name="Atelier" stroke={T.teal500} strokeWidth={3} dot={{r:4,fill:T.teal500}}/>
-                    <Line type="monotone" dataKey="satAutom" name="Autom" stroke={T.violet500} strokeWidth={3} dot={{r:4,fill:T.violet500}}/>
+                    <Line type="linear" dataKey="satAtelier" name="Atelier" stroke={stageSoft().production.solid} strokeWidth={2} dot={false}/>
+                    <Line type="linear" dataKey="satAutom" name="Autom" stroke={T.amber600} strokeWidth={2} dot={false}/>
                   </LineChart>
                 </ResponsiveContainer>:<div style={{padding:"40px 0",textAlign:"center",color:T.ink300,fontSize:FZ.sm}}>Aucune donnée pour cette période</div>}
               </div>
@@ -521,13 +521,13 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
                 </div>
                 {saturationByWeek.length>0?<ResponsiveContainer width="100%" height={220}>
                   <LineChart data={saturationByWeek}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={T.line}/>
+                    <CartesianGrid vertical={false} stroke={T.line} strokeOpacity={0.7}/>
                     <XAxis dataKey="semaineMois" tick={{fontSize:FZ.xs,fill:T.ink500}} angle={-35} textAnchor="end" height={55}/>
                     <YAxis tick={{fontSize:FZ.xs,fill:T.ink500}} tickFormatter={v=>v+"h"}/>
                     <Tooltip formatter={(v,n)=>[v+"h",n]} contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
                     <Legend wrapperStyle={{fontSize:FZ.sm}}/>
-                    <Line type="monotone" dataKey="atelier" name="Atelier" stroke={T.teal500} strokeWidth={3} dot={{r:4,fill:T.teal500}}/>
-                    <Line type="monotone" dataKey="autom" name="Autom" stroke={T.violet500} strokeWidth={3} dot={{r:4,fill:T.violet500}}/>
+                    <Line type="linear" dataKey="atelier" name="Atelier" stroke={stageSoft().production.solid} strokeWidth={2} dot={false}/>
+                    <Line type="linear" dataKey="autom" name="Autom" stroke={T.amber600} strokeWidth={2} dot={false}/>
                   </LineChart>
                 </ResponsiveContainer>:<div style={{padding:"40px 0",textAlign:"center",color:T.ink300,fontSize:FZ.sm}}>Aucune donnée pour cette période</div>}
               </div>
@@ -564,13 +564,13 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
             <div style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,marginBottom:8}}>{STEP_LABELS[kpiStep]} promis (initial) vs maintenus dans le mois (révisé)</div>
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={promiseVsReality}>
-                <CartesianGrid strokeDasharray="3 3" stroke={T.line}/>
+                <CartesianGrid vertical={false} stroke={T.line} strokeOpacity={0.7}/>
                 <XAxis dataKey="mois" tick={{fontSize:FZ.xs,fill:T.ink700,fontWeight:600}}/>
                 <YAxis allowDecimals={false} tick={{fontSize:FZ.xs,fill:T.ink500}}/>
                 <Tooltip contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
                 <Legend wrapperStyle={{fontSize:FZ.sm}}/>
-                <Line type="monotone" dataKey="promis" name="Promis (initial)" stroke={T.ink300} strokeWidth={2.5} strokeDasharray="5 4" dot={{r:4,fill:T.ink300}}/>
-                <Line type="monotone" dataKey="realise" name="Maintenu dans le mois" stroke={T.teal500} strokeWidth={3} dot={{r:5,fill:T.teal500}}/>
+                <Line type="linear" dataKey="promis" name="Promis (initial)" stroke={T.ink300} strokeWidth={2} strokeDasharray="5 4" dot={false}/>
+                <Line type="linear" dataKey="realise" name="Maintenu dans le mois" stroke={T.teal500} strokeWidth={2} dot={false}/>
               </LineChart>
             </ResponsiveContainer>
           </div>}
@@ -605,7 +605,7 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
                     </g>
                   );})}
                   {/* lignes alternées pour la lisibilité */}
-                  {pjCompareChart.map((p,i)=>i%2===0&&<rect key={"bg"+i} x={0} y={topPad+i*rowHd} width={chartW} height={rowHd} fill={T.card} opacity={0.5}/>)}
+                  
 
                   {pjCompareChart.map((p,i)=>{
                     const y=topPad+i*rowHd+rowHd/2;
@@ -635,7 +635,7 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,380px),1fr))",gap:12,marginBottom:14}}>
             {driftBuckets.length>0&&<div style={{background:T.surface,borderRadius:12,padding:12}}>
               <div style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,marginBottom:8}}>Répartition par sévérité du retard</div>
-              <PieBlock data={driftBuckets.filter(d=>d.n>0).map(d=>({name:d.label,value:d.n,color:d.c}))} unit=" PJ" size={140} centerLabel={driftBuckets.reduce((a,d)=>a+d.n,0)} sub="PJ"/>
+              <PieBlock data={driftBuckets.filter(d=>d.n>0).map(d=>({name:d.label,value:d.n,color:d.c}))} unit=" PJ" size={140}/>
             </div>}
 
             {trajectory.some(t=>t.moyenne!=null)&&<div style={{background:T.surface,borderRadius:12,padding:12}}>
@@ -643,11 +643,11 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
               <div style={{fontSize:FZ.xs,color:T.ink300,marginBottom:6}}>Le retard s'aggrave-t-il ou se résorbe-t-il entre l'arrivée et le départ ?</div>
               <ResponsiveContainer width="100%" height={150}>
                 <LineChart data={trajectory}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={T.line}/>
+                  <CartesianGrid vertical={false} stroke={T.line} strokeOpacity={0.7}/>
                   <XAxis dataKey="jalon" tick={{fontSize:FZ.xs,fill:T.ink700,fontWeight:600}}/>
                   <YAxis tick={{fontSize:FZ.xs,fill:T.ink500}}/>
                   <Tooltip contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
-                  <Line type="monotone" dataKey="moyenne" stroke={T.teal500} strokeWidth={3} dot={{r:5,fill:T.teal500}}/>
+                  <Line type="linear" dataKey="moyenne" stroke={stageSoft().production.solid} strokeWidth={2} dot={false}/>
                 </LineChart>
               </ResponsiveContainer>
             </div>}
@@ -670,11 +670,11 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
             <div style={{fontSize:FZ.sm,color:T.ink300,marginBottom:10}}>Écart moyen (jours) entre départ initial et révisé, par gamme</div>
             <ResponsiveContainer width="100%" height={Math.max(180,driftByGamme.length*36)}>
               <BarChart data={driftByGamme} layout="vertical" margin={{left:10,right:20}}>
-                <CartesianGrid strokeDasharray="3 3" stroke={T.surface}/>
+                <CartesianGrid vertical={false} stroke={T.line} strokeOpacity={0.7}/>
                 <XAxis type="number" tick={{fontSize:FZ.xs,fill:T.ink500}}/>
                 <YAxis type="category" dataKey="gamme" width={90} tick={{fontSize:FZ.sm,fill:T.ink700,fontWeight:600}}/>
                 <Tooltip formatter={(v,n,p)=>[v+"j (n="+p.payload.n+")","Dérive moyenne"]} contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
-                <Bar dataKey="moyenne" radius={[0,6,6,0]}>
+                <Bar dataKey="moyenne" radius={[0,2,2,0]}>
                   {driftByGamme.map((d,i)=><Cell key={i} fill={d.moyenne>0?T.red500:T.emerald500}/>)}
                 </Bar>
               </BarChart>
@@ -686,11 +686,11 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
             <div style={{fontSize:FZ.sm,color:T.ink300,marginBottom:10}}>Où le retard se creuse le plus dans la chaîne de production</div>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={driftByMilestone}>
-                <CartesianGrid strokeDasharray="3 3" stroke={T.surface}/>
+                <CartesianGrid vertical={false} stroke={T.line} strokeOpacity={0.7}/>
                 <XAxis dataKey="jalon" tick={{fontSize:FZ.sm,fill:T.ink700,fontWeight:600}}/>
                 <YAxis tick={{fontSize:FZ.xs,fill:T.ink500}}/>
                 <Tooltip formatter={(v,n,p)=>[v+"j (n="+p.payload.n+")","Dérive moyenne"]} contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
-                <Bar dataKey="moyenne" radius={[6,6,0,0]}>
+                <Bar dataKey="moyenne" radius={[2,2,0,0]}>
                   {driftByMilestone.map((d,i)=><Cell key={i} fill={d.moyenne>0?T.amber500:T.emerald500}/>)}
                 </Bar>
               </BarChart>
@@ -707,11 +707,11 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
             </div>
             {driftTrend.length>0?<ResponsiveContainer width="100%" height={220}>
               <LineChart data={driftTrend}>
-                <CartesianGrid strokeDasharray="3 3" stroke={T.surface}/>
+                <CartesianGrid vertical={false} stroke={T.line} strokeOpacity={0.7}/>
                 <XAxis dataKey="mois" tick={{fontSize:FZ.xs,fill:T.ink700,fontWeight:600}}/>
                 <YAxis tick={{fontSize:FZ.xs,fill:T.ink500}}/>
                 <Tooltip formatter={(v,n,p)=>[v+"j (n="+p.payload.n+")","Dérive moyenne"]} contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
-                <Line type="monotone" dataKey="moyenne" stroke={T.violet500} strokeWidth={3} dot={({cx,cy,payload})=><circle key={payload.mois} cx={cx} cy={cy} r={5} fill={payload.moyenne>0?T.red500:T.emerald500}/>}/>
+                <Line type="linear" dataKey="moyenne" stroke={stageSoft().production.solid} strokeWidth={2} dot={({cx,cy,payload})=><circle key={payload.mois} cx={cx} cy={cy} r={5} fill={payload.moyenne>0?T.red500:T.emerald500}/>}/>
               </LineChart>
             </ResponsiveContainer>:<div style={{padding:"40px 0",textAlign:"center",color:T.ink300,fontSize:FZ.sm}}>Aucune donnée pour cette période</div>}
           </div>}
@@ -733,7 +733,7 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
         <div style={{background:T.card,borderRadius:12,padding:0,border:"1px solid "+T.line,overflow:"auto"}}>
           <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,padding:"16px 16px 0"}}>Détail par PJ — Initial vs Révisé</div>
           <table style={{width:"100%",borderCollapse:"collapse",marginTop:10,tableLayout:"auto"}}>
-            <thead><tr style={{background:T.surface,borderBottom:"2px solid "+T.line}}>
+            <thead><tr style={{borderBottom:"1px solid "+T.line}}>
               {["N° PJ","Gamme","Arrivée","Δ","Tests","Δ","Fin prod","Δ","Départ","Δ"].map((h,i)=><th key={i} style={{padding:"8px 12px",textAlign:"left",fontWeight:700,color:T.ink500,fontSize:FZ.sm,whiteSpace:"nowrap",textTransform:"uppercase",letterSpacing:".03em"}}>{h}</th>)}
             </tr></thead>
             <tbody>{driftRows.map((r,i)=>(
@@ -742,7 +742,7 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
                 <td style={{padding:"8px 12px",color:T.ink500,fontSize:FZ.md,whiteSpace:"nowrap"}}>{r.gamme}</td>
                 {["arrivee","tests","finProd","depart"].map(k=>{const c=r[k];const d=c.delta;const col=d==null?T.ink300:d>0?T.red500:d<0?T.emerald500:T.ink500;return(<React.Fragment key={k}>
                   <td style={{padding:"8px 12px",fontSize:FZ.md,color:T.ink700,whiteSpace:"nowrap"}}>{c.rev?fmt(new Date(c.rev)):"—"}</td>
-                  <td style={{padding:"8px 12px",fontSize:FZ.md,fontWeight:700,color:col,whiteSpace:"nowrap"}}>{d==null?"—":(d>0?"+":"")+d+"j"}</td>
+                  <td style={{padding:"8px 12px",fontSize:FZ.md,fontWeight:700,color:col,whiteSpace:"nowrap",textAlign:"right",fontVariantNumeric:"tabular-nums"}}>{d==null?"—":(d>0?"+":"")+d+" j"}</td>
                 </React.Fragment>);})}
               </tr>
             ))}</tbody>

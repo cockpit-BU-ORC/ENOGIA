@@ -26,7 +26,7 @@ export function PieBlock({data,unit="",size=150,centerLabel,sub}){
     <div role="img" aria-label={data.map(d=>d.name+" : "+d.value+unit).join(", ")} style={{position:"relative",width:size,height:size,flexShrink:0}}>
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
-          <Pie data={data} dataKey="value" nameKey="name" innerRadius={size*.31} outerRadius={size*.5} paddingAngle={data.length>1?2:0} stroke="none">
+          <Pie data={data} dataKey="value" nameKey="name" innerRadius={size*.38} outerRadius={size*.5} paddingAngle={data.length>1?2:0} stroke="none">
             {data.map((d,i)=><Cell key={d.name+i} fill={d.color}/>)}
           </Pie>
           <Tooltip content={({active,payload})=>{
@@ -38,8 +38,8 @@ export function PieBlock({data,unit="",size=150,centerLabel,sub}){
         </PieChart>
       </ResponsiveContainer>
       <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
-        <span style={{fontFamily:T.fontDisplay,fontSize:size*.19,fontWeight:700,color:T.ink900,lineHeight:1}}>{centerLabel!=null?centerLabel:total+unit}</span>
-        {sub&&size>=120&&<span style={{fontSize:FZ.xs,color:T.ink300,marginTop:2}}>{sub}</span>} {/* petit anneau : le trou ne peut pas porter une ligne de 12 px, le libellé reste dans la légende */}
+        {centerLabel!=null&&centerLabel!==""&&<span style={{fontFamily:T.fontDisplay,fontSize:size*.19,fontWeight:700,color:T.ink900,lineHeight:1}}>{centerLabel}</span>}
+        {centerLabel!=null&&centerLabel!==""&&sub&&size>=120&&<span style={{fontSize:FZ.xs,color:T.ink300,marginTop:2}}>{sub}</span>} {/* petit anneau : le trou ne peut pas porter une ligne de 12 px, le libellé reste dans la légende */}
       </div>
     </div>
     <div style={{display:"flex",flexDirection:"column",gap:4,minWidth:150,flex:1}}>
@@ -52,16 +52,29 @@ export function PieBlock({data,unit="",size=150,centerLabel,sub}){
   </div>);
 }
 
-// Rangée de tuiles KPI : items = [[valeur, libellé, couleur d'accent]]
-export function KpiRow({items,min=140}){
-  return(<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax("+min+"px,1fr))",gap:8}}>
-    {items.map(([v,l,c])=>(
-      <div key={l} className="enogia-view-in" style={{...CARD,padding:"12px 14px 10px",borderTop:"3px solid "+T.teal500,borderRadius:"0 0 12px 12px",position:"relative"}}>
-        {/* v175 : chiffre éditorial (grand, léger) ; la couleur d'accent devient un petit repère carré à côté du libellé. */}
-        <div style={{fontFamily:T.fontDisplay,fontSize:"clamp(30px,3.4vw,40px)",fontWeight:300,letterSpacing:"-.03em",color:T.ink900,lineHeight:1,fontVariantNumeric:"tabular-nums"}}>{v}</div>
-        <div style={{fontSize:FZ.xs,fontWeight:600,color:T.ink700,marginTop:6,display:"flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:8,height:8,borderRadius:2,background:c,flexShrink:0}}/>{l}</div>
-      </div>
-    ))}
+// Rangée de chiffres KPI : items = [[valeur, libellé, couleur, explication?]]
+// v216 (règles de la Synthèse V215, ui-ux-pro-max + taste) : libellé au-dessus en gris, chiffre 28 px en encre ; la couleur ne sert
+// que pour dire « mauvais » (rouge) ou « bon » (vert) — les autres couleurs d'accent ne s'affichent plus.
+export function KpiRow({items,min=150}){
+  return(<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,"+min+"px),1fr))",gap:8}}>
+    {items.map(([v,l,c,sub])=>{const tone=c===T.red500||c===T.red600?T.red500:c===T.emerald500||c===T.emerald600?T.emerald600:T.ink900;return(
+      <div key={l} style={{background:T.card,border:"1px solid "+T.line,borderRadius:10,padding:"12px 14px",minWidth:0}}>
+        <div style={{fontSize:12.5,color:T.ink500,fontFamily:T.fontLabel}}>{l}</div>
+        <div style={{fontFamily:T.fontDisplay,fontSize:28,fontWeight:600,color:tone,lineHeight:1.15,marginTop:4,fontVariantNumeric:"tabular-nums"}}>{v}</div>
+        {sub&&<div style={{fontSize:12,color:T.ink500,marginTop:4}}>{sub}</div>}
+      </div>);})}
+  </div>);
+}
+// v216 : classement en barres horizontales triées, une seule couleur, valeur à droite en chiffres tabulaires
+export function RankBars({items,unit="",color,max=10,onPick}){
+  const list=(items||[]).slice(0,max),top=Math.max(1,...list.map(x=>x.value));
+  return(<div style={{display:"flex",flexDirection:"column",gap:6}}>
+    {list.map(x=>(<div key={x.label} {...(onPick?{role:"button",tabIndex:0,onClick:()=>onPick(x),onKeyDown:e=>{if(e.key==="Enter")onPick(x);}}:{})} style={{display:"grid",gridTemplateColumns:"minmax(90px,30%) minmax(0,1fr) 64px",alignItems:"center",gap:10,minHeight:28,cursor:onPick?"pointer":"default"}}>
+      <span title={x.label} style={{fontSize:FZ.sm,color:T.ink900,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{x.label}</span>
+      <span style={{height:10,background:T.surfaceAlt,borderRadius:2,overflow:"hidden"}}><span className="enogia-bar-fill" style={{display:"block",width:(x.value/top*100)+"%",height:"100%",background:color||T.navy600}}/></span>
+      <span style={{textAlign:"right",fontSize:FZ.sm,fontWeight:700,color:T.ink900,fontVariantNumeric:"tabular-nums"}}>{x.value}{unit}</span>
+    </div>))}
+    {(items||[]).length>max&&<div style={{fontSize:12,color:T.ink500}}>+ {(items||[]).length-max} autres</div>}
   </div>);
 }
 
@@ -180,7 +193,7 @@ export function KpiAvancement({rows,progress}){
   },[rows,progress]);
   const running20=vals.filter(x=>x.pv>0&&x.pv<100).sort((a,b)=>a.pv-b.pv).slice(0,8);
   return(<div style={{display:"flex",flexDirection:"column",gap:12}}>
-    <KpiRow items={[[avg+"%","Avancement moyen",T.teal500],[done,"PJ terminés (100 %)",T.emerald500],[running,"PJ en cours",T.amber500],[notStarted,"PJ non démarrés",T.ink300]]}/>
+    <KpiRow items={[[avg+" %","Avancement moyen",null,"moyenne des % saisis"],[done,"PJ terminés",null,"avancement 100 %"],[running,"PJ en cours",null,"entre 1 et 99 %"],[notStarted,"PJ non démarrés",null,"avancement 0 %"]]}/>
     <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
       <div style={{...CARD,padding:16,flex:"1 1 340px"}}>
         <div style={H_TITLE}>Avancement moyen par gamme</div>
@@ -218,7 +231,6 @@ export function DelayInsights({delays,delayTypes}){
     Object.entries(delays||{}).forEach(([pj,list])=>(list||[]).forEach(d=>out.push({...d,pj})));
     return out;
   },[delays]);
-  const colorOf=t=>{const i=delayTypes.indexOf(t);{const dc=getDelayColors();return dc[(i<0?delayTypes.length:i)%dc.length];}};
   const byType=useMemo(()=>{
     const m={};
     allEntries.forEach(e=>{m[e.type]=(m[e.type]||0)+(e.days||0);});
@@ -231,27 +243,18 @@ export function DelayInsights({delays,delayTypes}){
   },[allEntries]);
   const totalDays=allEntries.reduce((a,e)=>a+(e.days||0),0);
   const pjCount=new Set(allEntries.map(e=>e.pj)).size;
-  // camembert par PJ : les 8 plus touchés, le reste regroupé
-  const pjSlices=useMemo(()=>{
-    const all=Object.entries(allEntries.reduce((m,e)=>{m[e.pj]=(m[e.pj]||0)+(e.days||0);return m;},{})).map(([pj,days])=>({pj,days})).sort((a,b)=>b.days-a.days);
-    const pal=getDelayColors(); // v168 : jetons du thème (contraste ≥ 3:1 sur la carte), plus de teintes codées en dur
-    const top=all.slice(0,8).map((p,i)=>({name:p.pj,value:p.days,color:pal[i%pal.length]}));
-    const rest=all.slice(8).reduce((a,p)=>a+p.days,0);
-    if(rest>0)top.push({name:"Autres ("+(all.length-8)+" PJ)",value:rest,color:T.ink300});
-    return top;
-  },[allEntries]);
   return(<div style={{display:"flex",flexDirection:"column",gap:12}}>
-    <KpiRow items={[[totalDays+"j","Jours de retard alloués",T.red500],[allEntries.length,"Retards enregistrés",T.teal500],[pjCount,"PJ concernés",T.violet500],[byType.length,"Causes utilisées",T.amber500]]}/>
+    <KpiRow items={[[totalDays+" j","Jours de retard alloués",totalDays?T.red500:null,"toutes causes"],[allEntries.length,"Retards enregistrés",null,"déclarations"],[pjCount,"PJ concernés",null,"au moins un retard"],[byType.length,"Causes utilisées",null,byType[0]?"1re : "+byType[0].type:"aucune"]]}/>
     <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
       <div style={{...CARD,padding:16,flex:"1 1 340px"}}>
         <div style={H_TITLE}>Répartition par cause</div>
         <div style={{...H_SUB,marginBottom:12}}>Qu'est-ce qui génère le plus de retard sur le portefeuille ?</div>
-        {byType.length===0?<EmptyNote>Aucun retard enregistré pour l'instant.</EmptyNote>:<PieBlock data={byType.map(t=>({name:t.type,value:t.days,color:colorOf(t.type)}))} unit="j" sub="de retard"/>}
+        {byType.length===0?<EmptyNote>Aucun retard enregistré pour l'instant.</EmptyNote>:<RankBars items={byType.map(t=>({label:t.type,value:t.days}))} unit=" j" color={T.red500}/>}
       </div>
       <div style={{...CARD,padding:16,flex:"1 1 340px"}}>
         <div style={H_TITLE}>Retard par PJ — jours cumulés</div>
         <div style={{...H_SUB,marginBottom:12}}>Les projets qui concentrent le plus de retard, toutes causes confondues</div>
-        {byPj.length===0?<EmptyNote>Aucune donnée.</EmptyNote>:<PieBlock data={pjSlices} unit="j" sub="de retard"/>}
+        {byPj.length===0?<EmptyNote>Aucune donnée.</EmptyNote>:<RankBars items={byPj.map(p=>({label:p.pj,value:p.days}))} unit=" j" color={T.navy600}/>}
       </div>
     </div>
   </div>);

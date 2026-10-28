@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v216",
+    date: "2026-10-28",
+    title: "V216 : les pages KPI parlent la même langue",
+    items: [
+      { t: "Chiffres clés", d: "Sur Charge, Dérives, Avancement et Retards : libellé, chiffre, une ligne d'explication, comme la Synthèse ; rouge seulement quand c'est mauvais.", admin: true },
+      { t: "Retards en classement", d: "Causes et PJ les plus touchés en barres triées d'une seule couleur, à la place des camemberts à 8 parts.", admin: true },
+      { t: "Graphiques plus nets", d: "Grille légère horizontale, lignes fines sans points, barres nettes, couleurs des étapes pour la charge, plus de lignes alternées ni de total au centre des anneaux.", admin: true },
+    ],
+  },
+  {
     id: "2026-10-v215",
     date: "2026-10-28",
     title: "V215 : KPI — un tableau de pilotage",

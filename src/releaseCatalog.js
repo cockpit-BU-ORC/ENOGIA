@@ -434,4 +434,7 @@ export const RELEASE_CATALOG = [
   { v: "215", t: "KPI : un tableau de pilotage", items: [
     ["KPI", "Synthèse : 5 chiffres, PJ à risque, charge des 6 semaines, portefeuille par état."],
   ] },
+  { v: "216", t: "Les pages KPI parlent la même langue", items: [
+    ["KPI", "Charge, Dérives, Avancement, Retards : mêmes chiffres clés que la Synthèse, classements à une couleur, graphiques nets."],
+  ] },
 ];

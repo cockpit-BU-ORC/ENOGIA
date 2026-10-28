@@ -1397,3 +1397,13 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Les sous-pages **Dérives, Charge, Avancement, Retards ne sont pas modifiées** dans cette version.
 - Pas de nouvelle donnée ni clé `localStorage`. Vérifié : clair, sombre, téléphone (jsdom + aperçu, pas de défilement horizontal à 375 px) ; build (13 avertissements existants), tests, contraste.
 - Fichiers : components/{KpiPilotage,ManagerPanel}.js, styles.css, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
+
+## v216 — Sous-pages KPI (Charge, Dérives, Avancement, Retards) aux règles de la Synthèse
+
+- **`KpiRow`** (`ManagerParts.js`, utilisé par toutes les sous-pages KPI) : libellé 12,5 px gris au-dessus, chiffre 28 px en encre (chiffres tabulaires), ligne d'explication facultative (4e élément) ; plus de liseré ni de petit carré de couleur — la couleur d'un chiffre ne dit plus que « mauvais » (rouge) ou « bon » (vert).
+- **Retards** : « Répartition par cause » et « Retard par PJ » passent de camemberts (jusqu'à 9 parts) à des **classements en barres triées d'une seule couleur** (`RankBars`, valeurs à droite) ; chiffres clés avec explication (1re cause…).
+- **Avancement** : chiffres clés avec explication.
+- **Charge / Dérives** (`ManagerPanel.js`) : grille horizontale légère (plus de pointillés), courbes en lignes droites de 2 px sans points, barres à angles nets (2 px), charge par étape aux **couleurs des étapes** (palette V177), atelier / autom en bleu production et ocre (plus de violet), plus de lignes alternées dans le graphique initial / révisé, anneau de sévérité **sans total au centre** (comme V192) ; tableaux : en-têtes 12 px gris sans bandeau, heures et écarts alignés à droite en chiffres tabulaires.
+- `PieBlock` : anneau plus fin, total au centre seulement si on le demande explicitement.
+- Pas de nouvelle donnée ni clé `localStorage`. Vérifié : Avancement et Retards en clair et sombre (jsdom + aperçu) ; les graphiques Recharts de Charge et Dérives ne se dessinent pas en jsdom — à regarder dans l'appli. Build (13 avertissements existants), tests, contraste.
+- Fichiers : components/{ManagerParts,ManagerPanel}.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
