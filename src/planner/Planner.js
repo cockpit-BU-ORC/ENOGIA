@@ -410,7 +410,11 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
   const acceptProposal = () => { const np = proposal.plan; setProposal(null); setUndo(u => [...u.slice(-49), plan]); setRedo([]); setPlanState(np); setPreview(null); };
   const reorder = useCallback((pj, over) => { if (!plan) return; const np = moveTo(plan, pj, over); if (np !== plan) onCommit(np, { pj, key: null, want: null }); }, [plan, onCommit]);
 
-  const pjsShown = useMemo(() => { if (!live || live.v !== 2) return []; const s = q.trim().toLowerCase(); return live.pjs.filter(p => !s || p.pj.toLowerCase().includes(s) || (p.nomProjet || "").toLowerCase().includes(s)); }, [live, q]);
+  // v221 (demandé : « pouvoir cacher les PJ en slot libre dans le planificateur ») : masqués par défaut (case « Slots libres »)
+  const slotSet = useMemo(() => new Set((rows || []).filter(r => r && r.etat === "SLOT_LIBRE").map(r => r.pj)), [rows]);
+  const hideSlots = ui.hideSlots !== false;
+  const pjsShown = useMemo(() => { if (!live || live.v !== 2) return []; const s = q.trim().toLowerCase(); return live.pjs.filter(p => !(hideSlots && slotSet.has(p.pj)) && (!s || p.pj.toLowerCase().includes(s) || (p.nomProjet || "").toLowerCase().includes(s))); }, [live, q, hideSlots, slotSet]);
+  const lanesPlan = useMemo(() => live && live.v === 2 && hideSlots && slotSet.size ? { ...live, pjs: live.pjs.filter(p => !slotSet.has(p.pj)) } : live, [live, hideSlots, slotSet]);
   const toggleExp = (pj, force) => setExp(s => { const n = new Set(s); (force === true || !n.has(pj)) ? n.add(pj) : n.delete(pj); return n; });
   const goToday = () => { const el = (ui.view === "lanes" ? lref : gref).current; if (el) el.scrollLeft = Math.max(0, (tl.today - tl.lo) * tl.px - 160); };
   useEffect(() => { if (plan && plan.v === 2) { const t = setTimeout(goToday, 60); return () => clearTimeout(t); } }, [plan === null, ui.zoom, ui.view]); // eslint-disable-line
@@ -481,6 +485,7 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
         <input type="range" min={24} max={44} step={2} value={ui.rowH || 32} onChange={e => setUi({ rowH: Number(e.target.value) })} aria-label="Hauteur des lignes du Gantt" style={{ width: 110 }} /></label>}
       {ui.view === "lanes" && <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 700, color: T.ink700 }}>Hauteur des couloirs
         <input type="range" min={8} max={30} step={1} value={laneBH} onChange={e => setUi({ laneH: Number(e.target.value) })} aria-label="Hauteur des couloirs" style={{ width: 120 }} /></label>}
+      {slotSet.size > 0 && <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 700, color: T.ink700, cursor: "pointer", minHeight: 30 }}><input type="checkbox" checked={!hideSlots} onChange={e => setUi({ hideSlots: !e.target.checked })} />Slots libres ({slotSet.size})</label>}
       <input value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher un PJ…" aria-label="Rechercher un PJ" className="pg-in" style={{ ...INP, width: 160 }} />
       {!ui.lock && <>
         <span style={{ display: "inline-flex", gap: 4 }}>
@@ -520,7 +525,7 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
 
     {/* v208 (demandé : « la charge atelier toujours visible en bas de l'écran ») : la charge colle au bas de l'écran ; en Couloirs elle suit les couloirs */}
     {ui.view === "lanes" && <div style={{ ...CARD, overflow: "clip", marginBottom: 12 }}>
-      <PlannerLanes laneH={laneBH} plan={live} basePlan={plan} sched={sched} cal={cal} closurePeriods={closurePeriods} load={load} tl={tl} sel={selPj} setSel={setSel} readOnly={ro} onPreview={setPreview} onCommit={onCommit} scrollRef={lref} />
+      <PlannerLanes laneH={laneBH} plan={lanesPlan} basePlan={plan} sched={sched} cal={cal} closurePeriods={closurePeriods} load={load} tl={tl} sel={selPj} setSel={setSel} readOnly={ro} onPreview={setPreview} onCommit={onCommit} scrollRef={lref} />
       {loadEl}
     </div>}
     {ui.view === "changes" && chg && <div style={{ ...CARD, overflow: "hidden" }}>

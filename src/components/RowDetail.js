@@ -53,7 +53,7 @@ function Ring({ pct, color, label }) {
   </svg>);
 }
 
-export function RowDetail({ r, onClose, comments, addComment, deleteComment, pinOk, delays, delayTypes, setDelayTypes, addDelayAllocation, deleteDelayAllocation, addDelayComment, deleteDelayComment, authorName, savePjMetaOverride, canEditMeta }) {
+export function RowDetail({ r, onClose, comments, addComment, deleteComment, pinOk, delays, delayTypes, setDelayTypes, addDelayAllocation, deleteDelayAllocation, addDelayComment, deleteDelayComment, authorName, savePjMetaOverride, canEditMeta, dayAction }) {
   const ctx = useContext(PjDialogCtx);
   const [open, setOpen] = useState(null); // "comments" | "delays" | "edit"
   const meta = getPjMeta(r.pj, r), shipped = r.etat === "SHIPPED";
@@ -145,6 +145,8 @@ export function RowDetail({ r, onClose, comments, addComment, deleteComment, pin
     {/* Actions */}
     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginTop: 12 }}>
       <button type="button" onClick={() => toggle("comments")} aria-expanded={open === "comments"} style={btn(false)}><NavIcon name="comments" size={14} />Commentaires{pub.length ? " (" + pub.length + ")" : ""}</button>
+      {/* v221 (demandé : « garder le pop-up classique mais avec un bouton pour activer ou non ce jour de prod, pour ce PJ seulement ») */}
+      {dayAction && <button type="button" onClick={dayAction.onToggle} title={dayAction.hint} style={{ ...btn(false), color: dayAction.off ? T.emerald600 : T.red600 }}><NavIcon name="calendar" size={14} />{dayAction.label}</button>}
       {pinOk && delayTypes && <button type="button" onClick={() => toggle("delays")} aria-expanded={open === "delays"} style={btn(false)}><NavIcon name="clock" size={14} />Déclarer un retard</button>}
       {pinOk && <button type="button" onClick={() => { try { window.dispatchEvent(new CustomEvent("enogia:openSynthese", { detail: { pj: r.pj } })); } catch (e) {} onClose && onClose(); }} style={{ ...btn(true), marginLeft: "auto" }}>Ouvrir la fiche projet</button>}
     </div>

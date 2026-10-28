@@ -451,4 +451,9 @@ export const RELEASE_CATALOG = [
   { v: "220", t: "ENOGIA – BU ORC", items: [
     ["Site", "Nouveau nom « ENOGIA – BU ORC » et nouveau sous-titre."],
   ] },
+  { v: "221", t: "Machines ORC réparé, fiches regroupées, liens plus simples", items: [
+    ["Manager", "Machines ORC réparé ; fiches regroupées par PJ (PJ461-1, -2…) avec synthèse commune."],
+    ["Calendrier", "Fiche du PJ avec un bouton « production ce jour »."],
+    ["Planificateur", "Fenêtre de liens à listes ; slots libres masqués ; Cash in, Turbines et Planificateur réservés au propriétaire."],
+  ] },
 ];

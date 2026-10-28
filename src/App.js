@@ -12,7 +12,7 @@ import "./styles.css";
 
 import { T, setThemeMode, setDensity, D, mixHex, FZ, R, THEMES, DEFAULT_THEME, THEME_KEY, navTokens, stageSoft, stripeHues } from "./theme";
 import { ThemePicker } from "./components/ThemePicker";
-import { setSuperAdmin, isSuperAdmin, setOwner } from "./roles";
+import { setSuperAdmin, isSuperAdmin, setOwner, CASH_FOR_ADMINS } from "./roles";
 import { setCashinDoc, setCashinLinks, setOrdoPjs, getCashinDoc, getCashinLinks, getOrdoPjs, cashGroupsFor } from "./cashinLink";
 import { useCashin } from "./useCashin";
 import { CASHIN_DOC_REF, CASHIN_LINKS_REF, CASHIN_SHARED_REF, buildSharedCashin } from "./cashinData";
@@ -70,7 +70,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-28-v220-enogia-bu-orc";
+const APP_BUILD_VERSION = "2026-10-28-v221-orc-fiches-liens";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -270,10 +270,12 @@ export default function App(){
   const [pinOk,setPinOk]=useState(false);
   // v185 : droits d'administration complets pour le propriétaire et les admins (accès Manager) — sauf le Cash in (isOwner).
   const canEditMeta=isOwner||pinOk;
-  const canCash=isOwner||pinOk; // v210 : Cash in ouvert aux admins (chefs de projet) — règles Firestore à ouvrir aussi (DEPLOIEMENT v210)
+  // v210 : Cash in ouvrable aux admins (chefs de projet) ; v221 (demandé : « Planificateur, Cash in et Turbines restent visibles uniquement par moi pour l'instant ») :
+  // réservé au propriétaire tant que CASH_FOR_ADMINS vaut false (le passer à true rouvre le Cash in aux admins, règles Firestore à ouvrir — DEPLOIEMENT v210).
+  const canCash=isOwner||(CASH_FOR_ADMINS&&pinOk);
   setSuperAdmin(canEditMeta); // pose le rôle avant que les composants ne le lisent (src/roles.js)
   const [progress,setProgress]=useState({});
-  const [calSel,setCalSel]=useState(null);
+  const [calSel,setCalSel]=useState(null),[calDay,setCalDay]=useState(null); // v221 : jour cliqué dans le Calendrier (bouton « production ce jour » de la fiche)
   const [etatChoice,setEtatChoice]=useState({});
   const [releaseSelection,setReleaseSelection]=useState(null); // v146.16 : sélection en cours dans le catalogue des nouveautés
   const [releaseNotes,setReleaseNotes]=useState(null); // v146.10 : pop-up Nouveautés rédigé dans l'appli (Réglages › Nouveautés)
@@ -1013,7 +1015,7 @@ export default function App(){
     return true;
   }),[dataWithOverrides,selEtats,selGammes,selPJs,allPJs,selProjets,allProjets,selPays,allPays,selChefs,allChefs,onlyDrift,onlyChanged,changeMarks,selMoisArrivee,selMoisTests,selMoisFinProd,selMoisDepart]);
 
-  const VIEWS=[{id:"home",icon:"home",l:"Aujourd'hui"},{id:"table",icon:"list",l:"Liste"},{id:"gantt",icon:"gantt",l:"Gantt"},{id:"calendar",icon:"calendar",l:"Calendrier"},{id:"changes",icon:"changes",l:"Modifications"},{id:"comments",icon:"comments",l:"Commentaires"},...(canSeeTests?[{id:"tests",icon:"check",l:"Tests"}]:[]),...(isOwner?[{id:"planner",icon:"gantt",l:"Planificateur"}]:[]),...(canCash?[{id:"cashin",icon:"euro",l:"Cash in"}]:[]),...(pinOk?[{id:"turbines",icon:"factory",l:"Turbines"}]:[])]; // v204 : planificateur réservé au propriétaire ; v217 (demandé : « Cash in et Turbines doivent ouvrir une nouvelle page, pas les pages du Manager ») : pages à part entière
+  const VIEWS=[{id:"home",icon:"home",l:"Aujourd'hui"},{id:"table",icon:"list",l:"Liste"},{id:"gantt",icon:"gantt",l:"Gantt"},{id:"calendar",icon:"calendar",l:"Calendrier"},{id:"changes",icon:"changes",l:"Modifications"},{id:"comments",icon:"comments",l:"Commentaires"},...(canSeeTests?[{id:"tests",icon:"check",l:"Tests"}]:[]),...(isOwner?[{id:"planner",icon:"gantt",l:"Planificateur"}]:[]),...(canCash?[{id:"cashin",icon:"euro",l:"Cash in"}]:[]),...(isOwner?[{id:"turbines",icon:"factory",l:"Turbines"}]:[])]; // v204 : planificateur réservé au propriétaire ; v217 (demandé : « Cash in et Turbines doivent ouvrir une nouvelle page, pas les pages du Manager ») : pages à part entière
 
   // v159 : menu principal libellé (réductible, mémorisé) + recherche « Aller à… » (Ctrl K) sur toutes les pages
   // v191 (demandé : « l'onglet à gauche doit se masquer automatiquement ») : menu réduit par défaut, il s'ouvre par-dessus la page au survol
@@ -1032,7 +1034,7 @@ export default function App(){
   // v219 : le plan est aussi lu dans le Manager (charge des KPI d'après le planificateur)
   useEffect(()=>{if(!currentUser||!((isOwner&&view==="planner")||(pinOk&&view==="manager")))return undefined;return listenPlan(d=>{setPlanDoc(d);setPlanLoaded(true);});},[currentUser,isOwner,pinOk,view]);
   useEffect(()=>{if(view==="planner"&&currentUser&&!isOwner)setView("table");},[view,currentUser,isOwner]);
-  useEffect(()=>{if(!currentUser)return;if((view==="cashin"&&!canCash)||(view==="turbines"&&!pinOk))setView("home");},[view,currentUser,canCash,pinOk]);
+  useEffect(()=>{if(!currentUser)return;if((view==="cashin"&&!canCash)||(view==="turbines"&&!isOwner))setView("home");},[view,currentUser,canCash,isOwner]);
   const [cashFocusApp,setCashFocusApp]=useState(null); // v217 : PJ à afficher dans la page Cash in (depuis une fiche projet)
   const pjCtxTests=canSeeTests?testsDoc:null,pjCtx=useMemo(()=>({testsDoc:pjCtxTests,turbineDoc}),[pjCtxTests,turbineDoc]); // v203 : pastilles de la fiche d'un PJ // v196 : entrées du Manager affichées dans ce menu (fournies par ManagerPanel)
   const closePeek=delay=>{clearTimeout(navPeekT.current);navPeekT.current=setTimeout(()=>setNavPeek(false),delay||0);};
@@ -1208,7 +1210,7 @@ export default function App(){
             {/* Même filtre État + PJ que le Gantt (demandé explicitement : "le même format au même
                 emplacement") — partage le même état que la liste/le Gantt, donc filtrer ici filtre
                 aussi les autres vues et inversement. */}
-            {view==="calendar"&&<CalendarView canEditDays={canEditMeta} setClosurePeriods={setClosurePeriodsAndSave} setProductionExclusionDays={setProductionExclusionDays} data={filtered} onSelectPj={setCalSel}
+            {view==="calendar"&&<CalendarView canEditDays={canEditMeta} setClosurePeriods={setClosurePeriodsAndSave} setProductionExclusionDays={setProductionExclusionDays} data={filtered} onSelectPj={(pj,day)=>{setCalSel(pj);setCalDay(day||null);}}
               mode={calMode} setMode={setCalMode} anchor={calAnchor} setAnchor={setCalAnchor}
               dayAnchor={calDayAnchor} setDayAnchor={setCalDayAnchor} closurePeriods={closurePeriods}
               productionExclusions={productionExclusions}
@@ -1217,7 +1219,7 @@ export default function App(){
             {/* v204 (demandé : « un onglet uniquement pour moi, sous Tests ») : le module de planification (src/planner), brouillon séparé du planning ;
                 « Publier » seul modifie le planning lu par tous. Liens entre PJ, dates imposées, une production / un banc à la fois, charge par semaine. */}
             {view==="cashin"&&canCash&&<CashInTab authorName={authorName} focus={cashFocusApp}/>}
-            {view==="turbines"&&pinOk&&<TurbinesTab doc={turbineDoc||{turbines:[]}} save={saveTurbines} data={dataWithOverrides} authorName={authorName} superAdmin={pinOk}/>}
+            {view==="turbines"&&isOwner&&<TurbinesTab doc={turbineDoc||{turbines:[]}} save={saveTurbines} data={dataWithOverrides} authorName={authorName} superAdmin={pinOk}/>}
             {view==="planner"&&isOwner&&<PlannerView productionExclusions={productionExclusions} testers={testsDoc&&Array.isArray(testsDoc.testers)?testsDoc.testers:[]} planLoaded={planLoaded} planDoc={planDoc} rows={dataWithOverrides} closurePeriods={closurePeriods} authorName={authorName}
               onSavePlan={p=>savePlan(p,authorName)} onPublish={(plan,note)=>publishPlan({plan,closurePeriods,by:authorName,note})} onLoadHistory={loadHistory} onRestorePublication={restorePublication}/>}
             {view==="tests"&&canSeeTests&&<TestsTab doc={testsDoc} save={saveTests} data={dataWithOverrides} certifs={certifs} canEdit={pinOk} me={currentUser&&currentUser.email} signApi={signApi}/>}
@@ -1229,7 +1231,7 @@ export default function App(){
       </>
     )}
     {/* v203 : fiche unique d'un PJ (même pop-up que la Liste et le Gantt) */}
-    {calSel&&<PjDialog pj={calSel} data={dataWithOverrides} df={df} onClose={()=>setCalSel(null)} comments={comments} addComment={addComment} deleteComment={deleteComment}
+    {calSel&&<PjDialog dayAction={calDay&&canEditMeta?(()=>{const off=((productionExclusions||{})[calSel]||[]).includes(calDay),lab=calDay.slice(8,10)+"/"+calDay.slice(5,7);return{off,label:off?"Rétablir la production le "+lab:"Pas de production le "+lab,hint:"Pour "+calSel+" seulement — le Gantt, la charge et le planificateur en tiennent compte",onToggle:()=>setProductionExclusionDays({[calSel]:[calDay]},!off)};})():null} pj={calSel} data={dataWithOverrides} df={df} onClose={()=>{setCalSel(null);setCalDay(null);}} comments={comments} addComment={addComment} deleteComment={deleteComment}
       pinOk={pinOk} delays={delays} delayTypes={delayTypes} setDelayTypes={setDelayTypesAndSave} addDelayAllocation={addDelayAllocation} deleteDelayAllocation={deleteDelayAllocation}
       addDelayComment={addDelayComment} deleteDelayComment={deleteDelayComment} authorName={authorName} savePjMetaOverride={savePjMetaOverride} canEditMeta={canEditMeta}/>}
       </main>

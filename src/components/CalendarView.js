@@ -376,8 +376,8 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
               const todayEdge=isTodayCol?"inset 2px 0 0 "+T.red500+", inset -2px 0 0 "+T.red500:"none";
               // v218 (demandé : « cliquer sur la tuile de la ligne et non sur le jour en haut ») : admins, jour ouvré de la période de production
               const inProdRange=r.arrivee&&r.finProd&&toLocalISO(d)>=toLocalISO(new Date(r.arrivee))&&toLocalISO(d)<=toLocalISO(new Date(r.finProd));
-              const cellMenu=canEditDays&&!isWE&&(inProdRange||closed)?(e=>{e.stopPropagation();const rr=e.currentTarget.getBoundingClientRect();setDayMenu({iso:toLocalISO(d),x:rr.left,y:rr.bottom,pj});}):null;
-              if(!status)return(<div key={di} className="enogia-cal-daycell" onClick={cellMenu||undefined} title={cellMenu?"Options de production de ce jour pour "+pj:undefined} style={{cursor:cellMenu?"pointer":undefined,...pos,height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,background:cellBg,boxShadow:todayEdge,position:"relative"}}/>);
+              const cellMenu=canEditDays&&!isWE&&inProdRange&&!closed?(e=>{e.stopPropagation();onSelectPj&&onSelectPj(pj,toLocalISO(d));}):null; // v221 : fiche du PJ + bouton « production ce jour »
+              if(!status)return(<div key={di} className="enogia-cal-daycell" onClick={cellMenu||undefined} title={cellMenu?pj+" : fiche et production de ce jour":undefined} style={{cursor:cellMenu?"pointer":undefined,...pos,height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,background:cellBg,boxShadow:todayEdge,position:"relative"}}/>);
               const lastMilestone=status.split(" + ").pop();
               const st=SEGMENT_STYLE[lastMilestone]||SEGMENT_STYLE["Production"];
               const fill=stageFill(status);

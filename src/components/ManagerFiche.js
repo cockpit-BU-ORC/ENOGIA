@@ -639,7 +639,13 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
     const m=new Map();filteredList.forEach(x=>{const cs=chefsOf(getPjMeta(x.pj,x));(cs.length?cs:["Sans chef de projet"]).forEach(c=>{if(!m.has(c))m.set(c,[]);m.get(c).push(x);});}); // v191 : un PJ figure chez chacun de ses chefs
     return [...m.entries()].sort((a,b)=>a[0]==="Sans chef de projet"?1:b[0]==="Sans chef de projet"?-1:a[0].localeCompare(b[0],"fr")).map(([c,rows])=>({key:"c:"+c,head:c,rows,late:rows.filter(x=>x.drift>0&&x.etat!=="SHIPPED").length}));
   },[filteredList,groupBy,myPjs]); // eslint-disable-line
-  const pick=pj=>{setSelPj(pj);setChefView(null);};
+  const pick=pj=>{setSelPj(pj);setChefView(null);setClusterView(null);};
+  // v221 (demandé : « regrouper en synthèse certains PJ qui sont les mêmes (PJ461-1, -2…) ») : machines d'un même PJ regroupées dans la liste
+  const [clusterOn,setClusterOn]=useState(()=>{try{return localStorage.getItem("enogia_mlist_cluster")!=="0";}catch(e){return true;}});
+  useEffect(()=>{try{localStorage.setItem("enogia_mlist_cluster",clusterOn?"1":"0");}catch(e){}},[clusterOn]);
+  const [clusterView,setClusterView]=useState(null),[openCl,setOpenCl]=useState(()=>new Set());
+  const baseOf=pj=>{const m=/^(PJ\s*\d+)[-_ ]/i.exec(String(pj||""));return m?m[1].toUpperCase():null;};
+  const clusterRows=list=>{if(!clusterOn)return list.map(row=>({base:row.pj,rows:[row]}));const out=[],idx={};list.forEach(row=>{const b=baseOf(row.pj);if(!b){out.push({base:row.pj,rows:[row]});return;}if(idx[b]==null){idx[b]=out.length;out.push({base:b,rows:[]});}out[idx[b]].rows.push(row);});return out;};
   const r=data.find(x=>x.pj===selPj);
   const meta=r?getPjMeta(r.pj,r):null;
   // v146.18 : applique la clôture / réouverture d'une ligne commune aux autres projets du même envoi (même groupId)
@@ -749,7 +755,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
             {g.late>0&&<span title="En retard sur l'initial" style={{fontFamily:T.fontLabel,fontSize:11,fontWeight:600,color:T.red600,background:T.red100,borderRadius:999,padding:"0 6px"}}>{g.late} en retard</span>}
             <span style={{fontSize:FZ.xs,fontWeight:700,color:T.ink500,fontVariantNumeric:"tabular-nums"}}>{g.rows.length}</span>
           </div>)}
-        {(!g.head||!folded.has(g.key))&&g.rows.map(row=>{
+        {(!g.head||!folded.has(g.key))&&(()=>{const rowEl=(row,sub)=>{
           const m=getPjMeta(row.pj,row);
           const nCom=(comments?.[row.pj]||[]).length;
           const nDel=(delays?.[row.pj]||[]).length;
@@ -758,7 +764,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
           const ec=(ETAT_META[row.etat]||ETAT_META["NOT ORDERED"]);
           const pv=pvOf(row);
           if(listMini)return null; // v196 : liste en tiroir — repliée, seule la languette « Projets » reste
-          return(<div key={row.pj} {...pressable(()=>pick(row.pj),{"aria-current":sel?"true":undefined})} style={{padding:"6px 8px 6px 8px",cursor:"pointer",background:sel?T.teal100:"transparent",borderLeft:"3px solid "+(sel?T.teal500:"transparent"),borderBottom:"1px solid "+T.line}}>
+          return(<div key={row.pj} {...pressable(()=>pick(row.pj),{"aria-current":sel?"true":undefined})} style={{padding:sub?"6px 8px 6px 24px":"6px 8px 6px 8px",cursor:"pointer",background:sel?T.teal100:"transparent",borderLeft:"3px solid "+(sel?T.teal500:"transparent"),borderBottom:"1px solid "+T.line}}>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
               <span style={{width:8,height:8,borderRadius:"50%",background:ec.bar,flexShrink:0}} title={ec.label}/>
               <span style={{fontWeight:700,fontVariantNumeric:"tabular-nums",color:etatInk(row.etat),fontSize:FZ.sm,whiteSpace:"nowrap",flexShrink:0}}><PjPlate pj={row.pj}/></span>
@@ -777,7 +783,25 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
               <span style={{fontSize:FZ.xs,color:T.ink300}}>{row.depart?fmt(new Date(row.depart)):"—"}</span>
             </div>
           </div>);
-        })}</React.Fragment>))}
+};
+          return clusterRows(g.rows).map(cl=>{
+            if(cl.rows.length<2)return rowEl(cl.rows[0],false);
+            if(listMini)return null;
+            const open=openCl.has(g.key+cl.base),m0=getPjMeta(cl.rows[0].pj,cl.rows[0]),act=clusterView&&clusterView.key===g.key+cl.base;
+            const pvAvg=Math.round(cl.rows.reduce((t,x)=>t+pvOf(x),0)/cl.rows.length);
+            return(<React.Fragment key={"cl"+g.key+cl.base}>
+              <div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 8px",borderBottom:"1px solid "+T.line,background:act?T.teal100:"transparent"}}>
+                <button type="button" onClick={()=>setOpenCl(s0=>{const n=new Set(s0);const k=g.key+cl.base;if(n.has(k))n.delete(k);else n.add(k);return n;})} aria-expanded={open} aria-label={(open?"Replier ":"Déplier ")+cl.base} style={{border:"none",background:"transparent",cursor:"pointer",color:T.ink500,minWidth:24,minHeight:24,fontSize:12}}>{open?"▾":"▸"}</button>
+                <button type="button" onClick={()=>{setChefView(null);setClusterView({key:g.key+cl.base,label:cl.base+(m0.nomProjet?" · "+m0.nomProjet:"")+" ("+cl.rows.length+" machines)",rows:cl.rows});}} title={"Synthèse commune des "+cl.rows.length+" machines de "+cl.base} style={{flex:1,minWidth:0,border:"none",background:"transparent",cursor:"pointer",textAlign:"left",padding:"2px 0",fontFamily:T.font,display:"flex",alignItems:"center",gap:8}}>
+                  <span style={{fontFamily:T.fontMono,fontWeight:700,fontSize:FZ.sm,color:T.ink900}}>{cl.base}</span>
+                  <span style={{fontSize:FZ.xs,color:T.ink500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",minWidth:0}}>{m0.nomProjet||""}</span>
+                  <span style={{marginLeft:"auto",fontSize:FZ.xs,fontWeight:700,color:T.ink700,background:T.surfaceAlt,borderRadius:999,padding:"0 8px",whiteSpace:"nowrap"}}>{cl.rows.length} machines · {pvAvg}%</span>
+                </button>
+              </div>
+              {open&&cl.rows.map(row=>rowEl(row,true))}
+            </React.Fragment>);
+          });})()}</React.Fragment>))}
+        {!listMini&&<label style={{display:"flex",alignItems:"center",gap:6,padding:"8px 10px",fontSize:FZ.xs,color:T.ink700,fontWeight:600,cursor:"pointer",borderTop:"1px solid "+T.line}}><input type="checkbox" checked={clusterOn} onChange={e=>setClusterOn(e.target.checked)}/>Regrouper les machines d'un même PJ (PJ461-1, -2…)</label>}
         {filteredList.length===0&&<EmptyNote>Aucun résultat.</EmptyNote>}
         {groupBy==="mine"&&filteredList.length>0&&groups[0].rows.length===0&&<EmptyNote>Aucun PJ à votre nom. Associez vos PJ dans Réglages › Personnes et rôles.</EmptyNote>}
       </div>
@@ -787,14 +811,15 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
       style={{width:10,alignSelf:"stretch",minHeight:300,margin:"0 -6px",cursor:"col-resize",flexShrink:0,display:"flex",justifyContent:"center",touchAction:"none"}}><span style={{width:3,borderRadius:2,background:T.line,margin:"8px 0"}}/></div>}
     <div style={{flex:"1 1 560px",minWidth:340,maxWidth:"none"}}>
       {/* v146.15 : les rapports se lancent depuis une barre AU-DESSUS de la fiche, pas dedans (lecture de la synthèse) */}
+      {clusterView&&!chefView&&<ChefOverview name={clusterView.label} rows={clusterView.rows} pvOf={pvOf} onPick={pick} onClose={()=>setClusterView(null)}/>}
       {chefView&&<ChefOverview name={chefView} rows={(groups.find(g=>g.head===chefView)||{rows:data.filter(x=>x.etat!=="SLOT_LIBRE"&&x.etat!=="SHIPPED"&&(chefsOf(getPjMeta(x.pj,x)).includes(chefView)||(!chefOfRow(x)&&chefView==="Sans chef de projet")))}).rows} pvOf={pvOf} onPick={pick} onClose={()=>setChefView(null)}/>}
-      {!chefView&&r&&<div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:8,flexWrap:"wrap",marginBottom:8}}>
+      {!chefView&&!clusterView&&r&&<div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:8,flexWrap:"wrap",marginBottom:8}}>
         <span style={{fontSize:FZ.xs,color:T.ink300,marginRight:"auto"}}>Rapports pour {r.pj}</span>
         {savePjMetaMulti&&<button onClick={()=>setMultiOpen(true)} title="Ajouter une action, un plan de mitigation, un commentaire ou un statut à plusieurs projets en une fois" style={{display:"inline-flex",alignItems:"center",gap:6,padding:"5px 10px",border:"1px solid "+T.line,borderRadius:10,background:T.card,color:T.ink700,fontWeight:700,fontSize:FZ.xs,fontFamily:T.font,cursor:"pointer"}}>＋ Sur plusieurs projets…</button>}
         <button onClick={()=>setCdpOpen(true)} title="Générer le rapport PowerPoint du chef de projet" style={{display:"inline-flex",alignItems:"center",gap:6,padding:"5px 10px",border:"1px solid "+T.line,borderRadius:10,background:T.card,color:T.ink700,fontWeight:700,fontSize:FZ.xs,fontFamily:T.font,cursor:"pointer"}}><NavIcon name="chart" size={13}/>Rapport chef de projet</button>
         {isSuperAdmin()&&<button onClick={()=>setCodirOpen(true)} title="Générer la synthèse CODIR (PDF)" style={{display:"inline-flex",alignItems:"center",gap:6,padding:"5px 10px",border:"none",borderRadius:10,background:T.navy700,color:"#fff",fontWeight:700,fontSize:FZ.xs,fontFamily:T.font,cursor:"pointer"}}><NavIcon name="chart" size={13}/>Rapport CODIR</button>}
       </div>}
-      {chefView?null:!r?<div style={{...CARD,padding:28,textAlign:"center",color:T.ink300}}>Sélectionnez un PJ dans la liste.</div>:
+      {(chefView||clusterView)?null:!r?<div style={{...CARD,padding:28,textAlign:"center",color:T.ink300}}>Sélectionnez un PJ dans la liste.</div>:
       <div key={r.pj} className="enogia-view-in enogia-mcard" style={{...CARD,overflow:"hidden",display:"flex",flexDirection:"column",height:"calc(100dvh - 244px)",minHeight:420}}>
         <div style={{height:4,flexShrink:0,background:T.navy800,position:"relative"}}><span style={{position:"absolute",left:26,top:0,bottom:0,width:56,background:T.accent}}/></div>
         {/* v134 : la fiche prend la hauteur de l'écran ; elle défile à l'intérieur, l'en-tête (PJ, état, statut) reste figé en haut */}

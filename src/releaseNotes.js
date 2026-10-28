@@ -7,6 +7,17 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v221",
+    date: "2026-10-28",
+    title: "V221 : Machines ORC réparé, fiches regroupées par projet, liens plus simples",
+    items: [
+      { t: "Machines ORC", d: "Le menu du Manager ouvre bien la page Machines ORC (elle s'affichait vide).", admin: true },
+      { t: "Fiches regroupées", d: "Dans Fiches projet, les machines d'un même PJ (PJ461-1, PJ461-2…) sont regroupées ; un clic sur le groupe affiche leur synthèse commune. Case pour désactiver.", admin: true },
+      { t: "Calendrier", d: "Un clic sur la tuile d'un PJ ouvre sa fiche habituelle, avec un bouton « Pas de production le JJ/MM » (ou « Rétablir ») pour ce PJ seulement.", admin: true },
+      { t: "Planificateur", d: "« Lier » ouvre une fenêtre à listes : commence après…, doit être finie avant…, type et décalage, liens existants supprimables. Slots libres masqués (case pour les afficher).", admin: true },
+    ],
+  },
+  {
     id: "2026-10-v220",
     date: "2026-10-28",
     title: "V220 : le site devient « ENOGIA – BU ORC »",

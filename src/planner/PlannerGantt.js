@@ -109,7 +109,7 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
   const cbRef = useRef({}); cbRef.current = { onInfo, onError };
   const { lo, px, W, X } = tl; const cols = colsWith(view, listW); const LEFT_W = cols.reduce((a, c) => a + c[1], 0);
   // v211 : lien en deux clics (« Lier » sur une tâche, puis clic sur la tâche qui suit) — plus fiable que le glisser
-  const [linkFrom, setLinkFrom] = useState(null); const [dragStep, setDragStep] = useState(null);
+  const [linkFrom, setLinkFrom] = useState(null); const [dragStep, setDragStep] = useState(null); const [linkDlg, setLinkDlg] = useState(null);
   useEffect(() => { if (!linkFrom) return undefined; const k = e => { if (e.key === "Escape") setLinkFrom(null); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [linkFrom]);
   const labOf = key => { const sp = splitKey(key), pp = plan.pjs.find(x => x.pj === sp.pj); return sp.pj + " · " + (pp ? stepLabel(pp, sp.step) : sp.step); };
   const pick = (pj, step) => {
@@ -317,7 +317,7 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
             </span>}
           {rank ? <span title={"Ordre de passage : " + rank} style={{ fontSize: 10.5, fontWeight: 700, color: T.teal600, background: "rgba(46,125,154,.14)", borderRadius: 6, padding: "0 5px" }}>#{rank}</span> : null}
           <span style={{ flex: 1 }} />
-          {!readOnly && <button className="pg-btn pg-more" aria-label={"Lier " + stepLabel(p, k) + " de " + p.pj + " à une autre tâche"} title="Lier à une autre tâche : cliquez ensuite la tâche qui doit suivre" onClick={e => { e.stopPropagation(); setLinkFrom(key); }} style={{ border: "1px solid " + T.line, background: T.card, color: T.teal600, borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: "pointer", padding: "0 6px", marginRight: 4, lineHeight: "18px" }}>Lier</button>}
+          {!readOnly && <button className="pg-btn pg-more" aria-label={"Lier " + stepLabel(p, k) + " de " + p.pj + " à une autre tâche"} title="Lier à une autre tâche : cliquez ensuite la tâche qui doit suivre" onClick={e => { e.stopPropagation(); setLinkDlg(key); }} style={{ border: "1px solid " + T.line, background: T.card, color: T.teal600, borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: "pointer", padding: "0 6px", marginRight: 4, lineHeight: "18px" }}>Lier</button>}
           {!readOnly && <button className="pg-btn pg-more" aria-label={"Supprimer l'étape " + stepLabel(p, k) + " de " + p.pj} title="Supprimer cette étape" onClick={e => { e.stopPropagation(); if (window.confirm("Supprimer l'étape « " + stepLabel(p, k) + " » de " + p.pj + " (et ses liens) ?")) go(removeStep(base, p.pj, k), { pj: p.pj, key: null, want: null }); }} style={{ border: 0, background: "none", color: T.red500, cursor: "pointer", fontSize: 13, padding: "0 6px" }}>✕</button>}
         </>, { gap: 2 });
         if (c === "start") return cell(c, w, <EditCell disabled={readOnly} type="date" value={n && n.s !== null ? n.start : ""} onCommit={v => editStart(p, k, v)} mono title={pinned ? "Date imposée : « pas avant ce jour »" : n && n.s !== null ? "Date calculée par un lien. Cliquez pour imposer une date." : "Pas de date : imposez-en une ou ajoutez un prédécesseur"}
@@ -409,10 +409,54 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
         onStart={v => editStart(p, qe.step, v)} onDur={v => editDur(p, qe.step, v)} onWork={v => editWork(p, qe.step, v)} onPred={v => editPred(p, qe.step, v)} onClose={() => setQe(null)} />; })()}
     {le && (() => { const l = allLinks(base).find(x => x.id === le.id); if (!l) return null; const lab = k => { const s = splitKey(k); const pp = plan.pjs.find(x => x.pj === s.pj); return s.pj + " · " + (pp ? stepLabel(pp, s.step) : s.step); };
       return <LinkEdit at={le} link={l} from={lab(l.from)} to={lab(l.to)} onType={t => go(updateLink(base, l.id, { type: t }), { pj: splitKey(l.to).pj, key: null, want: null })} onLag={v => go(updateLink(base, l.id, { lag: Math.round(Number(v)) || 0 }), { pj: splitKey(l.to).pj, key: null, want: null })} onDelete={() => { setLe(null); go(removeLink(base, l.id), { pj: splitKey(l.to).pj, key: null, want: null }); }} onClose={() => setLe(null)} />; })()}
+    {linkDlg && <LinkDialog nodeKey_={linkDlg} plan={plan} base={base} pjs={pjs} onClose={() => setLinkDlg(null)} onPick={() => { setLinkFrom(linkDlg); setLinkDlg(null); }}
+      onAdd={(from, to, type, lag) => { if (from === to) return; if (allLinks(base).some(l => !l.seq && l.from === from && l.to === to)) { onError("Ce lien existe déjà."); return; } go(addLink(base, { from, to, type, lag: Math.round(Number(lag) || 0) }), { pj: splitKey(to).pj, key: null, want: null }); if (onInfo) onInfo("Lien créé : « " + labOf(from) + " » → « " + labOf(to) + " ».");}}
+      onRemove={id => go(removeLink(base, id), null)} labOf={labOf} />}
     {linkFrom && <div role="status" style={{ position: "fixed", left: "50%", top: 84, transform: "translateX(-50%)", zIndex: 10005, background: T.ink900, color: T.card, borderRadius: 10, padding: "8px 14px", fontSize: 13, fontWeight: 600, boxShadow: T.shadowLg, display: "flex", gap: 10, alignItems: "center" }}>
       Cliquez la tâche (ligne ou barre) qui doit suivre « {labOf(linkFrom)} »
       <button type="button" onClick={() => setLinkFrom(null)} style={{ border: "1px solid " + T.card, background: "transparent", color: T.card, borderRadius: 6, padding: "2px 8px", cursor: "pointer", fontWeight: 700 }}>Annuler</button>
     </div>}
     {dragging && tip && <div ref={tipRef} style={{ position: "fixed", left: 0, top: 0, zIndex: 10001, background: T.ink900, color: T.card, borderRadius: 6, padding: "3px 8px", fontSize: 12, fontWeight: 700, pointerEvents: "none" }}>{tip}</div>}
+  </div>);
+}
+
+// v221 (demandé : « le système de lien n'est pas simple à prendre en main ») : liens d'une tâche choisis dans des listes —
+// « commence après » (prédécesseur) et « doit être finie avant » (successeur), type et décalage ; liens existants supprimables.
+const LTYPES = [["FS", "fin → début"], ["SS", "début → début"], ["FF", "fin → fin"], ["SF", "début → fin"]];
+function LinkDialog({ nodeKey_, plan, base, pjs, onClose, onAdd, onRemove, onPick, labOf }) {
+  const [pred, setPred] = useState(""), [succ, setSucc] = useState(""), [type, setType] = useState("FS"), [lag, setLag] = useState("0");
+  useEffect(() => { const k = e => { if (e.key === "Escape") onClose(); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose]);
+  const list = (pjs && pjs.length ? pjs : plan.pjs);
+  const opts = <>{list.map(p => <optgroup key={p.pj} label={p.pj + (p.nomProjet ? " · " + p.nomProjet : "")}>{stepKeysOf(p).map(k => { const key = nodeKey(p.pj, k); return key === nodeKey_ ? null : <option key={key} value={key}>{p.pj + " · " + stepLabel(p, k)}</option>; })}</optgroup>)}</>;
+  const mine = allLinks(base).filter(l => !l.seq && (l.from === nodeKey_ || l.to === nodeKey_));
+  const L = { display: "flex", flexDirection: "column", gap: 4, fontSize: 12.5, fontWeight: 700, color: T.ink700 };
+  const sel = { height: 34, border: "1px solid " + T.line, borderRadius: 8, background: T.card, color: T.ink900, fontSize: 13, padding: "0 8px", fontFamily: T.font };
+  const ok = () => { if (pred) onAdd(pred, nodeKey_, type, lag); if (succ) onAdd(nodeKey_, succ, type, lag); setPred(""); setSucc(""); };
+  return (<div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,20,30,.45)", zIndex: 10010, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+    <div role="dialog" aria-label={"Liens de " + labOf(nodeKey_)} onClick={e => e.stopPropagation()} style={{ background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, width: "min(560px,100%)", maxHeight: "88vh", overflow: "auto", padding: "16px 18px", fontFamily: T.font }}>
+      <div style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: 18 }}>Liens · {labOf(nodeKey_)}</div>
+      <div style={{ fontSize: 12.5, color: T.ink500, margin: "4px 0 12px" }}>Choisissez la tâche qui doit passer avant, ou celle qui attend la fin de celle-ci. Les dates se recalculent aussitôt.</div>
+      <div style={{ display: "grid", gap: 10 }}>
+        <label style={L}>Commence après…<select value={pred} onChange={e => setPred(e.target.value)} style={sel}><option value="">— aucune —</option>{opts}</select></label>
+        <label style={L}>Doit être finie avant…<select value={succ} onChange={e => setSucc(e.target.value)} style={sel}><option value="">— aucune —</option>{opts}</select></label>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <label style={{ ...L, flex: "1 1 200px" }}>Type<select value={type} onChange={e => setType(e.target.value)} style={sel}>{LTYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
+          <label style={{ ...L, width: 140 }}>Décalage (j ouvrés)<input type="number" value={lag} onChange={e => setLag(e.target.value)} style={sel} /></label>
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+        <button type="button" disabled={!pred && !succ} onClick={ok} style={{ border: "none", borderRadius: 8, padding: "8px 14px", background: pred || succ ? T.ink900 : T.surfaceAlt, color: pred || succ ? T.card : T.ink500, fontWeight: 700, cursor: pred || succ ? "pointer" : "default", minHeight: 34 }}>Créer le lien</button>
+        <button type="button" onClick={onPick} style={{ border: "1px solid " + T.line, borderRadius: 8, padding: "8px 14px", background: T.card, color: T.ink700, fontWeight: 700, cursor: "pointer", minHeight: 34 }}>Ou cliquer la tâche suivante dans le Gantt</button>
+        <button type="button" onClick={onClose} style={{ marginLeft: "auto", border: "none", background: "transparent", color: T.ink500, cursor: "pointer", minHeight: 34 }}>Fermer</button>
+      </div>
+      <div style={{ borderTop: "1px solid " + T.line, marginTop: 14, paddingTop: 10 }}>
+        <div style={{ fontSize: 12.5, fontWeight: 700, color: T.ink700, marginBottom: 6 }}>Liens de cette tâche ({mine.length})</div>
+        {mine.length === 0 && <div style={{ fontSize: 12.5, color: T.ink500 }}>Aucun lien pour l'instant.</div>}
+        {mine.map(l => <div key={l.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, padding: "4px 0", minHeight: 30 }}>
+          <span style={{ flex: 1, minWidth: 0 }}>{labOf(l.from)} <span style={{ color: T.ink500 }}>→</span> {labOf(l.to)} <span style={{ color: T.ink500, fontSize: 12 }}>({(LTYPES.find(t => t[0] === l.type) || LTYPES[0])[1]}{l.lag ? ", " + (l.lag > 0 ? "+" : "") + l.lag + " j" : ""})</span></span>
+          <button type="button" onClick={() => onRemove(l.id)} aria-label="Supprimer ce lien" style={{ border: "1px solid " + T.line, background: T.card, color: T.red500, borderRadius: 6, padding: "2px 8px", cursor: "pointer", fontWeight: 700 }}>Supprimer</button>
+        </div>)}
+      </div>
+    </div>
   </div>);
 }

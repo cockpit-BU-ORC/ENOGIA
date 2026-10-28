@@ -18,4 +18,6 @@ export function setOwner(v) { ROLE.owner = !!v; }
 export function isOwner() { return ROLE.owner; }
 // v210 (demandé : « les 2 chefs de projet, aussi admin, Clément et Myy, doivent pouvoir remplir et mettre à jour le Cash in ») :
 // le Cash in est ouvert au propriétaire ET aux admins (accès Manager).
-export function canCash() { return ROLE.owner || ROLE.superAdmin; }
+// v221 : réservé au propriétaire « pour l'instant » (même réglage que CASH_FOR_ADMINS dans App.js)
+export const CASH_FOR_ADMINS = false;
+export function canCash() { return ROLE.owner || (CASH_FOR_ADMINS && ROLE.superAdmin); }
