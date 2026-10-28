@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v210",
+    date: "2026-10-28",
+    title: "V210 : Cash in pour les chefs de projet, tous les PJ dans le planning des bancs",
+    items: [
+      { t: "Cash in ouvert aux admins", d: "Les chefs de projet admins remplissent et mettent à jour le Cash in depuis leur session, et retrouvent le bloc Cash in sur leur accueil.", admin: true },
+      { t: "Cash in allégé", d: "Plus de boutons « Sauvegarde JSON » ni « Importer / Reprendre un fichier », plus de mention technique.", admin: true },
+      { t: "Planning des bancs", d: "Tous les PJ en cours avec une période de tests, chacun sur sa ligne, en colonnes séparées : PJ, gamme, testeur, client, NOBO, tests. Hors des 3 semaines, une flèche dit quand ; option « PJ sans période »." },
+    ],
+  },
+  {
     id: "2026-10-v209",
     date: "2026-10-28",
     title: "V209 : la page Tests en grille, claire et alignée",

@@ -113,7 +113,7 @@ function WeekBoard({ doc, rows, testers, catalog, conflicts, commit, certifs, ca
         <BenchStrip rows={withP} {...{ doc, catalog, testers }} on={cur && cur.pj} onPick={setSel} />
         <ResultsFeed rows={withP} {...{ doc, catalog }} onPick={setSel} />
       </div>
-      <BenchGrid rows={withP} {...{ doc, catalog, testers, conflicts }} on={cur && cur.pj} onPick={setSel} />
+      <BenchGrid rows={withP} allRows={rows} {...{ doc, catalog, testers, conflicts }} on={cur && cur.pj} onPick={setSel} />
     </div>
     {cur && <TestDialog r={cur} onClose={() => setSel(null)} {...{ doc, testers, catalog, conflicts, commit, certifs, canEdit, myTester, who, signApi }} />}
   </div>);
@@ -276,49 +276,74 @@ function GridNav({ off, setOff, step = 1 }) {
     <button type="button" onClick={() => setOff(o => o + step)} style={{ ...btn(true, "ghost"), minHeight: 30 }} aria-label="Une semaine plus tard">▶</button>
   </span>);
 }
-function BenchGrid({ rows, doc, catalog, testers, conflicts, on, onPick }) {
-  const [off, setOff] = useState(0); const todayIso = toLocalISO(new Date());
+// v210 (demandé : « avoir en ligne tous les PJ et une bonne séparation entre le PJ, la gamme, le testeur, NOBO, client ») :
+// une ligne par PJ en cours (non expédié) ayant une période de tests, même hors des 3 semaines affichées (une flèche dit
+// alors quand), + en option ceux sans période ; à gauche, de vraies colonnes séparées : PJ · Gamme · Testeur · Client ·
+// NOBO · Tests, avec leur en-tête.
+function BenchGrid({ rows, allRows, doc, catalog, testers, conflicts, on, onPick }) {
+  const [off, setOff] = useState(0), [noPer, setNoPer] = useState(false); const todayIso = toLocalISO(new Date());
   const days = workDaysFrom(addDaysIso(mondayOf(todayIso), off * 7), GRID_DAYS), end = days[days.length - 1], ix = gridIdx(days);
-  const ORDER = { late: 0, wip: 1, next: 2, done: 3 };
+  const ORDER = { late: 0, wip: 1, next: 2, done: 3, none: 4 };
   const list = [];
   rows.forEach(r => {
     const ms = machineState(r, doc, catalog, todayIso); if (!ms) return;
-    if (ms.st === "late" && ms.lateD > 30) return;
-    const a = ms.a, b = ms.st === "late" ? todayIso : ms.b; if (b < days[0] || a > end) return;
-    const c0 = Math.max(0, ix.from(a)), c1 = ix.to(b); if (c0 < 0 || c1 < c0) return;
-    const names = ms.plan.assign.map(x => testers.find(t => t.id === x.tid)).filter(Boolean).map(t => t.name.split(" ")[0]);
+    const a = ms.a, b = ms.st === "late" ? todayIso : ms.b;
+    let c0 = -1, c1 = -1;
+    if (!(b < days[0] || a > end)) { c0 = Math.max(0, ix.from(a)); c1 = ix.to(b); if (c1 < c0) { c0 = -1; c1 = -1; } }
+    const plan = ms.plan, names = plan.assign.map(x => testers.find(t => t.id === x.tid)).filter(Boolean).map(t => t.name.split(" ")[0]);
     const pd = presenceDates(r.clientPresence || null), pres = ["client", "nobo"].map(k => pd[k] && { k, d: dIso(pd[k]), i: days.indexOf(dIso(pd[k])) }).filter(x => x && x.i >= 0);
-    list.push({ r, ms, c0, c1, names, pres, conf: conflicts.some(c => c.a.pj === r.pj || c.b.pj === r.pj) });
+    list.push({ r, ms, c0, c1, names, pd, pres, out: c0 < 0 ? (a > end ? "after" : "before") : null, conf: conflicts.some(c => c.a.pj === r.pj || c.b.pj === r.pj) });
   });
-  list.sort((x, y) => ORDER[x.ms.st] - ORDER[y.ms.st] || (x.ms.a < y.ms.a ? -1 : x.ms.a > y.ms.a ? 1 : 0));
-  const lab = { width: "var(--bg-lw)", flexShrink: 0, padding: "0 10px", borderRight: "1px solid " + T.line, boxSizing: "border-box" };
+  const without = (allRows || []).filter(r => r && r.pj && r.etat !== "SHIPPED" && r.etat !== "SLOT_LIBRE" && !r.tests);
+  if (noPer) without.forEach(r => { const plan = planOf(doc, r.pj); list.push({ r, ms: { st: "none", plan, act: activeSections(presenceKind(r.clientPresence || null)), q: progressOf(plan, catalog, activeSections(presenceKind(r.clientPresence || null))), a: "9999" }, c0: -1, c1: -1, names: plan.assign.map(x => testers.find(t => t.id === x.tid)).filter(Boolean).map(t => t.name.split(" ")[0]), pd: presenceDates(r.clientPresence || null), pres: [], out: "none", conf: false }); });
+  list.sort((x, y) => ORDER[x.ms.st] - ORDER[y.ms.st] || (x.ms.a < y.ms.a ? -1 : x.ms.a > y.ms.a ? 1 : 0) || (x.r.pj < y.r.pj ? -1 : 1));
+  const inWin = list.filter(x => x.c0 >= 0).length;
+  const lab = { width: "var(--bg-lw)", flexShrink: 0, padding: 0, borderRight: "2px solid " + T.line, boxSizing: "border-box" };
+  const COLS = { display: "grid", gridTemplateColumns: "var(--bg-cols)", alignItems: "stretch", width: "100%", height: "100%" };
+  const hc = (txt, cls, right) => <span className={cls} style={{ padding: "0 8px", borderLeft: "1px solid " + T.line, display: "flex", alignItems: "flex-end", justifyContent: right ? "flex-end" : "flex-start", whiteSpace: "nowrap", overflow: "hidden" }}>{txt}</span>;
+  const head = (<div style={{ ...COLS, height: "auto", alignSelf: "stretch" }}>
+    <span style={{ padding: "0 8px", display: "flex", alignItems: "flex-end" }}>PJ</span>{hc("Gamme", "c-opt")}{hc("Testeur")}{hc("Client", "c-opt")}{hc("NOBO", "c-opt")}{hc("Tests", "", true)}
+  </div>);
+  const cellS = { padding: "0 8px", display: "flex", alignItems: "center", gap: 5, minWidth: 0, borderLeft: "1px solid " + T.line, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontSize: 12.5 };
+  const pres = (k, d) => d ? <><i aria-hidden="true" style={{ width: 8, height: 8, borderRadius: "50%", background: PRESENCE_META[k].color, flexShrink: 0 }} /><span style={{ fontVariantNumeric: "tabular-nums", color: T.ink900 }}>{fdm(dIso(d))}</span></> : d === "" ? <span style={{ color: T.ink500 }}>à fixer</span> : <span style={{ color: T.ink300 }}>—</span>;
   return (<section aria-label="Planning des bancs" className="enogia-bg" style={{ ...CARD, padding: 0, overflow: "hidden" }}>
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "10px 14px", flexWrap: "wrap", borderBottom: "1px solid " + T.line }}>
-      <div><h3 style={{ margin: 0, fontSize: FZ.md, fontWeight: 700, color: T.ink900 }}>Planning des bancs</h3><div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 2 }}>Du {fd(days[0])} au {fd(end)} · {list.length} machine{list.length > 1 ? "s" : ""} · une ligne par machine</div></div>
-      <span style={{ display: "inline-flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}><GridLegend /><GridNav off={off} setOff={setOff} /></span>
+      <div><h3 style={{ margin: 0, fontSize: FZ.md, fontWeight: 700, color: T.ink900 }}>Planning des bancs</h3><div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 2 }}>Du {fd(days[0])} au {fd(end)} · {list.length} PJ, dont {inWin} sur ces 3 semaines</div></div>
+      <span style={{ display: "inline-flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+        <GridLegend />
+        {without.length > 0 && <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: FZ.xs, color: T.ink700, fontWeight: 600, minHeight: 28, cursor: "pointer" }}><input type="checkbox" checked={noPer} onChange={e => setNoPer(e.target.checked)} />PJ sans période ({without.length})</label>}
+        <GridNav off={off} setOff={setOff} />
+      </span>
     </div>
-    <div style={{ overflowX: "auto" }}>
+    <div style={{ overflow: "auto", maxHeight: "calc(100dvh - 220px)" }}>
       <div className="enogia-bg-inner">
-        <GridHead days={days} todayIso={todayIso} labelStyle={lab} label="Machine" />
-        {list.length === 0 && <div style={{ padding: "16px 14px", fontSize: FZ.sm, color: T.ink500 }}>Aucune machine en test sur ces trois semaines.</div>}
-        {list.map(({ r, ms, c0, c1, names, pres, conf }) => {
-          const tn = toneOfSt(ms.st), sel = on === r.pj, segs = segsOf(ms.plan, catalog, ms.act);
-          const info = ms.st === "late" ? "en retard de " + ms.lateD + " j" : ms.st === "wip" ? "jour " + ms.n + " / " + ms.m : ms.st === "done" ? (isForced(ms.plan) ? "validé" : "terminé") : "prévu";
-          const aria = r.pj + (r.gamme ? ", " + r.gamme : "") + ", tests du " + fd(ms.a) + " au " + fd(ms.b) + ", " + info + ", " + ms.q.done + " tests faits sur " + ms.q.total + (names.length ? ", " + names.join(" et ") : ", sans testeur");
+        <GridHead days={days} todayIso={todayIso} labelStyle={lab} label={head} />
+        {list.length === 0 && <div style={{ padding: "16px 14px", fontSize: FZ.sm, color: T.ink500 }}>Aucun PJ en cours avec une période de tests.</div>}
+        {list.map(({ r, ms, c0, c1, names, pd, pres: dots, out, conf }) => {
+          const tn = toneOfSt(ms.st === "none" ? "next" : ms.st), sel = on === r.pj, segs = segsOf(ms.plan, catalog, ms.act);
+          const info = ms.st === "late" ? "en retard de " + ms.lateD + " j" : ms.st === "wip" ? "jour " + ms.n + " / " + ms.m : ms.st === "done" ? (isForced(ms.plan) ? "validé" : "terminé") : ms.st === "none" ? "période à définir" : "prévu";
+          const aria = r.pj + (r.gamme ? ", " + r.gamme : "") + (ms.st === "none" ? ", période de tests à définir" : ", tests du " + fd(ms.a) + " au " + fd(ms.b)) + ", " + info + ", " + ms.q.done + " tests faits sur " + ms.q.total + (names.length ? ", " + names.join(" et ") : ", sans testeur");
           return (<div key={r.pj} className="enogia-bg-row" style={{ display: "flex", minHeight: 40, borderBottom: "1px solid " + T.line, background: sel ? T.teal100 : "transparent" }}>
-            <button type="button" onClick={() => onPick(r.pj)} aria-label={"Ouvrir la fiche de tests : " + aria} style={{ ...lab, border: "none", borderRight: "1px solid " + T.line, background: "transparent", color: T.ink900, cursor: "pointer", display: "flex", alignItems: "center", gap: 7, minWidth: 0, textAlign: "left", fontFamily: T.font, fontSize: FZ.sm }}>
-              <PjPlate pj={r.pj} />
-              {r.gamme && <span className="bg-meta" style={{ fontFamily: T.fontLabel, fontSize: 12, fontWeight: 600, color: T.ink700, whiteSpace: "nowrap" }}>{r.gamme}</span>}
-              <span className="bg-meta" style={{ fontSize: 12, color: names.length ? T.ink500 : T.red600, fontWeight: names.length ? 500 : 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0, flex: 1 }}>{names.length ? names.join(", ") : "sans testeur"}</span>
-              <span className="bg-meta" style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6, flexShrink: 0 }}><SegBar segs={segs} h={7} gap={1} width={Math.max(24, Math.min(64, segs.length * 6))} /><span style={{ fontSize: 11.5, fontWeight: 700, color: T.ink700, fontVariantNumeric: "tabular-nums", minWidth: 30, textAlign: "right" }}>{ms.q.done}/{ms.q.total}</span></span>
+            <button type="button" onClick={() => onPick(r.pj)} aria-label={"Ouvrir la fiche de tests : " + aria} style={{ ...lab, border: "none", borderRight: "2px solid " + T.line, background: "transparent", color: T.ink900, cursor: "pointer", textAlign: "left", fontFamily: T.font }}>
+              <span style={COLS}>
+                <span style={{ ...cellS, borderLeft: "none" }}><PjPlate pj={r.pj} /></span>
+                <span className="c-opt" style={{ ...cellS, fontFamily: T.fontLabel, fontWeight: 600, color: T.ink700 }}>{r.gamme || "—"}</span>
+                <span style={{ ...cellS, color: names.length ? T.ink900 : T.red600, fontWeight: names.length ? 500 : 700 }} title={names.join(", ")}>{names.length ? names.join(", ") : "sans testeur"}</span>
+                <span className="c-opt" style={cellS}>{pres("client", pd.client)}</span>
+                <span className="c-opt" style={cellS}>{pres("nobo", pd.nobo)}</span>
+                <span style={{ ...cellS, justifyContent: "flex-end", gap: 6 }}><SegBar segs={segs} h={7} gap={1} width={Math.max(18, Math.min(40, segs.length * 4))} /><span style={{ fontWeight: 700, color: T.ink700, fontVariantNumeric: "tabular-nums" }}>{ms.q.done}/{ms.q.total}</span></span>
+              </span>
             </button>
             <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
               <TrackBg days={days} todayIso={todayIso} />
-              <button type="button" className="enogia-bg-bar" onClick={() => onPick(r.pj)} aria-label={aria} title={r.pj + " · " + fd(ms.a) + " → " + fd(ms.b) + " · " + info + (conf ? " · testeur en conflit" : "")}
+              {c0 >= 0 && <button type="button" className="enogia-bg-bar" onClick={() => onPick(r.pj)} aria-label={aria} title={r.pj + " · " + fd(ms.a) + " → " + fd(ms.b) + " · " + info + (conf ? " · testeur en conflit" : "")}
                 style={{ position: "absolute", left: "calc(" + pctOf(c0, days.length) + " + 3px)", width: "calc(" + pctOf(c1 - c0 + 1, days.length) + " - 6px)", top: 10, bottom: 10, border: tn.bd, boxShadow: conf ? "0 0 0 2px " + T.amber600 : sel ? "0 0 0 2px " + T.ink900 : "none", borderRadius: 4, background: tn.bg, color: tn.ink, cursor: "pointer", padding: "0 6px", fontSize: 11, fontWeight: 700, fontFamily: T.font, textAlign: "left", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", boxSizing: "border-box" }}>
                 <span className="bg-bar-txt">{info}</span>
-              </button>
-              {pres.map(x => <span key={x.k} title={(x.k === "client" ? "Client" : "NOBO") + " présent le " + fd(x.d)} aria-label={(x.k === "client" ? "Client" : "NOBO") + " présent le " + fd(x.d)} role="img" style={{ position: "absolute", left: "calc(" + pctOf(x.i + 1, days.length) + " - 12px)", top: 3, width: 8, height: 8, borderRadius: "50%", background: PRESENCE_META[x.k].color, boxShadow: "0 0 0 2px " + T.card, zIndex: 2 }} />)}
+              </button>}
+              {out && <span style={{ position: "absolute", top: 0, bottom: 0, display: "flex", alignItems: "center", fontSize: 11.5, color: ms.st === "late" ? T.red600 : T.ink500, fontWeight: 600, whiteSpace: "nowrap", ...(out === "after" ? { right: 10 } : { left: 10 }) }}>
+                {out === "after" ? "tests le " + fd(ms.a) + " →" : out === "before" ? "← " + info + " (" + fd(ms.a) + " → " + fd(ms.b) + ")" : "période de tests à définir"}
+              </span>}
+              {dots.map(x => <span key={x.k} title={(x.k === "client" ? "Client" : "NOBO") + " présent le " + fd(x.d)} aria-label={(x.k === "client" ? "Client" : "NOBO") + " présent le " + fd(x.d)} role="img" style={{ position: "absolute", left: "calc(" + pctOf(x.i + 1, days.length) + " - 12px)", top: 3, width: 8, height: 8, borderRadius: "50%", background: PRESENCE_META[x.k].color, boxShadow: "0 0 0 2px " + T.card, zIndex: 2 }} />)}
             </div>
           </div>);
         })}

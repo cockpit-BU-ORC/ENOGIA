@@ -15,7 +15,7 @@ export const ROLES = [
 // v191 : blocs de l'accueil de chaque rôle, cochés par le super admin pour chaque personne (profile.blocks ; absent = tous).
 export const ROLE_BLOCKS = {
   testeur: [["today", "Mes tests du jour"], ["sign", "Fiches à signer"], ["week", "Ma semaine"], ["notes", "Mes remarques"]],
-  cdp: [["pjs", "Mes PJ et retards"], ["jalons", "Jalons des 3 semaines"], ["fat", "FAT client à venir"], ["mentions", "Mentions"]],
+  cdp: [["pjs", "Mes PJ et retards"], ["jalons", "Jalons des 3 semaines"], ["fat", "FAT client à venir"], ["cash", "Cash in"], ["mentions", "Mentions"]], // v210 : Cash in (admins)
   direction: [["kpis", "Grands chiffres"], ["tests", "Tests"], ["turbines", "Turbines"], ["cash", "Cash in"], ["alertes", "Alertes"], ["charge", "Charge atelier"], ["postes", "Postes de test"], ["departs", "Départs à venir"], ["parcours", "Parcours des machines"]],
   atelier: [["kpis", "Grands chiffres"], ["arrdep", "Arrivées et départs"], ["postes", "Postes de test"]],
 };

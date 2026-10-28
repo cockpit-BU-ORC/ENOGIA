@@ -24,7 +24,7 @@ export function CashInNative({ authorName, focus, onLegacy }) {
   const [save, setSave] = useState("ok"), [msg, setMsg] = useState(null), [linksOpen, setLinksOpen] = useState(false);
   const [q, setQ] = useState(""), [filter, setFilter] = useState("all"), [hidePaid, setHidePaid] = useState(true), [hideEpc, setHideEpc] = useState(false);
   const [sel, setSel] = useState(null), [tab, setTab] = useState("jalons"), [folded, setFolded] = useState(() => new Set());
-  const dirty = useRef(false), timer = useRef(0), latest = useRef(null), fileRef = useRef(null);
+  const dirty = useRef(false), timer = useRef(0), latest = useRef(null);
   const today = todayISO();
 
   useEffect(() => onSnapshot(CASHIN_DOC_REF(), snap => {
@@ -87,16 +87,6 @@ export function CashInNative({ authorName, focus, onLegacy }) {
     const url = URL.createObjectURL(blob), a = document.createElement("a"); a.href = url; a.download = "Cash-in-PJ_" + today + ".xlsx"; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1500);
     notify("Fichier Excel prêt");
   };
-  const download = () => { if (!doc) return; const blob = new Blob([JSON.stringify(doc, null, 2)], { type: "application/json" }); const url = URL.createObjectURL(blob), a = document.createElement("a"); a.href = url; a.download = "cashin-sauvegarde-" + today + ".json"; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1500); };
-  const onFile = async ev => {
-    const f = ev.target.files && ev.target.files[0]; ev.target.value = ""; if (!f) return;
-    try {
-      const obj = JSON.parse(await f.text()), err = validateCashin(obj);
-      if (err) { setMsg({ kind: "err", text: err }); return; }
-      if (info.exists && !window.confirm("Remplacer les " + rows.length + " jalons actuels par les " + obj.rows.length + " du fichier ?\nL'état actuel n'est pas conservé : téléchargez d'abord une sauvegarde si besoin.")) return;
-      commit(cleanCashin(obj)); setMsg({ kind: "ok", text: obj.rows.length + " jalons repris depuis « " + f.name + " »." });
-    } catch (er) { setMsg({ kind: "err", text: er instanceof SyntaxError ? "Ce fichier n'est pas un JSON valide." : "Reprise impossible : " + (er && er.message) }); }
-  };
 
   const Kpi = ({ l, v, tone }) => <div style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 10, padding: "10px 12px", minWidth: 0 }}><div style={{ fontFamily: T.fontLabel, fontSize: 12, color: T.ink500 }}>{l}</div><div style={{ fontFamily: T.fontDisplay, fontSize: 24, fontWeight: 600, color: tone || T.ink900, fontVariantNumeric: "tabular-nums", lineHeight: 1.15, whiteSpace: "nowrap" }}>{v}</div></div>;
   const banner = (kind, children) => <div role={kind === "err" ? "alert" : "status"} style={{ padding: "8px 12px", borderRadius: 8, background: kind === "err" ? T.red100 : kind === "ok" ? T.emerald100 : T.teal100, color: kind === "err" ? T.red600 : kind === "ok" ? T.emerald600 : T.teal600, fontSize: FZ.sm, fontWeight: 600 }}>{children}</div>;
@@ -106,16 +96,13 @@ export function CashInNative({ authorName, focus, onLegacy }) {
       <span aria-live="polite" style={{ fontSize: FZ.xs, fontWeight: 700, color: save === "error" ? T.red500 : save === "ok" ? T.emerald600 : T.ink500 }}>● {SAVE_TXT[save]}</span>
       <span style={{ marginLeft: "auto", display: "inline-flex", gap: 6, flexWrap: "wrap" }}>
         <button type="button" style={btn(false)} onClick={() => setLinksOpen(true)} disabled={!info.exists}>Liaisons avec l'ordo</button>
-        <button type="button" style={btn(false)} onClick={download} disabled={!doc}>Sauvegarde JSON</button>
-        <button type="button" style={btn(false)} onClick={() => fileRef.current && fileRef.current.click()}>Importer un fichier…</button>
-        <input ref={fileRef} type="file" accept="application/json,.json" onChange={onFile} style={{ display: "none" }} aria-label="Fichier de sauvegarde Cash in" />
         <button type="button" style={btn(true)} onClick={exportXlsx}><NavIcon name="copy" size={14} />Exporter en Excel</button>
         {onLegacy && <button type="button" style={{ ...btn(false), border: "none", background: "transparent", color: T.ink500 }} onClick={onLegacy}>Ancienne page</button>}
       </span>
     </div>
     {info.err && banner("err", info.err)}
     {msg && banner(msg.kind, <>{msg.text} <button type="button" onClick={() => setMsg(null)} style={{ marginLeft: 8, border: "none", background: "none", color: "inherit", textDecoration: "underline", cursor: "pointer", fontWeight: 600 }}>Fermer</button></>)}
-    {info.loaded && !info.exists && !info.err && banner("info", <>Aucune donnée Cash in pour l'instant. « Importer un fichier… » puis choisissez <b>cashin-reprise.json</b>, ou ajoutez un PJ.</>)}
+    {info.loaded && !info.exists && !info.err && banner("info", <>Aucune donnée Cash in pour l'instant : ajoutez un PJ.</>)}
     {linksOpen && <CashLinksDialog onClose={() => setLinksOpen(false)} authorName={authorName} />}
 
     {ov && <div className="enogia-stagger" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 8 }}>

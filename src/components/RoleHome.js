@@ -21,7 +21,7 @@ const addD = (s, n) => { const d = new Date(s + "T12:00:00"); d.setDate(d.getDat
 const monday = s => { const d = new Date(s + "T12:00:00"); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return iso(d); };
 const DOW = ["Lun", "Mar", "Mer", "Jeu", "Ven"];
 
-export function RoleHome({ role, profile, ui, rows, open, late, mentions, myPjs, testsDoc, myTester, turbineDoc, owner, onOpenPj, onGo, onOpenCash }) {
+export function RoleHome({ role, profile, ui, rows, open, late, mentions, myPjs, testsDoc, myTester, turbineDoc, owner, cash, onOpenPj, onGo, onOpenCash }) {
   const { Row, Head, cardS, Pill, presenceOf, nomOf, empty, grey, link, S, H, A } = ui;
   const today = iso(new Date());
   const on = id => blockOn(profile, id);
@@ -43,6 +43,17 @@ export function RoleHome({ role, profile, ui, rows, open, late, mentions, myPjs,
 
   // ── Testeur ──
   const mineT = useMemo(() => (!myTester || !testsDoc ? [] : open.filter(r => r.tests && planOf(testsDoc, r.pj).assign.some(a => a.tid === myTester.id))), [open, myTester, testsDoc]);
+  const Stat = ({ label, value, tone, onClick }) => <button type="button" onClick={onClick} disabled={!onClick} style={{ border: "none", background: T.surface, borderRadius: 8, padding: "8px 10px", textAlign: "left", cursor: onClick ? "pointer" : "default", fontFamily: T.font, minWidth: 0 }}><div style={{ fontFamily: T.fontDisplay, fontSize: "clamp(18px,1.5vw,24px)", fontWeight: 600, lineHeight: 1.1, color: tone || T.ink900, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{value}</div><div style={{ ...grey, fontFamily: T.fontLabel }}>{label}</div></button>;
+  const grid = { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(110px,1fr))", gap: 6, marginTop: 6 };
+  // v210 : Cash in sur l'accueil du propriétaire et des admins (direction et chefs de projet)
+  const cashBlock = flex => { const c = cashOverview(getCashinDoc(), today); return (<section aria-label="Cash in" style={{ ...cardS(S.finProd.ring), flex }}>
+        <Head title="Cash in" sub={c ? "hors EPC" : ""} />
+        {!c ? <div style={{ ...grey, margin: "4px 0 6px" }}>Données du Cash in pas encore chargées : ouvrez une fois l'onglet Cash in, ou importez le fichier.</div> : <>
+          <div style={{ ...grid, gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))" }}><Stat label="encaissé" value={fmtEur(c.paid)} /><Stat label="facturé, en attente" value={fmtEur(c.invoiced)} /><Stat label="en retard de paiement" value={fmtEur(c.late)} tone={c.late ? T.red500 : undefined} /><Stat label="à facturer" value={fmtEur(c.toBill)} tone={c.toBill ? T.amber600 : undefined} /><Stat label="attendu sous 30 j" value={fmtEur(c.next30)} /></div>
+          {c.lateRows.slice(0, 3).map((x, i) => <div key={i} style={{ display: "flex", gap: 8, fontSize: FZ.xs, color: T.ink700, padding: "4px 2px", borderTop: i ? "1px solid " + T.line : "none", marginTop: i ? 0 : 8 }}><b style={{ fontFamily: T.fontMono }}>{x.pj || "—"}</b><span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.label}</span><span style={{ color: T.red500, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{fmtEur(x.montant)} · {x.days} j</span></div>)}
+        </>}
+        {onOpenCash && more("Ouvrir le Cash in", onOpenCash)}
+      </section>); };
   if (role === "testeur") {
     const effOf = r => { const a = planOf(testsDoc, r.pj).assign.find(x => x.tid === myTester.id); return effRange(a, r); };
     const todayT = mineT.filter(r => { const e = effOf(r); return e.from <= today && e.to >= today; });
@@ -102,6 +113,7 @@ export function RoleHome({ role, profile, ui, rows, open, late, mentions, myPjs,
         {fats.length === 0 ? empty("check", "Aucune FAT client ou NOBO prévue", "") :
           fats.slice(0, 6).map((f, i) => <Row key={f.r.pj + f.l} first={i === 0} pj={f.r.pj} pill={<Pill tone={S.arrivee}>{f.l}</Pill>} main={nomOf(f.r)} right={f.d ? fmtD(f.d) : "date à fixer"} />)}
       </section>}
+      {cash && on("cash") && cashBlock("2 1 360px")}
       {on("mentions") && mentionsBlock("Mentions", "2 1 300px")}
     </div>);
   }
@@ -143,8 +155,6 @@ export function RoleHome({ role, profile, ui, rows, open, late, mentions, myPjs,
     const bigLate = late.filter(r => r.drift > 10);
     const weeks = [0, 1, 2, 3].map(i => { const a = addD(w0, 7 * i), b = addD(a, 6); const n = open.filter(r => { const s = dIso(r.arrivee) || dIso(r.tests), e = dIso(r.finProd) || dIso(r.depart) || dIso(r.testsFin); return s && e && s <= b && e >= a; }).length; return { a, n }; });
     const maxW = Math.max(1, ...weeks.map(w => w.n));
-    const Stat = ({ label, value, tone, onClick }) => <button type="button" onClick={onClick} disabled={!onClick} style={{ border: "none", background: T.surface, borderRadius: 8, padding: "8px 10px", textAlign: "left", cursor: onClick ? "pointer" : "default", fontFamily: T.font, minWidth: 0 }}><div style={{ fontFamily: T.fontDisplay, fontSize: "clamp(18px,1.5vw,24px)", fontWeight: 600, lineHeight: 1.1, color: tone || T.ink900, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{value}</div><div style={{ ...grey, fontFamily: T.fontLabel }}>{label}</div></button>;
-    const grid = { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(110px,1fr))", gap: 6, marginTop: 6 };
     const alerts = [
       ...bigLate.slice(0, 4).map(r => ({ id: "d" + r.pj, pj: r.pj, pill: <Pill tone={A.orange}>Dérive</Pill>, main: nomOf(r) || "Départ " + fmtD(r.depart), right: "+" + r.drift + " j" })),
       ...noTester.slice(0, 3).map(r => ({ id: "t" + r.pj, pj: r.pj, pill: <Pill tone={S.tests}>Sans testeur</Pill>, main: nomOf(r) || r.gamme || "", right: fmtD(r.tests) })),
@@ -158,14 +168,7 @@ export function RoleHome({ role, profile, ui, rows, open, late, mentions, myPjs,
         <Head title="Turbines" count={turb.length} />
         <div style={grid}><Stat label="critiques" value={nCrit} tone={nCrit ? T.red500 : undefined} /><Stat label="en retard" value={nLateT} tone={nLateT ? T.amber600 : undefined} /><Stat label="à communiquer" value={nShare} /></div>
       </section>}
-      {owner && on("cash") && (() => { const c = cashOverview(getCashinDoc(), today); return (<section aria-label="Cash in" style={{ ...cardS(S.finProd.ring), flex: "2 1 360px" }}>
-        <Head title="Cash in" sub={c ? "hors EPC" : ""} />
-        {!c ? <div style={{ ...grey, margin: "4px 0 6px" }}>Données du Cash in pas encore chargées : ouvrez une fois l'onglet Cash in, ou importez le fichier.</div> : <>
-          <div style={{ ...grid, gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))" }}><Stat label="encaissé" value={fmtEur(c.paid)} /><Stat label="facturé, en attente" value={fmtEur(c.invoiced)} /><Stat label="en retard de paiement" value={fmtEur(c.late)} tone={c.late ? T.red500 : undefined} /><Stat label="à facturer" value={fmtEur(c.toBill)} tone={c.toBill ? T.amber600 : undefined} /><Stat label="attendu sous 30 j" value={fmtEur(c.next30)} /></div>
-          {c.lateRows.slice(0, 3).map((x, i) => <div key={i} style={{ display: "flex", gap: 8, fontSize: FZ.xs, color: T.ink700, padding: "4px 2px", borderTop: i ? "1px solid " + T.line : "none", marginTop: i ? 0 : 8 }}><b style={{ fontFamily: T.fontMono }}>{x.pj || "—"}</b><span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.label}</span><span style={{ color: T.red500, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{fmtEur(x.montant)} · {x.days} j</span></div>)}
-        </>}
-        {onOpenCash && more("Ouvrir le Cash in", onOpenCash)}
-      </section>); })()}
+      {cash && on("cash") && cashBlock("2 1 360px")}
       {on("alertes") && <section aria-label="Alertes" className="enogia-home-wide" style={{ ...cardS(A.orange.ring), flex: "3 1 420px" }}>
         <Head title="Alertes" sub="dérives > 10 j, tests sans testeur" count={bigLate.length + noTester.length} />
         {alerts.length === 0 ? empty("check", "Aucune alerte", "Pas de grosse dérive ni de test sans testeur.") : alerts.map((a, i) => <Row key={a.id} first={i === 0} pj={a.pj} pill={a.pill} main={a.main} right={a.right} />)}

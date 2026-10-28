@@ -16,3 +16,6 @@ export function setSuperAdmin(v) { ROLE.superAdmin = !!v; }
 export function isSuperAdmin() { return ROLE.superAdmin; }
 export function setOwner(v) { ROLE.owner = !!v; }
 export function isOwner() { return ROLE.owner; }
+// v210 (demandé : « les 2 chefs de projet, aussi admin, Clément et Myy, doivent pouvoir remplir et mettre à jour le Cash in ») :
+// le Cash in est ouvert au propriétaire ET aux admins (accès Manager).
+export function canCash() { return ROLE.owner || ROLE.superAdmin; }

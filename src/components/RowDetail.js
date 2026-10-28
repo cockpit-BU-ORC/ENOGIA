@@ -12,7 +12,7 @@ import { ProjectComments, DelayAllocations, EditMetaForm } from "./ProjectModal"
 import { STAGES, STEP_NOTE, autoPct } from "../prodStages";
 import { planOf, catalogOf, activeSections, progressOf } from "../testPlan";
 import { linkedPayments, cashSummary } from "../cashinLink";
-import { isOwner } from "../roles";
+import { canCash } from "../roles";
 import { fmtEur } from "../pjProgress";
 
 // Données de contexte fournies par App (tests, turbines) pour les pastilles, sans les faire passer par chaque vue.
@@ -74,7 +74,7 @@ export function RowDetail({ r, onClose, comments, addComment, deleteComment, pin
   // Pastilles de contexte
   const plan = ctx.testsDoc ? planOf(ctx.testsDoc, r.pj) : null;
   const tq = plan ? progressOf(plan, catalogOf(ctx.testsDoc), activeSections(kind)) : null;
-  const cash = isOwner() ? cashSummary(linkedPayments(r.pj)) : null;
+  const cash = canCash() ? cashSummary(linkedPayments(r.pj)) : null;
   const turb = ((ctx.turbineDoc && ctx.turbineDoc.turbines) || []).filter(t => t.target && t.target.kind === "PJ" && t.target.ref === r.pj);
   const pill = (txt, ink, bg, key) => <span key={key} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontFamily: T.fontLabel, fontSize: 12, fontWeight: 600, color: ink, background: bg, borderRadius: 999, padding: "2px 10px", whiteSpace: "nowrap" }}>{txt}</span>;
   const btn = primary => ({ display: "inline-flex", alignItems: "center", gap: 6, minHeight: 34, padding: "0 14px", borderRadius: 999, border: primary ? "none" : "1px solid " + T.line, background: primary ? T.ink900 : T.card, color: primary ? T.card : T.ink700, fontFamily: T.font, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" });

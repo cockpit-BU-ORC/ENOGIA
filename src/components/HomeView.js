@@ -36,7 +36,7 @@ const BLOCKS = [
 const prefKey = email => "enogia_home_" + String(email || "anon").toLowerCase();
 const loadPrefs = email => { try { return JSON.parse(localStorage.getItem(prefKey(email)) || "{}") || {}; } catch (e) { return {}; } };
 
-export function HomeView({ data, comments, myEmail, myName, people, unseenChanges, lastImport, onOpenPj, onGo, pinOk, testsDoc, profiles, owner, turbineDoc, onOpenCash }) {
+export function HomeView({ data, comments, myEmail, myName, people, unseenChanges, lastImport, onOpenPj, onGo, pinOk, testsDoc, profiles, owner, cash, turbineDoc, onOpenCash }) {
   const rows = useMemo(() => (data || []).filter(r => r && r.pj && r.etat !== "SLOT_LIBRE"), [data]);
   const today0 = startOfToday();
 
@@ -181,7 +181,7 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
         <Kpi color={H.warn} label="En retard sur l'initial" value={late.length} tone={late.length ? T.amber600 : T.ink900} sub={maxLate ? "max " + maxLate.pj + " · +" + maxLate.drift + " j" : "Aucune dérive"} onClick={() => onGo && onGo("table")} hint="Ouvrir la liste" />
       </div>}
 
-      {role && <RoleHome key={role} role={role} profile={profile} rows={rows} open={open} late={late} mentions={mentions} myPjs={myPjs} testsDoc={testsDoc} myTester={myTester} turbineDoc={turbineDoc} owner={owner} onOpenPj={onOpenPj} onGo={onGo} onOpenCash={onOpenCash}
+      {role && <RoleHome key={role} role={role} profile={profile} rows={rows} open={open} late={late} mentions={mentions} myPjs={myPjs} testsDoc={testsDoc} myTester={myTester} turbineDoc={turbineDoc} owner={owner} cash={cash} onOpenPj={onOpenPj} onGo={onGo} onOpenCash={onOpenCash}
         ui={{ Row, Head, cardS, Pill, presenceOf, nomOf, empty, grey, link, S, H, A }} />}
       {role === "direction" && bOn("departs") && <section aria-label="Départs à venir" style={{ ...cardS(S.depart.ring), marginBottom: 12 }}>
         <Head title="Ordo · départs à venir" count={departs.length} />

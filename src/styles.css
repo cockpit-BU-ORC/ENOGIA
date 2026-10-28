@@ -456,12 +456,13 @@ button:not(:disabled):active { transform: scale(.97); }
 @media (prefers-reduced-motion: reduce) { .enogia-segbar > i { animation: none; } .enogia-bench-card, .enogia-bench-card:hover { transition: none; transform: none; } }
 
 /* v209 : page Tests — grille des bancs / des testeurs (15 jours ouvrés), catalogue en tableaux */
-.enogia-bg { --bg-lw: 300px; }
+.enogia-bg { --bg-lw: 560px; --bg-cols: 96px 86px minmax(90px,1fr) 72px 72px 92px; }
 .enogia-bg-inner { min-width: calc(var(--bg-lw) + 15 * 34px); }
+.enogia-bg-row:hover > button { background: rgba(127,127,127,.06) !important; }
 .enogia-bg-bar { transition: transform .15s var(--e-ease); }
 .enogia-bg-bar:hover { transform: translateY(-1px); }
 .enogia-bg-bar:focus-visible, .enogia-bg-row > button:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
-@media (max-width: 1100px) { .enogia-bg { --bg-lw: 230px; } }
-@media (max-width: 640px) { .enogia-bg { --bg-lw: 104px; } .enogia-bg .bg-meta, .enogia-bg .bg-bar-txt { display: none !important; } }
+@media (max-width: 1100px) { .enogia-bg { --bg-lw: 440px; --bg-cols: 92px 70px minmax(80px,1fr) 62px 62px 74px; } }
+@media (max-width: 640px) { .enogia-bg { --bg-lw: 236px; --bg-cols: 88px minmax(70px,1fr) 70px; } .enogia-bg .c-opt, .enogia-bg .bg-bar-txt { display: none !important; } }
 .enogia-cat-in:hover, .enogia-cat-in:focus { border-color: rgba(127,127,127,.45) !important; }
 @media (prefers-reduced-motion: reduce) { .enogia-bg-bar, .enogia-bg-bar:hover { transition: none; transform: none; } }

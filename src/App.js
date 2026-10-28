@@ -68,7 +68,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-28-v209-tests-grille";
+const APP_BUILD_VERSION = "2026-10-28-v210-cashin-admins";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -268,6 +268,7 @@ export default function App(){
   const [pinOk,setPinOk]=useState(false);
   // v185 : droits d'administration complets pour le propriétaire et les admins (accès Manager) — sauf le Cash in (isOwner).
   const canEditMeta=isOwner||pinOk;
+  const canCash=isOwner||pinOk; // v210 : Cash in ouvert aux admins (chefs de projet) — règles Firestore à ouvrir aussi (DEPLOIEMENT v210)
   setSuperAdmin(canEditMeta); // pose le rôle avant que les composants ne le lisent (src/roles.js)
   const [progress,setProgress]=useState({});
   const [calSel,setCalSel]=useState(null);
@@ -492,20 +493,11 @@ export default function App(){
   const [,setCashinVer]=useState(0);
   const cashStoreVer=useCashin();
   const lastSharedRef=useRef("");
-  useEffect(()=>{
-    // V146.12 — Administrateurs (pas le super admin) : le Cash in arrive par la copie réduite publiée par le super admin (lecture seule).
-    if(isOwner||!pinOk){ if(!isOwner){ setCashinDoc(null); setCashinLinks(null); setCashinVer(v=>v+1); } return; }
-    const unsub = onSnapshot(CASHIN_SHARED_REF(), (snap)=>{
-      const d=snap.exists()?snap.data():null;
-      setCashinDoc(d&&Array.isArray(d.rows)?{rows:d.rows,labels:d.labels||{},totals:d.totals||{},owners:{},updatedAt:d.updatedAt||null}:null);
-      setCashinLinks(d&&d.links?d.links:{});
-      setCashinVer(v=>v+1);
-    }, (err)=>{ console.warn("Cash in partagé indisponible :", err&&err.code); setCashinDoc(null); setCashinLinks({}); setCashinVer(v=>v+1); });
-    return ()=>unsub();
-  },[isOwner,pinOk]);
+  // v210 : propriétaire et admins lisent le Cash in complet (ci-dessous) ; les autres comptes n'y ont pas accès.
+  useEffect(()=>{ if(canCash) return; setCashinDoc(null); setCashinLinks(null); setCashinVer(v=>v+1); },[canCash]);
   // Super admin : publie (avec un léger délai, seulement si le contenu a changé) la copie réduite du Cash in pour les administrateurs.
   useEffect(()=>{
-    if(!isOwner) return;
+    if(!canCash) return;
     const d=getCashinDoc(); if(!d) return;
     const ordo=getOrdoPjs(); if(!ordo.length) return;
     const keys=new Set(); ordo.forEach(pj=>cashGroupsFor(pj).forEach(g=>keys.add(g.pj)));
@@ -517,9 +509,9 @@ export default function App(){
         .then(()=>{lastSharedRef.current=h;}).catch(e=>console.warn("Publication du Cash in pour les admins impossible :", e&&e.code));
     },2000);
     return ()=>clearTimeout(t);
-  },[isOwner,cashStoreVer]); // eslint-disable-line
+  },[canCash,cashStoreVer]); // eslint-disable-line
   useEffect(()=>{
-    if(!isOwner){ return; }
+    if(!canCash){ return; }
     const unsub = onSnapshot(CASHIN_DOC_REF(), (snap)=>{
       setCashinDoc(snap.exists()?snap.data():null); setCashinVer(v=>v+1);
     }, (err)=>{
@@ -533,7 +525,7 @@ export default function App(){
       setCashinLinks({}); setCashinVer(v=>v+1);
     });
     return ()=>{unsub();unsubL();};
-  },[isOwner]);
+  },[canCash]);
   // N'écrit QUE les champs modifiés du PJ concerné (chemin meta.<PJ>.<champ>, valeur remplacée en bloc). Avant, on réécrivait
   // toute la table des PJ depuis l'état local : deux enregistrements rapprochés (saisie en série, collage de plusieurs
   // N° de série) pouvaient s'écraser l'un l'autre avec des valeurs périmées, et un feu effacé restait en base (fusion profonde).
@@ -1162,7 +1154,7 @@ export default function App(){
             {view!=="home"&&(()=>{const v=VIEWS.find(x=>x.id===view);if(!v)return null;
               const subs={planner:"Brouillon réservé à vous : déplacez, liez et forcez les PJ ; rien ne change pour les autres avant « Publier »",table:filtered.length+" machine"+(filtered.length>1?"s":"")+" affichée"+(filtered.length>1?"s":"")+" · survolez un état ou un écart pour le détail",gantt:"Chaque machine, étape par étape · Ctrl + molette pour zoomer",calendar:"Arrivées, tests, fins de production et départs",changes:"Ce qui a changé à chaque mise à jour du planning",comments:"Les échanges, machine par machine",tests:"Plans d'essais et affectations des testeurs"};
               /* v183 : plus de sur-titre ; v185 : une couleur de trait par page (demandé) */const SS=stageSoft(),HH=stripeHues(),acc={table:SS.production.solid,gantt:SS.tests.solid,calendar:SS.finProd.solid,changes:T.ember500,comments:HH.note,tests:SS.arrivee.solid,planner:SS.production.solid}[view];return <PageHead title={v.l} sub={subs[view]} accent={acc}/>;})()}
-            {view==="home"&&<HomeView pinOk={pinOk} testsDoc={canSeeTests?testsDoc:null} data={dataWithOverrides} comments={comments} myEmail={currentUser&&currentUser.email} myName={authorName} people={peopleAll} unseenChanges={unseenChanges} lastImport={lastImport} onOpenPj={setCalSel} onGo={setView} profiles={profiles} owner={isOwner} turbineDoc={turbineDoc} onOpenCash={isOwner?()=>{setManagerTab("cash");setView("manager");}:null}/>}
+            {view==="home"&&<HomeView pinOk={pinOk} testsDoc={canSeeTests?testsDoc:null} data={dataWithOverrides} comments={comments} myEmail={currentUser&&currentUser.email} myName={authorName} people={peopleAll} unseenChanges={unseenChanges} lastImport={lastImport} onOpenPj={setCalSel} onGo={setView} profiles={profiles} owner={isOwner} cash={canCash} turbineDoc={turbineDoc} onOpenCash={canCash?()=>{setManagerTab("cash");setView("manager");}:null}/>}
             {view==="table"&&<DashboardSummary data={filtered} allData={dataWithOverrides} progress={progressEff} changeLog={changeLog} onOpenChanges={()=>setView("changes")}/>}
             {view==="table"&&<TableView data={filtered} progress={progressEff} df={df} setDf={setDf} setEtatFor={setEtatFor} setClientPresenceFor={setClientPresenceFor}
               selEtats={selEtats} setSelEtats={setSelEtats}

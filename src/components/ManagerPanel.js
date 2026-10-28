@@ -17,7 +17,7 @@ import { TurbinesTab } from "./TurbinesTab";
 import { SerieTab } from "./Series";
 import { CashInTab } from "./CashInTab";
 import { ImportHistory } from "./ImportHistory";
-import { isSuperAdmin, isOwner } from "../roles";
+import { isSuperAdmin, canCash } from "../roles";
 import { PeopleRoles } from "./PeopleRoles";
 
 // Filtre de période (mois et/ou année) réutilisable sur chaque graphique temporel
@@ -311,7 +311,7 @@ export function ManagerPanel({onNav,profiles,saveProfiles,jumpFiche,changeLog,da
   // v196 : une phrase sous le titre de chaque page du Manager
 const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",suivi:"Statut, état et santé des projets",retards:"Retards déclarés et leurs causes",fiche:"Tout un projet sur une page : dates, actions, composants, paiements",hebdo:"Ce qui a changé cette semaine",turbines:"Pool de turbines et attributions",cash:"Encaissements et facturation (réservé)",reglages:"Paramètres du site, accès et imports"};
   const GROUP_OF={fiche:"fiche",hebdo:"hebdo",derives:"derives",statut:"suivi",sante:"suivi",retards:"retards",acces:"reglages",personnes:"reglages",imports:"reglages",serie:"reglages",vacances:"reglages",production:"reglages",nouveautes:"reglages",cash:"cash",turbines:"turbines"};
-  const superAdmin=isSuperAdmin(),owner=isOwner(); // v185 : superAdmin = propriétaire ou admin ; owner = propriétaire (Cash in) // v143 : seul le super admin voit l'onglet « Réglages » (changer le site) ; un admin n'a que les onglets d'usage
+  const superAdmin=isSuperAdmin(),owner=canCash(); // v210 : « owner » = accès au Cash in (propriétaire ou admin) // v185 : superAdmin = propriétaire ou admin ; owner = propriétaire (Cash in) // v143 : seul le super admin voit l'onglet « Réglages » (changer le site) ; un admin n'a que les onglets d'usage
   // v158 : menu groupé (rail latéral) ; chaque entrée sait où aller. Cash in et Réglages : super admin seulement.
   const [railMin,setRailMin]=useRailCollapsed(),[palOpen,setPalOpen]=useState(false),phone=useIsPhone();
   // v178 : « fiche plein écran » — menu réduit aux icônes (sous-pages au survol) et liste des projets masquée en fondu.

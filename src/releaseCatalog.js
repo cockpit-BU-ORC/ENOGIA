@@ -414,4 +414,8 @@ export const RELEASE_CATALOG = [
   { v: "209", t: "La page Tests en grille", items: [
     ["Tests", "Planning des bancs (une ligne par machine), Par testeur sur la même grille, catalogue en tableaux."],
   ] },
+  { v: "210", t: "Cash in pour les chefs de projet, tous les PJ dans les bancs", items: [
+    ["Cash in", "Ouvert aux admins, bloc sur leur accueil ; plus de sauvegarde / reprise JSON."],
+    ["Tests", "Tous les PJ en ligne, colonnes PJ · gamme · testeur · client · NOBO · tests."],
+  ] },
 ];
