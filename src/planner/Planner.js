@@ -4,10 +4,10 @@ import { useSheetJS } from "../components/SharedUI";
 import { guessGamme } from "../parsers";
 import {
   STEPS, splitKey, makeCalendar, schedule, planToRows, diffRows, initPlanFromRows,
-  addPj, initBlankPlan, setStep, rulesOf, summarizeChanges, diffPlans, DEFAULT_CAP, releasePins, setCap, setRules, loadModel, levelPlan, fitDurations, hasLevel, clearLevel, sortPjsByStart, capWeek, fillMissingHours, refreshPlanFromRows,
+  addPj, initBlankPlan, setStep, rulesOf, summarizeChanges, diffPlans, DEFAULT_CAP, releasePins, setCap, setRules, loadModel, levelPlan, fitDurations, hasLevel, clearLevel, sortPjsByStart, capWeek, fillMissingHours, refreshPlanFromRows, setCapWeek,
 } from "./engine";
 import { parseMsPlan, compareWithMs, applyCalibration } from "./importPlan";
-import { PlannerGantt, fmtIso, makeTimeline, leftWidth, STEP_COLOR } from "./PlannerGantt";
+import { PlannerGantt, fmtIso, makeTimeline, leftWidthWith, STEP_COLOR } from "./PlannerGantt";
 import { PlannerLoad } from "./PlannerLoad";
 import { PlannerLanes } from "./PlannerLanes";
 import { PlannerChanges } from "./PlannerChanges";
@@ -18,14 +18,16 @@ import { Pop } from "./PlannerMenu";
 // Le plan est un brouillon enregistré automatiquement. « Publier » le copie dans le planning actuel lu par tous les écrans
 // (avec aperçu des changements, historique et annulation). Le planning INITIAL (figé) n'est jamais touché ici.
 
-const INP = { padding: "5px 8px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: 12.5, fontFamily: T.font, boxSizing: "border-box" };
-const BTN = { padding: "6px 12px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink700, fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: T.font, whiteSpace: "nowrap" };
-const BTN_P = { ...BTN, border: "none", background: "linear-gradient(135deg," + T.teal500 + "," + T.navy700 + ")", color: "#fff" };
+// v208 : styles relus dans le thème à chaque usage (ils étaient figés au chargement : textes illisibles en sombre)
+const live = f => new Proxy({}, { get: (o, k) => f()[k], has: (o, k) => k in f(), ownKeys: () => Reflect.ownKeys(f()), getOwnPropertyDescriptor: (o, k) => { const v = f(); return k in v ? { value: v[k], enumerable: true, configurable: true, writable: true } : undefined; } });
+const INP = live(() => ({ padding: "5px 8px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: 12.5, fontFamily: T.font, boxSizing: "border-box" }));
+const BTN = live(() => ({ padding: "6px 12px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink700, fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: T.font, whiteSpace: "nowrap" }));
+const BTN_P = live(() => ({ ...BTN, border: "none", background: T.ink900, color: T.card }));
 const STEP_LABELS = Object.fromEntries(STEPS.map(s => [s[0], s[1]]));
-const CARD = { background: T.card, border: "1px solid " + T.line, borderRadius: 14, boxShadow: "0 1px 3px rgba(0,0,0,.05)" };
+const CARD = live(() => ({ background: T.card, border: "1px solid " + T.line, borderRadius: 14, boxShadow: "0 1px 3px rgba(0,0,0,.05)" }));
 
 // styles : survol, focus et menus (la spécificité dépasse les règles globales sur les champs)
-const PG_CSS = `
+const pgCss = () => `
 .pg-root{font-family:${T.font};color:${T.ink900}}
 .pg-root .pg-row:hover{background:${T.teal100} !important}
 .pg-root .pg-row .pg-more{opacity:0;transition:opacity .12s}
@@ -42,7 +44,8 @@ const PG_CSS = `
 .pg-root .pg-tb{border:1px solid ${T.line};background:${T.card};color:${T.ink700};border-radius:8px;padding:6px 12px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit}
 .pg-root .pg-tb:hover:not(:disabled):not([aria-pressed=true]){background:${T.teal100}}
 .pg-root .pg-tb:disabled{opacity:.45;cursor:default}
-.pg-root .pg-tb[aria-pressed=true]{background:${T.navy700};color:#fff;border-color:${T.navy700}}
+.pg-root .pg-tb[aria-pressed=true]{background:${T.ink900};color:${T.card};border-color:${T.ink900}}
+.pg-root .pg-split:hover,.pg-root .pg-split:focus-visible{background:linear-gradient(90deg,transparent 3px,${T.teal500} 3px,${T.teal500} 6px,transparent 6px);outline:none}
 `;
 
 function Modal({ title, onClose, children, width = 720 }) {
@@ -336,10 +339,10 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, authorN
   const goToday = () => { const el = (ui.view === "lanes" ? lref : gref).current; if (el) el.scrollLeft = Math.max(0, (tl.today - tl.lo) * tl.px - 160); };
   useEffect(() => { if (plan && plan.v === 2) { const t = setTimeout(goToday, 60); return () => clearTimeout(t); } }, [plan === null, ui.zoom, ui.view]); // eslint-disable-line
 
-  if (!planLoaded) return <div className="pg-root"><style>{PG_CSS}</style><div style={{ color: T.ink500, padding: 20 }}>Chargement du plan…</div></div>;
+  if (!planLoaded) return <div className="pg-root"><style>{pgCss()}</style><div style={{ color: T.ink500, padding: 20 }}>Chargement du plan…</div></div>;
   const empty = !plan || plan.v !== 2;
   if (empty) {
-    return (<div className="pg-root"><style>{PG_CSS}</style>
+    return (<div className="pg-root"><style>{pgCss()}</style>
       <div style={{ ...CARD, padding: "24px 28px", maxWidth: 760 }}>
         <div style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: 24, color: T.ink900 }}>Planification</div>
         {plan && plan.v !== 2 && <div style={{ background: T.amber100, color: T.amber600, borderRadius: 10, padding: "8px 14px", margin: "12px 0", fontWeight: 600, fontSize: 13 }}>Le plan enregistré date d'une ancienne version. Recréez-le : le planning actuel n'est pas modifié tant que vous ne publiez pas.</div>}
@@ -359,8 +362,10 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, authorN
   const rowsNotInPlan = (rows || []).filter(r => !plan.pjs.some(p => p.pj === r.pj));
   const selPj = sel && plan.pjs.some(p => p.pj === sel.pj) ? sel : null;
   const noT = ui.view === "list" || ui.view === "changes"; const cmp = proposal && proposal.cmp; const ro = ui.lock || !!proposal;
+  const loadEl = load ? <PlannerLoad plan={live} load={load} cal={cal} tl={tl} scrollX={scrollX} leftW={leftWidthWith(ui.view, ui.listW)} onCapWeek={(w, h) => apply(setCapWeek(plan, w, h))} small={!!ui.loadSmall} setSmall={v => setUi({ loadSmall: v })} standalone={ui.view === "list" || ui.view === "lanes"} mode={ui.loadMode} setMode={m => setUi({ loadMode: m })} cap={cap}
+        onCap={patch => apply(setCap(plan, patch))} readOnly={ro} onPropose={startProposal} hasLevelNow={hasLevel(plan)} nTooDense={load.tooDense.length} /> : null;
   return (<div className="pg-root">
-    <style>{PG_CSS}</style>
+    <style>{pgCss()}</style>
     <datalist id="plan-add">{rowsNotInPlan.map(r => <option key={r.pj} value={r.pj} />)}</datalist>
     {/* en-tête */}
     <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
@@ -393,6 +398,9 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, authorN
 <div role="group" aria-label="Affichage" style={{ display: "inline-flex" }}>
         {[["list", "Liste"], ["both", "Liste + Gantt"], ["gantt", "Gantt"], ["lanes", "Couloirs"], ["changes", "Modifications"]].map(([k, l], i, arr) => <button key={k} className="pg-tb" aria-pressed={ui.view === k} onClick={() => setUi({ view: k })} style={{ borderRadius: i === 0 ? "8px 0 0 8px" : i === arr.length - 1 ? "0 8px 8px 0" : 0, marginLeft: i ? -1 : 0 }}>{l}{k === "changes" && nTouched > 0 && <span style={{ marginLeft: 6, background: ui.view === k ? "rgba(255,255,255,.25)" : T.amber100, color: ui.view === k ? "#fff" : T.amber600, borderRadius: 99, padding: "0 7px", fontSize: 11.5 }}>{nTouched}</span>}</button>)}
       </div>
+      {ui.view === "lanes" && <div role="group" aria-label="Hauteur des couloirs" style={{ display: "inline-flex" }}>
+        {[["s", "Serrés"], ["m", "Normaux"], ["l", "Larges"]].map(([k, l], i) => <button key={k} className="pg-tb" aria-pressed={(ui.laneH || "m") === k} onClick={() => setUi({ laneH: k })} title="Hauteur des couloirs" style={{ borderRadius: i === 0 ? "8px 0 0 8px" : i === 2 ? "0 8px 8px 0" : 0, marginLeft: i ? -1 : 0 }}>{l}</button>)}
+      </div>}
       <input value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher un PJ…" aria-label="Rechercher un PJ" className="pg-in" style={{ ...INP, width: 160 }} />
       {!ui.lock && <>
         <span style={{ display: "inline-flex", gap: 4 }}>
@@ -411,8 +419,8 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, authorN
       <span style={{ flex: 1 }} />
       <span style={{ display: "inline-flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: T.ink500, alignItems: "center" }}>
         {[["arrivee", "Arrivée", 1], ["production", "Production"], ["tests", "Tests"], ["finProd", "Fin de prod."], ["depart", "Départ", 1]].map(([k, l, ms]) => <span key={k} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><span style={{ width: ms ? 9 : 16, height: 9, background: STEP_COLOR[k], transform: ms ? "rotate(45deg)" : "none", borderRadius: 2, display: "inline-block" }} />{l}</span>)}
-        <span><span style={{ color: "#44546A" }}>→</span> lien</span>
-        {(rules.prod || rules.banc) && <span style={{ color: "#2E7D9A" }}>⇢ ordre de passage</span>}
+        <span><span style={{ color: T.ink500 }}>→</span> lien</span>
+        {(rules.prod || rules.banc) && <span style={{ color: T.teal600 }}>⇢ ordre de passage</span>}
       </span>
     </div>
 
@@ -429,17 +437,18 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, authorN
     {sched.cycle && <Banner tone="bad">Boucle de liens détectée ({sched.cycle.slice(0, 4).map(k => { const x = splitKey(k); return x.pj + " · " + STEP_LABELS[x.step]; }).join(" → ")}…) : certaines dates ne peuvent pas être calculées. Corrigez la colonne Prédécesseurs.</Banner>}
     {notice && <Banner tone={notice.tone}>{notice.text}</Banner>}
 
-    {ui.view === "lanes" && <div style={{ ...CARD, overflow: "hidden", marginBottom: 12 }}>
-      <PlannerLanes plan={live} basePlan={plan} sched={sched} cal={cal} closurePeriods={closurePeriods} load={load} tl={tl} sel={selPj} setSel={setSel} readOnly={ro} onPreview={setPreview} onCommit={onCommit} scrollRef={lref} />
+    {/* v208 (demandé : « la charge atelier toujours visible en bas de l'écran ») : la charge colle au bas de l'écran ; en Couloirs elle suit les couloirs */}
+    {ui.view === "lanes" && <div style={{ ...CARD, overflow: "clip", marginBottom: 12 }}>
+      <PlannerLanes laneH={ui.laneH || "m"} plan={live} basePlan={plan} sched={sched} cal={cal} closurePeriods={closurePeriods} load={load} tl={tl} sel={selPj} setSel={setSel} readOnly={ro} onPreview={setPreview} onCommit={onCommit} scrollRef={lref} />
+      {loadEl}
     </div>}
     {ui.view === "changes" && chg && <div style={{ ...CARD, overflow: "hidden" }}>
       <PlannerChanges summary={chg.summary} planDiff={chg.planDiff || []} hasDetail={!!chg.planDiff} refs={chg.refs} refId={chg.id} setRefId={setRefId} refLabel={chg.label} loadingRefs={hist === null} q={q} onOpenPj={openPj} />
     </div>}
-    {ui.view !== "changes" && <div style={{ ...CARD, overflow: "hidden" }}>
-      <PlannerGantt plan={live} basePlan={plan} sched={sched} cal={cal} closurePeriods={closurePeriods} tl={tl} pjs={pjsShown} sel={selPj} setSel={setSel} expanded={exp} toggleExp={toggleExp}
+    {ui.view !== "changes" && <div style={{ ...CARD, overflow: "clip" }}>
+      <PlannerGantt listW={ui.listW} onListW={w => setUi({ listW: w })} plan={live} basePlan={plan} sched={sched} cal={cal} closurePeriods={closurePeriods} tl={tl} pjs={pjsShown} sel={selPj} setSel={setSel} expanded={exp} toggleExp={toggleExp}
         showLinks={ui.links} view={ui.view} readOnly={ro} onPreview={setPreview} onCommit={onCommit} onError={onError} onReorder={reorder} scrollRef={gref} onScrollX={setScrollX} />
-      {load && <PlannerLoad plan={live} load={load} cal={cal} tl={tl} scrollX={scrollX} leftW={leftWidth(ui.view)} standalone={ui.view === "list" || ui.view === "lanes"} mode={ui.loadMode} setMode={m => setUi({ loadMode: m })} cap={cap}
-        onCap={patch => apply(setCap(plan, patch))} readOnly={ro} onPropose={startProposal} hasLevelNow={hasLevel(plan)} nTooDense={load.tooDense.length} />}
+      {ui.view !== "lanes" && loadEl}
     </div>}
     {ui.view !== "changes" && <div style={{ fontSize: 12, color: T.ink500, marginTop: 8, lineHeight: 1.6 }}>
       Cliquez une date, une durée, un travail ou un prédécesseur pour la modifier (Entrée valide, Échap annule) · glissez une barre pour la déplacer, sa poignée pour changer la durée · glissez ⋮⋮ pour changer la priorité d'un PJ · prédécesseurs : numéros de ligne, <b>2 ; 7SS+3j</b> (FS par défaut, SS, FF, SF, décalage en jours ouvrés).

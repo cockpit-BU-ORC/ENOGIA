@@ -17,6 +17,19 @@ export const COLS_LIST = [["id", 44], ["name", 400], ["start", 112], ["end", 112
 export const COLS_COMPACT = [["id", 40], ["name", 256], ["start", 104], ["dur", 60]];
 export const colsFor = view => view === "list" || view === "lanes" ? COLS_LIST : view === "gantt" ? COLS_COMPACT : COLS_FULL;
 export const leftWidth = view => colsFor(view).reduce((a, c) => a + c[1], 0);
+// v208 (demandé : « régler la largeur de la partie liste dans le mode Liste + Gantt ») : la colonne Tâche prend la place gagnée ;
+// en dessous de la largeur normale, Prédécesseurs, Travail puis Fin sont masquées.
+export const LIST_W_MIN = 380, LIST_W_MAX = 1200;
+export function colsWith(view, listW) {
+  let cs = colsFor(view); if (view !== "both" || !listW) return cs;
+  const sum = cs.reduce((a, c) => a + c[1], 0);
+  cs = cs.map(([c, w]) => c === "name" ? [c, Math.max(170, w + listW - sum)] : [c, w]);
+  let tot = cs.reduce((a, c) => a + c[1], 0);
+  for (const d of ["pred", "work", "end"]) { if (tot <= listW + 1) break; const i = cs.findIndex(c => c[0] === d); if (i >= 0) { tot -= cs[i][1]; cs = cs.filter((_, j) => j !== i); } }
+  if (tot < listW) cs = cs.map(([c, w]) => c === "name" ? [c, w + listW - tot] : [c, w]);
+  return cs;
+}
+export const leftWidthWith = (view, listW) => colsWith(view, listW).reduce((a, c) => a + c[1], 0);
 const HEAD_LABEL = { id: "N°", name: "Tâche (l'ordre des PJ = priorité)", start: "Début", end: "Fin", dur: "Durée", work: "Travail", pred: "Prédécesseurs" };
 
 // Échelle de temps commune au Gantt et au graphique de charge
@@ -90,8 +103,10 @@ function LinkEdit({ at, link, from, to, onType, onLag, onDelete, onClose }) {
   </div>);
 }
 
-export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, pjs, sel, setSel, expanded, toggleExp, showLinks, view, readOnly, onPreview, onCommit, onError, onReorder, scrollRef, onScrollX }) {
-  const { lo, px, W, X } = tl; const cols = colsFor(view); const LEFT_W = leftWidth(view); const listOnly = view === "list" || view === "lanes";
+export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, pjs, sel, setSel, expanded, toggleExp, showLinks, view, readOnly, onPreview, onCommit, onError, onReorder, scrollRef, onScrollX, listW, onListW }) {
+  const { lo, px, W, X } = tl; const cols = colsWith(view, listW); const LEFT_W = cols.reduce((a, c) => a + c[1], 0);
+  const clampW = w => Math.max(LIST_W_MIN, Math.min(LIST_W_MAX, Math.round(w)));
+  const startSplit = e => { e.preventDefault(); const x0 = e.clientX, w0 = LEFT_W; const mv = ev => onListW(clampW(w0 + ev.clientX - x0)); const up = () => { window.removeEventListener("mousemove", mv); window.removeEventListener("mouseup", up); }; window.addEventListener("mousemove", mv); window.addEventListener("mouseup", up); }; const listOnly = view === "list" || view === "lanes";
   const base = basePlan || plan;
   const [qe, setQe] = useState(null); const [newKey, setNewKey] = useState(null); const [lk, setLk] = useState(null); const [le, setLe] = useState(null); const tlBody = useRef(null);
   const nums = useMemo(() => numberRows(plan), [plan]);
@@ -250,7 +265,7 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
             ? <EditCell autoEdit={newKey === key} disabled={readOnly} value={stepLabel(p, k)} onCommit={v => { if (v.trim()) go(setStep(base, p.pj, k, { name: v.trim() }), { pj: p.pj, key: null, want: null }); }} display={stepLabel(p, k)} title="Cliquez pour renommer cette tâche" style={{ color: T.ink900, fontWeight: 600, width: "auto", maxWidth: 190 }} />
             : <span style={{ color: T.ink900, fontWeight: 600, whiteSpace: "nowrap" }}>{STEP_LABEL[k]}</span>}
           <span style={{ fontSize: 10.5, color: T.ink300, whiteSpace: "nowrap" }}>{isCustomKey(k) ? "tâche" : STEP_KIND[k] === "jalon" ? "jalon" : STEP_KIND[k] === "banc" ? "banc" : "atelier"}</span>
-          {rank ? <span title={"Ordre de passage : " + rank} style={{ fontSize: 10.5, fontWeight: 700, color: "#2E7D9A", background: "rgba(46,125,154,.12)", borderRadius: 6, padding: "0 5px" }}>#{rank}</span> : null}
+          {rank ? <span title={"Ordre de passage : " + rank} style={{ fontSize: 10.5, fontWeight: 700, color: T.teal600, background: "rgba(46,125,154,.14)", borderRadius: 6, padding: "0 5px" }}>#{rank}</span> : null}
           <span style={{ flex: 1 }} />
           {!readOnly && <button className="pg-btn pg-more" aria-label={"Supprimer l'étape " + stepLabel(p, k) + " de " + p.pj} title="Supprimer cette étape" onClick={e => { e.stopPropagation(); if (window.confirm("Supprimer l'étape « " + stepLabel(p, k) + " » de " + p.pj + " (et ses liens) ?")) go(removeStep(base, p.pj, k), { pj: p.pj, key: null, want: null }); }} style={{ border: 0, background: "none", color: T.red500, cursor: "pointer", fontSize: 13, padding: "0 6px" }}>✕</button>}
         </>, { gap: 2 });
@@ -263,12 +278,12 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
         if (c === "work") return cell(c, w, work == null ? null : <EditCell disabled={readOnly} type="number" align="right" value={work} onCommit={v => editWork(p, k, v)} mono display={Math.round(work) + " h"} title={k === "tests" ? "Heures Autom du PJ (non limitées par la capacité atelier)" : "Heures atelier de cette tâche (comptées dans la charge)"} style={{ fontSize: 12, width: "100%", color: k === "tests" ? T.ink500 : T.ink900 }} />);
         const txt = predText(plan, nums.idOf, key); const auto = allLinks(plan).filter(l => l.seq && l.to === key && nums.idOf[l.from] != null).map(l => nums.idOf[l.from]);
         return cell(c, w, <EditCell disabled={readOnly} value={txt} placeholder="ex. 2 ; 7SS+3j" onCommit={v => editPred(p, k, v)} mono title={"Numéros de ligne, type FS (défaut) SS FF SF, décalage en jours ouvrés. Exemple : 2 ; 7SS+3j" + (auto.length ? "\nOrdre de passage automatique après la ligne " + auto.join(", ") : "")}
-          display={<>{txt || <span style={{ color: T.ink300 }}>—</span>}{auto.length ? <span style={{ color: "#2E7D9A", fontSize: 10.5 }}> ↻{auto.join(",")}</span> : null}</>} style={{ fontSize: 12, width: "100%" }} />);
+          display={<>{txt || <span style={{ color: T.ink300 }}>—</span>}{auto.length ? <span style={{ color: T.teal600, fontSize: 10.5 }}> ↻{auto.join(",")}</span> : null}</>} style={{ fontSize: 12, width: "100%" }} />);
       })}
     </div>);
   };
 
-  return (<div ref={scrollRef} onScroll={e => onScrollX && onScrollX(e.currentTarget.scrollLeft)} style={{ overflow: "auto", maxHeight: "calc(100vh - 360px)", minHeight: 280, position: "relative", userSelect: dragging ? "none" : "auto", cursor: dragging ? "grabbing" : "default" }}>
+  return (<div ref={scrollRef} onScroll={e => onScrollX && onScrollX(e.currentTarget.scrollLeft)} style={{ overflow: "auto", maxHeight: "calc(100dvh - 430px)", minHeight: 260, position: "relative", userSelect: dragging ? "none" : "auto", cursor: dragging ? "grabbing" : "default" }}>
     <div style={{ display: "flex", minWidth: "min-content" }}>
       {/* tableau */}
       <div style={{ width: listOnly ? "100%" : LEFT_W, minWidth: LEFT_W, flexShrink: 0, position: "sticky", left: 0, zIndex: 6, background: T.card, borderRight: "2px solid " + T.line }}>
@@ -276,6 +291,9 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
           {cols.map(([c, w]) => <div key={c} style={{ width: w, flex: "none", padding: "0 8px 8px", fontSize: 11.5, fontWeight: 700, color: T.ink500, textAlign: c === "dur" || c === "work" ? "right" : "left", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", boxSizing: "border-box" }}>{HEAD_LABEL[c]}</div>)}
         </div>
         {rows.list.map(leftRow)}
+        {view === "both" && onListW && <div role="separator" aria-orientation="vertical" aria-label="Largeur de la liste : glisser, ou flèches gauche / droite" aria-valuenow={LEFT_W} aria-valuemin={LIST_W_MIN} aria-valuemax={LIST_W_MAX} tabIndex={0} className="pg-split" title="Glisser pour élargir ou réduire la liste (double-clic : largeur normale)"
+          onMouseDown={startSplit} onDoubleClick={() => onListW(null)} onKeyDown={e => { if (e.key === "ArrowLeft" || e.key === "ArrowRight") { e.preventDefault(); onListW(clampW(LEFT_W + (e.key === "ArrowRight" ? 40 : -40))); } }}
+          style={{ position: "absolute", top: 0, bottom: 0, right: -6, width: 10, cursor: "col-resize", zIndex: 9 }} />}
         {rows.list.length === 0 && <div style={{ padding: 16, color: T.ink500, fontSize: 13 }}>Aucun PJ ne correspond.</div>}
       </div>
       {/* frise */}
@@ -300,12 +318,14 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
               return (<div key={"p" + r.p.pj} style={rowStyle}>
                 <div title={r.p.pj + " : " + fmtIso(startIso) + " → " + fmtIso(isoOfDay(b)) + (readOnly ? "" : "\nGlisser pour décaler tout le PJ")} onMouseDown={e => startDrag(e, { kind: "pj", pj: r.p.pj, startIso })} onClick={() => setSel({ pj: r.p.pj, step: null })}
                   style={{ position: "absolute", left: X(startIso), width: Math.max(px, (b - a + 1) * px), top: 11, height: 10, borderRadius: 3, background: on ? T.navy700 : "#7D88AA", cursor: readOnly ? "default" : "grab" }} />
+                <span aria-hidden="true" style={{ position: "absolute", left: X(isoOfDay(b)) + px + 16, top: 7, fontSize: 12, fontWeight: 700, color: T.ink900, whiteSpace: "nowrap", pointerEvents: "none" }}>{r.p.pj}{r.p.nomProjet ? <span style={{ fontWeight: 500, color: T.ink500 }}> · {r.p.nomProjet}</span> : null}</span>
                 {ns.filter(n => n.ms).map(n => <span key={n.step} style={{ position: "absolute", left: X(n.start) + px / 2 - 6, top: 10, width: 12, height: 12, transform: "rotate(45deg)", background: STEP_COLOR[n.step], border: "1px solid #fff", pointerEvents: "none" }} />)}
               </div>);
             }
             const key = nodeKey(r.p.pj, r.k), n = sched.nodes[key]; const on = sel && sel.pj === r.p.pj && sel.step === r.k; const ch = changed.has(key);
             if (!n || n.s === null) return <div key={key} style={{ ...rowStyle, cursor: readOnly ? "default" : "crosshair" }} title={readOnly ? undefined : "Cliquez ici pour placer la tâche à cette date"} onClick={e => { if (readOnly || !tlBody.current) return; const b = tlBody.current.getBoundingClientRect(); const d = lo + Math.floor((e.clientX - b.left) / px); editStart(r.p, r.k, isoOfDay(d)); setSel({ pj: r.p.pj, step: r.k }); }} />;
             const col = STEP_COLOR[r.k]; const pinned = n.driver === "snet";
+            const bw = (dayNum(n.finish) - dayNum(n.start) + 1) * px, lab = r.p.pj + " · " + stepLabel(r.p, r.k), fits = !n.ms && bw >= lab.length * 6.4 + 16;
             const tipTxt = r.p.pj + " · " + stepLabel(r.p, r.k) + "\n" + fmtIso(n.start) + (n.ms ? "" : " → " + fmtIso(n.finish) + " (" + n.dur + " j ouvrés)") + (pinned ? "\nDate imposée" : n.driver ? "\nCalée par un lien" : "") + (readOnly ? "" : "\nGlisser pour déplacer");
             return (<div key={key} style={rowStyle} className="pg-trow">
               {n.ms
@@ -313,20 +333,21 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
                     style={{ position: "absolute", left: X(n.start) + px / 2 - 8, top: 8, width: 16, height: 16, transform: "rotate(45deg)", background: col, border: on ? "2px solid " + T.ink900 : "1px solid #fff", outline: ch ? "2px dashed #E08A00" : "none", outlineOffset: 2, boxSizing: "border-box", cursor: readOnly ? "default" : "grab", borderRadius: 2 }} />
                 : <div title={tipTxt} onMouseDown={e => startDrag(e, { kind: "move", pj: r.p.pj, step: r.k, node: n })} onClick={() => setSel({ pj: r.p.pj, step: r.k })} onDoubleClick={e => { if (!readOnly) setQe({ pj: r.p.pj, step: r.k, x: e.clientX, y: e.clientY }); }} data-key={key} className="pg-bar"
                     style={{ position: "absolute", left: X(n.start), width: Math.max(px, (dayNum(n.finish) - dayNum(n.start) + 1) * px), top: 5, height: 22, borderRadius: 5, background: col, outline: on ? "2px solid " + T.ink900 : ch ? "2px dashed #E08A00" : "none", outlineOffset: 1, cursor: readOnly ? "default" : "grab", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 11, fontWeight: 700, overflow: "hidden", boxSizing: "border-box" }}>
-                    {(dayNum(n.finish) - dayNum(n.start) + 1) * px >= 40 && <span style={{ pointerEvents: "none", fontFamily: T.fontMono }}>{n.noDur ? "?" : n.dur + " j"}</span>}
+                    {fits ? <span style={{ pointerEvents: "none", padding: "0 8px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{lab}</span> : bw >= 40 ? <span style={{ pointerEvents: "none", fontFamily: T.fontMono }}>{n.noDur ? "?" : n.dur + " j"}</span> : null}
                     {!readOnly && <div onMouseDown={e => startDrag(e, { kind: "resize", pj: r.p.pj, step: r.k, node: n })} style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 7, cursor: "ew-resize", background: "rgba(0,0,0,.25)" }} />}
                   </div>}
               {!readOnly && (() => { const xs = n.ms ? X(n.start) + px / 2 - 20 : X(n.start) - 16, xe = n.ms ? X(n.start) + px / 2 + 12 : X(n.finish) + px + 4; const cy = r.y + ROW_H / 2;
                 const H = (x, side, label) => <span role="button" aria-label={label} title={label} className={"pg-h" + (lk ? " on" : "")} onMouseDown={e => startLink(e, key, side, x + 6, cy)} style={{ position: "absolute", left: x, top: 10, width: 12, height: 12, borderRadius: 6, border: "2px solid #1F7A8C", background: "#fff", cursor: "crosshair", boxSizing: "border-box" }} />;
                 return <>{H(xs, "start", "Tirer vers une autre tâche pour créer un lien depuis le début (SS / SF)")}{H(xe, "end", "Tirer vers une autre tâche pour créer un lien depuis la fin (FS / FF)")}</>; })()}
+              {!fits && <span aria-hidden="true" style={{ position: "absolute", left: n.ms ? X(n.start) + px / 2 + 26 : X(n.finish) + px + 22, top: 8, fontSize: 11.5, fontWeight: 600, color: T.ink900, whiteSpace: "nowrap", pointerEvents: "none", zIndex: 2 }}>{lab}{!n.ms && !n.noDur ? <span style={{ color: T.ink500, fontWeight: 400 }}> · {n.dur} j</span> : null}</span>}
               {pinned && !n.ms && <span title="Date imposée" aria-hidden="true" style={{ position: "absolute", left: X(n.start) - 10, top: 11, width: 6, height: 6, borderRadius: 3, background: T.ink700, pointerEvents: "none" }} />}
             </div>);
           })}
           <svg width={W} height={rows.height} style={{ position: "absolute", left: 0, top: 0, pointerEvents: "none", zIndex: 4 }} aria-hidden="true">
-            <defs><marker id="pg-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#44546A" /></marker><marker id="pg-arrow-hot" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#CB4848" /></marker><marker id="pg-arrow-seq" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#2E7D9A" /></marker></defs>
+            <defs><marker id="pg-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill={T.ink500} /></marker><marker id="pg-arrow-hot" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#CB4848" /></marker><marker id="pg-arrow-seq" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill={T.teal600} /></marker></defs>
             {links.map(l => !l.seq && !readOnly ? <path key={"h" + l.id} d={"M" + l.x1 + "," + l.y1 + " H" + (l.x1 + 7) + " V" + l.y2 + " H" + l.x2} fill="none" stroke="transparent" strokeWidth={12} style={{ pointerEvents: "stroke", cursor: "pointer" }} onClick={e => setLe({ id: l.id, x: e.clientX, y: e.clientY })}><title>Cliquer pour modifier ou supprimer ce lien</title></path> : null)}
             {lk && <><path d={"M" + lk.fx + "," + lk.fy + " L" + lk.x + "," + lk.y} stroke="#1F7A8C" strokeWidth={2} strokeDasharray="5 3" fill="none" /><circle cx={lk.x} cy={lk.y} r={4} fill="#1F7A8C" /></>}
-            {links.map(l => <path key={l.id} d={"M" + l.x1 + "," + l.y1 + " H" + (l.x1 + 7) + " V" + l.y2 + " H" + l.x2} fill="none" stroke={l.seq ? "#2E7D9A" : l.hot ? "#CB4848" : "#44546A"} strokeWidth={l.hot ? 1.8 : 1.2} strokeDasharray={l.seq ? "5 3" : undefined} markerEnd={l.seq ? "url(#pg-arrow-seq)" : l.hot ? "url(#pg-arrow-hot)" : "url(#pg-arrow)"} opacity={l.hot || !sel ? 0.9 : 0.35} />)}
+            {links.map(l => <path key={l.id} d={"M" + l.x1 + "," + l.y1 + " H" + (l.x1 + 7) + " V" + l.y2 + " H" + l.x2} fill="none" stroke={l.seq ? T.teal600 : l.hot ? "#CB4848" : T.ink500} strokeWidth={l.hot ? 1.8 : 1.2} strokeDasharray={l.seq ? "5 3" : undefined} markerEnd={l.seq ? "url(#pg-arrow-seq)" : l.hot ? "url(#pg-arrow-hot)" : "url(#pg-arrow)"} opacity={l.hot || !sel ? 0.9 : 0.35} />)}
           </svg>
         </div>
       </div>}

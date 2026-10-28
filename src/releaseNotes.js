@@ -7,6 +7,18 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v208",
+    date: "2026-10-28",
+    title: "V208 : un planificateur plus lisible",
+    items: [
+      { t: "La charge toujours sous les yeux", d: "Le graphique de charge atelier reste collé en bas de l'écran (Gantt, liste et couloirs) ; « Réduire » le rend plus bas.", admin: true },
+      { t: "Capacité d'une semaine", d: "Cliquez une semaine du graphique pour lui donner sa propre capacité (absences, renfort, fermeture) ; « Revenir à la normale » l'efface. Le nivellement en tient compte.", admin: true },
+      { t: "On se repère", d: "Chaque barre du Gantt porte le n° du PJ et le nom de la tâche (dedans, ou juste après si elle est courte) ; dans les couloirs, le n° de PJ est toujours écrit.", admin: true },
+      { t: "À votre taille", d: "Couloirs serrés, normaux ou larges ; largeur de la liste réglable en « Liste + Gantt » en glissant son bord (double-clic : largeur normale).", admin: true },
+      { t: "Mode sombre", d: "Textes, boutons, flèches de liens, couloirs et infobulles relisent les couleurs du thème : plus de texte invisible.", admin: true },
+    ],
+  },
+  {
     id: "2026-10-v207",
     date: "2026-10-27",
     title: "V207 : les tests en grand calendrier",

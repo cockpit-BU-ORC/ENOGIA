@@ -408,4 +408,7 @@ export const RELEASE_CATALOG = [
   { v: "207", t: "Les tests en grand calendrier", items: [
     ["Tests", "Calendrier de 3 semaines à la place des colonnes ; barres par machine, venues client / NOBO, fériés."],
   ] },
+  { v: "208", t: "Un planificateur plus lisible", items: [
+    ["Planificateur", "Charge collée en bas, capacité par semaine, libellés sur les barres, couloirs et liste réglables, mode sombre."],
+  ] },
 ];

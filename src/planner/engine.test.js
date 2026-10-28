@@ -1,4 +1,4 @@
-import { makeCalendar, initPlanFromRows, schedule, loadModel, levelPlan, shiftPj, pjDates, refreshPlanFromRows, planToRows, diffRows } from "./engine";
+import { makeCalendar, initPlanFromRows, schedule, loadModel, levelPlan, shiftPj, pjDates, refreshPlanFromRows, planToRows, diffRows, setCapWeek } from "./engine";
 
 // v204 : le module de planification est rebranché (onglet Planificateur) — vérifie le calcul de base.
 const rows = [
@@ -27,5 +27,11 @@ describe("planificateur (v204)", () => {
     expect(plan.cap.people).toBe(3);
     expect(p3.hAt).toBe(200); expect(p3.hEst).toBe(true);
     expect(diffRows(rs, planToRows(plan, schedule(plan, cal), rs, null, cal))).toEqual([]);
+  });
+  test("v208 : capacité spéciale d'une semaine", () => {
+    const rh = rows.map(r => ({ ...r, heuresAtelier: 200 })), plan = setCapWeek({ ...initPlanFromRows(rh, cal), cap: { people: 4, hours: 35 } }, "2026-10-19", 70), lm = loadModel(plan, schedule(plan, cal), cal);
+    const w = lm.weeks.find(x => x.week === "2026-10-19"), n = lm.weeks.find(x => x.week === "2026-10-26");
+    expect(w.cap).toBe(70); expect(w.special).toBe(true); expect(n.special).toBe(false);
+    expect(setCapWeek(plan, "2026-10-19", null).capWeeks["2026-10-19"]).toBeUndefined();
   });
 });

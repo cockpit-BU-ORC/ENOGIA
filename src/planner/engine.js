@@ -223,7 +223,8 @@ export function loadModel(plan, sched, cal) {
   }
   const weeks = [...wk.values()].sort((a, b) => a.week < b.week ? -1 : 1).map(w => {
     let days = 0; for (let d = 0; d < 5; d++) if (cal.isWork(isoOfDay(dayNum(w.week) + d))) days++;
-    const cap = capDay * days; return { ...w, hours: Math.round(w.hours * 10) / 10, days, cap, over: w.hours > cap + 0.5 };
+    const ov = plan && plan.capWeeks && plan.capWeeks[w.week], cap = ov != null ? Number(ov) : capDay * days; // v208 : semaine spéciale
+    return { ...w, hours: Math.round(w.hours * 10) / 10, days, cap, special: ov != null, over: w.hours > cap + 0.5 };
   });
   const peak = weeks.reduce((m, w) => Math.max(m, w.cap > 0 ? w.hours / w.cap : (w.hours > 0 ? 9 : 0)), 0);
   return { capDay, capWeek: cw, weeks, phases: ph, tooDense, overWeeks: weeks.filter(w => w.over).length, peak, day };
@@ -510,14 +511,14 @@ export function fitDurations(plan) {
 // plus prioritaires ; les phases moins prioritaires, elles, seront décalées à leur tour si besoin. Tout se recalcule en cascade
 // (liens, ordre de passage). Les heures d'un PJ restent dans sa phase ; seules les dates de départ des phases changent.
 export function levelPlan(plan, cal) {
-  let cur = clearLevel(plan); const capDay = capWeek(plan) / 5; const ignored = new Set(); const moved = new Set(); let iter = 0;
+  let cur = clearLevel(plan); const capDay = capWeek(plan) / 5; const cd = capDayFn(plan, cal); const ignored = new Set(); const moved = new Set(); let iter = 0;
   if (capDay <= 0) return { plan: cur, moved: 0, iterations: 0, stuck: true };
   const EPS = 1e-6;
   while (iter++ < 4000) {
     const s = schedule(cur, cal); if (s.cycle) break;
     const ph = atelierPhases(cur, s); const day = new Map();
     ph.forEach(x => { for (let i = x.s; i <= x.f; i++) day.set(i, (day.get(i) || 0) + x.daily); });
-    const bad = [...day.keys()].sort((a, b) => a - b).find(i => day.get(i) > capDay + EPS && !ignored.has(i));
+    const bad = [...day.keys()].sort((a, b) => a - b).find(i => day.get(i) > cd(cal.dateOf(i)) + EPS && !ignored.has(i));
     if (bad === undefined) break;
     const cands = ph.filter(x => x.s <= bad && x.f >= bad && x.daily <= capDay + EPS).sort((a, b) => a.prio !== b.prio ? b.prio - a.prio : b.s - a.s);
     if (!cands.length) { ignored.add(bad); continue; }
@@ -526,7 +527,7 @@ export function levelPlan(plan, cal) {
     let ns = Math.max(x.s, bad) + 1;
     for (let c = x.s + 1; c < x.s + 500; c++) {
       let ok = true;
-      for (let i = c; i < c + x.dur; i++) if ((hp.get(i) || 0) + x.daily > capDay + EPS) { ok = false; c = i; break; }
+      for (let i = c; i < c + x.dur; i++) if ((hp.get(i) || 0) + x.daily > cd(cal.dateOf(i)) + EPS) { ok = false; c = i; break; }
       if (ok) { ns = c; break; }
     }
     const sp = splitKey(x.key);
@@ -557,4 +558,22 @@ export function refreshPlanFromRows(plan, rows, cal) {
   const base = initPlanFromRows(rows, cal);
   const kept = { ...base, cap: (plan && plan.cap) || base.cap, cal: (plan && plan.cal) || base.cal, ...(plan && plan.templates ? { templates: plan.templates } : {}) };
   return fillMissingHours(kept, rows, kept.templates).plan;
+}
+
+// v208 (demandé : « gérer la charge de l'atelier à la semaine pour des cas spéciaux ») : capacité propre à une semaine.
+// plan.capWeeks = { "lundi ISO": heures de la semaine } ; sinon la capacité normale (personnes × heures). La capacité d'un jour
+// ouvré d'une semaine spéciale = ses heures / ses jours ouvrés. Utilisée par la charge et le nivellement.
+export const weekKeyOf = iso => { const n = dayNum(iso); return isoOfDay(n - dow(n)); };
+export function capDayFn(plan, cal) {
+  const base = capWeek(plan) / 5, ov = (plan && plan.capWeeks) || {}, memo = {};
+  return iso => {
+    const k = weekKeyOf(iso); if (ov[k] == null) return base;
+    if (memo[k] == null) { let d = 0; for (let i = 0; i < 5; i++) if (cal.isWork(isoOfDay(dayNum(k) + i))) d++; memo[k] = d ? Number(ov[k]) / d : 0; }
+    return memo[k];
+  };
+}
+export function setCapWeek(plan, week, hours) {
+  const capWeeks = { ...((plan && plan.capWeeks) || {}) };
+  if (hours == null || hours === "") delete capWeeks[week]; else capWeeks[week] = Math.max(0, Math.round(Number(hours) || 0));
+  return { ...clonePlan(plan), capWeeks };
 }

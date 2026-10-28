@@ -1,13 +1,17 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
+import { T } from "../theme";
 import { STEP_LABEL, nodeKey, dayNum, isoOfDay, moveStepTo, setStep, orderOf, rulesOf, schedule } from "./engine";
 import { fmtIso, STEP_COLOR, headerCells } from "./PlannerGantt";
 
 // Vue « Couloirs » : le planning lu comme un atelier. Deux rails de jalons (Arrivées en haut, Départs en bas) encadrent
 // trois couloirs de travail (Production, Banc d'essai, Fin de production). Même échelle de temps que le Gantt, défilement
 // horizontal libre (molette + Maj, glisser le fond, boutons ‹ ›), mise en page dense pour voir beaucoup de PJ à la fois.
-const FONT = "Roboto, 'Helvetica Neue', Arial, sans-serif", MONO = "'Roboto Mono', ui-monospace, Menlo, Consolas, monospace";
-const C = { bg: "#FFFFFF", panel: "#F8FAFC", line: "#E5E7EB", line2: "#EEF0F3", ink: "#111827", ink2: "#4B5563", ink3: "#6B7280", accent: "#1F4E79", bad: "#B3261E", warn: "#B45309", ok: "#0F766E" };
-const LABEL_W = 148, TR = 21, BH = 17, PAD = 7;
+const FONT = T.font, MONO = T.fontMono; // v208 : polices du site (Roboto réservé aux rapports imprimés)
+// v208 : couleurs lues dans le thème à chaque rendu (clair / sombre) — plus de palette claire figée
+const pal = () => ({ bg: T.card, panel: T.surface, line: T.line, line2: T.line, ink: T.ink900, ink2: T.ink700, ink3: T.ink500, accent: T.teal600, bad: T.red500, warn: T.amber600, ok: T.emerald600 });
+const LABEL_W = 148;
+// v208 (demandé : « pouvoir réduire la hauteur des couloirs ») : piste, barre, marge, hauteur mini d'un couloir, taille du texte
+export const LANE_DENS = { s: [14, 11, 3, 28, 9.5], m: [21, 17, 7, 44, 10.5], l: [28, 22, 8, 56, 11.5] };
 const LANES = [
   { id: "arr", step: "arrivee", title: "Arrivées", ms: true },
   { id: "prod", step: "production", title: "Production", res: "prod" },
@@ -15,11 +19,9 @@ const LANES = [
   { id: "fin", step: "finProd", title: "Fin de production" },
   { id: "dep", step: "depart", title: "Départs", ms: true },
 ];
-let fontsDone = false;
-function ensureRoboto() { if (fontsDone || typeof document === "undefined") return; fontsDone = true; const l = document.createElement("link"); l.rel = "stylesheet"; l.href = "https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap"; document.head.appendChild(l); }
 
-export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load, tl, sel, setSel, readOnly, onPreview, onCommit, scrollRef }) {
-  useEffect(() => { ensureRoboto(); }, []);
+export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load, tl, sel, setSel, readOnly, onPreview, onCommit, scrollRef, laneH }) {
+  const C = pal(); const [TR, BH, PAD, MINH, FS] = LANE_DENS[laneH] || LANE_DENS.m;
   const { lo, px, W } = tl; const nodes = sched.nodes; const base = basePlan || plan;
   const rules = rulesOf(plan);
   const names = useMemo(() => { const m = {}; plan.pjs.forEach(p => { m[p.pj] = p.nomProjet || ""; }); return m; }, [plan]);
@@ -39,16 +41,16 @@ export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load,
         const key = nodeKey(p.pj, l.step), n = nodes[key]; if (!n || n.s === null) return;
         const a = dayNum(n.start), b = dayNum(n.finish);
         if (l.ms) { const cx = (a - lo + 0.5) * px; arr.push({ pj: p.pj, key, n, cx, from: cx - 6, to: cx + 12 + p.pj.length * 6.4 }); }
-        else { const x = (a - lo) * px, w = Math.max(px, (b - a + 1) * px); arr.push({ pj: p.pj, key, n, x, w, from: x, to: x + w }); }
+        else { const x = (a - lo) * px, w = Math.max(px, (b - a + 1) * px), tw = p.pj.length * FS * 0.62 + 12, out = w < tw + 4; arr.push({ pj: p.pj, key, n, x, w, out, from: x, to: x + w + (out ? tw + 6 : 0) }); }
       });
       arr.sort((p, q) => p.from - q.from);
       const tracks = []; arr.forEach(i => { let t = tracks.findIndex(e => e <= i.from + 0.5); if (t < 0) { t = tracks.length; tracks.push(0); } tracks[t] = i.to + 2; i.track = t; });
-      const h = Math.max(44, Math.max(1, tracks.length) * TR + PAD * 2);
+      const h = Math.max(MINH, Math.max(1, tracks.length) * TR + PAD * 2);
       arr.forEach(i => { i.y = y + PAD + i.track * TR + (TR - BH) / 2; pos[i.key] = { ...i, cy: i.y + BH / 2, ms: !!l.ms }; });
       out.push({ ...l, y, h, items: arr }); y += h;
     });
     return { lanes: out, H: y, pos };
-  }, [plan, nodes, lo, px]);
+  }, [plan, nodes, lo, px, TR, BH, PAD, MINH, FS]);
 
   // ── glisser-déposer ──
   const drag = useRef(null); const tipRef = useRef(null); const [dragKey, setDragKey] = useState(null); const [tip, setTip] = useState("");
@@ -109,7 +111,7 @@ export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load,
   const aria = (it, l) => it.pj + ", " + STEP_LABEL[l.step] + ", " + (l.ms ? "le " + fmtIso(it.n.start) : "du " + fmtIso(it.n.start) + " au " + fmtIso(it.n.finish));
 
   return (<div style={{ fontFamily: FONT, color: C.ink, background: C.bg }}>
-    <div ref={scrollRef} style={{ overflow: "auto", maxHeight: "calc(100vh - 230px)", minHeight: 320, position: "relative", cursor: panning ? "grabbing" : "default", userSelect: dragKey || panning ? "none" : "auto" }}>
+    <div ref={scrollRef} style={{ overflow: "auto", maxHeight: "calc(100dvh - 430px)", minHeight: 260, position: "relative", cursor: panning ? "grabbing" : "default", userSelect: dragKey || panning ? "none" : "auto" }}>
       <div style={{ width: LABEL_W + W, position: "relative" }}>
         {/* en-tête */}
         <div style={{ display: "flex", position: "sticky", top: 0, zIndex: 8, height: HEAD, background: C.bg, borderBottom: "1px solid " + C.line }}>
@@ -121,8 +123,8 @@ export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load,
           </div>
           <div style={{ position: "relative", width: W, flex: "none" }}>
             {head.top.map((m, i) => <div key={i} style={{ position: "absolute", left: m.x, width: m.w, top: 0, height: HEAD1, borderLeft: "1px solid " + C.line, padding: "4px 8px", fontSize: 11.5, fontWeight: 500, color: C.ink2, whiteSpace: "nowrap", overflow: "hidden", boxSizing: "border-box" }}>{m.w > 60 ? m.label : ""}</div>)}
-            {head.bottom.map((m, i) => <div key={i} style={{ position: "absolute", left: m.x, width: m.w, top: HEAD1, height: HEAD2, borderLeft: "1px solid " + C.line2, display: "flex", flexDirection: "column", alignItems: tl.zoom === "day" ? "center" : "flex-start", justifyContent: "center", paddingLeft: tl.zoom === "day" ? 0 : 6, fontSize: 10.5, color: m.we ? "#9CA3AF" : C.ink3, fontWeight: m.cur || m.today ? 700 : 400, background: m.cur ? "#EEF4FA" : "transparent", boxSizing: "border-box", overflow: "hidden", lineHeight: 1.15 }}>
-              {tl.zoom === "day" && <span style={{ fontSize: 9, color: "#9CA3AF" }}>{m.sub}</span>}<span style={m.today ? { background: C.accent, color: "#fff", borderRadius: 8, padding: "0 5px" } : undefined}>{m.label}</span></div>)}
+            {head.bottom.map((m, i) => <div key={i} style={{ position: "absolute", left: m.x, width: m.w, top: HEAD1, height: HEAD2, borderLeft: "1px solid " + C.line2, display: "flex", flexDirection: "column", alignItems: tl.zoom === "day" ? "center" : "flex-start", justifyContent: "center", paddingLeft: tl.zoom === "day" ? 0 : 6, fontSize: 10.5, color: m.we ? "#9CA3AF" : C.ink3, fontWeight: m.cur || m.today ? 700 : 400, background: m.cur ? T.surface : "transparent", boxSizing: "border-box", overflow: "hidden", lineHeight: 1.15 }}>
+              {tl.zoom === "day" && <span style={{ fontSize: 9, color: C.ink3 }}>{m.sub}</span>}<span style={m.today ? { background: C.ink, color: C.bg, borderRadius: 8, padding: "0 5px" } : undefined}>{m.label}</span></div>)}
             {showGauge && Array.from({ length: Math.ceil((tl.hi - lo + 1) / 7) }, (_, i) => {
               const n = lo + i * 7, w = wmap.get(isoOfDay(n)); if (!w) return null; const r = w.cap > 0 ? w.hours / w.cap : (w.hours > 0 ? 9 : 0); const over = w.over;
               return (<div key={"g" + i} title={Math.round(w.hours) + " h planifiées / " + Math.round(w.cap) + " h de capacité"} style={{ position: "absolute", left: i * 7 * px + 3, width: 7 * px - 6, top: HEAD1 + HEAD2 + 7, height: 4, borderRadius: 2, background: C.line2 }}>
@@ -136,17 +138,17 @@ export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load,
         {/* corps */}
         <div style={{ display: "flex", position: "relative", height: L.H }}>
           <div style={{ width: LABEL_W, flex: "none", position: "sticky", left: 0, zIndex: 6, background: C.bg, borderRight: "1px solid " + C.line }}>
-            {L.lanes.map(l => (<div key={l.id} style={{ position: "absolute", top: l.y, left: 0, right: 0, height: l.h, borderBottom: "1px solid " + C.line, background: l.ms ? C.panel : C.bg, padding: "8px 12px", boxSizing: "border-box" }}>
+            {L.lanes.map(l => (<div key={l.id} style={{ position: "absolute", top: l.y, left: 0, right: 0, height: l.h, borderBottom: "1px solid " + C.line, background: l.ms ? C.panel : C.bg, padding: laneH === "s" ? "5px 12px" : "8px 12px", boxSizing: "border-box" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
                 <span style={{ width: 8, height: 8, background: STEP_COLOR[l.step], borderRadius: l.ms ? 1 : 2, transform: l.ms ? "rotate(45deg)" : "none", flex: "none" }} />
                 <span style={{ fontSize: 12, fontWeight: 500, color: C.ink }}>{l.title}</span>
               </div>
-              <div style={{ fontSize: 10.5, color: C.ink3, marginTop: 3, paddingLeft: 15 }}>{l.items.length} PJ{l.res && rules[l.res] ? " · 1 à la fois" : ""}</div>
+              {laneH !== "s" && <div style={{ fontSize: 10.5, color: C.ink3, marginTop: 3, paddingLeft: 15 }}>{l.items.length} PJ{l.res && rules[l.res] ? " · 1 à la fois" : ""}</div>}
             </div>))}
           </div>
           <div style={{ position: "relative", width: W, flex: "none" }} onPointerDown={e => { if (e.target === e.currentTarget || e.target.dataset.bg) { setSel(null); if (scrollRef.current) { pan.current = { x0: e.clientX, s0: scrollRef.current.scrollLeft }; setPanning(true); } } }}>
             {L.lanes.map(l => <div key={l.id} data-bg="1" style={{ position: "absolute", left: 0, right: 0, top: l.y, height: l.h, borderBottom: "1px solid " + C.line, background: l.ms ? C.panel : "transparent", cursor: "grab" }} />)}
-            {px >= 8 && Array.from({ length: Math.ceil((tl.hi - lo + 1) / 7) }, (_, i) => <div key={"we" + i} data-bg="1" style={{ position: "absolute", left: (i * 7 + 5) * px, width: 2 * px, top: 0, bottom: 0, background: "rgba(17,24,39,.035)", cursor: "grab" }} />)}
+            {px >= 8 && Array.from({ length: Math.ceil((tl.hi - lo + 1) / 7) }, (_, i) => <div key={"we" + i} data-bg="1" style={{ position: "absolute", left: (i * 7 + 5) * px, width: 2 * px, top: 0, bottom: 0, background: "rgba(127,127,127,.08)", cursor: "grab" }} />)}
             {closures.map((c, i) => <div key={i} title={c.label} style={{ position: "absolute", left: c.x, width: c.w, top: 0, bottom: 0, background: "rgba(180,83,9,.08)", pointerEvents: "none" }} />)}
             {head.bottom.map((m, i) => <div key={"v" + i} style={{ position: "absolute", left: m.x, top: 0, bottom: 0, width: 1, background: C.line2, pointerEvents: "none" }} />)}
             <div title="Aujourd'hui" style={{ position: "absolute", left: todayX - 0.5, top: 0, bottom: 0, width: 1, background: C.bad, opacity: 0.7, zIndex: 3, pointerEvents: "none" }} />
@@ -163,23 +165,25 @@ export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load,
                 const y = it.y; return (<div key={it.key} {...common} onPointerDown={e => startDrag(e, { kind: "move", pj: it.pj, step: l.step, key: it.key, node: n })} onClick={() => setSel({ pj: it.pj, step: l.step })}
                   style={{ position: "absolute", left: it.cx - 6, top: y, height: BH, display: "flex", alignItems: "center", gap: 6, opacity: dim ? 0.3 : 1, cursor: readOnly ? "default" : "grab", zIndex: on ? 5 : 2, whiteSpace: "nowrap" }}>
                   <span style={{ width: 11, height: 11, background: col, transform: "rotate(45deg)", borderRadius: 1.5, outline: on ? "2px solid " + C.ink : ch ? "2px dashed #E08A00" : "none", outlineOffset: 2, flex: "none", marginLeft: 0 }} />
-                  <span style={{ fontSize: 11, fontWeight: on ? 700 : 500, color: on ? C.ink : C.ink2, fontFamily: MONO }}>{it.pj}</span>
+                  <span style={{ fontSize: FS + 0.5, fontWeight: on ? 700 : 500, color: on ? C.ink : C.ink2, fontFamily: MONO }}>{it.pj}</span>
                 </div>);
               }
               return (<div key={it.key} {...common} onPointerDown={e => startDrag(e, { kind: "move", pj: it.pj, step: l.step, key: it.key, node: n })} onClick={() => setSel({ pj: it.pj, step: l.step })}
-                style={{ position: "absolute", left: it.x, top: it.y, width: it.w, height: BH, borderRadius: 3, background: col, opacity: dim ? 0.28 : 1, outline: on ? "2px solid " + C.ink : ch ? "2px dashed #E08A00" : "none", outlineOffset: 1, display: "flex", alignItems: "center", padding: "0 6px", gap: 5, color: "#fff", fontSize: 10.5, fontWeight: 500, overflow: "hidden", whiteSpace: "nowrap", cursor: readOnly ? "default" : "grab", zIndex: on ? 5 : 2, boxSizing: "border-box" }}>
+                style={{ position: "absolute", left: it.x, top: it.y, width: it.w, height: BH, borderRadius: 3, background: col, opacity: dim ? 0.28 : 1, outline: on ? "2px solid " + C.ink : ch ? "2px dashed #E08A00" : "none", outlineOffset: 1, display: "flex", alignItems: "center", padding: "0 6px", gap: 5, color: "#fff", fontSize: FS, fontWeight: 500, overflow: "hidden", whiteSpace: "nowrap", cursor: readOnly ? "default" : "grab", zIndex: on ? 5 : 2, boxSizing: "border-box" }}>
                 {rank > 0 && it.w > 36 && <span style={{ fontFamily: MONO, fontSize: 9.5, background: "rgba(255,255,255,.25)", borderRadius: 3, padding: "0 3px", flex: "none" }}>{rank}</span>}
-                <span style={{ fontFamily: MONO, pointerEvents: "none", overflow: "hidden", textOverflow: "ellipsis" }}>{it.w > 44 ? label(it) : ""}</span>
+                <span style={{ fontFamily: MONO, pointerEvents: "none", overflow: "hidden", textOverflow: "ellipsis" }}>{it.out ? "" : label(it)}</span>
                 {it.w > 96 && <span style={{ marginLeft: "auto", opacity: 0.85, pointerEvents: "none", flex: "none", fontFamily: MONO }}>{n.dur} j</span>}
                 {pinned && <span aria-hidden="true" style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: "rgba(0,0,0,.35)" }} />}
                 {!readOnly && <span onPointerDown={e => startDrag(e, { kind: "resize", pj: it.pj, step: l.step, key: it.key, node: n })} style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 6, cursor: "ew-resize", background: "rgba(0,0,0,.22)" }} />}
               </div>);
             }))}
+            {/* v208 : n° de PJ écrit à côté des barres trop courtes pour le contenir */}
+            {L.lanes.map(l => l.ms ? null : l.items.filter(it => it.out).map(it => <span key={"o" + it.key} aria-hidden="true" style={{ position: "absolute", left: it.x + it.w + 4, top: it.y, height: BH, lineHeight: BH + "px", fontSize: FS, fontFamily: MONO, fontWeight: 600, color: selPj && selPj !== it.pj ? C.ink3 : C.ink, whiteSpace: "nowrap", pointerEvents: "none", zIndex: 2 }}>{it.pj}</span>))}
           </div>
         </div>
       </div>
     </div>
-    {dragKey && tip && <div ref={tipRef} style={{ position: "fixed", left: 0, top: 0, zIndex: 10001, background: C.ink, color: "#fff", borderRadius: 4, padding: "3px 8px", fontSize: 11.5, fontWeight: 500, pointerEvents: "none" }}>{tip}</div>}
+    {dragKey && tip && <div ref={tipRef} style={{ position: "fixed", left: 0, top: 0, zIndex: 10001, background: C.ink, color: C.bg, borderRadius: 4, padding: "3px 8px", fontSize: 11.5, fontWeight: 500, pointerEvents: "none" }}>{tip}</div>}
     <div style={{ display: "flex", gap: 16, flexWrap: "wrap", padding: "6px 14px 8px", fontSize: 11, color: C.ink3, borderTop: "1px solid " + C.line }}>
       <span>Glisser une barre : déplacer · bord droit : durée · glisser le fond : parcourir les dates · ← → au clavier</span>
       {(rules.prod || rules.banc) && <span>Chiffre dans la barre = rang de passage</span>}
