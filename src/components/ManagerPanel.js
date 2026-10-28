@@ -16,6 +16,7 @@ import { InitialAddReview } from "./InitialAdd";
 import { SanteTab } from "./Feux";
 import { TurbinesTab } from "./TurbinesTab";
 import { SerieTab } from "./Series";
+import { KpiPilotage } from "./KpiPilotage";
 import { CashInTab } from "./CashInTab";
 import { isSuperAdmin, canCash } from "../roles";
 import { PeopleRoles } from "./PeopleRoles";
@@ -49,9 +50,6 @@ export function ManagerPanel({onNav,profiles,saveProfiles,jumpFiche,changeLog,da
   const fd=useMemo(()=>data.filter(r=>fEtat.has(r.etat)&&(r.etat==="SLOT_LIBRE"||fGamme.has(r.gamme))),[data,fEtat,fGamme]);
   // Les slots libres restent dans la liste, le statut et la charge atelier, mais ne comptent jamais dans les KPI ni les rapports.
   const fk=useMemo(()=>fd.filter(r=>r.etat!=="SLOT_LIBRE"),[fd]);
-  const shipped=fk.filter(r=>r.etat==="SHIPPED");
-  const inProd=fk.filter(r=>["MONTAGE","ELEC","TESTS","PACKAGING","En fabrication"].includes(r.etat));
-  const upcoming=fk.filter(r=>{const d=r.depart?diffDays(today,new Date(r.depart)):null;return d!=null&&d>=0&&d<=30;});
   const byMonth=Array(12).fill(0);fk.forEach(r=>{if(r.depart)byMonth[new Date(r.depart).getMonth()]++;});
   const maxBar=Math.max(...byMonth,1);
   const gammeCounts={};fk.forEach(r=>{if(r.gamme)gammeCounts[r.gamme]=(gammeCounts[r.gamme]||0)+1;});
@@ -227,8 +225,6 @@ export function ManagerPanel({onNav,profiles,saveProfiles,jumpFiche,changeLog,da
   };
 
   // ── Nouveaux KPI : volumétrie, durée moyenne, charge mensuelle ─
-  const dureeProdValues=fk.map(r=>r.arrivee&&r.depart?diffDays(new Date(r.arrivee),new Date(r.depart)):null).filter(d=>d!=null);
-  const avgDureeProd=dureeProdValues.length?Math.round(dureeProdValues.reduce((a,b)=>a+b,0)/dureeProdValues.length):null;
   const chargeByMonthMulti=useMemo(()=>{
     const steps=[["arrivee","Arrivée",T.teal500],["tests","Tests",T.amber500],["finProd","Fin prod",T.emerald500],["depart","Départ",T.red500]];
     const m={};
@@ -307,9 +303,6 @@ export function ManagerPanel({onNav,profiles,saveProfiles,jumpFiche,changeLog,da
     fk.forEach(r=>{const p=getPjMeta(r.pj,r).pays;m[p]=(m[p]||0)+1;});
     return Object.entries(m).map(([pays,n])=>({pays,n})).sort((a,b)=>b.n-a.n);
   },[fk]);
-  const countByEtat=useMemo(()=>{
-    return ALL_ETATS.map(e=>({etat:ETAT_META[e].label,n:fk.filter(r=>r.etat===e).length,c:ETAT_META[e].bar})).filter(d=>d.n>0);
-  },[fk]);
 
   // ── Navigation Manager : onglets horizontaux + sous-onglets par famille ──
   // « Il y a bcp de KPI… plusieurs petits onglets par famille de KPI ? » → un sous-onglet par famille.
@@ -387,24 +380,10 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
 
     <div key={tab+(tab==="derives"?"/"+kpiTab:"")} className="enogia-view-in" style={{minWidth:0}}>
     {tab==="derives"&&kpiTab==="synthese"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
-      <KpiRow items={[[fk.length,"Total",T.teal500],[shipped.length,"Expédiées",T.emerald500],[inProd.length,"En production",T.amber500],[upcoming.length,"Départs < 30j",T.red500],[avgDureeProd==null?"—":avgDureeProd+"j","Durée moy. production",T.violet500]]}/>
+      {/* v215 (maquette A validée) : tableau de pilotage — 5 chiffres, PJ à risque, charge des 6 semaines, portefeuille par état */}
+      <KpiPilotage rows={fk} driftRows={driftRows} delays={delays} closurePeriods={closurePeriods} productionExclusions={productionExclusions} capaWeek={CAPA_ATELIER_SEM} hasInitial={hasInitial} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}} onSeeDerives={()=>setKpiTab("derives")}/>
+      <h3 style={{margin:"6px 0 0",fontSize:FZ.md,fontWeight:700,color:T.ink900}}>Pour aller plus loin</h3>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,380px),1fr))",gap:12}}>
-        {countByEtat.length>0&&<div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line}}>
-          <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:4}}>Répartition par état</div>
-          <div style={{fontSize:FZ.sm,color:T.ink300,marginBottom:10}}>Volumétrie actuelle du portefeuille</div>
-          <ResponsiveContainer width="100%" height={Math.max(180,countByEtat.length*36)}>
-            <BarChart data={countByEtat} layout="vertical" margin={{left:10,right:20}}>
-              <CartesianGrid strokeDasharray="3 3" stroke={T.surface}/>
-              <XAxis type="number" allowDecimals={false} tick={{fontSize:FZ.xs,fill:T.ink500}}/>
-              <YAxis type="category" dataKey="etat" width={130} tick={{fontSize:FZ.sm,fill:T.ink700,fontWeight:600}}/>
-              <Tooltip contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
-              <Bar dataKey="n" radius={[0,6,6,0]}>
-                {countByEtat.map((d,i)=><Cell key={i} fill={d.c}/>)}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>}
-
         {countByPays.length>0&&<div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line}}>
           <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:4}}>Répartition par pays</div>
           <div style={{fontSize:FZ.sm,color:T.ink300,marginBottom:10}}>Destinations des machines du portefeuille</div>

@@ -431,4 +431,7 @@ export const RELEASE_CATALOG = [
   { v: "214", t: "Planificateur : lignes plus basses, liens en tirant, phase et ressource", items: [
     ["Planificateur", "Hauteur des lignes du Gantt, lien en tirant une barre sur une autre, phase et ressource modifiables sur chaque tâche."],
   ] },
+  { v: "215", t: "KPI : un tableau de pilotage", items: [
+    ["KPI", "Synthèse : 5 chiffres, PJ à risque, charge des 6 semaines, portefeuille par état."],
+  ] },
 ];

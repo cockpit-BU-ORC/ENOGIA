@@ -1385,3 +1385,15 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - **Phase et ressource** : sur chaque tâche (sauf jalons), la ressource affichée est un menu : **Phase** (Production / Tests / Packing, pour les tâches ajoutées) et **Ressource** (Atelier, Testeur à désigner, testeurs de l'onglet Tests) — `setStepMeta`. « ＋ Ajouter une tâche » (sous un PJ déplié, et dans son menu ⋯) ouvre la fenêtre complète (nom, phase, ressource, durée, heures, après quelle tâche).
 - Clé `localStorage` `planUi105` : `rowH`. Vérifié : lignes à 24 px en sombre, menu Phase / Ressource, lien par glisser vertical (jsdom + aperçu) ; build (13 avertissements existants), tests, contraste.
 - Fichiers : planner/{Planner,PlannerGantt}.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
+
+## v215 — KPI › Synthèse en tableau de pilotage (maquette A validée)
+
+- **Nouveau composant `KpiPilotage.js`** en tête de Manager › KPI › Synthèse (filtres État / Gamme appliqués), à la place de l'ancienne rangée de chiffres et du graphique « Répartition par état » :
+  - **5 chiffres** (libellé, valeur, une ligne d'explication ; rouge seulement quand c'est mauvais) : En production · Départs d'ici 30 jours (dont N en dérive) · Dérive moyenne du départ vs planning initial (rouge au-delà de +3 j) · Charge des 4 prochaines semaines en % de la capacité (heures planifiées / capacité, rouge au-delà de 100 %) · PJ avec un retard déclaré et leur 1re cause (jours cumulés).
+  - **PJ à risque** : PJ en cours dont le départ dérive, triés par dérive (6 premiers), colonnes PJ · Projet · État · Départ · Dérive (pastille orange ≤ 10 j, rouge au-delà) ; clic ou Entrée = fiche projet ; « Voir les N PJ en dérive » ouvre KPI › Dérives. Sans planning initial : un message l'explique.
+  - **Charge atelier** des 6 prochaines semaines : colonnes d'une seule couleur (rouge si la semaine dépasse), trait pointillé = capacité (175 h × jours ouverts / 5), heures au-dessus ; même calcul que KPI › Charge depuis la V213 (jours fermés et sans production déduits).
+  - **Portefeuille par état** : une barre à 100 % (4 états les plus fournis + autres) avec la légende chiffrée.
+  - Ensuite « Pour aller plus loin » : répartition par pays et explorateur libre (inchangés).
+- Les sous-pages **Dérives, Charge, Avancement, Retards ne sont pas modifiées** dans cette version.
+- Pas de nouvelle donnée ni clé `localStorage`. Vérifié : clair, sombre, téléphone (jsdom + aperçu, pas de défilement horizontal à 375 px) ; build (13 avertissements existants), tests, contraste.
+- Fichiers : components/{KpiPilotage,ManagerPanel}.js, styles.css, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.

@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v215",
+    date: "2026-10-28",
+    title: "V215 : KPI — un tableau de pilotage",
+    items: [
+      { t: "Cinq chiffres", d: "En tête de KPI › Synthèse : machines en production, départs d'ici 30 jours (et combien en dérive), dérive moyenne du départ, charge des 4 prochaines semaines face à la capacité, PJ avec un retard déclaré et leur 1re cause.", admin: true },
+      { t: "PJ à risque", d: "Les PJ dont le départ dérive le plus, triés, avec leur état et leur date de départ ; un clic ouvre la fiche projet.", admin: true },
+      { t: "Charge et portefeuille", d: "La charge atelier des 6 prochaines semaines face à la capacité (jours fermés et sans production déduits) et le portefeuille par état en une barre.", admin: true },
+    ],
+  },
+  {
     id: "2026-10-v214",
     date: "2026-10-28",
     title: "V214 : planificateur — lignes plus basses, liens en tirant, phase et ressource",
