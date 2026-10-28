@@ -307,7 +307,7 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, authorN
   const [plan, setPlanState] = useState(null); const [preview, setPreview] = useState(null); const [proposal, setProposal] = useState(null);
   const [undo, setUndo] = useState([]); const [redo, setRedo] = useState([]);
   const [sel, setSel] = useState(null); const [exp, setExp] = useState(() => new Set());
-  const [q, setQ] = useState(""); const [dlg, setDlg] = useState(null); const [saveSt, setSaveSt] = useState(""); const [notice, setNotice] = useState(null);
+  const [q, setQ] = useState(""); const [dlg, setDlg] = useState(null); const [saveSt, setSaveSt] = useState(""); const [notice, setNotice] = useState(null); const [taskPj, setTaskPj] = useState(null);
   const [ui, setUiState] = useState(loadUi); const [scrollX, setScrollX] = useState(0);
   const [refId, setRefId] = useState("pub"); const [hist, setHist] = useState(null); const baseRef = useRef(null);
   const lastSaved = useRef(null); const gref = useRef(null); const lref = useRef(null); const expInit = useRef(false);
@@ -477,13 +477,15 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, authorN
 <div role="group" aria-label="Affichage" style={{ display: "inline-flex" }}>
         {[["list", "Liste"], ["both", "Liste + Gantt"], ["gantt", "Gantt"], ["lanes", "Couloirs"], ["changes", "Modifications"]].map(([k, l], i, arr) => <button key={k} className="pg-tb" aria-pressed={ui.view === k} onClick={() => setUi({ view: k })} style={{ borderRadius: i === 0 ? "8px 0 0 8px" : i === arr.length - 1 ? "0 8px 8px 0" : 0, marginLeft: i ? -1 : 0 }}>{l}{k === "changes" && nTouched > 0 && <span style={{ marginLeft: 6, background: ui.view === k ? "rgba(255,255,255,.25)" : T.amber100, color: ui.view === k ? "#fff" : T.amber600, borderRadius: 99, padding: "0 7px", fontSize: 11.5 }}>{nTouched}</span>}</button>)}
       </div>
+      {ui.view !== "lanes" && ui.view !== "changes" && <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 700, color: T.ink700 }}>Hauteur des lignes
+        <input type="range" min={24} max={44} step={2} value={ui.rowH || 32} onChange={e => setUi({ rowH: Number(e.target.value) })} aria-label="Hauteur des lignes du Gantt" style={{ width: 110 }} /></label>}
       {ui.view === "lanes" && <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 700, color: T.ink700 }}>Hauteur des couloirs
         <input type="range" min={8} max={30} step={1} value={laneBH} onChange={e => setUi({ laneH: Number(e.target.value) })} aria-label="Hauteur des couloirs" style={{ width: 120 }} /></label>}
       <input value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher un PJ…" aria-label="Rechercher un PJ" className="pg-in" style={{ ...INP, width: 160 }} />
       {!ui.lock && <>
         <span style={{ display: "inline-flex", gap: 4 }}>
           <button className="pg-tb" disabled={!!proposal} onClick={() => setDlg("newpj")} title="Créer un PJ avec ses tâches (production, tests, packing) et ses ressources">＋ Nouveau PJ</button>
-          <button className="pg-tb" disabled={!!proposal || !selPj} onClick={() => setDlg("task")} title={selPj ? "Ajouter une tâche à " + selPj.pj : "Sélectionnez d'abord un PJ (clic sur sa ligne)"}>＋ Tâche{selPj ? " à " + selPj.pj : ""}</button>
+          <button className="pg-tb" disabled={!!proposal || !selPj} onClick={() => { setTaskPj(null); setDlg("task"); }} title={selPj ? "Ajouter une tâche à " + selPj.pj : "Sélectionnez d'abord un PJ (clic sur sa ligne)"}>＋ Tâche{selPj ? " à " + selPj.pj : ""}</button>
         </span>
         <Pop width={330} align="left" trigger={(o, t) => <button className="pg-tb" aria-haspopup="menu" aria-expanded={o} onClick={t}>Règles ▾{overlaps && !rules.prod && !rules.banc ? <span style={{ color: T.amber600 }}> ⚠ {overlaps}</span> : null}</button>}>
           {close => (<div style={{ padding: 4, fontSize: 13, color: T.ink700, display: "flex", flexDirection: "column", gap: 8 }}>
@@ -525,7 +527,7 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, authorN
       <PlannerChanges summary={chg.summary} planDiff={chg.planDiff || []} hasDetail={!!chg.planDiff} refs={chg.refs} refId={chg.id} setRefId={setRefId} refLabel={chg.label} loadingRefs={hist === null} q={q} onOpenPj={openPj} />
     </div>}
     {ui.view !== "changes" && <div style={{ ...CARD, overflow: "clip" }}>
-      <PlannerGantt listW={listW} onListW={w => setUi({ listW: w })} testers={testers} onInfo={t => setNotice({ tone: "ok", text: t })} plan={live} basePlan={plan} sched={sched} cal={cal} closurePeriods={closurePeriods} tl={tl} pjs={pjsShown} sel={selPj} setSel={setSel} expanded={exp} toggleExp={toggleExp}
+      <PlannerGantt listW={listW} onListW={w => setUi({ listW: w })} testers={testers} onInfo={t => setNotice({ tone: "ok", text: t })} rowH={ui.rowH || 32} onAddTask={pj => { setSel({ pj, step: null }); setTaskPj(pj); setDlg("task"); }} plan={live} basePlan={plan} sched={sched} cal={cal} closurePeriods={closurePeriods} tl={tl} pjs={pjsShown} sel={selPj} setSel={setSel} expanded={exp} toggleExp={toggleExp}
         showLinks={ui.links} view={ui.view} readOnly={ro} onPreview={setPreview} onCommit={onCommit} onError={onError} onReorder={reorder} scrollRef={gref} onScrollX={setScrollX} />
       {ui.view !== "lanes" && loadEl}
     </div>}
@@ -533,7 +535,7 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, authorN
       Cliquez une date, une durée, un travail ou un prédécesseur pour la modifier (Entrée valide, Échap annule) · glissez une barre pour la déplacer, sa poignée pour changer la durée · glissez ⋮⋮ pour changer la priorité d'un PJ · prédécesseurs : numéros de ligne, <b>2 ; 7SS+3j</b> (FS par défaut, SS, FF, SF, décalage en jours ouvrés).
     </div>}
     {dlg === "newpj" && <NewPjDialog plan={plan} rows={rows} cal={cal} testers={testers || []} onClose={() => setDlg(null)} onApply={(np, pj) => { apply(np); setSel({ pj, step: null }); toggleExp(pj, true); setNotice({ tone: "ok", text: pj + " ajouté au plan avec ses tâches." }); }} />}
-    {dlg === "task" && selPj && <TaskDialog plan={plan} pj={selPj.pj} after={selPj.step} testers={testers || []} onClose={() => setDlg(null)} onApply={(np, key) => { apply(np); toggleExp(selPj.pj, true); setSel({ pj: selPj.pj, step: key ? key.split("|").pop() : null }); }} />}
+    {dlg === "task" && (selPj || taskPj) && <TaskDialog plan={plan} pj={taskPj || selPj.pj} after={selPj && selPj.pj === (taskPj || selPj.pj) ? selPj.step : null} testers={testers || []} onClose={() => { setDlg(null); setTaskPj(null); }} onApply={(np, key) => { const pj = taskPj || selPj.pj; apply(np); toggleExp(pj, true); setSel({ pj, step: key ? key.split("|").pop() : null }); setTaskPj(null); }} />}
     {dlg === "templates" && <TemplatesDialog plan={plan} rows={rows} onClose={() => setDlg(null)} onApply={np => apply(np)} />}
     {dlg === "blank" && <BlankDialog rows={rows} hasPlan onClose={() => setDlg(null)} onApply={np => { setSel(null); setExp(new Set(np.pjs.map(p => p.pj))); apply(np); }} />}
     {dlg === "import" && <ImportDialog cal={cal} rows={rows} plan={plan} onClose={() => setDlg(null)} onApply={np => apply(np)} />}

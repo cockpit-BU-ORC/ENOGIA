@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v214",
+    date: "2026-10-28",
+    title: "V214 : planificateur — lignes plus basses, liens en tirant, phase et ressource",
+    items: [
+      { t: "Hauteur des lignes", d: "Un curseur « Hauteur des lignes » règle la hauteur des lignes du Gantt (Arrivée, Production, Tests…), de 24 à 44 px.", admin: true },
+      { t: "Lier en tirant", d: "Tirez une barre vers le haut ou le bas et lâchez-la sur la tâche qui suit : le lien fin → début est créé (« Lier » reste disponible).", admin: true },
+      { t: "Phase et ressource", d: "Sur chaque tâche, un clic sur sa ressource choisit la phase (Production, Tests, Packing) et la ressource (atelier, testeur, un testeur nommé). « ＋ Ajouter une tâche » ouvre la fenêtre complète.", admin: true },
+    ],
+  },
+  {
     id: "2026-10-v213",
     date: "2026-10-28",
     title: "V213 : les jours de production se règlent dans le Calendrier",

@@ -1377,3 +1377,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - **Charge atelier des KPI** (`ManagerPanel.js`) : les heures atelier d'un PJ se répartissent sur ses **jours ouvrés** d'arrivée à fin de production, hors week-ends, fermetures et jours sans production (avant : au prorata du temps calendaire). Le planificateur tenait déjà compte des fermetures.
 - Nouveau module `src/workDays.js` (+ `workDays.test.js`, 2 tests). Pas de nouvelle clé `localStorage`. Vérifié : menu d'un jour et Gantt coupé (jsdom + aperçu) ; build (13 avertissements existants), 134 tests, contraste.
 - Fichiers : workDays.js(+test), App.js, components/{CalendarView,GanttView,ManagerPanel}.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
+
+## v214 — Planificateur : hauteur des lignes, lien en tirant, phase et ressource sur chaque tâche
+
+- **Hauteur des lignes du Gantt** (`PlannerGantt.js`, `ROW_H` calculé à partir de `ui.rowH`) : curseur « Hauteur des lignes » dans la barre d'outils (vues Liste, Liste + Gantt, Gantt), de 24 à 44 px ; barres, jalons, poignées et libellés suivent. Les couloirs gardent leur propre curseur.
+- **Lien en tirant** : tirer une barre **verticalement** (plus que horizontalement, d'au moins ~¾ de ligne) puis la lâcher sur la barre ou la ligne d'une autre tâche crée un lien fin → début, avec le message « Lien créé ». Un glisser horizontal déplace toujours la tâche. « Lier » (deux clics) et les poignées restent disponibles.
+- **Phase et ressource** : sur chaque tâche (sauf jalons), la ressource affichée est un menu : **Phase** (Production / Tests / Packing, pour les tâches ajoutées) et **Ressource** (Atelier, Testeur à désigner, testeurs de l'onglet Tests) — `setStepMeta`. « ＋ Ajouter une tâche » (sous un PJ déplié, et dans son menu ⋯) ouvre la fenêtre complète (nom, phase, ressource, durée, heures, après quelle tâche).
+- Clé `localStorage` `planUi105` : `rowH`. Vérifié : lignes à 24 px en sombre, menu Phase / Ressource, lien par glisser vertical (jsdom + aperçu) ; build (13 avertissements existants), tests, contraste.
+- Fichiers : planner/{Planner,PlannerGantt}.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
