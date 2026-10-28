@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v209",
+    date: "2026-10-28",
+    title: "V209 : la page Tests en grille, claire et alignée",
+    items: [
+      { t: "Planning des bancs", d: "Sous le bandeau « Au banc maintenant », une ligne par machine sur 3 semaines : n° de PJ, gamme, testeurs, avancement, puis la barre de ses jours de tests (or en cours, rouge en retard, vert terminé, contour = prévu) et les venues client / NOBO. ◀ ▶ pour avancer d'une semaine." },
+      { t: "Par testeur", d: "La même grille, une ligne par testeur : ses machines, ou « libre ». On affecte toujours en glissant une barre sur un testeur." },
+      { t: "Catalogue", d: "Un tableau par partie (interne, client, NOBO) : n°, test, objectifs, actions." },
+    ],
+  },
+  {
     id: "2026-10-v208",
     date: "2026-10-28",
     title: "V208 : un planificateur plus lisible",

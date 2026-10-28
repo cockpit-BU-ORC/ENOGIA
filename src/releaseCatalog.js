@@ -411,4 +411,7 @@ export const RELEASE_CATALOG = [
   { v: "208", t: "Un planificateur plus lisible", items: [
     ["Planificateur", "Charge collée en bas, capacité par semaine, libellés sur les barres, couloirs et liste réglables, mode sombre."],
   ] },
+  { v: "209", t: "La page Tests en grille", items: [
+    ["Tests", "Planning des bancs (une ligne par machine), Par testeur sur la même grille, catalogue en tableaux."],
+  ] },
 ];
