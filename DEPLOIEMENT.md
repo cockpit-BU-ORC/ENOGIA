@@ -1463,3 +1463,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Clés `localStorage` : `enogia_arr_home-<rôle>`, `enogia_arr_kpi-synthese`, `enogia_arr_tests-semaine` (disposition propre à chaque poste et navigateur).
 - Vérifié : KPI (redimensionnement enregistré) et accueil (jsdom + aperçu) ; build (13 avertissements existants), tests, contraste.
 - Fichiers : components/{Arrange,KpiPilotage,RoleHome,TestsTab}.js, styles.css, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
+
+## v223 — Isothermes sur l'accueil (option B validée)
+
+- **Accueil** (`HomeView.js`) : composant `Isotherms` — 10 courbes de niveau en quart de cercle irrégulier autour du coin haut droit, trait 1,2 px, de plus en plus pâles vers le contenu ; décoratif (`aria-hidden`, sans clic), placé sous les cartes (`isolation: isolate`, `z-index: -1`), largeur `min(620px, 75%)`.
+- Nouveau jeton de thème `T.contour` : `#C7D2DE` (clair), `#36445F` (sombre).
+- Pas de clé `localStorage`.
+- Vérifié : rendu clair et sombre (jsdom + aperçu), build (13 avertissements existants), tests, contraste.
+- Fichiers : components/HomeView.js, theme.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.

@@ -459,4 +459,7 @@ export const RELEASE_CATALOG = [
   { v: "222", t: "Disposez vos cadrans", items: [
     ["Accueil, KPI, Tests", "Cadrans déplaçables et redimensionnables, disposition gardée sur le poste."],
   ] },
+  { v: "223", t: "Isothermes sur l'accueil", items: [
+    ["Accueil", "Courbes isothermes légères en coin, en clair et en sombre."],
+  ] },
 ];

@@ -71,14 +71,14 @@ export const THEMES = {
       teal600:"#121B30", teal500:"#1D2C4E", teal400:"#4B5D85", teal100:"#E8EAF0",
       surface:"#F3F5F8", surfaceAlt:"#E9EDF3", card:"#FFFFFF",
       ink900:"#101828", ink700:"#344054", ink500:"#52607A", ink300:"#5B6880", ink100:"#E4E8EF",
-      line:"#DDE2EA", panel:"#F1F3F7", panelDim:"#E7EAF0",
+      line:"#DDE2EA", panel:"#F1F3F7", panelDim:"#E7EAF0", contour:"#C7D2DE",
       accent:"#0A9DB5", accentInk:"#076477", accentSoft:"#D3F0F6" },
     dark:{ ...grad("#082440","#0D3B66","#4A6F92"),
       navy900:"#0B1220", navy800:"#C9D6E6", navy700:"#2E5A88", navy600:"#6F93BD",
       teal600:"#D0DCEB", teal500:"#4A73A3", teal400:"#9DB6D3", teal100:"#24364F",
       surface:"#16202E", surfaceAlt:"#22304A", card:"#1F2B3D",
       ink900:"#F1F5FA", ink700:"#D2DCE8", ink500:"#B6C3D3", ink300:"#A7B5C7", ink100:"#33435C",
-      line:"#33435C", panel:"#243247", panelDim:"#2B3B55",
+      line:"#33435C", panel:"#243247", panelDim:"#2B3B55", contour:"#36445F",
       accent:"#F4D35E", accentInk:"#F7DE84", accentSoft:"#4A3E22" } }, // v197 (demandé : « garder un seul thème ») : clair d'Ardoise + sombre de Salle de contrôle};
 };
 export const THEME_IDS = Object.keys(THEMES);

@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v223",
+    date: "2026-10-28",
+    title: "V223 : isothermes sur l'accueil",
+    items: [
+      { t: "Accueil", d: "Des courbes isothermes légères dans le coin haut droit donnent du relief au fond de l'accueil, en clair comme en sombre." },
+    ],
+  },
+  {
     id: "2026-10-v222",
     date: "2026-10-28",
     title: "V222 : disposez vos cadrans",
