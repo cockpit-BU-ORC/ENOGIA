@@ -3,6 +3,7 @@ import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, R
 import { T, FZ } from "../theme";
 import { SerieTag, getPjMeta, initials, GAMME_COLORS, ETAT_META, ALL_ETATS, ALL_GAMMES, MONTHS, today, PjPlate } from "../pjMeta";
 import { fmt, toLocalISO, diffDays, weekStartOf } from "../parsers";
+import { workDaysBetween } from "../workDays";
 import { DropFilter, ImportButton, NavIcon, Select, notify } from "./SharedUI";
 import { CARD, KpiRow, PieBlock, EmptyNote, StatutTab, KpiAvancement, DelayInsights, DelaysTab, ProductionCalendarManager } from "./ManagerParts";
 import { ProjectFileManager } from "./ManagerFiche";
@@ -279,8 +280,13 @@ export function ManagerPanel({onNav,profiles,saveProfiles,jumpFiche,changeLog,da
         cur=weekEnd;
       }
     };
+    // v213 : la charge atelier se répartit sur les jours ouvrés du PJ, hors fermetures et jours sans production
+    const addWorkDays=(r,totalHeures)=>{
+      const days=workDaysBetween(r.arrivee,r.finProd,closurePeriods,(productionExclusions||{})[r.pj]);if(!days.length||!totalHeures)return;
+      days.forEach(k=>{const ws=weekStartOf(new Date(k+"T12:00:00")),key=toLocalISO(ws);if(!weekly[key])weekly[key]={atelier:0,autom:0,weekStart:new Date(ws)};weekly[key].atelier+=totalHeures/days.length;});
+    };
     fd.forEach(r=>{
-      if(r.arrivee&&r.finProd)addToWeeks(r.arrivee,r.finProd,r.heuresAtelier,"atelier");
+      if(r.arrivee&&r.finProd)addWorkDays(r,r.heuresAtelier);
       if(r.tests&&r.testsFin)addToWeeks(r.tests,r.testsFin,r.heuresAutom,"autom");
     });
     return Object.values(weekly)
@@ -294,7 +300,7 @@ export function ManagerPanel({onNav,profiles,saveProfiles,jumpFiche,changeLog,da
       satAtelier:Math.round((w.atelier/CAPA_ATELIER_SEM)*100),
       satAutom:Math.round((w.autom/CAPA_AUTOM_SEM)*100),
     }));
-  },[fd,satYear,satMonth]);
+  },[fd,satYear,satMonth,closurePeriods,productionExclusions]);
 
   const countByPays=useMemo(()=>{
     const m={};

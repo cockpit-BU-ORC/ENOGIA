@@ -6,6 +6,7 @@ import { useMarks, NewMark } from "./ChangesNotice";
 import { getPjMeta, PresenceChip, presenceKind, presenceKindAt, presenceRing, MONTHS_FULL, today, ETAT_META, ALL_ETATS, ProjectLabelCell } from "../pjMeta";
 import { DropFilter, pressable } from "./SharedUI";
 import { toLocalISO, weekStartOf } from "../parsers";
+import { toggleClosedDay, isClosedDay } from "../workDays";
 
 export function getWeekStatus(r,weekStart,weekEnd){
   const a=r.arrivee?new Date(r.arrivee):null;
@@ -66,8 +67,11 @@ export function getDayStatus(r,day,excludedDates){
   });
   return milestones.length?milestones.join(" + "):null;
 }
-export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayAnchor,setDayAnchor,closurePeriods,productionExclusions,zoomLevel:zoomRaw,setZoomLevel,selEtats,setSelEtats,allPJs,selPJs,setSelPJs}){
+export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusionDays,data,onSelectPj,mode,setMode,anchor,setAnchor,dayAnchor,setDayAnchor,closurePeriods,productionExclusions,zoomLevel:zoomRaw,setZoomLevel,selEtats,setSelEtats,allPJs,selPJs,setSelPJs}){
   const {marks}=useMarks();
+  // v213 : un clic sur un jour (vue Jour, admins) ouvre ses options de production
+  const [dayMenu,setDayMenu]=useState(null);
+  useEffect(()=>{if(!dayMenu)return undefined;const k=e=>{if(e.key==="Escape")setDayMenu(null);};window.addEventListener("keydown",k);return()=>window.removeEventListener("keydown",k);},[dayMenu]);
   const isClosurePeriod=(colStart,colEnd)=>{
     if(!closurePeriods||!closurePeriods.length)return false;
     return closurePeriods.some(p=>{
@@ -320,7 +324,7 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
           const isWE=d.getDay()===0||d.getDay()===6;
           const dEnd=new Date(d);dEnd.setDate(dEnd.getDate()+1);
           const closed=isClosurePeriod(d,dEnd);
-          return(<div key={di} style={{padding:"3px 1px",textAlign:"center",background:di===todayDayIdx?T.red100:closed?T.ink100:isWE?T.ink100:T.surface,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,boxShadow:di===todayDayIdx?"inset 0 -3px 0 "+T.red500:"none",position:"sticky",top:headerTop,zIndex:10,gridColumn:di+2,gridRow:HEAD_ROW}}>
+          return(<div key={di} {...(canEditDays&&!isWE?{role:"button",tabIndex:0,"aria-label":"Options de production du "+d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"}),title:"Options de production de ce jour",onClick:e=>{const r=e.currentTarget.getBoundingClientRect();setDayMenu({iso:toLocalISO(d),x:r.left,y:r.bottom});},onKeyDown:e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();const r=e.currentTarget.getBoundingClientRect();setDayMenu({iso:toLocalISO(d),x:r.left,y:r.bottom});}}}:{})} style={{cursor:canEditDays&&!isWE?"pointer":undefined,padding:"3px 1px",textAlign:"center",background:di===todayDayIdx?T.red100:closed?T.ink100:isWE?T.ink100:T.surface,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,boxShadow:di===todayDayIdx?"inset 0 -3px 0 "+T.red500:"none",position:"sticky",top:headerTop,zIndex:10,gridColumn:di+2,gridRow:HEAD_ROW}}>
             {/* Numéro de semaine retiré d'ici (demandé explicitement) : il vit désormais uniquement
                 dans la bande groupée au-dessus. */}
             <div style={{fontSize:FZF.xs,fontWeight:600,lineHeight:1.2,color:di===todayDayIdx?T.red600:closed?T.ink300:T.ink300}}>{DAY_NAMES[d.getDay()]}</div>
@@ -407,8 +411,35 @@ export function CalendarView({data,onSelectPj,mode,setMode,anchor,setAnchor,dayA
     </div>
 
 
+  {dayMenu&&<DayProdMenu menu={dayMenu} data={data} closurePeriods={closurePeriods} productionExclusions={productionExclusions} setClosurePeriods={setClosurePeriods} setProductionExclusionDays={setProductionExclusionDays} onClose={()=>setDayMenu(null)}/>}
   </div>);
 }
 
 
 
+
+// v213 : options d'un jour — fermer / rouvrir l'atelier, ou retirer la production de certains PJ ce jour-là. Le Gantt et la charge en tiennent compte.
+function DayProdMenu({menu,data,closurePeriods,productionExclusions,setClosurePeriods,setProductionExclusionDays,onClose}){
+  const k=menu.iso,d=new Date(k+"T12:00:00"),closed=isClosedDay(closurePeriods,k);
+  const inProd=(data||[]).filter(r=>r&&r.pj&&r.arrivee&&r.finProd&&toLocalISO(new Date(r.arrivee))<=k&&k<=toLocalISO(new Date(r.finProd)));
+  const ex=pj=>((productionExclusions||{})[pj]||[]).includes(k);
+  const nEx=inProd.filter(r=>ex(r.pj)).length;
+  const setAll=on=>{const m={};inProd.forEach(r=>{m[r.pj]=[k];});setProductionExclusionDays&&setProductionExclusionDays(m,on);};
+  const W=320,left=Math.max(8,Math.min(menu.x,window.innerWidth-W-8)),top=Math.min(menu.y+4,window.innerHeight-120);
+  const btn={border:"1px solid "+T.line,background:T.card,color:T.ink900,borderRadius:8,padding:"7px 10px",fontSize:FZF.sm,fontWeight:700,cursor:"pointer",fontFamily:T.font,minHeight:34,textAlign:"left"};
+  return(<><div onClick={onClose} style={{position:"fixed",inset:0,zIndex:1300}}/>
+    <div role="dialog" aria-label={"Production du "+d.toLocaleDateString("fr-FR")} style={{position:"fixed",left,top,width:W,maxHeight:"min(70vh,520px)",overflow:"auto",zIndex:1301,background:T.card,color:T.ink900,border:"1px solid "+T.line,borderRadius:10,boxShadow:T.shadowFloat||T.shadowLg,padding:12,fontFamily:T.font}}>
+      <div style={{fontWeight:700,fontSize:FZF.md,marginBottom:2}}>{d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})}</div>
+      <div style={{fontSize:FZF.xs,color:T.ink500,marginBottom:10}}>{closed?"Atelier fermé ce jour.":"Jour travaillé."} Le Gantt et la charge en tiennent compte.</div>
+      <button type="button" style={{...btn,width:"100%",color:closed?T.emerald600:T.red600}} onClick={()=>{setClosurePeriods&&setClosurePeriods(toggleClosedDay(closurePeriods,k));onClose();}}>{closed?"Rouvrir ce jour pour tout l'atelier":"Jour non travaillé pour tout l'atelier"}</button>
+      {!closed&&inProd.length>0&&<div style={{marginTop:12}}>
+        <div style={{display:"flex",alignItems:"baseline",gap:8,marginBottom:4}}><b style={{fontSize:FZF.sm}}>Production ce jour</b><span style={{fontSize:FZF.xs,color:T.ink500}}>{inProd.length} PJ · {nEx} sans production</span></div>
+        <div style={{display:"flex",gap:6,marginBottom:6}}><button type="button" style={btn} onClick={()=>setAll(true)}>Aucune production</button><button type="button" style={btn} onClick={()=>setAll(false)}>Tout rétablir</button></div>
+        {inProd.map(r=><label key={r.pj} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 2px",fontSize:FZF.sm,cursor:"pointer",minHeight:30}}>
+          <input type="checkbox" checked={!ex(r.pj)} onChange={e=>setProductionExclusionDays&&setProductionExclusionDays({[r.pj]:[k]},!e.target.checked)}/>
+          <b style={{fontFamily:T.fontMono||"monospace",fontSize:12}}>{r.pj}</b><span style={{color:T.ink500,fontSize:12,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{getPjMeta(r.pj,r).nomProjet||""}</span>
+          <span style={{marginLeft:"auto",fontSize:11,color:ex(r.pj)?T.red600:T.emerald600,fontWeight:700}}>{ex(r.pj)?"pas de prod.":"en prod."}</span></label>)}
+      </div>}
+      {!closed&&inProd.length===0&&<div style={{marginTop:10,fontSize:FZF.xs,color:T.ink500}}>Aucun PJ en production ce jour.</div>}
+    </div></>);
+}

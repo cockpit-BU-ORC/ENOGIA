@@ -68,7 +68,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-28-v212-manager-simple";
+const APP_BUILD_VERSION = "2026-10-28-v213-jours-production";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -1188,11 +1188,11 @@ export default function App(){
               selEtats={selEtats} setSelEtats={setSelEtats} allPJs={allPJs} selPJs={selPJs} setSelPJs={setSelPJs}
               comments={comments} addComment={addComment} deleteComment={deleteComment}
               pinOk={pinOk} delays={delays} delayTypes={delayTypes} setDelayTypes={setDelayTypesAndSave} addDelayAllocation={addDelayAllocation} deleteDelayAllocation={deleteDelayAllocation}
-              addDelayComment={addDelayComment} deleteDelayComment={deleteDelayComment} authorName={authorName} savePjMetaOverride={savePjMetaOverride} canEditMeta={canEditMeta}/>}
+              addDelayComment={addDelayComment} deleteDelayComment={deleteDelayComment} authorName={authorName} savePjMetaOverride={savePjMetaOverride} canEditMeta={canEditMeta} closurePeriods={closurePeriods} productionExclusions={productionExclusions}/>}
             {/* Même filtre État + PJ que le Gantt (demandé explicitement : "le même format au même
                 emplacement") — partage le même état que la liste/le Gantt, donc filtrer ici filtre
                 aussi les autres vues et inversement. */}
-            {view==="calendar"&&<CalendarView data={filtered} onSelectPj={setCalSel}
+            {view==="calendar"&&<CalendarView canEditDays={canEditMeta} setClosurePeriods={setClosurePeriodsAndSave} setProductionExclusionDays={setProductionExclusionDays} data={filtered} onSelectPj={setCalSel}
               mode={calMode} setMode={setCalMode} anchor={calAnchor} setAnchor={setCalAnchor}
               dayAnchor={calDayAnchor} setDayAnchor={setCalDayAnchor} closurePeriods={closurePeriods}
               productionExclusions={productionExclusions}

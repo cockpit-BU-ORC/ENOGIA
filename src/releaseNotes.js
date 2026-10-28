@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v213",
+    date: "2026-10-28",
+    title: "V213 : les jours de production se règlent dans le Calendrier",
+    items: [
+      { t: "Un clic sur un jour", d: "Dans le Calendrier (vue Jour), un clic sur la date ouvre ses options : jour non travaillé pour tout l'atelier, ou pas de production pour certains PJ ce jour-là.", admin: true },
+      { t: "Le Gantt suit", d: "Les jours fermés ou sans production coupent les barres du Gantt (hachures) ; une info-bulle dit pourquoi." },
+      { t: "La charge suit", d: "La charge atelier des KPI se répartit sur les jours réellement travaillés : un jour retiré n'est plus compté.", admin: true },
+    ],
+  },
+  {
     id: "2026-10-v212",
     date: "2026-10-28",
     title: "V212 : un Manager plus simple, Cash in à portée de clic",

@@ -1369,3 +1369,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
   - Les anciens onglets mémorisés (acces, imports, sante, suivi) ramènent à leur nouvelle place.
 - Pas de nouvelle donnée ni clé `localStorage`. Vérifié : build (13 avertissements existants), tests, contraste. Pas vérifié dans l'appli connectée (menu et Manager demandent la connexion).
 - Fichiers : App.js, components/{ManagerPanel,Series}.js, styles.css, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
+
+## v213 — Jours de production réglés depuis le Calendrier ; Gantt fractionné ; charge recalculée
+
+- **Calendrier** (`CalendarView.js`, `DayProdMenu`) : en vue **Jour**, pour les accès Manager (`canEditMeta`), un clic (ou Entrée) sur la date d'un jour ouvré ouvre ses options : « **Jour non travaillé pour tout l'atelier** » / « Rouvrir ce jour » (ajoute une période d'un jour aux fermetures, ou coupe la période qui le couvre — `closurePeriods`, même donnée que Réglages › Vacances), et la liste des **PJ en production ce jour** avec une case par PJ (décochée = pas de production ce jour — `productionExclusions`, même donnée que Réglages › Production), « Aucune production » / « Tout rétablir ». Les réglages des pages Production et Vacances du Manager restent disponibles.
+- **Gantt** (`GanttView.js`) : les jours fermés (sur toute la barre) et les jours sans production du PJ (pendant sa production) **coupent la barre** (hachures, info-bulle « Atelier fermé » / « Pas de production »).
+- **Charge atelier des KPI** (`ManagerPanel.js`) : les heures atelier d'un PJ se répartissent sur ses **jours ouvrés** d'arrivée à fin de production, hors week-ends, fermetures et jours sans production (avant : au prorata du temps calendaire). Le planificateur tenait déjà compte des fermetures.
+- Nouveau module `src/workDays.js` (+ `workDays.test.js`, 2 tests). Pas de nouvelle clé `localStorage`. Vérifié : menu d'un jour et Gantt coupé (jsdom + aperçu) ; build (13 avertissements existants), 134 tests, contraste.
+- Fichiers : workDays.js(+test), App.js, components/{CalendarView,GanttView,ManagerPanel}.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.

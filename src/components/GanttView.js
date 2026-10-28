@@ -6,6 +6,7 @@ import { fmt } from "../parsers";
 import { getPjMeta, ETAT_META, ALL_ETATS, MONTHS, today, ProjectLabelCell } from "../pjMeta";
 import { DropFilter, NavIcon, pressable } from "./SharedUI";
 import { PjDialog } from "./RowDetail";
+import { gapRanges } from "../workDays";
 
 // Couleurs lues à chaque rendu (accesseurs) : un tableau figé à l'import garderait le thème clair.
 export const PHASES=[
@@ -33,7 +34,7 @@ export function driftColor(d){
 // selEtats/selPJs (demandé explicitement : "mettre en place un système de filtre pour enlever
 // certain PJ ou certain état") — même état que la liste (App.js), donc filtrer ici filtre aussi la
 // liste et inversement, sans dupliquer la logique de filtrage.
-export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,setSelPJs,comments,addComment,deleteComment,pinOk,delays,delayTypes,setDelayTypes,addDelayAllocation,deleteDelayAllocation,addDelayComment,deleteDelayComment,authorName,savePjMetaOverride,canEditMeta}){
+export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,setSelPJs,comments,addComment,deleteComment,pinOk,delays,delayTypes,setDelayTypes,addDelayAllocation,deleteDelayAllocation,addDelayComment,deleteDelayComment,authorName,savePjMetaOverride,canEditMeta,closurePeriods,productionExclusions}){
   const [sel,setSel]=useState(null);
   const [tip,setTip]=useState(null); // v142 : infobulle propre (PJ survolé + position)
   const todayYear=today.getFullYear();
@@ -285,6 +286,9 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
                     border:prevision?"1.5px dashed "+T.ink300:"none",background:prevision?"transparent":T.ink100,boxSizing:"border-box"}}>
                   {!prevision&&cuts.map(([x,y,col,lab],k)=><div key={k} title={lab} style={{flex:"0 0 "+((y-x)/total*100)+"%",background:col}}/>)}
                 </div>
+                {/* v213 : jours non travaillés (fermeture de l'atelier, ou pas de production pour ce PJ) : la barre est coupée */}
+                {!prevision&&gapRanges(r.arrivee,r.depart,closurePeriods,(productionExclusions||{})[r.pj]).filter(g=>g.kind==="closed"||(fin?new Date(g.to+"T12:00:00")<=fin:true)).map(g=>{const x0=xOf(new Date(g.from+"T00:00:00")),x1=xOf(new Date(g.to+"T00:00:00"))+dayW;return <div key={g.from} title={(g.kind==="closed"?"Atelier fermé":"Pas de production")+" : "+g.from.split("-").reverse().join("/")+(g.to!==g.from?" → "+g.to.split("-").reverse().join("/"):"")}
+                  style={{position:"absolute",left:x0,width:Math.max(2,x1-x0),top:"50%",transform:"translateY(-50%)",marginTop:-4,height:22,zIndex:2,background:T.surface,backgroundImage:"repeating-linear-gradient(135deg,"+T.line+" 0 2px,transparent 2px 5px)",borderLeft:"1px solid "+T.line,borderRight:"1px solid "+T.line,boxSizing:"border-box"}}/>;})}
                 {ini&&<div aria-hidden="true" title="Planning initial" style={{position:"absolute",left:ini.left,width:ini.width,top:"50%",marginTop:9,height:0,borderTop:"2px dashed "+T.ink500,opacity:.75,zIndex:2}}/>}
                 {(txt||prevision)&&<span style={{position:"absolute",left:mb.left+mb.width+8,top:"50%",transform:"translateY(-50%)",marginTop:-4,zIndex:4,whiteSpace:"nowrap",fontSize:FZF.xs,fontWeight:700,padding:"1px 8px",borderRadius:999,fontVariantNumeric:"tabular-nums",
                   background:prevision?"transparent":pill?pill.bg:"transparent",color:prevision?T.ink500:pill?pill.fg:T.ink500}}>{prevision?"dates prévisionnelles":txt}</span>}

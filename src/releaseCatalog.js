@@ -425,4 +425,7 @@ export const RELEASE_CATALOG = [
     ["Menu", "Cash in et Turbines dans le menu de gauche ; sous-menus du Manager en surimpression."],
     ["Manager", "Machines ORC (S/N, chef, pays, état) ; Point hebdo dans Fiche projet ; Personnes, rôles et accès ; plus de Suivi ni d'Imports."],
   ] },
+  { v: "213", t: "Les jours de production se règlent dans le Calendrier", items: [
+    ["Calendrier", "Clic sur un jour : fermer l'atelier ou retirer la production de PJ ; Gantt coupé et charge recalculée."],
+  ] },
 ];
