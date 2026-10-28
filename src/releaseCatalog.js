@@ -456,4 +456,7 @@ export const RELEASE_CATALOG = [
     ["Calendrier", "Fiche du PJ avec un bouton « production ce jour »."],
     ["Planificateur", "Fenêtre de liens à listes ; slots libres masqués ; Cash in, Turbines et Planificateur réservés au propriétaire."],
   ] },
+  { v: "222", t: "Disposez vos cadrans", items: [
+    ["Accueil, KPI, Tests", "Cadrans déplaçables et redimensionnables, disposition gardée sur le poste."],
+  ] },
 ];

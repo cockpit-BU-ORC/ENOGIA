@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v222",
+    date: "2026-10-28",
+    title: "V222 : disposez vos cadrans",
+    items: [
+      { t: "Disposer les cadrans", d: "Sur l'accueil, KPI › Synthèse et Tests › Par semaine : « Disposer les cadrans » permet de les déplacer (glisser, ou ◀ ▶) et de les élargir ou rétrécir (− +). Votre disposition est gardée sur ce poste ; « Réinitialiser » revient à l'origine." },
+    ],
+  },
+  {
     id: "2026-10-v221",
     date: "2026-10-28",
     title: "V221 : Machines ORC réparé, fiches regroupées par projet, liens plus simples",

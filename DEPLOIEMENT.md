@@ -1455,3 +1455,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - **À savoir** : les tâches ajoutées dans le planificateur (tâches libres) ne sont **pas publiées** dans la Liste, le Gantt ou le Calendrier : le planning publié ne connaît que les 5 jalons de chaque PJ (arrivée, tests, fin des tests, fin de production, départ). Elles servent à calculer ces dates et la charge.
 - Vérifié : fiches regroupées (jsdom), build (13 avertissements existants), tests, contraste.
 - Fichiers : roles.js, App.js, components/{ManagerPanel,ManagerFiche,CalendarView,RowDetail}.js, planner/{Planner,PlannerGantt}.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
+
+## v222 — Cadrans déplaçables et redimensionnables (accueil, KPI › Synthèse, Tests › Par semaine)
+
+- **Nouveau composant `Arrange.js`** : grille de 12 colonnes ; bouton « **Disposer les cadrans** » (en haut à droite de la zone) → chaque cadran porte une barre : poignée ⋮⋮ (glisser-déposer sur un autre cadran), ◀ ▶ (déplacer au clavier), − + (largeur : 25 %, 33 %, 42 %, 50 %, 58 %, 67 %, 100 %) ; « Terminer » ; « **Réinitialiser** » revient à la disposition d'origine. Sur un écran de moins de 900 px, chaque cadran prend toute la largeur.
+- Appliqué à : **l'accueil** de chaque rôle (`RoleHome.js` ; disposition propre à chaque rôle), **KPI › Synthèse** (`KpiPilotage.js` : Chiffres clés, PJ à risque, Charge atelier, Portefeuille par état), **Tests › Par semaine** (`TestsTab.js` : Au banc maintenant, Derniers résultats, Planning des bancs).
+- Clés `localStorage` : `enogia_arr_home-<rôle>`, `enogia_arr_kpi-synthese`, `enogia_arr_tests-semaine` (disposition propre à chaque poste et navigateur).
+- Vérifié : KPI (redimensionnement enregistré) et accueil (jsdom + aperçu) ; build (13 avertissements existants), tests, contraste.
+- Fichiers : components/{Arrange,KpiPilotage,RoleHome,TestsTab}.js, styles.css, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.

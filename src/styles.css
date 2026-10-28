@@ -476,3 +476,6 @@ button:not(:disabled):active { transform: scale(.97); }
 /* v215 : KPI › Synthèse (tableau de pilotage) — survol des lignes « PJ à risque » */
 .enogia-kpi-row:hover td, .enogia-kpi-row:focus-visible td { background: rgba(127,127,127,.07); }
 .enogia-kpi-row:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
+
+/* v222 : cadrans déplaçables / redimensionnables (Arrange) — pleine largeur sur écran étroit */
+@media (max-width: 900px) { .enogia-arr-grid > .enogia-arr-item { grid-column: 1 / -1 !important; } }

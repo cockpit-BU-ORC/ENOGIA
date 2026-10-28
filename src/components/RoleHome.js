@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { Arrange } from "./Arrange";
 import { T, FZ } from "../theme";
 import { presenceKind, presenceDates } from "../pjMeta";
 import { NavIcon } from "./SharedUI";
@@ -30,7 +31,6 @@ export function RoleHome({ role, profile, ui, rows, open, late, mentions, myPjs,
   const prog = r => progressOf(planOf(testsDoc || {}, r.pj), catalog, activeSections(presenceKind(r.clientPresence || null)));
   const tStart = r => dIso(r.tests), tEnd = r => dIso(r.testsFin) || dIso(r.tests);
   const inTest = (r, day) => !!r.tests && tStart(r) <= day && tEnd(r) >= day;
-  const wrap = {}; // v195 : grille .enogia-home-grid (styles.css) — tuiles dimensionnées selon leur contenu
   const more = (label, go) => <button type="button" onClick={go} className="enogia-homelink" style={{ ...link, marginTop: 2 }}>{label} <NavIcon name="arrow" size={15} /></button>;
   const progPill = q => <span style={{ fontVariantNumeric: "tabular-nums" }}>{q.done} / {q.total}{q.ko ? " · " + q.ko + " échec" + (q.ko > 1 ? "s" : "") : ""}</span>;
   const mentionsBlock = (title, flex) => (
@@ -60,7 +60,7 @@ export function RoleHome({ role, profile, ui, rows, open, late, mentions, myPjs,
     const toSign = mineT.filter(r => { const q = prog(r), p = planOf(testsDoc, r.pj); return !(p.signs || {})["t:" + myTester.id] && (tEnd(r) < today || (q.total > 0 && q.done === q.total)); }); // v189 : pas encore signée par moi
     const w0 = monday(today), days = DOW.map((l, i) => ({ l, d: addD(w0, i) }));
     if (!myTester) return <section style={{ ...cardS(S.tests.ring), marginBottom: 12 }}>{empty("check", "Vous n'êtes pas dans la liste des testeurs", "Un administrateur vous ajoute depuis la page Tests.")}</section>;
-    return (<div className="enogia-home-grid" style={wrap}>
+    return (<Arrange id={"home-" + role} defaultSpan={4}>
       {on("today") && <section aria-label="Mes tests du jour" className="enogia-home-wide" style={{ ...cardS(S.tests.ring), flex: "3 1 420px" }}>
         <Head title="Mes tests du jour" sub={fmtD(today)} count={todayT.length} />
         {todayT.length === 0 ? empty("check", "Pas de test aujourd'hui", "Vos prochaines machines sont dans « Ma semaine ».") :
@@ -83,7 +83,7 @@ export function RoleHome({ role, profile, ui, rows, open, late, mentions, myPjs,
         </div>
       </section>}
       {on("notes") && mentionsBlock("Mes remarques", "2 1 280px")}
-    </div>);
+    </Arrange>);
   }
 
   // ── Chef de projet ──
@@ -96,7 +96,7 @@ export function RoleHome({ role, profile, ui, rows, open, late, mentions, myPjs,
     const fats = [];
     mine.forEach(r => { const pd = presenceDates(r.clientPresence); [["client", "FAT client"], ["nobo", "FAT NOBO"]].forEach(([k, l]) => { const d = dIso(pd[k]) || (pd[k] === "" ? "" : null); if (pd[k] !== undefined && (!d || d >= today)) fats.push({ r, l, d }); }); });
     fats.sort((a, b) => (a.d || "9").localeCompare(b.d || "9"));
-    return (<div className="enogia-home-grid" style={wrap}>
+    return (<Arrange id={"home-" + role} defaultSpan={4}>
       {on("pjs") && <section aria-label="Mes PJ et retards" className="enogia-home-wide" style={{ ...cardS(S.production.ring), flex: "3 1 420px" }}>
         <Head title="Mes PJ et retards" sub={mine.filter(r => r.drift > 0).length + " en retard sur l'initial"} count={mine.length} />
         {mine.length === 0 ? empty("inbox", "Aucun PJ associé", "Les PJ vous sont associés dans Manager › Réglages › Personnes et rôles.") :
@@ -115,7 +115,7 @@ export function RoleHome({ role, profile, ui, rows, open, late, mentions, myPjs,
       </section>}
       {cash && on("cash") && cashBlock("2 1 360px")}
       {on("mentions") && mentionsBlock("Mentions", "2 1 300px")}
-    </div>);
+    </Arrange>);
   }
 
   // ── Chef d'atelier ──
@@ -131,7 +131,7 @@ export function RoleHome({ role, profile, ui, rows, open, late, mentions, myPjs,
           <Row key={r.pj} first={i === 0} pj={r.pj} pill={<Pill tone={names.length ? S.tests : A.orange}>{names.length ? names.map(n => n.split(" ")[0]).join(", ") : "Sans testeur"}</Pill>} main={nomOf(r) || r.gamme || ""} presence={presenceOf(r)} right={testsDoc ? progPill(prog(r)) : fmtD(r.testsFin)} />); })}
       {testsDoc && more("Ouvrir les tests", () => onGo && onGo("tests"))}
     </section>);
-  if (role === "atelier") return (<div className="enogia-home-grid" style={wrap}>
+  if (role === "atelier") return (<Arrange id={"home-" + role} defaultSpan={4}>
     {on("arrdep") && <section aria-label="Arrivées et départs" className="enogia-home-wide" style={{ ...cardS(S.depart.ring), flex: "3 1 420px" }}>
       <Head title="Arrivées et départs" sub="aujourd'hui et cette semaine" count={arrDep.length} />
       {arrDep.length === 0 ? empty("check", "Ni arrivée ni départ cette semaine", "") :
@@ -139,7 +139,7 @@ export function RoleHome({ role, profile, ui, rows, open, late, mentions, myPjs,
       {more("Ouvrir le calendrier", () => onGo && onGo("calendar"))}
     </section>}
     {on("postes") && postes("Postes de test", "2 1 320px")}
-  </div>);
+  </Arrange>);
 
   // ── Direction ──
   if (role === "direction") {
@@ -159,7 +159,7 @@ export function RoleHome({ role, profile, ui, rows, open, late, mentions, myPjs,
       ...bigLate.slice(0, 4).map(r => ({ id: "d" + r.pj, pj: r.pj, pill: <Pill tone={A.orange}>Dérive</Pill>, main: nomOf(r) || "Départ " + fmtD(r.depart), right: "+" + r.drift + " j" })),
       ...noTester.slice(0, 3).map(r => ({ id: "t" + r.pj, pj: r.pj, pill: <Pill tone={S.tests}>Sans testeur</Pill>, main: nomOf(r) || r.gamme || "", right: fmtD(r.tests) })),
     ];
-    return (<div className="enogia-home-grid" style={wrap}>
+    return (<Arrange id={"home-" + role} defaultSpan={4}>
       {on("tests") && <section aria-label="Tests" style={{ ...cardS(S.tests.ring), flex: "1 1 300px" }}>
         <Head title="Tests" sub="3 prochaines semaines" />
         {testsDoc ? <div style={grid}><Stat label="machines en test" value={soon.length} onClick={() => onGo("tests")} /><Stat label="sans testeur" value={noTester.length} tone={noTester.length ? T.red500 : undefined} onClick={() => onGo("tests")} /><Stat label="échecs" value={fails} tone={fails ? T.red500 : undefined} /><Stat label="en retard" value={lateT} tone={lateT ? T.amber600 : undefined} /><Stat label="conflits" value={conflicts} tone={conflicts ? T.amber600 : undefined} /></div> : <div style={grey}>Page Tests non disponible.</div>}
@@ -184,7 +184,7 @@ export function RoleHome({ role, profile, ui, rows, open, late, mentions, myPjs,
         </div>
       </section>}
       {on("postes") && postes("Postes de test", "2 1 320px")}
-    </div>);
+    </Arrange>);
   }
   return null;
 }

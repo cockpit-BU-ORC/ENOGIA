@@ -15,6 +15,7 @@ import { nameFromEmail } from "../mentions";
 import { gcalUrl } from "../gcal";
 import { openTestReport } from "../testReport";
 import { makeCalendar } from "../planner/engine";
+import { Arrange } from "./Arrange";
 
 const field = () => ({ padding: "5px 9px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, minWidth: 0 });
 const btn = (on = true, kind) => ({ border: kind === "ghost" ? "1px solid " + T.line : "none", borderRadius: 8, padding: "5px 12px", fontSize: FZ.xs, fontWeight: 700, fontFamily: T.font, cursor: on ? "pointer" : "default", background: kind === "ghost" ? T.card : on ? T.navy700 : T.ink100, color: kind === "ghost" ? T.ink700 : "#fff", flexShrink: 0 });
@@ -109,11 +110,11 @@ function WeekBoard({ doc, rows, testers, catalog, conflicts, commit, certifs, ca
         <span>S{isoWeek(weeks[0].a)} → S{isoWeek(weeks[2].a)} · {all.length} machine{all.length > 1 ? "s" : ""}{later ? " · " + later + " plus tard" : ""}{noPeriod ? " · " + noPeriod + " sans période de tests" : ""}</span>
         {myTester && <label style={{ display: "inline-flex", alignItems: "center", gap: 6, marginLeft: "auto", minHeight: 24, cursor: "pointer", color: T.ink700, fontWeight: 600 }}><input type="checkbox" checked={onlyMine} onChange={e => setOnlyMine(e.target.checked)} />Seulement mes tests</label>}
       </div>
-      <div className="enogia-bench">
-        <BenchStrip rows={withP} {...{ doc, catalog, testers }} on={cur && cur.pj} onPick={setSel} />
-        <ResultsFeed rows={withP} {...{ doc, catalog }} onPick={setSel} />
-      </div>
-      <BenchGrid rows={withP} allRows={rows} {...{ doc, catalog, testers, conflicts }} on={cur && cur.pj} onPick={setSel} />
+      <Arrange id="tests-semaine" spans={{ banc: 8, resultats: 4, grille: 12 }} labels={{ banc: "Au banc maintenant", resultats: "Derniers résultats", grille: "Planning des bancs" }}>
+        <BenchStrip key="banc" rows={withP} {...{ doc, catalog, testers }} on={cur && cur.pj} onPick={setSel} />
+        <ResultsFeed key="resultats" rows={withP} {...{ doc, catalog }} onPick={setSel} />
+        <BenchGrid key="grille" rows={withP} allRows={rows} {...{ doc, catalog, testers, conflicts }} on={cur && cur.pj} onPick={setSel} />
+      </Arrange>
     </div>
     {cur && <TestDialog r={cur} onClose={() => setSel(null)} {...{ doc, testers, catalog, conflicts, commit, certifs, canEdit, myTester, who, signApi }} />}
   </div>);

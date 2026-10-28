@@ -10,6 +10,7 @@ import { PjPlate } from "./SharedUI";
 import { toLocalISO, weekStartOf } from "../parsers";
 import { workDaysBetween, isClosedDay } from "../workDays";
 import { PieBlock, topSlices } from "./ManagerParts";
+import { Arrange } from "./Arrange";
 import { makeCalendar, schedule, loadModel } from "../planner/engine";
 
 const PROD = ["MONTAGE", "ELEC", "TESTS", "PACKAGING", "En fabrication"];
@@ -82,15 +83,14 @@ export function KpiPilotage({ rows, driftRows, delays, closurePeriods, productio
   const tot = etats.reduce((a, e) => a + e.n, 0);
   const maxH = Math.max(1, ...weeks.map(w => Math.max(w.hours, w.cap))) * 1.15, H = 120;
 
-  return (<div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,160px),1fr))", gap: 8 }}>
+  return (<Arrange id="kpi-synthese" spans={{ "Chiffres clés": 12, "PJ à risque": 7, "Charge atelier": 5, "Portefeuille par état": 5 }}>
+    <div aria-label="Chiffres clés" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,160px),1fr))", gap: 8 }}>
       <Kpi label="En production" value={inProd.length} sub="machines dans l'atelier" />
       <Kpi label="Départs d'ici 30 jours" value={dep30.length} sub={dep30.length ? (dep30Late ? "dont " + dep30Late + " en dérive" : "aucun en dérive") : "aucun départ prévu"} />
       <Kpi label="Dérive moyenne" value={avgDrift == null ? "—" : (avgDrift > 0 ? "+" : avgDrift < 0 ? "−" : "") + Math.abs(avgDrift) + " j"} sub={hasInitial ? "départ, vs planning initial" : "planning initial non importé"} bad={avgDrift != null && avgDrift > 3} />
       <Kpi label={"Charge S" + isoWeek(w4[0].a) + " → S" + isoWeek(w4[3].a)} value={pct4 == null ? "—" : pct4 + " %"} sub={load4 + " h sur " + Math.round(cap4) + " h de capacité"} bad={pct4 != null && pct4 > 100} />
       <Kpi label="PJ avec un retard déclaré" value={delayInfo.n} sub={delayInfo.top ? "1re cause : " + delayInfo.top[0] + " (" + delayInfo.top[1] + " j)" : "aucune cause saisie"} />
     </div>
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,440px),1fr))", gap: 12, alignItems: "start" }}>
       <section aria-label="PJ à risque" style={{ ...card, padding: 0, overflow: "hidden" }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 8, padding: "12px 14px 6px" }}>
           <h3 style={{ margin: 0, fontSize: FZ.md, fontWeight: 700, color: T.ink900 }}>PJ à risque</h3>
@@ -110,7 +110,6 @@ export function KpiPilotage({ rows, driftRows, delays, closurePeriods, productio
           </table></div>}
         {risky.length > 6 && onSeeDerives && <button type="button" onClick={onSeeDerives} style={{ border: "none", background: "transparent", color: T.teal600, fontWeight: 700, fontSize: FZ.sm, padding: "10px 14px", cursor: "pointer", fontFamily: T.font, minHeight: 36 }}>Voir les {risky.length} PJ en dérive →</button>}
       </section>
-      <div style={{ display: "flex", flexDirection: "column", gap: 12, minWidth: 0 }}>
         <section aria-label="Charge atelier" style={card}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 10 }}><h3 style={{ margin: 0, fontSize: FZ.md, fontWeight: 700, color: T.ink900 }}>Charge atelier</h3><span style={{ fontSize: 12, color: T.ink500 }}>heures par semaine · trait = capacité · {fromPlan ? "d'après le planificateur" : "d'après le planning (175 h / sem.)"}</span></div>
           <div role="img" aria-label={"Charge des 6 prochaines semaines : " + weeks.map(w => "S" + isoWeek(w.a) + " " + w.hours + " h sur " + Math.round(w.cap)).join(", ")} style={{ display: "flex", alignItems: "flex-end", gap: 8, height: H, borderBottom: "1px solid " + T.line }}>
@@ -127,7 +126,5 @@ export function KpiPilotage({ rows, driftRows, delays, closurePeriods, productio
           <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><h3 style={{ margin: 0, fontSize: FZ.md, fontWeight: 700, color: T.ink900 }}>Portefeuille par état</h3><span style={{ fontSize: 12, color: T.ink500 }}>{tot} PJ en cours</span></div>
           <div style={{ marginTop: 10 }}><PieBlock data={topSlices(etats.map(e => ({ name: e.label, value: e.n, color: e.c })), 5)} unit=" PJ" size={130} /></div>
         </section>
-      </div>
-    </div>
-  </div>);
+  </Arrange>);
 }
