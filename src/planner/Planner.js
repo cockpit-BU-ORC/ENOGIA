@@ -303,7 +303,7 @@ function Banner({ tone, children }) {
   return <div role="status" style={{ background: c[0], color: c[1], borderRadius: 10, padding: "8px 14px", fontWeight: 600, fontSize: 13, marginBottom: 10 }}>{children}</div>;
 }
 
-export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, authorName, onSavePlan, onPublish, onLoadHistory, onRestorePublication, testers }) {
+export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, productionExclusions, authorName, onSavePlan, onPublish, onLoadHistory, onRestorePublication, testers }) {
   const [plan, setPlanState] = useState(null); const [preview, setPreview] = useState(null); const [proposal, setProposal] = useState(null);
   const [undo, setUndo] = useState([]); const [redo, setRedo] = useState([]);
   const [sel, setSel] = useState(null); const [exp, setExp] = useState(() => new Set());
@@ -313,7 +313,7 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, authorN
   const lastSaved = useRef(null); const gref = useRef(null); const lref = useRef(null); const expInit = useRef(false);
   const setUi = useCallback(patch => setUiState(u => { const n = { ...u, ...patch }; saveUi(n); return n; }), []);
   const holidays = !(plan && plan.cal && plan.cal.holidays === false);
-  const cal = useMemo(() => makeCalendar({ closurePeriods, holidays }), [closurePeriods, holidays]);
+  const cal = useMemo(() => makeCalendar({ closurePeriods, holidays, pjOff: productionExclusions }), [closurePeriods, holidays, productionExclusions]); // v218 : jours sans production réglés dans le Calendrier
 
   // reprise du plan enregistré (première lecture, ou modification faite ailleurs tant qu'on n'a rien changé ici)
   useEffect(() => {

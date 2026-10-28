@@ -24,6 +24,7 @@ export function bucketsOf(load, cal, mode, plan) {
   const get = (key, start, end) => { let b = map.get(key); if (!b) { b = { key, start, end, hours: 0, pjs: {} }; map.set(key, b); } return b; };
   load.phases.forEach(ph => {
     for (let i = ph.s; i <= ph.f; i++) {
+      if (ph.off && ph.off.has(i)) continue; // v218 : jour sans production du PJ
       const iso = cal.dateOf(i); const n = dayNum(iso); let b;
       if (mode === "month") { const d = new Date(n * 86400000); const y = d.getUTCFullYear(), m = d.getUTCMonth(); b = get(y + "-" + m, Date.UTC(y, m, 1) / 86400000, Date.UTC(y, m + 1, 1) / 86400000); b.label = MONTHS[m] + " " + y; }
       else { const s = n - dow(n); b = get(s, s, s + 7); }

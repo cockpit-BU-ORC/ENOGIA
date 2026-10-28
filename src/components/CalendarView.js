@@ -374,7 +374,10 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
               const closed=isClosurePeriod(d,dEnd);
               const cellBg=closed?T.ink100:isTodayCol?T.red500+"14":isWE?T.ink100:rowBg;
               const todayEdge=isTodayCol?"inset 2px 0 0 "+T.red500+", inset -2px 0 0 "+T.red500:"none";
-              if(!status)return(<div key={di} className="enogia-cal-daycell" style={{...pos,height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,background:cellBg,boxShadow:todayEdge,position:"relative"}}/>);
+              // v218 (demandé : « cliquer sur la tuile de la ligne et non sur le jour en haut ») : admins, jour ouvré de la période de production
+              const inProdRange=r.arrivee&&r.finProd&&toLocalISO(d)>=toLocalISO(new Date(r.arrivee))&&toLocalISO(d)<=toLocalISO(new Date(r.finProd));
+              const cellMenu=canEditDays&&!isWE&&(inProdRange||closed)?(e=>{e.stopPropagation();const rr=e.currentTarget.getBoundingClientRect();setDayMenu({iso:toLocalISO(d),x:rr.left,y:rr.bottom,pj});}):null;
+              if(!status)return(<div key={di} className="enogia-cal-daycell" onClick={cellMenu||undefined} title={cellMenu?"Options de production de ce jour pour "+pj:undefined} style={{cursor:cellMenu?"pointer":undefined,...pos,height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,background:cellBg,boxShadow:todayEdge,position:"relative"}}/>);
               const lastMilestone=status.split(" + ").pop();
               const st=SEGMENT_STYLE[lastMilestone]||SEGMENT_STYLE["Production"];
               const fill=stageFill(status);
@@ -385,7 +388,7 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
               // étroite. Centré au milieu de la tuile (pivot au centre, plutôt qu'ancré au coin
               // bas-gauche) et contenu dans la tuile (overflow:"hidden" sur le conteneur) — demandé
               // explicitement : "les étapes sont pas au milieu des tiles et dépassent de celles-ci".
-              return(<div key={di} className="enogia-cal-daycell" onClick={()=>onSelectPj&&onSelectPj(pj)} onMouseEnter={e=>{e.currentTarget.style.background=T.teal100+"50";}} onMouseLeave={e=>{e.currentTarget.style.background=cellBg;}} style={{...pos,height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,boxShadow:todayEdge,cursor:"pointer",background:cellBg,position:"relative",transition:"background .12s ease"}}>
+              return(<div key={di} className="enogia-cal-daycell" onClick={cellMenu||(()=>onSelectPj&&onSelectPj(pj))} onMouseEnter={e=>{e.currentTarget.style.background=T.teal100+"50";}} onMouseLeave={e=>{e.currentTarget.style.background=cellBg;}} style={{...pos,height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,boxShadow:todayEdge,cursor:"pointer",background:cellBg,position:"relative",transition:"background .12s ease"}}>
                 <div style={{position:"absolute",inset:3,borderRadius:4,background:fill.background,boxShadow:showPresence?presenceRing(pKind):T.mode==="dark"?"inset 0 0 0 1px "+st.t+"33":"none",overflow:"hidden",opacity:closed?0.45:1,display:"flex",flexDirection:"column",gap:2,alignItems:"center",justifyContent:"center",padding:"0 3px"}}>
                   <span aria-label={status} style={{fontSize:FZF.xs,fontWeight:fill.bold?700:600,color:fill.color,textAlign:"center",lineHeight:1.15}}>{showWords?status:shortStatus(status)}</span>
                   {showWords&&showPresence&&<PresenceChip kind={pKind} compact tiny fontSize={9.5}/>}
@@ -411,7 +414,7 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
     </div>
 
 
-  {dayMenu&&<DayProdMenu menu={dayMenu} data={data} closurePeriods={closurePeriods} productionExclusions={productionExclusions} setClosurePeriods={setClosurePeriods} setProductionExclusionDays={setProductionExclusionDays} onClose={()=>setDayMenu(null)}/>}
+  {dayMenu&&<DayProdMenu onOpenPj={onSelectPj} menu={dayMenu} data={data} closurePeriods={closurePeriods} productionExclusions={productionExclusions} setClosurePeriods={setClosurePeriods} setProductionExclusionDays={setProductionExclusionDays} onClose={()=>setDayMenu(null)}/>}
   </div>);
 }
 
@@ -419,7 +422,7 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
 
 
 // v213 : options d'un jour — fermer / rouvrir l'atelier, ou retirer la production de certains PJ ce jour-là. Le Gantt et la charge en tiennent compte.
-function DayProdMenu({menu,data,closurePeriods,productionExclusions,setClosurePeriods,setProductionExclusionDays,onClose}){
+function DayProdMenu({menu,data,closurePeriods,productionExclusions,setClosurePeriods,setProductionExclusionDays,onClose,onOpenPj}){
   const k=menu.iso,d=new Date(k+"T12:00:00"),closed=isClosedDay(closurePeriods,k);
   const inProd=(data||[]).filter(r=>r&&r.pj&&r.arrivee&&r.finProd&&toLocalISO(new Date(r.arrivee))<=k&&k<=toLocalISO(new Date(r.finProd)));
   const ex=pj=>((productionExclusions||{})[pj]||[]).includes(k);
@@ -431,6 +434,13 @@ function DayProdMenu({menu,data,closurePeriods,productionExclusions,setClosurePe
     <div role="dialog" aria-label={"Production du "+d.toLocaleDateString("fr-FR")} style={{position:"fixed",left,top,width:W,maxHeight:"min(70vh,520px)",overflow:"auto",zIndex:1301,background:T.card,color:T.ink900,border:"1px solid "+T.line,borderRadius:10,boxShadow:T.shadowFloat||T.shadowLg,padding:12,fontFamily:T.font}}>
       <div style={{fontWeight:700,fontSize:FZF.md,marginBottom:2}}>{d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})}</div>
       <div style={{fontSize:FZF.xs,color:T.ink500,marginBottom:10}}>{closed?"Atelier fermé ce jour.":"Jour travaillé."} Le Gantt et la charge en tiennent compte.</div>
+      {menu.pj&&!closed&&<div style={{border:"1px solid "+T.line,borderRadius:8,padding:10,marginBottom:10}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}><b style={{fontFamily:T.fontMono||"monospace",fontSize:13}}>{menu.pj}</b><span style={{fontSize:12,color:ex(menu.pj)?T.red600:T.emerald600,fontWeight:700}}>{ex(menu.pj)?"pas de production ce jour":"en production ce jour"}</span></div>
+        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+          <button type="button" style={{...btn,color:ex(menu.pj)?T.emerald600:T.red600}} onClick={()=>{setProductionExclusionDays&&setProductionExclusionDays({[menu.pj]:[k]},!ex(menu.pj));onClose();}}>{ex(menu.pj)?"Rétablir la production ce jour":"Pas de production ce jour"}</button>
+          {onOpenPj&&<button type="button" style={btn} onClick={()=>{onClose();onOpenPj(menu.pj);}}>Ouvrir la fiche</button>}
+        </div>
+      </div>}
       <button type="button" style={{...btn,width:"100%",color:closed?T.emerald600:T.red600}} onClick={()=>{setClosurePeriods&&setClosurePeriods(toggleClosedDay(closurePeriods,k));onClose();}}>{closed?"Rouvrir ce jour pour tout l'atelier":"Jour non travaillé pour tout l'atelier"}</button>
       {!closed&&inProd.length>0&&<div style={{marginTop:12}}>
         <div style={{display:"flex",alignItems:"baseline",gap:8,marginBottom:4}}><b style={{fontSize:FZF.sm}}>Production ce jour</b><span style={{fontSize:FZF.xs,color:T.ink500}}>{inProd.length} PJ · {nEx} sans production</span></div>

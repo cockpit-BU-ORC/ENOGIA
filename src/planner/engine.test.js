@@ -46,4 +46,11 @@ describe("planificateur (v204)", () => {
     const two = splitBenches({ ...plan, rules: { banc: true } }, cal); const seqB = allLinks(two).filter(l => l.res === "banc");
     seqB.forEach(l => { const a = two.pjs.find(x => x.pj === l.from.split("|")[0]), b = two.pjs.find(x => x.pj === l.to.split("|")[0]); expect(benchOf(a)).toBe(benchOf(b)); });
   });
+  test("v218 : jours sans production d'un PJ (Calendrier) : la production s'allonge, pas de charge ces jours-là", () => {
+    const rh = rows.map(r => ({ ...r, heuresAtelier: 200 })), plan = initPlanFromRows(rh, cal), base = schedule(plan, cal).nodes[nodeKey("PJ1", "production")];
+    const off = makeCalendar({ closurePeriods: [], pjOff: { PJ1: ["2026-10-05", "2026-10-06"] } }), n = schedule(plan, off).nodes[nodeKey("PJ1", "production")];
+    expect(n.f - n.s).toBe(base.f - base.s + 2); expect(n.off.size).toBe(2);
+    const lm = loadModel(plan, schedule(plan, off), off), i = [...n.off][0];
+    expect(lm.day.get(i) || 0).toBe(0);
+  });
 });

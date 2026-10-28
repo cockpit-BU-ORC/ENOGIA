@@ -64,7 +64,9 @@ export function frenchHolidays(year) {
 }
 
 // Calendrier des jours ouvrés : lundi→vendredi, hors fermetures de l'entreprise (closurePeriods) et, au choix, jours fériés.
-export function makeCalendar({ closurePeriods = [], holidays = true, fromYear = 2023, toYear = 2040 } = {}) {
+// v218 : pjOff = { PJ: [dateIso…] } — jours sans production d'un PJ (réglés dans le Calendrier) : ses tâches d'atelier s'allongent
+// d'autant et sa charge n'est pas comptée ces jours-là.
+export function makeCalendar({ closurePeriods = [], holidays = true, fromYear = 2023, toYear = 2040, pjOff = null } = {}) {
   const closed = new Set();
   (closurePeriods || []).forEach(p => {
     if (!p || !p.start) return;
@@ -78,7 +80,9 @@ export function makeCalendar({ closurePeriods = [], holidays = true, fromYear = 
   for (let n = first; n <= last; n++) if (dow(n) < 5 && !closed.has(n) && !hol.has(n)) work.push(n);
   const lower = x => { let lo = 0, hi = work.length; while (lo < hi) { const mid = (lo + hi) >> 1; if (work[mid] < x) lo = mid + 1; else hi = mid; } return lo; };
   const clamp = i => Math.max(0, Math.min(work.length - 1, i));
+  const offMap = {}; Object.entries(pjOff || {}).forEach(([pj, list]) => { const set = new Set(); (list || []).forEach(iso => { const n = dayNum(iso), i = lower(n); if (work[i] === n) set.add(i); }); if (set.size) offMap[pj] = set; });
   return {
+    offOf: pj => offMap[pj] || null,
     isWork: iso => { const n = dayNum(iso); return dow(n) < 5 && !closed.has(n) && !hol.has(n); },
     idxOnOrAfter: iso => clamp(lower(dayNum(iso))),                       // 1er jour ouvré ≥ date
     idxOnOrBefore: iso => { const n = dayNum(iso), i = lower(n); return clamp(work[i] === n ? i : i - 1); }, // dernier jour ouvré ≤ date
@@ -155,6 +159,9 @@ export function schedule(plan, cal) {
     if (n.snet && driver !== "snet") n.snetIgnored = true;
     if (lower === null) return;
     n.s = Math.max(0, lower); n.f = n.ms ? n.s : n.s + n.dur - 1; n.driver = driver;
+    // v218 : tâche d'atelier d'un PJ qui a des jours sans production → elle s'allonge pour garder sa durée en jours travaillés
+    const off = !n.ms && cal.offOf ? cal.offOf(n.pj) : null;
+    if (off && atelierStep(plan, n.pj, n.step)) { let c = 0, i = n.s; const hit = []; for (let g = 0; g < 2000; g++) { if (off.has(i)) hit.push(i); else if (++c >= n.dur) break; i++; } n.f = i; if (hit.length) n.off = new Set(hit); }
     // Une date imposée est conservée telle quelle même si elle tombe un jour non ouvré (ex. date issue d'un ancien planning) ;
     // seules les dates calculées par les liens sont toujours des jours ouvrés.
     n.start = driver === "snet" ? n.snet : cal.dateOf(n.s);
@@ -211,6 +218,12 @@ export function setWork(plan, pj, step, hours) {
   p.steps[step] = { ...p.steps[step], work: h }; p.steps[other] = { ...p.steps[other], work: o };
   p.hAt = Math.round((h + o) * 10) / 10; delete p.hEst; return np;
 }
+// Tâche faite par l'atelier (Production, Packing, ou tâche libre affectée à l'atelier)
+function atelierStep(plan, pj, step) {
+  if (step === "production" || step === "finProd") return true;
+  if (!isCustomKey(step)) return false; const p = (plan.pjs || []).find(x => x.pj === pj), st = p && p.steps && p.steps[step];
+  return !!st && (st.res || "atelier") === "atelier" && st.phase !== "tests";
+}
 export function atelierPhases(plan, sched) {
   const out = []; const ord = orderOf(plan, "prod");
   (plan.pjs || []).forEach((p, pi) => {
@@ -218,20 +231,20 @@ export function atelierPhases(plan, sched) {
     ["production", "finProd"].forEach(step => {
       const n = sched.nodes[nodeKey(p.pj, step)]; if (!n || n.s === null || !h[step]) return;
       const pos = ord.indexOf(p.pj);
-      out.push({ key: nodeKey(p.pj, step), pj: p.pj, step, s: n.s, f: n.f, dur: n.dur, hours: h[step], daily: h[step] / n.dur, prio: pos >= 0 ? pos : 1000 + pi });
+      out.push({ key: nodeKey(p.pj, step), pj: p.pj, step, s: n.s, f: n.f, dur: n.dur, hours: h[step], daily: h[step] / n.dur, prio: pos >= 0 ? pos : 1000 + pi, off: n.off || null });
     });
     // v211 : une tâche libre affectée à l'atelier compte dans la charge avec ses heures
     Object.keys(p.steps || {}).filter(isCustomKey).forEach(k => {
       const st = p.steps[k], hrs = Number(st && st.work) || 0; if (!st || (st.res || "atelier") !== "atelier" || hrs <= 0) return;
       const n = sched.nodes[nodeKey(p.pj, k)]; if (!n || n.s === null) return; const pos = ord.indexOf(p.pj);
-      out.push({ key: nodeKey(p.pj, k), pj: p.pj, step: k, s: n.s, f: n.f, dur: n.dur, hours: hrs, daily: hrs / Math.max(1, n.dur), prio: pos >= 0 ? pos : 1000 + pi });
+      out.push({ key: nodeKey(p.pj, k), pj: p.pj, step: k, s: n.s, f: n.f, dur: n.dur, hours: hrs, daily: hrs / Math.max(1, n.dur), prio: pos >= 0 ? pos : 1000 + pi, off: n.off || null });
     });
   });
   return out;
 }
 export function loadModel(plan, sched, cal) {
   const cw = capWeek(plan), capDay = cw / 5; const ph = atelierPhases(plan, sched); const day = new Map();
-  ph.forEach(x => { for (let i = x.s; i <= x.f; i++) day.set(i, (day.get(i) || 0) + x.daily); });
+  ph.forEach(x => { for (let i = x.s; i <= x.f; i++) if (!(x.off && x.off.has(i))) day.set(i, (day.get(i) || 0) + x.daily); });
   const tooDense = ph.filter(x => x.daily > capDay + 1e-6).map(x => ({ pj: x.pj, step: x.step, hours: Math.round(x.hours), dur: x.dur, min: capDay > 0 ? Math.ceil(x.hours / capDay - 1e-9) : null }));
   if (!day.size) return { capDay, capWeek: cw, weeks: [], phases: ph, tooDense, overWeeks: 0, peak: 0, day };
   const lo = Math.min(...day.keys()), hi = Math.max(...day.keys()); const wk = new Map();
@@ -536,13 +549,13 @@ export function levelPlan(plan, cal) {
   while (iter++ < 4000) {
     const s = schedule(cur, cal); if (s.cycle) break;
     const ph = atelierPhases(cur, s); const day = new Map();
-    ph.forEach(x => { for (let i = x.s; i <= x.f; i++) day.set(i, (day.get(i) || 0) + x.daily); });
+    ph.forEach(x => { for (let i = x.s; i <= x.f; i++) if (!(x.off && x.off.has(i))) day.set(i, (day.get(i) || 0) + x.daily); });
     const bad = [...day.keys()].sort((a, b) => a - b).find(i => day.get(i) > cd(cal.dateOf(i)) + EPS && !ignored.has(i));
     if (bad === undefined) break;
     const cands = ph.filter(x => x.s <= bad && x.f >= bad && x.daily <= capDay + EPS).sort((a, b) => a.prio !== b.prio ? b.prio - a.prio : b.s - a.s);
     if (!cands.length) { ignored.add(bad); continue; }
     const x = cands[0]; const hp = new Map();
-    ph.forEach(y => { if (y.pj !== x.pj && y.prio < x.prio) for (let i = y.s; i <= y.f; i++) hp.set(i, (hp.get(i) || 0) + y.daily); });
+    ph.forEach(y => { if (y.pj !== x.pj && y.prio < x.prio) for (let i = y.s; i <= y.f; i++) if (!(y.off && y.off.has(i))) hp.set(i, (hp.get(i) || 0) + y.daily); });
     let ns = Math.max(x.s, bad) + 1;
     for (let c = x.s + 1; c < x.s + 500; c++) {
       let ok = true;

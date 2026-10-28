@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v218",
+    date: "2026-10-28",
+    title: "V218 : un clic sur la tuile d'un PJ, et le planificateur suit",
+    items: [
+      { t: "Clic sur la tuile", d: "Dans le Calendrier (vue Jour), un clic sur la tuile d'un PJ un jour ouvré de sa production ouvre : pas de production ce jour pour ce PJ (ou la rétablir), ouvrir sa fiche, ou fermer l'atelier ce jour-là.", admin: true },
+      { t: "Le planificateur suit", d: "Les jours sans production d'un PJ allongent ses tâches d'atelier d'autant (hachures sur la barre) et ne comptent pas dans la charge ; les fermetures de l'atelier étaient déjà prises en compte.", admin: true },
+    ],
+  },
+  {
     id: "2026-10-v217",
     date: "2026-10-28",
     title: "V217 : Cash in et Turbines en pages, un Manager mieux rangé",
