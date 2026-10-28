@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v219",
+    date: "2026-10-28",
+    title: "V219 : KPI — la charge du planificateur, des camemberts, une sous-page Explorer",
+    items: [
+      { t: "Charge du planificateur", d: "La charge des KPI (Synthèse et Charge) vient du planificateur : heures planifiées, capacité de chaque semaine (y compris les semaines spéciales), jours fermés et sans production déduits.", admin: true },
+      { t: "Camemberts", d: "Les répartitions (états, pays, gammes, causes et PJ en retard) sont en camemberts, avec les plus grandes parts et « Autres ».", admin: true },
+      { t: "Plus clair", d: "La Synthèse ne garde que le pilotage ; répartitions et explorateur libre ont leur sous-page « Explorer ».", admin: true },
+    ],
+  },
+  {
     id: "2026-10-v218",
     date: "2026-10-28",
     title: "V218 : un clic sur la tuile d'un PJ, et le planificateur suit",

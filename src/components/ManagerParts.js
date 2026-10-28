@@ -52,6 +52,9 @@ export function PieBlock({data,unit="",size=150,centerLabel,sub}){
   </div>);
 }
 
+// v219 : palette catégorielle des camemberts (validée V192) et découpage « N plus grands + autres »
+export const CAT_COLORS=["#4E79A7","#F28E2B","#E15759","#76B7B2","#59A14F","#B07AA1","#EDC948","#FF9DA7","#9C755F"];
+export function topSlices(list,n=6,colors){const all=(list||[]).filter(x=>x.value>0).sort((a,b)=>b.value-a.value);const top=all.slice(0,n).map((x,i)=>({...x,color:x.color||(colors||CAT_COLORS)[i%(colors||CAT_COLORS).length]}));const rest=all.slice(n).reduce((a,x)=>a+x.value,0);if(rest>0)top.push({name:"Autres ("+(all.length-n)+")",value:rest,color:T.ink300});return top;}
 // Rangée de chiffres KPI : items = [[valeur, libellé, couleur, explication?]]
 // v216 (règles de la Synthèse V215, ui-ux-pro-max + taste) : libellé au-dessus en gris, chiffre 28 px en encre ; la couleur ne sert
 // que pour dire « mauvais » (rouge) ou « bon » (vert) — les autres couleurs d'accent ne s'affichent plus.
@@ -249,12 +252,12 @@ export function DelayInsights({delays,delayTypes}){
       <div style={{...CARD,padding:16,flex:"1 1 340px"}}>
         <div style={H_TITLE}>Répartition par cause</div>
         <div style={{...H_SUB,marginBottom:12}}>Qu'est-ce qui génère le plus de retard sur le portefeuille ?</div>
-        {byType.length===0?<EmptyNote>Aucun retard enregistré pour l'instant.</EmptyNote>:<RankBars items={byType.map(t=>({label:t.type,value:t.days}))} unit=" j" color={T.red500}/>}
+        {byType.length===0?<EmptyNote>Aucun retard enregistré pour l'instant.</EmptyNote>:<PieBlock data={topSlices(byType.map(t=>({name:t.type,value:t.days})),6)} unit=" j"/>}
       </div>
       <div style={{...CARD,padding:16,flex:"1 1 340px"}}>
         <div style={H_TITLE}>Retard par PJ — jours cumulés</div>
         <div style={{...H_SUB,marginBottom:12}}>Les projets qui concentrent le plus de retard, toutes causes confondues</div>
-        {byPj.length===0?<EmptyNote>Aucune donnée.</EmptyNote>:<RankBars items={byPj.map(p=>({label:p.pj,value:p.days}))} unit=" j" color={T.navy600}/>}
+        {byPj.length===0?<EmptyNote>Aucune donnée.</EmptyNote>:<PieBlock data={topSlices(byPj.map(p=>({name:p.pj,value:p.days})),6)} unit=" j"/>}
       </div>
     </div>
   </div>);

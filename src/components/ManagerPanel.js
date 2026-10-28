@@ -5,7 +5,7 @@ import { SerieTag, getPjMeta, initials, GAMME_COLORS, ETAT_META, ALL_ETATS, ALL_
 import { fmt, toLocalISO, diffDays, weekStartOf } from "../parsers";
 import { workDaysBetween } from "../workDays";
 import { DropFilter, ImportButton, NavIcon, Select, notify } from "./SharedUI";
-import { CARD, KpiRow, PieBlock, EmptyNote, StatutTab, KpiAvancement, DelayInsights, DelaysTab, ProductionCalendarManager } from "./ManagerParts";
+import { CARD, KpiRow, PieBlock, topSlices, EmptyNote, StatutTab, KpiAvancement, DelayInsights, DelaysTab, ProductionCalendarManager } from "./ManagerParts";
 import { ProjectFileManager } from "./ManagerFiche";
 import { EtatInfoButton } from "./ProdStagesUI";
 import { ManagerRail, ManagerPalette, useRailCollapsed } from "./ManagerNav";
@@ -15,7 +15,7 @@ import { PointHebdo } from "./PointHebdo";
 import { InitialAddReview } from "./InitialAdd";
 import { SanteTab } from "./Feux";
 import { SerieTab } from "./Series";
-import { KpiPilotage } from "./KpiPilotage";
+import { KpiPilotage, planWeeks } from "./KpiPilotage";
 import { isSuperAdmin, canCash } from "../roles";
 import { PeopleRoles } from "./PeopleRoles";
 
@@ -26,7 +26,7 @@ export function PeriodFilter({yearsAvailable,year,setYear,month,setMonth,showMon
     {showMonth&&<div style={{width:128}}><Select compact value={month==null?"":month} onChange={e=>setMonth(e.target.value===""?null:+e.target.value)} options={[{value:"",label:"Tous les mois"},...MONTHS.map((m,i)=>({value:i,label:m}))]}/></div>}
   </div>);
 }
-export function ManagerPanel({initialAddFromImport,onOpenCashPage,onNav,profiles,saveProfiles,jumpFiche,changeLog,data,progress,setProgress,releases,saveReleaseNotes,releaseSelection,saveReleaseSelection,publishRelease,isBeta,initialData,lastInitialImport,lastInitialAdd,onInitialImport,onInitialAdd,initialImporting,etatChoice,setEtatFor,saveProgress,savingProgress,progressSaved,tab,setTab,clientPresence,setClientPresenceFor,closurePeriods,setClosurePeriods,customEtats,setCustomEtats,productionExclusions,setProductionExclusionDays,comments,delays,delayTypes,setDelayTypes,addDelayAllocationMulti,deleteDelayAllocation,managerEmails,setManagerEmails,currentUserEmail,authorName,buildVersion,savePjMetaOverride,savePjMetaMulti,addCommentMulti,addComment,resolveComment,deleteComment,turbineDoc,saveTurbines,certifs,setCertifs,compCatalog,setCompCatalog}){
+export function ManagerPanel({planDoc,initialAddFromImport,onOpenCashPage,onNav,profiles,saveProfiles,jumpFiche,changeLog,data,progress,setProgress,releases,saveReleaseNotes,releaseSelection,saveReleaseSelection,publishRelease,isBeta,initialData,lastInitialImport,lastInitialAdd,onInitialImport,onInitialAdd,initialImporting,etatChoice,setEtatFor,saveProgress,savingProgress,progressSaved,tab,setTab,clientPresence,setClientPresenceFor,closurePeriods,setClosurePeriods,customEtats,setCustomEtats,productionExclusions,setProductionExclusionDays,comments,delays,delayTypes,setDelayTypes,addDelayAllocationMulti,deleteDelayAllocation,managerEmails,setManagerEmails,currentUserEmail,authorName,buildVersion,savePjMetaOverride,savePjMetaMulti,addCommentMulti,addComment,resolveComment,deleteComment,turbineDoc,saveTurbines,certifs,setCertifs,compCatalog,setCompCatalog}){
   const [fEtat,setFEtat]=useState(new Set(ALL_ETATS));
   const [kpiStep,setKpiStep]=useState("depart");
   const [kpiTab,setKpiTab]=useState("synthese"); // sous-onglet KPI par famille
@@ -318,7 +318,7 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
   const [focusFiche,setFocusFiche]=useState(()=>{try{return localStorage.getItem("enogia_manager_focus")==="1";}catch(e){return false;}});
   useEffect(()=>{try{localStorage.setItem("enogia_manager_focus",focusFiche?"1":"0");}catch(e){}},[focusFiche]);
   const SUBS={
-    derives:[["synthese","Synthèse"],["derives","Dérives"],["charge","Charge"],["avancement","Avancement"]],
+    derives:[["synthese","Synthèse"],["derives","Dérives"],["charge","Charge"],["avancement","Avancement"],["explorer","Explorer"]],
     fiche:[["fiche","Fiches projet"],["hebdo","Point hebdo"]],
     retards:[["retards","Déclarer"],["retardsKpi","Analyse"]],
     calendrier:[["production","Jours sans production"],["vacances","Fermetures de l'atelier"]],
@@ -383,21 +383,16 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
     <div key={tab+(tab==="derives"?"/"+kpiTab:"")} className="enogia-view-in" style={{minWidth:0}}>
     {tab==="derives"&&kpiTab==="synthese"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
       {/* v215 (maquette A validée) : tableau de pilotage — 5 chiffres, PJ à risque, charge des 6 semaines, portefeuille par état */}
-      <KpiPilotage rows={fk} driftRows={driftRows} delays={delays} closurePeriods={closurePeriods} productionExclusions={productionExclusions} capaWeek={CAPA_ATELIER_SEM} hasInitial={hasInitial} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}} onSeeDerives={()=>setKpiTab("derives")}/>
-      <h3 style={{margin:"6px 0 0",fontSize:FZ.md,fontWeight:700,color:T.ink900}}>Pour aller plus loin</h3>
+      <KpiPilotage rows={fk} driftRows={driftRows} delays={delays} closurePeriods={closurePeriods} productionExclusions={productionExclusions} capaWeek={CAPA_ATELIER_SEM} plan={planDoc&&planDoc.plan} hasInitial={hasInitial} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}} onSeeDerives={()=>setKpiTab("derives")}/>
+    </div>}
+
+    {/* v219 (demandé : « l'imbrication des KPI est un peu brouillonne ») : répartitions et explorateur sur leur propre sous-page */}
+    {tab==="derives"&&kpiTab==="explorer"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,380px),1fr))",gap:12}}>
         {countByPays.length>0&&<div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line}}>
           <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:4}}>Répartition par pays</div>
           <div style={{fontSize:FZ.sm,color:T.ink300,marginBottom:10}}>Destinations des machines du portefeuille</div>
-          <ResponsiveContainer width="100%" height={Math.max(180,countByPays.length*34)}>
-            <BarChart data={countByPays} layout="vertical" margin={{left:10,right:20}}>
-              <CartesianGrid vertical={false} stroke={T.line} strokeOpacity={0.7}/>
-              <XAxis type="number" allowDecimals={false} tick={{fontSize:FZ.xs,fill:T.ink500}}/>
-              <YAxis type="category" dataKey="pays" width={90} tick={{fontSize:FZ.sm,fill:T.ink700,fontWeight:600}}/>
-              <Tooltip contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
-              <Bar dataKey="n" radius={[0,2,2,0]} fill={T.teal500}/>
-            </BarChart>
-          </ResponsiveContainer>
+          <PieBlock data={topSlices(countByPays.map(x=>({name:x.pays,value:x.n})),8)} unit=" PJ"/>
         </div>}
 
         <div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line}}>
@@ -434,15 +429,13 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
       </div>
       <div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line}}>
         <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:10}}>Par gamme</div>
-        {Object.entries(gammeCounts).sort((a,b)=>b[1]-a[1]).map(([g,n])=>{const col=GAMME_COLORS[g]||T.ink500;return(<div key={g} style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-          <span style={{width:78,fontSize:FZ.md,fontWeight:700,color:col,flexShrink:0}}>{g}</span>
-          <div style={{flex:1,background:T.surfaceAlt,borderRadius:4,height:18,overflow:"hidden",position:"relative"}}><div style={{width:((n/Math.max(fd.length,1))*100)+"%",height:"100%",background:col}}/><span style={{position:"absolute",left:8,top:1,fontSize:FZ.sm,color:"#fff",fontWeight:700,lineHeight:"16px"}}>{n}</span></div>
-        </div>);})}
+        <PieBlock data={topSlices(Object.entries(gammeCounts).map(([g,n])=>({name:g,value:n,color:GAMME_COLORS[g]})),8)} unit=" PJ"/>
       </div>
       </div>
     </div>}
 
     {tab==="derives"&&kpiTab==="charge"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
+      <PlanLoadCard weeks={planWeeks(planDoc&&planDoc.plan,closurePeriods,productionExclusions,12,weekStartOf(today))}/>
         {fd.length>0&&<div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line,gridColumn:"1 / -1"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8}}>
             <div>
@@ -909,4 +902,23 @@ export function ClosurePeriodsManager({closurePeriods,setClosurePeriods}){
       <button onClick={addPeriod} disabled={!newStart||!newEnd} style={{padding:"8px 16px",borderRadius:8,border:"none",background:newStart&&newEnd?T.teal500:T.surfaceAlt,color:newStart&&newEnd?"#fff":T.ink300,fontSize:FZ.sm,fontWeight:700,cursor:newStart&&newEnd?"pointer":"default"}}>+ Ajouter</button>
     </div>
   </div>);
+}
+
+// v219 : charge atelier des 12 prochaines semaines d'après le planificateur (heures planifiées et capacité de chaque semaine)
+function PlanLoadCard({weeks}){
+  if(!weeks)return(<div style={{background:T.card,border:"1px solid "+T.line,borderRadius:10,padding:"12px 14px",fontSize:FZ.sm,color:T.ink500}}>La charge d'après le planificateur s'affiche ici dès qu'un plan existe (onglet Planificateur).</div>);
+  const H=140,maxH=Math.max(1,...weeks.map(w=>Math.max(w.hours,w.cap)))*1.15;
+  const wk=d=>{const x=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const n=x.getUTCDay()||7;x.setUTCDate(x.getUTCDate()+4-n);const y=new Date(Date.UTC(x.getUTCFullYear(),0,1));return Math.ceil(((x-y)/86400000+1)/7);};
+  const over=weeks.filter(w=>w.hours>w.cap+0.5).length;
+  return(<section aria-label="Charge d'après le planificateur" style={{background:T.card,border:"1px solid "+T.line,borderRadius:10,padding:"12px 14px"}}>
+    <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap",marginBottom:10}}><h3 style={{margin:0,fontSize:FZ.md,fontWeight:700,color:T.ink900}}>Charge atelier — 12 semaines</h3><span style={{fontSize:12,color:T.ink500}}>d'après le planificateur · trait = capacité de la semaine</span><span style={{marginLeft:"auto",fontSize:12.5,fontWeight:700,color:over?T.red500:T.emerald600}}>{over?over+" semaine"+(over>1?"s":"")+" en surcharge":"aucune surcharge"}</span></div>
+    <div role="img" aria-label={weeks.map(w=>"S"+wk(w.a)+" "+w.hours+" h sur "+Math.round(w.cap)).join(", ")} style={{display:"flex",alignItems:"flex-end",gap:6,height:H,borderBottom:"1px solid "+T.line}}>
+      {weeks.map(w=>{const h=Math.round(w.hours/maxH*H),c=Math.round(w.cap/maxH*H),o=w.hours>w.cap+0.5;return(<div key={w.key} title={"S"+wk(w.a)+" : "+w.hours+" h / "+Math.round(w.cap)+" h"} style={{flex:1,position:"relative",height:"100%",minWidth:0}}>
+        <div style={{position:"absolute",left:0,right:0,bottom:0,height:Math.max(1,h),background:o?T.red500:stageSoft().production.solid,borderRadius:"2px 2px 0 0"}}/>
+        <div style={{position:"absolute",left:-2,right:-2,bottom:c,borderTop:"2px dashed "+T.ink500}}/>
+        <div style={{position:"absolute",left:0,right:0,bottom:Math.max(h,c)+4,textAlign:"center",fontSize:11,fontWeight:700,color:o?T.red500:T.ink700,fontVariantNumeric:"tabular-nums"}}>{w.hours}</div>
+      </div>);})}
+    </div>
+    <div style={{display:"flex",gap:6,marginTop:4}}>{weeks.map(w=><span key={w.key} style={{flex:1,textAlign:"center",fontSize:11,color:T.ink500}}>S{wk(w.a)}</span>)}</div>
+  </section>);
 }

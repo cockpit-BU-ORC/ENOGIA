@@ -70,7 +70,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-28-v218-tuile-calendrier";
+const APP_BUILD_VERSION = "2026-10-28-v219-kpi-planificateur";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -1029,7 +1029,8 @@ export default function App(){
   const closeFly=(ms=220)=>{clearTimeout(flyT.current);flyT.current=setTimeout(()=>setFly(null),ms);};
   // v204 : plan de l'onglet Planificateur (planning/plan, préfixe beta_ en bêta), lu seulement quand l'onglet est ouvert par le propriétaire
   const [planDoc,setPlanDoc]=useState(null),[planLoaded,setPlanLoaded]=useState(false);
-  useEffect(()=>{if(!currentUser||!isOwner||view!=="planner")return undefined;return listenPlan(d=>{setPlanDoc(d);setPlanLoaded(true);});},[currentUser,isOwner,view]);
+  // v219 : le plan est aussi lu dans le Manager (charge des KPI d'après le planificateur)
+  useEffect(()=>{if(!currentUser||!((isOwner&&view==="planner")||(pinOk&&view==="manager")))return undefined;return listenPlan(d=>{setPlanDoc(d);setPlanLoaded(true);});},[currentUser,isOwner,pinOk,view]);
   useEffect(()=>{if(view==="planner"&&currentUser&&!isOwner)setView("table");},[view,currentUser,isOwner]);
   useEffect(()=>{if(!currentUser)return;if((view==="cashin"&&!canCash)||(view==="turbines"&&!pinOk))setView("home");},[view,currentUser,canCash,pinOk]);
   const [cashFocusApp,setCashFocusApp]=useState(null); // v217 : PJ à afficher dans la page Cash in (depuis une fiche projet)
@@ -1162,7 +1163,7 @@ export default function App(){
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
               <span style={{fontFamily:T.fontDisplay,fontWeight:600,color:T.ink900,fontSize:FZ.lg,display:"flex",alignItems:"center",gap:8}}><NavIcon name="manager" size={20}/>Espace Manager</span>
             </div>
-            <ManagerPanel initialAddFromImport={initialAddFromImport} onNav={setMgrNav} changeLog={changeLog} data={dataWithOverrides} progress={progressEff} setProgress={setProgress} releases={releasesAll} saveReleaseNotes={saveReleaseNotes} releaseSelection={releaseSelection} saveReleaseSelection={saveReleaseSelection} publishRelease={publishRelease} isBeta={IS_BETA} initialData={initialData} lastInitialImport={lastInitialImport} lastInitialAdd={lastInitialAdd} onInitialImport={handleInitialImport} onInitialAdd={handleInitialAdd} initialImporting={initialImporting}
+            <ManagerPanel planDoc={planDoc} initialAddFromImport={initialAddFromImport} onNav={setMgrNav} changeLog={changeLog} data={dataWithOverrides} progress={progressEff} setProgress={setProgress} releases={releasesAll} saveReleaseNotes={saveReleaseNotes} releaseSelection={releaseSelection} saveReleaseSelection={saveReleaseSelection} publishRelease={publishRelease} isBeta={IS_BETA} initialData={initialData} lastInitialImport={lastInitialImport} lastInitialAdd={lastInitialAdd} onInitialImport={handleInitialImport} onInitialAdd={handleInitialAdd} initialImporting={initialImporting}
               etatChoice={etatChoiceEff} setEtatFor={setEtatFor} saveProgress={saveProgress} savingProgress={savingProgress} progressSaved={progressSaved}
               tab={managerTab} setTab={setManagerTab} jumpFiche={managerJump} clientPresence={clientPresence} setClientPresenceFor={setClientPresenceFor}
               closurePeriods={closurePeriods} setClosurePeriods={setClosurePeriodsAndSave}

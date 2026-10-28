@@ -445,4 +445,7 @@ export const RELEASE_CATALOG = [
   { v: "218", t: "Un clic sur la tuile d'un PJ, et le planificateur suit", items: [
     ["Calendrier", "Clic sur la tuile d'un PJ : pas de production ce jour, fiche, fermeture ; le planificateur allonge les tâches et retire la charge."],
   ] },
+  { v: "219", t: "KPI : charge du planificateur, camemberts, Explorer", items: [
+    ["KPI", "Charge d'après le planificateur ; répartitions en camemberts ; sous-page Explorer."],
+  ] },
 ];
