@@ -1356,3 +1356,16 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - `App.js` passe les testeurs de l'onglet Tests au planificateur. Données : dans le brouillon `planning/plan` (`seq`, `banc`, `res`, `phase`, `work` des tâches) — jamais publiées dans le planning. Clé `localStorage` `planUi105` : `laneH` numérique.
 - Vérifié : moteur (+1 test : nouveau PJ, ordre, 2 bancs), Liste + Gantt sombre avec lien en deux clics et fenêtre Nouveau PJ, Couloirs clair (jsdom + aperçu) ; build (13 avertissements existants), 132 tests, contraste.
 - Fichiers : planner/{engine.js, engine.test.js, Planner.js, PlannerGantt.js, PlannerLanes.js}, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
+
+## v212 — Menu : Cash in et Turbines ; Manager : sous-menus en surimpression, Machines ORC, Point hebdo dans les fiches, Personnes et accès
+
+- **Menu de gauche** (`App.js`, `VIEWS`) : nouvelle rubrique **Gestion** avec **Cash in** (comptes `canCash` : propriétaire et admins) et **Turbines** (propriétaire) ; un clic ouvre la page correspondante du Manager (entrées `mgr`), repère actif sur la bonne entrée. Aussi dans la recherche « Aller à… ».
+- **Sous-menus en surimpression** (`App.js`, état `fly` ; `styles.css` `.enogia-fly`) : dans le Manager, survoler (ou atteindre au clavier) une rubrique qui a des sous-pages ouvre un panneau à droite du menu avec ses sous-pages ; il se ferme en le quittant ou avec Échap.
+- **Manager réorganisé** (`ManagerPanel.js`) :
+  - **Machines ORC** (Projets) : sous-page **Machines** = l'ancien tableau des N° de série enrichi des colonnes **Chef de projet**, **Pays** (enregistrés dans les corrections de fiche, `chefProjet` / `pays`) et **État** (même liste que Statut & état) — ouvert à tous les accès Manager ; sous-page **Statut & présence** (l'ancien Suivi › Statut & état).
+  - **Suivi** supprimé (Santé projets est dans les fiches synthèses).
+  - **Fiche projet** › Fiches projet / **Point hebdo**.
+  - **Réglages** › **Personnes, rôles et accès** (fusion de Personnes et rôles + Accès Manager + version du site), Production, Vacances, Nouveautés. **Imports** supprimé : le repère « Planning initial » (son seul usage : ancrer de nouveaux PJ dans l'initial, base des dérives) est en tête de **KPI › Synthèse** ; l'historique des imports n'est plus affiché.
+  - Les anciens onglets mémorisés (acces, imports, sante, suivi) ramènent à leur nouvelle place.
+- Pas de nouvelle donnée ni clé `localStorage`. Vérifié : build (13 avertissements existants), tests, contraste. Pas vérifié dans l'appli connectée (menu et Manager demandent la connexion).
+- Fichiers : App.js, components/{ManagerPanel,Series}.js, styles.css, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.

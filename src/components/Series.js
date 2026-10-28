@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { T, FZ } from "../theme";
 import { getPjMeta, CountryFlag } from "../pjMeta";
-import { CARD } from "./ManagerParts";
+import { CARD, EtatSelect } from "./ManagerParts";
 import { EmptyState } from "./SharedUI";
 import { SERIE_SEED_TEXT } from "../serieSeed";
 
@@ -10,7 +10,15 @@ import { SERIE_SEED_TEXT } from "../serieSeed";
 // Gantt, fiches, commentaires, retards, rapport CODIR…). Stocké dans les corrections de fiche projet
 // (planning/pjMetaOverrides, champ numSerie) : un import MS Project ne l'écrase jamais.
 // Astuce : coller une colonne copiée depuis Excel dans une cellule remplit les lignes suivantes (une valeur par ligne).
-function Row({r,meta,value,onSave,onPasteMany}){
+// v212 (demandé : « regrouper l'écriture du S/N avec les statuts et état, les chefs de projet, le pays ») : champs texte enregistrés en sortie de champ
+function MetaCell({pj,field,value,onSave,width,placeholder}){
+  const [v,setV]=useState(value||"");const [st,setSt]=useState("");
+  useEffect(()=>{setV(value||"");},[value]);
+  const commit=async()=>{if(v.trim()===(value||"").trim())return;const ok=await onSave(pj,{[field]:v.trim()});setSt(ok===false?"échec":"✓");setTimeout(()=>setSt(""),1400);};
+  return(<td style={{padding:"4px 8px",whiteSpace:"nowrap"}}><input type="text" value={v} placeholder={placeholder} aria-label={placeholder+" de "+pj} onChange={e=>setV(e.target.value)} onBlur={commit} onKeyDown={e=>{if(e.key==="Enter")e.currentTarget.blur();else if(e.key==="Escape"){setV(value||"");e.currentTarget.blur();}}}
+    style={{width,padding:"4px 8px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink900,fontSize:FZ.xs,fontFamily:T.font}}/>{st&&<span style={{marginLeft:6,fontSize:FZ.xs,color:st==="échec"?T.red500:T.emerald600,fontWeight:700}}>{st}</span>}</td>);
+}
+function Row({r,meta,value,onSave,onPasteMany,saveMeta,etat,setEtat}){
   const [v,setV]=useState(value||"");const [st,setSt]=useState("");
   useEffect(()=>{setV(value||"");},[value]);
   const dirty=v.trim()!==(value||"").trim();
@@ -18,8 +26,10 @@ function Row({r,meta,value,onSave,onPasteMany}){
   return(<tr style={{borderBottom:"1px solid "+T.line}}>
     <td style={{padding:"6px 12px",fontWeight:700,color:T.teal600,fontFamily:T.fontMono,fontSize:FZ.sm,whiteSpace:"nowrap"}}>{r.pj}</td>
     <td style={{padding:"6px 12px",fontSize:FZ.sm,color:T.ink900,fontWeight:600}}>{meta.nomProjet}</td>
-    <td style={{padding:"6px 12px",fontSize:FZ.xs,color:T.ink500,whiteSpace:"nowrap"}}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><CountryFlag pays={meta.pays} size={12}/>{meta.pays}</span></td>
     <td style={{padding:"6px 12px",fontSize:FZ.xs,color:T.ink500,whiteSpace:"nowrap"}}>{r.gamme}</td>
+    {saveMeta?<MetaCell pj={r.pj} field="chefProjet" value={meta.chefProjet} onSave={saveMeta} width={150} placeholder="Chef de projet"/>:<td style={{padding:"6px 12px",fontSize:FZ.xs}}>{meta.chefProjet}</td>}
+    {saveMeta?<td style={{padding:"4px 8px",whiteSpace:"nowrap"}}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><CountryFlag pays={meta.pays} size={12}/><MetaInline pj={r.pj} value={meta.pays} onSave={saveMeta}/></span></td>:<td style={{padding:"6px 12px",fontSize:FZ.xs,color:T.ink500,whiteSpace:"nowrap"}}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><CountryFlag pays={meta.pays} size={12}/>{meta.pays}</span></td>}
+    <td style={{padding:"4px 8px",whiteSpace:"nowrap"}}>{setEtat?<EtatSelect value={etat||"A_DEFINIR"} onChange={e=>setEtat(r.pj,e.target.value)}/>:null}</td>
     <td style={{padding:"4px 12px",whiteSpace:"nowrap"}}>
       <input type="text" value={v} placeholder="N° de série" onChange={e=>setV(e.target.value)} onBlur={commit}
         onKeyDown={e=>{if(e.key==="Enter")e.currentTarget.blur();else if(e.key==="Escape"){setV(value||"");e.currentTarget.blur();}}}
@@ -30,6 +40,11 @@ function Row({r,meta,value,onSave,onPasteMany}){
   </tr>);
 }
 
+
+function MetaInline({pj,value,onSave}){
+  const [v,setV]=useState(value||"");useEffect(()=>{setV(value||"");},[value]);
+  return <input type="text" value={v} placeholder="Pays" aria-label={"Pays de "+pj} onChange={e=>setV(e.target.value)} onBlur={()=>{if(v.trim()!==(value||"").trim())onSave(pj,{pays:v.trim()});}} onKeyDown={e=>{if(e.key==="Enter")e.currentTarget.blur();}} style={{width:100,padding:"4px 8px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink900,fontSize:FZ.xs,fontFamily:T.font}}/>;
+}
 
 // ── Import d'une liste (PJ · client · N° de série) ────────────────────────────────────────────────────
 // Colle un tableau Excel (colonnes séparées par des tabulations) ou des lignes « PJ | client | N° de série » :
@@ -134,7 +149,7 @@ function ImportPanel({rows,save,onClose,onDone}){
   </div>);
 }
 
-export function SerieTab({data,savePjMetaOverride}){
+export function SerieTab({data,savePjMetaOverride,etatChoice,setEtatFor}){
   const [q,setQ]=useState("");const [onlyMissing,setOnlyMissing]=useState(false);const [msg,setMsg]=useState("");const [imp,setImp]=useState(false);
   const rows=data.map(r=>({r,meta:getPjMeta(r.pj,r)}));   // relu à chaque rendu : les N° saisis arrivent par les corrections de fiche (hors `data`)
   const filled=rows.filter(x=>x.meta.numSerie).length;
@@ -151,8 +166,8 @@ export function SerieTab({data,savePjMetaOverride}){
   return(<div style={{...CARD,padding:0,overflow:"hidden"}}>
     <div style={{padding:"12px 16px",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",borderBottom:"1px solid "+T.line}}>
       <div style={{flex:"1 1 260px",minWidth:0}}>
-        <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900}}>N° de série des machines</div>
-        <div style={{fontSize:FZ.xs,color:T.ink300,marginTop:2}}>Un numéro par PJ, repris partout dans l'application. Collez une colonne Excel dans une cellule pour remplir les lignes suivantes.</div>
+        <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900}}>Machines ORC</div>
+        <div style={{fontSize:FZ.xs,color:T.ink300,marginTop:2}}>N° de série, chef de projet, pays et état de chaque PJ, repris partout dans l'application. Collez une colonne Excel dans une case N° de série pour remplir les lignes suivantes.</div>
       </div>
       <span style={{fontSize:FZ.xs,fontWeight:700,color:filled===rows.length?T.emerald600:T.ink500,background:filled===rows.length?T.emerald100:T.surface,borderRadius:999,padding:"3px 12px"}}>{filled} / {rows.length} renseignés</span>
       <input type="text" value={q} onChange={e=>setQ(e.target.value)} placeholder="Rechercher un PJ, projet, N° de série…" style={{padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink900,fontSize:FZ.xs,fontFamily:T.font,width:230}}/>
@@ -163,10 +178,10 @@ export function SerieTab({data,savePjMetaOverride}){
     {msg&&<div style={{padding:"6px 16px",fontSize:FZ.xs,fontWeight:700,color:T.teal600,background:T.teal100}}>{msg}</div>}
     <div style={{overflow:"auto",maxHeight:"calc(100dvh - 290px)"}}>
       <table style={{width:"100%",borderCollapse:"collapse"}}>
-        <thead><tr>{["N° PJ","Projet","Pays","Gamme","N° de série"].map(h=><th key={h} style={{position:"sticky",top:0,zIndex:2,background:T.surface,boxShadow:"0 1px 0 "+T.line,textAlign:"left",padding:"8px 12px",fontSize:FZ.xs,fontWeight:700,color:T.ink500,textTransform:"uppercase",letterSpacing:".05em"}}>{h}</th>)}</tr></thead>
+        <thead><tr>{["N° PJ","Projet","Gamme","Chef de projet","Pays","État","N° de série"].map(h=><th key={h} style={{position:"sticky",top:0,zIndex:2,background:T.surface,boxShadow:"0 1px 0 "+T.line,textAlign:"left",padding:"8px 12px",fontSize:FZ.xs,fontWeight:700,color:T.ink500,textTransform:"uppercase",letterSpacing:".05em"}}>{h}</th>)}</tr></thead>
         <tbody>
-          {shown.map(({r,meta})=><Row key={r.pj} r={r} meta={meta} value={meta.numSerie} onSave={save} onPasteMany={pasteMany}/>)}
-          {shown.length===0&&<tr><td colSpan={5}><EmptyState compact icon="search" title="Aucun PJ."/></td></tr>}
+          {shown.map(({r,meta})=><Row key={r.pj} r={r} meta={meta} value={meta.numSerie} onSave={save} onPasteMany={pasteMany} saveMeta={savePjMetaOverride} etat={etatChoice&&etatChoice[r.pj]} setEtat={setEtatFor}/>)}
+          {shown.length===0&&<tr><td colSpan={7}><EmptyState compact icon="search" title="Aucun PJ."/></td></tr>}
         </tbody>
       </table>
     </div>

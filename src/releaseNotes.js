@@ -7,6 +7,18 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v212",
+    date: "2026-10-28",
+    title: "V212 : un Manager plus simple, Cash in à portée de clic",
+    items: [
+      { t: "Cash in et Turbines dans le menu", d: "Les personnes qui ont accès au Cash in le trouvent directement dans le menu de gauche (rubrique Gestion), avec les Turbines pour le propriétaire.", admin: true },
+      { t: "Sous-menus en surimpression", d: "Dans le Manager, survolez une rubrique du menu : ses sous-pages s'ouvrent à côté, un clic suffit.", admin: true },
+      { t: "Machines ORC", d: "Une seule page pour chaque machine : N° de série, chef de projet, pays et état, plus « Statut & présence ». L'onglet Suivi disparaît (la santé des projets est dans les fiches).", admin: true },
+      { t: "Fiche projet et Point hebdo", d: "Le point hebdo devient une sous-page de Fiche projet.", admin: true },
+      { t: "Réglages", d: "« Accès Manager » et « Personnes et rôles » ne font plus qu'une page ; l'onglet Imports est supprimé (le repère Planning initial est en tête des KPI › Synthèse).", admin: true },
+    ],
+  },
+  {
     id: "2026-10-v211",
     date: "2026-10-28",
     title: "V211 : planificateur — nouveaux PJ et tâches, 2 bancs, liens en deux clics",

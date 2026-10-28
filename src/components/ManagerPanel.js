@@ -16,7 +16,6 @@ import { SanteTab } from "./Feux";
 import { TurbinesTab } from "./TurbinesTab";
 import { SerieTab } from "./Series";
 import { CashInTab } from "./CashInTab";
-import { ImportHistory } from "./ImportHistory";
 import { isSuperAdmin, canCash } from "../roles";
 import { PeopleRoles } from "./PeopleRoles";
 
@@ -309,8 +308,10 @@ export function ManagerPanel({onNav,profiles,saveProfiles,jumpFiche,changeLog,da
   // ── Navigation Manager : onglets horizontaux + sous-onglets par famille ──
   // « Il y a bcp de KPI… plusieurs petits onglets par famille de KPI ? » → un sous-onglet par famille.
   // v196 : une phrase sous le titre de chaque page du Manager
-const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",suivi:"Statut, état et santé des projets",retards:"Retards déclarés et leurs causes",fiche:"Tout un projet sur une page : dates, actions, composants, paiements",hebdo:"Ce qui a changé cette semaine",turbines:"Pool de turbines et attributions",cash:"Encaissements et facturation (réservé)",reglages:"Paramètres du site, accès et imports"};
-  const GROUP_OF={fiche:"fiche",hebdo:"hebdo",derives:"derives",statut:"suivi",sante:"suivi",retards:"retards",acces:"reglages",personnes:"reglages",imports:"reglages",serie:"reglages",vacances:"reglages",production:"reglages",nouveautes:"reglages",cash:"cash",turbines:"turbines"};
+const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° de série, chef de projet, pays, état et présence de chaque machine",suivi:"Statut, état et santé des projets",retards:"Retards déclarés et leurs causes",fiche:"Tout un projet sur une page, et le point de la semaine",hebdo:"Ce qui a changé cette semaine",turbines:"Pool de turbines et attributions",cash:"Encaissements et facturation (réservé)",reglages:"Paramètres du site, personnes et accès"};
+  // v212 (demandé : « regrouper le S/N sous l'onglet ORC avec statuts, état, chefs de projet et pays ; supprimer Suivi ; Point hebdo dans les fiches ;
+  // supprimer Imports ; fusionner Accès Manager et Personnes et rôles ») :
+  const GROUP_OF={fiche:"fiche",hebdo:"fiche",derives:"derives",serie:"orc",statut:"orc",retards:"retards",personnes:"reglages",vacances:"reglages",production:"reglages",nouveautes:"reglages",cash:"cash",turbines:"turbines"};
   const superAdmin=isSuperAdmin(),owner=canCash(); // v210 : « owner » = accès au Cash in (propriétaire ou admin) // v185 : superAdmin = propriétaire ou admin ; owner = propriétaire (Cash in) // v143 : seul le super admin voit l'onglet « Réglages » (changer le site) ; un admin n'a que les onglets d'usage
   // v158 : menu groupé (rail latéral) ; chaque entrée sait où aller. Cash in et Réglages : super admin seulement.
   const [railMin,setRailMin]=useRailCollapsed(),[palOpen,setPalOpen]=useState(false),phone=useIsPhone();
@@ -319,20 +320,21 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",suivi:"St
   useEffect(()=>{try{localStorage.setItem("enogia_manager_focus",focusFiche?"1":"0");}catch(e){}},[focusFiche]);
   const SUBS={
     derives:[["synthese","Synthèse"],["derives","Dérives"],["charge","Charge"],["avancement","Avancement"],["retards","Retards"]],
-    suivi:[["statut","Statut & état"],["sante","Santé projets"]],
-    reglages:[["serie","N° de série"],["production","Production"],["vacances","Vacances"],["imports","Imports"],["nouveautes","Nouveautés"],["acces","Accès Manager"],["personnes","Personnes et rôles"]],
+    orc:[["serie","Machines"],["statut","Statut & présence"]],
+    fiche:[["fiche","Fiches projet"],["hebdo","Point hebdo"]],
+    reglages:[["personnes","Personnes, rôles et accès"],["production","Production"],["vacances","Vacances"],["nouveautes","Nouveautés"]],
   };
   const group=GROUP_OF[tab]||"derives";
-  useEffect(()=>{if((!superAdmin&&GROUP_OF[tab]==="reglages")||(!owner&&GROUP_OF[tab]==="cash"))setTab("derives");},[superAdmin,owner,tab]); // un admin qui arrive sur un onglet Réglages (ancien état mémorisé) est ramené aux KPI
+  useEffect(()=>{const old={acces:"personnes",imports:"derives",sante:"fiche",suivi:"statut"}[tab];if(old){setTab(old);return;}if((!superAdmin&&GROUP_OF[tab]==="reglages")||(!owner&&GROUP_OF[tab]==="cash"))setTab("derives");},[superAdmin,owner,tab]); // v212 : anciens onglets mémorisés → leur nouvelle place // un admin qui arrive sur un onglet Réglages (ancien état mémorisé) est ramené aux KPI
   const subItems=SUBS[group]||null;
   const subValue=group==="derives"?kpiTab:tab;
   const onSub=id=>{if(group==="derives")setKpiTab(id);else setTab(id);};
   const goSub=(top,id)=>()=>{if(top==="derives"){setTab("derives");setKpiTab(id);}else setTab(id);};
   const entry=(id,label,icon,hint,extra)=>{const subs=SUBS[id]?SUBS[id].map(([sid,sl])=>({id:sid,label:sl,go:goSub(id,sid)})):null;return{id,label,icon,hint,subs,go:subs?subs[0].go:()=>setTab(id),...(extra||{})};};
   const navGroups=[
-    {label:"Pilotage",entries:[entry("derives","KPI","chart","synthèse dérives charge avancement"),entry("suivi","Suivi","gauge","statut santé état"),entry("retards","Retards","warning","délais allocation")]},
-    {label:"Projets",entries:[entry("fiche","Fiche projet","list","pj commentaires dates"),entry("hebdo","Point hebdo","clock","semaine changements"),entry("turbines","Turbines","factory","machines")]},
-    ...(superAdmin?[{label:"Admin",entries:[...(owner?[entry("cash","Cash in","euro","encaissement facturation",{lock:true})]:[]),entry("reglages","Réglages","lock","série production vacances imports nouveautés accès",{lock:true,go:goSub("reglages","production")})]}]:[]),
+    {label:"Pilotage",entries:[entry("derives","KPI","chart","synthèse dérives charge avancement"),entry("retards","Retards","warning","délais allocation")]},
+    {label:"Projets",entries:[entry("fiche","Fiche projet","list","pj commentaires dates point hebdo semaine"),entry("orc","Machines ORC","gauge","n° de série statut état chef pays présence"),entry("turbines","Turbines","factory","machines")]},
+    ...(superAdmin?[{label:"Admin",entries:[...(owner?[entry("cash","Cash in","euro","encaissement facturation",{lock:true})]:[]),entry("reglages","Réglages","lock","personnes rôles accès production vacances nouveautés",{lock:true})]}]:[]),
   ];
   const activeEntry=navGroups.flatMap(g=>g.entries).find(e=>e.id===group)||navGroups[0].entries[0];
   // v196 : publie les entrées du Manager vers le menu du site (une seule barre de navigation) ; retirées en quittant le Manager.
@@ -341,7 +343,7 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",suivi:"St
   useEffect(()=>()=>{if(onNav)onNav(null);},[]); // eslint-disable-line
   const palettePjs=useMemo(()=>(data||[]).filter(r=>r&&r.pj).map(r=>({pj:r.pj,etat:r.etat,nomProjet:getPjMeta(r.pj,r).nomProjet||""})),[data]);
   useEffect(()=>{const f=e=>{if((e.ctrlKey||e.metaKey)&&!e.altKey&&String(e.key).toLowerCase()==="k"){e.preventDefault();setPalOpen(o=>!o);}};window.addEventListener("keydown",f);return()=>window.removeEventListener("keydown",f);},[]);
-  const showFilters=tab==="derives"||tab==="statut"||tab==="sante";
+  const showFilters=tab==="derives"||tab==="statut";
   const [filtersOpen,setFiltersOpen]=useState(false);
   const nFilters=(fEtat.size<ALL_ETATS.length?1:0)+(fGamme.size<ALL_GAMMES.length?1:0);
   const hasInitial=initialData.length>0;
@@ -773,8 +775,9 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",suivi:"St
     {tab==="hebdo"&&<PointHebdo data={data} savePjMetaOverride={savePjMetaOverride} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}}/>}
     {tab==="fiche"&&<ProjectFileManager profiles={profiles} focus={focusFiche} compCatalog={compCatalog} setCompCatalog={setCompCatalog} managerEmails={managerEmails} currentUserEmail={currentUserEmail} resolveComment={resolveComment} certifs={certifs} setCertifs={setCertifs} openPj={fichePj&&fichePj.pj} openNonce={fichePj&&fichePj.n} lastChange={changeLog&&changeLog[0]} data={data} initialData={initialData} comments={comments} delays={delays} progress={progress} savePjMetaOverride={savePjMetaOverride} savePjMetaMulti={savePjMetaMulti} addCommentMulti={addCommentMulti} addComment={addComment} deleteComment={deleteComment} addDelayAllocationMulti={addDelayAllocationMulti} deleteDelayAllocation={deleteDelayAllocation} delayTypes={delayTypes} setDelayTypes={setDelayTypes} changeLog={changeLog} authorName={authorName} onOpenCash={owner?(pj=>{setCashFocus({pj,n:Date.now()});setTab("cash");}):null}/>}
     {tab==="retards"&&<DelaysTab data={data} delays={delays} delayTypes={delayTypes} setDelayTypes={setDelayTypes} addDelayAllocationMulti={addDelayAllocationMulti} deleteDelayAllocation={deleteDelayAllocation} authorName={authorName}/>}
-    {superAdmin&&tab==="personnes"&&<PeopleRoles profiles={profiles} saveProfiles={saveProfiles} data={data}/>}
-    {superAdmin&&tab==="acces"&&<>
+    {superAdmin&&tab==="personnes"&&<>
+      <PeopleRoles profiles={profiles} saveProfiles={saveProfiles} data={data}/>
+      <div style={{height:14}}/>
       <ManagerAccessManager managerEmails={managerEmails} setManagerEmails={setManagerEmails} currentUserEmail={currentUserEmail}/>
       {/* Nom du build : réservé au propriétaire (demandé : « uniquement visible par moi, dans l'onglet manager »). */}
       {buildVersion&&<div style={{...CARD,padding:"8px 12px",marginTop:14,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
@@ -784,7 +787,8 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",suivi:"St
     </>}
     {owner&&tab==="cash"&&<CashInTab authorName={authorName} focus={cashFocus}/>}
     {superAdmin&&tab==="nouveautes"&&<><ReleaseCatalog isBeta={!!isBeta} selection={releaseSelection} onSaveSelection={saveReleaseSelection} onPublish={publishRelease} authorName={authorName}/><ReleaseEditor key={((releases||[])[0]||{}).id+":"+!!((releases||[])[0]||{}).off} releases={releases||[]} onSave={saveReleaseNotes} authorName={authorName}/></>}
-    {superAdmin&&tab==="imports"&&<><div style={{marginBottom:12}}>
+    {/* v212 : l'onglet Imports est supprimé ; le repère « Planning initial » (ancrer de nouveaux PJ dans l'initial, base des dérives) est en tête des KPI › Synthèse */}
+    {superAdmin&&tab==="derives"&&kpiTab==="synthese"&&<div style={{marginBottom:0}}>
       <div style={{display:"inline-flex",alignItems:"center",gap:8,padding:"4px 4px 4px 12px",border:"1px solid "+(hasInitial?T.line:T.amber500),borderRadius:12,background:hasInitial?T.card:T.amber100}}>
         <span style={{color:hasInitial?T.teal600:T.amber600,display:"inline-flex"}}><NavIcon name={hasInitial?"pin":"warning"} size={13}/></span>
         <div style={{lineHeight:1.25}}>
@@ -817,8 +821,8 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",suivi:"St
           warnText="Rien n'est enregistré avant votre validation."
         />}
       </div>
-      </div><ImportHistory authorName={authorName}/></>}
-    {superAdmin&&tab==="serie"&&<SerieTab data={data} savePjMetaOverride={savePjMetaOverride}/>}
+      </div>}
+    {tab==="serie"&&<SerieTab data={data} savePjMetaOverride={savePjMetaOverride} etatChoice={etatChoice} setEtatFor={setEtatFor}/>}
     {superAdmin&&tab==="vacances"&&<ClosurePeriodsManager closurePeriods={closurePeriods} setClosurePeriods={setClosurePeriods}/>}
     {superAdmin&&tab==="production"&&<ProductionCalendarManager data={data} productionExclusions={productionExclusions} setProductionExclusionDays={setProductionExclusionDays}/>}
     </div>

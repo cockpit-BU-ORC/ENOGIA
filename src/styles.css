@@ -466,3 +466,9 @@ button:not(:disabled):active { transform: scale(.97); }
 @media (max-width: 640px) { .enogia-bg { --bg-lw: 236px; --bg-cols: 88px minmax(70px,1fr) 70px; } .enogia-bg .c-opt, .enogia-bg .bg-bar-txt { display: none !important; } }
 .enogia-cat-in:hover, .enogia-cat-in:focus { border-color: rgba(127,127,127,.45) !important; }
 @media (prefers-reduced-motion: reduce) { .enogia-bg-bar, .enogia-bg-bar:hover { transition: none; transform: none; } }
+
+/* v212 : sous-menus du Manager en surimpression à droite du menu */
+.enogia-fly { animation: enogiaFlyIn .16s var(--e-ease) both; }
+.enogia-fly-item:hover, .enogia-fly-item:focus-visible { background: rgba(127,127,127,.12) !important; outline: none; }
+@keyframes enogiaFlyIn { from { opacity: 0; transform: translateX(-4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .enogia-fly { animation: none; } }

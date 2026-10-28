@@ -421,4 +421,8 @@ export const RELEASE_CATALOG = [
   { v: "211", t: "Planificateur : nouveaux PJ et tâches, 2 bancs, liens en deux clics", items: [
     ["Planificateur", "Nouveau PJ avec tâches et ressources, ajout et ordre des tâches, Packing, 2 bancs, liens en deux clics, clic droit pour se déplacer."],
   ] },
+  { v: "212", t: "Un Manager plus simple, Cash in à portée de clic", items: [
+    ["Menu", "Cash in et Turbines dans le menu de gauche ; sous-menus du Manager en surimpression."],
+    ["Manager", "Machines ORC (S/N, chef, pays, état) ; Point hebdo dans Fiche projet ; Personnes, rôles et accès ; plus de Suivi ni d'Imports."],
+  ] },
 ];
