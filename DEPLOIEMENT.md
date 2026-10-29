@@ -1566,3 +1566,8 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - **Tests** : une machine expédiée a ses tests validés (« Tests faits : machine expédiée ») ; calcul à l'affichage, jamais écrit en base.
 - **Fond des pages** (`pageBackdrop.js`) : papier millimétré (maille 32 px, trait 160 px), motif de la page avec annotations (repères du cycle, étiquettes P&ID, unités, cotes, températures) en haut à droite, second motif retourné en bas à gauche (`PAGE_SECOND`), même opacité.
 - Fichiers : App.js, pageBackdrop.js, components/{HomeView,RoleHome,Arrange,TestsTab,ChangesView,ChangesNotice,ManagerPanel,ManagerFiche,KpiPilotage,CdpReport,Series}.js, reports/cdpPptx.js, planner/Planner.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
+
+## v232 — Nom du site « BU ORC – Pilotage »
+
+- `src/siteName.js` : SITE_NAME « BU ORC », SITE_SCOPE « Pilotage » (menu, accueil, écran de connexion, titre de l'onglet) ; `public/index.html` (titre, description, titre iOS) ; `public/manifest.json` (« BU ORC – Pilotage », court « BU ORC Pilotage ») ; titre bêta dans `App.js`. Le sous-titre ne change pas. Le dépôt et `homepage` (`planning-enogia-2026`) restent inchangés : l'adresse du site ne bouge pas.
+- Une appli déjà installée sur un téléphone peut garder l'ancien nom jusqu'à sa réinstallation.

@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v232",
+    date: "2026-10-29",
+    title: "V232 : le site s'appelle « BU ORC – Pilotage »",
+    items: [
+      { t: "Nom du site", d: "« BU ORC – Pilotage » remplace « ENOGIA – BU ORC » (menu, accueil, connexion, onglet du navigateur, appli installée). Le sous-titre ne change pas." },
+    ],
+  },
+  {
     id: "2026-10-v231",
     date: "2026-10-29",
     title: "V231 : tout se fait sur le site, accueils de chaque poste visibles",

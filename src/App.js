@@ -51,7 +51,7 @@ import { listenChangeLog } from "./changeLog";
 // production vers la bêta. Build normal : préfixe vide, comportement strictement inchangé.
 const IS_BETA=process.env.REACT_APP_BETA==="1";
 const DOC_PFX=IS_BETA?"beta_":"";
-if(IS_BETA&&typeof document!=="undefined")document.title="[BÊTA] ENOGIA – BU ORC";
+if(IS_BETA&&typeof document!=="undefined")document.title="[BÊTA] BU ORC – Pilotage";
 const BETA_DOCS=["current","initial","overrides","comments","pjMetaSync","pjMetaOverrides","delays","delayTypes","managerEmails","changeLog","cashin","cashinLinks","turbines","tests","profiles","prodTurbines"];
 const DOC_REF=()=>doc(db,"planning",DOC_PFX+"current");
 const INITIAL_DOC_REF=()=>doc(db,"planning",DOC_PFX+"initial");
@@ -73,7 +73,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-29-v231-sans-import";
+const APP_BUILD_VERSION = "2026-10-29-v232-bu-orc-pilotage";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){

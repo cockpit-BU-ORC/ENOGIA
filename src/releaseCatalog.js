@@ -497,4 +497,7 @@ export const RELEASE_CATALOG = [
     ["Tests", "Machine expédiée = tests faits."],
     ["Fond", "Papier millimétré, motif annoté, second motif."],
   ] },
+  { v: "232", t: "Le site s'appelle « BU ORC – Pilotage »", items: [
+    ["Nom du site", "BU ORC – Pilotage (ex-ENOGIA – BU ORC)."],
+  ] },
 ];
