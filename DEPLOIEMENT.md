@@ -1595,3 +1595,9 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - **Disposition commune** : `ArrangeCtx` (Arrange.js) fourni par App autour de `<main>` ; les pages sans disposition propre (KPI › Synthèse, Tests › semaine) lisent `planning/profiles.pageLayouts[id]` ; seul le propriétaire enregistre (`savePageLayout`). Les anciennes dispositions locales (`enogia_arr_kpi-synthese`, `enogia_arr_tests-semaine`) ne sont plus lues : à refaire une fois par le propriétaire.
 - **Sécurité** : `firestore.rules` (nouveau) et `SECURITE.md` (procédure). **Non publiées** : Gabriel les colle et les publie dans la console Firebase après test dans le terrain de jeu des règles. Tout nouveau document de `planning/` devra être ajouté aux règles.
 - Fichiers : components/{Arrange,RoleHome}.js, App.js, firestore.rules, SECURITE.md, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
+
+## v236 — Le site s'appelle « Cockpit BU ORC »
+
+- `siteName.js` : `SITE_SCOPE` = « BU ORC » (surligneur, sans retour à la ligne entre BU et ORC) ; titre, manifeste et titre bêta « Cockpit BU ORC ».
+- Adresse web visée : `https://cockpit-bu-orc.github.io/ENOGIA/` — **pas encore changée**. Il faut d'abord renommer l'organisation GitHub (Planning-ENOGIA-BU-ORC → cockpit-BU-ORC) et le dépôt (planning-enogia-2026 → ENOGIA), puis `homepage` dans `package.json`, le domaine autorisé dans Firebase Authentication et la restriction de la clé API. L'ancienne adresse cessera de fonctionner (pas de redirection des pages GitHub).
+- Fichiers : siteName.js, App.js, components/{HomeView,LoginScreen}.js, public/{index.html,manifest.json}, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.

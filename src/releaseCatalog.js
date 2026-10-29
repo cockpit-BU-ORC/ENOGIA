@@ -512,4 +512,7 @@ export const RELEASE_CATALOG = [
     ["Disposition", "KPI et Tests : disposition partagée (planning/profiles.pageLayouts), réglée par le propriétaire seul."],
     ["Sécurité", "firestore.rules (comptes @enogia.com, droits par document) + SECURITE.md, à publier dans la console."],
   ] },
+  { v: "236", t: "Le site s'appelle « Cockpit BU ORC »", items: [
+    ["Nom du site", "Cockpit BU ORC (« BU ORC » au surligneur) ; ex-Cockpit ORC."],
+  ] },
 ];
