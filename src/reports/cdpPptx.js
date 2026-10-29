@@ -115,9 +115,9 @@ function summarySlides(pptx, items, ctx) {
 function changesSlide(pptx, items, ctx) {
   const ch = items.filter(i => i.change);
   const s = pptx.addSlide();
-  frame(s, { eyebrow: ctx.chef, title: "Modifications depuis le dernier import", page: ctx.page(), total: ctx.total, label: ctx.label });
+  frame(s, { eyebrow: ctx.chef, title: "Modifications depuis la dernière mise à jour", page: ctx.page(), total: ctx.total, label: ctx.label });
   s.addText("Import du " + ctx.lastChange.when + " comparé à la version précédente", { x: MX, y: 1.05, w: 10, h: 0.3, fontFace: FONT, fontSize: 12, color: C.mute, margin: 0 });
-  if (!ch.length) { s.addText("Aucun changement sur vos projets lors du dernier import.", { x: MX, y: 1.8, w: 10, h: 0.5, fontFace: FONT, fontSize: 18, color: C.green, bold: true, margin: 0 }); return; }
+  if (!ch.length) { s.addText("Aucun changement sur vos projets lors de la dernière mise à jour.", { x: MX, y: 1.8, w: 10, h: 0.5, fontFace: FONT, fontSize: 18, color: C.green, bold: true, margin: 0 }); return; }
   const rows = [[{ text: "PJ", options: { bold: true, color: C.white, fontSize: 9.5, fontFace: FONT, fill: { color: C.navy } } }, { text: "Projet", options: { bold: true, color: C.white, fontSize: 9.5, fontFace: FONT, fill: { color: C.navy } } }, { text: "Ce qui a bougé", options: { bold: true, color: C.white, fontSize: 9.5, fontFace: FONT, fill: { color: C.navy } } }]];
   ch.slice(0, 11).forEach((i, qi) => {
     const c = i.change; const runs = []; const band = { color: qi % 2 ? C.white : C.pale };
@@ -376,8 +376,8 @@ function pjSlide2(pptx, i, ctx) {
   py += Math.min(pay.length, MAXP) * 0.29;
   if (pay.length > MAXP) { s.addText("+ " + (pay.length - MAXP) + " autre(s) jalon(s) dans la fiche", { x: RX, y: py, w: RW, h: 0.18, fontFace: FONT, fontSize: 8.5, color: C.mute, margin: 0 }); py += 0.2; }
   py += 0.14;
-  // Depuis le dernier import
-  sec(s, "Depuis le dernier import", RX, py, RW);
+  // Depuis la dernière mise à jour
+  sec(s, "Depuis la dernière mise à jour", RX, py, RW);
   const ch = i.change; const runs = [];
   if (!ch) runs.push({ text: "✓ Aucun changement pour ce PJ.", options: { color: C.green, bold: true, breakLine: true } });
   else if (ch.isNew) runs.push({ text: "Nouveau PJ dans cette version.", options: { color: C.amber, bold: true, breakLine: true } });

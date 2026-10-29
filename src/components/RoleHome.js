@@ -267,7 +267,20 @@ export function RoleHome({ role, profile, ui, kpiEl, depEl, parcoursEl, rows, op
   const ids = [...defs.map(x => x[0]).filter(id => on(id)), ...extra].filter((id, i, a) => a.indexOf(id) === i && !hidden.includes(id) && avail(id));
   const spans = Object.fromEntries([...defs, ...Object.entries(W).map(([k, w]) => [k, w.span])].reverse().map(([k, s]) => [k, s]));
   const items = ids.map(id => { const el = W[id].render(); return el ? React.cloneElement(el, { key: id, "aria-label": el.props["aria-label"] || W[id].label }) : null; }).filter(Boolean);
-  const addable = Object.keys(W).filter(id => !ids.includes(id) && avail(id) && W[id].render()).map(id => [id, W[id].label]);
+  // v231 (demandé : « Ajouter un cadran n'est pas clair : des thèmes ou des liens avec les onglets ») : chaque cadran est rangé sous
+  // la page du site d'où viennent ses données, avec une phrase qui dit ce qu'il montre.
+  const THEMES = [
+    ["Vue d'ensemble — Liste et Gantt", { kpis: "les grands chiffres du portefeuille", departs: "les 5 prochains départs", parcours: "combien de machines à chaque étape", alertes: "les dérives fortes et les retards à déclarer" }],
+    ["Projets — Fiches projet", { pjs: "les PJ d'un chef de projet, triés par départ", jalons: "arrivées, tests et départs des 3 semaines", todo: "retards à déclarer et mentions", fat: "FAT client et NOBO à venir", avance: "avancement moyen et PJ en avance / en retard" }],
+    ["Tests — page Tests", { tests: "machines au banc et tests des 3 semaines", today: "machines au banc aujourd'hui (jour N / M)", sign: "fiches de test à signer", week: "la semaine de tests d'un testeur", arrivees: "machines qui arrivent au banc", results: "réussis et échecs des 14 derniers jours", postes: "occupation des postes de test" }],
+    ["Atelier — Planificateur et Calendrier", { charge: "heures atelier sur 4 semaines face à la capacité", arrdep: "arrivées et départs de la semaine", montage: "machines en montage méca / élec" }],
+    ["Production turbines", { ptReady: "turbines prêtes", ptNoWheel: "turbines testées sans roue", ptPieces: "pièces à suivre", ptDates: "dates prévisionnelles des turbines", ptRoues: "stock de roues équilibrées", ptInj: "stock d'injecteurs" }],
+    ["Gestion — Turbines et Cash in", { turbines: "pool de turbines", cash: "encaissements à venir" }],
+    ["Échanges — Commentaires", { mentions: "les mentions qui vous attendent" }],
+  ];
+  const addable = []; const placed = new Set();
+  THEMES.forEach(([g, m]) => Object.keys(m).forEach(id => { if (W[id] && !ids.includes(id) && avail(id) && W[id].render()) { addable.push([id, W[id].label, g, m[id]]); placed.add(id); } }));
+  Object.keys(W).filter(id => !placed.has(id) && !ids.includes(id) && avail(id) && W[id].render()).forEach(id => addable.push([id, W[id].label, "Autres", ""]));
   const setL = patch => onLayout && onLayout({ ...L, ...patch });
   return (<>{leadSegs && renderLead ? renderLead(leadSegs) : null}<Arrange id={"home-" + role} defaultSpan={4} spans={spans} labels={Object.fromEntries(Object.entries(W).map(([k, w]) => [k, w.label]))}
     layout={L} onLayout={onLayout ? v => onLayout(v) : undefined}

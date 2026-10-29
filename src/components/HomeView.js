@@ -4,9 +4,9 @@ import { getPjMeta, chefsOf, ETAT_META, PresenceChip, presenceKind, presenceFirs
 import { NavIcon, AnimatedNumber, EmptyState, PjPlate, Hl } from "./SharedUI";
 import { openMentionsFor, chefAccount, nameFromEmail } from "../mentions";
 import { SITE_NAME, SITE_SCOPE, SITE_SUB } from "../siteName";
-import { testerOfEmail, planOf } from "../testPlan";
+import { testerOfEmail, planOf, testersOf } from "../testPlan";
 import { RoleHome } from "./RoleHome";
-import { profileOf, effectiveRole, pjsOfProfile } from "../profiles";
+import { profileOf, effectiveRole, pjsOfProfile, ROLES } from "../profiles";
 
 // v173 — direction « Éditorial industriel » : sur-titre d'atelier en mono, grande phrase légère, chiffres géants sous un filet marine,
 //   n° de PJ en plaques, parcours en blocs pleins étiquetés.
@@ -72,7 +72,18 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
   const profile = useMemo(() => profileOf(profiles, myEmail), [profiles, myEmail]);
   const myPjs = useMemo(() => [...new Set([...pjsOfProfile(profile, rows), ...mine.map(r => r.pj)])], [profile, rows, mine]);
   const autoRole = effectiveRole(profile, { owner, tester: !!myTester, hasProjects: myPjs.length > 0, prodTurb: !!canProdTurb && !owner });
-  const role = autoRole; // v191 : l'accueil se règle par personne dans Manager › Réglages › Personnes et rôles (plus de sélecteur ici)
+  // v231 (demandé : « je dois avoir la vision de chaque onglet même si je ne suis pas indiqué testeur ») : le propriétaire choisit
+  // l'accueil de n'importe quel poste, et la personne vue (chef de projet, testeur) ; les autres gardent l'accueil de leur poste.
+  const [viewAs, setViewAsS] = useState(() => { try { return JSON.parse(localStorage.getItem("enogia_home_viewas") || "null") || {}; } catch (e) { return {}; } });
+  const setViewAs = v => { const n = { ...viewAs, ...v }; setViewAsS(n); try { localStorage.setItem("enogia_home_viewas", JSON.stringify(n)); } catch (e) { /* stockage indisponible */ } };
+  const role = owner && viewAs.role ? viewAs.role : autoRole;
+  const chefList = useMemo(() => owner ? [...new Set(open.flatMap(r => chefsOf(getPjMeta(r.pj, r))).filter(Boolean))].sort((a, b) => a.localeCompare(b, "fr")) : [], [owner, open]);
+  const testerList = useMemo(() => owner && testsDoc ? testersOf(testsDoc) : [], [owner, testsDoc]);
+  const asChef = owner && role === "cdp" ? (chefList.includes(viewAs.chef) ? viewAs.chef : chefList[0] || "") : "";
+  const asTester = owner && role === "testeur" ? (testerList.find(t => t.id === viewAs.tester) || testerList[0] || null) : null;
+  const homePjs = asChef ? open.filter(r => chefsOf(getPjMeta(r.pj, r)).includes(asChef)).map(r => r.pj) : myPjs;
+  const homeTester = owner && role === "testeur" ? asTester : myTester;
+  const homeName = asChef ? asChef.split(" ")[0] : asTester ? String(asTester.name || "").split(" ")[0] : firstName;
   const nChanged = (unseenChanges || []).reduce((n, e) => n + ((e.stats && e.stats.nPj) || 0), 0);
   const nNew = (unseenChanges || []).reduce((n, e) => n + ((e.stats && e.stats.nNew) || 0), 0);
 
@@ -210,8 +221,15 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
 
       {!role && kpiEl}
 
-      {role && <RoleHome key={role} kpiEl={kpiEl} depEl={depEl} parcoursEl={parcoursEl} role={role} profile={profile} rows={rows} open={open} late={late} mentions={mentions} myPjs={myPjs} testsDoc={testsDoc} myTester={myTester} turbineDoc={turbineDoc} owner={owner} cash={cash} onOpenPj={onOpenPj} onGo={onGo} onOpenCash={onOpenCash}
-        prodDoc={canProdTurb ? prodDoc : null} plan={plan} closurePeriods={closurePeriods} hello={hello() + (firstName ? " " + firstName : "")} renderLead={renderLead}
+      {owner && <div role="tablist" aria-label="Accueil affiché" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, margin: "0 0 14px" }}>
+        <span style={{ fontSize: FZ.xs, color: T.ink500, fontWeight: 600, marginRight: 4 }}>Accueil de :</span>
+        {ROLES.map(([k, l]) => <button key={k} type="button" role="tab" aria-selected={role === k} onClick={() => setViewAs({ role: k })} style={{ border: "1px solid " + (role === k ? T.ink900 : T.line), background: role === k ? T.ink900 : T.card, color: role === k ? T.card : T.ink700, borderRadius: 999, padding: "3px 12px", minHeight: 28, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>{l}</button>)}
+        {role === "cdp" && chefList.length > 0 && <select aria-label="Chef de projet affiché" value={asChef} onChange={e => setViewAs({ chef: e.target.value })} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink900, borderRadius: 8, minHeight: 28, padding: "0 8px", fontSize: FZ.xs, fontFamily: T.font }}>{chefList.map(c => <option key={c} value={c}>{c}</option>)}</select>}
+        {role === "testeur" && testerList.length > 0 && <select aria-label="Testeur affiché" value={asTester ? asTester.id : ""} onChange={e => setViewAs({ tester: e.target.value })} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink900, borderRadius: 8, minHeight: 28, padding: "0 8px", fontSize: FZ.xs, fontFamily: T.font }}>{testerList.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select>}
+        {role !== autoRole && <span style={{ fontSize: FZ.xs, color: T.ink500 }}>— vue telle que la personne la voit ; la disposition réglée ici vaut pour tout le poste.</span>}
+      </div>}
+      {role && <RoleHome key={role} kpiEl={kpiEl} depEl={depEl} parcoursEl={parcoursEl} role={role} profile={profile} rows={rows} open={open} late={late} mentions={mentions} myPjs={homePjs} testsDoc={testsDoc} myTester={homeTester} turbineDoc={turbineDoc} owner={owner} cash={cash} onOpenPj={onOpenPj} onGo={onGo} onOpenCash={onOpenCash}
+        prodDoc={canProdTurb ? prodDoc : null} plan={plan} closurePeriods={closurePeriods} hello={hello() + (homeName ? " " + homeName : "")} renderLead={renderLead}
         layout={layouts[role] || {}} onLayout={owner && saveHomeLayout ? lay => saveHomeLayout(role, lay) : undefined}
         ui={{ Row, Head, cardS, Pill, presenceOf, nomOf, empty, grey, link, S, H, A }} />}
 

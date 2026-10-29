@@ -25,7 +25,7 @@ import { backdropStyle } from "./pageBackdrop"; // v225 : un fond léger par pag
 import { useA11yFallback } from "./a11yFallback";
 import { CashInTab } from "./components/CashInTab";
 import { TurbinesTab } from "./components/TurbinesTab";
-import { ImportButton, ManagerAccessNotice, PIN, NavIcon, EmptyState, LoadingSkeleton, PageHead, notify, Toaster } from "./components/SharedUI";
+import { ManagerAccessNotice, PIN, NavIcon, EmptyState, LoadingSkeleton, PageHead, notify, Toaster } from "./components/SharedUI";
 import { GanttView } from "./components/GanttView";
 import { PjDialog, PjDialogCtx } from "./components/RowDetail";
 import { PlannerView } from "./planner/Planner";
@@ -43,8 +43,7 @@ import { WorkshopScreen } from "./components/WorkshopScreen";
 import { normalizeEtat, buildProgress } from "./prodStages";
 import { ReleasePopup, useUnseenReleases, mergeReleases } from "./components/ReleaseNotes";
 import { ChangesPopup, ChangesBadge, useUnseenChanges, useChangeMarks, ChangeMarksContext } from "./components/ChangesNotice";
-import { buildEntry, appendChangeLog, listenChangeLog } from "./changeLog";
-import { saveBackup } from "./importBackups";
+import { listenChangeLog } from "./changeLog";
 
 // ── Version bêta ────────────────────────────────────────────────────────────────────────────────────
 // Build « bêta » (npm run deploy:beta) : mêmes écrans, mais TOUTES les données sont lues/écrites dans des documents
@@ -74,7 +73,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-29-v230-cadrans-libres-etats";
+const APP_BUILD_VERSION = "2026-10-29-v231-sans-import";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -213,7 +212,6 @@ export default function App(){
 
   const [data,setData]=useState([]);
   const [loading,setLoading]=useState(true);
-  const [importing,setImporting]=useState(false);
   const [lastImport,setLastImport]=useState(null);
   const [initialData,setInitialData]=useState([]);
   const [initialImporting,setInitialImporting]=useState(false);
@@ -720,6 +718,8 @@ export default function App(){
   const canSeeTests=!!(pinOk||testerOfEmail(testsDoc,currentUser&&currentUser.email));
   useEffect(()=>{if(view==="tests"&&testsLoaded&&!canSeeTests)setView("table");},[view,testsLoaded,canSeeTests]); // accès retiré ou ancien choix mémorisé
   const saveTests=useCallback(async next=>{
+    // v231 : la validation automatique des machines expédiées (testsView) n'est jamais écrite en base
+    if(next&&next.plans){const plans={};Object.entries(next.plans).forEach(([pj,p])=>{plans[pj]=p&&p.forced&&p.forced.auto?{...p,forced:null}:p;});next={...next,plans};}
     try{await setDoc(TESTS_DOC_REF(),{...next,updatedAt:new Date().toISOString(),updatedBy:authorName||""});return true;}
     catch(e){console.error(e);notify("Erreur lors de l'enregistrement des tests : "+e.message);return false;}
   },[authorName]);
@@ -936,36 +936,8 @@ export default function App(){
   // planning, les PJ absents du planning initial (base des dérives) sont signalés, avec un bouton pour les y ancrer.
   const [newVsInitial,setNewVsInitial]=useState(null),[initialAddFromImport,setInitialAddFromImport]=useState(null);
   const initialPjsRef=useRef(new Set()); initialPjsRef.current=new Set(initialData.map(r=>r.pj));
-  const handleImport=useCallback(async (rows,indice)=>{
-    setImporting(true);
-    try{
-      const lastImportStr=new Date().toLocaleString("fr-FR");
-      // ancienne version relue juste avant d'écrire (pas l'état local, qui peut être en retard) : sert à l'onglet « Modifications »
-      let before=null;
-      try{const s0=await getDoc(DOC_REF());if(s0.exists())before=s0.data();}catch(e){console.warn("Lecture de l'ancienne version impossible :",e);}
-      // v145 : copie de sécurité de l'ancien planning AVANT d'écraser (14 dernières gardées, restaurables dans Réglages › Imports).
-      // Si la copie échoue (réseau, droits Firestore), on demande avant d'importer sans filet.
-      try{await saveBackup(before,{by:authorName||"",reason:"import"});}
-      catch(e){
-        console.warn("Copie de sécurité impossible :",e);
-        if(!window.confirm("La copie de sécurité de l'ancien planning n'a pas pu être enregistrée ("+(e&&e.message?e.message:"erreur inconnue")+").\n\nImporter quand même, sans possibilité de revenir en arrière ?")){setImporting(false);return;}
-      }
-      await setDoc(DOC_REF(), { rows, lastImport: lastImportStr, indice: indice||"" });
-      if(before&&Array.isArray(before.rows)&&before.rows.length){
-        try{
-          await appendChangeLog(buildEntry(before.rows,rows,{source:"import",by:authorName||"",indice:indice||"",label:lastImportStr,prevLabel:before.lastImport||"",prevIndice:before.indice||""}));
-          setView("changes");
-        }catch(e){console.warn("Journal des modifications non enregistré (l'import est bien fait) :",e);}
-      }
-      setSelPJs(rows.length?new Set(rows.map(r=>r.pj)):null);
-      if(initialPjsRef.current.size){const fresh=rows.filter(r=>r&&r.pj&&r.etat!=="SLOT_LIBRE"&&!initialPjsRef.current.has(r.pj));setNewVsInitial(fresh.length?{rows,pjs:fresh.map(r=>r.pj)}:null);}
-      // Pas besoin de setData ici : onSnapshot va le faire automatiquement pour tout le monde
-    }catch(e){
-      console.error(e);
-      notify("Erreur lors de l'enregistrement : " + e.message);
-    }
-    setImporting(false);
-  },[authorName]);
+  // v231 (demandé : « je ne veux plus faire d'import MS Project, tout se fait sur le site ») : plus d'import du planning ;
+  // le planning actuel (planning/current) est la référence et ne change plus que par « Publier » dans le Planificateur.
 
   const handleInitialImport=useCallback(async rows=>{
     setInitialImporting(true);
@@ -1073,7 +1045,10 @@ export default function App(){
   useEffect(()=>{if(view==="planner"&&currentUser&&!isOwner)setView("table");},[view,currentUser,isOwner]);
   useEffect(()=>{if(!currentUser)return;if((view==="cashin"&&!canCash)||(view==="turbines"&&!isOwner)||(view==="prodturb"&&prodDoc!==null&&!canProdTurb))setView("home");},[view,currentUser,canCash,isOwner,prodDoc,canProdTurb]);
   const [cashFocusApp,setCashFocusApp]=useState(null); // v217 : PJ à afficher dans la page Cash in (depuis une fiche projet)
-  const pjCtxTests=canSeeTests?testsDoc:null,pjCtx=useMemo(()=>({testsDoc:pjCtxTests,turbineDoc}),[pjCtxTests,turbineDoc]); // v203 : pastilles de la fiche d'un PJ // v196 : entrées du Manager affichées dans ce menu (fournies par ManagerPanel)
+  // v231 (demandé : « toute machine déjà expédiée a déjà effectué ses tests ») : à l'affichage, une machine expédiée a ses tests
+  // validés (forced.auto, « Machine expédiée ») ; rien n'est écrit en base (retiré par saveTests).
+  const testsView=useMemo(()=>{const plans={...((testsDoc&&testsDoc.plans)||{})};(dataWithOverrides||[]).forEach(r=>{if(!r||r.etat!=="SHIPPED")return;const p=plans[r.pj]||{};if(p.forced&&p.forced.at)return;plans[r.pj]={...p,forced:{at:String(r.depart||r.testsFin||r.tests||new Date().toISOString()).slice(0,10),by:"Machine expédiée",auto:true}};});return{...testsDoc,plans};},[testsDoc,dataWithOverrides]);
+  const pjCtxTests=canSeeTests?testsView:null,pjCtx=useMemo(()=>({testsDoc:pjCtxTests,turbineDoc}),[pjCtxTests,turbineDoc]); // v203 : pastilles de la fiche d'un PJ // v196 : entrées du Manager affichées dans ce menu (fournies par ManagerPanel)
   const closePeek=delay=>{clearTimeout(navPeekT.current);navPeekT.current=setTimeout(()=>setNavPeek(false),delay||0);};
   const navOverlay=true;
   const navCompact=navOverlay&&!navPeek; // dans l'espace Manager, un seul menu large : celui du Manager
@@ -1158,15 +1133,9 @@ export default function App(){
         <div className="enogia-bar-right" aria-hidden={hdrHidden?"true":undefined} style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",opacity:hdrHidden?0:1,transform:hdrHidden?"translateY(-6px)":"none",visibility:hdrHidden?"hidden":"visible",transition:"opacity .25s ease, transform .25s var(--e-ease), visibility 0s linear "+(hdrHidden?".25s":"0s")}}>
           {pinOk&&<div className="enogia-bar-meta" style={{display:"flex",alignItems:"baseline",gap:10,fontSize:FZ.xs}}>
             {loading?<span className="enogia-skeleton" aria-label="Chargement" style={{display:"inline-block",width:64,height:12}}/>:<span style={{color:T.ink500,fontSize:FZ.xs,fontWeight:600,fontFamily:T.font}}>{data.length+" unités"}</span>}
-            {!loading&&lastImport&&<button onClick={()=>setView("changes")} title="Voir ce qui a bougé avec ce dernier import" style={{border:"none",background:"transparent",padding:0,cursor:"pointer",color:T.ink700,fontWeight:600,fontSize:FZ.xs,fontFamily:T.font,textAlign:"right"}}>Dernier import {lastImport}{changeLog&&changeLog[0]&&changeLog[0].stats?" · "+changeLog[0].stats.nPj+" PJ modifié"+(changeLog[0].stats.nPj>1?"s":""):""} ›</button>}
+            {!loading&&lastImport&&<button onClick={()=>setView("changes")} title="Voir ce qui a bougé à la dernière publication" style={{border:"none",background:"transparent",padding:0,cursor:"pointer",color:T.ink700,fontWeight:600,fontSize:FZ.xs,fontFamily:T.font,textAlign:"right"}}>Mis à jour le {lastImport}{changeLog&&changeLog[0]&&changeLog[0].stats?" · "+changeLog[0].stats.nPj+" PJ modifié"+(changeLog[0].stats.nPj>1?"s":""):""} ›</button>}
             {savedAt&&<span role="status" aria-live="polite" style={{color:T.emerald600||T.ink500,fontSize:FZ.xs,fontFamily:T.font,textAlign:"right"}}>✓ Enregistré à {String(savedAt.getHours()).padStart(2,"0")+":"+String(savedAt.getMinutes()).padStart(2,"0")}</span>}
           </div>}
-          {pinOk&&<ImportButton
-            onImport={handleImport}
-            busy={importing}
-            hasExisting={data.length>0}
-            confirmMessage={"Un planning révisé a déjà été importé"+(lastImport?(" le "+lastImport):"")+" ("+data.length+" unités).\n\nCet import va remplacer les données pour tous les visiteurs du site.\n\nÊtes-vous sûr de vouloir continuer ?"}
-          />}
           {currentUser&&<div className="enogia-hide-phone" style={{width:1,height:22,background:T.line}}/>}
           {currentUser&&<button onClick={()=>setNavPal(true)} title="Aller à… (Ctrl K)" aria-label="Aller à… (Ctrl K)" style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:32,height:32,padding:0,border:"1px solid transparent",borderRadius:9,cursor:"pointer",background:"transparent",color:T.ink500}} onMouseEnter={e=>{e.currentTarget.style.background=T.surfaceAlt;e.currentTarget.style.color=T.ink900;}} onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=T.ink500;}}><NavIcon name="search" size={18}/></button>}
           {currentUser&&<MentionBell assignments={myNewAssign} onSeenAssign={seeAssign} onOpenTests={()=>setView("tests")} comments={comments} me={mentionCtx.me} data={dataWithOverrides} resolveComment={resolveComment} canSeePrivate={pinOk} onOpen={pj=>{if(pinOk){setManagerJump({pj,n:Date.now()});setManagerTab("fiche");setView("manager");}else jumpToPj(pj);}}/>}
@@ -1193,7 +1162,7 @@ export default function App(){
     {loading?<div style={{position:"relative"}}><LoadingSkeleton variant={view==="home"?"home":undefined}/></div>:
     data.length===0?(
       <div className="enogia-float-in" style={{background:T.card,borderRadius:R.lg,boxShadow:T.shadowCard}}>
-        <EmptyState icon="inbox" title="Aucune donnée pour l'instant" hint={pinOk?"Importe un planning MS Project pour faire apparaître les projets ici.":"Le planning sera visible dès qu'un administrateur l'aura importé."}/>
+        <EmptyState icon="inbox" title="Aucune donnée pour l'instant" hint={pinOk?"Le planning se construit dans le Planificateur (Tests › Planificateur), puis « Publier ».":"Le planning sera visible dès qu'un administrateur l'aura importé."}/>
       </div>
     ):(
       <>
@@ -1219,7 +1188,7 @@ export default function App(){
             {view!=="home"&&(()=>{const v=VIEWS.find(x=>x.id===view);if(!v)return null;
               const subs={planner:"Brouillon réservé à vous : déplacez, liez et forcez les PJ ; rien ne change pour les autres avant « Publier »",table:filtered.length+" machine"+(filtered.length>1?"s":"")+" affichée"+(filtered.length>1?"s":"")+" · survolez un état ou un écart pour le détail",gantt:"Chaque machine, étape par étape · Ctrl + molette pour zoomer",calendar:"Arrivées, tests, fins de production et départs",changes:"Ce qui a changé à chaque mise à jour du planning",comments:"Les échanges, machine par machine",tests:"Plans d'essais et affectations des testeurs",cashin:"Encaissements et facturation des PJ",turbines:"Pool de turbines et attributions"};
               /* v183 : plus de sur-titre ; v185 : une couleur de trait par page (demandé) */const SS=stageSoft(),HH=stripeHues(),acc={table:SS.production.solid,gantt:SS.tests.solid,calendar:SS.finProd.solid,changes:T.ember500,comments:HH.note,tests:SS.arrivee.solid,planner:SS.production.solid,cashin:SS.finProd.solid,turbines:SS.depart.solid}[view];return <PageHead title={v.l} sub={subs[view]} accent={acc}/>;})()}
-            {view==="home"&&<HomeView pinOk={pinOk} testsDoc={canSeeTests?testsDoc:null} data={dataWithOverrides} comments={comments} myEmail={currentUser&&currentUser.email} myName={authorName} people={peopleAll} unseenChanges={unseenChanges} lastImport={lastImport} onOpenPj={setCalSel} onGo={setView} profiles={profiles} owner={isOwner} cash={canCash} turbineDoc={turbineDoc} onOpenCash={canCash?()=>setView("cashin"):null} prodDoc={prodDoc} canProdTurb={canProdTurb} plan={planDoc&&planDoc.plan} closurePeriods={closurePeriods} saveHomeLayout={isOwner?saveHomeLayout:null}/>}
+            {view==="home"&&<HomeView pinOk={pinOk} testsDoc={canSeeTests?testsView:null} data={dataWithOverrides} comments={comments} myEmail={currentUser&&currentUser.email} myName={authorName} people={peopleAll} unseenChanges={unseenChanges} lastImport={lastImport} onOpenPj={setCalSel} onGo={setView} profiles={profiles} owner={isOwner} cash={canCash} turbineDoc={turbineDoc} onOpenCash={canCash?()=>setView("cashin"):null} prodDoc={prodDoc} canProdTurb={canProdTurb} plan={planDoc&&planDoc.plan} closurePeriods={closurePeriods} saveHomeLayout={isOwner?saveHomeLayout:null}/>}
             {view==="table"&&<DashboardSummary data={filtered} allData={dataWithOverrides} progress={progressEff} changeLog={changeLog} onOpenChanges={()=>setView("changes")}/>}
             {view==="table"&&<TableView data={filtered} progress={progressEff} df={df} setDf={setDf} setEtatFor={setEtatFor} setClientPresenceFor={setClientPresenceFor}
               selEtats={selEtats} setSelEtats={setSelEtats}
@@ -1260,7 +1229,7 @@ export default function App(){
             {view==="turbines"&&isOwner&&<TurbinesTab doc={turbineDoc||{turbines:[]}} save={saveTurbines} data={dataWithOverrides} authorName={authorName} superAdmin={pinOk}/>}
             {view==="planner"&&isOwner&&<PlannerView productionExclusions={productionExclusions} testers={testsDoc&&Array.isArray(testsDoc.testers)?testsDoc.testers:[]} planLoaded={planLoaded} planDoc={planDoc} rows={dataWithOverrides} closurePeriods={closurePeriods} authorName={authorName}
               onSavePlan={p=>savePlan(p,authorName)} onPublish={async(plan,note)=>{const r=await publishPlan({plan,closurePeriods,by:authorName,note});/* v224 : un PJ publié depuis le planificateur et absent du planning initial → même bandeau qu’après un import (« Les ancrer dans l’initial ») */if(r&&r.rows&&initialPjsRef.current.size){const fresh=r.rows.filter(x=>x&&x.pj&&x.etat!=="SLOT_LIBRE"&&!initialPjsRef.current.has(x.pj));setNewVsInitial(fresh.length?{rows:r.rows,pjs:fresh.map(x=>x.pj)}:null);}return r;}} onLoadHistory={loadHistory} onRestorePublication={restorePublication}/>}
-            {view==="tests"&&canSeeTests&&<TestsTab doc={testsDoc} save={saveTests} data={dataWithOverrides} certifs={certifs} canEdit={pinOk} me={currentUser&&currentUser.email} signApi={signApi}/>}
+            {view==="tests"&&canSeeTests&&<TestsTab doc={testsView} save={saveTests} data={dataWithOverrides} certifs={certifs} canEdit={pinOk} me={currentUser&&currentUser.email} signApi={signApi}/>}
             {view==="changes"&&<ChangesView entries={changeLog} onOpenPj={jumpToPj}/>}
             {view==="comments"&&<CommentsView data={filtered} comments={comments} addComment={addComment} deleteComment={deleteComment}
               pinOk={pinOk} addCommentMulti={addCommentMulti} jumpToPj={jumpToPj} authorName={authorName}/>}

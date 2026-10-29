@@ -491,4 +491,10 @@ export const RELEASE_CATALOG = [
     ["États", "Fabrication/Montage Fournisseurs ; états existants renommables, recolorables, avec explication."],
     ["Planificateur", "⚠ des bancs sans PJ masqués ni tests terminés ; priorité à gauche, Priorité et S/N masquables ; charge alignée en Couloirs."],
   ] },
+  { v: "231", t: "Tout se fait sur le site, accueils de chaque poste visibles", items: [
+    ["Planning", "Plus d'import MS Project ni de planning initial ; publication depuis le Planificateur ; journal des publications."],
+    ["Accueil", "Choix de l'accueil d'un poste et de la personne vue (propriétaire) ; catalogue des cadrans par page du site."],
+    ["Tests", "Machine expédiée = tests faits."],
+    ["Fond", "Papier millimétré, motif annoté, second motif."],
+  ] },
 ];

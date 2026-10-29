@@ -121,7 +121,9 @@ export function Arrange({ id, children, spans = {}, defaultSpan = 6, labels = {}
   return (<div className="enogia-arr" style={{ minWidth: 0 }}>
     {can && (onLayout || !shared) ? <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
       {edit && <span style={{ fontSize: FZ.xs, color: T.ink500, alignSelf: "center", marginRight: "auto" }}>Glissez un cadran où vous voulez ; tirez son bord droit pour la largeur, son bord bas pour la hauteur.</span>}
-      {edit && catalog && catalog.length > 0 && onAdd && <select aria-label="Ajouter un cadran" value="" onChange={e => { if (e.target.value) onAdd(e.target.value); }} style={{ ...tb, padding: "0 8px", fontWeight: 600 }}><option value="">Ajouter un cadran…</option>{catalog.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>}
+      {/* v231 : catalogue rangé par page du site (catalog = [id, libellé, thème, ce qu'il montre]) */}
+      {edit && catalog && catalog.length > 0 && onAdd && <select aria-label="Ajouter un cadran" value="" onChange={e => { if (e.target.value) onAdd(e.target.value); }} style={{ ...tb, padding: "0 8px", fontWeight: 600, maxWidth: 340 }}><option value="">＋ Ajouter un cadran (par page du site)…</option>
+        {[...new Set(catalog.map(c => c[2] || "Cadrans"))].map(g => <optgroup key={g} label={g}>{catalog.filter(c => (c[2] || "Cadrans") === g).map(([k, l, , d]) => <option key={k} value={k} title={d || l}>{l}{d ? " — " + d : ""}</option>)}</optgroup>)}</select>}
       {edit && <button type="button" onClick={() => { if (shared) onLayout({ ...layout, order: [], span: {}, pos: {} }); else save({ order: [], span: {}, pos: {} }); }} style={{ ...tb, padding: "0 10px" }}>Réinitialiser</button>}
       <button type="button" aria-pressed={edit} onClick={() => setEdit(v => !v)} title="Déplacer et redimensionner les cadrans de cette page" style={{ ...tb, padding: "0 12px", background: edit ? T.ink900 : T.card, color: edit ? T.card : T.ink700 }}>{edit ? "Terminer" : "Disposer les cadrans"}</button>
     </div> : null}

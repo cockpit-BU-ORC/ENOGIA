@@ -12,7 +12,7 @@ import { loadReportAssets } from "../reports/reportAssets";
 
 // ── Rapport « Chef de projet » (PowerPoint) ──────────────────────────────────────────────────────────────────
 // Un .pptx généré dans le navigateur (bibliothèque pptxgenjs chargée à la demande depuis cdnjs, rien n'est envoyé
-// ailleurs) : garde, synthèse, modifications du dernier import et une diapositive par PJ. Les commentaires privés
+// ailleurs) : garde, synthèse, modifications de la dernière mise à jour et une diapositive par PJ. Les commentaires privés
 // ne sont jamais repris. Le chef de projet se choisit dans la liste, ou « Tous » (un chapitre par chef de projet).
 // La bibliothèque est embarquée avec le site (public/vendor/pptxgen.bundle.js, même origine : aucun accès internet requis).
 // Repli sur cdnjs si le fichier local était absent (déploiement partiel).
@@ -142,10 +142,10 @@ export function CdpDialog({ data, initialData, delays, comments, progress, chang
               {chefs.map(([c, k]) => <option key={c} value={c}>{c} — {k} PJ</option>)}
             </select>
           </label>
-          <label style={row}><input type="checkbox" checked={withChanges} onChange={e => setWithChanges(e.target.checked)} disabled={!last} />Inclure les modifications du dernier import{!last && <span style={{ color: T.ink300 }}> (aucun import enregistré)</span>}</label>
+          <label style={row}><input type="checkbox" checked={withChanges} onChange={e => setWithChanges(e.target.checked)} disabled={!last} />Inclure les modifications de la dernière mise à jour{!last && <span style={{ color: T.ink300 }}> (aucun import enregistré)</span>}</label>
           <label style={row}><input type="checkbox" checked={withShipped} onChange={e => setWithShipped(e.target.checked)} />Inclure les PJ déjà expédiés</label>
           <div style={{ fontSize: FZ.xs, color: T.ink500, lineHeight: 1.5, background: T.surface, border: "1px solid " + T.line, borderRadius: 8, padding: "8px 12px" }}>
-            Contenu : garde, synthèse des projets, modifications depuis le dernier import, puis pour chaque PJ la fiche projet complète sur 2 à 4 diapositives (statut global et commentaires, certification, prix de la fiche, livraison et pénalités, indicateurs, jalons, contrat & MaD ORC, major components, jalons de paiement, actions de la semaine, plans de mitigation, retards, fil de commentaires). Les commentaires privés ne sont pas repris.
+            Contenu : garde, synthèse des projets, modifications depuis la dernière mise à jour, puis pour chaque PJ la fiche projet complète sur 2 à 4 diapositives (statut global et commentaires, certification, prix de la fiche, livraison et pénalités, indicateurs, jalons, contrat & MaD ORC, major components, jalons de paiement, actions de la semaine, plans de mitigation, retards, fil de commentaires). Les commentaires privés ne sont pas repris.
           </div>
           <div style={{ fontSize: FZ.sm, color: T.ink700, fontWeight: 600 }}>{n} projet{n > 1 ? "s" : ""} · {nSlides} diapositive{nSlides > 1 ? "s" : ""}</div>
           {err && <div style={{ fontSize: FZ.xs, color: T.red500, background: T.red100, borderRadius: 8, padding: "8px 8px" }}>{err}</div>}

@@ -388,14 +388,14 @@ function ItemsSection({title,kind,meta,field,atKey,color,showWeek,onSave,onGroup
 const ActionsSection=({meta,onSave,onGroup})=><ItemsSection kind="actions" onGroup={onGroup} title="Actions de la semaine" meta={meta} field="actions" atKey="semAt" color={T.accent} showWeek onSave={onSave}/>;
 const MitigationSection=({meta,onSave,onGroup})=><ItemsSection kind="mitigations" onGroup={onGroup} title="Plans de mitigation" meta={meta} field="mitigations" atKey="mitAt" color={T.red500} onSave={onSave}/>;
 
-// ── Depuis le dernier import : ce qui a bougé pour ce PJ entre les deux dernières versions du planning ──
+// ── Depuis la dernière mise à jour : ce qui a bougé pour ce PJ entre les deux dernières versions du planning ──
 function LastChange({entry,pj}){
   if(!entry)return null;
   const p=(entry.pjs||[]).find(x=>x.pj===pj);
   const when=new Date(entry.at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
   const L={arrivee:"Arrivée",tests:"Tests",testsFin:"Fin tests",finProd:"Fin de prod.",depart:"Départ"};
   const short=v=>v?v.slice(8,10)+"/"+v.slice(5,7):"—";
-  return(<Section title="Depuis le dernier import" right={<span style={{fontSize:FZ.xs,color:T.ink300,whiteSpace:"nowrap"}}>import du {when}</span>}>
+  return(<Section title="Depuis la dernière mise à jour" right={<span style={{fontSize:FZ.xs,color:T.ink300,whiteSpace:"nowrap"}}>mise à jour du {when}</span>}>
     {!p?<div style={{fontSize:FZ.sm,color:T.emerald600,fontWeight:600}}>✓ Aucun changement pour ce PJ.</div>:p.isNew?<div style={{fontSize:FZ.sm,color:T.amber600,fontWeight:700}}>Nouveau PJ dans cette version.</div>:
     <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
       {Object.entries(p.d||{}).map(([f,c])=>{const dl=c.delta;const col=dl==null?T.amber600:dl>0?T.red500:T.emerald600;const bg=dl==null?T.amber100:dl>0?T.red100:T.emerald100;
@@ -967,7 +967,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
 </Col>
         </Cols>
         </Frame>
-        <Frame title="Planning" sub="Jalons, contrat, dernier import">
+        <Frame title="Planning" sub="Jalons, contrat, dernière mise à jour">
         <Cols>
 <Col>
         {/* ── Jalons ── */}
@@ -981,7 +981,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
         {savePjMetaOverride?<ContratSection r={r} meta={meta} onSave={f=>savePjMetaOverride(r.pj,f)} onNote={saveNote}/>:null}
 </Col>
 <Col>
-        {/* ── Depuis le dernier import ── */}
+        {/* ── Depuis la dernière mise à jour ── */}
         <LastChange entry={lastChange} pj={r.pj}/>
 
 </Col>

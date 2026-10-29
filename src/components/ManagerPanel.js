@@ -4,7 +4,7 @@ import { T, FZ, stageSoft } from "../theme";
 import { SerieTag, getPjMeta, initials, GAMME_COLORS, ETAT_META, ALL_ETATS, ALL_GAMMES, MONTHS, today, PjPlate } from "../pjMeta";
 import { fmt, toLocalISO, diffDays, weekStartOf } from "../parsers";
 import { workDaysBetween } from "../workDays";
-import { DropFilter, ImportButton, NavIcon, Select, notify } from "./SharedUI";
+import { DropFilter, NavIcon, Select, notify } from "./SharedUI";
 import { CARD, KpiRow, PieBlock, topSlices, EmptyNote, StatutTab, KpiAvancement, DelayInsights, DelaysTab, ProductionCalendarManager } from "./ManagerParts";
 import { ProjectFileManager } from "./ManagerFiche";
 import { EtatInfoButton } from "./ProdStagesUI";
@@ -462,7 +462,7 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
 
         {workloadByPJ.length>0&&<div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line,gridColumn:"1 / -1"}}>
           <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:4,display:"flex",alignItems:"center",gap:8}}><NavIcon name="gauge" size={17}/>Charge de travail Atelier / Autom</div>
-          <div style={{fontSize:FZ.sm,color:T.ink300,marginBottom:14}}>Heures de travail par PJ, issues de l'import Excel (feuille Table_affectation)</div>
+          <div style={{fontSize:FZ.sm,color:T.ink300,marginBottom:14}}>Heures de travail par PJ, issues du planning</div>
 
           <KpiRow items={[[totalHeuresAtelier+" h","Heures atelier",null,"total du portefeuille filtré"],[totalHeuresAutom+" h","Heures autom",null,"total du portefeuille filtré"],[workloadByPJ.length,"PJ avec charge connue",null,"heures issues de l'import"]]} min={150}/>
 
@@ -535,7 +535,7 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
     {pendingAdd&&<InitialAddReview parsed={pendingAdd} initialData={initialData} busy={initialImporting} onCancel={()=>setPendingAdd(null)} onConfirm={async(rows,fixRows)=>{await onInitialAdd(rows,fixRows);setPendingAdd(null);}}/>}
 
     {me&&tab==="derives"&&kpiTab==="derives"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
-      {!hasInitial&&<div style={{background:T.amber100,color:T.amber600,borderRadius:12,padding:"16px 16px",fontSize:FZ.sm,display:"flex",alignItems:"center",gap:8}}><NavIcon name="warning" size={16}/>Aucun planning initial importé — les dérives ne peuvent pas être calculées. Utilisez le menu ⋯ de la tuile « Planning initial » en haut à droite.</div>}
+      {!hasInitial&&<div style={{background:T.amber100,color:T.amber600,borderRadius:12,padding:"16px 16px",fontSize:FZ.sm,display:"flex",alignItems:"center",gap:8}}><NavIcon name="warning" size={16}/>Aucun planning initial — les dérives ne peuvent pas être calculées. Après une publication du Planificateur, ancrez les PJ dans l'initial avec le bandeau proposé.</div>}
       {initialData.length>0&&<>
           <KpiRow items={[[avgDelay==null?"—":(avgDelay>0?"+":"")+avgDelay+"j","Retard moyen départ",avgDelay>0?T.red500:T.emerald500],[lateCount,"PJ en retard",T.red500],[onTimeOrEarlyCount,"PJ à l'heure / en avance",T.emerald500],[onTimeRate==null?"—":onTimeRate+"%","Taux de respect délais",onTimeRate>=70?T.emerald500:onTimeRate>=40?T.amber500:T.red500],[comparable.length,"PJ comparables",T.ink500]]}/>
 
@@ -771,33 +771,8 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
         <span style={{color:hasInitial?T.teal600:T.amber600,display:"inline-flex"}}><NavIcon name={hasInitial?"pin":"warning"} size={13}/></span>
         <div style={{lineHeight:1.25}}>
           <div style={{fontSize:FZ.xs,fontWeight:700,color:T.ink900}}>Planning initial</div>
-          <div style={{fontSize:FZ.xs,color:hasInitial?T.ink500:T.amber600}}>{hasInitial?initialData.length+" unités"+(lastInitialImport?" · "+lastInitialImport:" · figé")+(lastInitialAdd?" · ajout "+lastInitialAdd:""):"non importé — dérives indisponibles"}</div>
+          <div style={{fontSize:FZ.xs,color:hasInitial?T.ink500:T.amber600}}>{hasInitial?initialData.length+" unités"+(lastInitialImport?" · "+lastInitialImport:" · figé")+(lastInitialAdd?" · ajout "+lastInitialAdd:""):"absent — dérives indisponibles"}</div>
         </div>
-        {/* Import initial complet (⋯) : seulement tant qu'aucun initial n'existe (première mise en place). Ensuite on n'ajoute que de nouveaux PJ avec ＋, les PJ ancrés ne sont plus écrasables par erreur. */}
-        {superAdmin&&!hasInitial&&<ImportButton
-          iconOnly
-          onImport={onInitialImport}
-          busy={initialImporting}
-          label="Importer planning initial"
-          accent={T.navy700}
-          hasExisting={hasInitial}
-          inputId="msp-file-initial"
-          confirmMessage={"Un planning initial a déjà été importé"+(lastInitialImport?(" le "+lastInitialImport):"")+".\n\nCe planning sert de référence figée pour calculer les dérives — il ne devrait normalement être importé qu'une seule fois.\n\nÊtes-vous sûr de vouloir l'écraser ?"}
-          helpText={<>Export Excel (.xlsx) avec colonnes <b>Nom, Début, Niveau hiérarchique</b>.<br/>Ce planning sera <b>figé</b> et servira de référence pour calculer les dérives par rapport au planning révisé.</>}
-          warnText="Ce planning devient la référence figée (dates initiales) — à importer une seule fois normalement."
-        />}
-        {superAdmin&&hasInitial&&<ImportButton
-          iconOnly
-          iconGlyph="＋"
-          onImport={rows=>setPendingAdd(rows)}
-          busy={initialImporting}
-          label="Ajouter des projets à l'initial"
-          accent={T.navy700}
-          hasExisting={false}
-          inputId="msp-file-initial-add"
-          helpText={<>Même format que l'import initial. Le site repère les <b>nouveaux PJ</b> du fichier et vous propose de les ancrer.<br/>Les PJ déjà dans l'initial ne sont <b>jamais modifiés</b>.</>}
-          warnText="Rien n'est enregistré avant votre validation."
-        />}
       </div>
       </div>}
     {tab==="serie"&&<SerieTab data={data} savePjMetaOverride={savePjMetaOverride} etatChoice={etatChoice} setEtatFor={setEtatFor} clientPresence={clientPresence} setClientPresenceFor={setClientPresenceFor} customEtats={customEtats||[]} setCustomEtats={superAdmin?setCustomEtats:null} etatEdits={etatEdits||{}} setEtatEdits={superAdmin?setEtatEdits:null}/>}

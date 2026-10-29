@@ -113,7 +113,7 @@ function ImportPanel({rows,save,onClose,onDone}){
   const STX={new:["Nouveau",T.emerald600],approx:["Correspondance approchée",T.amber600],replace:["Remplace",T.amber600],same:["Déjà à jour",T.ink300],dup:["Doublon",T.red500],absent:["Absent du planning",T.ink300]};
   return(<div style={{padding:"12px 16px",borderBottom:"1px solid "+T.line,background:T.surface}}>
     <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:8}}>
-      <div style={{fontWeight:700,fontSize:FZ.sm,color:T.ink900,flex:"1 1 auto"}}>Importer une liste de N° de série</div>
+      <div style={{fontWeight:700,fontSize:FZ.sm,color:T.ink900,flex:"1 1 auto"}}>Coller une liste de N° de série</div>
       <button onClick={()=>{setText(SERIE_SEED_TEXT);setSel({});}} style={{padding:"4px 12px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink700,fontSize:FZ.xs,fontWeight:700,cursor:"pointer"}}>Charger la liste connue (07/10/2026)</button>
       <button onClick={onClose} style={{padding:"4px 12px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink500,fontSize:FZ.xs,fontWeight:700,cursor:"pointer"}}>Fermer</button>
     </div>
@@ -176,10 +176,10 @@ export function SerieTab({data,savePjMetaOverride,etatChoice,setEtatFor,clientPr
       <input type="text" value={q} onChange={e=>setQ(e.target.value)} placeholder="Rechercher un PJ, projet, N° de série…" style={{padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink900,fontSize:FZ.xs,fontFamily:T.font,width:230}}/>
       {setCustomEtats&&<button onClick={()=>setEtatsOpen(true)} style={{padding:"6px 12px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink700,fontSize:FZ.xs,fontWeight:700,cursor:"pointer"}}>Gérer les états</button>}
       {etatsOpen&&setCustomEtats&&<EtatsDialog onClose={()=>setEtatsOpen(false)} customEtats={customEtats||[]} setCustomEtats={setCustomEtats} etatEdits={etatEdits||{}} setEtatEdits={setEtatEdits} data={data}/>}
-      <button onClick={()=>setImp(v=>!v)} style={{padding:"6px 12px",borderRadius:8,border:"1px solid "+(imp?T.teal500:T.line),background:imp?T.teal100:T.card,color:imp?T.teal600:T.ink700,fontSize:FZ.xs,fontWeight:700,cursor:"pointer"}}>Importer une liste</button>
+      <button onClick={()=>setImp(v=>!v)} style={{padding:"6px 12px",borderRadius:8,border:"1px solid "+(imp?T.teal500:T.line),background:imp?T.teal100:T.card,color:imp?T.teal600:T.ink700,fontSize:FZ.xs,fontWeight:700,cursor:"pointer"}}>Coller une liste</button>
       <label style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:FZ.xs,color:T.ink500,fontWeight:600,cursor:"pointer"}}><input type="checkbox" checked={onlyMissing} onChange={e=>setOnlyMissing(e.target.checked)}/>Seulement les manquants ({rows.length-filled})</label>
     </div>
-    {imp&&<ImportPanel rows={rows} save={save} onClose={()=>setImp(false)} onDone={(ok,fail)=>{setMsg(ok+" N° de série importé"+(ok>1?"s":"")+(fail?" · "+fail+" échec"+(fail>1?"s":""):"")+".");setTimeout(()=>setMsg(""),5000);}}/>}
+    {imp&&<ImportPanel rows={rows} save={save} onClose={()=>setImp(false)} onDone={(ok,fail)=>{setMsg(ok+" N° de série enregistré"+(ok>1?"s":"")+(fail?" · "+fail+" échec"+(fail>1?"s":""):"")+".");setTimeout(()=>setMsg(""),5000);}}/>}
     {msg&&<div style={{padding:"6px 16px",fontSize:FZ.xs,fontWeight:700,color:T.teal600,background:T.teal100}}>{msg}</div>}
     <div style={{overflow:"auto",maxHeight:"calc(100dvh - 290px)"}}>
       <table style={{width:"100%",borderCollapse:"collapse"}}>

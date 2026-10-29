@@ -87,7 +87,7 @@ export function KpiPilotage({ rows, driftRows, delays, closurePeriods, productio
     <div aria-label="Chiffres clés" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,160px),1fr))", gap: 8 }}>
       <Kpi label="En production" value={inProd.length} sub="machines dans l'atelier" />
       <Kpi label="Départs d'ici 30 jours" value={dep30.length} sub={dep30.length ? (dep30Late ? "dont " + dep30Late + " en dérive" : "aucun en dérive") : "aucun départ prévu"} />
-      <Kpi label="Dérive moyenne" value={avgDrift == null ? "—" : (avgDrift > 0 ? "+" : avgDrift < 0 ? "−" : "") + Math.abs(avgDrift) + " j"} sub={hasInitial ? "départ, vs planning initial" : "planning initial non importé"} bad={avgDrift != null && avgDrift > 3} />
+      <Kpi label="Dérive moyenne" value={avgDrift == null ? "—" : (avgDrift > 0 ? "+" : avgDrift < 0 ? "−" : "") + Math.abs(avgDrift) + " j"} sub={hasInitial ? "départ, vs planning initial" : "pas de planning initial"} bad={avgDrift != null && avgDrift > 3} />
       <Kpi label={"Charge S" + isoWeek(w4[0].a) + " → S" + isoWeek(w4[3].a)} value={pct4 == null ? "—" : pct4 + " %"} sub={load4 + " h sur " + Math.round(cap4) + " h de capacité"} bad={pct4 != null && pct4 > 100} />
       <Kpi label="PJ avec un retard déclaré" value={delayInfo.n} sub={delayInfo.top ? "1re cause : " + delayInfo.top[0] + " (" + delayInfo.top[1] + " j)" : "aucune cause saisie"} />
     </div>

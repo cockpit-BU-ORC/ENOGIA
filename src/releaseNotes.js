@@ -7,6 +7,17 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v231",
+    date: "2026-10-29",
+    title: "V231 : tout se fait sur le site, accueils de chaque poste visibles",
+    items: [
+      { t: "Planning", d: "Plus d'import de planning MS Project ni de planning initial : le planning actuel fait foi et ne change plus que par « Publier » dans le Planificateur. L'onglet Modifications devient le journal des publications." },
+      { t: "Accueil", d: "Le propriétaire choisit l'accueil affiché (direction, chef de projet, testeur, chef d'atelier, directeur turbines, autres) et la personne vue. « Ajouter un cadran » range les cadrans par page du site, avec ce que chacun montre." },
+      { t: "Tests", d: "Une machine expédiée a ses tests faits : elle n'apparaît plus en retard ni à faire." },
+      { t: "Fond des pages", d: "Papier millimétré léger, motif de la page annoté (repères, cotes) en haut à droite et second motif en bas à gauche." },
+    ],
+  },
+  {
     id: "2026-10-v230",
     date: "2026-10-29",
     title: "V230 : cadrans libres, états modifiables, bancs et couloirs",
