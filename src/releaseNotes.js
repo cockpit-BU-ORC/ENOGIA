@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v233",
+    date: "2026-10-29",
+    title: "V233 : un fond plus discret",
+    items: [
+      { t: "Fond", d: "Le fond est plus discret : papier millimétré et un seul dessin pâle par page (cycle ORC, diagramme de Mollier ou rotor de turbine), sans texte. Les tableaux ont eux aussi un papier millimétré très léger." },
+      { t: "Barre du haut", d: "Le nombre d'unités et la date de mise à jour ne sont plus affichés en haut de page." },
+    ],
+  },
+  {
     id: "2026-10-v232",
     date: "2026-10-29",
     title: "V232 : le site s'appelle « BU ORC – Pilotage »",

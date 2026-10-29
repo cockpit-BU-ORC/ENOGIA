@@ -481,3 +481,7 @@ button:not(:disabled):active { transform: scale(.97); }
 @media (max-width: 900px) { .enogia-arr-grid > .enogia-arr-item { grid-column: 1 / -1 !important; } }
 /* v230 : cadran à hauteur réglée — son contenu remplit la place */
 .enogia-arr-fit > * { height: 100%; box-sizing: border-box; }
+
+/* v233 (demandé : « le papier millimétré même sur les tableaux, en très léger ») : maille plus pâle que celle du fond, peinte
+   sous les lignes des tableaux (les en-têtes collés gardent leur fond plein). Variable posée sur <main> par pageBackdrop.js. */
+#enogia-main table { background-image: var(--enogia-grid, none); background-size: 160px 160px; background-repeat: repeat; }

@@ -500,4 +500,8 @@ export const RELEASE_CATALOG = [
   { v: "232", t: "Le site s'appelle « BU ORC – Pilotage »", items: [
     ["Nom du site", "BU ORC – Pilotage (ex-ENOGIA – BU ORC)."],
   ] },
+  { v: "233", t: "Un fond plus discret", items: [
+    ["Fond", "Papier millimétré + un seul motif pâle sans texte (T-s, Mollier h-s ou rotor) ; papier millimétré très léger sur les tableaux."],
+    ["Barre du haut", "Plus de « N unités · Mis à jour le … · N PJ modifiés »."],
+  ] },
 ];

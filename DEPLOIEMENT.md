@@ -1571,3 +1571,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 
 - `src/siteName.js` : SITE_NAME « BU ORC », SITE_SCOPE « Pilotage » (menu, accueil, écran de connexion, titre de l'onglet) ; `public/index.html` (titre, description, titre iOS) ; `public/manifest.json` (« BU ORC – Pilotage », court « BU ORC Pilotage ») ; titre bêta dans `App.js`. Le sous-titre ne change pas. Le dépôt et `homepage` (`planning-enogia-2026`) restent inchangés : l'adresse du site ne bouge pas.
 - Une appli déjà installée sur un téléphone peut garder l'ancien nom jusqu'à sa réinstallation.
+
+## v233 — Un fond plus discret
+
+- **Fond** (`pageBackdrop.js`) : deux couches seulement — papier millimétré sur toute la page et **un seul motif pâle, sans texte** dans le coin haut droit (diagramme T-s du cycle ORC, diagramme de Mollier h-s, rotor de turbine). Retirés : tuyauterie P&ID, traces de banc, isothermes, second motif en bas à gauche, annotations.
+- **Tableaux** : papier millimétré très léger sous les lignes (`#enogia-main table`, variable `--enogia-grid` posée sur `<main>`).
+- **Barre du haut** : plus de « N unités · Mis à jour le … · N PJ modifiés » (le journal reste dans Modifications ; « ✓ Enregistré » reste).
+- Pas de nouvelle clé `localStorage`.
+- Fichiers : pageBackdrop.js, styles.css, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.

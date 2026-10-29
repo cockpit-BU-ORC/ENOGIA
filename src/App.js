@@ -73,7 +73,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-29-v232-bu-orc-pilotage";
+const APP_BUILD_VERSION = "2026-10-29-v233-fond-discret";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -1132,8 +1132,7 @@ export default function App(){
       <div className={"enogia-bar"+(hdrHidden?" is-hidden":"")} style={{flexShrink:0,minHeight:44,display:"flex",alignItems:"center",gap:12,padding:"6px 28px 0",background:"transparent",flexWrap:"wrap",position:"sticky",top:0,zIndex:25,pointerEvents:hdrHidden?"none":"auto"}}>
         <div className="enogia-bar-right" aria-hidden={hdrHidden?"true":undefined} style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",opacity:hdrHidden?0:1,transform:hdrHidden?"translateY(-6px)":"none",visibility:hdrHidden?"hidden":"visible",transition:"opacity .25s ease, transform .25s var(--e-ease), visibility 0s linear "+(hdrHidden?".25s":"0s")}}>
           {pinOk&&<div className="enogia-bar-meta" style={{display:"flex",alignItems:"baseline",gap:10,fontSize:FZ.xs}}>
-            {loading?<span className="enogia-skeleton" aria-label="Chargement" style={{display:"inline-block",width:64,height:12}}/>:<span style={{color:T.ink500,fontSize:FZ.xs,fontWeight:600,fontFamily:T.font}}>{data.length+" unités"}</span>}
-            {!loading&&lastImport&&<button onClick={()=>setView("changes")} title="Voir ce qui a bougé à la dernière publication" style={{border:"none",background:"transparent",padding:0,cursor:"pointer",color:T.ink700,fontWeight:600,fontSize:FZ.xs,fontFamily:T.font,textAlign:"right"}}>Mis à jour le {lastImport}{changeLog&&changeLog[0]&&changeLog[0].stats?" · "+changeLog[0].stats.nPj+" PJ modifié"+(changeLog[0].stats.nPj>1?"s":""):""} ›</button>}
+            {/* v233 (demandé : « supprimer ») : plus de « N unités · Mis à jour le … · N PJ modifiés » dans la barre */}
             {savedAt&&<span role="status" aria-live="polite" style={{color:T.emerald600||T.ink500,fontSize:FZ.xs,fontFamily:T.font,textAlign:"right"}}>✓ Enregistré à {String(savedAt.getHours()).padStart(2,"0")+":"+String(savedAt.getMinutes()).padStart(2,"0")}</span>}
           </div>}
           {currentUser&&<div className="enogia-hide-phone" style={{width:1,height:22,background:T.line}}/>}
