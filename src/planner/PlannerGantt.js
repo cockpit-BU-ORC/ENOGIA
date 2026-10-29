@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import { T } from "../theme";
 import { SerieTag } from "../pjMeta";
-import { STEP_KEYS, STEP_LABEL, STEP_IS_MS, STEP_KIND, stepKeysOf, stepLabel, isCustomKey, addCustomStep, addLink, removeLink, updateLink, nodeKey, splitKey, dayNum, isoOfDay, setStep, setWork, stepWork, shiftPj, moveStepTo, removeStep, removePj, allLinks, orderOf, rulesOf, schedule as scheduleOf, moveStepOrder, setStepMeta, benchOf, PHASE_LABEL, PHASES } from "./engine";
+import { STEP_KEYS, STEP_LABEL, STEP_IS_MS, STEP_KIND, stepKeysOf, stepLabel, isCustomKey, addCustomStep, addLink, removeLink, updateLink, nodeKey, splitKey, dayNum, isoOfDay, setStep, setWork, stepWork, shiftPj, moveStepTo, removeStep, removePj, allLinks, orderOf, rulesOf, schedule as scheduleOf, moveStepOrder, setStepMeta, benchOf, PHASE_LABEL, PHASES, setBench } from "./engine";
 import { numberRows, predText, applyPredText } from "./predecessors";
 import { Pop, MenuItem } from "./PlannerMenu";
 
@@ -33,8 +33,11 @@ export const leftWidthWith = (view, listW) => colsWith(view, listW).reduce((a, c
 const HEAD_LABEL = { id: "N°", name: "Tâche (l'ordre des PJ = priorité)", start: "Début", end: "Fin", dur: "Durée", work: "Travail", pred: "Prédécesseurs" };
 
 // Échelle de temps commune au Gantt et au graphique de charge
-export function makeTimeline(sched, zoom) {
-  const px = { day: 28, week: 9, month: 3 }[zoom] || 9;
+// v224 (demandé : « pouvoir zoomer ») : zoom = "day" | "week" | "month" ou un nombre de pixels par jour (Ctrl + molette, − +) ;
+// l'en-tête suit la largeur d'un jour (jours au-delà de 18 px, semaines au-delà de 5 px, sinon mois).
+export const ZOOM_PX = { day: 28, week: 9, month: 3 }, PX_MIN = 1.5, PX_MAX = 48;
+export function makeTimeline(sched, zoomIn) {
+  const px = typeof zoomIn === "number" ? Math.max(PX_MIN, Math.min(PX_MAX, zoomIn)) : ZOOM_PX[zoomIn] || 9; const zoom = px >= 18 ? "day" : px >= 5 ? "week" : "month";
   const t = new Date(); const today = dayNum(t.getFullYear() + "-" + String(t.getMonth() + 1).padStart(2, "0") + "-" + String(t.getDate()).padStart(2, "0"));
   let lo = Infinity, hi = -Infinity;
   Object.values(sched.nodes).forEach(n => { if (n.s === null) return; lo = Math.min(lo, dayNum(n.start)); hi = Math.max(hi, dayNum(n.finish)); });
@@ -103,7 +106,7 @@ function LinkEdit({ at, link, from, to, onType, onLag, onDelete, onClose }) {
   </div>);
 }
 
-export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, pjs, sel, setSel, expanded, toggleExp, showLinks, view, readOnly, onPreview, onCommit, onError, onReorder, scrollRef, onScrollX, listW, onListW, testers, onInfo, rowH, onAddTask }) {
+export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, pjs, sel, setSel, expanded, toggleExp, showLinks, view, readOnly, onPreview, onCommit, onError, onReorder, scrollRef, onScrollX, listW, onListW, testers, onInfo, rowH, onAddTask, maxH }) {
   // v214 (demandé : « réduire la hauteur des lignes Arrivée, Production… ») : hauteur des lignes réglable (24 à 44 px)
   const ROW_H = Math.max(24, Math.min(44, Number(rowH) || 32)), BAR_H = Math.max(12, ROW_H - 10), BAR_T = (ROW_H - BAR_H) / 2, MID = ROW_H / 2;
   const cbRef = useRef({}); cbRef.current = { onInfo, onError };
@@ -193,7 +196,7 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
   const addTask = pj => { if (onAddTask) { onAddTask(pj); return; } addTaskRaw(pj); };
   const addTaskRaw = pj => { const r = addCustomStep(base, pj, "Nouvelle tâche"); if (!r.key) return; go(r.plan, { pj, key: null, want: null }); setNewKey(r.key); setTimeout(() => setNewKey(null), 700); setSel({ pj, step: splitKey(r.key).step }); if (!expanded.has(pj)) toggleExp(pj, true); };
   // ── création d'un lien en tirant depuis la poignée d'une barre vers une autre barre ──
-  const lkRef = useRef(null); lkRef.current = lk;
+  const lkRef = useRef(null); lkRef.current = lk; const geoRef = useRef(null); geoRef.current = { sched, X, px };
   useEffect(() => {
     if (!lk) return;
     const pos = e => { const r = tlBody.current ? tlBody.current.getBoundingClientRect() : { left: 0, top: 0 }; return { x: e.clientX - r.left, y: e.clientY - r.top }; };
@@ -202,11 +205,16 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
       const s = lkRef.current; setLk(null); if (!s) return;
       const el = document.elementFromPoint(e.clientX, e.clientY); const tgt = el && el.closest && el.closest("[data-key]"); if (!tgt) return;
       const to = tgt.getAttribute("data-key"); if (!to || to === s.from) return;
-      const b = tgt.getBoundingClientRect(); const left = e.clientX < b.left + b.width / 2;
+      // v224 (demandé : « quand je tire un lien du rond d'une tâche au rond d'une autre, il ne se crée pas ») : les ronds et toute la
+      // ligne de la tâche acceptent le lâcher ; rond de début = vers le début, rond de fin = vers la fin, sinon la moitié de la barre la plus proche.
+      const side = tgt.getAttribute("data-side"); let left;
+      if (side) left = side === "start";
+      else { const g = geoRef.current, n = g.sched.nodes[to], body = tlBody.current; if (n && n.s !== null && body) { const x = e.clientX - body.getBoundingClientRect().left; left = x < g.X(n.start) + ((dayNum(n.finish) - dayNum(n.start) + 1) * g.px) / 2; } else { const b = tgt.getBoundingClientRect(); left = e.clientX < b.left + b.width / 2; } }
       const type = s.side === "end" ? (left ? "FS" : "FF") : (left ? "SS" : "SF");
       if (allLinks(base).some(l => !l.seq && l.from === s.from && l.to === to && l.type === type)) { onError("Ce lien existe déjà."); return; }
       go(addLink(base, { from: s.from, to, type, lag: 0 }), { pj: splitKey(to).pj, key: null, want: null });
       setSel({ pj: splitKey(to).pj, step: splitKey(to).step });
+      const cb = cbRef.current; if (cb.onInfo) cb.onInfo("Lien créé : « " + labOf(s.from) + " » → « " + labOf(to) + " » (" + { FS: "fin → début", FF: "fin → fin", SS: "début → début", SF: "début → fin" }[type] + ").");
     };
     const esc = e => { if (e.key === "Escape") setLk(null); };
     window.addEventListener("mousemove", move); window.addEventListener("mouseup", up); window.addEventListener("keydown", esc);
@@ -303,7 +311,7 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
           {STEP_KIND[k] === "jalon" ? <span style={{ fontSize: 10.5, color: T.ink500, whiteSpace: "nowrap" }}>jalon</span>
             : <span style={{ fontSize: 10.5, color: T.ink500, whiteSpace: "nowrap", display: "inline-flex", gap: 4, alignItems: "center" }}>
               {isCustomKey(k) && p.steps[k].phase ? <span>{PHASE_LABEL[p.steps[k].phase]} ·</span> : null}
-              {k === "tests" ? <button type="button" className="pg-btn" disabled={readOnly} title="Banc d'essai (cliquer pour changer)" onClick={e => { e.stopPropagation(); go(setStepMeta(base, p.pj, "tests", { banc: benchOf(p) === 2 ? 1 : 2 }), { pj: p.pj, key: null, want: null }); }} style={{ border: "1px solid " + T.line, background: T.surface, color: T.ink700, borderRadius: 6, fontSize: 10.5, fontWeight: 700, padding: "0 5px", cursor: readOnly ? "default" : "pointer", lineHeight: "16px" }}>Banc {benchOf(p)}</button> : null}
+              {k === "tests" ? <button type="button" className="pg-btn" disabled={readOnly} title="Banc d'essai (cliquer pour changer)" onClick={e => { e.stopPropagation(); go(setBench(base, cal, p.pj, benchOf(p) === 2 ? 1 : 2), { pj: p.pj, key: null, want: null }); }} style={{ border: "1px solid " + T.line, background: T.surface, color: T.ink700, borderRadius: 6, fontSize: 10.5, fontWeight: 700, padding: "0 5px", cursor: readOnly ? "default" : "pointer", lineHeight: "16px" }}>Banc {benchOf(p)}</button> : null}
               {readOnly ? <span>{resName(p, k)}</span> : <Pop width={240} align="left" trigger={(o, t) => <button type="button" className="pg-btn" aria-haspopup="menu" aria-expanded={o} onClick={e => { e.stopPropagation(); t(); }} title="Phase et ressource de la tâche" style={{ border: "1px dashed " + T.ink300, background: "transparent", color: T.ink700, borderRadius: 6, fontSize: 10.5, padding: "0 5px", cursor: "pointer", lineHeight: "16px", fontWeight: 600 }}>{resName(p, k)} ▾</button>}>
                 {close => { const st = p.steps[k] || {}, defRes = k === "tests" || st.phase === "tests" ? "testeur" : "atelier", curRes = st.res || defRes; const info = { pj: p.pj, key: null, want: null };
                   const opts = [...(k === "tests" ? [] : [["atelier", "Atelier"]]), ["testeur", "Testeur (à désigner)"], ...(testers || []).map(t => [t.id, t.name])];
@@ -334,7 +342,7 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
     </div>);
   };
 
-  return (<div ref={scrollRef} onScroll={e => onScrollX && onScrollX(e.currentTarget.scrollLeft)} onMouseDown={panStart} onContextMenu={e => e.preventDefault()} style={{ overflow: "auto", maxHeight: "calc(100dvh - 430px)", minHeight: 260, position: "relative", userSelect: dragging ? "none" : "auto", cursor: dragging ? "grabbing" : "default" }}>
+  return (<div ref={scrollRef} onScroll={e => onScrollX && onScrollX(e.currentTarget.scrollLeft)} onMouseDown={panStart} onContextMenu={e => e.preventDefault()} style={{ overflow: "auto", maxHeight: "calc(100dvh - " + (maxH || 430) + "px)", minHeight: 260, position: "relative", userSelect: dragging ? "none" : "auto", cursor: dragging ? "grabbing" : "default" }}>
     <div style={{ display: "flex", minWidth: "min-content" }}>
       {/* tableau */}
       <div style={{ width: listOnly ? "100%" : LEFT_W, minWidth: LEFT_W, flexShrink: 0, position: "sticky", left: 0, zIndex: 6, background: T.card, borderRight: "2px solid " + T.line }}>
@@ -378,7 +386,7 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
             const col = STEP_COLOR[r.k]; const pinned = n.driver === "snet";
             const bw = (dayNum(n.finish) - dayNum(n.start) + 1) * px, lab = r.p.pj + " · " + stepLabel(r.p, r.k), fits = !n.ms && bw >= lab.length * 6.4 + 16;
             const tipTxt = r.p.pj + " · " + stepLabel(r.p, r.k) + "\n" + fmtIso(n.start) + (n.ms ? "" : " → " + fmtIso(n.finish) + " (" + n.dur + " j ouvrés)") + (pinned ? "\nDate imposée" : n.driver ? "\nCalée par un lien" : "") + (readOnly ? "" : "\nGlisser pour déplacer");
-            return (<div key={key} style={rowStyle} className="pg-trow">
+            return (<div key={key} style={rowStyle} className="pg-trow" data-key={key}>
               {n.ms
                 ? <div title={tipTxt} onMouseDown={e => startDrag(e, { kind: "move", pj: r.p.pj, step: r.k, node: n })} onClick={() => pick(r.p.pj, r.k)} onDoubleClick={e => { if (!readOnly) setQe({ pj: r.p.pj, step: r.k, x: e.clientX, y: e.clientY }); }} data-key={key} className="pg-bar"
                     style={{ position: "absolute", left: X(n.start) + px / 2 - 8, top: MID - Math.min(8, BAR_H / 2), width: Math.min(16, BAR_H), height: Math.min(16, BAR_H), transform: "rotate(45deg)", background: col, border: on ? "2px solid " + T.ink900 : "1px solid #fff", outline: ch ? "2px dashed #E08A00" : "none", outlineOffset: 2, boxSizing: "border-box", cursor: readOnly ? "default" : "grab", borderRadius: 2 }} />
@@ -388,7 +396,7 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
                     {!readOnly && <div onMouseDown={e => startDrag(e, { kind: "resize", pj: r.p.pj, step: r.k, node: n })} style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 7, cursor: "ew-resize", background: "rgba(0,0,0,.25)" }} />}
                   </div>}
               {!readOnly && (() => { const xs = n.ms ? X(n.start) + px / 2 - 20 : X(n.start) - 16, xe = n.ms ? X(n.start) + px / 2 + 12 : X(n.finish) + px + 4; const cy = r.y + ROW_H / 2;
-                const H = (x, side, label) => <span role="button" aria-label={label} title={label} className={"pg-h" + (lk || on || linkFrom ? " on" : "")} onMouseDown={e => startLink(e, key, side, x + 6, cy)} style={{ position: "absolute", left: x - 1, top: MID - 7, width: 14, height: 14, borderRadius: 7, border: "2px solid #1F7A8C", background: "#fff", cursor: "crosshair", boxSizing: "border-box" }} />;
+                const H = (x, side, label) => <span role="button" aria-label={label} title={label} className={"pg-h" + (lk || on || linkFrom ? " on" : "")} data-key={key} data-side={side} onMouseDown={e => startLink(e, key, side, x + 6, cy)} style={{ position: "absolute", left: x - 1, top: MID - 7, width: 14, height: 14, borderRadius: 7, border: "2px solid #1F7A8C", background: "#fff", cursor: "crosshair", boxSizing: "border-box" }} />;
                 return <>{H(xs, "start", "Tirer vers une autre tâche pour créer un lien depuis le début (SS / SF)")}{H(xe, "end", "Tirer vers une autre tâche pour créer un lien depuis la fin (FS / FF)")}</>; })()}
               {!fits && <span aria-hidden="true" style={{ position: "absolute", left: n.ms ? X(n.start) + px / 2 + 26 : X(n.finish) + px + 22, top: MID - 8, fontSize: 11.5, fontWeight: 600, color: T.ink900, whiteSpace: "nowrap", pointerEvents: "none", zIndex: 2 }}>{lab}{!n.ms && !n.noDur ? <span style={{ color: T.ink500, fontWeight: 400 }}> · {n.dur} j</span> : null}</span>}
               {n.off && [...n.off].map(i => <span key={"off" + i} title={"Pas de production le " + fmtIso(cal.dateOf(i))} aria-hidden="true" style={{ position: "absolute", left: X(cal.dateOf(i)), width: Math.max(2, px), top: BAR_T, height: BAR_H, zIndex: 2, pointerEvents: "none", background: T.surface, backgroundImage: "repeating-linear-gradient(135deg," + T.line + " 0 2px,transparent 2px 5px)" }} />)}

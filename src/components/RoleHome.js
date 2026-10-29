@@ -22,7 +22,7 @@ const addD = (s, n) => { const d = new Date(s + "T12:00:00"); d.setDate(d.getDat
 const monday = s => { const d = new Date(s + "T12:00:00"); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return iso(d); };
 const DOW = ["Lun", "Mar", "Mer", "Jeu", "Ven"];
 
-export function RoleHome({ role, profile, ui, rows, open, late, mentions, myPjs, testsDoc, myTester, turbineDoc, owner, cash, onOpenPj, onGo, onOpenCash }) {
+export function RoleHome({ role, profile, ui, lead, tail, rows, open, late, mentions, myPjs, testsDoc, myTester, turbineDoc, owner, cash, onOpenPj, onGo, onOpenCash }) {
   const { Row, Head, cardS, Pill, presenceOf, nomOf, empty, grey, link, S, H, A } = ui;
   const today = iso(new Date());
   const on = id => blockOn(profile, id);
@@ -61,6 +61,7 @@ export function RoleHome({ role, profile, ui, rows, open, late, mentions, myPjs,
     const w0 = monday(today), days = DOW.map((l, i) => ({ l, d: addD(w0, i) }));
     if (!myTester) return <section style={{ ...cardS(S.tests.ring), marginBottom: 12 }}>{empty("check", "Vous n'êtes pas dans la liste des testeurs", "Un administrateur vous ajoute depuis la page Tests.")}</section>;
     return (<Arrange id={"home-" + role} defaultSpan={4}>
+      {lead}
       {on("today") && <section aria-label="Mes tests du jour" className="enogia-home-wide" style={{ ...cardS(S.tests.ring), flex: "3 1 420px" }}>
         <Head title="Mes tests du jour" sub={fmtD(today)} count={todayT.length} />
         {todayT.length === 0 ? empty("check", "Pas de test aujourd'hui", "Vos prochaines machines sont dans « Ma semaine ».") :
@@ -83,6 +84,7 @@ export function RoleHome({ role, profile, ui, rows, open, late, mentions, myPjs,
         </div>
       </section>}
       {on("notes") && mentionsBlock("Mes remarques", "2 1 280px")}
+      {tail}
     </Arrange>);
   }
 
@@ -97,6 +99,7 @@ export function RoleHome({ role, profile, ui, rows, open, late, mentions, myPjs,
     mine.forEach(r => { const pd = presenceDates(r.clientPresence); [["client", "FAT client"], ["nobo", "FAT NOBO"]].forEach(([k, l]) => { const d = dIso(pd[k]) || (pd[k] === "" ? "" : null); if (pd[k] !== undefined && (!d || d >= today)) fats.push({ r, l, d }); }); });
     fats.sort((a, b) => (a.d || "9").localeCompare(b.d || "9"));
     return (<Arrange id={"home-" + role} defaultSpan={4}>
+      {lead}
       {on("pjs") && <section aria-label="Mes PJ et retards" className="enogia-home-wide" style={{ ...cardS(S.production.ring), flex: "3 1 420px" }}>
         <Head title="Mes PJ et retards" sub={mine.filter(r => r.drift > 0).length + " en retard sur l'initial"} count={mine.length} />
         {mine.length === 0 ? empty("inbox", "Aucun PJ associé", "Les PJ vous sont associés dans Manager › Réglages › Personnes et rôles.") :
@@ -115,6 +118,7 @@ export function RoleHome({ role, profile, ui, rows, open, late, mentions, myPjs,
       </section>}
       {cash && on("cash") && cashBlock("2 1 360px")}
       {on("mentions") && mentionsBlock("Mentions", "2 1 300px")}
+      {tail}
     </Arrange>);
   }
 
@@ -132,6 +136,7 @@ export function RoleHome({ role, profile, ui, rows, open, late, mentions, myPjs,
       {testsDoc && more("Ouvrir les tests", () => onGo && onGo("tests"))}
     </section>);
   if (role === "atelier") return (<Arrange id={"home-" + role} defaultSpan={4}>
+      {lead}
     {on("arrdep") && <section aria-label="Arrivées et départs" className="enogia-home-wide" style={{ ...cardS(S.depart.ring), flex: "3 1 420px" }}>
       <Head title="Arrivées et départs" sub="aujourd'hui et cette semaine" count={arrDep.length} />
       {arrDep.length === 0 ? empty("check", "Ni arrivée ni départ cette semaine", "") :
@@ -139,7 +144,8 @@ export function RoleHome({ role, profile, ui, rows, open, late, mentions, myPjs,
       {more("Ouvrir le calendrier", () => onGo && onGo("calendar"))}
     </section>}
     {on("postes") && postes("Postes de test", "2 1 320px")}
-  </Arrange>);
+    {tail}
+    </Arrange>);
 
   // ── Direction ──
   if (role === "direction") {
@@ -160,6 +166,7 @@ export function RoleHome({ role, profile, ui, rows, open, late, mentions, myPjs,
       ...noTester.slice(0, 3).map(r => ({ id: "t" + r.pj, pj: r.pj, pill: <Pill tone={S.tests}>Sans testeur</Pill>, main: nomOf(r) || r.gamme || "", right: fmtD(r.tests) })),
     ];
     return (<Arrange id={"home-" + role} defaultSpan={4}>
+      {lead}
       {on("tests") && <section aria-label="Tests" style={{ ...cardS(S.tests.ring), flex: "1 1 300px" }}>
         <Head title="Tests" sub="3 prochaines semaines" />
         {testsDoc ? <div style={grid}><Stat label="machines en test" value={soon.length} onClick={() => onGo("tests")} /><Stat label="sans testeur" value={noTester.length} tone={noTester.length ? T.red500 : undefined} onClick={() => onGo("tests")} /><Stat label="échecs" value={fails} tone={fails ? T.red500 : undefined} /><Stat label="en retard" value={lateT} tone={lateT ? T.amber600 : undefined} /><Stat label="conflits" value={conflicts} tone={conflicts ? T.amber600 : undefined} /></div> : <div style={grey}>Page Tests non disponible.</div>}
@@ -184,6 +191,7 @@ export function RoleHome({ role, profile, ui, rows, open, late, mentions, myPjs,
         </div>
       </section>}
       {on("postes") && postes("Postes de test", "2 1 320px")}
+      {tail}
     </Arrange>);
   }
   return null;

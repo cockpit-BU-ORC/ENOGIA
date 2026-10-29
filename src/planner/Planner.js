@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import { T } from "../theme";
 import { useSheetJS } from "../components/SharedUI";
 import { guessGamme } from "../parsers";
@@ -7,7 +7,8 @@ import {
   addPj, initBlankPlan, setStep, rulesOf, summarizeChanges, diffPlans, DEFAULT_CAP, releasePins, setCap, setRules, loadModel, levelPlan, fitDurations, hasLevel, clearLevel, sortPjsByStart, capWeek, fillMissingHours, refreshPlanFromRows, setCapWeek, newPjPlan, addPhaseTask, splitBenches, stepKeysOf, stepLabel, PHASES,
 } from "./engine";
 import { parseMsPlan, compareWithMs, applyCalibration } from "./importPlan";
-import { PlannerGantt, fmtIso, makeTimeline, leftWidthWith, STEP_COLOR } from "./PlannerGantt";
+import { PlannerGantt, fmtIso, makeTimeline, leftWidthWith, STEP_COLOR, ZOOM_PX, PX_MIN, PX_MAX } from "./PlannerGantt";
+import { benchOrderByStart, setBench, benchMoveUp, benchConflicts, splitBenches as splitBenchesV } from "./engine";
 import { PlannerLoad } from "./PlannerLoad";
 import { PlannerLanes } from "./PlannerLanes";
 import { PlannerChanges } from "./PlannerChanges";
@@ -41,7 +42,10 @@ const pgCss = () => `
 .pg-root .pg-trow:hover .pg-h,.pg-root .pg-h.on{opacity:1}
 .pg-menuitem:hover:not(:disabled){background:${T.teal100} !important}
 .pg-menuitem:focus-visible{outline:2px solid ${T.teal500}}
-.pg-root .pg-tb{border:1px solid ${T.line};background:${T.card};color:${T.ink700};border-radius:8px;padding:6px 12px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit}
+.pg-root .pg-tb{border:1px solid ${T.line};background:${T.card};color:${T.ink700};border-radius:6px;padding:2px 7px;min-height:22px;font-size:11px;line-height:16px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit}
+.pg-root .pg-bar1{display:flex;gap:4px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
+.pg-root .pg-bar1 label{font-size:11px!important;min-height:22px!important}
+.pg-root .pg-bar1 .pg-in{height:22px!important;font-size:11px!important;padding:0 6px!important}
 .pg-root .pg-tb:hover:not(:disabled):not([aria-pressed=true]){background:${T.teal100}}
 .pg-root .pg-tb:disabled{opacity:.45;cursor:default}
 .pg-root .pg-tb[aria-pressed=true]{background:${T.ink900};color:${T.card};border-color:${T.ink900}}
@@ -298,6 +302,53 @@ function moveTo(plan, pj, over) {
   return np;
 }
 
+// v224 (demandé : « 2 slots de banc d'essai : 2 machines en même temps, jamais 2 machines sur le même slot ; une attribution
+// simple et claire ») : une ligne par banc, ses machines dans l'ordre (dates, chevauchements en rouge), changer de banc d'un clic,
+// « Interdire les chevauchements » (règle « un test à la fois par banc », ordre = ordre des tests), répartition automatique.
+function BenchDialog({ plan, sched, cal, hide, readOnly, onClose, onApply }) {
+  const [past, setPast] = useState(false);
+  useEffect(() => { const k = e => { if (e.key === "Escape") onClose(); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose]);
+  const rule = rulesOf(plan).banc; const conf = benchConflicts(plan, sched); const bad = new Set(conf.map(c => c.pj));
+  const items = plan.pjs.filter(p => p.steps.tests && !(hide && hide.has(p.pj))).map(p => ({ p, b: Number(p.steps.tests.banc) === 2 ? 2 : 1, n: sched.nodes[p.pj + "|tests"] })).filter(x => x.n && x.n.s !== null).sort((a, b) => a.n.s - b.n.s);
+  const d0 = new Date(), t0 = d0.getFullYear() + "-" + String(d0.getMonth() + 1).padStart(2, "0") + "-" + String(d0.getDate()).padStart(2, "0");
+  const shown = items.filter(x => past || x.n.finish >= t0);
+  const lo = shown.length ? Math.min(...shown.map(x => x.n.s)) : 0, hi = shown.length ? Math.max(...shown.map(x => x.n.f)) : 1, span = Math.max(1, hi - lo + 1);
+  const withRule = np => benchOrderByStart({ ...np, rules: { ...rulesOf(np), banc: true } }, cal);
+  const tb = { border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 6, padding: "2px 8px", fontSize: 11.5, fontWeight: 700, cursor: readOnly ? "default" : "pointer", minHeight: 24, fontFamily: T.font };
+  return (<div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,20,30,.45)", zIndex: 10010, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+    <div role="dialog" aria-label="Bancs d'essai" onClick={e => e.stopPropagation()} style={{ background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, width: "min(980px,100%)", maxHeight: "90vh", overflow: "auto", padding: "16px 18px", fontFamily: T.font }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+        <div style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: 18 }}>Bancs d'essai</div>
+        <span style={{ fontSize: 12.5, color: T.ink500 }}>2 bancs : deux machines peuvent être testées en même temps, une seule par banc.</span>
+        <button type="button" onClick={onClose} style={{ marginLeft: "auto", border: "none", background: "transparent", color: T.ink500, cursor: "pointer", minHeight: 28 }}>Fermer</button>
+      </div>
+      <div role="status" style={{ margin: "10px 0", padding: "8px 12px", borderRadius: 8, background: conf.length ? T.red100 : rule ? T.emerald100 : T.amber100, color: conf.length ? T.red500 : rule ? T.emerald600 : T.amber600, fontSize: 13, fontWeight: 600, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+        <span style={{ flex: 1, minWidth: 220 }}>{conf.length ? conf.length + " chevauchement" + (conf.length > 1 ? "s" : "") + " : " + conf.slice(0, 3).map(c => c.pj + " et " + c.with + " sur le banc " + c.b).join(" ; ") + (conf.length > 3 ? "…" : "") : rule ? "Aucun chevauchement : chaque banc enchaîne ses machines l'une après l'autre." : "Aucun chevauchement pour l'instant, mais rien ne l'empêche."}</span>
+        {!readOnly && !rule && <button type="button" style={{ ...tb, background: T.ink900, color: T.card, borderColor: T.ink900 }} onClick={() => onApply(withRule(plan), "Un test à la fois par banc : les machines d'un même banc passent l'une après l'autre, dans l'ordre de leurs tests.")}>Interdire les chevauchements</button>}
+        {!readOnly && <button type="button" style={tb} onClick={() => { const np = splitBenchesV(plan, cal); onApply(rule ? benchOrderByStart(np, cal) : np, "Tests répartis sur le banc libéré le plus tôt."); }}>Répartir automatiquement</button>}
+        {!readOnly && rule && <button type="button" style={{ ...tb, border: "none", background: "transparent", color: T.ink500 }} onClick={() => onApply(setRules(plan, { banc: false }), "Chevauchements de bancs autorisés.")}>Autoriser les chevauchements</button>}
+      </div>
+      <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: T.ink700, marginBottom: 8, cursor: "pointer" }}><input type="checkbox" checked={past} onChange={e => setPast(e.target.checked)} />Afficher les tests terminés</label>
+      {[1, 2].map(b => { const L = shown.filter(x => x.b === b); return (<section key={b} aria-label={"Banc " + b} style={{ borderTop: "1px solid " + T.line, padding: "8px 0" }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 6 }}><b style={{ fontSize: 14 }}>Banc {b}</b><span style={{ fontSize: 12, color: T.ink500 }}>{L.length} machine{L.length > 1 ? "s" : ""}</span></div>
+        <div aria-hidden="true" style={{ position: "relative", height: 18, background: T.surface, borderRadius: 4, marginBottom: 6, overflow: "hidden" }}>
+          {L.map(x => <span key={x.p.pj} title={x.p.pj + " · " + fmtIso(x.n.start) + " → " + fmtIso(x.n.finish)} style={{ position: "absolute", top: 2, bottom: 2, left: ((x.n.s - lo) / span * 100) + "%", width: Math.max(0.6, (x.n.f - x.n.s + 1) / span * 100) + "%", background: bad.has(x.p.pj) ? T.red500 : STEP_COLOR.tests, opacity: 0.85, borderRadius: 3, outline: "1px solid " + T.card }} />)}
+        </div>
+        {L.length === 0 && <div style={{ fontSize: 12.5, color: T.ink500 }}>Aucune machine sur ce banc.</div>}
+        {L.map((x, i) => { const c = conf.find(k => k.pj === x.p.pj); return (<div key={x.p.pj} style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 34, borderTop: i ? "1px solid " + T.line : "none", fontSize: 13, flexWrap: "wrap" }}>
+          <span style={{ fontFamily: T.fontMono, fontWeight: 700, color: T.teal600, width: 86 }}>{x.p.pj}</span>
+          <span style={{ flex: 1, minWidth: 120, color: T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.p.nomProjet || ""}</span>
+          <span style={{ fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{fmtIso(x.n.start)} → {fmtIso(x.n.finish)}</span>
+          <span style={{ width: 44, textAlign: "right", color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{x.n.dur} j</span>
+          <span style={{ width: 150, fontSize: 12, fontWeight: 600, color: c ? T.red500 : T.ink300 }}>{c ? "chevauche " + c.with : ""}</span>
+          {!readOnly && rule && <button type="button" style={tb} disabled={i === 0} onClick={() => onApply(benchMoveUp(plan, x.p.pj), x.p.pj + " passe avant " + L[i - 1].p.pj + " sur le banc " + b + ".")} title="Faire passer ce PJ avant le précédent sur ce banc">Passer avant</button>}
+          {!readOnly && <button type="button" style={tb} onClick={() => onApply(setBench(plan, cal, x.p.pj, b === 1 ? 2 : 1), x.p.pj + " passe sur le banc " + (b === 1 ? 2 : 1) + ".")}>→ Banc {b === 1 ? 2 : 1}</button>}
+        </div>); })}
+      </section>); })}
+    </div>
+  </div>);
+}
+
 function Banner({ tone, children }) {
   const c = { warn: [T.amber100, T.amber600], bad: [T.red100, T.red500], ok: [T.emerald100, T.emerald600] }[tone];
   return <div role="status" style={{ background: c[0], color: c[1], borderRadius: 10, padding: "8px 14px", fontWeight: 600, fontSize: 13, marginBottom: 10 }}>{children}</div>;
@@ -337,7 +388,15 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
   const live = preview || (proposal && proposal.plan) || plan;
   const sched = useMemo(() => live && live.v === 2 ? schedule(live, cal) : { nodes: {}, cycle: null }, [live, cal]);
   const load = useMemo(() => live && live.v === 2 ? loadModel(live, sched, cal) : null, [live, sched, cal]);
-  const tl = useMemo(() => makeTimeline(sched, ui.zoom), [sched, ui.zoom]);
+  const tl = useMemo(() => makeTimeline(sched, ui.px || ui.zoom), [sched, ui.zoom, ui.px]);
+  // v224 (demandé : « pouvoir zoomer ») : − + et Ctrl + molette ; la date sous la souris reste en place
+  const zoomAnchor = useRef(null); const zoomFn = useRef(null);
+  zoomFn.current = (factor, clientX) => { const el = gref.current; const nv = Math.max(PX_MIN, Math.min(PX_MAX, Math.round(tl.px * factor * 10) / 10)); if (nv === tl.px) return;
+    if (el) { const r = el.getBoundingClientRect(); const lw = ui.view === "gantt" || ui.view === "both" ? (el.firstChild && el.firstChild.firstChild ? el.firstChild.firstChild.getBoundingClientRect().width : 0) : 0; const mx = clientX != null ? clientX - r.left : el.clientWidth / 2; zoomAnchor.current = { day: (el.scrollLeft + mx - lw) / tl.px, mx, lw }; }
+    setUi({ px: nv }); };
+  useLayoutEffect(() => { const a = zoomAnchor.current, el = gref.current; zoomAnchor.current = null; if (a && el) el.scrollLeft = Math.max(0, a.day * tl.px - a.mx + a.lw); }, [tl.px]);
+  useEffect(() => { const el = gref.current; if (!el) return undefined; const w = e => { if (!e.ctrlKey && !e.metaKey) return; e.preventDefault(); zoomFn.current(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX); }; el.addEventListener("wheel", w, { passive: false }); return () => el.removeEventListener("wheel", w); });
+  const conflicts = useMemo(() => live && live.v === 2 ? benchConflicts(live, sched) : [], [live, sched]);
   const pubRows = useMemo(() => plan && plan.v === 2 ? planToRows(plan, schedule(plan, cal), rows || [], guessGamme, cal) : [], [plan, cal, rows]);
   const changes = useMemo(() => plan && plan.v === 2 ? diffRows(rows || [], pubRows) : [], [rows, pubRows, plan]);
 
@@ -411,8 +470,9 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
   const reorder = useCallback((pj, over) => { if (!plan) return; const np = moveTo(plan, pj, over); if (np !== plan) onCommit(np, { pj, key: null, want: null }); }, [plan, onCommit]);
 
   // v221 (demandé : « pouvoir cacher les PJ en slot libre dans le planificateur ») : masqués par défaut (case « Slots libres »)
-  const slotSet = useMemo(() => new Set((rows || []).filter(r => r && r.etat === "SLOT_LIBRE").map(r => r.pj)), [rows]);
-  const hideSlots = ui.hideSlots !== false;
+  // v224 (demandé : « je ne dois pas avoir les slots libres ou PJXXX ») : jamais affichés (ils restent comptés dans la charge)
+  const slotSet = useMemo(() => new Set([...(rows || []).filter(r => r && r.etat === "SLOT_LIBRE").map(r => r.pj), ...((live && live.pjs) || []).map(p => p.pj).filter(pj => /X{2,}/i.test(pj))]), [rows, live]);
+  const hideSlots = true;
   const pjsShown = useMemo(() => { if (!live || live.v !== 2) return []; const s = q.trim().toLowerCase(); return live.pjs.filter(p => !(hideSlots && slotSet.has(p.pj)) && (!s || p.pj.toLowerCase().includes(s) || (p.nomProjet || "").toLowerCase().includes(s))); }, [live, q, hideSlots, slotSet]);
   const lanesPlan = useMemo(() => live && live.v === 2 && hideSlots && slotSet.size ? { ...live, pjs: live.pjs.filter(p => !slotSet.has(p.pj)) } : live, [live, hideSlots, slotSet]);
   const toggleExp = (pj, force) => setExp(s => { const n = new Set(s); (force === true || !n.has(pj)) ? n.add(pj) : n.delete(pj); return n; });
@@ -445,17 +505,17 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
   // v211 : en Liste + Gantt, la liste prend au plus ~42 % de la largeur tant qu'on ne l'a pas réglée (sinon le Gantt n'apparaît pas sur un petit écran)
   const listW = ui.listW || (ui.view === "both" && typeof window !== "undefined" ? Math.max(380, Math.min(736, Math.round(window.innerWidth * 0.42))) : null);
   const noT = ui.view === "list" || ui.view === "changes"; const cmp = proposal && proposal.cmp; const ro = ui.lock || !!proposal;
-  const loadEl = load ? <PlannerLoad plan={live} load={load} cal={cal} tl={tl} scrollX={scrollX} leftW={leftWidthWith(ui.view, listW)} onCapWeek={(w, h) => apply(setCapWeek(plan, w, h))} small={!!ui.loadSmall} setSmall={v => setUi({ loadSmall: v })} standalone={ui.view === "list" || ui.view === "lanes"} mode={ui.loadMode} setMode={m => setUi({ loadMode: m })} cap={cap}
+  const loadEl = load && !ui.loadHide ? <PlannerLoad plan={live} load={load} cal={cal} tl={tl} scrollX={scrollX} leftW={leftWidthWith(ui.view, listW)} onCapWeek={(w, h) => apply(setCapWeek(plan, w, h))} small={!!ui.loadSmall} setSmall={v => setUi({ loadSmall: v })} standalone={ui.view === "list" || ui.view === "lanes"} mode={ui.loadMode} setMode={m => setUi({ loadMode: m })} cap={cap}
         onCap={patch => apply(setCap(plan, patch))} readOnly={ro} onPropose={startProposal} hasLevelNow={hasLevel(plan)} nTooDense={load.tooDense.length} /> : null;
   return (<div className="pg-root">
     <style>{pgCss()}</style>
     <datalist id="plan-add">{rowsNotInPlan.map(r => <option key={r.pj} value={r.pj} />)}</datalist>
     {/* en-tête */}
-    <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
-      <div style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: 22, color: T.ink900 }}>Planification</div>
-      <span style={{ fontSize: 12.5, color: T.ink500 }}>{plan.pjs.length} PJ · {nLinks} lien{nLinks > 1 ? "s" : ""}</span>
+    <div className="pg-bar1">
+      <div style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: 14, color: T.ink900, marginRight: 4 }}>Planification</div>
+      <span style={{ fontSize: 11, color: T.ink500 }}>{plan.pjs.length} PJ · {nLinks} lien{nLinks > 1 ? "s" : ""}</span>
       {nEst + nNoH > 0 && <span title="La charge vient des heures atelier du planning importé. Sans heures, un PJ reprend le modèle de sa gamme ou la moyenne des PJ de la même gamme." style={{ fontSize: 12, color: T.amber600 }}>{nEst ? nEst + " PJ aux heures estimées" : ""}{nEst && nNoH ? " · " : ""}{nNoH ? nNoH + " PJ sans heures (hors charge)" : ""}</span>}
-      <span role="button" tabIndex={0} onClick={() => { setRefId("pub"); setUi({ view: "changes" }); }} onKeyDown={e => { if (e.key === "Enter") { setRefId("pub"); setUi({ view: "changes" }); } }} title="Voir la synthèse des modifications" style={{ cursor: "pointer", borderRadius: 99, padding: "3px 12px", fontSize: 12.5, fontWeight: 700, background: changes.length ? T.amber100 : T.emerald100, color: changes.length ? T.amber600 : T.emerald600 }}>{changes.length ? changes.length + " modification" + (changes.length > 1 ? "s" : "") + " non publiée" + (changes.length > 1 ? "s" : "") : "À jour avec le planning actuel"}</span>
+      <span role="button" tabIndex={0} onClick={() => { setRefId("pub"); setUi({ view: "changes" }); }} onKeyDown={e => { if (e.key === "Enter") { setRefId("pub"); setUi({ view: "changes" }); } }} title="Voir la synthèse des modifications" style={{ cursor: "pointer", borderRadius: 99, padding: "1px 8px", fontSize: 11, fontWeight: 700, background: changes.length ? T.amber100 : T.emerald100, color: changes.length ? T.amber600 : T.emerald600 }}>{changes.length ? changes.length + " modification" + (changes.length > 1 ? "s" : "") + " non publiée" + (changes.length > 1 ? "s" : "") : "À jour avec le planning actuel"}</span>
       <span style={{ fontSize: 12, color: T.ink500 }} aria-live="polite">{saveSt}</span>
       <span style={{ flex: 1 }} />
       <button className="pg-tb" aria-pressed={ui.lock} onClick={() => { setUi({ lock: !ui.lock }); setProposal(null); }} title="Verrouille l'édition (lecture en réunion)">{ui.lock ? "🔒 Lecture" : "Lecture"}</button>
@@ -467,26 +527,29 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
         <button className="pg-tb" onClick={() => setDlg("blank")} title="Repartir de zéro avec quelques PJ, sans dates ni durées">Plan vierge…</button>
         <button className="pg-tb" onClick={() => setDlg("import")}>Importer</button>
         <button className="pg-tb" onClick={() => setDlg("history")}>Historique</button>
-        <button style={{ ...BTN_P, padding: "7px 16px" }} onClick={() => setDlg("publish")}>Publier</button>
+        <button className="pg-tb" style={{ background: T.ink900, color: T.card, borderColor: T.ink900 }} onClick={() => setDlg("publish")}>Publier</button>
       </>}
     </div>
     {/* barre d'outils */}
-    <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
+    <div className="pg-bar1" style={{ marginBottom: 6 }}>
       <button className="pg-tb" disabled={noT} onClick={goToday}>Aujourd'hui</button>
-      <div role="group" aria-label="Échelle de temps" style={{ display: "inline-flex", gap: 0 }}>
-        {[["day", "Jour"], ["week", "Semaine"], ["month", "Mois"]].map(([k, l], i) => <button key={k} className="pg-tb" disabled={noT} aria-pressed={ui.zoom === k} onClick={() => setUi({ zoom: k })} style={{ borderRadius: i === 0 ? "8px 0 0 8px" : i === 3 ? "0 8px 8px 0" : 0, marginLeft: i ? -1 : 0 }}>{l}</button>)}
+      <div role="group" aria-label="Zoom" style={{ display: "inline-flex", gap: 0 }}>
+        <button className="pg-tb" disabled={noT || tl.px <= PX_MIN} onClick={() => zoomFn.current(1 / 1.4)} aria-label="Dézoomer" title="Dézoomer (Ctrl + molette)" style={{ borderRadius: "6px 0 0 6px" }}>−</button>
+        {[["day", "Jour"], ["week", "Sem."], ["month", "Mois"]].map(([k, l]) => <button key={k} className="pg-tb" disabled={noT} aria-pressed={(!ui.px && ui.zoom === k) || ui.px === ZOOM_PX[k]} onClick={() => setUi({ zoom: k, px: null })} style={{ borderRadius: 0, marginLeft: -1 }}>{l}</button>)}
+        <button className="pg-tb" disabled={noT || tl.px >= PX_MAX} onClick={() => zoomFn.current(1.4)} aria-label="Zoomer" title="Zoomer (Ctrl + molette)" style={{ borderRadius: "0 6px 6px 0", marginLeft: -1 }}>+</button>
       </div>
+      <button className="pg-tb" aria-pressed={!ui.loadHide} onClick={() => setUi({ loadHide: !ui.loadHide })} title={ui.loadHide ? "Afficher la charge atelier en bas" : "Masquer la charge atelier pour agrandir le Gantt"}>Charge</button>
+      <button className="pg-tb" onClick={() => setDlg("bench")} title="Attribuer les 2 bancs d'essai (une seule machine par banc à la fois)">Bancs d'essai{conflicts.length ? <span style={{ color: T.red500 }}> ⚠ {conflicts.length}</span> : null}</button>
       <button className="pg-tb" onClick={() => setExp(s => s.size ? new Set() : new Set(plan.pjs.map(p => p.pj)))}>{exp.size ? "Tout replier" : "Tout déplier"}</button>
       <button className="pg-tb" disabled={noT} aria-pressed={ui.links} onClick={() => setUi({ links: !ui.links })} title="Affiche toutes les flèches de liens (sinon seulement celles du PJ sélectionné)">Liens</button>
 <div role="group" aria-label="Affichage" style={{ display: "inline-flex" }}>
-        {[["list", "Liste"], ["both", "Liste + Gantt"], ["gantt", "Gantt"], ["lanes", "Couloirs"], ["changes", "Modifications"]].map(([k, l], i, arr) => <button key={k} className="pg-tb" aria-pressed={ui.view === k} onClick={() => setUi({ view: k })} style={{ borderRadius: i === 0 ? "8px 0 0 8px" : i === arr.length - 1 ? "0 8px 8px 0" : 0, marginLeft: i ? -1 : 0 }}>{l}{k === "changes" && nTouched > 0 && <span style={{ marginLeft: 6, background: ui.view === k ? "rgba(255,255,255,.25)" : T.amber100, color: ui.view === k ? "#fff" : T.amber600, borderRadius: 99, padding: "0 7px", fontSize: 11.5 }}>{nTouched}</span>}</button>)}
+        {[["list", "Liste"], ["both", "Liste + Gantt"], ["gantt", "Gantt"], ["lanes", "Couloirs"], ["changes", "Modifications"]].map(([k, l], i, arr) => <button key={k} className="pg-tb" aria-pressed={ui.view === k} onClick={() => setUi({ view: k })} style={{ borderRadius: i === 0 ? "6px 0 0 6px" : i === arr.length - 1 ? "0 6px 6px 0" : 0, marginLeft: i ? -1 : 0 }}>{l}{k === "changes" && nTouched > 0 && <span style={{ marginLeft: 6, background: ui.view === k ? "rgba(255,255,255,.25)" : T.amber100, color: ui.view === k ? "#fff" : T.amber600, borderRadius: 99, padding: "0 7px", fontSize: 11.5 }}>{nTouched}</span>}</button>)}
       </div>
-      {ui.view !== "lanes" && ui.view !== "changes" && <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 700, color: T.ink700 }}>Hauteur des lignes
-        <input type="range" min={24} max={44} step={2} value={ui.rowH || 32} onChange={e => setUi({ rowH: Number(e.target.value) })} aria-label="Hauteur des lignes du Gantt" style={{ width: 110 }} /></label>}
-      {ui.view === "lanes" && <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 700, color: T.ink700 }}>Hauteur des couloirs
-        <input type="range" min={8} max={30} step={1} value={laneBH} onChange={e => setUi({ laneH: Number(e.target.value) })} aria-label="Hauteur des couloirs" style={{ width: 120 }} /></label>}
-      {slotSet.size > 0 && <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 700, color: T.ink700, cursor: "pointer", minHeight: 30 }}><input type="checkbox" checked={!hideSlots} onChange={e => setUi({ hideSlots: !e.target.checked })} />Slots libres ({slotSet.size})</label>}
-      <input value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher un PJ…" aria-label="Rechercher un PJ" className="pg-in" style={{ ...INP, width: 160 }} />
+      {ui.view !== "lanes" && ui.view !== "changes" && <label style={{ display: "inline-flex", alignItems: "center", gap: 4, fontWeight: 700, color: T.ink700 }}>Lignes
+        <input type="range" min={24} max={44} step={2} value={ui.rowH || 32} onChange={e => setUi({ rowH: Number(e.target.value) })} aria-label="Hauteur des lignes du Gantt" style={{ width: 70 }} /></label>}
+      {ui.view === "lanes" && <label style={{ display: "inline-flex", alignItems: "center", gap: 4, fontWeight: 700, color: T.ink700 }}>Couloirs
+        <input type="range" min={8} max={30} step={1} value={laneBH} onChange={e => setUi({ laneH: Number(e.target.value) })} aria-label="Hauteur des couloirs" style={{ width: 70 }} /></label>}
+      <input value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher un PJ…" aria-label="Rechercher un PJ" className="pg-in" style={{ ...INP, width: 130 }} />
       {!ui.lock && <>
         <span style={{ display: "inline-flex", gap: 4 }}>
           <button className="pg-tb" disabled={!!proposal} onClick={() => setDlg("newpj")} title="Créer un PJ avec ses tâches (production, tests, packing) et ses ressources">＋ Nouveau PJ</button>
@@ -503,7 +566,7 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
         </Pop>
       </>}
       <span style={{ flex: 1 }} />
-      <span style={{ display: "inline-flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: T.ink500, alignItems: "center" }}>
+      <span style={{ display: "inline-flex", gap: 8, flexWrap: "wrap", fontSize: 10.5, color: T.ink500, alignItems: "center" }}>
         {[["arrivee", "Arrivée", 1], ["production", "Production"], ["tests", "Tests"], ["finProd", "Packing"], ["depart", "Départ", 1]].map(([k, l, ms]) => <span key={k} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><span style={{ width: ms ? 9 : 16, height: 9, background: STEP_COLOR[k], transform: ms ? "rotate(45deg)" : "none", borderRadius: 2, display: "inline-block" }} />{l}</span>)}
         <span><span style={{ color: T.ink500 }}>→</span> lien</span>
         {(rules.prod || rules.banc) && <span style={{ color: T.teal600 }}>⇢ ordre de passage</span>}
@@ -533,14 +596,15 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
     </div>}
     {ui.view !== "changes" && <div style={{ ...CARD, overflow: "clip" }}>
       <PlannerGantt listW={listW} onListW={w => setUi({ listW: w })} testers={testers} onInfo={t => setNotice({ tone: "ok", text: t })} rowH={ui.rowH || 32} onAddTask={pj => { setSel({ pj, step: null }); setTaskPj(pj); setDlg("task"); }} plan={live} basePlan={plan} sched={sched} cal={cal} closurePeriods={closurePeriods} tl={tl} pjs={pjsShown} sel={selPj} setSel={setSel} expanded={exp} toggleExp={toggleExp}
-        showLinks={ui.links} view={ui.view} readOnly={ro} onPreview={setPreview} onCommit={onCommit} onError={onError} onReorder={reorder} scrollRef={gref} onScrollX={setScrollX} />
+        showLinks={ui.links} view={ui.view} readOnly={ro} onPreview={setPreview} onCommit={onCommit} onError={onError} onReorder={reorder} scrollRef={gref} onScrollX={setScrollX} maxH={ui.loadHide ? 150 : ui.loadSmall ? 260 : 360} />
       {ui.view !== "lanes" && loadEl}
     </div>}
-    {ui.view !== "changes" && <div style={{ fontSize: 12, color: T.ink500, marginTop: 8, lineHeight: 1.6 }}>
-      Cliquez une date, une durée, un travail ou un prédécesseur pour la modifier (Entrée valide, Échap annule) · glissez une barre pour la déplacer, sa poignée pour changer la durée · glissez ⋮⋮ pour changer la priorité d'un PJ · prédécesseurs : numéros de ligne, <b>2 ; 7SS+3j</b> (FS par défaut, SS, FF, SF, décalage en jours ouvrés).
+    {ui.view !== "changes" && <div style={{ fontSize: 11, color: T.ink500, marginTop: 4, lineHeight: 1.5 }}>
+      Ctrl + molette pour zoomer · tirez d'un rond à une autre tâche pour la lier · cliquez une date, une durée, un travail ou un prédécesseur pour la modifier (Entrée valide, Échap annule) · glissez une barre pour la déplacer, sa poignée pour changer la durée · glissez ⋮⋮ pour changer la priorité d'un PJ · prédécesseurs : numéros de ligne, <b>2 ; 7SS+3j</b> (FS par défaut, SS, FF, SF, décalage en jours ouvrés).
     </div>}
     {dlg === "newpj" && <NewPjDialog plan={plan} rows={rows} cal={cal} testers={testers || []} onClose={() => setDlg(null)} onApply={(np, pj) => { apply(np); setSel({ pj, step: null }); toggleExp(pj, true); setNotice({ tone: "ok", text: pj + " ajouté au plan avec ses tâches." }); }} />}
     {dlg === "task" && (selPj || taskPj) && <TaskDialog plan={plan} pj={taskPj || selPj.pj} after={selPj && selPj.pj === (taskPj || selPj.pj) ? selPj.step : null} testers={testers || []} onClose={() => { setDlg(null); setTaskPj(null); }} onApply={(np, key) => { const pj = taskPj || selPj.pj; apply(np); toggleExp(pj, true); setSel({ pj, step: key ? key.split("|").pop() : null }); setTaskPj(null); }} />}
+    {dlg === "bench" && <BenchDialog plan={plan} sched={sched} cal={cal} hide={slotSet} readOnly={ro} onClose={() => setDlg(null)} onApply={(np, msg) => { apply(np); if (msg) setNotice({ tone: "ok", text: msg }); }} />}
     {dlg === "templates" && <TemplatesDialog plan={plan} rows={rows} onClose={() => setDlg(null)} onApply={np => apply(np)} />}
     {dlg === "blank" && <BlankDialog rows={rows} hasPlan onClose={() => setDlg(null)} onApply={np => { setSel(null); setExp(new Set(np.pjs.map(p => p.pj))); apply(np); }} />}
     {dlg === "import" && <ImportDialog cal={cal} rows={rows} plan={plan} onClose={() => setDlg(null)} onApply={np => apply(np)} />}

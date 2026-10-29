@@ -166,6 +166,19 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
   const showSide = on("departs");
   const since = nChanged + nNew === 0 ? "Le planning n'a pas bougé depuis votre dernière visite." : "Depuis votre dernière visite : " + nChanged + " PJ modifié" + (nChanged > 1 ? "s" : "") + (nNew ? ", " + nNew + " nouveau" + (nNew > 1 ? "x" : "") : "");
 
+  // v224 (demandé : « certains cadrans ne peuvent pas être réduits ou déplacés ») : chiffres clés et départs à venir passent dans la grille des cadrans
+  const kpiEl = role !== "testeur" && (!role || bOn("kpis")) ? <div key="kpis" aria-label="Chiffres clés" data-span={12} className="enogia-stagger enogia-kpis-ed" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: "0 16px", borderTop: "3px solid " + T.teal500, marginBottom: 20 }}>
+        <Kpi color={S.depart.ring} label="Livrées cette année" value={shipped} sub={shipped28 > 0 ? shipped28 + " sur les 28 derniers jours" : open.length + " encore en cours"} onClick={() => onGo && onGo("table")} hint="Ouvrir la liste" />
+        <Kpi color={S.production.ring} label="En production" value={inProd} sub={"sur " + open.length + " projet" + (open.length > 1 ? "s" : "") + " ouvert" + (open.length > 1 ? "s" : "")} onClick={() => onGo && onGo("table")} hint="Ouvrir la liste" />
+        <Kpi color={S.tests.ring} label="Départs sous 30 j" value={next30} tone={S.depart.ring} sub={nextDep ? "prochain " + nextDep.pj + " · " + fmtD(nextDep.depart) : "Aucun départ à venir"} onClick={() => onGo && onGo("calendar")} hint="Ouvrir le calendrier" />
+        <Kpi color={H.warn} label="En retard sur l'initial" value={late.length} tone={late.length ? T.amber600 : T.ink900} sub={maxLate ? "max " + maxLate.pj + " · +" + maxLate.drift + " j" : "Aucune dérive"} onClick={() => onGo && onGo("table")} hint="Ouvrir la liste" />
+      </div> : null;
+  const depEl = role === "direction" && bOn("departs") ? <section key="departs" aria-label="Départs à venir" data-span={12} style={{ ...cardS(S.depart.ring) }}>
+        <Head title="Ordo · départs à venir" count={departs.length} />
+        {departs.length === 0 ? empty("inbox", "Aucun départ prévu", "Aucune machine n'a de date de départ à venir.") :
+          departs.slice(0, 5).map((r, i) => { const n = inDays(r.depart); return <Row key={r.pj} first={i === 0} pj={r.pj} main={<span style={{ color: T.ink500 }}>{nomOf(r)}</span>} presence={presenceOf(r)} right={fmtD(r.depart) + (n != null && n <= 7 ? " · " + relDays(n) : "")} />; })}
+      </section> : null;
+
   return (
     <div style={{ fontFamily: T.font, position: "relative", isolation: "isolate" }}>
       <Isotherms />
@@ -195,20 +208,11 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
         </div>
       )}
 
-      {role !== "testeur" && (!role || bOn("kpis")) && <div className="enogia-stagger enogia-kpis-ed" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: "0 16px", borderTop: "3px solid " + T.teal500, marginBottom: 20 }}>
-        <Kpi color={S.depart.ring} label="Livrées cette année" value={shipped} sub={shipped28 > 0 ? shipped28 + " sur les 28 derniers jours" : open.length + " encore en cours"} onClick={() => onGo && onGo("table")} hint="Ouvrir la liste" />
-        <Kpi color={S.production.ring} label="En production" value={inProd} sub={"sur " + open.length + " projet" + (open.length > 1 ? "s" : "") + " ouvert" + (open.length > 1 ? "s" : "")} onClick={() => onGo && onGo("table")} hint="Ouvrir la liste" />
-        <Kpi color={S.tests.ring} label="Départs sous 30 j" value={next30} tone={S.depart.ring} sub={nextDep ? "prochain " + nextDep.pj + " · " + fmtD(nextDep.depart) : "Aucun départ à venir"} onClick={() => onGo && onGo("calendar")} hint="Ouvrir le calendrier" />
-        <Kpi color={H.warn} label="En retard sur l'initial" value={late.length} tone={late.length ? T.amber600 : T.ink900} sub={maxLate ? "max " + maxLate.pj + " · +" + maxLate.drift + " j" : "Aucune dérive"} onClick={() => onGo && onGo("table")} hint="Ouvrir la liste" />
-      </div>}
+      {!role && kpiEl}
 
-      {role && <RoleHome key={role} role={role} profile={profile} rows={rows} open={open} late={late} mentions={mentions} myPjs={myPjs} testsDoc={testsDoc} myTester={myTester} turbineDoc={turbineDoc} owner={owner} cash={cash} onOpenPj={onOpenPj} onGo={onGo} onOpenCash={onOpenCash}
+      {role && <RoleHome key={role} lead={kpiEl} tail={depEl} role={role} profile={profile} rows={rows} open={open} late={late} mentions={mentions} myPjs={myPjs} testsDoc={testsDoc} myTester={myTester} turbineDoc={turbineDoc} owner={owner} cash={cash} onOpenPj={onOpenPj} onGo={onGo} onOpenCash={onOpenCash}
         ui={{ Row, Head, cardS, Pill, presenceOf, nomOf, empty, grey, link, S, H, A }} />}
-      {role === "direction" && bOn("departs") && <section aria-label="Départs à venir" style={{ ...cardS(S.depart.ring), marginBottom: 12 }}>
-        <Head title="Ordo · départs à venir" count={departs.length} />
-        {departs.length === 0 ? empty("inbox", "Aucun départ prévu", "Aucune machine n'a de date de départ à venir.") :
-          departs.slice(0, 5).map((r, i) => { const n = inDays(r.depart); return <Row key={r.pj} first={i === 0} pj={r.pj} main={<span style={{ color: T.ink500 }}>{nomOf(r)}</span>} presence={presenceOf(r)} right={fmtD(r.depart) + (n != null && n <= 7 ? " · " + relDays(n) : "")} />; })}
-      </section>}
+
 
       {!role && (showTodo || showSide) && (
         <div className="enogia-stagger" style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 12, alignItems: "flex-start" }}>

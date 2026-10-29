@@ -462,4 +462,9 @@ export const RELEASE_CATALOG = [
   { v: "223", t: "Isothermes sur l'accueil", items: [
     ["Accueil", "Courbes isothermes légères en coin, en clair et en sombre."],
   ] },
+  { v: "224", t: "Bancs d'essai, zoom du planificateur, résumé des projets à plusieurs machines", items: [
+    ["Planificateur", "Zoom (− + et Ctrl + molette), fenêtre Bancs d'essai (une machine par banc), charge masquable, barre compacte, liens d'un rond à l'autre réparés, insertion d'une tâche qui reprend les liens."],
+    ["Manager", "KPI et Personnes et site réservés au propriétaire ; résumé en tête des fiches communes."],
+    ["Cadrans", "Disposition réservée au propriétaire, glisser en direct, largeur au bord droit."],
+  ] },
 ];

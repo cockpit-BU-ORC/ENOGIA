@@ -46,7 +46,7 @@ export async function publishPlan({ plan, closurePeriods, by, note }) {
   await setDoc(CURRENT_REF(), { ...cur, rows: plain(rows), lastImport: new Date(at).toLocaleString("fr-FR"), lastPublish: { at, by: by || "" } });
   try { await appendChangeLog(buildEntry(curRows, rows, { source: "publication", by: by || "", note: note || "", label: new Date(at).toLocaleString("fr-FR"), prevLabel: cur.lastImport || "", prevIndice: cur.indice || "", indice: cur.indice || "" })); }
   catch (e) { console.warn("Journal des modifications non enregistré (la publication est bien faite) :", e); }
-  return { nChanges: changes.length };
+  return { nChanges: changes.length, rows };
 }
 
 // Annule une publication : remet dans « current » les lignes d'avant cette publication.

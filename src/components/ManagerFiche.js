@@ -555,7 +555,68 @@ function GlobalTile({gp,onSave}){
 }
 
 // v190 — vue d'ensemble d'un chef de projet : tous ses PJ en cartes (étape, gamme, pays, écart, avancement, prochain jalon).
-function ChefOverview({name,rows,pvOf,onPick,onClose}){
+// v224 (demandé : « faire un résumé sur les fiches globales des projets multiples ») : en tête de la fiche commune d'un PJ
+// à plusieurs machines (PJ461-1, -2…) — projet, chiffres clés, répartition des états, jalons du premier au dernier, derniers messages.
+function ProjectSummary({rows,pvOf,comments,delays,onPick}){
+  const t0=new Date(today);t0.setHours(0,0,0,0);
+  const m0=getPjMeta(rows[0].pj,rows[0]);
+  const chefs=[...new Set(rows.flatMap(x=>chefsOf(getPjMeta(x.pj,x))))].filter(Boolean);
+  const gammes=[...new Set(rows.map(x=>x.gamme).filter(Boolean))];
+  const shipped=rows.filter(x=>x.etat==="SHIPPED").length,open=rows.filter(x=>x.etat!=="SHIPPED");
+  const avg=rows.length?Math.round(rows.reduce((a,x)=>a+pvOf(x),0)/rows.length):0;
+  const maxDrift=open.reduce((a,x)=>Math.max(a,x.drift||0),0);
+  const dels=rows.flatMap(x=>(delays&&delays[x.pj])||[]),delDays=dels.reduce((a,d)=>a+(d.days||0),0);
+  const fats=open.filter(x=>{const pd=presenceDates(x.clientPresence);const d=pd.client||pd.nobo;return presenceKind(x.clientPresence)&&(!d||new Date(d)>=t0);}).length;
+  const byEtat={};rows.forEach(x=>{byEtat[x.etat]=(byEtat[x.etat]||0)+1;});
+  const etats=Object.entries(byEtat).sort((a,b)=>b[1]-a[1]);
+  const span=k=>{const L=rows.map(x=>x[k]?new Date(x[k]):null).filter(d=>d&&!isNaN(d)).sort((a,b)=>a-b);return L.length?[L[0],L[L.length-1]]:null;};
+  const jalons=[["arrivee","Arrivée"],["tests","Tests"],["finProd","Fin de production"],["depart","Départ"]].map(([k,l])=>[l,span(k)]);
+  const msgs=rows.flatMap(x=>((comments&&comments[x.pj])||[]).filter(c=>!c.private).map(c=>({...c,pj:x.pj}))).sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,3);
+  const kpi=(l,v,sub,tone)=>(<div style={{minWidth:0}}>
+    <div style={{fontSize:12,color:T.ink500}}>{l}</div>
+    <div style={{fontFamily:T.fontDisplay,fontSize:26,fontWeight:500,lineHeight:1.1,color:tone||T.ink900,fontVariantNumeric:"tabular-nums"}}>{v}</div>
+    {sub&&<div style={{fontSize:FZ.xs,color:T.ink500}}>{sub}</div>}
+  </div>);
+  return(<section aria-label="Résumé du projet" style={{border:"1px solid "+T.line,borderRadius:10,padding:"12px 14px",marginBottom:12,background:T.card}}>
+    <div style={{display:"flex",alignItems:"baseline",gap:10,flexWrap:"wrap",marginBottom:10}}>
+      <h3 style={{margin:0,fontSize:FZ.md,fontWeight:700,color:T.ink900}}>Résumé du projet</h3>
+      <span style={{fontSize:FZ.sm,color:T.ink500}}>{[m0.nomProjet&&m0.nomProjet!=="—"?m0.nomProjet:null,m0.pays,gammes.join(", "),chefs.length?"Chef"+(chefs.length>1?"s":"")+" : "+chefs.join(", "):null].filter(Boolean).join(" · ")}</span>
+    </div>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:12,marginBottom:12}}>
+      {kpi("Machines",rows.length,shipped?shipped+" expédiée"+(shipped>1?"s":""):open.length+" en cours")}
+      {kpi("Avancement moyen",avg+" %")}
+      {kpi("Plus grande dérive",maxDrift>0?"+"+maxDrift+" j":"0 j",maxDrift>0?"sur le départ initial":"à l'heure",maxDrift>10?T.red600:maxDrift>0?T.amber600:null)}
+      {kpi("Retards déclarés",delDays+" j",dels.length+" déclaration"+(dels.length>1?"s":""))}
+      {kpi("FAT client / NOBO",fats,"à venir")}
+    </div>
+    <div style={{fontSize:12,color:T.ink500,marginBottom:4}}>États des machines</div>
+    <div role="img" aria-label={etats.map(([e,n])=>n+" "+(ETAT_META[e]||{label:e}).label).join(", ")} style={{display:"flex",height:10,borderRadius:3,overflow:"hidden",gap:2,marginBottom:6}}>
+      {etats.map(([e,n])=><span key={e} style={{flex:n,background:(ETAT_META[e]||ETAT_META["NOT ORDERED"]).bar}}/>)}
+    </div>
+    <div style={{display:"flex",flexWrap:"wrap",gap:"4px 14px",fontSize:FZ.xs,color:T.ink700,marginBottom:12}}>
+      {etats.map(([e,n])=><span key={e} style={{display:"inline-flex",alignItems:"center",gap:5}}><span style={{width:8,height:8,borderRadius:2,background:(ETAT_META[e]||ETAT_META["NOT ORDERED"]).bar}}/>{(ETAT_META[e]||{label:e}).label} <b style={{fontVariantNumeric:"tabular-nums"}}>{n}</b></span>)}
+    </div>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,320px),1fr))",gap:14}}>
+      <div>
+        <div style={{fontSize:12,color:T.ink500,marginBottom:4}}>Jalons (première → dernière machine)</div>
+        {jalons.map(([l,sp])=><div key={l} style={{display:"flex",justifyContent:"space-between",gap:10,minHeight:30,alignItems:"center",borderTop:"1px solid "+T.line,fontSize:FZ.sm}}>
+          <span style={{color:T.ink700}}>{l}</span>
+          <span style={{fontVariantNumeric:"tabular-nums",color:sp?T.ink900:T.ink300}}>{sp?(sp[0].getTime()===sp[1].getTime()?fmt(sp[0]):fmt(sp[0])+" → "+fmt(sp[1])):"—"}</span>
+        </div>)}
+      </div>
+      <div>
+        <div style={{fontSize:12,color:T.ink500,marginBottom:4}}>Derniers messages</div>
+        {msgs.length===0?<div style={{fontSize:FZ.sm,color:T.ink300,borderTop:"1px solid "+T.line,paddingTop:6}}>Aucun message sur ces machines.</div>:
+          msgs.map((c,i)=><button type="button" key={i} onClick={()=>onPick(c.pj)} style={{display:"flex",gap:8,alignItems:"flex-start",width:"100%",textAlign:"left",border:"none",borderTop:"1px solid "+T.line,background:"transparent",padding:"6px 0",cursor:"pointer",fontFamily:T.font,color:T.ink900}}>
+            <PjPlate pj={c.pj}/>
+            <span style={{minWidth:0,flex:1}}><span style={{fontSize:FZ.xs,color:T.ink500}}>{c.author||""}{c.date?" · "+fmt(new Date(c.date)):""}</span><span style={{display:"block",fontSize:FZ.sm,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{c.text}</span></span>
+          </button>)}
+      </div>
+    </div>
+  </section>);
+}
+
+function ChefOverview({name,rows,pvOf,onPick,onClose,summary}){
   const t0=new Date(today);t0.setHours(0,0,0,0);
   const open=rows.filter(x=>x.etat!=="SHIPPED"),late=open.filter(x=>x.drift>0).length;
   const fats=open.filter(x=>{const pd=presenceDates(x.clientPresence);const d=pd.client||pd.nobo;return presenceKind(x.clientPresence)&&(!d||new Date(d)>=t0);}).length;
@@ -571,6 +632,7 @@ function ChefOverview({name,rows,pvOf,onPick,onClose}){
         <button type="button" onClick={onClose} aria-label="Fermer la vue d'ensemble" style={{border:"none",background:T.surface,color:T.ink700,borderRadius:8,width:30,height:30,cursor:"pointer"}}><NavIcon name="close" size={11}/></button>
       </span>
     </div>
+    {summary&&<ProjectSummary rows={rows} pvOf={pvOf} comments={summary.comments} delays={summary.delays} onPick={onPick}/>}
     <div className="enogia-stagger" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(210px,1fr))",gap:10}}>
       {sorted.map(x=>{const m=getPjMeta(x.pj,x),ec=ETAT_META[x.etat]||ETAT_META["NOT ORDERED"],pv=pvOf(x),nx=nextOf(x),edge=x.etat!=="SHIPPED"&&x.drift>10?T.red500:ec.bar;return(
         <div key={x.pj} {...pressable(()=>onPick(x.pj),{"aria-label":"Ouvrir la fiche "+x.pj})} className="enogia-test-card" style={{background:T.card,border:"1px solid "+T.line,borderTop:"4px solid "+edge,borderRadius:"0 0 10px 10px",padding:"10px 12px",cursor:"pointer",minWidth:0}}>
@@ -811,7 +873,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
       style={{width:10,alignSelf:"stretch",minHeight:300,margin:"0 -6px",cursor:"col-resize",flexShrink:0,display:"flex",justifyContent:"center",touchAction:"none"}}><span style={{width:3,borderRadius:2,background:T.line,margin:"8px 0"}}/></div>}
     <div style={{flex:"1 1 560px",minWidth:340,maxWidth:"none"}}>
       {/* v146.15 : les rapports se lancent depuis une barre AU-DESSUS de la fiche, pas dedans (lecture de la synthèse) */}
-      {clusterView&&!chefView&&<ChefOverview name={clusterView.label} rows={clusterView.rows} pvOf={pvOf} onPick={pick} onClose={()=>setClusterView(null)}/>}
+      {clusterView&&!chefView&&<ChefOverview name={clusterView.label} rows={clusterView.rows} pvOf={pvOf} onPick={pick} onClose={()=>setClusterView(null)} summary={{comments,delays}}/>}
       {chefView&&<ChefOverview name={chefView} rows={(groups.find(g=>g.head===chefView)||{rows:data.filter(x=>x.etat!=="SLOT_LIBRE"&&x.etat!=="SHIPPED"&&(chefsOf(getPjMeta(x.pj,x)).includes(chefView)||(!chefOfRow(x)&&chefView==="Sans chef de projet")))}).rows} pvOf={pvOf} onPick={pick} onClose={()=>setChefView(null)}/>}
       {!chefView&&!clusterView&&r&&<div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:8,flexWrap:"wrap",marginBottom:8}}>
         <span style={{fontSize:FZ.xs,color:T.ink300,marginRight:"auto"}}>Rapports pour {r.pj}</span>

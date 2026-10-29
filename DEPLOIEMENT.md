@@ -1471,3 +1471,19 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Pas de clé `localStorage`.
 - Vérifié : rendu clair et sombre (jsdom + aperçu), build (13 avertissements existants), tests, contraste.
 - Fichiers : components/HomeView.js, theme.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
+
+## v224 — KPI au propriétaire, cadrans fluides, résumé des projets multi-machines, planificateur (zoom, bancs, place, liens)
+
+- **KPI et Personnes et site** (`ManagerPanel.js`) : réservés au **propriétaire** (`isOwner()`). Un admin arrive sur Fiches projet ; le Calendrier de production reste ouvert aux admins. Après un import, le bandeau « Les ancrer dans l'initial » mène un admin aux fiches (l'examen s'ouvre quand même).
+- **Cadrans** (`Arrange.js`) : bouton « Disposer les cadrans » visible par le propriétaire seul ; on glisse la poignée ⋮⋮ et les autres cadrans se rangent en direct (animation 180 ms, `prefers-reduced-motion` respecté) ; la largeur se règle en tirant le bord droit (1 colonne = 1/12, de 2 à 12) ou avec − + ; **accueil** : les chiffres clés et « Départs à venir » (direction) sont maintenant des cadrans (`HomeView.js` → `RoleHome` `lead` / `tail`).
+- **Fiches projet** (`ManagerFiche.js`) : la fiche commune d'un PJ à plusieurs machines s'ouvre sur un **Résumé du projet** (`ProjectSummary`) : projet, pays, gammes, chefs ; machines, avancement moyen, plus grande dérive, retards déclarés, FAT client / NOBO ; barre des états ; jalons de la première à la dernière machine ; 3 derniers messages publics (clic = fiche de la machine).
+- **Planificateur** :
+  - **Zoom** : − + autour de Jour / Sem. / Mois, et **Ctrl + molette** sur le Gantt (la date sous la souris reste en place) ; clé `planUi105.px` (1,5 à 48 px par jour).
+  - **Bancs d'essai** (bouton de la barre, ⚠ = nombre de chevauchements) : une ligne par banc, ses machines dans l'ordre avec leurs dates, chevauchements en rouge, « → Banc 2 », « Passer avant » ; **« Interdire les chevauchements »** active la règle « un test à la fois par banc » avec l'ordre des tests (`benchOrderByStart`), « Répartir automatiquement » ; changer de banc sur la ligne Tests réordonne aussi la file.
+  - **Place pour le Gantt** : bouton « Charge » pour masquer la charge atelier (clé `planUi105.loadHide`), barres d'outils compactes, hauteur du Gantt adaptée.
+  - **Slots libres et PJ « …XXX… »** jamais affichés (toujours comptés dans la charge).
+  - **Liens** : tirer d'un rond vers le rond d'une autre tâche crée bien le lien (rond de début = vers son début, rond de fin = vers sa fin ; lâcher sur la ligne marche aussi).
+  - **Insertion** : une tâche ajoutée « après » une tâche reprend ses liens (A → C devient A → nouvelle → C).
+  - **Publication** : un PJ publié qui n'est pas dans le planning initial déclenche le bandeau « N PJ ne sont pas dans le planning initial » → les ancrer : leurs dates deviennent les dates initiales (figées) ; les publications suivantes changent les dates actuelles et la dérive se calcule par rapport à l'initial.
+- Vérifié : moteur (insertion, bancs) et rendu du planificateur et des bancs (jsdom + aperçu), build (13 avertissements existants), tests, contraste. Non vérifié dans l'appli connectée : glisser des cadrans, Ctrl + molette, lien rond → rond à la souris.
+- Fichiers : components/{Arrange,HomeView,RoleHome,ManagerPanel,ManagerFiche}.js, planner/{engine,Planner,PlannerGantt,store}.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.

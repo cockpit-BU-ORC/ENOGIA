@@ -16,7 +16,7 @@ import { InitialAddReview } from "./InitialAdd";
 import { SanteTab } from "./Feux";
 import { SerieTab } from "./Series";
 import { KpiPilotage, planWeeks } from "./KpiPilotage";
-import { isSuperAdmin, canCash } from "../roles";
+import { isSuperAdmin, canCash, isOwner } from "../roles";
 import { PeopleRoles } from "./PeopleRoles";
 
 // Filtre de période (mois et/ou année) réutilisable sur chaque graphique temporel
@@ -311,7 +311,7 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
   // v217 (demandé : « bien regrouper les pages entre elles si elles ont un rapport ») : Pilotage (KPI, Retards), Projets (Fiches projet,
   // Machines ORC), Réglages (Personnes et accès, Calendrier de production, Nouveautés). Cash in et Turbines sont des pages du site.
   const GROUP_OF={fiche:"fiche",hebdo:"fiche",derives:"derives",serie:"orc",orc:"orc",retards:"retards",retardsKpi:"retards",personnes:"reglages",vacances:"calendrier",production:"calendrier",nouveautes:"reglages"};
-  const superAdmin=isSuperAdmin(),owner=canCash(); // v210 : « owner » = accès au Cash in (propriétaire ou admin) // v185 : superAdmin = propriétaire ou admin ; owner = propriétaire (Cash in) // v143 : seul le super admin voit l'onglet « Réglages » (changer le site) ; un admin n'a que les onglets d'usage
+  const superAdmin=isSuperAdmin(),owner=canCash(),me=isOwner(); // v224 (demandé : « garder l'accès KPI uniquement pour moi comme Personnes et site ») : me = propriétaire seul → KPI, Personnes et site // v210 : « owner » = accès au Cash in (propriétaire ou admin) // v185 : superAdmin = propriétaire ou admin ; owner = propriétaire (Cash in) // v143 : seul le super admin voit l'onglet « Réglages » (changer le site) ; un admin n'a que les onglets d'usage
   // v158 : menu groupé (rail latéral) ; chaque entrée sait où aller. Cash in et Réglages : super admin seulement.
   const [railMin,setRailMin]=useRailCollapsed(),[palOpen,setPalOpen]=useState(false),phone=useIsPhone();
   // v178 : « fiche plein écran » — menu réduit aux icônes (sous-pages au survol) et liste des projets masquée en fondu.
@@ -325,16 +325,16 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
     reglages:[["personnes","Personnes, rôles et accès"],["nouveautes","Nouveautés"]],
   };
   const group=GROUP_OF[tab]||"derives";
-  useEffect(()=>{const old={orc:"serie",acces:"personnes",imports:"derives",sante:"fiche",suivi:"serie",statut:"serie",cash:"derives",turbines:"derives"}[tab];if(old){setTab(old);return;}if((!superAdmin&&GROUP_OF[tab]==="reglages")||(!owner&&GROUP_OF[tab]==="cash"))setTab("derives");},[superAdmin,owner,tab]); // v212 : anciens onglets mémorisés → leur nouvelle place // un admin qui arrive sur un onglet Réglages (ancien état mémorisé) est ramené aux KPI
+  useEffect(()=>{const old={orc:"serie",acces:"personnes",imports:"derives",sante:"fiche",suivi:"serie",statut:"serie",cash:"derives",turbines:"derives"}[tab];if(old){setTab(old);return;}if(!me&&(GROUP_OF[tab]||"derives")==="derives"){setTab("fiche");return;}if((!me&&GROUP_OF[tab]==="reglages")||(!superAdmin&&GROUP_OF[tab]==="calendrier")||(!owner&&GROUP_OF[tab]==="cash"))setTab(me?"derives":"fiche");},[superAdmin,owner,me,tab]); // v212 : anciens onglets mémorisés → leur nouvelle place // un admin qui arrive sur un onglet Réglages (ancien état mémorisé) est ramené aux KPI
   const subItems=SUBS[group]||null;
   const subValue=group==="derives"?kpiTab:tab;
   const onSub=id=>{if(group==="derives")setKpiTab(id);else setTab(id);};
   const goSub=(top,id)=>()=>{if(top==="derives"){setTab("derives");setKpiTab(id);}else setTab(id);};
   const entry=(id,label,icon,hint,extra)=>{const subs=SUBS[id]?SUBS[id].map(([sid,sl])=>({id:sid,label:sl,go:goSub(id,sid)})):null;return{id,label,icon,hint,subs,go:subs?subs[0].go:()=>setTab(id),...(extra||{})};};
   const navGroups=[
-    {label:"Pilotage",entries:[entry("derives","KPI","chart","synthèse dérives charge avancement"),entry("retards","Retards","warning","délais allocation")]},
+    {label:"Pilotage",entries:[...(me?[entry("derives","KPI","chart","synthèse dérives charge avancement",{lock:true})]:[]),entry("retards","Retards","warning","délais allocation")]},
     {label:"Projets",entries:[entry("fiche","Fiches projet","list","pj commentaires dates point hebdo semaine"),entry("orc","Machines ORC","gauge","n° de série statut état chef pays présence client nobo",{go:()=>setTab("serie")})]},
-    ...(superAdmin?[{label:"Réglages",entries:[entry("calendrier","Calendrier de production","calendar","jours sans production fermetures vacances",{lock:true}),entry("reglages","Personnes et site","lock","personnes rôles accès nouveautés",{lock:true})]}]:[]),
+    ...(superAdmin?[{label:"Réglages",entries:[entry("calendrier","Calendrier de production","calendar","jours sans production fermetures vacances",{lock:true}),...(me?[entry("reglages","Personnes et site","lock","personnes rôles accès nouveautés",{lock:true})]:[])]}]:[]),
   ];
   const activeEntry=navGroups.flatMap(g=>g.entries).find(e=>e.id===group)||navGroups[0].entries[0];
   // v196 : publie les entrées du Manager vers le menu du site (une seule barre de navigation) ; retirées en quittant le Manager.
@@ -381,13 +381,13 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
     </header>
 
     <div key={tab+(tab==="derives"?"/"+kpiTab:"")} className="enogia-view-in" style={{minWidth:0}}>
-    {tab==="derives"&&kpiTab==="synthese"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
+    {me&&tab==="derives"&&kpiTab==="synthese"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
       {/* v215 (maquette A validée) : tableau de pilotage — 5 chiffres, PJ à risque, charge des 6 semaines, portefeuille par état */}
       <KpiPilotage rows={fk} driftRows={driftRows} delays={delays} closurePeriods={closurePeriods} productionExclusions={productionExclusions} capaWeek={CAPA_ATELIER_SEM} plan={planDoc&&planDoc.plan} hasInitial={hasInitial} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}} onSeeDerives={()=>setKpiTab("derives")}/>
     </div>}
 
     {/* v219 (demandé : « l'imbrication des KPI est un peu brouillonne ») : répartitions et explorateur sur leur propre sous-page */}
-    {tab==="derives"&&kpiTab==="explorer"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
+    {me&&tab==="derives"&&kpiTab==="explorer"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,380px),1fr))",gap:12}}>
         {countByPays.length>0&&<div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line}}>
           <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:4}}>Répartition par pays</div>
@@ -434,7 +434,7 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
       </div>
     </div>}
 
-    {tab==="derives"&&kpiTab==="charge"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
+    {me&&tab==="derives"&&kpiTab==="charge"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
       <PlanLoadCard weeks={planWeeks(planDoc&&planDoc.plan,closurePeriods,productionExclusions,12,weekStartOf(today))}/>
         {fd.length>0&&<div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line,gridColumn:"1 / -1"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8}}>
@@ -534,7 +534,7 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
 
     {pendingAdd&&<InitialAddReview parsed={pendingAdd} initialData={initialData} busy={initialImporting} onCancel={()=>setPendingAdd(null)} onConfirm={async(rows,fixRows)=>{await onInitialAdd(rows,fixRows);setPendingAdd(null);}}/>}
 
-    {tab==="derives"&&kpiTab==="derives"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
+    {me&&tab==="derives"&&kpiTab==="derives"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
       {!hasInitial&&<div style={{background:T.amber100,color:T.amber600,borderRadius:12,padding:"16px 16px",fontSize:FZ.sm,display:"flex",alignItems:"center",gap:8}}><NavIcon name="warning" size={16}/>Aucun planning initial importé — les dérives ne peuvent pas être calculées. Utilisez le menu ⋯ de la tuile « Planning initial » en haut à droite.</div>}
       {initialData.length>0&&<>
           <KpiRow items={[[avgDelay==null?"—":(avgDelay>0?"+":"")+avgDelay+"j","Retard moyen départ",avgDelay>0?T.red500:T.emerald500],[lateCount,"PJ en retard",T.red500],[onTimeOrEarlyCount,"PJ à l'heure / en avance",T.emerald500],[onTimeRate==null?"—":onTimeRate+"%","Taux de respect délais",onTimeRate>=70?T.emerald500:onTimeRate>=40?T.amber500:T.red500],[comparable.length,"PJ comparables",T.ink500]]}/>
@@ -746,7 +746,7 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
       </>}
     </div>}
 
-    {tab==="derives"&&kpiTab==="avancement"&&<KpiAvancement rows={fk} progress={progress}/>}
+    {me&&tab==="derives"&&kpiTab==="avancement"&&<KpiAvancement rows={fk} progress={progress}/>}
     {tab==="retardsKpi"&&<DelayInsights delays={delays} delayTypes={delayTypes}/>}
 
     {tab==="sante"&&<SanteTab rows={fk} onSave={(pj,f)=>savePjMetaOverride&&savePjMetaOverride(pj,f)}/>}
@@ -754,7 +754,7 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
     {tab==="hebdo"&&<PointHebdo data={data} savePjMetaOverride={savePjMetaOverride} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}}/>}
     {tab==="fiche"&&<ProjectFileManager profiles={profiles} focus={focusFiche} compCatalog={compCatalog} setCompCatalog={setCompCatalog} managerEmails={managerEmails} currentUserEmail={currentUserEmail} resolveComment={resolveComment} certifs={certifs} setCertifs={setCertifs} openPj={fichePj&&fichePj.pj} openNonce={fichePj&&fichePj.n} lastChange={changeLog&&changeLog[0]} data={data} initialData={initialData} comments={comments} delays={delays} progress={progress} savePjMetaOverride={savePjMetaOverride} savePjMetaMulti={savePjMetaMulti} addCommentMulti={addCommentMulti} addComment={addComment} deleteComment={deleteComment} addDelayAllocationMulti={addDelayAllocationMulti} deleteDelayAllocation={deleteDelayAllocation} delayTypes={delayTypes} setDelayTypes={setDelayTypes} changeLog={changeLog} authorName={authorName} onOpenCash={onOpenCashPage?(pj=>onOpenCashPage(pj)):null}/>}
     {tab==="retards"&&<DelaysTab data={data} delays={delays} delayTypes={delayTypes} setDelayTypes={setDelayTypes} addDelayAllocationMulti={addDelayAllocationMulti} deleteDelayAllocation={deleteDelayAllocation} authorName={authorName}/>}
-    {superAdmin&&tab==="personnes"&&<>
+    {me&&tab==="personnes"&&<>
       <PeopleRoles profiles={profiles} saveProfiles={saveProfiles} data={data}/>
       <div style={{height:14}}/>
       <ManagerAccessManager managerEmails={managerEmails} setManagerEmails={setManagerEmails} currentUserEmail={currentUserEmail}/>
@@ -764,7 +764,7 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
         <span style={{fontFamily:"monospace",fontSize:FZ.xs,fontWeight:600,color:T.ink700,background:T.ink100,borderRadius:8,padding:"3px 8px"}}>build {buildVersion}</span>
       </div>}
     </>}
-    {superAdmin&&tab==="nouveautes"&&<><ReleaseCatalog isBeta={!!isBeta} selection={releaseSelection} onSaveSelection={saveReleaseSelection} onPublish={publishRelease} authorName={authorName}/><ReleaseEditor key={((releases||[])[0]||{}).id+":"+!!((releases||[])[0]||{}).off} releases={releases||[]} onSave={saveReleaseNotes} authorName={authorName}/></>}
+    {me&&tab==="nouveautes"&&<><ReleaseCatalog isBeta={!!isBeta} selection={releaseSelection} onSaveSelection={saveReleaseSelection} onPublish={publishRelease} authorName={authorName}/><ReleaseEditor key={((releases||[])[0]||{}).id+":"+!!((releases||[])[0]||{}).off} releases={releases||[]} onSave={saveReleaseNotes} authorName={authorName}/></>}
     {/* v212 : l'onglet Imports est supprimé ; le repère « Planning initial » (ancrer de nouveaux PJ dans l'initial, base des dérives) est en tête des KPI › Synthèse */}
     {superAdmin&&tab==="derives"&&kpiTab==="synthese"&&<div style={{marginBottom:0}}>
       <div style={{display:"inline-flex",alignItems:"center",gap:8,padding:"4px 4px 4px 12px",border:"1px solid "+(hasInitial?T.line:T.amber500),borderRadius:12,background:hasInitial?T.card:T.amber100}}>

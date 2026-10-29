@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v224",
+    date: "2026-10-29",
+    title: "V224 : bancs d'essai, zoom du planificateur, résumé des projets à plusieurs machines",
+    items: [
+      { t: "Fiches projet", d: "La fiche commune d'un PJ à plusieurs machines (PJ461-1, -2…) commence par un résumé : machines, avancement moyen, plus grande dérive, retards déclarés, FAT à venir, états, jalons et derniers messages.", admin: true },
+      { t: "Accueil", d: "Les chiffres clés font partie des cadrans de l'accueil." },
+    ],
+  },
+  {
     id: "2026-10-v223",
     date: "2026-10-28",
     title: "V223 : isothermes sur l'accueil",

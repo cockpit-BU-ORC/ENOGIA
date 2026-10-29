@@ -632,7 +632,9 @@ export function splitBenches(plan, cal) {
 export function addPhaseTask(plan, pj, { name, phase, dur, work, res, after }) {
   const r = addCustomStep(plan, pj, name); if (!r.key) return { plan, key: null };
   const step = splitKey(r.key).step; let np = setStepMeta(r.plan, pj, step, { phase: phase || null, res: res || (phase === "tests" ? "testeur" : "atelier"), dur: Math.max(1, Number(dur) || 1), work: Number(work) || 0 });
-  if (after) { np = addLink(np, { from: nodeKey(pj, after), to: r.key, type: "FS", lag: 0 }); const p = np.pjs.find(x => x.pj === pj); const ks = stepKeysOf(p).filter(k => k !== step); ks.splice(ks.indexOf(after) + 1, 0, step); p.seq = ks; }
+  // v224 (demandé : « si je rajoute une tâche entre 2 tâches, le lien doit se mettre à jour ») : les liens qui partaient de la tâche
+  // « après » vers une autre tâche du même PJ partent maintenant de la nouvelle tâche (A → C devient A → nouvelle → C).
+  if (after) { const fromK = nodeKey(pj, after); np = { ...np, links: (np.links || []).map(l => l.from === fromK && l.to !== r.key && splitKey(l.to).pj === pj ? { ...l, from: r.key } : l) }; np = addLink(np, { from: fromK, to: r.key, type: "FS", lag: 0 }); const p = np.pjs.find(x => x.pj === pj); const ks = stepKeysOf(p).filter(k => k !== step); ks.splice(ks.indexOf(after) + 1, 0, step); p.seq = ks; }
   return { plan: np, key: r.key };
 }
 // Nouveau PJ complet : Arrivée → Production → Tests → Packing → Départ (durées du modèle de la gamme), enchaînés, avec leurs
@@ -655,4 +657,35 @@ export function newPjPlan(plan, cal, o) {
   let np = clonePlan(plan); np.pjs.push({ pj, nomProjet: o.nomProjet || null, gamme: o.gamme || null, hAt, hAu: Number(W.tests) || 0, steps, seq }); np.links.push(...links);
   np = repositionInOrder(np, cal, "prod", pj, start); np = repositionInOrder(np, cal, "banc", pj, start);
   return np;
+}
+
+// ── v224 (demandé : « j'ai 2 slots de banc d'essai : 2 machines en même temps, mais jamais 2 machines sur le même slot ;
+// une attribution simple et claire ») ─────────────────────────────────────────────────────────────────────────────────
+// Ordre de passage des bancs = ordre des débuts de tests (calculés sans la règle) : avec la règle, chaque banc enchaîne ses
+// machines dans l'ordre où elles arrivent, sans en faire passer une plus tardive devant.
+export function benchOrderByStart(plan, cal) {
+  const s = schedule({ ...plan, rules: { ...rulesOf(plan), banc: false } }, cal);
+  const at = p => { const n = s.nodes[nodeKey(p.pj, "tests")]; return n && n.s !== null ? n.s : 1e9; };
+  const ids = (plan.pjs || []).filter(p => p.steps && p.steps.tests).slice().sort((a, b) => at(a) - at(b)).map(p => p.pj);
+  const np = clonePlan(plan); np.order = { ...(np.order || {}), banc: ids }; return np;
+}
+export function setBench(plan, cal, pj, b) {
+  const np = setStepMeta(plan, pj, "tests", { banc: Number(b) === 2 ? 2 : 1 });
+  return rulesOf(np).banc ? benchOrderByStart(np, cal) : np;
+}
+// Fait passer un PJ avant le précédent du même banc (ordre de passage), quand la règle « un test à la fois par banc » est active.
+export function benchMoveUp(plan, pj) {
+  const o = orderOf(plan, "banc"), p = (plan.pjs || []).find(x => x.pj === pj); if (!p) return plan;
+  const b = benchOf(p), same = o.filter(x => benchOf((plan.pjs || []).find(q => q.pj === x)) === b), i = same.indexOf(pj); if (i <= 0) return plan;
+  const prev = same[i - 1], next = o.filter(x => x !== pj); next.splice(next.indexOf(prev), 0, pj);
+  const np = clonePlan(plan); np.order = { ...(np.order || {}), banc: next }; return np;
+}
+// Chevauchements sur un même banc (deux machines au banc en même temps).
+export function benchConflicts(plan, sched) {
+  const out = [];
+  [1, 2].forEach(b => {
+    const L = (plan.pjs || []).filter(p => p.steps && p.steps.tests && benchOf(p) === b).map(p => ({ pj: p.pj, n: sched.nodes[nodeKey(p.pj, "tests")] })).filter(x => x.n && x.n.s !== null).sort((x, y) => x.n.s - y.n.s);
+    let last = null; L.forEach(x => { if (last && x.n.s <= last.n.f) out.push({ b, pj: x.pj, with: last.pj }); if (!last || x.n.f > last.n.f) last = x; });
+  });
+  return out;
 }

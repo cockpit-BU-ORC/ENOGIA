@@ -70,7 +70,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-28-v223-isothermes";
+const APP_BUILD_VERSION = "2026-10-29-v224-bancs-zoom-resume";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -1143,7 +1143,7 @@ export default function App(){
         {newVsInitial&&pinOk&&<div role="status" style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",marginBottom:12,padding:"10px 14px",borderRadius:10,background:T.teal100,color:T.teal600,fontFamily:T.font,fontSize:FZ.sm,fontWeight:600}}>
           <NavIcon name="pin" size={16}/>
           <span style={{flex:"1 1 320px"}}>{newVsInitial.pjs.length} PJ de cet import {newVsInitial.pjs.length>1?"ne sont pas":"n'est pas"} dans le planning initial : {newVsInitial.pjs.slice(0,6).join(", ")}{newVsInitial.pjs.length>6?"…":""}. Sans initial, leur dérive ne se calcule pas.</span>
-          <button type="button" onClick={()=>{setInitialAddFromImport({rows:newVsInitial.rows,n:Date.now()});setNewVsInitial(null);setManagerTab("derives");setView("manager");}} style={{border:"none",borderRadius:8,padding:"6px 12px",background:T.ink900,color:T.card,fontWeight:700,cursor:"pointer",fontFamily:T.font,minHeight:32}}>Les ancrer dans l'initial…</button>
+          <button type="button" onClick={()=>{setInitialAddFromImport({rows:newVsInitial.rows,n:Date.now()});setNewVsInitial(null);setManagerTab(isOwner?"derives":"fiche");setView("manager");}} style={{border:"none",borderRadius:8,padding:"6px 12px",background:T.ink900,color:T.card,fontWeight:700,cursor:"pointer",fontFamily:T.font,minHeight:32}}>Les ancrer dans l'initial…</button>
           <button type="button" onClick={()=>setNewVsInitial(null)} style={{border:"1px solid "+T.line,borderRadius:8,padding:"6px 12px",background:T.card,color:T.ink700,fontWeight:700,cursor:"pointer",fontFamily:T.font,minHeight:32}}>Plus tard</button>
         </div>}
         {(syncLost||offline)&&<div role="alert" style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",marginBottom:12,padding:"10px 14px",borderRadius:10,background:T.amber100,borderLeft:"4px solid "+T.amber500,color:T.ink900,fontSize:FZ.sm,fontFamily:T.font}}>
@@ -1221,7 +1221,7 @@ export default function App(){
             {view==="cashin"&&canCash&&<CashInTab authorName={authorName} focus={cashFocusApp}/>}
             {view==="turbines"&&isOwner&&<TurbinesTab doc={turbineDoc||{turbines:[]}} save={saveTurbines} data={dataWithOverrides} authorName={authorName} superAdmin={pinOk}/>}
             {view==="planner"&&isOwner&&<PlannerView productionExclusions={productionExclusions} testers={testsDoc&&Array.isArray(testsDoc.testers)?testsDoc.testers:[]} planLoaded={planLoaded} planDoc={planDoc} rows={dataWithOverrides} closurePeriods={closurePeriods} authorName={authorName}
-              onSavePlan={p=>savePlan(p,authorName)} onPublish={(plan,note)=>publishPlan({plan,closurePeriods,by:authorName,note})} onLoadHistory={loadHistory} onRestorePublication={restorePublication}/>}
+              onSavePlan={p=>savePlan(p,authorName)} onPublish={async(plan,note)=>{const r=await publishPlan({plan,closurePeriods,by:authorName,note});/* v224 : un PJ publié depuis le planificateur et absent du planning initial → même bandeau qu’après un import (« Les ancrer dans l’initial ») */if(r&&r.rows&&initialPjsRef.current.size){const fresh=r.rows.filter(x=>x&&x.pj&&x.etat!=="SLOT_LIBRE"&&!initialPjsRef.current.has(x.pj));setNewVsInitial(fresh.length?{rows:r.rows,pjs:fresh.map(x=>x.pj)}:null);}return r;}} onLoadHistory={loadHistory} onRestorePublication={restorePublication}/>}
             {view==="tests"&&canSeeTests&&<TestsTab doc={testsDoc} save={saveTests} data={dataWithOverrides} certifs={certifs} canEdit={pinOk} me={currentUser&&currentUser.email} signApi={signApi}/>}
             {view==="changes"&&<ChangesView entries={changeLog} onOpenPj={jumpToPj}/>}
             {view==="comments"&&<CommentsView data={filtered} comments={comments} addComment={addComment} deleteComment={deleteComment}
