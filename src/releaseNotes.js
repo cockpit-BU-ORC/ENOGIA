@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v234",
+    date: "2026-10-29",
+    title: "V234 : le site s'appelle « Cockpit ORC »",
+    items: [
+      { t: "Nom du site", d: "Le site s'appelle maintenant « Cockpit ORC » : « Cockpit » en gras, « ORC » surligné, dans le menu, l'accueil, l'écran de connexion et l'onglet du navigateur." },
+    ],
+  },
+  {
     id: "2026-10-v233",
     date: "2026-10-29",
     title: "V233 : un fond plus discret",

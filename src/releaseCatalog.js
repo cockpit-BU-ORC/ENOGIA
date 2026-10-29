@@ -504,4 +504,7 @@ export const RELEASE_CATALOG = [
     ["Fond", "Papier millimétré + un seul motif pâle sans texte (T-s, Mollier h-s ou rotor) ; papier millimétré très léger sur les tableaux."],
     ["Barre du haut", "Plus de « N unités · Mis à jour le … · N PJ modifiés »."],
   ] },
+  { v: "234", t: "Le site s'appelle « Cockpit ORC »", items: [
+    ["Nom du site", "Cockpit ORC (« Cockpit » en gras, « ORC » au surligneur) ; ex-BU ORC – Pilotage."],
+  ] },
 ];

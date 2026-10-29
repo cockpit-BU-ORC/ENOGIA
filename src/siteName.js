@@ -2,7 +2,8 @@
 // repris par le menu, l'accueil, l'écran de connexion, l'écran de transition et le titre de l'onglet.
 // v220 (demandé : « l'outil devient global à la BU ORC d'ENOGIA, je dois changer le titre du site ») : ENOGIA · BU ORC
 // v232 (choisi par Gabriel : « ENOGIA » trop large pour un outil de la BU ORC) : « BU ORC – Pilotage »
-export const SITE_NAME = "BU ORC";
-export const SITE_SCOPE = "Pilotage";
+// v234 (choisi par Gabriel, proposition 3) : « Cockpit ORC » — « Cockpit » en gras, « ORC » au surligneur (Hl)
+export const SITE_NAME = "Cockpit";
+export const SITE_SCOPE = "ORC";
 export const SITE_SUB = "Ordonnancement · Production · Tests · Projets · Cash in";
-export const SITE_TITLE = SITE_NAME + " – " + SITE_SCOPE;
+export const SITE_TITLE = SITE_NAME + " " + SITE_SCOPE;

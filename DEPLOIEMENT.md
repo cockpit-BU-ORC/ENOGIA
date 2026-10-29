@@ -1579,3 +1579,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - **Barre du haut** : plus de « N unités · Mis à jour le … · N PJ modifiés » (le journal reste dans Modifications ; « ✓ Enregistré » reste).
 - Pas de nouvelle clé `localStorage`.
 - Fichiers : pageBackdrop.js, styles.css, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
+
+## v234 — Le site s'appelle « Cockpit ORC »
+
+- `siteName.js` : `SITE_NAME` = « Cockpit », `SITE_SCOPE` = « ORC », `SITE_TITLE` = « Cockpit ORC ».
+- Menu, accueil et écran de connexion : « Cockpit » en gras, « ORC » au surligneur (`Hl`, or).
+- `public/index.html` (titre, description, titre iOS), `public/manifest.json` (nom et nom court), titre bêta « [BÊTA] Cockpit ORC ».
+- Une appli déjà installée sur un téléphone peut garder l'ancien nom jusqu'à sa réinstallation. Dépôt et adresse inchangés.
+- Pas de nouvelle clé `localStorage`.
+- Fichiers : siteName.js, App.js, components/{HomeView,LoginScreen}.js, public/{index.html,manifest.json}, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.

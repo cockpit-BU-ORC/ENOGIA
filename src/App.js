@@ -25,7 +25,7 @@ import { backdropStyle } from "./pageBackdrop"; // v225 : un fond léger par pag
 import { useA11yFallback } from "./a11yFallback";
 import { CashInTab } from "./components/CashInTab";
 import { TurbinesTab } from "./components/TurbinesTab";
-import { ManagerAccessNotice, PIN, NavIcon, EmptyState, LoadingSkeleton, PageHead, notify, Toaster } from "./components/SharedUI";
+import { ManagerAccessNotice, PIN, NavIcon, Hl, EmptyState, LoadingSkeleton, PageHead, notify, Toaster } from "./components/SharedUI";
 import { GanttView } from "./components/GanttView";
 import { PjDialog, PjDialogCtx } from "./components/RowDetail";
 import { PlannerView } from "./planner/Planner";
@@ -51,7 +51,7 @@ import { listenChangeLog } from "./changeLog";
 // production vers la bêta. Build normal : préfixe vide, comportement strictement inchangé.
 const IS_BETA=process.env.REACT_APP_BETA==="1";
 const DOC_PFX=IS_BETA?"beta_":"";
-if(IS_BETA&&typeof document!=="undefined")document.title="[BÊTA] BU ORC – Pilotage";
+if(IS_BETA&&typeof document!=="undefined")document.title="[BÊTA] Cockpit ORC";
 const BETA_DOCS=["current","initial","overrides","comments","pjMetaSync","pjMetaOverrides","delays","delayTypes","managerEmails","changeLog","cashin","cashinLinks","turbines","tests","profiles","prodTurbines"];
 const DOC_REF=()=>doc(db,"planning",DOC_PFX+"current");
 const INITIAL_DOC_REF=()=>doc(db,"planning",DOC_PFX+"initial");
@@ -73,7 +73,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-29-v233-fond-discret";
+const APP_BUILD_VERSION = "2026-10-29-v234-cockpit-orc";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -1081,7 +1081,7 @@ export default function App(){
       <button type="button" onClick={()=>setView("home")} aria-label={SITE_TITLE+" — accueil"} title="Accueil" style={{border:"none",background:"transparent",cursor:"pointer",padding:navCompact?"2px 0 10px":"2px 10px 12px",display:"flex",justifyContent:navCompact?"center":"flex-start",alignItems:"center",minHeight:44}}>
         <span style={{display:"flex",flexDirection:"column",alignItems:navCompact?"center":"flex-start",gap:6,minWidth:0}}>
         <img src={process.env.PUBLIC_URL+"/enogia-logo-color-crop.svg"} alt="" aria-hidden="true" width="105" height="42" style={{height:navCompact?24:34,width:"auto",maxWidth:navCompact?44:170,objectFit:"contain",objectPosition:"left center",filter:NAV.industrial||darkMode?"brightness(0) invert(1)":"none"}}/>
-        {!navCompact&&<span style={{textAlign:"left",lineHeight:1.25}}><span style={{display:"block",fontFamily:T.fontDisplay,fontWeight:800,fontSize:14,letterSpacing:".02em",color:NAV.industrial?"#FFFFFF":T.ink900}}>{SITE_NAME} <span style={{color:NAV.group}}>· {SITE_SCOPE}</span></span><span style={{display:"block",fontSize:11,color:NAV.ink,marginTop:2,whiteSpace:"normal"}}>{SITE_SUB}</span></span>}
+        {!navCompact&&<span style={{textAlign:"left",lineHeight:1.25}}><span style={{display:"block",fontFamily:T.fontDisplay,fontWeight:800,fontSize:14,letterSpacing:".02em",color:NAV.industrial?"#FFFFFF":T.ink900}}>{SITE_NAME} <Hl color={NAV.industrial?NAV.mark:T.amber500} style={{fontWeight:800}}>{SITE_SCOPE}</Hl></span><span style={{display:"block",fontSize:11,color:NAV.ink,marginTop:2,whiteSpace:"normal"}}>{SITE_SUB}</span></span>}
         </span>
       </button>
       {!(view==="manager"&&mgrNav)&&[["Planning",["home","table","gantt","calendar"]],["Suivi",["changes","comments","tests","planner"]],["Gestion",["cashin","turbines","prodturb"]]].map(([gl,ids])=>{const items=VIEWS.filter(v=>ids.includes(v.id));if(!items.length)return null;return(<React.Fragment key={gl}>

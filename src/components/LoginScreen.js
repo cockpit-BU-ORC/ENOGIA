@@ -45,7 +45,7 @@ export function LoginScreen(){
         <img src={process.env.PUBLIC_URL+"/world-map-bg.svg"} alt="" aria-hidden="true" style={{position:"absolute",right:"-18%",bottom:"-8%",width:"min(1100px,140%)",maxWidth:"none",opacity:.12,filter:"brightness(0) invert(1)",pointerEvents:"none",zIndex:0}}/>
         <img src={process.env.PUBLIC_URL+"/enogia-logo-color-crop.svg"} alt="ENOGIA" width="105" height="42" style={{position:"relative",height:40,width:"auto",alignSelf:"flex-start",filter:"brightness(0) invert(1)"}}/>
         <div style={{marginTop:"auto",position:"relative"}}>
-          <div style={{fontFamily:T.fontDisplay,fontWeight:800,fontSize:16,letterSpacing:".02em",marginBottom:2}}>{SITE_NAME} <span style={{color:"#F4D35E"}}>– {SITE_SCOPE}</span></div>
+          <div style={{fontFamily:T.fontDisplay,fontWeight:800,fontSize:16,letterSpacing:".02em",marginBottom:2}}>{SITE_NAME} <Hl color="#F4D35E">{SITE_SCOPE}</Hl></div>
           <div style={{fontSize:FZ.xs,color:"#C9D4E2",marginBottom:16}}>{SITE_SUB}</div>
           <h1 className="enogia-float-in" style={{margin:0,fontFamily:T.fontDisplay,fontWeight:500,fontSize:"clamp(30px,4vw,46px)",lineHeight:1.08,letterSpacing:"-.02em",maxWidth:560}}>
             Toutes les machines ORC, de l'<Hl color="#F4D35E">atelier</Hl> à la livraison.
@@ -97,7 +97,7 @@ export function LoginTransition({name}){
       <div className="enogia-tr" style={{position:"relative",display:"flex",flexDirection:"column",alignItems:"flex-start",gap:14,width:"min(440px,calc(100vw - 48px))"}}>
         <img src={process.env.PUBLIC_URL+"/enogia-logo-color-crop.svg"} alt="ENOGIA" width="105" height="42" style={{height:44,width:"auto",filter:"brightness(0) invert(1)"}}/>
         <div>
-          <div style={{fontFamily:T.fontDisplay,fontWeight:800,fontSize:"clamp(30px,5vw,40px)",letterSpacing:"-.01em",lineHeight:1.05}}><Hl color="#F4D35E">{SITE_NAME}</Hl> <span style={{fontWeight:500,color:"#C9D4E2"}}>– {SITE_SCOPE}</span></div>
+          <div style={{fontFamily:T.fontDisplay,fontWeight:800,fontSize:"clamp(30px,5vw,40px)",letterSpacing:"-.01em",lineHeight:1.05}}>{SITE_NAME} <Hl color="#F4D35E">{SITE_SCOPE}</Hl></div>
           <div style={{fontSize:FZ.sm,color:"#C9D4E2",marginTop:6}}>{SITE_SUB}</div>
         </div>
         <div style={{fontSize:FZ.md,fontWeight:600}}>{firstName?"Bienvenue, "+firstName+".":"Bienvenue."} <span style={{fontWeight:400,color:"#C9D4E2"}}>Chargement du planning…</span></div>
