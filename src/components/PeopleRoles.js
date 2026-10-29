@@ -2,11 +2,13 @@ import React, { useMemo, useState } from "react";
 import { T, FZ } from "../theme";
 import { PjPlate } from "./SharedUI";
 import { useMentions } from "../mentionContext";
-import { ROLES, ROLE_BLOCKS, profileOf, setProfile, chefNames, pjsOfProfile } from "../profiles";
+import { ROLES, ROLE_BLOCKS, profileOf, setProfile, chefNames, pjsOfProfile, removePerson, parsePeopleList } from "../profiles";
 import { nameFromEmail } from "../mentions";
 
 // v188 — Manager › Réglages › Personnes et rôles : pour chaque compte, le rôle (donc l'accueil qu'il voit) et ses PJ.
 // Les PJ s'associent un par un, ou d'un coup en choisissant un nom de chef de projet (tous ses PJ, y compris les futurs).
+// v238 : retirer une personne (gardée à part, « Rétablir ») ; coller une liste d'adresses @enogia.com — les personnes ajoutées
+// reçoivent un rôle et peuvent être taguées (@) avant leur première connexion.
 const lc = v => String(v || "").trim().toLowerCase();
 const chip = on => ({ display: "inline-flex", alignItems: "center", gap: 6, minHeight: 26, padding: "2px 10px", borderRadius: 999, border: "1.5px solid " + (on ? T.teal500 : T.line), background: on ? T.teal100 : T.card, color: on ? T.teal600 : T.ink700, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font });
 const field = () => ({ padding: "6px 10px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, minHeight: 32, boxSizing: "border-box" });
@@ -16,10 +18,12 @@ export function PeopleRoles({ profiles, saveProfiles, data }) {
   const rows = useMemo(() => (data || []).filter(r => r && r.pj && r.etat !== "SLOT_LIBRE"), [data]);
   const chefs = useMemo(() => chefNames(rows), [rows]);
   const [q, setQ] = useState(""), [newEmail, setNewEmail] = useState(""), [open, setOpen] = useState(null), [err, setErr] = useState("");
+  const [bulk, setBulk] = useState(null), [bulkMsg, setBulkMsg] = useState(""), [showRemoved, setShowRemoved] = useState(false);
+  const removed = useMemo(() => Object.values((profiles && profiles.byEmail) || {}).filter(p => p && p.email && p.removed).sort((a, b) => (a.name || a.email).localeCompare(b.name || b.email, "fr")), [profiles]);
   const people = useMemo(() => {
     const m = new Map();
     (ctx.options || []).forEach(o => { if (o.email) m.set(lc(o.email), { email: lc(o.email), name: o.name || nameFromEmail(o.email) }); });
-    Object.values((profiles && profiles.byEmail) || {}).forEach(p => { if (p && p.email && !m.has(lc(p.email))) m.set(lc(p.email), { email: lc(p.email), name: p.name || nameFromEmail(p.email) }); });
+    Object.values((profiles && profiles.byEmail) || {}).forEach(p => { if (p && p.email && !p.removed && !m.has(lc(p.email))) m.set(lc(p.email), { email: lc(p.email), name: p.name || nameFromEmail(p.email) }); });
     return [...m.values()].sort((a, b) => a.name.localeCompare(b.name, "fr"));
   }, [ctx.options, profiles]);
   const shown = people.filter(p => !q.trim() || (p.name + " " + p.email).toLowerCase().includes(q.trim().toLowerCase()));
@@ -27,7 +31,15 @@ export function PeopleRoles({ profiles, saveProfiles, data }) {
   const add = () => {
     const v = lc(newEmail);
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) { setErr("Adresse e-mail invalide."); return; }
-    setErr(""); save(v, { name: nameFromEmail(v) }); setNewEmail(""); setOpen(v);
+    setErr(""); const pr = profileOf(profiles, v); saveProfiles(setProfile(profiles, v, { name: pr.name || nameFromEmail(v), removed: false })); setNewEmail(""); setOpen(v);
+  };
+  const remove = p => { if (window.confirm("Retirer " + p.name + " de la liste ? Son rôle et ses PJ sont effacés ; vous pourrez la rétablir.")) { saveProfiles(removePerson(profiles, p.email)); if (open === p.email) setOpen(null); } };
+  const addBulk = () => {
+    const list = parsePeopleList(bulk);
+    if (!list.length) { setBulkMsg("Aucune adresse @enogia.com trouvée."); return; }
+    let next = profiles, n = 0;
+    list.forEach(({ email, name }) => { const pr = profileOf(next, email), known = people.some(x => x.email === email); if (!known) n++; next = setProfile(next, email, { name: pr.name || name || nameFromEmail(email), removed: false }); });
+    saveProfiles(next); setBulk(null); setBulkMsg(n + " personne" + (n > 1 ? "s" : "") + " ajoutée" + (n > 1 ? "s" : "") + (list.length > n ? ", " + (list.length - n) + " déjà dans la liste" : "") + ".");
   };
   const counts = ROLES.map(([id, l]) => [l, people.filter(p => profileOf(profiles, p.email).role === id).length]);
 
@@ -39,6 +51,15 @@ export function PeopleRoles({ profiles, saveProfiles, data }) {
         <input value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher une personne" aria-label="Rechercher une personne" style={{ ...field(), flex: "1 1 200px" }} />
         <input value={newEmail} onChange={e => { setNewEmail(e.target.value); setErr(""); }} onKeyDown={e => { if (e.key === "Enter") add(); }} placeholder="prenom.nom@enogia.com" aria-label="Ajouter une personne par e-mail" style={{ ...field(), flex: "1 1 220px" }} />
         <button type="button" onClick={add} style={{ ...field(), background: T.teal500, color: T.card, border: "none", fontWeight: 700, cursor: "pointer" }}>Ajouter</button>
+        <button type="button" onClick={() => { setBulk(bulk === null ? "" : null); setBulkMsg(""); }} aria-expanded={bulk !== null} style={{ ...field(), cursor: "pointer", fontWeight: 700, color: T.ink700 }}>Coller une liste</button>
+        {bulk !== null && <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 6 }}>
+          <textarea value={bulk} onChange={e => { setBulk(e.target.value); setBulkMsg(""); }} rows={6} aria-label="Liste de personnes à ajouter" placeholder={"Une personne par ligne :\nPrénom NOM <prenom.nom@enogia.com>\nou simplement prenom.nom@enogia.com"} style={{ ...field(), width: "100%", fontFamily: T.fontMono, fontSize: FZ.xs, resize: "vertical" }} />
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <button type="button" onClick={addBulk} style={{ ...field(), background: T.teal500, color: T.card, border: "none", fontWeight: 700, cursor: "pointer" }}>Ajouter {parsePeopleList(bulk).length || ""} personne{parsePeopleList(bulk).length > 1 ? "s" : ""}</button>
+            <span style={{ fontSize: FZ.xs, color: T.ink500 }}>Seules les adresses @enogia.com sont gardées. Les personnes ajoutées peuvent être taguées avant leur première connexion.</span>
+          </div>
+        </div>}
+        {bulkMsg && <span role="status" style={{ fontSize: FZ.xs, color: T.ink700, fontWeight: 600 }}>{bulkMsg}</span>}
         <span style={{ fontSize: FZ.xs, color: T.ink500, width: "100%" }}>{counts.map(([l, n]) => l + " : " + n).join(" · ")}</span>
         {err && <span role="alert" style={{ fontSize: FZ.xs, color: T.red500, fontWeight: 600 }}>{err}</span>}
       </div>
@@ -58,6 +79,7 @@ export function PeopleRoles({ profiles, saveProfiles, data }) {
               {ROLES.map(([id, l]) => <option key={id} value={id}>{l}</option>)}
             </select>
             <button type="button" onClick={() => setOpen(isOpen ? null : p.email)} aria-expanded={isOpen} style={{ ...field(), cursor: "pointer", fontWeight: 700, color: T.ink700, minWidth: 120 }}>Accueil · {mine.length} PJ {isOpen ? "▴" : "▾"}</button>
+            {lc(p.email) !== lc(ctx.me) && <button type="button" onClick={() => remove(p)} aria-label={"Retirer " + p.name} title="Retirer de la liste" style={{ ...field(), cursor: "pointer", color: T.red500, fontWeight: 700, minWidth: 32, padding: "6px 8px" }}>Retirer</button>}
           </div>
           {isOpen && <div style={{ padding: "4px 14px 14px", display: "flex", flexDirection: "column", gap: 10, background: T.surface }}>
             {/* v191 : le super admin choisit les blocs de l'accueil de chaque personne (plus de sélecteur sur l'accueil lui-même) */}
@@ -89,6 +111,13 @@ export function PeopleRoles({ profiles, saveProfiles, data }) {
         </div>);
       })}
     </div>
+    {removed.length > 0 && <div style={{ background: T.card, borderRadius: 12, border: "1px solid " + T.line, overflow: "hidden" }}>
+      <button type="button" onClick={() => setShowRemoved(v => !v)} aria-expanded={showRemoved} style={{ width: "100%", textAlign: "left", border: "none", background: "transparent", padding: "10px 14px", cursor: "pointer", fontFamily: T.font, fontSize: FZ.sm, fontWeight: 700, color: T.ink700, minHeight: 36 }}>Personnes retirées ({removed.length}) {showRemoved ? "▴" : "▾"}</button>
+      {showRemoved && removed.map(p => <div key={p.email} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 14px", borderTop: "1px solid " + T.line }}>
+        <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: FZ.sm, color: T.ink700 }}>{p.name || nameFromEmail(p.email)}</div><div style={{ fontSize: FZ.xs, color: T.ink500, fontFamily: T.fontMono }}>{p.email}</div></div>
+        <button type="button" onClick={() => saveProfiles(removePerson(profiles, p.email, false))} style={{ ...field(), cursor: "pointer", fontWeight: 700, color: T.teal600 }}>Rétablir</button>
+      </div>)}
+    </div>}
   </div>);
 }
 const getNom = r => String(r.nomProjet || r.client || "");

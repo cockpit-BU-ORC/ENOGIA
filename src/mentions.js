@@ -71,12 +71,16 @@ export function openMentionsFor(commentsByPj, email) {
 // v153 — Personnes que l'on peut taguer : tous les comptes qui se sont déjà connectés au site (registre « knownUsers »)
 // + les managers déclarés + soi-même. Le nom affiché est celui du compte Google, à défaut tiré de l'adresse.
 export const userKey = email => lc(email).replace(/[.#$[\]/]/g, "_");
-export function peopleOptions(known, managerEmails, myEmail, myName) {
+// v238 : profiles = planning/profiles (personnes ajoutées à la main, taguables avant leur première connexion ; les retirées sont exclues).
+export function peopleOptions(known, managerEmails, myEmail, myName, profiles) {
   const byEmail = new Map();
   const add = (email, name) => { const k = lc(email); if (!k) return; const prev = byEmail.get(k); if (!prev || (!prev.named && name)) byEmail.set(k, { email: k, name: String(name || "").trim() || nameFromEmail(k), named: !!String(name || "").trim() }); };
   (known || []).forEach(u => u && add(u.email, u.name));
   (managerEmails || []).forEach(e => add(e, ""));
   add(myEmail, myName);
+  const by = (profiles && profiles.byEmail) || {};
+  Object.values(by).forEach(p => { if (p && p.email && !p.removed) add(p.email, p.name); });
+  Object.values(by).forEach(p => { if (p && p.email && p.removed && lc(p.email) !== lc(myEmail)) byEmail.delete(lc(p.email)); });
   return [...byEmail.values()].map(({ email, name }) => ({ email, name })).sort((a, b) => a.name.localeCompare(b.name));
 }
 

@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { db, auth, ALLOWED_EMAIL_DOMAIN } from "./firebase";
 import { setResolved as setCommentResolved, peopleOptions, userKey, chefAccount, withChef, lc as lcMention } from "./mentions";
+import { profileOf } from "./profiles";
 import { MentionCtx } from "./mentionContext";
 import { MentionBell } from "./components/MentionBell";
 import { TestsTab } from "./components/TestsTab";
@@ -74,7 +75,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-29-v237-adresse-cockpit";
+const APP_BUILD_VERSION = "2026-10-29-v238-personnes-roles";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -611,6 +612,7 @@ export default function App(){
   useEffect(()=>{const h=e=>{const pj=e.detail&&e.detail.pj;if(!pj||!pinOkRef.current)return;setCalSel(null);setManagerJump({pj,n:Date.now()});setManagerTab("fiche");setView("manager");};window.addEventListener("enogia:openSynthese",h);return()=>window.removeEventListener("enogia:openSynthese",h);},[]);
   // v153 : registre des comptes déjà connectés au site (planning/knownUsers) → personnes que l'on peut taguer avec @
   const [knownUsers,setKnownUsers]=useState([]);
+  const [profiles,setProfiles]=useState({byEmail:{}}); // v188 (lu plus bas) ; v238 : déclaré ici, les personnes ajoutées dans Personnes et rôles sont taguables
   useEffect(()=>{
     if(!currentUser||!currentUser.email)return;
     const ref=doc(db,"planning","knownUsers");
@@ -620,10 +622,10 @@ export default function App(){
   },[currentUser]);
   // v154 : chef de projet d'un PJ et son compte (s'il s'est déjà connecté ou s'il est manager déclaré) ; les managers ne sont plus proposés dans la saisie @
   const dataRef=useRef(data);dataRef.current=data;
-  const peopleAll=useMemo(()=>peopleOptions(knownUsers,managerEmails,currentUser&&currentUser.email,currentUser&&currentUser.displayName),[knownUsers,managerEmails,currentUser]);
+  const peopleAll=useMemo(()=>peopleOptions(knownUsers,managerEmails,currentUser&&currentUser.email,currentUser&&currentUser.displayName,profiles),[knownUsers,managerEmails,currentUser,profiles]);
   const chefOfRef=useRef(()=>({name:"",account:null}));
   chefOfRef.current=pj=>{const row=dataRef.current.find(r=>r.pj===pj);const name=row?(getPjMeta(pj,row).chefProjet||""):"";return{name,account:chefAccount(name,peopleAll)};};
-  const mentionCtx=useMemo(()=>({options:peopleOptions(knownUsers,[],currentUser&&currentUser.email,currentUser&&currentUser.displayName),me:lcMention(currentUser&&currentUser.email),chefOf:pj=>chefOfRef.current(pj)}),[knownUsers,currentUser]);
+  const mentionCtx=useMemo(()=>({options:peopleOptions(knownUsers,[],currentUser&&currentUser.email,currentUser&&currentUser.displayName,profiles),me:lcMention(currentUser&&currentUser.email),chefOf:pj=>chefOfRef.current(pj)}),[knownUsers,currentUser,profiles]);
   const resolveComment=useCallback(async (pj,idx,email,on)=>{
     const nextAll={...comments,[pj]:setCommentResolved(comments[pj]||[],idx,email,on,new Date().toISOString())};
     try{await setDoc(COMMENTS_DOC_REF(),{byPj:nextAll},{merge:true});return true;}
@@ -693,7 +695,6 @@ export default function App(){
     return ()=>unsub();
   },[currentUser]);
   // v188 : profils (rôle → accueil, PJ associés), lus par tous les comptes connectés, modifiés depuis le Manager
-  const [profiles,setProfiles]=useState({byEmail:{}});
   useEffect(()=>{
     if(!currentUser)return undefined;
     return onSnapshot(PROFILES_DOC_REF(),snap=>{const d=snap.exists()?snap.data():{};setProfiles({...d,byEmail:d.byEmail&&typeof d.byEmail==="object"?d.byEmail:{}});},err=>console.warn("profiles (lecture) :",err&&err.message));
@@ -719,7 +720,9 @@ export default function App(){
     save:async(pj,key,entry)=>{try{await setDoc(doc(db,"planning",DOC_PFX+"testsign_"+pj),{[key]:entry},{merge:true});return true;}catch(e){console.error(e);notify("Erreur lors de l'enregistrement de la signature : "+e.message);return false;}},
   }),[]);
   // Page « Tests » (rail de gauche) : administrateurs + testeurs de la liste (adresse renseignée) ; les testeurs consultent seulement
-  const canSeeTests=!!(pinOk||testerOfEmail(testsDoc,currentUser&&currentUser.email));
+  // v238 : le responsable des testeurs (rôle « resptest » dans Personnes et rôles) voit et renseigne les tests de tous les testeurs
+  const isTestLead=!!currentUser&&profileOf(profiles,currentUser.email).role==="resptest";
+  const canSeeTests=!!(pinOk||isTestLead||testerOfEmail(testsDoc,currentUser&&currentUser.email));
   useEffect(()=>{if(view==="tests"&&testsLoaded&&!canSeeTests)setView("table");},[view,testsLoaded,canSeeTests]); // accès retiré ou ancien choix mémorisé
   const saveTests=useCallback(async next=>{
     // v231 : la validation automatique des machines expédiées (testsView) n'est jamais écrite en base
@@ -1232,7 +1235,7 @@ export default function App(){
             {view==="turbines"&&isOwner&&<TurbinesTab doc={turbineDoc||{turbines:[]}} save={saveTurbines} data={dataWithOverrides} authorName={authorName} superAdmin={pinOk}/>}
             {view==="planner"&&isOwner&&<PlannerView productionExclusions={productionExclusions} testers={testsDoc&&Array.isArray(testsDoc.testers)?testsDoc.testers:[]} planLoaded={planLoaded} planDoc={planDoc} rows={dataWithOverrides} closurePeriods={closurePeriods} authorName={authorName}
               onSavePlan={p=>savePlan(p,authorName)} onPublish={async(plan,note)=>{const r=await publishPlan({plan,closurePeriods,by:authorName,note});/* v224 : un PJ publié depuis le planificateur et absent du planning initial → même bandeau qu’après un import (« Les ancrer dans l’initial ») */if(r&&r.rows&&initialPjsRef.current.size){const fresh=r.rows.filter(x=>x&&x.pj&&x.etat!=="SLOT_LIBRE"&&!initialPjsRef.current.has(x.pj));setNewVsInitial(fresh.length?{rows:r.rows,pjs:fresh.map(x=>x.pj)}:null);}return r;}} onLoadHistory={loadHistory} onRestorePublication={restorePublication}/>}
-            {view==="tests"&&canSeeTests&&<TestsTab doc={testsView} save={saveTests} data={dataWithOverrides} certifs={certifs} canEdit={pinOk} me={currentUser&&currentUser.email} signApi={signApi}/>}
+            {view==="tests"&&canSeeTests&&<TestsTab doc={testsView} save={saveTests} data={dataWithOverrides} certifs={certifs} canEdit={pinOk} lead={isTestLead} me={currentUser&&currentUser.email} signApi={signApi}/>}
             {view==="changes"&&<ChangesView entries={changeLog} onOpenPj={jumpToPj}/>}
             {view==="comments"&&<CommentsView data={filtered} comments={comments} addComment={addComment} deleteComment={deleteComment}
               pinOk={pinOk} addCommentMulti={addCommentMulti} jumpToPj={jumpToPj} authorName={authorName}/>}

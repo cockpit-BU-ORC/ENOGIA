@@ -30,6 +30,7 @@ export const CAPA_SEMAINE = 175; // h atelier par semaine (même valeur que les 
 export const HOME_DEFAULTS = {
   cdp: [["pjs", 7], ["jalons", 5], ["todo", 4], ["fat", 4], ["avance", 4]],
   testeur: [["today", 8], ["sign", 4], ["week", 12], ["arrivees", 6], ["results", 6]],
+  resptest: [["today", 8], ["sign", 4], ["week", 12], ["arrivees", 6], ["results", 6], ["postes", 6], ["tests", 6]], // v238
   atelier: [["charge", 7], ["arrdep", 5], ["montage", 7], ["postes", 5]],
   turbines: [["ptReady", 3], ["ptNoWheel", 3], ["ptPieces", 6], ["ptDates", 12], ["ptRoues", 6], ["ptInj", 6]],
   autre: [["kpis", 12], ["departs", 6], ["parcours", 6], ["benchWeek", 6], ["visites", 6], ["shipped", 6], ["etats", 6], ["fermetures", 6]],
@@ -53,6 +54,10 @@ export function roleLead(role, d) {
       d.toSign.length ? { t: s(d.toSign.length, "fiche à signer", "fiches à signer"), c: "warn" } : "aucune fiche à signer",
       d.nextT ? " ; prochaine arrivée au banc " + fmtDay(d.nextT) + "." : "."];
   }
+  if (role === "resptest") // v238 : responsable des testeurs — tous les testeurs
+    return [d.hello + ". Aujourd'hui, ", { t: s(d.todayT.length, "machine au banc", "machines au banc"), c: "tests" }, ", ",
+      d.toSign.length ? { t: s(d.toSign.length, "fiche à signer", "fiches à signer"), c: "warn" } : "aucune fiche à signer",
+      d.nextT ? " ; prochaine arrivée au banc " + fmtDay(d.nextT) + "." : "."];
   if (role === "atelier") {
     const w = d.charge[0] || { hours: 0, cap: CAPA_SEMAINE }, pct = w.cap ? Math.round(w.hours / w.cap * 100) : 0;
     return ["Cette semaine, ", { t: s(d.montage.length, "machine en montage", "machines en montage"), c: "production" }, ", charge à ",
@@ -85,11 +90,14 @@ export function RoleHome({ role, profile, ui, kpiEl, depEl, parcoursEl, rows, op
   /* ── données communes ── */
   const w0 = monday(today), weekEnd = addD(w0, 6);
   const mine = useMemo(() => open.filter(r => myPjs.includes(r.pj)).sort((a, b) => dIso(a.depart || "9").localeCompare(dIso(b.depart || "9"))), [open, myPjs]);
-  const mineT = useMemo(() => (!myTester || !testsDoc ? [] : open.filter(r => r.tests && planOf(testsDoc, r.pj).assign.some(a => a.tid === myTester.id))), [open, myTester, testsDoc]);
-  const effOf = r => { const a = planOf(testsDoc, r.pj).assign.find(x => x.tid === myTester.id); return effRange(a, r); };
-  const todayT = myTester ? mineT.filter(r => { const e = effOf(r); return e.from <= today && e.to >= today; }) : [];
-  const toSign = myTester ? mineT.filter(r => { const q = prog(r), p = planOf(testsDoc, r.pj); return !(p.signs || {})["t:" + myTester.id] && (tEnd(r) < today || (q.total > 0 && q.done === q.total)); }) : [];
-  const nextArr = (myTester ? mineT : open).filter(r => r.tests && tStart(r) > today).sort((a, b) => tStart(a).localeCompare(tStart(b)));
+  // v238 : le responsable des testeurs voit les machines de tous les testeurs (cadrans « Au banc aujourd'hui », « La semaine », « Fiches à signer »…)
+  const allT = role === "resptest" && !!testsDoc, tView = allT || !!myTester;
+  const mineT = useMemo(() => (!testsDoc ? [] : allT ? open.filter(r => r.tests) : !myTester ? [] : open.filter(r => r.tests && planOf(testsDoc, r.pj).assign.some(a => a.tid === myTester.id))), [open, myTester, testsDoc, allT]);
+  const effOf = r => { if (allT) return { from: tStart(r), to: tEnd(r) }; const a = planOf(testsDoc, r.pj).assign.find(x => x.tid === myTester.id); return effRange(a, r); };
+  const todayT = tView ? mineT.filter(r => { const e = effOf(r); return e.from <= today && e.to >= today; }) : [];
+  const unsigned = (r, p) => allT ? (p.assign.length > 0 && p.assign.some(a => !(p.signs || {})["t:" + a.tid])) : !(p.signs || {})["t:" + myTester.id];
+  const toSign = tView ? mineT.filter(r => { const q = prog(r), p = planOf(testsDoc, r.pj); return unsigned(r, p) && (tEnd(r) < today || (q.total > 0 && q.done === q.total)); }) : [];
+  const nextArr = (tView ? mineT : open).filter(r => r.tests && tStart(r) > today).sort((a, b) => tStart(a).localeCompare(tStart(b)));
   const testers = testsDoc ? testersOf(testsDoc) : [];
   const nowTest = open.filter(r => inTest(r, today));
   const montage = open.filter(r => ["MONTAGE", "ELEC", "PACKAGING"].includes(r.etat));
@@ -162,16 +170,16 @@ export function RoleHome({ role, profile, ui, kpiEl, depEl, parcoursEl, rows, op
   // testeur
   W.today = { label: "Au banc aujourd'hui", span: 8, render: () => sec("today", "Au banc aujourd'hui", S.tests.ring, <>
     <Head title="Au banc aujourd'hui" sub={fmtDay(today)} count={todayT.length} />
-    {!myTester ? empty("check", "Vous n'êtes pas dans la liste des testeurs", "Un administrateur vous ajoute depuis la page Tests.") : todayT.length === 0 ? empty("check", "Pas de test aujourd'hui", "Vos prochaines machines sont dans « Ma semaine ».") :
+    {!tView ? empty("check", "Vous n'êtes pas dans la liste des testeurs", "Un administrateur vous ajoute depuis la page Tests.") : todayT.length === 0 ? empty("check", "Pas de test aujourd'hui", "Vos prochaines machines sont dans « Ma semaine ».") :
       todayT.map((r, i) => { const e = effOf(r), n = workDays(e.from, today), m = workDays(e.from, e.to); return <Row key={r.pj} first={i === 0} pj={r.pj} pill={<Pill tone={S.tests}>{"jour " + n + " / " + m}</Pill>} main={nomOf(r) || r.gamme || "Tests"} presence={presenceOf(r)} right={progPill(prog(r))} />; })}
     {more("Renseigner mes tests", () => onGo && onGo("tests"))}</>) };
   W.sign = { label: "Fiches à signer", span: 4, render: () => sec("sign", "Fiches à signer", S.finProd.ring, <>
     <Head title="Fiches à signer" sub="tests terminés" count={toSign.length} />
     {toSign.length === 0 ? empty("check", "Rien à signer", "Les fiches de test à signer apparaîtront ici.") : toSign.slice(0, 5).map((r, i) => <Row key={r.pj} first={i === 0} pj={r.pj} main={nomOf(r) || r.gamme || ""} right={progPill(prog(r))} />)}</>) };
-  W.week = { label: "Ma semaine", span: 12, render: () => { const days = DOW.map((l, i) => ({ l, d: addD(w0, i) }));
-    return sec("week", "Ma semaine", S.production.ring, <><Head title="Ma semaine" sub={"du " + fmtD(days[0].d) + " au " + fmtD(days[4].d)} />
+  W.week = { label: allT ? "La semaine" : "Ma semaine", span: 12, render: () => { const days = DOW.map((l, i) => ({ l, d: addD(w0, i) }));
+    return sec("week", allT ? "La semaine" : "Ma semaine", S.production.ring, <><Head title={allT ? "La semaine" : "Ma semaine"} sub={"du " + fmtD(days[0].d) + " au " + fmtD(days[4].d)} />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(5,minmax(0,1fr))", gap: 6, marginTop: 6 }}>
-        {days.map(({ l, d }) => { const list = myTester ? mineT.filter(r => { const e = effOf(r); return e.from <= d && e.to >= d; }) : []; return (
+        {days.map(({ l, d }) => { const list = tView ? mineT.filter(r => { const e = effOf(r); return e.from <= d && e.to >= d; }) : []; return (
           <div key={d} style={{ background: d === today ? T.teal100 : T.surface, borderRadius: 8, padding: "6px 6px 8px", minWidth: 0 }}>
             <div style={{ fontSize: FZ.xs, fontWeight: 700, color: d === today ? T.teal600 : T.ink700 }}>{l} {d.slice(8, 10)}</div>
             {list.length === 0 ? <div style={{ ...grey, marginTop: 4 }}>—</div> : list.map(r => <button key={r.pj} type="button" onClick={() => onOpenPj && onOpenPj(r.pj)} style={{ display: "block", width: "100%", marginTop: 4, border: "none", borderLeft: "3px solid " + S.tests.solid, background: T.card, borderRadius: "0 6px 6px 0", padding: "3px 6px", textAlign: "left", cursor: "pointer", fontFamily: T.fontMono, fontSize: 11, fontWeight: 700, color: T.ink900, minHeight: 24 }}>{r.pj}</button>)}
@@ -180,7 +188,7 @@ export function RoleHome({ role, profile, ui, kpiEl, depEl, parcoursEl, rows, op
   W.arrivees = { label: "Prochaines arrivées au banc", span: 6, render: () => sec("arrivees", "Prochaines arrivées au banc", S.arrivee.ring, <>
     <Head title="Prochaines arrivées au banc" count={nextArr.length} />
     {nextArr.length === 0 ? empty("check", "Aucune arrivée prévue", "") : nextArr.slice(0, 5).map((r, i) => <Row key={r.pj} first={i === 0} pj={r.pj} main={nomOf(r) || r.gamme || ""} presence={presenceOf(r)} right={fmtDay(tStart(r))} />)}</>) };
-  W.results = { label: "Derniers résultats", span: 6, render: () => { const L = (myTester ? mineT : open).filter(r => r.tests && tStart(r) <= today).map(r => ({ r, q: prog(r) })).filter(x => x.q.done > 0).sort((a, b) => tEnd(b.r).localeCompare(tEnd(a.r))).slice(0, 5);
+  W.results = { label: "Derniers résultats", span: 6, render: () => { const L = (tView ? mineT : open).filter(r => r.tests && tStart(r) <= today).map(r => ({ r, q: prog(r) })).filter(x => x.q.done > 0).sort((a, b) => tEnd(b.r).localeCompare(tEnd(a.r))).slice(0, 5);
     return sec("results", "Derniers résultats", A.red.ring, <><Head title="Derniers résultats" />
       {L.length === 0 ? empty("inbox", "Aucun résultat pour l'instant", "") : L.map(({ r, q }, i) => <Row key={r.pj} first={i === 0} pj={r.pj} pill={<Pill tone={q.ko ? A.red : S.finProd}>{q.ko ? q.ko + " échec" + (q.ko > 1 ? "s" : "") : q.done === q.total ? "Réussi" : "En cours"}</Pill>} main={nomOf(r) || r.gamme || ""} right={progPill(q)} />)}</>); } };
   // chef d'atelier

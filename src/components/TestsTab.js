@@ -39,7 +39,7 @@ function TesterChip({ t, warn, on, onClick, disabled, small }) {
   </span>);
 }
 
-export function TestsTab({ doc, save, data, certifs, canEdit, me, signApi }) {
+export function TestsTab({ doc, save, data, certifs, canEdit, lead, me, signApi }) {
   const [sub, setSub] = useState("semaine"); // v186 : vue par semaine par défaut (maquette validée)
   const [focus, setFocus] = useState(null);
   const [msg, setMsg] = useState(null);
@@ -48,13 +48,13 @@ export function TestsTab({ doc, save, data, certifs, canEdit, me, signApi }) {
   const rows = useMemo(() => (data || []).filter(r => r && r.pj && r.etat !== "SLOT_LIBRE"), [data]);
   const conflicts = useMemo(() => findConflicts(doc, rows), [doc, rows]);
   const who = (myTester && myTester.name) || nameFromEmail(me || "");
-  const commit = async next => { if (!canEdit && !myTester) return false; const ok = await save({ ...doc, ...next }); setMsg(ok === false ? "L'enregistrement a échoué." : null); return ok; };
+  const commit = async next => { if (!canEdit && !myTester && !lead) return false; const ok = await save({ ...doc, ...next }); setMsg(ok === false ? "L'enregistrement a échoué." : null); return ok; };
   const SUBS = [["semaine", "Par semaine"], ["testers", "Par testeur"], ...(canEdit ? [["catalog", "Catalogue"]] : [])];
   const openPj = pj => { setFocus({ pj, n: Date.now() }); setSub("semaine"); };
   return (<div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
       <div>
-        <div style={H_SUB}>{canEdit ? "Qui teste quelle machine, quand, et quels tests faire en interne, avec le client et avec NOBO." : "Vos machines en test : indiquez l'avancement et le résultat de chaque test."}</div>
+        <div style={H_SUB}>{canEdit ? "Qui teste quelle machine, quand, et quels tests faire en interne, avec le client et avec NOBO." : lead ? "Les machines en test de tous les testeurs : suivez et renseignez l'avancement de chaque test." : "Vos machines en test : indiquez l'avancement et le résultat de chaque test."}</div>
       </div>
       <div role="tablist" style={{ display: "inline-flex", background: T.surface, border: "1px solid " + T.line, borderRadius: 10, padding: 2, gap: 2 }}>
         {SUBS.map(([id, l]) => <button key={id} role="tab" aria-selected={sub === id} onClick={() => setSub(id)} style={{ border: "none", cursor: "pointer", borderRadius: 8, padding: "6px 14px", fontSize: FZ.sm, fontWeight: 700, fontFamily: T.font, background: sub === id ? T.card : "transparent", color: sub === id ? T.teal600 : T.ink500, boxShadow: sub === id ? T.shadowSm : "none" }}>{l}</button>)}
@@ -64,7 +64,7 @@ export function TestsTab({ doc, save, data, certifs, canEdit, me, signApi }) {
     {conflicts.length > 0 && sub !== "catalog" && <div role="status" style={{ background: T.amber100, color: T.amber600, borderRadius: 10, padding: "8px 12px", fontSize: FZ.sm, fontWeight: 600 }}>
       <span style={{ display: "inline-flex", verticalAlign: "-3px", marginRight: 6 }}><NavIcon name="warning" size={16} /></span>{conflicts.length} chevauchement{conflicts.length > 1 ? "s" : ""} : {conflicts.slice(0, 4).map(c => { const t = testers.find(x => x.id === c.tid); return (t ? t.name : "Testeur") + " sur " + c.a.pj + " et " + c.b.pj; }).join(" · ")}{conflicts.length > 4 ? " …" : ""}
     </div>}
-    {sub === "semaine" && <WeekBoard {...{ doc, rows, testers, catalog, conflicts, commit, certifs, canEdit, myTester, focus, who, signApi }} />}
+    {sub === "semaine" && <WeekBoard {...{ doc, rows, testers, catalog, conflicts, commit, certifs, canEdit, lead, myTester, focus, who, signApi }} />}
     {sub === "testers" && <TesterTimeline {...{ doc, rows, testers, catalog, conflicts, commit, canEdit, myTester, openPj, who }} />}
     {sub === "catalog" && canEdit && <CatalogView {...{ doc, catalog, commit }} />}
   </div>);
@@ -77,9 +77,9 @@ export function TestsTab({ doc, save, data, certifs, canEdit, me, signApi }) {
 // première colonne, signalées « En retard ».
 const mondayD = d => { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; };
 const isoWeek = d => { const x = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const n = x.getUTCDay() || 7; x.setUTCDate(x.getUTCDate() + 4 - n); const y = new Date(Date.UTC(x.getUTCFullYear(), 0, 1)); return Math.ceil(((x - y) / 86400000 + 1) / 7); };
-function WeekBoard({ doc, rows, testers, catalog, conflicts, commit, certifs, canEdit, myTester, focus, who, signApi }) {
+function WeekBoard({ doc, rows, testers, catalog, conflicts, commit, certifs, canEdit, lead, myTester, focus, who, signApi }) {
   const [sel, setSel] = useState(null);
-  const [onlyMine, setOnlyMine] = useState(!!myTester && !canEdit);
+  const [onlyMine, setOnlyMine] = useState(!!myTester && !canEdit && !lead); // v238 : le responsable des testeurs voit tout
   useEffect(() => { if (focus && focus.pj) setSel(focus.pj); }, [focus]);
   const w0 = mondayD(new Date());
   const weeks = [0, 1, 2].map(i => { const a = new Date(w0); a.setDate(a.getDate() + 7 * i); const b = new Date(a); b.setDate(b.getDate() + 7); return { a, b, i }; });
@@ -116,7 +116,7 @@ function WeekBoard({ doc, rows, testers, catalog, conflicts, commit, certifs, ca
         <BenchGrid key="grille" rows={withP} allRows={rows} {...{ doc, catalog, testers, conflicts }} on={cur && cur.pj} onPick={setSel} />
       </Arrange>
     </div>
-    {cur && <TestDialog r={cur} onClose={() => setSel(null)} {...{ doc, testers, catalog, conflicts, commit, certifs, canEdit, myTester, who, signApi }} />}
+    {cur && <TestDialog r={cur} onClose={() => setSel(null)} {...{ doc, testers, catalog, conflicts, commit, certifs, canEdit, lead, myTester, who, signApi }} />}
   </div>);
 }
 
@@ -354,7 +354,7 @@ function BenchGrid({ rows, allRows, doc, catalog, testers, conflicts, on, onPick
 }
 
 // v189 — pop-up central de la fiche de tests (fond assombri, entrée 200 ms, Échap pour fermer, focus gardé dans le pop-up).
-export function TestDialog({ r, onClose, doc, testers, catalog, conflicts, commit, certifs, canEdit, myTester, who, signApi }) {
+export function TestDialog({ r, onClose, doc, testers, catalog, conflicts, commit, certifs, canEdit, lead, myTester, who, signApi }) {
   const box = useRef(null);
   useEffect(() => {
     const prev = document.activeElement, k = e => { if (e.key === "Escape") onClose(); };
@@ -377,13 +377,13 @@ export function TestDialog({ r, onClose, doc, testers, catalog, conflicts, commi
         <Num l="Avancement" v={q.done + " / " + q.total} /><Num l="Réussis" v={q.ok} c={T.emerald600} /><Num l="Échecs" v={q.ko} c={q.ko ? T.red600 : undefined} /><Num l="En cours" v={q.wip} c={q.wip ? T.amber600 : undefined} />
       </div>
       <div style={{ margin: "10px 18px 0" }}><SegBar segs={segsOf(plan, catalog, activeSections(kind))} h={7} /></div>
-      <FatSheet panel bare r={r} {...{ doc, testers, catalog, conflicts, commit, certifs, canEdit, myTester, who, signApi }} open onToggle={() => {}} />
+      <FatSheet panel bare r={r} {...{ doc, testers, catalog, conflicts, commit, certifs, canEdit, lead, myTester, who, signApi }} open onToggle={() => {}} />
     </div>
   </div>);
 }
 
 // Carte d'une machine dans une colonne : PJ, présence, dates, testeurs, avancement « faits / à réaliser ».
-function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdit, open, onToggle, myTester, panel, who, bare, signApi }) {
+function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdit, lead, open, onToggle, myTester, panel, who, bare, signApi }) {
   const [newName, setNewName] = useState(""), [limit, setLimit] = useState({});
   const ctx = useMentions();
   const plan = planOf(doc, r.pj);
@@ -409,7 +409,7 @@ function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdi
   };
   const mine = !!myTester && plan.assign.some(a => a.tid === myTester.id);
   const canTest = canEdit; // seuls les administrateurs choisissent les tests et les testeurs
-  const canMark = canEdit || mine; // v187 : le testeur affecté renseigne l'avancement et le résultat de ses tests
+  const canMark = canEdit || mine || !!lead; // v238 : le responsable des testeurs aussi ; v187 : le testeur affecté renseigne l'avancement et le résultat de ses tests
   const forced = isForced(plan), ended = !!r.tests && (dIso(r.testsFin) || dIso(r.tests)) < dIso(new Date());
   return (<div id={"fat-" + r.pj} className={panel && !bare ? "enogia-view-in" : undefined} style={bare ? { overflow: "hidden" } : { ...CARD, overflow: "hidden", borderColor: mine ? T.teal500 : undefined }}>
     {panel && (!bare || (canEdit && (ended || forced))) && <div style={{ padding: bare ? "10px 18px 0" : "10px 14px", borderBottom: bare ? "none" : "1px solid " + T.line, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>

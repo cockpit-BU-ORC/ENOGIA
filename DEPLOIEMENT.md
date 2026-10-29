@@ -1609,3 +1609,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - L'ancienne adresse ne fonctionne plus (pas de redirection des pages GitHub) : prévenir les utilisateurs, réinstaller l'appli sur téléphone.
 - Alerte GitHub « Google API Key » (secret scanning) : c'est la clé web Firebase, publique par nature (elle est dans le code envoyé au navigateur). Elle est protégée par les règles Firestore, la restriction de domaine et, plus tard, App Check. Le fichier `.map` signalé date de juin ; `.env` désactive les `.map` depuis, et le déploiement production efface les anciens fichiers. Fermer l'alerte en « Won't fix » une fois la clé restreinte.
 - Fichiers : package.json, releaseNotes.js, releaseCatalog.js(+test), App.js, CLAUDE.md, DEPLOIEMENT.md, SECURITE.md.
+
+## v238 — Personnes, rôles et responsable des testeurs
+
+- **Responsable des testeurs** : nouveau rôle `resptest` (Manager › Réglages › Personnes et rôles). Donne la page Tests sans être admin ni testeur, avec toutes les machines (pas de filtre « mes tests ») ; il renseigne l'avancement et le résultat de chaque test. Affecter les testeurs et le catalogue restent aux admins. Accueil : cadrans testeur sur l'ensemble des testeurs + Postes de test + Tests (chiffres).
+- **Personnes et rôles** : bouton « Retirer » (confirmation ; profil gardé avec `removed: true`, liste « Personnes retirées » avec « Rétablir ») et « Coller une liste » (une personne par ligne, `Prénom NOM <adresse>` ou l'adresse seule ; seules les @enogia.com sont gardées).
+- **Mentions** : les personnes de `planning/profiles` (non retirées) sont proposées dans la saisie @ avant leur première connexion ; une personne retirée n'est plus proposée.
+- Données : uniquement `planning/profiles` (écrit par le propriétaire, déjà couvert par les règles Firestore). Pas de nouvelle clé `localStorage`.
+- La liste des collègues n'est pas dans le code (dépôt public) : elle se colle dans la page.
+- Fichiers : profiles.js, mentions.js, App.js, components/PeopleRoles.js, components/TestsTab.js, components/RoleHome.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

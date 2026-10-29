@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v238",
+    date: "2026-10-29",
+    title: "V238 : personnes, rôles et responsable des testeurs",
+    items: [
+      { t: "Responsable des testeurs", d: "Nouveau rôle : il voit les machines en test de tous les testeurs (accueil et page Tests) et renseigne l'avancement de chaque test." },
+      { t: "Personnes et rôles", d: "Retirer une personne de la liste (et la rétablir), ou coller une liste d'adresses @enogia.com pour ajouter plusieurs personnes d'un coup." },
+      { t: "Mentions", d: "Les personnes ajoutées dans Personnes et rôles peuvent être taguées avec @, même si elles ne se sont jamais connectées." },
+    ],
+  },
+  {
     id: "2026-10-v237",
     date: "2026-10-29",
     title: "V237 : nouvelle adresse du site",

@@ -11,6 +11,7 @@ export const ROLES = [
   ["direction", "Direction", "Vision globale : ordo, tests, turbines, cash, alertes, charge atelier"],
   ["cdp", "Chef de projet", "Ses PJ, retards, jalons des 3 semaines, FAT client, mentions"],
   ["testeur", "Testeur", "Ses tests du jour, fiches à signer, sa semaine, ses remarques"],
+  ["resptest", "Responsable des testeurs", "Les tests de tous les testeurs : au banc, semaine, fiches à signer, résultats ; renseigne l'avancement de chaque test"],
   ["atelier", "Chef d'atelier", "Charge atelier, arrivées et départs, machines en montage, postes de test"],
   ["turbines", "Directeur production turbines", "Turbines prêtes et sans roue, pièces à suivre, dates prévisionnelles, stocks roues et injecteurs"],
   ["autre", "Autres personnes", "Chiffres clés, prochains départs, où en sont les machines"],
@@ -18,6 +19,7 @@ export const ROLES = [
 // v191 : blocs de l'accueil de chaque rôle, cochés par le super admin pour chaque personne (profile.blocks ; absent = tous).
 export const ROLE_BLOCKS = {
   testeur: [["today", "Au banc aujourd'hui"], ["sign", "Fiches à signer"], ["week", "Ma semaine"], ["arrivees", "Prochaines arrivées au banc"], ["results", "Derniers résultats"]],
+  resptest: [["today", "Au banc aujourd'hui"], ["sign", "Fiches à signer"], ["week", "La semaine"], ["arrivees", "Prochaines arrivées au banc"], ["results", "Derniers résultats"], ["postes", "Postes de test"]],
   cdp: [["pjs", "Mes PJ"], ["jalons", "Jalons des 3 semaines"], ["todo", "À traiter"], ["fat", "FAT client / NOBO"], ["avance", "Avancement"]], // v229 : accueils validés
   direction: [["kpis", "Grands chiffres"], ["tests", "Tests"], ["turbines", "Turbines"], ["cash", "Cash in"], ["alertes", "Alertes"], ["charge", "Charge atelier"], ["postes", "Postes de test"], ["departs", "Départs à venir"], ["parcours", "Parcours des machines"]],
   atelier: [["charge", "Charge atelier"], ["arrdep", "Arrivées et départs"], ["montage", "En montage"], ["postes", "Postes de test"]],
@@ -32,6 +34,24 @@ export const profileOf = (doc, email) => {
   const p = doc && doc.byEmail && doc.byEmail[userKey(email)];
   return { email: lc(email), name: (p && p.name) || "", role: (p && p.role) || "", pjs: Array.isArray(p && p.pjs) ? p.pjs : [], chefs: Array.isArray(p && p.chefs) ? p.chefs : [], blocks: Array.isArray(p && p.blocks) ? p.blocks : null };
 };
+// v238 : personnes retirées de la liste (profil gardé avec removed: true, pour qu'un ancien compte connecté ne revienne pas)
+export const isRemoved = (doc, email) => !!(doc && doc.byEmail && doc.byEmail[userKey(email)] && doc.byEmail[userKey(email)].removed);
+export function removePerson(doc, email, on = true) {
+  const k = userKey(email), cur = (doc && doc.byEmail && doc.byEmail[k]) || {};
+  return { ...(doc || {}), byEmail: { ...((doc && doc.byEmail) || {}), [k]: on ? { email: lc(email), name: cur.name || "", removed: true } : { ...cur, email: lc(email), removed: false } } };
+}
+// v238 : liste collée (une personne par ligne : « Prénom NOM <prenom.nom@enogia.com> », « prenom.nom@enogia.com », séparées par , ou ;)
+// → [{ email, name }] ; seules les adresses du domaine gardées, sans doublon.
+export function parsePeopleList(text, domain = "enogia.com") {
+  const out = new Map();
+  String(text || "").split(/[\n;,]+/).forEach(part => {
+    const m = part.match(/[^\s<>"']+@[^\s<>"']+/); if (!m) return;
+    const email = lc(m[0]); if (!email.endsWith("@" + domain) || out.has(email)) return;
+    const name = part.replace(m[0], "").replace(/[<>"'()]/g, " ").replace(/\s+/g, " ").trim();
+    out.set(email, { email, name });
+  });
+  return [...out.values()];
+}
 export function setProfile(doc, email, patch) {
   const k = userKey(email), cur = profileOf(doc, email);
   const next = { ...cur, ...patch, email: lc(email) };

@@ -518,4 +518,9 @@ export const RELEASE_CATALOG = [
   { v: "237", t: "Nouvelle adresse du site", items: [
     ["Adresse", "cockpit-bu-orc.github.io/ENOGIA (compte GitHub cockpit-BU-ORC, dépôt ENOGIA) ; ex-planning-enogia-bu-orc.github.io/planning-enogia-2026."],
   ] },
+  { v: "238", t: "Personnes, rôles et responsable des testeurs", items: [
+    ["Responsable des testeurs", "Rôle resptest : page Tests et accueil avec les machines de tous les testeurs ; avancement des tests modifiable."],
+    ["Personnes et rôles", "Retirer / Rétablir (profil removed) ; « Coller une liste » d'adresses @enogia.com."],
+    ["Mentions", "Personnes de planning/profiles taguables avant leur première connexion ; personnes retirées exclues."],
+  ] },
 ];
