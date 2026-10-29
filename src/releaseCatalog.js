@@ -507,4 +507,9 @@ export const RELEASE_CATALOG = [
   { v: "234", t: "Le site s'appelle « Cockpit ORC »", items: [
     ["Nom du site", "Cockpit ORC (« Cockpit » en gras, « ORC » au surligneur) ; ex-BU ORC – Pilotage."],
   ] },
+  { v: "235", t: "Plus de cadrans, disposition commune, règles de sécurité", items: [
+    ["Cadrans", "7 nouveaux cadrans (expédiées, visites, banc de la semaine, états, départs par mois, fermetures, raccourcis) ; accueil « Autres personnes » enrichi."],
+    ["Disposition", "KPI et Tests : disposition partagée (planning/profiles.pageLayouts), réglée par le propriétaire seul."],
+    ["Sécurité", "firestore.rules (comptes @enogia.com, droits par document) + SECURITE.md, à publier dans la console."],
+  ] },
 ];

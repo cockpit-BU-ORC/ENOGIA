@@ -7,12 +7,16 @@
 // seuls les cadrans qu'il recouvre descendent juste en dessous. La largeur se tire au bord droit, la hauteur au bord bas, les
 // deux au coin. Au premier déplacement, la disposition actuelle est relevée telle qu'elle s'affiche (pas de saut).
 // Clavier : ← → ↑ ↓ déplacent le cadran sélectionné, Maj + flèches changent sa largeur / sa hauteur.
-// Disposition gardée sur ce poste (localStorage enogia_arr_<id>) ou partagée (layout / onLayout, ex. accueil d'un poste) ;
+// Disposition partagée (v235 : ArrangeCtx ou layout / onLayout ; localStorage enogia_arr_<id> seulement sans App, ex. tests) (layout / onLayout, ex. accueil d'un poste) ;
 // « Réinitialiser » revient à l'origine. Sur un écran étroit (< 900 px), chaque cadran prend toute la largeur, dans l'ordre des places.
 // Identité d'un cadran : sa clé React, sinon son aria-label.
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { T, FZF as FZ } from "../theme";
 import { isOwner } from "../roles";
+
+// v235 (demandé : « uniquement moi les personnaliser pour tout le monde ») : sans disposition donnée par la page, la disposition
+// vient de planning/profiles.pageLayouts[id] (fournie par App) : la même pour tous ; seul le propriétaire reçoit save.
+export const ArrangeCtx = createContext(null);
 
 const MIN = 2, MAX = 12, GAP = 12, ROW = 8, MINH = 8;
 const load = id => { try { const v = JSON.parse(localStorage.getItem("enogia_arr_" + id) || "null"); return v && typeof v === "object" ? { order: Array.isArray(v.order) ? v.order : [], span: v.span || {}, pos: v.pos || {} } : { order: [], span: {}, pos: {} }; } catch (e) { return { order: [], span: {}, pos: {} }; } };
@@ -31,6 +35,8 @@ export const resolve = (P, k) => { const out = {}, placed = []; if (k && P[k]) {
 
 export function Arrange({ id, children, spans = {}, defaultSpan = 6, labels = {}, layout, onLayout, catalog, onAdd, onRemove }) {
   const can = isOwner();
+  const ctx = useContext(ArrangeCtx);
+  if (!layout && ctx) { layout = (ctx.layouts && ctx.layouts[id]) || {}; onLayout = ctx.save ? v => ctx.save(id, v) : undefined; }
   const items = React.Children.toArray(children).filter(c => c && c.props);
   const ids = items.map(idOf);
   const [local, setLocal] = useState(() => load(id)); const [edit, setEdit] = useState(false);

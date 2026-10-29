@@ -1588,3 +1588,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Une appli déjà installée sur un téléphone peut garder l'ancien nom jusqu'à sa réinstallation. Dépôt et adresse inchangés.
 - Pas de nouvelle clé `localStorage`.
 - Fichiers : siteName.js, App.js, components/{HomeView,LoginScreen}.js, public/{index.html,manifest.json}, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
+
+## v235 — Plus de cadrans, disposition commune, règles de sécurité
+
+- **Cadrans** (`RoleHome.js`) : Dernières expédiées, Visites client / NOBO (toutes machines), Au banc cette semaine, Machines par état, Départs par mois (6 mois), Fermetures à venir, Raccourcis. Rangés dans le catalogue « Ajouter un cadran ». Accueil « Autres personnes » par défaut : chiffres clés, départs, parcours, banc de la semaine, visites, expédiées, états, fermetures.
+- **Disposition commune** : `ArrangeCtx` (Arrange.js) fourni par App autour de `<main>` ; les pages sans disposition propre (KPI › Synthèse, Tests › semaine) lisent `planning/profiles.pageLayouts[id]` ; seul le propriétaire enregistre (`savePageLayout`). Les anciennes dispositions locales (`enogia_arr_kpi-synthese`, `enogia_arr_tests-semaine`) ne sont plus lues : à refaire une fois par le propriétaire.
+- **Sécurité** : `firestore.rules` (nouveau) et `SECURITE.md` (procédure). **Non publiées** : Gabriel les colle et les publie dans la console Firebase après test dans le terrain de jeu des règles. Tout nouveau document de `planning/` devra être ajouté aux règles.
+- Fichiers : components/{Arrange,RoleHome}.js, App.js, firestore.rules, SECURITE.md, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.

@@ -32,7 +32,7 @@ export const HOME_DEFAULTS = {
   testeur: [["today", 8], ["sign", 4], ["week", 12], ["arrivees", 6], ["results", 6]],
   atelier: [["charge", 7], ["arrdep", 5], ["montage", 7], ["postes", 5]],
   turbines: [["ptReady", 3], ["ptNoWheel", 3], ["ptPieces", 6], ["ptDates", 12], ["ptRoues", 6], ["ptInj", 6]],
-  autre: [["kpis", 12], ["departs", 6], ["parcours", 6]],
+  autre: [["kpis", 12], ["departs", 6], ["parcours", 6], ["benchWeek", 6], ["visites", 6], ["shipped", 6], ["etats", 6], ["fermetures", 6]],
   direction: [["kpis", 12], ["tests", 4], ["turbines", 4], ["cash", 4], ["alertes", 8], ["charge", 4], ["postes", 6], ["departs", 6], ["parcours", 12]],
 };
 
@@ -260,6 +260,47 @@ export function RoleHome({ role, profile, ui, kpiEl, depEl, parcoursEl, rows, op
   W.ptRoues = { label: "Roues équilibrées", span: 6, only: ptOnly, render: () => stockList("ptRoues", "Roues équilibrées", Object.values(pt.S.roues), r => +r.qte || 0) };
   W.ptInj = { label: "Injecteurs", span: 6, only: ptOnly, render: () => stockList("ptInj", "Injecteurs", Object.values(pt.S.injecteurs), r => (+r.qte || 0) + (r.variantes || []).reduce((a, v) => a + (+v.qte || 0), 0), r => " · " + (+r.qte || 0) + " vierge" + ((+r.qte || 0) > 1 ? "s" : "")) };
 
+  // v235 (demandé : « mettre à dispo plus de cadrans ») : cadrans en lecture seule, utiles à tout le monde
+  W.shipped = { label: "Dernières expédiées", span: 6, render: () => { const L = rows.filter(r => r.etat === "SHIPPED" && dIso(r.depart) && dIso(r.depart) <= today).sort((a, b) => dIso(b.depart).localeCompare(dIso(a.depart))).slice(0, 6);
+    return sec("shipped", "Dernières expédiées", S.depart.ring, <><Head title="Dernières expédiées" count={L.length} />
+      {L.length === 0 ? empty("inbox", "Aucune machine expédiée", "") : L.map((r, i) => <Row key={r.pj} first={i === 0} pj={r.pj} main={nomOf(r) || r.gamme || ""} right={fmtD(r.depart)} />)}</>); } };
+  W.visites = { label: "Visites client / NOBO", span: 6, render: () => { const f = [];
+    open.forEach(r => { const pd = presenceDates(r.clientPresence); [["client", "Client"], ["nobo", "NOBO"]].forEach(([k, l]) => { if (pd[k] === undefined) return; const d = dIso(pd[k]); if (d && d >= today) f.push({ r, l, d }); }); });
+    f.sort((a, b) => a.d.localeCompare(b.d));
+    return sec("visites", "Visites client / NOBO", S.arrivee.ring, <><Head title="Visites client / NOBO" sub="à venir, toutes machines" count={f.length} />
+      {f.length === 0 ? empty("check", "Aucune visite prévue", "") : f.slice(0, 6).map((x, i) => <Row key={x.r.pj + x.l} first={i === 0} pj={x.r.pj} pill={<Pill tone={S.arrivee}>{x.l}</Pill>} main={nomOf(x.r)} right={fmtDay(x.d)} />)}</>); } };
+  W.benchWeek = { label: "Au banc cette semaine", span: 6, render: () => { const L = open.filter(r => r.tests && tEnd(r) >= w0 && tStart(r) <= weekEnd).sort((a, b) => tStart(a).localeCompare(tStart(b)));
+    return sec("benchWeek", "Au banc cette semaine", S.tests.ring, <><Head title="Au banc cette semaine" sub={"du " + fmtD(w0) + " au " + fmtD(addD(w0, 4))} count={L.length} />
+      {L.length === 0 ? empty("check", "Aucune machine au banc cette semaine", "") : L.slice(0, 6).map((r, i) => <Row key={r.pj} first={i === 0} pj={r.pj} main={nomOf(r) || r.gamme || ""} presence={presenceOf(r)} right={fmtDay(tStart(r)) + " → " + fmtDay(tEnd(r))} />)}
+      {testsDoc && more("Ouvrir les tests", () => onGo && onGo("tests"))}</>); } };
+  W.etats = { label: "Machines par état", span: 6, render: () => { const n = {}; open.forEach(r => { n[r.etat] = (n[r.etat] || 0) + 1; });
+    const L = Object.entries(n).sort((a, b) => b[1] - a[1]), max = Math.max(1, ...L.map(x => x[1]));
+    return sec("etats", "Machines par état", S.production.ring, <><Head title="Machines par état" sub="hors expédiées" count={open.length} />
+      {L.length === 0 ? empty("inbox", "Aucune machine", "") : L.slice(0, 8).map(([k, c]) => { const m = ETAT_META[k] || {}; return (
+        <div key={k} style={{ display: "grid", gridTemplateColumns: "minmax(0,150px) 1fr 32px", gap: 8, alignItems: "center", minHeight: 26, fontSize: FZ.sm }}>
+          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: T.ink700 }}>{m.label || k}</span>{bar(c / max * 100, m.bar || T.ink300)}
+          <b style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{c}</b></div>); })}</>); } };
+  W.depMois = { label: "Départs par mois", span: 6, render: () => { const m0 = new Date(today + "T12:00:00"); const months = Array.from({ length: 6 }, (_, i) => { const d = new Date(m0.getFullYear(), m0.getMonth() + i, 1); return { k: d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"), l: d.toLocaleDateString("fr-FR", { month: "short" }).replace(".", "") }; });
+    months.forEach(m => { m.n = open.filter(r => dIso(r.depart).slice(0, 7) === m.k).length; }); const max = Math.max(1, ...months.map(m => m.n));
+    return sec("depMois", "Départs par mois", S.depart.ring, <><Head title="Départs par mois" sub="6 prochains mois" count={months.reduce((a, m) => a + m.n, 0)} />
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 10, height: 110, marginTop: 8 }}>
+        {months.map(m => <div key={m.k} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, height: "100%", justifyContent: "flex-end" }}>
+          <span style={{ fontSize: FZ.xs, fontWeight: 700, color: T.ink900, fontVariantNumeric: "tabular-nums" }}>{m.n}</span>
+          <div className="enogia-bar-fill" style={{ width: "100%", maxWidth: 44, height: Math.max(2, Math.round(70 * m.n / max)), background: S.depart.solid }} />
+          <span style={grey}>{m.l}</span></div>)}
+      </div></>); } };
+  W.fermetures = { label: "Fermetures à venir", span: 4, render: () => { const L = (closurePeriods || []).filter(p => p && p.start && dIso(p.end || p.start) >= today).sort((a, b) => dIso(a.start).localeCompare(dIso(b.start))).slice(0, 5);
+    return sec("fermetures", "Fermetures à venir", T.ink500, <><Head title="Fermetures à venir" sub="jours sans atelier" count={L.length} />
+      {L.length === 0 ? empty("check", "Aucune fermeture prévue", "") : L.map((p, i) => { const a = dIso(p.start), b = dIso(p.end || p.start); return (
+        <div key={a + i} style={{ display: "flex", gap: 8, minHeight: 28, alignItems: "center", borderTop: i ? "1px solid " + T.line : "none", fontSize: FZ.sm }}>
+          <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.label || "Fermeture"}</span>
+          <span style={{ ...grey, fontVariantNumeric: "tabular-nums" }}>{a === b ? fmtDay(a) : fmtD(a) + " → " + fmtD(b)}</span></div>); })}</>); } };
+  W.raccourcis = { label: "Raccourcis", span: 4, render: () => sec("raccourcis", "Raccourcis", H.brand, <><Head title="Raccourcis" sub="pages du site" />
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))", gap: 6, marginTop: 6 }}>
+      {[["table", "Liste", "list"], ["gantt", "Gantt", "gantt"], ["calendar", "Calendrier", "calendar"], ["tests", "Tests", "check"], ["comments", "Commentaires", "comments"], ["changes", "Modifications", "changes"]].map(([v, l, ic]) =>
+        <button key={v} type="button" onClick={() => onGo && onGo(v)} style={{ display: "flex", alignItems: "center", gap: 6, minHeight: 36, border: "1px solid " + T.line, background: T.card, borderRadius: 6, padding: "0 10px", cursor: "pointer", fontFamily: T.font, fontSize: FZ.sm, fontWeight: 600, color: T.ink900 }}><NavIcon name={ic} size={16} />{l}</button>)}
+    </div></>) };
+
   /* ── disposition du poste ── */
   const avail = id => W[id] && (!W[id].only || W[id].only());
   const L = layout || {}, extra = Array.isArray(L.extra) ? L.extra : [], hidden = Array.isArray(L.hidden) ? L.hidden : [];
@@ -270,10 +311,10 @@ export function RoleHome({ role, profile, ui, kpiEl, depEl, parcoursEl, rows, op
   // v231 (demandé : « Ajouter un cadran n'est pas clair : des thèmes ou des liens avec les onglets ») : chaque cadran est rangé sous
   // la page du site d'où viennent ses données, avec une phrase qui dit ce qu'il montre.
   const THEMES = [
-    ["Vue d'ensemble — Liste et Gantt", { kpis: "les grands chiffres du portefeuille", departs: "les 5 prochains départs", parcours: "combien de machines à chaque étape", alertes: "les dérives fortes et les retards à déclarer" }],
-    ["Projets — Fiches projet", { pjs: "les PJ d'un chef de projet, triés par départ", jalons: "arrivées, tests et départs des 3 semaines", todo: "retards à déclarer et mentions", fat: "FAT client et NOBO à venir", avance: "avancement moyen et PJ en avance / en retard" }],
-    ["Tests — page Tests", { tests: "machines au banc et tests des 3 semaines", today: "machines au banc aujourd'hui (jour N / M)", sign: "fiches de test à signer", week: "la semaine de tests d'un testeur", arrivees: "machines qui arrivent au banc", results: "réussis et échecs des 14 derniers jours", postes: "occupation des postes de test" }],
-    ["Atelier — Planificateur et Calendrier", { charge: "heures atelier sur 4 semaines face à la capacité", arrdep: "arrivées et départs de la semaine", montage: "machines en montage méca / élec" }],
+    ["Vue d'ensemble — Liste et Gantt", { kpis: "les grands chiffres du portefeuille", departs: "les 5 prochains départs", parcours: "combien de machines à chaque étape", alertes: "les dérives fortes et les retards à déclarer", etats: "nombre de machines dans chaque état", depMois: "départs prévus sur les 6 prochains mois", shipped: "les dernières machines parties", raccourcis: "boutons vers les pages du site" }],
+    ["Projets — Fiches projet", { pjs: "les PJ d'un chef de projet, triés par départ", jalons: "arrivées, tests et départs des 3 semaines", todo: "retards à déclarer et mentions", fat: "FAT client et NOBO à venir (mes PJ)", visites: "visites client et NOBO à venir, toutes machines", avance: "avancement moyen et PJ en avance / en retard" }],
+    ["Tests — page Tests", { tests: "machines au banc et tests des 3 semaines", today: "machines au banc aujourd'hui (jour N / M)", sign: "fiches de test à signer", week: "la semaine de tests d'un testeur", arrivees: "machines qui arrivent au banc", results: "réussis et échecs des 14 derniers jours", postes: "occupation des postes de test", benchWeek: "toutes les machines au banc cette semaine" }],
+    ["Atelier — Planificateur et Calendrier", { charge: "heures atelier sur 4 semaines face à la capacité", arrdep: "arrivées et départs de la semaine", montage: "machines en montage méca / élec", fermetures: "fermetures de l’atelier à venir" }],
     ["Production turbines", { ptReady: "turbines prêtes", ptNoWheel: "turbines testées sans roue", ptPieces: "pièces à suivre", ptDates: "dates prévisionnelles des turbines", ptRoues: "stock de roues équilibrées", ptInj: "stock d'injecteurs" }],
     ["Gestion — Turbines et Cash in", { turbines: "pool de turbines", cash: "encaissements à venir" }],
     ["Échanges — Commentaires", { mentions: "les mentions qui vous attendent" }],

@@ -1,0 +1,60 @@
+rules_version = '2';
+// Règles Firestore de Cockpit ORC (v235). À publier par Gabriel dans la console Firebase › Firestore › Règles
+// (voir SECURITE.md). Le site ne lit et n'écrit que dans la collection « planning » ; tout le reste est refusé.
+//  · Connexion obligatoire avec un compte Google @enogia.com vérifié.
+//  · Propriétaire : OWNER (même adresse que OWNER_EMAILS dans App.js).
+//  · Admins : adresses de planning/managerEmails (planning/beta_managerEmails en bêta), comme l'accès Manager du site.
+//  · Les documents de bêta (préfixe beta_) suivent les mêmes règles que ceux de production.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower().matches('.*@enogia[.]com$');
+    }
+    function mail() { return request.auth.token.email.lower(); }
+    function isOwner() { return signedIn() && mail() == 'gabriel.vincent@enogia.com'; }
+    function pfx(id) { return id.matches('^beta_.*') ? 'beta_' : ''; }
+    function base(id) { return id.replace('^beta_', ''); }
+    function isAdmin(id) {
+      let ref = /databases/$(database)/documents/planning/$(pfx(id) + 'managerEmails');
+      return isOwner() || (signedIn() && exists(ref)
+        && get(ref).data.get('emails', []).toSet().hasAny([mail(), request.auth.token.email]));
+    }
+    function prodTurbAccess(id) {
+      return isOwner() || (signedIn() && exists(/databases/$(database)/documents/planning/$(id))
+        && get(/databases/$(database)/documents/planning/$(id)).data.get('access', []).toSet().hasAny([mail(), request.auth.token.email]));
+    }
+
+    match /planning/{id} {
+      // Cash in complet : propriétaire seul (CASH_FOR_ADMINS = false dans roles.js)
+      allow read, write: if base(id) in ['cashin', 'cashinLinks'] && isOwner();
+      // Copie réduite du Cash in : écrite par le propriétaire, lue par les admins
+      allow read: if base(id) == 'cashinShared' && isAdmin(id);
+      allow write: if base(id) == 'cashinShared' && isOwner();
+
+      // Tout le reste se lit dès qu'on est connecté avec un compte ENOGIA
+      allow read: if signedIn() && !(base(id) in ['cashin', 'cashinLinks', 'cashinShared']);
+
+      // Réglages du propriétaire : rôles, dispositions des cadrans, accès Manager, planificateur
+      allow write: if isOwner() && base(id) in ['profiles', 'managerEmails', 'plan', 'planHistory'];
+
+      // Production turbines : propriétaire et adresses de sa liste « access »
+      allow write: if base(id) == 'prodTurbines' && prodTurbAccess(id);
+
+      // Planning publié, planning initial, journal, sauvegardes, types de retard, pool de turbines : admins
+      allow write: if isAdmin(id) && (base(id) in ['current', 'initial', 'initialBackup', 'changeLog', 'importIndex', 'delayTypes', 'turbines']
+        || base(id).matches('^backup_.*'));
+
+      // Travail de tous les jours (commentaires, tests, signatures, retards, états, fiches PJ, comptes connus) : tout compte ENOGIA
+      allow write: if signedIn() && (base(id) in ['comments', 'tests', 'delays', 'overrides', 'pjMetaOverrides', 'pjMetaSync', 'knownUsers']
+        || base(id).matches('^testsign_.*'));
+    }
+
+    // Toute autre collection : refusée
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

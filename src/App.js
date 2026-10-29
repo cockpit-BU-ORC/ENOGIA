@@ -21,6 +21,7 @@ import { weekStartOf } from "./parsers";
 import { HomeView } from "./components/HomeView";
 import { ProdTurbines } from "./components/ProdTurbines";
 import { PageGuard } from "./components/PageGuard";
+import { ArrangeCtx } from "./components/Arrange"; // v235 : cadrans partagés, réglés par le propriétaire
 import { backdropStyle } from "./pageBackdrop"; // v225 : un fond léger par page
 import { useA11yFallback } from "./a11yFallback";
 import { CashInTab } from "./components/CashInTab";
@@ -73,7 +74,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-29-v234-cockpit-orc";
+const APP_BUILD_VERSION = "2026-10-29-v235-cadrans-securite";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -698,6 +699,9 @@ export default function App(){
     return onSnapshot(PROFILES_DOC_REF(),snap=>{const d=snap.exists()?snap.data():{};setProfiles({...d,byEmail:d.byEmail&&typeof d.byEmail==="object"?d.byEmail:{}});},err=>console.warn("profiles (lecture) :",err&&err.message));
   },[currentUser]);
   // v229 : disposition de l'accueil d'un poste (réglée par le propriétaire, la même pour toutes les personnes du poste)
+  // v235 : disposition des cadrans des autres pages (KPI › Synthèse, Tests…), partagée par tous, réglée par le propriétaire seul
+  const savePageLayout=useCallback((id,lay)=>{setProfiles(p=>{const next={...p,pageLayouts:{...((p&&p.pageLayouts)||{}),[id]:lay}};setDoc(PROFILES_DOC_REF(),{pageLayouts:next.pageLayouts,updatedAt:new Date().toISOString(),updatedBy:authorName||""},{merge:true}).catch(e=>{console.error(e);notify("Erreur lors de l'enregistrement de la disposition : "+e.message);});return next;});},[authorName]);
+  const arrangeCtx=useMemo(()=>({layouts:(profiles&&profiles.pageLayouts)||{},save:isOwner?savePageLayout:null}),[profiles,isOwner,savePageLayout]);
   const saveHomeLayout=useCallback((role,lay)=>{setProfiles(p=>{const next={...p,homeLayouts:{...((p&&p.homeLayouts)||{}),[role]:lay}};setDoc(PROFILES_DOC_REF(),{homeLayouts:next.homeLayouts,updatedAt:new Date().toISOString(),updatedBy:authorName||""},{merge:true}).catch(e=>{console.error(e);notify("Erreur lors de l'enregistrement de la disposition : "+e.message);});return next;});},[authorName]);
   const saveProfiles=useCallback(async next=>{
     try{await setDoc(PROFILES_DOC_REF(),{...next,updatedAt:new Date().toISOString(),updatedBy:authorName||""});return true;}
@@ -1144,7 +1148,7 @@ export default function App(){
       </div>
 
       <PjDialogCtx.Provider value={pjCtx}>
-      <main id="enogia-main" tabIndex={-1} className="enogia-main" style={{padding:D.main,flex:1,outline:"none",...backdropStyle(view)}}>
+      <main id="enogia-main" tabIndex={-1} className="enogia-main" style={{padding:D.main,flex:1,outline:"none",...backdropStyle(view)}}><ArrangeCtx.Provider value={arrangeCtx}>
         {newVsInitial&&pinOk&&<div role="status" style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",marginBottom:12,padding:"10px 14px",borderRadius:10,background:T.teal100,color:T.teal600,fontFamily:T.font,fontSize:FZ.sm,fontWeight:600}}>
           <NavIcon name="pin" size={16}/>
           <span style={{flex:"1 1 320px"}}>{newVsInitial.pjs.length} PJ de cet import {newVsInitial.pjs.length>1?"ne sont pas":"n'est pas"} dans le planning initial : {newVsInitial.pjs.slice(0,6).join(", ")}{newVsInitial.pjs.length>6?"…":""}. Sans initial, leur dérive ne se calcule pas.</span>
@@ -1240,7 +1244,7 @@ export default function App(){
     {calSel&&<PjDialog dayAction={calDay&&canEditMeta?(()=>{const off=((productionExclusions||{})[calSel]||[]).includes(calDay),lab=calDay.slice(8,10)+"/"+calDay.slice(5,7);return{off,label:off?"Rétablir la production le "+lab:"Pas de production le "+lab,hint:"Pour "+calSel+" seulement — le Gantt, la charge et le planificateur en tiennent compte",onToggle:()=>setProductionExclusionDays({[calSel]:[calDay]},!off)};})():null} pj={calSel} data={dataWithOverrides} df={df} onClose={()=>{setCalSel(null);setCalDay(null);}} comments={comments} addComment={addComment} deleteComment={deleteComment}
       pinOk={pinOk} delays={delays} delayTypes={delayTypes} setDelayTypes={setDelayTypesAndSave} addDelayAllocation={addDelayAllocation} deleteDelayAllocation={deleteDelayAllocation}
       addDelayComment={addDelayComment} deleteDelayComment={deleteDelayComment} authorName={authorName} savePjMetaOverride={savePjMetaOverride} canEditMeta={canEditMeta}/>}
-      </main>
+      </ArrangeCtx.Provider></main>
       </PjDialogCtx.Provider>
     </div>
   </div></ChangeMarksContext.Provider></MentionCtx.Provider>);

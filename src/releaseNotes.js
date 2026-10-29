@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v235",
+    date: "2026-10-29",
+    title: "V235 : plus de cadrans, disposition commune",
+    items: [
+      { t: "Cadrans", d: "Nouveaux cadrans : dernières expédiées, visites client / NOBO, au banc cette semaine, machines par état, départs par mois, fermetures à venir, raccourcis vers les pages." },
+      { t: "Disposition", d: "La disposition des cadrans (accueil, KPI, Tests) est la même pour tout le monde et seul le propriétaire peut la changer." },
+    ],
+  },
+  {
     id: "2026-10-v234",
     date: "2026-10-29",
     title: "V234 : le site s'appelle « Cockpit ORC »",
