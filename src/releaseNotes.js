@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v225",
+    date: "2026-10-29",
+    title: "V225 : un fond léger pour chaque page",
+    items: [
+      { t: "Fonds de page", d: "Chaque page a son motif discret dans le coin haut droit, en clair comme en sombre : cycle ORC sur l'accueil, tuyauterie sur la Liste, traces de mesure sur le Gantt et les Tests, isothermes sur le Calendrier, rotor de turbine sur le Manager." },
+    ],
+  },
+  {
     id: "2026-10-v224",
     date: "2026-10-29",
     title: "V224 : bancs d'essai, zoom du planificateur, résumé des projets à plusieurs machines",

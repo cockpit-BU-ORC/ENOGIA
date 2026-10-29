@@ -36,26 +36,6 @@ const BLOCKS = [
 const prefKey = email => "enogia_home_" + String(email || "anon").toLowerCase();
 const loadPrefs = email => { try { return JSON.parse(localStorage.getItem(prefKey(email)) || "{}") || {}; } catch (e) { return {}; } };
 
-// v223 (option B validée) : isothermes en coin de l'accueil — courbes de niveau autour d'une source chaude,
-// décoratives (aria-hidden, sans clic), plus marquées près du coin et qui s'estompent vers le contenu.
-const ISO = Array.from({ length: 10 }, (_, i) => {
-  const r = 70 + i * 46, pts = [];
-  for (let k = 0; k <= 48; k++) {
-    const a = Math.PI / 2 + (k / 48) * Math.PI / 2; // quart de tour autour du coin haut droit (520, 0)
-    const w = r * (1 + 0.07 * Math.sin(3 * a + i * 0.7) + 0.04 * Math.sin(5 * a - i * 0.4));
-    pts.push((520 + w * Math.cos(a)).toFixed(1) + "," + (w * Math.sin(a) * 0.82).toFixed(1));
-  }
-  return { d: "M" + pts.join(" L"), o: Math.max(0.25, 1 - i * 0.08) };
-});
-function Isotherms() {
-  return (<svg aria-hidden="true" focusable="false" viewBox="0 0 520 420" preserveAspectRatio="xMaxYMin meet"
-    style={{ position: "absolute", top: -14, right: -14, width: "min(620px, 75%)", height: "auto", zIndex: -1, pointerEvents: "none" }}>
-    <g fill="none" stroke={T.contour || T.line} strokeWidth="1.2" strokeLinecap="round">
-      {ISO.map((p, i) => <path key={i} d={p.d} opacity={p.o} />)}
-    </g>
-  </svg>);
-}
-
 export function HomeView({ data, comments, myEmail, myName, people, unseenChanges, lastImport, onOpenPj, onGo, pinOk, testsDoc, profiles, owner, cash, turbineDoc, onOpenCash }) {
   const rows = useMemo(() => (data || []).filter(r => r && r.pj && r.etat !== "SLOT_LIBRE"), [data]);
   const today0 = startOfToday();
@@ -180,8 +160,7 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
       </section> : null;
 
   return (
-    <div style={{ fontFamily: T.font, position: "relative", isolation: "isolate" }}>
-      <Isotherms />
+    <div style={{ fontFamily: T.font }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
         <div style={{ flex: 1, minWidth: 260 }}>
           {/* v183 : nom du site en titre de l'accueil, avec son sous-titre (demandé) */}

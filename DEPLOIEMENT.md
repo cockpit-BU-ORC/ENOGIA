@@ -1487,3 +1487,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
   - **Publication** : un PJ publié qui n'est pas dans le planning initial déclenche le bandeau « N PJ ne sont pas dans le planning initial » → les ancrer : leurs dates deviennent les dates initiales (figées) ; les publications suivantes changent les dates actuelles et la dérive se calcule par rapport à l'initial.
 - Vérifié : moteur (insertion, bancs) et rendu du planificateur et des bancs (jsdom + aperçu), build (13 avertissements existants), tests, contraste. Non vérifié dans l'appli connectée : glisser des cadrans, Ctrl + molette, lien rond → rond à la souris.
 - Fichiers : components/{Arrange,HomeView,RoleHome,ManagerPanel,ManagerFiche}.js, planner/{engine,Planner,PlannerGantt,store}.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
+
+## v225 — Un fond léger pour chaque page
+
+- Nouveau `src/pageBackdrop.js` : `backdropStyle(view)` peint un motif SVG en image de fond de `<main>` (coin haut droit, `min(620px, 75%)`), trait 1,2 px au jeton `T.contour` (clair `#C7D2DE`, sombre `#36445F`) — même opacité que les isothermes de la V223. En image de fond : il reste sous les cartes et ne change pas l'empilement des fenêtres.
+- Motifs (`PAGE_MOTIF`) : accueil et Cash in = diagramme T-s du cycle ORC ; Liste et Modifications = tuyauterie (P&ID) ; Gantt et Tests = traces de banc d'essai ; Calendrier, Commentaires et Planificateur = isothermes ; Turbines et Manager = rotor de turbine.
+- Les isothermes de l'accueil (V223, `Isotherms` dans `HomeView.js`) sont retirées au profit de ce mécanisme commun.
+- Pas de clé `localStorage`.
+- Vérifié : planche des motifs en clair et en sombre (aperçu), build (13 avertissements existants), tests, contraste.
+- Fichiers : pageBackdrop.js, App.js, components/HomeView.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.

@@ -19,6 +19,7 @@ import { CASHIN_DOC_REF, CASHIN_LINKS_REF, CASHIN_SHARED_REF, buildSharedCashin 
 import { getPjMeta, chefsOf, ALL_GAMMES, ALL_ETATS, ETAT_META, registerCustomEtats, MONTHS, today, setSyncedPjMeta, setPjMetaOverrides, GAMME_OVERRIDE, EXCLUDED_CHEFS } from "./pjMeta";
 import { weekStartOf } from "./parsers";
 import { HomeView } from "./components/HomeView";
+import { backdropStyle } from "./pageBackdrop"; // v225 : un fond léger par page
 import { useA11yFallback } from "./a11yFallback";
 import { CashInTab } from "./components/CashInTab";
 import { TurbinesTab } from "./components/TurbinesTab";
@@ -70,7 +71,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-29-v224-bancs-zoom-resume";
+const APP_BUILD_VERSION = "2026-10-29-v225-fonds-pages";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -1139,7 +1140,7 @@ export default function App(){
       </div>
 
       <PjDialogCtx.Provider value={pjCtx}>
-      <main id="enogia-main" tabIndex={-1} className="enogia-main" style={{padding:D.main,flex:1,outline:"none"}}>
+      <main id="enogia-main" tabIndex={-1} className="enogia-main" style={{padding:D.main,flex:1,outline:"none",...backdropStyle(view)}}>
         {newVsInitial&&pinOk&&<div role="status" style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",marginBottom:12,padding:"10px 14px",borderRadius:10,background:T.teal100,color:T.teal600,fontFamily:T.font,fontSize:FZ.sm,fontWeight:600}}>
           <NavIcon name="pin" size={16}/>
           <span style={{flex:"1 1 320px"}}>{newVsInitial.pjs.length} PJ de cet import {newVsInitial.pjs.length>1?"ne sont pas":"n'est pas"} dans le planning initial : {newVsInitial.pjs.slice(0,6).join(", ")}{newVsInitial.pjs.length>6?"…":""}. Sans initial, leur dérive ne se calcule pas.</span>

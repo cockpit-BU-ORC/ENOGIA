@@ -467,4 +467,7 @@ export const RELEASE_CATALOG = [
     ["Manager", "KPI et Personnes et site réservés au propriétaire ; résumé en tête des fiches communes."],
     ["Cadrans", "Disposition réservée au propriétaire, glisser en direct, largeur au bord droit."],
   ] },
+  { v: "225", t: "Un fond léger pour chaque page", items: [
+    ["Toutes les pages", "Motif discret par page (cycle ORC, tuyauterie, traces de mesure, isothermes, rotor)."],
+  ] },
 ];
