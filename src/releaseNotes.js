@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v226",
+    date: "2026-10-29",
+    title: "V226 : page Production turbines",
+    items: [
+      { t: "Production turbines", d: "Nouvelle page (menu Gestion) pour le suivi du montage des turbines : turbines prêtes et testées sans roue, stocks de roues et d'injecteurs, dates prévisionnelles, pièces (appro, contrôle qualité, non-conformités), tableau des turbines et des arbres où l'on glisse une carte pour changer d'étape, gamme et durées.", admin: true },
+    ],
+  },
+  {
     id: "2026-10-v225",
     date: "2026-10-29",
     title: "V225 : un fond léger pour chaque page",

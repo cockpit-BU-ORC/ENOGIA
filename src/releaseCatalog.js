@@ -470,4 +470,9 @@ export const RELEASE_CATALOG = [
   { v: "225", t: "Un fond léger pour chaque page", items: [
     ["Toutes les pages", "Motif discret par page (cycle ORC, tuyauterie, traces de mesure, isothermes, rotor)."],
   ] },
+  { v: "226", t: "Page Production turbines", items: [
+    ["Production turbines", "Nouvelle page réservée (propriétaire + comptes autorisés) : accueil, planning turbines / arbres / pièces, stocks roues et injecteurs, gamme et durées."],
+    ["Planificateur", "Bancs d'essai : « Allouer automatiquement » en un clic."],
+    ["Cadrans", "Le cadran se saisit n'importe où et suit la souris."],
+  ] },
 ];

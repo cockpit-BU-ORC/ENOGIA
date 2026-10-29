@@ -46,7 +46,7 @@ function rotor() {
 
 const MOTIF = { iso, ts, pid, signal, rotor };
 // Motif de chaque page
-export const PAGE_MOTIF = { home: "ts", table: "pid", gantt: "signal", calendar: "iso", changes: "pid", comments: "iso", tests: "signal", planner: "iso", cashin: "ts", turbines: "rotor", manager: "rotor" };
+export const PAGE_MOTIF = { home: "ts", table: "pid", gantt: "signal", calendar: "iso", changes: "pid", comments: "iso", tests: "signal", planner: "iso", cashin: "ts", turbines: "rotor", manager: "rotor", prodturb: "rotor" };
 
 const cache = {};
 export function backdropStyle(view) {

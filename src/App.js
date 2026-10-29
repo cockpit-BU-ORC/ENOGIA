@@ -19,6 +19,7 @@ import { CASHIN_DOC_REF, CASHIN_LINKS_REF, CASHIN_SHARED_REF, buildSharedCashin 
 import { getPjMeta, chefsOf, ALL_GAMMES, ALL_ETATS, ETAT_META, registerCustomEtats, MONTHS, today, setSyncedPjMeta, setPjMetaOverrides, GAMME_OVERRIDE, EXCLUDED_CHEFS } from "./pjMeta";
 import { weekStartOf } from "./parsers";
 import { HomeView } from "./components/HomeView";
+import { ProdTurbines } from "./components/ProdTurbines";
 import { backdropStyle } from "./pageBackdrop"; // v225 : un fond léger par page
 import { useA11yFallback } from "./a11yFallback";
 import { CashInTab } from "./components/CashInTab";
@@ -51,7 +52,7 @@ import { saveBackup } from "./importBackups";
 const IS_BETA=process.env.REACT_APP_BETA==="1";
 const DOC_PFX=IS_BETA?"beta_":"";
 if(IS_BETA&&typeof document!=="undefined")document.title="[BÊTA] ENOGIA – BU ORC";
-const BETA_DOCS=["current","initial","overrides","comments","pjMetaSync","pjMetaOverrides","delays","delayTypes","managerEmails","changeLog","cashin","cashinLinks","turbines","tests","profiles"];
+const BETA_DOCS=["current","initial","overrides","comments","pjMetaSync","pjMetaOverrides","delays","delayTypes","managerEmails","changeLog","cashin","cashinLinks","turbines","tests","profiles","prodTurbines"];
 const DOC_REF=()=>doc(db,"planning",DOC_PFX+"current");
 const INITIAL_DOC_REF=()=>doc(db,"planning",DOC_PFX+"initial");
 const OVERRIDES_DOC_REF=()=>doc(db,"planning",DOC_PFX+"overrides");
@@ -61,6 +62,7 @@ const PJ_META_OVERRIDES_DOC_REF=()=>doc(db,"planning",DOC_PFX+"pjMetaOverrides")
 const DELAYS_DOC_REF=()=>doc(db,"planning",DOC_PFX+"delays");
 const DELAY_TYPES_DOC_REF=()=>doc(db,"planning",DOC_PFX+"delayTypes");
 const TURBINES_DOC_REF=()=>doc(db,"planning",DOC_PFX+"turbines"); // v146.22 : pool de turbines
+const PRODTURB_DOC_REF=()=>doc(db,"planning",DOC_PFX+"prodTurbines"); // v226 : Production turbines (directeur de production turbines + propriétaire)
 const TESTS_DOC_REF=()=>doc(db,"planning",DOC_PFX+"tests"); // v154 : testeurs, affectations aux périodes de tests, catalogue FAT
 const MANAGER_EMAILS_DOC_REF=()=>doc(db,"planning",DOC_PFX+"managerEmails");
 const PROFILES_DOC_REF=()=>doc(db,"planning",DOC_PFX+"profiles"); // v188 : rôle et PJ de chaque compte (Manager › Réglages › Personnes et rôles)
@@ -71,7 +73,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-29-v225-fonds-pages";
+const APP_BUILD_VERSION = "2026-10-29-v226-production-turbines";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -216,7 +218,7 @@ export default function App(){
   const [initialImporting,setInitialImporting]=useState(false);
   const [lastInitialImport,setLastInitialImport]=useState(null);
   const [lastInitialAdd,setLastInitialAdd]=useState(null);
-  const [view,setView]=useState(()=>{try{const v=localStorage.getItem("enogia_view");return ["home","table","gantt","calendar","changes","comments","tests","planner","cashin","turbines"].includes(v)?v:"home";}catch(e){return "home";}});
+  const [view,setView]=useState(()=>{try{const v=localStorage.getItem("enogia_view");return ["home","table","gantt","calendar","changes","comments","tests","planner","cashin","turbines","prodturb"].includes(v)?v:"home";}catch(e){return "home";}});
   useEffect(()=>{try{localStorage.setItem("enogia_view",view);}catch(e){}},[view]);
   useEffect(()=>{
     const h=e=>{
@@ -707,6 +709,25 @@ export default function App(){
     try{await setDoc(TESTS_DOC_REF(),{...next,updatedAt:new Date().toISOString(),updatedBy:authorName||""});return true;}
     catch(e){console.error(e);notify("Erreur lors de l'enregistrement des tests : "+e.message);return false;}
   },[authorName]);
+  // v226 : Production turbines — lue par tous les comptes connectés (pour savoir qui y a accès), modifiée élément par élément
+  const [prodDoc,setProdDoc]=useState(null);
+  useEffect(()=>{
+    if(!currentUser)return undefined;
+    return onSnapshot(PRODTURB_DOC_REF(),snap=>setProdDoc(snap.exists()?snap.data():{}),err=>{console.warn("prodTurbines (lecture) :",err&&err.message);setProdDoc({});});
+  },[currentUser]);
+  const prodApi=useMemo(()=>{
+    const stamp=()=>({updatedAt:new Date().toISOString(),updatedBy:authorName||""});
+    const fail=e=>{console.error(e);notify("Erreur lors de l'enregistrement (Production turbines) : "+e.message);return false;};
+    const setField=async(k,v)=>{try{await updateDoc(PRODTURB_DOC_REF(),{[k]:v,...stamp()});}catch(e){await setDoc(PRODTURB_DOC_REF(),{[k]:v,...stamp()},{merge:true});}return true;};
+    return{
+      put:async(c,id,data)=>{try{await setDoc(PRODTURB_DOC_REF(),{[c]:{[id]:data},...stamp()},{merge:true});const cur=(prodDoc&&prodDoc[c]&&prodDoc[c][id])||{};const gone=Object.keys(cur).filter(k=>!(k in data));if(gone.length)await updateDoc(PRODTURB_DOC_REF(),Object.fromEntries(gone.map(k=>[c+"."+id+"."+k,deleteField()])));return true;}catch(e){return fail(e);}},
+      del:async(c,id)=>{try{await updateDoc(PRODTURB_DOC_REF(),{[c+"."+id]:deleteField(),...stamp()});return true;}catch(e){return fail(e);}},
+      setParams:async p=>{try{return await setField("params",p);}catch(e){return fail(e);}},
+      setAccess:async list=>{try{return await setField("access",list);}catch(e){return fail(e);}},
+    };
+  },[authorName,prodDoc]); // eslint-disable-line react-hooks/exhaustive-deps
+  const myMail=String((currentUser&&currentUser.email)||"").toLowerCase();
+  const canProdTurb=!!(isOwner||(prodDoc&&Array.isArray(prodDoc.access)&&prodDoc.access.map(x=>String(x).toLowerCase()).includes(myMail)));
   const saveTurbines=useCallback(async next=>{
     try{await setDoc(TURBINES_DOC_REF(),{...next,updatedAt:new Date().toISOString(),updatedBy:authorName||""});return true;}
     catch(e){console.error(e);notify("Erreur lors de l'enregistrement des turbines : "+e.message);return false;}
@@ -1016,7 +1037,7 @@ export default function App(){
     return true;
   }),[dataWithOverrides,selEtats,selGammes,selPJs,allPJs,selProjets,allProjets,selPays,allPays,selChefs,allChefs,onlyDrift,onlyChanged,changeMarks,selMoisArrivee,selMoisTests,selMoisFinProd,selMoisDepart]);
 
-  const VIEWS=[{id:"home",icon:"home",l:"Aujourd'hui"},{id:"table",icon:"list",l:"Liste"},{id:"gantt",icon:"gantt",l:"Gantt"},{id:"calendar",icon:"calendar",l:"Calendrier"},{id:"changes",icon:"changes",l:"Modifications"},{id:"comments",icon:"comments",l:"Commentaires"},...(canSeeTests?[{id:"tests",icon:"check",l:"Tests"}]:[]),...(isOwner?[{id:"planner",icon:"gantt",l:"Planificateur"}]:[]),...(canCash?[{id:"cashin",icon:"euro",l:"Cash in"}]:[]),...(isOwner?[{id:"turbines",icon:"factory",l:"Turbines"}]:[])]; // v204 : planificateur réservé au propriétaire ; v217 (demandé : « Cash in et Turbines doivent ouvrir une nouvelle page, pas les pages du Manager ») : pages à part entière
+  const VIEWS=[{id:"home",icon:"home",l:"Aujourd'hui"},{id:"table",icon:"list",l:"Liste"},{id:"gantt",icon:"gantt",l:"Gantt"},{id:"calendar",icon:"calendar",l:"Calendrier"},{id:"changes",icon:"changes",l:"Modifications"},{id:"comments",icon:"comments",l:"Commentaires"},...(canSeeTests?[{id:"tests",icon:"check",l:"Tests"}]:[]),...(isOwner?[{id:"planner",icon:"gantt",l:"Planificateur"}]:[]),...(canCash?[{id:"cashin",icon:"euro",l:"Cash in"}]:[]),...(isOwner?[{id:"turbines",icon:"factory",l:"Turbines"}]:[]),...(canProdTurb?[{id:"prodturb",icon:"gauge",l:"Production turbines"}]:[])]; // v204 : planificateur réservé au propriétaire ; v217 (demandé : « Cash in et Turbines doivent ouvrir une nouvelle page, pas les pages du Manager ») : pages à part entière
 
   // v159 : menu principal libellé (réductible, mémorisé) + recherche « Aller à… » (Ctrl K) sur toutes les pages
   // v191 (demandé : « l'onglet à gauche doit se masquer automatiquement ») : menu réduit par défaut, il s'ouvre par-dessus la page au survol
@@ -1035,7 +1056,7 @@ export default function App(){
   // v219 : le plan est aussi lu dans le Manager (charge des KPI d'après le planificateur)
   useEffect(()=>{if(!currentUser||!((isOwner&&view==="planner")||(pinOk&&view==="manager")))return undefined;return listenPlan(d=>{setPlanDoc(d);setPlanLoaded(true);});},[currentUser,isOwner,pinOk,view]);
   useEffect(()=>{if(view==="planner"&&currentUser&&!isOwner)setView("table");},[view,currentUser,isOwner]);
-  useEffect(()=>{if(!currentUser)return;if((view==="cashin"&&!canCash)||(view==="turbines"&&!isOwner))setView("home");},[view,currentUser,canCash,isOwner]);
+  useEffect(()=>{if(!currentUser)return;if((view==="cashin"&&!canCash)||(view==="turbines"&&!isOwner)||(view==="prodturb"&&prodDoc!==null&&!canProdTurb))setView("home");},[view,currentUser,canCash,isOwner,prodDoc,canProdTurb]);
   const [cashFocusApp,setCashFocusApp]=useState(null); // v217 : PJ à afficher dans la page Cash in (depuis une fiche projet)
   const pjCtxTests=canSeeTests?testsDoc:null,pjCtx=useMemo(()=>({testsDoc:pjCtxTests,turbineDoc}),[pjCtxTests,turbineDoc]); // v203 : pastilles de la fiche d'un PJ // v196 : entrées du Manager affichées dans ce menu (fournies par ManagerPanel)
   const closePeek=delay=>{clearTimeout(navPeekT.current);navPeekT.current=setTimeout(()=>setNavPeek(false),delay||0);};
@@ -1073,7 +1094,7 @@ export default function App(){
         {!navCompact&&<span style={{textAlign:"left",lineHeight:1.25}}><span style={{display:"block",fontFamily:T.fontDisplay,fontWeight:800,fontSize:14,letterSpacing:".02em",color:NAV.industrial?"#FFFFFF":T.ink900}}>{SITE_NAME} <span style={{color:NAV.group}}>· {SITE_SCOPE}</span></span><span style={{display:"block",fontSize:11,color:NAV.ink,marginTop:2,whiteSpace:"normal"}}>{SITE_SUB}</span></span>}
         </span>
       </button>
-      {!(view==="manager"&&mgrNav)&&[["Planning",["home","table","gantt","calendar"]],["Suivi",["changes","comments","tests","planner"]],["Gestion",["cashin","turbines"]]].map(([gl,ids])=>{const items=VIEWS.filter(v=>ids.includes(v.id));if(!items.length)return null;return(<React.Fragment key={gl}>
+      {!(view==="manager"&&mgrNav)&&[["Planning",["home","table","gantt","calendar"]],["Suivi",["changes","comments","tests","planner"]],["Gestion",["cashin","turbines","prodturb"]]].map(([gl,ids])=>{const items=VIEWS.filter(v=>ids.includes(v.id));if(!items.length)return null;return(<React.Fragment key={gl}>
         {!navCompact&&<div className="enogia-nav-grp" style={{fontSize:12,fontWeight:700,color:NAV.group,fontFamily:T.font,padding:"12px 10px 4px",whiteSpace:"nowrap"}}>{gl}</div>}
         {navCompact&&<div className="enogia-nav-grp" style={{width:18,height:1,background:NAV.industrial?"rgba(255,255,255,.18)":T.line,margin:"4px 0"}}/>}
         {items.map(v=>{const on=v.mgr?(view==="manager"&&managerTab===v.mgr):view===v.id;const ttl=v.id==="changes"&&unseenChanges.length?"Modifications — "+unseenChanges.length+" nouvelle"+(unseenChanges.length>1?"s":"")+" version"+(unseenChanges.length>1?"s":""):v.l;return(
@@ -1220,6 +1241,7 @@ export default function App(){
             {/* v204 (demandé : « un onglet uniquement pour moi, sous Tests ») : le module de planification (src/planner), brouillon séparé du planning ;
                 « Publier » seul modifie le planning lu par tous. Liens entre PJ, dates imposées, une production / un banc à la fois, charge par semaine. */}
             {view==="cashin"&&canCash&&<CashInTab authorName={authorName} focus={cashFocusApp}/>}
+            {view==="prodturb"&&canProdTurb&&<ProdTurbines doc={prodDoc} api={prodApi} canEdit owner={isOwner}/>}
             {view==="turbines"&&isOwner&&<TurbinesTab doc={turbineDoc||{turbines:[]}} save={saveTurbines} data={dataWithOverrides} authorName={authorName} superAdmin={pinOk}/>}
             {view==="planner"&&isOwner&&<PlannerView productionExclusions={productionExclusions} testers={testsDoc&&Array.isArray(testsDoc.testers)?testsDoc.testers:[]} planLoaded={planLoaded} planDoc={planDoc} rows={dataWithOverrides} closurePeriods={closurePeriods} authorName={authorName}
               onSavePlan={p=>savePlan(p,authorName)} onPublish={async(plan,note)=>{const r=await publishPlan({plan,closurePeriods,by:authorName,note});/* v224 : un PJ publié depuis le planificateur et absent du planning initial → même bandeau qu’après un import (« Les ancrer dans l’initial ») */if(r&&r.rows&&initialPjsRef.current.size){const fresh=r.rows.filter(x=>x&&x.pj&&x.etat!=="SLOT_LIBRE"&&!initialPjsRef.current.has(x.pj));setNewVsInitial(fresh.length?{rows:r.rows,pjs:fresh.map(x=>x.pj)}:null);}return r;}} onLoadHistory={loadHistory} onRestorePublication={restorePublication}/>}

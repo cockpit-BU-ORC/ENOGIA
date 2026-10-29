@@ -304,7 +304,7 @@ function moveTo(plan, pj, over) {
 
 // v224 (demandé : « 2 slots de banc d'essai : 2 machines en même temps, jamais 2 machines sur le même slot ; une attribution
 // simple et claire ») : une ligne par banc, ses machines dans l'ordre (dates, chevauchements en rouge), changer de banc d'un clic,
-// « Interdire les chevauchements » (règle « un test à la fois par banc », ordre = ordre des tests), répartition automatique.
+// « Allouer automatiquement » (banc libre le plus tôt + une machine à la fois par banc, ordre = ordre des tests).
 function BenchDialog({ plan, sched, cal, hide, readOnly, onClose, onApply }) {
   const [past, setPast] = useState(false);
   useEffect(() => { const k = e => { if (e.key === "Escape") onClose(); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose]);
@@ -322,11 +322,16 @@ function BenchDialog({ plan, sched, cal, hide, readOnly, onClose, onApply }) {
         <span style={{ fontSize: 12.5, color: T.ink500 }}>2 bancs : deux machines peuvent être testées en même temps, une seule par banc.</span>
         <button type="button" onClick={onClose} style={{ marginLeft: "auto", border: "none", background: "transparent", color: T.ink500, cursor: "pointer", minHeight: 28 }}>Fermer</button>
       </div>
-      <div role="status" style={{ margin: "10px 0", padding: "8px 12px", borderRadius: 8, background: conf.length ? T.red100 : rule ? T.emerald100 : T.amber100, color: conf.length ? T.red500 : rule ? T.emerald600 : T.amber600, fontSize: 13, fontWeight: 600, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-        <span style={{ flex: 1, minWidth: 220 }}>{conf.length ? conf.length + " chevauchement" + (conf.length > 1 ? "s" : "") + " : " + conf.slice(0, 3).map(c => c.pj + " et " + c.with + " sur le banc " + c.b).join(" ; ") + (conf.length > 3 ? "…" : "") : rule ? "Aucun chevauchement : chaque banc enchaîne ses machines l'une après l'autre." : "Aucun chevauchement pour l'instant, mais rien ne l'empêche."}</span>
-        {!readOnly && !rule && <button type="button" style={{ ...tb, background: T.ink900, color: T.card, borderColor: T.ink900 }} onClick={() => onApply(withRule(plan), "Un test à la fois par banc : les machines d'un même banc passent l'une après l'autre, dans l'ordre de leurs tests.")}>Interdire les chevauchements</button>}
-        {!readOnly && <button type="button" style={tb} onClick={() => { const np = splitBenchesV(plan, cal); onApply(rule ? benchOrderByStart(np, cal) : np, "Tests répartis sur le banc libéré le plus tôt."); }}>Répartir automatiquement</button>}
-        {!readOnly && rule && <button type="button" style={{ ...tb, border: "none", background: "transparent", color: T.ink500 }} onClick={() => onApply(setRules(plan, { banc: false }), "Chevauchements de bancs autorisés.")}>Autoriser les chevauchements</button>}
+      {/* v226 (demandé : « je ne comprends pas l’interdiction des chevauchements ; il faut un moyen rapide d’allouer en auto ») : un bouton qui fait tout */}
+      <div style={{ margin: "10px 0", padding: "10px 12px", borderRadius: 8, border: "1px solid " + T.line, background: T.surface, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+        <div style={{ flex: 1, minWidth: 260, fontSize: 12.5, color: T.ink700, lineHeight: 1.5 }}>
+          <b style={{ color: T.ink900 }}>Allouer automatiquement</b> : chaque machine va sur le banc libre le plus tôt. Si les deux bancs sont pris, ses tests attendent la fin de la machine précédente sur son banc (les dates suivantes se décalent). Annulable avec ↶.
+        </div>
+        {!readOnly && <button type="button" style={{ ...tb, background: T.ink900, color: T.card, borderColor: T.ink900, padding: "6px 14px", fontSize: 12.5 }} onClick={() => onApply(withRule(splitBenchesV(plan, cal)), "Bancs alloués : une seule machine à la fois par banc, chacune sur le banc libre le plus tôt.")}>Allouer automatiquement</button>}
+      </div>
+      <div role="status" style={{ marginBottom: 10, padding: "6px 12px", borderRadius: 8, background: conf.length ? T.red100 : T.emerald100, color: conf.length ? T.red500 : T.emerald600, fontSize: 12.5, fontWeight: 600, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+        <span style={{ flex: 1, minWidth: 220 }}>{conf.length ? conf.length + " machine" + (conf.length > 1 ? "s" : "") + " sur un banc déjà occupé : " + conf.slice(0, 3).map(c => c.pj + " avec " + c.with + " (banc " + c.b + ")").join(" ; ") + (conf.length > 3 ? "…" : "") + ". Cliquez « Allouer automatiquement »." : rule ? "Aucun conflit : chaque banc teste une machine à la fois, les suivantes attendent leur tour." : "Aucun conflit pour l’instant."}</span>
+        {!readOnly && <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 500, color: T.ink700, cursor: "pointer" }} title="Coché : une machine qui arrive sur un banc occupé attend la fin de la précédente (ses dates se décalent). Décoché : rien ne l’empêche."><input type="checkbox" checked={rule} onChange={e => onApply(e.target.checked ? withRule(plan) : setRules(plan, { banc: false }), e.target.checked ? "Une machine à la fois par banc : les suivantes attendent leur tour." : "Plusieurs machines peuvent de nouveau se trouver sur le même banc.")} />Une machine à la fois par banc</label>}
       </div>
       <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: T.ink700, marginBottom: 8, cursor: "pointer" }}><input type="checkbox" checked={past} onChange={e => setPast(e.target.checked)} />Afficher les tests terminés</label>
       {[1, 2].map(b => { const L = shown.filter(x => x.b === b); return (<section key={b} aria-label={"Banc " + b} style={{ borderTop: "1px solid " + T.line, padding: "8px 0" }}>
