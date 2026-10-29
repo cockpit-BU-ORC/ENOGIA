@@ -89,18 +89,14 @@ export function Arrange({ id, children, spans = {}, defaultSpan = 6, labels = {}
     <div ref={grid} className="enogia-arr-grid" style={{ display: "grid", gridTemplateColumns: "repeat(12,minmax(0,1fr))", gap: GAP, alignItems: "start", gridAutoFlow: on ? "row" : "row dense", userSelect: live ? "none" : undefined }}>
       {order.map((k, i) => { const c = byId[k]; if (!c) return null; const sp = spanOf(k); const lab = labels[k] || (c.props && c.props["aria-label"]) || k; const dragging = live && live.k === k;
         return (<div key={k} ref={el => { els.current[k] = el; }} data-arr-k={k} className="enogia-arr-item" onPointerDown={on ? e => startDrag(k, e) : undefined} style={{ gridColumn: "span " + sp, minWidth: 0, position: "relative", outline: on ? "2px dashed " + (dragging ? T.teal500 : T.line) : "none", outlineOffset: 3, borderRadius: 10, opacity: dragging && live.order ? .85 : 1, zIndex: dragging ? 5 : undefined, cursor: on ? (dragging ? "grabbing" : "grab") : undefined, touchAction: on ? "none" : undefined, boxShadow: dragging && live.order ? T.shadowLg : undefined }}>
-          {on && <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "3px 6px", marginBottom: 6, background: T.surface, border: "1px solid " + T.line, borderRadius: 8, fontSize: FZ.xs, color: T.ink700 }}>
-            <span aria-hidden="true" style={{ color: T.ink500, fontSize: 15, padding: "2px 6px", lineHeight: 1 }}>⋮⋮</span>
-            <b style={{ flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{lab}</b>
-            <button type="button" style={tb} disabled={i === 0} onClick={() => move(k, i - 1)} aria-label={"Avancer " + lab}>◀</button>
-            <button type="button" style={tb} disabled={i === order.length - 1} onClick={() => move(k, i + 1)} aria-label={"Reculer " + lab}>▶</button>
-            <button type="button" style={tb} disabled={sp <= MIN} onClick={() => resize(k, -1)} aria-label={"Rétrécir " + lab}>−</button>
-            <span style={{ fontVariantNumeric: "tabular-nums", minWidth: 34, textAlign: "center" }}>{sp}/12</span>
-            <button type="button" style={tb} disabled={sp >= MAX} onClick={() => resize(k, 1)} aria-label={"Élargir " + lab}>+</button>
-          </div>}
+          {/* v228 (demandé : « trop brouillon, je ne veux pas voir de flèches ni de plus ») : plus de barre sur les cadrans ; au clavier,
+               le cadran sélectionné se déplace avec ← → et change de largeur avec Maj + ← → */}
+          {on && <span role="button" tabIndex={0} aria-label={lab + " : flèches gauche / droite pour déplacer, Maj + flèches pour la largeur"} onKeyDown={e => { if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return; e.preventDefault(); const d = e.key === "ArrowLeft" ? -1 : 1; if (e.shiftKey) resize(k, d); else move(k, i + d); }}
+            style={{ position: "absolute", inset: 0, zIndex: 3, borderRadius: 10 }} />}
+          {dragging && live.span && <span aria-hidden="true" style={{ position: "absolute", right: 8, top: 8, zIndex: 4, background: T.ink900, color: T.card, borderRadius: 6, padding: "1px 7px", fontSize: FZ.xs, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{Math.round(sp / 12 * 100)} %</span>}
           <div style={{ pointerEvents: on ? "none" : "auto" }}>{c}</div>
           {on && <span aria-hidden="true" data-arr-resize="1" title="Tirer pour changer la largeur" onPointerDown={e => startResize(k, e)}
-            style={{ position: "absolute", top: 0, bottom: 0, right: -9, width: 12, cursor: "ew-resize", touchAction: "none", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            style={{ position: "absolute", top: 0, bottom: 0, right: -9, width: 12, zIndex: 4, cursor: "ew-resize", touchAction: "none", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <span style={{ width: 4, height: 40, borderRadius: 2, background: dragging && live.span ? T.teal500 : T.ink300 }} />
           </span>}
         </div>); })}

@@ -33,8 +33,8 @@ const RIBBON = [
 // Ce que signifie chaque état, en une phrase (et l'étape suivante).
 const MEANING = {
   "NOT ORDERED": ["Commande non passée", "La machine n'est pas encore commandée : rien n'est lancé en atelier.", "la commande"],
-  "NON_DESIGNEE": ["Non désignée", "La commande existe, mais la machine n'est pas encore affectée à un client final.", "la désignation"],
-  "En fabrication": ["Fabrication FNR", "Les pièces sont fabriquées chez les fournisseurs avant l'arrivée de la machine en atelier.", "le montage mécanique"],
+  "NON_DESIGNEE": ["Design en cours", "Le design de l'ORC n'est pas encore complètement défini : la commande ne peut pas être passée.", "la commande"],
+  "En fabrication": ["Fabrication fournisseurs", "L'ORC (armoire et skid) est en fabrication et en montage chez les fournisseurs, avant son arrivée en atelier.", "le montage mécanique"],
   "STOCKAGE_EXT": ["Stockage externe", "La machine attend dans un stockage externe avant de revenir en atelier.", "le montage mécanique"],
   "MONTAGE": ["Montage mécanique", "Assemblage mécanique de la machine : lubrification, refroidissement, test de pression, tirage au vide, remplissage.", "le montage électrique"],
   "ELEC": ["Montage électrique", "Le circuit est fermé et testé ; on installe et on câble l'armoire électrique.", "les tests (essais de la machine, puis FAT)"],
@@ -113,7 +113,7 @@ export function RowDetail({ r, onClose, comments, addComment, deleteComment, pin
         <div style={{ fontSize: FZ.sm, fontWeight: 700, color: T.ink900, marginBottom: 4 }}>{stage ? "Sous-étapes · " + fs.label : fs.label}</div>
         {stage ? stage.steps.map(st => <div key={st} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: FZ.xs, color: T.ink700, padding: "2px 0" }}>
           <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: "50%", flexShrink: 0, background: fsState === "done" ? ETAT_META.SHIPPED.bar : fsState === "cur" ? bar : "transparent", boxShadow: fsState === "todo" ? "inset 0 0 0 1.5px " + T.ink300 : "none" }} />{st}</div>)
-          : <div style={{ fontSize: FZ.xs, color: T.ink700, lineHeight: 1.5 }}>{fs.id === "PRE" ? "Commande, désignation du client, fabrication des pièces chez les fournisseurs (FNR) ou stockage externe." : (MEANING.SHIPPED[1])}</div>}
+          : <div style={{ fontSize: FZ.xs, color: T.ink700, lineHeight: 1.5 }}>{fs.id === "PRE" ? "Design de l’ORC, commande, fabrication et montage chez les fournisseurs (armoire et skid) ou stockage externe." : (MEANING.SHIPPED[1])}</div>}
         {stage && stage.steps.some(x => x.endsWith("*")) && <div style={{ fontSize: 11, color: T.ink500, marginTop: 4, lineHeight: 1.4 }}>{STEP_NOTE}</div>}
         <div style={{ fontSize: 11, color: T.ink500, marginTop: 4 }}>{fsState === "done" ? "Étape terminée." : fsState === "cur" ? "Étape en cours." : "À venir."} Cliquez une autre étape pour voir la sienne.</div>
       </div>

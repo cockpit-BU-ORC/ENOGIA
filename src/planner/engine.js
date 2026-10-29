@@ -689,3 +689,21 @@ export function benchConflicts(plan, sched) {
   });
   return out;
 }
+
+// ── v228 (demandé : « un numéro de priorité des tâches mères pour chaque PJ : plus le numéro est grand, plus je veux que ses tâches
+// soient terminées en priorité » ; « archiver des projets : ils gardent leurs dernières dates mais ne sont plus dans la liste ») ──
+// La priorité range les PJ (la liste = l'ordre de priorité utilisé par « une production à la fois » et le lissage) : du plus grand
+// numéro au plus petit, les PJ sans numéro gardent leur place relative après eux.
+export function setPrio(plan, pj, v) {
+  const n = v === "" || v == null ? null : Math.round(Number(String(v).replace(",", ".")));
+  const np = clonePlan(plan); const p = np.pjs.find(x => x.pj === pj); if (!p) return plan;
+  if (n == null || isNaN(n)) delete p.prio; else p.prio = n;
+  const idx = new Map(np.pjs.map((x, i) => [x.pj, i]));
+  np.pjs.sort((a, b) => { const pa = a.prio != null ? a.prio : -Infinity, pb = b.prio != null ? b.prio : -Infinity; return pb - pa || idx.get(a.pj) - idx.get(b.pj); });
+  np.order = { ...(np.order || {}), prod: np.pjs.filter(x => x.steps && x.steps.production).map(x => x.pj) };
+  return np;
+}
+export function setArchived(plan, pj, on) {
+  const np = clonePlan(plan); const p = np.pjs.find(x => x.pj === pj); if (!p) return plan;
+  if (on) p.archived = new Date().toISOString().slice(0, 10); else delete p.archived; return np;
+}

@@ -1520,3 +1520,18 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
   4. Build, tests, contraste, commit, `npm run deploy:beta` ; puis `npm run kit:jeremie` pour lui renvoyer la version intégrée.
 - Vérifié : aller-retour sans modification (aucun changement), retour modifié (1 ligne), retour refusé (`import`), kit rendu seul (jsdom) ; build, tests, contraste.
 - Fichiers : scripts/{prodturb-kit,prodturb-import}.js, scripts/prodturb-consignes.md, components/ProdTurbines.js, package.json, .gitignore, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
+
+## v228 — États plus clairs ; garde-fous Production turbines ; cadrans sobres ; planificateur (priorité, archives, couloirs, pointillés)
+
+- **États** (`pjMeta.js`, `RowDetail.js`) : « Fabrication FNR » → **« Fabrication fournisseurs »** (l'ORC, armoire et skid, est fabriqué et monté chez les fournisseurs) ; « Non désignée » → **« Design en cours »** (le design de l'ORC n'est pas complètement défini : la commande ne peut pas être passée ; étape suivante : la commande). Les identifiants des états ne changent pas (aucune donnée à migrer).
+- **Production turbines** : `components/PageGuard.js` — une erreur dans la page s'affiche dans la page seulement (« Réessayer »), le reste du site continue. **Kit** : ligne « Base du kit : <empreinte> » ; `import:jeremie` **refuse** un retour fait à partir d'une version plus ancienne de la page (vos modifications ou un autre retour seraient perdues) — fusion à faire, `--force` pour écraser.
+- **Cadrans** (`Arrange.js`) : plus de barre (flèches, −, +) sur les cadrans ; en mode disposition on glisse le cadran et on tire son bord droit (la largeur s'affiche pendant le geste) ; au clavier : ← → pour déplacer, Maj + ← → pour la largeur.
+- **Planificateur** :
+  - **Priorité** : « P n » sur la ligne de chaque PJ (cliquer pour saisir) ; plus le numéro est grand, plus ses tâches passent en premier (la liste se range du plus grand au plus petit, les PJ sans numéro ensuite ; ordre « une production à la fois » mis à jour).
+  - **Archives** : menu ⋯ d'un PJ › « Archiver » — il garde ses dernières dates (publiées telles quelles) mais disparaît de la liste, du Gantt et des couloirs ; les PJ **expédiés** sont masqués de la même façon ; case « Archivés (N) » pour les revoir, « Sortir des archives » pour revenir.
+  - **Couloirs** : le tableau des tâches sous les couloirs est masqué ; bouton « Tableau des tâches » pour l'afficher.
+  - **Pointillés** supprimés (liens automatiques de l'ordre de passage : ils agissent toujours, ils ne sont plus dessinés).
+  - **Alerte après « Allouer automatiquement »** : le ⚠ à côté d'une date de test signalait qu'une date imposée n'était plus tenue parce que la machine attend son banc — normal après une allocation ; il n'apparaît plus dans ce cas (il reste pour les liens que vous créez).
+- Clés `localStorage` (`planUi105`) : `showArch`, `lanesTable`.
+- Vérifié : build (13 avertissements existants), tests (priorité, archives), contraste.
+- Fichiers : pjMeta.js, components/{RowDetail,Arrange,PageGuard}.js, planner/{engine,Planner,PlannerGantt,bench.test}.js, scripts/{prodturb-kit,prodturb-import}.js, scripts/prodturb-consignes.md, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.

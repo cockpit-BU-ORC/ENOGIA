@@ -5,6 +5,9 @@
 // Usage : node scripts/prodturb-kit.js            → kit-jeremie/ProdTurbines-kit.jsx + Consignes-pour-Claude.md
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
+// Empreinte de la page : le kit la garde, l’import vérifie que le site n’a pas changé entre-temps
+const hashOf = body => crypto.createHash("sha1").update(body.replace(/\r\n/g, "\n").replace(/\s+$/, "")).digest("hex").slice(0, 12);
 
 const ROOT = path.join(__dirname, "..");
 const SRC = path.join(ROOT, "src", "components", "ProdTurbines.js");
@@ -27,6 +30,7 @@ function build() {
   const kit = `// Kit « Production turbines » — ENOGIA, BU ORC (site ${version || "planning"})
 // Fichier unique à ouvrir comme artifact React dans Claude. NE MODIFIER QUE ce qui est entre les repères
 // « ===== DÉBUT PAGE » et « ===== FIN PAGE ===== » : le reste reproduit le site (thème, en-tête, icônes) pour l'aperçu.
+// Base du kit : ${hashOf(body)} (ne pas modifier cette ligne)
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
 /* ---------- Thème du site (copie de src/theme.js — ne pas modifier) ---------- */
@@ -97,4 +101,4 @@ if (require.main === module) {
   const r = build();
   console.log("Kit écrit dans " + r.out + " (" + r.lines + " lignes) : ProdTurbines-kit.jsx + Consignes-pour-Claude.md");
 }
-module.exports = { build, pageBody, START, END };
+module.exports = { build, pageBody, hashOf, START, END };

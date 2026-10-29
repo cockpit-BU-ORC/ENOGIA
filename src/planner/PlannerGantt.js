@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import { T } from "../theme";
 import { SerieTag } from "../pjMeta";
-import { STEP_KEYS, STEP_LABEL, STEP_IS_MS, STEP_KIND, stepKeysOf, stepLabel, isCustomKey, addCustomStep, addLink, removeLink, updateLink, nodeKey, splitKey, dayNum, isoOfDay, setStep, setWork, stepWork, shiftPj, moveStepTo, removeStep, removePj, allLinks, orderOf, rulesOf, schedule as scheduleOf, moveStepOrder, setStepMeta, benchOf, PHASE_LABEL, PHASES, setBench } from "./engine";
+import { STEP_KEYS, STEP_LABEL, STEP_IS_MS, STEP_KIND, stepKeysOf, stepLabel, isCustomKey, addCustomStep, addLink, removeLink, updateLink, nodeKey, splitKey, dayNum, isoOfDay, setStep, setWork, stepWork, shiftPj, moveStepTo, removeStep, removePj, allLinks, orderOf, rulesOf, schedule as scheduleOf, moveStepOrder, setStepMeta, benchOf, PHASE_LABEL, PHASES, setBench, setPrio, setArchived } from "./engine";
 import { numberRows, predText, applyPredText } from "./predecessors";
 import { Pop, MenuItem } from "./PlannerMenu";
 
@@ -225,7 +225,7 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
   // ── liens ──
   const yOf = useMemo(() => { const m = {}; rows.list.forEach(r => { m[r.type === "pj" ? r.p.pj : nodeKey(r.p.pj, r.k)] = r.y + ROW_H / 2; }); return m; }, [rows, ROW_H]);
   const links = useMemo(() => {
-    const all = allLinks(plan).filter(l => showLinks || (sel && (splitKey(l.from).pj === sel.pj || splitKey(l.to).pj === sel.pj)));
+    const all = allLinks(plan).filter(l => !l.seq).filter(l => showLinks || (sel && (splitKey(l.from).pj === sel.pj || splitKey(l.to).pj === sel.pj)));
     return all.map(l => {
       const a = sched.nodes[l.from], b = sched.nodes[l.to]; if (!a || !b || a.s === null || b.s === null) return null;
       const ya = yOf[l.from] != null ? yOf[l.from] : yOf[a.pj], yb = yOf[l.to] != null ? yOf[l.to] : yOf[b.pj]; if (ya == null || yb == null) return null;
@@ -274,7 +274,7 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
             {!readOnly && <span draggable aria-label={"Déplacer " + p.pj + " pour changer sa priorité"} title="Glisser pour changer la priorité" onDragStart={e => { setDragPj(p.pj); try { e.dataTransfer.setData("text/plain", p.pj); e.dataTransfer.effectAllowed = "move"; } catch (x) { /* ignore */ } }} onDragEnd={() => { setDragPj(null); setDropOn(null); }} style={{ cursor: "grab", color: T.ink300, padding: "0 4px", fontSize: 13, letterSpacing: -2 }}>⋮⋮</span>}
             <button aria-label={open ? "Replier " + p.pj : "Déplier " + p.pj} aria-expanded={open} onClick={e => { e.stopPropagation(); toggleExp(p.pj); }} className="pg-btn" style={{ width: 20, border: 0, background: "none", color: T.ink500, fontSize: 11, cursor: "pointer", padding: 0 }}>{open ? "▾" : "▸"}</button>
             <span style={{ fontFamily: T.fontMono, color: T.teal600, fontSize: 13 }}>{p.pj}</span><SerieTag pj={p.pj} size={9.5} />
-            <span title={"Priorité " + (idx + 1)} style={{ fontSize: 10.5, color: T.ink300, fontWeight: 600 }}>#{idx + 1}</span>
+            <span onClick={e => e.stopPropagation()} style={{ display: "inline-flex", width: 34, flex: "none" }}><EditCell disabled={readOnly} type="number" align="center" value={p.prio != null ? p.prio : ""} onCommit={v => go(setPrio(base, p.pj, v), { pj: p.pj, key: null, want: null })} display={p.prio != null ? "P" + p.prio : "P–"} title={"Priorité des tâches de " + p.pj + " : plus le numéro est grand, plus elles passent en premier (vide = sans priorité)"} style={{ fontSize: 10.5, fontWeight: 700, color: p.prio != null ? T.teal600 : T.ink300, width: "100%" }} /></span>
             <span style={{ fontSize: 12, color: T.ink500, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0, flex: 1 }}>{p.nomProjet || ""}</span>
             {!readOnly && <Pop width={230} align="right" trigger={(o, t) => <button className="pg-btn pg-more" aria-label={"Actions pour " + p.pj} onClick={e => { e.stopPropagation(); t(); }} style={{ border: 0, background: "none", color: T.ink500, cursor: "pointer", fontSize: 16, lineHeight: 1, padding: "0 6px" }}>⋯</button>}>
               {close => (<>
@@ -282,6 +282,7 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
                 {missing.map(k => <MenuItem key={k} onClick={() => { close(); go(setStep(base, p.pj, k, { dur: STEP_IS_MS[k] ? 0 : 5 }), { pj: p.pj, key: null, want: null }); toggleExp(p.pj, true); }}>＋ Ajouter l'étape « {STEP_LABEL[k]} »</MenuItem>)}
                 <MenuItem disabled={idx === 0} onClick={() => { close(); onReorder(p.pj, plan.pjs[idx - 1].pj); }}>▲ Monter dans la priorité</MenuItem>
                 <MenuItem disabled={idx === plan.pjs.length - 1} onClick={() => { close(); onReorder(p.pj, plan.pjs[idx + 1].pj); }}>▼ Baisser dans la priorité</MenuItem>
+                <MenuItem onClick={() => { close(); go(setArchived(base, p.pj, !p.archived), null); if (!p.archived) setSel(null); }}>{p.archived ? "Sortir des archives" : "Archiver (garde ses dates, masqué du Gantt)"}</MenuItem>
                 <MenuItem danger onClick={() => { close(); if (window.confirm("Retirer " + p.pj + " du plan ? (Le planning actuel publié n'est pas modifié.)")) { go(removePj(base, p.pj), null); setSel(null); } }}>Retirer ce PJ du plan</MenuItem>
               </>)}
             </Pop>}
@@ -329,7 +330,7 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
           {!readOnly && <button className="pg-btn pg-more" aria-label={"Supprimer l'étape " + stepLabel(p, k) + " de " + p.pj} title="Supprimer cette étape" onClick={e => { e.stopPropagation(); if (window.confirm("Supprimer l'étape « " + stepLabel(p, k) + " » de " + p.pj + " (et ses liens) ?")) go(removeStep(base, p.pj, k), { pj: p.pj, key: null, want: null }); }} style={{ border: 0, background: "none", color: T.red500, cursor: "pointer", fontSize: 13, padding: "0 6px" }}>✕</button>}
         </>, { gap: 2 });
         if (c === "start") return cell(c, w, <EditCell disabled={readOnly} type="date" value={n && n.s !== null ? n.start : ""} onCommit={v => editStart(p, k, v)} mono title={pinned ? "Date imposée : « pas avant ce jour »" : n && n.s !== null ? "Date calculée par un lien. Cliquez pour imposer une date." : "Pas de date : imposez-en une ou ajoutez un prédécesseur"}
-          display={<>{n && n.s !== null ? fmtIso(n.start) : "—"}{n && n.snetIgnored ? <span title="La date imposée est antérieure à ce que permettent les liens : elle n'a pas d'effet" style={{ color: T.amber600 }}> ⚠</span> : null}</>} style={{ fontSize: 12, fontWeight: pinned ? 700 : 400, color: ch ? T.amber600 : pinned ? T.ink900 : T.ink500, background: ch ? T.amber100 : "transparent", borderRadius: 6 }} />);
+          display={<>{n && n.s !== null ? fmtIso(n.start) : "—"}{n && n.snetIgnored && !String(n.driver || "").startsWith("seq:") ? <span title="La date imposée est antérieure à ce que permettent les liens : elle n'a pas d'effet" style={{ color: T.amber600 }}> ⚠</span> : null}</>} style={{ fontSize: 12, fontWeight: pinned ? 700 : 400, color: ch ? T.amber600 : pinned ? T.ink900 : T.ink500, background: ch ? T.amber100 : "transparent", borderRadius: 6 }} />);
         if (c === "end") return cell(c, w, ms ? <span style={{ fontFamily: T.fontMono, fontSize: 12, color: T.ink300, padding: "0 4px" }}>{n && n.s !== null ? fmtIso(n.start) : "—"}</span>
           : <EditCell disabled={readOnly} type="date" value={n && n.s !== null ? n.finish : ""} onCommit={v => editEnd(p, k, n, v)} mono display={n && n.s !== null ? fmtIso(n.finish) : "—"} title="Cliquez pour changer la date de fin (modifie la durée)" style={{ fontSize: 12, color: ch ? T.amber600 : T.ink500, background: ch ? T.amber100 : "transparent", borderRadius: 6 }} />);
         if (c === "dur") return cell(c, w, ms ? <span style={{ fontFamily: T.fontMono, fontSize: 12, color: T.ink300, width: "100%", textAlign: "right", padding: "0 4px" }}>0 j</span>

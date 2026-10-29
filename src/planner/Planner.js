@@ -478,8 +478,12 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
   // v224 (demandé : « je ne dois pas avoir les slots libres ou PJXXX ») : jamais affichés (ils restent comptés dans la charge)
   const slotSet = useMemo(() => new Set([...(rows || []).filter(r => r && r.etat === "SLOT_LIBRE").map(r => r.pj), ...((live && live.pjs) || []).map(p => p.pj).filter(pj => /X{2,}/i.test(pj))]), [rows, live]);
   const hideSlots = true;
-  const pjsShown = useMemo(() => { if (!live || live.v !== 2) return []; const s = q.trim().toLowerCase(); return live.pjs.filter(p => !(hideSlots && slotSet.has(p.pj)) && (!s || p.pj.toLowerCase().includes(s) || (p.nomProjet || "").toLowerCase().includes(s))); }, [live, q, hideSlots, slotSet]);
-  const lanesPlan = useMemo(() => live && live.v === 2 && hideSlots && slotSet.size ? { ...live, pjs: live.pjs.filter(p => !slotSet.has(p.pj)) } : live, [live, hideSlots, slotSet]);
+  // v228 (demandé : « archiver des projets ; quand le PJ est expédié je ne dois pas le voir ») : archivés et expédiés masqués (case « Archivés »)
+  const shippedSet = useMemo(() => new Set((rows || []).filter(r => r && r.etat === "SHIPPED").map(r => r.pj)), [rows]);
+  const isArch = p => !!p.archived || shippedSet.has(p.pj);
+  const nArch = live && live.v === 2 ? live.pjs.filter(isArch).length : 0;
+  const pjsShown = useMemo(() => { if (!live || live.v !== 2) return []; const s = q.trim().toLowerCase(); return live.pjs.filter(p => (ui.showArch || !isArch(p)) && !(hideSlots && slotSet.has(p.pj)) && (!s || p.pj.toLowerCase().includes(s) || (p.nomProjet || "").toLowerCase().includes(s))); }, [live, q, hideSlots, slotSet, shippedSet, ui.showArch]); // eslint-disable-line react-hooks/exhaustive-deps
+  const lanesPlan = useMemo(() => live && live.v === 2 ? { ...live, pjs: live.pjs.filter(p => !slotSet.has(p.pj) && (ui.showArch || !isArch(p))) } : live, [live, slotSet, shippedSet, ui.showArch]); // eslint-disable-line react-hooks/exhaustive-deps
   const toggleExp = (pj, force) => setExp(s => { const n = new Set(s); (force === true || !n.has(pj)) ? n.add(pj) : n.delete(pj); return n; });
   const goToday = () => { const el = (ui.view === "lanes" ? lref : gref).current; if (el) el.scrollLeft = Math.max(0, (tl.today - tl.lo) * tl.px - 160); };
   useEffect(() => { if (plan && plan.v === 2) { const t = setTimeout(goToday, 60); return () => clearTimeout(t); } }, [plan === null, ui.zoom, ui.view]); // eslint-disable-line
@@ -554,6 +558,8 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
         <input type="range" min={24} max={44} step={2} value={ui.rowH || 32} onChange={e => setUi({ rowH: Number(e.target.value) })} aria-label="Hauteur des lignes du Gantt" style={{ width: 70 }} /></label>}
       {ui.view === "lanes" && <label style={{ display: "inline-flex", alignItems: "center", gap: 4, fontWeight: 700, color: T.ink700 }}>Couloirs
         <input type="range" min={8} max={30} step={1} value={laneBH} onChange={e => setUi({ laneH: Number(e.target.value) })} aria-label="Hauteur des couloirs" style={{ width: 70 }} /></label>}
+      {nArch > 0 && <label title="PJ archivés ou expédiés : ils gardent leurs dernières dates mais sont masqués" style={{ display: "inline-flex", alignItems: "center", gap: 4, fontWeight: 700, color: T.ink700, cursor: "pointer" }}><input type="checkbox" checked={!!ui.showArch} onChange={e => setUi({ showArch: e.target.checked })} />Archivés ({nArch})</label>}
+      {ui.view === "lanes" && <button className="pg-tb" aria-pressed={!!ui.lanesTable} onClick={() => setUi({ lanesTable: !ui.lanesTable })} title="Afficher ou masquer le tableau des tâches sous les couloirs">Tableau des tâches</button>}
       <input value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher un PJ…" aria-label="Rechercher un PJ" className="pg-in" style={{ ...INP, width: 130 }} />
       {!ui.lock && <>
         <span style={{ display: "inline-flex", gap: 4 }}>
@@ -574,7 +580,6 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
       <span style={{ display: "inline-flex", gap: 8, flexWrap: "wrap", fontSize: 10.5, color: T.ink500, alignItems: "center" }}>
         {[["arrivee", "Arrivée", 1], ["production", "Production"], ["tests", "Tests"], ["finProd", "Packing"], ["depart", "Départ", 1]].map(([k, l, ms]) => <span key={k} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><span style={{ width: ms ? 9 : 16, height: 9, background: STEP_COLOR[k], transform: ms ? "rotate(45deg)" : "none", borderRadius: 2, display: "inline-block" }} />{l}</span>)}
         <span><span style={{ color: T.ink500 }}>→</span> lien</span>
-        {(rules.prod || rules.banc) && <span style={{ color: T.teal600 }}>⇢ ordre de passage</span>}
       </span>
     </div>
 
@@ -599,7 +604,7 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
     {ui.view === "changes" && chg && <div style={{ ...CARD, overflow: "hidden" }}>
       <PlannerChanges summary={chg.summary} planDiff={chg.planDiff || []} hasDetail={!!chg.planDiff} refs={chg.refs} refId={chg.id} setRefId={setRefId} refLabel={chg.label} loadingRefs={hist === null} q={q} onOpenPj={openPj} />
     </div>}
-    {ui.view !== "changes" && <div style={{ ...CARD, overflow: "clip" }}>
+    {ui.view !== "changes" && (ui.view !== "lanes" || ui.lanesTable) && <div style={{ ...CARD, overflow: "clip" }}>
       <PlannerGantt listW={listW} onListW={w => setUi({ listW: w })} testers={testers} onInfo={t => setNotice({ tone: "ok", text: t })} rowH={ui.rowH || 32} onAddTask={pj => { setSel({ pj, step: null }); setTaskPj(pj); setDlg("task"); }} plan={live} basePlan={plan} sched={sched} cal={cal} closurePeriods={closurePeriods} tl={tl} pjs={pjsShown} sel={selPj} setSel={setSel} expanded={exp} toggleExp={toggleExp}
         showLinks={ui.links} view={ui.view} readOnly={ro} onPreview={setPreview} onCommit={onCommit} onError={onError} onReorder={reorder} scrollRef={gref} onScrollX={setScrollX} maxH={ui.loadHide ? 150 : ui.loadSmall ? 260 : 360} />
       {ui.view !== "lanes" && loadEl}

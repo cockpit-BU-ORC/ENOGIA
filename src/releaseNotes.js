@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v228",
+    date: "2026-10-29",
+    title: "V228 : états plus clairs",
+    items: [
+      { t: "États", d: "« Fabrication FNR » devient « Fabrication fournisseurs » : l'ORC (armoire et skid) est fabriqué et monté chez les fournisseurs. « Non désignée » devient « Design en cours » : le design de l'ORC n'est pas encore complètement défini, la commande ne peut pas être passée." },
+      { t: "Cadrans", d: "Disposition plus sobre : on glisse le cadran, on tire son bord droit ; plus de flèches ni de boutons sur les cadrans." },
+    ],
+  },
+  {
     id: "2026-10-v227",
     date: "2026-10-29",
     title: "V227 : Production turbines — correction des fiches",

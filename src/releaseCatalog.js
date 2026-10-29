@@ -478,4 +478,9 @@ export const RELEASE_CATALOG = [
   { v: "227", t: "Production turbines : fiches corrigées, kit pour le directeur", items: [
     ["Production turbines", "Éléments enregistrés rouverts correctement ; kit d'échange avec le Claude du directeur de production turbines."],
   ] },
+  { v: "228", t: "États plus clairs, planificateur (priorité, archives), cadrans sobres", items: [
+    ["États", "Fabrication fournisseurs (ex-Fabrication FNR), Design en cours (ex-Non désignée)."],
+    ["Planificateur", "Priorité par PJ, archives (expédiés masqués), tableau des couloirs masquable, plus de pointillés, plus d'alerte après l'allocation des bancs."],
+    ["Production turbines", "Une erreur dans la page ne touche plus le reste du site ; contrôle de version des retours du kit."],
+  ] },
 ];

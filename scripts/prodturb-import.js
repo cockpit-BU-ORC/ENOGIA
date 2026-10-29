@@ -4,7 +4,7 @@
 // Usage : node scripts/prodturb-import.js "C:\chemin\ProdTurbines-kit.jsx" [--dry]
 const fs = require("fs");
 const path = require("path");
-const { pageBody, START, END } = require("./prodturb-kit");
+const { pageBody, hashOf, START, END } = require("./prodturb-kit");
 
 const ROOT = path.join(__dirname, "..");
 const SRC = path.join(ROOT, "src", "components", "ProdTurbines.js");
@@ -33,6 +33,10 @@ function run(file, dry) {
   const i = cur.indexOf(START), j = cur.indexOf(END);
   const head = cur.slice(0, cur.indexOf("\n", i) + 1), oldBody = cur.slice(cur.indexOf("\n", i) + 1, j);
   const { errors, warns } = check(body, oldBody);
+  // v228 : le kit renvoyé doit partir de la page actuelle du site (sinon des modifications faites côté site seraient perdues)
+  const base = (got.match(/Base du kit : ([0-9a-f]{12})/) || [])[1];
+  if (!base) warns.push("Kit sans empreinte (ancien kit) : vérifier que les changements faits côté site depuis ne sont pas perdus.");
+  else if (base !== hashOf(oldBody) && !process.argv.includes("--force")) errors.push("La page a changé dans le site depuis la fabrication de ce kit (modification de Gabriel ou autre retour). Ses changements doivent être fusionnés à la main avec la version actuelle ; --force écrase la version du site.");
   if (errors.length) { console.error("Refusé :\n- " + errors.join("\n- ")); process.exitCode = 1; return; }
   const next = head + body + END + "\n";
   const a = oldBody.split("\n"), b = body.split("\n"); const sa = new Set(a), sb = new Set(b);

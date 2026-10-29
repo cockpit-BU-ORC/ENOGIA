@@ -311,10 +311,10 @@ export const ETAT_META={
   "ELEC":etatFromColor("#48CAE4","Montage Élec"),
   "TESTS":etatFromColor("#FFB703","Tests"),
   "PACKAGING":etatFromColor("#2A9D8F","Packaging"),
-  "En fabrication":etatFromColor("#E76F51","Fabrication FNR"),
+  "En fabrication":etatFromColor("#E76F51","Fabrication fournisseurs"), // v228 (demandé) : l’ORC (armoire et skid) est fabriqué / monté chez les fournisseurs
   "STOCKAGE_EXT":etatFromColor("#8D99AE","Stockage Externe"),
   "NOT ORDERED":etatFromColor("#D62839","Non commandée"),
-  "NON_DESIGNEE":etatFromColor("#C77DFF","Non Designée"),
+  "NON_DESIGNEE":etatFromColor("#C77DFF","Design en cours"), // v228 (demandé) : design de l’ORC pas complètement défini, commande impossible
   "SLOT_LIBRE":etatFromColor("#CED4DA","Slot libre"),
   "A_DEFINIR":{get bg(){return T.surfaceAlt;},get text(){return T.ink500;},get border(){return T.ink100;},get bar(){return T.ink300;},label:"À définir"},
 };

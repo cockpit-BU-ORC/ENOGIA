@@ -24,3 +24,14 @@ test("bancs : avec la règle, plus aucun chevauchement sur un même banc", () =>
   const p3 = E.setBench(p2, cal, "PJ471", 2);
   expect(E.benchConflicts(p3, E.schedule(p3, cal)).length).toBe(0);
 });
+
+test("priorité : le plus grand numéro passe en tête, archivage réversible", () => {
+  const cal = E.makeCalendar({});
+  let p = E.initPlanFromRows(rows, cal);
+  p = E.setPrio(p, "PJ474", 9); p = E.setPrio(p, "PJ472", 3);
+  expect(p.pjs.slice(0, 2).map(x => x.pj)).toEqual(["PJ474", "PJ472"]);
+  expect(p.order.prod[0]).toBe("PJ474");
+  const a = E.setArchived(p, "PJ470", true);
+  expect(!!a.pjs.find(x => x.pj === "PJ470").archived).toBe(true);
+  expect(E.setArchived(a, "PJ470", false).pjs.find(x => x.pj === "PJ470").archived).toBeUndefined();
+});
