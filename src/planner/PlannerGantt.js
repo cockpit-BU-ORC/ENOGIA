@@ -106,7 +106,7 @@ function LinkEdit({ at, link, from, to, onType, onLag, onDelete, onClose }) {
   </div>);
 }
 
-export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, pjs, sel, setSel, expanded, toggleExp, showLinks, view, readOnly, onPreview, onCommit, onError, onReorder, scrollRef, onScrollX, listW, onListW, testers, onInfo, rowH, onAddTask, maxH }) {
+export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, pjs, sel, setSel, expanded, toggleExp, showLinks, view, readOnly, onPreview, onCommit, onError, onReorder, scrollRef, onScrollX, listW, onListW, testers, onInfo, rowH, onAddTask, maxH, showPrio = true, showSn = true }) {
   // v214 (demandé : « réduire la hauteur des lignes Arrivée, Production… ») : hauteur des lignes réglable (24 à 44 px)
   const ROW_H = Math.max(24, Math.min(44, Number(rowH) || 32)), BAR_H = Math.max(12, ROW_H - 10), BAR_T = (ROW_H - BAR_H) / 2, MID = ROW_H / 2;
   const cbRef = useRef({}); cbRef.current = { onInfo, onError };
@@ -272,9 +272,10 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
           if (c === "id") return cell(c, w, <span style={{ fontSize: 11, color: T.ink300, fontFamily: T.fontMono, width: "100%", textAlign: "center" }}>{nums.pjId[p.pj]}</span>);
           if (c === "name") return cell(c, w, <>
             {!readOnly && <span draggable aria-label={"Déplacer " + p.pj + " pour changer sa priorité"} title="Glisser pour changer la priorité" onDragStart={e => { setDragPj(p.pj); try { e.dataTransfer.setData("text/plain", p.pj); e.dataTransfer.effectAllowed = "move"; } catch (x) { /* ignore */ } }} onDragEnd={() => { setDragPj(null); setDropOn(null); }} style={{ cursor: "grab", color: T.ink300, padding: "0 4px", fontSize: 13, letterSpacing: -2 }}>⋮⋮</span>}
+            {/* v230 (demandé : « la priorité à gauche, et masquable comme le S/N ») */}
+            {showPrio && <span onClick={e => e.stopPropagation()} style={{ display: "inline-flex", width: 34, flex: "none" }}><EditCell disabled={readOnly} type="number" align="center" value={p.prio != null ? p.prio : ""} onCommit={v => go(setPrio(base, p.pj, v), { pj: p.pj, key: null, want: null })} display={p.prio != null ? "P" + p.prio : "P–"} title={"Priorité des tâches de " + p.pj + " : plus le numéro est grand, plus elles passent en premier (vide = sans priorité)"} style={{ fontSize: 10.5, fontWeight: 700, color: p.prio != null ? T.teal600 : T.ink300, width: "100%" }} /></span>}
             <button aria-label={open ? "Replier " + p.pj : "Déplier " + p.pj} aria-expanded={open} onClick={e => { e.stopPropagation(); toggleExp(p.pj); }} className="pg-btn" style={{ width: 20, border: 0, background: "none", color: T.ink500, fontSize: 11, cursor: "pointer", padding: 0 }}>{open ? "▾" : "▸"}</button>
-            <span style={{ fontFamily: T.fontMono, color: T.teal600, fontSize: 13 }}>{p.pj}</span><SerieTag pj={p.pj} size={9.5} />
-            <span onClick={e => e.stopPropagation()} style={{ display: "inline-flex", width: 34, flex: "none" }}><EditCell disabled={readOnly} type="number" align="center" value={p.prio != null ? p.prio : ""} onCommit={v => go(setPrio(base, p.pj, v), { pj: p.pj, key: null, want: null })} display={p.prio != null ? "P" + p.prio : "P–"} title={"Priorité des tâches de " + p.pj + " : plus le numéro est grand, plus elles passent en premier (vide = sans priorité)"} style={{ fontSize: 10.5, fontWeight: 700, color: p.prio != null ? T.teal600 : T.ink300, width: "100%" }} /></span>
+            <span style={{ fontFamily: T.fontMono, color: T.teal600, fontSize: 13 }}>{p.pj}</span>{showSn && <SerieTag pj={p.pj} size={9.5} />}
             <span style={{ fontSize: 12, color: T.ink500, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0, flex: 1 }}>{p.nomProjet || ""}</span>
             {!readOnly && <Pop width={230} align="right" trigger={(o, t) => <button className="pg-btn pg-more" aria-label={"Actions pour " + p.pj} onClick={e => { e.stopPropagation(); t(); }} style={{ border: 0, background: "none", color: T.ink500, cursor: "pointer", fontSize: 16, lineHeight: 1, padding: "0 6px" }}>⋯</button>}>
               {close => (<>

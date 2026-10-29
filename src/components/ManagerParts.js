@@ -148,11 +148,11 @@ export function PresenceEditor({r,presence,onChange}){
   </div>);
 }
 
-export function StatutTab({rows,etatChoice,setEtatFor,clientPresence,setClientPresenceFor,customEtats,setCustomEtats,data}){
+export function StatutTab({rows,etatChoice,setEtatFor,clientPresence,setClientPresenceFor,customEtats,setCustomEtats,etatEdits,setEtatEdits,data}){
   const COLS="130px 150px 84px 180px 1fr";
   const [etatsOpen,setEtatsOpen]=useState(false);
   return(<div style={{...CARD,overflow:"hidden"}}>
-    {etatsOpen&&setCustomEtats&&<EtatsDialog onClose={()=>setEtatsOpen(false)} customEtats={customEtats||[]} setCustomEtats={setCustomEtats} data={data||rows}/>}
+    {etatsOpen&&setCustomEtats&&<EtatsDialog onClose={()=>setEtatsOpen(false)} customEtats={customEtats||[]} setCustomEtats={setCustomEtats} etatEdits={etatEdits||{}} setEtatEdits={setEtatEdits} data={data||rows}/>}
     <div style={{padding:"12px 16px 8px"}}>
       <div style={H_TITLE}>Statut & état des machines</div>
       <div style={H_SUB}>L'état choisi ici est celui affiché partout sur le site, immédiatement visible par tous. En Montage, Élec, Tests, Packaging et Expédiée, l'avancement de production s'en déduit automatiquement (voir le « i » des filtres d'état).</div>

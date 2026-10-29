@@ -8,6 +8,7 @@ import {
 } from "./engine";
 import { parseMsPlan, compareWithMs, applyCalibration } from "./importPlan";
 import { PlannerGantt, fmtIso, makeTimeline, leftWidthWith, STEP_COLOR, ZOOM_PX, PX_MIN, PX_MAX } from "./PlannerGantt";
+import { LABEL_W as LANE_LABEL_W } from "./PlannerLanes";
 import { benchOrderByStart, setBench, benchMoveUp, benchConflicts, splitBenches as splitBenchesV } from "./engine";
 import { PlannerLoad } from "./PlannerLoad";
 import { PlannerLanes } from "./PlannerLanes";
@@ -305,11 +306,11 @@ function moveTo(plan, pj, over) {
 // v224 (demandé : « 2 slots de banc d'essai : 2 machines en même temps, jamais 2 machines sur le même slot ; une attribution
 // simple et claire ») : une ligne par banc, ses machines dans l'ordre (dates, chevauchements en rouge), changer de banc d'un clic,
 // « Allouer automatiquement » (banc libre le plus tôt + une machine à la fois par banc, ordre = ordre des tests).
-function BenchDialog({ plan, sched, cal, hide, readOnly, onClose, onApply }) {
+function BenchDialog({ plan, sched, cal, hide, skip, readOnly, onClose, onApply }) {
   const [past, setPast] = useState(false);
   useEffect(() => { const k = e => { if (e.key === "Escape") onClose(); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose]);
-  const rule = rulesOf(plan).banc; const conf = benchConflicts(plan, sched); const bad = new Set(conf.map(c => c.pj));
-  const items = plan.pjs.filter(p => p.steps.tests && !(hide && hide.has(p.pj))).map(p => ({ p, b: Number(p.steps.tests.banc) === 2 ? 2 : 1, n: sched.nodes[p.pj + "|tests"] })).filter(x => x.n && x.n.s !== null).sort((a, b) => a.n.s - b.n.s);
+  const rule = rulesOf(plan).banc; const conf = benchConflicts(plan, sched, { skip, since: past ? null : (d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"))(new Date()) }); const bad = new Set(conf.map(c => c.pj));
+  const items = plan.pjs.filter(p => p.steps.tests && !(hide && hide.has(p.pj)) && !(skip && skip(p))).map(p => ({ p, b: Number(p.steps.tests.banc) === 2 ? 2 : 1, n: sched.nodes[p.pj + "|tests"] })).filter(x => x.n && x.n.s !== null).sort((a, b) => a.n.s - b.n.s);
   const d0 = new Date(), t0 = d0.getFullYear() + "-" + String(d0.getMonth() + 1).padStart(2, "0") + "-" + String(d0.getDate()).padStart(2, "0");
   const shown = items.filter(x => past || x.n.finish >= t0);
   const lo = shown.length ? Math.min(...shown.map(x => x.n.s)) : 0, hi = shown.length ? Math.max(...shown.map(x => x.n.f)) : 1, span = Math.max(1, hi - lo + 1);
@@ -401,7 +402,6 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
     setUi({ px: nv }); };
   useLayoutEffect(() => { const a = zoomAnchor.current, el = gref.current; zoomAnchor.current = null; if (a && el) el.scrollLeft = Math.max(0, a.day * tl.px - a.mx + a.lw); }, [tl.px]);
   useEffect(() => { const el = gref.current; if (!el) return undefined; const w = e => { if (!e.ctrlKey && !e.metaKey) return; e.preventDefault(); zoomFn.current(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX); }; el.addEventListener("wheel", w, { passive: false }); return () => el.removeEventListener("wheel", w); });
-  const conflicts = useMemo(() => live && live.v === 2 ? benchConflicts(live, sched) : [], [live, sched]);
   const pubRows = useMemo(() => plan && plan.v === 2 ? planToRows(plan, schedule(plan, cal), rows || [], guessGamme, cal) : [], [plan, cal, rows]);
   const changes = useMemo(() => plan && plan.v === 2 ? diffRows(rows || [], pubRows) : [], [rows, pubRows, plan]);
 
@@ -463,7 +463,7 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
     if (kind === "level") { const r = levelPlan(plan, cal); np = r.plan; title = "Nivellement de la charge atelier (" + Math.round(capWeek(plan)) + " h / semaine)"; }
     else if (kind === "early") { np = releasePins(plan); title = "Dates au plus tôt : dates imposées libérées (sauf arrivées et départs)"; }
     else if (kind === "fit") { np = fitDurations(plan); title = "Durées allongées pour tenir la capacité"; }
-    else if (kind === "bench") { np = splitBenches(plan, cal); title = "Répartition des tests sur les 2 bancs"; }
+    else if (kind === "bench") { np = benchOrderByStart({ ...splitBenches(plan, cal), rules: { ...rulesOf(plan), banc: true } }, cal); title = "Répartition des tests sur les 2 bancs (une machine à la fois par banc)"; } // v230 : la règle suit, sinon le ⚠ restait
     else if (kind === "rules") { np = setRules(plan, patch); title = Object.keys(patch).map(k => (k === "prod" ? "Une production à la fois" : "Un test à la fois par banc") + (patch[k] ? " : activé" : " : désactivé")).join(", "); }
     else if (kind === "sort") { apply(sortPjsByStart(plan, cal)); return; }
     else { np = clearLevel(plan); title = "Retrait du nivellement"; }
@@ -482,9 +482,13 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
   const shippedSet = useMemo(() => new Set((rows || []).filter(r => r && r.etat === "SHIPPED").map(r => r.pj)), [rows]);
   const isArch = p => !!p.archived || shippedSet.has(p.pj);
   const nArch = live && live.v === 2 ? live.pjs.filter(isArch).length : 0;
+  const benchSkip = p => isArch(p) || slotSet.has(p.pj); const todayIso = (d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"))(new Date());
+  const conflicts = useMemo(() => live && live.v === 2 ? benchConflicts(live, sched, { skip: benchSkip, since: todayIso }) : [], [live, sched, slotSet, shippedSet]); // eslint-disable-line react-hooks/exhaustive-deps
   const pjsShown = useMemo(() => { if (!live || live.v !== 2) return []; const s = q.trim().toLowerCase(); return live.pjs.filter(p => (ui.showArch || !isArch(p)) && !(hideSlots && slotSet.has(p.pj)) && (!s || p.pj.toLowerCase().includes(s) || (p.nomProjet || "").toLowerCase().includes(s))); }, [live, q, hideSlots, slotSet, shippedSet, ui.showArch]); // eslint-disable-line react-hooks/exhaustive-deps
   const lanesPlan = useMemo(() => live && live.v === 2 ? { ...live, pjs: live.pjs.filter(p => !slotSet.has(p.pj) && (ui.showArch || !isArch(p))) } : live, [live, slotSet, shippedSet, ui.showArch]); // eslint-disable-line react-hooks/exhaustive-deps
   const toggleExp = (pj, force) => setExp(s => { const n = new Set(s); (force === true || !n.has(pj)) ? n.add(pj) : n.delete(pj); return n; });
+  // v230 : en changeant de vue, la charge reprend le défilement de la vue affichée (couloirs ou Gantt)
+  useEffect(() => { const el = (ui.view === "lanes" ? lref : gref).current; setScrollX(el ? el.scrollLeft : 0); }, [ui.view]); // eslint-disable-line react-hooks/exhaustive-deps
   const goToday = () => { const el = (ui.view === "lanes" ? lref : gref).current; if (el) el.scrollLeft = Math.max(0, (tl.today - tl.lo) * tl.px - 160); };
   useEffect(() => { if (plan && plan.v === 2) { const t = setTimeout(goToday, 60); return () => clearTimeout(t); } }, [plan === null, ui.zoom, ui.view]); // eslint-disable-line
 
@@ -514,7 +518,7 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
   // v211 : en Liste + Gantt, la liste prend au plus ~42 % de la largeur tant qu'on ne l'a pas réglée (sinon le Gantt n'apparaît pas sur un petit écran)
   const listW = ui.listW || (ui.view === "both" && typeof window !== "undefined" ? Math.max(380, Math.min(736, Math.round(window.innerWidth * 0.42))) : null);
   const noT = ui.view === "list" || ui.view === "changes"; const cmp = proposal && proposal.cmp; const ro = ui.lock || !!proposal;
-  const loadEl = load && !ui.loadHide ? <PlannerLoad plan={live} load={load} cal={cal} tl={tl} scrollX={scrollX} leftW={leftWidthWith(ui.view, listW)} onCapWeek={(w, h) => apply(setCapWeek(plan, w, h))} small={!!ui.loadSmall} setSmall={v => setUi({ loadSmall: v })} standalone={ui.view === "list" || ui.view === "lanes"} mode={ui.loadMode} setMode={m => setUi({ loadMode: m })} cap={cap}
+  const loadEl = load && !ui.loadHide ? <PlannerLoad plan={live} load={load} cal={cal} tl={tl} scrollX={scrollX} leftW={ui.view === "lanes" ? LANE_LABEL_W : leftWidthWith(ui.view, listW)} onCapWeek={(w, h) => apply(setCapWeek(plan, w, h))} small={!!ui.loadSmall} setSmall={v => setUi({ loadSmall: v })} standalone={ui.view === "list"} mode={ui.loadMode} setMode={m => setUi({ loadMode: m })} cap={cap}
         onCap={patch => apply(setCap(plan, patch))} readOnly={ro} onPropose={startProposal} hasLevelNow={hasLevel(plan)} nTooDense={load.tooDense.length} /> : null;
   return (<div className="pg-root">
     <style>{pgCss()}</style>
@@ -558,6 +562,10 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
         <input type="range" min={24} max={44} step={2} value={ui.rowH || 32} onChange={e => setUi({ rowH: Number(e.target.value) })} aria-label="Hauteur des lignes du Gantt" style={{ width: 70 }} /></label>}
       {ui.view === "lanes" && <label style={{ display: "inline-flex", alignItems: "center", gap: 4, fontWeight: 700, color: T.ink700 }}>Couloirs
         <input type="range" min={8} max={30} step={1} value={laneBH} onChange={e => setUi({ laneH: Number(e.target.value) })} aria-label="Hauteur des couloirs" style={{ width: 70 }} /></label>}
+      {ui.view !== "lanes" && ui.view !== "changes" && <span role="group" aria-label="Colonnes affichées" style={{ display: "inline-flex" }}>
+        <button className="pg-tb" aria-pressed={!ui.hidePrio} onClick={() => setUi({ hidePrio: !ui.hidePrio })} title="Afficher ou masquer la priorité (P n) devant chaque PJ" style={{ borderRadius: "6px 0 0 6px" }}>Priorité</button>
+        <button className="pg-tb" aria-pressed={!ui.hideSn} onClick={() => setUi({ hideSn: !ui.hideSn })} title="Afficher ou masquer le n° de série à côté de chaque PJ" style={{ borderRadius: "0 6px 6px 0", marginLeft: -1 }}>S/N</button>
+      </span>}
       {nArch > 0 && <label title="PJ archivés ou expédiés : ils gardent leurs dernières dates mais sont masqués" style={{ display: "inline-flex", alignItems: "center", gap: 4, fontWeight: 700, color: T.ink700, cursor: "pointer" }}><input type="checkbox" checked={!!ui.showArch} onChange={e => setUi({ showArch: e.target.checked })} />Archivés ({nArch})</label>}
       {ui.view === "lanes" && <button className="pg-tb" aria-pressed={!!ui.lanesTable} onClick={() => setUi({ lanesTable: !ui.lanesTable })} title="Afficher ou masquer le tableau des tâches sous les couloirs">Tableau des tâches</button>}
       <input value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher un PJ…" aria-label="Rechercher un PJ" className="pg-in" style={{ ...INP, width: 130 }} />
@@ -598,7 +606,7 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
 
     {/* v208 (demandé : « la charge atelier toujours visible en bas de l'écran ») : la charge colle au bas de l'écran ; en Couloirs elle suit les couloirs */}
     {ui.view === "lanes" && <div style={{ ...CARD, overflow: "clip", marginBottom: 12 }}>
-      <PlannerLanes laneH={laneBH} plan={lanesPlan} basePlan={plan} sched={sched} cal={cal} closurePeriods={closurePeriods} load={load} tl={tl} sel={selPj} setSel={setSel} readOnly={ro} onPreview={setPreview} onCommit={onCommit} scrollRef={lref} />
+      <PlannerLanes laneH={laneBH} plan={lanesPlan} basePlan={plan} sched={sched} cal={cal} closurePeriods={closurePeriods} load={load} tl={tl} sel={selPj} setSel={setSel} readOnly={ro} onPreview={setPreview} onCommit={onCommit} scrollRef={lref} onScrollX={setScrollX} />
       {loadEl}
     </div>}
     {ui.view === "changes" && chg && <div style={{ ...CARD, overflow: "hidden" }}>
@@ -606,7 +614,7 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
     </div>}
     {ui.view !== "changes" && (ui.view !== "lanes" || ui.lanesTable) && <div style={{ ...CARD, overflow: "clip" }}>
       <PlannerGantt listW={listW} onListW={w => setUi({ listW: w })} testers={testers} onInfo={t => setNotice({ tone: "ok", text: t })} rowH={ui.rowH || 32} onAddTask={pj => { setSel({ pj, step: null }); setTaskPj(pj); setDlg("task"); }} plan={live} basePlan={plan} sched={sched} cal={cal} closurePeriods={closurePeriods} tl={tl} pjs={pjsShown} sel={selPj} setSel={setSel} expanded={exp} toggleExp={toggleExp}
-        showLinks={ui.links} view={ui.view} readOnly={ro} onPreview={setPreview} onCommit={onCommit} onError={onError} onReorder={reorder} scrollRef={gref} onScrollX={setScrollX} maxH={ui.loadHide ? 150 : ui.loadSmall ? 260 : 360} />
+        showLinks={ui.links} view={ui.view} readOnly={ro} onPreview={setPreview} onCommit={onCommit} onError={onError} onReorder={reorder} scrollRef={gref} onScrollX={setScrollX} showPrio={!ui.hidePrio} showSn={!ui.hideSn} maxH={ui.loadHide ? 150 : ui.loadSmall ? 260 : 360} />
       {ui.view !== "lanes" && loadEl}
     </div>}
     {ui.view !== "changes" && <div style={{ fontSize: 11, color: T.ink500, marginTop: 4, lineHeight: 1.5 }}>
@@ -614,7 +622,7 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
     </div>}
     {dlg === "newpj" && <NewPjDialog plan={plan} rows={rows} cal={cal} testers={testers || []} onClose={() => setDlg(null)} onApply={(np, pj) => { apply(np); setSel({ pj, step: null }); toggleExp(pj, true); setNotice({ tone: "ok", text: pj + " ajouté au plan avec ses tâches." }); }} />}
     {dlg === "task" && (selPj || taskPj) && <TaskDialog plan={plan} pj={taskPj || selPj.pj} after={selPj && selPj.pj === (taskPj || selPj.pj) ? selPj.step : null} testers={testers || []} onClose={() => { setDlg(null); setTaskPj(null); }} onApply={(np, key) => { const pj = taskPj || selPj.pj; apply(np); toggleExp(pj, true); setSel({ pj, step: key ? key.split("|").pop() : null }); setTaskPj(null); }} />}
-    {dlg === "bench" && <BenchDialog plan={plan} sched={sched} cal={cal} hide={slotSet} readOnly={ro} onClose={() => setDlg(null)} onApply={(np, msg) => { apply(np); if (msg) setNotice({ tone: "ok", text: msg }); }} />}
+    {dlg === "bench" && <BenchDialog plan={plan} sched={sched} cal={cal} hide={slotSet} skip={benchSkip} readOnly={ro} onClose={() => setDlg(null)} onApply={(np, msg) => { apply(np); if (msg) setNotice({ tone: "ok", text: msg }); }} />}
     {dlg === "templates" && <TemplatesDialog plan={plan} rows={rows} onClose={() => setDlg(null)} onApply={np => apply(np)} />}
     {dlg === "blank" && <BlankDialog rows={rows} hasPlan onClose={() => setDlg(null)} onApply={np => { setSel(null); setExp(new Set(np.pjs.map(p => p.pj))); apply(np); }} />}
     {dlg === "import" && <ImportDialog cal={cal} rows={rows} plan={plan} onClose={() => setDlg(null)} onApply={np => apply(np)} />}

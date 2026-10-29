@@ -301,7 +301,7 @@ export function etatColors(color){
   const lbg=mixHex(c,"#ffffff",.8),dbg=mixHex(c,"#101826",.64);
   return{light:{bg:lbg,text:readable(c,lbg,"#000000"),border:mixHex(c,"#ffffff",.5),bar:c},dark:{bg:dbg,text:readable(c,dbg,"#ffffff"),border:mixHex(c,"#101826",.3),bar:visibleOn(c,"#1C2536")}};
 }
-const etatFromColor=(c,label)=>{const k=etatColors(c);return etatThemed(k.light,k.dark,label);};
+const etatFromColor=(c,label)=>{const k=etatColors(c);const o=etatThemed(k.light,k.dark,label);Object.defineProperty(o,"base",{value:c});return o;};
 export const ETAT_META={
   // v162 : palette B (teintes franches : fond = 18 % de la couleur en clair, point/liseré = couleur pleine). Ancien : v146.10 : teintes plus soutenues (fonds, liserés et texte un cran plus foncés). « Production ENOGIA » est remplacée par les 4 étapes de production.
   // v177 : nouvelle palette (Regal Navy, Light Blue, Royal Gold, Forest Green, Black Forest, Sandy Brown, Mustard, Tomato, Orange) — dérivée par etatColors().
@@ -311,7 +311,7 @@ export const ETAT_META={
   "ELEC":etatFromColor("#48CAE4","Montage Élec"),
   "TESTS":etatFromColor("#FFB703","Tests"),
   "PACKAGING":etatFromColor("#2A9D8F","Packaging"),
-  "En fabrication":etatFromColor("#E76F51","Fabrication fournisseurs"), // v228 (demandé) : l’ORC (armoire et skid) est fabriqué / monté chez les fournisseurs
+  "En fabrication":etatFromColor("#E76F51","Fabrication/Montage Fournisseurs"), // v228 / v230 (demandé) : l’ORC (armoire et skid) est fabriqué / monté chez les fournisseurs
   "STOCKAGE_EXT":etatFromColor("#8D99AE","Stockage Externe"),
   "NOT ORDERED":etatFromColor("#D62839","Non commandée"),
   "NON_DESIGNEE":etatFromColor("#C77DFF","Design en cours"), // v228 (demandé) : design de l’ORC pas complètement défini, commande impossible
@@ -319,6 +319,19 @@ export const ETAT_META={
   "A_DEFINIR":{get bg(){return T.surfaceAlt;},get text(){return T.ink500;},get border(){return T.ink100;},get bar(){return T.ink300;},label:"À définir"},
 };
 export const ALL_ETATS=Object.keys(ETAT_META);
+// ── v230 (demandé : « pouvoir modifier les états existants ») : nom, couleur et explication des états intégrés, modifiables par les
+// admins (Gérer les états). Stockés dans planning/overrides.etatEdits : { [id]: { label, color, desc } } ; « Rétablir » revient à l'origine.
+const ETAT_ORIG={...ETAT_META};
+export const ETAT_EDITS={};
+export const etatOrig=id=>ETAT_ORIG[id]?{label:ETAT_ORIG[id].label,color:ETAT_ORIG[id].base||""}:null;
+export function registerEtatEdits(map){
+  Object.keys(ETAT_EDITS).forEach(k=>{delete ETAT_EDITS[k];ETAT_META[k]=ETAT_ORIG[k];});
+  Object.entries(map&&typeof map==="object"?map:{}).forEach(([id,e])=>{
+    const o=ETAT_ORIG[id];if(!o||!o.base||!e)return;
+    const label=String(e.label||"").trim()||o.label,color=/^#[0-9a-f]{6}$/i.test(e.color||"")?e.color:o.base;
+    ETAT_META[id]=etatFromColor(color,label);ETAT_EDITS[id]={label:String(e.label||"").trim(),color:e.color||"",desc:String(e.desc||"").trim()};
+  });
+}
 export const ASSIGNABLE_ETATS=ALL_ETATS.filter(e=>e!=="A_DEFINIR");
 
 // ── v146.18 : états créés par l'utilisateur (Manager › Réglages › États). Stockés dans planning/overrides.customEtats : [{id,label,color}].

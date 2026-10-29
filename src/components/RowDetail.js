@@ -6,7 +6,7 @@
 // Fenêtre centrale floutée (téléphone : monte du bas), entrée 240 ms / sortie 180 ms, Échap / clic à côté / croix pour fermer.
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import { T, FZF as FZ, inkOn, mixHex } from "../theme";
-import { getPjMeta, ETAT_META, chefsOf, EpcTag, PresenceChip, presenceKind, presenceFirstDate, presenceDates, CountryFlag, relTime, Avatar } from "../pjMeta";
+import { ETAT_EDITS, getPjMeta, ETAT_META, chefsOf, EpcTag, PresenceChip, presenceKind, presenceFirstDate, presenceDates, CountryFlag, relTime, Avatar } from "../pjMeta";
 import { NavIcon, PjPlate } from "./SharedUI";
 import { ProjectComments, DelayAllocations, EditMetaForm } from "./ProjectModal";
 import { STAGES, STEP_NOTE, autoPct } from "../prodStages";
@@ -34,8 +34,8 @@ const RIBBON = [
 const MEANING = {
   "NOT ORDERED": ["Commande non passée", "La machine n'est pas encore commandée : rien n'est lancé en atelier.", "la commande"],
   "NON_DESIGNEE": ["Design en cours", "Le design de l'ORC n'est pas encore complètement défini : la commande ne peut pas être passée.", "la commande"],
-  "En fabrication": ["Fabrication fournisseurs", "L'ORC (armoire et skid) est en fabrication et en montage chez les fournisseurs, avant son arrivée en atelier.", "le montage mécanique"],
-  "STOCKAGE_EXT": ["Stockage externe", "La machine attend dans un stockage externe avant de revenir en atelier.", "le montage mécanique"],
+  "En fabrication": ["Fabrication / montage fournisseurs", "L'ORC (armoire et skid) est en fabrication et en montage chez les fournisseurs, avant son arrivée en atelier.", "le montage mécanique"],
+  "STOCKAGE_EXT": ["Stockage externe", "La machine est dans un stockage externe : soit avant le montage interne, soit après les tests et le packaging, en attendant le départ.", "le montage mécanique ou le départ"],
   "MONTAGE": ["Montage mécanique", "Assemblage mécanique de la machine : lubrification, refroidissement, test de pression, tirage au vide, remplissage.", "le montage électrique"],
   "ELEC": ["Montage électrique", "Le circuit est fermé et testé ; on installe et on câble l'armoire électrique.", "les tests (essais de la machine, puis FAT)"],
   "TESTS": ["Tests", "La machine tourne : essais internes, puis FAT avec le client ou NOBO quand c'est prévu.", "le packaging"],
@@ -60,7 +60,8 @@ export function RowDetail({ r, onClose, comments, addComment, deleteComment, pin
   const cur = Math.max(0, RIBBON.findIndex(s => s.etats.includes(r.etat)));
   const [focus, setFocus] = useState(RIBBON[cur].id);
   const em = ETAT_META[r.etat] || ETAT_META["NOT ORDERED"], bar = em.bar;
-  const [title, meaning, next] = MEANING[r.etat] || [em.label, "", ""];
+  const [title0, meaning0, next] = MEANING[r.etat] || [em.label, "", ""];
+  const ed = ETAT_EDITS[r.etat]; const title = (ed && ed.label) || title0, meaning = (ed && ed.desc) || meaning0; // v230 : état modifié dans « Gérer les états »
   const pct = shipped ? 100 : autoPct(r.etat) != null ? autoPct(r.etat) : 0;
   const list = (comments && comments[r.pj]) || [], pub = list.filter(c => !c.private);
   const last = pub.slice().sort((a, b) => String(a.date || "").localeCompare(String(b.date || ""))).pop();

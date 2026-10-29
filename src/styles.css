@@ -479,3 +479,5 @@ button:not(:disabled):active { transform: scale(.97); }
 
 /* v222 : cadrans déplaçables / redimensionnables (Arrange) — pleine largeur sur écran étroit */
 @media (max-width: 900px) { .enogia-arr-grid > .enogia-arr-item { grid-column: 1 / -1 !important; } }
+/* v230 : cadran à hauteur réglée — son contenu remplit la place */
+.enogia-arr-fit > * { height: 100%; box-sizing: border-box; }

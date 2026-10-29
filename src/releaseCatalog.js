@@ -486,4 +486,9 @@ export const RELEASE_CATALOG = [
   { v: "229", t: "Un accueil pour chaque poste", items: [
     ["Accueil", "5 accueils par poste (chef de projet, testeur, chef d'atelier, directeur production turbines, autres) avec leur phrase ; disposition figée par poste, réglée par le propriétaire, catalogue « Ajouter un cadran »."],
   ] },
+  { v: "230", t: "Cadrans libres, états modifiables, bancs et couloirs", items: [
+    ["Cadrans", "Placement libre et hauteur réglable (bord bas, bord droit, coin)."],
+    ["États", "Fabrication/Montage Fournisseurs ; états existants renommables, recolorables, avec explication."],
+    ["Planificateur", "⚠ des bancs sans PJ masqués ni tests terminés ; priorité à gauche, Priorité et S/N masquables ; charge alignée en Couloirs."],
+  ] },
 ];

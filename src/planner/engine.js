@@ -681,10 +681,12 @@ export function benchMoveUp(plan, pj) {
   const np = clonePlan(plan); np.order = { ...(np.order || {}), banc: next }; return np;
 }
 // Chevauchements sur un même banc (deux machines au banc en même temps).
-export function benchConflicts(plan, sched) {
-  const out = [];
+// v230 (demandé : « après allocation des bancs j'ai toujours le warning rouge ») : opts.skip(p) écarte les PJ masqués (archivés,
+// expédiés, slots libres) et opts.since (date) les tests déjà terminés — ni l'un ni l'autre ne peut plus être corrigé.
+export function benchConflicts(plan, sched, opts = {}) {
+  const out = []; const skip = opts.skip || (() => false);
   [1, 2].forEach(b => {
-    const L = (plan.pjs || []).filter(p => p.steps && p.steps.tests && benchOf(p) === b).map(p => ({ pj: p.pj, n: sched.nodes[nodeKey(p.pj, "tests")] })).filter(x => x.n && x.n.s !== null).sort((x, y) => x.n.s - y.n.s);
+    const L = (plan.pjs || []).filter(p => p.steps && p.steps.tests && benchOf(p) === b && !skip(p)).map(p => ({ pj: p.pj, n: sched.nodes[nodeKey(p.pj, "tests")] })).filter(x => x.n && x.n.s !== null && (!opts.since || !x.n.finish || x.n.finish >= opts.since)).sort((x, y) => x.n.s - y.n.s);
     let last = null; L.forEach(x => { if (last && x.n.s <= last.n.f) out.push({ b, pj: x.pj, with: last.pj }); if (!last || x.n.f > last.n.f) last = x; });
   });
   return out;

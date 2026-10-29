@@ -16,7 +16,7 @@ import { setSuperAdmin, isSuperAdmin, setOwner, CASH_FOR_ADMINS } from "./roles"
 import { setCashinDoc, setCashinLinks, setOrdoPjs, getCashinDoc, getCashinLinks, getOrdoPjs, cashGroupsFor } from "./cashinLink";
 import { useCashin } from "./useCashin";
 import { CASHIN_DOC_REF, CASHIN_LINKS_REF, CASHIN_SHARED_REF, buildSharedCashin } from "./cashinData";
-import { getPjMeta, chefsOf, ALL_GAMMES, ALL_ETATS, ETAT_META, registerCustomEtats, MONTHS, today, setSyncedPjMeta, setPjMetaOverrides, GAMME_OVERRIDE, EXCLUDED_CHEFS } from "./pjMeta";
+import { getPjMeta, chefsOf, ALL_GAMMES, ALL_ETATS, ETAT_META, registerCustomEtats, registerEtatEdits, MONTHS, today, setSyncedPjMeta, setPjMetaOverrides, GAMME_OVERRIDE, EXCLUDED_CHEFS } from "./pjMeta";
 import { weekStartOf } from "./parsers";
 import { HomeView } from "./components/HomeView";
 import { ProdTurbines } from "./components/ProdTurbines";
@@ -74,7 +74,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-29-v229-accueils-par-poste";
+const APP_BUILD_VERSION = "2026-10-29-v230-cadrans-libres-etats";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -288,6 +288,7 @@ export default function App(){
   const [compCatalog,setCompCatalog]=useState([]); // v150 : liste des major components gérée par les administrateurs
   const [certifs,setCertifs]=useState([]); // v146.23 : catalogue des certifications (nom + couleur)
   const [customEtats,setCustomEtats]=useState([]); // v146.18 : états créés dans le Manager
+  const [etatEdits,setEtatEdits]=useState({}); // v230 : états intégrés renommés / recolorés
   const [overridesLoaded,setOverridesLoaded]=useState(false); // v146.19
   const [turbineDoc,setTurbineDoc]=useState({turbines:[],wheelNames:[],injectorNames:[]}); // v146.22
   const [productionExclusions,setProductionExclusions]=useState({});
@@ -384,6 +385,7 @@ export default function App(){
         { // v146.18 : états personnalisés (enregistrés avant le rendu) ; un nouvel état est visible d'emblée dans les filtres
           const list=Array.isArray(d.customEtats)?d.customEtats:[];
           const before=new Set(ALL_ETATS);
+          registerEtatEdits(d.etatEdits||{});setEtatEdits(d.etatEdits||{}); // v230
           registerCustomEtats(list);
           const added=ALL_ETATS.filter(e=>!before.has(e));
           if(added.length)setSelEtats(prev=>new Set([...prev,...added]));
@@ -419,6 +421,15 @@ export default function App(){
       console.error(e);
       notify("Erreur lors de l'enregistrement des certifications : " + e.message);
       return false;
+    }
+  },[]);
+  const setEtatEditsAndSave=useCallback(async next=>{ // v230 : remplace tout l'objet (un état rétabli disparaît)
+    try{
+      await updateDoc(OVERRIDES_DOC_REF(), { etatEdits:next });
+      return true;
+    }catch(e){
+      try{ await setDoc(OVERRIDES_DOC_REF(), { etatEdits:next }, { merge:true }); return true; }
+      catch(e2){ console.error(e2); notify("Erreur lors de l'enregistrement des états : " + e2.message); return false; }
     }
   },[]);
   const setCustomEtatsAndSave=useCallback(async next=>{
@@ -1017,7 +1028,7 @@ export default function App(){
     const gamme=etat==="SLOT_LIBRE"?"":((pjOverridesState[r.pj]&&pjOverridesState[r.pj].gamme)||GAMME_OVERRIDE[r.pj]||r.gamme);
     return{...r,etat,clientPresence:clientPresence[r.pj]||null,drift,gamme};
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }),[data,etatChoice,progress,clientPresence,initialByPj,pjOverridesState,customEtats]); // customEtats : ETAT_META (global) change avec lui
+  }),[data,etatChoice,progress,clientPresence,initialByPj,pjOverridesState,customEtats,etatEdits]); // customEtats / etatEdits : ETAT_META (global) change avec lui
   // Avancement effectif : calculé pour Montage / Élec / Tests / Packaging / Expédiée, saisi à la main pour les autres états.
   const progressEff=useMemo(()=>buildProgress(progress,dataWithOverrides),[progress,dataWithOverrides]);
 
@@ -1195,7 +1206,7 @@ export default function App(){
               etatChoice={etatChoiceEff} setEtatFor={setEtatFor} saveProgress={saveProgress} savingProgress={savingProgress} progressSaved={progressSaved}
               tab={managerTab} setTab={setManagerTab} jumpFiche={managerJump} clientPresence={clientPresence} setClientPresenceFor={setClientPresenceFor}
               closurePeriods={closurePeriods} setClosurePeriods={setClosurePeriodsAndSave}
-              productionExclusions={productionExclusions} setProductionExclusionDays={setProductionExclusionDays} customEtats={customEtats} setCustomEtats={setCustomEtatsAndSave} certifs={certifs} setCertifs={setCertifsAndSave} compCatalog={compCatalog} setCompCatalog={setCompCatalogAndSave}
+              productionExclusions={productionExclusions} setProductionExclusionDays={setProductionExclusionDays} customEtats={customEtats} setCustomEtats={setCustomEtatsAndSave} etatEdits={etatEdits} setEtatEdits={setEtatEditsAndSave} certifs={certifs} setCertifs={setCertifsAndSave} compCatalog={compCatalog} setCompCatalog={setCompCatalogAndSave}
               comments={comments} delays={delays} delayTypes={delayTypes} setDelayTypes={setDelayTypesAndSave} addDelayAllocationMulti={addDelayAllocationMulti} deleteDelayAllocation={(pj,id)=>deleteDelayAllocation(pj,id,PIN)}
               turbineDoc={turbineDoc} saveTurbines={saveTurbines} onOpenCashPage={canCash?(pj=>{setCashFocusApp({pj,n:Date.now()});setView("cashin");}):null} managerEmails={managerEmails} setManagerEmails={setManagerEmailsAndSave} currentUserEmail={currentUser?.email} authorName={authorName} buildVersion={canEditMeta?APP_BUILD_VERSION:null} profiles={profiles} saveProfiles={saveProfiles} savePjMetaOverride={savePjMetaOverride} savePjMetaMulti={savePjMetaMulti} addCommentMulti={addCommentMulti} addComment={addComment} resolveComment={resolveComment} deleteComment={(pj,idx)=>deleteComment(pj,idx,PIN)}/>
           </div>

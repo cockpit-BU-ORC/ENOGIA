@@ -151,7 +151,7 @@ function ImportPanel({rows,save,onClose,onDone}){
   </div>);
 }
 
-export function SerieTab({data,savePjMetaOverride,etatChoice,setEtatFor,clientPresence,setClientPresenceFor,customEtats,setCustomEtats}){
+export function SerieTab({data,savePjMetaOverride,etatChoice,setEtatFor,clientPresence,setClientPresenceFor,customEtats,setCustomEtats,etatEdits,setEtatEdits}){
   const [etatsOpen,setEtatsOpen]=useState(false);
   const [q,setQ]=useState("");const [onlyMissing,setOnlyMissing]=useState(false);const [msg,setMsg]=useState("");const [imp,setImp]=useState(false);
   const rows=data.map(r=>({r,meta:getPjMeta(r.pj,r)}));   // relu à chaque rendu : les N° saisis arrivent par les corrections de fiche (hors `data`)
@@ -175,7 +175,7 @@ export function SerieTab({data,savePjMetaOverride,etatChoice,setEtatFor,clientPr
       <span style={{fontSize:FZ.xs,fontWeight:700,color:filled===rows.length?T.emerald600:T.ink500,background:filled===rows.length?T.emerald100:T.surface,borderRadius:999,padding:"3px 12px"}}>{filled} / {rows.length} renseignés</span>
       <input type="text" value={q} onChange={e=>setQ(e.target.value)} placeholder="Rechercher un PJ, projet, N° de série…" style={{padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink900,fontSize:FZ.xs,fontFamily:T.font,width:230}}/>
       {setCustomEtats&&<button onClick={()=>setEtatsOpen(true)} style={{padding:"6px 12px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink700,fontSize:FZ.xs,fontWeight:700,cursor:"pointer"}}>Gérer les états</button>}
-      {etatsOpen&&setCustomEtats&&<EtatsDialog onClose={()=>setEtatsOpen(false)} customEtats={customEtats||[]} setCustomEtats={setCustomEtats} data={data}/>}
+      {etatsOpen&&setCustomEtats&&<EtatsDialog onClose={()=>setEtatsOpen(false)} customEtats={customEtats||[]} setCustomEtats={setCustomEtats} etatEdits={etatEdits||{}} setEtatEdits={setEtatEdits} data={data}/>}
       <button onClick={()=>setImp(v=>!v)} style={{padding:"6px 12px",borderRadius:8,border:"1px solid "+(imp?T.teal500:T.line),background:imp?T.teal100:T.card,color:imp?T.teal600:T.ink700,fontSize:FZ.xs,fontWeight:700,cursor:"pointer"}}>Importer une liste</button>
       <label style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:FZ.xs,color:T.ink500,fontWeight:600,cursor:"pointer"}}><input type="checkbox" checked={onlyMissing} onChange={e=>setOnlyMissing(e.target.checked)}/>Seulement les manquants ({rows.length-filled})</label>
     </div>

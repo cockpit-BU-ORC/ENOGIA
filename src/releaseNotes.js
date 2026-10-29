@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v230",
+    date: "2026-10-29",
+    title: "V230 : cadrans libres, états modifiables, bancs et couloirs",
+    items: [
+      { t: "Cadrans", d: "Placement libre : un cadran se pose où l'on veut (y compris en laissant du vide) ; seuls les cadrans qu'il recouvre descendent. La hauteur se règle en tirant le bord bas, la largeur au bord droit, les deux au coin." },
+      { t: "États", d: "« Fabrication/Montage Fournisseurs » ; le Stockage externe peut être avant le montage interne ou après les tests et le packaging. Dans « Gérer les états », les états existants se renomment, se recolorent et reçoivent une explication (fiche du PJ) ; « Rétablir » revient à l'origine." },
+      { t: "Planificateur", d: "Le ⚠ rouge des bancs ne compte plus les PJ archivés, expédiés, les slots libres ni les tests terminés ; « Répartir les tests sur les 2 bancs » active aussi « une machine à la fois par banc ». La priorité passe à gauche du n° de PJ ; boutons Priorité et S/N pour les masquer. En Couloirs, la charge atelier suit le défilement et s'aligne sur les couloirs." },
+    ],
+  },
+  {
     id: "2026-10-v229",
     date: "2026-10-29",
     title: "V229 : un accueil pour chaque poste",

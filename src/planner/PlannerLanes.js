@@ -9,7 +9,7 @@ import { fmtIso, STEP_COLOR, headerCells } from "./PlannerGantt";
 const FONT = T.font, MONO = T.fontMono; // v208 : polices du site (Roboto réservé aux rapports imprimés)
 // v208 : couleurs lues dans le thème à chaque rendu (clair / sombre) — plus de palette claire figée
 const pal = () => ({ bg: T.card, panel: T.surface, line: T.line, line2: T.line, ink: T.ink900, ink2: T.ink700, ink3: T.ink500, accent: T.teal600, bad: T.red500, warn: T.amber600, ok: T.emerald600 });
-const LABEL_W = 148;
+export const LABEL_W = 148;
 // v208 (demandé : « pouvoir réduire la hauteur des couloirs ») : piste, barre, marge, hauteur mini d'un couloir, taille du texte
 export const LANE_DENS = { s: [14, 11, 3, 28, 9.5], m: [21, 17, 7, 44, 10.5], l: [28, 22, 8, 56, 11.5] };
 const LANES = [
@@ -21,7 +21,7 @@ const LANES = [
   { id: "dep", step: "depart", title: "Départs", ms: true },
 ];
 
-export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load, tl, sel, setSel, readOnly, onPreview, onCommit, scrollRef, laneH }) {
+export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load, tl, sel, setSel, readOnly, onPreview, onCommit, scrollRef, laneH, onScrollX }) {
   // v211 : hauteur réglable en continu (curseur) — laneH = hauteur de barre en px (ou s / m / l des versions précédentes)
   const C = pal(); const bh = typeof laneH === "number" ? laneH : ({ s: 11, m: 17, l: 22 }[laneH] || 17);
   const [TR, BH, PAD, MINH, FS] = [bh + 4, bh, Math.max(3, Math.round(bh * 0.4)), Math.max(26, Math.round(bh * 2.6)), Math.max(9, Math.min(12, Math.round(bh * 0.62 * 2) / 2))];
@@ -115,7 +115,7 @@ export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load,
   const aria = (it, l) => it.pj + ", " + STEP_LABEL[l.step] + ", " + (l.ms ? "le " + fmtIso(it.n.start) : "du " + fmtIso(it.n.start) + " au " + fmtIso(it.n.finish));
 
   return (<div style={{ fontFamily: FONT, color: C.ink, background: C.bg }}>
-    <div ref={scrollRef} onContextMenu={e => e.preventDefault()} onMouseDown={e => { if ((e.button !== 2 && e.button !== 1) || !scrollRef.current) return; e.preventDefault(); const el = scrollRef.current, x0 = e.clientX, y0 = e.clientY, sl = el.scrollLeft, st = el.scrollTop; const mv = ev => { el.scrollLeft = sl - (ev.clientX - x0); el.scrollTop = st - (ev.clientY - y0); }; const up = () => { window.removeEventListener("mousemove", mv); window.removeEventListener("mouseup", up); }; window.addEventListener("mousemove", mv); window.addEventListener("mouseup", up); }} style={{ overflow: "auto", maxHeight: "calc(100dvh - 430px)", minHeight: 260, position: "relative", cursor: panning ? "grabbing" : "default", userSelect: dragKey || panning ? "none" : "auto" }}>
+    <div ref={scrollRef} onScroll={e => onScrollX && onScrollX(e.currentTarget.scrollLeft)} onContextMenu={e => e.preventDefault()} onMouseDown={e => { if ((e.button !== 2 && e.button !== 1) || !scrollRef.current) return; e.preventDefault(); const el = scrollRef.current, x0 = e.clientX, y0 = e.clientY, sl = el.scrollLeft, st = el.scrollTop; const mv = ev => { el.scrollLeft = sl - (ev.clientX - x0); el.scrollTop = st - (ev.clientY - y0); }; const up = () => { window.removeEventListener("mousemove", mv); window.removeEventListener("mouseup", up); }; window.addEventListener("mousemove", mv); window.addEventListener("mouseup", up); }} style={{ overflow: "auto", maxHeight: "calc(100dvh - 430px)", minHeight: 260, position: "relative", cursor: panning ? "grabbing" : "default", userSelect: dragKey || panning ? "none" : "auto" }}>
       <div style={{ width: LABEL_W + W, position: "relative" }}>
         {/* en-tête */}
         <div style={{ display: "flex", position: "sticky", top: 0, zIndex: 8, height: HEAD, background: C.bg, borderBottom: "1px solid " + C.line }}>

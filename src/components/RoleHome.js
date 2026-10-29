@@ -270,7 +270,7 @@ export function RoleHome({ role, profile, ui, kpiEl, depEl, parcoursEl, rows, op
   const addable = Object.keys(W).filter(id => !ids.includes(id) && avail(id) && W[id].render()).map(id => [id, W[id].label]);
   const setL = patch => onLayout && onLayout({ ...L, ...patch });
   return (<>{leadSegs && renderLead ? renderLead(leadSegs) : null}<Arrange id={"home-" + role} defaultSpan={4} spans={spans} labels={Object.fromEntries(Object.entries(W).map(([k, w]) => [k, w.label]))}
-    layout={onLayout ? L : undefined} onLayout={onLayout ? v => onLayout(v) : undefined}
+    layout={L} onLayout={onLayout ? v => onLayout(v) : undefined}
     catalog={onLayout ? addable : null} onAdd={id => setL({ extra: [...extra.filter(x => x !== id), id], hidden: hidden.filter(x => x !== id) })}
     onRemove={id => setL({ extra: extra.filter(x => x !== id), hidden: defs.some(d => d[0] === id) ? [...hidden.filter(x => x !== id), id] : hidden })}>
     {items}
