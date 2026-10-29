@@ -27,7 +27,7 @@ Toute autre collection est refusée.
 
 ## Autres réglages rapides (console, par Gabriel)
 - **Authentication › Méthodes de connexion** : ne garder que Google.
-- **Google Cloud › API et services › Identifiants** : restreindre la clé API du site aux référents `https://planning-enogia-bu-orc.github.io/*` et `http://localhost:3000/*`.
+- **Google Cloud › API et services › Identifiants** : restreindre la clé API du site aux référents `https://cockpit-bu-orc.github.io/*` et `http://localhost:3000/*`.
 - **Double authentification** sur le compte Google propriétaire et sur GitHub.
 - **Firestore › Reprise après sinistre / sauvegardes planifiées** : une sauvegarde quotidienne, gardée 7 jours.
 - **Facturation › Budgets et alertes** : une alerte à un petit montant, pour repérer un abus.

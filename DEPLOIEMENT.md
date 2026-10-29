@@ -110,8 +110,8 @@ place une authentification Firebase plus robuste si besoin.
 ## Version bêta (essais) et retour arrière
 
 ### Principe
-- **Production** : https://Planning-ENOGIA-BU-ORC.github.io/planning-enogia-2026/ (`npm run deploy`, comme avant).
-- **Bêta** : https://Planning-ENOGIA-BU-ORC.github.io/planning-enogia-2026/beta/ (`npm run deploy:beta`).
+- **Production** : https://cockpit-bu-orc.github.io/ENOGIA/ (`npm run deploy`) — depuis v237 ; avant : Planning-ENOGIA-BU-ORC.github.io/planning-enogia-2026.
+- **Bêta** : https://cockpit-bu-orc.github.io/ENOGIA/beta/ (`npm run deploy:beta`).
 - La bêta a **ses propres données** (documents Firestore préfixés `beta_`) : tout ce qui est saisi ou importé dans la bêta
   n'affecte jamais la production. Un bandeau orange « VERSION BÊTA » est affiché en haut de chaque écran.
 - Un déploiement de la production **conserve** le dossier `beta/`, et un déploiement de la bêta **ne touche pas** la production.
@@ -1601,3 +1601,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - `siteName.js` : `SITE_SCOPE` = « BU ORC » (surligneur, sans retour à la ligne entre BU et ORC) ; titre, manifeste et titre bêta « Cockpit BU ORC ».
 - Adresse web visée : `https://cockpit-bu-orc.github.io/ENOGIA/` — **pas encore changée**. Il faut d'abord renommer l'organisation GitHub (Planning-ENOGIA-BU-ORC → cockpit-BU-ORC) et le dépôt (planning-enogia-2026 → ENOGIA), puis `homepage` dans `package.json`, le domaine autorisé dans Firebase Authentication et la restriction de la clé API. L'ancienne adresse cessera de fonctionner (pas de redirection des pages GitHub).
 - Fichiers : siteName.js, App.js, components/{HomeView,LoginScreen}.js, public/{index.html,manifest.json}, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
+
+## v237 — Nouvelle adresse : cockpit-bu-orc.github.io/ENOGIA
+
+- Compte GitHub renommé `cockpit-BU-ORC` et dépôt `ENOGIA` (par Gabriel). `package.json` : `homepage` = `https://cockpit-bu-orc.github.io/ENOGIA` ; adresse git `origin` = `https://github.com/cockpit-BU-ORC/ENOGIA.git` (réglage local, hors commit).
+- **Avant le premier déploiement** : Firebase › Authentication › Paramètres › Domaines autorisés → ajouter `cockpit-bu-orc.github.io` (sinon la connexion Google est refusée). Restriction de la clé API (Google Cloud › Identifiants) sur `https://cockpit-bu-orc.github.io/*`.
+- L'ancienne adresse ne fonctionne plus (pas de redirection des pages GitHub) : prévenir les utilisateurs, réinstaller l'appli sur téléphone.
+- Alerte GitHub « Google API Key » (secret scanning) : c'est la clé web Firebase, publique par nature (elle est dans le code envoyé au navigateur). Elle est protégée par les règles Firestore, la restriction de domaine et, plus tard, App Check. Le fichier `.map` signalé date de juin ; `.env` désactive les `.map` depuis, et le déploiement production efface les anciens fichiers. Fermer l'alerte en « Won't fix » une fois la clé restreinte.
+- Fichiers : package.json, releaseNotes.js, releaseCatalog.js(+test), App.js, CLAUDE.md, DEPLOIEMENT.md, SECURITE.md.

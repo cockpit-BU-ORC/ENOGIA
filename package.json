@@ -2,7 +2,7 @@
   "name": "planning-enogia-2026",
   "version": "1.0.0",
   "private": true,
-  "homepage": "https://Planning-ENOGIA-BU-ORC.github.io/planning-enogia-2026",
+  "homepage": "https://cockpit-bu-orc.github.io/ENOGIA",
   "dependencies": {
     "@phosphor-icons/react": "2.1.7",
     "firebase": "^10.12.0",

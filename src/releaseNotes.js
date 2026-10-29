@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v237",
+    date: "2026-10-29",
+    title: "V237 : nouvelle adresse du site",
+    items: [
+      { t: "Adresse", d: "Le site est maintenant à l'adresse cockpit-bu-orc.github.io/ENOGIA (bêta : cockpit-bu-orc.github.io/ENOGIA/beta). L'ancienne adresse ne fonctionne plus : mettez à jour vos favoris et réinstallez l'appli sur téléphone." },
+    ],
+  },
+  {
     id: "2026-10-v236",
     date: "2026-10-29",
     title: "V236 : le site s'appelle « Cockpit BU ORC »",

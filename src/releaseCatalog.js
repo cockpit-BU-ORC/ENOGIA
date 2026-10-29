@@ -515,4 +515,7 @@ export const RELEASE_CATALOG = [
   { v: "236", t: "Le site s'appelle « Cockpit BU ORC »", items: [
     ["Nom du site", "Cockpit BU ORC (« BU ORC » au surligneur) ; ex-Cockpit ORC."],
   ] },
+  { v: "237", t: "Nouvelle adresse du site", items: [
+    ["Adresse", "cockpit-bu-orc.github.io/ENOGIA (compte GitHub cockpit-BU-ORC, dépôt ENOGIA) ; ex-planning-enogia-bu-orc.github.io/planning-enogia-2026."],
+  ] },
 ];
