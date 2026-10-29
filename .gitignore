@@ -21,3 +21,6 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# v227 : kit Production turbines pour Jérémie (régénéré par npm run kit:jeremie)
+kit-jeremie/

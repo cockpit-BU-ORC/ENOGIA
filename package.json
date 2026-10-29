@@ -24,7 +24,9 @@
     "build:beta": "node scripts/build.js beta",
     "predeploy:beta": "npm run build:beta",
     "deploy:beta": "node scripts/deploy.js beta",
-    "check:contrast": "node scripts/check-contrast.mjs"
+    "check:contrast": "node scripts/check-contrast.mjs",
+    "kit:jeremie": "node scripts/prodturb-kit.js",
+    "import:jeremie": "node scripts/prodturb-import.js"
   },
   "eslintConfig": {
     "extends": [

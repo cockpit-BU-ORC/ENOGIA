@@ -1509,3 +1509,14 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - **Cadrans** (`Arrange.js`) : en mode disposition, le cadran se saisit n'importe où et suit la souris ; sa place se calcule d'après la position des autres cadrans (plus d'oscillation) ; la page défile seule près des bords.
 - Vérifié : calculs (affectation des arbres, garde-fous arbre / roue), rendu des 4 sous-pages en clair et en sombre (jsdom + aperçu), build (13 avertissements existants), tests, contraste. Non vérifié dans l'appli connectée : écritures Firestore de la page, glisser des cartes et des cadrans à la souris.
 - Fichiers : components/{ProdTurbines,ProdTurbines.test,Arrange}.js, planner/Planner.js, pageBackdrop.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
+
+## v227 — Production turbines : fiches corrigées ; kit d'échange avec le Claude de Jérémie
+
+- **Correction** (`ProdTurbines.js`) : Firestore enregistre chaque turbine / arbre / pièce / référence sans son champ `id` ; la page le reprend maintenant depuis la clé (sans cela, rouvrir ou glisser un élément enregistré ne marchait pas).
+- **Kit pour Jérémie** (directeur de production turbines), pour qu'il fasse évoluer la page dans son Claude et la renvoie :
+  1. `npm run kit:jeremie` → dossier `kit-jeremie/` (non versionné) : **`ProdTurbines-kit.jsx`** (un seul fichier, s'ouvre comme artifact React dans claude.ai : thème du site recopié, en-tête et icônes simplifiés, la page entre les repères `// ===== DÉBUT PAGE` et `// ===== FIN PAGE =====`, aperçu avec données d'exemple, boutons Mode sombre / Voir comme le directeur) et **`Consignes-pour-Claude.md`** (règles à coller en tête de sa conversation).
+  2. Jérémie modifie et renvoie le fichier **complet**.
+  3. `npm run import:jeremie -- "C:\chemin\ProdTurbines-kit.jsx"` (ajouter `--dry` pour voir sans écrire) : remet sa partie dans `src/components/ProdTurbines.js`. **Refusé** si la partie contient des `import`, utilise `window.claude` / le stockage de l'artifact, ou ne garde pas les exports `ProdTurbines`, `makeModel`, `moveTurbine`, `EMPTY_PROD`, `T_STEPS`, `A_STEPS`. **Signalé** : couleurs codées en dur ajoutées, nouvelles collections de données.
+  4. Build, tests, contraste, commit, `npm run deploy:beta` ; puis `npm run kit:jeremie` pour lui renvoyer la version intégrée.
+- Vérifié : aller-retour sans modification (aucun changement), retour modifié (1 ligne), retour refusé (`import`), kit rendu seul (jsdom) ; build, tests, contraste.
+- Fichiers : scripts/{prodturb-kit,prodturb-import}.js, scripts/prodturb-consignes.md, components/ProdTurbines.js, package.json, .gitignore, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.

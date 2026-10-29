@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v227",
+    date: "2026-10-29",
+    title: "V227 : Production turbines — correction des fiches",
+    items: [
+      { t: "Production turbines", d: "Les turbines, arbres, pièces et références enregistrées se rouvrent et se modifient correctement.", admin: true },
+    ],
+  },
+  {
     id: "2026-10-v226",
     date: "2026-10-29",
     title: "V226 : page Production turbines",

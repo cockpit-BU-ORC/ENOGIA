@@ -7,8 +7,10 @@
 // automatiquement, le premier carter terminé prend le premier arbre prêt), une roue requise pour le banc avec roue.
 // Données : document Firestore planning/prodTurbines (préfixe beta_ en bêta), une entrée par élément (écritures fusionnées).
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { T, FZF as FZ, stageSoft, alertSoft } from "../theme";
+import { T, FZF, stageSoft, alertSoft } from "../theme";
 import { PageHead, NavIcon } from "./SharedUI";
+
+// ===== DÉBUT PAGE (kit Jérémie : tout ce qui suit jusqu’à FIN PAGE est échangé avec son Claude — scripts/prodturb-kit.js / prodturb-import.js) =====
 
 /* ---------- Gamme de montage (reprise de l'original) ---------- */
 const PHASES = { att: "À lancer", carter: "Montage carter", assy: "Assemblage / finition", tests: "Tests", ok: "Prête", arbre: "Arbre", dispo: "Disponible", stock: "Stock" };
@@ -145,13 +147,13 @@ function phaseColors() {
 
 /* ---------- Petits éléments communs ---------- */
 const card = () => ({ background: T.card, border: "1px solid " + T.line, borderRadius: 10, padding: "12px 14px", minWidth: 0, boxSizing: "border-box" });
-const btn = (kind) => ({ border: kind === "primary" ? "1px solid " + T.ink900 : "1px solid " + (kind === "danger" ? T.red500 : T.line), background: kind === "primary" ? T.ink900 : T.card, color: kind === "primary" ? T.card : kind === "danger" ? T.red500 : T.ink700, borderRadius: 6, padding: "4px 10px", minHeight: 28, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font, whiteSpace: "nowrap" });
+const btn = (kind) => ({ border: kind === "primary" ? "1px solid " + T.ink900 : "1px solid " + (kind === "danger" ? T.red500 : T.line), background: kind === "primary" ? T.ink900 : T.card, color: kind === "primary" ? T.card : kind === "danger" ? T.red500 : T.ink700, borderRadius: 6, padding: "4px 10px", minHeight: 28, fontSize: FZF.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font, whiteSpace: "nowrap" });
 const H2 = ({ children, sub, right }) => (<div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap", margin: "4px 0 8px" }}>
-  <h2 style={{ margin: 0, fontFamily: T.fontDisplay, fontSize: FZ.lg, fontWeight: 600, color: T.ink900 }}>{children}</h2>
-  {sub && <span style={{ fontSize: FZ.xs, color: T.ink500 }}>{sub}</span>}
+  <h2 style={{ margin: 0, fontFamily: T.fontDisplay, fontSize: FZF.lg, fontWeight: 600, color: T.ink900 }}>{children}</h2>
+  {sub && <span style={{ fontSize: FZF.xs, color: T.ink500 }}>{sub}</span>}
   {right && <span style={{ marginLeft: "auto", display: "inline-flex", gap: 6 }}>{right}</span>}
 </div>);
-const Muted = ({ children }) => <div style={{ fontSize: FZ.sm, color: T.ink500, padding: "6px 0" }}>{children}</div>;
+const Muted = ({ children }) => <div style={{ fontSize: FZF.sm, color: T.ink500, padding: "6px 0" }}>{children}</div>;
 
 // Fenêtre d'édition générique (mêmes champs que l'original)
 function FormDialog({ title, fields, vals, onSave, extra = [], readOnly, onClose, notify }) {
@@ -159,13 +161,13 @@ function FormDialog({ title, fields, vals, onSave, extra = [], readOnly, onClose
   useEffect(() => { const k = e => { if (e.key === "Escape") onClose(); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose]);
   const val = () => { const o = {}; fields.forEach(f => { let x = v[f.k]; if (f.type === "number") x = Math.max(0, parseInt(x || "0", 10) || 0); o[f.k] = typeof x === "string" ? x.trim() : x; }); return o; };
   const submit = async e => { e.preventDefault(); const r = val(); const miss = fields.find(f => f.req && (!f.show || f.show(r)) && !r[f.k]); if (miss) { notify("Renseignez le champ « " + miss.l + " ».", true); return; } const ok = await onSave(r); if (ok !== false) onClose(); };
-  const inp = { width: "100%", height: 34, border: "1px solid " + T.line, borderRadius: 8, background: T.card, color: T.ink900, padding: "0 10px", fontSize: FZ.sm, fontFamily: T.font, boxSizing: "border-box" };
+  const inp = { width: "100%", height: 34, border: "1px solid " + T.line, borderRadius: 8, background: T.card, color: T.ink900, padding: "0 10px", fontSize: FZF.sm, fontFamily: T.font, boxSizing: "border-box" };
   const cur = val();
   return (<div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,20,30,.45)", zIndex: 10010, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
     <form role="dialog" aria-label={title} onSubmit={submit} onClick={e => e.stopPropagation()} style={{ background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, width: "min(460px,100%)", maxHeight: "90vh", overflow: "auto", padding: "16px 18px", fontFamily: T.font }}>
       <div style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: 18, marginBottom: 10 }}>{title}</div>
       {fields.filter(f => !f.show || f.show(cur)).map(f => (<label key={f.k} style={{ display: "block", marginBottom: 10 }}>
-        <span style={{ display: "block", fontSize: FZ.xs, fontWeight: 700, color: T.ink700, marginBottom: 4 }}>{f.l}{f.req ? " *" : ""}</span>
+        <span style={{ display: "block", fontSize: FZF.xs, fontWeight: 700, color: T.ink700, marginBottom: 4 }}>{f.l}{f.req ? " *" : ""}</span>
         {f.type === "select" ? <select disabled={readOnly} value={v[f.k]} onChange={e => setV({ ...v, [f.k]: e.target.value })} style={inp}>{f.opts.map(([ov, ol]) => <option key={ov} value={ov}>{ol}</option>)}</select>
           : f.type === "textarea" ? <textarea disabled={readOnly} value={v[f.k]} onChange={e => setV({ ...v, [f.k]: e.target.value })} style={{ ...inp, height: 70, padding: 8, resize: "vertical" }} />
           : <><input disabled={readOnly} type={f.type || "text"} min={f.type === "number" ? 0 : undefined} value={v[f.k]} list={f.list ? "pt-dl-" + f.k : undefined} onChange={e => setV({ ...v, [f.k]: e.target.value })} style={inp} />
@@ -186,7 +188,9 @@ function FormDialog({ title, fields, vals, onSave, extra = [], readOnly, onClose
 const TABS = [["accueil", "Accueil"], ["planning", "Planning"], ["stocks", "Stocks roues & injecteurs"], ["parametres", "Gamme & durées"]];
 
 export function ProdTurbines({ doc, api, canEdit, owner }) {
-  const S = useMemo(() => ({ ...EMPTY_PROD, ...(doc || {}), params: { d: {}, l: {}, ...((doc && doc.params) || {}) } }), [doc]);
+  // Chaque élément reçoit son identifiant depuis sa clé (Firestore enregistre les éléments sans le champ id)
+  const S = useMemo(() => { const d = doc || {}, o = { ...EMPTY_PROD, ...d, params: { d: {}, l: {}, ...(d.params || {}) } };
+    ["turbines", "arbres", "pieces", "roues", "injecteurs"].forEach(c => { o[c] = Object.fromEntries(Object.entries(d[c] || {}).map(([k, v]) => [k, { ...v, id: k }])); }); return o; }, [doc]);
   const M = useMemo(() => makeModel(S), [S]);
   const P = phaseColors();
   const readOnly = !canEdit;
@@ -301,11 +305,11 @@ export function ProdTurbines({ doc, api, canEdit, owner }) {
 
   /* ---- rendu ---- */
   const kpi = (title, big, body) => (<section aria-label={title} style={{ ...card(), display: "flex", flexDirection: "column", gap: 6 }}>
-    <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><h3 style={{ margin: 0, fontSize: FZ.sm, fontWeight: 700, color: T.ink700, flex: 1 }}>{title}</h3>
+    <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><h3 style={{ margin: 0, fontSize: FZF.sm, fontWeight: 700, color: T.ink700, flex: 1 }}>{title}</h3>
       <span style={{ fontFamily: T.fontDisplay, fontSize: 30, fontWeight: 300, lineHeight: 1, color: T.ink900, fontVariantNumeric: "tabular-nums" }}>{big}</span></div>
     {body}
   </section>);
-  const li = { display: "flex", justifyContent: "space-between", gap: 8, minHeight: 28, alignItems: "center", borderTop: "1px solid " + T.line, fontSize: FZ.sm };
+  const li = { display: "flex", justifyContent: "space-between", gap: 8, minHeight: 28, alignItems: "center", borderTop: "1px solid " + T.line, fontSize: FZF.sm };
 
   const renderHome = () => {
     const turbs = M.live, ready = turbs.filter(t => t.step === "ok").sort(sortNum), noWheel = turbs.filter(t => t.step === "s1").sort(sortNum);
@@ -318,14 +322,14 @@ export function ProdTurbines({ doc, api, canEdit, owner }) {
     const hatch = c => "repeating-linear-gradient(135deg," + c + " 0 3px,transparent 3px 7px)";
     return (<div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,230px),1fr))", gap: 12, alignItems: "start" }}>
-        {kpi("Turbines prêtes", ready.length, ready.length ? ready.map(t => <div key={t.id} style={li}><b>{t.num}</b><span style={{ color: T.ink500, fontSize: FZ.xs }}>{t.roue ? "roue " + t.roue : "config. roue à renseigner"}</span></div>) : <Muted>Aucune turbine prête pour l'instant.</Muted>)}
-        {kpi("Testées sans roue", noWheel.length, noWheel.length ? noWheel.map(t => <div key={t.id} style={li}><b>{t.num}</b><span style={{ color: T.ink500, fontSize: FZ.xs }}>{t.roue ? "roue " + t.roue + " attribuée" : "en stock depuis le " + fmtShort(parseD(t.since))}</span></div>) : <Muted>Aucune turbine en stock sans roue.</Muted>)}
+        {kpi("Turbines prêtes", ready.length, ready.length ? ready.map(t => <div key={t.id} style={li}><b>{t.num}</b><span style={{ color: T.ink500, fontSize: FZF.xs }}>{t.roue ? "roue " + t.roue : "config. roue à renseigner"}</span></div>) : <Muted>Aucune turbine prête pour l'instant.</Muted>)}
+        {kpi("Testées sans roue", noWheel.length, noWheel.length ? noWheel.map(t => <div key={t.id} style={li}><b>{t.num}</b><span style={{ color: T.ink500, fontSize: FZF.xs }}>{t.roue ? "roue " + t.roue + " attribuée" : "en stock depuis le " + fmtShort(parseD(t.since))}</span></div>) : <Muted>Aucune turbine en stock sans roue.</Muted>)}
         {kpi("Roues équilibrées par réf.", sumR, roues.length ? roues.map(r => <div key={r.id} style={{ ...li, display: "block", padding: "4px 0" }}><div style={{ display: "flex", justifyContent: "space-between" }}><span>{r.ref}</span><b style={{ fontVariantNumeric: "tabular-nums" }}>{+r.qte || 0}</b></div>
           <div style={{ height: 4, background: T.surfaceAlt, borderRadius: 2, marginTop: 3 }}><div style={{ width: ((+r.qte || 0) / maxR * 100) + "%", height: 4, borderRadius: 2, background: P.arbre.c }} /></div></div>) : <Muted>Ajoutez les références dans l'onglet Stocks.</Muted>)}
-        {kpi("Injecteurs par réf.", sumI, injs.length ? injs.map(r => <div key={r.id} style={{ ...li, alignItems: "flex-start", padding: "4px 0" }}><span>{r.ref}<br /><span style={{ fontSize: FZ.xs, color: T.ink500 }}>{+r.qte || 0} vierge{(+r.qte || 0) > 1 ? "s" : ""}</span>{vars(r).map(v => <span key={v.bouches} style={{ display: "block", fontSize: FZ.xs, color: T.ink700 }}>{v.qte} avec {v.bouches}/{r.ouvertures || "?"} bouchages</span>)}</span><b style={{ fontVariantNumeric: "tabular-nums" }}>{injTotal(r)}</b></div>) : <Muted>Ajoutez les références dans l'onglet Stocks.</Muted>)}
+        {kpi("Injecteurs par réf.", sumI, injs.length ? injs.map(r => <div key={r.id} style={{ ...li, alignItems: "flex-start", padding: "4px 0" }}><span>{r.ref}<br /><span style={{ fontSize: FZF.xs, color: T.ink500 }}>{+r.qte || 0} vierge{(+r.qte || 0) > 1 ? "s" : ""}</span>{vars(r).map(v => <span key={v.bouches} style={{ display: "block", fontSize: FZF.xs, color: T.ink700 }}>{v.qte} avec {v.bouches}/{r.ouvertures || "?"} bouchages</span>)}</span><b style={{ fontVariantNumeric: "tabular-nums" }}>{injTotal(r)}</b></div>) : <Muted>Ajoutez les références dans l'onglet Stocks.</Muted>)}
       </div>
       <section aria-label="Dates prévisionnelles des prochaines turbines" style={card()}>
-        <H2 sub="jours ouvrés" right={<span style={{ display: "inline-flex", gap: 10, flexWrap: "wrap", fontSize: FZ.xs, color: T.ink500 }}>
+        <H2 sub="jours ouvrés" right={<span style={{ display: "inline-flex", gap: 10, flexWrap: "wrap", fontSize: FZF.xs, color: T.ink500 }}>
           {[["carter", "Montage carter"], ["assy", "Assemblage / finition"], ["tests", "Tests"], ["wait", "Attente arbre"]].map(([k, l]) => <span key={k} style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><i style={{ width: 14, height: 9, borderRadius: 2, background: k === "wait" ? hatch(P.wait.c) : P[k].c, display: "inline-block" }} />{l}</span>)}
         </span>}>Dates prévisionnelles des prochaines turbines</H2>
         {upcoming.length === 0 ? <Muted>Aucune turbine en cours. Créez-en une depuis l'onglet Planning.</Muted> : <div style={{ overflowX: "auto" }}>
@@ -341,8 +345,8 @@ export function ProdTurbines({ doc, api, canEdit, owner }) {
                 : <><b>{fmtD(offDate(s.end))}</b><small>{s.wait ? "dont " + fmtJ(s.wait) + " d'attente arbre" : t.affaire || " "}</small></>;
               return (<div key={t.id} style={{ display: "grid", gridTemplateColumns: "210px 1fr 150px", gap: 10, alignItems: "center", minHeight: 46, borderTop: "1px solid " + T.line }}>
                 <button type="button" onClick={() => openTurbine(t)} style={{ border: "none", background: "transparent", textAlign: "left", padding: "4px 0", cursor: "pointer", fontFamily: T.font, color: T.ink900, minWidth: 0 }}>
-                  <b style={{ fontFamily: T.fontMono, fontSize: FZ.sm }}>{t.num}</b>{t.roue ? <span style={{ fontSize: FZ.xs, color: T.ink500 }}> roue {t.roue}</span> : null}
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: FZ.xs, color: T.ink700 }}><i style={{ width: 8, height: 8, borderRadius: 4, background: pc.c, display: "inline-block", flexShrink: 0 }} /><span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{M.lbl(st.id)}</span></div>
+                  <b style={{ fontFamily: T.fontMono, fontSize: FZF.sm }}>{t.num}</b>{t.roue ? <span style={{ fontSize: FZF.xs, color: T.ink500 }}> roue {t.roue}</span> : null}
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: FZF.xs, color: T.ink700 }}><i style={{ width: 8, height: 8, borderRadius: 4, background: pc.c, display: "inline-block", flexShrink: 0 }} /><span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{M.lbl(st.id)}</span></div>
                   <div style={{ height: 3, background: T.surfaceAlt, borderRadius: 2, marginTop: 3 }}><div style={{ width: Math.round(M.progressOf(t) * 100) + "%", height: 3, borderRadius: 2, background: pc.c }} /></div>
                 </button>
                 <div style={{ position: "relative", height: 16, background: T.surface, borderRadius: 3 }}>
@@ -350,10 +354,10 @@ export function ProdTurbines({ doc, api, canEdit, owner }) {
                   {s.segs.map((g, i) => <div key={i} title={g.ph === "wait" ? "Attente arbre" : g.ph === "missing" ? "Aucun arbre prévu" : PHASES[g.ph]} style={{ position: "absolute", top: 2, bottom: 2, left: pct(g.from) + "%", width: (g.to === null ? 100 - pct(g.from) : pct(g.to) - pct(g.from)) + "%", borderRadius: 2, background: g.ph === "wait" ? hatch(P.wait.c) : g.ph === "missing" ? hatch(P.missing.c) : (P[g.ph] || P.att).c }} />)}
                   <i title="Aujourd'hui" style={{ position: "absolute", left: 0, top: -6, bottom: -6, width: 2, background: T.red500 }} />
                 </div>
-                <div style={{ textAlign: "right", fontSize: FZ.sm, display: "flex", flexDirection: "column", lineHeight: 1.25 }}>{end}</div>
+                <div style={{ textAlign: "right", fontSize: FZF.sm, display: "flex", flexDirection: "column", lineHeight: 1.25 }}>{end}</div>
               </div>); })}
           </div></div>}
-        <div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 8 }}>Calcul en jours ouvrés à partir des durées de la gamme, du temps déjà passé à l'étape en cours et de la disponibilité des arbres équilibrés.</div>
+        <div style={{ fontSize: FZF.xs, color: T.ink500, marginTop: 8 }}>Calcul en jours ouvrés à partir des durées de la gamme, du temps déjà passé à l'étape en cours et de la disponibilité des arbres équilibrés.</div>
       </section>
     </div>);
   };
@@ -370,7 +374,7 @@ export function ProdTurbines({ doc, api, canEdit, owner }) {
           <tr>{steps.map(s => <th key={s.id} style={{ ...th, top: 0, minWidth: 104, whiteSpace: "normal", lineHeight: 1.2, borderLeft: s.id === lockId ? "2px solid " + T.ink500 : undefined }}>{M.lbl(s.id)}{M.dur(s.id) ? <em style={{ display: "block", fontStyle: "normal", color: T.ink300, fontVariantNumeric: "tabular-nums" }}>{fmtJ(M.dur(s.id))}</em> : null}</th>)}</tr>
         </thead>
         <tbody>
-          {items.length === 0 && <tr><td colSpan={steps.length + 1} style={{ padding: 14, color: T.ink500, fontSize: FZ.sm }}>{kind === "turbine" ? "Aucune turbine en cours. Créez la première avec « Nouvelle turbine »." : "Aucun arbre en stock ou en cours."}</td></tr>}
+          {items.length === 0 && <tr><td colSpan={steps.length + 1} style={{ padding: 14, color: T.ink500, fontSize: FZF.sm }}>{kind === "turbine" ? "Aucune turbine en cours. Créez la première avec « Nouvelle turbine »." : "Aucun arbre en stock ou en cours."}</td></tr>}
           {items.map(x => { const idx = (kind === "turbine" ? TI : AI)[x.step] ?? 0; const dragging = drag && drag.id === x.id;
             return (<tr key={x.id}>
               <td style={{ position: "sticky", left: 0, zIndex: 2, background: T.card, borderTop: "1px solid " + T.line, padding: "6px 8px", verticalAlign: "top", minWidth: 190, maxWidth: 230 }}>{nameCell(x)}</td>
@@ -396,8 +400,8 @@ export function ProdTurbines({ doc, api, canEdit, owner }) {
     const late = { color: T.red600, fontWeight: 600 };
     const pItem = (p, meta, acts) => (<div key={p.id} style={{ display: "flex", gap: 8, alignItems: "center", borderTop: "1px solid " + T.line, padding: "6px 0", minHeight: 36 }}>
       <button type="button" onClick={() => openPiece(p)} style={{ flex: 1, minWidth: 0, border: "none", background: "transparent", textAlign: "left", cursor: "pointer", fontFamily: T.font, color: T.ink900, padding: 0 }}>
-        <span style={{ fontSize: FZ.sm, fontWeight: 600 }}>{p.designation || "Pièce"}{p.qte > 1 ? <span style={{ color: T.ink500 }}> ×{p.qte}</span> : null}{p.turbine ? <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 700, background: T.surfaceAlt, color: T.ink700, borderRadius: 99, padding: "0 7px" }}>{p.turbine}</span> : null}</span>
-        <span style={{ display: "block", fontSize: FZ.xs, color: T.ink500 }}>{meta}</span>
+        <span style={{ fontSize: FZF.sm, fontWeight: 600 }}>{p.designation || "Pièce"}{p.qte > 1 ? <span style={{ color: T.ink500 }}> ×{p.qte}</span> : null}{p.turbine ? <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 700, background: T.surfaceAlt, color: T.ink700, borderRadius: 99, padding: "0 7px" }}>{p.turbine}</span> : null}</span>
+        <span style={{ display: "block", fontSize: FZF.xs, color: T.ink500 }}>{meta}</span>
       </button>
       {!readOnly && <span style={{ display: "inline-flex", gap: 4 }}>{acts}</span>}
     </div>);
@@ -423,20 +427,20 @@ export function ProdTurbines({ doc, api, canEdit, owner }) {
         <H2 sub={"Glissez une carte sur sa ligne pour changer d'étape · " + nAvail + " arbre" + (nAvail > 1 ? "s" : "") + " prêt" + (nAvail > 1 ? "s" : "") + " à monter"} right={!readOnly && <button type="button" style={btn("primary")} onClick={() => openTurbine(null)}>Nouvelle turbine</button>}>Turbines</H2>
         {board("turbine", T_STEPS, "a1", turbs, t => { const i = TI[t.step] ?? 0, sc = M.sch[t.id] || {};
           return (<button type="button" onClick={() => openTurbine(t)} style={{ border: "none", background: "transparent", textAlign: "left", padding: 0, cursor: "pointer", fontFamily: T.font, color: T.ink900 }}>
-            <b style={{ fontFamily: T.fontMono, fontSize: FZ.sm }}>{t.num}</b>{t.affaire ? <span style={{ fontSize: FZ.xs, color: T.ink500 }}> {t.affaire}</span> : null}
-            <div style={{ fontSize: FZ.xs, color: T.ink500 }}>{t.roue ? "Roue " + t.roue : "Roue non attribuée"}</div>
+            <b style={{ fontFamily: T.fontMono, fontSize: FZF.sm }}>{t.num}</b>{t.affaire ? <span style={{ fontSize: FZF.xs, color: T.ink500 }}> {t.affaire}</span> : null}
+            <div style={{ fontSize: FZF.xs, color: T.ink500 }}>{t.roue ? "Roue " + t.roue : "Roue non attribuée"}</div>
             {M.hasArbre(t) ? chip(true, "Arbre " + S.arbres[t.arbreId].num) : i < IA1 ? (sc.arbrePrevu ? chip(true, "Arbre prévu : " + sc.arbrePrevu, true) : chip(false, "Aucun arbre prévu")) : t.step === "ok" ? null : chip(false, "Arbre à affecter")}
-            <div style={{ fontSize: FZ.xs, fontWeight: 700, marginTop: 2, color: t.step === "ok" ? P.dispo.ink : sc.missing ? T.red600 : sc.noRoue ? P.wait.ink : T.ink700 }}>{t.step === "ok" ? "Prête" : sc.missing ? "Date bloquée : arbre manquant" : sc.noRoue ? "Roue à attribuer" : "Prête le " + fmtD(offDate(sc.end))}</div>
+            <div style={{ fontSize: FZF.xs, fontWeight: 700, marginTop: 2, color: t.step === "ok" ? P.dispo.ink : sc.missing ? T.red600 : sc.noRoue ? P.wait.ink : T.ink700 }}>{t.step === "ok" ? "Prête" : sc.missing ? "Date bloquée : arbre manquant" : sc.noRoue ? "Roue à attribuer" : "Prête le " + fmtD(offDate(sc.end))}</div>
           </button>); },
           (t, c) => { const late = M.dur(c.id) && elapsed(t) > M.dur(c.id); const txt = c.id === "ok" ? (t.roue ? "roue " + t.roue : "prête") : c.id === "s1" ? (t.roue ? "roue " + t.roue : "sans roue") : c.id === "att" ? (t.lancement ? "lancement " + fmtShort(parseD(t.lancement)) : "à lancer") : "J" + (elapsed(t) + 1) + " / " + Math.max(1, Math.ceil(M.dur(c.id))); return late ? <b style={{ color: T.red600 }}>{txt}</b> : txt; })}
       </section>
       <section aria-label="Arbres">
         <H2 sub="Un arbre « Disponible » (contrôlé, roulements et douille montés) est affecté automatiquement à la turbine qui passe en assemblage." right={!readOnly && <button type="button" style={btn("")} onClick={() => openArbre(null)}>Nouvel arbre</button>}>Arbres</H2>
         {board("arbre", A_STEPS, null, arbres, a => (<button type="button" onClick={() => openArbre(a)} style={{ border: "none", background: "transparent", textAlign: "left", padding: 0, cursor: "pointer", fontFamily: T.font, color: T.ink900 }}>
-            <b style={{ fontFamily: T.fontMono, fontSize: FZ.sm }}>{a.num}</b><div style={{ fontSize: FZ.xs, color: T.ink500 }}>{a.ref ? a.ref + " · " : ""}{a.step === "b6" ? "Prêt à monter" : "Dispo le " + fmtD(addWD(T0(), Math.ceil(M.arbreReadyOffset(a) - 1e-9)))}</div>
+            <b style={{ fontFamily: T.fontMono, fontSize: FZF.sm }}>{a.num}</b><div style={{ fontSize: FZF.xs, color: T.ink500 }}>{a.ref ? a.ref + " · " : ""}{a.step === "b6" ? "Prêt à monter" : "Dispo le " + fmtD(addWD(T0(), Math.ceil(M.arbreReadyOffset(a) - 1e-9)))}</div>
           </button>),
           (a, c) => { const late = M.dur(c.id) && elapsed(a) > M.dur(c.id); const txt = c.id === "b6" ? "disponible" : c.id === "b0" ? (a.lancement ? "lancement " + fmtShort(parseD(a.lancement)) : "à lancer") : "J" + (elapsed(a) + 1) + (M.dur(c.id) ? " / " + Math.ceil(M.dur(c.id)) : ""); return late ? <b style={{ color: T.red600 }}>{txt}</b> : txt; })}
-        {mounted.length > 0 && <div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 6 }}>Arbres montés : {mounted.map(a => a.num + " sur " + ((M.live.find(t => t.arbreId === a.id) || {}).num || "")).join(", ")}</div>}
+        {mounted.length > 0 && <div style={{ fontSize: FZF.xs, color: T.ink500, marginTop: 6 }}>Arbres montés : {mounted.map(a => a.num + " sur " + ((M.live.find(t => t.arbreId === a.id) || {}).num || "")).join(", ")}</div>}
       </section>
     </div>);
   };
@@ -447,7 +451,7 @@ export function ProdTurbines({ doc, api, canEdit, owner }) {
     {!readOnly && <button type="button" aria-label={"Ajouter " + lab} onClick={onPlus} style={{ ...btn(""), minWidth: 28, padding: 0 }}>+</button>}
   </span>);
   const thS = { fontSize: 12, color: T.ink500, fontWeight: 600, textAlign: "left", padding: "6px 8px", borderBottom: "1px solid " + T.line };
-  const tdS = { padding: "6px 8px", borderTop: "1px solid " + T.line, fontSize: FZ.sm, verticalAlign: "top" };
+  const tdS = { padding: "6px 8px", borderTop: "1px solid " + T.line, fontSize: FZF.sm, verticalAlign: "top" };
   const renderStocks = () => {
     const roues = Object.values(S.roues).sort(byRef), injs = Object.values(S.injecteurs).sort(byRef);
     return (<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,420px),1fr))", gap: 12, alignItems: "start" }}>
@@ -462,10 +466,10 @@ export function ProdTurbines({ doc, api, canEdit, owner }) {
         <H2 right={!readOnly && <button type="button" style={btn("")} onClick={() => openStock("injecteurs", null)}>Ajouter une référence</button>}>Injecteurs</H2>
         <table style={{ width: "100%", borderCollapse: "collapse" }}><thead><tr><th style={thS}>Référence</th><th style={thS}>Vierges</th><th style={thS}>Avec bouchages</th><th style={thS} /></tr></thead><tbody>
           {injs.length === 0 && <tr><td colSpan={4} style={{ ...tdS, color: T.ink500 }}>Aucune référence.</td></tr>}
-          {injs.map(r => <tr key={r.id}><td style={tdS}>{r.ref}<br /><span style={{ fontSize: FZ.xs, color: r.ouvertures ? T.ink500 : T.red600 }}>{r.ouvertures ? r.ouvertures + " ouvertures" : "ouvertures à renseigner"}</span></td>
+          {injs.map(r => <tr key={r.id}><td style={tdS}>{r.ref}<br /><span style={{ fontSize: FZF.xs, color: r.ouvertures ? T.ink500 : T.red600 }}>{r.ouvertures ? r.ouvertures + " ouvertures" : "ouvertures à renseigner"}</span></td>
             <td style={tdS}>{qty(() => bumpQty("injecteurs", r, -1), +r.qte || 0, () => bumpQty("injecteurs", r, 1), "un injecteur vierge " + r.ref)}</td>
-            <td style={tdS}>{vars(r).length === 0 && <span style={{ fontSize: FZ.xs, color: T.ink500 }}>Aucun</span>}
-              {vars(r).map(v => <div key={v.bouches} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>{qty(() => bumpVar(r, v.bouches, -1), v.qte, () => bumpVar(r, v.bouches, 1), "un injecteur " + v.bouches + " bouchages")}<span style={{ fontSize: FZ.xs, color: T.ink700, fontVariantNumeric: "tabular-nums" }}>{v.bouches}/{r.ouvertures || "?"}</span></div>)}
+            <td style={tdS}>{vars(r).length === 0 && <span style={{ fontSize: FZF.xs, color: T.ink500 }}>Aucun</span>}
+              {vars(r).map(v => <div key={v.bouches} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>{qty(() => bumpVar(r, v.bouches, -1), v.qte, () => bumpVar(r, v.bouches, 1), "un injecteur " + v.bouches + " bouchages")}<span style={{ fontSize: FZF.xs, color: T.ink700, fontVariantNumeric: "tabular-nums" }}>{v.bouches}/{r.ouvertures || "?"}</span></div>)}
               {!readOnly && <button type="button" style={{ ...btn(""), marginTop: 4 }} onClick={() => addVar(r)}>Ajouter un bouchage</button>}</td>
             <td style={{ ...tdS, textAlign: "right" }}>{!readOnly && <button type="button" style={btn("")} onClick={() => openStock("injecteurs", r)}>Modifier</button>}</td></tr>)}
         </tbody></table>
@@ -477,7 +481,7 @@ export function ProdTurbines({ doc, api, canEdit, owner }) {
   const renderParams = () => {
     const cur = pd || { d: { ...S.params.d }, l: { ...S.params.l } };
     const dOf = id => (cur.d[id] != null ? cur.d[id] : STEP[id].d), lOf = id => cur.l[id] != null ? cur.l[id] : M.lbl(id);
-    const inp = { height: 30, border: "1px solid " + T.line, borderRadius: 6, background: T.card, color: T.ink900, padding: "0 8px", fontSize: FZ.sm, fontFamily: T.font, boxSizing: "border-box" };
+    const inp = { height: 30, border: "1px solid " + T.line, borderRadius: 6, background: T.card, color: T.ink900, padding: "0 8px", fontSize: FZF.sm, fontFamily: T.font, boxSizing: "border-box" };
     const rows = steps => steps.map(s => <tr key={s.id}><td style={tdS}><input aria-label={"Nom de l'étape " + STEP[s.id].l} disabled={readOnly} value={lOf(s.id)} onChange={e => setPd({ ...cur, l: { ...cur.l, [s.id]: e.target.value } })} style={{ ...inp, width: "100%" }} /></td>
       <td style={{ ...tdS, width: 110 }}><input aria-label={"Durée en jours ouvrés de " + STEP[s.id].l} disabled={readOnly} type="number" min={0} step={0.5} value={dOf(s.id)} onChange={e => setPd({ ...cur, d: { ...cur.d, [s.id]: e.target.value } })} style={{ ...inp, width: 90, textAlign: "right", fontVariantNumeric: "tabular-nums" }} /></td></tr>);
     const grp = (title, ph, steps) => <><tr><td colSpan={2} style={{ ...tdS, fontWeight: 700, color: T.ink900, borderLeft: "4px solid " + (P[ph] || P.att).c, background: T.surface }}>{title}</td></tr>{rows(steps)}</>;
@@ -487,7 +491,7 @@ export function ProdTurbines({ doc, api, canEdit, owner }) {
       if (await api.setParams(p)) { setPd(null); notify("Gamme enregistrée"); } };
     const access = Array.isArray(S.access) ? S.access : [];
     return (<div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: FZ.sm, color: T.ink500, maxWidth: 820 }}>Les durées sont en jours ouvrés (lundi à vendredi). Elles alimentent les dates prévisionnelles de l'accueil. Pour l'équilibrage sous-traité, une date de retour saisie sur l'arbre remplace la durée standard.</div>
+      <div style={{ fontSize: FZF.sm, color: T.ink500, maxWidth: 820 }}>Les durées sont en jours ouvrés (lundi à vendredi). Elles alimentent les dates prévisionnelles de l'accueil. Pour l'équilibrage sous-traité, une date de retour saisie sur l'arbre remplace la durée standard.</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,420px),1fr))", gap: 12, alignItems: "start" }}>
         <section aria-label="Étapes turbine" style={card()}><table style={{ width: "100%", borderCollapse: "collapse" }}><thead><tr><th style={thS}>Étape turbine</th><th style={thS}>Durée (j)</th></tr></thead><tbody>
           {grp("Montage carter", "carter", T_STEPS.filter(s => s.ph === "carter"))}{grp("Assemblage / finition", "assy", T_STEPS.filter(s => s.ph === "assy"))}{grp("Tests", "tests", T_STEPS.filter(s => s.ph === "tests"))}
@@ -500,9 +504,9 @@ export function ProdTurbines({ doc, api, canEdit, owner }) {
           </section>
           {owner && <section aria-label="Accès à la page" style={card()}>
             <H2 sub="propriétaire seulement">Accès à la page</H2>
-            <div style={{ fontSize: FZ.xs, color: T.ink500, marginBottom: 8 }}>En plus de vous, ces comptes voient et modifient Production turbines (adresse de connexion au site).</div>
+            <div style={{ fontSize: FZF.xs, color: T.ink500, marginBottom: 8 }}>En plus de vous, ces comptes voient et modifient Production turbines (adresse de connexion au site).</div>
             {access.length === 0 && <Muted>Aucun compte ajouté.</Muted>}
-            {access.map(m => <div key={m} style={{ display: "flex", alignItems: "center", gap: 8, minHeight: 32, borderTop: "1px solid " + T.line, fontSize: FZ.sm }}><span style={{ flex: 1 }}>{m}</span><button type="button" style={btn("danger")} onClick={() => api.setAccess(access.filter(x => x !== m))}>Retirer</button></div>)}
+            {access.map(m => <div key={m} style={{ display: "flex", alignItems: "center", gap: 8, minHeight: 32, borderTop: "1px solid " + T.line, fontSize: FZF.sm }}><span style={{ flex: 1 }}>{m}</span><button type="button" style={btn("danger")} onClick={() => api.setAccess(access.filter(x => x !== m))}>Retirer</button></div>)}
             <form onSubmit={async e => { e.preventDefault(); const m = mail.trim().toLowerCase(); if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m)) { notify("Saisissez une adresse e-mail valide.", true); return; } if (!access.includes(m) && await api.setAccess([...access, m])) { setMail(""); notify(m + " a accès à Production turbines"); } }} style={{ display: "flex", gap: 8, marginTop: 8 }}>
               <input type="email" aria-label="Adresse e-mail à ajouter" placeholder="prenom.nom@enogia.com" value={mail} onChange={e => setMail(e.target.value)} style={{ ...inp, flex: 1 }} />
               <button type="submit" style={btn("primary")}>Ajouter</button>
@@ -516,7 +520,7 @@ export function ProdTurbines({ doc, api, canEdit, owner }) {
   return (<div style={{ fontFamily: T.font }}>
     <PageHead title="Production turbines" accent={P.carter.c} sub={new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) + (readOnly ? " · lecture seule" : "")} />
     <div role="tablist" aria-label="Sous-pages Production turbines" style={{ display: "flex", gap: 18, borderBottom: "1px solid " + T.line, marginBottom: 12, overflowX: "auto" }}>
-      {TABS.map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)} style={{ border: "none", background: "transparent", padding: "8px 0", marginBottom: -1, borderBottom: "2px solid " + (tab === k ? T.ink900 : "transparent"), color: tab === k ? T.ink900 : T.ink500, fontWeight: tab === k ? 700 : 500, fontSize: FZ.sm, cursor: "pointer", fontFamily: T.font, whiteSpace: "nowrap", minHeight: 32 }}>{l}</button>)}
+      {TABS.map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)} style={{ border: "none", background: "transparent", padding: "8px 0", marginBottom: -1, borderBottom: "2px solid " + (tab === k ? T.ink900 : "transparent"), color: tab === k ? T.ink900 : T.ink500, fontWeight: tab === k ? 700 : 500, fontSize: FZF.sm, cursor: "pointer", fontFamily: T.font, whiteSpace: "nowrap", minHeight: 32 }}>{l}</button>)}
     </div>
     <div key={tab} className="enogia-view-in">
       {tab === "accueil" && renderHome()}
@@ -526,6 +530,7 @@ export function ProdTurbines({ doc, api, canEdit, owner }) {
     </div>
     {form && <FormDialog {...form} readOnly={readOnly} notify={notify} onClose={() => setForm(null)} />}
     {drag && drag.x != null && <div aria-hidden="true" style={{ position: "fixed", left: drag.x + 12, top: drag.y + 12, zIndex: 10020, pointerEvents: "none", background: T.ink900, color: T.card, borderRadius: 6, padding: "3px 8px", fontSize: 12, fontWeight: 700, fontFamily: T.fontMono, boxShadow: T.shadowLg }}>{(drag.kind === "turbine" ? S.turbines : S.arbres)[drag.id]?.num}{drag.target ? " → " + M.lbl(drag.target) : ""}</div>}
-    {toast && <div role="status" aria-live="polite" style={{ position: "fixed", left: "50%", bottom: 24, transform: "translateX(-50%)", zIndex: 10030, background: toast.err ? T.redFill : T.ink900, color: toast.err ? "#fff" : T.card, borderRadius: 10, padding: "8px 14px", fontSize: FZ.sm, fontWeight: 600, boxShadow: T.shadowLg, maxWidth: "min(560px,92vw)" }}><NavIcon name={toast.err ? "warning" : "check"} size={14} /> {toast.msg}</div>}
+    {toast && <div role="status" aria-live="polite" style={{ position: "fixed", left: "50%", bottom: 24, transform: "translateX(-50%)", zIndex: 10030, background: toast.err ? T.redFill : T.ink900, color: toast.err ? "#fff" : T.card, borderRadius: 10, padding: "8px 14px", fontSize: FZF.sm, fontWeight: 600, boxShadow: T.shadowLg, maxWidth: "min(560px,92vw)" }}><NavIcon name={toast.err ? "warning" : "check"} size={14} /> {toast.msg}</div>}
   </div>);
 }
+// ===== FIN PAGE =====

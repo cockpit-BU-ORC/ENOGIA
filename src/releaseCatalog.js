@@ -475,4 +475,7 @@ export const RELEASE_CATALOG = [
     ["Planificateur", "Bancs d'essai : « Allouer automatiquement » en un clic."],
     ["Cadrans", "Le cadran se saisit n'importe où et suit la souris."],
   ] },
+  { v: "227", t: "Production turbines : fiches corrigées, kit pour le directeur", items: [
+    ["Production turbines", "Éléments enregistrés rouverts correctement ; kit d'échange avec le Claude du directeur de production turbines."],
+  ] },
 ];
