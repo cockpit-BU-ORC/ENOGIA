@@ -1535,3 +1535,18 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Clés `localStorage` (`planUi105`) : `showArch`, `lanesTable`.
 - Vérifié : build (13 avertissements existants), tests (priorité, archives), contraste.
 - Fichiers : pjMeta.js, components/{RowDetail,Arrange,PageGuard}.js, planner/{engine,Planner,PlannerGantt,bench.test}.js, scripts/{prodturb-kit,prodturb-import}.js, scripts/prodturb-consignes.md, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.
+
+## v229 — Un accueil pour chaque poste (maquettes validées)
+
+- **5 accueils** (`RoleHome.js`, `HomeView.js`), chacun avec sa phrase d'ouverture liée au poste :
+  - **Chef de projet** : Mes PJ (par départ, dérive), Jalons des 3 semaines, À traiter (retards à déclarer, mentions), FAT client / NOBO, Avancement. Phrase : « Sur tes N PJ, … avancent, … glissent ; prochain départ … ».
+  - **Testeur** : Au banc aujourd'hui (jour N / M, avancement des tests), Fiches à signer, Ma semaine, Prochaines arrivées au banc, Derniers résultats.
+  - **Chef d'atelier** : Charge atelier sur 4 semaines (heures et capacité ; d'après le planificateur quand il est lisible, sinon les heures atelier du planning réparties sur les jours ouvrés, capacité 175 h), Arrivées et départs, En montage, Postes de test. Phrase : machines en montage, charge en %, arrivées et départs.
+  - **Directeur de production turbines** (nouveau rôle `turbines`, automatique pour un compte qui a accès à Production turbines) : Turbines prêtes, Testées sans roue, Pièces à suivre, Dates prévisionnelles, Roues équilibrées, Injecteurs.
+  - **Autres personnes** (nouveau rôle `autre`, accueil par défaut d'un compte sans rôle) : Chiffres clés, Prochains départs, Où en sont les machines.
+  - La **Direction** garde ses cadrans (chiffres, tests, turbines, cash in, alertes, charge, postes, départs, parcours) et sa phrase.
+- **Disposition figée par poste** : la même pour toutes les personnes du poste, enregistrée dans `planning/profiles` (`homeLayouts.<rôle>` : ordre, largeurs, cadrans ajoutés ou retirés). **Seul le propriétaire** la règle : « Disposer les cadrans » sur l'accueil du poste affiché (choisir son propre rôle dans Manager › Personnes et site pour voir un autre poste), « Ajouter un cadran… » (catalogue de tous les cadrans), « Retirer », « Réinitialiser ».
+- Rôles : Manager › Personnes et site › Personnes, rôles et accès propose maintenant « Directeur production turbines » et « Autres personnes ».
+- Le plan du planificateur est lu aussi sur l'accueil pour les admins (charge atelier).
+- Vérifié : rendu des 5 accueils (jsdom + aperçu, clair et sombre), build (13 avertissements existants), tests, contraste. Non vérifié dans l'appli connectée : enregistrement de la disposition partagée.
+- Fichiers : components/{RoleHome,HomeView,Arrange}.js, profiles.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md.

@@ -74,7 +74,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-29-v228-etats-priorite-archives";
+const APP_BUILD_VERSION = "2026-10-29-v229-accueils-par-poste";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -688,6 +688,8 @@ export default function App(){
     if(!currentUser)return undefined;
     return onSnapshot(PROFILES_DOC_REF(),snap=>{const d=snap.exists()?snap.data():{};setProfiles({...d,byEmail:d.byEmail&&typeof d.byEmail==="object"?d.byEmail:{}});},err=>console.warn("profiles (lecture) :",err&&err.message));
   },[currentUser]);
+  // v229 : disposition de l'accueil d'un poste (réglée par le propriétaire, la même pour toutes les personnes du poste)
+  const saveHomeLayout=useCallback((role,lay)=>{setProfiles(p=>{const next={...p,homeLayouts:{...((p&&p.homeLayouts)||{}),[role]:lay}};setDoc(PROFILES_DOC_REF(),{homeLayouts:next.homeLayouts,updatedAt:new Date().toISOString(),updatedBy:authorName||""},{merge:true}).catch(e=>{console.error(e);notify("Erreur lors de l'enregistrement de la disposition : "+e.message);});return next;});},[authorName]);
   const saveProfiles=useCallback(async next=>{
     try{await setDoc(PROFILES_DOC_REF(),{...next,updatedAt:new Date().toISOString(),updatedBy:authorName||""});return true;}
     catch(e){console.error(e);notify("Erreur lors de l'enregistrement des profils : "+e.message);return false;}
@@ -1055,7 +1057,8 @@ export default function App(){
   // v204 : plan de l'onglet Planificateur (planning/plan, préfixe beta_ en bêta), lu seulement quand l'onglet est ouvert par le propriétaire
   const [planDoc,setPlanDoc]=useState(null),[planLoaded,setPlanLoaded]=useState(false);
   // v219 : le plan est aussi lu dans le Manager (charge des KPI d'après le planificateur)
-  useEffect(()=>{if(!currentUser||!((isOwner&&view==="planner")||(pinOk&&view==="manager")))return undefined;return listenPlan(d=>{setPlanDoc(d);setPlanLoaded(true);});},[currentUser,isOwner,pinOk,view]);
+  useEffect(()=>{if(!currentUser||!((isOwner&&view==="planner")||(pinOk&&(view==="manager"||view==="home"))))return undefined; // v229 : aussi l'accueil (charge atelier d'après le planificateur)
+  return listenPlan(d=>{setPlanDoc(d);setPlanLoaded(true);});},[currentUser,isOwner,pinOk,view]);
   useEffect(()=>{if(view==="planner"&&currentUser&&!isOwner)setView("table");},[view,currentUser,isOwner]);
   useEffect(()=>{if(!currentUser)return;if((view==="cashin"&&!canCash)||(view==="turbines"&&!isOwner)||(view==="prodturb"&&prodDoc!==null&&!canProdTurb))setView("home");},[view,currentUser,canCash,isOwner,prodDoc,canProdTurb]);
   const [cashFocusApp,setCashFocusApp]=useState(null); // v217 : PJ à afficher dans la page Cash in (depuis une fiche projet)
@@ -1205,7 +1208,7 @@ export default function App(){
             {view!=="home"&&(()=>{const v=VIEWS.find(x=>x.id===view);if(!v)return null;
               const subs={planner:"Brouillon réservé à vous : déplacez, liez et forcez les PJ ; rien ne change pour les autres avant « Publier »",table:filtered.length+" machine"+(filtered.length>1?"s":"")+" affichée"+(filtered.length>1?"s":"")+" · survolez un état ou un écart pour le détail",gantt:"Chaque machine, étape par étape · Ctrl + molette pour zoomer",calendar:"Arrivées, tests, fins de production et départs",changes:"Ce qui a changé à chaque mise à jour du planning",comments:"Les échanges, machine par machine",tests:"Plans d'essais et affectations des testeurs",cashin:"Encaissements et facturation des PJ",turbines:"Pool de turbines et attributions"};
               /* v183 : plus de sur-titre ; v185 : une couleur de trait par page (demandé) */const SS=stageSoft(),HH=stripeHues(),acc={table:SS.production.solid,gantt:SS.tests.solid,calendar:SS.finProd.solid,changes:T.ember500,comments:HH.note,tests:SS.arrivee.solid,planner:SS.production.solid,cashin:SS.finProd.solid,turbines:SS.depart.solid}[view];return <PageHead title={v.l} sub={subs[view]} accent={acc}/>;})()}
-            {view==="home"&&<HomeView pinOk={pinOk} testsDoc={canSeeTests?testsDoc:null} data={dataWithOverrides} comments={comments} myEmail={currentUser&&currentUser.email} myName={authorName} people={peopleAll} unseenChanges={unseenChanges} lastImport={lastImport} onOpenPj={setCalSel} onGo={setView} profiles={profiles} owner={isOwner} cash={canCash} turbineDoc={turbineDoc} onOpenCash={canCash?()=>setView("cashin"):null}/>}
+            {view==="home"&&<HomeView pinOk={pinOk} testsDoc={canSeeTests?testsDoc:null} data={dataWithOverrides} comments={comments} myEmail={currentUser&&currentUser.email} myName={authorName} people={peopleAll} unseenChanges={unseenChanges} lastImport={lastImport} onOpenPj={setCalSel} onGo={setView} profiles={profiles} owner={isOwner} cash={canCash} turbineDoc={turbineDoc} onOpenCash={canCash?()=>setView("cashin"):null} prodDoc={prodDoc} canProdTurb={canProdTurb} plan={planDoc&&planDoc.plan} closurePeriods={closurePeriods} saveHomeLayout={isOwner?saveHomeLayout:null}/>}
             {view==="table"&&<DashboardSummary data={filtered} allData={dataWithOverrides} progress={progressEff} changeLog={changeLog} onOpenChanges={()=>setView("changes")}/>}
             {view==="table"&&<TableView data={filtered} progress={progressEff} df={df} setDf={setDf} setEtatFor={setEtatFor} setClientPresenceFor={setClientPresenceFor}
               selEtats={selEtats} setSelEtats={setSelEtats}

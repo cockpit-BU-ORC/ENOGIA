@@ -483,4 +483,7 @@ export const RELEASE_CATALOG = [
     ["Planificateur", "Priorité par PJ, archives (expédiés masqués), tableau des couloirs masquable, plus de pointillés, plus d'alerte après l'allocation des bancs."],
     ["Production turbines", "Une erreur dans la page ne touche plus le reste du site ; contrôle de version des retours du kit."],
   ] },
+  { v: "229", t: "Un accueil pour chaque poste", items: [
+    ["Accueil", "5 accueils par poste (chef de projet, testeur, chef d'atelier, directeur production turbines, autres) avec leur phrase ; disposition figée par poste, réglée par le propriétaire, catalogue « Ajouter un cadran »."],
+  ] },
 ];

@@ -18,14 +18,17 @@ const store = (id, v) => { try { localStorage.setItem("enogia_arr_" + id, JSON.s
 const idOf = c => { const k = c.key != null ? String(c.key).replace(/^\.\$/, "") : ""; return k && !/^\.\d+$/.test(k) ? k : (c.props && c.props["aria-label"]) || k; };
 const calm = () => { try { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { return false; } };
 
-export function Arrange({ id, children, spans = {}, defaultSpan = 6, labels = {} }) {
+// v229 : disposition partagée (layout / onLayout, ex. accueil d'un poste dans planning/profiles) et catalogue « Ajouter un cadran » / « Retirer ».
+export function Arrange({ id, children, spans = {}, defaultSpan = 6, labels = {}, layout, onLayout, catalog, onAdd, onRemove }) {
   const can = isOwner();
   const items = React.Children.toArray(children).filter(c => c && c.props);
   const ids = items.map(idOf);
-  const [lay, setLay] = useState(() => load(id)); const [edit, setEdit] = useState(false);
+  const [local, setLocal] = useState(() => load(id)); const [edit, setEdit] = useState(false);
+  const shared = !!(layout && onLayout);
+  const lay = shared ? { order: Array.isArray(layout.order) ? layout.order : [], span: layout.span || {} } : local;
   const [live, setLive] = useState(null); // { k, order?, span? } pendant un glissement ou un redimensionnement
   const grid = useRef(null), els = useRef({}), rects = useRef({});
-  const save = v => { setLay(v); store(id, v); };
+  const save = v => { if (shared) onLayout({ ...layout, ...v }); else { setLocal(v); store(id, v); } };
   const baseOrder = [...lay.order.filter(k => ids.includes(k)), ...ids.filter(k => !lay.order.includes(k))];
   const order = (live && live.order) || baseOrder;
   const byId = Object.fromEntries(items.map((c, i) => [ids[i], c]));
@@ -83,7 +86,8 @@ export function Arrange({ id, children, spans = {}, defaultSpan = 6, labels = {}
   return (<div className="enogia-arr" style={{ minWidth: 0 }}>
     {can && <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginBottom: 8 }}>
       {edit && <span style={{ fontSize: FZ.xs, color: T.ink500, alignSelf: "center", marginRight: "auto" }}>Glissez un cadran pour le déplacer, tirez son bord droit pour la largeur.</span>}
-      {edit && <button type="button" onClick={() => save({ order: [], span: {} })} style={{ ...tb, padding: "0 10px" }}>Réinitialiser</button>}
+      {edit && catalog && catalog.length > 0 && onAdd && <select aria-label="Ajouter un cadran" value="" onChange={e => { if (e.target.value) onAdd(e.target.value); }} style={{ ...tb, padding: "0 8px", fontWeight: 600 }}><option value="">Ajouter un cadran…</option>{catalog.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>}
+      {edit && <button type="button" onClick={() => { if (shared) onLayout({}); else save({ order: [], span: {} }); }} style={{ ...tb, padding: "0 10px" }}>Réinitialiser</button>}
       <button type="button" aria-pressed={edit} onClick={() => setEdit(v => !v)} title="Déplacer et redimensionner les cadrans de cette page" style={{ ...tb, padding: "0 12px", background: edit ? T.ink900 : T.card, color: edit ? T.card : T.ink700 }}>{edit ? "Terminer" : "Disposer les cadrans"}</button>
     </div>}
     <div ref={grid} className="enogia-arr-grid" style={{ display: "grid", gridTemplateColumns: "repeat(12,minmax(0,1fr))", gap: GAP, alignItems: "start", gridAutoFlow: on ? "row" : "row dense", userSelect: live ? "none" : undefined }}>
@@ -93,6 +97,7 @@ export function Arrange({ id, children, spans = {}, defaultSpan = 6, labels = {}
                le cadran sélectionné se déplace avec ← → et change de largeur avec Maj + ← → */}
           {on && <span role="button" tabIndex={0} aria-label={lab + " : flèches gauche / droite pour déplacer, Maj + flèches pour la largeur"} onKeyDown={e => { if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return; e.preventDefault(); const d = e.key === "ArrowLeft" ? -1 : 1; if (e.shiftKey) resize(k, d); else move(k, i + d); }}
             style={{ position: "absolute", inset: 0, zIndex: 3, borderRadius: 10 }} />}
+          {on && onRemove && <button type="button" data-arr-resize="1" onClick={() => onRemove(k)} aria-label={"Retirer « " + lab + " » de la page"} style={{ position: "absolute", right: 8, top: 8, zIndex: 4, border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 6, padding: "0 8px", minHeight: 24, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>Retirer</button>}
           {dragging && live.span && <span aria-hidden="true" style={{ position: "absolute", right: 8, top: 8, zIndex: 4, background: T.ink900, color: T.card, borderRadius: 6, padding: "1px 7px", fontSize: FZ.xs, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{Math.round(sp / 12 * 100)} %</span>}
           <div style={{ pointerEvents: on ? "none" : "auto" }}>{c}</div>
           {on && <span aria-hidden="true" data-arr-resize="1" title="Tirer pour changer la largeur" onPointerDown={e => startResize(k, e)}

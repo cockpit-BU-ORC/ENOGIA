@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v229",
+    date: "2026-10-29",
+    title: "V229 : un accueil pour chaque poste",
+    items: [
+      { t: "Accueil", d: "Chaque poste a son accueil et sa phrase d'ouverture : chef de projet (mes PJ, jalons, à traiter, FAT, avancement), testeur (au banc aujourd'hui, fiches à signer, ma semaine, arrivées au banc, résultats), chef d'atelier (charge, arrivées et départs, en montage, postes de test), directeur de production turbines (turbines prêtes, sans roue, pièces, dates prévisionnelles, stocks) et une page de base pour les autres personnes." },
+    ],
+  },
+  {
     id: "2026-10-v228",
     date: "2026-10-29",
     title: "V228 : états plus clairs",
