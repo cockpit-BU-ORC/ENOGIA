@@ -24,3 +24,6 @@ yarn-error.log*
 
 # v227 : kit Production turbines pour Jérémie (régénéré par npm run kit:jeremie)
 kit-jeremie/
+
+# /brag-slim : vidéos de lancement (contiennent de vraies données, jamais dans le dépôt public)
+brag-output*/
