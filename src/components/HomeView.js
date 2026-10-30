@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { T, FZ, R, stageSoft, stripeBg, stripeHues, alertSoft, inkOn } from "../theme";
-import { getPjMeta, chefsOf, ETAT_META, PresenceChip, presenceKind, presenceFirstDate, presenceDates, countShippedYTD } from "../pjMeta";
+import { getPjMeta, chefsOf, ETAT_META, PresenceChip, presenceKind, presenceFirstDate, presenceDates, countShippedYTD, departedNotShipped } from "../pjMeta";
 import { NavIcon, AnimatedNumber, EmptyState, PjPlate, Hl } from "./SharedUI";
 import { openMentionsFor, chefAccount, nameFromEmail } from "../mentions";
 import { SITE_NAME, SITE_SCOPE, SITE_SUB } from "../siteName";
@@ -42,6 +42,7 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
 
   const open = useMemo(() => rows.filter(r => r.etat !== "SHIPPED"), [rows]);
   const shipped = useMemo(() => countShippedYTD(rows), [rows]);
+  const notShipped = useMemo(() => departedNotShipped(rows), [rows]); // v243 : départ passé mais pas « Expédiée »
   const shipped28 = useMemo(() => rows.filter(r => { if (!r.depart) return false; const n = inDays(r.depart); return n != null && n <= 0 && n >= -28; }).length, [rows]); // eslint-disable-line
   const departs = useMemo(() => open.filter(r => r.depart && !isNaN(new Date(r.depart)) && new Date(r.depart) >= today0).sort((a, b) => new Date(a.depart) - new Date(b.depart)), [open]); // eslint-disable-line
   const next30 = departs.filter(r => inDays(r.depart) <= 30).length;
@@ -172,7 +173,7 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
   const parcoursEl = (
         <section key="parcours" aria-label="Où en sont les machines" style={cardS(H.brand)}>
           <Head title={"Où en sont les " + open.length + " machine" + (open.length > 1 ? "s" : "") + " ouverte" + (open.length > 1 ? "s" : "")} />
-          <div style={{ ...grey, marginBottom: 10 }}>+ {shipped} expédiée{shipped > 1 ? "s" : ""} depuis janvier</div>
+          <div style={{ ...grey, marginBottom: 10 }}>+ {shipped} expédiée{shipped > 1 ? "s" : ""} depuis janvier{notShipped.length > 0 && <span title={notShipped.map(r => r.pj).join(", ")} style={{ color: T.amber600, fontWeight: 700 }}> · {notShipped.length} départ{notShipped.length > 1 ? "s" : ""} passé{notShipped.length > 1 ? "s" : ""} pas encore « Expédiée » ({notShipped.map(r => r.pj).join(", ")})</span>}</div>
           {open.length === 0 ? <div style={grey}>Aucune machine ouverte pour l'instant.</div> : (<>
             <div role="img" aria-label={journey.map(j => j.l + " " + j.n).join(", ") + ", pas encore lancées " + notStarted} className="enogia-bar-fill" style={{ display: "flex", height: 32, gap: 4 }}>
               {journey.filter(j => j.n > 0).map(j => <div key={j.id} title={j.l + " : " + j.n} style={{ flex: j.n, minWidth: 0, background: j.c, color: inkOn(j.c), borderRadius: 3, display: "flex", alignItems: "center", padding: "0 8px", fontSize: 11, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", whiteSpace: "nowrap", overflow: "hidden" }}>{j.n}</div>)}

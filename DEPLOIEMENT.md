@@ -1652,3 +1652,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Données : `planning/profiles.tutoVideo` (écrit par le propriétaire, déjà couvert par les règles Firestore). Clé `localStorage` : `enogia_tuto_seen_<id>_<adresse>` (vidéo déjà vue sur ce poste).
 - **La vidéo n'est pas dans le dépôt** : le dépôt et GitHub Pages sont publics et la vidéo montre de vraies données. La déposer sur le Google Drive ENOGIA, partage « ENOGIA : toute personne ayant le lien », et coller le lien.
 - Fichiers : components/TutoVideo.js, components/SharedUI.js (icône play), components/ManagerPanel.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v243 — Machines livrées = machines expédiées
+
+- Demandé : « pourquoi 12 machines livrées mais seulement 10 expédiées ? » → aligner.
+- `pjMeta.js` : `countShippedYTD` compte l'état « Expédiée » (départ dans l'année) au lieu de tout départ passé ; nouveau `departedNotShipped` (départ passé, pas « Expédiée », hors PJXX et slots libres).
+- Liste (`DashboardSummary`) et accueil (`HomeView`) : ligne orange « + N départs passés pas encore « Expédiée » » avec les n° de PJ.
+- Pas de nouvelle clé `localStorage`, pas de nouveau document Firestore.
+- Fichiers : pjMeta.js, components/DashboardSummary.js, components/HomeView.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

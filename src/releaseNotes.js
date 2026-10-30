@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v243",
+    date: "2026-10-30",
+    title: "V243 : machines livrées = machines expédiées",
+    items: [
+      { t: "Machines livrées", d: "Le compteur des machines livrées compte maintenant les machines à l'état « Expédiée ». Les machines dont le départ est passé sans être « Expédiée » sont signalées juste en dessous, pour mettre leur état à jour." },
+    ],
+  },
+  {
     id: "2026-10-v242",
     date: "2026-10-30",
     title: "V242 : la vidéo de présentation",

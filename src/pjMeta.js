@@ -1,5 +1,6 @@
 import React from "react";
 import { T, FZ, mixHex } from "./theme";
+import { isEstimatePj } from "./changeDiff";
 
 // Corrections manuelles de gamme, prioritaires sur ce qui est importé/deviné — s'appliquent immédiatement, sans réimport.
 export const GAMME_OVERRIDE={
@@ -391,10 +392,17 @@ export const ALL_GAMMES=Object.keys(GAMME_COLORS);
 export const MONTHS=["Jan","Fév","Mar","Avr","Mai","Juin","Juil","Août","Sep","Oct","Nov","Déc"];
 export const MONTHS_FULL=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
 export const today=new Date();
-// Machines livrées depuis le 1er janvier (calcul automatique : départ passé dans l'année en cours).
+// Machines livrées depuis le 1er janvier.
+// v243 (demandé : « 12 machines livrées mais 10 expédiées » → aligner) : on compte l'état « Expédiée » (départ dans l'année),
+// plus seulement une date de départ passée. Les départs passés qui ne sont pas « Expédiée » sont signalés à part (departedNotShipped).
+const yearOf=r=>{const d=new Date(r.depart);return isNaN(d)?null:d.getFullYear();};
 export function countShippedYTD(rows){
   const y=today.getFullYear();
-  return rows.filter(r=>r.depart&&new Date(r.depart).getFullYear()===y&&new Date(r.depart)<=today).length;
+  return rows.filter(r=>r.etat==="SHIPPED"&&r.depart&&yearOf(r)===y).length;
+}
+export function departedNotShipped(rows){
+  const y=today.getFullYear();
+  return rows.filter(r=>r&&r.pj&&!isEstimatePj(r.pj)&&r.etat!=="SHIPPED"&&r.etat!=="SLOT_LIBRE"&&r.depart&&yearOf(r)===y&&new Date(r.depart)<=today);
 }
 
 

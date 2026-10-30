@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { isPhone } from "../useIsPhone";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { T, FZ } from "../theme";
-import { getPjMeta, ETAT_META, GAMME_COLORS, countShippedYTD } from "../pjMeta";
+import { getPjMeta, ETAT_META, GAMME_COLORS, countShippedYTD, departedNotShipped } from "../pjMeta";
 import { AnimatedNumber } from "./SharedUI";
 
 // v176 : retour aux camemberts colorés (demandé), en version basse : anneau de 76 px + légende à côté, 4 valeurs + « Autres ».
@@ -49,6 +49,7 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
   // Compteur 100 % automatique (départs passés), compté depuis la première machine présente sur le
   // site : le 19/05/2026 (demandé : « garder la base auto … dire que c'est depuis le 19/05 »).
   const shippedYTD=useMemo(()=>countShippedYTD(fullData),[fullData]);
+  const notShipped=useMemo(()=>departedNotShipped(fullData),[fullData]); // v243 : départ passé mais pas « Expédiée »
 
 
   // Une répartition (breakdown) par dimension, calculées ensemble pour les 4 petits camemberts.
@@ -96,6 +97,7 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
       <div style={{display:"flex",flexDirection:"column",gap:2,minWidth:120,flexShrink:0}}>
         <div style={{fontSize:"clamp(36px,4vw,46px)",fontWeight:300,letterSpacing:"-.03em",color:T.ink900,fontFamily:T.fontDisplay,lineHeight:.95,fontVariantNumeric:"tabular-nums"}}><AnimatedNumber value={shippedYTD}/></div>
         <div style={{fontSize:FZ.xs,color:T.ink500}}>machine{shippedYTD>1?"s":""} livrée{shippedYTD>1?"s":""}<br/>depuis le {SHIPPED_SINCE_LABEL}</div>
+        {notShipped.length>0&&<div title={"Départ passé, état pas encore « Expédiée » : "+notShipped.map(r=>r.pj).join(", ")} style={{fontSize:FZ.xs,fontWeight:700,color:T.amber600,marginTop:2}}>+ {notShipped.length} départ{notShipped.length>1?"s":""} passé{notShipped.length>1?"s":""}<br/>pas encore « Expédiée »</div>}
       </div>
 
       <div className="enogia-dash-sep" style={{width:3,alignSelf:"stretch",background:T.teal500,flexShrink:0,borderRadius:1}}/>

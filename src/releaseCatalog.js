@@ -535,4 +535,7 @@ export const RELEASE_CATALOG = [
   { v: "242", t: "Vidéo de présentation à la connexion", items: [
     ["Vidéo", "TutoVideo.js : profiles.tutoVideo { id, url, until, title } réglé dans Manager › Réglages › Nouveautés ; ouverture une fois par personne (localStorage enogia_tuto_seen_<id>_<adresse>), revue depuis la cloche (MentionBell, sans compter dans la pastille) jusqu'à la date de fin ; lien Drive, YouTube ou .mp4."],
   ] },
+  { v: "243", t: "Machines livrées = machines expédiées", items: [
+    ["Machines livrées", "countShippedYTD compte l'état « Expédiée » (départ dans l'année) ; departedNotShipped (départ passé, pas « Expédiée », hors PJXX) signalé sous le chiffre de la Liste et dans l'accueil."],
+  ] },
 ];
