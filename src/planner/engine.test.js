@@ -14,6 +14,12 @@ describe("planificateur (v204)", () => {
     expect(pjDates(s, "PJ1").depart).toBe("2026-11-12");
     expect(loadModel(plan, s, cal)).toBeTruthy();
     expect(levelPlan(plan, cal)).toBeTruthy();
+    // v239 : un PJXX du plan n'est ni publié, ni compté dans les écarts, ni dans la charge
+    const rx = [...rows.map(r => ({ ...r, heuresAtelier: 100 })), { pj: "PJXX", etat: "A_DEFINIR", arrivee: "2026-10-05", tests: "2026-11-03", testsFin: "2026-11-05", finProd: "2026-11-10", depart: "2026-11-13", heuresAtelier: 100 }];
+    const px = initPlanFromRows(rx, cal), sx = schedule(px, cal), pub = planToRows(px, sx, rx, null, cal);
+    expect(pub.some(r => r.pj === "PJXX")).toBe(false);
+    expect(diffRows(rows, pub).some(c => c.pj === "PJXX")).toBe(false);
+    expect(loadModel(px, sx, cal).phases.some(x => x.pj === "PJXX")).toBe(false);
   });
   test("décaler un PJ décale ses dates", () => {
     const plan = initPlanFromRows(rows, cal), moved = shiftPj(plan, "PJ1", 5, cal);

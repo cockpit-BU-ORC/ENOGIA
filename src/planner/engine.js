@@ -10,6 +10,10 @@
 //   FS tâche→tâche : le successeur commence le jour ouvré SUIVANT la fin du prédécesseur ; si l'un des deux est un jalon,
 //   il se place le MÊME jour. SS : même début. FF : même fin. SF : fin du successeur = début du prédécesseur. + décalage.
 
+import { isEstimatePj } from "../changeDiff";
+// v239 : les PJXX (estimations, pas des PJ vendus) ne comptent nulle part : ni charge, ni publication, ni écarts.
+export { isEstimatePj };
+
 export const STEPS = [
   ["arrivee", "Arrivée", true],       // jalon : le matériel est arrivé
   ["production", "Production", false], // phase atelier — une seule à la fois (règle)
@@ -227,6 +231,7 @@ function atelierStep(plan, pj, step) {
 export function atelierPhases(plan, sched) {
   const out = []; const ord = orderOf(plan, "prod");
   (plan.pjs || []).forEach((p, pi) => {
+    if (isEstimatePj(p.pj)) return; // v239 : pas dans la charge
     const h = phaseHours(p);
     ["production", "finProd"].forEach(step => {
       const n = sched.nodes[nodeKey(p.pj, step)]; if (!n || n.s === null || !h[step]) return;
@@ -270,10 +275,12 @@ export function pjDates(sched, pj) {
 }
 // Lignes à publier : on ne touche qu'aux PJ du plan ; gamme / nom / état déjà présents sont conservés.
 export function planToRows(plan, sched, currentRows, guessGamme, cal) {
-  const byPj = {}; (currentRows || []).forEach(r => { byPj[r.pj] = r; });
-  const rows = (currentRows || []).map(r => ({ ...r }));
+  const cur = (currentRows || []).filter(r => r && !isEstimatePj(r.pj)); // v239 : jamais publiés
+  const byPj = {}; cur.forEach(r => { byPj[r.pj] = r; });
+  const rows = cur.map(r => ({ ...r }));
   const idx = {}; rows.forEach((r, i) => { idx[r.pj] = i; });
   (plan.pjs || []).forEach(p => {
+    if (isEstimatePj(p.pj)) return;
     const d = pjDates(sched, p.pj);
     const base = byPj[p.pj] ? { ...byPj[p.pj] } : { pj: p.pj, gamme: guessGamme ? guessGamme(p.pj) : "", etat: "A_DEFINIR", nomProjet: p.nomProjet || null, heuresAtelier: 0, heuresAutom: 0 };
     ROW_FIELDS.forEach(f => {
@@ -293,6 +300,7 @@ export function diffRows(oldRows, newRows) {
   const o = {}; (oldRows || []).forEach(r => { o[r.pj] = r; });
   const out = [];
   (newRows || []).forEach(r => {
+    if (isEstimatePj(r.pj)) return; // v239
     const a = o[r.pj];
     if (!a) { out.push({ pj: r.pj, field: "new", from: null, to: r.arrivee || r.depart || null }); return; }
     ROW_FIELDS.forEach(f => { if ((a[f] || null) !== (r[f] || null)) out.push({ pj: r.pj, field: f, from: a[f] || null, to: r[f] || null }); });
@@ -305,7 +313,8 @@ export function diffRows(oldRows, newRows) {
 // ── Synthèse des écarts entre deux états du planning (onglet « Modifications ») ──────────────────────────
 // Compare des lignes (planning actuel, planning initial, plan à une date) aux lignes du plan en cours : une entrée par PJ qui a
 // bougé, avec l'écart en jours calendaires pour chaque date (positif = plus tard). Le départ est l'indicateur principal.
-export function summarizeChanges(refRows, nowRows) {
+export function summarizeChanges(refRowsAll, nowRowsAll) {
+  const refRows = (refRowsAll || []).filter(r => !isEstimatePj(r.pj)), nowRows = (nowRowsAll || []).filter(r => !isEstimatePj(r.pj)); // v239
   const ref = {}; (refRows || []).forEach(r => { ref[r.pj] = r; });
   const seen = new Set(); const pjs = [];
   const st = { nPj: 0, nDates: 0, late: 0, early: 0, maxLate: 0, maxEarly: 0, nNew: 0, nRemoved: 0, nHours: 0 };
@@ -365,7 +374,7 @@ export function diffPlans(a, b) {
   if (ra.prod !== rb.prod) out.push({ pj: null, kind: "Règle", text: "« Une production à la fois » " + (rb.prod ? "activée" : "désactivée") });
   if (ra.banc !== rb.banc) out.push({ pj: null, kind: "Règle", text: "« Un test au banc à la fois » " + (rb.banc ? "activé" : "désactivé") });
   if (hasLevel(a) !== hasLevel(b)) out.push({ pj: null, kind: "Nivellement", text: hasLevel(b) ? "appliqué" : "retiré" });
-  return out;
+  return out.filter(x => !isEstimatePj(x.pj)); // v239
 }
 const isoFr = iso => iso ? iso.slice(8, 10) + "/" + iso.slice(5, 7) + "/" + iso.slice(2, 4) : "—";
 

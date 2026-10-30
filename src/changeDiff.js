@@ -4,7 +4,8 @@ export const ROW_FIELDS = ["arrivee", "tests", "testsFin", "finProd", "depart"];
 const dayNum = iso => { const [y, m, d] = iso.split("-").map(Number); return Math.floor(Date.UTC(y, m - 1, d) / 86400000); };
 
 // Les lignes « PJXXX » du planning MS Project sont des estimations, pas des PJ vendus : jamais dans les modifications du planning.
-export const isEstimatePj = pj => /^PJ[\s_-]*X{2,}/i.test(String(pj || ""));
+// v239 (demandé : « ne jamais prendre en compte les PJXX, nulle part ») : PJXX, PJXXX, PJ XX, PJ4XX… — aussi dans le planificateur.
+export const isEstimatePj = pj => /^PJ[\s_-]*\d*X{2,}/i.test(String(pj || ""));
 // Entrée déjà enregistrée dans le journal : retire les PJXXX et recalcule les totaux.
 export function cleanEntry(e) {
   if (!e || !Array.isArray(e.pjs)) return e;

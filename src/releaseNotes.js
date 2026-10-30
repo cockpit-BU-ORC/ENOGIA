@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v239",
+    date: "2026-10-30",
+    title: "V239 : les PJXX ne comptent nulle part",
+    items: [
+      { t: "Planificateur", d: "Les PJXX (estimations, pas des PJ vendus) ne sont plus publiés, ne comptent plus dans la charge atelier et n'apparaissent plus dans les modifications ni dans les écarts avant publication.", admin: true },
+    ],
+  },
+  {
     id: "2026-10-v238",
     date: "2026-10-29",
     title: "V238 : personnes, rôles et responsable des testeurs",

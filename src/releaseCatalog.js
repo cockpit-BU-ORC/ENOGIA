@@ -523,4 +523,7 @@ export const RELEASE_CATALOG = [
     ["Personnes et rôles", "Retirer / Rétablir (profil removed) ; « Coller une liste » d'adresses @enogia.com."],
     ["Mentions", "Personnes de planning/profiles taguables avant leur première connexion ; personnes retirées exclues."],
   ] },
+  { v: "239", t: "Les PJXX ne comptent nulle part", items: [
+    ["PJXX", "isEstimatePj élargi (PJXX, PJ4XX…) ; exclus de planToRows, diffRows, summarizeChanges, diffPlans, atelierPhases (charge) et de toutes les pages (dataWithOverrides).", "admin"],
+  ] },
 ];

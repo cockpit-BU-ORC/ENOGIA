@@ -1,7 +1,7 @@
 import { isEstimatePj, cleanEntry, summarizeChanges } from "./changeDiff";
 
 test("les PJXXX sont des estimations", () => {
-  ["PJXXX", "PJXXX-1", "PJ XXX", "pjxxx2", "PJ_XXX"].forEach(p => expect(isEstimatePj(p)).toBe(true));
+  ["PJXXX", "PJXXX-1", "PJ XXX", "pjxxx2", "PJ_XXX", "PJXX", "PJ4XX", "PJXX-2"].forEach(p => expect(isEstimatePj(p)).toBe(true));
   ["PJ460", "PJ405-Y34", "PJX1", "", null].forEach(p => expect(isEstimatePj(p)).toBe(false));
 });
 test("summarizeChanges ignore les PJXXX (modifiés, ajoutés, retirés)", () => {

@@ -1618,3 +1618,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Données : uniquement `planning/profiles` (écrit par le propriétaire, déjà couvert par les règles Firestore). Pas de nouvelle clé `localStorage`.
 - La liste des collègues n'est pas dans le code (dépôt public) : elle se colle dans la page.
 - Fichiers : profiles.js, mentions.js, App.js, components/PeopleRoles.js, components/TestsTab.js, components/RoleHome.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v239 — Les PJXX ne comptent nulle part
+
+- Demandé : « quand je fais des modifications sur le planificateur, ne jamais prendre en compte les PJXX (ni dans les modifications, nulle part) ».
+- `isEstimatePj` (changeDiff.js) reconnaît aussi PJXX, PJ4XX, PJXX-2 (avant : PJXXX seulement).
+- Planificateur (engine.js) : pas publiés (`planToRows` les retire, même s'ils étaient déjà dans le planning actuel), pas dans les écarts (`diffRows`, `summarizeChanges`, `diffPlans`), pas dans la charge atelier (`atelierPhases` → `loadModel`, donc aussi KPI et accueils). **Changement** : depuis la V224 ils restaient comptés dans la charge ; ce n'est plus le cas.
+- App : exclus de toutes les pages (`dataWithOverrides`) et du bandeau « ancrer dans l'initial » après une publication.
+- Pas de nouvelle clé `localStorage`, pas de nouveau document Firestore.
+- Fichiers : changeDiff.js(+test), planner/engine.js(+test), planner/Planner.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

@@ -7,7 +7,7 @@ import {
 } from "./engine";
 import { PlannerGantt, fmtIso, makeTimeline, leftWidthWith, STEP_COLOR, ZOOM_PX, PX_MIN, PX_MAX } from "./PlannerGantt";
 import { LABEL_W as LANE_LABEL_W } from "./PlannerLanes";
-import { benchOrderByStart, setBench, benchMoveUp, benchConflicts, splitBenches as splitBenchesV } from "./engine";
+import { benchOrderByStart, setBench, benchMoveUp, benchConflicts, splitBenches as splitBenchesV, isEstimatePj } from "./engine";
 import { PlannerLoad } from "./PlannerLoad";
 import { PlannerLanes } from "./PlannerLanes";
 import { PlannerChanges } from "./PlannerChanges";
@@ -423,7 +423,7 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
 
   // v221 (demandé : « pouvoir cacher les PJ en slot libre dans le planificateur ») : masqués par défaut (case « Slots libres »)
   // v224 (demandé : « je ne dois pas avoir les slots libres ou PJXXX ») : jamais affichés (ils restent comptés dans la charge)
-  const slotSet = useMemo(() => new Set([...(rows || []).filter(r => r && r.etat === "SLOT_LIBRE").map(r => r.pj), ...((live && live.pjs) || []).map(p => p.pj).filter(pj => /X{2,}/i.test(pj))]), [rows, live]);
+  const slotSet = useMemo(() => new Set([...(rows || []).filter(r => r && r.etat === "SLOT_LIBRE").map(r => r.pj), ...((live && live.pjs) || []).map(p => p.pj).filter(pj => /X{2,}/i.test(pj) || isEstimatePj(pj))]), [rows, live]);
   const hideSlots = true;
   // v228 (demandé : « archiver des projets ; quand le PJ est expédié je ne dois pas le voir ») : archivés et expédiés masqués (case « Archivés »)
   const shippedSet = useMemo(() => new Set((rows || []).filter(r => r && r.etat === "SHIPPED").map(r => r.pj)), [rows]);
