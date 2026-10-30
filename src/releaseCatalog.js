@@ -526,4 +526,7 @@ export const RELEASE_CATALOG = [
   { v: "239", t: "Les PJXX ne comptent nulle part", items: [
     ["PJXX", "isEstimatePj élargi (PJXX, PJ4XX…) ; exclus de planToRows, diffRows, summarizeChanges, diffPlans, atelierPhases (charge) et de toutes les pages (dataWithOverrides).", "admin"],
   ] },
+  { v: "240", t: "Cloche en rouge", items: [
+    ["Cloche", "MentionBell : icône, pastille et compteur en T.red600 (texte de la pastille en T.card) quand il y a des demandes."],
+  ] },
 ];

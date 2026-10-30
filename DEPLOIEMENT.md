@@ -1627,3 +1627,9 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - App : exclus de toutes les pages (`dataWithOverrides`) et du bandeau « ancrer dans l'initial » après une publication.
 - Pas de nouvelle clé `localStorage`, pas de nouveau document Firestore.
 - Fichiers : changeDiff.js(+test), planner/engine.js(+test), planner/Planner.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v240 — Cloche en rouge
+
+- Demandé : « mettre la notification de la cloche en rouge ». `MentionBell.js` : quand il y a des demandes, l'icône, la pastille et le compteur « (n) » passent du violet au rouge (`T.red600`) ; le chiffre de la pastille prend la couleur de carte (`T.card`), lisible en clair comme en sombre.
+- Pas de nouvelle clé `localStorage`, pas de donnée Firestore.
+- Fichiers : components/MentionBell.js, releaseNotes.js, releaseCatalog.js(+test), App.js, CLAUDE.md, DEPLOIEMENT.md.
