@@ -1668,3 +1668,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - `ReleaseNotes.js` : `ReleaseManager` remplace les deux blocs (catalogue + éditeur) — coches, reformulation sur place, lignes libres, aperçu ; « Enregistrer » corrige le pop-up publié sans le réafficher, « Publier » le réaffiche. `ReleasePopup` : lignes à la suite, sans titre ni numéro de version.
 - Données : `planning/overrides.releaseSelection` gagne `edits` et `extra` (document déjà couvert par les règles). Pas de nouvelle clé `localStorage`.
 - Fichiers : components/ReleaseNotes.js, components/ManagerPanel.js, components/TutoVideo.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v245 — Tout voir avec un affichage agrandi par Windows
+
+- Demandé : « garder le même format mais avoir la vision globale même si les gens ont une résolution plus grande (150 %) sur Windows ».
+- Un site ne peut pas régler le zoom du navigateur ; un zoom CSS forcé sur la page a été essayé et décale les menus flottants (filtres, pop-ups) et le glisser-déposer. On guide donc vers le zoom du navigateur, que Chrome et Edge retiennent par site.
+- `components/ZoomHint.js` : bandeau en tête de page quand Windows agrandit l'affichage (devicePixelRatio ≥ 1,2, largeur < 1900 px) : « Ctrl et − (N fois, zoom X %) » ; disparaît de lui-même une fois le zoom fait, ou avec « Compris ». Même conseil dans le message « N colonnes masquées » de la Liste.
+- Clé `localStorage` : `enogia_zoomhint_off` (bandeau masqué).
+- Fichiers : components/ZoomHint.js, components/TableView.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

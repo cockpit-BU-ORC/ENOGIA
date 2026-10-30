@@ -11,6 +11,7 @@ import { EtatPopBody, DriftPopBody, AvPopBody } from "./RowPops";
 import { EtatSelect, PresenceEditor } from "./ManagerParts";
 import { exportPlanningXlsx } from "../exportExcel";
 import { useIsPhone } from "../useIsPhone";
+import { useZoomAdvice, zoomTip } from "./ZoomHint";
 
 export const TABLE_COLUMNS=[
   {id:"serie",label:"N° de série (sous le PJ)"},
@@ -274,6 +275,7 @@ export function TableView({data,progress,df,setDf,selEtats,setSelEtats,selGammes
   };
   const PX=listW>=1280?16:listW>=1100?10:listW>=900?7:4;
   const tight=listW<1280;
+  const zoomA=useZoomAdvice(); // v245 : mise à l'échelle Windows (150 %…) → conseil de zoom du navigateur
   const FS=listW<900?FZ.xs:FZ.sm; // police des cellules : un cran plus petite quand la liste est très étroite
   useSheetJS();
   // v130 : la liste doit tenir dans sa largeur sans défilement horizontal. Le N° de série passe sous le N° PJ, le pays devient un drapeau ;
@@ -366,7 +368,7 @@ export function TableView({data,progress,df,setDf,selEtats,setSelEtats,selGammes
       </div>
     </div>
     {autoHide.size>0&&!phone&&<div role="status" style={{padding:"0 4px 8px",fontSize:FZ.xs,color:T.ink500,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-      <span>{autoHide.size} colonne{autoHide.size>1?"s":""} masquée{autoHide.size>1?"s":""} faute de place ({autoCols.slice(0,nAuto).map(id=>TABLE_COLUMNS.find(c=>c.id===id)?.label||id).join(", ")}).</span>
+      <span>{autoHide.size} colonne{autoHide.size>1?"s":""} masquée{autoHide.size>1?"s":""} faute de place ({autoCols.slice(0,nAuto).map(id=>TABLE_COLUMNS.find(c=>c.id===id)?.label||id).join(", ")}).{zoomA?" "+zoomTip(zoomA):""}</span>
     </div>}
     {rows.length===0&&<EmptyState compact icon="search" title={onlyDrift?"Aucun PJ en dérive avec les filtres actuels.":"Aucun PJ ne correspond aux filtres actuels."} action="Tout afficher" onAction={()=>applyView(baseView())}/>}
     <div ref={boxRef} onScroll={e=>{const v=e.currentTarget.scrollLeft>0;if(v!==scrolledX)setScrolledX(v);}} style={{overflow:"auto",maxHeight:"calc(100dvh - 170px)",minHeight:240,padding:"0 4px"}}>

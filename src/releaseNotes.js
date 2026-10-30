@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v245",
+    date: "2026-10-30",
+    title: "V245 : tout voir avec un affichage agrandi",
+    items: [
+      { t: "Affichage agrandi", d: "Si Windows agrandit l'affichage (125 %, 150 %), le site vous indique le zoom à faire (Ctrl et −) pour retrouver toutes les colonnes de la Liste. Le navigateur s'en souvient." },
+    ],
+  },
+  {
     id: "2026-10-v244",
     date: "2026-10-30",
     title: "V244 : lecteur vidéo et pop-up Nouveautés",

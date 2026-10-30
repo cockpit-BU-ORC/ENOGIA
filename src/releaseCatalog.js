@@ -542,4 +542,7 @@ export const RELEASE_CATALOG = [
     ["Vidéo toujours fermable", "La fenêtre de la vidéo est dimensionnée sur la hauteur de l'écran ; le bouton « Fermer » reste visible pendant la lecture."],
     ["Un seul réglage du pop-up Nouveautés", "Manager › Réglages › Nouveautés : on coche les lignes, on les reformule sur place, on ajoute des lignes libres ; « Enregistrer » corrige sans réafficher, « Publier » réaffiche à tous. Plus de numéro de version dans le pop-up.", "admin"],
   ] },
+  { v: "245", t: "Tout voir avec un affichage agrandi", items: [
+    ["Conseil de zoom", "Quand Windows agrandit l'affichage (125 %, 150 %), un bandeau indique le zoom du navigateur (Ctrl et −) qui redonne toutes les colonnes ; il disparaît une fois le zoom fait ou avec « Compris »."],
+  ] },
 ];
