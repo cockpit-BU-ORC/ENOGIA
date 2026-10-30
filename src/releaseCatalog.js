@@ -538,4 +538,8 @@ export const RELEASE_CATALOG = [
   { v: "243", t: "Machines livrées = machines expédiées", items: [
     ["Machines livrées", "countShippedYTD compte l'état « Expédiée » (départ dans l'année) ; departedNotShipped (départ passé, pas « Expédiée », hors PJXX) signalé sous le chiffre de la Liste et dans l'accueil."],
   ] },
+  { v: "244", t: "Lecteur vidéo et réglage des nouveautés", items: [
+    ["Vidéo toujours fermable", "La fenêtre de la vidéo est dimensionnée sur la hauteur de l'écran ; le bouton « Fermer » reste visible pendant la lecture."],
+    ["Un seul réglage du pop-up Nouveautés", "Manager › Réglages › Nouveautés : on coche les lignes, on les reformule sur place, on ajoute des lignes libres ; « Enregistrer » corrige sans réafficher, « Publier » réaffiche à tous. Plus de numéro de version dans le pop-up.", "admin"],
+  ] },
 ];

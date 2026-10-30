@@ -25,17 +25,19 @@ export function videoEmbed(url) {
 }
 const fmt = s => { const d = new Date(String(s) + "T12:00:00"); return isNaN(d) ? s : d.toLocaleDateString("fr-FR", { day: "numeric", month: "long" }); };
 
+// v244 (demandé : « je n'arrive pas à fermer le lecteur lorsque la vidéo se lance ») : fenêtre dimensionnée sur la hauteur de l'écran
+// (le bouton Fermer reste toujours visible) ; clic en dehors ou Échap ferment aussi.
 export function TutoVideoModal({ cfg, onClose }) {
   useEffect(() => { const k = e => { if (e.key === "Escape") onClose(); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose]);
   const v = videoEmbed(cfg && cfg.url); if (!v) return null;
   return (<div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 10000, background: "rgba(8,16,30,.62)", display: "grid", placeItems: "center", padding: 16 }}>
-    <div role="dialog" aria-modal="true" aria-labelledby="tuto-title" onClick={e => e.stopPropagation()} className="enogia-modal-pop" style={{ background: T.card, color: T.ink900, borderRadius: 18, border: "1px solid " + T.line, boxShadow: "0 30px 80px rgba(8,16,30,.38)", width: "min(1100px,100%)", overflow: "hidden", fontFamily: T.font }}>
+    <div role="dialog" aria-modal="true" aria-labelledby="tuto-title" onClick={e => e.stopPropagation()} className="enogia-modal-pop" style={{ background: T.card, color: T.ink900, borderRadius: 18, border: "1px solid " + T.line, boxShadow: "0 30px 80px rgba(8,16,30,.38)", width: "min(1100px, 100%, calc((100vh - 150px) * 16 / 9))", maxHeight: "calc(100vh - 32px)", overflow: "hidden", fontFamily: T.font }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 18px", borderBottom: "1px solid " + T.line }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div id="tuto-title" style={{ fontFamily: T.fontDisplay, fontWeight: 700, fontSize: FZ.lg }}>{(cfg && cfg.title) || "Le tour du Cockpit en vidéo"}</div>
           <div style={{ fontSize: FZ.xs, color: T.ink500 }}>À revoir jusqu'au {fmt(cfg.until)} depuis la cloche en haut à droite.</div>
         </div>
-        <button type="button" onClick={onClose} aria-label="Fermer la vidéo" style={{ border: "none", background: T.panel, color: T.ink700, borderRadius: 999, width: 36, height: 36, cursor: "pointer", fontSize: 18 }}>×</button>
+        <button type="button" onClick={onClose} aria-label="Fermer la vidéo" style={{ display: "inline-flex", alignItems: "center", gap: 6, border: "1px solid " + T.line, background: T.card, color: T.ink900, borderRadius: 9, height: 36, padding: "0 12px", cursor: "pointer", fontSize: FZ.sm, fontWeight: 700, fontFamily: T.font, flexShrink: 0 }}><NavIcon name="close" size={14} />Fermer</button>
       </div>
       <div style={{ position: "relative", width: "100%", aspectRatio: "16 / 9", background: "#000" }}>
         {v.kind === "video"

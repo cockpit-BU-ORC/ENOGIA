@@ -10,7 +10,7 @@ import { ProjectFileManager } from "./ManagerFiche";
 import { EtatInfoButton } from "./ProdStagesUI";
 import { ManagerRail, ManagerPalette, useRailCollapsed } from "./ManagerNav";
 import { useIsPhone } from "../useIsPhone";
-import { ReleaseEditor, ReleaseCatalog } from "./ReleaseNotes";
+import { ReleaseManager } from "./ReleaseNotes";
 import { PointHebdo } from "./PointHebdo";
 import { InitialAddReview } from "./InitialAdd";
 import { SanteTab } from "./Feux";
@@ -765,7 +765,7 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
         <span style={{fontFamily:"monospace",fontSize:FZ.xs,fontWeight:600,color:T.ink700,background:T.ink100,borderRadius:8,padding:"3px 8px"}}>build {buildVersion}</span>
       </div>}
     </>}
-    {me&&tab==="nouveautes"&&<><TutoVideoSettings profiles={profiles} saveProfiles={saveProfiles}/><ReleaseCatalog isBeta={!!isBeta} selection={releaseSelection} onSaveSelection={saveReleaseSelection} onPublish={publishRelease} authorName={authorName}/><ReleaseEditor key={((releases||[])[0]||{}).id+":"+!!((releases||[])[0]||{}).off} releases={releases||[]} onSave={saveReleaseNotes} authorName={authorName}/></>}
+    {me&&tab==="nouveautes"&&<><TutoVideoSettings profiles={profiles} saveProfiles={saveProfiles}/><ReleaseManager isBeta={!!isBeta} selection={releaseSelection} releases={releases||[]} onSaveSelection={saveReleaseSelection} onPublish={publishRelease} authorName={authorName}/></>}
     {/* v212 : l'onglet Imports est supprimé ; le repère « Planning initial » (ancrer de nouveaux PJ dans l'initial, base des dérives) est en tête des KPI › Synthèse */}
     {superAdmin&&tab==="derives"&&kpiTab==="synthese"&&<div style={{marginBottom:0}}>
       <div style={{display:"inline-flex",alignItems:"center",gap:8,padding:"4px 4px 4px 12px",border:"1px solid "+(hasInitial?T.line:T.amber500),borderRadius:12,background:hasInitial?T.card:T.amber100}}>

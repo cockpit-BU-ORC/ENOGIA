@@ -1660,3 +1660,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Liste (`DashboardSummary`) et accueil (`HomeView`) : ligne orange « + N départs passés pas encore « Expédiée » » avec les n° de PJ.
 - Pas de nouvelle clé `localStorage`, pas de nouveau document Firestore.
 - Fichiers : pjMeta.js, components/DashboardSummary.js, components/HomeView.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v244 — Lecteur vidéo et pop-up Nouveautés
+
+- Demandé : « je n'arrive pas à fermer le lecteur lorsque la vidéo se lance » ; « pourquoi il y a 2 pop-up (Nouveautés) : en avoir un seul, sélectionner ce que je veux afficher et pouvoir le modifier, sans le numéro de version ».
+- `TutoVideo.js` : largeur limitée par la hauteur de l'écran (`(100vh - 150px) × 16/9`), bouton « Fermer » visible ; clic en dehors / Échap ferment.
+- `ReleaseNotes.js` : `ReleaseManager` remplace les deux blocs (catalogue + éditeur) — coches, reformulation sur place, lignes libres, aperçu ; « Enregistrer » corrige le pop-up publié sans le réafficher, « Publier » le réaffiche. `ReleasePopup` : lignes à la suite, sans titre ni numéro de version.
+- Données : `planning/overrides.releaseSelection` gagne `edits` et `extra` (document déjà couvert par les règles). Pas de nouvelle clé `localStorage`.
+- Fichiers : components/ReleaseNotes.js, components/ManagerPanel.js, components/TutoVideo.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v244",
+    date: "2026-10-30",
+    title: "V244 : lecteur vidéo et pop-up Nouveautés",
+    items: [
+      { t: "Vidéo", d: "La fenêtre de la vidéo tient dans l'écran et garde toujours son bouton « Fermer »." },
+      { t: "Nouveautés", d: "Le pop-up des nouveautés présente toutes les lignes à la suite, sans numéro de version.", admin: true },
+    ],
+  },
+  {
     id: "2026-10-v243",
     date: "2026-10-30",
     title: "V243 : machines livrées = machines expédiées",

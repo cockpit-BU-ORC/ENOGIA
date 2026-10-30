@@ -46,7 +46,6 @@ export function useUnseenReleases(userKey, isAdmin, releases = RELEASES) {
   return { unseen, markSeen };
 }
 
-const fmtDate = s => { try { return new Date(s + "T12:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }); } catch (e) { return s; } };
 
 // Icône choisie d'après le titre de la ligne (aucune saisie nécessaire dans l'éditeur).
 const ICONS = [[/frise|« i »/i, "list"], [/couleur|palette|contraste/i, "palette"], [/écran|tv|diapo/i, "screen"], [/alerte|mise à jour|modif|repère/i, "changes"], [/calendrier|date|aujourd/i, "calendar"],
@@ -78,9 +77,9 @@ export function ReleasePopup({ releases, userName, onClose }) {
       </div>
       {/* contenu */}
       <div className="enogia-stagger" style={{ padding: "8px 30px 4px", overflowY: "auto", flex: "1 1 auto", minHeight: 0, display: "flex", flexDirection: "column" }}>
-        {releases.map((r, ri) => (<div key={r.id} style={{ paddingTop: ri ? 10 : 0 }}>
-          {(releases.length > 1 || ri > 0) && <div style={{ fontSize: 11.5, color: T.ink500, fontWeight: 800, letterSpacing: ".07em", textTransform: "uppercase", margin: "14px 0 2px" }}>{r.title} · {fmtDate(r.date)}</div>}
-          {r.items.map((i, k) => (<div key={i.t} style={{ display: "flex", gap: 14, alignItems: "flex-start", padding: "14px 0", borderBottom: (k < r.items.length - 1 || ri < releases.length - 1) ? "1px solid " + T.line : "none" }}>
+        {/* v244 (demandé : « sans marquer le numéro de la version ») : toutes les lignes à la suite, sans titre de version */}
+        {releases.map((r, ri) => (<div key={r.id}>
+          {r.items.map((i, k) => (<div key={i.t + k} style={{ display: "flex", gap: 14, alignItems: "flex-start", padding: "14px 0", borderBottom: (k < r.items.length - 1 || ri < releases.length - 1) ? "1px solid " + T.line : "none" }}>
             <span aria-hidden="true" style={{ width: 38, height: 38, borderRadius: 12, flexShrink: 0, display: "inline-flex", alignItems: "center", justifyContent: "center", color: dark ? "#9BD6E4" : T.teal600, background: dark ? "rgba(99,185,210,.14)" : T.teal100, border: "1px solid " + (dark ? "rgba(99,185,210,.28)" : T.teal400 + "55") }}><NavIcon name={iconFor(i.t)} size={19} /></span>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: FZ.md, fontWeight: 700, lineHeight: 1.25, overflowWrap: "anywhere" }}>{i.t}</div>
@@ -234,5 +233,101 @@ export function ReleaseCatalog({ isBeta, selection, onSaveSelection, onPublish, 
       <span style={{ fontSize: FZ.xs, color: msg.startsWith("✓") ? T.emerald500 : T.ink500, fontWeight: 600 }}>{msg}</span>
     </div>
     {preview && <ReleasePopup releases={previewRel()} userName={authorName} onClose={() => setPreview(false)} />}
+  </div>);
+}
+
+// ── v244 : un seul réglage pour le pop-up « Nouveautés » ──────────────────────────────────────────────────────────────
+// Demandé : « je ne comprends pas pourquoi il y a 2 pop-up, je dois en avoir un seul, sélectionner ce que je veux afficher (et pouvoir
+// le modifier) sans marquer le numéro de la version ». On coche dans le catalogue, chaque ligne cochée se reformule sur place,
+// on peut ajouter des lignes libres ; « Enregistrer » corrige le pop-up en ligne sans le réafficher, « Publier » le réaffiche à tous.
+// La sélection garde les reformulations (selection.edits[clé] = { t, d }) et les lignes libres (selection.extra = [{ t, d }]).
+export function ReleaseManager({ isBeta, selection, releases, onSaveSelection, onPublish, authorName }) {
+  const s0 = selection || {};
+  const [sel, setSel] = useState(() => new Set(s0.keys || []));
+  const [edits, setEdits] = useState(() => s0.edits || {});
+  const [extra, setExtra] = useState(() => s0.extra || []);
+  const [title, setTitle] = useState(s0.title || "Ce qui change dans le planning");
+  const [q, setQ] = useState("");
+  const [msg, setMsg] = useState("");
+  const [confirm, setConfirm] = useState(false);
+  const [preview, setPreview] = useState(false);
+  const loaded = useRef(!!selection);
+  useEffect(() => { if (!loaded.current && selection) { loaded.current = true; setSel(new Set(selection.keys || [])); setEdits(selection.edits || {}); setExtra(selection.extra || []); if (selection.title) setTitle(selection.title); } }, [selection]);
+  const touch = () => { setConfirm(false); setMsg(""); };
+  const flip = k => { touch(); setSel(a => { const n = new Set(a); n.has(k) ? n.delete(k) : n.add(k); return n; }); };
+  const lineOf = (g, i) => { const it = g.items[i], e = edits[keyOf(g.v, i)] || {}; return { t: e.t != null ? e.t : it[0], d: e.d != null ? e.d : it[1], admin: it[2] === "admin" }; };
+  const setEdit = (k, patch) => { touch(); setEdits(x => ({ ...x, [k]: { ...(x[k] || {}), ...patch } })); };
+  // lignes choisies, de la plus récente à la plus ancienne ; les lignes libres en tête
+  const chosen = useMemo(() => [...RELEASE_CATALOG].reverse().flatMap(g => g.items.map((_, i) => ({ g, i, k: keyOf(g.v, i) })).filter(x => sel.has(x.k))), [sel]);
+  const items = () => [...extra, ...chosen.map(x => lineOf(x.g, x.i))]
+    .map(x => ({ t: String(x.t || "").trim(), d: String(x.d || "").trim(), ...(x.admin ? { admin: true } : {}) })).filter(x => x.t);
+  const n = items().length;
+  const top = (releases || []).find(r => r && r.replaceCode);
+  const sel0 = () => ({ keys: [...sel], edits, extra, title, by: authorName || "", at: new Date().toISOString() });
+  const build = keep => ({ id: keep && top ? top.id : "r" + Date.now().toString(36), date: keep && top ? top.date : new Date().toISOString().slice(0, 10), title: title.trim() || "Ce qui change dans le planning", replaceCode: true, items: items() });
+  const err = e => "Échec : " + (e && e.code === "permission-denied" ? "écriture refusée par les règles Firestore." : (e && e.message ? e.message : e));
+  const save = async () => {
+    setMsg("Enregistrement…");
+    try {
+      await onSaveSelection(sel0());
+      if (top && !isBeta && n) await onPublish(build(true), sel0()); // corrige le pop-up en ligne sans le réafficher à ceux qui l'ont vu
+      setMsg(top && !isBeta && n ? "✓ Enregistré : le pop-up en ligne est corrigé, sans être réaffiché." : "✓ Sélection enregistrée.");
+    } catch (e) { setMsg(err(e)); }
+  };
+  const publish = async () => {
+    if (!confirm) { setConfirm(true); return; }
+    setMsg("Publication…");
+    try { await onSaveSelection(sel0()); await onPublish(build(false), sel0()); setConfirm(false); setMsg("✓ Publié : le pop-up s'affichera une fois à chacun, à sa prochaine connexion" + (isBeta ? " (site de production)" : "") + "."); }
+    catch (e) { setConfirm(false); setMsg(err(e)); }
+  };
+  const CB = { accentColor: T.teal600, width: 16, height: 16, marginTop: 3 };
+  const ql = q.trim().toLowerCase();
+  const groups = [...RELEASE_CATALOG].reverse().map(g => ({ g, rows: g.items.map((it, i) => ({ it, i, k: keyOf(g.v, i) })).filter(x => !ql || (x.it[0] + " " + x.it[1] + " " + g.t).toLowerCase().includes(ql)) })).filter(x => x.rows.length);
+  const setX = (j, patch) => { touch(); setExtra(a => a.map((y, m) => m === j ? { ...y, ...patch } : y)); };
+  return (<div style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 14, padding: 16, display: "flex", flexDirection: "column", gap: 12, fontFamily: T.font, marginBottom: 14 }}>
+    <div>
+      <div style={{ fontSize: FZ.md, fontWeight: 700, color: T.ink900 }}>Pop-up « Nouveautés »</div>
+      <div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 2, lineHeight: 1.5 }}>Cochez ce que vous voulez annoncer ; chaque ligne cochée peut être reformulée. « Publier » l'affiche une fois à chacun, à sa prochaine connexion{isBeta ? " sur le site de production" : ""}. « Enregistrer » garde vos choix{isBeta ? "" : " et corrige le pop-up déjà publié sans le réafficher"}.</div>
+    </div>
+    <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: FZ.xs, fontWeight: 700, color: T.ink500 }}>Titre du pop-up
+      <input value={title} onChange={e => { touch(); setTitle(e.target.value); }} style={{ ...INP, fontWeight: 700 }} /></label>
+    {extra.map((x, j) => (<div key={"x" + j} style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) auto", gap: 8, border: "1px solid " + T.line, background: T.teal100, borderRadius: 10, padding: 8 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 5, minWidth: 0 }}>
+        <input value={x.t || ""} placeholder="Titre court" aria-label="Titre de la ligne" onChange={e => setX(j, { t: e.target.value })} style={{ ...INP, fontWeight: 700 }} />
+        <textarea value={x.d || ""} placeholder="Une phrase pour expliquer" aria-label="Explication" rows={2} onChange={e => setX(j, { d: e.target.value })} style={{ ...INP, resize: "vertical" }} />
+      </div>
+      <button onClick={() => { touch(); setExtra(a => a.filter((_, m) => m !== j)); }} title="Supprimer la ligne" aria-label="Supprimer la ligne" style={{ ...BTN(false), color: T.red500, alignSelf: "start", display: "inline-flex", alignItems: "center" }}><NavIcon name="close" size={13} /></button>
+    </div>))}
+    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+      <button onClick={() => { touch(); setExtra(a => [...a, { t: "", d: "" }]); }} style={BTN(false)}>+ Ajouter une ligne</button>
+      <input value={q} onChange={e => setQ(e.target.value)} placeholder="Chercher une nouveauté…" aria-label="Chercher une nouveauté" style={{ ...INP, flex: "1 1 220px", width: "auto" }} />
+      <button onClick={() => { touch(); setSel(new Set()); }} disabled={!sel.size} style={BTN(false)}>Tout décocher</button>
+    </div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: 520, overflowY: "auto", paddingRight: 4 }}>
+      {groups.map(({ g, rows }) => (<div key={g.v} style={{ border: "1px solid " + T.line, borderRadius: 10, overflow: "hidden", flexShrink: 0 }}>
+        <div style={{ padding: "7px 12px", background: T.surface, borderBottom: "1px solid " + T.line, fontSize: FZ.xs, fontWeight: 700, color: T.ink700 }}>{g.t}</div>
+        {rows.map(({ it, i, k }) => { const on = sel.has(k), L = lineOf(g, i);
+          return (<div key={k} style={{ display: "grid", gridTemplateColumns: "auto minmax(0,1fr)", gap: 10, padding: "8px 12px", borderTop: "1px solid " + T.line, background: on ? T.teal100 : "transparent", alignItems: "start" }}>
+            <input type="checkbox" style={CB} checked={on} onChange={() => flip(k)} aria-label={"Annoncer : " + it[0]} />
+            {on ? <div style={{ display: "flex", flexDirection: "column", gap: 5, minWidth: 0 }}>
+              <input value={L.t} aria-label="Titre de la ligne" onChange={e => setEdit(k, { t: e.target.value })} style={{ ...INP, fontWeight: 700 }} />
+              <textarea value={L.d} aria-label="Explication" rows={2} onChange={e => setEdit(k, { d: e.target.value })} style={{ ...INP, resize: "vertical" }} />
+              {edits[k] && <button onClick={() => { touch(); setEdits(x => { const y = { ...x }; delete y[k]; return y; }); }} style={{ alignSelf: "flex-start", border: "none", background: "transparent", color: T.teal600, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", padding: 0, minHeight: 24 }}>Revenir au texte d'origine</button>}
+            </div> : <div onClick={() => flip(k)} style={{ minWidth: 0, cursor: "pointer" }}>
+              <span style={{ fontSize: FZ.sm, fontWeight: 700, color: T.ink900 }}>{it[0]}{it[2] === "admin" && <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 700, color: T.ink500, border: "1px solid " + T.line, borderRadius: 99, padding: "0 6px" }}>Propriétaire</span>}</span>
+              <span style={{ display: "block", fontSize: FZ.xs, color: T.ink500, marginTop: 1 }}>{it[1]}</span>
+            </div>}
+          </div>); })}
+      </div>))}
+    </div>
+    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+      <b style={{ fontSize: FZ.sm, color: T.ink900, fontVariantNumeric: "tabular-nums" }}>{n} ligne{n > 1 ? "s" : ""} dans le pop-up</b>
+      <button onClick={() => setPreview(true)} disabled={!n} style={BTN(false)}>Aperçu</button>
+      <button onClick={save} style={BTN(false)}>Enregistrer</button>
+      <button onClick={publish} disabled={!n} style={BTN(true, !n)}>{confirm ? "Confirmer : publier (" + n + ")" : "Publier et afficher à tous"}</button>
+      {confirm && <button onClick={() => setConfirm(false)} style={BTN(false)}>Annuler</button>}
+      <span role="status" style={{ fontSize: FZ.xs, color: msg.startsWith("✓") ? T.emerald500 : T.ink500, fontWeight: 600 }}>{msg}</span>
+    </div>
+    {preview && <ReleasePopup releases={[build(false)]} userName={authorName} onClose={() => setPreview(false)} />}
   </div>);
 }
