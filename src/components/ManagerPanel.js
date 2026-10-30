@@ -18,6 +18,7 @@ import { SerieTab } from "./Series";
 import { KpiPilotage, planWeeks } from "./KpiPilotage";
 import { isSuperAdmin, canCash, isOwner } from "../roles";
 import { PeopleRoles } from "./PeopleRoles";
+import { TutoVideoSettings } from "./TutoVideo";
 
 // Filtre de période (mois et/ou année) réutilisable sur chaque graphique temporel
 export function PeriodFilter({yearsAvailable,year,setYear,month,setMonth,showMonth=true}){
@@ -764,7 +765,7 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
         <span style={{fontFamily:"monospace",fontSize:FZ.xs,fontWeight:600,color:T.ink700,background:T.ink100,borderRadius:8,padding:"3px 8px"}}>build {buildVersion}</span>
       </div>}
     </>}
-    {me&&tab==="nouveautes"&&<><ReleaseCatalog isBeta={!!isBeta} selection={releaseSelection} onSaveSelection={saveReleaseSelection} onPublish={publishRelease} authorName={authorName}/><ReleaseEditor key={((releases||[])[0]||{}).id+":"+!!((releases||[])[0]||{}).off} releases={releases||[]} onSave={saveReleaseNotes} authorName={authorName}/></>}
+    {me&&tab==="nouveautes"&&<><TutoVideoSettings profiles={profiles} saveProfiles={saveProfiles}/><ReleaseCatalog isBeta={!!isBeta} selection={releaseSelection} onSaveSelection={saveReleaseSelection} onPublish={publishRelease} authorName={authorName}/><ReleaseEditor key={((releases||[])[0]||{}).id+":"+!!((releases||[])[0]||{}).off} releases={releases||[]} onSave={saveReleaseNotes} authorName={authorName}/></>}
     {/* v212 : l'onglet Imports est supprimé ; le repère « Planning initial » (ancrer de nouveaux PJ dans l'initial, base des dérives) est en tête des KPI › Synthèse */}
     {superAdmin&&tab==="derives"&&kpiTab==="synthese"&&<div style={{marginBottom:0}}>
       <div style={{display:"inline-flex",alignItems:"center",gap:8,padding:"4px 4px 4px 12px",border:"1px solid "+(hasInitial?T.line:T.amber500),borderRadius:12,background:hasInitial?T.card:T.amber100}}>

@@ -532,4 +532,7 @@ export const RELEASE_CATALOG = [
   { v: "241", t: "Projets EPC : chef de projet EPC, chef ORC en soutien", items: [
     ["EPC", "chefsOf : chefProjet + autres chefs, jamais chefOrc (remplace la règle V197) ; orcSupportOf ; pastille EPC sans nom ; « soutien ORC » dans les fiches ; libellé « Chef de projet ORC en soutien »."],
   ] },
+  { v: "242", t: "Vidéo de présentation à la connexion", items: [
+    ["Vidéo", "TutoVideo.js : profiles.tutoVideo { id, url, until, title } réglé dans Manager › Réglages › Nouveautés ; ouverture une fois par personne (localStorage enogia_tuto_seen_<id>_<adresse>), bouton « Vidéo » jusqu'à la date de fin ; lien Drive, YouTube ou .mp4."],
+  ] },
 ];

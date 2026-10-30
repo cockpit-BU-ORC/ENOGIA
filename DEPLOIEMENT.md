@@ -1642,3 +1642,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Saisie (`ChefsEpc.js`) : « Chef de projet ORC en soutien » + phrase d'explication. Données inchangées (`epc`, `chefOrc`).
 - Test ajouté (143 tests). Pas de nouvelle clé `localStorage`.
 - Fichiers : pjMeta.js, components/ChefsEpc.js, components/ProjectModal.js, components/ManagerFiche.js, customEtats.test.js, releaseNotes.js, releaseCatalog.js(+test), App.js, CLAUDE.md, DEPLOIEMENT.md.
+
+## v242 — Vidéo de présentation à la connexion
+
+- Demandé : « intégrer cette vidéo à l'ouverture des prochaines connexions des gens et la laisser disponible pendant 1 semaine ».
+- `components/TutoVideo.js` : fenêtre vidéo (Drive `/preview`, YouTube `youtube-nocookie`, ou fichier .mp4), bouton « Vidéo » de la barre du haut, réglage propriétaire.
+- Réglage : Manager › Réglages › Nouveautés › « Vidéo de présentation » : lien, titre, date de fin (par défaut : dans 7 jours). « Publier » = nouvel identifiant → s'ouvre à la prochaine connexion de chacun ; « Enregistrer sans rouvrir » ; « Retirer ».
+- Données : `planning/profiles.tutoVideo` (écrit par le propriétaire, déjà couvert par les règles Firestore). Clé `localStorage` : `enogia_tuto_seen_<id>_<adresse>` (vidéo déjà vue sur ce poste).
+- **La vidéo n'est pas dans le dépôt** : le dépôt et GitHub Pages sont publics et la vidéo montre de vraies données. La déposer sur le Google Drive ENOGIA, partage « ENOGIA : toute personne ayant le lien », et coller le lien.
+- Fichiers : components/TutoVideo.js, components/SharedUI.js (icône play), components/ManagerPanel.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

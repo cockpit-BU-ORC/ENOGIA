@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect, useRef } from "react"
 import { db, auth, ALLOWED_EMAIL_DOMAIN } from "./firebase";
 import { setResolved as setCommentResolved, peopleOptions, userKey, chefAccount, withChef, lc as lcMention } from "./mentions";
 import { profileOf } from "./profiles";
+import { TutoVideoModal, TutoVideoButton, tutoActive, tutoSeen, markTutoSeen } from "./components/TutoVideo";
 import { isEstimatePj } from "./changeDiff";
 import { MentionCtx } from "./mentionContext";
 import { MentionBell } from "./components/MentionBell";
@@ -76,7 +77,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-10-30-v241-epc-chef";
+const APP_BUILD_VERSION = "2026-10-30-v242-video";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -705,6 +706,10 @@ export default function App(){
   const savePageLayout=useCallback((id,lay)=>{setProfiles(p=>{const next={...p,pageLayouts:{...((p&&p.pageLayouts)||{}),[id]:lay}};setDoc(PROFILES_DOC_REF(),{pageLayouts:next.pageLayouts,updatedAt:new Date().toISOString(),updatedBy:authorName||""},{merge:true}).catch(e=>{console.error(e);notify("Erreur lors de l'enregistrement de la disposition : "+e.message);});return next;});},[authorName]);
   const arrangeCtx=useMemo(()=>({layouts:(profiles&&profiles.pageLayouts)||{},save:isOwner?savePageLayout:null}),[profiles,isOwner,savePageLayout]);
   const saveHomeLayout=useCallback((role,lay)=>{setProfiles(p=>{const next={...p,homeLayouts:{...((p&&p.homeLayouts)||{}),[role]:lay}};setDoc(PROFILES_DOC_REF(),{homeLayouts:next.homeLayouts,updatedAt:new Date().toISOString(),updatedBy:authorName||""},{merge:true}).catch(e=>{console.error(e);notify("Erreur lors de l'enregistrement de la disposition : "+e.message);});return next;});},[authorName]);
+  // v242 : vidéo de présentation (profiles.tutoVideo) — s'ouvre une fois à la connexion, revue avec le bouton « Vidéo » jusqu'à la date de fin
+  const tutoCfg=profiles&&profiles.tutoVideo,tutoOn=tutoActive(tutoCfg);
+  const [tutoOpen,setTutoOpen]=useState(false);
+  const closeTuto=useCallback(()=>{setTutoOpen(false);if(currentUser)markTutoSeen(tutoCfg,currentUser.email);},[tutoCfg,currentUser]);
   const saveProfiles=useCallback(async next=>{
     try{await setDoc(PROFILES_DOC_REF(),{...next,updatedAt:new Date().toISOString(),updatedBy:authorName||""});return true;}
     catch(e){console.error(e);notify("Erreur lors de l'enregistrement des profils : "+e.message);return false;}
@@ -1079,6 +1084,7 @@ export default function App(){
     {presentation&&<button onClick={()=>setPresentation(false)} title="Quitter le mode présentation (Échap)" className="enogia-btn-tap" style={{position:"fixed",right:16,bottom:16,zIndex:10010,border:"none",borderRadius:999,padding:"8px 16px",background:T.ink900,color:T.surface,fontFamily:T.font,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",boxShadow:T.shadowFloat}}>Mode présentation · Quitter (Échap)</button>}
     {screenOpen&&<WorkshopScreen data={dataWithOverrides} productionExclusions={productionExclusions} closurePeriods={closurePeriods} changeLog={changeLog} darkMode={darkMode} onClose={()=>setScreenOpen(false)}/>}
     {loggedIn&&!justLoggedIn&&!screenOpen&&overridesLoaded&&unseenReleases.length>0&&<ReleasePopup releases={unseenReleases} userName={authorName} onClose={markReleasesSeen}/>}
+    {loggedIn&&!justLoggedIn&&!screenOpen&&tutoOn&&(tutoOpen||(overridesLoaded&&unseenReleases.length===0&&currentUser&&!tutoSeen(tutoCfg,currentUser.email)))&&<TutoVideoModal cfg={tutoCfg} onClose={closeTuto}/>}
     {noticeOpen&&!screenOpen&&overridesLoaded&&!unseenReleases.length&&unseenChanges.length>0&&<ChangesPopup entries={unseenChanges} userName={authorName} onLater={closeNoticeLater} onRead={()=>{markChangesSeen();setNoticeOpen(false);}} onOpen={()=>{setNoticeOpen(false);setView("changes");}}/>}
 
     {/* ── Rail de navigation : icônes de vue + accès Manager + mode sombre ── */}
@@ -1145,6 +1151,7 @@ export default function App(){
           </div>}
           {currentUser&&<div className="enogia-hide-phone" style={{width:1,height:22,background:T.line}}/>}
           {currentUser&&<button onClick={()=>setNavPal(true)} title="Aller à… (Ctrl K)" aria-label="Aller à… (Ctrl K)" style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:32,height:32,padding:0,border:"1px solid transparent",borderRadius:9,cursor:"pointer",background:"transparent",color:T.ink500}} onMouseEnter={e=>{e.currentTarget.style.background=T.surfaceAlt;e.currentTarget.style.color=T.ink900;}} onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=T.ink500;}}><NavIcon name="search" size={18}/></button>}
+          {currentUser&&tutoOn&&<TutoVideoButton onOpen={()=>setTutoOpen(true)}/>}
           {currentUser&&<MentionBell assignments={myNewAssign} onSeenAssign={seeAssign} onOpenTests={()=>setView("tests")} comments={comments} me={mentionCtx.me} data={dataWithOverrides} resolveComment={resolveComment} canSeePrivate={pinOk} onOpen={pj=>{if(pinOk){setManagerJump({pj,n:Date.now()});setManagerTab("fiche");setView("manager");}else jumpToPj(pj);}}/>}
           <button onClick={()=>{setManagerTab("fiche");setView("manager");}} title="Espace Manager" aria-label="Espace Manager" aria-pressed={view==="manager"} style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:32,height:32,padding:0,border:"1px solid "+(view==="manager"?T.teal500+"66":"transparent"),borderRadius:9,cursor:"pointer",background:view==="manager"?T.teal100:"transparent",color:view==="manager"?T.teal600:T.ink500,transition:"background .15s ease, color .15s ease"}} onMouseEnter={e=>{if(view!=="manager"){e.currentTarget.style.background=T.surfaceAlt;e.currentTarget.style.color=T.ink900;}}} onMouseLeave={e=>{if(view!=="manager"){e.currentTarget.style.background="transparent";e.currentTarget.style.color=T.ink500;}}}><NavIcon name="manager" size={19}/></button>
           {currentUser&&<UserChip user={currentUser} onSignOut={()=>signOut(auth)} role={isOwner?"Super admin":pinOk?"Admin":null}/>}

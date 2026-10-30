@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v242",
+    date: "2026-10-30",
+    title: "V242 : la vidéo de présentation",
+    items: [
+      { t: "Vidéo", d: "Une vidéo de présentation du Cockpit s'ouvre à votre prochaine connexion. Vous pouvez la revoir pendant une semaine avec le bouton « Vidéo » en haut à droite." },
+    ],
+  },
+  {
     id: "2026-10-v241",
     date: "2026-10-30",
     title: "V241 : projets EPC, le chef de projet est celui de l'EPC",
