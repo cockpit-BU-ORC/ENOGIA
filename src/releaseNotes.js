@@ -11,7 +11,7 @@ export const RELEASES = [
     date: "2026-10-30",
     title: "V242 : la vidéo de présentation",
     items: [
-      { t: "Vidéo", d: "Une vidéo de présentation du Cockpit s'ouvre à votre prochaine connexion. Vous pouvez la revoir pendant une semaine avec le bouton « Vidéo » en haut à droite." },
+      { t: "Vidéo", d: "Une vidéo de présentation du Cockpit vous est proposée à votre prochaine connexion. Pendant une semaine, vous la retrouvez dans la cloche en haut à droite." },
     ],
   },
   {

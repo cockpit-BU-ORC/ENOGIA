@@ -3,10 +3,11 @@ import { T, FZ } from "../theme";
 import { openMentionsFor, nameFromEmail } from "../mentions";
 import { relTime, getPjMeta } from "../pjMeta";
 import { gcalUrl } from "../gcal";
+import { NavIcon } from "./SharedUI";
 
 // v152 — Cloche de l'en-tête : les demandes où l'on est cité (@) et qu'on n'a pas encore marquées « traitées », tous PJ confondus.
 // v188 : + les nouvelles affectations aux tests (assignments = [{ pj, at, by, from, to }]), « Vu » les retire, lien Google Agenda.
-export function MentionBell({ comments, me, data, resolveComment, onOpen, canSeePrivate, assignments, onSeenAssign, onOpenTests }) {
+export function MentionBell({ comments, me, data, resolveComment, onOpen, canSeePrivate, assignments, onSeenAssign, onOpenTests, video, onOpenVideo }) {
   const [open, setOpen] = useState(false);
   const items = useMemo(() => openMentionsFor(comments, me).filter(x => canSeePrivate || !x.c.private), [comments, me, canSeePrivate]); // un compte sans accès Manager ne voit jamais un message privé
   useEffect(() => {
@@ -38,6 +39,12 @@ export function MentionBell({ comments, me, data, resolveComment, onOpen, canSee
               <span style={{ fontSize: FZ.xs, color: T.ink500, flex: 1, minWidth: 0 }}>{r.gamme ? r.gamme + " · " : ""}{from ? from.slice(8, 10) + "/" + from.slice(5, 7) + (to && to !== from ? " → " + to.slice(8, 10) + "/" + to.slice(5, 7) : "") : "période à fixer"}{a.by ? " · par " + a.by : ""}</span>
               {from && <a href={gcalUrl({ title: "Tests FAT " + a.pj + (r.gamme ? " · " + r.gamme : ""), from, to, details: "Tests FAT de la machine " + a.pj + "." })} target="_blank" rel="noopener noreferrer" style={{ fontSize: FZ.xs, fontWeight: 700, color: T.teal600 }}>Ajouter à mon agenda</a>}
             </div>); })}
+        </div>}
+        {/* v243 (demandé : « la laisser dispo dans l'onglet notification pendant 1 semaine, sans laisser le 1 apparent ») : la vidéo est une information, jamais comptée dans la pastille */}
+        {video && <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", borderRadius: 8, background: T.surface, marginBottom: 6 }}>
+          <NavIcon name="play" size={16} />
+          <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: FZ.xs, fontWeight: 700, color: T.ink900 }}>{video.title || "Le tour du Cockpit en vidéo"}</div><div style={{ fontSize: FZ.xs, color: T.ink500 }}>Disponible jusqu'au {new Date(video.until + "T12:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}</div></div>
+          <button onClick={() => { setOpen(false); onOpenVideo && onOpenVideo(); }} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "2px 9px", minHeight: 24, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>Regarder</button>
         </div>}
         {n === 0 && <div style={{ padding: "14px 8px", fontSize: FZ.sm, color: T.ink500, textAlign: "center" }}>Rien à traiter pour l'instant.</div>}
         {items.map(({ pj, idx, c }) => (<div key={pj + "-" + idx} style={{ padding: "8px", borderRadius: 8, borderTop: "1px solid " + T.surface, display: "flex", flexDirection: "column", gap: 4 }}>

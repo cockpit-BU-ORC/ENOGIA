@@ -33,7 +33,7 @@ export function TutoVideoModal({ cfg, onClose }) {
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 18px", borderBottom: "1px solid " + T.line }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div id="tuto-title" style={{ fontFamily: T.fontDisplay, fontWeight: 700, fontSize: FZ.lg }}>{(cfg && cfg.title) || "Le tour du Cockpit en vidéo"}</div>
-          <div style={{ fontSize: FZ.xs, color: T.ink500 }}>Disponible jusqu'au {fmt(cfg.until)} avec le bouton « Vidéo » en haut à droite.</div>
+          <div style={{ fontSize: FZ.xs, color: T.ink500 }}>À revoir jusqu'au {fmt(cfg.until)} depuis la cloche en haut à droite.</div>
         </div>
         <button type="button" onClick={onClose} aria-label="Fermer la vidéo" style={{ border: "none", background: T.panel, color: T.ink700, borderRadius: 999, width: 36, height: 36, cursor: "pointer", fontSize: 18 }}>×</button>
       </div>
@@ -46,7 +46,7 @@ export function TutoVideoModal({ cfg, onClose }) {
   </div>);
 }
 
-// Bouton de la barre du haut, tant que la vidéo est disponible
+// Bouton « Vidéo » (plus affiché dans la barre depuis la v243 : la vidéo est dans la cloche)
 export function TutoVideoButton({ onOpen }) {
   return <button type="button" onClick={onOpen} title="Revoir la vidéo de présentation" aria-label="Revoir la vidéo de présentation" style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 32, padding: "0 10px", border: "1px solid " + T.line, borderRadius: 9, background: T.card, color: T.ink900, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}><NavIcon name="play" size={14} />Vidéo</button>;
 }
@@ -66,7 +66,7 @@ export function TutoVideoSettings({ profiles, saveProfiles }) {
   const on = tutoActive(cur);
   return (<div style={{ background: T.card, borderRadius: 12, padding: 16, border: "1px solid " + T.line, marginBottom: 12 }}>
     <div style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: FZ.md, color: T.ink900, marginBottom: 4 }}>Vidéo de présentation</div>
-    <div style={{ fontSize: FZ.sm, color: T.ink500, lineHeight: 1.5, marginBottom: 12 }}>S'ouvre une fois pour chaque personne à sa prochaine connexion, puis reste disponible avec le bouton « Vidéo » en haut à droite jusqu'à la date de fin. Lien Google Drive (partagé avec ENOGIA), YouTube non répertorié ou fichier .mp4 : la vidéo contient de vraies données, elle ne doit pas être publique.{on ? " En ce moment : en ligne jusqu'au " + fmt(cur.until) + "." : ""}</div>
+    <div style={{ fontSize: FZ.sm, color: T.ink500, lineHeight: 1.5, marginBottom: 12 }}>Proposée une seule fois à chaque personne à sa prochaine connexion, puis disponible dans la cloche (sans compter comme une notification) jusqu'à la date de fin. Lien Google Drive (partagé avec ENOGIA), YouTube non répertorié ou fichier .mp4 : la vidéo contient de vraies données, elle ne doit pas être publique.{on ? " En ce moment : en ligne jusqu'au " + fmt(cur.until) + "." : ""}</div>
     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-end" }}>
       <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: FZ.xs, fontWeight: 600, color: T.ink500, flex: "2 1 320px" }}>Lien de la vidéo<input value={url} onChange={e => { setUrl(e.target.value); setMsg(""); }} placeholder="https://drive.google.com/file/d/…/view" style={field} /></label>
       <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: FZ.xs, fontWeight: 600, color: T.ink500, flex: "1 1 200px" }}>Titre<input value={title} onChange={e => setTitle(e.target.value)} style={field} /></label>
