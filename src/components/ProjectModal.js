@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { T, FZF as FZ, stripeBg, stripeHues, stageSoft, inkOn } from "../theme";
-import { SerieTag, getPjMeta, PresenceChip, presenceKind, presenceDates, presenceFirstDate, CountryFlag, MONTHS_FULL, today, ALL_GAMMES, getAllChefs, ALL_PAYS, relTime, Avatar, ETAT_META, chefsOf, EpcTag } from "../pjMeta";
+import { SerieTag, getPjMeta, PresenceChip, presenceKind, presenceDates, presenceFirstDate, CountryFlag, MONTHS_FULL, today, ALL_GAMMES, getAllChefs, ALL_PAYS, relTime, Avatar, ETAT_META, chefsOf, EpcTag, orcSupportOf } from "../pjMeta";
 import { ChefsEpcFields, chefsEpcOf } from "./ChefsEpc";
 import { fmt, fmtMode } from "../parsers";
 import { MentionPicker, MentionTextarea } from "./MentionPicker";
@@ -94,7 +94,8 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
         ?<EditMetaForm meta={meta} gamme={r.gamme} onCancel={()=>setEditingMeta(false)} onSave={async fields=>{const ok=await savePjMetaOverride(pj,fields);if(ok)setEditingMeta(false);}}/>
         :<div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",fontSize:FZ.xs,color:T.ink500,marginBottom:12}}>
           {meta.pays&&meta.pays!=="—"&&<span style={{display:"inline-flex",alignItems:"center",gap:5}}><CountryFlag pays={meta.pays} size={13}/>{meta.pays}</span>}
-          {chefsOf(meta).map(c=><span key={c} style={{display:"inline-flex",alignItems:"center",gap:5}}><Avatar name={c} size={16}/>{c}{meta.epc&&c===meta.chefOrc?" (ORC)":""}</span>)}
+          {chefsOf(meta).map(c=><span key={c} style={{display:"inline-flex",alignItems:"center",gap:5}}><Avatar name={c} size={16}/>{c}</span>)}
+          {orcSupportOf(meta)&&<span title="Chef de projet ORC en soutien du chef de projet EPC">soutien ORC : {orcSupportOf(meta)}</span>}
           <SerieTag pj={pj} size={11}/>
           {presenceKind(r.clientPresence)&&<PresenceChip kind={presenceKind(r.clientPresence)} date={presenceFirstDate(r.clientPresence)} dates={presenceDates(r.clientPresence)} compact tiny/>}
           {canEditMeta&&savePjMetaOverride&&<button onClick={()=>setEditingMeta(true)} title="Modifier le nom, le pays, le chef de projet, la gamme" style={{background:"transparent",border:"none",padding:"2px 4px",minHeight:24,fontSize:FZ.xs,fontWeight:700,color:T.teal600,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4,fontFamily:T.font}}><NavIcon name="edit" size={12}/>Modifier</button>}

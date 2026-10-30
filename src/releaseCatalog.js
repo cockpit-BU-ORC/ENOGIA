@@ -529,4 +529,7 @@ export const RELEASE_CATALOG = [
   { v: "240", t: "Cloche en rouge", items: [
     ["Cloche", "MentionBell : icône, pastille et compteur en T.red600 (texte de la pastille en T.card) quand il y a des demandes."],
   ] },
+  { v: "241", t: "Projets EPC : chef de projet EPC, chef ORC en soutien", items: [
+    ["EPC", "chefsOf : chefProjet + autres chefs, jamais chefOrc (remplace la règle V197) ; orcSupportOf ; pastille EPC sans nom ; « soutien ORC » dans les fiches ; libellé « Chef de projet ORC en soutien »."],
+  ] },
 ];

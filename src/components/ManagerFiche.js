@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useLayoutEffect, useRef } from "react";
 import { T, FZF as FZ, D, statusSoft, stripeBg, stripeHues } from "../theme";
-import { SerieTag, getPjMeta, CountryFlag, Avatar, GAMME_COLORS, ETAT_META, etatInk, PresenceChip, PRESENCE_META, presenceKind, presenceDates, presenceFirstDate, today, PjPlate, chefsOf, EpcTag } from "../pjMeta";
+import { SerieTag, getPjMeta, CountryFlag, Avatar, GAMME_COLORS, ETAT_META, etatInk, PresenceChip, PRESENCE_META, presenceKind, presenceDates, presenceFirstDate, today, PjPlate, chefsOf, EpcTag, orcSupportOf } from "../pjMeta";
 import { ChefsEpcEditor } from "./ChefsEpc";
 import { fmt, diffDays } from "../parsers";
 import { Badge, NavIcon, EmptyState, SuperOnly, pressable } from "./SharedUI";
@@ -898,7 +898,8 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
               </div>
               <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginTop:4,fontSize:FZ.sm,fontWeight:500,color:T.ink500}}>
                 <span>{meta.nomProjet}</span>
-                {chefsOf(meta).map(c=><span key={c} style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:FZ.xs,fontWeight:400}}><Avatar name={c} size={16}/>{c}{meta.epc&&c===meta.chefOrc?" (ORC)":""}</span>)}
+                {chefsOf(meta).map(c=><span key={c} style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:FZ.xs,fontWeight:400}}><Avatar name={c} size={16}/>{c}</span>)}
+                {orcSupportOf(meta)&&<span title="Chef de projet ORC en soutien du chef de projet EPC" style={{fontSize:FZ.xs,fontWeight:400}}>soutien ORC : {orcSupportOf(meta)}</span>}
                 <EpcTag meta={meta}/>
                 {isSuperAdmin()&&savePjMetaOverride&&<button type="button" onClick={()=>setChefEdit(v=>!v)} aria-expanded={chefEdit} style={{border:"none",background:"transparent",color:T.teal600,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",minHeight:24,fontFamily:T.font}}>Chefs / EPC</button>}
               </div>

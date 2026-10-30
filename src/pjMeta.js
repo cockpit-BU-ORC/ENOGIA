@@ -417,13 +417,15 @@ export const EXCLUDED_CHEFS={has:name=>EXCLUDED_CHEFS_NORM.has(normChefName(name
 // changent en cours de session.
 // v191 : plusieurs chefs de projet par PJ (chefProjet + chefsExtra) et projet EPC (epc) avec son chef de projet ORC (chefOrc).
 const clean=c=>{const v=String(c||"").trim();return v&&v!=="—"?v:"";};
-// v197 (demandé) : projet EPC avec un chef de projet ORC → c'est lui qui figure dans les listes et regroupements, à la place du chef classique.
-export function chefsOf(meta){const m=meta||{},orc=m.epc?clean(m.chefOrc):"";const out=[orc||clean(m.chefProjet),...(Array.isArray(m.chefsExtra)?m.chefsExtra.map(clean):[])].filter(Boolean);return [...new Set(out)];}
+// v241 (demandé : « pour un projet EPC, le chef de projet est la personne qui doit être dans la liste ; le chef de projet ORC est en soutien,
+// impossible d'avoir un lien entre lui et l'EPC ») : remplace la règle v197. Le chef de projet de la fiche (celui de l'EPC) figure dans
+// les listes, regroupements, accueils et comptes ; le chef ORC en soutien (chefOrc) n'y figure jamais, même s'il est aussi en « autres chefs ».
+export function chefsOf(meta){const m=meta||{},orc=m.epc?clean(m.chefOrc).toLowerCase():"";const out=[clean(m.chefProjet),...(Array.isArray(m.chefsExtra)?m.chefsExtra.map(clean):[])].filter(c=>c&&(!orc||c.toLowerCase()!==orc));return [...new Set(out)];}
+export const orcSupportOf=meta=>meta&&meta.epc?clean(meta.chefOrc):"";
 export const isEpc=meta=>!!(meta&&meta.epc);
 export function EpcTag({meta,short}){
   if(!isEpc(meta))return null;
-  const orc=clean(meta.chefOrc);
-  return <span title={"Projet EPC"+(orc?" · chef de projet ORC : "+orc:"")} style={{display:"inline-flex",alignItems:"center",gap:4,fontFamily:T.fontLabel,fontSize:11,fontWeight:700,lineHeight:"16px",padding:"0 6px",borderRadius:4,background:T.violet100,color:T.violet600,border:"1px solid "+T.violet500,whiteSpace:"nowrap",flexShrink:0}}>EPC{!short&&orc?<span style={{fontWeight:500}}>· {orc}</span>:null}</span>;
+  return <span title="Projet EPC : le chef de projet est celui de l'EPC" style={{display:"inline-flex",alignItems:"center",gap:4,fontFamily:T.fontLabel,fontSize:11,fontWeight:700,lineHeight:"16px",padding:"0 6px",borderRadius:4,background:T.violet100,color:T.violet600,border:"1px solid "+T.violet500,whiteSpace:"nowrap",flexShrink:0}}>EPC</span>; // v241 : pas de nom du chef ORC sur la pastille
 }
 export function getAllChefs(){
   const set=new Set();

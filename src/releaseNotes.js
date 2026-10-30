@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v241",
+    date: "2026-10-30",
+    title: "V241 : projets EPC, le chef de projet est celui de l'EPC",
+    items: [
+      { t: "Projets EPC", d: "Pour un projet EPC, le chef de projet de la fiche (celui de l'EPC) est celui qui figure dans la Liste, les regroupements et les accueils. Le chef de projet ORC est en soutien : il apparaît seulement dans la fiche (« soutien ORC »), sans lien avec le projet EPC." },
+    ],
+  },
+  {
     id: "2026-10-v240",
     date: "2026-10-30",
     title: "V240 : la cloche passe au rouge",

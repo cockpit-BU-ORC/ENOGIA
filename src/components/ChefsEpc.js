@@ -24,8 +24,9 @@ export function ChefsEpcFields({ value, onChange, mainChef }) {
     <label style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: FZ.sm, fontWeight: 600, color: T.ink900, cursor: "pointer", minHeight: 28 }}>
       <input type="checkbox" checked={v.epc} onChange={e => set({ epc: e.target.checked })} style={{ width: 16, height: 16, accentColor: T.violet500 }} />Projet EPC
     </label>
-    {v.epc && <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: FZ.xs, fontWeight: 600, color: T.ink500, maxWidth: 320 }}>Chef de projet ORC
-      <input list="enogia-chefs-all" value={v.chefOrc} onChange={e => set({ chefOrc: e.target.value })} placeholder="Nom du chef de projet ORC" style={field()} />
+    {v.epc && <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: FZ.xs, fontWeight: 600, color: T.ink500, maxWidth: 420 }}>Chef de projet ORC en soutien
+      <input list="enogia-chefs-all" value={v.chefOrc} onChange={e => set({ chefOrc: e.target.value })} placeholder="Nom du chef de projet ORC (facultatif)" style={field()} />
+      <span style={{ fontWeight: 400, lineHeight: 1.4 }}>Le chef de projet de la fiche est celui de l'EPC : c'est lui qui figure dans les listes. Le chef ORC est en soutien : il n'est pas relié au projet EPC.</span>
     </label>}
   </div>);
 }

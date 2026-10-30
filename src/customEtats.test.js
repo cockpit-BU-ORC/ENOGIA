@@ -1,3 +1,4 @@
+import { chefsOf, orcSupportOf } from "./pjMeta";
 import { ETAT_META, ALL_ETATS, ASSIGNABLE_ETATS, registerCustomEtats, etatColors, contrastRatio, isCustomEtat } from "./pjMeta";
 
 describe("états personnalisés (v146.18)", () => {
@@ -23,4 +24,13 @@ describe("états personnalisés (v146.18)", () => {
     });
   });
   test("couleur invalide : gris par défaut, sans erreur", () => { expect(etatColors("rouge").light.bar).toBe("#6b7f99"); });
+});
+
+// v241 : projet EPC — le chef de projet de la fiche (EPC) figure dans les listes ; le chef ORC en soutien jamais
+test("projet EPC : chef de projet EPC dans les listes, chef ORC seulement en soutien", () => {
+  const m = { epc: true, chefProjet: "Jean EPC", chefOrc: "Clément MARTOUZET", chefsExtra: ["clément martouzet", "Emmy BOURELLY"] };
+  expect(chefsOf(m)).toEqual(["Jean EPC", "Emmy BOURELLY"]);
+  expect(orcSupportOf(m)).toBe("Clément MARTOUZET");
+  expect(chefsOf({ chefProjet: "Clément MARTOUZET", chefOrc: "X" })).toEqual(["Clément MARTOUZET"]);
+  expect(orcSupportOf({ chefOrc: "X" })).toBe("");
 });

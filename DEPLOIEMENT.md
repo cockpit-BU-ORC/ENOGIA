@@ -1633,3 +1633,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Demandé : « mettre la notification de la cloche en rouge ». `MentionBell.js` : quand il y a des demandes, l'icône, la pastille et le compteur « (n) » passent du violet au rouge (`T.red600`) ; le chiffre de la pastille prend la couleur de carte (`T.card`), lisible en clair comme en sombre.
 - Pas de nouvelle clé `localStorage`, pas de donnée Firestore.
 - Fichiers : components/MentionBell.js, releaseNotes.js, releaseCatalog.js(+test), App.js, CLAUDE.md, DEPLOIEMENT.md.
+
+## v241 — Projets EPC : chef de projet EPC, chef ORC en soutien
+
+- Demandé : « pour un projet EPC, le chef de projet est la personne qui doit être dans la liste ; le chef de projet ORC est en soutien ; impossible d'avoir un lien entre Clément MARTOUZET et EPC ».
+- `pjMeta.js` : `chefsOf` renvoie le chef de projet de la fiche + les autres chefs, sans jamais le chef ORC en soutien (l'ancienne règle V197 mettait le chef ORC à la place). Conséquences : Liste, regroupements des fiches projet, camembert « Par chef de projet », Personnes et rôles (PJ d'un chef), accueils chef de projet.
+- `orcSupportOf(meta)` : nom du chef ORC en soutien, affiché « soutien ORC : … » dans la fiche projet (ProjectModal) et la fiche synthèse (ManagerFiche). Pastille EPC : « EPC » seul.
+- Saisie (`ChefsEpc.js`) : « Chef de projet ORC en soutien » + phrase d'explication. Données inchangées (`epc`, `chefOrc`).
+- Test ajouté (143 tests). Pas de nouvelle clé `localStorage`.
+- Fichiers : pjMeta.js, components/ChefsEpc.js, components/ProjectModal.js, components/ManagerFiche.js, customEtats.test.js, releaseNotes.js, releaseCatalog.js(+test), App.js, CLAUDE.md, DEPLOIEMENT.md.
