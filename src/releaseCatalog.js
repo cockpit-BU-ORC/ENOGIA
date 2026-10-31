@@ -554,4 +554,8 @@ export const RELEASE_CATALOG = [
     ["Fenêtres", "Une seule ouverture (240 ms, sans rebond) et une seule fermeture (170 ms) pour toutes les fenêtres ; menus et sélecteurs en 160 ms."],
     ["Clavier", "Tab reste dans la fenêtre ouverte ; à la fermeture, le focus revient sur le bouton qui l'avait ouverte."],
   ] },
+  { v: "248", t: "Fond flouté et cascades au même rythme", items: [
+    ["Fond des fenêtres", "Toutes les fenêtres qui bloquent la page floutent légèrement l'arrière-plan ; jamais les menus."],
+    ["Apparitions", "Les cadrans de l'accueil et les lignes des tableaux apparaissent au même rythme partout (40 ms d'écart, 200 ms au plus)."],
+  ] },
 ];

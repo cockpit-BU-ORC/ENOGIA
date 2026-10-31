@@ -502,3 +502,16 @@ button { transition: background-color var(--e-dur-micro) var(--e-ease), border-c
 .enogia-ghost [aria-modal="true"], .enogia-ghost[aria-modal="true"] { animation: enogiaDlgOut var(--e-dur-out) var(--e-ease-in) both !important; }
 @media (max-width: 640px) { .enogia-ghost [aria-modal="true"] { animation-name: enogiaFadeOut !important; } }
 @media (prefers-reduced-motion: reduce) { .enogia-ghost { display: none !important; } }
+
+/* v248 — fin de l'audit des transitions : flou du fond identique sous toutes les fenêtres modales (celles qui bloquent la page ;
+   jamais sous un menu), et cascades d'apparition au même rythme partout (40 ms entre deux éléments, 200 ms de retard au plus). */
+:not(body):not(#root):has(> [aria-modal="true"]) { -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+.enogia-tr > *:nth-child(2) { animation-delay: .04s; }
+.enogia-tr > *:nth-child(3) { animation-delay: .08s; }
+.enogia-tr > *:nth-child(4) { animation-delay: .12s; }
+.enogia-home-grid > *:nth-child(2) { animation-delay: .04s; }
+.enogia-home-grid > *:nth-child(3) { animation-delay: .08s; }
+.enogia-home-grid > *:nth-child(4) { animation-delay: .12s; }
+.enogia-home-grid > *:nth-child(5) { animation-delay: .16s; }
+.enogia-home-grid > *:nth-child(n+6) { animation-delay: .2s; }
+.enogia-table tbody tr:nth-child(n+11) { animation-delay: 200ms; }

@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v248",
+    date: "2026-10-31",
+    title: "V248 : finitions des fenêtres",
+    items: [
+      { t: "Fenêtres", d: "L'arrière-plan est légèrement flouté sous toutes les fenêtres, et l'accueil apparaît plus vite." },
+    ],
+  },
+  {
     id: "2026-10-v247",
     date: "2026-10-31",
     title: "V247 : fenêtres plus fluides",

@@ -1694,3 +1694,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - `aria-modal="true"` ajouté aux fenêtres Bancs d'essai et Liens du planificateur.
 - Pas de nouvelle clé `localStorage`, pas de nouveau document Firestore.
 - Fichiers : motion.js (nouveau), index.js, styles.css, planner/Planner.js, planner/PlannerGantt.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v248 — Fond flouté et cascades au même rythme
+
+- Suite de l'audit des transitions (« next step ») : points 4 et 5.
+- `styles.css` (bloc v248) : flou léger (4 px) de l'arrière-plan sous toutes les fenêtres modales — avant, seules 5 fenêtres le faisaient ; la fiche d'un PJ garde son flou de 6 px ; jamais sous un menu ou un sélecteur. Cascades d'apparition au même rythme : 40 ms entre deux éléments, 200 ms de retard au plus (accueil : 350 ms avant).
+- Pas de nouvelle clé `localStorage`, pas de nouveau document Firestore.
+- Fichiers : styles.css, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
