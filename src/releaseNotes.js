@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v247",
+    date: "2026-10-31",
+    title: "V247 : fenêtres plus fluides",
+    items: [
+      { t: "Fenêtres", d: "Toutes les fenêtres s'ouvrent et se ferment de la même façon, en douceur. Au clavier, Tab reste dans la fenêtre ouverte et, à la fermeture, vous retrouvez le bouton d'où vous veniez." },
+    ],
+  },
+  {
     id: "2026-10-v246",
     date: "2026-10-31",
     title: "V246 : KPI refaits",

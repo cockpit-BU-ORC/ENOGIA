@@ -117,16 +117,13 @@ button:focus-visible, select:focus-visible, a:focus-visible, summary:focus-visib
   outline: 2px solid var(--e-accent, #0E8C9E); outline-offset: 2px;
 }
 /* Retour au survol / à l'appui sur les boutons (fond plus soutenu, léger enfoncement). */
-button { transition: background-color .12s ease, border-color .12s ease, color .12s ease, box-shadow .12s ease, transform .1s ease, filter .12s ease; }
+/* v247 : la transition des boutons est définie une seule fois (bloc v137, jetons --e-dur-*). */
 button:not(:disabled):hover { filter: brightness(1.07); }
 button:not(:disabled):active { transform: scale(.985); }
 button:disabled { cursor: default; }
 /* Cases à cocher personnalisées : la coche s'installe en douceur. */
 input[type="checkbox"] { transition: background-color .14s ease, border-color .14s ease, box-shadow .14s ease; }
-/* Mouvement réduit : on coupe toutes les animations et transitions. */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
-}
+/* v247 : « réduire les animations » est traité une seule fois, plus haut. */
 
 /* ── Transitions et micro-animations (v137) ──────────────────────────────────────────────────────────
    Principe : tout ce qui apparaît « arrive » en 0,2–0,3 s (jamais plus), tout ce qui change d'état s'adoucit,
@@ -485,3 +482,23 @@ button:not(:disabled):active { transform: scale(.97); }
 /* v233 (demandé : « le papier millimétré même sur les tableaux, en très léger ») : maille plus pâle que celle du fond, peinte
    sous les lignes des tableaux (les en-têtes collés gardent leur fond plein). Variable posée sur <main> par pageBackdrop.js. */
 #enogia-main table { background-image: var(--enogia-grid, none); background-size: 160px 160px; background-repeat: repeat; }
+
+/* ── v247 — ouvertures et fermetures harmonisées (audit ui-ux-pro-max + animation-principles) ─────────────────────────────
+   Trois familles de durées : micro (survol, appui) 120 ms · menus et petites fenêtres 160 ms · fenêtres 240 ms à l'entrée,
+   170 ms à la sortie. Entrée = décélération (--e-ease), sortie = accélération (--e-ease-in). Transform / opacity uniquement,
+   plus de rebond. S'applique à toutes les fenêtres modales ([aria-modal]), à leur fond et aux menus / sélecteurs, sans retoucher
+   chaque composant ; la sortie est jouée par src/motion.js (copie inerte .enogia-ghost). */
+:root { --e-dur-micro: .12s; --e-dur-menu: .16s; --e-dur-in: .24s; --e-dur-out: .17s; }
+button { transition: background-color var(--e-dur-micro) var(--e-ease), border-color var(--e-dur-micro) var(--e-ease), color var(--e-dur-micro) var(--e-ease), box-shadow var(--e-dur-micro) var(--e-ease), transform var(--e-dur-micro) var(--e-ease), filter var(--e-dur-micro) ease, opacity var(--e-dur-micro) ease; }
+.enogia-modal-pop { animation: enogiaDlgIn var(--e-dur-in) var(--e-ease) both; }
+.enogia-modal-pop-out { animation: enogiaDlgOut var(--e-dur-out) var(--e-ease-in) both; }
+.enogia-modal-backdrop, .enogia-panel-backdrop { animation: enogiaBackIn .2s ease-out both; }
+[aria-modal="true"]:not(.enogia-dlg):not(.enogia-modal-pop) { animation: enogiaDlgIn var(--e-dur-in) var(--e-ease) backwards; }
+:not(body):not(#root):has(> [aria-modal="true"]):not(.enogia-dlg-backdrop):not(.enogia-modal-backdrop) { animation: enogiaBackIn .2s ease-out backwards; }
+[role="dialog"]:not([aria-modal]), [role="menu"], [role="listbox"] { animation: enogiaMenuIn var(--e-dur-menu) var(--e-ease) backwards; }
+.enogia-menu { animation-duration: var(--e-dur-menu); }
+.enogia-ghost { animation: enogiaBackOut var(--e-dur-out) ease-in both !important; }
+.enogia-ghost * { animation: none !important; transition: none !important; }
+.enogia-ghost [aria-modal="true"], .enogia-ghost[aria-modal="true"] { animation: enogiaDlgOut var(--e-dur-out) var(--e-ease-in) both !important; }
+@media (max-width: 640px) { .enogia-ghost [aria-modal="true"] { animation-name: enogiaFadeOut !important; } }
+@media (prefers-reduced-motion: reduce) { .enogia-ghost { display: none !important; } }

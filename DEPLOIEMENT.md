@@ -1685,3 +1685,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - C — `KpiViews.js` › `KpiSemaines`, nouvelle sous-page KPI › Semaines : 8 colonnes (charge vs capacité, départs avec dérive, machines au banc), « À décider ».
 - Pas de nouvelle clé `localStorage`, pas de nouveau document Firestore.
 - Fichiers : components/KpiPilotage.js, components/KpiViews.js (nouveau), components/ManagerPanel.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v247 — Ouvertures et fermetures de fenêtres harmonisées
+
+- Demandé : audit UX/UI des transitions et ouvertures de pop-up, puis « next step » (mise en œuvre des propositions).
+- `styles.css` (bloc v247) : jetons de durée (micro 120 ms, menus 160 ms, fenêtres 240 ms / 170 ms en sortie) ; toutes les fenêtres modales entrent de la même façon (montée de 14 px + léger agrandissement, sans rebond), leur fond en fondu, les menus et sélecteurs en 160 ms ; doublons retirés (transition des boutons, règle « réduire les animations »).
+- `src/motion.js` (appelé dans `index.js`) : sortie animée de toute fenêtre modale (copie inerte `.enogia-ghost` jouée 170 ms puis supprimée ; la fiche d'un PJ garde sa propre sortie), focus clavier placé dans la fenêtre, Tab / Maj+Tab gardés dans la fenêtre du dessus, focus rendu à l'élément d'origine à la fermeture. « Réduire les animations » : pas de copie de sortie.
+- `aria-modal="true"` ajouté aux fenêtres Bancs d'essai et Liens du planificateur.
+- Pas de nouvelle clé `localStorage`, pas de nouveau document Firestore.
+- Fichiers : motion.js (nouveau), index.js, styles.css, planner/Planner.js, planner/PlannerGantt.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

@@ -550,4 +550,8 @@ export const RELEASE_CATALOG = [
     ["KPI › Semaines", "Les 8 prochaines semaines en colonnes : charge atelier face à la capacité, départs avec leur dérive, machines au banc, et « À décider » (semaines en surcharge, plus forte dérive).", "admin"],
     ["KPI › Dérives", "En tête : « N machines partiront plus tard que prévu », classement des plus fortes dérives (clic = fiche), départs des 30 prochains jours, dérive moyenne et retards déclarés.", "admin"],
   ] },
+  { v: "247", t: "Ouvertures et fermetures harmonisées", items: [
+    ["Fenêtres", "Une seule ouverture (240 ms, sans rebond) et une seule fermeture (170 ms) pour toutes les fenêtres ; menus et sélecteurs en 160 ms."],
+    ["Clavier", "Tab reste dans la fenêtre ouverte ; à la fermeture, le focus revient sur le bouton qui l'avait ouverte."],
+  ] },
 ];
