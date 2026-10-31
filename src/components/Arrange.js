@@ -70,6 +70,7 @@ export function Arrange({ id, children, spans = {}, defaultSpan = 6, labels = {}
   const [need, setNeed] = useState({});
   const grows = useRef({});
   const showPos = pos && !edit && !live ? resolve(Object.fromEntries(Object.entries(pos).map(([k, p]) => [k, need[k] > p.h ? { ...p, h: need[k] } : p])), null) : pos;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- volontairement à chaque rendu (mesure), gardé par le seuil et le plafond
   useLayoutEffect(() => {
     if (!pos || edit || live) return;
     const add = {};
