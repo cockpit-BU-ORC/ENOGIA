@@ -70,10 +70,17 @@ export function initMotion() {
   if (typeof window === "undefined" || typeof MutationObserver === "undefined" || window.__enogiaMotion) return;
   window.__enogiaMotion = true;
   new MutationObserver(muts => {
+    let closed = false;
+    const backs = [];
     muts.forEach(m => {
       m.addedNodes.forEach(n => modalsIn(n).forEach(onOpen));
-      m.removedNodes.forEach(n => { if (n.nodeType === 1 && !n.classList.contains("enogia-ghost")) modalsIn(n).forEach(d => onClose(d, n, m.target, m.nextSibling)); });
+      [...m.removedNodes].filter(n => n.nodeType === 1 && !n.classList.contains("enogia-ghost")).forEach(n => {
+        modalsIn(n).forEach(d => { closed = true; onClose(d, n, m.target, m.nextSibling); });
+        if (n.getAttribute("aria-hidden") === "true" && n.style.position === "fixed" && n.style.inset === "0px") backs.push([n, m.target, m.nextSibling]);
+      });
     });
+    // v249 : fond posé à côté de la fenêtre (frère plein écran, aria-hidden) retiré avec elle : il s'efface lui aussi
+    if (closed) backs.forEach(([n, p, nx]) => ghost(n, p, nx));
   }).observe(document.body, { childList: true, subtree: true });
   document.addEventListener("keydown", onKey, true);
   document.addEventListener("focusin", e => { const t = e.target; if (t && t.closest && !t.closest('[aria-modal="true"]')) lastOutside = t; }, true);

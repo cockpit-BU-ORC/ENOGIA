@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v249",
+    date: "2026-10-31",
+    title: "V249 : fenêtres vérifiées",
+    items: [
+      { t: "Fenêtres", d: "Le volet « Déclarer un retard », la fiche de tests et la fenêtre des états s'ouvrent de nouveau correctement, en entier et sur leur titre." },
+    ],
+  },
+  {
     id: "2026-10-v248",
     date: "2026-10-31",
     title: "V248 : finitions des fenêtres",

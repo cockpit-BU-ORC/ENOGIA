@@ -558,4 +558,10 @@ export const RELEASE_CATALOG = [
     ["Fond des fenêtres", "Toutes les fenêtres qui bloquent la page floutent légèrement l'arrière-plan ; jamais les menus."],
     ["Apparitions", "Les cadrans de l'accueil et les lignes des tableaux apparaissent au même rythme partout (40 ms d'écart, 200 ms au plus)."],
   ] },
+  { v: "249", t: "Fenêtres vérifiées une par une", items: [
+    ["Volet « Déclarer un retard »", "Il s'ouvre de nouveau en pleine hauteur, depuis la droite, avec un fond qui s'efface en douceur."],
+    ["Fiche de tests", "Elle s'ouvre en haut, en-tête visible."],
+    ["États des machines", "La fenêtre s'ouvre sur son titre au lieu de défiler jusqu'au champ du bas."],
+    ["Fonds des fenêtres", "États, feux, saisie multiple, composants, rapport CODIR, Cash in, SAV, écran atelier : le fond se fond et se floute, seule la fenêtre monte."],
+  ] },
 ];

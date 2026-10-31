@@ -494,7 +494,7 @@ button { transition: background-color var(--e-dur-micro) var(--e-ease), border-c
 .enogia-modal-pop-out { animation: enogiaDlgOut var(--e-dur-out) var(--e-ease-in) both; }
 .enogia-modal-backdrop, .enogia-panel-backdrop { animation: enogiaBackIn .2s ease-out both; }
 [aria-modal="true"]:not(.enogia-dlg):not(.enogia-modal-pop) { animation: enogiaDlgIn var(--e-dur-in) var(--e-ease) backwards; }
-:not(body):not(#root):has(> [aria-modal="true"]):not(.enogia-dlg-backdrop):not(.enogia-modal-backdrop) { animation: enogiaBackIn .2s ease-out backwards; }
+[style*="position: fixed"]:has(> [aria-modal="true"]):not(.enogia-dlg-backdrop):not(.enogia-modal-backdrop) { animation: enogiaBackIn .2s ease-out backwards; } /* v249 : seulement un vrai fond (position fixe), jamais le conteneur de la page */
 [role="dialog"]:not([aria-modal]), [role="menu"], [role="listbox"] { animation: enogiaMenuIn var(--e-dur-menu) var(--e-ease) backwards; }
 .enogia-menu { animation-duration: var(--e-dur-menu); }
 .enogia-ghost { animation: enogiaBackOut var(--e-dur-out) ease-in both !important; }
@@ -505,7 +505,7 @@ button { transition: background-color var(--e-dur-micro) var(--e-ease), border-c
 
 /* v248 — fin de l'audit des transitions : flou du fond identique sous toutes les fenêtres modales (celles qui bloquent la page ;
    jamais sous un menu), et cascades d'apparition au même rythme partout (40 ms entre deux éléments, 200 ms de retard au plus). */
-:not(body):not(#root):has(> [aria-modal="true"]) { -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+[style*="position: fixed"]:has(> [aria-modal="true"]) { -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); } /* v249 : un flou sur un conteneur ordinaire y accrochait les éléments fixes (volet « Déclarer un retard » décalé) */
 .enogia-tr > *:nth-child(2) { animation-delay: .04s; }
 .enogia-tr > *:nth-child(3) { animation-delay: .08s; }
 .enogia-tr > *:nth-child(4) { animation-delay: .12s; }
@@ -515,3 +515,18 @@ button { transition: background-color var(--e-dur-micro) var(--e-ease), border-c
 .enogia-home-grid > *:nth-child(5) { animation-delay: .16s; }
 .enogia-home-grid > *:nth-child(n+6) { animation-delay: .2s; }
 .enogia-table tbody tr:nth-child(n+11) { animation-delay: 200ms; }
+
+/* v249 — vérification des fenêtres une par une : deux formes de fenêtre n'étaient pas couvertes.
+   1. Le repère aria-modal est porté par le fond plein écran lui-même (États, Feux, Saisie multiple, Composants, Rapport CODIR…) :
+      le fond se fond et se floute, c'est son contenu qui monte (avant, tout le fond glissait de 14 px).
+   2. Le fond est un frère placé juste avant la fenêtre (volet « Déclarer un retard ») : il se fond et se floute aussi ; le volet
+      glisse depuis la droite. */
+[aria-modal="true"][style*="position: fixed"][style*="inset: 0px"] { animation: enogiaBackIn .2s ease-out backwards; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+[aria-modal="true"][style*="position: fixed"][style*="inset: 0px"] > * { animation: enogiaDlgIn var(--e-dur-in) var(--e-ease) backwards; }
+[style*="position: fixed"][style*="inset: 0px"]:has(+ [aria-modal="true"]) { animation: enogiaBackIn .2s ease-out backwards; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+@keyframes enogiaDrawerIn { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+@keyframes enogiaDrawerOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateX(28px); } }
+[aria-modal="true"][style*="position: fixed"][style*="right: 0px"][style*="bottom: 0px"]:not([style*="inset"]) { animation: enogiaDrawerIn var(--e-dur-in) var(--e-ease) backwards; }
+.enogia-ghost[aria-modal="true"][style*="inset: 0px"] { animation: enogiaBackOut var(--e-dur-out) ease-in both !important; }
+.enogia-ghost[aria-modal="true"][style*="inset: 0px"] > * { animation: enogiaDlgOut var(--e-dur-out) var(--e-ease-in) both !important; }
+.enogia-ghost[aria-modal="true"][style*="right: 0px"][style*="bottom: 0px"]:not([style*="inset"]) { animation: enogiaDrawerOut var(--e-dur-out) var(--e-ease-in) both !important; }

@@ -358,7 +358,7 @@ export function TestDialog({ r, onClose, doc, testers, catalog, conflicts, commi
   const box = useRef(null);
   useEffect(() => {
     const prev = document.activeElement, k = e => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", k); if (box.current) box.current.focus();
+    window.addEventListener("keydown", k); if (box.current) box.current.focus({ preventScroll: true }); // v249 : sans défilement (la fenêtre, en train d'entrer, était remontée de 74 px, en-tête coupé)
     const ov = document.body.style.overflow; document.body.style.overflow = "hidden";
     return () => { window.removeEventListener("keydown", k); document.body.style.overflow = ov; if (prev && prev.focus) prev.focus(); };
   }, [onClose]);

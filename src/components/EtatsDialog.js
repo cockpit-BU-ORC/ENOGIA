@@ -75,7 +75,7 @@ export function EtatsDialog({ onClose, customEtats, setCustomEtats, etatEdits = 
 
       <div style={{ ...lbl, paddingTop: 12, borderTop: "1px solid " + T.line }}>Nouvel état</div>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <input value={label} autoFocus onChange={e => { setLabel(e.target.value); setErr(""); }} onKeyDown={e => { if (e.key === "Enter") add(); }} placeholder="Nom (ex. En attente client)" aria-label="Nom du nouvel état" maxLength={30} style={{ ...fld, flex: 1, minWidth: 170 }} />
+        <input value={label} onChange={e => { setLabel(e.target.value); setErr(""); }} onKeyDown={e => { if (e.key === "Enter") add(); }} placeholder="Nom (ex. En attente client)" aria-label="Nom du nouvel état" maxLength={30} style={{ ...fld, flex: 1, minWidth: 170 }} />
         <input type="color" value={color} onChange={e => setColor(e.target.value)} aria-label="Couleur du nouvel état" style={{ width: 42, height: 32, border: "1px solid " + T.line, borderRadius: 8, background: "transparent", padding: 2, cursor: "pointer" }} />
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap", marginTop: 10 }}>

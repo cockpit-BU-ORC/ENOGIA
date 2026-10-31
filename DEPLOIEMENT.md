@@ -1701,3 +1701,15 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - `styles.css` (bloc v248) : flou léger (4 px) de l'arrière-plan sous toutes les fenêtres modales — avant, seules 5 fenêtres le faisaient ; la fiche d'un PJ garde son flou de 6 px ; jamais sous un menu ou un sélecteur. Cascades d'apparition au même rythme : 40 ms entre deux éléments, 200 ms de retard au plus (accueil : 350 ms avant).
 - Pas de nouvelle clé `localStorage`, pas de nouveau document Firestore.
 - Fichiers : styles.css, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v249 — Fenêtres vérifiées une par une
+
+- Demandé : vérifier toutes les fenêtres touchées par la V247. Ouvertes et fermées dans le site local : Étapes (Liste), Aller à…, États des machines, feux de statut, saisie sur plusieurs projets, rapports chef de projet et CODIR, liste des composants, Déclarer un retard, fiche de tests, Bancs d'essai, Écran atelier, Liaisons Cash in, Nouveau projet SAV, vidéo, fiche d'un PJ.
+- Corrigé :
+  - `styles.css` : le flou et le fondu du fond ne s'appliquent qu'à un vrai fond (`position: fixed`) ; sur le conteneur de la page, le flou décalait le volet « Déclarer un retard » (215 px du haut au lieu de 0).
+  - fenêtres dont le fond porte lui-même `aria-modal` (8 fenêtres) : le fond se fond et se floute, seul le contenu monte (avant, tout le fond glissait) ; sortie assortie.
+  - volet à droite : entrée et sortie latérales ; son fond (élément voisin) se fond, se floute et s'efface avec lui (`motion.js`).
+  - `TestsTab.js` : focus sans défilement (la fiche de tests s'ouvrait remontée de 74 px).
+  - `EtatsDialog.js` : plus de focus automatique sur le champ du bas (la fenêtre s'ouvrait défilée, titre masqué).
+- Non ouvertes (il faut des données ou une action précise) : Liens du planificateur, alerte de modifications, ajout à l'initial, certifications. Elles suivent les mêmes règles.
+- Fichiers : styles.css, motion.js, components/TestsTab.js, components/EtatsDialog.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
