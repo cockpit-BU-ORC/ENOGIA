@@ -16,6 +16,7 @@ import { InitialAddReview } from "./InitialAdd";
 import { SanteTab } from "./Feux";
 import { SerieTab } from "./Series";
 import { KpiPilotage, planWeeks } from "./KpiPilotage";
+import { KpiDerivesHead, KpiSemaines } from "./KpiViews";
 import { isSuperAdmin, canCash, isOwner } from "../roles";
 import { PeopleRoles } from "./PeopleRoles";
 import { TutoVideoSettings } from "./TutoVideo";
@@ -306,7 +307,7 @@ export function ManagerPanel({planDoc,initialAddFromImport,onOpenCashPage,onNav,
   // ── Navigation Manager : onglets horizontaux + sous-onglets par famille ──
   // « Il y a bcp de KPI… plusieurs petits onglets par famille de KPI ? » → un sous-onglet par famille.
   // v196 : une phrase sous le titre de chaque page du Manager
-const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° de série, chef de projet, pays, état et présence client / NOBO de chaque machine",calendrier:"Jours sans production par PJ et fermetures de l'atelier (aussi réglables depuis le Calendrier)",suivi:"Statut, état et santé des projets",retards:"Déclarer un retard et analyser ses causes",fiche:"Tout un projet sur une page, et le point de la semaine",hebdo:"Ce qui a changé cette semaine",turbines:"Pool de turbines et attributions",cash:"Encaissements et facturation (réservé)",reglages:"Personnes, rôles, accès et nouveautés du site"};
+const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avancement de l'atelier",orc:"N° de série, chef de projet, pays, état et présence client / NOBO de chaque machine",calendrier:"Jours sans production par PJ et fermetures de l'atelier (aussi réglables depuis le Calendrier)",suivi:"Statut, état et santé des projets",retards:"Déclarer un retard et analyser ses causes",fiche:"Tout un projet sur une page, et le point de la semaine",hebdo:"Ce qui a changé cette semaine",turbines:"Pool de turbines et attributions",cash:"Encaissements et facturation (réservé)",reglages:"Personnes, rôles, accès et nouveautés du site"};
   // v212 (demandé : « regrouper le S/N sous l'onglet ORC avec statuts, état, chefs de projet et pays ; supprimer Suivi ; Point hebdo dans les fiches ;
   // supprimer Imports ; fusionner Accès Manager et Personnes et rôles ») :
   // v217 (demandé : « bien regrouper les pages entre elles si elles ont un rapport ») : Pilotage (KPI, Retards), Projets (Fiches projet,
@@ -319,7 +320,7 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
   const [focusFiche,setFocusFiche]=useState(()=>{try{return localStorage.getItem("enogia_manager_focus")==="1";}catch(e){return false;}});
   useEffect(()=>{try{localStorage.setItem("enogia_manager_focus",focusFiche?"1":"0");}catch(e){}},[focusFiche]);
   const SUBS={
-    derives:[["synthese","Synthèse"],["derives","Dérives"],["charge","Charge"],["avancement","Avancement"],["explorer","Explorer"]],
+    derives:[["synthese","Synthèse"],["semaines","Semaines"],["derives","Dérives"],["charge","Charge"],["avancement","Avancement"],["explorer","Explorer"]],
     fiche:[["fiche","Fiches projet"],["hebdo","Point hebdo"]],
     retards:[["retards","Déclarer"],["retardsKpi","Analyse"]],
     calendrier:[["production","Jours sans production"],["vacances","Fermetures de l'atelier"]],
@@ -384,8 +385,11 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
     <div key={tab+(tab==="derives"?"/"+kpiTab:"")} className="enogia-view-in" style={{minWidth:0}}>
     {me&&tab==="derives"&&kpiTab==="synthese"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
       {/* v215 (maquette A validée) : tableau de pilotage — 5 chiffres, PJ à risque, charge des 6 semaines, portefeuille par état */}
-      <KpiPilotage rows={fk} driftRows={driftRows} delays={delays} closurePeriods={closurePeriods} productionExclusions={productionExclusions} capaWeek={CAPA_ATELIER_SEM} plan={planDoc&&planDoc.plan} hasInitial={hasInitial} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}} onSeeDerives={()=>setKpiTab("derives")}/>
+      <KpiPilotage rows={fk} driftRows={driftRows} closurePeriods={closurePeriods} productionExclusions={productionExclusions} capaWeek={CAPA_ATELIER_SEM} plan={planDoc&&planDoc.plan} hasInitial={hasInitial} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}} onSeeDerives={()=>setKpiTab("derives")}/>
     </div>}
+
+    {/* v246 (maquette C de Claude Design) : les 8 prochaines semaines — charge, départs, banc, à décider */}
+    {me&&tab==="derives"&&kpiTab==="semaines"&&<KpiSemaines rows={fk} driftRows={driftRows} closurePeriods={closurePeriods} productionExclusions={productionExclusions} capaWeek={CAPA_ATELIER_SEM} plan={planDoc&&planDoc.plan} hasInitial={hasInitial} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}}/>}
 
     {/* v219 (demandé : « l'imbrication des KPI est un peu brouillonne ») : répartitions et explorateur sur leur propre sous-page */}
     {me&&tab==="derives"&&kpiTab==="explorer"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
@@ -536,6 +540,8 @@ const PAGE_DESC={derives:"Dérives, charge et avancement de l'atelier",orc:"N° 
     {pendingAdd&&<InitialAddReview parsed={pendingAdd} initialData={initialData} busy={initialImporting} onCancel={()=>setPendingAdd(null)} onConfirm={async(rows,fixRows)=>{await onInitialAdd(rows,fixRows);setPendingAdd(null);}}/>}
 
     {me&&tab==="derives"&&kpiTab==="derives"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
+      {/* v246 (maquette B de Claude Design) : la réponse en titre, classement des dérives, départs du mois */}
+      <KpiDerivesHead rows={fk} driftRows={driftRows} delays={delays} hasInitial={hasInitial} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}}/>
       {!hasInitial&&<div style={{background:T.amber100,color:T.amber600,borderRadius:12,padding:"16px 16px",fontSize:FZ.sm,display:"flex",alignItems:"center",gap:8}}><NavIcon name="warning" size={16}/>Aucun planning initial — les dérives ne peuvent pas être calculées. Après une publication du Planificateur, ancrez les PJ dans l'initial avec le bandeau proposé.</div>}
       {initialData.length>0&&<>
           <KpiRow items={[[avgDelay==null?"—":(avgDelay>0?"+":"")+avgDelay+"j","Retard moyen départ",avgDelay>0?T.red500:T.emerald500],[lateCount,"PJ en retard",T.red500],[onTimeOrEarlyCount,"PJ à l'heure / en avance",T.emerald500],[onTimeRate==null?"—":onTimeRate+"%","Taux de respect délais",onTimeRate>=70?T.emerald500:onTimeRate>=40?T.amber500:T.red500],[comparable.length,"PJ comparables",T.ink500]]}/>

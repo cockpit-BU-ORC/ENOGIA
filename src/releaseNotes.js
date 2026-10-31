@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v246",
+    date: "2026-10-31",
+    title: "V246 : KPI refaits",
+    items: [
+      { t: "KPI › Synthèse", d: "Cinq chiffres (production, départs du mois, PJ en retard, charge, livrées), les PJ à risque avec leur état, la charge plus lisible et le portefeuille en une barre.", admin: true },
+      { t: "KPI › Semaines", d: "Nouvelle page : les 8 prochaines semaines en colonnes, avec la charge de l'atelier, les départs, les machines au banc et ce qui est à décider.", admin: true },
+      { t: "KPI › Dérives", d: "La page s'ouvre sur la réponse : combien de machines partiront plus tard que prévu, le classement des dérives et les départs du mois.", admin: true },
+    ],
+  },
+  {
     id: "2026-10-v245",
     date: "2026-10-30",
     title: "V245 : tout voir avec un affichage agrandi",

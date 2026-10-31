@@ -1676,3 +1676,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - `components/ZoomHint.js` : bandeau en tête de page quand Windows agrandit l'affichage (devicePixelRatio ≥ 1,2, largeur < 1900 px) : « Ctrl et − (N fois, zoom X %) » ; disparaît de lui-même une fois le zoom fait, ou avec « Compris ». Même conseil dans le message « N colonnes masquées » de la Liste.
 - Clé `localStorage` : `enogia_zoomhint_off` (bandeau masqué).
 - Fichiers : components/ZoomHint.js, components/TableView.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v246 — KPI refaits (maquettes Claude Design)
+
+- Demandé : maquettes de la page KPI dans Claude Design, puis « je veux les 3 ».
+- A — `KpiPilotage.js` (KPI › Synthèse) : 5 chiffres (en production, départs d'ici 30 jours, en retard sur l'initial, charge 4 semaines avec la semaine la plus chargée, livrées cette année) ; « PJ à risque » avec la pastille d'état ; charge plus haute, en heures, avec la date de chaque semaine ; portefeuille par état en barre à 100 % avec légende chiffrée. `loadWeeks` (charge sur n semaines) et `weekLabel` exportés.
+- B — `KpiViews.js` › `KpiDerivesHead` en tête de KPI › Dérives : titre-réponse, classement des 14 plus fortes dérives (clic = fiche), départs des 30 prochains jours, dérive moyenne et retards déclarés.
+- C — `KpiViews.js` › `KpiSemaines`, nouvelle sous-page KPI › Semaines : 8 colonnes (charge vs capacité, départs avec dérive, machines au banc), « À décider ».
+- Pas de nouvelle clé `localStorage`, pas de nouveau document Firestore.
+- Fichiers : components/KpiPilotage.js, components/KpiViews.js (nouveau), components/ManagerPanel.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

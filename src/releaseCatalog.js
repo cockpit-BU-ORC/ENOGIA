@@ -545,4 +545,9 @@ export const RELEASE_CATALOG = [
   { v: "245", t: "Tout voir avec un affichage agrandi", items: [
     ["Conseil de zoom", "Quand Windows agrandit l'affichage (125 %, 150 %), un bandeau indique le zoom du navigateur (Ctrl et −) qui redonne toutes les colonnes ; il disparaît une fois le zoom fait ou avec « Compris »."],
   ] },
+  { v: "246", t: "KPI refaits (maquettes Claude Design)", items: [
+    ["KPI › Synthèse", "Production, départs du mois, PJ en retard sur l'initial, charge 4 semaines, livrées cette année ; PJ à risque avec la pastille d'état ; charge en heures avec les dates ; portefeuille en barre à 100 %.", "admin"],
+    ["KPI › Semaines", "Les 8 prochaines semaines en colonnes : charge atelier face à la capacité, départs avec leur dérive, machines au banc, et « À décider » (semaines en surcharge, plus forte dérive).", "admin"],
+    ["KPI › Dérives", "En tête : « N machines partiront plus tard que prévu », classement des plus fortes dérives (clic = fiche), départs des 30 prochains jours, dérive moyenne et retards déclarés.", "admin"],
+  ] },
 ];
