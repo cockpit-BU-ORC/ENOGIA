@@ -39,7 +39,7 @@ export function KpiDerivesHead({ rows, driftRows, delays, hasInitial, onOpenPj }
   return (<div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
     <header style={{ display: "flex", flexDirection: "column", gap: 4 }}>
       <h2 style={{ margin: 0, fontFamily: T.fontDisplay, fontSize: "clamp(24px, 2.6vw, 36px)", lineHeight: 1.12, fontWeight: 700, color: late.length ? T.ink900 : T.emerald600, letterSpacing: "-.01em" }}>
-        {late.length ? late.length + " " + plural(late.length, "machine partira", "machines partiront") + " plus tard que prévu" : "Aucune machine ne part plus tard que prévu"}</h2>
+        {late.length ? late.length + " " + plural(late.length, "machine en cours partira", "machines en cours partiront") + " plus tard que prévu" : "Aucune machine en cours ne part plus tard que prévu"}</h2>
       <p style={{ margin: 0, fontSize: FZ.md, color: T.ink700 }}>{sentence}</p>
     </header>
     <div style={{ display: "flex", flexWrap: "wrap", gap: 14, alignItems: "flex-start" }}>
@@ -71,7 +71,7 @@ export function KpiDerivesHead({ rows, driftRows, delays, hasInitial, onOpenPj }
             </button>); })}
         </section>
         <section aria-label="Repères" style={{ ...card(), padding: "12px 16px", display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 }}>
-          <div><div style={lbl}>Dérive moyenne</div><div style={{ fontFamily: T.fontDisplay, fontSize: 28, fontWeight: 600, fontVariantNumeric: "tabular-nums", color: avg > 3 ? T.red500 : T.ink900 }}>{avg == null ? "—" : (avg > 0 ? "+" : avg < 0 ? "−" : "") + Math.abs(avg) + " j"}</div><div style={{ fontSize: 12, color: T.ink500 }}>départ, vs initial</div></div>
+          <div><div style={lbl}>Dérive moyenne</div><div style={{ fontFamily: T.fontDisplay, fontSize: 28, fontWeight: 600, fontVariantNumeric: "tabular-nums", color: avg > 3 ? T.red500 : T.ink900 }}>{avg == null ? "—" : (avg > 0 ? "+" : avg < 0 ? "−" : "") + Math.abs(avg) + " j"}</div><div style={{ fontSize: 12, color: T.ink500 }}>machines en cours, vs initial</div></div>
           <div><div style={lbl}>Retards déclarés</div><div style={{ fontFamily: T.fontDisplay, fontSize: 28, fontWeight: 600, fontVariantNumeric: "tabular-nums", color: T.ink900 }}>{delayInfo.n}</div><div style={{ fontSize: 12, color: T.ink500, overflow: "hidden", textOverflow: "ellipsis" }}>{delayInfo.top ? "1re cause : " + delayInfo.top[0] : "aucune cause saisie"}</div></div>
         </section>
       </div>
@@ -106,8 +106,8 @@ export function KpiSemaines({ rows, driftRows, closurePeriods, productionExclusi
   ];
   const Chip = ({ r }) => { const d = driftOf[r.pj] || 0; return (
     <button type="button" onClick={() => onOpenPj && onOpenPj(r.pj)} aria-label={"Ouvrir la fiche de " + r.pj} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", width: "100%", border: "1px solid " + T.line, borderRadius: 6, background: T.card, padding: "4px 7px", cursor: "pointer", fontFamily: T.font, textAlign: "left", color: T.ink900, minHeight: 36 }}>
-      <b style={{ fontFamily: T.fontMono, fontSize: 12.5 }}>{r.pj}</b>
-      <span style={{ fontSize: 12, color: T.ink700, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{nom(r) || fdm(r.depart)}{d > 0 && <> · <b style={{ color: T.red500 }}>+{d} j</b></>}</span>
+      <span style={{ display: "flex", width: "100%", justifyContent: "space-between", gap: 4, whiteSpace: "nowrap" }}><b style={{ fontFamily: T.fontMono, fontSize: 12.5 }}>{r.pj}</b>{d > 0 && <b style={{ color: T.red500, fontSize: 12, fontVariantNumeric: "tabular-nums" }}>+{d} j</b>}</span>
+      <span style={{ fontSize: 12, color: T.ink700, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{nom(r) || fdm(r.depart)}</span>
     </button>); };
   return (<div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
     <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
