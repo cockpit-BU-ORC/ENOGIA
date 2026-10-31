@@ -59,8 +59,10 @@ export function useChangeMarks(entries, userKey) {
 export function NewMark({ mark }) {
   if (!mark) return null;
   const d = mark.delta, late = d > 0, early = d < 0;
-  const text = mark.isNew ? "nouveau" : late ? "+" + d + " j" : early ? "−" + Math.abs(d) + " j" : "modifié";
-  const [bg, fg] = mark.isNew ? [T.teal100, T.teal600] : late ? [T.red100, T.red500] : early ? [T.emerald100, T.emerald600] : [T.surfaceAlt, T.ink700];
+  // v250 (critique design) : la pastille rouge « +N j » est réservée à l'écart avec le planning initial (Gantt, KPI, accueil) ;
+  // le décalage dû à la dernière mise à jour porte une flèche « ↻ » sur fond gris, pour ne plus être confondu avec elle.
+  const text = mark.isNew ? "nouveau" : late ? "↻ +" + d + " j" : early ? "↻ −" + Math.abs(d) + " j" : "modifié";
+  const [bg, fg] = mark.isNew ? [T.teal100, T.teal600] : [T.surfaceAlt, T.ink700];
   const title = mark.isNew ? "Nouveau PJ depuis votre dernière visite" : late ? "Départ repoussé de " + d + " j par la dernière mise à jour" : early ? "Départ avancé de " + Math.abs(d) + " j par la dernière mise à jour" : "Modifié par la dernière mise à jour";
   return <span title={title} aria-label={title} style={{ background: bg, color: fg, borderRadius: 999, padding: "0 6px", fontSize:11, lineHeight: "16px", fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{text}</span>;
 }

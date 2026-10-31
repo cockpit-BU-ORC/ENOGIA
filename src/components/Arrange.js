@@ -62,6 +62,32 @@ export function Arrange({ id, children, spans = {}, defaultSpan = 6, labels = {}
   const free = !narrow && (hasPos || !!live);
   const pos = live ? live.pos : hasPos ? fullPos(lay.pos) : null;
   const flowOrder = pos ? ids.slice().sort((a, b) => pos[a].y - pos[b].y || pos[a].x - pos[b].x) : [...lay.order.filter(k => ids.includes(k)), ...ids.filter(k => !lay.order.includes(k))];
+  // v250 (critique design : « cadrans coupés, avec une barre de défilement interne ») : hors mode disposition, un cadran n'est
+  // jamais plus bas que son contenu ; s'il lui faut plus de place, il s'allonge et les cadrans qu'il recouvre descendent (resolve).
+  // La disposition enregistrée ne change pas : c'est seulement l'affichage.
+  // Seul un vrai débordement (> 6 px) allonge le cadran, et au plus 8 fois par cadran : un contenu « 100 % + bordure » ne doit
+  // pas le faire grandir sans fin.
+  const [need, setNeed] = useState({});
+  const grows = useRef({});
+  const showPos = pos && !edit && !live ? resolve(Object.fromEntries(Object.entries(pos).map(([k, p]) => [k, need[k] > p.h ? { ...p, h: need[k] } : p])), null) : pos;
+  useLayoutEffect(() => {
+    if (!pos || edit || live) return;
+    const add = {};
+    Object.entries(els.current).forEach(([k, el]) => {
+      const f = el && el.querySelector(":scope > .enogia-arr-fit"), c = f && f.firstElementChild, sh = c ? c.scrollHeight : f ? f.scrollHeight : 0; if (!f || sh <= f.clientHeight + 6) return;
+      if ((grows.current[k] || 0) >= 8) return;
+      const r = Math.ceil((sh + GAP) / ROW); if (r > (need[k] || 0)) { add[k] = r; grows.current[k] = (grows.current[k] || 0) + 1; }
+    });
+    if (Object.keys(add).length) setNeed(n => ({ ...n, ...add }));
+  });
+  // le contenu change de taille sans que la grille se redessine (polices, chiffres animés, données) : on revérifie alors
+  const [, bump] = useState(0);
+  useEffect(() => {
+    if (!pos || typeof ResizeObserver === "undefined") return undefined;
+    const ro = new ResizeObserver(() => bump(t => t + 1));
+    Object.values(els.current).forEach(el => { const c = el && el.querySelector(":scope > .enogia-arr-fit > *"); if (c) ro.observe(c); });
+    return () => ro.disconnect();
+  }, [!!pos, ids.join("|")]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Position « naturelle » = rectangle à l'écran moins la translation en cours (animation ou cadran saisi).
   const natural = el => { const b = el.getBoundingClientRect(); let dx = 0, dy = 0; try { const m = new DOMMatrixReadOnly(getComputedStyle(el).transform); dx = m.m41; dy = m.m42; } catch (x) { /* pas de transform */ } return { left: b.left - dx, top: b.top - dy, width: b.width, height: b.height }; };
@@ -138,7 +164,7 @@ export function Arrange({ id, children, spans = {}, defaultSpan = 6, labels = {}
       : { display: "grid", gridTemplateColumns: "repeat(12,minmax(0,1fr))", gap: GAP, alignItems: "start", gridAutoFlow: "row dense", userSelect: live ? "none" : undefined }}>
       {ghost && <div aria-hidden="true" style={{ gridColumn: (ghost.x + 1) + " / span " + ghost.w, gridRow: (ghost.y + 1) + " / span " + ghost.h, marginBottom: GAP, border: "2px dashed " + T.teal500, borderRadius: 10, background: T.panelDim || "transparent", opacity: .6 }} />}
       {(free ? ids : flowOrder).map(k => { const c = byId[k]; if (!c) return null; const lab = labels[k] || (c.props && c.props["aria-label"]) || k; const act = live && live.k === k;
-        const p = free ? pos[k] : null; const sp = p ? p.w : spanOf(k);
+        const p = free ? showPos[k] : null; const sp = p ? p.w : spanOf(k);
         const place = p ? { gridColumn: (p.x + 1) + " / span " + p.w, gridRow: (p.y + 1) + " / span " + p.h } : { gridColumn: "span " + sp };
         return (<div key={k} ref={el => { els.current[k] = el; }} data-arr-k={k} className="enogia-arr-item" onPointerDown={on ? e => startDrag(k, e) : undefined}
           style={{ ...place, minWidth: 0, minHeight: 0, position: "relative", outline: on ? "2px dashed " + (act ? T.teal500 : T.line) : "none", outlineOffset: 3, borderRadius: 10, marginBottom: p ? GAP : undefined, opacity: act && live.mode === "drag" ? .9 : 1, zIndex: act ? 5 : undefined, cursor: on ? (act && live.mode === "drag" ? "grabbing" : "grab") : undefined, touchAction: on ? "none" : undefined, boxShadow: act && live.mode === "drag" ? T.shadowLg : undefined }}>

@@ -1713,3 +1713,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
   - `EtatsDialog.js` : plus de focus automatique sur le champ du bas (la fenêtre s'ouvrait défilée, titre masqué).
 - Non ouvertes (il faut des données ou une action précise) : Liens du planificateur, alerte de modifications, ajout à l'initial, certifications. Elles suivent les mêmes règles.
 - Fichiers : styles.css, motion.js, components/TestsTab.js, components/EtatsDialog.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v250 — Critique design : un sens par pastille, cadrans entiers
+
+- Demandé : une critique design avec un autre skill (design-critique), puis « les trois » recommandations.
+- `ChangesNotice.js` (`NewMark`) : le décalage dû à la dernière mise à jour s'affiche « ↻ +N j » sur fond gris ; la pastille rouge « +N j » reste réservée à l'écart avec le planning initial (avant : PJ461-1 à +113 j dans le Calendrier, +160 j ailleurs). `CalendarView.js` : légende « ↻ = décalage de la dernière mise à jour », « Client + NOBO » retiré (doublon).
+- `Arrange.js` : hors mode disposition, un cadran prend au moins la hauteur de son contenu (les cadrans qu'il recouvre descendent) ; la disposition enregistrée ne change pas. `styles.css` : pas de marge basse ni de barre de défilement dans un cadran placé librement.
+- `HomeView.js` : chiffres clés de l'accueil — livrées en vert, en retard en rouge, départs en encre (avant : départs en vert, retard en ocre).
+- Pas de nouvelle clé `localStorage`, pas de nouveau document Firestore.
+- Fichiers : components/ChangesNotice.js, components/CalendarView.js, components/Arrange.js, components/HomeView.js, styles.css, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

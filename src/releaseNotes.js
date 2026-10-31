@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-10-v250",
+    date: "2026-10-31",
+    title: "V250 : des repères plus clairs",
+    items: [
+      { t: "Dérives", d: "La pastille rouge « +N j » indique toujours l'écart avec le planning initial. Le décalage de la dernière mise à jour est maintenant gris, avec une flèche « ↻ »." },
+      { t: "Accueil", d: "Les cadrans ne sont plus coupés, et les chiffres clés suivent les mêmes couleurs que les KPI." },
+    ],
+  },
+  {
     id: "2026-10-v249",
     date: "2026-10-31",
     title: "V249 : fenêtres vérifiées",

@@ -564,4 +564,9 @@ export const RELEASE_CATALOG = [
     ["États des machines", "La fenêtre s'ouvre sur son titre au lieu de défiler jusqu'au champ du bas."],
     ["Fonds des fenêtres", "États, feux, saisie multiple, composants, rapport CODIR, Cash in, SAV, écran atelier : le fond se fond et se floute, seule la fenêtre monte."],
   ] },
+  { v: "250", t: "Critique design : un sens par pastille, cadrans entiers", items: [
+    ["Pastille « +N j »", "La pastille rouge est réservée à l'écart avec le planning initial ; le décalage dû à la dernière mise à jour s'affiche « ↻ +N j » sur fond gris (expliqué dans la légende du Calendrier)."],
+    ["Cadrans entiers", "Sur l'accueil et la page Tests, un cadran n'est plus coupé avec une barre de défilement : il prend la hauteur de son contenu."],
+    ["Chiffres de l'accueil", "Même règle que les KPI : vert pour les machines livrées, rouge pour les PJ en retard, encre sinon."],
+  ] },
 ];

@@ -408,8 +408,9 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
       </span>)}
       <span style={{display:"flex",alignItems:"center",gap:8,paddingLeft:16,borderLeft:"1px solid "+T.line}}>
         <span style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>Présence tests</span>
-        <PresenceChip kind="client" compact fontSize={12}/><PresenceChip kind="nobo" compact fontSize={12}/><PresenceChip kind="both" compact fontSize={12}/>
+        <PresenceChip kind="client" compact fontSize={12}/><PresenceChip kind="nobo" compact fontSize={12}/>{/* v250 : « Client + NOBO » retiré de la légende (il répétait les deux étiquettes) */}
       </span>
+      <span style={{display:"flex",alignItems:"center",gap:6,paddingLeft:16,borderLeft:"1px solid "+T.line,fontSize:FZF.md,color:T.ink700}}><span style={{background:T.surfaceAlt,color:T.ink700,borderRadius:999,padding:"0 6px",fontSize:11,fontWeight:700,lineHeight:"16px"}}>↻ +5 j</span>décalage de la dernière mise à jour</span>
       <span style={{fontSize:FZF.md,color:T.ink300,marginLeft:"auto"}}>Couleur de la tuile = étape · Colonne rouge = aujourd'hui · Clic = détail</span>
     </div>
 

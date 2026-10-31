@@ -158,11 +158,12 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
   const since = nChanged + nNew === 0 ? "Le planning n'a pas bougé depuis votre dernière visite." : "Depuis votre dernière visite : " + nChanged + " PJ modifié" + (nChanged > 1 ? "s" : "") + (nNew ? ", " + nNew + " nouveau" + (nNew > 1 ? "x" : "") : "");
 
   // v224 (demandé : « certains cadrans ne peuvent pas être réduits ou déplacés ») : chiffres clés et départs à venir passent dans la grille des cadrans
+  // v250 (critique design) : couleur des chiffres = jugement, comme dans les KPI — vert = bon (livrées), rouge = mauvais (retard), encre sinon
   const kpiEl = <div key="kpis" aria-label="Chiffres clés" data-span={12} className="enogia-stagger enogia-kpis-ed" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: "0 16px", borderTop: "3px solid " + T.teal500, marginBottom: 20 }}>
-        <Kpi color={S.depart.ring} label="Livrées cette année" value={shipped} sub={shipped28 > 0 ? shipped28 + " sur les 28 derniers jours" : open.length + " encore en cours"} onClick={() => onGo && onGo("table")} hint="Ouvrir la liste" />
+        <Kpi color={S.depart.ring} label="Livrées cette année" value={shipped} tone={shipped ? T.emerald600 : T.ink900} sub={shipped28 > 0 ? shipped28 + " sur les 28 derniers jours" : open.length + " encore en cours"} onClick={() => onGo && onGo("table")} hint="Ouvrir la liste" />
         <Kpi color={S.production.ring} label="En production" value={inProd} sub={"sur " + open.length + " projet" + (open.length > 1 ? "s" : "") + " ouvert" + (open.length > 1 ? "s" : "")} onClick={() => onGo && onGo("table")} hint="Ouvrir la liste" />
-        <Kpi color={S.tests.ring} label="Départs sous 30 j" value={next30} tone={S.depart.ring} sub={nextDep ? "prochain " + nextDep.pj + " · " + fmtD(nextDep.depart) : "Aucun départ à venir"} onClick={() => onGo && onGo("calendar")} hint="Ouvrir le calendrier" />
-        <Kpi color={H.warn} label="En retard sur l'initial" value={late.length} tone={late.length ? T.amber600 : T.ink900} sub={maxLate ? "max " + maxLate.pj + " · +" + maxLate.drift + " j" : "Aucune dérive"} onClick={() => onGo && onGo("table")} hint="Ouvrir la liste" />
+        <Kpi color={S.tests.ring} label="Départs sous 30 j" value={next30} sub={nextDep ? "prochain " + nextDep.pj + " · " + fmtD(nextDep.depart) : "Aucun départ à venir"} onClick={() => onGo && onGo("calendar")} hint="Ouvrir le calendrier" />
+        <Kpi color={H.warn} label="En retard sur l'initial" value={late.length} tone={late.length ? T.red500 : T.ink900} sub={maxLate ? "max " + maxLate.pj + " · +" + maxLate.drift + " j" : "Aucune dérive"} onClick={() => onGo && onGo("table")} hint="Ouvrir la liste" />
       </div>;
   const depEl = <section key="departs" aria-label="Prochains départs" style={{ ...cardS(S.depart.ring) }}>
         <Head title="Prochains départs" count={departs.length} />

@@ -530,3 +530,9 @@ button { transition: background-color var(--e-dur-micro) var(--e-ease), border-c
 .enogia-ghost[aria-modal="true"][style*="inset: 0px"] { animation: enogiaBackOut var(--e-dur-out) ease-in both !important; }
 .enogia-ghost[aria-modal="true"][style*="inset: 0px"] > * { animation: enogiaDlgOut var(--e-dur-out) var(--e-ease-in) both !important; }
 .enogia-ghost[aria-modal="true"][style*="right: 0px"][style*="bottom: 0px"]:not([style*="inset"]) { animation: enogiaDrawerOut var(--e-dur-out) var(--e-ease-in) both !important; }
+
+/* v250 : dans un cadran placé librement, la marge basse du contenu (prévue pour l'affichage en flux) ne doit pas créer de barre de défilement */
+.enogia-arr-fit > * { margin-bottom: 0 !important; }
+/* v250 : les cadrans s'allongent selon leur contenu ; un reste d'arrondi (1 px) ne doit pas afficher de barre de défilement */
+.enogia-arr-fit { scrollbar-width: none; }
+.enogia-arr-fit::-webkit-scrollbar { display: none; }
