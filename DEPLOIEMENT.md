@@ -1746,6 +1746,6 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 
 - Demandé : trois pistes pour le Calendrier dans Claude Design (canevas « Cockpit — Calendrier »), la piste A vue aussi en mode Jours, puis « Oui, intègre ».
 - `CalendarView.js` : la production devient une bande continue d'une case à l'autre (semaines ou jours), arrondie seulement au début et à la fin, avec « Production → date de fin » au début ; les jalons (arrivée, tests, fin de prod, départ, et leurs combinaisons) deviennent des pastilles ; la présence client / NOBO devient deux petits ronds « C » / « N » (aussi dans la légende). La grille, la colonne du jour, les fermetures, les clics (fiche, jour sans production) ne changent pas.
-- Non vérifié dans le navigateur (session locale à reconnecter) : build, tests et contraste seulement.
+- Vérifié ensuite dans le site local (Semaines et Jours) : les pastilles combinées (« Tests + Fin prod ») sont séparées en une pastille par étape (le fond en diagonale rendait le texte illisible sur le vert foncé) ; en mode Jours étroit, la pastille remplit la case avec un texte abrégé.
 - Pas de nouvelle clé `localStorage`, pas de nouveau document Firestore.
 - Fichiers : components/CalendarView.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

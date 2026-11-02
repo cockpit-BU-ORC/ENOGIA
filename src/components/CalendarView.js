@@ -85,8 +85,13 @@ function StageTile({status,label,fill,st,pKind,closed,runStart,runEnd,rowH,compa
     </div>;
   }
   const h=Math.max(20,Math.min(30,Math.round(rowH*0.6)));
-  return <div style={{position:"absolute",top:"50%",left:3,right:3,minHeight:h,transform:"translateY(-50%)",display:"flex",alignItems:"center",justifyContent:"center",gap:4,opacity:closed?0.45:1,zIndex:2,pointerEvents:"none"}}>
-    <span style={{minWidth:0,flex:"0 1 auto",background:fill.background,color:fill.color,borderRadius:999,padding:compact?"3px 6px":"4px 10px",fontSize:FZF.xs,fontWeight:700,lineHeight:1.15,textAlign:"center",whiteSpace:"normal",boxShadow:T.mode==="dark"?"inset 0 0 0 1px "+st.t+"33":"none"}}>{label}</span>
+  // plusieurs étapes la même case (« Tests + Fin prod ») : une petite pastille par étape, chacune dans sa couleur et son encre
+  // (le fond en diagonale rendait le texte illisible sur le vert foncé)
+  const P=stagePalette(),parts=String(status).split(" + ").filter(Boolean);
+  // colonne jour étroite (compact) : la pastille prend toute la case, texte abrégé plus petit, coupé net plutôt que « … »
+  const pill=(k,txt)=>{const s=P[k]||st;return <span key={k} style={{minWidth:0,flex:compact?"1 1 0":"0 1 auto",background:parts.length>1?s.c:fill.background,color:parts.length>1?s.t:fill.color,borderRadius:compact?4:999,padding:compact?"3px 1px":parts.length>2?"3px 6px":"4px 10px",fontSize:compact?10:FZF.xs,fontWeight:700,lineHeight:1.15,textAlign:"center",whiteSpace:compact||parts.length>1?"nowrap":"normal",overflow:"hidden",textOverflow:compact?"clip":"ellipsis",boxShadow:T.mode==="dark"?"inset 0 0 0 1px "+s.t+"33":"none"}}>{txt}</span>;};
+  return <div style={{position:"absolute",top:"50%",left:3,right:3,minHeight:h,transform:"translateY(-50%)",display:"flex",alignItems:"center",justifyContent:"center",gap:3,opacity:closed?0.45:1,zIndex:2,pointerEvents:"none"}}>
+    {parts.length>1?parts.map(k=>pill(k,compact?(STAGE_SHORT[k]||k):k)):pill(parts[0],label)}
     {pKind&&<PresenceDots kind={pKind}/>}
   </div>;
 }
