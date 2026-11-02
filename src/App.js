@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { db, auth, ALLOWED_EMAIL_DOMAIN } from "./firebase";
 import { setResolved as setCommentResolved, peopleOptions, userKey, chefAccount, withChef, lc as lcMention } from "./mentions";
-import { profileOf } from "./profiles";
+import { profileOf, pjsOfProfile } from "./profiles";
 import { TutoVideoModal, tutoActive, tutoSeen, markTutoSeen } from "./components/TutoVideo";
 import { isEstimatePj } from "./changeDiff";
 import { MentionCtx } from "./mentionContext";
@@ -20,7 +20,7 @@ import { setSuperAdmin, isSuperAdmin, setOwner, CASH_FOR_ADMINS } from "./roles"
 import { setCashinDoc, setCashinLinks, setOrdoPjs, getCashinDoc, getCashinLinks, getOrdoPjs, cashGroupsFor } from "./cashinLink";
 import { useCashin } from "./useCashin";
 import { CASHIN_DOC_REF, CASHIN_LINKS_REF, CASHIN_SHARED_REF, buildSharedCashin } from "./cashinData";
-import { getPjMeta, chefsOf, ALL_GAMMES, ALL_ETATS, ETAT_META, registerCustomEtats, registerEtatEdits, MONTHS, today, setSyncedPjMeta, setPjMetaOverrides, GAMME_OVERRIDE, EXCLUDED_CHEFS } from "./pjMeta";
+import { getPjMeta, chefsOf, orcChefsOf, ALL_GAMMES, ALL_ETATS, ETAT_META, registerCustomEtats, registerEtatEdits, MONTHS, today, setSyncedPjMeta, setPjMetaOverrides, GAMME_OVERRIDE, EXCLUDED_CHEFS } from "./pjMeta";
 import { weekStartOf } from "./parsers";
 import { HomeView } from "./components/HomeView";
 import { ProdTurbines } from "./components/ProdTurbines";
@@ -78,7 +78,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-11-02-v253-calendrier";
+const APP_BUILD_VERSION = "2026-11-02-v254-couloirs-cloche";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -1075,6 +1075,23 @@ export default function App(){
   const [cashFocusApp,setCashFocusApp]=useState(null); // v217 : PJ à afficher dans la page Cash in (depuis une fiche projet)
   // v231 (demandé : « toute machine déjà expédiée a déjà effectué ses tests ») : à l'affichage, une machine expédiée a ses tests
   // validés (forced.auto, « Machine expédiée ») ; rien n'est écrit en base (retiré par saveTests).
+  // v254 (demandé : « quand mon projet, en tant que chef de projet, subit une modification, je devrais avoir une notification sur la cloche ») :
+  // PJ dont je suis chef (rôle « chef de projet » de Personnes et rôles, ou mon nom en chef / chef ORC) touchés par une publication du
+  // planning depuis mon dernier « Vu » (par défaut : 14 derniers jours). Comptés dans la pastille ; « Vu » les retire (mémorisé sur ce poste).
+  const chgSeenKey="enogia_mypjchg_seen_"+String((currentUser&&currentUser.email)||"").toLowerCase();
+  const [chgSeen,setChgSeen]=useState(()=>{try{return localStorage.getItem(chgSeenKey)||"";}catch(e){return "";}});
+  useEffect(()=>{try{setChgSeen(localStorage.getItem(chgSeenKey)||"");}catch(e){}},[chgSeenKey]);
+  const myPjChanges=useMemo(()=>{
+    if(!currentUser||!Array.isArray(changeLog)||!changeLog.length)return [];
+    const email=currentUser.email||"",pr=profileOf(profiles,email),low=s=>String(s||"").toLowerCase().trim();
+    const mine=new Set(pr?pjsOfProfile(pr,dataWithOverrides):[]),nm=low((pr&&pr.name)||authorName);
+    if(nm)dataWithOverrides.forEach(x=>{const m=getPjMeta(x.pj,x);if([...chefsOf(m),...orcChefsOf(m)].some(c=>low(c)===nm))mine.add(x.pj);});
+    if(!mine.size)return [];
+    const since=chgSeen||new Date(Date.now()-14*864e5).toISOString(),out=[];
+    changeLog.forEach(e=>{if(!e||!e.at||e.at<=since)return;(e.pjs||[]).forEach(p=>{if(mine.has(p.pj)&&!out.some(o=>o.pj===p.pj))out.push({pj:p.pj,at:e.at,isNew:!!p.isNew,delta:p.departDelta||0,nom:p.nomProjet||""});});});
+    return out;
+  },[currentUser,changeLog,profiles,dataWithOverrides,authorName,chgSeen]);
+  const seePjChanges=()=>{const v=new Date().toISOString();setChgSeen(v);try{localStorage.setItem(chgSeenKey,v);}catch(e){}};
   const testsView=useMemo(()=>{const plans={...((testsDoc&&testsDoc.plans)||{})};(dataWithOverrides||[]).forEach(r=>{if(!r||r.etat!=="SHIPPED")return;const p=plans[r.pj]||{};if(p.forced&&p.forced.at)return;plans[r.pj]={...p,forced:{at:String(r.depart||r.testsFin||r.tests||new Date().toISOString()).slice(0,10),by:"Machine expédiée",auto:true}};});return{...testsDoc,plans};},[testsDoc,dataWithOverrides]);
   const pjCtxTests=canSeeTests?testsView:null,pjCtx=useMemo(()=>({testsDoc:pjCtxTests,turbineDoc}),[pjCtxTests,turbineDoc]); // v203 : pastilles de la fiche d'un PJ // v196 : entrées du Manager affichées dans ce menu (fournies par ManagerPanel)
   const closePeek=delay=>{clearTimeout(navPeekT.current);navPeekT.current=setTimeout(()=>setNavPeek(false),delay||0);};
@@ -1166,7 +1183,7 @@ export default function App(){
           </div>}
           {currentUser&&<div className="enogia-hide-phone" style={{width:1,height:22,background:T.line}}/>}
           {currentUser&&<button onClick={()=>setNavPal(true)} title="Aller à… (Ctrl K)" aria-label="Aller à… (Ctrl K)" style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:32,height:32,padding:0,border:"1px solid transparent",borderRadius:9,cursor:"pointer",background:"transparent",color:T.ink500}} onMouseEnter={e=>{e.currentTarget.style.background=T.surfaceAlt;e.currentTarget.style.color=T.ink900;}} onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=T.ink500;}}><NavIcon name="search" size={18}/></button>}
-          {currentUser&&<MentionBell video={tutoOn?tutoCfg:null} onOpenVideo={()=>setTutoOpen(true)} assignments={myNewAssign} onSeenAssign={seeAssign} onOpenTests={()=>setView("tests")} comments={comments} me={mentionCtx.me} data={dataWithOverrides} resolveComment={resolveComment} canSeePrivate={pinOk} onOpen={pj=>{if(pinOk){setManagerJump({pj,n:Date.now()});setManagerTab("fiche");setView("manager");}else jumpToPj(pj);}}/>}
+          {currentUser&&<MentionBell pjChanges={myPjChanges} onSeenPjChanges={seePjChanges} onOpenChanges={()=>setView("changes")} video={tutoOn?tutoCfg:null} onOpenVideo={()=>setTutoOpen(true)} assignments={myNewAssign} onSeenAssign={seeAssign} onOpenTests={()=>setView("tests")} comments={comments} me={mentionCtx.me} data={dataWithOverrides} resolveComment={resolveComment} canSeePrivate={pinOk} onOpen={pj=>{if(pinOk){setManagerJump({pj,n:Date.now()});setManagerTab("fiche");setView("manager");}else jumpToPj(pj);}}/>}
           <button onClick={()=>{setManagerTab("fiche");setView("manager");}} title="Espace Manager" aria-label="Espace Manager" aria-pressed={view==="manager"} style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:32,height:32,padding:0,border:"1px solid "+(view==="manager"?T.teal500+"66":"transparent"),borderRadius:9,cursor:"pointer",background:view==="manager"?T.teal100:"transparent",color:view==="manager"?T.teal600:T.ink500,transition:"background .15s ease, color .15s ease"}} onMouseEnter={e=>{if(view!=="manager"){e.currentTarget.style.background=T.surfaceAlt;e.currentTarget.style.color=T.ink900;}}} onMouseLeave={e=>{if(view!=="manager"){e.currentTarget.style.background="transparent";e.currentTarget.style.color=T.ink500;}}}><NavIcon name="manager" size={19}/></button>
           {currentUser&&<UserChip user={currentUser} onSignOut={()=>signOut(auth)} role={isOwner?"Super admin":pinOk?"Admin":null}/>}
         </div>

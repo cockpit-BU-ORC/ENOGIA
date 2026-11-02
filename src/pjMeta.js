@@ -430,6 +430,10 @@ const clean=c=>{const v=String(c||"").trim();return v&&v!=="—"?v:"";};
 // les listes, regroupements, accueils et comptes ; le chef ORC en soutien (chefOrc) n'y figure jamais, même s'il est aussi en « autres chefs ».
 export function chefsOf(meta){const m=meta||{},orc=m.epc?clean(m.chefOrc).toLowerCase():"";const out=[clean(m.chefProjet),...(Array.isArray(m.chefsExtra)?m.chefsExtra.map(clean):[])].filter(c=>c&&(!orc||c.toLowerCase()!==orc));return [...new Set(out)];}
 export const orcSupportOf=meta=>meta&&meta.epc?clean(meta.chefOrc):"";
+// v254 (demandé : « dans les fiches projet, les chefs de projet sont uniquement les CdP ORC ») : pour un projet EPC, le chef ORC
+// (chefOrc) est le chef de la fiche ; le chef de l'EPC n'apparaît qu'en mention « chef EPC ». Hors EPC : chefsOf.
+export function orcChefsOf(meta){const m=meta||{};if(!m.epc)return chefsOf(m);const o=clean(m.chefOrc);return o?[o]:[];}
+export const epcChefOf=meta=>meta&&meta.epc?clean(meta.chefProjet):"";
 export const isEpc=meta=>!!(meta&&meta.epc);
 export function EpcTag({meta,short}){
   if(!isEpc(meta))return null;

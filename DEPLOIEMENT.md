@@ -1749,3 +1749,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Vérifié ensuite dans le site local (Semaines et Jours) : les pastilles combinées (« Tests + Fin prod ») sont séparées en une pastille par étape (le fond en diagonale rendait le texte illisible sur le vert foncé) ; en mode Jours étroit, la pastille remplit la case avec un texte abrégé.
 - Pas de nouvelle clé `localStorage`, pas de nouveau document Firestore.
 - Fichiers : components/CalendarView.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v254 — Couloirs éditables, chefs ORC dans les fiches, cloche des projets modifiés
+
+- Demandé : « en mode couloirs, cliquer sur la tâche pour un pop-up où modifier les dates, la durée et la charge » ; « dans les fiches projet, les chefs de projet sont uniquement les CdP ORC » ; « quand mon projet (chef de projet) subit une modification, je devrais avoir une notification sur la cloche ».
+- `planner/PlannerLanes.js` : `StepDialog` (fenêtre rendue dans `<body>`) — début (date imposée « pas avant »), fin ou durée en jours ouvrés, charge en heures (atelier pour Production / Packing, essai pour les bancs), « Libérer la date imposée » ; ouverte au clic ou avec Entrée, pas juste après un glisser. Rien ne change pour les autres avant « Publier ».
+- `pjMeta.js` : `orcChefsOf`, `epcChefOf`. `ManagerFiche.js` : chefs affichés, liste « Par chef », vue d'un chef et « Mes PJ » sur les chefs ORC ; projet EPC : « chef EPC : … » en mention (au lieu de « soutien ORC »). Les autres pages gardent la règle V241.
+- Cloche : `App.js` `myPjChanges` (publications du planning touchant mes PJ depuis mon dernier « Vu », 14 jours par défaut) ; `MentionBell.js` : section « Vos projets modifiés par le planning » (nouveau, départ ± N j, dates modifiées), « Vu », lien vers Modifications ; comptée dans la pastille rouge.
+- Clé `localStorage` : `enogia_mypjchg_seen_<adresse>`.
+- Fichiers : planner/PlannerLanes.js, pjMeta.js, components/ManagerFiche.js, components/MentionBell.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

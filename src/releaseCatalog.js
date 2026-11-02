@@ -584,4 +584,9 @@ export const RELEASE_CATALOG = [
     ["Production en bande", "La production est une bande continue sur les semaines ou les jours, avec sa date de fin au début."],
     ["Jalons en pastilles", "Arrivée, tests, fin de production et départ sont des pastilles ; client et NOBO aux tests, deux ronds « C » et « N »."],
   ] },
+  { v: "254", t: "Couloirs éditables, chefs ORC, cloche des projets modifiés", items: [
+    ["Couloirs du planificateur", "Un clic sur une tâche ouvre une fenêtre : début, fin, durée en jours ouvrés et charge en heures, ou libérer la date imposée.", "admin"],
+    ["Fiches projet", "Les chefs de projet affichés et les regroupements « Par chef » sont les chefs ORC ; pour un projet EPC, le chef EPC est indiqué en mention.", "admin"],
+    ["Cloche", "Un chef de projet est prévenu quand une publication du planning modifie un de ses projets (nouveau, départ repoussé ou avancé, dates modifiées)."],
+  ] },
 ];

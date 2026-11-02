@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useLayoutEffect, useRef } from "react";
 import { T, FZF as FZ, D, statusSoft, stripeBg, stripeHues } from "../theme";
-import { SerieTag, getPjMeta, CountryFlag, Avatar, GAMME_COLORS, ETAT_META, etatInk, PresenceChip, PRESENCE_META, presenceKind, presenceDates, presenceFirstDate, today, PjPlate, chefsOf, EpcTag, orcSupportOf } from "../pjMeta";
+import { SerieTag, getPjMeta, CountryFlag, Avatar, GAMME_COLORS, ETAT_META, etatInk, PresenceChip, PRESENCE_META, presenceKind, presenceDates, presenceFirstDate, today, PjPlate, orcChefsOf, epcChefOf, EpcTag } from "../pjMeta";
 import { ChefsEpcEditor } from "./ChefsEpc";
 import { fmt, diffDays } from "../parsers";
 import { Badge, NavIcon, EmptyState, SuperOnly, pressable } from "./SharedUI";
@@ -560,7 +560,7 @@ function GlobalTile({gp,onSave}){
 function ProjectSummary({rows,pvOf,comments,delays,onPick}){
   const t0=new Date(today);t0.setHours(0,0,0,0);
   const m0=getPjMeta(rows[0].pj,rows[0]);
-  const chefs=[...new Set(rows.flatMap(x=>chefsOf(getPjMeta(x.pj,x))))].filter(Boolean);
+  const chefs=[...new Set(rows.flatMap(x=>orcChefsOf(getPjMeta(x.pj,x))))].filter(Boolean);
   const gammes=[...new Set(rows.map(x=>x.gamme).filter(Boolean))];
   const shipped=rows.filter(x=>x.etat==="SHIPPED").length,open=rows.filter(x=>x.etat!=="SHIPPED");
   const avg=rows.length?Math.round(rows.reduce((a,x)=>a+pvOf(x),0)/rows.length):0;
@@ -693,12 +693,12 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
       return row.pj.toLowerCase().includes(q)||(m.nomProjet||"").toLowerCase().includes(q)||(m.pays||"").toLowerCase().includes(q)||(m.chefProjet||"").toLowerCase().includes(q)||(row.gamme||"").toLowerCase().includes(q);
     });
   },[data,search,showSlots,showShipped]);
-  const myPjs=useMemo(()=>{const pr=profileOf(profiles,currentUserEmail);const set=new Set(pjsOfProfile(pr,data));const nm=lc(pr.name||nameFromEmail(currentUserEmail||""));data.forEach(x=>{if(nm&&chefsOf(getPjMeta(x.pj,x)).some(c=>lc(c)===nm))set.add(x.pj);});return set;},[profiles,currentUserEmail,data]);
-  const chefOfRow=row=>chefsOf(getPjMeta(row.pj,row))[0]||"";
+  const myPjs=useMemo(()=>{const pr=profileOf(profiles,currentUserEmail);const set=new Set(pjsOfProfile(pr,data));const nm=lc(pr.name||nameFromEmail(currentUserEmail||""));data.forEach(x=>{if(nm&&orcChefsOf(getPjMeta(x.pj,x)).some(c=>lc(c)===nm))set.add(x.pj);});return set;},[profiles,currentUserEmail,data]);
+  const chefOfRow=row=>orcChefsOf(getPjMeta(row.pj,row))[0]||"";
   const groups=useMemo(()=>{
     if(groupBy==="mine")return [{key:"mine",head:null,rows:filteredList.filter(x=>myPjs.has(x.pj))}];
     if(groupBy!=="chef")return [{key:"all",head:null,rows:filteredList}];
-    const m=new Map();filteredList.forEach(x=>{const cs=chefsOf(getPjMeta(x.pj,x));(cs.length?cs:["Sans chef de projet"]).forEach(c=>{if(!m.has(c))m.set(c,[]);m.get(c).push(x);});}); // v191 : un PJ figure chez chacun de ses chefs
+    const m=new Map();filteredList.forEach(x=>{const cs=orcChefsOf(getPjMeta(x.pj,x));(cs.length?cs:["Sans chef de projet"]).forEach(c=>{if(!m.has(c))m.set(c,[]);m.get(c).push(x);});}); // v191 : un PJ figure chez chacun de ses chefs
     return [...m.entries()].sort((a,b)=>a[0]==="Sans chef de projet"?1:b[0]==="Sans chef de projet"?-1:a[0].localeCompare(b[0],"fr")).map(([c,rows])=>({key:"c:"+c,head:c,rows,late:rows.filter(x=>x.drift>0&&x.etat!=="SHIPPED").length}));
   },[filteredList,groupBy,myPjs]); // eslint-disable-line
   const pick=pj=>{setSelPj(pj);setChefView(null);setClusterView(null);};
@@ -874,7 +874,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
     <div style={{flex:"1 1 560px",minWidth:340,maxWidth:"none"}}>
       {/* v146.15 : les rapports se lancent depuis une barre AU-DESSUS de la fiche, pas dedans (lecture de la synthèse) */}
       {clusterView&&!chefView&&<ChefOverview name={clusterView.label} rows={clusterView.rows} pvOf={pvOf} onPick={pick} onClose={()=>setClusterView(null)} summary={{comments,delays}}/>}
-      {chefView&&<ChefOverview name={chefView} rows={(groups.find(g=>g.head===chefView)||{rows:data.filter(x=>x.etat!=="SLOT_LIBRE"&&x.etat!=="SHIPPED"&&(chefsOf(getPjMeta(x.pj,x)).includes(chefView)||(!chefOfRow(x)&&chefView==="Sans chef de projet")))}).rows} pvOf={pvOf} onPick={pick} onClose={()=>setChefView(null)}/>}
+      {chefView&&<ChefOverview name={chefView} rows={(groups.find(g=>g.head===chefView)||{rows:data.filter(x=>x.etat!=="SLOT_LIBRE"&&x.etat!=="SHIPPED"&&(orcChefsOf(getPjMeta(x.pj,x)).includes(chefView)||(!chefOfRow(x)&&chefView==="Sans chef de projet")))}).rows} pvOf={pvOf} onPick={pick} onClose={()=>setChefView(null)}/>}
       {!chefView&&!clusterView&&r&&<div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:8,flexWrap:"wrap",marginBottom:8}}>
         <span style={{fontSize:FZ.xs,color:T.ink300,marginRight:"auto"}}>Rapports pour {r.pj}</span>
         {savePjMetaMulti&&<button onClick={()=>setMultiOpen(true)} title="Ajouter une action, un plan de mitigation, un commentaire ou un statut à plusieurs projets en une fois" style={{display:"inline-flex",alignItems:"center",gap:6,padding:"5px 10px",border:"1px solid "+T.line,borderRadius:10,background:T.card,color:T.ink700,fontWeight:700,fontSize:FZ.xs,fontFamily:T.font,cursor:"pointer"}}>＋ Sur plusieurs projets…</button>}
@@ -898,8 +898,8 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
               </div>
               <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginTop:4,fontSize:FZ.sm,fontWeight:500,color:T.ink500}}>
                 <span>{meta.nomProjet}</span>
-                {chefsOf(meta).map(c=><span key={c} style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:FZ.xs,fontWeight:400}}><Avatar name={c} size={16}/>{c}</span>)}
-                {orcSupportOf(meta)&&<span title="Chef de projet ORC en soutien du chef de projet EPC" style={{fontSize:FZ.xs,fontWeight:400}}>soutien ORC : {orcSupportOf(meta)}</span>}
+                {orcChefsOf(meta).map(c=><span key={c} style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:FZ.xs,fontWeight:400}}><Avatar name={c} size={16}/>{c}</span>)}
+                {epcChefOf(meta)&&<span title="Projet EPC : chef de projet côté EPC" style={{fontSize:FZ.xs,fontWeight:400}}>chef EPC : {epcChefOf(meta)}</span>}
                 <EpcTag meta={meta}/>
                 {isSuperAdmin()&&savePjMetaOverride&&<button type="button" onClick={()=>setChefEdit(v=>!v)} aria-expanded={chefEdit} style={{border:"none",background:"transparent",color:T.teal600,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",minHeight:24,fontFamily:T.font}}>Chefs / EPC</button>}
               </div>

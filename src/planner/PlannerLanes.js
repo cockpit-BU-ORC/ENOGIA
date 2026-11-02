@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { T } from "../theme";
-import { STEP_LABEL, nodeKey, dayNum, isoOfDay, moveStepTo, setStep, orderOf, rulesOf, schedule, benchOf } from "./engine";
+import { STEP_LABEL, nodeKey, dayNum, isoOfDay, moveStepTo, setStep, orderOf, rulesOf, schedule, benchOf, stepWork, setWork } from "./engine";
 import { fmtIso, STEP_COLOR, headerCells } from "./PlannerGantt";
 
 // Vue « Couloirs » : le planning lu comme un atelier. Deux rails de jalons (Arrivées en haut, Départs en bas) encadrent
@@ -10,6 +11,54 @@ const FONT = T.font, MONO = T.fontMono; // v208 : polices du site (Roboto réser
 // v208 : couleurs lues dans le thème à chaque rendu (clair / sombre) — plus de palette claire figée
 const pal = () => ({ bg: T.card, panel: T.surface, line: T.line, line2: T.line, ink: T.ink900, ink2: T.ink700, ink3: T.ink500, accent: T.teal600, bad: T.red500, warn: T.amber600, ok: T.emerald600 });
 export const LABEL_W = 148;
+
+// v254 (demandé : « en mode couloirs, cliquer sur la tâche et ouvrir un pop-up où modifier les dates, la durée et la charge ») :
+// début (date imposée « pas avant »), fin ou durée en jours ouvrés, et heures de la tâche (Production, Packing : heures atelier ;
+// Banc : heures d'essai). « Appliquer » passe par les mêmes opérations que le glisser-déposer (moveStepTo, setStep, setWork).
+function StepDialog({ it, step, plan, cal, onApply, onClose }) {
+  const C = pal(); const n = it.n; const ms = step === "arrivee" || step === "depart";
+  const p = plan.pjs.find(x => x.pj === it.pj); const w0 = p ? stepWork(p, step) : null;
+  const [start, setStart] = useState(n.start), [dur, setDur] = useState(n.dur), [end, setEnd] = useState(n.finish), [work, setWorkV] = useState(w0 == null ? "" : String(w0));
+  const [free, setFree] = useState(false);
+  useEffect(() => { const k = e => { if (e.key === "Escape") onClose(); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose]);
+  const onEnd = v => { setEnd(v); if (v && start && v >= start) setDur(Math.max(1, cal.countBetween(start, v))); };
+  const onDur = v => { const d = Math.max(1, Math.round(Number(v) || 1)); setDur(d); if (start) setEnd(cal.addWork(cal.dateOf(cal.idxOnOrAfter(start)), d - 1)); };
+  const onStart = v => { setStart(v); if (v && !ms) setEnd(cal.addWork(cal.dateOf(cal.idxOnOrAfter(v)), Math.max(1, dur) - 1)); };
+  const apply = () => {
+    let np = plan;
+    if (free) np = setStep(np, it.pj, step, { snet: null });
+    else if (start && start !== n.start) np = moveStepTo(np, cal, it.pj, step, cal.dateOf(cal.idxOnOrAfter(start)));
+    if (!ms && dur && dur !== n.dur) np = setStep(np, it.pj, step, { dur: Math.max(1, dur) });
+    if (w0 != null && work !== "" && Number(work) !== w0) np = setWork(np, it.pj, step, Number(work));
+    onApply(np, { pj: it.pj, key: !free && start !== n.start ? it.key : null, want: !free && start !== n.start ? cal.dateOf(cal.idxOnOrAfter(start)) : null });
+  };
+  const fld = { padding: "6px 8px", minHeight: 32, border: "1px solid " + C.line, borderRadius: 6, background: C.bg, color: C.ink, fontFamily: FONT, fontSize: 13, boxSizing: "border-box", width: "100%" };
+  const lab = { display: "flex", flexDirection: "column", gap: 4, fontSize: 12, fontWeight: 600, color: C.ink3 };
+  const btn = primary => ({ minHeight: 34, padding: "0 14px", borderRadius: 6, border: primary ? "none" : "1px solid " + C.line, background: primary ? C.ink : C.bg, color: primary ? C.bg : C.ink2, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: FONT });
+  const unit = step === "tests" ? "heures d'essai" : "heures atelier";
+  // rendu dans <body> : à l’intérieur de la zone qui défile du planificateur, la fenêtre se plaçait hors de l’écran
+  return createPortal(<div onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 10005, background: "rgba(8,12,28,.4)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+    <div role="dialog" aria-modal="true" aria-label={"Modifier " + it.pj + " · " + STEP_LABEL[step]} style={{ width: "min(420px,100%)", background: C.bg, color: C.ink, border: "1px solid " + C.line, borderRadius: 10, boxShadow: T.shadowLg, fontFamily: FONT }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderBottom: "1px solid " + C.line }}>
+        <span style={{ width: 12, height: 12, borderRadius: 3, background: STEP_COLOR[step], flex: "none" }} />
+        <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontWeight: 700, fontSize: 15 }}><span style={{ fontFamily: MONO }}>{it.pj}</span> · {STEP_LABEL[step]}</div>
+          <div style={{ fontSize: 12, color: C.ink3 }}>Actuellement : {fmtIso(n.start)}{ms ? "" : " → " + fmtIso(n.finish) + " · " + n.dur + " j ouvrés"}{w0 != null ? " · " + w0 + " h" : ""}</div></div>
+        <button type="button" onClick={onClose} aria-label="Fermer" style={{ ...btn(false), padding: "0 10px" }}>×</button>
+      </div>
+      <div style={{ padding: "14px 16px", display: "grid", gridTemplateColumns: ms ? "1fr" : "1fr 1fr", gap: 12 }}>
+        <label style={lab}>{ms ? "Date" : "Début (pas avant)"}<input type="date" value={start || ""} disabled={free} onChange={e => onStart(e.target.value)} style={fld} /></label>
+        {!ms && <label style={lab}>Fin<input type="date" value={end || ""} min={start || undefined} onChange={e => onEnd(e.target.value)} style={fld} /></label>}
+        {!ms && <label style={lab}>Durée (jours ouvrés)<input type="number" min={1} step={1} value={dur} onChange={e => onDur(e.target.value)} style={fld} /></label>}
+        {w0 != null && <label style={lab}>Charge ({unit})<input type="number" min={0} step={0.5} value={work} onChange={e => setWorkV(e.target.value)} style={fld} /></label>}
+        {n.driver === "snet" && <label style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: C.ink2 }}><input type="checkbox" checked={free} onChange={e => setFree(e.target.checked)} />Libérer la date imposée (la tâche suit de nouveau ses liens)</label>}
+      </div>
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, padding: "10px 16px 14px", borderTop: "1px solid " + C.line }}>
+        <button type="button" onClick={onClose} style={btn(false)}>Annuler</button>
+        <button type="button" onClick={apply} style={btn(true)}>Appliquer</button>
+      </div>
+    </div>
+  </div>, document.body);
+}
 // v208 (demandé : « pouvoir réduire la hauteur des couloirs ») : piste, barre, marge, hauteur mini d'un couloir, taille du texte
 export const LANE_DENS = { s: [14, 11, 3, 28, 9.5], m: [21, 17, 7, 44, 10.5], l: [28, 22, 8, 56, 11.5] };
 const LANES = [
@@ -57,6 +106,7 @@ export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load,
   }, [plan, nodes, lo, px, TR, BH, PAD, MINH, FS]);
 
   // ── glisser-déposer ──
+  const [edit, setEdit] = useState(null); const dragged = useRef(0); // v254 : fenêtre d'édition ; dragged = un glisser vient de finir (le clic qui suit ne l'ouvre pas)
   const drag = useRef(null); const tipRef = useRef(null); const [dragKey, setDragKey] = useState(null); const [tip, setTip] = useState("");
   const startDrag = (e, d) => {
     if (readOnly || (e.button !== undefined && e.button !== 0)) return;
@@ -75,6 +125,7 @@ export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load,
     };
     const up = () => {
       const d = drag.current; drag.current = null; setDragKey(null); setTip(""); if (!d) return;
+      if (d.dd) dragged.current = Date.now();
       if (d.dd && d.cand) { const want = d.kind === "move" ? cal.dateOf(cal.idxOnOrAfter(isoOfDay(dayNum(d.node.start) + d.dd))) : null; onCommit(d.cand, { pj: d.pj, key: want ? d.key : null, want }); } else onPreview(null);
     };
     const esc = e => { if (e.key === "Escape") { drag.current = null; setDragKey(null); setTip(""); onPreview(null); } };
@@ -85,7 +136,7 @@ export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load,
   // clavier : ← → déplacent d'un jour ouvré (Maj : une semaine), [ ] changent la durée
   const onKey = (e, it, step, isMs) => {
     const n = it.n;
-    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSel({ pj: it.pj, step }); return; }
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSel({ pj: it.pj, step }); if (!readOnly) setEdit({ it, step }); return; }
     if (e.key === "Escape") { setSel(null); return; }
     if (readOnly) return;
     if (e.key === "ArrowLeft" || e.key === "ArrowRight") { e.preventDefault(); const want = cal.addWork(n.start, (e.key === "ArrowRight" ? 1 : -1) * (e.shiftKey ? 5 : 1)); setSel({ pj: it.pj, step }); onCommit(moveStepTo(base, cal, it.pj, step, want), { pj: it.pj, key: it.key, want }); }
@@ -166,13 +217,13 @@ export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load,
               const rank = l.res && rules[l.res] ? ranks[l.res].indexOf(it.pj) + 1 : 0;
               const common = { tabIndex: 0, role: "button", "aria-label": aria(it, l), "aria-pressed": !!on, onKeyDown: e => onKey(e, it, l.step, !!l.ms), title: it.pj + (names[it.pj] ? " · " + names[it.pj] : "") + "\n" + STEP_LABEL[l.step] + " : " + fmtIso(n.start) + (l.ms ? "" : " → " + fmtIso(n.finish) + " (" + n.dur + " j)") + (readOnly ? "" : "\nGlisser pour déplacer") };
               if (l.ms) {
-                const y = it.y; return (<div key={it.key} {...common} onPointerDown={e => startDrag(e, { kind: "move", pj: it.pj, step: l.step, key: it.key, node: n })} onClick={() => setSel({ pj: it.pj, step: l.step })}
+                const y = it.y; return (<div key={it.key} {...common} onPointerDown={e => startDrag(e, { kind: "move", pj: it.pj, step: l.step, key: it.key, node: n })} onClick={() => { setSel({ pj: it.pj, step: l.step }); if (!readOnly && Date.now() - dragged.current > 300) setEdit({ it, step: l.step }); }}
                   style={{ position: "absolute", left: it.cx - 6, top: y, height: BH, display: "flex", alignItems: "center", gap: 6, opacity: dim ? 0.3 : 1, cursor: readOnly ? "default" : "grab", zIndex: on ? 5 : 2, whiteSpace: "nowrap" }}>
                   <span style={{ width: 11, height: 11, background: col, transform: "rotate(45deg)", borderRadius: 1.5, outline: on ? "2px solid " + C.ink : ch ? "2px dashed #E08A00" : "none", outlineOffset: 2, flex: "none", marginLeft: 0 }} />
                   <span style={{ fontSize: FS + 0.5, fontWeight: on ? 700 : 500, color: on ? C.ink : C.ink2, fontFamily: MONO }}>{it.pj}</span>
                 </div>);
               }
-              return (<div key={it.key} {...common} onPointerDown={e => startDrag(e, { kind: "move", pj: it.pj, step: l.step, key: it.key, node: n })} onClick={() => setSel({ pj: it.pj, step: l.step })}
+              return (<div key={it.key} {...common} onPointerDown={e => startDrag(e, { kind: "move", pj: it.pj, step: l.step, key: it.key, node: n })} onClick={() => { setSel({ pj: it.pj, step: l.step }); if (!readOnly && Date.now() - dragged.current > 300) setEdit({ it, step: l.step }); }}
                 style={{ position: "absolute", left: it.x, top: it.y, width: it.w, height: BH, borderRadius: 3, background: col, opacity: dim ? 0.28 : 1, outline: on ? "2px solid " + C.ink : ch ? "2px dashed #E08A00" : "none", outlineOffset: 1, display: "flex", alignItems: "center", padding: "0 6px", gap: 5, color: "#fff", fontSize: FS, fontWeight: 500, overflow: "hidden", whiteSpace: "nowrap", cursor: readOnly ? "default" : "grab", zIndex: on ? 5 : 2, boxSizing: "border-box" }}>
                 {rank > 0 && it.w > 36 && <span style={{ fontFamily: MONO, fontSize: 9.5, background: "rgba(255,255,255,.25)", borderRadius: 3, padding: "0 3px", flex: "none" }}>{rank}</span>}
                 <span style={{ fontFamily: MONO, pointerEvents: "none", overflow: "hidden", textOverflow: "ellipsis" }}>{it.out ? "" : label(it)}</span>
@@ -187,9 +238,10 @@ export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load,
         </div>
       </div>
     </div>
+    {edit && <StepDialog it={edit.it} step={edit.step} plan={base} cal={cal} onClose={() => setEdit(null)} onApply={(np, info) => { setEdit(null); onCommit(np, info); }} />}
     {dragKey && tip && <div ref={tipRef} style={{ position: "fixed", left: 0, top: 0, zIndex: 10001, background: C.ink, color: C.bg, borderRadius: 4, padding: "3px 8px", fontSize: 11.5, fontWeight: 500, pointerEvents: "none" }}>{tip}</div>}
     <div style={{ display: "flex", gap: 16, flexWrap: "wrap", padding: "6px 14px 8px", fontSize: 11, color: C.ink3, borderTop: "1px solid " + C.line }}>
-      <span>Glisser une barre : déplacer · bord droit : durée · glisser le fond ou clic droit maintenu : parcourir les dates · ← → au clavier</span>
+      <span>Clic sur une tâche : dates, durée et charge · glisser une barre : déplacer · bord droit : durée · glisser le fond ou clic droit maintenu : parcourir les dates · ← → au clavier</span>
       {(rules.prod || rules.banc) && <span>Chiffre dans la barre = rang de passage</span>}
       <span>Trait sombre à gauche = date imposée</span>
     </div>

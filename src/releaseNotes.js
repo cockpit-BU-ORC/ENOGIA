@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v254",
+    date: "2026-11-02",
+    title: "V254 : vos projets modifiés dans la cloche",
+    items: [
+      { t: "Cloche", d: "Quand une mise à jour du planning modifie un de vos projets (chef de projet), la cloche vous prévient, avec le décalage du départ." },
+      { t: "Planificateur", d: "En mode Couloirs, un clic sur une tâche permet de changer ses dates, sa durée et sa charge.", admin: true },
+    ],
+  },
+  {
     id: "2026-11-v253",
     date: "2026-11-02",
     title: "V253 : Calendrier plus lisible",
