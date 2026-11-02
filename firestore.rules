@@ -28,8 +28,8 @@ service cloud.firestore {
     }
 
     match /planning/{id} {
-      // Cash in complet : propriétaire seul (CASH_FOR_ADMINS = false dans roles.js)
-      allow read, write: if base(id) in ['cashin', 'cashinLinks'] && isOwner();
+      // Cash in complet : propriétaire et admins (v252 : CASH_FOR_ADMINS = true dans roles.js)
+      allow read, write: if base(id) in ['cashin', 'cashinLinks'] && isAdmin(id);
       // Copie réduite du Cash in : écrite par le propriétaire, lue par les admins
       allow read: if base(id) == 'cashinShared' && isAdmin(id);
       allow write: if base(id) == 'cashinShared' && isOwner();

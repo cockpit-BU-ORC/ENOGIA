@@ -54,6 +54,18 @@ export function toTreat(rows, today = todayISO()) {
   return out.sort((a, b) => rank[a.kind] - rank[b.kind] || b.days - a.days);
 }
 
+// v252 (demandé : « voir toutes les facturations et encaissements prévus jusqu'à fin 2026 ») : factures pas encore émises et
+// encaissements pas encore reçus dont la date prévue tombe d'ici `until` (les retards inclus), hors EPC, triés par date.
+export function plannedUntil(rows, until = "2026-12-31") {
+  const out = [];
+  (rows || []).forEach(r => {
+    if (!r || r.epc) return;
+    if (!r.factReelle && r.factPrevue && r.factPrevue <= until) out.push({ r, kind: "facture", date: r.factPrevue, montant: Number(r.montant) || 0 });
+    if (!r.encReelle && r.encPrevue && r.encPrevue <= until) out.push({ r, kind: "encaissement", date: r.encPrevue, montant: Number(r.montant) || 0 });
+  });
+  return out.sort((a, b) => a.date.localeCompare(b.date) || a.r.pj.localeCompare(b.r.pj));
+}
+
 // Synthèse d'un PJ du Cash in (en-tête de groupe) : montant du projet, total des jalons, encaissé.
 export function groupInfo(doc, pj) {
   const rows = ((doc && doc.rows) || []).filter(r => r.pj === pj), live = rows.filter(r => !r.epc);

@@ -78,7 +78,7 @@ const DEFAULT_DELAY_TYPES=[
   "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
 ];
 
-const APP_BUILD_VERSION = "2026-11-02-v251-gantt";
+const APP_BUILD_VERSION = "2026-11-02-v252-cash-admins";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 function BetaBanner({canCopy}){
@@ -107,6 +107,7 @@ export default function App(){
   const [authChecked,setAuthChecked]=useState(false);
   // v180 : données plus synchronisées (réseau coupé ou erreur Firestore) → bandeau explicite avec « Recharger ».
   const [syncLost,setSyncLost]=useState(false),[offline,setOffline]=useState(typeof navigator!=="undefined"&&navigator.onLine===false);
+  const authUid=currentUser?currentUser.uid:null; // v252 : les lectures temps réel attendent la connexion (sinon refusées puis jamais relancées)
   useEffect(()=>{const on=()=>setOffline(false),off=()=>setOffline(true);window.addEventListener("online",on);window.addEventListener("offline",off);return()=>{window.removeEventListener("online",on);window.removeEventListener("offline",off);};},[]); // évite un flash de l'écran de connexion pendant la vérification initiale
 
   useEffect(()=>{
@@ -310,6 +311,7 @@ export default function App(){
 
   // Lecture temps réel depuis Firestore
   useEffect(()=>{
+    if(!authUid)return undefined; // v252 : pas de lecture avant la connexion
     const unsub = onSnapshot(DOC_REF(), (snap)=>{
       if(snap.exists()){
         const d = snap.data();
@@ -317,17 +319,18 @@ export default function App(){
         setLastImport(d.lastImport || null);
       }
       setLoading(false);
+      setSyncLost(false); // v252 : la lecture repart (après connexion) → le bandeau disparaît
     }, (err)=>{
       console.error("Erreur Firestore:", err);
       setLoading(false);
       setSyncLost(true); // v180 : l'écran affiche un bandeau au lieu de rester figé sans explication
     });
     return ()=>unsub();
-  },[]);
+  },[authUid]);
 
   // Journal des versions : écart entre l'ancienne et la nouvelle version à chaque import / publication
   const [changeLog,setChangeLog]=useState(null);
-  useEffect(()=>{const unsub=listenChangeLog(setChangeLog);return ()=>unsub();},[]);
+  useEffect(()=>{if(!authUid)return undefined;const unsub=listenChangeLog(setChangeLog);return ()=>unsub();},[authUid]);
   // v135 : modifications non vues (par personne et par poste) → pastille sur l'icône + message à la connexion
   const {unseen:unseenChanges,markSeen:markChangesSeen}=useUnseenChanges(changeLog,currentUser&&currentUser.email);
   const [noticeOpen,setNoticeOpen]=useState(false);
@@ -360,6 +363,7 @@ export default function App(){
 
   // Lecture temps réel du planning initial (figé, Manager uniquement)
   useEffect(()=>{
+    if(!authUid)return undefined; // v252 : pas de lecture avant la connexion
     const unsub = onSnapshot(INITIAL_DOC_REF(), (snap)=>{
       if(snap.exists()){
         const d = snap.data();
@@ -371,10 +375,11 @@ export default function App(){
       console.error("Erreur Firestore (initial):", err);
     });
     return ()=>unsub();
-  },[]);
+  },[authUid]);
 
   // Lecture temps réel des états choisis manuellement par le Manager (pas de calcul automatique)
   useEffect(()=>{
+    if(!authUid)return undefined; // v252 : pas de lecture avant la connexion
     const unsub = onSnapshot(OVERRIDES_DOC_REF(), (snap)=>{
       if(!snap.metadata.fromCache)setOverridesLoaded(true); // v146.19 : le pop-up « nouveautés » attend la version serveur (sinon il s'ouvre puis se ferme)
       if(snap.exists()){
@@ -403,7 +408,7 @@ export default function App(){
       setOverridesLoaded(true);
     });
     return ()=>unsub();
-  },[]);
+  },[authUid]);
 
   const setCompCatalogAndSave=useCallback(async next=>{
     try{
@@ -475,17 +480,19 @@ export default function App(){
 
   // Lecture temps réel des commentaires par PJ
   useEffect(()=>{
+    if(!authUid)return undefined; // v252 : pas de lecture avant la connexion
     const unsub = onSnapshot(COMMENTS_DOC_REF(), (snap)=>{
       if(snap.exists())setComments(snap.data().byPj || {});
     }, (err)=>{
       console.error("Erreur Firestore (comments):", err);
     });
     return ()=>unsub();
-  },[]);
+  },[authUid]);
 
   // Lecture temps réel du cache de synchro "Suivi ORC" (noms / pays / chefs de projet), partagé pour tous les utilisateurs
   // (Bouton « Sync depuis Suivi ORC » retiré du Manager pour l'instant — on garde seulement la lecture du cache déjà synchronisé.)
   useEffect(()=>{
+    if(!authUid)return undefined; // v252 : pas de lecture avant la connexion
     const unsub = onSnapshot(PJ_META_SYNC_DOC_REF(), (snap)=>{
       if(snap.exists()){
         const d=snap.data();
@@ -495,12 +502,13 @@ export default function App(){
       console.error("Erreur Firestore (pjMetaSync):", err);
     });
     return ()=>unsub();
-  },[]);
+  },[authUid]);
 
   // Lecture temps réel des corrections manuelles de fiche projet (nom/pays/chef), saisies dans l'app.
   // Prioritaires sur la synchro Suivi ORC — c'est la dernière main humaine sur la donnée.
   const [pjOverridesState,setPjOverridesState]=useState({});
   useEffect(()=>{
+    if(!authUid)return undefined; // v252 : pas de lecture avant la connexion
     const unsub = onSnapshot(PJ_META_OVERRIDES_DOC_REF(), (snap)=>{
       const v=snap.exists()?(snap.data().meta||{}):{};
       setPjMetaOverrides(v);
@@ -509,7 +517,7 @@ export default function App(){
       console.error("Erreur Firestore (pjMetaOverrides):", err);
     });
     return ()=>unsub();
-  },[]);
+  },[authUid]);
   // V146.1 — Cash in lu en temps réel (super admin uniquement) : alimente les jalons de paiement des fiches, rapports CODIR / CDP et l'avancement.
   // Sans accès (autre compte, règles Firestore) : on vide le magasin, les jalons saisis à la main restent la référence.
   const [,setCashinVer]=useState(0);
@@ -654,9 +662,9 @@ export default function App(){
     }
   },[comments,currentUser]);
 
-  const deleteComment=useCallback(async (pj,index,pin)=>{
-    if(!isSuperAdmin()){notify("La suppression est réservée au super admin.");return false;}
-    if(pin!==PIN){notify("Code incorrect.");return false;}
+  // v252 (demandé : « les admins peuvent supprimer des commentaires ») : plus de code Manager, une simple confirmation suffit
+  const deleteComment=useCallback(async (pj,index)=>{
+    if(!isSuperAdmin()){notify("La suppression est réservée aux admins.");return false;}
     const current=comments[pj]||[];
     const next=current.filter((_,i)=>i!==index);
     const nextAll={...comments,[pj]:next};
@@ -672,13 +680,14 @@ export default function App(){
 
   // Lecture temps réel des allocations de retard par PJ
   useEffect(()=>{
+    if(!authUid)return undefined; // v252 : pas de lecture avant la connexion
     const unsub = onSnapshot(DELAYS_DOC_REF(), (snap)=>{
       if(snap.exists())setDelays(snap.data().byPj || {});
     }, (err)=>{
       console.error("Erreur Firestore (delays):", err);
     });
     return ()=>unsub();
-  },[]);
+  },[authUid]);
 
   // v146.22 : pool de turbines (Manager uniquement)
   useEffect(()=>{
@@ -710,7 +719,10 @@ export default function App(){
   // v242 : vidéo de présentation (profiles.tutoVideo) — proposée une fois à la connexion ; v243 : revue depuis la cloche (sans compteur) jusqu'à la date de fin
   const tutoCfg=profiles&&profiles.tutoVideo,tutoOn=tutoActive(tutoCfg);
   const [tutoOpen,setTutoOpen]=useState(false);
-  const closeTuto=useCallback(()=>{setTutoOpen(false);if(currentUser)markTutoSeen(tutoCfg,currentUser.email);},[tutoCfg,currentUser]);
+  // v252 (retour : « la vidéo de la première connexion ne pouvait pas se fermer ») : ouverte d'elle-même, tutoOpen valait déjà false ;
+  // « Fermer » ne changeait donc aucun état et la page ne se redessinait pas. tutoClosedId retient la vidéo fermée dans cette session.
+  const [tutoClosedId,setTutoClosedId]=useState(null);
+  const closeTuto=useCallback(()=>{setTutoOpen(false);setTutoClosedId((tutoCfg&&tutoCfg.id)||"x");if(currentUser)markTutoSeen(tutoCfg,currentUser.email);},[tutoCfg,currentUser]);
   const saveProfiles=useCallback(async next=>{
     try{await setDoc(PROFILES_DOC_REF(),{...next,updatedAt:new Date().toISOString(),updatedBy:authorName||""});return true;}
     catch(e){console.error(e);notify("Erreur lors de l'enregistrement des profils : "+e.message);return false;}
@@ -763,6 +775,7 @@ export default function App(){
 
   // Lecture temps réel des types de retard génériques (configurables par le Manager)
   useEffect(()=>{
+    if(!authUid)return undefined; // v252 : pas de lecture avant la connexion
     const unsub = onSnapshot(DELAY_TYPES_DOC_REF(), (snap)=>{
       if(snap.exists()&&Array.isArray(snap.data().types)&&snap.data().types.length>0){
         setDelayTypes(snap.data().types);
@@ -771,10 +784,11 @@ export default function App(){
       console.error("Erreur Firestore (delayTypes):", err);
     });
     return ()=>unsub();
-  },[]);
+  },[authUid]);
 
   // Lecture temps réel de la liste des emails autorisés à l'espace Manager
   useEffect(()=>{
+    if(!authUid)return undefined; // v252 : pas de lecture avant la connexion
     const unsub = onSnapshot(MANAGER_EMAILS_DOC_REF(), (snap)=>{
       if(snap.exists()&&Array.isArray(snap.data().emails)){
         setManagerEmails(snap.data().emails);
@@ -783,7 +797,7 @@ export default function App(){
       console.error("Erreur Firestore (managerEmails):", err);
     });
     return ()=>unsub();
-  },[]);
+  },[authUid]);
 
   const setManagerEmailsAndSave=useCallback(async next=>{
     try{
@@ -1085,7 +1099,7 @@ export default function App(){
     {presentation&&<button onClick={()=>setPresentation(false)} title="Quitter le mode présentation (Échap)" className="enogia-btn-tap" style={{position:"fixed",right:16,bottom:16,zIndex:10010,border:"none",borderRadius:999,padding:"8px 16px",background:T.ink900,color:T.surface,fontFamily:T.font,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",boxShadow:T.shadowFloat}}>Mode présentation · Quitter (Échap)</button>}
     {screenOpen&&<WorkshopScreen data={dataWithOverrides} productionExclusions={productionExclusions} closurePeriods={closurePeriods} changeLog={changeLog} darkMode={darkMode} onClose={()=>setScreenOpen(false)}/>}
     {loggedIn&&!justLoggedIn&&!screenOpen&&overridesLoaded&&unseenReleases.length>0&&<ReleasePopup releases={unseenReleases} userName={authorName} onClose={markReleasesSeen}/>}
-    {loggedIn&&!justLoggedIn&&!screenOpen&&tutoOn&&(tutoOpen||(overridesLoaded&&unseenReleases.length===0&&currentUser&&!tutoSeen(tutoCfg,currentUser.email)))&&<TutoVideoModal cfg={tutoCfg} onClose={closeTuto}/>}
+    {loggedIn&&!justLoggedIn&&!screenOpen&&tutoOn&&(tutoOpen||(overridesLoaded&&unseenReleases.length===0&&currentUser&&tutoClosedId!==((tutoCfg&&tutoCfg.id)||"x")&&!tutoSeen(tutoCfg,currentUser.email)))&&<TutoVideoModal cfg={tutoCfg} onClose={closeTuto}/>}
     {noticeOpen&&!screenOpen&&overridesLoaded&&!unseenReleases.length&&unseenChanges.length>0&&<ChangesPopup entries={unseenChanges} userName={authorName} onLater={closeNoticeLater} onRead={()=>{markChangesSeen();setNoticeOpen(false);}} onOpen={()=>{setNoticeOpen(false);setView("changes");}}/>}
 
     {/* ── Rail de navigation : icônes de vue + accès Manager + mode sombre ── */}

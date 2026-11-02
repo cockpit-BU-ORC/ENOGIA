@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v252",
+    date: "2026-11-02",
+    title: "V252 : Cash in pour les admins et corrections",
+    items: [
+      { t: "Cash in", d: "Ouvert aux admins, avec une vue de tout ce qui reste à facturer et à encaisser d'ici fin 2026.", admin: true },
+      { t: "Commentaires", d: "Les admins suppriment un commentaire sans code, avec une simple confirmation.", admin: true },
+      { t: "Connexion", d: "La vidéo de présentation se ferme correctement, et le bandeau « connexion interrompue » n'apparaît plus à la première connexion." },
+    ],
+  },
+  {
     id: "2026-11-v251",
     date: "2026-11-02",
     title: "V251 : Gantt plus lisible",

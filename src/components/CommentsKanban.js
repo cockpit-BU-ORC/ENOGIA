@@ -28,7 +28,7 @@ function Card({c,onDelete,confirming,pinInput,setPinInput,onConfirm,onCancel,onJ
     {!groupColumn&&c.groupPjs&&<div title={"Commentaire groupé : "+c.groupPjs.join(", ")} style={{marginTop:7,fontSize:FZ.xs,color:T.violet600,background:T.violet100,borderRadius:4,padding:"1px 8px",fontWeight:700,display:"inline-block"}}>groupé ×{c.groupPjs.length}</div>}
     {c.linkedDate&&<div style={{marginTop:6,fontSize:FZ.xs,color:T.ink500,fontWeight:600}}>Lié au {new Date(c.linkedDate).toLocaleDateString("fr-FR")}</div>}
     {confirming&&<div style={{marginTop:8,paddingTop:8,borderTop:"1px solid "+T.line,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
-      <input type="password" value={pinInput} onChange={e=>setPinInput(e.target.value)} placeholder="Code Manager" style={{padding:"4px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.xs,fontFamily:T.font,width:104}}/>
+      <span style={{fontSize:FZ.xs,fontWeight:700,color:T.ink900}}>Supprimer ce commentaire ?</span>
       <button onClick={onConfirm} style={{padding:"4px 8px",borderRadius:8,border:"none",background:T.redFill,color:"#fff",fontSize:FZ.xs,fontWeight:700,cursor:"pointer"}}>Confirmer</button>
       <button onClick={onCancel} style={{padding:"4px 8px",borderRadius:8,border:"none",background:T.panel,color:T.ink700,fontSize:FZ.xs,cursor:"pointer"}}>Annuler</button>
     </div>}

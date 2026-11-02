@@ -232,7 +232,7 @@ export function CommentsView({data,comments,addComment,deleteComment,pinOk,addCo
                 </div>
                 <div style={{background:c.private?T.amber100:T.surface,borderRadius:"3px 12px 12px 12px",padding:"8px 12px",display:"inline-block",maxWidth:"100%",fontSize:FZ.sm,color:T.ink700,whiteSpace:"pre-wrap"}}>{c.text}</div>
                 {isTarget&&<div style={{marginTop:7,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
-                  <input type="password" value={pinInput} onChange={e=>setPinInput(e.target.value)} placeholder="Code Manager" style={{padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.xs,fontFamily:T.font,width:110}}/>
+                  <span style={{fontSize:FZ.xs,fontWeight:700,color:T.ink900}}>Supprimer ce commentaire ?</span>
                   <button onClick={confirmDelete} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.redFill,color:"#fff",fontSize:FZ.xs,fontWeight:700,cursor:"pointer"}}>Confirmer</button>
                   <button onClick={()=>setDeleteTarget(null)} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.surface,boxShadow:T.outline,color:T.ink700,fontSize:FZ.xs,cursor:"pointer"}}>Annuler</button>
                 </div>}
@@ -293,7 +293,7 @@ export function CommentsView({data,comments,addComment,deleteComment,pinOk,addCo
                 <div style={{background:c.private?T.amber100:T.surface,borderRadius:"3px 12px 12px 12px",padding:"8px 12px",display:"inline-block",maxWidth:"100%",fontSize:FZ.sm,color:T.ink700,whiteSpace:"pre-wrap"}}>{c.text}</div>
                 {c.linkedDate&&<div style={{marginTop:4,fontSize:FZ.xs,color:T.ink500,fontWeight:600}}>Lié au {fmt(new Date(c.linkedDate))}</div>}
                 {isTarget&&<div style={{marginTop:7,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
-                  <input type="password" value={pinInput} onChange={e=>setPinInput(e.target.value)} placeholder="Code Manager" style={{padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.xs,fontFamily:T.font,width:110}}/>
+                  <span style={{fontSize:FZ.xs,fontWeight:700,color:T.ink900}}>Supprimer ce commentaire ?</span>
                   <button onClick={confirmDelete} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.redFill,color:"#fff",fontSize:FZ.xs,fontWeight:700,cursor:"pointer"}}>Confirmer</button>
                   <button onClick={()=>setDeleteTarget(null)} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.surface,boxShadow:T.outline,color:T.ink700,fontSize:FZ.xs,cursor:"pointer"}}>Annuler</button>
                 </div>}

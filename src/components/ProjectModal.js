@@ -323,7 +323,7 @@ export function ProjectComments({pj,comments,addComment,deleteComment,pinOk,auth
             <div style={{background:c.private?T.amber100:T.panel,borderRadius:"3px 12px 12px 12px",padding:"8px 12px",display:"inline-block",maxWidth:"100%",fontSize:FZ.xs,color:T.ink700,whiteSpace:"pre-wrap"}}>{c.text}</div>
             {c.linkedDate&&<div style={{marginTop:5,fontSize:FZ.xs,color:T.ink500,fontWeight:600}}>Lié au {fmt(new Date(c.linkedDate))}</div>}
             {deleteTarget===c._idx&&<div style={{marginTop:8,paddingTop:8,borderTop:"1px solid "+T.line,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
-              <input type="password" value={pinInput} onChange={e=>setPinInput(e.target.value)} placeholder="Code Manager" style={{padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,width:120}}/>
+              <span style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900}}>Supprimer ce commentaire ?</span>
               <button onClick={confirmDelete} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.redFill,color:"#fff",fontSize:FZ.sm,fontWeight:700,cursor:"pointer"}}>Confirmer la suppression</button>
               <button onClick={()=>setDeleteTarget(null)} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.panel,boxShadow:T.outline,color:T.ink700,fontSize:FZ.sm,cursor:"pointer"}}>Annuler</button>
             </div>}

@@ -8,7 +8,7 @@ import { NavIcon, notify } from "./SharedUI";
 import { CashLinksDialog } from "./CashLinks";
 import { CASHIN_DOC_REF, CASHIN_MAX_BYTES, validateCashin, cleanCashin } from "../cashinData";
 import { cashOverview, todayISO, STATUS_LABEL } from "../cashinLink";
-import { applyEdit, newRow, rowView, toTreat, groupInfo, pjList } from "../cashinModel";
+import { applyEdit, newRow, rowView, toTreat, groupInfo, pjList, plannedUntil } from "../cashinModel";
 import { fmtEur } from "../pjProgress";
 import { ProjetsView, MoisView, EcartsView } from "./CashInViews";
 import { CashInGrid } from "./CashInGrid";
@@ -18,12 +18,64 @@ const btn = primary => ({ padding: "6px 12px", minHeight: 32, borderRadius: 8, b
 const field = () => ({ padding: "5px 8px", minHeight: 32, borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, boxSizing: "border-box", width: "100%" });
 const FILTERS = [["all", "Tous"], ["late", "En retard"], ["tobill", "À facturer"], ["invoiced", "Facture émise"], ["future", "À venir"], ["paid", "Payé"]];
 const SAVE_TXT = { ok: "Enregistré", dirty: "Modifié", saving: "Enregistrement…", error: "Échec de l'enregistrement" };
+const UNTIL = "2026-12-31";
+const MOIS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+
+// v252 (demandé : « un bouton dans À traiter pour voir toutes les facturations et encaissements prévus jusqu'à fin 2026 ») :
+// fenêtre listant, mois par mois, les factures à émettre et les encaissements attendus d'ici UNTIL (retards en tête du mois
+// courant, signalés en rouge), avec les totaux ; un clic ouvre le jalon.
+function PlannedDialog({ rows, labels, today, onClose, onOpenRow }) {
+  const [show, setShow] = useState("all");
+  useEffect(() => { const k = e => { if (e.key === "Escape") onClose(); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose]);
+  const all = useMemo(() => plannedUntil(rows, UNTIL), [rows]);
+  const list = all.filter(x => show === "all" || x.kind === show);
+  const sum = k => all.filter(x => x.kind === k).reduce((a, x) => a + x.montant, 0);
+  const byMonth = [];
+  list.forEach(x => { const m = x.date < today ? "retard" : x.date.slice(0, 7); let g = byMonth.find(b => b.m === m); if (!g) { g = { m, items: [] }; byMonth.push(g); } g.items.push(x); });
+  byMonth.sort((a, b) => (a.m === "retard" ? -1 : b.m === "retard" ? 1 : a.m.localeCompare(b.m)));
+  const th = { textAlign: "left", fontSize: 12, fontWeight: 500, color: T.ink500, padding: "6px 8px", borderBottom: "1px solid " + T.line, whiteSpace: "nowrap" };
+  const td = { padding: "0 8px", height: 36, borderBottom: "1px solid " + T.line, fontSize: FZ.sm, color: T.ink700, whiteSpace: "nowrap" };
+  const tab = (id, l) => <button key={id} type="button" aria-pressed={show === id} onClick={() => setShow(id)} style={{ ...btn(show === id) }}>{l}</button>;
+  return (<div onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 3000, background: "rgba(8,12,28,.45)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "5vh 12px", overflowY: "auto" }}>
+    <div role="dialog" aria-modal="true" aria-label={"Facturations et encaissements prévus jusqu'au " + fd(UNTIL)} style={{ width: "min(920px,100%)", background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, fontFamily: T.font }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderBottom: "1px solid " + T.line, flexWrap: "wrap" }}>
+        <div style={{ flex: 1, minWidth: 220 }}>
+          <div style={{ fontSize: FZ.md, fontWeight: 700 }}>Prévu jusqu'au 31 décembre {UNTIL.slice(0, 4)}</div>
+          <div style={{ fontSize: FZ.xs, color: T.ink500 }}>Factures pas encore émises et paiements pas encore reçus (hors EPC). Clic sur une ligne = le jalon.</div>
+        </div>
+        <button type="button" onClick={onClose} aria-label="Fermer" style={{ ...btn(false) }}><NavIcon name="close" size={14} />Fermer</button>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 8, padding: "12px 16px 4px" }}>
+        <div style={{ background: T.surface, borderRadius: 10, padding: "8px 12px" }}><div style={{ fontFamily: T.fontLabel, fontSize: 12, color: T.ink500 }}>À facturer d'ici fin {UNTIL.slice(0, 4)}</div><div style={{ fontFamily: T.fontDisplay, fontSize: 22, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{fmtEur(sum("facture"))}</div></div>
+        <div style={{ background: T.surface, borderRadius: 10, padding: "8px 12px" }}><div style={{ fontFamily: T.fontLabel, fontSize: 12, color: T.ink500 }}>À encaisser d'ici fin {UNTIL.slice(0, 4)}</div><div style={{ fontFamily: T.fontDisplay, fontSize: 22, fontWeight: 600, fontVariantNumeric: "tabular-nums", color: T.emerald600 }}>{fmtEur(sum("encaissement"))}</div></div>
+      </div>
+      <div role="group" aria-label="Afficher" style={{ display: "flex", gap: 6, padding: "8px 16px", flexWrap: "wrap" }}>{tab("all", "Tout")}{tab("facture", "Facturations")}{tab("encaissement", "Encaissements")}</div>
+      <div style={{ padding: "0 16px 16px", overflowX: "auto" }}>
+        {list.length === 0 ? <div style={{ padding: "16px 0", fontSize: FZ.sm, color: T.ink500 }}>Rien de prévu d'ici la fin de l'année.</div> :
+          <table style={{ width: "100%", borderCollapse: "collapse", fontVariantNumeric: "tabular-nums" }}>
+            <thead><tr><th style={th}>Date prévue</th><th style={th}>PJ</th><th style={th}>Jalon</th><th style={th}>Type</th><th style={{ ...th, textAlign: "right" }}>Montant</th></tr></thead>
+            {byMonth.map(g => { const tot = g.items.reduce((a, x) => a + x.montant, 0); return (<tbody key={g.m}>
+              <tr><td colSpan={5} style={{ padding: "10px 8px 4px", fontSize: FZ.xs, fontWeight: 700, color: g.m === "retard" ? T.red500 : T.ink900 }}>{g.m === "retard" ? "Déjà en retard" : MOIS[Number(g.m.slice(5, 7)) - 1] + " " + g.m.slice(0, 4)} <span style={{ color: T.ink500, fontWeight: 600 }}>· {fmtEur(tot)}</span></td></tr>
+              {g.items.map((x, i) => <tr key={x.r.id + x.kind + i} className="enogia-kpi-row" tabIndex={0} onClick={() => onOpenRow(x.r.id)} onKeyDown={e => { if (e.key === "Enter") onOpenRow(x.r.id); }} style={{ cursor: "pointer" }} aria-label={"Ouvrir le jalon " + x.r.pj + " " + (x.r.jalon || "")}>
+                <td style={{ ...td, color: x.date < today ? T.red500 : T.ink700, fontWeight: x.date < today ? 700 : 400 }}>{fd(x.date)}</td>
+                <td style={{ ...td, fontFamily: T.fontMono, fontWeight: 700, color: T.ink900 }}>{x.r.pj}<span style={{ fontFamily: T.font, fontWeight: 400, color: T.ink500 }}>{labels[x.r.pj] ? " · " + labels[x.r.pj] : ""}</span></td>
+                <td style={{ ...td, maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis" }}>{x.r.jalon || "Jalon sans nom"}</td>
+                <td style={td}>{x.kind === "facture" ? "Facturation" : "Encaissement"}</td>
+                <td style={{ ...td, textAlign: "right", color: T.ink900, fontWeight: 600 }}>{fmtEur(x.montant)}</td>
+              </tr>)}
+            </tbody>); })}
+          </table>}
+      </div>
+    </div>
+  </div>);
+}
 
 export function CashInNative({ authorName, focus, onLegacy }) {
   const [doc, setDocState] = useState(null), [info, setInfo] = useState({ loaded: false, exists: false, err: null });
   const [save, setSave] = useState("ok"), [msg, setMsg] = useState(null), [linksOpen, setLinksOpen] = useState(false);
   const [q, setQ] = useState(""), [filter, setFilter] = useState("all"), [hidePaid, setHidePaid] = useState(true), [hideEpc, setHideEpc] = useState(false);
   const [sel, setSel] = useState(null), [tab, setTab] = useState("jalons"), [folded, setFolded] = useState(() => new Set());
+  const [planOpen, setPlanOpen] = useState(false);
   const dirty = useRef(false), timer = useRef(0), latest = useRef(null);
   const today = todayISO();
 
@@ -109,14 +161,19 @@ export function CashInNative({ authorName, focus, onLegacy }) {
       <Kpi l="Encaissé" v={fmtEur(ov.paid)} tone={T.emerald600} /><Kpi l="Facturé, en attente" v={fmtEur(ov.invoiced)} /><Kpi l="En retard" v={fmtEur(ov.late)} tone={ov.late ? T.red500 : undefined} /><Kpi l="Reste à facturer" v={fmtEur(ov.toBill)} tone={ov.toBill ? T.amber600 : undefined} /><Kpi l="Attendu sous 30 j" v={fmtEur(ov.next30)} />
     </div>}
 
-    {treat.length > 0 && <section aria-label="À traiter" style={{ background: T.card, border: "1px solid " + T.line, borderLeft: "4px solid " + T.red500, borderRadius: "0 10px 10px 0", padding: "8px 12px" }}>
-      <div style={{ fontSize: FZ.sm, fontWeight: 700, color: T.ink900, marginBottom: 4 }}>À traiter · {treat.length}</div>
+    {rows.length > 0 && <section aria-label="À traiter" style={{ background: T.card, border: "1px solid " + T.line, borderLeft: "4px solid " + (treat.length ? T.red500 : T.line), borderRadius: "0 10px 10px 0", padding: "8px 12px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 4 }}>
+        <span style={{ fontSize: FZ.sm, fontWeight: 700, color: T.ink900 }}>À traiter · {treat.length}{treat.length === 0 ? " — rien d'urgent" : ""}</span>
+        {/* v252 : tout ce qui reste à facturer et à encaisser jusqu'à la fin de l'année */}
+        <button type="button" style={{ ...btn(false), marginLeft: "auto" }} onClick={() => setPlanOpen(true)}><NavIcon name="calendar" size={14} />Prévu jusqu'à fin {UNTIL.slice(0, 4)}</button>
+      </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 14px" }}>
         {treat.slice(0, 8).map(x => <button key={x.r.id} type="button" onClick={() => { setTab("jalons"); setSel(x.r.id); setHidePaid(false); }} style={{ border: "none", background: "transparent", padding: "2px 0", minHeight: 24, cursor: "pointer", fontFamily: T.font, fontSize: FZ.xs, color: T.ink700, textAlign: "left" }}>
           <b style={{ fontFamily: T.fontMono, color: T.ink900 }}>{x.r.pj}</b> {x.r.jalon || "Jalon sans nom"} · {fmtEur(x.r.montant)} · <span style={{ color: x.kind === "late" ? T.red500 : x.kind === "tobill" ? T.amber600 : T.ink500, fontWeight: 700 }}>{x.text}</span></button>)}
         {treat.length > 8 && <span style={{ fontSize: FZ.xs, color: T.ink500 }}>… et {treat.length - 8} autres</span>}
       </div>
     </section>}
+    {planOpen && <PlannedDialog rows={rows} labels={(doc && doc.labels) || {}} today={today} onClose={() => setPlanOpen(false)} onOpenRow={id => { setPlanOpen(false); openRow(id); }} />}
 
     <div role="tablist" aria-label="Vues du Cash in" style={{ display: "flex", gap: 2, borderBottom: "1px solid " + T.line }}>
       {[["jalons", "Jalons"], ["projets", "Projets"], ["mois", "Cash par mois"], ["ecarts", "Écarts"]].map(([id, l]) => <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)} style={{ border: "none", background: "transparent", borderBottom: "3px solid " + (tab === id ? T.ink900 : "transparent"), marginBottom: -1, padding: "8px 12px", fontSize: FZ.sm, fontWeight: 700, color: tab === id ? T.ink900 : T.ink500, cursor: "pointer", fontFamily: T.font }}>{l}</button>)}

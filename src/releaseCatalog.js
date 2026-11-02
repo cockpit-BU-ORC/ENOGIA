@@ -573,4 +573,11 @@ export const RELEASE_CATALOG = [
     ["Départ initial", "Un losange gris marque le départ prévu au planning initial ; un pointillé de la couleur de l'écart le relie au départ actuel."],
     ["En-tête", "Deux lignes seulement : le mois, puis la semaine et la date de son lundi."],
   ] },
+  { v: "252", t: "Cash in pour les admins, commentaires, première connexion", items: [
+    ["Cash in pour les admins", "Les admins ouvrent le Cash in (page, pastille de la fiche, blocs de l'accueil).", "admin"],
+    ["Prévu jusqu'à fin 2026", "Dans « À traiter » du Cash in : toutes les factures à émettre et les encaissements attendus d'ici le 31 décembre, mois par mois, avec les totaux.", "admin"],
+    ["Supprimer un commentaire", "Les admins suppriment un commentaire avec une simple confirmation, sans code.", "admin"],
+    ["Vidéo de présentation", "Ouverte d'elle-même à la connexion, elle se ferme bien avec « Fermer »."],
+    ["Première connexion", "Plus de bandeau « connexion aux données interrompue » : les données se chargent après la connexion Google."],
+  ] },
 ];

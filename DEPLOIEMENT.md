@@ -1729,3 +1729,15 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - `GanttView.js` : le départ prévu au planning initial devient un losange gris, relié au départ actuel par un pointillé de la couleur de l'écart (rouge plus de 10 j, ambre 4 à 10 j, vert sinon) ; il remplace la barre initiale en pointillés sous chaque ligne. En-tête sur deux lignes : le mois (en gras, aligné à gauche), puis « S45 · 2 » (semaine et date du lundi) ; l'ancienne ligne des jours est retirée. Légende : « Départ initial », « Glissement ».
 - Pas de nouvelle clé `localStorage`, pas de nouveau document Firestore.
 - Fichiers : components/GanttView.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v252 — Cash in pour les admins, commentaires, première connexion
+
+- Demandé : « déployer le Cash in aussi aux admins », « un bouton dans À traiter pour voir toutes les facturations et encaissements prévus jusqu'à fin 2026 », « les admins peuvent supprimer des commentaires », « la vidéo de la première connexion ne se fermait pas », « comment éviter le bandeau (connexion interrompue) lors des premières connexions ? ».
+- **À faire par Gabriel : republier `firestore.rules`** (console Firebase › Firestore › Règles, voir SECURITE.md). Sans cela, les admins voient le Cash in mais la lecture est refusée.
+- `roles.js` : `CASH_FOR_ADMINS = true`. `firestore.rules` : `cashin` / `cashinLinks` lisibles et modifiables par les admins (`isAdmin`), plus seulement le propriétaire.
+- `cashinModel.js` : `plannedUntil(rows, until)`. `CashInNative.js` : « À traiter » toujours affiché, bouton « Prévu jusqu'à fin 2026 » → fenêtre mois par mois (déjà en retard, puis chaque mois), totaux à facturer / à encaisser, filtre Tout / Facturations / Encaissements, clic = le jalon.
+- Commentaires : `deleteComment` sans code Manager ; dans la Liste des commentaires, le tableau et la fiche, « Supprimer ce commentaire ? » + Confirmer.
+- Vidéo : une vidéo ouverte d'elle-même à la connexion restait affichée après « Fermer » (aucun état ne changeait) ; `tutoClosedId` la retire tout de suite.
+- Première connexion : les lectures temps réel (planning, initial, réglages, commentaires, fiches, retards, types de retard, accès Manager, journal) démarrent après la connexion Google (`authUid`). Avant, elles partaient sans compte, étaient refusées par les règles et ne repartaient plus : bandeau « connexion interrompue » et données figées jusqu'au rechargement.
+- Pas de nouvelle clé `localStorage`, pas de nouveau document Firestore.
+- Fichiers : roles.js, firestore.rules, cashinModel.js, components/CashInNative.js, components/CommentsKanban.js, components/CommentsView.js, components/ProjectModal.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

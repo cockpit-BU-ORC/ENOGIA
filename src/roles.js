@@ -19,5 +19,6 @@ export function isOwner() { return ROLE.owner; }
 // v210 (demandé : « les 2 chefs de projet, aussi admin, Clément et Myy, doivent pouvoir remplir et mettre à jour le Cash in ») :
 // le Cash in est ouvert au propriétaire ET aux admins (accès Manager).
 // v221 : réservé au propriétaire « pour l'instant » (même réglage que CASH_FOR_ADMINS dans App.js)
-export const CASH_FOR_ADMINS = false;
+// v252 (demandé : « déployer le Cash in aussi aux admins ») : ouvert aux admins (règles Firestore cashin / cashinLinks ouvertes aussi)
+export const CASH_FOR_ADMINS = true;
 export function canCash() { return ROLE.owner || (CASH_FOR_ADMINS && ROLE.superAdmin); }
