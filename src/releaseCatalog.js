@@ -569,4 +569,8 @@ export const RELEASE_CATALOG = [
     ["Cadrans entiers", "Sur l'accueil et la page Tests, un cadran n'est plus coupé avec une barre de défilement : il prend la hauteur de son contenu."],
     ["Chiffres de l'accueil", "Même règle que les KPI : vert pour les machines livrées, rouge pour les PJ en retard, encre sinon."],
   ] },
+  { v: "251", t: "Gantt épuré (maquette Claude Design)", items: [
+    ["Départ initial", "Un losange gris marque le départ prévu au planning initial ; un pointillé de la couleur de l'écart le relie au départ actuel."],
+    ["En-tête", "Deux lignes seulement : le mois, puis la semaine et la date de son lundi."],
+  ] },
 ];

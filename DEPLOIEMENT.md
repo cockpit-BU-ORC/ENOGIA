@@ -1722,3 +1722,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - `HomeView.js` : chiffres clés de l'accueil — livrées en vert, en retard en rouge, départs en encre (avant : départs en vert, retard en ocre).
 - Pas de nouvelle clé `localStorage`, pas de nouveau document Firestore.
 - Fichiers : components/ChangesNotice.js, components/CalendarView.js, components/Arrange.js, components/HomeView.js, styles.css, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v251 — Gantt épuré (maquette Claude Design)
+
+- Demandé : trois pistes pour le Gantt dans Claude Design (canevas « Cockpit — Gantt »), puis « Piste A ».
+- `GanttView.js` : le départ prévu au planning initial devient un losange gris, relié au départ actuel par un pointillé de la couleur de l'écart (rouge plus de 10 j, ambre 4 à 10 j, vert sinon) ; il remplace la barre initiale en pointillés sous chaque ligne. En-tête sur deux lignes : le mois (en gras, aligné à gauche), puis « S45 · 2 » (semaine et date du lundi) ; l'ancienne ligne des jours est retirée. Légende : « Départ initial », « Glissement ».
+- Pas de nouvelle clé `localStorage`, pas de nouveau document Firestore.
+- Fichiers : components/GanttView.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

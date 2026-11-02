@@ -93,8 +93,10 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
   // En-tête à 3 bandes — mois, puis numéro de semaine ("SXX", demandé explicitement : "rajouter les
   // SXX (numéro de semaine) dans la page gantt"), puis le repère jour existant — plutôt que de
   // remplacer ce dernier, pour ne pas perdre le détail jour tout en ajoutant le numéro de semaine.
-  const MONTH_BAND_H=22, WEEK_NUM_BAND_H=14, DAY_TICK_H=24;
-  const HEADER_H=MONTH_BAND_H+WEEK_NUM_BAND_H+DAY_TICK_H;
+  // v251 (maquette A « Gantt épuré » de Claude Design, choisie par Gabriel) : en-tête sur deux bandes seulement — le mois en gras,
+  // puis la semaine et la date de son lundi sur une seule ligne (« S45 · 2 ») ; l'ancienne bande des jours est fusionnée.
+  const MONTH_BAND_H=26, WEEK_NUM_BAND_H=22;
+  const HEADER_H=MONTH_BAND_H+WEEK_NUM_BAND_H;
   // Même formule que CalendarView (weekNum) — numéro ISO-like de semaine à partir du 1er janvier.
   const weekNum=d=>{const j=new Date(d.getFullYear(),0,1);return Math.ceil(((d-j)/86400000+j.getDay()+1)/7);};
   const scrollRef=React.useRef(null);
@@ -244,15 +246,12 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
         {/* en-tête mois + numéro de semaine + semaines (repère jour) */}
         <div style={{height:HEADER_H,position:"sticky",top:0,zIndex:7,borderBottom:"1px solid "+T.line,background:T.surface}}>
           {months.map((ms,mi)=>{const me=new Date(ms.getFullYear(),ms.getMonth()+1,1);const w=(xOf(me)-xOf(ms));const isCur=ms.getFullYear()===todayYear&&ms.getMonth()===today.getMonth();
-            return(<div key={mi} style={{position:"absolute",left:xOf(ms),width:w,top:0,height:MONTH_BAND_H,display:"flex",alignItems:"center",justifyContent:"center",fontSize:FZF.md,fontWeight:700,color:isCur?T.teal600:T.ink700,borderLeft:"1px solid "+T.line,background:isCur?T.teal100:"transparent"}}>{MONTHS[ms.getMonth()]}{multiYear?" "+ms.getFullYear():""}</div>);
+            return(<div key={mi} style={{position:"absolute",left:xOf(ms),width:w,top:0,height:MONTH_BAND_H,display:"flex",alignItems:"flex-end",justifyContent:"flex-start",padding:"0 8px 2px",boxSizing:"border-box",overflow:"hidden",whiteSpace:"nowrap",fontSize:FZF.md,fontWeight:700,color:isCur?T.ink900:T.ink700,borderLeft:"1px solid "+T.line,background:isCur?T.teal100:"transparent"}}>{MONTHS[ms.getMonth()]}{multiYear?" "+ms.getFullYear():""}</div>);
           })}
           {/* Bande "SXX" (demandé explicitement), une fois par semaine, séparée du repère jour
               ci-dessous plutôt que de le remplacer. */}
           {weekMarks.map((wm,wi)=>(
-            <div key={wi} style={{position:"absolute",left:xOf(wm),top:MONTH_BAND_H,height:WEEK_NUM_BAND_H,width:dayW*7,display:"flex",alignItems:"center",justifyContent:"center",fontSize:FZF.xs,fontWeight:700,color:T.ink300,borderLeft:"1px solid "+T.surfaceAlt}}>S{weekNum(wm)}</div>
-          ))}
-          {weekMarks.map((wm,wi)=>(
-            <div key={"d"+wi} style={{position:"absolute",left:xOf(wm),top:MONTH_BAND_H+WEEK_NUM_BAND_H,height:DAY_TICK_H,width:dayW*7,display:"flex",alignItems:"center",justifyContent:"center",fontSize:FZF.sm,color:T.ink300,borderLeft:"1px solid "+T.surfaceAlt,fontWeight:500}}>{wm.getDate()}</div>
+            <div key={wi} title={"Semaine "+weekNum(wm)+" — lundi "+fmt(wm)} style={{position:"absolute",left:xOf(wm),top:MONTH_BAND_H,height:WEEK_NUM_BAND_H,width:dayW*7,display:"flex",alignItems:"center",justifyContent:"center",gap:3,fontSize:FZF.xs,whiteSpace:"nowrap",overflow:"hidden",borderLeft:"1px solid "+T.surfaceAlt,fontVariantNumeric:"tabular-nums"}}><b style={{color:T.ink500}}>S{weekNum(wm)}</b>{dayW*7>=46&&<span style={{color:T.ink300}}>· {wm.getDate()}</span>}</div>
           ))}
         </div>
 
@@ -289,7 +288,12 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
                 {/* v213 : jours non travaillés (fermeture de l'atelier, ou pas de production pour ce PJ) : la barre est coupée */}
                 {!prevision&&gapRanges(r.arrivee,r.depart,closurePeriods,(productionExclusions||{})[r.pj]).filter(g=>g.kind==="closed"||(fin?new Date(g.to+"T12:00:00")<=fin:true)).map(g=>{const x0=xOf(new Date(g.from+"T00:00:00")),x1=xOf(new Date(g.to+"T00:00:00"))+dayW;return <div key={g.from} title={(g.kind==="closed"?"Atelier fermé":"Pas de production")+" : "+g.from.split("-").reverse().join("/")+(g.to!==g.from?" → "+g.to.split("-").reverse().join("/"):"")}
                   style={{position:"absolute",left:x0,width:Math.max(2,x1-x0),top:"50%",transform:"translateY(-50%)",marginTop:-4,height:22,zIndex:2,background:T.surface,backgroundImage:"repeating-linear-gradient(135deg,"+T.line+" 0 2px,transparent 2px 5px)",borderLeft:"1px solid "+T.line,borderRight:"1px solid "+T.line,boxSizing:"border-box"}}/>;})}
-                {ini&&<div aria-hidden="true" title="Planning initial" style={{position:"absolute",left:ini.left,width:ini.width,top:"50%",marginTop:9,height:0,borderTop:"2px dashed "+T.ink500,opacity:.75,zIndex:2}}/>}
+                {/* v251 (maquette A) : le départ prévu au planning initial = losange gris ; un pointillé de la couleur de l'écart le relie
+                    au départ actuel (glissement), au lieu de toute la barre initiale en pointillés */}
+                {ini&&(()=>{const xi=ini.left+ini.width,xd=mb.left+mb.width,a=Math.min(xi,xd),w=Math.abs(xd-xi),col=lvl==="late"?T.red500:lvl==="warn"?T.amber600:T.emerald600;return <>
+                  {w>2&&<div aria-hidden="true" style={{position:"absolute",left:a,width:w,top:"50%",marginTop:12,height:0,borderTop:"2px dotted "+col,zIndex:2}}/>}
+                  <div title={"Départ prévu au planning initial : "+fmt(new Date(new Date(r.depart).getTime()-r.drift*86400000))} style={{position:"absolute",left:xi-5,top:"50%",marginTop:7,width:10,height:10,background:T.ink500,transform:"rotate(45deg)",zIndex:3,boxShadow:"0 0 0 1.5px "+T.card}}/>
+                </>;})()}
                 {(txt||prevision)&&<span style={{position:"absolute",left:mb.left+mb.width+8,top:"50%",transform:"translateY(-50%)",marginTop:-4,zIndex:4,whiteSpace:"nowrap",fontSize:FZF.xs,fontWeight:700,padding:"1px 8px",borderRadius:999,fontVariantNumeric:"tabular-nums",
                   background:prevision?"transparent":pill?pill.bg:"transparent",color:prevision?T.ink500:pill?pill.fg:T.ink500}}>{prevision?"dates prévisionnelles":txt}</span>}
               </>;})()}
@@ -310,7 +314,8 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
     {/* v184 : légende de la maquette validée */}
     <div style={{padding:"10px 18px",borderTop:"1px solid "+T.line,display:"flex",gap:"6px 18px",flexWrap:"wrap",alignItems:"center",background:T.surface,fontSize:FZF.sm,color:T.ink700}}>
       {[["Production",stageSoft().production.solid],["Tests",stageSoft().tests.solid],["Fin de prod → départ",stageSoft().finProd.solid]].map(([l,c])=><span key={l} style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:18,height:10,borderRadius:2,background:c}}/>{l}</span>)}
-      <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:18,height:0,borderTop:"2px dashed "+T.ink500}}/>Planning initial</span>
+      <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:9,height:9,background:T.ink500,transform:"rotate(45deg)"}}/>Départ initial</span>
+      <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:18,height:0,borderTop:"2px dotted "+T.red500}}/>Glissement</span>
       <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:2,height:12,background:T.red500}}/>Aujourd'hui</span>
       <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:18,height:10,borderRadius:2,border:"1.5px dashed "+T.ink300,boxSizing:"border-box"}}/>Dates prévisionnelles</span>
       <span style={{marginLeft:"auto",color:T.ink500}}>Écart : <b style={{color:T.emerald600}}>à l'heure</b> · <b style={{color:T.amber600}}>4 à 10 j</b> · <b style={{color:T.red600}}>plus de 10 j</b></span>

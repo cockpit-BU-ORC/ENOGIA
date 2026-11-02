@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v251",
+    date: "2026-11-02",
+    title: "V251 : Gantt plus lisible",
+    items: [
+      { t: "Gantt", d: "Un losange gris montre le départ prévu au départ ; un pointillé le relie au départ actuel pour voir le glissement d'un coup d'œil. L'en-tête est plus léger." },
+    ],
+  },
+  {
     id: "2026-10-v250",
     date: "2026-10-31",
     title: "V250 : des repères plus clairs",
