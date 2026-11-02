@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v253",
+    date: "2026-11-02",
+    title: "V253 : Calendrier plus lisible",
+    items: [
+      { t: "Calendrier", d: "La production est une bande continue avec sa date de fin ; les arrivées, tests et départs sont des pastilles, et la présence client / NOBO deux petits ronds « C » et « N »." },
+    ],
+  },
+  {
     id: "2026-11-v252",
     date: "2026-11-02",
     title: "V252 : Cash in pour les admins et corrections",

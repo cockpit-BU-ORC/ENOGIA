@@ -3,7 +3,7 @@ import { isPhone } from "../useIsPhone";
 import { EtatInfoButton } from "./ProdStagesUI";
 import { T, FZF, stagePalette, stageSoft, stripeBg } from "../theme";
 import { useMarks, NewMark } from "./ChangesNotice";
-import { getPjMeta, PresenceChip, presenceKind, presenceKindAt, presenceRing, MONTHS_FULL, today, ETAT_META, ALL_ETATS, ProjectLabelCell } from "../pjMeta";
+import { getPjMeta, presenceKind, presenceKindAt, PRESENCE_META, MONTHS_FULL, today, ETAT_META, ALL_ETATS, ProjectLabelCell } from "../pjMeta";
 import { DropFilter, pressable } from "./SharedUI";
 import { toLocalISO, weekStartOf } from "../parsers";
 import { toggleClosedDay, isClosedDay } from "../workDays";
@@ -66,6 +66,29 @@ export function getDayStatus(r,day,excludedDates){
     return true;
   });
   return milestones.length?milestones.join(" + "):null;
+}
+// v252 (maquette A « Semaines affinées » / « Mode Jours » du canevas Claude Design « Cockpit — Calendrier ») : la production devient une
+// bande continue (bords arrondis seulement au début et à la fin de la suite, libellé « Production → date de fin » au début) ; les jalons
+// (arrivée, tests, fin prod, départ) deviennent des pastilles ; la présence client / NOBO, deux ronds « C » / « N ».
+function PresenceDots({kind}){
+  const ks=kind==="both"?["client","nobo"]:[kind];
+  return <span style={{display:"inline-flex",gap:3,flexShrink:0}}>{ks.map(k=>{const m=PRESENCE_META[k];return <span key={k} title={m.label+" présent aux tests"} aria-label={m.label+" présent aux tests"} style={{width:17,height:17,borderRadius:"50%",background:m.bg,border:"2px solid "+m.color,color:m.ink,fontSize:9.5,fontWeight:800,display:"inline-flex",alignItems:"center",justifyContent:"center",boxSizing:"border-box",lineHeight:1}}>{k==="client"?"C":"N"}</span>;})}</span>;
+}
+const fdShort=v=>{const d=v?new Date(v):null;return d&&!isNaN(d)?String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0"):"";};
+// Une tuile : bande (production seule) ou pastille (jalons). runStart / runEnd : la bande continue de la case d'avant / d'après.
+function StageTile({status,label,fill,st,pKind,closed,runStart,runEnd,rowH,compact}){
+  const prod=status==="Production";
+  if(prod){
+    const h=Math.max(16,Math.round(rowH*0.42));
+    return <div style={{position:"absolute",top:"50%",left:runStart?4:-1,right:runEnd?4:0,height:h,marginTop:-h/2,background:fill.background,color:fill.color,borderRadius:(runStart?4:0)+"px "+(runEnd?4:0)+"px "+(runEnd?4:0)+"px "+(runStart?4:0)+"px",opacity:closed?0.45:1,display:"flex",alignItems:"center",padding:runStart?"0 8px":0,overflow:"visible",whiteSpace:"nowrap",zIndex:1,pointerEvents:"none"}}>
+      {runStart&&label&&<span style={{fontSize:FZF.xs,fontWeight:700,position:"relative",zIndex:2}}>{label}</span>}
+    </div>;
+  }
+  const h=Math.max(20,Math.min(30,Math.round(rowH*0.6)));
+  return <div style={{position:"absolute",top:"50%",left:3,right:3,minHeight:h,transform:"translateY(-50%)",display:"flex",alignItems:"center",justifyContent:"center",gap:4,opacity:closed?0.45:1,zIndex:2,pointerEvents:"none"}}>
+    <span style={{minWidth:0,flex:"0 1 auto",background:fill.background,color:fill.color,borderRadius:999,padding:compact?"3px 6px":"4px 10px",fontSize:FZF.xs,fontWeight:700,lineHeight:1.15,textAlign:"center",whiteSpace:"normal",boxShadow:T.mode==="dark"?"inset 0 0 0 1px "+st.t+"33":"none"}}>{label}</span>
+    {pKind&&<PresenceDots kind={pKind}/>}
+  </div>;
 }
 export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusionDays,data,onSelectPj,mode,setMode,anchor,setAnchor,dayAnchor,setDayAnchor,closurePeriods,productionExclusions,zoomLevel:zoomRaw,setZoomLevel,selEtats,setSelEtats,allPJs,selPJs,setSelPJs}){
   const {marks}=useMarks();
@@ -363,7 +386,10 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
                 {/* Tuile de nouveau remplie (demandé explicitement : "essaye de les remplir") — le mot
                     complet doit toujours rester lisible ("je dois toujours réussir à lire l'intégralité
                     des mots"), donc texte qui s'enroule sur 2 lignes plutôt qu'une troncature. */}
-                <div style={{height:"100%",background:fill.background,borderRadius:4,boxShadow:showPresence?presenceRing(pKind):T.mode==="dark"?"inset 0 0 0 1px "+st.t+"33":"none",display:"flex",flexDirection:"column",gap:3,alignItems:"center",justifyContent:"center",textAlign:"center",fontSize:status.includes("+")?FZF.xs:FZF.sm,fontWeight:fill.bold?700:600,color:fill.color,overflow:"visible",whiteSpace:"normal",lineHeight:1.15,padding:"2px 6px",opacity:closed?0.45:1}}><span>{status}</span>{showPresence&&<PresenceChip kind={pKind} compact tiny/>}</div>
+                {(()=>{const pw=new Date(w);pw.setDate(pw.getDate()-7);const nw=new Date(we);nw.setDate(nw.getDate()+7);
+                  const runStart=status!=="Production"||getWeekStatus(r,pw,w)!=="Production"||wi===lo,runEnd=status!=="Production"||getWeekStatus(r,we,nw)!=="Production";
+                  const label=status==="Production"?"Production"+(r.finProd?" → "+fdShort(r.finProd):""):status;
+                  return <StageTile status={status} label={label} fill={fill} st={st} pKind={showPresence?pKind:null} closed={closed} runStart={runStart} runEnd={runEnd} rowH={rowH}/>;})()}
               </div>);
             }):days.slice(lo,hi+1).map((d,k)=>{
               const di=lo+k,pos={gridColumn:di+2,gridRow:row};
@@ -389,10 +415,11 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
               // bas-gauche) et contenu dans la tuile (overflow:"hidden" sur le conteneur) — demandé
               // explicitement : "les étapes sont pas au milieu des tiles et dépassent de celles-ci".
               return(<div key={di} className="enogia-cal-daycell" onClick={cellMenu||(()=>onSelectPj&&onSelectPj(pj))} onMouseEnter={e=>{e.currentTarget.style.background=T.teal100+"50";}} onMouseLeave={e=>{e.currentTarget.style.background=cellBg;}} style={{...pos,height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,boxShadow:todayEdge,cursor:"pointer",background:cellBg,position:"relative",transition:"background .12s ease"}}>
-                <div style={{position:"absolute",inset:3,borderRadius:4,background:fill.background,boxShadow:showPresence?presenceRing(pKind):T.mode==="dark"?"inset 0 0 0 1px "+st.t+"33":"none",overflow:"hidden",opacity:closed?0.45:1,display:"flex",flexDirection:"column",gap:2,alignItems:"center",justifyContent:"center",padding:"0 3px"}}>
-                  <span aria-label={status} style={{fontSize:FZF.xs,fontWeight:fill.bold?700:600,color:fill.color,textAlign:"center",lineHeight:1.15}}>{showWords?status:shortStatus(status)}</span>
-                  {showWords&&showPresence&&<PresenceChip kind={pKind} compact tiny fontSize={9.5}/>}
-                </div>
+                {(()=>{const pd=new Date(d);pd.setDate(pd.getDate()-1);const nd=new Date(d);nd.setDate(nd.getDate()+1);
+                  const ex=productionExclusions?.[pj];
+                  const runStart=status!=="Production"||getDayStatus(r,pd,ex)!=="Production"||di===lo,runEnd=status!=="Production"||getDayStatus(r,nd,ex)!=="Production";
+                  const label=status==="Production"?(showWords?"Production"+(r.finProd?" → "+fdShort(r.finProd):""):"Prod"):(showWords?status:shortStatus(status));
+                  return <StageTile status={status} label={label} fill={fill} st={st} pKind={showWords&&showPresence?pKind:null} closed={closed} runStart={runStart} runEnd={runEnd} rowH={rowH} compact={!showWords}/>;})()}
               </div>);
             })}
           </React.Fragment>);
@@ -408,7 +435,7 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
       </span>)}
       <span style={{display:"flex",alignItems:"center",gap:8,paddingLeft:16,borderLeft:"1px solid "+T.line}}>
         <span style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>Présence tests</span>
-        <PresenceChip kind="client" compact fontSize={12}/><PresenceChip kind="nobo" compact fontSize={12}/>{/* v250 : « Client + NOBO » retiré de la légende (il répétait les deux étiquettes) */}
+        <span style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:FZF.md,color:T.ink700}}><PresenceDots kind="client"/>Client</span><span style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:FZF.md,color:T.ink700}}><PresenceDots kind="nobo"/>NOBO</span>{/* v250 : « Client + NOBO » retiré de la légende (il répétait les deux étiquettes) */}
       </span>
       <span style={{display:"flex",alignItems:"center",gap:6,paddingLeft:16,borderLeft:"1px solid "+T.line,fontSize:FZF.md,color:T.ink700}}><span style={{background:T.surfaceAlt,color:T.ink700,borderRadius:999,padding:"0 6px",fontSize:11,fontWeight:700,lineHeight:"16px"}}>↻ +5 j</span>décalage de la dernière mise à jour</span>
       <span style={{fontSize:FZF.md,color:T.ink300,marginLeft:"auto"}}>Couleur de la tuile = étape · Colonne rouge = aujourd'hui · Clic = détail</span>

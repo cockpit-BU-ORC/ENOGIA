@@ -580,4 +580,8 @@ export const RELEASE_CATALOG = [
     ["Vidéo de présentation", "Ouverte d'elle-même à la connexion, elle se ferme bien avec « Fermer »."],
     ["Première connexion", "Plus de bandeau « connexion aux données interrompue » : les données se chargent après la connexion Google."],
   ] },
+  { v: "253", t: "Calendrier affiné (maquette Claude Design)", items: [
+    ["Production en bande", "La production est une bande continue sur les semaines ou les jours, avec sa date de fin au début."],
+    ["Jalons en pastilles", "Arrivée, tests, fin de production et départ sont des pastilles ; client et NOBO aux tests, deux ronds « C » et « N »."],
+  ] },
 ];

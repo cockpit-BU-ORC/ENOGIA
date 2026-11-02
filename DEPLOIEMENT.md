@@ -1741,3 +1741,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Première connexion : les lectures temps réel (planning, initial, réglages, commentaires, fiches, retards, types de retard, accès Manager, journal) démarrent après la connexion Google (`authUid`). Avant, elles partaient sans compte, étaient refusées par les règles et ne repartaient plus : bandeau « connexion interrompue » et données figées jusqu'au rechargement.
 - Pas de nouvelle clé `localStorage`, pas de nouveau document Firestore.
 - Fichiers : roles.js, firestore.rules, cashinModel.js, components/CashInNative.js, components/CommentsKanban.js, components/CommentsView.js, components/ProjectModal.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v253 — Calendrier affiné (maquette Claude Design)
+
+- Demandé : trois pistes pour le Calendrier dans Claude Design (canevas « Cockpit — Calendrier »), la piste A vue aussi en mode Jours, puis « Oui, intègre ».
+- `CalendarView.js` : la production devient une bande continue d'une case à l'autre (semaines ou jours), arrondie seulement au début et à la fin, avec « Production → date de fin » au début ; les jalons (arrivée, tests, fin de prod, départ, et leurs combinaisons) deviennent des pastilles ; la présence client / NOBO devient deux petits ronds « C » / « N » (aussi dans la légende). La grille, la colonne du jour, les fermetures, les clics (fiche, jour sans production) ne changent pas.
+- Non vérifié dans le navigateur (session locale à reconnecter) : build, tests et contraste seulement.
+- Pas de nouvelle clé `localStorage`, pas de nouveau document Firestore.
+- Fichiers : components/CalendarView.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
