@@ -589,4 +589,9 @@ export const RELEASE_CATALOG = [
     ["Fiches projet", "Les chefs de projet affichés et les regroupements « Par chef » sont les chefs ORC ; pour un projet EPC, le chef EPC est indiqué en mention.", "admin"],
     ["Cloche", "Un chef de projet est prévenu quand une publication du planning modifie un de ses projets (nouveau, départ repoussé ou avancé, dates modifiées)."],
   ] },
+  { v: "255", t: "Livraison prévue calculée, demandes en tête des commentaires, journal des modifications", items: [
+    ["Livraison prévue", "Avec une durée de transport dans la fiche, la livraison prévue = fin projetée + transport, recalculée à chaque publication ; mention « date de livraison, transport compris ».", "admin"],
+    ["Commentaires", "En tête de page, les demandes qui attendent une réponse (personnes citées avec @ qui n'ont pas marqué « traité »), avec Répondre et Marquer traité ; Kanban et Fil en dessous."],
+    ["Modifications", "Le journal des publications à gauche, le détail à droite avec une phrase qui résume (départs, plus grands écarts, ajouts et retraits)."],
+  ] },
 ];

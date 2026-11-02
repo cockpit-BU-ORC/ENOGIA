@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { T, FZ } from "../theme";
 import { getPjMeta, ETAT_META, PRESENCE_META, presenceKind, presenceDateText, GAMME_COLORS, etatColors } from "../pjMeta";
-import { penaltyCalc, ficheBase, siblingsOf, pjBase } from "../penalties";
+import { penaltyCalc, livrPrevueOf, ficheBase, siblingsOf, pjBase } from "../penalties";
 import { diffDays } from "../parsers";
 import { NavIcon } from "./SharedUI";
 import { feuxOf } from "./Feux";
@@ -50,7 +50,7 @@ function financeOf(r, meta, rows, certifs) {
   });
   const sib = siblingsOf(rows, r.pj);
   const sibs = sib.length > 1 ? sib.map(x => { const m = getPjMeta(x.pj, x), c = penaltyCalc(m, x.depart, today); return { pj: x.pj, base: ficheBase(m), status: c.status, lateDays: c.lateDays, weeks: c.chargeableWeeks, amount: c.status === "ok" ? c.amount : 0, current: x.pj === r.pj }; }) : [];
-  return { base: ficheBase(meta), livrContr: meta.contratLivr || null, livrPrevue: meta.livrPrevue || null, pen, certs, sibs, sibBase: pjBase(r.pj) };
+  return { base: ficheBase(meta), livrContr: meta.contratLivr || null, livrPrevue: livrPrevueOf(meta, r.depart), pen, certs, sibs, sibBase: pjBase(r.pj) };
 }
 
 function infoOf(r, { initialByPj, delays, comments, progress, change, rows, certifs }) {

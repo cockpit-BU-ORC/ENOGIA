@@ -1758,3 +1758,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Cloche : `App.js` `myPjChanges` (publications du planning touchant mes PJ depuis mon dernier « Vu », 14 jours par défaut) ; `MentionBell.js` : section « Vos projets modifiés par le planning » (nouveau, départ ± N j, dates modifiées), « Vu », lien vers Modifications ; comptée dans la pastille rouge.
 - Clé `localStorage` : `enogia_mypjchg_seen_<adresse>`.
 - Fichiers : planner/PlannerLanes.js, pjMeta.js, components/ManagerFiche.js, components/MentionBell.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v255 — Livraison prévue calculée, Commentaires (piste B), Modifications (piste A)
+
+- Demandé : « livraison prévue : marqué en italique qu'il s'agit de la date de livraison transport compris ; mettre la date de fin projetée + durée transport » ; « B en commentaires avec un Kanban ou une vision globale » ; « A en modifications » (canevas Claude Design « Cockpit — Commentaires et Modifications »).
+- `penalties.js` : `livrPrevueOf(meta, depart)` = départ prévu + `meta.transportJ` jours, sinon `meta.livrPrevue` ; utilisé par `penaltyCalc` (référence « Livraison ») et `CdpReport`. `ManagerFiche.js` : `LivrPrevueField` — durée « transport … j », date calculée (ou saisie si pas de durée), mention en italique.
+- `CommentsView.js` : `OpenAsks` — demandes en attente (cité avec @, pas encore « traité »), cartes avec Répondre / Marquer traité, 6 visibles puis « Voir les N autres » ; sans demande, une ligne explique comment en créer. Kanban et Fil en dessous. `App.js` passe `resolveComment`.
+- `ChangesView.js` : journal des publications à gauche, détail à droite (phrase de synthèse + tableau) ; `ChangesTable.js` : la liste « Version à afficher » n'apparaît que si `refs` est donné.
+- Donnée Firestore : `pjMetaOverrides` gagne `transportJ` (document déjà couvert par les règles). Pas de nouvelle clé `localStorage`.
+- Fichiers : penalties.js, components/ManagerFiche.js, components/CdpReport.js, components/CommentsView.js, components/ChangesView.js, components/ChangesTable.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

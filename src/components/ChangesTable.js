@@ -77,10 +77,12 @@ export function ChangesTable({ summary, refs, refId, setRefId, refLabel, q, onOp
   const th = { padding: "8px 8px", fontSize: FZ.xs, fontWeight: 700, color: T.ink500, textAlign: "center", whiteSpace: "nowrap", borderBottom: "1px solid " + T.line, background: T.surface, position: "sticky", top: 0, zIndex: 1 };
   return (<div style={{ padding: "12px 16px 16px" }}>
     <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 12 }}>
+      {refs && refs.length > 0 && <>{/* v255 : sans liste (journal à gauche dans Modifications), seul le bouton Copier reste */}
       <span style={{ fontSize: FZ.sm, color: T.ink500 }}>Version à afficher</span>
       <select value={refId} onChange={e => { setRefId(e.target.value); setFilter("all"); }} aria-label="Référence de comparaison" style={{ padding: "6px 8px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontWeight: 700, fontFamily: T.font, maxWidth: 560 }}>
         {refs.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
       </select>
+      </>}
             <span style={{ flex: 1 }} />
       <button style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink700, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font, whiteSpace: "nowrap" }} onClick={copy} title="Copie la synthèse en texte, prête à coller dans un mail ou un compte rendu">{copied ? "Copié ✓" : "Copier la synthèse"}</button>
     </div>

@@ -19,6 +19,7 @@ import { CashLinksDialog } from "./CashLinks";
 import { MultiApplyDialog } from "./MultiApply";
 import { ITEM_STATUS, itemStatus, statusPatch, mitText, mitParts, COMP_STEPS, itemsOf, sortedItems, composantsOf, getDefaultComposants, paiementsOf, compPct, payPct, globalProgress, montantOf, fmtEur } from "../pjProgress";
 import { FicheContratPanel, CertifTag } from "./FicheContrat";
+import { livrPrevueOf } from "../penalties";
 import { FEUX, FeuPicker, feuxOf, worstFeu, feuColor, feuText, feuLabel, NOTE_MAX, useRedGate, redNeeds } from "./Feux";
 
 // ── Fiche projet (Manager) ─────────────────────────────────────────────────────────────────────
@@ -262,6 +263,22 @@ function MontantField({value,onSave}){
     <div style={{fontSize:FZ.xs,color:T.ink300,marginTop:2}}>{value?fmtEur(value):"non renseigné"}</div>
   </div>);
 }
+// v255 : durée de transport (jours) → livraison prévue = fin projetée (départ prévu du planning) + transport, recalculée à chaque
+// publication ; sans durée, la date saisie à la main reste utilisée. Mention en italique : date de livraison, transport compris.
+function LivrPrevueField({meta,depart,onSave}){
+  const tj=meta.transportJ;const [v,setV]=useState(tj==null?"":String(tj));
+  React.useEffect(()=>{setV(tj==null?"":String(tj));},[tj]);
+  const save=()=>{const n=v.trim()===""?undefined:Math.max(0,Math.round(Number(v)));if(n===undefined&&tj==null)return;if(n!==undefined&&isNaN(n))return;if(n!==tj)onSave({transportJ:n});};
+  const auto=tj!=null&&depart,liv=livrPrevueOf(meta,depart);
+  return(<div style={{minWidth:0}}>
+    <div style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>Livraison prévue</div>
+    {auto?<div style={{fontWeight:600,fontSize:FZ.sm,color:T.ink900,marginTop:4}}>{liv?fmt(dOf(liv)):"—"}</div>
+      :<DateField label="" value={meta.livrPrevue||""} onSave={x=>onSave({livrPrevue:x||undefined})} hint=""/>}
+    <label style={{display:"flex",alignItems:"center",gap:4,marginTop:4,fontSize:FZ.xs,color:T.ink500}}>transport
+      <input type="number" min={0} step={1} value={v} placeholder="j" onChange={e=>setV(e.target.value)} onBlur={save} onKeyDown={e=>{if(e.key==="Enter")e.currentTarget.blur();}} aria-label="Durée du transport en jours" style={{width:52,padding:"2px 6px",borderRadius:6,border:"1px solid "+T.line,background:T.card,color:T.ink900,fontSize:FZ.xs,fontFamily:T.font}}/>j</label>
+    <div style={{fontSize:FZ.xs,color:T.ink500,marginTop:2,fontStyle:"italic"}}>{auto?"date de livraison, transport compris (fin projetée + "+tj+" j)":"date de livraison, transport compris"}</div>
+  </div>);
+}
 function ContratSection({r,meta,onSave,onNote}){
   const t0=meta.contratT0||"",tf=meta.contratTFin||"";
   const dT0=dOf(t0),dTf=dOf(tf),dep=dOf(r.depart);
@@ -282,7 +299,7 @@ function ContratSection({r,meta,onSave,onNote}){
       <DateField label="T0 · début" value={t0} onSave={v=>onSave({contratT0:v})} hint={dT0?"":"non renseigné"}/>
       <DateField label="MaD ORC" value={tf} onSave={v=>onSave({contratTFin:v})} hint={dTf?"fin contractuelle, hors transport":"non renseignée"}/>
       <DateField label="Livraison contr." value={meta.contratLivr||""} onSave={v=>onSave({contratLivr:v||undefined})} hint={meta.contratLivr?"transport inclus":"non renseignée"}/>
-      <DateField label="Livraison prévue" value={meta.livrPrevue||""} onSave={v=>onSave({livrPrevue:v||undefined})} hint={meta.livrPrevue?"":"à saisir"}/>
+      <LivrPrevueField meta={meta} depart={r.depart} onSave={onSave}/>
       <div style={{minWidth:0}}>
         <div style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>{endLab}</div>
         <div style={{fontWeight:600,fontSize:FZ.sm,letterSpacing:"-.01em",color:late?T.red500:T.ink900,marginTop:4}}>{dep?fmt(dep):"—"}</div>

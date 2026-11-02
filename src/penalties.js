@@ -38,6 +38,13 @@ export function ficheBase(meta) {
 //   today    : date du jour
 // Résultat : { status: "off"|"inactive"|"incomplete"|"ok", missing[], ref, contract, effective, provisional, lateDays, graceDays,
 //   chargeableWeeks, base, weekly, raw, capEur, amount, capped, startDate }
+// v255 (demandé : « livraison prévue = fin projetée + durée transport, pour que ce soit plus simple ») : quand la fiche a une durée de
+// transport (meta.transportJ, jours calendaires), la livraison prévue se calcule depuis le départ prévu du planning ; sinon, la date saisie.
+export function livrPrevueOf(meta, depart) {
+  const m = meta || {}, n = m.transportJ;
+  if (n != null && n !== "" && !isNaN(Number(n)) && depart) { const d = new Date(depart); if (!isNaN(d)) { d.setHours(12, 0, 0, 0); d.setDate(d.getDate() + Number(n)); return d.toISOString().slice(0, 10); } }
+  return m.livrPrevue || null;
+}
 export function penaltyCalc(meta, depart, today) {
   const p = { ...PEN_DEFAULT, ...((meta && meta.penalite) || {}) };
   const R = PEN_REFS[p.ref] || PEN_REFS.mad;
@@ -53,7 +60,7 @@ export function penaltyCalc(meta, depart, today) {
   out.contract = contract ? iso(contract) : null;
   if (contract) {
     out.startDate = iso(new Date(+contract + (out.graceDays) * DAY));
-    let eff = R.forecast ? toDay(meta[R.forecast]) : toDay(depart);
+    let eff = R.forecast ? toDay(R.forecast === "livrPrevue" ? livrPrevueOf(meta, depart) : meta[R.forecast]) : toDay(depart);
     const t = toDay(today);
     if (!eff && t && t > contract) { eff = t; out.provisional = true; }   // pas de prévision mais l'échéance est dépassée : on compte jusqu'à aujourd'hui
     if (eff) out.effective = iso(eff);

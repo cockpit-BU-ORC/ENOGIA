@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v255",
+    date: "2026-11-02",
+    title: "V255 : commentaires et modifications plus lisibles",
+    items: [
+      { t: "Commentaires", d: "Les demandes qui attendent une réponse (vous ou un collègue cité avec @) s'affichent en tête de la page, avec « Répondre » et « Marquer traité »." },
+      { t: "Modifications", d: "Le journal des publications est à gauche ; à droite, une phrase résume ce qui a bougé avant le tableau détaillé." },
+      { t: "Livraison prévue", d: "Saisissez la durée du transport dans la fiche projet : la livraison prévue se calcule depuis la fin projetée.", admin: true },
+    ],
+  },
+  {
     id: "2026-11-v254",
     date: "2026-11-02",
     title: "V254 : vos projets modifiés dans la cloche",
