@@ -1767,3 +1767,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - `ChangesView.js` : journal des publications à gauche, détail à droite (phrase de synthèse + tableau) ; `ChangesTable.js` : la liste « Version à afficher » n'apparaît que si `refs` est donné.
 - Donnée Firestore : `pjMetaOverrides` gagne `transportJ` (document déjà couvert par les règles). Pas de nouvelle clé `localStorage`.
 - Fichiers : penalties.js, components/ManagerFiche.js, components/CdpReport.js, components/CommentsView.js, components/ChangesView.js, components/ChangesTable.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v256 — Cash in au format artefact
+
+- Demandé : « garder le format et le design du Cash in en format artefact et non la solution du site » ; « les modifications du Cash in ne sont visibles que sur la version du site ».
+- `CashInTab.js` : le format artefact (page d'origine `public/cashin.html`, mêmes données `planning/cashin`) s'ouvre par défaut pour tout le monde ; « Cash in du site » reste à un clic (choix mémorisé dans la nouvelle clé `enogia_cashin_format2` : un ancien choix ne l'empêche plus). Bouton « Prévu jusqu'à fin 2026 » ajouté à la barre de ce format (même fenêtre que dans la version du site ; clic sur une ligne = le PJ dans la page).
+- Clé `localStorage` : `enogia_cashin_format2` (`artefact` par défaut, `site`).
+- Fichiers : components/CashInTab.js, components/CashInNative.js (PlannedDialog exporté), App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

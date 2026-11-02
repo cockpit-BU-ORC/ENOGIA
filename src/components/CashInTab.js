@@ -4,7 +4,8 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { onSnapshot, setDoc } from "firebase/firestore";
 import { T, FZ, R } from "../theme";
 import { CashLinksDialog } from "./CashLinks";
-import { CashInNative } from "./CashInNative";
+import { CashInNative, PlannedDialog } from "./CashInNative";
+import { todayISO } from "../cashinLink";
 import { CASHIN_DOC_REF, CASHIN_PAGE_VERSION, CASHIN_MAX_BYTES, cashinTheme, validateCashin } from "../cashinData";
 
 const btn = (primary) => ({ padding: "6px 12px", borderRadius: 8, border: "1px solid " + (primary ? T.teal600 : T.line), background: primary ? T.teal600 : T.card, color: primary ? T.card : T.ink900, fontSize: FZ.sm, fontWeight: 600, cursor: "pointer" });
@@ -12,8 +13,11 @@ const btn = (primary) => ({ padding: "6px 12px", borderRadius: 8, border: "1px s
 // v193 : l'onglet affiche la version intégrée (CashInNative) ; l'ancienne page en cadre reste accessible le temps de comparer.
 export function CashInTab({ authorName, focus }) {
   // v195 (demandé : « reprendre le même format que la version artefact ») : le format de l'artefact est affiché par défaut ; « Nouvelle version » reste à un clic.
-  const [legacy, setLegacy] = useState(() => { try { return localStorage.getItem("enogia_cashin_format") === "artefact"; } catch (e) { return false; } }); // v198 : le format artefact est reconstruit dans le site, affiché par défaut
-  const pick = v => { setLegacy(v); try { localStorage.setItem("enogia_cashin_format", v ? "artefact" : "nouveau"); } catch (e) {} };
+  // v256 (demandé : « garder le format et le design du Cash in en format artefact et non la solution du site ») : le format artefact
+  // (public/cashin.html, mêmes données planning/cashin) est l'affichage par défaut pour tout le monde ; « Cash in du site » reste à un clic.
+  // Nouvelle clé de mémoire : un ancien choix « nouveau » n'empêche plus le format artefact.
+  const [legacy, setLegacy] = useState(() => { try { return localStorage.getItem("enogia_cashin_format2") !== "site"; } catch (e) { return true; } }); // v198 : le format artefact est reconstruit dans le site, affiché par défaut
+  const pick = v => { setLegacy(v); try { localStorage.setItem("enogia_cashin_format2", v ? "artefact" : "site"); } catch (e) {} };
   return legacy ? <CashInLegacy authorName={authorName} focus={focus} onNative={() => pick(false)} /> : <CashInNative authorName={authorName} focus={focus} onLegacy={() => pick(true)} />;
 }
 function CashInLegacy({ authorName, focus, onNative }) {
@@ -24,6 +28,7 @@ function CashInLegacy({ authorName, focus, onNative }) {
   const lastTheme = useRef("");
   const [info, setInfo] = useState({ loaded: false, exists: false, err: null, count: 0 });
   const [linksOpen, setLinksOpen] = useState(false); // V146.2
+  const [planOpen, setPlanOpen] = useState(false); // v256 : « Prévu jusqu'à fin 2026 » aussi dans le format artefact
   const [msg, setMsg] = useState(null); // { kind: "ok" | "err", text }
 
   const post = useCallback((m) => {
@@ -99,7 +104,8 @@ function CashInLegacy({ authorName, focus, onNative }) {
     <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", justifyContent: "space-between" }}>
       <span />
       <div style={{ display: "flex", gap: 8 }}>
-        <button style={btn(false)} onClick={onNative} title="Revenir au Cash in du site">Cash in du site</button>
+        <button style={btn(false)} onClick={() => setPlanOpen(true)} disabled={!info.exists} title="Factures à émettre et encaissements attendus d'ici le 31 décembre">Prévu jusqu'à fin 2026</button>
+        <button style={btn(false)} onClick={onNative} title="Afficher le Cash in refait dans le site">Cash in du site</button>
         <button style={btn(true)} onClick={() => setLinksOpen(true)} disabled={!info.exists} title="Choisir à quel(s) PJ de l'ordo chaque PJ du Cash in se rattache">Liaisons avec l'ordo</button>
       </div>
     </div>
@@ -107,6 +113,7 @@ function CashInLegacy({ authorName, focus, onNative }) {
     {msg && banner(msg.kind === "ok" ? T.emerald100 : T.red100, msg.kind === "ok" ? T.emerald600 : T.red600, <>{msg.text} <button onClick={() => setMsg(null)} style={{ marginLeft: 8, border: "none", background: "none", color: "inherit", textDecoration: "underline", cursor: "pointer", fontWeight: 600 }}>Fermer</button></>, msg.kind === "ok" ? "status" : "alert")}
     {info.loaded && !info.exists && !info.err && banner(T.teal100, T.teal600, <>Aucune donnée Cash in sur ce site pour l'instant.</>, "status")}
     {linksOpen && <CashLinksDialog onClose={() => setLinksOpen(false)} authorName={authorName}/>}
+    {planOpen && <PlannedDialog rows={(latest.current.data && latest.current.data.rows) || []} labels={(latest.current.data && latest.current.data.labels) || {}} today={todayISO()} onClose={() => setPlanOpen(false)} onOpenRow={id => { const r = ((latest.current.data && latest.current.data.rows) || []).find(x => x.id === id); setPlanOpen(false); if (r) post({ type: "goto", pj: r.pj }); }} />}
     <iframe ref={frameRef} title="Cash in PJ" src={base} style={{ width: "100%", height: "calc(100dvh - 210px)", minHeight: 560, border: "1px solid " + T.line, borderRadius: 12, background: T.surface }}/>
   </div>);
 }

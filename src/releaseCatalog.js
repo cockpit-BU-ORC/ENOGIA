@@ -594,4 +594,7 @@ export const RELEASE_CATALOG = [
     ["Commentaires", "En tête de page, les demandes qui attendent une réponse (personnes citées avec @ qui n'ont pas marqué « traité »), avec Répondre et Marquer traité ; Kanban et Fil en dessous."],
     ["Modifications", "Le journal des publications à gauche, le détail à droite avec une phrase qui résume (départs, plus grands écarts, ajouts et retraits)."],
   ] },
+  { v: "256", t: "Cash in au format artefact", items: [
+    ["Cash in", "Le Cash in s'ouvre au format de l'artefact d'origine (mêmes données) ; « Prévu jusqu'à fin 2026 » y est aussi ; « Cash in du site » reste à un clic.", "admin"],
+  ] },
 ];

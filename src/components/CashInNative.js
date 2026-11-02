@@ -24,7 +24,7 @@ const MOIS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", 
 // v252 (demandé : « un bouton dans À traiter pour voir toutes les facturations et encaissements prévus jusqu'à fin 2026 ») :
 // fenêtre listant, mois par mois, les factures à émettre et les encaissements attendus d'ici UNTIL (retards en tête du mois
 // courant, signalés en rouge), avec les totaux ; un clic ouvre le jalon.
-function PlannedDialog({ rows, labels, today, onClose, onOpenRow }) {
+export function PlannedDialog({ rows, labels, today, onClose, onOpenRow }) {
   const [show, setShow] = useState("all");
   useEffect(() => { const k = e => { if (e.key === "Escape") onClose(); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose]);
   const all = useMemo(() => plannedUntil(rows, UNTIL), [rows]);
