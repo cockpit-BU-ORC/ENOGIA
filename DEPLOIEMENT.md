@@ -1814,3 +1814,13 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Tests : 134 / 23 suites (nouveau : ics.test.js).
 - Pas de nouvelle clé `localStorage`.
 - Fichiers : planner/Planner.js, penalties.js, cashinLink.js, components/CashAnchors.js (nouveau), components/CashInTab.js, components/CashInPlanned.js (nouveau), components/CashInNative.js / CashInGrid.js / CashInViews.js (supprimés), ics.js (nouveau), ics.test.js (nouveau), components/TestsTab.js, turbines.js (+test), cashinData.js, components/CalendarView.js, components/GanttView.js, components/ManagerPanel.js, components/TableView.js, parsers.js, appDocs.js (nouveau), components/AppChrome.js (nouveau), App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v261 — Découpage d'App.js (rien ne change à l'écran)
+
+- Demandé : « continuer le découpage d'App.js ».
+- `src/useAppData.js` (nouveau) : lectures temps réel et enregistrements du pool de turbines, des tests, de Production turbines, des retards et du Cash in, sortis d'App.js à l'identique.
+- `src/listFilters.js` (nouveau) : état des 11 filtres de la Liste, valeurs proposées, calcul de la liste filtrée (+ `listFilters.test.js`).
+- App.js : 1 248 → 1 134 lignes (1 321 avant la V260). 0 avertissement ESLint ; 135 tests / 24 suites.
+- Vérifié dans le site local : Liste (33 machines, filtres), Tests, Turbines, Production turbines, Cash in, accueil.
+- Pas de nouvelle clé `localStorage`, pas de nouveau document Firestore.
+- Fichiers : App.js, useAppData.js (nouveau), listFilters.js (nouveau), listFilters.test.js (nouveau), releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

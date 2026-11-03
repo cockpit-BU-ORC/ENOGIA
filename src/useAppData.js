@@ -1,0 +1,123 @@
+// v261 : sorti de App.js — lectures Firestore temps réel et enregistrements de quelques documents (turbines, tests, Production
+// turbines, retards, Cash in). Même code qu'avant, regroupé par document ; App.js n'appelle plus que ces crochets.
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { onSnapshot, setDoc, updateDoc, deleteField } from "firebase/firestore";
+import { TURBINES_DOC_REF, TESTS_DOC_REF, PRODTURB_DOC_REF, DELAYS_DOC_REF } from "./appDocs";
+import { notify } from "./components/SharedUI";
+import { setCashinDoc, setCashinLinks, getCashinDoc, getCashinLinks, getOrdoPjs, cashGroupsFor } from "./cashinLink";
+import { CASHIN_DOC_REF, CASHIN_LINKS_REF, CASHIN_SHARED_REF, buildSharedCashin } from "./cashinData";
+import { useCashin } from "./useCashin";
+
+// Pool de turbines : lu par le Manager (pinOk), enregistré en bloc
+export function useTurbineDoc(pinOk, authorName) {
+  const [turbineDoc,setTurbineDoc]=useState({turbines:[],wheelNames:[],injectorNames:[]}); // v146.22
+  // v146.22 : pool de turbines (Manager uniquement)
+  useEffect(()=>{
+    if(!pinOk)return undefined;
+    const unsub=onSnapshot(TURBINES_DOC_REF(),snap=>{
+      const d=snap.exists()?snap.data():{};
+      setTurbineDoc({...d,turbines:Array.isArray(d.turbines)?d.turbines:[],wheelNames:Array.isArray(d.wheelNames)?d.wheelNames:[],injectorNames:Array.isArray(d.injectorNames)?d.injectorNames:[]});
+    },err=>console.error("Erreur Firestore (turbines):",err));
+    return ()=>unsub();
+  },[pinOk]);
+  const saveTurbines=useCallback(async next=>{
+    try{await setDoc(TURBINES_DOC_REF(),{...next,updatedAt:new Date().toISOString(),updatedBy:authorName||""});return true;}
+    catch(e){console.error(e);notify("Erreur lors de l'enregistrement des turbines : "+e.message);return false;}
+  },[authorName]);
+  return { turbineDoc, saveTurbines };
+}
+
+// Tests (testeurs, affectations, catalogue FAT) : lus par tous les comptes connectés
+export function useTestsDoc(currentUser, authorName) {
+  const [testsDoc,setTestsDoc]=useState({testers:[],plans:{}});
+  const [testsLoaded,setTestsLoaded]=useState(false);
+  useEffect(()=>{
+    if(!currentUser)return undefined;
+    const unsub=onSnapshot(TESTS_DOC_REF(),snap=>{const d=snap.exists()?snap.data():{};setTestsDoc({...d,testers:Array.isArray(d.testers)?d.testers:[],plans:d.plans&&typeof d.plans==="object"?d.plans:{}});setTestsLoaded(true);},err=>{console.error("Erreur Firestore (tests):",err);setTestsLoaded(true);});
+    return ()=>unsub();
+  },[currentUser]);
+  const saveTests=useCallback(async next=>{
+    // v231 : la validation automatique des machines expédiées (testsView) n'est jamais écrite en base
+    if(next&&next.plans){const plans={};Object.entries(next.plans).forEach(([pj,p])=>{plans[pj]=p&&p.forced&&p.forced.auto?{...p,forced:null}:p;});next={...next,plans};}
+    try{await setDoc(TESTS_DOC_REF(),{...next,updatedAt:new Date().toISOString(),updatedBy:authorName||""});return true;}
+    catch(e){console.error(e);notify("Erreur lors de l'enregistrement des tests : "+e.message);return false;}
+  },[authorName]);
+  return { testsDoc, testsLoaded, saveTests };
+}
+
+// Production turbines : document + opérations élément par élément
+export function useProdTurbines(currentUser, authorName) {
+  // v226 : Production turbines — lue par tous les comptes connectés (pour savoir qui y a accès), modifiée élément par élément
+  const [prodDoc,setProdDoc]=useState(null);
+  useEffect(()=>{
+    if(!currentUser)return undefined;
+    return onSnapshot(PRODTURB_DOC_REF(),snap=>setProdDoc(snap.exists()?snap.data():{}),err=>{console.warn("prodTurbines (lecture) :",err&&err.message);setProdDoc({});});
+  },[currentUser]);
+  const prodApi=useMemo(()=>{
+    const stamp=()=>({updatedAt:new Date().toISOString(),updatedBy:authorName||""});
+    const fail=e=>{console.error(e);notify("Erreur lors de l'enregistrement (Production turbines) : "+e.message);return false;};
+    const setField=async(k,v)=>{try{await updateDoc(PRODTURB_DOC_REF(),{[k]:v,...stamp()});}catch(e){await setDoc(PRODTURB_DOC_REF(),{[k]:v,...stamp()},{merge:true});}return true;};
+    return{
+      put:async(c,id,data)=>{try{await setDoc(PRODTURB_DOC_REF(),{[c]:{[id]:data},...stamp()},{merge:true});const cur=(prodDoc&&prodDoc[c]&&prodDoc[c][id])||{};const gone=Object.keys(cur).filter(k=>!(k in data));if(gone.length)await updateDoc(PRODTURB_DOC_REF(),Object.fromEntries(gone.map(k=>[c+"."+id+"."+k,deleteField()])));return true;}catch(e){return fail(e);}},
+      del:async(c,id)=>{try{await updateDoc(PRODTURB_DOC_REF(),{[c+"."+id]:deleteField(),...stamp()});return true;}catch(e){return fail(e);}},
+      setParams:async p=>{try{return await setField("params",p);}catch(e){return fail(e);}},
+      setAccess:async list=>{try{return await setField("access",list);}catch(e){return fail(e);}},
+    };
+  },[authorName,prodDoc]); // eslint-disable-line react-hooks/exhaustive-deps
+  return { prodDoc, prodApi };
+}
+
+// Retards déclarés (par PJ), lus après la connexion
+export function useDelays(authUid) {
+  const [delays,setDelays]=useState({});
+  useEffect(()=>{
+    if(!authUid)return undefined; // v252 : pas de lecture avant la connexion
+    const unsub = onSnapshot(DELAYS_DOC_REF(), (snap)=>{
+      if(snap.exists())setDelays(snap.data().byPj || {});
+    }, (err)=>{
+      console.error("Erreur Firestore (delays):", err);
+    });
+    return ()=>unsub();
+  },[authUid]);
+  return delays;
+}
+
+// Cash in : magasin partagé (cashinLink) alimenté en temps réel pour le propriétaire et les admins, copie réduite publiée pour les autres
+export function useCashinSync(canCash, currentUser) {
+  const [,setCashinVer]=useState(0);
+  const cashStoreVer=useCashin();
+  const lastSharedRef=useRef("");
+  // v210 : propriétaire et admins lisent le Cash in complet (ci-dessous) ; les autres comptes n'y ont pas accès.
+  useEffect(()=>{ if(canCash) return; setCashinDoc(null); setCashinLinks(null); setCashinVer(v=>v+1); },[canCash]);
+  // Super admin : publie (avec un léger délai, seulement si le contenu a changé) la copie réduite du Cash in pour les administrateurs.
+  useEffect(()=>{
+    if(!canCash) return;
+    const d=getCashinDoc(); if(!d) return;
+    const ordo=getOrdoPjs(); if(!ordo.length) return;
+    const keys=new Set(); ordo.forEach(pj=>cashGroupsFor(pj).forEach(g=>keys.add(g.pj)));
+    const payload=buildSharedCashin(d,getCashinLinks(),keys);
+    const h=JSON.stringify(payload);
+    if(h===lastSharedRef.current) return;
+    const t=setTimeout(()=>{
+      setDoc(CASHIN_SHARED_REF(),{...payload,updatedAt:new Date().toISOString(),updatedBy:(currentUser&&currentUser.email)||""})
+        .then(()=>{lastSharedRef.current=h;}).catch(e=>console.warn("Publication du Cash in pour les admins impossible :", e&&e.code));
+    },2000);
+    return ()=>clearTimeout(t);
+  },[canCash,cashStoreVer]); // eslint-disable-line
+  useEffect(()=>{
+    if(!canCash){ return; }
+    const unsub = onSnapshot(CASHIN_DOC_REF(), (snap)=>{
+      setCashinDoc(snap.exists()?snap.data():null); setCashinVer(v=>v+1);
+    }, (err)=>{
+      console.error("Erreur Firestore (cashin):", err);
+      setCashinDoc(null); setCashinVer(v=>v+1);
+    });
+    const unsubL = onSnapshot(CASHIN_LINKS_REF(), (snap)=>{
+      setCashinLinks(snap.exists()?(snap.data().links||{}):{}); setCashinVer(v=>v+1);
+    }, (err)=>{
+      console.error("Erreur Firestore (cashinLinks):", err);
+      setCashinLinks({}); setCashinVer(v=>v+1);
+    });
+    return ()=>{unsub();unsubL();};
+  },[canCash]);
+}

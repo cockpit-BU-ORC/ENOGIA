@@ -17,10 +17,8 @@ import "./styles.css";
 import { T, setThemeMode, setDensity, D, mixHex, FZ, R, THEMES, DEFAULT_THEME, THEME_KEY, navTokens, stageSoft, stripeHues } from "./theme";
 import { ThemePicker } from "./components/ThemePicker";
 import { setSuperAdmin, isSuperAdmin, setOwner, CASH_FOR_ADMINS } from "./roles";
-import { setCashinDoc, setCashinLinks, setOrdoPjs, getCashinDoc, getCashinLinks, getOrdoPjs, cashGroupsFor } from "./cashinLink";
-import { useCashin } from "./useCashin";
-import { CASHIN_DOC_REF, CASHIN_LINKS_REF, CASHIN_SHARED_REF, buildSharedCashin } from "./cashinData";
-import { getPjMeta, chefsOf, orcChefsOf, ALL_GAMMES, ALL_ETATS, ETAT_META, registerCustomEtats, registerEtatEdits, MONTHS, today, setSyncedPjMeta, setPjMetaOverrides, GAMME_OVERRIDE, EXCLUDED_CHEFS } from "./pjMeta";
+import { setOrdoPjs } from "./cashinLink";
+import { getPjMeta, chefsOf, orcChefsOf, ALL_ETATS, ETAT_META, registerCustomEtats, registerEtatEdits, today, setSyncedPjMeta, setPjMetaOverrides, GAMME_OVERRIDE } from "./pjMeta";
 import { weekStartOf } from "./parsers";
 import { HomeView } from "./components/HomeView";
 import { ProdTurbines } from "./components/ProdTurbines";
@@ -51,10 +49,12 @@ import { ChangesPopup, ChangesBadge, useUnseenChanges, useChangeMarks, ChangeMar
 import { listenChangeLog } from "./changeLog";
 
 // v260 : documents Firestore, bandeau bêta et identité du compte sortis de ce fichier (appDocs.js, components/AppChrome.js)
-import { IS_BETA, DOC_PFX, DOC_REF, INITIAL_DOC_REF, OVERRIDES_DOC_REF, COMMENTS_DOC_REF, PJ_META_SYNC_DOC_REF, PJ_META_OVERRIDES_DOC_REF, DELAYS_DOC_REF, DELAY_TYPES_DOC_REF, TURBINES_DOC_REF, PRODTURB_DOC_REF, TESTS_DOC_REF, MANAGER_EMAILS_DOC_REF, PROFILES_DOC_REF, DEFAULT_DELAY_TYPES } from "./appDocs";
+import { IS_BETA, DOC_PFX, DOC_REF, INITIAL_DOC_REF, OVERRIDES_DOC_REF, COMMENTS_DOC_REF, PJ_META_SYNC_DOC_REF, PJ_META_OVERRIDES_DOC_REF, DELAYS_DOC_REF, DELAY_TYPES_DOC_REF, MANAGER_EMAILS_DOC_REF, PROFILES_DOC_REF, DEFAULT_DELAY_TYPES } from "./appDocs";
 import { BetaBanner, UserChip } from "./components/AppChrome";
+import { useTurbineDoc, useTestsDoc, useProdTurbines, useDelays, useCashinSync } from "./useAppData";
+import { useListFilters, filterOptions, filterRows } from "./listFilters";
 
-const APP_BUILD_VERSION = "2026-11-03-v260-agenda-cashin";
+const APP_BUILD_VERSION = "2026-11-03-v261-decoupage";
 
 export default function App(){
   // Utilisateur connecté via Google, restreint aux comptes @enogia.com (null tant que non connecté).
@@ -218,17 +218,8 @@ export default function App(){
   },[calMode,calAnchor,calDayAnchor,calZoom]);
   const [managerTab,setManagerTab]=useState("derives");
   const [managerJump,setManagerJump]=useState(null); // v152 : PJ à ouvrir dans la fiche Manager depuis la cloche @
-  const [selEtats,setSelEtats]=useState(new Set(ALL_ETATS.filter(e=>e!=="SLOT_LIBRE"&&e!=="SHIPPED"))); // slots libres et machines expédiées masqués de base (à cocher dans le filtre État)
-  const [selGammes,setSelGammes]=useState(new Set(ALL_GAMMES));
-  const [selMoisArrivee,setSelMoisArrivee]=useState(new Set(MONTHS));
-  const [selMoisTests,setSelMoisTests]=useState(new Set(MONTHS));
-  const [selMoisFinProd,setSelMoisFinProd]=useState(new Set(MONTHS));
-  const [selMoisDepart,setSelMoisDepart]=useState(new Set(MONTHS));
-  const [selPJs,setSelPJs]=useState(null);
-  const [selProjets,setSelProjets]=useState(null);
-  const [selPays,setSelPays]=useState(null);
-  const [selChefs,setSelChefs]=useState(null);
-  const [onlyDrift,setOnlyDrift]=useState(false); // v126 : « En dérive seulement » (départ plus tard que dans le planning initial)
+  // v261 : filtres de la Liste (listFilters.js)
+  const {selEtats,setSelEtats,selGammes,setSelGammes,selMoisArrivee,setSelMoisArrivee,selMoisTests,setSelMoisTests,selMoisFinProd,setSelMoisFinProd,selMoisDepart,setSelMoisDepart,selPJs,setSelPJs,selProjets,setSelProjets,selPays,setSelPays,selChefs,setSelChefs,onlyDrift,setOnlyDrift}=useListFilters();
   const [df,setDf]=useState("date");
   const [pinOk,setPinOk]=useState(false);
   // v185 : droits d'administration complets pour le propriétaire et les admins (accès Manager) — sauf le Cash in (isOwner).
@@ -249,10 +240,8 @@ export default function App(){
   const [customEtats,setCustomEtats]=useState([]); // v146.18 : états créés dans le Manager
   const [etatEdits,setEtatEdits]=useState({}); // v230 : états intégrés renommés / recolorés
   const [overridesLoaded,setOverridesLoaded]=useState(false); // v146.19
-  const [turbineDoc,setTurbineDoc]=useState({turbines:[],wheelNames:[],injectorNames:[]}); // v146.22
   const [productionExclusions,setProductionExclusions]=useState({});
   const [comments,setComments]=useState({});
-  const [delays,setDelays]=useState({});
   const [delayTypes,setDelayTypes]=useState(DEFAULT_DELAY_TYPES);
   const [managerEmails,setManagerEmails]=useState([]);
   const [tableJumpPj,setTableJumpPj]=useState(null);
@@ -363,7 +352,7 @@ export default function App(){
       setOverridesLoaded(true);
     });
     return ()=>unsub();
-  },[authUid]);
+  },[authUid,setSelEtats]); // v261 : setSelEtats vient de useListFilters (stable)
 
   const setCompCatalogAndSave=useCallback(async next=>{
     try{
@@ -475,42 +464,7 @@ export default function App(){
   },[authUid]);
   // V146.1 — Cash in lu en temps réel (super admin uniquement) : alimente les jalons de paiement des fiches, rapports CODIR / CDP et l'avancement.
   // Sans accès (autre compte, règles Firestore) : on vide le magasin, les jalons saisis à la main restent la référence.
-  const [,setCashinVer]=useState(0);
-  const cashStoreVer=useCashin();
-  const lastSharedRef=useRef("");
-  // v210 : propriétaire et admins lisent le Cash in complet (ci-dessous) ; les autres comptes n'y ont pas accès.
-  useEffect(()=>{ if(canCash) return; setCashinDoc(null); setCashinLinks(null); setCashinVer(v=>v+1); },[canCash]);
-  // Super admin : publie (avec un léger délai, seulement si le contenu a changé) la copie réduite du Cash in pour les administrateurs.
-  useEffect(()=>{
-    if(!canCash) return;
-    const d=getCashinDoc(); if(!d) return;
-    const ordo=getOrdoPjs(); if(!ordo.length) return;
-    const keys=new Set(); ordo.forEach(pj=>cashGroupsFor(pj).forEach(g=>keys.add(g.pj)));
-    const payload=buildSharedCashin(d,getCashinLinks(),keys);
-    const h=JSON.stringify(payload);
-    if(h===lastSharedRef.current) return;
-    const t=setTimeout(()=>{
-      setDoc(CASHIN_SHARED_REF(),{...payload,updatedAt:new Date().toISOString(),updatedBy:(currentUser&&currentUser.email)||""})
-        .then(()=>{lastSharedRef.current=h;}).catch(e=>console.warn("Publication du Cash in pour les admins impossible :", e&&e.code));
-    },2000);
-    return ()=>clearTimeout(t);
-  },[canCash,cashStoreVer]); // eslint-disable-line
-  useEffect(()=>{
-    if(!canCash){ return; }
-    const unsub = onSnapshot(CASHIN_DOC_REF(), (snap)=>{
-      setCashinDoc(snap.exists()?snap.data():null); setCashinVer(v=>v+1);
-    }, (err)=>{
-      console.error("Erreur Firestore (cashin):", err);
-      setCashinDoc(null); setCashinVer(v=>v+1);
-    });
-    const unsubL = onSnapshot(CASHIN_LINKS_REF(), (snap)=>{
-      setCashinLinks(snap.exists()?(snap.data().links||{}):{}); setCashinVer(v=>v+1);
-    }, (err)=>{
-      console.error("Erreur Firestore (cashinLinks):", err);
-      setCashinLinks({}); setCashinVer(v=>v+1);
-    });
-    return ()=>{unsub();unsubL();};
-  },[canCash]);
+  useCashinSync(canCash,currentUser); // v261 : Cash in en temps réel (useAppData.js)
   // N'écrit QUE les champs modifiés du PJ concerné (chemin meta.<PJ>.<champ>, valeur remplacée en bloc). Avant, on réécrivait
   // toute la table des PJ depuis l'état local : deux enregistrements rapprochés (saisie en série, collage de plusieurs
   // N° de série) pouvaient s'écraser l'un l'autre avec des valeurs périmées, et un feu effacé restait en base (fusion profonde).
@@ -634,33 +588,11 @@ export default function App(){
   },[comments]);
 
   // Lecture temps réel des allocations de retard par PJ
-  useEffect(()=>{
-    if(!authUid)return undefined; // v252 : pas de lecture avant la connexion
-    const unsub = onSnapshot(DELAYS_DOC_REF(), (snap)=>{
-      if(snap.exists())setDelays(snap.data().byPj || {});
-    }, (err)=>{
-      console.error("Erreur Firestore (delays):", err);
-    });
-    return ()=>unsub();
-  },[authUid]);
+  const delays=useDelays(authUid); // v261 : useAppData.js
 
-  // v146.22 : pool de turbines (Manager uniquement)
-  useEffect(()=>{
-    if(!pinOk)return undefined;
-    const unsub=onSnapshot(TURBINES_DOC_REF(),snap=>{
-      const d=snap.exists()?snap.data():{};
-      setTurbineDoc({...d,turbines:Array.isArray(d.turbines)?d.turbines:[],wheelNames:Array.isArray(d.wheelNames)?d.wheelNames:[],injectorNames:Array.isArray(d.injectorNames)?d.injectorNames:[]});
-    },err=>console.error("Erreur Firestore (turbines):",err));
-    return ()=>unsub();
-  },[pinOk]);
-  // v154 : Manager › Tests (testeurs, affectations, tests FAT)
-  const [testsDoc,setTestsDoc]=useState({testers:[],plans:{}});
-  const [testsLoaded,setTestsLoaded]=useState(false);
-  useEffect(()=>{
-    if(!currentUser)return undefined;
-    const unsub=onSnapshot(TESTS_DOC_REF(),snap=>{const d=snap.exists()?snap.data():{};setTestsDoc({...d,testers:Array.isArray(d.testers)?d.testers:[],plans:d.plans&&typeof d.plans==="object"?d.plans:{}});setTestsLoaded(true);},err=>{console.error("Erreur Firestore (tests):",err);setTestsLoaded(true);});
-    return ()=>unsub();
-  },[currentUser]);
+  const {turbineDoc,saveTurbines}=useTurbineDoc(pinOk,authorName); // v261 : useAppData.js
+  // v154 : Manager › Tests (testeurs, affectations, tests FAT) — v261 : useAppData.js
+  const {testsDoc,testsLoaded,saveTests}=useTestsDoc(currentUser,authorName);
   // v188 : profils (rôle → accueil, PJ associés), lus par tous les comptes connectés, modifiés depuis le Manager
   useEffect(()=>{
     if(!currentUser)return undefined;
@@ -698,35 +630,10 @@ export default function App(){
   const isTestLead=!!currentUser&&profileOf(profiles,currentUser.email).role==="resptest";
   const canSeeTests=!!(pinOk||isTestLead||testerOfEmail(testsDoc,currentUser&&currentUser.email));
   useEffect(()=>{if(view==="tests"&&testsLoaded&&!canSeeTests)setView("table");},[view,testsLoaded,canSeeTests]); // accès retiré ou ancien choix mémorisé
-  const saveTests=useCallback(async next=>{
-    // v231 : la validation automatique des machines expédiées (testsView) n'est jamais écrite en base
-    if(next&&next.plans){const plans={};Object.entries(next.plans).forEach(([pj,p])=>{plans[pj]=p&&p.forced&&p.forced.auto?{...p,forced:null}:p;});next={...next,plans};}
-    try{await setDoc(TESTS_DOC_REF(),{...next,updatedAt:new Date().toISOString(),updatedBy:authorName||""});return true;}
-    catch(e){console.error(e);notify("Erreur lors de l'enregistrement des tests : "+e.message);return false;}
-  },[authorName]);
-  // v226 : Production turbines — lue par tous les comptes connectés (pour savoir qui y a accès), modifiée élément par élément
-  const [prodDoc,setProdDoc]=useState(null);
-  useEffect(()=>{
-    if(!currentUser)return undefined;
-    return onSnapshot(PRODTURB_DOC_REF(),snap=>setProdDoc(snap.exists()?snap.data():{}),err=>{console.warn("prodTurbines (lecture) :",err&&err.message);setProdDoc({});});
-  },[currentUser]);
-  const prodApi=useMemo(()=>{
-    const stamp=()=>({updatedAt:new Date().toISOString(),updatedBy:authorName||""});
-    const fail=e=>{console.error(e);notify("Erreur lors de l'enregistrement (Production turbines) : "+e.message);return false;};
-    const setField=async(k,v)=>{try{await updateDoc(PRODTURB_DOC_REF(),{[k]:v,...stamp()});}catch(e){await setDoc(PRODTURB_DOC_REF(),{[k]:v,...stamp()},{merge:true});}return true;};
-    return{
-      put:async(c,id,data)=>{try{await setDoc(PRODTURB_DOC_REF(),{[c]:{[id]:data},...stamp()},{merge:true});const cur=(prodDoc&&prodDoc[c]&&prodDoc[c][id])||{};const gone=Object.keys(cur).filter(k=>!(k in data));if(gone.length)await updateDoc(PRODTURB_DOC_REF(),Object.fromEntries(gone.map(k=>[c+"."+id+"."+k,deleteField()])));return true;}catch(e){return fail(e);}},
-      del:async(c,id)=>{try{await updateDoc(PRODTURB_DOC_REF(),{[c+"."+id]:deleteField(),...stamp()});return true;}catch(e){return fail(e);}},
-      setParams:async p=>{try{return await setField("params",p);}catch(e){return fail(e);}},
-      setAccess:async list=>{try{return await setField("access",list);}catch(e){return fail(e);}},
-    };
-  },[authorName,prodDoc]); // eslint-disable-line react-hooks/exhaustive-deps
+  // v226 : Production turbines — v261 : useAppData.js
+  const {prodDoc,prodApi}=useProdTurbines(currentUser,authorName);
   const myMail=String((currentUser&&currentUser.email)||"").toLowerCase();
   const canProdTurb=!!(isOwner||(prodDoc&&Array.isArray(prodDoc.access)&&prodDoc.access.map(x=>String(x).toLowerCase()).includes(myMail)));
-  const saveTurbines=useCallback(async next=>{
-    try{await setDoc(TURBINES_DOC_REF(),{...next,updatedAt:new Date().toISOString(),updatedBy:authorName||""});return true;}
-    catch(e){console.error(e);notify("Erreur lors de l'enregistrement des turbines : "+e.message);return false;}
-  },[authorName]);
 
   // Lecture temps réel des types de retard génériques (configurables par le Manager)
   useEffect(()=>{
@@ -961,13 +868,7 @@ export default function App(){
     setInitialImporting(false);
   },[]);
 
-  const allPJs=useMemo(()=>[...new Set(data.map(r=>r.pj))].sort(),[data]);
-  const allProjets=useMemo(()=>[...new Set(data.map(r=>getPjMeta(r.pj,r).nomProjet))].sort(),[data]);
-  const allPays=useMemo(()=>[...new Set(data.map(r=>getPjMeta(r.pj,r).pays))].sort(),[data]);
-  // Mêmes noms exclus que dans le sélecteur d'édition (demandé explicitement : "enlever CMA et
-  // Clément Bablon du choix du chef de projet") — n'affecte que la liste proposée au filtre, pas
-  // les projets déjà assignés à ces noms.
-  const allChefs=useMemo(()=>[...new Set(data.map(r=>getPjMeta(r.pj,r).chefProjet))].filter(c=>!EXCLUDED_CHEFS.has(c)).sort(),[data]);
+  const {allPJs,allProjets,allPays,allChefs}=useMemo(()=>filterOptions(data),[data]); // v261 : listFilters.js
 
   // L'état affiché vient exclusivement du choix manuel du Manager (etatChoice), sinon "À définir"
   const initialByPj=useMemo(()=>{const m={};initialData.forEach(r=>{m[r.pj]=r;});return m;},[initialData]);
@@ -989,22 +890,7 @@ export default function App(){
 
   // V146.2 : liste des PJ de l'ordo (hors slots libres) pour le rapprochement Cash in ↔ ordo
   useEffect(()=>{const rows=dataWithOverrides.filter(r=>r&&r.pj&&r.etat!=="SLOT_LIBRE");const names={};rows.forEach(r=>{names[r.pj]=getPjMeta(r.pj,r).nomProjet||"";});setOrdoPjs(rows.map(r=>r.pj),names);},[dataWithOverrides]);
-  const filtered=useMemo(()=>dataWithOverrides.filter(r=>{
-    if(!selEtats.has(r.etat))return false;
-    if(r.etat!=="SLOT_LIBRE"&&!selGammes.has(r.gamme))return false;
-    if(selPJs&&!selPJs.has(r.pj))return false;
-    const meta=getPjMeta(r.pj,r);
-    if(selProjets&&!selProjets.has(meta.nomProjet))return false;
-    if(selPays&&!selPays.has(meta.pays))return false;
-    if(selChefs&&!(selChefs.has(meta.chefProjet)||chefsOf(meta).some(c=>selChefs.has(c))))return false; // v191 : tous les chefs du PJ
-    if(onlyDrift&&!(r.drift>0))return false;
-    if(onlyChanged&&!changeMarks.marks.has(r.pj))return false;
-    if(selMoisArrivee.size<MONTHS.length){const m=r.arrivee?MONTHS[new Date(r.arrivee).getMonth()]:null;if(!m||!selMoisArrivee.has(m))return false;}
-    if(selMoisTests.size<MONTHS.length){const m=r.tests?MONTHS[new Date(r.tests).getMonth()]:null;if(!m||!selMoisTests.has(m))return false;}
-    if(selMoisFinProd.size<MONTHS.length){const m=r.finProd?MONTHS[new Date(r.finProd).getMonth()]:null;if(!m||!selMoisFinProd.has(m))return false;}
-    if(selMoisDepart.size<MONTHS.length){const m=r.depart?MONTHS[new Date(r.depart).getMonth()]:null;if(!m||!selMoisDepart.has(m))return false;}
-    return true;
-  }),[dataWithOverrides,selEtats,selGammes,selPJs,selProjets,selPays,selChefs,onlyDrift,onlyChanged,changeMarks,selMoisArrivee,selMoisTests,selMoisFinProd,selMoisDepart]);
+  const filtered=useMemo(()=>filterRows(dataWithOverrides,{selEtats,selGammes,selPJs,selProjets,selPays,selChefs,onlyDrift,onlyChanged,selMoisArrivee,selMoisTests,selMoisFinProd,selMoisDepart},changeMarks),[dataWithOverrides,selEtats,selGammes,selPJs,selProjets,selPays,selChefs,onlyDrift,onlyChanged,changeMarks,selMoisArrivee,selMoisTests,selMoisFinProd,selMoisDepart]);
 
   const VIEWS=[{id:"home",icon:"home",l:"Aujourd'hui"},{id:"table",icon:"list",l:"Liste"},{id:"gantt",icon:"gantt",l:"Gantt"},{id:"calendar",icon:"calendar",l:"Calendrier"},{id:"changes",icon:"changes",l:"Modifications"},{id:"comments",icon:"comments",l:"Commentaires"},...(canSeeTests?[{id:"tests",icon:"check",l:"Tests"}]:[]),...(isOwner?[{id:"planner",icon:"gantt",l:"Planificateur"}]:[]),...(canCash?[{id:"cashin",icon:"euro",l:"Cash in"}]:[]),...(isOwner?[{id:"turbines",icon:"factory",l:"Turbines"}]:[]),...(canProdTurb?[{id:"prodturb",icon:"gauge",l:"Production turbines"}]:[])]; // v204 : planificateur réservé au propriétaire ; v217 (demandé : « Cash in et Turbines doivent ouvrir une nouvelle page, pas les pages du Manager ») : pages à part entière
 

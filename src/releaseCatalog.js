@@ -620,4 +620,7 @@ export const RELEASE_CATALOG = [
     ["Cash in lié au planning", "Un jalon peut suivre le départ ou les tests ; quand le planning bouge, le Cash in propose de mettre la date de facturation à jour.", "admin"],
     ["Agenda des testeurs", "Les périodes de banc de chaque testeur se téléchargent en fichier .ics pour Outlook ou Google Agenda."],
   ] },
+  { v: "261", t: "Réorganisation du code", items: [
+    ["Sous le capot", "Le code principal du site est réorganisé (lectures des données, filtres de la Liste) ; rien ne change à l'écran.", "admin"],
+  ] },
 ];
