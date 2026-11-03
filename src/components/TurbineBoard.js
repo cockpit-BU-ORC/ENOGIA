@@ -11,7 +11,7 @@ import { getPjMeta, GAMME_COLORS } from "../pjMeta";
 import { Badge, NavIcon } from "./SharedUI";
 import { toLocalISO } from "../parsers";
 import { CARD, H_TITLE, H_SUB } from "./ManagerParts";
-import { TYPE_LABEL, TURBINE_TYPES, isFree, byMad, weekLabel, fmtFr, turbinesNeeded, pjCheck, moveTurbine, placeElement, hasEl, urgencyOf, withMad, pendingShare, savName, lateDays, dueDates, placeLoose, dropLoose, looseOf, absorbLoose } from "../turbines";
+import { TYPE_LABEL, TURBINE_TYPES, isFree, byMad, weekLabel, fmtFr, turbinesNeeded, pjCheck, moveTurbine, placeElement, hasEl, urgencyOf, withMad, savName, lateDays, dueDates, placeLoose, dropLoose, looseOf, absorbLoose } from "../turbines";
 
 const dIso = x => { if (!x) return ""; const d = new Date(x); return isNaN(d) ? "" : toLocalISO(d); };
 const typeColor = ty => ty === "20LT" ? T.teal600 : T.navy700;
@@ -116,7 +116,7 @@ export function TurbineBoard({ installed, turbines, looseEls, rows, savProjects,
 
   const TurbineCard = ({ t, row, full }) => {
     const due = row ? dueDates(row) : null, wl = due ? urgencyOf(due.wheel, today) : null, il = due ? urgencyOf(due.injector, today) : null;
-    const toShare = pendingShare([t]).length > 0, edited = t.madSrc && t.madSrc !== t.mad, real = isReal(t, today), zc = zoneC(t, today);
+    const edited = t.madSrc && t.madSrc !== t.mad, real = isReal(t, today), zc = zoneC(t, today);
     return <div {...dragProps({ k: "turbine", id: t.id })} title="Glisser pour déplacer cette turbine" style={{ border: "1px solid " + T.line, borderLeft: "5px " + (real ? "solid " : "dashed ") + zc, borderRadius: 10, background: T.surface, padding: "6px 8px", cursor: "grab", userSelect: "none", display: "flex", flexDirection: "column", gap: 6 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
         {Tag({ ty: t.type })}
@@ -126,9 +126,8 @@ export function TurbineBoard({ installed, turbines, looseEls, rows, savProjects,
           MàD {weekLabel(t.mad)} {dateIn(t, edited)}
         </span>
       </div>
-      {(t.need || toShare) && <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", fontSize: FZ.xs, color: T.ink500 }}>
+      {t.need && <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", fontSize: FZ.xs, color: T.ink500 }}>
         {t.need && <span>Échéance {fmtFr(t.need)} {latePill(t)}</span>}
-        {toShare && <span style={{ fontWeight: 700, color: T.amber600 }}>● À communiquer au responsable turbines</span>}
       </div>}
       {full && <div style={{ display: "flex", gap: 6 }}>
         {ElSlot({ t, kind: "wheel", level: wl, when: due && due.wheel ? (due.fromArrival ? "connue 1 sem. avant l'arrivée" : "avant les tests") + " (" + fmtFr(due.wheel) + ")" : "" })}

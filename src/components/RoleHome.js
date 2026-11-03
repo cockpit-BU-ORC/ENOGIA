@@ -4,7 +4,7 @@ import { T, FZ } from "../theme";
 import { presenceKind, presenceDates, ETAT_META } from "../pjMeta";
 import { NavIcon } from "./SharedUI";
 import { planOf, catalogOf, activeSections, progressOf, effRange, isForced, testersOf, findConflicts } from "../testPlan";
-import { turbineStatus, pendingShare } from "../turbines";
+import { turbineStatus } from "../turbines";
 import { blockOn } from "../profiles";
 import { getCashinDoc, cashOverview } from "../cashinLink";
 import { useCashin } from "../useCashin";
@@ -229,9 +229,9 @@ export function RoleHome({ role, profile, ui, kpiEl, depEl, parcoursEl, rows, op
     return sec("tests", "Tests", S.tests.ring, <><Head title="Tests" sub="3 prochaines semaines" />
       {testsDoc ? <div style={grid}><Stat label="machines en test" value={soon.length} onClick={() => onGo("tests")} /><Stat label="sans testeur" value={noTester.length} tone={noTester.length ? T.red500 : undefined} onClick={() => onGo("tests")} /><Stat label="échecs" value={fails} tone={fails ? T.red500 : undefined} /><Stat label="en retard" value={lateT} tone={lateT ? T.amber600 : undefined} /><Stat label="conflits" value={conflicts} tone={conflicts ? T.amber600 : undefined} /></div> : <div style={grey}>Page Tests non disponible.</div>}</>); } };
   W.turbines = { label: "Turbines (pool)", span: 4, render: () => { const turb = (turbineDoc && turbineDoc.turbines) || []; const tst = turb.map(t => turbineStatus(t, today));
-    const nCrit = tst.filter(x => x === "Critique").length, nLateT = tst.filter(x => x === "En retard").length, nShare = pendingShare(turb).length;
+    const nCrit = tst.filter(x => x === "Critique").length, nLateT = tst.filter(x => x === "En retard").length;
     return sec("turbines", "Turbines", H.brand, <><Head title="Turbines" count={turb.length} />
-      <div style={grid}><Stat label="critiques" value={nCrit} tone={nCrit ? T.red500 : undefined} /><Stat label="en retard" value={nLateT} tone={nLateT ? T.amber600 : undefined} /><Stat label="à communiquer" value={nShare} /></div></>); } };
+      <div style={grid}><Stat label="critiques" value={nCrit} tone={nCrit ? T.red500 : undefined} /><Stat label="en retard" value={nLateT} tone={nLateT ? T.amber600 : undefined} /></div></>); } };
   W.cash = { label: "Cash in", span: 4, only: () => !!cash, render: () => { const c = cashOverview(getCashinDoc(), today); return sec("cash", "Cash in", S.finProd.ring, <>
     <Head title="Cash in" sub={c ? "hors EPC" : ""} />
     {!c ? <div style={{ ...grey, margin: "4px 0 6px" }}>Données du Cash in pas encore chargées : ouvrez une fois l'onglet Cash in, ou importez le fichier.</div> : <>

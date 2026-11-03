@@ -1,13 +1,13 @@
 // v146.26 — Manager › Turbines : pool de turbines 100LT / 20LT, attribution aux PJ ou au SAV (tableau glisser-déposer), roue et injecteur,
-// import du fichier du responsable turbines ou de l'export, stock à venir par semaine. Les données vivent dans planning/turbines (un seul document).
+// stock à venir par semaine ; v257 : feuille par PJ, plus d'import / export ni de communication au responsable. Les données vivent dans planning/turbines (un seul document).
 import React, { useMemo, useState } from "react";
 import { T, FZF as FZ } from "../theme";
 import { getPjMeta } from "../pjMeta";
 import { toLocalISO } from "../parsers";
-import { useSheetJS, NavIcon } from "./SharedUI";
+import { NavIcon } from "./SharedUI";
 import { CARD, H_TITLE, H_SUB } from "./ManagerParts";
 import { TurbineBoard } from "./TurbineBoard";
-import { TURBINE_TYPES, TYPE_LABEL, parseTurbineRows, parseBossRows, isBossId, dropLoose, turbinesNeeded, mergeImport, exportRows, stampExport, planningNeeds, pendingShare, markShared, shareMessage, autoRef, withMad, makeTurbine, stockByWeek, takenNames, targetLabel, isFree, byMad, mondayOf, addDays, isoOf, weekLabel, fmtFr, isoWeek } from "../turbines";
+import { TURBINE_TYPES, TYPE_LABEL, dropLoose, turbinesNeeded, planningNeeds, autoRef, withMad, makeTurbine, stockByWeek, takenNames, targetLabel, isFree, byMad, mondayOf, addDays, isoOf, weekLabel, fmtFr, isoWeek } from "../turbines";
 
 const todayIso = () => isoOf(new Date());
 const dIso = x => { if (!x) return ""; const d = new Date(x); return isNaN(d) ? "" : toLocalISO(d); };
@@ -16,12 +16,10 @@ export function TurbinesTab({ doc, save, data, authorName, superAdmin }) {
   const turbines = useMemo(() => doc.turbines || [], [doc.turbines]), wheelNames = doc.wheelNames || [], injectorNames = doc.injectorNames || [];
   const savProjects = useMemo(() => Array.isArray(doc.savProjects) ? doc.savProjects : [], [doc.savProjects]);
   const savMeta = useMemo(() => doc.savMeta && typeof doc.savMeta === "object" ? doc.savMeta : {}, [doc.savMeta]);
-  const [sheetSel, setSheetSel] = useState(""), [attachBoss, setAttachBoss] = useState(false);
   const looseEls = useMemo(() => Array.isArray(doc.looseEls) ? doc.looseEls : [], [doc.looseEls]);
-  const ready = useSheetJS();
   const [filter, setFilter] = useState("all"), [typeF, setTypeF] = useState("all");
-  const [pending, setPending] = useState(null), [msg, setMsg] = useState(null), [adding, setAdding] = useState(null);
-  const [removeAbs, setRemoveAbs] = useState(false), [plan, setPlan] = useState(null), [copied, setCopied] = useState(false);
+  const [msg, setMsg] = useState(null), [adding, setAdding] = useState(null);
+  const [plan, setPlan] = useState(null);
   const installed = useMemo(() => Array.isArray(doc.installedPj) ? doc.installedPj : [], [doc.installedPj]);
   const today = todayIso();
 
@@ -30,54 +28,7 @@ export function TurbinesTab({ doc, save, data, authorName, superAdmin }) {
   const commit = async next => { const ok = await save({ ...doc, ...next }); if (ok === false) setMsg({ err: true, t: "L'enregistrement a échoué." }); return ok; };
   const upd = (id, patch) => commit({ turbines: turbines.map(t => t.id === id ? { ...t, ...patch } : t) });
 
-  // ── Import Excel : reconnaît l'export de l'outil (colonne Réf./Type) ou le fichier du responsable turbines (Projet | Modèle | Échéance | Livraison Sxx…)
-  const normH = v => String(v == null ? "" : v).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-  const looksBoss = rowsX => { const head = rowsX.slice(0, 8).some(r => Array.isArray(r) && r.some(c => /^projet$/.test(normH(c))) && r.some(c => /livraison|modele/.test(normH(c)))); return head || (rowsX.filter(r => Array.isArray(r) && isBossId(r[0])).length >= 2 && !rowsX.slice(0, 8).some(r => Array.isArray(r) && r.some(c => /^type$/.test(normH(c))))); };
-  const pickSheet = names => names.find(n => /dates?[_ ]?livraison[_ ]turbines/i.test(n)) || names.filter(n => /^import[_ ]?s\d+/i.test(n)).sort((a, b) => (+b.replace(/\D/g, "")) - (+a.replace(/\D/g, "")))[0] || names[0];
-  const onFile = async f => {
-    setMsg(null);
-    try {
-      if (!window.XLSX) { setMsg({ err: true, t: "Librairie Excel en cours de chargement, réessayez dans 2 s." }); return; }
-      const wb = window.XLSX.read(await f.arrayBuffer(), { type: "array", cellDates: true });
-      const sheets = {}; wb.SheetNames.forEach(n => { sheets[n] = window.XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true }); });
-      const names = wb.SheetNames, first = looksBoss(sheets[names[0]] || []) || names.some(n => looksBoss(sheets[n])) ? pickSheet(names.filter(n => looksBoss(sheets[n]))) : names[0];
-      setSheetSel(first); setAttachBoss(false); setRemoveAbs(looksBoss(sheets[first] || [])); setPending({ name: f.name, sheets, names });
-    } catch (e) { setMsg({ err: true, t: "Lecture impossible : " + e.message }); }
-  };
-  const parsedFile = useMemo(() => {
-    if (!pending) return null;
-    const rowsX = pending.sheets[sheetSel] || [];
-    if (!looksBoss(rowsX)) return { ...parseTurbineRows(rowsX), boss: false };
-    const pjIds = new Set(rows.map(r => String(r.pj).toUpperCase()));
-    const typeOf = (id, target) => {
-      const ex = turbines.find(t => t.ref && t.ref.toLowerCase() === String(id).toLowerCase()); if (ex) return ex.type;
-      const r = target && target.kind === "PJ" ? rows.find(x => String(x.pj).toUpperCase() === target.ref) : null;
-      const n = r && turbinesNeeded(r.gamme); return n ? n.type : null;
-    };
-    // Projets déjà expédiés / installés, et anciennes livraisons dont le projet n'est plus au planning : pas de turbine à suivre
-    const gone = new Set([...rows.filter(r => r.etat === "SHIPPED").map(r => String(r.pj).toUpperCase()), ...installed.map(x => String(x).toUpperCase())]);
-    const skip = (target, mad) => !target ? false : target.kind === "PJ" ? (gone.has(target.ref) || (!pjIds.has(target.ref) && mad < today)) : (mad < today && !savProjects.includes(target.ref));
-    return { ...parseBossRows(rowsX, { pjIds, typeOf, skip }, new Date()), boss: true };
-  }, [pending, sheetSel, rows, turbines, installed, savProjects, today]); // eslint-disable-line react-hooks/exhaustive-deps
-  const preview = useMemo(() => parsedFile ? mergeImport(turbines, parsedFile.items, { removeFreeAbsent: removeAbs, attach: !(parsedFile.boss && !attachBoss) }) : null, [parsedFile, turbines, removeAbs, attachBoss]);
-  const confirmImport = async () => {
-    const r = preview, patch = { turbines: r.turbines, importedAt: new Date().toISOString(), importedBy: authorName || "", importFile: pending.name + (parsedFile.boss ? " (" + sheetSel + ")" : "") };
-    const addSavs = (r.newSav || []).filter(n => !savProjects.some(x => x.toLowerCase() === n.toLowerCase()));
-    if (addSavs.length) patch.savProjects = [...savProjects, ...addSavs];
-    const ok = await commit(patch);
-    if (ok !== false) { setMsg({ t: "Pool mis à jour : " + r.stats.added + " ajoutée(s), " + r.stats.updated + " modifiée(s), " + r.stats.removed + " retirée(s)" + (addSavs.length ? ", " + addSavs.length + " projet(s) SAV créé(s)" : "") + ". Les attributions, roues et injecteurs existants n'ont pas bougé." }); setPending(null); setRemoveAbs(false); }
-  };
-  // Export : toutes les turbines + attribution ; les dates exportées deviennent la référence du prochain import (la correction faite ici n'est alors jamais écrasée par un fichier inchangé)
-  const doExport = async () => {
-    if (!window.XLSX) return;
-    const ws = window.XLSX.utils.aoa_to_sheet(exportRows(turbines, today), { cellDates: true });
-    ws["!cols"] = [{ wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 12 }, { wch: 14 }, { wch: 10 }, { wch: 9 }, { wch: 14 }, { wch: 10 }, { wch: 22 }, { wch: 14 }, { wch: 14 }, { wch: 18 }];
-    for (let i = 1; i <= turbines.length; i++) ["D", "E", "H"].forEach(col => { const c = ws[col + (i + 1)]; if (c && c.t === "d") c.z = "dd/mm/yyyy"; });
-    const wb = window.XLSX.utils.book_new(); window.XLSX.utils.book_append_sheet(wb, ws, "Turbines");
-    window.XLSX.writeFile(wb, "Dates_livraison_turbines_" + today + ".xlsx");
-    await commit({ turbines: stampExport(turbines) });
-    setMsg({ t: "Export réalisé au format du fichier du responsable turbines : la colonne « Livraison » porte vos nouvelles MàD (ancienne date et repère « modifiée » à côté). Vous pouvez aussi le ré-importer ici sans rien écraser." });
-  };
+  // v257 (demandé : « enlever la communication au responsable des turbines ainsi que tout système d’import ou d’export pour l’instant ») : import / export Excel retirés.
   // Pré-remplissage depuis le planning : une turbine par besoin (gamme), datée de l'arrivée de l'ORC
   const doneRow = r => r.etat === "SHIPPED" || installed.includes(r.pj);
   const openPlan = () => { setMsg(null); const items = planningNeeds(rows.map(r => ({ ...r, arrivee: dIso(r.arrivee), tests: dIso(r.tests) })), turbines, doneRow); if (!items.length) { setMsg({ t: "Rien à pré-remplir : tous les besoins du planning sont déjà couverts." }); return; } setPlan(items); };
@@ -92,10 +43,6 @@ export function TurbinesTab({ doc, save, data, authorName, superAdmin }) {
     for (let i = 0; i < n; i++) made.push({ ...makeTurbine({ type: adding.type, mad: adding.mad, ref: n === 1 && adding.ref ? adding.ref : autoRef(turbines, adding.type, made) }), madSrc: adding.mad });
     const ok = await commit({ turbines: [...turbines, ...made].sort(byMad) }); if (ok !== false) setAdding(null);
   };
-  // À communiquer au responsable turbines
-  const toShare = pendingShare(turbines).sort(byMad);
-  const copyShare = async () => { try { await navigator.clipboard.writeText(shareMessage(turbines, today)); setCopied(true); setTimeout(() => setCopied(false), 3000); } catch (e) { window.prompt("Copiez le message :", shareMessage(turbines, today)); } };
-
   // ── Stock à venir : de la semaine courante jusqu'à la dernière MàD connue (fichier du responsable, jusqu'en mars), 12 semaines au minimum
   const mondays = useMemo(() => {
     const m0 = mondayOf(new Date());
@@ -176,39 +123,14 @@ export function TurbinesTab({ doc, save, data, authorName, superAdmin }) {
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
         <div style={{ flex: "1 1 320px" }}>
           <div style={H_TITLE}>Pool de turbines</div>
-          <div style={H_SUB}>Turbines 100 kW (gammes 100 et 180) et 20 kW (gammes 20 et 40) à attribuer aux PJ ou au SAV. La roue s'installe juste avant les tests ; l'injecteur est à part mais doit être disponible pour le départ.{doc.importedAt ? " Dernier import : " + new Date(doc.importedAt).toLocaleDateString("fr-FR") + (doc.importedBy ? " par " + doc.importedBy : "") + (doc.importFile ? " (" + doc.importFile + ")" : "") + "." : ""}</div>
+          <div style={H_SUB}>Turbines 100 kW (gammes 100 et 180) et 20 kW (gammes 20 et 40) à attribuer aux PJ ou au SAV. La roue s'installe juste avant les tests ; l'injecteur est à part mais doit être disponible pour le départ.</div>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-          <label style={{ ...btn(false, true), display: "inline-flex", alignItems: "center", gap: 6 }}>
-            Importer l'Excel (responsable turbines ou export)
-            <input type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={e => { const f = e.target.files[0]; e.target.value = ""; if (f) onFile(f); }} />
-          </label>
-          <button onClick={doExport} disabled={!ready} style={btn(false)} title="Fichier au format du responsable turbines, avec vos nouvelles MàD">Exporter pour le responsable</button>
           <button onClick={openPlan} style={btn(!!plan)} title="Crée des turbines ESTIMÉES (besoins) d'après les gammes et les arrivées du planning : elles ne comptent pas dans le stock">Estimer les besoins depuis le planning</button>
           <button onClick={() => setAdding(adding ? null : { type: "100LT", mad: today, ref: "", qty: 1 })} style={btn(!!adding)}>＋ Turbines</button>
         </div>
       </div>
       {msg && <div role="status" style={{ marginTop: 10, fontSize: FZ.xs, fontWeight: 700, color: msg.err ? T.red600 : T.emerald600 }}>{msg.t}</div>}
-      {pending && parsedFile && <div style={{ marginTop: 12, padding: 12, border: "1px solid " + T.line, borderRadius: 10, background: T.surface }}>
-        <div style={{ fontSize: FZ.sm, fontWeight: 700 }}>{pending.name} : {parsedFile.items.length} ligne(s) lue(s) — {preview.stats.added} nouvelle(s), {preview.stats.updated} modifiée(s), {parsedFile.items.length - preview.stats.added} retrouvée(s)</div>
-        {pending.names.length > 1 && <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: FZ.xs, color: T.ink700, marginTop: 6 }}>Feuille lue
-          <select value={sheetSel} onChange={e => setSheetSel(e.target.value)} aria-label="Feuille à importer" style={sel}>{pending.names.map(n => <option key={n} value={n}>{n}</option>)}</select></label>}
-        {parsedFile.boss
-          ? <div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 4 }}>Fichier du responsable turbines reconnu : une turbine par ligne, MàD = dernière date de livraison, échéance du fichier conservée (retard affiché). Les turbines déjà livrées (MàD passée) vont dans le <b>stock réel</b>, les autres dans le <b>stock à venir</b> ; les projets expédiés / installés sont ignorés. Celles déjà dans l'outil ne changent que de date (<b>attributions, roues et injecteurs jamais touchés</b>).<div style={{ marginTop: 4, color: T.ink900, fontWeight: 700 }}>Stock après import : {preview.turbines.filter(t => !t.target && t.mad && t.mad <= today).length} en stock réel · {preview.turbines.filter(t => !t.target && (!t.mad || t.mad > today)).length} à venir (libres)</div>
-            <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, cursor: "pointer", color: T.ink700 }}><input type="checkbox" checked={attachBoss} onChange={e => setAttachBoss(e.target.checked)} style={{ accentColor: T.teal600 }} />Rattacher aussi chaque nouvelle turbine au PJ / SAV du fichier (sinon elles arrivent libres : à glisser vers le bon PJ ; leur réf. rappelle le PJ prévu)</label></div>
-          : <div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 4 }}>Les lignes retrouvées (colonne Id, sinon Réf.) ne changent que de type / date de MàD : <b>attributions, roues et injecteurs ne sont jamais touchés</b>. Une date corrigée ici est conservée si la date du fichier n'a pas changé depuis le dernier export.</div>}
-        {parsedFile.boss && parsedFile.guessed > 0 && <div style={{ fontSize: FZ.xs, color: T.amber600, marginTop: 6, fontWeight: 700 }}><NavIcon name="warning" size={12}/> {parsedFile.guessed} ligne(s) sans modèle ni gamme connue : type 100 kW par défaut (à corriger dans le détail).</div>}
-        {parsedFile.boss && parsedFile.unspecified > 0 && <div style={{ fontSize: FZ.xs, color: T.amber600, marginTop: 4, fontWeight: 700 }}><NavIcon name="warning" size={12}/> {parsedFile.unspecified} ligne(s) « SAV » sans numéro : créées libres, à rattacher à un SAVxxx.</div>}
-        {parsedFile.boss && parsedFile.skipped > 0 && <div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 4 }}>{parsedFile.skipped} ligne(s) ignorée(s) : projet expédié / installé ou ancienne livraison sans projet en cours.</div>}
-        {parsedFile.boss && parsedFile.noDate > 0 && <div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 4 }}>{parsedFile.noDate} ligne(s) ignorée(s) : pas encore de date de livraison.</div>}
-        {preview.conflicts.length > 0 && <div style={{ fontSize: FZ.xs, color: T.amber600, marginTop: 6, fontWeight: 700 }}><NavIcon name="warning" size={12}/> Date modifiée des deux côtés (celle du fichier est retenue) : {preview.conflicts.slice(0, 6).map(c => c.ref + " " + fmtFr(c.live) + " → " + fmtFr(c.file)).join(" ; ")}{preview.conflicts.length > 6 ? " …" : ""}</div>}
-        {preview.absent.length > 0 && <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: FZ.xs, color: T.ink700, marginTop: 6, cursor: "pointer" }}><input type="checkbox" checked={removeAbs} onChange={e => setRemoveAbs(e.target.checked)} style={{ accentColor: T.teal600 }} />Retirer aussi les {preview.absent.length} turbine(s) libre(s) absentes du fichier (le stock reflète alors exactement le fichier)</label>}
-        {parsedFile.errors.length > 0 && <ul style={{ margin: "6px 0 0", paddingLeft: 18, fontSize: FZ.xs, color: T.red600 }}>{parsedFile.errors.slice(0, 8).map((e, i) => <li key={i}>{e}</li>)}{parsedFile.errors.length > 8 && <li>… et {parsedFile.errors.length - 8} autre(s)</li>}</ul>}
-        <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-          <button onClick={confirmImport} disabled={!parsedFile.items.length} style={btn(false, true)}>Mettre à jour le pool</button>
-          <button onClick={() => { setPending(null); setRemoveAbs(false); }} style={btn(false)}>Annuler</button>
-        </div>
-      </div>}
       {adding && <form onSubmit={addForm} style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap", alignItems: "center" }}>
         <select value={adding.type} onChange={e => setAdding({ ...adding, type: e.target.value })} style={sel} aria-label="Type">{TURBINE_TYPES.map(x => <option key={x}>{x}</option>)}</select>
         <input type="date" value={adding.mad} onChange={e => setAdding({ ...adding, mad: e.target.value })} aria-label="Date de MàD" style={{ ...sel, colorScheme: T.mode === "dark" ? "dark" : "light" }} />
@@ -224,17 +146,8 @@ export function TurbinesTab({ doc, save, data, authorName, superAdmin }) {
       </div>}
     </div>
 
-    {/* À communiquer au responsable turbines */}
-    {toShare.length > 0 && <div style={{ ...CARD, padding: 14, borderLeft: "4px solid " + T.amber600 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <div style={{ flex: "1 1 280px" }}><div style={H_TITLE}>À communiquer au responsable turbines ({toShare.length})</div>
-          <div style={H_SUB}>Ces attributions n'ont pas encore été transmises : tant qu'il ne les connaît pas, il peut réutiliser la turbine, la roue ou l'injecteur ailleurs.</div></div>
-        <button onClick={copyShare} style={btn(copied, false)}>{copied ? "Message copié ✓" : "Copier le message"}</button>
-        <button onClick={doExport} disabled={!ready} style={btn(false)} title="Fichier au format du responsable turbines, avec vos nouvelles MàD">Exporter pour le responsable</button>
-        <button onClick={() => { if (window.confirm("Marquer ces " + toShare.length + " attribution(s) comme communiquées ?")) commit({ turbines: markShared(turbines) }); }} style={btn(false, true)}>C'est communiqué</button>
-      </div>
-      <pre style={{ margin: "10px 0 0", whiteSpace: "pre-wrap", fontFamily: T.font, fontSize: FZ.xs, color: T.ink700, background: T.surface, borderRadius: 8, padding: "8px 10px", maxHeight: 160, overflow: "auto" }}>{shareMessage(turbines, today)}</pre>
-    </div>}
+    {/* v257 : feuille par PJ — turbines, quantité, roues et injecteurs prévus */}
+    <PjTurbineSheet rows={rows} doc={doc} commit={commit} installed={installed} wheelNames={wheelNames} injectorNames={injectorNames} />
 
     {/* v146.24 : tableau d'attribution par glisser-déposer */}
     <TurbineBoard installed={installed} turbines={turbines} rows={rows} savProjects={savProjects} savMeta={savMeta} looseEls={looseEls} wheelNames={wheelNames} injectorNames={injectorNames} today={today} commit={commit} superAdmin={superAdmin} />
@@ -284,4 +197,54 @@ export function TurbinesTab({ doc, save, data, authorName, superAdmin }) {
       </div>
     </details>
   </div>);
+}
+
+// v257 (demandé : « une feuille dans cet onglet qui me permet de dire, par PJ, quelles turbines on doit mettre, la quantité, la ou les roues
+// et le ou les injecteurs ») : une ligne par PJ en cours ; type et quantité proposés d'après la gamme (turbinesNeeded) tant que rien n'est saisi ;
+// roues et injecteurs en texte libre (plusieurs séparés par des virgules), avec les noms connus proposés. Données : planning/turbines.pjSheet[PJ].
+function PjTurbineSheet({ rows, doc, commit, installed, wheelNames, injectorNames }) {
+  const sheet = doc.pjSheet && typeof doc.pjSheet === "object" ? doc.pjSheet : {};
+  const [q, setQ] = useState(""), [showDone, setShowDone] = useState(false);
+  const list = rows.filter(r => (showDone || (r.etat !== "SHIPPED" && !installed.includes(r.pj))) && (!q || (r.pj + " " + (getPjMeta(r.pj, r).nomProjet || "") + " " + (r.gamme || "")).toLowerCase().includes(q.toLowerCase())))
+    .sort((a, b) => String(a.arrivee || "9").localeCompare(String(b.arrivee || "9")));
+  const set = (pj, patch) => { const cur = sheet[pj] || {}, nx = { ...cur, ...patch }; Object.keys(nx).forEach(k => { if (nx[k] === "" || nx[k] == null) delete nx[k]; }); const all = { ...sheet }; if (Object.keys(nx).length) all[pj] = { ...nx, at: new Date().toISOString() }; else delete all[pj]; commit({ pjSheet: all }); };
+  const inp = { fontFamily: T.font, fontSize: FZ.sm, color: T.ink900, background: T.card, border: "1px solid " + T.line, borderRadius: 6, padding: "4px 8px", minHeight: 30, boxSizing: "border-box", width: "100%" };
+  const th = { textAlign: "left", padding: "8px", fontSize: 12, fontWeight: 500, color: T.ink500, borderBottom: "1px solid " + T.line, whiteSpace: "nowrap", position: "sticky", top: 0, background: T.card, zIndex: 1 };
+  const td = { padding: "4px 8px", borderBottom: "1px solid " + T.line, verticalAlign: "middle" };
+  const filled = list.filter(r => sheet[r.pj] && (sheet[r.pj].type || sheet[r.pj].wheels || sheet[r.pj].injectors)).length;
+  // un champ texte qui n'enregistre qu'à la sortie (pas à chaque frappe)
+  const Txt = ({ pj, k, ph, listId }) => <input key={pj + k + (sheet[pj] && sheet[pj][k])} defaultValue={(sheet[pj] && sheet[pj][k]) || ""} placeholder={ph} list={listId} aria-label={k + " " + pj}
+    onBlur={e => { const v = e.target.value.trim(); if (v !== ((sheet[pj] && sheet[pj][k]) || "")) set(pj, { [k]: v }); }} onKeyDown={e => { if (e.key === "Enter") e.currentTarget.blur(); }} style={inp} />;
+  return (<section aria-label="Turbines par PJ" style={{ ...CARD, padding: 0, overflow: "hidden" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "12px 14px" }}>
+      <div style={{ flex: "1 1 320px" }}>
+        <div style={H_TITLE}>Turbines par PJ</div>
+        <div style={H_SUB}>Pour chaque PJ : le type de turbine, la quantité, la ou les roues et le ou les injecteurs prévus. Plusieurs roues ou injecteurs : séparez-les par des virgules. En gris, la proposition d'après la gamme. {filled} PJ renseigné{filled > 1 ? "s" : ""} sur {list.length}.</div>
+      </div>
+      <input value={q} onChange={e => setQ(e.target.value)} placeholder="Chercher un PJ, un projet…" aria-label="Chercher un PJ" style={{ ...inp, width: 220 }} />
+      <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: FZ.xs, color: T.ink700 }}><input type="checkbox" checked={showDone} onChange={e => setShowDone(e.target.checked)} />Afficher les PJ expédiés</label>
+    </div>
+    <datalist id="pjs-wheels">{wheelNames.map(n => <option key={n} value={n} />)}</datalist>
+    <datalist id="pjs-injectors">{injectorNames.map(n => <option key={n} value={n} />)}</datalist>
+    <div style={{ overflowX: "auto", maxHeight: 520, overflowY: "auto" }}>
+      <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 960, fontVariantNumeric: "tabular-nums" }}>
+        <thead><tr><th style={th}>PJ</th><th style={th}>Gamme</th><th style={th}>Arrivée</th><th style={{ ...th, width: 120 }}>Turbine</th><th style={{ ...th, width: 80 }}>Qté</th><th style={{ ...th, minWidth: 180 }}>Roue(s)</th><th style={{ ...th, minWidth: 180 }}>Injecteur(s)</th><th style={{ ...th, minWidth: 160 }}>Note</th></tr></thead>
+        <tbody>
+          {list.map(r => { const e = sheet[r.pj] || {}, sug = turbinesNeeded(r.gamme), nom = getPjMeta(r.pj, r).nomProjet || ""; return (<tr key={r.pj}>
+            <td style={{ ...td, whiteSpace: "nowrap" }}><b style={{ fontFamily: T.fontMono, fontSize: FZ.sm }}>{r.pj}</b> <span style={{ fontSize: FZ.xs, color: T.ink500 }}>{nom}</span></td>
+            <td style={{ ...td, fontSize: FZ.sm, color: T.ink700 }}>{r.gamme || "—"}</td>
+            <td style={{ ...td, fontSize: FZ.sm, color: T.ink700, whiteSpace: "nowrap" }}>{r.arrivee ? fmtFr(dIso(r.arrivee)) : "—"}</td>
+            <td style={td}><select value={e.type || ""} onChange={ev => set(r.pj, { type: ev.target.value })} aria-label={"Turbine " + r.pj} style={{ ...inp, color: e.type ? T.ink900 : T.ink500 }}>
+              <option value="">{sug ? sug.type + " (proposé)" : "—"}</option>{TURBINE_TYPES.map(x => <option key={x} value={x}>{x}</option>)}<option value="aucune">Aucune</option></select></td>
+            <td style={td}><input type="number" min={0} max={20} key={r.pj + "q" + e.qty} defaultValue={e.qty == null ? "" : e.qty} placeholder={sug ? String(sug.n) : ""} aria-label={"Quantité " + r.pj}
+              onBlur={ev => { const v = ev.target.value === "" ? "" : Math.max(0, Math.round(+ev.target.value)); if (v !== (e.qty == null ? "" : e.qty)) set(r.pj, { qty: v }); }} style={inp} /></td>
+            <td style={td}><Txt pj={r.pj} k="wheels" ph="ex. R12, R13" listId="pjs-wheels" /></td>
+            <td style={td}><Txt pj={r.pj} k="injectors" ph="ex. INJ-04" listId="pjs-injectors" /></td>
+            <td style={td}><Txt pj={r.pj} k="note" ph="" /></td>
+          </tr>); })}
+          {!list.length && <tr><td colSpan={8} style={{ ...td, textAlign: "center", color: T.ink500, padding: 20 }}>Aucun PJ pour ce filtre.</td></tr>}
+        </tbody>
+      </table>
+    </div>
+  </section>);
 }

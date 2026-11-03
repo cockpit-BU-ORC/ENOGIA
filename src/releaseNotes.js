@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v257",
+    date: "2026-11-03",
+    title: "V257 : turbines par PJ, Cash in unique",
+    items: [
+      { t: "Turbines par PJ", d: "Dans l'onglet Turbines, une feuille pour noter par PJ la turbine, la quantité, les roues et les injecteurs prévus.", admin: true },
+      { t: "Cash in", d: "Un seul Cash in ; « Prévu jusqu'à fin 2026 » est dans le cadran « À traiter ».", admin: true },
+    ],
+  },
+  {
     id: "2026-11-v256",
     date: "2026-11-03",
     title: "V256 : Cash in au format artefact",

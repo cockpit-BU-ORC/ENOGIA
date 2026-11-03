@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { onSnapshot, setDoc } from "firebase/firestore";
 import { T, FZ, R } from "../theme";
 import { CashLinksDialog } from "./CashLinks";
-import { CashInNative, PlannedDialog } from "./CashInNative";
+import { PlannedDialog } from "./CashInNative";
 import { todayISO } from "../cashinLink";
 import { CASHIN_DOC_REF, CASHIN_PAGE_VERSION, CASHIN_MAX_BYTES, cashinTheme, validateCashin } from "../cashinData";
 
@@ -16,11 +16,10 @@ export function CashInTab({ authorName, focus }) {
   // v256 (demandé : « garder le format et le design du Cash in en format artefact et non la solution du site ») : le format artefact
   // (public/cashin.html, mêmes données planning/cashin) est l'affichage par défaut pour tout le monde ; « Cash in du site » reste à un clic.
   // Nouvelle clé de mémoire : un ancien choix « nouveau » n'empêche plus le format artefact.
-  const [legacy, setLegacy] = useState(() => { try { return localStorage.getItem("enogia_cashin_format2") !== "site"; } catch (e) { return true; } }); // v198 : le format artefact est reconstruit dans le site, affiché par défaut
-  const pick = v => { setLegacy(v); try { localStorage.setItem("enogia_cashin_format2", v ? "artefact" : "site"); } catch (e) {} };
-  return legacy ? <CashInLegacy authorName={authorName} focus={focus} onNative={() => pick(false)} /> : <CashInNative authorName={authorName} focus={focus} onLegacy={() => pick(true)} />;
+  // v257 (demandé : « enlever le Cash in du site ») : le format artefact est le seul Cash in.
+  return <CashInLegacy authorName={authorName} focus={focus} />;
 }
-function CashInLegacy({ authorName, focus, onNative }) {
+function CashInLegacy({ authorName, focus }) {
   const frameRef = useRef(null);
   const latest = useRef({ loaded: false, exists: false, data: null, err: null });
   const readyRef = useRef(false);
@@ -72,6 +71,7 @@ function CashInLegacy({ authorName, focus, onNative }) {
       if (!w || e.source !== w) return;
       const m = e.data;
       if (!m || m.src !== "cashin") return;
+      if (m.type === "planned") { setPlanOpen(true); return; } // v257 : bouton « Prévu jusqu’à fin 2026 » du cadran « À traiter » de la page
       if (m.type === "ready") { readyRef.current = true; sendTheme(true); sendState(); if (focusRef.current) post({ type: "goto", pj: focusRef.current.pj }); return; }
       if (m.type === "save") {
         try {
@@ -104,8 +104,6 @@ function CashInLegacy({ authorName, focus, onNative }) {
     <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", justifyContent: "space-between" }}>
       <span />
       <div style={{ display: "flex", gap: 8 }}>
-        <button style={btn(false)} onClick={() => setPlanOpen(true)} disabled={!info.exists} title="Factures à émettre et encaissements attendus d'ici le 31 décembre">Prévu jusqu'à fin 2026</button>
-        <button style={btn(false)} onClick={onNative} title="Afficher le Cash in refait dans le site">Cash in du site</button>
         <button style={btn(true)} onClick={() => setLinksOpen(true)} disabled={!info.exists} title="Choisir à quel(s) PJ de l'ordo chaque PJ du Cash in se rattache">Liaisons avec l'ordo</button>
       </div>
     </div>

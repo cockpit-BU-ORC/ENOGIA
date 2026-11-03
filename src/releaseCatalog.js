@@ -597,4 +597,8 @@ export const RELEASE_CATALOG = [
   { v: "256", t: "Cash in au format artefact", items: [
     ["Cash in", "Le Cash in s'ouvre au format de l'artefact d'origine (mêmes données) ; « Prévu jusqu'à fin 2026 » y est aussi ; « Cash in du site » reste à un clic.", "admin"],
   ] },
+  { v: "257", t: "Turbines par PJ, Cash in unique", items: [
+    ["Turbines par PJ", "Une feuille dans l'onglet Turbines : pour chaque PJ, le type de turbine, la quantité, la ou les roues et le ou les injecteurs prévus.", "admin"],
+    ["Cash in", "Un seul Cash in (le format d'origine) ; « Prévu jusqu'à fin 2026 » est dans le cadran « À traiter », à côté de « Mois prochain ».", "admin"],
+  ] },
 ];
