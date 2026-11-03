@@ -601,4 +601,10 @@ export const RELEASE_CATALOG = [
     ["Turbines par PJ", "Une feuille dans l'onglet Turbines : pour chaque PJ, le type de turbine, la quantité, la ou les roues et le ou les injecteurs prévus.", "admin"],
     ["Cash in", "Un seul Cash in (le format d'origine) ; « Prévu jusqu'à fin 2026 » est dans le cadran « À traiter », à côté de « Mois prochain ».", "admin"],
   ] },
+  { v: "258", t: "Planificateur : publication, annonces, dates imposées", items: [
+    ["Publication", "Les jours sans production de chaque PJ sont pris en compte à la publication : les dates publiées sont celles affichées.", "admin"],
+    ["Annonces", "À la publication, on coche les changements annoncés aux utilisateurs ; les heures ne le sont pas par défaut.", "admin"],
+    ["Modèles par gamme", "Ils ne s'appliquent qu'aux PJ dont la production n'a pas commencé.", "admin"],
+    ["Début d'une tâche", "On voit ce qui fixe le début (lien, date imposée, ordre de passage) et on choisit le début en gardant les liens du PJ.", "admin"],
+  ] },
 ];

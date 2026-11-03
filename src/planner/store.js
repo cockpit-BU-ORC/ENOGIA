@@ -6,7 +6,7 @@
 import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase";
 import { guessGamme } from "../parsers";
-import { makeCalendar, schedule, planToRows, diffRows } from "./engine";
+import { makeCalendar, schedule, planToRows, diffRows, ROW_FIELDS } from "./engine";
 import { buildEntry, appendChangeLog } from "../changeLog";
 
 const PFX = process.env.REACT_APP_BETA === "1" ? "beta_" : "";
@@ -28,11 +28,15 @@ export async function loadHistory() {
 
 // Publie le plan dans le planning actuel. On relit « current » juste avant d'écrire (pas l'état local, qui peut être en retard),
 // on garde les lignes d'avant dans l'historique, et on ne touche qu'aux PJ présents dans le plan.
-export async function publishPlan({ plan, closurePeriods, by, note }) {
+// v258 : pjOff = jours sans production de chaque PJ (Calendrier) — le planificateur les compte ; sans eux ici, les dates publiées
+// différaient de celles affichées et les mêmes changements revenaient après « Publier » (« ça ne se publie pas »).
+// announce = ensemble « PJ|champ » des changements annoncés aux utilisateurs (journal des modifications, cloche, repères) ;
+// tout est publié dans le planning, seuls les changements cochés sont annoncés. null = tout annoncer.
+export async function publishPlan({ plan, closurePeriods, productionExclusions, by, note, announce }) {
   const snap = await getDoc(CURRENT_REF());
   const cur = snap.exists() ? snap.data() : {};
   const curRows = cur.rows || [];
-  const cal = makeCalendar({ closurePeriods, holidays: !(plan.cal && plan.cal.holidays === false) });
+  const cal = makeCalendar({ closurePeriods, holidays: !(plan.cal && plan.cal.holidays === false), pjOff: productionExclusions || null });
   const sched = schedule(plan, cal);
   if (sched.cycle) throw new Error("Le plan contient une boucle de liens : " + sched.cycle.slice(0, 4).join(", "));
   const rows = planToRows(plan, sched, curRows, guessGamme, cal);
@@ -44,9 +48,21 @@ export async function publishPlan({ plan, closurePeriods, by, note }) {
   while (JSON.stringify(entries).length > 900000 && entries.length > 1) entries.pop(); // limite Firestore : 1 Mo par document
   await setDoc(HIST_REF(), { entries });
   await setDoc(CURRENT_REF(), { ...cur, rows: plain(rows), lastImport: new Date(at).toLocaleString("fr-FR"), lastPublish: { at, by: by || "" } });
-  try { await appendChangeLog(buildEntry(curRows, rows, { source: "publication", by: by || "", note: note || "", label: new Date(at).toLocaleString("fr-FR"), prevLabel: cur.lastImport || "", prevIndice: cur.indice || "", indice: cur.indice || "" })); }
+  const shown = announcedRows(curRows, rows, announce);
+  if (shown) try { await appendChangeLog(buildEntry(curRows, shown, { source: "publication", by: by || "", note: note || "", label: new Date(at).toLocaleString("fr-FR"), prevLabel: cur.lastImport || "", prevIndice: cur.indice || "", indice: cur.indice || "" })); }
   catch (e) { console.warn("Journal des modifications non enregistré (la publication est bien faite) :", e); }
-  return { nChanges: changes.length, rows };
+  return { nChanges: changes.length, rows, nAnnounced: shown ? diffRows(curRows, shown).length : 0 };
+}
+// Lignes « telles qu'annoncées » : l'état d'avant, avec seulement les changements cochés. null si rien n'est annoncé.
+export function announcedRows(curRows, rows, announce) {
+  if (!announce) return rows;
+  if (!announce.size) return null;
+  const old = {}; (curRows || []).forEach(r => { old[r.pj] = r; });
+  const out = (rows || []).map(r => {
+    const o = old[r.pj]; if (!o) return announce.has(r.pj + "|new") ? r : null;
+    const x = { ...o }; [...ROW_FIELDS, "heuresAtelier", "heuresAutom"].forEach(f => { if (announce.has(r.pj + "|" + f)) x[f] = r[f]; }); return x;
+  }).filter(Boolean);
+  return diffRows(curRows, out).length ? out : null;
 }
 
 // Annule une publication : remet dans « current » les lignes d'avant cette publication.

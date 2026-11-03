@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v258",
+    date: "2026-11-03",
+    title: "V258 : planificateur — publication, annonces, dates imposées",
+    items: [
+      { t: "Publication", d: "Les dates publiées depuis le planificateur sont exactement celles affichées (jours sans production compris).", admin: true },
+      { t: "Annonces", d: "On choisit les changements annoncés aux utilisateurs au moment de publier.", admin: true },
+      { t: "Début d'une tâche", d: "La fenêtre d'une tâche dit ce qui fixe son début et permet de le choisir en gardant les liens.", admin: true },
+    ],
+  },
+  {
     id: "2026-11-v257",
     date: "2026-11-03",
     title: "V257 : turbines par PJ, Cash in unique",

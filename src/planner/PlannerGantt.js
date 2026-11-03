@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import { T } from "../theme";
 import { SerieTag } from "../pjMeta";
-import { STEP_KEYS, STEP_LABEL, STEP_IS_MS, STEP_KIND, stepKeysOf, stepLabel, isCustomKey, addCustomStep, addLink, removeLink, updateLink, nodeKey, splitKey, dayNum, isoOfDay, setStep, setWork, stepWork, shiftPj, moveStepTo, removeStep, removePj, allLinks, orderOf, rulesOf, schedule as scheduleOf, moveStepOrder, setStepMeta, benchOf, PHASE_LABEL, PHASES, setBench, setPrio, setArchived } from "./engine";
+import { STEP_KEYS, STEP_LABEL, STEP_IS_MS, STEP_KIND, stepKeysOf, stepLabel, isCustomKey, addCustomStep, addLink, removeLink, updateLink, nodeKey, splitKey, dayNum, isoOfDay, setStep, setWork, stepWork, shiftPj, moveStepTo, startAtKeepLinks, removeStep, removePj, allLinks, orderOf, rulesOf, schedule as scheduleOf, moveStepOrder, setStepMeta, benchOf, PHASE_LABEL, PHASES, setBench, setPrio, setArchived } from "./engine";
 import { numberRows, predText, applyPredText } from "./predecessors";
 import { Pop, MenuItem } from "./PlannerMenu";
 
@@ -242,7 +242,9 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
   const go = (np, info) => { if (np) onCommit(np, info || null); };
   const editStart = (p, k, v) => {
     if (!v) return; const iso = cal.dateOf(cal.idxOnOrAfter(v));
-    go(moveStepTo(base, cal, p.pj, k, iso), { pj: p.pj, key: nodeKey(p.pj, k), want: iso });
+    const r = startAtKeepLinks(base, cal, p.pj, k, iso); // v258 : liens du PJ gardés (avance si besoin)
+    if (r.blocked) onError("Impossible de commencer le " + fmtIso(iso) + " : " + r.blocked);
+    go(r.plan, { pj: p.pj, key: nodeKey(p.pj, k), want: iso });
   };
   const editEnd = (p, k, n, v) => {
     if (!v) return; if (!n || n.s === null) { onError("Donnez d'abord une date de début."); return; }

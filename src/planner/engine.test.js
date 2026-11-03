@@ -1,4 +1,4 @@
-import { makeCalendar, initPlanFromRows, schedule, loadModel, levelPlan, shiftPj, pjDates, refreshPlanFromRows, planToRows, diffRows, setCapWeek, newPjPlan, splitBenches, benchOf, allLinks, moveStepOrder, stepKeysOf, addPhaseTask, nodeKey } from "./engine";
+import { makeCalendar, initPlanFromRows, schedule, loadModel, levelPlan, shiftPj, pjDates, refreshPlanFromRows, planToRows, diffRows, setCapWeek, newPjPlan, splitBenches, benchOf, allLinks, moveStepOrder, stepKeysOf, addPhaseTask, nodeKey, startAtKeepLinks, startReason } from "./engine";
 
 // v204 : le module de planification est rebranché (onglet Planificateur) — vérifie le calcul de base.
 const rows = [
@@ -58,5 +58,23 @@ describe("planificateur (v204)", () => {
     expect(n.f - n.s).toBe(base.f - base.s + 2); expect(n.off.size).toBe(2);
     const lm = loadModel(plan, schedule(plan, off), off), i = [...n.off][0];
     expect(lm.day.get(i) || 0).toBe(0);
+  });
+});
+
+describe("v258 : début d'une tâche choisi en gardant les liens du PJ", () => {
+  const cal = makeCalendar({ closurePeriods: [] });
+  test("plus tôt : le lien est gardé avec une avance ; plus tard : date imposée", () => {
+    const plan = initPlanFromRows(rows, cal), s = schedule(plan, cal);
+    const k = Object.keys(s.nodes).find(x => { const n = s.nodes[x]; return n.pj === "PJ1" && !n.ms && (plan.links || []).some(l => l.id === n.driver && l.from.startsWith("PJ1|")); });
+    expect(k).toBeTruthy();
+    const n = s.nodes[k], step = n.step, nLinks = plan.links.length;
+    const early = cal.addWork(n.start, -2), r = startAtKeepLinks(plan, cal, "PJ1", step, early);
+    expect(r.blocked).toBeNull();
+    expect(schedule(r.plan, cal).nodes[k].start).toBe(early);
+    expect(r.plan.links.length).toBe(nLinks);
+    expect(r.plan.links.find(l => l.id === n.driver).lag).toBeLessThan(0);
+    const late = cal.addWork(n.start, 3), r2 = startAtKeepLinks(plan, cal, "PJ1", step, late), n2 = schedule(r2.plan, cal).nodes[k];
+    expect(n2.start).toBe(late); expect(n2.driver).toBe("snet");
+    expect(startReason(r2.plan, n2)).toMatch(/date imposée/);
   });
 });

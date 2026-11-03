@@ -491,6 +491,35 @@ export function moveStepTo(plan, cal, pj, step, wantedIso) {
   if (res && rulesOf(plan)[res]) np = repositionInOrder(np, cal, res, pj, wantedIso);
   return np;
 }
+// v258 (demandé : « avoir la main sur quand commence une tâche tant qu'elle est liée à une tâche prédécesseur et successeur
+// par PJ ») : la tâche commence le jour choisi. Plus tard que ses liens : date imposée (pas avant). Plus tôt : le lien du même PJ
+// qui la repousse est GARDÉ et prend une avance (décalage négatif) pour qu'elle commence ce jour-là. Un lien vers un autre PJ
+// ou l'ordre de passage ne sont pas modifiés : blocked = ce qui empêche (texte), la tâche commence alors au plus tôt possible.
+export function startAtKeepLinks(plan, cal, pj, step, iso) {
+  let np = moveStepTo(plan, cal, pj, step, iso); const want = cal.idxOnOrAfter(iso), key = nodeKey(pj, step);
+  for (let g = 0; g < 8; g++) {
+    const n = schedule(np, cal).nodes[key]; if (!n || n.s === null || n.s <= want) return { plan: np, blocked: null };
+    const l = (np.links || []).find(x => x.id === n.driver);
+    if (!l || splitKey(l.from).pj !== pj) return { plan: np, blocked: startReason(np, n) };
+    np = clonePlan(np); const m = np.links.find(x => x.id === l.id); m.lag = (Number(m.lag) || 0) - (n.s - want);
+  }
+  return { plan: np, blocked: "liens en chaîne" };
+}
+// v258 (demandé : « je ne sais pas quand la date est imposée et quelle est la date imposée de la tâche ») : ce qui fixe le début
+export function startReason(plan, n) {
+  if (!n || n.s === null) return "Pas de date : ni date imposée ni prédécesseur.";
+  const pin = n.snet ? "date imposée (pas avant le " + isoFr(n.snet) + ")" : "";
+  if (n.driver === "snet") return "Début fixé par la " + pin + ".";
+  let why = "Début calculé.";
+  if (n.driver === "lvl") why = "Début fixé par le lissage de la charge.";
+  else if (n.driver) {
+    const l = allLinks(plan).find(x => x.id === n.driver);
+    if (l && l.seq) why = "Début fixé par l'ordre de passage " + (l.res === "banc" ? "au banc" : "en production") + " : après " + splitKey(l.from).pj + ".";
+    else if (l) { const f = splitKey(l.from), p = (plan.pjs || []).find(x => x.pj === f.pj), lag = Number(l.lag) || 0;
+      why = "Début fixé par le lien avec « " + (f.pj !== n.pj ? f.pj + " · " : "") + stepLabel(p, f.step) + " » (" + (l.type || "FS") + (lag ? (lag > 0 ? " +" : " ") + lag + " j" : "") + ")."; }
+  }
+  return why + (pin ? " Date imposée (pas avant le " + isoFr(n.snet) + ")" + (n.snetIgnored ? " : sans effet, la tâche ne peut pas commencer plus tôt." : ".") : " Pas de date imposée.");
+}
 // Passer un PJ avant / après son voisin dans l'ordre de passage (les deux échangent leurs créneaux : leurs dates imposées sur cette étape sont libérées)
 export function moveInOrder(plan, res, pj, delta) {
   const o = orderOf(plan, res); const i = o.indexOf(pj), j = i + delta; if (i < 0 || j < 0 || j >= o.length) return plan;

@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { T } from "../theme";
-import { STEP_LABEL, nodeKey, dayNum, isoOfDay, moveStepTo, setStep, orderOf, rulesOf, schedule, benchOf, stepWork, setWork } from "./engine";
+import { STEP_LABEL, nodeKey, dayNum, isoOfDay, moveStepTo, setStep, orderOf, rulesOf, schedule, benchOf, stepWork, setWork, startAtKeepLinks, startReason } from "./engine";
 import { fmtIso, STEP_COLOR, headerCells } from "./PlannerGantt";
 
 // Vue « Couloirs » : le planning lu comme un atelier. Deux rails de jalons (Arrivées en haut, Départs en bas) encadrent
@@ -19,7 +19,7 @@ function StepDialog({ it, step, plan, cal, onApply, onClose }) {
   const C = pal(); const n = it.n; const ms = step === "arrivee" || step === "depart";
   const p = plan.pjs.find(x => x.pj === it.pj); const w0 = p ? stepWork(p, step) : null;
   const [start, setStart] = useState(n.start), [dur, setDur] = useState(n.dur), [end, setEnd] = useState(n.finish), [work, setWorkV] = useState(w0 == null ? "" : String(w0));
-  const [free, setFree] = useState(false);
+  const [free, setFree] = useState(false), [err, setErr] = useState("");
   useEffect(() => { const k = e => { if (e.key === "Escape") onClose(); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose]);
   const onEnd = v => { setEnd(v); if (v && start && v >= start) setDur(Math.max(1, cal.countBetween(start, v))); };
   const onDur = v => { const d = Math.max(1, Math.round(Number(v) || 1)); setDur(d); if (start) setEnd(cal.addWork(cal.dateOf(cal.idxOnOrAfter(start)), d - 1)); };
@@ -27,7 +27,12 @@ function StepDialog({ it, step, plan, cal, onApply, onClose }) {
   const apply = () => {
     let np = plan;
     if (free) np = setStep(np, it.pj, step, { snet: null });
-    else if (start && start !== n.start) np = moveStepTo(np, cal, it.pj, step, cal.dateOf(cal.idxOnOrAfter(start)));
+    else if (start && start !== n.start) {
+      // v258 : le début choisi est respecté en gardant les liens du PJ (avance sur le lien si besoin)
+      const r = startAtKeepLinks(np, cal, it.pj, step, cal.dateOf(cal.idxOnOrAfter(start)));
+      if (r.blocked) { setErr("Impossible de commencer le " + fmtIso(start) + " : " + r.blocked); return; }
+      np = r.plan;
+    }
     if (!ms && dur && dur !== n.dur) np = setStep(np, it.pj, step, { dur: Math.max(1, dur) });
     if (w0 != null && work !== "" && Number(work) !== w0) np = setWork(np, it.pj, step, Number(work));
     onApply(np, { pj: it.pj, key: !free && start !== n.start ? it.key : null, want: !free && start !== n.start ? cal.dateOf(cal.idxOnOrAfter(start)) : null });
@@ -42,15 +47,18 @@ function StepDialog({ it, step, plan, cal, onApply, onClose }) {
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderBottom: "1px solid " + C.line }}>
         <span style={{ width: 12, height: 12, borderRadius: 3, background: STEP_COLOR[step], flex: "none" }} />
         <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontWeight: 700, fontSize: 15 }}><span style={{ fontFamily: MONO }}>{it.pj}</span> · {STEP_LABEL[step]}</div>
-          <div style={{ fontSize: 12, color: C.ink3 }}>Actuellement : {fmtIso(n.start)}{ms ? "" : " → " + fmtIso(n.finish) + " · " + n.dur + " j ouvrés"}{w0 != null ? " · " + w0 + " h" : ""}</div></div>
+          <div style={{ fontSize: 12, color: C.ink3 }}>Actuellement : {fmtIso(n.start)}{ms ? "" : " → " + fmtIso(n.finish) + " · " + n.dur + " j ouvrés"}{w0 != null ? " · " + w0 + " h" : ""}</div>
+          <div style={{ fontSize: 12, color: n.snet ? C.ink : C.ink3, marginTop: 2 }}>{n.snet ? "📌 " : ""}{startReason(plan, n)}</div></div>
         <button type="button" onClick={onClose} aria-label="Fermer" style={{ ...btn(false), padding: "0 10px" }}>×</button>
       </div>
       <div style={{ padding: "14px 16px", display: "grid", gridTemplateColumns: ms ? "1fr" : "1fr 1fr", gap: 12 }}>
-        <label style={lab}>{ms ? "Date" : "Début (pas avant)"}<input type="date" value={start || ""} disabled={free} onChange={e => onStart(e.target.value)} style={fld} /></label>
+        <label style={lab}>{ms ? "Date" : "Début"}<input type="date" value={start || ""} disabled={free} onChange={e => { onStart(e.target.value); setErr(""); }} style={fld} /></label>
         {!ms && <label style={lab}>Fin<input type="date" value={end || ""} min={start || undefined} onChange={e => onEnd(e.target.value)} style={fld} /></label>}
         {!ms && <label style={lab}>Durée (jours ouvrés)<input type="number" min={1} step={1} value={dur} onChange={e => onDur(e.target.value)} style={fld} /></label>}
         {w0 != null && <label style={lab}>Charge ({unit})<input type="number" min={0} step={0.5} value={work} onChange={e => setWorkV(e.target.value)} style={fld} /></label>}
-        {n.driver === "snet" && <label style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: C.ink2 }}><input type="checkbox" checked={free} onChange={e => setFree(e.target.checked)} />Libérer la date imposée (la tâche suit de nouveau ses liens)</label>}
+        {!ms && <div style={{ gridColumn: "1 / -1", fontSize: 12, color: C.ink3, lineHeight: 1.45 }}>Le début choisi est respecté et les liens du PJ sont gardés : plus tard, il devient la date imposée ; plus tôt, le lien qui la repousse prend une avance.</div>}
+        {n.snet && <label style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: C.ink2 }}><input type="checkbox" checked={free} onChange={e => setFree(e.target.checked)} />Libérer la date imposée du {fmtIso(n.snet)} (la tâche suit de nouveau ses liens)</label>}
+        {err && <div role="alert" style={{ gridColumn: "1 / -1", fontSize: 12.5, fontWeight: 600, color: T.red600 }}>{err}</div>}
       </div>
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, padding: "10px 16px 14px", borderTop: "1px solid " + C.line }}>
         <button type="button" onClick={onClose} style={btn(false)}>Annuler</button>
@@ -215,7 +223,7 @@ export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load,
               const on = sel && sel.pj === it.pj && (!sel.step || sel.step === l.step); const dim = selPj && selPj !== it.pj; const ch = changed.has(it.key);
               const col = STEP_COLOR[l.step]; const n = it.n; const pinned = n.driver === "snet" && !l.ms;
               const rank = l.res && rules[l.res] ? ranks[l.res].indexOf(it.pj) + 1 : 0;
-              const common = { tabIndex: 0, role: "button", "aria-label": aria(it, l), "aria-pressed": !!on, onKeyDown: e => onKey(e, it, l.step, !!l.ms), title: it.pj + (names[it.pj] ? " · " + names[it.pj] : "") + "\n" + STEP_LABEL[l.step] + " : " + fmtIso(n.start) + (l.ms ? "" : " → " + fmtIso(n.finish) + " (" + n.dur + " j)") + (readOnly ? "" : "\nGlisser pour déplacer") };
+              const common = { tabIndex: 0, role: "button", "aria-label": aria(it, l), "aria-pressed": !!on, onKeyDown: e => onKey(e, it, l.step, !!l.ms), title: it.pj + (names[it.pj] ? " · " + names[it.pj] : "") + "\n" + STEP_LABEL[l.step] + " : " + fmtIso(n.start) + (l.ms ? "" : " → " + fmtIso(n.finish) + " (" + n.dur + " j)") + "\n" + startReason(base, n) + (readOnly ? "" : "\nClic : modifier · glisser : déplacer") };
               if (l.ms) {
                 const y = it.y; return (<div key={it.key} {...common} onPointerDown={e => startDrag(e, { kind: "move", pj: it.pj, step: l.step, key: it.key, node: n })} onClick={() => { setSel({ pj: it.pj, step: l.step }); if (!readOnly && Date.now() - dragged.current > 300) setEdit({ it, step: l.step }); }}
                   style={{ position: "absolute", left: it.cx - 6, top: y, height: BH, display: "flex", alignItems: "center", gap: 6, opacity: dim ? 0.3 : 1, cursor: readOnly ? "default" : "grab", zIndex: on ? 5 : 2, whiteSpace: "nowrap" }}>

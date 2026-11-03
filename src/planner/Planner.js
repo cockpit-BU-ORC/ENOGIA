@@ -68,20 +68,23 @@ function Modal({ title, onClose, children, width = 720 }) {
 // des PJ de la gamme dans le plan ; « Appliquer » écrit ces durées sur les PJ de la gamme (les dates imposées sont gardées).
 const TPL_STEPS = [["production", "Production"], ["tests", "Tests"], ["finProd", "Packing"]];
 function gammeOfPj(pj, rows) { const r = (rows || []).find(x => x.pj === pj); return (r && r.gamme) || "Sans gamme"; }
-function TemplatesDialog({ plan, rows, onClose, onApply }) {
+// v258 (demandé : « quand j'applique les modèles par gamme, ils ne s'appliquent qu'aux PJ non commencés en production ») :
+// started = PJ dont la production a commencé (début ≤ aujourd'hui, ou état Montage, Élec, Tests, Packaging, Expédiée) : jamais touchés.
+function TemplatesDialog({ plan, rows, started, onClose, onApply }) {
   const gammes = [...new Set((plan.pjs || []).map(x => gammeOfPj(x.pj, rows)))].sort();
   const avg = g => { const L = (plan.pjs || []).filter(x => gammeOfPj(x.pj, rows) === g), o = {}; TPL_STEPS.forEach(([k]) => { const v = L.map(x => x.steps && x.steps[k]).filter(Boolean); o[k] = { dur: v.length ? Math.round(v.reduce((a, b) => a + (Number(b.dur) || 0), 0) / v.length) : 0, work: v.some(b => b.work != null) ? Math.round(v.reduce((a, b) => a + (Number(b.work) || 0), 0) / v.length) : null }; }); return o; };
   const [tpl, setTpl] = useState(() => { const t = { ...(plan.templates || {}) }; gammes.forEach(g => { if (!t[g]) t[g] = avg(g); }); return t; });
   const set = (g, k, f, v) => setTpl(t => ({ ...t, [g]: { ...t[g], [k]: { ...(t[g] && t[g][k]), [f]: v === "" ? null : Math.max(0, Number(v) || 0) } } }));
-  const applyG = (g, np) => { let out = np; (out.pjs || []).filter(x => gammeOfPj(x.pj, rows) === g).forEach(x => TPL_STEPS.forEach(([k]) => { const m = tpl[g] && tpl[g][k]; if (!m || !x.steps || !x.steps[k]) return; const patch = { dur: m.dur }; if (m.work != null) patch.work = m.work; out = setStep(out, x.pj, k, patch); })); return out; };
+  const applyG = (g, np) => { let out = np; (out.pjs || []).filter(x => gammeOfPj(x.pj, rows) === g && !started.has(x.pj)).forEach(x => TPL_STEPS.forEach(([k]) => { const m = tpl[g] && tpl[g][k]; if (!m || !x.steps || !x.steps[k]) return; const patch = { dur: m.dur }; if (m.work != null) patch.work = m.work; out = setStep(out, x.pj, k, patch); })); return out; };
   const save = (all, g) => { let np = { ...plan, templates: tpl }; if (all) gammes.forEach(x => { np = applyG(x, np); }); else if (g) np = applyG(g, np); onApply(np); };
   const n = g => (plan.pjs || []).filter(x => gammeOfPj(x.pj, rows) === g).length;
+  const nTodo = g => (plan.pjs || []).filter(x => gammeOfPj(x.pj, rows) === g && !started.has(x.pj)).length;
   return (<Modal title="Modèles par gamme" onClose={onClose} width={860}>
-    <div style={{ fontSize: 13, color: T.ink500, lineHeight: 1.5, marginBottom: 10 }}>Durée habituelle (jours ouvrés) et travail (heures atelier) de chaque phase, par gamme. « Appliquer » recalcule les PJ de la gamme ; les dates imposées restent.</div>
+    <div style={{ fontSize: 13, color: T.ink500, lineHeight: 1.5, marginBottom: 10 }}>Durée habituelle (jours ouvrés) et travail (heures atelier) de chaque phase, par gamme. « Appliquer » recalcule seulement les PJ de la gamme <b>dont la production n'a pas commencé</b> ; les PJ en cours ne changent pas, les dates imposées restent.</div>
     <div style={{ overflowX: "auto" }}><table style={{ borderCollapse: "collapse", width: "100%", fontSize: 12.5 }}>
       <thead><tr><th style={{ textAlign: "left", padding: "6px 8px", color: T.ink500, fontWeight: 600 }}>Gamme</th>{TPL_STEPS.map(([k, l]) => <th key={k} colSpan={2} style={{ textAlign: "left", padding: "6px 8px", color: T.ink500, fontWeight: 600 }}>{l} <span style={{ fontWeight: 400 }}>(j · h)</span></th>)}<th /></tr></thead>
       <tbody>{gammes.map(g => <tr key={g} style={{ borderTop: "1px solid " + T.line }}>
-        <td style={{ padding: "6px 8px", fontWeight: 700, whiteSpace: "nowrap" }}>{g} <span style={{ fontWeight: 400, color: T.ink500 }}>· {n(g)} PJ</span></td>
+        <td style={{ padding: "6px 8px", fontWeight: 700, whiteSpace: "nowrap" }}>{g} <span style={{ fontWeight: 400, color: T.ink500 }}>· {nTodo(g)} / {n(g)} PJ à venir</span></td>
         {TPL_STEPS.map(([k]) => <React.Fragment key={k}>
           <td style={{ padding: "4px 4px" }}><input type="number" min={0} aria-label={g + " " + k + " durée"} value={(tpl[g] && tpl[g][k] && tpl[g][k].dur != null) ? tpl[g][k].dur : ""} onChange={e => set(g, k, "dur", e.target.value)} style={{ ...INP, width: 64 }} /></td>
           <td style={{ padding: "4px 4px" }}><input type="number" min={0} aria-label={g + " " + k + " travail"} value={(tpl[g] && tpl[g][k] && tpl[g][k].work != null) ? tpl[g][k].work : ""} placeholder="h" onChange={e => set(g, k, "work", e.target.value)} style={{ ...INP, width: 64 }} /></td>
@@ -187,20 +190,35 @@ function BlankDialog({ rows, onClose, onApply, hasPlan }) {
   </Modal>);
 }
 
+// v258 (demandé : « choisir les modifications que j'annonce aux utilisateurs ; la modification d'heures d'une tâche n'intéresse pas
+// les autres ») : une case par changement ; heures décochées par défaut. Tout est publié ; seuls les changements cochés sont annoncés
+// (page Modifications, cloche, repères ↻ de la Liste et du Calendrier).
+const HOUR_FIELDS = new Set(["heuresAtelier", "heuresAutom"]);
 function PublishDialog({ plan, sched, rows, pubRows, changes, onClose, onPublish }) {
   const [note, setNote] = useState(""); const [busy, setBusy] = useState(false); const [err, setErr] = useState(""); const [done, setDone] = useState(null);
+  const keyOf = c => c.pj + "|" + c.field;
+  const [ann, setAnn] = useState(() => new Set(changes.filter(c => !HOUR_FIELDS.has(c.field)).map(keyOf)));
+  const flip = (keys, on) => setAnn(s => { const n = new Set(s); keys.forEach(k => { if (on) n.add(k); else n.delete(k); }); return n; });
+  const nAnn = changes.filter(c => ann.has(keyOf(c))).length;
   const byPj = useMemo(() => { const m = {}; changes.forEach(c => { (m[c.pj] = m[c.pj] || []).push(c); }); return m; }, [changes]);
-  const unscheduled = Object.values(sched.nodes).filter(n => n.s === null).length;
+  const unschedL = Object.values(sched.nodes).filter(n => n.s === null && !isEstimatePj(n.pj)), unscheduled = unschedL.length; // v258 : un PJXX (estimation) n’est jamais publié
   const FL = { arrivee: "Arrivée", tests: "Tests", testsFin: "Fin tests", finProd: "Fin prod.", depart: "Départ", heuresAtelier: "Heures atelier", heuresAutom: "Heures autom", new: "Nouveau PJ" };
-  const go = async () => { setBusy(true); setErr(""); try { const r = await onPublish(note.trim()); setDone(r); } catch (e) { setErr(e.message || String(e)); } setBusy(false); };
+  const go = async () => { setBusy(true); setErr(""); try { const r = await onPublish(note.trim(), new Set(changes.filter(c => ann.has(keyOf(c))).map(keyOf))); setDone(r); } catch (e) { setErr(e.message || String(e)); } setBusy(false); };
   return (<Modal title="Publier dans le planning actuel" onClose={onClose} width={760}>
-    {done ? <div style={{ fontSize: 14, color: T.emerald600, fontWeight: 700 }}>✓ Publié : {done.nChanges} changement(s) appliqués. Tous les écrans utilisent maintenant ces dates.<div style={{ marginTop: 12, textAlign: "right" }}><button style={{ ...BTN_P }} onClick={onClose}>Fermer</button></div></div> : <>
-      <div style={{ fontSize: 13.5, color: T.ink500, lineHeight: 1.55 }}>{changes.length === 0 ? "Le planning actuel est déjà identique au plan : rien à publier." : <>Ces changements remplaceront les dates du planning actuel (calendrier, Gantt, liste, KPI, rapport CODIR). Le planning <b>initial</b> n'est pas modifié. Une copie de l'état actuel est gardée pour pouvoir annuler.</>}</div>
-      {unscheduled > 0 && <div style={{ color: T.amber600, fontSize: 12.5, marginTop: 6 }}>⚠ {unscheduled} étape(s) du plan n'ont pas de date (ni date imposée ni prédécesseur) : les dates correspondantes seront vides.</div>}
-      {changes.length > 0 && <div style={{ marginTop: 10, border: "1px solid " + T.line, borderRadius: 10, maxHeight: 300, overflow: "auto" }}>
+    {done ? <div style={{ fontSize: 14, color: T.emerald600, fontWeight: 700 }}>✓ Publié : {done.nChanges} changement(s) appliqués, {done.nAnnounced || 0} annoncé(s) aux utilisateurs. Tous les écrans utilisent maintenant ces dates.<div style={{ marginTop: 12, textAlign: "right" }}><button style={{ ...BTN_P }} onClick={onClose}>Fermer</button></div></div> : <>
+      <div style={{ fontSize: 13.5, color: T.ink500, lineHeight: 1.55 }}>{changes.length === 0 ? "Le planning actuel est déjà identique au plan : rien à publier." : <>Ces changements remplaceront les dates du planning actuel (calendrier, Gantt, liste, KPI, rapport CODIR). Le planning <b>initial</b> n'est pas modifié. Une copie de l'état actuel est gardée pour pouvoir annuler. <b>Cochez ce que vous annoncez</b> aux utilisateurs (page Modifications, cloche) : le reste est publié sans être annoncé.</>}</div>
+      {unscheduled > 0 && <div style={{ color: T.amber600, fontSize: 12.5, marginTop: 6 }}>⚠ {unscheduled} étape(s) du plan n'ont pas de date (ni date imposée ni prédécesseur) : les dates correspondantes seront vides — {unschedL.slice(0, 6).map(n => n.pj + " · " + stepLabel(plan.pjs.find(x => x.pj === n.pj), n.step)).join(", ")}{unscheduled > 6 ? "…" : ""}.</div>}
+      {changes.length > 0 && <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginTop: 10, fontSize: 12.5, color: T.ink500 }}>
+        <span>{nAnn} sur {changes.length} annoncé{nAnn > 1 ? "s" : ""}</span>
+        <button type="button" style={{ ...BTN, minHeight: 26, padding: "0 10px" }} onClick={() => flip(changes.map(keyOf), true)}>Tout annoncer</button>
+        <button type="button" style={{ ...BTN, minHeight: 26, padding: "0 10px" }} onClick={() => setAnn(new Set(changes.filter(c => !HOUR_FIELDS.has(c.field)).map(keyOf)))}>Dates seulement</button>
+        <button type="button" style={{ ...BTN, minHeight: 26, padding: "0 10px" }} onClick={() => setAnn(new Set())}>Ne rien annoncer</button>
+      </div>}
+      {changes.length > 0 && <div style={{ marginTop: 8, border: "1px solid " + T.line, borderRadius: 10, maxHeight: 300, overflow: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}><tbody>
-          {Object.keys(byPj).map(pj => byPj[pj].map((c, i) => (<tr key={pj + i} style={{ borderTop: i === 0 ? "1px solid " + T.line : "none" }}>
-            <td style={{ padding: "4px 10px", fontFamily: T.fontMono, fontWeight: 700, color: T.teal600, width: 90 }}>{i === 0 ? pj : ""}</td>
+          {Object.keys(byPj).map(pj => byPj[pj].map((c, i) => (<tr key={pj + i} style={{ borderTop: i === 0 ? "1px solid " + T.line : "none", opacity: ann.has(keyOf(c)) ? 1 : 0.6 }}>
+            <td style={{ padding: "4px 4px 4px 10px", width: 28 }}><input type="checkbox" checked={ann.has(keyOf(c))} onChange={e => flip([keyOf(c)], e.target.checked)} aria-label={"Annoncer " + pj + " " + (FL[c.field] || c.field)} /></td>
+            <td style={{ padding: "4px 10px", fontFamily: T.fontMono, fontWeight: 700, color: T.teal600, width: 90 }}>{i === 0 ? <label style={{ display: "inline-flex", gap: 6, alignItems: "center", cursor: "pointer" }} title="Annoncer ou non tous les changements de ce PJ"><input type="checkbox" checked={byPj[pj].every(x => ann.has(keyOf(x)))} onChange={e => flip(byPj[pj].map(keyOf), e.target.checked)} aria-label={"Annoncer tout " + pj} />{pj}</label> : ""}</td>
             <td style={{ padding: "4px 10px", color: T.ink500, width: 100 }}>{FL[c.field] || c.field}</td>
             <td style={{ padding: "4px 10px", color: T.ink700 }}>{c.field === "new" ? fmtIso(c.to) : (typeof c.from === "number" ? c.from : fmtIso(c.from)) + " → " + (typeof c.to === "number" ? c.to : fmtIso(c.to))}</td>
           </tr>)))}
@@ -430,6 +448,10 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
   const isArch = p => !!p.archived || shippedSet.has(p.pj);
   const nArch = live && live.v === 2 ? live.pjs.filter(isArch).length : 0;
   const benchSkip = p => isArch(p) || slotSet.has(p.pj); const todayIso = (d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"))(new Date());
+  const startedSet = useMemo(() => { const s = new Set(); const ST = new Set(["MONTAGE", "ELEC", "TESTS", "PACKAGING", "SHIPPED"]);
+    (rows || []).forEach(r => { if (r && ST.has(r.etat)) s.add(r.pj); });
+    Object.values(sched.nodes).forEach(n => { if (n.step === "production" && n.start && n.start <= todayIso) s.add(n.pj); });
+    return s; }, [rows, sched, todayIso]);
   const conflicts = useMemo(() => live && live.v === 2 ? benchConflicts(live, sched, { skip: benchSkip, since: todayIso }) : [], [live, sched, slotSet, shippedSet]); // eslint-disable-line react-hooks/exhaustive-deps
   const pjsShown = useMemo(() => { if (!live || live.v !== 2) return []; const s = q.trim().toLowerCase(); return live.pjs.filter(p => (ui.showArch || !isArch(p)) && !(hideSlots && slotSet.has(p.pj)) && (!s || p.pj.toLowerCase().includes(s) || (p.nomProjet || "").toLowerCase().includes(s))); }, [live, q, hideSlots, slotSet, shippedSet, ui.showArch]); // eslint-disable-line react-hooks/exhaustive-deps
   const lanesPlan = useMemo(() => live && live.v === 2 ? { ...live, pjs: live.pjs.filter(p => !slotSet.has(p.pj) && (ui.showArch || !isArch(p))) } : live, [live, slotSet, shippedSet, ui.showArch]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -567,9 +589,9 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
     {dlg === "newpj" && <NewPjDialog plan={plan} rows={rows} cal={cal} testers={testers || []} onClose={() => setDlg(null)} onApply={(np, pj) => { apply(np); setSel({ pj, step: null }); toggleExp(pj, true); setNotice({ tone: "ok", text: pj + " ajouté au plan avec ses tâches." }); }} />}
     {dlg === "task" && (selPj || taskPj) && <TaskDialog plan={plan} pj={taskPj || selPj.pj} after={selPj && selPj.pj === (taskPj || selPj.pj) ? selPj.step : null} testers={testers || []} onClose={() => { setDlg(null); setTaskPj(null); }} onApply={(np, key) => { const pj = taskPj || selPj.pj; apply(np); toggleExp(pj, true); setSel({ pj, step: key ? key.split("|").pop() : null }); setTaskPj(null); }} />}
     {dlg === "bench" && <BenchDialog plan={plan} sched={sched} cal={cal} hide={slotSet} skip={benchSkip} readOnly={ro} onClose={() => setDlg(null)} onApply={(np, msg) => { apply(np); if (msg) setNotice({ tone: "ok", text: msg }); }} />}
-    {dlg === "templates" && <TemplatesDialog plan={plan} rows={rows} onClose={() => setDlg(null)} onApply={np => apply(np)} />}
+    {dlg === "templates" && <TemplatesDialog plan={plan} rows={rows} started={startedSet} onClose={() => setDlg(null)} onApply={np => apply(np)} />}
     {dlg === "blank" && <BlankDialog rows={rows} hasPlan onClose={() => setDlg(null)} onApply={np => { setSel(null); setExp(new Set(np.pjs.map(p => p.pj))); apply(np); }} />}
-    {dlg === "publish" && <PublishDialog plan={plan} sched={sched} rows={rows} pubRows={pubRows} changes={changes} onClose={() => setDlg(null)} onPublish={note => onPublish(plan, note)} />}
+    {dlg === "publish" && <PublishDialog plan={plan} sched={sched} rows={rows} pubRows={pubRows} changes={changes} onClose={() => setDlg(null)} onPublish={(note, announce) => onPublish(plan, note, announce)} />}
     {dlg === "history" && <HistoryDialog onClose={() => setDlg(null)} onLoad={onLoadHistory} onRestorePlan={p => apply(p)} onRestorePub={onRestorePublication} />}
   </div>);
 }
