@@ -92,7 +92,7 @@ export function KpiPilotage({ rows, driftRows, closurePeriods, productionExclusi
       <Kpi label="Départs d'ici 30 jours" value={dep30.length} sub={dep30.length ? (dep30Late === dep30.length ? (dep30.length > 1 ? "tous en dérive" : "en dérive") : dep30Late ? "dont " + dep30Late + " en dérive" : "aucun en dérive") : "aucun départ prévu"} subBad={dep30Late > 0} />
       <Kpi label="En retard sur l'initial" value={hasInitial ? risky.length : "—"} bad={risky.length > 0} sub={!hasInitial ? "pas de planning initial" : risky.length ? "max " + risky[0].pj + " · +" + driftOf[risky[0].pj] + " j" : "aucun PJ en dérive"} />
       <Kpi label={"Charge S" + isoWeek(w4[0].a) + " → S" + isoWeek(w4[3].a)} value={pct4 == null ? "—" : pct4 + " %"} bad={pct4 != null && pct4 > 100} sub={load4 + " h sur " + Math.round(cap4) + " h" + (peak ? " · S" + isoWeek(peak.a) + " à " + Math.round(peak.hours / peak.cap * 100) + " %" : "")} subBad={!!peak} />
-      <Kpi label="Livrées cette année" value={shipped} good={shipped > 0} sub={shipped28 + " sur les 28 derniers jours"} />
+      <Kpi label="Livrées depuis mai" value={shipped} good={shipped > 0} sub={shipped28 + " sur les 28 derniers jours"} />
     </div>
       <section aria-label="PJ à risque" style={{ ...card, padding: 0, overflow: "hidden" }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 8, padding: "12px 14px 6px" }}>

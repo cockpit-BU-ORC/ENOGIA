@@ -232,6 +232,26 @@ function PublishDialog({ plan, sched, rows, pubRows, changes, onClose, onPublish
   </Modal>);
 }
 
+// v259 (demandé : « choisir de quand à quand je nivelle la charge et sur quelle capacité ») : aperçu ensuite, comme avant
+function LevelDialog({ plan, onClose, onGo }) {
+  const iso = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  const d0 = new Date(), d1 = new Date(d0.getFullYear(), d0.getMonth() + 3, d0.getDate()), base = Math.round(capWeek(plan));
+  const [f, setF] = useState({ from: iso(d0), to: iso(d1), cap: String(base) }); const [err, setErr] = useState("");
+  const L = { display: "flex", flexDirection: "column", gap: 4, fontSize: 12.5, fontWeight: 700, color: T.ink700 };
+  const go = () => { if (!f.from || !f.to || f.to < f.from) { setErr("La fin doit être après le début."); return; } const c = Number(f.cap); if (!(c > 0)) { setErr("Donnez une capacité en heures par semaine."); return; } onGo({ from: f.from, to: f.to, cap: c === base ? null : c }); };
+  return (<Modal title="Niveler la charge atelier" onClose={onClose} width={560}>
+    <div style={{ fontSize: 13, color: T.ink500, lineHeight: 1.5, marginBottom: 12 }}>Seules les semaines de cette période sont nivelées : les phases qui commencent avant le début ne bougent pas. Vous voyez le résultat avant de l'appliquer.</div>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 10 }}>
+      <label style={L}>Du<input type="date" value={f.from} onChange={e => { setF({ ...f, from: e.target.value }); setErr(""); }} className="pg-in" style={{ ...INP }} /></label>
+      <label style={L}>Au<input type="date" value={f.to} onChange={e => { setF({ ...f, to: e.target.value }); setErr(""); }} className="pg-in" style={{ ...INP }} /></label>
+      <label style={L}>Capacité (h / semaine)<input type="number" min={1} value={f.cap} onChange={e => { setF({ ...f, cap: e.target.value }); setErr(""); }} className="pg-in" style={{ ...INP }} /></label>
+    </div>
+    <div style={{ fontSize: 12, color: T.ink500, marginTop: 6 }}>Capacité du plan : {base} h / semaine (garder ce chiffre conserve aussi les semaines à capacité spéciale).</div>
+    {err && <div role="alert" style={{ color: T.red500, fontWeight: 600, fontSize: 13, marginTop: 10 }}>{err}</div>}
+    <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 14 }}><button style={{ ...BTN }} onClick={onClose}>Annuler</button><button style={{ ...BTN_P }} onClick={go}>Voir le nivellement</button></div>
+  </Modal>);
+}
+
 function HistoryDialog({ onClose, onLoad, onRestorePlan, onRestorePub }) {
   const [items, setItems] = useState(null); const [err, setErr] = useState(""); const [msg, setMsg] = useState("");
   useEffect(() => { onLoad().then(setItems).catch(e => setErr(e.message)); }, []); // eslint-disable-line
@@ -271,6 +291,49 @@ function moveTo(plan, pj, over) {
 // v224 (demandé : « 2 slots de banc d'essai : 2 machines en même temps, jamais 2 machines sur le même slot ; une attribution
 // simple et claire ») : une ligne par banc, ses machines dans l'ordre (dates, chevauchements en rouge), changer de banc d'un clic,
 // « Allouer automatiquement » (banc libre le plus tôt + une machine à la fois par banc, ordre = ordre des tests).
+// v259 (demandé : « une vision planning / frise chronologique avec les 2 bancs l'un au-dessus de l'autre ; allouer les tests
+// d'une machine au banc que je souhaite en glisser-déposer ») : une ligne par banc, une barre par machine (jours ouvrés), les
+// machines qui se chevauchent sur un même banc passent sur une sous-ligne et sont en rouge. Glisser une barre sur l'autre banc
+// = setBench ; au clavier : flèche haut / bas. Le jour est repéré par un trait.
+const BT_PX = 18, BT_LBL = 74, BT_BAR = 24;
+function BenchTimeline({ items, lo, hi, cal, bad, today, readOnly, onMove }) {
+  const [drag, setDrag] = useState(null); const rows = useRef({});
+  const span = Math.max(1, hi - lo + 1), W = span * BT_PX;
+  const lanesOf = L => { const ends = []; return L.map(x => { let k = ends.findIndex(e => e < x.n.s); if (k < 0) { k = ends.length; ends.push(x.n.f); } else ends[k] = x.n.f; return { ...x, lane: k }; }); };
+  const benches = [1, 2].map(b => { const L = lanesOf(items.filter(x => x.b === b)); return { b, L, h: Math.max(1, ...L.map(x => x.lane + 1)) * (BT_BAR + 6) + 10 }; });
+  const ticks = []; for (let i = lo; i <= hi; i++) { const d = cal.dateOf(i); if (i === lo || new Date(d + "T00:00:00").getDay() === 1) ticks.push({ i, d }); }
+  const ti = today ? cal.idxOnOrAfter(today) : null;
+  const benchAt = y => { let hit = null; Object.keys(rows.current).forEach(b => { const el = rows.current[b]; if (!el) return; const r = el.getBoundingClientRect(); if (y >= r.top && y <= r.bottom) hit = Number(b); }); return hit; };
+  const down = (e, x) => { if (readOnly || (e.button != null && e.button !== 0)) return; e.preventDefault(); e.currentTarget.setPointerCapture(e.pointerId); setDrag({ pj: x.p.pj, from: x.b, y0: e.clientY, dy: 0, over: x.b }); };
+  const move = e => { if (!drag) return; setDrag(d => ({ ...d, dy: e.clientY - d.y0, over: benchAt(e.clientY) || d.over })); };
+  const up = () => { if (!drag) return; const d = drag; setDrag(null); if (d.over && d.over !== d.from) onMove(d.pj, d.over); };
+  if (!items.length) return <div style={{ fontSize: 12.5, color: T.ink500, margin: "6px 0 12px" }}>Aucune machine avec des tests datés sur cette période.</div>;
+  return (<div style={{ border: "1px solid " + T.line, borderRadius: 10, overflow: "hidden", marginBottom: 12 }}>
+    <div style={{ fontSize: 12, color: T.ink500, padding: "6px 10px", borderBottom: "1px solid " + T.line, background: T.surface }}>{readOnly ? "Frise des bancs." : "Glissez une machine sur l'autre banc pour l'y affecter (au clavier : flèche haut / bas)."}</div>
+    <div style={{ overflowX: "auto" }}>
+      <div style={{ position: "relative", width: BT_LBL + W, minWidth: "100%" }} onPointerMove={move} onPointerUp={up} onPointerCancel={() => setDrag(null)}>
+        <div style={{ position: "relative", height: 22, marginLeft: BT_LBL, borderBottom: "1px solid " + T.line }}>
+          {ticks.map(t => <span key={t.i} style={{ position: "absolute", left: (t.i - lo) * BT_PX, top: 4, fontSize: 11, color: T.ink500, whiteSpace: "nowrap", borderLeft: "1px solid " + T.line, paddingLeft: 3, fontVariantNumeric: "tabular-nums" }}>{fmtIso(t.d).slice(0, 5)}</span>)}
+        </div>
+        {benches.map(({ b, L, h }) => { const over = drag && drag.over === b && drag.from !== b; return (
+          <div key={b} ref={el => { rows.current[b] = el; }} aria-label={"Banc " + b} style={{ position: "relative", height: h, borderTop: b === 2 ? "1px solid " + T.line : "none", background: over ? T.surfaceAlt : "transparent", outline: over ? "2px dashed " + T.teal600 : "none", outlineOffset: -2 }}>
+            <div style={{ position: "sticky", left: 0, zIndex: 3, width: BT_LBL, height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 10px", background: T.card, borderRight: "1px solid " + T.line, boxSizing: "border-box" }}>
+              <b style={{ fontSize: 13 }}>Banc {b}</b><span style={{ fontSize: 11, color: T.ink500 }}>{L.length} PJ</span>
+            </div>
+            {ticks.map(t => <span key={t.i} aria-hidden="true" style={{ position: "absolute", top: 0, bottom: 0, left: BT_LBL + (t.i - lo) * BT_PX, width: 1, background: T.line, opacity: 0.6 }} />)}
+            {ti !== null && ti >= lo && ti <= hi && <span aria-hidden="true" style={{ position: "absolute", top: 0, bottom: 0, left: BT_LBL + (ti - lo) * BT_PX, width: 2, background: T.red500, opacity: 0.7, zIndex: 1 }} />}
+            {L.map(x => { const me = drag && drag.pj === x.p.pj, red = bad.has(x.p.pj); return (
+              <div key={x.p.pj} role="button" tabIndex={0} aria-label={x.p.pj + ", banc " + b + ", tests du " + fmtIso(x.n.start) + " au " + fmtIso(x.n.finish)}
+                title={x.p.pj + (x.p.nomProjet ? " · " + x.p.nomProjet : "") + "\n" + fmtIso(x.n.start) + " → " + fmtIso(x.n.finish) + " (" + x.n.dur + " j)" + (red ? "\nChevauche une autre machine sur ce banc" : "")}
+                onPointerDown={e => down(e, x)}
+                onKeyDown={e => { if (readOnly) return; if (e.key === "ArrowUp" && b === 2) { e.preventDefault(); onMove(x.p.pj, 1); } if (e.key === "ArrowDown" && b === 1) { e.preventDefault(); onMove(x.p.pj, 2); } }}
+                style={{ position: "absolute", left: BT_LBL + (x.n.s - lo) * BT_PX + 1, width: Math.max(BT_PX - 2, (x.n.f - x.n.s + 1) * BT_PX - 2), top: 6 + x.lane * (BT_BAR + 6), height: BT_BAR, borderRadius: 4, background: red ? T.red500 : STEP_COLOR.tests, color: T.card, fontSize: 11.5, fontWeight: 700, fontFamily: T.fontMono, display: "flex", alignItems: "center", padding: "0 6px", boxSizing: "border-box", overflow: "hidden", whiteSpace: "nowrap", cursor: readOnly ? "default" : me ? "grabbing" : "grab", zIndex: me ? 6 : 2, transform: me ? "translateY(" + drag.dy + "px)" : "none", boxShadow: me ? T.shadowLg : "none", touchAction: "none", userSelect: "none" }}>{x.p.pj}</div>); })}
+          </div>); })}
+      </div>
+    </div>
+  </div>);
+}
+
 function BenchDialog({ plan, sched, cal, hide, skip, readOnly, onClose, onApply }) {
   const [past, setPast] = useState(false);
   useEffect(() => { const k = e => { if (e.key === "Escape") onClose(); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose]);
@@ -278,7 +341,7 @@ function BenchDialog({ plan, sched, cal, hide, skip, readOnly, onClose, onApply 
   const items = plan.pjs.filter(p => p.steps.tests && !(hide && hide.has(p.pj)) && !(skip && skip(p))).map(p => ({ p, b: Number(p.steps.tests.banc) === 2 ? 2 : 1, n: sched.nodes[p.pj + "|tests"] })).filter(x => x.n && x.n.s !== null).sort((a, b) => a.n.s - b.n.s);
   const d0 = new Date(), t0 = d0.getFullYear() + "-" + String(d0.getMonth() + 1).padStart(2, "0") + "-" + String(d0.getDate()).padStart(2, "0");
   const shown = items.filter(x => past || x.n.finish >= t0);
-  const lo = shown.length ? Math.min(...shown.map(x => x.n.s)) : 0, hi = shown.length ? Math.max(...shown.map(x => x.n.f)) : 1, span = Math.max(1, hi - lo + 1);
+  const lo = shown.length ? Math.min(...shown.map(x => x.n.s)) : 0, hi = shown.length ? Math.max(...shown.map(x => x.n.f)) : 1;
   const withRule = np => benchOrderByStart({ ...np, rules: { ...rulesOf(np), banc: true } }, cal);
   const tb = { border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 6, padding: "2px 8px", fontSize: 11.5, fontWeight: 700, cursor: readOnly ? "default" : "pointer", minHeight: 24, fontFamily: T.font };
   return (<div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,20,30,.45)", zIndex: 10010, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
@@ -300,11 +363,9 @@ function BenchDialog({ plan, sched, cal, hide, skip, readOnly, onClose, onApply 
         {!readOnly && <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 500, color: T.ink700, cursor: "pointer" }} title="Coché : une machine qui arrive sur un banc occupé attend la fin de la précédente (ses dates se décalent). Décoché : rien ne l’empêche."><input type="checkbox" checked={rule} onChange={e => onApply(e.target.checked ? withRule(plan) : setRules(plan, { banc: false }), e.target.checked ? "Une machine à la fois par banc : les suivantes attendent leur tour." : "Plusieurs machines peuvent de nouveau se trouver sur le même banc.")} />Une machine à la fois par banc</label>}
       </div>
       <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: T.ink700, marginBottom: 8, cursor: "pointer" }}><input type="checkbox" checked={past} onChange={e => setPast(e.target.checked)} />Afficher les tests terminés</label>
+      <BenchTimeline items={shown} lo={lo} hi={hi} cal={cal} bad={bad} today={t0} readOnly={readOnly} onMove={(pj, b) => onApply(setBench(plan, cal, pj, b), pj + " passe sur le banc " + b + ".")} />
       {[1, 2].map(b => { const L = shown.filter(x => x.b === b); return (<section key={b} aria-label={"Banc " + b} style={{ borderTop: "1px solid " + T.line, padding: "8px 0" }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 6 }}><b style={{ fontSize: 14 }}>Banc {b}</b><span style={{ fontSize: 12, color: T.ink500 }}>{L.length} machine{L.length > 1 ? "s" : ""}</span></div>
-        <div aria-hidden="true" style={{ position: "relative", height: 18, background: T.surface, borderRadius: 4, marginBottom: 6, overflow: "hidden" }}>
-          {L.map(x => <span key={x.p.pj} title={x.p.pj + " · " + fmtIso(x.n.start) + " → " + fmtIso(x.n.finish)} style={{ position: "absolute", top: 2, bottom: 2, left: ((x.n.s - lo) / span * 100) + "%", width: Math.max(0.6, (x.n.f - x.n.s + 1) / span * 100) + "%", background: bad.has(x.p.pj) ? T.red500 : STEP_COLOR.tests, opacity: 0.85, borderRadius: 3, outline: "1px solid " + T.card }} />)}
-        </div>
         {L.length === 0 && <div style={{ fontSize: 12.5, color: T.ink500 }}>Aucune machine sur ce banc.</div>}
         {L.map((x, i) => { const c = conf.find(k => k.pj === x.p.pj); return (<div key={x.p.pj} style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 34, borderTop: i ? "1px solid " + T.line : "none", fontSize: 13, flexWrap: "wrap" }}>
           <span style={{ fontFamily: T.fontMono, fontWeight: 700, color: T.teal600, width: 86 }}>{x.p.pj}</span>
@@ -425,7 +486,8 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
   // propositions : aperçu sur le Gantt (contour pointillé) avant d'appliquer
   const startProposal = (kind, patch) => {
     if (!plan) return; let np, title;
-    if (kind === "level") { const r = levelPlan(plan, cal); np = r.plan; title = "Nivellement de la charge atelier (" + Math.round(capWeek(plan)) + " h / semaine)"; }
+    if (kind === "level" && !patch) { setDlg("level"); return; } // v259 : période et capacité choisies d'abord
+    if (kind === "level") { const r = levelPlan(plan, cal, patch); np = r.plan; title = "Nivellement de la charge atelier du " + fmtIso(patch.from) + " au " + fmtIso(patch.to) + " (" + Math.round(patch.cap > 0 ? patch.cap : capWeek(plan)) + " h / semaine" + (patch.cap > 0 ? "" : ", semaines spéciales comprises") + ")"; }
     else if (kind === "early") { np = releasePins(plan); title = "Dates au plus tôt : dates imposées libérées (sauf arrivées et départs)"; }
     else if (kind === "fit") { np = fitDurations(plan); title = "Durées allongées pour tenir la capacité"; }
     else if (kind === "bench") { np = benchOrderByStart({ ...splitBenches(plan, cal), rules: { ...rulesOf(plan), banc: true } }, cal); title = "Répartition des tests sur les 2 bancs (une machine à la fois par banc)"; } // v230 : la règle suit, sinon le ⚠ restait
@@ -588,6 +650,7 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
     </div>}
     {dlg === "newpj" && <NewPjDialog plan={plan} rows={rows} cal={cal} testers={testers || []} onClose={() => setDlg(null)} onApply={(np, pj) => { apply(np); setSel({ pj, step: null }); toggleExp(pj, true); setNotice({ tone: "ok", text: pj + " ajouté au plan avec ses tâches." }); }} />}
     {dlg === "task" && (selPj || taskPj) && <TaskDialog plan={plan} pj={taskPj || selPj.pj} after={selPj && selPj.pj === (taskPj || selPj.pj) ? selPj.step : null} testers={testers || []} onClose={() => { setDlg(null); setTaskPj(null); }} onApply={(np, key) => { const pj = taskPj || selPj.pj; apply(np); toggleExp(pj, true); setSel({ pj, step: key ? key.split("|").pop() : null }); setTaskPj(null); }} />}
+    {dlg === "level" && <LevelDialog plan={plan} onClose={() => setDlg(null)} onGo={o => { setDlg(null); startProposal("level", o); }} />}
     {dlg === "bench" && <BenchDialog plan={plan} sched={sched} cal={cal} hide={slotSet} skip={benchSkip} readOnly={ro} onClose={() => setDlg(null)} onApply={(np, msg) => { apply(np); if (msg) setNotice({ tone: "ok", text: msg }); }} />}
     {dlg === "templates" && <TemplatesDialog plan={plan} rows={rows} started={startedSet} onClose={() => setDlg(null)} onApply={np => apply(np)} />}
     {dlg === "blank" && <BlankDialog rows={rows} hasPlan onClose={() => setDlg(null)} onApply={np => { setSel(null); setExp(new Set(np.pjs.map(p => p.pj))); apply(np); }} />}

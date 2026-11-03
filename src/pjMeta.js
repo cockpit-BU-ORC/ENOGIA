@@ -395,14 +395,14 @@ export const today=new Date();
 // Machines livrées depuis le 1er janvier.
 // v243 (demandé : « 12 machines livrées mais 10 expédiées » → aligner) : on compte l'état « Expédiée » (départ dans l'année),
 // plus seulement une date de départ passée. Les départs passés qui ne sont pas « Expédiée » sont signalés à part (departedNotShipped).
-const yearOf=r=>{const d=new Date(r.depart);return isNaN(d)?null:d.getFullYear();};
+// v259 (demandé : « il ne s'agit pas des machines livrées cette année mais depuis le mois de mai ») : on compte depuis le 1er mai 2026
+// (première machine suivie par le site), sans remise à zéro au 1er janvier.
+export const SHIPPED_SINCE="2026-05-01", SHIPPED_SINCE_TXT="depuis mai";
 export function countShippedYTD(rows){
-  const y=today.getFullYear();
-  return rows.filter(r=>r.etat==="SHIPPED"&&r.depart&&yearOf(r)===y).length;
+  return rows.filter(r=>r.etat==="SHIPPED"&&r.depart&&String(r.depart).slice(0,10)>=SHIPPED_SINCE).length;
 }
 export function departedNotShipped(rows){
-  const y=today.getFullYear();
-  return rows.filter(r=>r&&r.pj&&!isEstimatePj(r.pj)&&r.etat!=="SHIPPED"&&r.etat!=="SLOT_LIBRE"&&r.depart&&yearOf(r)===y&&new Date(r.depart)<=today);
+  return rows.filter(r=>r&&r.pj&&!isEstimatePj(r.pj)&&r.etat!=="SHIPPED"&&r.etat!=="SLOT_LIBRE"&&r.depart&&String(r.depart).slice(0,10)>=SHIPPED_SINCE&&new Date(r.depart)<=today);
 }
 
 

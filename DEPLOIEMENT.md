@@ -1791,3 +1791,14 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Début d'une tâche : la fenêtre d'une tâche (Couloirs) et l'infobulle des barres disent ce qui fixe le début et la date imposée (et si elle est sans effet) ; le début choisi est respecté en gardant les liens du PJ (plus tard = date imposée, plus tôt = avance sur le lien). Même règle dans la colonne Début du Gantt.
 - Pas de nouvelle clé `localStorage`, pas de nouveau document Firestore.
 - Fichiers : planner/engine.js (+test), planner/store.js, planner/Planner.js, planner/PlannerLanes.js, planner/PlannerGantt.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v259 — Bancs en frise, nivellement réglable, clic droit pour se déplacer
+
+- Demandé : « livrées depuis le mois de mai » ; « pas de légende Autres, tout indiquer » ; « Bancs d'essai : une frise avec les 2 bancs l'un au-dessus de l'autre, allouer en glisser-déposer » ; « le clic droit enfoncé pour se déplacer sur tout le site » ; « choisir de quand à quand je nivelle la charge et sur quelle capacité ».
+- Machines livrées : état Expédiée avec départ depuis le 1er mai 2026 (`SHIPPED_SINCE`, pjMeta.js) ; libellés « Livrées depuis mai » (accueil, KPI › Synthèse), « depuis le 1er mai 2026 » (Liste).
+- Camemberts de la Liste et du Manager : toutes les valeurs, légende sur 2 colonnes au-delà de 6 (noms abrégés avec « … » si la place manque).
+- Planificateur › Bancs d'essai : frise des 2 bancs ; glisser une machine sur l'autre banc (ou flèche haut / bas) l'y affecte ; chevauchements en rouge.
+- Planificateur › Niveler la charge : fenêtre « Du / Au / Capacité (h par semaine) », puis aperçu à appliquer ou annuler comme avant.
+- Clic droit maintenu + glisser : fait défiler la zone sous la souris sur tout le site (`src/pan.js`) ; un clic droit sans bouger garde son menu.
+- Pas de nouvelle clé `localStorage`, pas de nouveau document Firestore.
+- Fichiers : pan.js (nouveau), index.js, pjMeta.js, components/DashboardSummary.js, components/ManagerParts.js, components/HomeView.js, components/KpiPilotage.js, planner/engine.js (+test), planner/Planner.js, planner/PlannerLoad.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

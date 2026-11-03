@@ -7,6 +7,18 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v259",
+    date: "2026-11-03",
+    title: "V259 : bancs en frise, nivellement réglable, clic droit pour se déplacer",
+    items: [
+      { t: "Se déplacer", d: "Clic droit maintenu et glisser fait défiler la zone sous la souris, partout sur le site." },
+      { t: "Machines livrées", d: "Comptées depuis mai." },
+      { t: "Répartitions", d: "Les camemberts indiquent toutes les valeurs, sans « Autres »." },
+      { t: "Bancs d'essai", d: "Frise des 2 bancs : glisser une machine sur l'autre banc pour l'y affecter.", admin: true },
+      { t: "Nivellement", d: "Période et capacité choisies avant de niveler la charge.", admin: true },
+    ],
+  },
+  {
     id: "2026-11-v258",
     date: "2026-11-03",
     title: "V258 : planificateur — publication, annonces, dates imposées",

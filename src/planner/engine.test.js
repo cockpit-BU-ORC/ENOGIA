@@ -78,3 +78,12 @@ describe("v258 : début d'une tâche choisi en gardant les liens du PJ", () => {
     expect(startReason(r2.plan, n2)).toMatch(/date imposée/);
   });
 });
+
+describe("v259 : nivellement sur une période", () => {
+  const cal = makeCalendar({ closurePeriods: [] });
+  test("hors période, rien ne bouge ; capacité choisie prise en compte", () => {
+    const rs = rows.map(r => ({ ...r, heuresAtelier: 100 })), plan = initPlanFromRows(rs, cal);
+    expect(levelPlan(plan, cal, { from: "2030-01-01", to: "2030-06-30", cap: 30 }).moved).toBe(0);
+    expect(levelPlan(plan, cal, { from: "2026-01-01", to: "2027-12-31", cap: 30 }).moved).toBeGreaterThan(0);
+  });
+});

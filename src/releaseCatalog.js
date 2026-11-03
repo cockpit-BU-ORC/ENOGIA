@@ -607,4 +607,11 @@ export const RELEASE_CATALOG = [
     ["Modèles par gamme", "Ils ne s'appliquent qu'aux PJ dont la production n'a pas commencé.", "admin"],
     ["Début d'une tâche", "On voit ce qui fixe le début (lien, date imposée, ordre de passage) et on choisit le début en gardant les liens du PJ.", "admin"],
   ] },
+  { v: "259", t: "Bancs en frise, nivellement réglable, clic droit pour se déplacer", items: [
+    ["Bancs d'essai", "Frise des 2 bancs l'un au-dessus de l'autre ; on glisse une machine sur l'autre banc pour l'y affecter.", "admin"],
+    ["Nivellement", "On choisit la période et la capacité avant de niveler la charge atelier.", "admin"],
+    ["Se déplacer", "Clic droit maintenu et glisser : fait défiler la zone sous la souris, partout sur le site."],
+    ["Machines livrées", "Comptées depuis mai (et non depuis le 1er janvier)."],
+    ["Répartitions", "Les camemberts indiquent toutes les valeurs, sans regroupement « Autres »."],
+  ] },
 ];

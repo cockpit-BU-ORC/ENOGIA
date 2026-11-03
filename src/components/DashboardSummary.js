@@ -11,14 +11,13 @@ import { AnimatedNumber } from "./SharedUI";
 // répartitions sont affichées en petits camemberts côte à côte (plutôt qu'un seul gros camembert
 // avec des onglets pour changer de dimension) pour occuper l'espace horizontal disponible au lieu
 // de laisser un grand vide à droite — demandé explicitement.
-const SHIPPED_SINCE_LABEL="19/05/2026"; // date de la première machine du site
+const SHIPPED_SINCE_LABEL="1er mai 2026"; // v259 : compté depuis le 1er mai (SHIPPED_SINCE, pjMeta.js)
 const DIMENSIONS=[
   {key:"gamme",label:"Gamme"},
   {key:"pays",label:"Pays"},
   {key:"chef",label:"Chef de projet"},
   {key:"etat",label:"État"},
 ];
-const TOP_N=4;
 // Palette douce des camemberts (demandée explicitement : « couleurs plus douces et légères ») — gammes et états gardent leurs couleurs propres.
 const PALETTE=["#4E79A7","#F28E2B","#E15759","#76B7B2","#59A14F","#B07AA1","#EDC948","#FF9DA7","#9C755F"]; // v192 : palette catégorielle bien distincte (pays, chefs) — validée
 
@@ -74,8 +73,8 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
 
   const etatColor=name=>{const e=Object.entries(ETAT_META).find(([,v])=>v.label===name);return e?e[1].bar:T.ink300;};
   const colorFor=(dimKey,name,i)=>dimKey==="gamme"&&GAMME_COLORS[name]?GAMME_COLORS[name]:dimKey==="etat"?etatColor(name):PALETTE[i%PALETTE.length];
-  // 5 premières valeurs + « Autres » regroupées, pour que chaque bloc reste lisible d'un coup d'œil.
-  const topOf=list=>{if(list.length<=TOP_N+1)return list;const rest=list.slice(TOP_N).reduce((a,x)=>a+x.value,0);return[...list.slice(0,TOP_N),{name:"Autres ("+(list.length-TOP_N)+")",value:rest,other:true}];};
+  // v259 (demandé : « ne pas avoir la légende Autres mais bien tout indiquer ») : toutes les valeurs, légende sur 2 colonnes au-delà de 6.
+  const topOf=list=>list;
 
   return(<div style={{paddingBottom:folded?10:16,marginBottom:folded?12:16,borderBottom:"1px solid "+T.line,fontFamily:T.font}}>
     {/* Pas de carte ici : le bandeau est posé directement sur le fond de page (direction "Piste A"),
@@ -104,7 +103,7 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
 
       {/* v176 (demandé : « la hauteur est trop importante, je préfère les camemberts avec les couleurs ») :
           un petit anneau coloré par répartition, légende à côté (et non dessous) pour limiter la hauteur. */}
-      <div className="enogia-stagger" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:"12px 24px",flex:1,minWidth:0}}>
+      <div className="enogia-stagger" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:"12px 24px",flex:1,minWidth:0}}>
         {DIMENSIONS.map((d,di)=>{
           const all=breakdownsByDim[d.key],list=topOf(all),total=all.reduce((a,x)=>a+x.value,0);
           const pie=list.map((x,i)=>({...x,color:x.other?T.ink300:colorFor(d.key,x.name,i)}));
@@ -131,8 +130,8 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
                 <span style={{marginLeft:8,fontSize:FZ.xs,fontWeight:700,color:T.ink900,fontVariantNumeric:"tabular-nums"}}>{total}</span>
               </div>
               {total===0?<div style={{fontSize:FZ.xs,color:T.ink500}}>Aucune machine avec ces filtres.</div>:
-                <div style={{display:"flex",flexDirection:"column",gap:1,"--lw":/* v195 : noms à la largeur du plus long (max 18 car.), chiffre juste après */Math.min(18,Math.max(...pie.map(x=>String(x.name).length)))+1+"ch"}}>
-                  {pie.map((x,xi)=><div key={x.name} className="enogia-pie-leg" style={{display:"grid",gridTemplateColumns:"8px var(--lw) auto",justifyContent:"start",alignItems:"center",columnGap:6,fontSize:FZ.xs,color:T.ink700,lineHeight:1.35,animationDelay:(200+di*120+xi*40)+"ms"}}>
+                <div style={{display:"grid",gridTemplateColumns:pie.length>6?"repeat(2,minmax(0,max-content))":"minmax(0,max-content)",columnGap:12,rowGap:1,overflow:"hidden","--lw":/* v195 : noms à la largeur du plus long (max 18 car.), chiffre juste après */Math.min(18,Math.max(...pie.map(x=>String(x.name).length)))+1+"ch"}}>
+                  {pie.map((x,xi)=><div key={x.name} className="enogia-pie-leg" style={{display:"grid",gridTemplateColumns:"8px minmax(0,var(--lw)) auto",justifyContent:"start",alignItems:"center",columnGap:6,fontSize:FZ.xs,color:T.ink700,lineHeight:1.35,animationDelay:Math.min(200,di*40+xi*20)+"ms"}}>
                     <span aria-hidden="true" style={{width:8,height:8,borderRadius:2,flexShrink:0,background:x.color}}/>
                     <span title={x.name} style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",minWidth:0,fontWeight:500}}>{x.name}</span>
                     <span style={{fontWeight:700,color:T.ink900,fontVariantNumeric:"tabular-nums",textAlign:"right",minWidth:"2ch"}}>{x.value}</span>

@@ -54,7 +54,8 @@ export function PieBlock({data,unit="",size=150,centerLabel,sub}){
 
 // v219 : palette catégorielle des camemberts (validée V192) et découpage « N plus grands + autres »
 export const CAT_COLORS=["#4E79A7","#F28E2B","#E15759","#76B7B2","#59A14F","#B07AA1","#EDC948","#FF9DA7","#9C755F"];
-export function topSlices(list,n=6,colors){const all=(list||[]).filter(x=>x.value>0).sort((a,b)=>b.value-a.value);const top=all.slice(0,n).map((x,i)=>({...x,color:x.color||(colors||CAT_COLORS)[i%(colors||CAT_COLORS).length]}));const rest=all.slice(n).reduce((a,x)=>a+x.value,0);if(rest>0)top.push({name:"Autres ("+(all.length-n)+")",value:rest,color:T.ink300});return top;}
+// v259 (demandé : « ne pas avoir la légende Autres mais bien tout indiquer ») : toutes les parts, n n'est plus utilisé
+export function topSlices(list,n,colors){n=Infinity;const all=(list||[]).filter(x=>x.value>0).sort((a,b)=>b.value-a.value);const top=all.slice(0,n).map((x,i)=>({...x,color:x.color||(colors||CAT_COLORS)[i%(colors||CAT_COLORS).length]}));const rest=all.slice(n).reduce((a,x)=>a+x.value,0);if(rest>0)top.push({name:"Autres ("+(all.length-n)+")",value:rest,color:T.ink300});return top;}
 // Rangée de chiffres KPI : items = [[valeur, libellé, couleur, explication?]]
 // v216 (règles de la Synthèse V215, ui-ux-pro-max + taste) : libellé au-dessus en gris, chiffre 28 px en encre ; la couleur ne sert
 // que pour dire « mauvais » (rouge) ou « bon » (vert) — les autres couleurs d'accent ne s'affichent plus.

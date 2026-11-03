@@ -68,7 +68,7 @@ export function PlannerLoad({ plan, load, cal, tl, scrollX, leftW, standalone, m
       {!readOnly && mode === "week" && <span style={{ fontSize: 12, color: T.ink500 }}>{nSpecial ? nSpecial + " semaine" + (nSpecial > 1 ? "s" : "") + " à capacité spéciale · " : ""}cliquez une semaine pour changer sa capacité</span>}
       <span style={{ flex: 1 }} />
       {!readOnly && <>
-        <button className="pg-btn" onClick={() => onPropose("level")} title="Décale les phases des PJ les moins prioritaires pour que chaque semaine tienne dans la capacité (aperçu avant d'appliquer)" style={{ border: "none", background: T.ink900, color: T.card, borderRadius: 8, padding: "6px 14px", fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>Niveler la charge</button>
+        <button className="pg-btn" onClick={() => onPropose("level")} title="Choisir la période et la capacité, puis voir le décalage des phases des PJ les moins prioritaires (aperçu avant d'appliquer)" style={{ border: "none", background: T.ink900, color: T.card, borderRadius: 8, padding: "6px 14px", fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>Niveler la charge</button>
         <Pop width={290} align="right" trigger={(o, t) => <button className="pg-btn" aria-haspopup="menu" aria-expanded={o} onClick={t} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "6px 12px", fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>Plus ▾</button>}>
           {close => (<>
             <MenuItem onClick={() => { close(); onPropose("early"); }}>Voir au plus tôt<div style={{ fontSize: 11.5, color: T.ink500 }}>Libère les dates imposées (sauf arrivées et départs)</div></MenuItem>

@@ -580,17 +580,23 @@ export function fitDurations(plan) {
 // prioritaire (dernier dans l'ordre de passage) parmi celles actives ce jour-là, au premier créneau où elle tient à côté des phases
 // plus prioritaires ; les phases moins prioritaires, elles, seront décalées à leur tour si besoin. Tout se recalcule en cascade
 // (liens, ordre de passage). Les heures d'un PJ restent dans sa phase ; seules les dates de départ des phases changent.
-export function levelPlan(plan, cal) {
-  let cur = clearLevel(plan); const capDay = capWeek(plan) / 5; const cd = capDayFn(plan, cal); const ignored = new Set(); const moved = new Set(); let iter = 0;
+// v259 (demandé : « choisir de quand à quand je nivelle la charge et sur quelle capacité ») : opts.from / opts.to (ISO) bornent
+// les jours vérifiés et les phases déplacées (celles qui commencent avant « from » ne bougent pas, leur nivellement est gardé) ;
+// opts.cap = capacité en heures par semaine pour ce nivellement (sinon la capacité du plan, semaines spéciales comprises).
+export function levelPlan(plan, cal, opts = {}) {
+  const lo = opts.from ? cal.idxOnOrAfter(opts.from) : -Infinity, hi = opts.to ? cal.idxOnOrBefore(opts.to) : Infinity;
+  let cur = clearLevel(plan);
+  if (opts.from) { const s0 = schedule(plan, cal); cur = mapSteps(plan, (pj, k, st) => { const n = s0.nodes[nodeKey(pj, k)]; return st.lvl && n && n.s !== null && n.s >= lo ? { ...st, lvl: null } : st; }); }
+  const capDay = opts.cap > 0 ? opts.cap / 5 : capWeek(plan) / 5; const cd = opts.cap > 0 ? () => opts.cap / 5 : capDayFn(plan, cal); const ignored = new Set(); const moved = new Set(); let iter = 0;
   if (capDay <= 0) return { plan: cur, moved: 0, iterations: 0, stuck: true };
   const EPS = 1e-6;
   while (iter++ < 4000) {
     const s = schedule(cur, cal); if (s.cycle) break;
     const ph = atelierPhases(cur, s); const day = new Map();
     ph.forEach(x => { for (let i = x.s; i <= x.f; i++) if (!(x.off && x.off.has(i))) day.set(i, (day.get(i) || 0) + x.daily); });
-    const bad = [...day.keys()].sort((a, b) => a - b).find(i => day.get(i) > cd(cal.dateOf(i)) + EPS && !ignored.has(i));
+    const bad = [...day.keys()].sort((a, b) => a - b).find(i => i >= lo && i <= hi && day.get(i) > cd(cal.dateOf(i)) + EPS && !ignored.has(i));
     if (bad === undefined) break;
-    const cands = ph.filter(x => x.s <= bad && x.f >= bad && x.daily <= capDay + EPS).sort((a, b) => a.prio !== b.prio ? b.prio - a.prio : b.s - a.s);
+    const cands = ph.filter(x => x.s <= bad && x.f >= bad && x.s >= lo && x.daily <= capDay + EPS).sort((a, b) => a.prio !== b.prio ? b.prio - a.prio : b.s - a.s);
     if (!cands.length) { ignored.add(bad); continue; }
     const x = cands[0]; const hp = new Map();
     ph.forEach(y => { if (y.pj !== x.pj && y.prio < x.prio) for (let i = y.s; i <= y.f; i++) if (!(y.off && y.off.has(i))) hp.set(i, (hp.get(i) || 0) + y.daily); });
