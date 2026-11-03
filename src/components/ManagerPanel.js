@@ -36,7 +36,6 @@ export function ManagerPanel({planDoc,initialAddFromImport,onOpenCashPage,onNav,
   const [fichePj,setFichePj]=useState(null); // v134 : PJ à ouvrir dans la fiche depuis le Point hebdo
   useEffect(()=>{if(jumpFiche&&jumpFiche.pj)setFichePj(jumpFiche);},[jumpFiche]);
   const [chargeYear,setChargeYear]=useState(null);
-  const [chargeMonth,setChargeMonth]=useState(null);
   const [satYear,setSatYear]=useState(null);
   const [satMonth,setSatMonth]=useState(null);
   const [driftMoisYear,setDriftMoisYear]=useState(null);
@@ -134,7 +133,7 @@ export function ManagerPanel({planDoc,initialAddFromImport,onOpenCashPage,onNav,
       dateIni:r[kpiStep].ini,
       dateRev:r[kpiStep].rev,
     })).sort((a,b)=>a.initial-b.initial);
-  },[comparable,kpiStep]);
+  },[comparable,kpiStep]); // eslint-disable-line react-hooks/exhaustive-deps -- dayOfYear est une fonction pure recréée à chaque rendu
 
   // ── Durée totale de production (Arrivée → Départ) : initial vs révisé ──
   const dureeCompare=useMemo(()=>{
@@ -217,7 +216,7 @@ export function ManagerPanel({planDoc,initialAddFromImport,onOpenCashPage,onNav,
       drift:g.driftN?Math.round((g.driftSum/g.driftN)*10)/10:null,
       duree:g.durN?Math.round(g.durSum/g.durN):null,
     })).sort((a,b)=>b.count-a.count);
-  },[fd,exploreDim,driftRows]);
+  },[fd,exploreDim,driftRows]); // eslint-disable-line react-hooks/exhaustive-deps -- DIM_GETTERS ne dépend que de ces valeurs
   const exploreMetricInfo={
     count:{key:"count",label:"Nombre de PJ",fmt:v=>v},
     drift:{key:"drift",label:"Dérive moyenne départ (j)",fmt:v=>v==null?"—":v},
@@ -327,7 +326,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
     reglages:[["personnes","Personnes, rôles et accès"],["nouveautes","Nouveautés"]],
   };
   const group=GROUP_OF[tab]||"derives";
-  useEffect(()=>{const old={orc:"serie",acces:"personnes",imports:"derives",sante:"fiche",suivi:"serie",statut:"serie",cash:"derives",turbines:"derives"}[tab];if(old){setTab(old);return;}if(!me&&(GROUP_OF[tab]||"derives")==="derives"){setTab("fiche");return;}if((!me&&GROUP_OF[tab]==="reglages")||(!superAdmin&&GROUP_OF[tab]==="calendrier")||(!owner&&GROUP_OF[tab]==="cash"))setTab(me?"derives":"fiche");},[superAdmin,owner,me,tab]); // v212 : anciens onglets mémorisés → leur nouvelle place // un admin qui arrive sur un onglet Réglages (ancien état mémorisé) est ramené aux KPI
+  useEffect(()=>{const old={orc:"serie",acces:"personnes",imports:"derives",sante:"fiche",suivi:"serie",statut:"serie",cash:"derives",turbines:"derives"}[tab];if(old){setTab(old);return;}if(!me&&(GROUP_OF[tab]||"derives")==="derives"){setTab("fiche");return;}if((!me&&GROUP_OF[tab]==="reglages")||(!superAdmin&&GROUP_OF[tab]==="calendrier")||(!owner&&GROUP_OF[tab]==="cash"))setTab(me?"derives":"fiche");},[superAdmin,owner,me,tab]); // eslint-disable-line react-hooks/exhaustive-deps -- GROUP_OF est fixe, setTab vient du parent ; v212 : anciens onglets mémorisés → leur nouvelle place // un admin qui arrive sur un onglet Réglages (ancien état mémorisé) est ramené aux KPI
   const subItems=SUBS[group]||null;
   const subValue=group==="derives"?kpiTab:tab;
   const onSub=id=>{if(group==="derives")setKpiTab(id);else setTab(id);};

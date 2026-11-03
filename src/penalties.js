@@ -81,6 +81,19 @@ export function penaltyCalc(meta, depart, today) {
   return out;
 }
 
+// v260 (demandé : « alertes de retard contractuel : un PJ dont le départ dépasse la date contractuelle, avec l'estimation des pénalités,
+// signalé dans l'aperçu avant publication ») : retard sur la date contractuelle pour un départ donné. Avec des conditions de pénalité,
+// c'est penaltyCalc (montant compris) ; sans, la date contractuelle MaD ORC (sinon livraison) comparée au départ (sinon à la livraison prévue).
+export function contractLate(meta, depart, today) {
+  const c = penaltyCalc(meta, depart, today);
+  if (c.contract) return { refLabel: c.refLabel, contract: c.contract, effective: c.effective, lateDays: c.lateDays, amount: c.status === "ok" ? c.amount : null };
+  const k = meta && meta.contratTFin ? "mad" : meta && meta.contratLivr ? "livr" : null;
+  if (!k || !depart) return null;
+  const R = PEN_REFS[k], ct = toDay(meta[R.contract]), eff = toDay(k === "livr" ? (livrPrevueOf(meta, depart) || depart) : depart);
+  if (!ct || !eff) return null;
+  return { refLabel: R.label, contract: iso(ct), effective: iso(eff), lateDays: Math.max(0, Math.round((+eff - +ct) / DAY)), amount: null };
+}
+
 // Fiches d'un même PJ : PJ461 → PJ461, PJ461-1, PJ461-2… (la base est ce qui précède le premier « - »)
 export const pjBase = pj => String(pj || "").split("-")[0];
 export function siblingsOf(rows, pj) {

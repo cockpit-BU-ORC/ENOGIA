@@ -261,7 +261,6 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
             {gb&&<div aria-hidden="true" style={{position:"absolute",left:gb.left,width:gb.width,top:"50%",height:6,transform:"translateY(-50%)",borderRadius:3,background:mixHex(T.surfaceAlt,T.ink500,.45)}}/>}
           </div>);}
           const r=it.r;
-          const c=ETAT_META[r.etat]||ETAT_META["NOT ORDERED"];
           const mb=bpct(r.arrivee,r.depart);
           const isSel=sel===r.pj;
           return(<div key={ri} onClick={()=>setSel(isSel?null:r.pj)} onMouseMove={e=>setTip({r,x:e.clientX,y:e.clientY})} onMouseLeave={()=>setTip(null)} style={{height:rowH,boxSizing:"border-box",position:"relative",borderBottom:"1px solid "+T.surfaceAlt,background:isSel?T.surfaceAlt:"transparent",cursor:"pointer"}}>

@@ -127,7 +127,6 @@ export function ResizeHandle({colId,nextColId,colWidths,setColWidths,order,userS
         const newW=Math.max(5,startW+deltaPct);
         if(nextColId&&startNextW!=null){
           // Transfère la largeur entre la colonne courante et la suivante, la somme totale reste constante
-          const newNextW=Math.max(5,startNextW-deltaPct);
           const actualDelta=newW-startW;
           next[colId]=startW+actualDelta;
           next[nextColId]=startNextW-actualDelta;
@@ -288,6 +287,8 @@ export function TableView({data,progress,df,setDf,selEtats,setSelEtats,selGammes
   const nAuto=fit.key===fitKey?fit.n:0;
   const autoCols=AUTO_ORDER.filter(id=>!hiddenCols.has(id));
   const autoHide=new Set(autoCols.slice(0,nAuto));
+  // mesure après chaque rendu, voulue : setFit n'agit que si la clé (largeur, données, colonnes) a changé
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useLayoutEffect(()=>{
     const el=boxRef.current;if(!el)return;
     if(el.scrollWidth>el.clientWidth+1&&nAuto<autoCols.length)setFit({key:fitKey,n:nAuto+1});

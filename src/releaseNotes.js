@@ -7,6 +7,17 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v260",
+    date: "2026-11-03",
+    title: "V260 : agenda des testeurs, Cash in lié au planning, retards contractuels",
+    items: [
+      { t: "Agenda des testeurs", d: "Page Tests › Par testeur : vos périodes de banc en fichier .ics, à ouvrir dans Outlook ou Google Agenda." },
+      { t: "Cash in lié au planning", d: "Un jalon peut suivre le départ ou les tests ; la date de facturation se met à jour d'un clic.", admin: true },
+      { t: "Retards contractuels", d: "Avant de publier, les PJ qui dépassent leur date contractuelle sont signalés avec les pénalités estimées.", admin: true },
+      { t: "Bancs d'essai", d: "Glisser une machine dans le temps sur la frise des bancs.", admin: true },
+    ],
+  },
+  {
     id: "2026-11-v259",
     date: "2026-11-03",
     title: "V259 : bancs en frise, nivellement réglable, clic droit pour se déplacer",

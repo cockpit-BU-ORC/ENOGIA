@@ -68,7 +68,7 @@ export function cashinTheme() {
 // groupKeys = clés des PJ du Cash in concernés (calculées par cashGroupsFor côté App).
 export function buildSharedCashin(doc, links, groupKeys) {
   const keys = new Set(groupKeys);
-  const rows = (doc && doc.rows || []).filter(r => keys.has(r.pj));
+  const rows = ((doc && doc.rows) || []).filter(r => keys.has(r.pj));
   const labels = {}, totals = {}, lk = {};
   keys.forEach(k => {
     if (doc.labels && doc.labels[k] != null) labels[k] = doc.labels[k];

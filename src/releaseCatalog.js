@@ -614,4 +614,10 @@ export const RELEASE_CATALOG = [
     ["Machines livrées", "Comptées depuis mai (et non depuis le 1er janvier)."],
     ["Répartitions", "Les camemberts indiquent toutes les valeurs, sans regroupement « Autres »."],
   ] },
+  { v: "260", t: "Bancs dans le temps, retards contractuels, Cash in lié au planning, agenda des testeurs", items: [
+    ["Bancs d'essai", "Sur la frise, on glisse une machine à gauche ou à droite pour changer la date de ses tests (liens gardés).", "admin"],
+    ["Retards contractuels", "L'aperçu de publication signale les PJ qui dépassent leur date contractuelle, avec les pénalités estimées.", "admin"],
+    ["Cash in lié au planning", "Un jalon peut suivre le départ ou les tests ; quand le planning bouge, le Cash in propose de mettre la date de facturation à jour.", "admin"],
+    ["Agenda des testeurs", "Les périodes de banc de chaque testeur se téléchargent en fichier .ics pour Outlook ou Google Agenda."],
+  ] },
 ];

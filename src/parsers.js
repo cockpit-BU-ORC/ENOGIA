@@ -110,7 +110,6 @@ export function parseMSProjectRows(rows,affectationRows){
     aRes=aHeader.findIndex(h=>h.includes("ressource"));
     aTrav=aHeader.findIndex(h=>h==="travail"||(h.includes("travail")&&!h.includes("%")&&!h.includes("achevé")));
   }
-  const STEP_NAMES_FR=["arrivée","production","tests","fin de production","départ"];
   const nextAffectationFor=stepNameFR=>{
     // Avance dans Table_affectation tant que le nom de tâche correspond bien à l'étape attendue (alignement séquentiel)
     if(aNom<0||!affectationRows)return null;

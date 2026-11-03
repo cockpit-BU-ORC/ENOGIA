@@ -3,7 +3,7 @@ import { isPhone } from "../useIsPhone";
 import { EtatInfoButton } from "./ProdStagesUI";
 import { T, FZF, stagePalette, stageSoft, stripeBg } from "../theme";
 import { useMarks, NewMark } from "./ChangesNotice";
-import { getPjMeta, presenceKind, presenceKindAt, PRESENCE_META, MONTHS_FULL, today, ETAT_META, ALL_ETATS, ProjectLabelCell } from "../pjMeta";
+import { getPjMeta, presenceKindAt, PRESENCE_META, MONTHS_FULL, today, ETAT_META, ALL_ETATS, ProjectLabelCell } from "../pjMeta";
 import { DropFilter, pressable } from "./SharedUI";
 import { toLocalISO, weekStartOf } from "../parsers";
 import { toggleClosedDay, isClosedDay } from "../workDays";

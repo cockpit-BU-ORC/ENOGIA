@@ -7,7 +7,11 @@ import {
 } from "./engine";
 import { PlannerGantt, fmtIso, makeTimeline, leftWidthWith, STEP_COLOR, ZOOM_PX, PX_MIN, PX_MAX } from "./PlannerGantt";
 import { LABEL_W as LANE_LABEL_W } from "./PlannerLanes";
-import { benchOrderByStart, setBench, benchMoveUp, benchConflicts, splitBenches as splitBenchesV, isEstimatePj } from "./engine";
+import { benchOrderByStart, setBench, benchMoveUp, benchConflicts, splitBenches as splitBenchesV, isEstimatePj, startAtKeepLinks } from "./engine";
+import { getPjMeta } from "../pjMeta";
+import { contractLate } from "../penalties";
+import { getCashinDoc, anchoredBill, diffDays } from "../cashinLink";
+import { fmtEur } from "../pjProgress";
 import { PlannerLoad } from "./PlannerLoad";
 import { PlannerLanes } from "./PlannerLanes";
 import { PlannerChanges } from "./PlannerChanges";
@@ -200,6 +204,17 @@ function PublishDialog({ plan, sched, rows, pubRows, changes, onClose, onPublish
   const [ann, setAnn] = useState(() => new Set(changes.filter(c => !HOUR_FIELDS.has(c.field)).map(keyOf)));
   const flip = (keys, on) => setAnn(s => { const n = new Set(s); keys.forEach(k => { if (on) n.add(k); else n.delete(k); }); return n; });
   const nAnn = changes.filter(c => ann.has(keyOf(c))).length;
+  // v260 : PJ qui dépassent (davantage) leur date contractuelle avec cette publication, et jalons de facturation liés au planning qui reculent
+  const lateList = useMemo(() => {
+    const cur = {}; (rows || []).forEach(r => { cur[r.pj] = r; }); const t = new Date(), out = [];
+    (pubRows || []).forEach(r => { const o = cur[r.pj]; if (!r.depart || (o && o.depart === r.depart)) return; const m = getPjMeta(r.pj, r), a = contractLate(m, r.depart, t); if (!a || a.lateDays <= 0) return; const b = o && o.depart ? contractLate(m, o.depart, t) : null; if (b && b.lateDays >= a.lateDays) return; out.push({ pj: r.pj, a, b }); });
+    return out.sort((x, y) => y.a.lateDays - x.a.lateDays);
+  }, [rows, pubRows]);
+  const cashLate = useMemo(() => {
+    const doc = getCashinDoc(); if (!doc || !Array.isArray(doc.rows)) return [];
+    const now = {}, nxt = {}; (rows || []).forEach(r => { now[r.pj] = r; }); (pubRows || []).forEach(r => { nxt[r.pj] = r; });
+    return doc.rows.filter(r => !r.factReelle && !r.encReelle).map(r => ({ r, a: anchoredBill(r, now), b: anchoredBill(r, nxt) })).filter(x => x.a && x.b && x.b > x.a).map(x => ({ ...x, d: diffDays(x.a, x.b) }));
+  }, [rows, pubRows]);
   const byPj = useMemo(() => { const m = {}; changes.forEach(c => { (m[c.pj] = m[c.pj] || []).push(c); }); return m; }, [changes]);
   const unschedL = Object.values(sched.nodes).filter(n => n.s === null && !isEstimatePj(n.pj)), unscheduled = unschedL.length; // v258 : un PJXX (estimation) n’est jamais publié
   const FL = { arrivee: "Arrivée", tests: "Tests", testsFin: "Fin tests", finProd: "Fin prod.", depart: "Départ", heuresAtelier: "Heures atelier", heuresAutom: "Heures autom", new: "Nouveau PJ" };
@@ -223,6 +238,20 @@ function PublishDialog({ plan, sched, rows, pubRows, changes, onClose, onPublish
             <td style={{ padding: "4px 10px", color: T.ink700 }}>{c.field === "new" ? fmtIso(c.to) : (typeof c.from === "number" ? c.from : fmtIso(c.from)) + " → " + (typeof c.to === "number" ? c.to : fmtIso(c.to))}</td>
           </tr>)))}
         </tbody></table></div>}
+      {lateList.length > 0 && <div role="alert" style={{ marginTop: 10, border: "1px solid " + T.red500, borderRadius: 10, padding: "8px 12px", background: T.red100 }}>
+        <div style={{ fontWeight: 700, fontSize: 13, color: T.red600, marginBottom: 4 }}>⚠ {lateList.length} PJ dépasse{lateList.length > 1 ? "nt" : ""} sa date contractuelle avec cette publication</div>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, color: T.ink900 }}><tbody>{lateList.map(x => <tr key={x.pj}>
+          <td style={{ padding: "2px 8px 2px 0", fontFamily: T.fontMono, fontWeight: 700, width: 90 }}>{x.pj}</td>
+          <td style={{ padding: "2px 8px", color: T.ink700 }}>{x.a.refLabel} contractuelle {fmtIso(x.a.contract)}</td>
+          <td style={{ padding: "2px 8px", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>retard {x.b ? x.b.lateDays + " → " : ""}<b>{x.a.lateDays} j</b></td>
+          <td style={{ padding: "2px 0 2px 8px", textAlign: "right", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{x.a.amount != null ? <>pénalités {x.b && x.b.amount != null ? fmtEur(x.b.amount) + " → " : ""}<b>{fmtEur(x.a.amount)}</b></> : <span style={{ color: T.ink500 }}>pénalités non renseignées</span>}</td>
+        </tr>)}</tbody></table>
+      </div>}
+      {cashLate.length > 0 && <div style={{ marginTop: 10, border: "1px solid " + T.amber600, borderRadius: 10, padding: "8px 12px" }}>
+        <div style={{ fontWeight: 700, fontSize: 13, color: T.amber600, marginBottom: 4 }}>{cashLate.length} facturation{cashLate.length > 1 ? "s" : ""} liée{cashLate.length > 1 ? "s" : ""} au planning recule{cashLate.length > 1 ? "nt" : ""} ({fmtEur(cashLate.reduce((s, x) => s + (Number(x.r.montant) || 0), 0))})</div>
+        {cashLate.slice(0, 8).map(x => <div key={x.r.id} style={{ fontSize: 12.5, color: T.ink700, display: "flex", gap: 8 }}><b style={{ fontFamily: T.fontMono }}>{x.r.pj}</b><span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.r.jalon}</span><span style={{ fontVariantNumeric: "tabular-nums" }}>{fmtIso(x.a)} → {fmtIso(x.b)} (+{x.d} j)</span></div>)}
+        <div style={{ fontSize: 12, color: T.ink500, marginTop: 4 }}>Après la publication, le Cash in propose de mettre ces dates à jour.</div>
+      </div>}
       {changes.length > 0 && <input value={note} onChange={e => setNote(e.target.value)} placeholder="Commentaire de publication (facultatif) : ex. « glissement PJ449 suite retard fournisseur »" style={{ ...INP, width: "100%", marginTop: 10 }} />}
       {err && <div style={{ color: T.red500, fontWeight: 700, fontSize: 13, marginTop: 8 }}>{err}</div>}
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 14 }}>
@@ -295,8 +324,10 @@ function moveTo(plan, pj, over) {
 // d'une machine au banc que je souhaite en glisser-déposer ») : une ligne par banc, une barre par machine (jours ouvrés), les
 // machines qui se chevauchent sur un même banc passent sur une sous-ligne et sont en rouge. Glisser une barre sur l'autre banc
 // = setBench ; au clavier : flèche haut / bas. Le jour est repéré par un trait.
+// v260 (demandé : « glisser les tests dans le temps sur la frise des bancs, en gardant les liens ») : un glisser horizontal décale
+// le début des tests d'autant de jours ouvrés (startAtKeepLinks, comme la fenêtre d'une tâche) ; flèches gauche / droite au clavier.
 const BT_PX = 18, BT_LBL = 74, BT_BAR = 24;
-function BenchTimeline({ items, lo, hi, cal, bad, today, readOnly, onMove }) {
+function BenchTimeline({ items, lo, hi, cal, bad, today, readOnly, onDrop }) {
   const [drag, setDrag] = useState(null); const rows = useRef({});
   const span = Math.max(1, hi - lo + 1), W = span * BT_PX;
   const lanesOf = L => { const ends = []; return L.map(x => { let k = ends.findIndex(e => e < x.n.s); if (k < 0) { k = ends.length; ends.push(x.n.f); } else ends[k] = x.n.f; return { ...x, lane: k }; }); };
@@ -304,12 +335,13 @@ function BenchTimeline({ items, lo, hi, cal, bad, today, readOnly, onMove }) {
   const ticks = []; for (let i = lo; i <= hi; i++) { const d = cal.dateOf(i); if (i === lo || new Date(d + "T00:00:00").getDay() === 1) ticks.push({ i, d }); }
   const ti = today ? cal.idxOnOrAfter(today) : null;
   const benchAt = y => { let hit = null; Object.keys(rows.current).forEach(b => { const el = rows.current[b]; if (!el) return; const r = el.getBoundingClientRect(); if (y >= r.top && y <= r.bottom) hit = Number(b); }); return hit; };
-  const down = (e, x) => { if (readOnly || (e.button != null && e.button !== 0)) return; e.preventDefault(); e.currentTarget.setPointerCapture(e.pointerId); setDrag({ pj: x.p.pj, from: x.b, y0: e.clientY, dy: 0, over: x.b }); };
-  const move = e => { if (!drag) return; setDrag(d => ({ ...d, dy: e.clientY - d.y0, over: benchAt(e.clientY) || d.over })); };
-  const up = () => { if (!drag) return; const d = drag; setDrag(null); if (d.over && d.over !== d.from) onMove(d.pj, d.over); };
+  const down = (e, x) => { if (readOnly || (e.button != null && e.button !== 0)) return; e.preventDefault(); e.currentTarget.setPointerCapture(e.pointerId); setDrag({ pj: x.p.pj, from: x.b, s: x.n.s, x0: e.clientX, y0: e.clientY, dx: 0, dy: 0, over: x.b }); };
+  const move = e => { if (!drag) return; setDrag(d => ({ ...d, dx: e.clientX - d.x0, dy: e.clientY - d.y0, over: benchAt(e.clientY) || d.over })); };
+  const up = () => { if (!drag) return; const d = drag; setDrag(null); const days = Math.round(d.dx / BT_PX); const b = d.over && d.over !== d.from ? d.over : null; if (b || days) onDrop(d.pj, b, days ? cal.dateOf(d.s + days) : null); };
+  const dayTxt = drag && Math.round(drag.dx / BT_PX) ? cal.dateOf(drag.s + Math.round(drag.dx / BT_PX)) : null;
   if (!items.length) return <div style={{ fontSize: 12.5, color: T.ink500, margin: "6px 0 12px" }}>Aucune machine avec des tests datés sur cette période.</div>;
   return (<div style={{ border: "1px solid " + T.line, borderRadius: 10, overflow: "hidden", marginBottom: 12 }}>
-    <div style={{ fontSize: 12, color: T.ink500, padding: "6px 10px", borderBottom: "1px solid " + T.line, background: T.surface }}>{readOnly ? "Frise des bancs." : "Glissez une machine sur l'autre banc pour l'y affecter (au clavier : flèche haut / bas)."}</div>
+    <div style={{ fontSize: 12, color: T.ink500, padding: "6px 10px", borderBottom: "1px solid " + T.line, background: T.surface }}>{readOnly ? "Frise des bancs." : dayTxt ? "Début des tests le " + fmtIso(dayTxt) + " (les liens du PJ sont gardés)" : "Glissez une machine sur l'autre banc pour l'y affecter, ou à gauche / droite pour changer ses dates (liens gardés). Au clavier : flèches."}</div>
     <div style={{ overflowX: "auto" }}>
       <div style={{ position: "relative", width: BT_LBL + W, minWidth: "100%" }} onPointerMove={move} onPointerUp={up} onPointerCancel={() => setDrag(null)}>
         <div style={{ position: "relative", height: 22, marginLeft: BT_LBL, borderBottom: "1px solid " + T.line }}>
@@ -326,8 +358,8 @@ function BenchTimeline({ items, lo, hi, cal, bad, today, readOnly, onMove }) {
               <div key={x.p.pj} role="button" tabIndex={0} aria-label={x.p.pj + ", banc " + b + ", tests du " + fmtIso(x.n.start) + " au " + fmtIso(x.n.finish)}
                 title={x.p.pj + (x.p.nomProjet ? " · " + x.p.nomProjet : "") + "\n" + fmtIso(x.n.start) + " → " + fmtIso(x.n.finish) + " (" + x.n.dur + " j)" + (red ? "\nChevauche une autre machine sur ce banc" : "")}
                 onPointerDown={e => down(e, x)}
-                onKeyDown={e => { if (readOnly) return; if (e.key === "ArrowUp" && b === 2) { e.preventDefault(); onMove(x.p.pj, 1); } if (e.key === "ArrowDown" && b === 1) { e.preventDefault(); onMove(x.p.pj, 2); } }}
-                style={{ position: "absolute", left: BT_LBL + (x.n.s - lo) * BT_PX + 1, width: Math.max(BT_PX - 2, (x.n.f - x.n.s + 1) * BT_PX - 2), top: 6 + x.lane * (BT_BAR + 6), height: BT_BAR, borderRadius: 4, background: red ? T.red500 : STEP_COLOR.tests, color: T.card, fontSize: 11.5, fontWeight: 700, fontFamily: T.fontMono, display: "flex", alignItems: "center", padding: "0 6px", boxSizing: "border-box", overflow: "hidden", whiteSpace: "nowrap", cursor: readOnly ? "default" : me ? "grabbing" : "grab", zIndex: me ? 6 : 2, transform: me ? "translateY(" + drag.dy + "px)" : "none", boxShadow: me ? T.shadowLg : "none", touchAction: "none", userSelect: "none" }}>{x.p.pj}</div>); })}
+                onKeyDown={e => { if (readOnly) return; if (e.key === "ArrowUp" && b === 2) { e.preventDefault(); onDrop(x.p.pj, 1, null); } if (e.key === "ArrowDown" && b === 1) { e.preventDefault(); onDrop(x.p.pj, 2, null); } if (e.key === "ArrowLeft" || e.key === "ArrowRight") { e.preventDefault(); onDrop(x.p.pj, null, cal.dateOf(x.n.s + (e.key === "ArrowRight" ? 1 : -1))); } }}
+                style={{ position: "absolute", left: BT_LBL + (x.n.s - lo) * BT_PX + 1, width: Math.max(BT_PX - 2, (x.n.f - x.n.s + 1) * BT_PX - 2), top: 6 + x.lane * (BT_BAR + 6), height: BT_BAR, borderRadius: 4, background: red ? T.red500 : STEP_COLOR.tests, color: T.card, fontSize: 11.5, fontWeight: 700, fontFamily: T.fontMono, display: "flex", alignItems: "center", padding: "0 6px", boxSizing: "border-box", overflow: "hidden", whiteSpace: "nowrap", cursor: readOnly ? "default" : me ? "grabbing" : "grab", zIndex: me ? 6 : 2, transform: me ? "translate(" + drag.dx + "px," + drag.dy + "px)" : "none", boxShadow: me ? T.shadowLg : "none", touchAction: "none", userSelect: "none" }}>{x.p.pj}</div>); })}
           </div>); })}
       </div>
     </div>
@@ -363,7 +395,9 @@ function BenchDialog({ plan, sched, cal, hide, skip, readOnly, onClose, onApply 
         {!readOnly && <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 500, color: T.ink700, cursor: "pointer" }} title="Coché : une machine qui arrive sur un banc occupé attend la fin de la précédente (ses dates se décalent). Décoché : rien ne l’empêche."><input type="checkbox" checked={rule} onChange={e => onApply(e.target.checked ? withRule(plan) : setRules(plan, { banc: false }), e.target.checked ? "Une machine à la fois par banc : les suivantes attendent leur tour." : "Plusieurs machines peuvent de nouveau se trouver sur le même banc.")} />Une machine à la fois par banc</label>}
       </div>
       <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: T.ink700, marginBottom: 8, cursor: "pointer" }}><input type="checkbox" checked={past} onChange={e => setPast(e.target.checked)} />Afficher les tests terminés</label>
-      <BenchTimeline items={shown} lo={lo} hi={hi} cal={cal} bad={bad} today={t0} readOnly={readOnly} onMove={(pj, b) => onApply(setBench(plan, cal, pj, b), pj + " passe sur le banc " + b + ".")} />
+      <BenchTimeline items={shown} lo={lo} hi={hi} cal={cal} bad={bad} today={t0} readOnly={readOnly} onDrop={(pj, b, iso) => { let np = plan; const msg = []; if (b) { np = setBench(np, cal, pj, b); msg.push(pj + " passe sur le banc " + b); }
+        if (iso) { const r = startAtKeepLinks(np, cal, pj, "tests", iso); np = r.plan; msg.push(r.blocked ? "début des tests au plus tôt possible (" + r.blocked + ")" : "tests à partir du " + fmtIso(iso)); }
+        onApply(np, msg.join(" ; ").replace(/^./, c => c.toUpperCase()) + "."); }} />
       {[1, 2].map(b => { const L = shown.filter(x => x.b === b); return (<section key={b} aria-label={"Banc " + b} style={{ borderTop: "1px solid " + T.line, padding: "8px 0" }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 6 }}><b style={{ fontSize: 14 }}>Banc {b}</b><span style={{ fontSize: 12, color: T.ink500 }}>{L.length} machine{L.length > 1 ? "s" : ""}</span></div>
         {L.length === 0 && <div style={{ fontSize: 12.5, color: T.ink500 }}>Aucune machine sur ce banc.</div>}

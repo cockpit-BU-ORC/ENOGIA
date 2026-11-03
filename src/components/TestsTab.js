@@ -11,6 +11,7 @@ import { CARD, H_SUB } from "./ManagerParts";
 import { CertifChip } from "./FicheContrat";
 import { NavIcon, PjPlate, pressable } from "./SharedUI";
 import { SECTIONS, DEFAULT_TEST_CATALOG, catalogOf, testersOf, planOf, activeSections, selectedIds, toggleTest, setExtra, setNote, assignTester, unassignTester, setAssignDates, effRange, findConflicts, assignmentsOf, dropTester, dropTestFromPlans, newId, packLanes, addDaysIso, mondayOf, testerOfEmail, doneIds, progressOf, TEST_STATUS, statusOf, statusByOf, setStatus, isForced, setForced } from "../testPlan";
+import { buildIcs, downloadIcs } from "../ics";
 import { nameFromEmail } from "../mentions";
 import { gcalUrl } from "../gcal";
 import { openTestReport } from "../testReport";
@@ -659,6 +660,13 @@ function Step({ n, title, hint, children }) {
 // avec le PJ, la gamme et l'avancement. Ligne « Sans testeur » en pointillés rouges. Les administrateurs glissent une
 // barre sur un testeur pour l'affecter (depuis un autre testeur : la machine passe de l'un à l'autre).
 const CAL_DAYS = GRID_DAYS, LANE_H = 36, LABEL_W = 220; // v209 : 3 semaines, lignes de 36 px (même grille que les bancs)
+// v260 : agenda d'un testeur (.ics) — ses périodes de banc des 30 derniers jours et à venir
+function testerIcs(doc, t, rows) {
+  const by = {}; rows.forEach(r => { by[r.pj] = r; }); const since = addDaysIso(toLocalISO(new Date()), -30);
+  const ev = assignmentsOf(doc, t.id, rows).filter(a => a.from && a.to >= since).map(a => { const r = by[a.pj] || {}, nom = getPjMeta(a.pj, r).nomProjet;
+    return { uid: a.pj + "-" + t.id, from: a.from, to: a.to, title: "Tests " + a.pj + (r.gamme ? " · " + r.gamme : "") + (nom && nom !== "—" ? " · " + nom : ""), details: "Tests au banc de la machine " + a.pj + ".\nCockpit BU ORC — mis à jour le " + new Date().toLocaleDateString("fr-FR") + "." }; });
+  downloadIcs(buildIcs(ev, "Tests — " + t.name), "tests-" + t.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-") + ".ics");
+}
 export function TesterTimeline({ doc, rows, testers, catalog, conflicts, commit, canEdit, myTester, openPj, who }) {
   const ctx = useMentions();
   const [offset, setOffset] = useState(0), [edit, setEdit] = useState(null), [del, setDel] = useState(null), [newName, setNewName] = useState(""), [over, setOver] = useState(null);
@@ -708,6 +716,7 @@ export function TesterTimeline({ doc, rows, testers, catalog, conflicts, commit,
       <div><h3 style={{ margin: 0, fontSize: FZ.md, fontWeight: 700, color: T.ink900 }}>Testeurs</h3><div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 2 }}>Du {fd(days[0])} au {fd(end)} · une ligne par testeur : qui est pris, qui est libre{canEdit ? " · glissez une barre sur un testeur pour l'affecter" : ""}</div></div>
       <div style={{ display: "inline-flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
         <GridLegend />
+        {myTester && <button type="button" onClick={() => testerIcs(doc, myTester, rows)} title="Télécharger mes périodes de banc pour Outlook / Google Agenda. Réimportez le fichier après une mise à jour du planning : les événements sont mis à jour, pas dupliqués." style={{ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "4px 10px", minHeight: 28, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}><NavIcon name="calendar" size={14} />Mon agenda (.ics)</button>}
         <GridNav off={offset} setOff={setOffset} />
       </div>
     </div>
@@ -733,6 +742,7 @@ export function TesterTimeline({ doc, rows, testers, catalog, conflicts, commit,
                     <div style={{ fontSize: FZ.sm, fontWeight: 700, color: myTester && myTester.id === t.id ? T.teal600 : T.ink900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</div>
                     {conflict ? <div style={{ fontFamily: T.fontLabel, fontSize: 11, fontWeight: 600, color: T.amber600 }}>Chevauchement</div> : <div style={{ fontSize: 11, color: T.ink500 }}>{items.length ? items.length + " machine" + (items.length > 1 ? "s" : "") : "libre"}{!t.email ? " · sans e-mail" : ""}</div>}
                   </div>
+                  <button onClick={() => testerIcs(doc, t, rows)} aria-label={"Agenda de " + t.name + " (.ics)"} title={"Agenda de " + t.name + " (.ics) pour Outlook / Google Agenda"} style={{ border: "none", background: "transparent", color: T.ink500, cursor: "pointer", minWidth: 24, minHeight: 24, padding: 2, lineHeight: 0 }}><NavIcon name="calendar" size={15} /></button>
                   {canEdit && <button onClick={() => setEdit(t.id)} aria-label={"Modifier " + t.name} title="Modifier / retirer" style={{ border: "none", background: "transparent", color: T.ink500, cursor: "pointer", minWidth: 24, minHeight: 24, padding: 2, lineHeight: 0 }}><NavIcon name="edit" size={15} /></button>}
                 </div>}
             </div>

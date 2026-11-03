@@ -4,22 +4,21 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { onSnapshot, setDoc } from "firebase/firestore";
 import { T, FZ, R } from "../theme";
 import { CashLinksDialog } from "./CashLinks";
-import { PlannedDialog } from "./CashInNative";
-import { todayISO } from "../cashinLink";
+import { PlannedDialog } from "./CashInPlanned";
+import { todayISO, anchorShifts } from "../cashinLink";
+import { applyEdit } from "../cashinModel";
+import { CashAnchorsDialog } from "./CashAnchors";
+import { useCashin } from "../useCashin";
 import { CASHIN_DOC_REF, CASHIN_PAGE_VERSION, CASHIN_MAX_BYTES, cashinTheme, validateCashin } from "../cashinData";
 
 const btn = (primary) => ({ padding: "6px 12px", borderRadius: 8, border: "1px solid " + (primary ? T.teal600 : T.line), background: primary ? T.teal600 : T.card, color: primary ? T.card : T.ink900, fontSize: FZ.sm, fontWeight: 600, cursor: "pointer" });
 
-// v193 : l'onglet affiche la version intégrée (CashInNative) ; l'ancienne page en cadre reste accessible le temps de comparer.
-export function CashInTab({ authorName, focus }) {
-  // v195 (demandé : « reprendre le même format que la version artefact ») : le format de l'artefact est affiché par défaut ; « Nouvelle version » reste à un clic.
-  // v256 (demandé : « garder le format et le design du Cash in en format artefact et non la solution du site ») : le format artefact
-  // (public/cashin.html, mêmes données planning/cashin) est l'affichage par défaut pour tout le monde ; « Cash in du site » reste à un clic.
-  // Nouvelle clé de mémoire : un ancien choix « nouveau » n'empêche plus le format artefact.
+export function CashInTab({ authorName, focus, planRows }) {
   // v257 (demandé : « enlever le Cash in du site ») : le format artefact est le seul Cash in.
-  return <CashInLegacy authorName={authorName} focus={focus} />;
+  return <CashInLegacy authorName={authorName} focus={focus} planRows={planRows} />;
 }
-function CashInLegacy({ authorName, focus }) {
+function CashInLegacy({ authorName, focus, planRows }) {
+  useCashin(); // v260 : liaisons et jalons liés relus à chaque changement
   const frameRef = useRef(null);
   const latest = useRef({ loaded: false, exists: false, data: null, err: null });
   const readyRef = useRef(false);
@@ -29,6 +28,16 @@ function CashInLegacy({ authorName, focus }) {
   const [linksOpen, setLinksOpen] = useState(false); // V146.2
   const [planOpen, setPlanOpen] = useState(false); // v256 : « Prévu jusqu'à fin 2026 » aussi dans le format artefact
   const [msg, setMsg] = useState(null); // { kind: "ok" | "err", text }
+  const [ancOpen, setAncOpen] = useState(false);
+  // v260 : jalons liés au planning dont la facturation prévue ne suit plus les dates → bandeau « Mettre à jour »
+  const shifts = info.exists ? anchorShifts(planRows || [], latest.current.data) : [];
+  const applyShifts = async () => {
+    const d = latest.current.data; if (!d || !Array.isArray(d.rows)) return;
+    const by = {}; shifts.forEach(s => { by[s.row.id] = s.to; });
+    const rows = d.rows.map(r => (by[r.id] ? applyEdit(r, "factPrevue", by[r.id]).row : r));
+    try { const body = { ...d, rows, updatedAt: new Date().toISOString() }; const err = validateCashin(body); if (err) throw new Error(err); await setDoc(CASHIN_DOC_REF(), { ...body, updatedBy: authorName || "" }); setMsg({ kind: "ok", text: shifts.length + " date" + (shifts.length > 1 ? "s" : "") + " de facturation mise" + (shifts.length > 1 ? "s" : "") + " à jour d'après le planning." }); }
+    catch (er) { setMsg({ kind: "err", text: "Mise à jour impossible : " + (er && er.message) }); }
+  };
 
   const post = useCallback((m) => {
     const w = frameRef.current && frameRef.current.contentWindow;
@@ -104,12 +113,15 @@ function CashInLegacy({ authorName, focus }) {
     <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", justifyContent: "space-between" }}>
       <span />
       <div style={{ display: "flex", gap: 8 }}>
+        <button style={btn(false)} onClick={() => setAncOpen(true)} disabled={!info.exists} title="Faire suivre à un jalon une date du planning (départ, tests…)">Jalons liés au planning</button>
         <button style={btn(true)} onClick={() => setLinksOpen(true)} disabled={!info.exists} title="Choisir à quel(s) PJ de l'ordo chaque PJ du Cash in se rattache">Liaisons avec l'ordo</button>
       </div>
     </div>
     {info.err && banner(T.red100, T.red600, info.err, "alert")}
     {msg && banner(msg.kind === "ok" ? T.emerald100 : T.red100, msg.kind === "ok" ? T.emerald600 : T.red600, <>{msg.text} <button onClick={() => setMsg(null)} style={{ marginLeft: 8, border: "none", background: "none", color: "inherit", textDecoration: "underline", cursor: "pointer", fontWeight: 600 }}>Fermer</button></>, msg.kind === "ok" ? "status" : "alert")}
     {info.loaded && !info.exists && !info.err && banner(T.teal100, T.teal600, <>Aucune donnée Cash in sur ce site pour l'instant.</>, "status")}
+    {shifts.length > 0 && banner(T.amber100 || T.surfaceAlt, T.ink900, <>{shifts.length} jalon{shifts.length > 1 ? "s" : ""} lié{shifts.length > 1 ? "s" : ""} au planning ne suive{shifts.length > 1 ? "nt" : ""} plus ses dates : {shifts.slice(0, 3).map(s => s.row.pj + " · " + (s.row.jalon || "jalon") + " " + (s.from ? s.from.slice(8, 10) + "/" + s.from.slice(5, 7) : "—") + " → " + s.to.slice(8, 10) + "/" + s.to.slice(5, 7)).join(" ; ")}{shifts.length > 3 ? "…" : ""} <button onClick={applyShifts} style={{ marginLeft: 8, border: "1px solid " + T.ink900, borderRadius: 6, background: T.ink900, color: T.card, padding: "2px 10px", cursor: "pointer", fontWeight: 700 }}>Mettre à jour les dates</button></>, "status")}
+    {ancOpen && <CashAnchorsDialog planRows={planRows} authorName={authorName} onClose={() => setAncOpen(false)} />}
     {linksOpen && <CashLinksDialog onClose={() => setLinksOpen(false)} authorName={authorName}/>}
     {planOpen && <PlannedDialog rows={(latest.current.data && latest.current.data.rows) || []} labels={(latest.current.data && latest.current.data.labels) || {}} today={todayISO()} onClose={() => setPlanOpen(false)} onOpenRow={id => { const r = ((latest.current.data && latest.current.data.rows) || []).find(x => x.id === id); setPlanOpen(false); if (r) post({ type: "goto", pj: r.pj }); }} />}
     <iframe ref={frameRef} title="Cash in PJ" src={base} style={{ width: "100%", height: "calc(100dvh - 210px)", minHeight: 560, border: "1px solid " + T.line, borderRadius: 12, background: T.surface }}/>

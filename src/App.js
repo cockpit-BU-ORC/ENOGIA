@@ -50,56 +50,11 @@ import { ReleasePopup, useUnseenReleases, mergeReleases } from "./components/Rel
 import { ChangesPopup, ChangesBadge, useUnseenChanges, useChangeMarks, ChangeMarksContext } from "./components/ChangesNotice";
 import { listenChangeLog } from "./changeLog";
 
-// ── Version bêta ────────────────────────────────────────────────────────────────────────────────────
-// Build « bêta » (npm run deploy:beta) : mêmes écrans, mais TOUTES les données sont lues/écrites dans des documents
-// distincts (préfixe beta_) → la production n'est jamais touchée par les essais. Le bouton du bandeau bêta copie la
-// production vers la bêta. Build normal : préfixe vide, comportement strictement inchangé.
-const IS_BETA=process.env.REACT_APP_BETA==="1";
-const DOC_PFX=IS_BETA?"beta_":"";
-if(IS_BETA&&typeof document!=="undefined")document.title="[BÊTA] Cockpit BU ORC";
-const BETA_DOCS=["current","initial","overrides","comments","pjMetaSync","pjMetaOverrides","delays","delayTypes","managerEmails","changeLog","cashin","cashinLinks","turbines","tests","profiles","prodTurbines"];
-const DOC_REF=()=>doc(db,"planning",DOC_PFX+"current");
-const INITIAL_DOC_REF=()=>doc(db,"planning",DOC_PFX+"initial");
-const OVERRIDES_DOC_REF=()=>doc(db,"planning",DOC_PFX+"overrides");
-const COMMENTS_DOC_REF=()=>doc(db,"planning",DOC_PFX+"comments");
-const PJ_META_SYNC_DOC_REF=()=>doc(db,"planning",DOC_PFX+"pjMetaSync");
-const PJ_META_OVERRIDES_DOC_REF=()=>doc(db,"planning",DOC_PFX+"pjMetaOverrides");
-const DELAYS_DOC_REF=()=>doc(db,"planning",DOC_PFX+"delays");
-const DELAY_TYPES_DOC_REF=()=>doc(db,"planning",DOC_PFX+"delayTypes");
-const TURBINES_DOC_REF=()=>doc(db,"planning",DOC_PFX+"turbines"); // v146.22 : pool de turbines
-const PRODTURB_DOC_REF=()=>doc(db,"planning",DOC_PFX+"prodTurbines"); // v226 : Production turbines (directeur de production turbines + propriétaire)
-const TESTS_DOC_REF=()=>doc(db,"planning",DOC_PFX+"tests"); // v154 : testeurs, affectations aux périodes de tests, catalogue FAT
-const MANAGER_EMAILS_DOC_REF=()=>doc(db,"planning",DOC_PFX+"managerEmails");
-const PROFILES_DOC_REF=()=>doc(db,"planning",DOC_PFX+"profiles"); // v188 : rôle et PJ de chaque compte (Manager › Réglages › Personnes et rôles)
+// v260 : documents Firestore, bandeau bêta et identité du compte sortis de ce fichier (appDocs.js, components/AppChrome.js)
+import { IS_BETA, DOC_PFX, DOC_REF, INITIAL_DOC_REF, OVERRIDES_DOC_REF, COMMENTS_DOC_REF, PJ_META_SYNC_DOC_REF, PJ_META_OVERRIDES_DOC_REF, DELAYS_DOC_REF, DELAY_TYPES_DOC_REF, TURBINES_DOC_REF, PRODTURB_DOC_REF, TESTS_DOC_REF, MANAGER_EMAILS_DOC_REF, PROFILES_DOC_REF, DEFAULT_DELAY_TYPES } from "./appDocs";
+import { BetaBanner, UserChip } from "./components/AppChrome";
 
-// Types de retard génériques par défaut — éditables depuis le panel Manager (onglet Retards)
-const DEFAULT_DELAY_TYPES=[
-  "Retard paiement FNR","NC FNR","NC interne","Retard fournisseur",
-  "Aléas planning client","Retard études","Manque de main d'œuvre","Autre",
-];
-
-const APP_BUILD_VERSION = "2026-11-03-v259-bancs-frise";
-
-// Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
-function BetaBanner({canCopy}){
-  const [st,setSt]=useState("");
-  const copy=async()=>{
-    if(!window.confirm("Copier les données de la PRODUCTION vers la BÊTA ?\n\nLes données actuelles de la bêta seront remplacées. La production n'est pas modifiée."))return;
-    setSt("Copie en cours…");let n=0;
-    try{
-      for(const name of BETA_DOCS){const snap=await getDoc(doc(db,"planning",name));if(snap.exists()){await setDoc(doc(db,"planning","beta_"+name),snap.data());n++;}}
-      setSt("✓ "+n+" documents copiés depuis la production");
-    }catch(e){console.error(e);setSt("Échec de la copie : "+e.message);}
-    setTimeout(()=>setSt(""),8000);
-  };
-  return(<div style={{flexShrink:0,display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",padding:"6px 28px",background:T.amber600,color:T.mode==="dark"?"#1B1405":"#fff",fontSize:FZ.sm,fontWeight:700,fontFamily:T.font}}>
-    <span style={{letterSpacing:".08em"}}>VERSION BÊTA</span>
-    <span style={{fontWeight:500,opacity:.95}}>Données de test séparées : rien de ce que vous faites ici n'affecte la production.</span>
-    {canCopy&&<button onClick={copy} style={{marginLeft:"auto",padding:"4px 12px",borderRadius:8,border:"1px solid rgba(255,255,255,.7)",background:"rgba(255,255,255,.15)",color:"#fff",fontWeight:700,fontSize:FZ.xs,cursor:"pointer",fontFamily:T.font}}>Copier la production vers la bêta</button>}
-    {st&&<span style={{fontWeight:600}}>{st}</span>}
-  </div>);
-}
-
+const APP_BUILD_VERSION = "2026-11-03-v260-agenda-cashin";
 
 export default function App(){
   // Utilisateur connecté via Google, restreint aux comptes @enogia.com (null tant que non connecté).
@@ -1049,7 +1004,7 @@ export default function App(){
     if(selMoisFinProd.size<MONTHS.length){const m=r.finProd?MONTHS[new Date(r.finProd).getMonth()]:null;if(!m||!selMoisFinProd.has(m))return false;}
     if(selMoisDepart.size<MONTHS.length){const m=r.depart?MONTHS[new Date(r.depart).getMonth()]:null;if(!m||!selMoisDepart.has(m))return false;}
     return true;
-  }),[dataWithOverrides,selEtats,selGammes,selPJs,allPJs,selProjets,allProjets,selPays,allPays,selChefs,allChefs,onlyDrift,onlyChanged,changeMarks,selMoisArrivee,selMoisTests,selMoisFinProd,selMoisDepart]);
+  }),[dataWithOverrides,selEtats,selGammes,selPJs,selProjets,selPays,selChefs,onlyDrift,onlyChanged,changeMarks,selMoisArrivee,selMoisTests,selMoisFinProd,selMoisDepart]);
 
   const VIEWS=[{id:"home",icon:"home",l:"Aujourd'hui"},{id:"table",icon:"list",l:"Liste"},{id:"gantt",icon:"gantt",l:"Gantt"},{id:"calendar",icon:"calendar",l:"Calendrier"},{id:"changes",icon:"changes",l:"Modifications"},{id:"comments",icon:"comments",l:"Commentaires"},...(canSeeTests?[{id:"tests",icon:"check",l:"Tests"}]:[]),...(isOwner?[{id:"planner",icon:"gantt",l:"Planificateur"}]:[]),...(canCash?[{id:"cashin",icon:"euro",l:"Cash in"}]:[]),...(isOwner?[{id:"turbines",icon:"factory",l:"Turbines"}]:[]),...(canProdTurb?[{id:"prodturb",icon:"gauge",l:"Production turbines"}]:[])]; // v204 : planificateur réservé au propriétaire ; v217 (demandé : « Cash in et Turbines doivent ouvrir une nouvelle page, pas les pages du Manager ») : pages à part entière
 
@@ -1269,7 +1224,7 @@ export default function App(){
               selEtats={selEtats} setSelEtats={setSelEtats} allPJs={allPJs} selPJs={selPJs} setSelPJs={setSelPJs}/>}
             {/* v204 (demandé : « un onglet uniquement pour moi, sous Tests ») : le module de planification (src/planner), brouillon séparé du planning ;
                 « Publier » seul modifie le planning lu par tous. Liens entre PJ, dates imposées, une production / un banc à la fois, charge par semaine. */}
-            {view==="cashin"&&canCash&&<CashInTab authorName={authorName} focus={cashFocusApp}/>}
+            {view==="cashin"&&canCash&&<CashInTab authorName={authorName} focus={cashFocusApp} planRows={dataWithOverrides}/>}
             {view==="prodturb"&&canProdTurb&&<PageGuard name="Production turbines"><ProdTurbines doc={prodDoc} api={prodApi} canEdit owner={isOwner}/></PageGuard>}
             {view==="turbines"&&isOwner&&<TurbinesTab doc={turbineDoc||{turbines:[]}} save={saveTurbines} data={dataWithOverrides} authorName={authorName} superAdmin={pinOk}/>}
             {view==="planner"&&isOwner&&<PlannerView productionExclusions={productionExclusions} testers={testsDoc&&Array.isArray(testsDoc.testers)?testsDoc.testers:[]} planLoaded={planLoaded} planDoc={planDoc} rows={dataWithOverrides} closurePeriods={closurePeriods} authorName={authorName}
@@ -1290,32 +1245,4 @@ export default function App(){
       </PjDialogCtx.Provider>
     </div>
   </div></ChangeMarksContext.Provider></MentionCtx.Provider>);
-}
-
-// ── Identité de l'utilisateur connecté, en haut de l'appli : on voit tout de suite
-// sous quel compte on est, avec un accès direct à la déconnexion. ──
-function UserChip({user,onSignOut,role}){
-  const [open,setOpen]=useState(false);
-  const ref=React.useRef(null);
-  useEffect(()=>{
-    const onClick=e=>{if(ref.current&&!ref.current.contains(e.target))setOpen(false);};
-    document.addEventListener("mousedown",onClick);
-    return ()=>document.removeEventListener("mousedown",onClick);
-  },[]);
-  const name=user.displayName||user.email;
-  const initial=(name||"?").trim().charAt(0).toUpperCase();
-  return(<div ref={ref} style={{position:"relative"}}>
-    <button onClick={()=>setOpen(o=>!o)} style={{display:"flex",alignItems:"center",gap:8,background:T.surfaceAlt,border:"none",borderRadius:999,padding:"4px 12px 4px 6px",cursor:"pointer",color:T.ink900}}>
-      <span style={{width:26,height:26,borderRadius:"50%",background:T.teal500,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:FZ.sm,fontWeight:700,flexShrink:0}}>{initial}</span>
-      <span className="enogia-user-name" style={{fontSize:FZ.sm,fontWeight:600,maxWidth:160,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",color:T.ink900}}>{name}</span>
-    </button>
-    {open&&<div style={{position:"absolute",top:"calc(100% + 8px)",right:0,background:T.card,borderRadius:12,boxShadow:T.shadowLg,padding:8,minWidth:200,zIndex:50}}>
-      <div style={{padding:"6px 8px 8px",borderBottom:"1px solid "+T.line,marginBottom:6}}>
-        <div style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{name}</div>
-        <div style={{fontSize:FZ.xs,color:T.ink500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{user.email}</div>
-        {role&&<div style={{marginTop:4,display:"inline-block",fontSize:FZ.xs,fontWeight:700,color:role==="Super admin"?"#fff":T.teal600,background:role==="Super admin"?T.teal500:T.teal100,borderRadius:999,padding:"1px 8px"}}>{role}</div>}
-      </div>
-      <button onClick={onSignOut} style={{width:"100%",display:"flex",alignItems:"center",gap:8,background:"none",border:"none",borderRadius:8,padding:"8px 8px",fontSize:FZ.sm,fontWeight:600,color:T.red500,cursor:"pointer",textAlign:"left"}}><NavIcon name="logout" size={15}/>Se déconnecter</button>
-    </div>}
-  </div>);
 }

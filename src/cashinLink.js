@@ -120,6 +120,26 @@ export function cashGroupsFor(pj, doc = DOC, links = LINKS, ordo = ORDO) {
   return out;
 }
 
+// v260 (demandé : « Cash in relié au planning : un jalon de facturation qui suit la date de départ ou de tests, et un signal quand un
+// glissement repousse un encaissement ») : un jalon peut suivre une date du planning de ses PJ de l'ordo (la plus tardive s'il y en a
+// plusieurs) + un décalage en jours calendaires. Stocké dans le document des liaisons, clé "anc:<id du jalon>" = { on, lag }.
+export const ANCHOR_FIELDS = [["arrivee", "Arrivée"], ["tests", "Début des tests"], ["testsFin", "Fin des tests"], ["finProd", "Fin de production"], ["depart", "Départ"]];
+export const anchorKey = id => "anc:" + id;
+export const anchorOf = (row, links = LINKS) => { const a = links && row && links[anchorKey(row.id)]; return a && !Array.isArray(a) && a.on ? a : null; };
+export function anchoredBill(row, rowsByPj, links = LINKS, ordo = ORDO) {
+  const a = anchorOf(row, links); if (!a) return null;
+  const tg = rowTargetsOf(row, links) || targetsOf(row.pj, links, ordo).list;
+  const ds = tg.map(p => rowsByPj[p] && rowsByPj[p][a.on]).filter(Boolean).map(d => String(d).slice(0, 10)).sort();
+  return ds.length ? addDays(ds[ds.length - 1], Number(a.lag) || 0) : null;
+}
+// Jalons pas encore facturés dont la facturation prévue ne suit plus le planning : [{ row, from, to, delta }]
+export function anchorShifts(planRows, doc = DOC, links = LINKS, ordo = ORDO) {
+  const by = {}; (planRows || []).forEach(r => { if (r && r.pj) by[r.pj] = r; });
+  const out = [];
+  ((doc && doc.rows) || []).forEach(r => { if (r.factReelle || r.encReelle) return; const to = anchoredBill(r, by, links, ordo); if (to && to !== r.factPrevue) out.push({ row: r, from: r.factPrevue || null, to, delta: r.factPrevue ? diffDays(r.factPrevue, to) : null }); });
+  return out;
+}
+
 // Jalons de paiement d'un PJ vus par la fiche : { id, label, pct, montant, done, doneAt, linked:true, epc, k, tone, group, ref, dates…, retard, due }
 export function linkedPayments(pj, doc = DOC, today = todayISO()) {
   const out = [];
