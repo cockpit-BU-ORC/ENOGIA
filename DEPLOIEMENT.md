@@ -1951,3 +1951,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Fiches projet : blocs rangés en colonnes sans trous ; tailles de texte harmonisées ; livraison sur site « en transport · non confirmée » (date estimée) puis « confirmée ».
 - Pas de nouvelle clé `localStorage`. Règles Firestore inchangées (`profiles` déjà écrit par le propriétaire).
 - Fichiers : monthReview.js (+ test), components/KpiBilan.js (nouveaux), components/ManagerPanel.js, components/ManagerFiche.js, components/TurbinesHub.js, turbineNeeds.js (+ test), styles.css, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v275 — Vue CODIR compacte, jalons par mois, fiches mieux remplies
+
+- Demandé : « cadrans de Dérives trop grands ; sur la vue CODIR un résumé des PJ tenus à date par étape pour des captures PowerPoint » ; « la sévérité des retards ne porte-t-elle que sur les expédiées ? je dois pouvoir choisir » ; « plus de graphiques : arrivées par mois, tests par mois… » ; « fiche projet : trop de zones sans information, finance et machine côte à côte, frise à droite » ; « un graphique des départs, tests et arrivées sur les mois du bilan ».
+- Réponse sur la sévérité : elle portait sur toutes les machines qui ont un planning initial (filtres du Manager appliqués), expédiées ou non. Un choix Toutes / En cours / Expédiées s'applique maintenant à toute la vue CODIR.
+- KPI › Dérives : résumé compact par étape, jalons par mois, cadrans resserrés. KPI › Bilan mensuel : graphique des quatre mois.
+- Fiches projet : Planning (contrat | jalons), Machine | Finance.
+- Pas de nouvelle donnée, pas de nouvelle clé `localStorage`.
+- Fichiers : components/ManagerPanel.js, components/KpiBilan.js, components/ManagerFiche.js, styles.css, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

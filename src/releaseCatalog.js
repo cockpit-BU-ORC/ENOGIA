@@ -681,4 +681,9 @@ export const RELEASE_CATALOG = [
     ["Turbines › Besoins", "Turbines prêtes avec roue et sans roue séparées ; une turbine ou une roue d'une autre référence que celle prévue est refusée avec un message. Couleurs ORC (marine) et SAV (violet), drapeaux.", "admin"],
     ["Fiches projet", "Les blocs se rangent en colonnes sans trous ; textes harmonisés ; livraison sur site : « en transport, non confirmée » avec la date estimée, puis « confirmée ».", "admin"],
   ] },
+  { v: "275", t: "Vue CODIR compacte, jalons par mois, fiches mieux remplies", items: [
+    ["KPI › Dérives", "Résumé « PJ tenus à date, par étape » (compact, prêt pour une capture), choix des machines (toutes, en cours, expédiées) pour toute la vue CODIR, graphiques des arrivées, tests, fins de production et départs par mois, cadrans resserrés.", "admin"],
+    ["KPI › Bilan mensuel", "Graphique des départs, tests terminés et arrivées sur les quatre mois.", "admin"],
+    ["Fiches projet", "Planning : contrat à gauche, frise des jalons à droite ; Machine et Finance côte à côte.", "admin"],
+  ] },
 ];

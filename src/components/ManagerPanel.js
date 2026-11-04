@@ -32,6 +32,8 @@ export function PeriodFilter({yearsAvailable,year,setYear,month,setMonth,showMon
 export function ManagerPanel({planDoc,initialAddFromImport,onOpenCashPage,onNav,profiles,saveProfiles,jumpFiche,changeLog,data,progress,setProgress,releases,saveReleaseNotes,releaseSelection,saveReleaseSelection,publishRelease,isBeta,initialData,lastInitialImport,lastInitialAdd,onInitialImport,onInitialAdd,initialImporting,etatChoice,setEtatFor,saveProgress,savingProgress,progressSaved,tab,setTab,clientPresence,setClientPresenceFor,closurePeriods,setClosurePeriods,customEtats,setCustomEtats,etatEdits,setEtatEdits,productionExclusions,setProductionExclusionDays,comments,delays,delayTypes,setDelayTypes,addDelayAllocationMulti,deleteDelayAllocation,managerEmails,setManagerEmails,currentUserEmail,authorName,buildVersion,savePjMetaOverride,savePjMetaMulti,addCommentMulti,addComment,resolveComment,deleteComment,turbineDoc,saveTurbines,certifs,setCertifs,compCatalog,setCompCatalog}){
   const [fEtat,setFEtat]=useState(new Set(ALL_ETATS));
   const [kpiStep,setKpiStep]=useState("depart");
+  // v275 (demandé : « la répartition par sévérité est-elle seulement sur les machines expédiées ? je dois pouvoir choisir ») : toutes / en cours / expédiées
+  const [codirScope,setCodirScope]=useState("all");
   const [kpiTab,setKpiTab]=useState("synthese"); // sous-onglet KPI par famille
   useEffect(()=>{if(kpiTab==="retards")setKpiTab("synthese");},[kpiTab]); // v217 : l'analyse des retards est passée dans Retards › Analyse
   const [fichePj,setFichePj]=useState(null); // v134 : PJ à ouvrir dans la fiche depuis le Point hebdo
@@ -66,7 +68,15 @@ export function ManagerPanel({planDoc,initialAddFromImport,onOpenCashPage,onNav,
     };
     return{pj:r.pj,gamme:r.gamme,etat:r.etat,hasInitial:!!ini,arrivee:mk("arrivee"),tests:mk("tests"),finProd:mk("finProd"),depart:mk("depart")};
   }),[fk,initialByPJ]);
-  const comparable=driftRows.filter(r=>r.hasInitial);
+  const comparable=driftRows.filter(r=>r.hasInitial&&(codirScope==="all"||(codirScope==="shipped"?r.etat==="SHIPPED":r.etat!=="SHIPPED")));
+  // v275 (demandé : « un résumé des PJ tenus à date pour chaque étape, compact pour des captures PowerPoint ») : par étape, tenus (écart ≤ 0) / comparés
+  const stepSummary=["arrivee","tests","finProd","depart"].map(k=>{const ds=comparable.map(r=>r[k].delta).filter(d=>d!=null),late=ds.filter(d=>d>0);
+    return{k,l:STEP_LABELS[k],n:ds.length,ok:ds.length-late.length,late:late.length,pct:ds.length?Math.round((ds.length-late.length)/ds.length*100):null,avg:late.length?Math.round(late.reduce((a,b)=>a+b,0)/late.length):0,crit:late.filter(d=>d>30).length,
+      worst:comparable.filter(r=>r[k].delta!=null&&r[k].delta>0).sort((a,b)=>b[k].delta-a[k].delta).slice(0,3).map(r=>r.pj+" +"+r[k].delta+"j")};});
+  // v275 (demandé : « plus de graphiques comme dans l'explorer : arrivées par mois, tests par mois… ») : jalons par mois, initial vs révisé, 12 mois glissants
+  const monthsBy=(()=>{const base=new Date(today.getFullYear(),today.getMonth()-5,1),list=[];for(let i=0;i<12;i++){const d=new Date(base.getFullYear(),base.getMonth()+i,1);list.push({key:d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"),mois:MONTHS[d.getMonth()]+(d.getMonth()===0||i===0?" "+String(d.getFullYear()).slice(2):"")});}
+    const km=v=>{if(!v)return null;const d=new Date(v);return isNaN(d)?null:d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");};
+    return ["arrivee","tests","finProd","depart"].map(k=>({k,l:STEP_LABELS[k],data:list.map(m=>({mois:m.mois,initial:driftRows.filter(r=>(codirScope==="all"||(codirScope==="shipped"?r.etat==="SHIPPED":r.etat!=="SHIPPED"))&&km(r[k].ini)===m.key).length,revise:driftRows.filter(r=>(codirScope==="all"||(codirScope==="shipped"?r.etat==="SHIPPED":r.etat!=="SHIPPED"))&&km(r[k].rev)===m.key).length,now:m.key===today.getFullYear()+"-"+String(today.getMonth()+1).padStart(2,"0")}))}));})();
   const stepDeltas=comparable.map(r=>r[kpiStep].delta).filter(d=>d!=null);
   const lateCount=stepDeltas.filter(d=>d>0).length;
   const onTimeOrEarlyCount=stepDeltas.filter(d=>d<=0).length;
@@ -561,12 +571,31 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
               </div>
             </div>
           </div>
-          <div style={{marginBottom:16}}/>
-          <KpiRow items={[[totalDelayDays+"j","Retard cumulé généré ("+STEP_LABELS[kpiStep]+")",T.red500],[totalGainDays+"j","Avance cumulée gagnée",T.emerald500],[reliabilityRate==null?"—":reliabilityRate+"%","PJ tenus à la date promise",T.teal500],[dureeCompare.ecart==null?"—":(dureeCompare.ecart>0?"+":"")+dureeCompare.ecart+"j","Écart durée moy. production",dureeCompare.ecart>0?T.red500:T.emerald500]]} min={170}/>
+          <div role="group" aria-label="Machines prises en compte" style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",margin:"8px 0 10px"}}>
+            <span style={{fontSize:12,color:T.ink500,fontWeight:600}}>Machines :</span>
+            <div style={{display:"inline-flex",background:T.surfaceAlt,borderRadius:9,padding:2,gap:2}}>
+              {[["all","Toutes"],["open","En cours"],["shipped","Expédiées"]].map(([k,l])=><button key={k} type="button" aria-pressed={codirScope===k} onClick={()=>setCodirScope(k)} style={{border:"none",borderRadius:7,minHeight:28,padding:"0 12px",fontSize:12.5,fontWeight:700,cursor:"pointer",fontFamily:T.font,background:codirScope===k?T.card:"transparent",color:codirScope===k?T.ink900:T.ink500,boxShadow:codirScope===k?"0 1px 2px rgba(0,0,0,.08)":"none"}}>{l}</button>)}
+            </div>
+            <span style={{fontSize:12,color:T.ink500}}>{comparable.length} machine{comparable.length>1?"s":""} avec un planning initial · s'applique à toute la vue CODIR</span>
+          </div>
+          {/* Résumé compact, prêt à capturer : une ligne par étape */}
+          <div aria-label="PJ tenus à date par étape" style={{maxWidth:980,border:"1px solid "+T.line,borderRadius:10,overflow:"hidden",marginBottom:12,background:T.card}}>
+            <div style={{display:"flex",alignItems:"baseline",gap:8,padding:"8px 12px",borderBottom:"1px solid "+T.line}}><b style={{fontSize:13.5,color:T.ink900}}>PJ tenus à date, par étape</b><span style={{fontSize:12,color:T.ink500}}>écart au planning initial ≤ 0 · {codirScope==="all"?"toutes les machines":codirScope==="shipped"?"machines expédiées":"machines en cours"} · {new Date().toLocaleDateString("fr-FR")}</span></div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(4,minmax(0,1fr))"}}>
+              {stepSummary.map((x,i)=><div key={x.k} style={{padding:"8px 12px",borderLeft:i?"1px solid "+T.line:"none"}}>
+                <div style={{fontSize:12,fontWeight:600,color:T.ink500}}>{x.l}</div>
+                <div style={{display:"flex",alignItems:"baseline",gap:6}}><b style={{fontSize:22,fontVariantNumeric:"tabular-nums",color:x.pct==null?T.ink300:x.pct>=80?T.emerald600:x.pct>=50?T.amber600:T.red600}}>{x.pct==null?"—":x.pct+" %"}</b><span style={{fontSize:12.5,color:T.ink700,fontVariantNumeric:"tabular-nums"}}>{x.ok} / {x.n} tenus</span></div>
+                <div aria-hidden="true" style={{height:5,borderRadius:3,background:T.red100,overflow:"hidden",margin:"4px 0"}}><div style={{height:"100%",width:(x.pct||0)+"%",background:T.emerald500}}/></div>
+                <div style={{fontSize:12,color:T.ink500,fontVariantNumeric:"tabular-nums"}}>{x.late?x.late+" en retard · moy. +"+x.avg+" j"+(x.crit?" · "+x.crit+" > 30 j":""):"aucun retard"}</div>
+                {x.worst.length>0&&<div style={{fontSize:11.5,color:T.red600,fontFamily:T.fontMono,marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{x.worst.join(" · ")}</div>}
+              </div>)}
+            </div>
+          </div>
+          <KpiRow items={[[totalDelayDays+"j","Retard cumulé généré ("+STEP_LABELS[kpiStep]+")",T.red500],[totalGainDays+"j","Avance cumulée gagnée",T.emerald500],[reliabilityRate==null?"—":reliabilityRate+"%","PJ exactement à la date promise (écart 0)",T.teal500],[dureeCompare.ecart==null?"—":(dureeCompare.ecart>0?"+":"")+dureeCompare.ecart+"j","Écart durée moy. production",dureeCompare.ecart>0?T.red500:T.emerald500]]} min={170}/>
 
           {promiseVsReality.length>0&&<div style={{background:T.surface,borderRadius:12,padding:12,marginBottom:14}}>
             <div style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,marginBottom:8}}>{STEP_LABELS[kpiStep]} promis (initial) vs maintenus dans le mois (révisé)</div>
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer width="100%" height={170}>
               <LineChart data={promiseVsReality}>
                 <CartesianGrid vertical={false} stroke={T.line} strokeOpacity={0.7}/>
                 <XAxis dataKey="mois" tick={{fontSize:FZ.xs,fill:T.ink700,fontWeight:600}}/>
@@ -579,11 +608,11 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
             </ResponsiveContainer>
           </div>}
 
-          {pjCompareChart.length>0&&<div style={{background:T.surface,borderRadius:12,padding:16,marginBottom:14}}>
+          {pjCompareChart.length>0&&<div style={{background:T.surface,borderRadius:12,padding:12,marginBottom:12,maxHeight:460,overflowY:"auto"}}>
             <div style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,marginBottom:4}}>Date de {STEP_LABELS[kpiStep].toLowerCase()} par PJ — Initial vs Révisé</div>
             <div style={{fontSize:FZ.xs,color:T.ink300,marginBottom:12}}>Chaque ligne relie la date promise à la date réelle — la longueur et la couleur indiquent l'ampleur du glissement</div>
             {(()=>{
-              const rowHd=34,labelW=78,leftPad=20,rightPad=20,topPad=28,bottomPad=4;
+              const rowHd=20,labelW=78,leftPad=20,rightPad=20,topPad=24,bottomPad=4; // v275 : 34 → 20 px par PJ (cadran trop haut)
               const minD=Math.min(...pjCompareChart.map(p=>Math.min(p.initial,p.revise)));
               const maxD=Math.max(...pjCompareChart.map(p=>Math.max(p.initial,p.revise)));
               const pad=Math.max((maxD-minD)*0.08,3);
@@ -619,11 +648,11 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
                     const dIni=new Date(yearStart);dIni.setDate(dIni.getDate()+p.initial);
                     const dRev=new Date(yearStart);dRev.setDate(dRev.getDate()+p.revise);
                     return(<g key={p.pj}>
-                      <text x={6} y={y+4} fontSize={13} fontWeight={700} fill={T.teal600}>{p.pj}</text>
+                      <text x={6} y={y+4} fontSize={11} fontWeight={700} fill={T.teal600}>{p.pj}</text>
                       <line x1={Math.min(x1,x2)} x2={Math.max(x1,x2)} y1={y} y2={y} stroke={dotColor} strokeWidth={2.5} strokeOpacity={0.35}/>
-                      <circle cx={x1} cy={y} r={5} fill={T.card} stroke={T.ink300} strokeWidth={2}/>
-                      <circle cx={x2} cy={y} r={6} fill={dotColor}/>
-                      <text x={x2} y={y-11} fontSize={11} fontWeight={700} fill={dotColor} textAnchor="middle">{p.delta===0?"=":(p.delta>0?"+":"")+p.delta+"j"}</text>
+                      <circle cx={x1} cy={y} r={4} fill={T.card} stroke={T.ink300} strokeWidth={2}/>
+                      <circle cx={x2} cy={y} r={4.5} fill={dotColor}/>
+                      <text x={x2+8} y={y+4} fontSize={10} fontWeight={700} fill={dotColor} textAnchor="start">{p.delta===0?"=":(p.delta>0?"+":"")+p.delta+"j"}</text>
                     </g>);
                   })}
                 </svg>
@@ -639,7 +668,8 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,380px),1fr))",gap:12,marginBottom:14}}>
             {driftBuckets.length>0&&<div style={{background:T.surface,borderRadius:12,padding:12}}>
               <div style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,marginBottom:8}}>Répartition par sévérité du retard</div>
-              <PieBlock data={driftBuckets.filter(d=>d.n>0).map(d=>({name:d.label,value:d.n,color:d.c}))} unit=" PJ" size={140}/>
+              <PieBlock data={driftBuckets.filter(d=>d.n>0).map(d=>({name:d.label,value:d.n,color:d.c}))} unit=" PJ" size={120}/>
+              <div style={{fontSize:12,color:T.ink500,marginTop:4}}>{STEP_LABELS[kpiStep]} · {codirScope==="all"?"toutes les machines":codirScope==="shipped"?"machines expédiées":"machines en cours"} ({stepDeltas.length})</div>
             </div>}
 
             {trajectory.some(t=>t.moyenne!=null)&&<div style={{background:T.surface,borderRadius:12,padding:12}}>
@@ -665,6 +695,25 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
                 <div><div style={{fontFamily:T.fontDisplay,fontSize:FZ.xl,fontWeight:700,color:dureeCompare.ecart>0?T.red500:T.emerald500}}>{dureeCompare.avgRev}j</div><div style={{fontSize:FZ.xs,color:T.ink300}}>Révisé</div></div>
               </div>
             </div>}
+          </div>
+        </div>
+
+        <div style={{background:T.card,borderRadius:16,padding:"14px 16px",border:"1px solid "+T.line}}>
+          <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap",marginBottom:8}}><b style={{fontSize:FZ.md,color:T.ink900}}>Jalons par mois</b><span style={{fontSize:12,color:T.ink500}}>12 mois (5 passés, le mois en cours, 6 à venir) · gris : planning initial · couleur : planning actuel</span></div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,300px),1fr))",gap:12}}>
+            {monthsBy.map(g=><div key={g.k} style={{background:T.surface,borderRadius:10,padding:"8px 10px"}}>
+              <div style={{fontSize:12.5,fontWeight:700,color:T.ink900,marginBottom:2}}>{g.k==="arrivee"?"Arrivées":g.k==="tests"?"Débuts de tests":g.k==="finProd"?"Fins de production":"Départs"} par mois <span style={{fontWeight:400,color:T.ink500}}>· {g.data.reduce((a,b)=>a+b.revise,0)} au total</span></div>
+              <ResponsiveContainer width="100%" height={130}>
+                <BarChart data={g.data} barGap={1} margin={{top:6,right:4,left:-26,bottom:0}}>
+                  <CartesianGrid vertical={false} stroke={T.line} strokeOpacity={0.7}/>
+                  <XAxis dataKey="mois" tick={{fontSize:10,fill:T.ink500}} interval={0} tickLine={false}/>
+                  <YAxis allowDecimals={false} tick={{fontSize:10,fill:T.ink500}} tickLine={false} axisLine={false}/>
+                  <Tooltip contentStyle={{fontFamily:T.font,fontSize:12,borderRadius:8}} formatter={(v,n)=>[v,n==="initial"?"Planning initial":"Planning actuel"]}/>
+                  <Bar dataKey="initial" fill={T.ink300} radius={[2,2,0,0]}/>
+                  <Bar dataKey="revise" radius={[2,2,0,0]}>{g.data.map((d,i)=><Cell key={i} fill={d.now?T.amber500:(g.k==="depart"?stageSoft().depart.solid:g.k==="arrivee"?stageSoft().arrivee.solid:g.k==="tests"?stageSoft().tests.solid:stageSoft().finProd.solid)}/>)}</Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>)}
           </div>
         </div>
 

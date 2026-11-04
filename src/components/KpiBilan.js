@@ -4,7 +4,8 @@
 // drapeau, client, date, écart à l'initial ; et une note libre « Faits marquants » / « Objectifs » (planning/profiles.monthNotes[mois],
 // propriétaire). Les données viennent du planning publié : rien à saisir pour les listes.
 import React, { useMemo, useState } from "react";
-import { T } from "../theme";
+import { T, stageSoft } from "../theme";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LabelList } from "recharts";
 import { getPjMeta, CountryFlag } from "../pjMeta";
 import { monthReview, monthKey, addMonths, monthLabel } from "../monthReview";
 
@@ -27,8 +28,24 @@ export function KpiBilan({ rows, initialByPJ, profiles, saveProfiles, onOpenPj, 
   const notes = (profiles && profiles.monthNotes) || {};
   const saveNote = saveProfiles ? (k, text) => saveProfiles({ ...(profiles || {}), monthNotes: { ...notes, [k]: { text, at: new Date().toISOString() } } }) : null;
   const tone = c => ({ emerald: [T.emerald600, T.emerald100], red: [T.red600, T.red100], ink: [T.ink700, T.surface] }[c]);
+  // v275 (demandé : « un graphique pour dire combien de départs, de tests terminés et d’arrivées ») : une barre par type et par mois
+  const chart = data.map((m, i) => { const c = k => (m.groups.find(g => g.k === k) || { items: [] }).items.length; return { mois: monthLabel(m.key).split(" ")[0] + (i === 2 ? " (en cours)" : ""), "Départs": c("depart"), "Tests terminés": c("testsFin"), "Arrivées": c("arrivee") }; });
+  const S = stageSoft();
   return (<div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
     <div style={{ fontSize: 13, color: T.ink500, maxWidth: 900 }}>Jalons du planning publié, mois par mois : ce qui a été fait les deux derniers mois, ce qui est prévu ce mois-ci et le suivant. « En retard » = date passée sans que l'état de la machine ait suivi. La note de chaque mois est libre (faits marquants, objectifs).</div>
+    <section aria-label="Départs, tests terminés et arrivées par mois" style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "10px 14px", maxWidth: 980 }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}><b style={{ fontSize: 14, color: T.ink900 }}>Départs, tests terminés et arrivées</b><span style={{ fontSize: 12, color: T.ink500 }}>deux mois passés : réalisé · mois en cours et suivant : prévu au planning</span></div>
+      <ResponsiveContainer width="100%" height={190}>
+        <BarChart data={chart} barGap={3} margin={{ top: 16, right: 8, left: -22, bottom: 0 }}>
+          <CartesianGrid vertical={false} stroke={T.line} strokeOpacity={0.7} />
+          <XAxis dataKey="mois" tick={{ fontSize: 12, fill: T.ink700 }} tickLine={false} />
+          <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: T.ink500 }} tickLine={false} axisLine={false} />
+          <Tooltip contentStyle={{ fontFamily: T.font, fontSize: 12, borderRadius: 8 }} />
+          <Legend wrapperStyle={{ fontSize: 12 }} />
+          {[["Départs", S.depart.solid], ["Tests terminés", S.tests.solid], ["Arrivées", S.arrivee.solid]].map(([k, c]) => <Bar key={k} dataKey={k} fill={c} radius={[2, 2, 0, 0]}><LabelList dataKey={k} position="top" style={{ fontSize: 11, fill: T.ink700 }} /></Bar>)}
+        </BarChart>
+      </ResponsiveContainer>
+    </section>
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 12, alignItems: "start" }}>
       {data.map((m, i) => { const past = i < 2, now = i === 2;
         return <section key={m.key} aria-label={monthLabel(m.key)} style={{ background: T.card, border: "1px solid " + (now ? T.ink900 : T.line), borderRadius: 12, padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10, minWidth: 0 }}>

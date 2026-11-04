@@ -1100,28 +1100,24 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
 </Col>
         </Cols>
         </Frame>
-        <Frame id="planning" title="Planning" sub="Jalons, contrat, dernière mise à jour">
-        <Cols>
-<Col>
-        {/* ── Jalons ── */}
-        <Section title="Jalons" right={<span style={{fontSize:FZ.xs,color:T.ink500,whiteSpace:"nowrap"}}>en grand : date actuelle · barrée : date initiale · écart</span>}>
-          <Timeline r={r} ini={ini} kind={kind}/>
-        </Section>
-
-</Col>
-<Col>
-        {/* ── Contrat & roadmap (T0 / Tfin) ── */}
-        {savePjMetaOverride?<ContratSection r={r} meta={meta} onSave={f=>savePjMetaOverride(r.pj,f)} onNote={saveNote}/>:null}
-</Col>
-<Col>
-        {/* ── Depuis la dernière mise à jour ── */}
-        <LastChange entry={lastChange} pj={r.pj}/>
-
-</Col>
-        </Cols>
-        {/* v265 : dates de fin et de livraison sur toute la largeur : contrat / initial / prévision / écart */}
+        {/* v275 (demandé : « trop de zones sans information ; pour Planning, la frise à droite ») : à gauche le contrat, à droite la frise
+            des jalons et la dernière mise à jour ; dessous, sur toute la largeur, les dates de fin et de livraison */}
+        <Frame id="planning" title="Planning" sub="Contrat, dates de fin et de livraison, jalons">
+        <div className="enogia-fiche-split" style={{display:"grid",gridTemplateColumns:"minmax(0,1.3fr) minmax(300px,1fr)",gap:16,alignItems:"start"}}>
+          <div style={{minWidth:0}}>
+            {savePjMetaOverride?<ContratSection r={r} meta={meta} onSave={f=>savePjMetaOverride(r.pj,f)} onNote={saveNote}/>:null}
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:12,minWidth:0}}>
+            <Section title="Jalons" right={<span style={{fontSize:FZ.xs,color:T.ink500,whiteSpace:"nowrap"}}>date actuelle · barrée : initiale</span>}>
+              <Timeline r={r} ini={ini} kind={kind}/>
+            </Section>
+            <LastChange entry={lastChange} pj={r.pj}/>
+          </div>
+        </div>
         {savePjMetaOverride&&<Section title="Dates de fin et de livraison" right={<span style={{fontSize:FZ.xs,color:T.ink500}}>contractuelle · prévisionnelle · effectuée</span>}><DatesTable r={r} meta={meta} onSave={f=>savePjMetaOverride(r.pj,f)}/></Section>}
         </Frame>
+        {/* v275 (demandé : « remonter des gros blocs à côté, finance et machine par exemple ») : Machine et Finance côte à côte */}
+        <div className="enogia-fiche-split" style={{display:"grid",gridTemplateColumns:savePjMetaOverride?"minmax(280px,1fr) minmax(0,2.2fr)":"1fr",gap:D.mode==="compact"?8:12,alignItems:"start"}}>
         {/* v272 (audit apple-design « turbine rangée au mauvais endroit ») : zone Machine = S/N, certification, présence aux tests, turbine */}
         <Frame id="machine" title="Machine" sub="Numéro de série, certification, tests, turbine">
           <div style={{display:"flex",alignItems:"center",gap:14,flexWrap:"wrap",fontSize:FZ.xs,color:T.ink500}}>
@@ -1133,7 +1129,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
         </Frame>
         {/* ── Finance : prix de la fiche, pénalités, composants et paiements ── */}
         {savePjMetaOverride&&<Frame id="finance" title="Finance" sub="Prix de la fiche, pénalités, composants et paiements">
-        <Cols>
+        <Cols min={270}>
 <Col>
         {savePjMetaMulti?<FicheContratPanel key={"p"+r.pj} part="contrat" r={r} meta={meta} rows={data} getMeta={getPjMeta} today={today} save={f=>savePjMetaOverride(r.pj,f)} saveMulti={savePjMetaMulti}/>:null}
 </Col>
@@ -1149,6 +1145,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
 </Col>
         </Cols>
         </Frame>}
+        </div>
         {savePjMetaOverride&&<Frame id="suivi" title="Suivi" sub="Actions, mitigation, retards et commentaires">
         <Cols>
 <Col>
