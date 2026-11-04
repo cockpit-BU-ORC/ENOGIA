@@ -80,7 +80,7 @@ Tableau de bord interne (React 18 + Create React App 5 + Firebase/Firestore) qui
 - Liseré coloré de 4 px sur le haut des cartes (`stripeBg`), couleur d'état aussi sur le texte (`etatInk`), en-tête de page commun (`PageHead`), bulles d'info au survol (`HoverPop`), menu latéral avec repère sur la page active.
 - Les couleurs viennent des jetons (`T`, `stageSoft()`, `ETAT_META`) : pas de couleur codée en dur dans un composant.
 - Avant un gros changement visuel : proposer une maquette et attendre le « go » de Gabriel.
-- Skills de design à utiliser pour toute interface : `ui-ux-pro-max` (check-list : accessibilité, contraste, tableaux, graphiques), `frontend-design` (direction visuelle et maquettes contrastées) et `taste-skill` (garde-fou anti-rendu générique, pas direction principale). Les autres skills installés (`hallmark`, `ck:frontend-design`) seulement sur demande. Les choix ci-dessus et les demandes explicites de Gabriel priment sur leurs règles.
+- Skills de design à utiliser pour toute interface : `ui-ux-pro-max` (check-list : accessibilité, contraste, tableaux, graphiques), `frontend-design` (direction visuelle et maquettes contrastées) et `taste-skill` (garde-fou anti-rendu générique, pas direction principale). Les autres skills installés (`hallmark`, `ck:frontend-design`, `apple-design` — mouvements, gestes, ressorts, matières, typographie ; installé en V262) seulement sur demande. Les choix ci-dessus et les demandes explicites de Gabriel priment sur leurs règles.
 - Accessibilité : `src/a11yFallback.js` complète les étiquettes manquantes, mais on étiquette à la source dans les nouveaux composants (aria-label, `label`, cibles ≥ 24 px).
 
 ## Données et rôles
