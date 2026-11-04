@@ -4,6 +4,7 @@ import { SerieTag } from "../pjMeta";
 import { STEP_KEYS, STEP_LABEL, STEP_IS_MS, STEP_KIND, stepKeysOf, stepLabel, isCustomKey, addCustomStep, addLink, removeLink, updateLink, nodeKey, splitKey, dayNum, isoOfDay, setStep, setWork, stepWork, shiftPj, moveStepTo, startAtKeepLinks, removeStep, removePj, allLinks, orderOf, rulesOf, schedule as scheduleOf, moveStepOrder, setStepMeta, benchOf, PHASE_LABEL, PHASES, setBench, setPrio, setArchived } from "./engine";
 import { numberRows, predText, applyPredText } from "./predecessors";
 import { Pop, MenuItem } from "./PlannerMenu";
+import { usePointerDnD } from "../pointerDrag";
 
 export const fmtIso = iso => iso ? iso.slice(8, 10) + "/" + iso.slice(5, 7) + "/" + iso.slice(2, 4) : "—";
 export const STEP_COLOR_BASE = { arrivee: "#7A5A1C", production: "#17734F", tests: "#5A44A6", finProd: "#A4570B", depart: "#A8332F" };
@@ -112,7 +113,7 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
   const cbRef = useRef({}); cbRef.current = { onInfo, onError };
   const { lo, px, W, X } = tl; const cols = colsWith(view, listW); const LEFT_W = cols.reduce((a, c) => a + c[1], 0);
   // v211 : lien en deux clics (« Lier » sur une tâche, puis clic sur la tâche qui suit) — plus fiable que le glisser
-  const [linkFrom, setLinkFrom] = useState(null); const [dragStep, setDragStep] = useState(null); const [linkDlg, setLinkDlg] = useState(null);
+  const [linkFrom, setLinkFrom] = useState(null); const [linkDlg, setLinkDlg] = useState(null);
   useEffect(() => { if (!linkFrom) return undefined; const k = e => { if (e.key === "Escape") setLinkFrom(null); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [linkFrom]);
   const labOf = key => { const sp = splitKey(key), pp = plan.pjs.find(x => x.pj === sp.pj); return sp.pj + " · " + (pp ? stepLabel(pp, sp.step) : sp.step); };
   const pick = (pj, step) => {
@@ -255,7 +256,8 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
   const editWork = (p, k, v) => { const h = Number(String(v).replace(",", ".")); if (!(h >= 0)) { onError("Saisissez un nombre d'heures."); return; } go(setWork(base, p.pj, k, h), { pj: p.pj, key: null, want: null }); };
   const editPred = (p, k, v) => { const r = applyPredText(base, nodeKey(p.pj, k), v, cal); if (r.error) { onError(r.error); return; } go(r.plan, { pj: p.pj, key: null, want: null }); };
 
-  const [dropOn, setDropOn] = useState(null); const [dragPj, setDragPj] = useState(null);
+  // v263 (audit apple-design) : glisser maison pour la priorité et l'ordre des tâches ; la ligne entière suit la souris
+  const dnd = usePointerDnD(), dropOn = dnd.over, dragPj = dnd.drag && dnd.drag.t === "pj" ? dnd.drag.pj : null, dragStep = dnd.drag && dnd.drag.t === "step" ? dnd.drag : null;
 
   const cell = (key, w, content, extra) => <div key={key} style={{ width: w, flex: "none", height: ROW_H, display: "flex", alignItems: "center", padding: "0 4px", boxSizing: "border-box", overflow: "hidden", ...extra }}>{content}</div>;
 
@@ -268,12 +270,12 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
       const ns = stepKeysOf(p).map(k => sched.nodes[nodeKey(p.pj, k)]).filter(n => n && n.s !== null);
       const a = ns.length ? Math.min(...ns.map(n => dayNum(n.start))) : null, b = ns.length ? Math.max(...ns.map(n => dayNum(n.finish))) : null;
       const missing = STEP_KEYS.filter(k => !p.steps[k]); const idx = plan.pjs.indexOf(p);
-      return (<div key={"p" + p.pj} className="pg-row" onClick={() => setSel({ pj: p.pj, step: null })} onDragOver={e => { if (dragPj) { e.preventDefault(); setDropOn(p.pj); } }} onDrop={e => { e.preventDefault(); if (dragPj && dragPj !== p.pj) onReorder(dragPj, p.pj); setDragPj(null); setDropOn(null); }}
+      return (<div key={"p" + p.pj} className="pg-row" onClick={() => setSel({ pj: p.pj, step: null })} {...dnd.dropProps(p.pj, d => d.t === "pj" && d.pj !== p.pj, d => onReorder(d.pj, p.pj))}
         style={{ display: "flex", height: ROW_H, background: on ? T.teal100 : T.surface, borderBottom: "1px solid " + T.line, boxShadow: dropOn === p.pj && dragPj !== p.pj ? "inset 0 2px 0 " + T.teal500 : "none", fontWeight: 700 }}>
         {cols.map(([c, w]) => {
           if (c === "id") return cell(c, w, <span style={{ fontSize: 11, color: T.ink300, fontFamily: T.fontMono, width: "100%", textAlign: "center" }}>{nums.pjId[p.pj]}</span>);
           if (c === "name") return cell(c, w, <>
-            {!readOnly && <span draggable aria-label={"Déplacer " + p.pj + " pour changer sa priorité"} title="Glisser pour changer la priorité" onDragStart={e => { setDragPj(p.pj); try { e.dataTransfer.setData("text/plain", p.pj); e.dataTransfer.effectAllowed = "move"; } catch (x) { /* ignore */ } }} onDragEnd={() => { setDragPj(null); setDropOn(null); }} style={{ cursor: "grab", color: T.ink300, padding: "0 4px", fontSize: 13, letterSpacing: -2 }}>⋮⋮</span>}
+            {!readOnly && <span role="button" tabIndex={0} {...dnd.dragProps({ t: "pj", pj: p.pj }, { ghost: el => el.closest(".pg-row") })} onClick={e => e.stopPropagation()} onKeyDown={e => { if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return; const q = plan.pjs[idx + (e.key === "ArrowDown" ? 1 : -1)]; if (q) { e.preventDefault(); onReorder(p.pj, q.pj); } }} aria-label={"Déplacer " + p.pj + " pour changer sa priorité (flèches haut / bas)"} title="Glisser pour changer la priorité (ou flèches haut / bas)" style={{ cursor: "grab", color: T.ink300, padding: "0 4px", fontSize: 13, letterSpacing: -2 }}>⋮⋮</span>}
             {/* v230 (demandé : « la priorité à gauche, et masquable comme le S/N ») */}
             {showPrio && <span onClick={e => e.stopPropagation()} style={{ display: "inline-flex", width: 34, flex: "none" }}><EditCell disabled={readOnly} type="number" align="center" value={p.prio != null ? p.prio : ""} onCommit={v => go(setPrio(base, p.pj, v), { pj: p.pj, key: null, want: null })} display={p.prio != null ? "P" + p.prio : "P–"} title={"Priorité des tâches de " + p.pj + " : plus le numéro est grand, plus elles passent en premier (vide = sans priorité)"} style={{ fontSize: 10.5, fontWeight: 700, color: p.prio != null ? T.teal600 : T.ink300, width: "100%" }} /></span>}
             <button aria-label={open ? "Replier " + p.pj : "Déplier " + p.pj} aria-expanded={open} onClick={e => { e.stopPropagation(); toggleExp(p.pj); }} className="pg-btn" style={{ width: 20, border: 0, background: "none", color: T.ink500, fontSize: 11, cursor: "pointer", padding: 0 }}>{open ? "▾" : "▸"}</button>
@@ -302,12 +304,12 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
     const rank = k === "production" ? posOf["prod:" + p.pj] : k === "tests" ? posOf["banc:" + p.pj] : null;
     const pinned = n && n.driver === "snet";
     const work = stepWork(p, k);
-    return (<div key={key} data-key={key} className="pg-row" onClick={() => pick(p.pj, k)} onDragOver={e => { if (dragStep && dragStep.pj === p.pj) { e.preventDefault(); setDropOn(key); } }} onDrop={e => { if (!dragStep || dragStep.pj !== p.pj) return; e.preventDefault(); go(moveStepOrder(base, p.pj, dragStep.k, k), { pj: p.pj, key: null, want: null }); setDragStep(null); setDropOn(null); }}
+    return (<div key={key} data-key={key} className="pg-row" onClick={() => pick(p.pj, k)} {...dnd.dropProps(key, d => d.t === "step" && d.pj === p.pj && d.k !== k, d => go(moveStepOrder(base, p.pj, d.k, k), { pj: p.pj, key: null, want: null }))}
       style={{ boxShadow: dropOn === key && dragStep && dragStep.k !== k ? "inset 0 2px 0 " + T.teal500 : linkFrom === key ? "inset 0 0 0 2px " + T.teal500 : "none", cursor: linkFrom ? "crosshair" : undefined, display: "flex", height: ROW_H, background: on ? T.teal100 : T.card, borderBottom: "1px solid " + T.line, fontSize: 12.5 }}>
       {cols.map(([c, w]) => {
         if (c === "id") return cell(c, w, <span style={{ fontSize: 11, color: T.ink300, fontFamily: T.fontMono, width: "100%", textAlign: "center" }}>{nums.idOf[key]}</span>);
         if (c === "name") return cell(c, w, <>
-          {!readOnly ? <span draggable aria-label={"Déplacer la tâche " + stepLabel(p, k) + " dans la liste"} title="Glisser pour changer l'ordre des tâches" onClick={e => e.stopPropagation()} onDragStart={e => { setDragStep({ pj: p.pj, k }); try { e.dataTransfer.setData("text/plain", key); e.dataTransfer.effectAllowed = "move"; } catch (x) { /* ignore */ } }} onDragEnd={() => { setDragStep(null); setDropOn(null); }} style={{ width: 12, flex: "none", cursor: "grab", color: T.ink300, fontSize: 12, marginLeft: 14 }}>⋮⋮</span> : <span style={{ width: 12, flex: "none" }} />}
+          {!readOnly ? <span role="button" tabIndex={0} {...dnd.dragProps({ t: "step", pj: p.pj, k }, { ghost: el => el.closest(".pg-row") })} onClick={e => e.stopPropagation()} onKeyDown={e => { if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return; const ks = stepKeysOf(p), j = ks.indexOf(k) + (e.key === "ArrowDown" ? 1 : -1); if (ks[j]) { e.preventDefault(); go(moveStepOrder(base, p.pj, k, ks[j]), { pj: p.pj, key: null, want: null }); } }} aria-label={"Déplacer la tâche " + stepLabel(p, k) + " dans la liste (flèches haut / bas)"} title="Glisser pour changer l'ordre des tâches (ou flèches haut / bas)" style={{ width: 12, flex: "none", cursor: "grab", color: T.ink300, fontSize: 12, marginLeft: 14 }}>⋮⋮</span> : <span style={{ width: 12, flex: "none" }} />}
           <span style={{ width: 9, height: 9, borderRadius: ms ? 2 : 3, transform: ms ? "rotate(45deg)" : "none", background: STEP_COLOR[k], flexShrink: 0, margin: "0 6px 0 8px" }} />
           {isCustomKey(k)
             ? <EditCell autoEdit={newKey === key} disabled={readOnly} value={stepLabel(p, k)} onCommit={v => { if (v.trim()) go(setStep(base, p.pj, k, { name: v.trim() }), { pj: p.pj, key: null, want: null }); }} display={stepLabel(p, k)} title="Cliquez pour renommer cette tâche" style={{ color: T.ink900, fontWeight: 600, width: "auto", maxWidth: 190 }} />

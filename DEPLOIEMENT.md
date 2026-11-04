@@ -1834,3 +1834,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Production turbines et Achats / Appro : un seul titre (l'en-tête du site n'est plus ajouté au-dessus de celui de la page).
 - Clé `localStorage` : `enogia_achats_tab` (sous-page ouverte).
 - Fichiers : components/Achats.js (nouveau), useAppData.js, appDocs.js, App.js, firestore.rules, achats.test.js (nouveau), scripts/achats-kit.js, achats-import.js, achats-consignes.md, achats-marche-a-suivre.md (nouveaux), scripts/prodturb-kit.js (en-tête commun SHARED, kit de Jérémie inchangé), package.json, .gitignore, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v263 — Audit apple-design : glisser-déposer, menus, accessibilité
+
+- Demandé : « toutes » (les 8 retouches de l'audit apple-design).
+- Glisser-déposer maison (`src/pointerDrag.js`) dans Tests › Par testeur, le tableau des turbines et le Gantt du planificateur : l'élément suit la souris, la cible s'allume, retour au départ si refusé, Échap annule ; flèches haut / bas au clavier dans Par testeur et le Gantt.
+- Planificateur : barre des Couloirs qui suit la souris en continu puis se pose sur son jour ; frise des bancs qui atterrit depuis l'endroit du lâcher.
+- Menus ancrés sur le bouton cliqué (motion.js) ; « Réduire la transparence » et « Contraste élevé » du système respectés ; pastille « Non commandée » : 3 pulsations puis fixe ; doublons CSS des boutons retirés ; petits textes très légèrement espacés.
+- Pas de nouvelle clé `localStorage`, pas de nouveau document Firestore.
+- Fichiers : pointerDrag.js (nouveau), components/TestsTab.js, components/TurbineBoard.js, planner/PlannerGantt.js, planner/PlannerLanes.js, planner/Planner.js, motion.js, theme.js, styles.css, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

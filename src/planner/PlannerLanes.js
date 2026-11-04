@@ -116,15 +116,22 @@ export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load,
   // ── glisser-déposer ──
   const [edit, setEdit] = useState(null); const dragged = useRef(0); // v254 : fenêtre d'édition ; dragged = un glisser vient de finir (le clic qui suit ne l'ouvre pas)
   const drag = useRef(null); const tipRef = useRef(null); const [dragKey, setDragKey] = useState(null); const [tip, setTip] = useState("");
+  // au lâcher, la barre glisse de la souris jusqu'à son jour (150 ms, sans rebond)
+  const settle = key => requestAnimationFrame(() => { const el = document.querySelector('[data-lane-key="' + (window.CSS && CSS.escape ? CSS.escape(key) : key) + '"]'); if (!el || !el.style.transform) return; el.style.transition = "transform 150ms cubic-bezier(.2,.8,.2,1)"; el.style.transform = ""; setTimeout(() => { el.style.transition = ""; }, 170); });
   const startDrag = (e, d) => {
     if (readOnly || (e.button !== undefined && e.button !== 0)) return;
-    e.stopPropagation(); e.preventDefault(); drag.current = { ...d, x0: e.clientX, dd: 0, base }; setDragKey(d.key + (d.kind === "resize" ? "|r" : ""));
+    e.stopPropagation(); e.preventDefault();
+    // v263 (audit apple-design) : position de départ de la barre, pour qu'elle suive la souris au pixel près entre deux jours
+    const bar = e.currentTarget.closest ? e.currentTarget.closest("[data-lane-key]") : null;
+    drag.current = { ...d, x0: e.clientX, dd: 0, base, left0: bar ? parseFloat(bar.style.left) : null }; setDragKey(d.key + (d.kind === "resize" ? "|r" : ""));
   };
   useEffect(() => {
     if (!dragKey) return;
     const move = e => {
       const d = drag.current; if (!d) return;
       if (tipRef.current) { tipRef.current.style.left = (e.clientX + 14) + "px"; tipRef.current.style.top = (e.clientY + 16) + "px"; }
+      // la barre colle à la souris (écart restant jusqu'à la souris, mesuré après le recalcul du plan)
+      if (d.kind === "move" && d.left0 != null) { const cx = e.clientX; requestAnimationFrame(() => { const el = document.querySelector('[data-lane-key="' + (window.CSS && CSS.escape ? CSS.escape(d.key) : d.key) + '"]'); if (el && drag.current === d) { el.style.transition = "none"; el.style.transform = "translateX(" + (d.left0 + (cx - d.x0) - parseFloat(el.style.left)) + "px)"; } }); }
       const dd = Math.round((e.clientX - d.x0) / px); if (dd === d.dd) return; d.dd = dd;
       if (dd === 0) { d.cand = null; setTip(""); onPreview(null); return; }
       const ns = isoOfDay(dayNum(d.node.start) + dd);
@@ -133,10 +140,11 @@ export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load,
     };
     const up = () => {
       const d = drag.current; drag.current = null; setDragKey(null); setTip(""); if (!d) return;
+      settle(d.key);
       if (d.dd) dragged.current = Date.now();
       if (d.dd && d.cand) { const want = d.kind === "move" ? cal.dateOf(cal.idxOnOrAfter(isoOfDay(dayNum(d.node.start) + d.dd))) : null; onCommit(d.cand, { pj: d.pj, key: want ? d.key : null, want }); } else onPreview(null);
     };
-    const esc = e => { if (e.key === "Escape") { drag.current = null; setDragKey(null); setTip(""); onPreview(null); } };
+    const esc = e => { if (e.key === "Escape") { const d = drag.current; drag.current = null; setDragKey(null); setTip(""); onPreview(null); if (d) settle(d.key); } };
     window.addEventListener("pointermove", move); window.addEventListener("pointerup", up); window.addEventListener("keydown", esc);
     return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); window.removeEventListener("keydown", esc); };
   }, [dragKey, px, cal, onPreview, onCommit]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -223,7 +231,7 @@ export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load,
               const on = sel && sel.pj === it.pj && (!sel.step || sel.step === l.step); const dim = selPj && selPj !== it.pj; const ch = changed.has(it.key);
               const col = STEP_COLOR[l.step]; const n = it.n; const pinned = n.driver === "snet" && !l.ms;
               const rank = l.res && rules[l.res] ? ranks[l.res].indexOf(it.pj) + 1 : 0;
-              const common = { tabIndex: 0, role: "button", "aria-label": aria(it, l), "aria-pressed": !!on, onKeyDown: e => onKey(e, it, l.step, !!l.ms), title: it.pj + (names[it.pj] ? " · " + names[it.pj] : "") + "\n" + STEP_LABEL[l.step] + " : " + fmtIso(n.start) + (l.ms ? "" : " → " + fmtIso(n.finish) + " (" + n.dur + " j)") + "\n" + startReason(base, n) + (readOnly ? "" : "\nClic : modifier · glisser : déplacer") };
+              const common = { "data-lane-key": it.key, tabIndex: 0, role: "button", "aria-label": aria(it, l), "aria-pressed": !!on, onKeyDown: e => onKey(e, it, l.step, !!l.ms), title: it.pj + (names[it.pj] ? " · " + names[it.pj] : "") + "\n" + STEP_LABEL[l.step] + " : " + fmtIso(n.start) + (l.ms ? "" : " → " + fmtIso(n.finish) + " (" + n.dur + " j)") + "\n" + startReason(base, n) + (readOnly ? "" : "\nClic : modifier · glisser : déplacer") };
               if (l.ms) {
                 const y = it.y; return (<div key={it.key} {...common} onPointerDown={e => startDrag(e, { kind: "move", pj: it.pj, step: l.step, key: it.key, node: n })} onClick={() => { setSel({ pj: it.pj, step: l.step }); if (!readOnly && Date.now() - dragged.current > 300) setEdit({ it, step: l.step }); }}
                   style={{ position: "absolute", left: it.cx - 6, top: y, height: BH, display: "flex", alignItems: "center", gap: 6, opacity: dim ? 0.3 : 1, cursor: readOnly ? "default" : "grab", zIndex: on ? 5 : 2, whiteSpace: "nowrap" }}>

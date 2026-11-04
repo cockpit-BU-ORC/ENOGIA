@@ -12,6 +12,7 @@ import { CertifChip } from "./FicheContrat";
 import { NavIcon, PjPlate, pressable } from "./SharedUI";
 import { SECTIONS, DEFAULT_TEST_CATALOG, catalogOf, testersOf, planOf, activeSections, selectedIds, toggleTest, setExtra, setNote, assignTester, unassignTester, setAssignDates, effRange, findConflicts, assignmentsOf, dropTester, dropTestFromPlans, newId, packLanes, addDaysIso, mondayOf, testerOfEmail, doneIds, progressOf, TEST_STATUS, statusOf, statusByOf, setStatus, isForced, setForced } from "../testPlan";
 import { buildIcs, downloadIcs } from "../ics";
+import { usePointerDnD } from "../pointerDrag";
 import { nameFromEmail } from "../mentions";
 import { gcalUrl } from "../gcal";
 import { openTestReport } from "../testReport";
@@ -669,7 +670,8 @@ function testerIcs(doc, t, rows) {
 }
 export function TesterTimeline({ doc, rows, testers, catalog, conflicts, commit, canEdit, myTester, openPj, who }) {
   const ctx = useMentions();
-  const [offset, setOffset] = useState(0), [edit, setEdit] = useState(null), [del, setDel] = useState(null), [newName, setNewName] = useState(""), [over, setOver] = useState(null);
+  const [offset, setOffset] = useState(0), [edit, setEdit] = useState(null), [del, setDel] = useState(null), [newName, setNewName] = useState("");
+  const dnd = usePointerDnD(), over = dnd.over; // v263 : glisser maison (la barre suit la souris)
   const todayIso = toLocalISO(new Date());
   const start = addDaysIso(mondayOf(todayIso), offset * 7);
   const days = []; for (let i = 0; days.length < CAL_DAYS; i++) { const d = addDaysIso(start, i); const wd = (new Date(d + "T12:00:00").getDay() + 6) % 7; if (wd < 5) days.push(d); }
@@ -684,21 +686,20 @@ export function TesterTimeline({ doc, rows, testers, catalog, conflicts, commit,
   const addTester = async () => { const n = newName.trim(); if (!n || testers.some(t => t.name.toLowerCase() === n.toLowerCase())) return; const acct = ctx.options.find(o => o.name.toLowerCase() === n.toLowerCase()); const ok = await commit({ testers: [...testers, { id: newId("t"), name: n, email: acct ? acct.email : "" }] }); if (ok !== false) setNewName(""); };
   const upd = (id, patch) => commit({ testers: testers.map(t => t.id === id ? { ...t, ...patch } : t) });
   const toneOf = pj => { const r = byPj[pj] || {}, k = presenceKind(r.clientPresence || null), ms = machineState(r, doc, catalog, todayIso); return { ...toneOfSt(ms ? ms.st : "next"), k }; }; // v209 : couleur = état des tests (comme la grille des bancs)
-  const drop = (tid, e) => {
-    e.preventDefault(); setOver(null); if (!canEdit) return;
-    let d; try { d = JSON.parse(e.dataTransfer.getData("text/plain")); } catch (x) { return; }
-    if (!d || !d.pj || d.from === tid) return;
+  const dropTo = (tid, d) => {
+    if (!canEdit || !d || !d.pj || d.from === tid) return;
     let plan = planOf(doc, d.pj); if (d.from) plan = unassignTester(plan, d.from); plan = assignTester(plan, tid, who);
     commit({ plans: { ...(doc.plans || {}), [d.pj]: plan } });
   };
-  const dropZone = tid => canEdit ? { onDragOver: e => { e.preventDefault(); setOver(tid); }, onDragLeave: () => setOver(o => (o === tid ? null : o)), onDrop: e => drop(tid, e) } : {};
+  const dropZone = tid => canEdit ? dnd.dropProps(tid, d => d.from !== tid, d => dropTo(tid, d)) : {};
   const pct = i => (i / CAL_DAYS * 100) + "%";
   const Bar = ({ it, fromTid, free }) => {
     const pl = place(it); if (!pl) return null;
     const r = byPj[it.pj] || {}, tn = toneOf(it.pj), q = progressOf(planOf(doc, it.pj), catalog, activeSections(tn.k)), warn = it.lane > 0;
-    return (<button type="button" className="enogia-cal-bar" draggable={canEdit} onDragStart={e => { e.dataTransfer.setData("text/plain", JSON.stringify({ pj: it.pj, from: fromTid || "" })); e.dataTransfer.effectAllowed = "move"; }}
-      onClick={() => openPj(it.pj)} title={it.pj + (r.gamme ? " · " + r.gamme : "") + " · " + (getPjMeta(it.pj, r).nomProjet || "") + " · " + fd(it.from) + " → " + fd(it.to) + " · " + q.done + "/" + q.total + " tests" + (warn ? " · chevauche un autre PJ" : "") + (canEdit ? " · glisser pour affecter" : "")}
-      style={{ position: "absolute", left: "calc(" + pct(pl.a) + " + 3px)", width: "calc(" + pct(pl.b - pl.a + 1) + " - 6px)", top: it.lane * LANE_H + 8, height: LANE_H - 16, boxSizing: "border-box",
+    return (<button type="button" className="enogia-cal-bar" {...(canEdit ? dnd.dragProps({ pj: it.pj, from: fromTid || "" }) : {})}
+      onKeyDown={e => { if (!canEdit || !fromTid || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return; const i = testers.findIndex(t => t.id === fromTid), t2 = testers[i + (e.key === "ArrowDown" ? 1 : -1)]; if (t2) { e.preventDefault(); dropTo(t2.id, { pj: it.pj, from: fromTid }); } }}
+      onClick={() => openPj(it.pj)} title={it.pj + (r.gamme ? " · " + r.gamme : "") + " · " + (getPjMeta(it.pj, r).nomProjet || "") + " · " + fd(it.from) + " → " + fd(it.to) + " · " + q.done + "/" + q.total + " tests" + (warn ? " · chevauche un autre PJ" : "") + (canEdit ? " · glisser pour affecter (flèches haut / bas : testeur voisin)" : "")}
+      style={{ opacity: dnd.drag && dnd.drag.pj === it.pj && dnd.drag.from === (fromTid || "") ? 0.35 : 1, position: "absolute", left: "calc(" + pct(pl.a) + " + 3px)", width: "calc(" + pct(pl.b - pl.a + 1) + " - 6px)", top: it.lane * LANE_H + 8, height: LANE_H - 16, boxSizing: "border-box",
         background: free ? "transparent" : tn.bg, color: free ? T.red600 : tn.ink, border: free ? "1.5px dashed " + T.red500 : tn.bd, boxShadow: warn ? "0 0 0 2px " + T.amber600 : "none", borderRadius: 4,
         fontFamily: T.fontLabel, fontSize: 11, fontWeight: 600, cursor: canEdit ? "grab" : "pointer", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", padding: "0 6px", textAlign: "left", display: "flex", alignItems: "center", gap: 6 }}>
       <b style={{ fontFamily: T.fontMono }}>{it.pj}</b>{r.gamme && <span>{r.gamme}</span>}{q.total > 0 && <span style={{ marginLeft: "auto", fontVariantNumeric: "tabular-nums" }}>{q.done}/{q.total}</span>}

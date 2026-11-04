@@ -626,4 +626,9 @@ export const RELEASE_CATALOG = [
   { v: "262", t: "Page Achats / Appro", items: [
     ["Achats / Appro", "Nouvelle page (menu Gestion) pour suivre l'appro des composants des ORC, PJ par PJ : commandes, livraisons prévues, retards sur la date de besoin.", "admin"],
   ] },
+  { v: "263", t: "Glisser-déposer plus fluide", items: [
+    ["Glisser-déposer", "Dans Tests › Par testeur, le tableau des turbines et le planificateur, l'élément suit la souris, la cible s'allume, et il revient à sa place si on lâche ailleurs (Échap annule)."],
+    ["Planificateur", "Dans les Couloirs, la barre suit la souris en continu puis se pose sur son jour ; dans les Bancs d'essai, elle glisse jusqu'à sa nouvelle place.", "admin"],
+    ["Menus", "Les menus s'ouvrent depuis le bouton cliqué."],
+  ] },
 ];

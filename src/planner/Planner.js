@@ -12,6 +12,7 @@ import { getPjMeta } from "../pjMeta";
 import { contractLate } from "../penalties";
 import { getCashinDoc, anchoredBill, diffDays } from "../cashinLink";
 import { fmtEur } from "../pjProgress";
+import { landFrom } from "../pointerDrag";
 import { PlannerLoad } from "./PlannerLoad";
 import { PlannerLanes } from "./PlannerLanes";
 import { PlannerChanges } from "./PlannerChanges";
@@ -328,7 +329,9 @@ function moveTo(plan, pj, over) {
 // le début des tests d'autant de jours ouvrés (startAtKeepLinks, comme la fenêtre d'une tâche) ; flèches gauche / droite au clavier.
 const BT_PX = 18, BT_LBL = 74, BT_BAR = 24;
 function BenchTimeline({ items, lo, hi, cal, bad, today, readOnly, onDrop }) {
-  const [drag, setDrag] = useState(null); const rows = useRef({});
+  const [drag, setDrag] = useState(null); const rows = useRef({}), land = useRef(null), box = useRef(null);
+  // v263 (audit apple-design) : après un dépôt, la barre repart de l'endroit où on l'a lâchée et glisse jusqu'à sa place
+  useLayoutEffect(() => { const l = land.current; if (!l || !box.current) return; land.current = null; const el = box.current.querySelector('[data-bench-pj="' + (window.CSS && CSS.escape ? CSS.escape(l.pj) : l.pj) + '"]'); landFrom(el, l.rect); });
   const span = Math.max(1, hi - lo + 1), W = span * BT_PX;
   const lanesOf = L => { const ends = []; return L.map(x => { let k = ends.findIndex(e => e < x.n.s); if (k < 0) { k = ends.length; ends.push(x.n.f); } else ends[k] = x.n.f; return { ...x, lane: k }; }); };
   const benches = [1, 2].map(b => { const L = lanesOf(items.filter(x => x.b === b)); return { b, L, h: Math.max(1, ...L.map(x => x.lane + 1)) * (BT_BAR + 6) + 10 }; });
@@ -337,13 +340,13 @@ function BenchTimeline({ items, lo, hi, cal, bad, today, readOnly, onDrop }) {
   const benchAt = y => { let hit = null; Object.keys(rows.current).forEach(b => { const el = rows.current[b]; if (!el) return; const r = el.getBoundingClientRect(); if (y >= r.top && y <= r.bottom) hit = Number(b); }); return hit; };
   const down = (e, x) => { if (readOnly || (e.button != null && e.button !== 0)) return; e.preventDefault(); e.currentTarget.setPointerCapture(e.pointerId); setDrag({ pj: x.p.pj, from: x.b, s: x.n.s, x0: e.clientX, y0: e.clientY, dx: 0, dy: 0, over: x.b }); };
   const move = e => { if (!drag) return; setDrag(d => ({ ...d, dx: e.clientX - d.x0, dy: e.clientY - d.y0, over: benchAt(e.clientY) || d.over })); };
-  const up = () => { if (!drag) return; const d = drag; setDrag(null); const days = Math.round(d.dx / BT_PX); const b = d.over && d.over !== d.from ? d.over : null; if (b || days) onDrop(d.pj, b, days ? cal.dateOf(d.s + days) : null); };
+  const up = e => { if (!drag) return; const d = drag; const el = box.current && box.current.querySelector('[data-bench-pj="' + (window.CSS && CSS.escape ? CSS.escape(d.pj) : d.pj) + '"]'); if (el) land.current = { pj: d.pj, rect: el.getBoundingClientRect() }; setDrag(null); const days = Math.round(d.dx / BT_PX); const b = d.over && d.over !== d.from ? d.over : null; if (b || days) onDrop(d.pj, b, days ? cal.dateOf(d.s + days) : null); };
   const dayTxt = drag && Math.round(drag.dx / BT_PX) ? cal.dateOf(drag.s + Math.round(drag.dx / BT_PX)) : null;
   if (!items.length) return <div style={{ fontSize: 12.5, color: T.ink500, margin: "6px 0 12px" }}>Aucune machine avec des tests datés sur cette période.</div>;
   return (<div style={{ border: "1px solid " + T.line, borderRadius: 10, overflow: "hidden", marginBottom: 12 }}>
     <div style={{ fontSize: 12, color: T.ink500, padding: "6px 10px", borderBottom: "1px solid " + T.line, background: T.surface }}>{readOnly ? "Frise des bancs." : dayTxt ? "Début des tests le " + fmtIso(dayTxt) + " (les liens du PJ sont gardés)" : "Glissez une machine sur l'autre banc pour l'y affecter, ou à gauche / droite pour changer ses dates (liens gardés). Au clavier : flèches."}</div>
     <div style={{ overflowX: "auto" }}>
-      <div style={{ position: "relative", width: BT_LBL + W, minWidth: "100%" }} onPointerMove={move} onPointerUp={up} onPointerCancel={() => setDrag(null)}>
+      <div ref={box} style={{ position: "relative", width: BT_LBL + W, minWidth: "100%" }} onPointerMove={move} onPointerUp={up} onPointerCancel={() => setDrag(null)}>
         <div style={{ position: "relative", height: 22, marginLeft: BT_LBL, borderBottom: "1px solid " + T.line }}>
           {ticks.map(t => <span key={t.i} style={{ position: "absolute", left: (t.i - lo) * BT_PX, top: 4, fontSize: 11, color: T.ink500, whiteSpace: "nowrap", borderLeft: "1px solid " + T.line, paddingLeft: 3, fontVariantNumeric: "tabular-nums" }}>{fmtIso(t.d).slice(0, 5)}</span>)}
         </div>
@@ -355,7 +358,7 @@ function BenchTimeline({ items, lo, hi, cal, bad, today, readOnly, onDrop }) {
             {ticks.map(t => <span key={t.i} aria-hidden="true" style={{ position: "absolute", top: 0, bottom: 0, left: BT_LBL + (t.i - lo) * BT_PX, width: 1, background: T.line, opacity: 0.6 }} />)}
             {ti !== null && ti >= lo && ti <= hi && <span aria-hidden="true" style={{ position: "absolute", top: 0, bottom: 0, left: BT_LBL + (ti - lo) * BT_PX, width: 2, background: T.red500, opacity: 0.7, zIndex: 1 }} />}
             {L.map(x => { const me = drag && drag.pj === x.p.pj, red = bad.has(x.p.pj); return (
-              <div key={x.p.pj} role="button" tabIndex={0} aria-label={x.p.pj + ", banc " + b + ", tests du " + fmtIso(x.n.start) + " au " + fmtIso(x.n.finish)}
+              <div key={x.p.pj} data-bench-pj={x.p.pj} role="button" tabIndex={0} aria-label={x.p.pj + ", banc " + b + ", tests du " + fmtIso(x.n.start) + " au " + fmtIso(x.n.finish)}
                 title={x.p.pj + (x.p.nomProjet ? " · " + x.p.nomProjet : "") + "\n" + fmtIso(x.n.start) + " → " + fmtIso(x.n.finish) + " (" + x.n.dur + " j)" + (red ? "\nChevauche une autre machine sur ce banc" : "")}
                 onPointerDown={e => down(e, x)}
                 onKeyDown={e => { if (readOnly) return; if (e.key === "ArrowUp" && b === 2) { e.preventDefault(); onDrop(x.p.pj, 1, null); } if (e.key === "ArrowDown" && b === 1) { e.preventDefault(); onDrop(x.p.pj, 2, null); } if (e.key === "ArrowLeft" || e.key === "ArrowRight") { e.preventDefault(); onDrop(x.p.pj, null, cal.dateOf(x.n.s + (e.key === "ArrowRight" ? 1 : -1))); } }}

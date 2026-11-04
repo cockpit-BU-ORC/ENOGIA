@@ -56,7 +56,7 @@
 .enogia-modal-pop { animation: enogiaModalPop .25s cubic-bezier(.2,.85,.3,1.15) both; }
 .enogia-panel-backdrop { animation: enogiaBackdropFade .18s ease both; }
 .enogia-panel-slide { animation: enogiaPanelSlideIn .22s cubic-bezier(.2,.85,.3,1.1) both; }
-.enogia-pulse-urgent { animation: enogiaPulseRing 2.2s infinite; }
+.enogia-pulse-urgent { animation: enogiaPulseRing 2.2s 3; } /* v263 : 3 pulsations à l'affichage, puis fixe (plus de mouvement permanent) */
 .enogia-modal-pop-out { animation: enogiaModalPopOut .18s cubic-bezier(.4,0,.6,1) both; }
 .enogia-fade-out { animation: enogiaFadeOutDown .18s cubic-bezier(.4,0,.6,1) both; }
 /* Léger retour tactile au clic (demandé : effets sur les boutons d'action), sans dépendre d'un
@@ -119,7 +119,6 @@ button:focus-visible, select:focus-visible, a:focus-visible, summary:focus-visib
 /* Retour au survol / à l'appui sur les boutons (fond plus soutenu, léger enfoncement). */
 /* v247 : la transition des boutons est définie une seule fois (bloc v137, jetons --e-dur-*). */
 button:not(:disabled):hover { filter: brightness(1.07); }
-button:not(:disabled):active { transform: scale(.985); }
 button:disabled { cursor: default; }
 /* Cases à cocher personnalisées : la coche s'installe en douceur. */
 input[type="checkbox"] { transition: background-color .14s ease, border-color .14s ease, box-shadow .14s ease; }
@@ -148,8 +147,6 @@ input[type="checkbox"] { transition: background-color .14s ease, border-color .1
 .enogia-stagger > *:nth-child(4) { animation-delay: .12s; }
 .enogia-stagger > *:nth-child(5) { animation-delay: .16s; }
 .enogia-stagger > *:nth-child(n+6) { animation-delay: .2s; }
-/* boutons : appui un peu plus net, survol plus doux */
-button { transition: background-color .16s var(--e-ease), border-color .16s var(--e-ease), color .16s var(--e-ease), box-shadow .16s var(--e-ease), transform .12s var(--e-ease), filter .16s ease, opacity .16s ease; }
 /* liens et zones cliquables génériques */
 a { transition: color .16s ease, opacity .16s ease; }
 details > summary { transition: color .16s ease; }
@@ -536,3 +533,11 @@ button { transition: background-color var(--e-dur-micro) var(--e-ease), border-c
 /* v250 : les cadrans s'allongent selon leur contenu ; un reste d'arrondi (1 px) ne doit pas afficher de barre de défilement */
 .enogia-arr-fit { scrollbar-width: none; }
 .enogia-arr-fit::-webkit-scrollbar { display: none; }
+
+/* v263 (audit apple-design) */
+/* « Réduire la transparence » (Windows, macOS) : plus de flou sous les fenêtres */
+@media (prefers-reduced-transparency: reduce) { * { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; } }
+/* « Contraste élevé » : focus clavier plus épais (les filets et gris sont renforcés dans theme.js) */
+@media (prefers-contrast: more) { :focus-visible { outline-width: 3px !important; } }
+/* petits textes (11 px et moins) : lettres très légèrement espacées pour la lisibilité ; les grands chiffres restent resserrés */
+[style*="font-size: 11px"], [style*="font-size: 10.5px"], [style*="font-size: 10px"], [style*="font-size: 9.5px"], th { letter-spacing: .01em; }

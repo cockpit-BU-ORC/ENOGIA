@@ -6,6 +6,7 @@
 // la roue ou l'injecteur manquant dans la semaine qui arrive.
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { usePointerDnD } from "../pointerDrag";
 import { T, FZF as FZ } from "../theme";
 import { getPjMeta, GAMME_COLORS } from "../pjMeta";
 import { Badge, NavIcon } from "./SharedUI";
@@ -58,19 +59,12 @@ function SavDialog({ onClose, onCreate, existing }) {
 
 export function TurbineBoard({ installed, turbines, looseEls, rows, savProjects, savMeta, wheelNames, injectorNames, today, commit, superAdmin }) {
   const loose = Array.isArray(looseEls) ? looseEls : [];
-  const [drag, setDrag] = useState(null), [over, setOver] = useState(null);
+  const dnd = usePointerDnD(), over = dnd.over;
   const [q, setQ] = useState(""), [onlyTodo, setOnlyTodo] = useState(false), [savDlg, setSavDlg] = useState(false), [openMap, setOpenMap] = useState({});
 
-  const dragProps = payload => ({
-    draggable: true,
-    onDragStart: e => { e.stopPropagation(); try { e.dataTransfer.setData("text/plain", JSON.stringify(payload)); e.dataTransfer.effectAllowed = "move"; } catch (x) { /* ignore */ } setDrag(payload); },
-    onDragEnd: () => { setDrag(null); setOver(null); },
-  });
-  const dropProps = (key, accepts, onDrop) => ({
-    onDragOver: e => { if (drag && accepts(drag)) { e.preventDefault(); e.stopPropagation(); if (over !== key) setOver(key); } },
-    onDragLeave: e => { if (!e.currentTarget.contains(e.relatedTarget)) setOver(o => o === key ? null : o); },
-    onDrop: e => { e.preventDefault(); e.stopPropagation(); const p = drag; setDrag(null); setOver(null); if (p && accepts(p)) onDrop(p); },
-  });
+  // v263 (audit apple-design) : glisser maison — la carte suit la souris, la cible s'allume, retour au départ si refusé
+  const dragProps = payload => dnd.dragProps(payload);
+  const dropProps = (key, accepts, onDrop) => dnd.dropProps(key, accepts, onDrop);
   const isT = p => p.k === "turbine";
   const lit = key => over === key ? { borderColor: T.teal500, background: T.teal100 } : null;
 

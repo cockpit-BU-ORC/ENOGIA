@@ -167,6 +167,8 @@ export function setThemeMode(dark, themeId, present){
   Object.assign(T, base, pr ? (dark ? PRESENT_DARK : PRESENT_LIGHT) : {}, { present: pr });
   const k = pr ? PRESENT_SCALE : 1;
   for (const key of Object.keys(FZ_BASE)) { FZ[key] = Math.round(FZ_BASE[key] * k * 2) / 2; FZF[key] = Math.round(FZF_BASE[key] * k * 2) / 2; }
+  // v263 (audit apple-design) : « contraste élevé » demandé par Windows ou le navigateur → filets et gris plus marqués
+  try { if (typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-contrast: more)").matches) Object.assign(T, { line: T.ink300, ink500: T.ink700, ink300: T.ink500 }); } catch (e) { /* navigateur ancien */ }
 }
 export function isPresentation(){ return !!T.present; }
 

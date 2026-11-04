@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v263",
+    date: "2026-11-04",
+    title: "V263 : glisser-déposer plus fluide",
+    items: [
+      { t: "Glisser-déposer", d: "Ce qu'on déplace suit la souris et revient à sa place si on lâche ailleurs ; Échap annule." },
+      { t: "Menus", d: "Les menus s'ouvrent depuis le bouton cliqué." },
+    ],
+  },
+  {
     id: "2026-11-v262",
     date: "2026-11-04",
     title: "V262 : page Achats / Appro",

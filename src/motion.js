@@ -66,6 +66,18 @@ function onKey(e) {
   else if (!e.shiftKey && a === last) { e.preventDefault(); first.focus(); }
 }
 
+// v263 (audit apple-design : « une fenêtre part de l'élément qui l'ouvre ») : un menu, une liste ou une bulle qui s'ouvre juste
+// après un clic grandit depuis le point le plus proche du bouton cliqué (au lieu de toujours son coin haut gauche).
+let lastTrigger = null;
+const MENU_SEL = '.enogia-menu, .enogia-flyout, [role="menu"], [role="listbox"], [role="dialog"]:not([aria-modal])';
+const menusIn = n => n.nodeType !== 1 ? [] : [...(n.matches(MENU_SEL) ? [n] : []), ...n.querySelectorAll(MENU_SEL)];
+function anchorMenu(el) {
+  const t = lastTrigger; if (!t || Date.now() - t.at > 800) return;
+  const r = el.getBoundingClientRect(); if (!r.width || !r.height) return;
+  const ox = Math.max(0, Math.min(r.width, t.r.left + t.r.width / 2 - r.left)), oy = t.r.top + t.r.height / 2 < r.top + r.height / 2 ? 0 : r.height;
+  el.style.transformOrigin = Math.round(ox) + "px " + Math.round(oy) + "px";
+}
+
 export function initMotion() {
   if (typeof window === "undefined" || typeof MutationObserver === "undefined" || window.__enogiaMotion) return;
   window.__enogiaMotion = true;
@@ -74,6 +86,7 @@ export function initMotion() {
     const backs = [];
     muts.forEach(m => {
       m.addedNodes.forEach(n => modalsIn(n).forEach(onOpen));
+      m.addedNodes.forEach(n => menusIn(n).forEach(anchorMenu)); // v263
       [...m.removedNodes].filter(n => n.nodeType === 1 && !n.classList.contains("enogia-ghost")).forEach(n => {
         modalsIn(n).forEach(d => { closed = true; onClose(d, n, m.target, m.nextSibling); });
         if (n.getAttribute("aria-hidden") === "true" && n.style.position === "fixed" && n.style.inset === "0px") backs.push([n, m.target, m.nextSibling]);
@@ -84,5 +97,5 @@ export function initMotion() {
   }).observe(document.body, { childList: true, subtree: true });
   document.addEventListener("keydown", onKey, true);
   document.addEventListener("focusin", e => { const t = e.target; if (t && t.closest && !t.closest('[aria-modal="true"]')) lastOutside = t; }, true);
-  document.addEventListener("pointerdown", e => { const b = e.target && e.target.closest && e.target.closest("button, a, [tabindex]"); if (b && !b.closest('[aria-modal="true"]')) lastOutside = b; }, true);
+  document.addEventListener("pointerdown", e => { const b = e.target && e.target.closest && e.target.closest("button, a, [tabindex]"); if (b && !b.closest('[aria-modal="true"]')) lastOutside = b; if (b) lastTrigger = { r: b.getBoundingClientRect(), at: Date.now() }; }, true);
 }
