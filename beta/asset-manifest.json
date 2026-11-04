@@ -1,11 +1,11 @@
 {
   "files": {
-    "main.css": "/ENOGIA/beta/static/css/main.f86058ff.css",
-    "main.js": "/ENOGIA/beta/static/js/main.ef324126.js",
+    "main.css": "/ENOGIA/beta/static/css/main.b2befeda.css",
+    "main.js": "/ENOGIA/beta/static/js/main.6ac486bb.js",
     "index.html": "/ENOGIA/beta/index.html"
   },
   "entrypoints": [
-    "static/css/main.f86058ff.css",
-    "static/js/main.ef324126.js"
+    "static/css/main.b2befeda.css",
+    "static/js/main.6ac486bb.js"
   ]
 }
