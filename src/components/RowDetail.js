@@ -4,13 +4,16 @@
 // (aujourd'hui, départ, écart à l'initial), des pastilles de contexte (présence, tests, cash pour le propriétaire, turbine),
 // le dernier commentaire et trois actions (commentaires, retard, fiche projet) qui s'ouvrent dans la fenêtre.
 // Fenêtre centrale floutée (téléphone : monte du bas), entrée 240 ms / sortie 180 ms, Échap / clic à côté / croix pour fermer.
+// v265 : contenu refait d'après la maquette B (onglets) — voir RowDetail plus bas.
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
-import { T, FZF as FZ, inkOn, mixHex } from "../theme";
+import { T, FZF as FZ, inkOn, mixHex, stageSoft } from "../theme";
 import { ETAT_EDITS, getPjMeta, ETAT_META, chefsOf, EpcTag, PresenceChip, presenceKind, presenceFirstDate, presenceDates, CountryFlag, relTime, Avatar } from "../pjMeta";
 import { NavIcon, PjPlate } from "./SharedUI";
 import { ProjectComments, DelayAllocations, EditMetaForm } from "./ProjectModal";
-import { STAGES, STEP_NOTE, autoPct } from "../prodStages";
-import { planOf, catalogOf, activeSections, progressOf } from "../testPlan";
+import { STAGES, autoPct } from "../prodStages";
+import { planOf, catalogOf, activeSections, progressOf, SECTIONS, selectedIds, statusOf } from "../testPlan";
+import { debugProgress, DEBUG_ITEMS } from "../debugChecklist";
+import { contractLate, livrPrevueOf } from "../penalties";
 import { linkedPayments, cashSummary } from "../cashinLink";
 import { canCash } from "../roles";
 import { fmtEur } from "../pjProgress";
@@ -43,116 +46,136 @@ const MEANING = {
   "SHIPPED": ["Expédiée", "La machine est partie de l'atelier.", ""],
 };
 
-function Ring({ pct, color, label }) {
-  const r = 40, c = 2 * Math.PI * r, v = Math.max(0, Math.min(100, pct || 0));
-  return (<svg viewBox="0 0 100 100" width="104" height="104" role="img" aria-label={label + " : " + v + " %"} style={{ flexShrink: 0 }}>
-    <circle cx="50" cy="50" r={r} fill="none" stroke={T.surfaceAlt} strokeWidth="10" />
-    <circle className="enogia-ring" cx="50" cy="50" r={r} fill="none" stroke={color} strokeWidth="10" strokeLinecap="round" strokeDasharray={(c * v / 100) + " " + c} transform="rotate(-90 50 50)" />
-    <text x="50" y="50" textAnchor="middle" fontSize="20" fontWeight="600" fill={T.ink900} style={{ fontFamily: T.fontDisplay }}>{v} %</text>
-    <text x="50" y="65" textAnchor="middle" fontSize="9" fill={T.ink500}>{label}</text>
-  </svg>);
-}
+// v265 (maquette B du canevas « Cockpit — Fiche d'un PJ » retenue ; demandé : « attention, certaines données ne doivent pas être
+// mises à disposition de tout le monde, comme le cash ; les blocs appro et turbines sont encore en cours de dev ») : en-tête court
+// (étape, avancement, départ, écart à l'initial), barre de parcours, onglets Résumé · Tests · Cash · Commentaires. L'onglet et la tuile
+// Cash ne s'affichent qu'avec l'accès Cash in (canCash) ; le retard contractuel aux admins (pinOk), le montant des pénalités avec l'accès
+// Cash in seulement ; pas d'appro ni de turbines pour l'instant.
+const STATUS_TXT = { paid: "Payé", invoiced: "Facture émise", tobill: "À facturer", warn: "À surveiller", late: "En retard", future: "À venir", epc: "EPC" };
 
 export function RowDetail({ r, onClose, comments, addComment, deleteComment, pinOk, delays, delayTypes, setDelayTypes, addDelayAllocation, deleteDelayAllocation, addDelayComment, deleteDelayComment, authorName, savePjMetaOverride, canEditMeta, dayAction }) {
   const ctx = useContext(PjDialogCtx);
-  const [open, setOpen] = useState(null); // "comments" | "delays" | "edit"
+  const [tab, setTab] = useState("resume"), [open, setOpen] = useState(null); // open : "delays" | "edit"
   const meta = getPjMeta(r.pj, r), shipped = r.etat === "SHIPPED";
   const cur = Math.max(0, RIBBON.findIndex(s => s.etats.includes(r.etat)));
-  const [focus, setFocus] = useState(RIBBON[cur].id);
   const em = ETAT_META[r.etat] || ETAT_META["NOT ORDERED"], bar = em.bar;
   const [title0, meaning0, next] = MEANING[r.etat] || [em.label, "", ""];
-  const ed = ETAT_EDITS[r.etat]; const title = (ed && ed.label) || title0, meaning = (ed && ed.desc) || meaning0; // v230 : état modifié dans « Gérer les états »
+  const ed = ETAT_EDITS[r.etat]; const title = (ed && ed.label) || title0, meaning = (ed && ed.desc) || meaning0;
   const pct = shipped ? 100 : autoPct(r.etat) != null ? autoPct(r.etat) : 0;
   const list = (comments && comments[r.pj]) || [], pub = list.filter(c => !c.private);
   const last = pub.slice().sort((a, b) => String(a.date || "").localeCompare(String(b.date || ""))).pop();
   const kind = presenceKind(r.clientPresence);
-  const doneBg = mixHex(T.card, ETAT_META.SHIPPED.bar, T.mode === "dark" ? .24 : .13);
-  // Mini-frise : de l'arrivée (ou du début des tests) au départ, avec aujourd'hui et le départ initial (départ − écart).
-  const t0 = day0(), a = r.arrivee ? new Date(r.arrivee) : r.tests ? new Date(r.tests) : null, z = r.depart ? new Date(r.depart) : null;
-  const drift = Number(r.drift) || 0, zInit = z && drift ? new Date(z.getTime() - drift * 864e5) : null;
-  const span = a && z ? Math.max(1, (Math.max(z, zInit || z) - a)) : 0, pos = d => Math.max(0, Math.min(100, ((d - a) / span) * 100));
-  const daysLeft = z ? Math.round((z - t0) / 864e5) : null;
-  // Pastilles de contexte
-  const plan = ctx.testsDoc ? planOf(ctx.testsDoc, r.pj) : null;
-  const tq = plan ? progressOf(plan, catalogOf(ctx.testsDoc), activeSections(kind)) : null;
-  const cash = canCash() ? cashSummary(linkedPayments(r.pj)) : null;
-  const turb = ((ctx.turbineDoc && ctx.turbineDoc.turbines) || []).filter(t => t.target && t.target.kind === "PJ" && t.target.ref === r.pj);
+  const drift = Number(r.drift) || 0, z = r.depart ? new Date(r.depart) : null, zInit = z && drift ? new Date(z.getTime() - drift * 864e5) : null;
+  const daysLeft = z ? Math.round((z - day0()) / 864e5) : null;
+  // Tests et checklist de debug (page Tests)
+  const plan = ctx.testsDoc ? planOf(ctx.testsDoc, r.pj) : null, catalog = ctx.testsDoc ? catalogOf(ctx.testsDoc) : null, act = activeSections(kind);
+  const tq = plan ? progressOf(plan, catalog, act) : null, dbg = plan ? debugProgress(plan.debug) : null;
+  const nokAll = (tq ? tq.ko : 0) + (dbg ? dbg.nok : 0); // échecs de tests + NOK de la checklist
+  const testers = plan ? plan.assign.map(x => ((ctx.testsDoc.testers || []).find(t => t.id === x.tid) || {}).name).filter(Boolean) : [];
+  // Cash (accès Cash in seulement) et contrat (admins ; montant avec l'accès Cash in)
+  const cashOk = canCash(), pays = cashOk ? linkedPayments(r.pj) : [], cash = cashOk && pays.length ? cashSummary(pays) : null;
+  const nextPay = pays.filter(p => !p.done && !p.epc).sort((a, b) => String(a.factPrevue || a.encPrevue || "9").localeCompare(String(b.factPrevue || b.encPrevue || "9")))[0];
+  const ct = pinOk ? contractLate(meta, r.depart, new Date()) : null;
+  const livr = livrPrevueOf(meta, r.depart);
   const pill = (txt, ink, bg, key) => <span key={key} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontFamily: T.fontLabel, fontSize: 12, fontWeight: 600, color: ink, background: bg, borderRadius: 999, padding: "2px 10px", whiteSpace: "nowrap" }}>{txt}</span>;
-  const btn = primary => ({ display: "inline-flex", alignItems: "center", gap: 6, minHeight: 34, padding: "0 14px", borderRadius: 999, border: primary ? "none" : "1px solid " + T.line, background: primary ? T.ink900 : T.card, color: primary ? T.card : T.ink700, fontFamily: T.font, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" });
+  const btn = primary => ({ display: "inline-flex", alignItems: "center", gap: 6, minHeight: 36, padding: "0 14px", borderRadius: 999, border: primary ? "none" : "1px solid " + T.line, background: primary ? T.ink900 : T.card, color: primary ? T.card : T.ink700, fontFamily: T.font, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" });
   const toggle = id => setOpen(o => (o === id ? null : id));
-  const fs = RIBBON.find(s => s.id === focus) || RIBBON[cur], fsIdx = RIBBON.indexOf(fs), stage = STAGES.find(s => s.id === fs.id);
-  const fsState = shipped || fsIdx < cur ? "done" : fsIdx === cur ? "cur" : "todo";
-  const box = { background: T.surface, borderRadius: 12, padding: "10px 12px", minWidth: 0 };
+  const doneBg = mixHex(T.card, ETAT_META.SHIPPED.bar, T.mode === "dark" ? .3 : .28);
+  const TABS = [["resume", "Résumé", ""], ...(plan ? [["tests", "Tests", nokAll ? nokAll + " NOK" : "", true]] : []), ...(cash ? [["cash", "Cash", cash.lateN ? cash.lateN + " en retard" : "", true]] : []), ["comments", "Commentaires", pub.length ? String(pub.length) : ""]];
+  const tile = { textAlign: "left", border: "1px solid " + T.line, borderRadius: 10, background: T.card, padding: "10px 12px", cursor: "pointer", fontFamily: T.font, color: T.ink900, display: "flex", flexDirection: "column", gap: 4, minWidth: 0 };
+  const meter = (p, c) => <span aria-hidden="true" style={{ display: "block", height: 6, borderRadius: 3, background: T.surfaceAlt, overflow: "hidden", marginTop: "auto" }}><span style={{ display: "block", height: "100%", width: Math.max(0, Math.min(100, p)) + "%", background: c }} /></span>;
+  const dateTile = (label, value, sub, bad) => <div key={label} style={{ background: T.surface, borderRadius: 10, padding: "8px 12px", minWidth: 0 }}><div style={{ fontFamily: T.fontLabel, fontSize: 12, color: T.ink500 }}>{label}</div><div style={{ fontFamily: T.fontDisplay, fontSize: 19, fontWeight: 600, color: T.ink900, fontVariantNumeric: "tabular-nums" }}>{value || "—"}</div>{sub && <div style={{ fontSize: 11.5, color: bad ? T.red600 : T.ink500 }}>{sub}</div>}</div>;
 
   return (<div style={{ fontFamily: T.font }}>
-    {/* Où en est la machine */}
-    <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
-      <Ring pct={pct} color={bar} label="production" />
-      <div style={{ flex: "1 1 300px", minWidth: 0 }}>
-        <div style={{ fontSize: FZ.xs, color: T.ink500 }}>{shipped ? "La machine est" : "La machine est en"}</div>
-        <div style={{ fontFamily: T.fontDisplay, fontSize: 24, fontWeight: 600, letterSpacing: "-.01em", color: T.ink900, lineHeight: 1.15, margin: "2px 0 4px" }}>{title}</div>
-        <div style={{ fontSize: FZ.sm, color: T.ink700, lineHeight: 1.5 }}>{meaning}{next ? " Étape suivante : " + next + "." : ""}</div>
-      </div>
+    {/* Où en est la machine, en une ligne */}
+    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+      <span style={{ fontFamily: T.fontLabel, fontSize: 13, fontWeight: 600, background: bar, color: inkOn(bar), borderRadius: 999, padding: "3px 12px" }}>{title}{shipped ? "" : " · " + pct + " %"}</span>
+      <span style={{ fontSize: FZ.sm, color: T.ink700 }}>{shipped ? "Partie le " + dmy(r.depart) : daysLeft == null ? "Départ pas encore daté" : <>Départ le <b style={{ color: T.ink900 }}>{dmy(r.depart)}</b>{daysLeft > 0 ? " · dans " + daysLeft + " j" : daysLeft === 0 ? " · aujourd'hui" : ""}</>}</span>
+      {drift !== 0 && !shipped && pill((drift > 0 ? "+" : "−") + Math.abs(drift) + " j sur l'initial", drift > 0 ? T.red600 : T.emerald600, drift > 0 ? T.red100 : T.emerald100, "d")}
     </div>
-    {/* Ruban des étapes */}
-    <ol aria-label="Parcours de la machine" style={{ listStyle: "none", margin: "14px 0 0", padding: 0, display: "flex", gap: 4 }}>
-      {RIBBON.map((s, i) => {
-        const isDone = shipped || i < cur, isCur = !shipped && i === cur, sb = (ETAT_META[s.color] || {}).bar || T.teal500, on = focus === s.id;
-        const f = s.from ? dmy(r[s.from]) : "", t = s.to ? dmy(r[s.to]) : "", date = f && t ? f + " → " + t : f || t;
-        return (<li key={s.id} aria-current={isCur ? "step" : undefined} style={{ flex: 1, minWidth: 0 }}>
-          <button type="button" onClick={() => setFocus(s.id)} aria-pressed={on} title={(STAGES.find(x => x.id === s.id) || { steps: [] }).steps.join(" · ") || s.label}
-            className="enogia-rib" style={{ width: "100%", border: "none", borderRadius: 10, padding: "8px 6px 9px", cursor: "pointer", textAlign: "center", fontFamily: T.font, background: isCur ? sb : isDone ? doneBg : T.surface, color: isCur ? inkOn(sb) : T.ink500, boxShadow: on ? "0 0 0 2px " + (isCur ? T.ink900 : sb) : !isCur && !isDone ? "inset 0 0 0 1px " + T.line : "none", transform: isCur ? "translateY(-2px)" : "none" }}>
-            <span style={{ display: "block", fontFamily: T.fontLabel, fontSize: 12, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: isCur ? inkOn(sb) : T.ink900 }}>{isDone ? "✓ " : ""}{s.label}</span>
-            <span style={{ display: "block", fontSize: 11, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{isCur ? "en cours" : date || (isDone ? "fait" : "—")}{s.id === "SHIPPED" && drift > 0 && !shipped ? <b style={{ color: T.red500 }}> +{drift} j</b> : null}</span>
-          </button>
-        </li>);
-      })}
-    </ol>
-    {/* Sous-étapes de l'étape choisie · mini-frise */}
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: 10, marginTop: 12 }}>
-      <div style={{ ...box, borderLeft: "3px solid " + ((ETAT_META[fs.color] || {}).bar || bar), borderRadius: "0 12px 12px 0" }}>
-        <div style={{ fontSize: FZ.sm, fontWeight: 700, color: T.ink900, marginBottom: 4 }}>{stage ? "Sous-étapes · " + fs.label : fs.label}</div>
-        {stage ? stage.steps.map(st => <div key={st} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: FZ.xs, color: T.ink700, padding: "2px 0" }}>
-          <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: "50%", flexShrink: 0, background: fsState === "done" ? ETAT_META.SHIPPED.bar : fsState === "cur" ? bar : "transparent", boxShadow: fsState === "todo" ? "inset 0 0 0 1.5px " + T.ink300 : "none" }} />{st}</div>)
-          : <div style={{ fontSize: FZ.xs, color: T.ink700, lineHeight: 1.5 }}>{fs.id === "PRE" ? "Design de l’ORC, commande, fabrication et montage chez les fournisseurs (armoire et skid) ou stockage externe." : (MEANING.SHIPPED[1])}</div>}
-        {stage && stage.steps.some(x => x.endsWith("*")) && <div style={{ fontSize: 11, color: T.ink500, marginTop: 4, lineHeight: 1.4 }}>{STEP_NOTE}</div>}
-        <div style={{ fontSize: 11, color: T.ink500, marginTop: 4 }}>{fsState === "done" ? "Étape terminée." : fsState === "cur" ? "Étape en cours." : "À venir."} Cliquez une autre étape pour voir la sienne.</div>
-      </div>
-      <div style={box}>
-        <div style={{ fontSize: FZ.sm, fontWeight: 700, color: T.ink900, marginBottom: 8 }}>Calendrier</div>
-        {a && z ? <div aria-hidden="true" style={{ position: "relative", height: 30 }}>
-          <div style={{ position: "absolute", left: 0, right: 0, top: 10, height: 6, borderRadius: 3, background: T.surfaceAlt }} />
-          <div className="enogia-bar-fill" style={{ position: "absolute", left: 0, width: pos(Math.min(t0, z)) + "%", top: 10, height: 6, borderRadius: 3, background: bar }} />
-          {zInit && <div title={"Départ initial : " + dmy(zInit)} style={{ position: "absolute", left: 0, width: pos(zInit) + "%", top: 20, borderTop: "2px dashed " + T.ink300 }} />}
-          {t0 > a && t0 < z && <div style={{ position: "absolute", left: pos(t0) + "%", top: 2, bottom: 2, width: 2, background: T.red500, borderRadius: 1 }} />}
-          <span style={{ position: "absolute", left: 0, top: 18, fontSize: 10, color: T.ink500 }}>{dmy(a)}</span>
-          <span style={{ position: "absolute", right: 0, top: 18, fontSize: 10, color: T.ink500 }}>{dmy(z)}</span>
-        </div> : <div style={{ fontSize: FZ.xs, color: T.ink500 }}>Dates pas encore connues.</div>}
-        <div style={{ fontSize: FZ.xs, color: T.ink700, marginTop: 6 }}>{shipped ? "Partie le " + dmy(r.depart) : daysLeft == null ? "" : daysLeft > 0 ? <>Départ dans <b style={{ color: T.ink900 }}>{daysLeft} jour{daysLeft > 1 ? "s" : ""}</b></> : daysLeft === 0 ? <b>Départ aujourd'hui</b> : <>Départ prévu il y a {-daysLeft} j</>}{drift > 0 ? <span style={{ color: T.red500 }}> · {drift} j plus tard que l'initial</span> : drift < 0 ? <span style={{ color: T.emerald600 }}> · {-drift} j d'avance</span> : null}</div>
-      </div>
+    <div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 6, lineHeight: 1.45 }}>{meaning}{next ? " Étape suivante : " + next + "." : ""}</div>
+    {/* Parcours : une barre par étape, survol = sous-étapes */}
+    <div role="img" aria-label={"Parcours : " + RIBBON.map((s, i) => s.label + (shipped || i < cur ? " fait" : i === cur ? " en cours" : "")).join(", ")} style={{ display: "flex", gap: 3, marginTop: 12 }}>
+      {RIBBON.map((s, i) => { const done = shipped || i < cur, isCur = !shipped && i === cur, st = STAGES.find(x => x.id === s.id); return <div key={s.id} title={s.label + (st ? " : " + st.steps.join(" · ") : "")} style={{ flex: s.id === "PRE" ? 3 : s.id === "SHIPPED" || s.id === "PACKAGING" ? 1 : 2, height: 10, borderRadius: 3, background: isCur ? bar : done ? doneBg : T.surfaceAlt }} />; })}
     </div>
-    {/* Qui · contexte */}
-    <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginTop: 12 }}>
-      {chefsOf(meta).map(c => <span key={c} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: FZ.xs, color: T.ink700 }}><Avatar name={c} size={20} />{c}</span>)}
-      <EpcTag meta={meta} />
-      {kind && <PresenceChip kind={kind} date={presenceFirstDate(r.clientPresence)} dates={presenceDates(r.clientPresence)} />}
-      {tq && tq.total > 0 && pill("Tests " + tq.done + "/" + tq.total + (tq.ko ? " · " + tq.ko + " échec" + (tq.ko > 1 ? "s" : "") : ""), tq.ko ? T.red600 : T.amber600, tq.ko ? T.red100 : T.amber100, "t")}
-      {cash && pill(cash.lateN ? fmtEur(cash.late) + " en retard" : "Encaissé " + fmtEur(cash.paid) + " / " + fmtEur(cash.total), cash.lateN ? T.red600 : T.emerald600, cash.lateN ? T.red100 : T.emerald100, "c")}
-      {turb.length > 0 && pill("Turbine attribuée" + (turb.length > 1 ? " × " + turb.length : ""), T.ink700, T.surfaceAlt, "u")}
-      {meta.numSerie && <span style={{ fontFamily: T.fontMono, fontSize: 11, color: T.ink500 }}>{meta.numSerie}</span>}
-      {canEditMeta && savePjMetaOverride && <button type="button" onClick={() => toggle("edit")} aria-expanded={open === "edit"} style={{ border: "none", background: "transparent", color: T.teal600, fontWeight: 700, fontSize: FZ.xs, cursor: "pointer", minHeight: 24, padding: 0, fontFamily: T.font }}>Modifier</button>}
+    <div aria-hidden="true" style={{ display: "flex", gap: 3, marginTop: 3, fontSize: 11, color: T.ink500 }}>
+      {RIBBON.map((s, i) => <span key={s.id} style={{ flex: s.id === "PRE" ? 3 : s.id === "SHIPPED" || s.id === "PACKAGING" ? 1 : 2, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: !shipped && i === cur ? 700 : 400, color: !shipped && i === cur ? T.ink900 : T.ink500 }}>{s.label}</span>)}
     </div>
-    {last && <button type="button" onClick={() => toggle("comments")} style={{ ...box, display: "block", width: "100%", textAlign: "left", border: "none", cursor: "pointer", marginTop: 10, fontFamily: T.font, fontSize: FZ.sm, color: T.ink900, lineHeight: 1.45 }}>« {String(last.text || "").replace(/\s+/g, " ").slice(0, 200)}{String(last.text || "").length > 200 ? "…" : ""} » <span style={{ fontSize: FZ.xs, color: T.ink500 }}>{last.author || ""}, {relTime(last.date)}</span></button>}
+    {/* Onglets */}
+    <div role="tablist" aria-label="Rubriques de la fiche" style={{ display: "flex", gap: 18, borderBottom: "1px solid " + T.line, marginTop: 12 }}>
+      {TABS.map(([id, label, badge, warn]) => <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)} style={{ border: "none", background: "transparent", padding: "8px 0", minHeight: 36, cursor: "pointer", fontFamily: T.font, fontSize: FZ.sm, fontWeight: tab === id ? 700 : 500, color: tab === id ? T.ink900 : T.ink500, borderBottom: "2px solid " + (tab === id ? T.ink900 : "transparent"), marginBottom: -1, display: "inline-flex", alignItems: "center", gap: 6 }}>{label}{badge && <span style={{ fontSize: 11, fontWeight: 700, borderRadius: 999, padding: "0 7px", background: warn ? T.red100 : T.surfaceAlt, color: warn ? T.red600 : T.ink700 }}>{badge}</span>}</button>)}
+    </div>
+
+    <div role="tabpanel" style={{ paddingTop: 12, display: "flex", flexDirection: "column", gap: 12 }}>
+      {tab === "resume" && <>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(130px,1fr))", gap: 8 }}>
+          {dateTile("Arrivée", dmy(r.arrivee))}
+          {dateTile(r.testsFin ? "Fin des tests" : "Tests", dmy(r.testsFin || r.tests), r.tests && r.testsFin ? "début " + dmy(r.tests) : "")}
+          {dateTile(shipped ? "Départ" : "Départ prévu", dmy(r.depart), zInit ? "initial " + dmy(zInit) : "", drift > 0)}
+          {dateTile("Livraison prévue", dmy(livr), livr ? "sur site client, transport compris" : "transport non renseigné")}
+        </div>
+        {(tq || ct || cash) && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 8 }}>
+          {tq && <button type="button" onClick={() => setTab("tests")} style={tile}>
+            <span style={{ display: "flex", alignItems: "center", gap: 8 }}><b style={{ fontSize: FZ.sm }}>Tests</b>{tq.total ? pill(tq.ko ? tq.ko + " échec" + (tq.ko > 1 ? "s" : "") : tq.done === tq.total ? "terminés" : "en cours", tq.ko ? T.red600 : tq.done === tq.total ? T.emerald600 : T.amber600, tq.ko ? T.red100 : tq.done === tq.total ? T.emerald100 : T.amber100, "s") : null}</span>
+            <span style={{ fontSize: FZ.xs, color: T.ink700 }}>{tq.total ? tq.done + " test" + (tq.done > 1 ? "s" : "") + " sur " + tq.total + " renseigné" + (tq.done > 1 ? "s" : "") : "Aucun test choisi"}</span>
+            <span style={{ fontSize: FZ.xs, color: dbg && dbg.nok ? T.red600 : T.ink500 }}>Checklist de debug : {dbg ? dbg.done + " / " + dbg.total + (dbg.nok ? ", " + dbg.nok + " NOK" : "") + (dbg.signed ? ", signée" : ", à signer") : "—"}</span>
+            {meter(tq.total ? tq.done / tq.total * 100 : 0, tq.ko ? T.red500 : stageSoft().tests.solid)}
+          </button>}
+          {ct && <div style={{ ...tile, cursor: "default" }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 8 }}><b style={{ fontSize: FZ.sm }}>Contrat</b>{pill(ct.lateDays > 0 ? ct.lateDays + " j de retard" : "dans les temps", ct.lateDays > 0 ? T.red600 : T.emerald600, ct.lateDays > 0 ? T.red100 : T.emerald100, "c")}</span>
+            <span style={{ fontSize: FZ.xs, color: T.ink700 }}>{ct.refLabel} au contrat : {dmy(ct.contract)}</span>
+            <span style={{ fontSize: FZ.xs, color: T.ink500 }}>{cashOk ? (ct.amount != null ? "Pénalités estimées : " + fmtEur(ct.amount) : "Pas de conditions de pénalité saisies") : "Prévu : " + dmy(ct.effective)}</span>
+          </div>}
+          {cash && <button type="button" onClick={() => setTab("cash")} style={tile}>
+            <span style={{ display: "flex", alignItems: "center", gap: 8 }}><b style={{ fontSize: FZ.sm }}>Cash</b>{pill(cash.lateN ? fmtEur(cash.late) + " en retard" : "à jour", cash.lateN ? T.red600 : T.ink700, cash.lateN ? T.red100 : T.surfaceAlt, "k")}</span>
+            <span style={{ fontSize: FZ.xs, color: T.ink700 }}>Encaissé {fmtEur(cash.paid)} sur {fmtEur(cash.total)}</span>
+            <span style={{ fontSize: FZ.xs, color: T.ink500 }}>{nextPay ? "Prochain : " + nextPay.label + (nextPay.factPrevue ? " · facturation " + dmy(nextPay.factPrevue) : "") : "Tous les jalons sont payés"}</span>
+            {meter(cash.total ? cash.paid / cash.total * 100 : 0, T.emerald500)}
+          </button>}
+        </div>}
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", fontSize: FZ.xs, color: T.ink700 }}>
+          {chefsOf(meta).map(c => <span key={c} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Avatar name={c} size={20} />{c}</span>)}
+          <EpcTag meta={meta} />
+          {testers.length > 0 && <span><span style={{ color: T.ink500 }}>Testeurs</span> {testers.join(", ")}</span>}
+          {kind && <PresenceChip kind={kind} date={presenceFirstDate(r.clientPresence)} dates={presenceDates(r.clientPresence)} />}
+          {meta.numSerie && <span style={{ fontFamily: T.fontMono, fontSize: 11, color: T.ink500 }}>{meta.numSerie}</span>}
+          {canEditMeta && savePjMetaOverride && <button type="button" onClick={() => toggle("edit")} aria-expanded={open === "edit"} style={{ border: "none", background: "transparent", color: T.teal600, fontWeight: 700, fontSize: FZ.xs, cursor: "pointer", minHeight: 24, padding: 0, fontFamily: T.font }}>Modifier</button>}
+        </div>
+        {last && <button type="button" onClick={() => setTab("comments")} style={{ background: T.surface, borderRadius: 10, padding: "10px 12px", display: "block", width: "100%", textAlign: "left", border: "none", cursor: "pointer", fontFamily: T.font, fontSize: FZ.sm, color: T.ink900, lineHeight: 1.45 }}>« {String(last.text || "").replace(/\s+/g, " ").slice(0, 200)}{String(last.text || "").length > 200 ? "…" : ""} » <span style={{ fontSize: FZ.xs, color: T.ink500 }}>{last.author || ""}, {relTime(last.date)}</span></button>}
+      </>}
+
+      {tab === "tests" && plan && <>
+        {act.map(k => { const ids = selectedIds(plan, catalog, k), items = ids.map(id => ({ id, name: ((catalog[k] || []).find(t => t.id === id) || { name: id }).name, st: statusOf(plan, k, id) })); const ok = items.filter(x => x.st === "ok").length, ko = items.filter(x => x.st === "ko");
+          return <div key={k} style={{ background: T.surface, borderRadius: 10, padding: "8px 12px" }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><b style={{ fontSize: FZ.sm }}>{(SECTIONS.find(x => x[0] === k) || [])[1] || k}</b><span style={{ fontSize: FZ.xs, color: T.ink500 }}>{ok} réussi{ok > 1 ? "s" : ""} sur {items.length}{ko.length ? " · " : ""}</span>{ko.length > 0 && <span style={{ fontSize: FZ.xs, color: T.red600, fontWeight: 700 }}>{ko.length} échec{ko.length > 1 ? "s" : ""}</span>}</div>
+            {ko.length > 0 && <div style={{ fontSize: FZ.xs, color: T.red600, marginTop: 4 }}>{ko.map(x => x.name).join(" · ")}</div>}
+          </div>; })}
+        <div style={{ background: T.surface, borderRadius: 10, padding: "8px 12px" }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><b style={{ fontSize: FZ.sm }}>Checklist de debug</b><span style={{ fontSize: FZ.xs, color: T.ink500 }}>{dbg.done} / {dbg.total} renseignés{dbg.signed ? " · signée" : " · pas encore signée"}</span>{dbg.nok > 0 && <span style={{ fontSize: FZ.xs, color: T.red600, fontWeight: 700 }}>{dbg.nok} NOK</span>}</div>
+          {dbg.nok > 0 && <div style={{ fontSize: FZ.xs, color: T.red600, marginTop: 4 }}>{DEBUG_ITEMS.filter(i => plan.debug && plan.debug.rows && plan.debug.rows[i.id] && plan.debug.rows[i.id].r === "nok").map(i => i.label).join(" · ")}</div>}
+        </div>
+        <div style={{ fontSize: FZ.xs, color: T.ink500 }}>{testers.length ? "Testeurs : " + testers.join(", ") + "." : "Aucun testeur affecté."} Le détail se remplit dans la page Tests.</div>
+      </>}
+
+      {tab === "cash" && cash && <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {pays.map(p => <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 10px", background: T.surface, borderRadius: 8, fontSize: FZ.xs }}>
+          <span style={{ flex: 1, minWidth: 0, color: T.ink900, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={p.label}>{p.label}{p.shared ? <span style={{ fontWeight: 400, color: T.ink500 }}> · paiement unique du contrat, non divisé</span> : p.split > 1 ? <span style={{ fontWeight: 400, color: T.ink500 }}> · part 1/{p.split}</span> : null}</span>
+          <span style={{ color: T.ink500, whiteSpace: "nowrap" }}>{p.done ? "payé " + dmy(p.doneAt) : p.factPrevue ? "facturation " + dmy(p.factPrevue) : ""}</span>
+          <span style={{ fontWeight: 700, color: p.k === "late" ? T.red600 : T.ink900, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{fmtEur(p.montant)}</span>
+          <span style={{ width: 92, textAlign: "right", color: p.k === "late" ? T.red600 : p.done ? T.emerald600 : T.ink500, fontWeight: 600 }}>{STATUS_TXT[p.k] || ""}</span>
+        </div>)}
+      </div>}
+
+      {tab === "comments" && <ProjectComments pj={r.pj} comments={list} addComment={addComment} deleteComment={deleteComment} pinOk={pinOk} authorName={authorName} />}
+    </div>
+
     {/* Actions */}
-    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginTop: 12 }}>
-      <button type="button" onClick={() => toggle("comments")} aria-expanded={open === "comments"} style={btn(false)}><NavIcon name="comments" size={14} />Commentaires{pub.length ? " (" + pub.length + ")" : ""}</button>
-      {/* v221 (demandé : « garder le pop-up classique mais avec un bouton pour activer ou non ce jour de prod, pour ce PJ seulement ») */}
+    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginTop: 14, paddingTop: 12, borderTop: "1px solid " + T.line }}>
       {dayAction && <button type="button" onClick={dayAction.onToggle} title={dayAction.hint} style={{ ...btn(false), color: dayAction.off ? T.emerald600 : T.red600 }}><NavIcon name="calendar" size={14} />{dayAction.label}</button>}
       {pinOk && delayTypes && <button type="button" onClick={() => toggle("delays")} aria-expanded={open === "delays"} style={btn(false)}><NavIcon name="clock" size={14} />Déclarer un retard</button>}
       {pinOk && <button type="button" onClick={() => { try { window.dispatchEvent(new CustomEvent("enogia:openSynthese", { detail: { pj: r.pj } })); } catch (e) {} onClose && onClose(); }} style={{ ...btn(true), marginLeft: "auto" }}>Ouvrir la fiche projet</button>}
     </div>
     {open && <div className="enogia-view-in" style={{ marginTop: 12, padding: 12, background: T.surface, borderRadius: 12 }}>
-      {open === "comments" && <ProjectComments pj={r.pj} comments={list} addComment={addComment} deleteComment={deleteComment} pinOk={pinOk} authorName={authorName} />}
       {open === "delays" && <DelayAllocations pj={r.pj} delays={(delays && delays[r.pj]) || []} delayTypes={delayTypes} setDelayTypes={setDelayTypes} addDelayAllocation={addDelayAllocation} deleteDelayAllocation={deleteDelayAllocation} addDelayComment={addDelayComment} deleteDelayComment={deleteDelayComment} authorName={authorName} />}
       {open === "edit" && <EditMetaForm meta={meta} gamme={r.gamme} onCancel={() => setOpen(null)} onSave={async f => { const ok = await savePjMetaOverride(r.pj, f); if (ok) setOpen(null); }} />}
     </div>}

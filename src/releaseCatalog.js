@@ -634,4 +634,9 @@ export const RELEASE_CATALOG = [
   { v: "264", t: "Checklist de debug", items: [
     ["Checklist de debug", "Dans la fiche de tests de chaque machine : la checklist de debug à cocher ligne par ligne (OK / NOK), à signer, et à exporter en Word au format de la procédure."],
   ] },
+  { v: "265", t: "Fiche d'un PJ à onglets, dates des fiches projet, liaisons Cash in", items: [
+    ["Fiche d'un PJ", "Nouvelle fiche : étape et départ en une ligne, barre de parcours, onglets Résumé, Tests et Commentaires ; dates clés, livraison prévue et état des tests et de la checklist en un coup d'œil."],
+    ["Dates des fiches projet", "Un tableau sépare le contrat, le planning initial (figé) et la prévision actuelle (mise à jour à chaque publication) pour la fin projetée (MàD ORC) et la livraison sur site client.", "admin"],
+    ["Liaisons Cash in", "Jalon par jalon : « réparti » (divisé entre les machines) ou « machines cochées » (montant entier sur une machine ou paiement unique du contrat), avec des exemples.", "admin"],
+  ] },
 ];

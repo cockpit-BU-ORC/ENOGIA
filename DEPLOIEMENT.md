@@ -1852,3 +1852,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Données : `planning/tests` (`plans[PJ].debug`) et `planning/testsign_<PJ>` (clé `debug`) — documents déjà couverts par les règles, rien à republier.
 - Pas de nouvelle clé `localStorage`.
 - Fichiers : debugChecklist.js, debugDocx.js, debugLogo.js, zipStore.js, components/DebugChecklist.js, debugChecklist.test.js (nouveaux), components/TestsTab.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v265 — Fiche d'un PJ (maquette B), dates des fiches projet, liaisons Cash in
+
+- Demandé : « la piste B, mais attention certaines données ne doivent pas être mises à disposition de tout le monde, comme le cash ; les blocs appro et turbines sont encore en cours de dev » ; « dans les fiches synthèse, je suis perdu entre toutes les dates : différencier les dates initiales et les nouvelles dates automatiques ; une livraison prévue sur site client selon le temps de transport, et la date de fin projetée = MàD ORC actuelle » ; « quand je lie du cash à un PJ, pas clair quand répartir un jalon et quand c'est commun ».
+- Fiche d'un PJ (Liste, Gantt, Calendrier, accueil) : ligne d'état, barre de parcours, onglets Résumé · Tests · Cash · Commentaires. Cash : seulement avec l'accès Cash in ; contrat : admins (pénalités en euros : accès Cash in). Appro et turbines non affichés.
+- Fiches projet › Planning : tableau « Dates de fin et de livraison » (contrat / planning initial / prévision actuelle / écart) et durée du transport ; la livraison prévue se recalcule à chaque publication.
+- Liaisons Cash in : « Réparti ÷ N » ou « Machines cochées » jalon par jalon, explications et exemples ; résumé corrigé (le montant « par machine » ne tenait pas compte des jalons non divisés).
+- Pas de nouvelle clé `localStorage`, pas de nouveau document Firestore.
+- Fichiers : components/RowDetail.js, components/ManagerFiche.js, components/CashLinks.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

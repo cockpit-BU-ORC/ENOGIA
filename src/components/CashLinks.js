@@ -16,14 +16,17 @@ const same = (a, b) => normPj(a) === normPj(b);
 // Résumé d'une liaison : ce que l'utilisateur voit dans la liste.
 export function linkSummary(g, links, ordo) {
   const r0 = linkSummary0(g, links, ordo), nr = g.rows.filter(r => rowTargetsOf(r, links)).length;
-  return nr ? { ...r0, text: r0.text + " · " + nr + " jalon" + (nr > 1 ? "s" : "") + " commun" + (nr > 1 ? "s" : "") } : r0;
+  // v265 : avec des jalons communs, le montant « par machine » du résumé serait faux : on dit combien sont répartis et combien communs
+  if (!nr) return r0;
+  const t = targetsOf(g.pj, links, ordo), nd = g.rows.length - nr;
+  return { ...r0, text: (t.list.length > 1 ? "Contrat sur " + t.list.length + " machines : " + t.list.join(", ") + " — " : r0.text + " · ") + nd + " jalon" + (nd > 1 ? "s" : "") + " réparti" + (nd > 1 ? "s" : "") + " (÷ " + Math.max(1, t.list.length) + "), " + nr + " sur des machines cochées" };
 }
 function linkSummary0(g, links, ordo) {
   const t = targetsOf(g.pj, links, ordo), n = t.list.length, SS = statusSoft();
   if (t.explicit && n === 0) return { tone: SS.future, text: "Aucun PJ de l'ordo (ignoré)", n };
   if (n === 0) return { tone: SS.warn, text: "Aucun PJ de l'ordo ne correspond : à lier à la main", n };
   if (!t.explicit && n > 1) return { tone: SS.warn, text: "Automatique : " + t.list.join(", ") + " — chacun reçoit la totalité, répartissez-les", n };
-  if (n > 1) return { tone: SS.invoiced, text: "÷ " + n + " : " + t.list.join(", ") + " — " + fmtEur(g.total / n) + " chacun", n };
+  if (n > 1) return { tone: SS.invoiced, text: "Contrat sur " + n + " machines : " + t.list.join(", ") + " — jalons répartis, " + fmtEur(g.total / n) + " par machine", n };
   return { tone: t.explicit ? SS.invoiced : SS.future, text: (t.explicit ? "Lié à " : "Automatique : ") + t.list[0], n };
 }
 
@@ -39,7 +42,7 @@ function Editor({ g, links, ordo, onSave, onCancel, onAuto, busy }) {
   return (<div style={{ marginTop: 8, padding: 10, borderRadius: 10, background: T.surface, border: "1px solid " + T.line }}>
     <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 6 }}>
       <input value={q} onChange={e => setQ(e.target.value)} placeholder="Chercher un PJ ou un projet de l'ordo" aria-label="Chercher un PJ de l'ordo" style={{ ...field, flex: "1 1 220px" }}/>
-      <span style={{ fontSize: FZ.sm, fontWeight: 700, color: T.ink900 }}>{n === 0 ? "Aucun PJ coché" : n === 1 ? "1 PJ : il reçoit la totalité (" + fmtEur(g.total) + ")" : "Réparti sur " + n + " PJ : " + fmtEur(g.total / n) + " chacun"}</span>
+      <span style={{ fontSize: FZ.sm, fontWeight: 700, color: T.ink900 }}>{n === 0 ? "Aucun PJ coché" : n === 1 ? "1 machine : elle reçoit tous les jalons (" + fmtEur(g.total) + ")" : n + " machines : chaque jalon est divisé par " + n + ", sauf ceux que vous mettez sur des « machines cochées » ci-dessous"}</span>
     </div>
     <div style={{ maxHeight: 190, overflowY: "auto", display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: "2px 12px" }}>
       {shown.map(p => (<label key={p} style={{ display: "flex", alignItems: "center", gap: 7, padding: "3px 4px", fontSize: FZ.sm, color: T.ink900, cursor: "pointer", minWidth: 0 }}>
@@ -70,15 +73,16 @@ function RowsEditor({ g, links, ordo, onSave, busy }) {
   if (targets.length < 2) return null;
   const seg = on => ({ padding: "2px 10px", border: "1px solid " + (on ? T.teal600 : T.line), background: on ? T.teal600 : "transparent", color: on ? "#fff" : T.ink500, fontSize: FZ.xs, fontWeight: 700, fontFamily: T.font, cursor: "pointer" });
   return (<div style={{ marginTop: 8, padding: 10, borderRadius: 10, background: T.surface, border: "1px solid " + T.line }}>
-    <div style={{ fontSize: FZ.sm, fontWeight: 700, color: T.ink900, marginBottom: 2 }}>Jalon par jalon</div>
-    <div style={{ fontSize: FZ.xs, color: T.ink500, marginBottom: 8 }}><b>Réparti</b> : le montant est divisé entre tous les PJ liés. <b>Commun</b> : le montant complet apparaît sur chaque machine cochée, sans division — c'est le même paiement vu depuis plusieurs machines, il ne faut donc pas l'additionner (ni le multiplier par le nombre de machines).</div>
+    <div style={{ fontSize: FZ.sm, fontWeight: 700, color: T.ink900, marginBottom: 2 }}>Jalon par jalon : réparti, ou sur des machines cochées ?</div>
+    <div style={{ fontSize: FZ.xs, color: T.ink700, marginBottom: 8, lineHeight: 1.5 }}><b>Réparti</b> : le jalon concerne toutes les machines de la même façon, le montant est divisé entre elles. <b>Machines cochées</b> : le montant reste entier — cochez <b>une</b> machine pour un jalon qui lui est propre (FAT, livraison de l'ORC n°1…), ou <b>plusieurs</b> pour un paiement unique du contrat (acompte, avance), qui n'est alors compté qu'une fois : ne l'additionnez pas d'une machine à l'autre.</div>
     {g.rows.map(r => { const v = draft[r.id], shared = !!v, cur = v || targets; return (<div key={r.id} style={{ padding: "5px 0", borderTop: "1px solid " + T.line }}>
       <div style={{ display: "flex", gap: 8, alignItems: "baseline", flexWrap: "wrap" }}>
         <b style={{ fontSize: FZ.sm }}>{r.jalon || "Jalon sans nom"}</b>
-        <span style={{ fontSize: FZ.xs, color: T.ink500 }}>{shared ? fmtEur(r.montant || 0) + (cur.length > 1 ? " sur chacune des " + cur.length + " machines (commun, non divisé)" : cur.length === 1 ? " → " + cur[0] : " · aucun PJ") : fmtEur(r.montant || 0) + " ÷ " + cur.length + " = " + fmtEur((r.montant || 0) / cur.length)}</span>
+        <span style={{ fontSize: FZ.xs, color: T.ink500 }}>{shared ? fmtEur(r.montant || 0) + (cur.length > 1 ? " en entier, un seul paiement montré sur les " + cur.length + " machines cochées" : cur.length === 1 ? " en entier → " + cur[0] + " seulement" : " · aucune machine cochée") : fmtEur(r.montant || 0) + " ÷ " + cur.length + " = " + fmtEur((r.montant || 0) / cur.length) + " par machine"}</span>
+        {!shared && /acompte|avance|advance|down ?payment|commande|order/i.test(r.jalon || "") && <span title="Un acompte ou une avance est en général un paiement unique pour tout le contrat : « Machines cochées », toutes cochées" style={{ fontSize: 11, fontWeight: 700, color: T.amber600, background: T.amber100, borderRadius: 999, padding: "1px 8px" }}>acompte : en général non divisé</span>}
         <span style={{ marginLeft: "auto", display: "inline-flex" }}>
-          <button onClick={() => setMode(r, false)} aria-pressed={!shared} style={{ ...seg(!shared), borderRadius: "99px 0 0 99px" }}>Réparti</button>
-          <button onClick={() => setMode(r, true)} aria-pressed={shared} style={{ ...seg(shared), borderRadius: "0 99px 99px 0", borderLeft: 0 }}>Commun</button>
+          <button onClick={() => setMode(r, false)} aria-pressed={!shared} title="Payé une fois par machine : montant divisé" style={{ ...seg(!shared), borderRadius: "99px 0 0 99px" }}>Réparti ÷ {targets.length}</button>
+          <button onClick={() => setMode(r, true)} aria-pressed={shared} title="Montant entier sur les machines cochées : une machine (jalon propre) ou plusieurs (paiement unique du contrat)" style={{ ...seg(shared), borderRadius: "0 99px 99px 0", borderLeft: 0 }}>Machines cochées</button>
         </span>
       </div>
       {shared && <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 4 }}>
@@ -124,7 +128,9 @@ export function CashLinksDialog({ onClose, authorName, focusPj }) {
         <button style={btn(false)} onClick={onClose}>Fermer</button>
       </div>
       <div style={{ fontSize: FZ.sm, color: T.ink500, marginBottom: 10 }}>
-        Par défaut, un PJ du Cash in se rattache au PJ de l'ordo de même numéro. Vous pouvez le lier à un autre PJ, ou à <b>plusieurs</b> : le total est alors divisé à parts égales (PJ réparti sur X PJ ⇒ chaque PJ reçoit 1/X des jalons et des montants).
+        Un PJ du Cash in se rattache tout seul au PJ de l'ordo de même numéro. Si son contrat couvre <b>plusieurs machines</b>, liez-le à chacune ; chaque jalon est alors <b>réparti</b> (divisé à parts égales entre les machines), sauf si vous le mettez sur des <b>machines cochées</b> :
+        <span style={{ display: "block", marginTop: 4 }}>• un jalon propre à une machine (ex. « FAT ORC n°1 ») : cochez cette machine seulement, elle reçoit le montant entier ;</span>
+        <span style={{ display: "block" }}>• un paiement unique pour tout le contrat (ex. l'acompte) : cochez toutes les machines, chacune le montre en entier mais il n'est compté qu'une fois.</span>
         {nTodo > 0 && <> <b style={{ color: statusSoft().warn.ink }}>{nTodo} PJ du Cash in sans PJ correspondant.</b></>}
       </div>
       <input value={q} onChange={e => setQ(e.target.value)} placeholder="Chercher un PJ du Cash in" aria-label="Chercher un PJ du Cash in" style={{ ...field, width: "100%", boxSizing: "border-box", marginBottom: 8 }}/>

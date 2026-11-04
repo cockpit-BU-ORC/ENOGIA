@@ -263,23 +263,54 @@ function MontantField({value,onSave}){
     <div style={{fontSize:FZ.xs,color:T.ink300,marginTop:2}}>{value?fmtEur(value):"non renseigné"}</div>
   </div>);
 }
-// v255 : durée de transport (jours) → livraison prévue = fin projetée (départ prévu du planning) + transport, recalculée à chaque
-// publication ; sans durée, la date saisie à la main reste utilisée. Mention en italique : date de livraison, transport compris.
-function LivrPrevueField({meta,depart,onSave}){
+// v265 (demandé : « je suis un peu perdu entre toutes les dates : bien différencier les dates initiales et les nouvelles dates qui se
+// mettent à jour automatiquement ; n'ayant que les dates de départ des ORC d'ENOGIA, ajouter une livraison prévue sur site client qui se
+// met à jour avec le temps de transport, et la date de fin projetée = MàD ORC actuelle ») : un tableau à deux lignes (MàD ORC = départ
+// de l'atelier ENOGIA, hors transport ; livraison sur site client, transport compris) et quatre colonnes (contrat saisi, planning
+// initial figé, prévision actuelle recalculée à chaque publication, écart au contrat). Transport en jours sous le tableau.
+const addDaysIso=(iso,n)=>{const d=dOf(iso);if(!d||n==null||n===""||isNaN(Number(n)))return null;const x=new Date(d);x.setDate(x.getDate()+Number(n));return x;};
+function TransportField({meta,onSave}){
   const tj=meta.transportJ;const [v,setV]=useState(tj==null?"":String(tj));
   React.useEffect(()=>{setV(tj==null?"":String(tj));},[tj]);
   const save=()=>{const n=v.trim()===""?undefined:Math.max(0,Math.round(Number(v)));if(n===undefined&&tj==null)return;if(n!==undefined&&isNaN(n))return;if(n!==tj)onSave({transportJ:n});};
-  const auto=tj!=null&&depart,liv=livrPrevueOf(meta,depart);
-  return(<div style={{minWidth:0}}>
-    <div style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>Livraison prévue</div>
-    {auto?<div style={{fontWeight:600,fontSize:FZ.sm,color:T.ink900,marginTop:4}}>{liv?fmt(dOf(liv)):"—"}</div>
-      :<DateField label="" value={meta.livrPrevue||""} onSave={x=>onSave({livrPrevue:x||undefined})} hint=""/>}
-    <label style={{display:"flex",alignItems:"center",gap:4,marginTop:4,fontSize:FZ.xs,color:T.ink500}}>transport
-      <input type="number" min={0} step={1} value={v} placeholder="j" onChange={e=>setV(e.target.value)} onBlur={save} onKeyDown={e=>{if(e.key==="Enter")e.currentTarget.blur();}} aria-label="Durée du transport en jours" style={{width:52,padding:"2px 6px",borderRadius:6,border:"1px solid "+T.line,background:T.card,color:T.ink900,fontSize:FZ.xs,fontFamily:T.font}}/>j</label>
-    <div style={{fontSize:FZ.xs,color:T.ink500,marginTop:2,fontStyle:"italic"}}>{auto?"date de livraison, transport compris (fin projetée + "+tj+" j)":"date de livraison, transport compris"}</div>
+  return(<label style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:FZ.xs,color:T.ink700}}>Durée du transport jusqu'au site client
+    <input type="number" min={0} step={1} value={v} placeholder="j" onChange={e=>setV(e.target.value)} onBlur={save} onKeyDown={e=>{if(e.key==="Enter")e.currentTarget.blur();}} aria-label="Durée du transport en jours" style={{width:56,padding:"3px 6px",borderRadius:6,border:"1px solid "+T.line,background:T.card,color:T.ink900,fontSize:FZ.sm,fontFamily:T.font}}/>jours</label>);
+}
+function DatesTable({r,ini,meta,onSave}){
+  const shipped=r.etat==="SHIPPED",tj=meta.transportJ,hasTj=tj!=null&&tj!=="";
+  const madC=dOf(meta.contratTFin),livC=dOf(meta.contratLivr);
+  const madI=ini?dOf(ini.depart):null,livI=ini&&hasTj?addDaysIso(ini.depart,tj):null;
+  const madA=dOf(r.depart),livA=dOf(livrPrevueOf(meta,r.depart));
+  const gap=(c,a)=>c&&a?diffDays(c,a):null;
+  const th={textAlign:"left",fontFamily:T.font,fontSize:12,fontWeight:700,color:T.ink500,padding:"6px 8px",borderBottom:"1px solid "+T.line,verticalAlign:"bottom"};
+  const td={padding:"6px 8px",borderBottom:"1px solid "+T.line,fontSize:FZ.sm,verticalAlign:"middle",fontVariantNumeric:"tabular-nums"};
+  const ecart=g=>g==null?<span style={{color:T.ink300}}>—</span>:g===0?<span style={{color:T.emerald600,fontWeight:700}}>dans les temps</span>:<span style={{fontWeight:800,color:g>0?T.red600:T.emerald600,background:g>0?T.red100:T.emerald100,borderRadius:999,padding:"1px 8px"}}>{signed(g)}</span>;
+  const row=(label,hint,contrat,initial,actuel,actuelHint,g)=><tr>
+    <td style={{...td,minWidth:150}}><b style={{color:T.ink900}}>{label}</b><div style={{fontSize:FZ.xs,color:T.ink500}}>{hint}</div></td>
+    <td style={td}>{contrat}</td>
+    <td style={{...td,color:T.ink500}}>{initial?fmt(initial):"—"}</td>
+    <td style={{...td,background:T.surface}}>{actuel}<div style={{fontSize:FZ.xs,color:T.ink500}}>{actuelHint}</div></td>
+    <td style={{...td,textAlign:"right"}}>{ecart(g)}</td></tr>;
+  return(<div style={{overflowX:"auto"}}>
+    <table style={{width:"100%",borderCollapse:"collapse",minWidth:560}}>
+      <thead><tr><th style={th}></th><th style={th}>Contrat<div style={{fontWeight:400}}>saisi dans la fiche</div></th><th style={th}>Planning initial<div style={{fontWeight:400}}>figé</div></th><th style={{...th,background:T.surface,color:T.ink900}}>{shipped?"Réel":"Prévision actuelle"}<div style={{fontWeight:400,color:T.ink500}}>↻ se met à jour à chaque publication</div></th><th style={{...th,textAlign:"right"}}>Écart au contrat</th></tr></thead>
+      <tbody>
+        {row("Fin projetée · MàD ORC","départ de l'atelier ENOGIA, hors transport",
+          <DateField label="" value={meta.contratTFin||""} onSave={v=>onSave({contratTFin:v})} hint=""/>, madI,
+          <b style={{color:madC&&madA&&madA>madC?T.red600:T.ink900}}>{madA?fmt(madA):"—"}</b>, shipped?"départ effectif":"départ du planning", gap(madC,madA))}
+        {row("Livraison sur site client","transport compris",
+          <DateField label="" value={meta.contratLivr||""} onSave={v=>onSave({contratLivr:v||undefined})} hint=""/>, livI,
+          hasTj?<b style={{color:livC&&livA&&livA>livC?T.red600:T.ink900}}>{livA?fmt(livA):"—"}</b>:<DateField label="" value={meta.livrPrevue||""} onSave={x=>onSave({livrPrevue:x||undefined})} hint=""/>,
+          hasTj?"MàD + "+tj+" j de transport":"saisie à la main : indiquez le transport pour un calcul automatique", gap(livC,livA))}
+      </tbody>
+    </table>
+    <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap",marginTop:8}}>
+      <TransportField meta={meta} onSave={onSave}/>
+      <span style={{fontSize:FZ.xs,color:T.ink500,fontStyle:"italic"}}>Les dates du planning initial ne bougent jamais ; la prévision suit chaque publication du planning.</span>
+    </div>
   </div>);
 }
-function ContratSection({r,meta,onSave,onNote}){
+function ContratSection({r,ini,meta,onSave,onNote}){
   const t0=meta.contratT0||"",tf=meta.contratTFin||"";
   const dT0=dOf(t0),dTf=dOf(tf),dep=dOf(r.depart);
   const ecart=dTf&&dep?diffDays(dTf,dep):null;     // + = départ prévu après la fin contractuelle
@@ -292,25 +323,18 @@ function ContratSection({r,meta,onSave,onNote}){
   const pos=d=>d?Math.max(0,Math.min(100,(+d-lo)/span*100)):null;
   const a=pos(dT0||dOf(r.arrivee)),b=pos(dTf),c=pos(dep),n=pos(today);
   const late=ecart!=null&&ecart>0;
-  const shipped=r.etat==="SHIPPED",endLab=shipped?"Tf final":"Fin projetée";   // projet expédié : la fin projetée devient le Tf final
+  const shipped=r.etat==="SHIPPED";   // projet expédié : la fin projetée devient le Tf final
   return(<Section title="Contrat & roadmap" right={<span style={{fontSize:FZ.xs,color:T.ink500}}><Gloss t="MaD ORC : mise à disposition de l'ORC, c'est-à-dire la fin contractuelle, hors transport vers le site client">MaD ORC</Gloss> = hors transport · Livraison = transport inclus</span>}>
     <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(112px,1fr))",gap:8,alignItems:"start"}}>
       <MontantField value={montantOf(meta)} onSave={n=>onSave({montantContrat:n})}/>
       <DateField label="T0 · début" value={t0} onSave={v=>onSave({contratT0:v})} hint={dT0?"":"non renseigné"}/>
-      <DateField label="MaD ORC" value={tf} onSave={v=>onSave({contratTFin:v})} hint={dTf?"fin contractuelle, hors transport":"non renseignée"}/>
-      <DateField label="Livraison contr." value={meta.contratLivr||""} onSave={v=>onSave({contratLivr:v||undefined})} hint={meta.contratLivr?"transport inclus":"non renseignée"}/>
-      <LivrPrevueField meta={meta} depart={r.depart} onSave={onSave}/>
       <div style={{minWidth:0}}>
-        <div style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>{endLab}</div>
-        <div style={{fontWeight:600,fontSize:FZ.sm,letterSpacing:"-.01em",color:late?T.red500:T.ink900,marginTop:4}}>{dep?fmt(dep):"—"}</div>
-        <div style={{fontSize:FZ.xs,color:T.ink300,marginTop:2}}>{shipped?"départ effectif":"départ prévu du planning"}</div>
-      </div>
-      <div style={{minWidth:0}}>
-        <div style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>Écart vs MaD ORC</div>
-        <div style={{fontWeight:600,fontSize:FZ.sm,letterSpacing:"-.01em",color:ecart==null?T.ink300:late?T.red500:T.emerald600,marginTop:4}}>{ecart==null?"—":ecart===0?"dans les temps":signed(ecart)}</div>
-        <div style={{fontSize:FZ.xs,color:T.ink300,marginTop:2}}>{duree!=null?"durée contrat "+duree+" j":bad?"MaD ORC avant T0 ?":"renseignez T0 et MaD ORC"}</div>
+        <div style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>Durée du contrat</div>
+        <div style={{fontWeight:600,fontSize:FZ.sm,color:T.ink900,marginTop:4}}>{duree!=null?duree+" j":"—"}</div>
+        <div style={{fontSize:FZ.xs,color:T.ink300,marginTop:2}}>{duree!=null?"de T0 à la MàD ORC":bad?"MaD ORC avant T0 ?":"renseignez T0 et la MàD ORC"}</div>
       </div>
     </div>
+
     {bad&&<div style={{marginTop:8,fontSize:FZ.xs,color:T.amber600,background:T.amber100,borderRadius:8,padding:"4px 8px",display:"inline-flex",alignItems:"center",gap:6}}><NavIcon name="warning" size={12}/>La date de MaD ORC est avant le début : vérifiez la saisie.</div>}
     {(dTf||dT0)&&<div style={{marginTop:6,position:"relative",height:52}}>
       <div style={{position:"absolute",left:0,right:0,top:20,height:6,background:T.surfaceAlt,borderRadius:8}}/>
@@ -989,14 +1013,14 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
         <Cols>
 <Col>
         {/* ── Jalons ── */}
-        <Section title="Jalons" right={<span style={{fontSize:FZ.xs,color:T.ink300,whiteSpace:"nowrap"}}>révisé · initial barré · écart</span>}>
+        <Section title="Jalons" right={<span style={{fontSize:FZ.xs,color:T.ink500,whiteSpace:"nowrap"}}>en grand : date actuelle · barrée : date initiale · écart</span>}>
           <Timeline r={r} ini={ini} kind={kind}/>
         </Section>
 
 </Col>
 <Col>
         {/* ── Contrat & roadmap (T0 / Tfin) ── */}
-        {savePjMetaOverride?<ContratSection r={r} meta={meta} onSave={f=>savePjMetaOverride(r.pj,f)} onNote={saveNote}/>:null}
+        {savePjMetaOverride?<ContratSection r={r} ini={ini} meta={meta} onSave={f=>savePjMetaOverride(r.pj,f)} onNote={saveNote}/>:null}
 </Col>
 <Col>
         {/* ── Depuis la dernière mise à jour ── */}
@@ -1004,6 +1028,8 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
 
 </Col>
         </Cols>
+        {/* v265 : dates de fin et de livraison sur toute la largeur : contrat / initial / prévision / écart */}
+        {savePjMetaOverride&&<Section title="Dates de fin et de livraison" right={<span style={{fontSize:FZ.xs,color:T.ink500}}>contrat saisi · initial figé · prévision automatique</span>}><DatesTable r={r} ini={ini} meta={meta} onSave={f=>savePjMetaOverride(r.pj,f)}/></Section>}
         </Frame>
         {/* ── Finance : prix de la fiche, pénalités, composants et paiements ── */}
         {savePjMetaOverride&&<Frame title="Finance" sub="Prix de la fiche, pénalités, composants et paiements">

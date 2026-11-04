@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v265",
+    date: "2026-11-04",
+    title: "V265 : nouvelle fiche d'un PJ",
+    items: [
+      { t: "Fiche d'un PJ", d: "Plus claire : l'étape et le départ en une ligne, les dates clés, la livraison prévue, et des onglets Tests et Commentaires." },
+      { t: "Dates des fiches projet", d: "Contrat, planning initial et prévision actuelle côte à côte, pour la fin projetée et la livraison sur site client.", admin: true },
+      { t: "Liaisons Cash in", d: "Plus clair : jalon réparti entre les machines, ou montant entier sur les machines cochées.", admin: true },
+    ],
+  },
+  {
     id: "2026-11-v264",
     date: "2026-11-04",
     title: "V264 : checklist de debug",
