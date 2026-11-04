@@ -1861,3 +1861,13 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Liaisons Cash in : « Réparti ÷ N » ou « Machines cochées » jalon par jalon, explications et exemples ; résumé corrigé (le montant « par machine » ne tenait pas compte des jalons non divisés).
 - Pas de nouvelle clé `localStorage`, pas de nouveau document Firestore.
 - Fichiers : components/RowDetail.js, components/ManagerFiche.js, components/CashLinks.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v266 — Production turbines : retour de Jérémie (gammes 100 kW / 20 kW)
+
+- Demandé : intégrer le fichier renvoyé par Jérémie (`ProdTurbines-kit (1).jsx`).
+- Intégré avec `npm run import:jeremie` : son kit partait de la V227 (sans ligne « Base du kit ») et la page du site n'avait pas changé depuis, donc rien n'est perdu.
+- Nouveautés de la page : gamme 100 kW / 20 kW (sélecteur ; accueil, planning, stocks et durées propres à chaque gamme ; les données existantes comptent en 100 kW), lots de roues à équilibrer, turbines reconditionnées avec contrôles OK / NOK à chaque étape, consommation des pièces par étape.
+- Données : même document `planning/prodTurbines`, mêmes collections (nouveaux champs `gamme`, `checks`, `conso`, `params.r20`) — règles Firestore inchangées.
+- Clé `localStorage` : `enogia_prodturb_gamme` (gamme affichée).
+- Kit régénéré (`npm run kit:jeremie`) : à renvoyer à Jérémie, c'est sa nouvelle base.
+- Fichiers : components/ProdTurbines.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

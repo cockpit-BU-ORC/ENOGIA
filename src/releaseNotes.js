@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v266",
+    date: "2026-11-04",
+    title: "V266 : Production turbines, gammes 100 kW et 20 kW",
+    items: [
+      { t: "Production turbines", d: "Deux gammes (100 kW et 20 kW), lots de roues à équilibrer, turbines reconditionnées et consommation des pièces par étape.", admin: true },
+    ],
+  },
+  {
     id: "2026-11-v265",
     date: "2026-11-04",
     title: "V265 : nouvelle fiche d'un PJ",

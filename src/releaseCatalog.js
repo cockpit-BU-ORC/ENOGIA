@@ -639,4 +639,7 @@ export const RELEASE_CATALOG = [
     ["Dates des fiches projet", "Un tableau sépare le contrat, le planning initial (figé) et la prévision actuelle (mise à jour à chaque publication) pour la fin projetée (MàD ORC) et la livraison sur site client.", "admin"],
     ["Liaisons Cash in", "Jalon par jalon : « réparti » (divisé entre les machines) ou « machines cochées » (montant entier sur une machine ou paiement unique du contrat), avec des exemples.", "admin"],
   ] },
+  { v: "266", t: "Production turbines : gammes 100 kW et 20 kW, roues, reconditionnement", items: [
+    ["Production turbines", "Retour de Jérémie : une gamme 100 kW et une gamme 20 kW séparées, lots de roues à équilibrer, turbines reconditionnées avec contrôles OK / NOK, consommation des pièces par étape.", "admin"],
+  ] },
 ];
