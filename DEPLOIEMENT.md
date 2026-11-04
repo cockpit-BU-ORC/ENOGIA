@@ -1934,3 +1934,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Fiches projet › Turbine : trois lignes courtes (turbine, roue, injecteur + bouchages).
 - Pas de nouvelle clé `localStorage`, pas de nouvelle donnée.
 - Fichiers : debugPdf.js (nouveau), debugDocx.js et zipStore.js (supprimés), debugChecklist.test.js, components/DebugChecklist.js, components/ManagerFiche.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v273 — Besoins turbines en plateaux, fiches projet plus lisibles (audit apple-design)
+
+- Demandé : « Oui, tout » sur la maquette « Besoins v2 et audit des fiches synthèse ».
+- Turbines › Besoins ORC et SAV : un plateau par turbine attendue (turbine · roue · injecteur) ; la pièce prévue est écrite dans son logement ; pendant le glisser, les logements compatibles s'allument et celui de la bonne référence passe en vert ; toucher une tuile puis un logement marche aussi ; « Remplir automatiquement » propose une affectation du stock, annulable ; anneau d'avancement par PJ et barre de progression.
+- Fiches projet : onglets collés en haut (Pilotage, Planning, Machine, Finance, Suivi) ; chiffres clés sous l'en-tête ; nouvelle zone Machine (S/N, certification, présence aux tests, turbine) ; zones sans bordure ; étiquettes grises ; feux plus grands ; « ✓ Enregistré » (ou l'échec) après chaque saisie.
+- Pas de nouvelle donnée, pas de nouvelle clé `localStorage`.
+- Fichiers : turbineNeeds.js (+ test), needsView.test.js (nouveau), components/TurbinesHub.js, components/ManagerFiche.js, styles.css, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

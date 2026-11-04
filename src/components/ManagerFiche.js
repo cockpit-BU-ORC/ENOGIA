@@ -38,7 +38,7 @@ const signed=d=>d==null?"—":(d>0?"+":"")+d+"j";
 // Mise en page éditoriale (même langage visuel que le rapport CODIR) : une grande carte unique, des blocs
 // séparés par un filet fin, des chiffres généreux, un seul accent (laiton). Les textes saisis ici
 // (commentaires de feux / d'indicateurs, actions de la semaine) sont repris tels quels dans les rapports (CODIR, chef de projet).
-const Cap=({children,style})=><div style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk,...style}}>{children}</div>;
+const Cap=({children,style})=><div style={{fontFamily:T.font,fontSize:12,fontWeight:600,color:T.ink500,...style}}>{children}</div>; // v272 (audit apple-design) : étiquette grise, plus de couleur qui ressemble à un lien
 function Section({title,right,children,style}){
   // v129 : sous-titre de bloc (niveau 2) — la phrase en gras, sans majuscules ; le cadre thématique (Frame) porte le niveau 1.
   return(<div style={{minWidth:0,...style}}>
@@ -51,8 +51,9 @@ function Section({title,right,children,style}){
   </div>);
 }
 // v129 : cadre par thème (Pilotage, Planning, Suivi…). Fond crème, filet, coin arrondi ; les tuiles à l'intérieur sont blanches.
-function Frame({title,sub,right,children,style}){
-  return(<section aria-label={title} style={{background:T.surface,border:"1px solid "+T.line,borderRadius:16,padding:D.mode==="compact"?"6px 10px 8px":"8px 12px 12px",display:"flex",flexDirection:"column",gap:D.mode==="compact"?4:8,minWidth:0,...style}}>
+function Frame({title,sub,right,children,style,id}){
+  // v272 (audit apple-design « trop de cadres dans les cadres ») : la zone est un fond uni, sans bordure ; id = cible des onglets de la fiche
+  return(<section id={id} data-fiche-zone={id} aria-label={title} style={{scrollMarginTop:56,background:T.surface,border:"none",borderRadius:14,padding:D.mode==="compact"?"6px 10px 8px":"8px 12px 12px",display:"flex",flexDirection:"column",gap:D.mode==="compact"?4:8,minWidth:0,...style}}>
     <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
       <span aria-hidden="true" style={{width:4,alignSelf:"stretch",minHeight:18,borderRadius:4,background:T.accent,flexShrink:0}}/>
       <span style={{fontSize:FZ.md,fontWeight:700,letterSpacing:"-.01em",color:T.ink900}}>{title}</span>
@@ -185,7 +186,7 @@ function StatutGlobal({meta,pj,onSave,onNote}){
           <Cap>{lab}</Cap>
           <div style={{marginTop:3,display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
             <span style={{fontSize:FZ.sm,fontWeight:600,color:feuText(lv),letterSpacing:"-.01em"}}>{feuLabel(lv)}</span>
-            <FeuPicker value={lv} onChange={v=>gate.ask(pj,meta,k,v)} size={16}/>
+            <FeuPicker value={lv} onChange={v=>gate.ask(pj,meta,k,v)} size={20}/>
           </div>
           <NoteField value={notes[k]} onSave={t=>lv==="red"&&!String(t||"").trim()?false:onNote(k,t)} placeholder={lv==="red"?"Commentaire obligatoire (statut à risque)":"＋ Commentaire de synthèse"}/>
           {lv==="red"&&redNeeds(meta,k).length>0&&<div role="alert" style={{marginTop:3,fontSize:FZ.xs,fontWeight:700,color:T.red600}}>À renseigner : {redNeeds(meta,k).join(" et ")}</div>}
@@ -193,7 +194,7 @@ function StatutGlobal({meta,pj,onSave,onNote}){
     </div>}
     {ne.length>0&&<div role="group" aria-label="Axes non évalués" style={{display:"flex",flexWrap:"wrap",alignItems:"center",gap:"2px 18px",marginTop:ev.length?8:0,padding:"3px 8px",borderRadius:8,background:T.card}}>
       <Cap>{ev.length?"Non évalués":"Aucun axe évalué"}</Cap>
-      {ne.map(([k,lab])=>(<span key={k} style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:FZ.xs,color:T.ink500}}>{lab}<FeuPicker value={null} onChange={v=>gate.ask(pj,meta,k,v)} size={16}/></span>))}
+      {ne.map(([k,lab])=>(<span key={k} style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:FZ.xs,color:T.ink500}}>{lab}<FeuPicker value={null} onChange={v=>gate.ask(pj,meta,k,v)} size={20}/></span>))}
     </div>}
   </Section>);
 }
@@ -215,11 +216,11 @@ function Synthese({r,ini,meta}){
   const SS=statusSoft();
   let payTile=null;
   if(cs){
-    if(cs.lateN>0)payTile=tile("Prochain paiement",fmtEur(cs.late),"en retard · "+cs.lateN+" jalon"+(cs.lateN>1?"s":"")+(cs.next&&cs.next.k!=="late"?" · puis "+cs.next.due.kind+" "+fmt(new Date(cs.next.due.date+"T00:00:00")):""),null,SS.late,true);
-    else if(cs.next){const dd=cs.next.due.days;payTile=tile("Prochain paiement",fmtEur(cs.next.montant),cs.next.due.kind+" "+fmt(new Date(cs.next.due.date+"T00:00:00"))+" · "+(dd<0?Math.abs(dd)+" j de retard":dd===0?"aujourd'hui":"dans "+dd+" j"),null,cs.next.tone==="warn"||dd<=15?SS.warn:null,true);}
-    else payTile=tile("Prochain paiement",cs.allEpc?"EPC":"Soldé",cs.allEpc?"pas de suivi de paiement":"tous les jalons sont encaissés",null,cs.allEpc?null:SS.paid,true);
+    if(cs.lateN>0)payTile=tile("Prochain paiement",fmtEur(cs.late),"en retard · "+cs.lateN+" jalon"+(cs.lateN>1?"s":"")+(cs.next&&cs.next.k!=="late"?" · puis "+cs.next.due.kind+" "+fmt(new Date(cs.next.due.date+"T00:00:00")):""),null,SS.late,false);
+    else if(cs.next){const dd=cs.next.due.days;payTile=tile("Prochain paiement",fmtEur(cs.next.montant),cs.next.due.kind+" "+fmt(new Date(cs.next.due.date+"T00:00:00"))+" · "+(dd<0?Math.abs(dd)+" j de retard":dd===0?"aujourd'hui":"dans "+dd+" j"),null,cs.next.tone==="warn"||dd<=15?SS.warn:null,false);}
+    else payTile=tile("Prochain paiement",cs.allEpc?"EPC":"Soldé",cs.allEpc?"pas de suivi de paiement":"tous les jalons sont encaissés",null,cs.allEpc?null:SS.paid,false);
   }
-  return(<div role="group" aria-label="Synthèse du projet" style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",gap:6}}>
+  return(<div role="group" aria-label="Synthèse du projet" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))",gap:6}}> {/* v272 : bande de chiffres sous l’en-tête */}
     {tile("Départ",dp?fmtLong(dp):"—",drift==null?"pas de planning initial":drift===0?"conforme au planning initial":Math.abs(drift)+" j "+(drift>0?"de retard":"d'avance")+" sur l'initial",drift>0?T.red500:drift<0?T.emerald600:null)}
     {tile("Prochain jalon",nxt?fmt(nxt[1]):"Aucun",nxt?nxt[0]+" · dans "+diffDays(today,nxt[1])+" j":"tous les jalons sont passés")}
     {tile("À traiter",nA+nM,nA+nM===0?"rien d'ouvert":nA+" action"+(nA>1?"s":"")+" · "+nM+" mitigation"+(nM>1?"s":""),nA+nM>0?T.amber600:null)}
@@ -742,7 +743,33 @@ function ChefOverview({name,rows,pvOf,onPick,onClose,summary}){
   </div>);
 }
 
-export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,managerEmails,currentUserEmail,resolveComment,certifs,setCertifs,openPj,openNonce,lastChange,data,initialData,comments,delays,progress,savePjMetaOverride,savePjMetaMulti,addCommentMulti,addComment,deleteComment,addDelayAllocationMulti,deleteDelayAllocation,delayTypes,setDelayTypes,changeLog,authorName,onOpenCash}){
+// v272 : barre d’onglets de la fiche — matière translucide (le contenu défile dessous), onglet actif = zone visible (IntersectionObserver),
+// clic = défilement doux (instantané si « réduire les animations »), « Enregistré » ou l’échec affiché à droite.
+function FicheTabs({r,zones,zone,setZone,saved,worst}){
+  const ref=React.useRef(null);
+  useEffect(()=>{
+    const root=ref.current&&ref.current.closest(".enogia-mcard-in");if(!root||typeof IntersectionObserver==="undefined")return undefined;
+    const io=new IntersectionObserver(es=>{const v=es.filter(e=>e.isIntersecting).sort((a,b)=>a.boundingClientRect.top-b.boundingClientRect.top)[0];if(v)setZone(v.target.getAttribute("data-fiche-zone"));},{root,rootMargin:"-60px 0px -60% 0px",threshold:0});
+    root.querySelectorAll("[data-fiche-zone]").forEach(el=>io.observe(el));return()=>io.disconnect();
+  },[r.pj,setZone,zones.length]);
+  const go=id=>{const root=ref.current&&ref.current.closest(".enogia-mcard-in"),el=root&&root.querySelector('[data-fiche-zone="'+id+'"]');if(!el)return;setZone(id);
+    const reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;root.scrollTo({top:root.scrollTop+el.getBoundingClientRect().top-root.getBoundingClientRect().top-52,behavior:reduce?"auto":"smooth"});};
+  return(<div ref={ref} className="enogia-fiche-tabs" style={{position:"sticky",top:0,zIndex:9,margin:"0 -16px",padding:"0 16px",display:"flex",alignItems:"center",gap:16,boxShadow:"0 1px 0 "+T.line,"--fiche-bg":T.card}}>
+    <span style={{fontFamily:T.fontMono,fontWeight:700,fontSize:FZ.sm,color:T.ink900,whiteSpace:"nowrap"}}>{r.pj}</span>
+    <div role="tablist" aria-label="Zones de la fiche" style={{display:"flex",gap:16,overflowX:"auto",minWidth:0}}>
+      {zones.map(([id,l])=><button key={id} type="button" role="tab" aria-selected={zone===id} onClick={()=>go(id)} style={{border:"none",background:"transparent",padding:"10px 0",minHeight:40,cursor:"pointer",fontFamily:T.font,fontSize:FZ.sm,fontWeight:zone===id?700:500,color:zone===id?T.ink900:T.ink500,borderBottom:"2px solid "+(zone===id?T.ink900:"transparent"),whiteSpace:"nowrap",transition:"color 120ms, border-color 120ms"}}>{l}</button>)}
+    </div>
+    <span style={{flex:1}}/>
+    {saved&&<span role="status" className="enogia-bell-peek" style={{fontSize:FZ.xs,fontWeight:700,color:saved.ok?T.emerald600:T.red600,whiteSpace:"nowrap"}}>{saved.ok?"✓ Enregistré":"Échec de l’enregistrement, réessayez"}</span>}
+    {worst&&<span style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:FZ.xs,fontWeight:700,color:feuText(worst),whiteSpace:"nowrap"}}><span style={{width:8,height:8,borderRadius:"50%",background:feuColor(worst)}}/>{feuLabel(worst)}</span>}
+  </div>);
+}
+export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,managerEmails,currentUserEmail,resolveComment,certifs,setCertifs,openPj,openNonce,lastChange,data,initialData,comments,delays,progress,savePjMetaOverride:saveMetaRaw,savePjMetaMulti,addCommentMulti,addComment,deleteComment,addDelayAllocationMulti,deleteDelayAllocation,delayTypes,setDelayTypes,changeLog,authorName,onOpenCash}){
+  // v272 (audit apple-design « enregistrement silencieux ») : chaque enregistrement de la fiche affiche « Enregistré » (ou l’échec) dans la barre d’onglets
+  const [saved,setSaved]=useState(null);
+  useEffect(()=>{if(!saved)return undefined;const t=setTimeout(()=>setSaved(null),saved.ok?1600:5000);return()=>clearTimeout(t);},[saved]);
+  const savePjMetaOverride=saveMetaRaw?(async(pj,fields)=>{const ok=await saveMetaRaw(pj,fields);setSaved({ok:ok!==false,n:Date.now()});return ok;}):saveMetaRaw;
+  const [zone,setZone]=useState("pilotage");
   const [search,setSearch]=useState("");
   // v164 : colonne de gauche redimensionnable (glisser la poignée) et réductible en mini-liste (n° de PJ + état), mémorisées sur ce poste
   const [listW,setListW]=useState(()=>{try{const v=parseInt(localStorage.getItem("enogia_mlist_w"),10);return v>=220&&v<=640?v:340;}catch(e){return 340;}});
@@ -980,14 +1007,15 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
         {/* v134 : la fiche prend la hauteur de l'écran ; elle défile à l'intérieur, l'en-tête (PJ, état, statut) reste figé en haut */}
         <div className="enogia-mcard-in" style={{padding:"0 16px 16px",display:"flex",flexDirection:"column",gap:12,flex:1,minHeight:0,overflowY:"auto",overflowX:"hidden"}}>
 
+        {/* v272 (audit apple-design « fiche de 2 600 px sans repère ») : onglets collés en haut, translucides ; clic = défilement doux jusqu’à la zone, l’onglet suit le défilement */}
+        <FicheTabs r={r} zone={zone} setZone={setZone} saved={saved} worst={worst} zones={[["pilotage","Pilotage"],["planning","Planning"],["machine","Machine"],...(savePjMetaOverride?[["finance","Finance"],["suivi","Suivi"]]:[])]}/>
         {/* ── En-tête : identité, avancement, message clé ── */}
-        <div style={{position:"sticky",top:0,zIndex:8,background:T.card,padding:"12px 16px 8px",margin:"0 -16px",borderBottom:"1px solid "+T.line}}>
+        <div style={{padding:"12px 0 4px"}}>
           <div style={{display:"flex",gap:20,flexWrap:"wrap",alignItems:"center",justifyContent:"space-between"}}>
             <div style={{minWidth:0,flex:"1 1 300px"}}>
               <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
                 <span style={{fontSize:FZ.xl,fontWeight:700,letterSpacing:"-.02em",lineHeight:1,color:T.ink900,whiteSpace:"nowrap",flexShrink:0}}><PjPlate pj={r.pj} size="lg"/></span>
                 {r.gamme&&<span style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:FZ.md,fontWeight:500,letterSpacing:"-.01em",lineHeight:1,color:T.ink700,whiteSpace:"nowrap"}}><span style={{width:9,height:9,borderRadius:"50%",background:gc,flexShrink:0}}/>{r.gamme}</span>}
-                <SerieTag pj={r.pj} size={12} style={{alignSelf:"center",padding:"1px 8px",lineHeight:"18px",borderRadius:8}}/>
               </div>
               <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginTop:4,fontSize:FZ.sm,fontWeight:500,color:T.ink500}}>
                 <span>{meta.nomProjet}</span>
@@ -999,9 +1027,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
               {chefEdit&&<ChefsEpcEditor meta={meta} onSave={f=>savePjMetaOverride(r.pj,f)} onCancel={()=>setChefEdit(false)}/>}
               <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",marginTop:5,fontSize:FZ.xs,color:T.ink500}}>
                 <Badge etat={r.etat}/>
-                <CertifTag r={r} meta={meta} rows={data} getMeta={getPjMeta} save={savePjMetaOverride&&savePjMetaMulti?(f=>savePjMetaOverride(r.pj,f)):null} saveMulti={savePjMetaMulti} certifs={certifs||[]} setCertifs={setCertifs||(async()=>false)}/>
                 {meta.pays&&meta.pays!=="—"&&<span style={{display:"inline-flex",alignItems:"center",gap:6}}><CountryFlag pays={meta.pays} size={13}/>{meta.pays}</span>}
-                {kind?<PresenceChip kind={kind} date={presenceFirstDate(r.clientPresence)} dates={presenceDates(r.clientPresence)} fontSize={11.5}/>:<span style={{fontSize:FZ.xs,color:T.ink300}}>Pas de présence aux tests</span>}
               </div>
             </div>
             <div style={{display:"inline-flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
@@ -1010,14 +1036,14 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
           </div>
         </div>
 
-        {/* ══ v146.28 : une zone par domaine, pleine largeur, empilées : Pilotage, Planning, Finance, Suivi ══ */}
+        <Synthese r={r} ini={ini} meta={meta}/>
+        {/* ══ v146.28 : une zone par domaine, pleine largeur, empilées : Pilotage, Planning, Machine (v272), Finance, Suivi ══ */}
         <div style={{display:"flex",flexDirection:"column",gap:D.mode==="compact"?8:12,minWidth:0}}>
         {/* ══ Cadre « Pilotage » (v129) : synthèse, commentaire général, statut global, indicateurs ══ */}
-        <Frame title="Pilotage" sub="Où en est ce projet" style={{gap:8}}>
+        <Frame id="pilotage" title="Pilotage" sub="Où en est ce projet" style={{gap:8}}>
         <Cols>
 <Col>
         {/* v178 : en-tête aligné sur « Statut global » et « Indicateurs clés » (les trois colonnes commencent au même niveau). */}
-        <Section title="Synthèse"><Synthese r={r} ini={ini} meta={meta}/></Section>
 
         {/* ── Légende : les deux types de commentaires (v123 : repliée, un clic sur « ? » l'affiche) ── */}
         {savePjMetaOverride&&<div style={{marginTop:-6}}>
@@ -1061,7 +1087,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
 </Col>
         </Cols>
         </Frame>
-        <Frame title="Planning" sub="Jalons, contrat, dernière mise à jour">
+        <Frame id="planning" title="Planning" sub="Jalons, contrat, dernière mise à jour">
         <Cols>
 <Col>
         {/* ── Jalons ── */}
@@ -1081,11 +1107,19 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
 </Col>
         </Cols>
         {/* v265 : dates de fin et de livraison sur toute la largeur : contrat / initial / prévision / écart */}
-        {savePjMetaOverride&&<TurbineSection r={r} meta={meta} onSave={f=>savePjMetaOverride(r.pj,f)}/>}
         {savePjMetaOverride&&<Section title="Dates de fin et de livraison" right={<span style={{fontSize:FZ.xs,color:T.ink500}}>contractuelle · prévisionnelle · effectuée</span>}><DatesTable r={r} meta={meta} onSave={f=>savePjMetaOverride(r.pj,f)}/></Section>}
         </Frame>
+        {/* v272 (audit apple-design « turbine rangée au mauvais endroit ») : zone Machine = S/N, certification, présence aux tests, turbine */}
+        <Frame id="machine" title="Machine" sub="Numéro de série, certification, tests, turbine">
+          <div style={{display:"flex",alignItems:"center",gap:14,flexWrap:"wrap",fontSize:FZ.xs,color:T.ink500}}>
+            <span style={{display:"inline-flex",alignItems:"center",gap:6}}>S/N <SerieTag pj={r.pj} size={12} style={{padding:"1px 8px",lineHeight:"18px",borderRadius:8}}/></span>
+            <span style={{display:"inline-flex",alignItems:"center",gap:6}}><CertifTag r={r} meta={meta} rows={data} getMeta={getPjMeta} save={savePjMetaOverride&&savePjMetaMulti?(f=>savePjMetaOverride(r.pj,f)):null} saveMulti={savePjMetaMulti} certifs={certifs||[]} setCertifs={setCertifs||(async()=>false)}/></span>
+            {kind?<PresenceChip kind={kind} date={presenceFirstDate(r.clientPresence)} dates={presenceDates(r.clientPresence)} fontSize={11.5}/>:<span style={{color:T.ink500}}>Pas de présence client / NOBO aux tests</span>}
+          </div>
+          {savePjMetaOverride&&<TurbineSection r={r} meta={meta} onSave={f=>savePjMetaOverride(r.pj,f)}/>}
+        </Frame>
         {/* ── Finance : prix de la fiche, pénalités, composants et paiements ── */}
-        {savePjMetaOverride&&<Frame title="Finance" sub="Prix de la fiche, pénalités, composants et paiements">
+        {savePjMetaOverride&&<Frame id="finance" title="Finance" sub="Prix de la fiche, pénalités, composants et paiements">
         <Cols>
 <Col>
         {savePjMetaMulti?<FicheContratPanel key={"p"+r.pj} part="contrat" r={r} meta={meta} rows={data} getMeta={getPjMeta} today={today} save={f=>savePjMetaOverride(r.pj,f)} saveMulti={savePjMetaMulti}/>:null}
@@ -1102,7 +1136,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
 </Col>
         </Cols>
         </Frame>}
-        {savePjMetaOverride&&<Frame title="Suivi" sub="Actions, mitigation, retards et commentaires">
+        {savePjMetaOverride&&<Frame id="suivi" title="Suivi" sub="Actions, mitigation, retards et commentaires">
         <Cols>
 <Col>
 

@@ -187,3 +187,30 @@ export function unallocOps(doc, alloc) {
 
 // Document de la production turbines, fourni par App (fiche projet : listes de roues et d’injecteurs)
 export const ProdDocCtx = createContext(null);
+
+// v272 (maquette « Besoins v2 » validée) : « Remplir automatiquement » — par date de besoin, pour chaque emplacement vide :
+// turbine disponible de la gamme (prête avec la roue prévue, puis prête, puis sans roue, puis en fabrication la plus tôt finie),
+// roue de la référence prévue, injecteur de la référence prévue (variante au bon nombre de bouchages, sinon vierge).
+// Rien n'est choisi sans référence prévue. Renvoie les écritures (dernière valeur par élément) et de quoi annuler.
+export function autoFill(doc, needs, free, today = new Date(), newId) {
+  const put = (d, w) => ({ ...d, [w.c]: { ...((d && d[w.c]) || {}), [w.id]: w.data } });
+  let d = { ...(doc || {}) }; const writes = new Map(), turbs = [], allocs = []; let k = 0;
+  const nid = newId || (() => "a" + Date.now().toString(36) + (k++).toString(36) + Math.random().toString(36).slice(2, 4));
+  const take = ops => { (ops.writes || []).forEach(w => { d = put(d, w); writes.set(w.c + "/" + w.id, w); }); };
+  const pool = (free || []).filter(x => !x.livree).slice();
+  const rank = (x, n) => (x.ready && n.roue && U(x.roue) === U(n.roue) ? 0 : x.ready ? 1 : x.sansRoue ? 2 : 3);
+  [...(needs || [])].sort((a, b) => String(a.date || "9").localeCompare(String(b.date || "9"))).forEach(n0 => {
+    const n = { ...n0, slots: n0.slots.map(s => ({ ...s })) };
+    n.slots.forEach((s, i) => {
+      if (s.extra) return;
+      if (!s.t) { const c = pool.filter(x => x.gamme === n.cfg.g).sort((a, b) => rank(a, n) - rank(b, n) || String(a.end || "9").localeCompare(String(b.end || "9")))[0];
+        if (c) { pool.splice(pool.indexOf(c), 1); take(assignOps(d, c, n, today)); s.t = c; s.roueMontee = c.roue && !c.sansRoue ? c.roue : ""; turbs.push(c.id); } }
+      if (!s.roue && !s.roueMontee && n.roue) { const t = stockTiles(d, n.cfg.g).roues.find(r => U(r.ref) === U(n.roue) && r.qte > 0);
+        if (t) { const id = nid(), ops = allocOps(d, n, i, t, today, () => id); if (!ops.error) { take(ops); s.roue = { id }; allocs.push(id); } } }
+      if (!s.inj && n.inj) { const L = stockTiles(d, n.cfg.g).injs.filter(r => U(r.ref) === U(n.inj) && r.qte > 0);
+        const t = L.find(r => n.injB ? r.bouches === n.injB : r.bouches == null) || L.find(r => r.bouches == null) || null;
+        if (t) { const id = nid(), ops = allocOps(d, n, i, t, today, () => id); if (!ops.error) { take(ops); s.inj = { id }; allocs.push(id); } } }
+    });
+  });
+  return { writes: [...writes.values()], turbs, allocs, count: turbs.length + allocs.length };
+}

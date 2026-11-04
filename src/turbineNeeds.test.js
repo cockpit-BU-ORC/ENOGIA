@@ -1,4 +1,4 @@
-import { defaultCfg, buildNeeds, assignOps, unassignOps, allocOps, unallocOps, stockTiles, maxBouches, refsOf } from "./turbineNeeds";
+import { defaultCfg, buildNeeds, assignOps, unassignOps, allocOps, unallocOps, stockTiles, maxBouches, refsOf, autoFill } from "./turbineNeeds";
 import { setResolved, isSeenFor, isResolvedFor } from "./mentions";
 
 // v270 : besoins PJ + SAV, turbines glissées sur un besoin, sortie du stock de la production
@@ -72,4 +72,15 @@ test("commentaire : « Vu » puis « Traité » (traité vaut vu), visibles de t
   expect(isSeenFor(a[0], "g@enogia.com")).toBe(true); expect(isResolvedFor(a[0], "g@enogia.com")).toBe(false);
   const b = setResolved(list, 0, "g@enogia.com", true, "2026-11-04T11:00:00Z");
   expect(isSeenFor(b[0], "g@enogia.com")).toBe(true); expect(isResolvedFor(b[0], "g@enogia.com")).toBe(true);
+});
+test("remplir automatiquement : turbine, roue et injecteur prévus, stock décompté une seule fois par élément", () => {
+  const d = { ...doc, turbines: { a: { num: "100N1", step: "ok", roue: "R1" }, e: { num: "100N9", step: "att" } }, besoins: {}, injecteurs: { i1: { ref: "MT11", qte: 3 } } };
+  const { needs, free } = buildNeeds(d, rows, metaOf, today);
+  let k = 0; const r = autoFill(d, needs, free, today, () => "X" + (k++));
+  const p1 = needs.find(n => n.key === "pj:PJ1"); expect(p1.want).toBe(2);
+  expect(r.turbs).toEqual(["a", "e"]);
+  // la turbine prête a déjà la roue R1 : une seule roue sortie (emplacement 2) ; deux injecteurs MT11
+  expect(r.writes.find(w => w.c === "roues").data.qte).toBe(1);
+  expect(r.writes.find(w => w.c === "injecteurs").data.qte).toBe(1);
+  expect(r.writes.filter(w => w.c === "allocs")).toHaveLength(3);
 });

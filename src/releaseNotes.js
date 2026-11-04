@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v273",
+    date: "2026-11-04",
+    title: "V273 : besoins turbines et fiches projet",
+    items: [
+      { t: "Turbines", d: "Besoins en plateaux turbine · roue · injecteur, remplissage automatique depuis le stock.", admin: true },
+      { t: "Fiches projet", d: "Onglets en haut, chiffres clés sous l'en-tête, zone Machine, confirmation « Enregistré ».", admin: true },
+    ],
+  },
+  {
     id: "2026-11-v272",
     date: "2026-11-04",
     title: "V272 : checklist de debug en PDF",

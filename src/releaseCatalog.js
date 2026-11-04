@@ -672,4 +672,8 @@ export const RELEASE_CATALOG = [
     ["Tests · checklist de debug", "« Exporter en PDF » : même mise en page que le modèle (A4 paysage), à enregistrer en PDF depuis la fenêtre d'impression. L'export Word est retiré."],
     ["Fiches projet · Turbine", "Section plus compacte : turbine, roue et injecteur sur trois lignes courtes.", "admin"],
   ] },
+  { v: "273", t: "Besoins turbines en plateaux, fiches projet plus lisibles", items: [
+    ["Turbines › Besoins ORC et SAV", "Chaque turbine attendue est un plateau turbine · roue · injecteur ; la pièce prévue est écrite dans son logement et s'allume en vert quand on glisse la bonne. « Remplir automatiquement » propose le stock (annulable). Toucher une tuile puis un logement marche aussi.", "admin"],
+    ["Fiches projet", "Onglets collés en haut (Pilotage, Planning, Machine, Finance, Suivi), chiffres clés sous l'en-tête, zone Machine (S/N, certification, tests, turbine), « Enregistré » après chaque saisie, feux plus grands.", "admin"],
+  ] },
 ];
