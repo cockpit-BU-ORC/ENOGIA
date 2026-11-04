@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v271",
+    date: "2026-11-04",
+    title: "V271 : cloche, « Vu » et besoins turbines",
+    items: [
+      { t: "Cloche", d: "« N à traiter » en toutes lettres, et un aperçu de chaque nouvelle mention." },
+      { t: "Commentaires", d: "Cité ? Cliquez « Vu » pour montrer à l'auteur que c'est pris en compte, puis « Traité »." },
+      { t: "Turbines", d: "Besoins par emplacement turbine + roue + injecteur, à remplir par glisser-déposer depuis le stock de la production.", admin: true },
+    ],
+  },
+  {
     id: "2026-11-v270",
     date: "2026-11-04",
     title: "V270 : turbines par PJ et SAV, checklist de debug",

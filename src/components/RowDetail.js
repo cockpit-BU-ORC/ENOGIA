@@ -53,7 +53,7 @@ const MEANING = {
 // Cash in seulement ; pas d'appro ni de turbines pour l'instant.
 const STATUS_TXT = { paid: "Payé", invoiced: "Facture émise", tobill: "À facturer", warn: "À surveiller", late: "En retard", future: "À venir", epc: "EPC" };
 
-export function RowDetail({ initialTab, r, onClose, comments, addComment, deleteComment, pinOk, delays, delayTypes, setDelayTypes, addDelayAllocation, deleteDelayAllocation, addDelayComment, deleteDelayComment, authorName, savePjMetaOverride, canEditMeta, dayAction }) {
+export function RowDetail({ resolveComment, initialTab, r, onClose, comments, addComment, deleteComment, pinOk, delays, delayTypes, setDelayTypes, addDelayAllocation, deleteDelayAllocation, addDelayComment, deleteDelayComment, authorName, savePjMetaOverride, canEditMeta, dayAction }) {
   const ctx = useContext(PjDialogCtx);
   const [tab, setTab] = useState(initialTab || "resume"), [open, setOpen] = useState(null), [focus0, setFocus] = useState(null); // v270 : initialTab (notification d’échange → Commentaires) // open : "delays" | "edit"
   const meta = getPjMeta(r.pj, r), shipped = r.etat === "SHIPPED";
@@ -180,7 +180,7 @@ export function RowDetail({ initialTab, r, onClose, comments, addComment, delete
         </div>)}
       </div>}
 
-      {tab === "comments" && <ProjectComments pj={r.pj} comments={list} addComment={addComment} deleteComment={deleteComment} pinOk={pinOk} authorName={authorName} />}
+      {tab === "comments" && <ProjectComments pj={r.pj} comments={list} addComment={addComment} deleteComment={deleteComment} pinOk={pinOk} authorName={authorName} resolveComment={resolveComment} />}
     </div>
 
     {/* Actions */}

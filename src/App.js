@@ -55,7 +55,7 @@ import { BetaBanner, UserChip } from "./components/AppChrome";
 import { useTurbineDoc, useTestsDoc, useProdTurbines, useDelays, useCashinSync, useAchats } from "./useAppData";
 import { useListFilters, filterOptions, filterRows } from "./listFilters";
 
-const APP_BUILD_VERSION = "2026-11-04-v270-turbines-besoins";
+const APP_BUILD_VERSION = "2026-11-04-v271-besoins-emplacements";
 
 export default function App(){
   // Utilisateur connecté via Google, restreint aux comptes @enogia.com (null tant que non connecté).
@@ -547,8 +547,8 @@ export default function App(){
   const chefOfRef=useRef(()=>({name:"",account:null}));
   chefOfRef.current=pj=>{const row=dataRef.current.find(r=>r.pj===pj);const name=row?(getPjMeta(pj,row).chefProjet||""):"";return{name,account:chefAccount(name,peopleAll)};};
   const mentionCtx=useMemo(()=>({options:peopleOptions(knownUsers,[],currentUser&&currentUser.email,currentUser&&currentUser.displayName,profiles),me:lcMention(currentUser&&currentUser.email),chefOf:pj=>chefOfRef.current(pj)}),[knownUsers,currentUser,profiles]);
-  const resolveComment=useCallback(async (pj,idx,email,on)=>{
-    const nextAll={...comments,[pj]:setCommentResolved(comments[pj]||[],idx,email,on,new Date().toISOString())};
+  const resolveComment=useCallback(async (pj,idx,email,on,field)=>{ // v271 : field = "seen" pour « Vu »
+    const nextAll={...comments,[pj]:setCommentResolved(comments[pj]||[],idx,email,on,new Date().toISOString(),field||"resolved")};
     try{await setDoc(COMMENTS_DOC_REF(),{byPj:nextAll},{merge:true});return true;}
     catch(e){console.error(e);notify("Erreur lors de l'enregistrement : "+e.message);return false;}
   },[comments]);
@@ -1129,7 +1129,7 @@ export default function App(){
       </>
     )}
     {/* v203 : fiche unique d'un PJ (même pop-up que la Liste et le Gantt) */}
-    {calSel&&<PjDialog dayAction={calDay&&canEditMeta?(()=>{const off=((productionExclusions||{})[calSel]||[]).includes(calDay),lab=calDay.slice(8,10)+"/"+calDay.slice(5,7);return{off,label:off?"Rétablir la production le "+lab:"Pas de production le "+lab,hint:"Pour "+calSel+" seulement — le Gantt, la charge et le planificateur en tiennent compte",onToggle:()=>setProductionExclusionDays({[calSel]:[calDay]},!off)};})():null} pj={calSel} initialTab={calTab} data={dataWithOverrides} df={df} onClose={()=>{setCalSel(null);setCalDay(null);setCalTab("resume");}} comments={comments} addComment={addComment} deleteComment={deleteComment}
+    {calSel&&<PjDialog dayAction={calDay&&canEditMeta?(()=>{const off=((productionExclusions||{})[calSel]||[]).includes(calDay),lab=calDay.slice(8,10)+"/"+calDay.slice(5,7);return{off,label:off?"Rétablir la production le "+lab:"Pas de production le "+lab,hint:"Pour "+calSel+" seulement — le Gantt, la charge et le planificateur en tiennent compte",onToggle:()=>setProductionExclusionDays({[calSel]:[calDay]},!off)};})():null} pj={calSel} initialTab={calTab} resolveComment={resolveComment} data={dataWithOverrides} df={df} onClose={()=>{setCalSel(null);setCalDay(null);setCalTab("resume");}} comments={comments} addComment={addComment} deleteComment={deleteComment}
       pinOk={pinOk} delays={delays} delayTypes={delayTypes} setDelayTypes={setDelayTypesAndSave} addDelayAllocation={addDelayAllocation} deleteDelayAllocation={deleteDelayAllocation}
       addDelayComment={addDelayComment} deleteDelayComment={deleteDelayComment} authorName={authorName} savePjMetaOverride={savePjMetaOverride} canEditMeta={canEditMeta}/>}
       </ArrangeCtx.Provider></main>

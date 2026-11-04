@@ -662,4 +662,10 @@ export const RELEASE_CATALOG = [
     ["Notifications", "Un clic sur un commentaire de la cloche ouvre la fiche du PJ sur ses commentaires."],
     ["Tests · checklist de debug", "Les cases cochées sont bien enregistrées."],
   ] },
+  { v: "271", t: "Cloche plus visible, « Vu » sur les commentaires, besoins turbines refaits", items: [
+    ["Cloche", "« N à traiter » écrit à côté de la cloche ; elle tinte à chaque nouvelle demande et un aperçu de la mention s'affiche quelques secondes."],
+    ["Commentaires", "Quand on vous cite : « Vu » montre à l'auteur que vous l'avez pris en compte, « Traité » quand c'est réglé. Les deux sont visibles de tous."],
+    ["Turbines › Besoins ORC et SAV", "Chaque turbine attendue est un emplacement turbine + roue + injecteur ; glissez-y les turbines (prêtes avec roue, sans roue, en fabrication), les roues et les injecteurs du stock : le stock de la production se met à jour.", "admin"],
+    ["Fiches projet", "Turbine choisie sur des cartes, roue et injecteur en pastilles avec leur stock, nombre de bouchages de l'injecteur.", "admin"],
+  ] },
 ];

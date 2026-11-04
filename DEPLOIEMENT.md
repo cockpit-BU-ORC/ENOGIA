@@ -1914,3 +1914,15 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Kit de Jérémie : à régénérer (`npm run kit:jeremie`) ; consignes : garder la prop `demandes` et ces champs.
 - Pas de nouvelle clé `localStorage`.
 - Fichiers : turbineNeeds.js (+ test, nouveaux), components/TurbinesHub.js, components/ProdTurbines.js, components/ManagerFiche.js, components/RowDetail.js, components/MentionBell.js, testPlan.js, App.js, turbinesHub.test.js, scripts/prodturb-kit.js, scripts/prodturb-consignes.md, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v271 — Cloche plus visible, « Vu » sur les commentaires, besoins turbines par emplacement
+
+- Demandé : « cloche pas assez visible » (piste C retenue) ; « montrer que j'ai pris en compte un commentaire » (« Vu ») ; « besoins ORC : design pas clair ; turbines prêtes avec / sans roue ; stock de roues et d'injecteurs aussi en glisser-déposer, qui met à jour le stock de Jérémie ; roue et injecteur à installer signalés par PJ » ; « rien dans l'onglet de Jérémie » ; « fiche projet : piste A, et nombre de bouchages de l'injecteur borné par l'injecteur ».
+- Cloche : « N à traiter » écrit, tintement et halo à chaque nouvelle demande, aperçu 6 s de la nouvelle mention (Ouvrir / Vu).
+- Commentaires : « Vu » et « Traité » pour la personne citée, visibles de tous (fiche pop-up et fiches projet). Données : `seen` à côté de `resolved` dans `planning/comments`.
+- Turbines › Besoins ORC et SAV : stock de la production en tuiles (turbines prêtes / sans roue / en fabrication, roues, injecteurs vierges ou bouchés) ; chaque turbine attendue = emplacement turbine + roue + injecteur ; glisser = sortie du stock (quantités de Jérémie mises à jour), × = retour. Nouvelle collection `allocs` dans `planning/prodTurbines` (déjà couvert par les règles).
+- Turbines › Production : encart « Demandes ORC et SAV » retiré.
+- Fiches projet › Turbine : cartes, pastilles avec stock, bouchages (`turbInjB`).
+- Kit de Jérémie à régénérer (`npm run kit:jeremie`) : consignes 7 bis mises à jour (champs `besoin`, `sortieOrc`, collections `besoins` et `allocs`).
+- Pas de nouvelle clé `localStorage`.
+- Fichiers : turbineNeeds.js (+ test), components/TurbinesHub.js, components/ProdTurbines.js (retour V269), components/ManagerFiche.js, components/CommentMarks.js (nouveau), components/ProjectModal.js, components/RowDetail.js, components/MentionBell.js, mentions.js, styles.css, App.js, scripts/prodturb-kit.js, scripts/prodturb-consignes.md, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

@@ -541,3 +541,12 @@ button { transition: background-color var(--e-dur-micro) var(--e-ease), border-c
 @media (prefers-contrast: more) { :focus-visible { outline-width: 3px !important; } }
 /* petits textes (11 px et moins) : lettres très légèrement espacées pour la lisibilité ; les grands chiffres restent resserrés */
 [style*="font-size: 11px"], [style*="font-size: 10.5px"], [style*="font-size: 10px"], [style*="font-size: 9.5px"], th { letter-spacing: .01em; }
+
+/* v271 : cloche (piste C) — tintement + halo quand le nombre de demandes augmente, aperçu qui sort de la cloche */
+.enogia-bell-ring svg{animation:enogiaBellRing 900ms cubic-bezier(.2,.8,.2,1) 1;transform-origin:50% 10%}
+.enogia-bell-ring::after{content:"";position:absolute;inset:-2px;border-radius:11px;pointer-events:none;animation:enogiaBellHalo 1.6s ease-out 2}
+@keyframes enogiaBellRing{0%{transform:rotate(0)}15%{transform:rotate(14deg)}30%{transform:rotate(-12deg)}45%{transform:rotate(8deg)}60%{transform:rotate(-5deg)}75%{transform:rotate(2deg)}100%{transform:rotate(0)}}
+@keyframes enogiaBellHalo{0%{box-shadow:0 0 0 0 rgba(168,47,21,.45)}100%{box-shadow:0 0 0 12px rgba(168,47,21,0)}}
+.enogia-bell-peek{animation:enogiaBellPeek 240ms cubic-bezier(.2,.8,.2,1)}
+@keyframes enogiaBellPeek{from{opacity:0;transform:scale(.96) translateY(-4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.enogia-bell-ring svg,.enogia-bell-ring::after,.enogia-bell-peek{animation:none}}

@@ -293,7 +293,7 @@ const TABS = [["accueil", "Accueil"], ["planning", "Planning"], ["stocks", "Stoc
 
 // pjs (facultatif) : PJ du planning proposés dans « Affaire / client » (« PJ479-1 - EDF PEI ») ; la page Turbines › Besoins des ORC
 // rattache une turbine au PJ dont le numéro commence ce champ.
-export function ProdTurbines({ doc, api, canEdit, owner, pjs, demandes }) { // v270 : demandes = besoins ORC / SAV envoyés par le site (garder la prop)
+export function ProdTurbines({ doc, api, canEdit, owner, pjs }) {
   // Gamme affichée (100 kW ou 20 kW) : préférence d'affichage propre à ce navigateur.
   const [gamme, setGamme] = useState(() => { try { return localStorage.getItem("enogia_prodturb_gamme") === "20" ? "20" : "100"; } catch (e) { return "100"; } });
   useEffect(() => { try { localStorage.setItem("enogia_prodturb_gamme", gamme); } catch (e) { /* stockage indisponible */ } }, [gamme]);
@@ -501,8 +501,8 @@ export function ProdTurbines({ doc, api, canEdit, owner, pjs, demandes }) { // v
   /* ---- glisser une carte sur sa ligne (souris et tactile) ---- */
   const dragRef = useRef(null); const [drag, setDrag] = useState(null);
   // Ordre des encarts (Accueil, Planning et Stock), propre à chaque utilisateur et à ce navigateur : simple préférence d'affichage.
-  const ORDER_DEF = { accueil: ["demandes", "pretes", "sansroue", "roues", "injecteurs", "vision"], planning: ["pieces", "turbines", "reco", "arbres", "roues"], stocks: ["roues", "injecteurs", "stock"] };
-  const BLOCK_L = { accueil: { demandes: "Demandes ORC et SAV", pretes: "Turbines prêtes", sansroue: "Testées sans roue", roues: "Roues équilibrées par réf.", injecteurs: "Injecteurs par réf.", vision: "Dates prévisionnelles des prochaines turbines" }, planning: { pieces: "Appro, contrôle qualité et non-conformités", turbines: "Turbines", reco: "Turbines reconditionnées", arbres: "Arbres", roues: "Roues à équilibrer" },
+  const ORDER_DEF = { accueil: ["pretes", "sansroue", "roues", "injecteurs", "vision"], planning: ["pieces", "turbines", "reco", "arbres", "roues"], stocks: ["roues", "injecteurs", "stock"] };
+  const BLOCK_L = { accueil: { pretes: "Turbines prêtes", sansroue: "Testées sans roue", roues: "Roues équilibrées par réf.", injecteurs: "Injecteurs par réf.", vision: "Dates prévisionnelles des prochaines turbines" }, planning: { pieces: "Appro, contrôle qualité et non-conformités", turbines: "Turbines", reco: "Turbines reconditionnées", arbres: "Arbres", roues: "Roues à équilibrer" },
     stocks: { roues: "Roues équilibrées", injecteurs: "Injecteurs", stock: "Pièces en stock" } };
   const ORDER_KEY = "enogia_prodturb_order";
   const [blockOrder, setBlockOrder] = useState(() => { try { return JSON.parse(localStorage.getItem(ORDER_KEY) || "{}") || {}; } catch { return {}; } });
@@ -584,25 +584,7 @@ export function ProdTurbines({ doc, api, canEdit, owner, pjs, demandes }) { // v
     const pct = x => Math.max(0, Math.min(100, (x / H) * 100));
     const ticks = []; for (let k = 0; k < H; k++) { const d = addWD(T0(), k); if (k === 0 || d.getDay() === 1) ticks.push({ k, l: fmtShort(d) }); }
     const hatch = c => "repeating-linear-gradient(135deg," + c + " 0 3px,transparent 3px 7px)";
-    // v270 : besoins ORC / SAV de la gamme affichée — date, configuration, roue et injecteur demandés, turbines déjà attribuées
-    const dem = (demandes || []).filter(d => String(d.gamme) === gamme).sort((a, b) => String(a.date || "9").localeCompare(String(b.date || "9")));
-    const refQ = (c, ref) => { const x = Object.values(S[c] || {}).find(y => normTxt(y.ref) === normTxt(ref)); return x ? (c === "injecteurs" ? injTotal(x) : +x.qte || 0) : null; };
     const blocks = {
-      demandes: (<section aria-label="Demandes ORC et SAV" style={card()}>
-        <H2 sub="Envoyées par le site (Turbines › Besoins ORC et SAV) : ce qui est attendu, pour quand, avec quelle roue et quel injecteur.">Demandes ORC et SAV</H2>
-        {dem.length === 0 ? <Muted>Aucune demande en attente pour la gamme {gammeL(gamme)}.</Muted> : <div role="region" tabIndex={0} aria-label="Demandes ORC et SAV" style={{ overflow: "auto", maxHeight: "min(60vh, 480px)" }}><table style={{ width: "100%", borderCollapse: "collapse", fontSize: FZF.sm, fontVariantNumeric: "tabular-nums", minWidth: 640 }}>
-          <thead><tr>{["Pour le", "Demande", "Turbine", "Roue", "Injecteur", "Turbines attribuées"].map(h => <th key={h} style={{ textAlign: "left", fontSize: 12, fontWeight: 500, color: T.ink500, padding: "6px 8px", borderBottom: "1px solid " + T.line, whiteSpace: "nowrap" }}>{h}</th>)}</tr></thead>
-          <tbody>{dem.map(d => { const late = d.turbines.some(t => !t.ready && t.end && d.date && t.end > d.date), rq = d.roue ? refQ("roues", d.roue) : null, iq = d.inj ? refQ("injecteurs", d.inj) : null;
-            return <tr key={d.key}>
-              <td style={{ padding: "6px 8px", borderBottom: "1px solid " + T.line, whiteSpace: "nowrap", fontWeight: 700 }}>{d.date ? fmtShort(parseD(d.date)) : "—"}</td>
-              <td style={{ padding: "6px 8px", borderBottom: "1px solid " + T.line }}><b>{d.label}</b>{d.kind === "sav" ? <span style={{ color: T.amber600, fontWeight: 700 }}> · SAV</span> : null}{d.sub ? <div style={{ fontSize: FZF.xs, color: T.ink500 }}>{d.sub}</div> : null}</td>
-              <td style={{ padding: "6px 8px", borderBottom: "1px solid " + T.line, whiteSpace: "nowrap" }}>{d.cfg}</td>
-              <td style={{ padding: "6px 8px", borderBottom: "1px solid " + T.line, whiteSpace: "nowrap" }}>{d.roue || <span style={{ color: T.ink500 }}>à préciser</span>}{rq != null ? <div style={{ fontSize: FZF.xs, color: rq > 0 ? T.ink500 : T.red600 }}>{rq} en stock</div> : null}</td>
-              <td style={{ padding: "6px 8px", borderBottom: "1px solid " + T.line, whiteSpace: "nowrap" }}>{d.inj || <span style={{ color: T.ink500 }}>à préciser</span>}{iq != null ? <div style={{ fontSize: FZF.xs, color: iq > 0 ? T.ink500 : T.red600 }}>{iq} en stock</div> : null}</td>
-              <td style={{ padding: "6px 8px", borderBottom: "1px solid " + T.line }}>{d.turbines.map(t => <div key={t.num} style={{ fontSize: FZF.xs }}><b>{t.num}</b> · {t.livree ? "sortie le " + fmtShort(parseD(t.livree)) : t.ready ? "prête" : t.end ? "fin prévue " + fmtShort(parseD(t.end)) : "en cours"}</div>)}
-                {d.manque > 0 && <div style={{ fontSize: FZF.xs, fontWeight: 700, color: T.red600 }}>{d.manque} à fournir</div>}{late && <div style={{ fontSize: FZF.xs, fontWeight: 700, color: T.red600 }}>prête après la date demandée</div>}</td>
-            </tr>; })}</tbody></table></div>}
-      </section>),
       pretes: (kpi("Turbines prêtes", ready.length, ready.length ? ready.map(t => <div key={t.id} style={li}><b>{t.num}</b><span style={{ color: T.ink500, fontSize: FZF.xs }}>{t.roue ? "roue " + t.roue : "config. roue à renseigner"}</span></div>) : <Muted>Aucune turbine prête pour l'instant.</Muted>)),
       sansroue: (kpi("Testées sans roue", noWheel.length, noWheel.length ? noWheel.map(t => <div key={t.id} style={li}><b>{t.num}</b><span style={{ color: T.ink500, fontSize: FZF.xs }}>{t.roue ? "roue " + t.roue + " attribuée" : "en stock depuis le " + fmtShort(parseD(t.since))}</span></div>) : <Muted>Aucune turbine en stock sans roue.</Muted>)),
       roues: (kpi("Roues équilibrées par réf.", sumR, roues.length ? roues.map(r => <div key={r.id} style={{ ...li, display: "block", padding: "4px 0" }}><div style={{ display: "flex", justifyContent: "space-between" }}><span>{r.ref}</span><b style={{ fontVariantNumeric: "tabular-nums" }}>{+r.qte || 0}</b></div>
@@ -647,7 +629,7 @@ export function ProdTurbines({ doc, api, canEdit, owner, pjs, demandes }) { // v
         <div style={{ fontSize: FZF.xs, color: T.ink500, marginTop: 8 }}>Calcul en jours ouvrés à partir des durées de la gamme, du temps déjà passé à l'étape en cours et de la disponibilité des arbres équilibrés.</div>
       </section>),
     };
-    return (<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,230px),1fr))", gap: 12, alignItems: "start" }}>{orderedBlocks("accueil", blocks, k => k === "vision" || k === "demandes" ? { gridColumn: "1 / -1" } : undefined)}</div>);
+    return (<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,230px),1fr))", gap: 12, alignItems: "start" }}>{orderedBlocks("accueil", blocks, k => k === "vision" ? { gridColumn: "1 / -1" } : undefined)}</div>);
   };
 
   const board = (kind, steps, lockId, items, nameCell, cardText) => {

@@ -34,19 +34,24 @@ export function toggleToken(text, o) {
 }
 
 export const mentionsOf = c => (c && Array.isArray(c.mentions) ? c.mentions.map(lc) : []);
+// v271 (demandé : « montrer que j'ai bien pris en compte le commentaire ») : « Vu » = seen: [{ email, at }], visible de tous, avant « traité »
+export const isSeenFor = (c, email) => !!(c && Array.isArray(c.seen) && c.seen.some(x => lc(x.email) === lc(email)));
+export const markOf = (c, email, field) => ((c && Array.isArray(c[field]) && c[field].find(x => lc(x.email) === lc(email))) || null);
 export const isResolvedFor = (c, email) => !!(c && Array.isArray(c.resolved) && c.resolved.some(x => lc(x.email) === lc(email)));
 // Demande ouverte pour cette personne : elle est citée et n'a pas marqué « traité »
 export const isOpenFor = (c, email) => !!email && mentionsOf(c).includes(lc(email)) && !isResolvedFor(c, email);
 export const countOpenFor = (list, email) => (list || []).filter(c => isOpenFor(c, email)).length;
 
 // Nouvelle liste de commentaires après « traité » / « rouvrir »
-export function setResolved(list, idx, email, on, nowIso) {
+export function setResolved(list, idx, email, on, nowIso, field = "resolved") {
   return (list || []).map((c, i) => {
     if (i !== idx) return c;
-    const rest = (c.resolved || []).filter(x => lc(x.email) !== lc(email));
-    const resolved = on ? [...rest, { email: lc(email), at: nowIso }] : rest;
-    const next = { ...c, resolved };
-    if (!resolved.length) delete next.resolved;
+    const rest = (c[field] || []).filter(x => lc(x.email) !== lc(email));
+    const marks = on ? [...rest, { email: lc(email), at: nowIso }] : rest;
+    const next = { ...c, [field]: marks };
+    if (!marks.length) delete next[field];
+    // « traité » vaut aussi « vu »
+    if (field === "resolved" && on && !isSeenFor(c, email)) next.seen = [...(c.seen || []), { email: lc(email), at: nowIso }];
     return next;
   });
 }

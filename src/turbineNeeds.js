@@ -1,13 +1,15 @@
 // v270 (demandé : « la production produit des turbines ; dans les besoins, une liste des PJ, et on prend dans une liste de turbines
 // disponibles pour les glisser sur un PJ ; garder les besoins SAV ; sur chaque fiche projet, la turbine (2×100 kW, 100 kW, 20 kW,
-// 2×40 kW), la roue et l'injecteur (listes définies avec le responsable turbines) ; une turbine libre / terminée prise dans la production
-// doit sortir de son stock ; les besoins doivent remonter dans son planning : on attend cette turbine avec cette roue et cet injecteur
-// pour telle date ; pareil pour le SAV »).
-// Calculs purs (testés dans turbineNeeds.test.js) :
-//  · besoins = PJ en cours (configuration de la fiche projet, sinon déduite de la gamme) + besoins SAV (planning/prodTurbines.besoins) ;
-//  · une turbine est rattachée à un besoin par son champ `besoin` (« pj:PJ479-1 » / « sav:<id> »), sinon par son « Affaire » (ancien usage) ;
-//  · attribuer = écrire la turbine (affaire, besoin, roue si vide) ; une turbine **prête** sort du stock (livree = aujourd'hui, sortieOrc)
-//    et prend un injecteur vierge du stock (injPris) ; retirer l'attribution remet tout comme avant.
+// 2×40 kW), la roue et l'injecteur ; une turbine libre / terminée prise dans la production doit sortir de son stock »).
+// v271 (demandé : « différencier les turbines prêtes avec et sans roue ; avoir aussi le stock de roues et d'injecteurs prêts pour faire un
+// glisser-déposer ; tout glisser-déposer met à jour le stock de Jérémie ; pour chaque PJ, la roue et l'injecteur à installer signalés ;
+// l'injecteur peut être à boucher : indiquer le nombre de bouchages ») :
+//  · un besoin (PJ en cours ou SAV) a autant d'emplacements que de turbines ; chaque emplacement = turbine + roue + injecteur ;
+//  · turbine : champ `besoin` (« pj:PJ » / « sav:id ») ; une turbine prête (avec roue) ou testée sans roue sort du stock (livree, sortieOrc) ;
+//  · roue / injecteur : `planning/prodTurbines.allocs[id] = { besoin, slot, kind: "roue"|"inj", stockId, ref, bouches, at }` ;
+//    la quantité du stock (roues.qte, injecteurs.qte vierges ou variantes[bouches].qte) baisse de 1, et revient si on retire l'élément ;
+//  · une turbine qui a déjà sa roue montée couvre la roue de son emplacement.
+// Calculs purs, testés dans turbineNeeds.test.js.
 import { createContext } from "react";
 import { makeModel, EMPTY_PROD } from "./components/ProdTurbines";
 import { turbinesNeeded } from "./turbines";
@@ -16,10 +18,9 @@ export const TURB_CFGS = [
   { id: "2x100", l: "2 × 100 kW", n: 2, g: "100" },
   { id: "100", l: "100 kW", n: 1, g: "100" },
   { id: "20", l: "20 kW", n: 1, g: "20" },
-  { id: "2x40", l: "2 × 40 kW", n: 2, g: "20" }, // les ORC 40 kW reçoivent des turbines de la ligne 20 kW (comme avant : « 20 kW, gammes 20 et 40 »)
+  { id: "2x40", l: "2 × 40 kW", n: 2, g: "20" }, // les ORC 40 kW reçoivent des turbines de la ligne 20 kW
 ];
 export const cfgById = id => TURB_CFGS.find(c => c.id === id) || null;
-// Configuration par défaut d'après la gamme du PJ (100 → 100 kW, 180 → 2 × 100 kW, 20 → 20 kW, 40 → 2 × 40 kW)
 export function defaultCfg(gamme) {
   const n = turbinesNeeded(gamme); if (!n) return null;
   return n.type === "20LT" ? (n.n > 1 ? "2x40" : "20") : (n.n > 1 ? "2x100" : "100");
@@ -28,7 +29,6 @@ export const pjCfg = (meta, gamme) => cfgById((meta && meta.turbCfg) || defaultC
 
 const COLLS = ["turbines", "arbres", "pieces", "roues", "injecteurs"];
 const gammeOf = x => (x && String(x.gamme) === "20" ? "20" : "100");
-// Même lecture que la page de production : éléments de la gamme, identifiant repris de la clé, durées du 20 kW dans params.r20
 export function prodState(doc, g) {
   const d = doc || {}, dp = d.params || {};
   const o = { ...EMPTY_PROD, ...d, gamme: g, params: g === "20" ? { d: {}, l: {}, ...(dp.r20 || {}) } : { d: {}, l: {}, ...dp } };
@@ -39,20 +39,36 @@ const isWork = d => d.getDay() % 6 !== 0;
 export const isoDay = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 export function workDate(n, from = new Date()) { const d = new Date(from); d.setHours(0, 0, 0, 0); while (!isWork(d)) d.setDate(d.getDate() + 1); let k = Math.ceil(n || 0); while (k > 0) { d.setDate(d.getDate() + 1); if (isWork(d)) k--; } return isoDay(d); }
 export const isoOf = v => { if (!v) return ""; const s = String(v); if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10); const d = new Date(s); return isNaN(d) ? "" : isoDay(d); };
-// PJ du planning désigné par le champ « Affaire » (« PJ479-1 - EDF PEI » → PJ479-1) : le plus long numéro qui commence le texte
 export function pjOfAffaire(aff, pjs) {
   const a = String(aff || "").trim().toUpperCase(); if (!a) return null;
   let best = null;
   (pjs || []).forEach(p => { const P = String(p).toUpperCase(); if (a.startsWith(P) && !/[A-Z0-9-]/.test(a.charAt(P.length)) && (!best || P.length > best.length)) best = p; });
   return best;
 }
-// Références de roues / d'injecteurs définies dans la production (pour une gamme, ou toutes)
+const U = v => String(v || "").trim().toUpperCase();
 export function refsOf(doc, c, g) {
   const s = new Set(); Object.values((doc && doc[c]) || {}).forEach(x => { if (x && x.ref && (!g || gammeOf(x) === g)) s.add(String(x.ref)); });
   return [...s].sort((a, b) => a.localeCompare(b, "fr", { numeric: true }));
 }
-const stockOf = (doc, c, ref) => Object.entries((doc && doc[c]) || {}).find(([, x]) => x && String(x.ref || "").toUpperCase() === String(ref || "").toUpperCase()) || null;
 const fd = s => (s ? String(s).slice(8, 10) + "/" + String(s).slice(5, 7) : "—");
+const vars = r => (r.variantes || []).filter(v => (+v.qte || 0) > 0);
+// Stock de roues et d'injecteurs d'une gamme : une tuile par référence (roues) ; injecteurs : vierges + une tuile par nombre de bouchages
+export function stockTiles(doc, g) {
+  const roues = Object.entries((doc && doc.roues) || {}).filter(([, r]) => r && gammeOf(r) === g).map(([id, r]) => ({ kind: "roue", stockId: id, ref: String(r.ref || ""), qte: +r.qte || 0, g }))
+    .sort((a, b) => a.ref.localeCompare(b.ref, "fr", { numeric: true }));
+  const injs = [];
+  Object.entries((doc && doc.injecteurs) || {}).filter(([, r]) => r && gammeOf(r) === g).sort((a, b) => String(a[1].ref).localeCompare(String(b[1].ref), "fr", { numeric: true })).forEach(([id, r]) => {
+    injs.push({ kind: "inj", stockId: id, ref: String(r.ref || ""), bouches: null, qte: +r.qte || 0, ouv: +r.ouvertures || 0, g });
+    vars(r).sort((a, b) => a.bouches - b.bouches).forEach(v => injs.push({ kind: "inj", stockId: id, ref: String(r.ref || ""), bouches: +v.bouches, qte: +v.qte || 0, ouv: +r.ouvertures || 0, g }));
+  });
+  return { roues, injs };
+}
+// Injecteur d'une référence : ouvertures (pour borner les bouchages) et quantités prêtes
+export function injInfo(doc, ref) {
+  const e = Object.entries((doc && doc.injecteurs) || {}).find(([, r]) => r && U(r.ref) === U(ref)); if (!e) return null;
+  const r = e[1]; return { id: e[0], ouv: +r.ouvertures || 0, vierges: +r.qte || 0, variantes: vars(r).map(v => ({ bouches: +v.bouches, qte: +v.qte || 0 })) };
+}
+export const maxBouches = ouv => (ouv > 0 ? ouv - 1 : 99); // comme la production : il reste au moins une ouverture
 
 // Toutes les turbines de la production, avec leur date de fin prévue
 export function allTurbines(doc, today = new Date()) {
@@ -60,85 +76,113 @@ export function allTurbines(doc, today = new Date()) {
   ["100", "20"].forEach(g => {
     const S = prodState(doc, g), M = makeModel(S);
     Object.values(S.turbines).forEach(t => {
-      const sc = M.sch[t.id] || {}, ready = t.step === "ok", end = t.livree || ready ? isoDay(today) : sc.end != null ? workDate(sc.end, today) : null;
-      out.push({ id: t.id, raw: t, num: t.num || "", gamme: g, step: M.lbl(t.step), ready, end, livree: t.livree || "", missing: !!sc.missing, roue: t.roue || "", affaire: t.affaire || "", besoin: t.besoin || "" });
+      const sc = M.sch[t.id] || {}, ready = t.step === "ok", sansRoue = t.step === "s1", dispo = ready || sansRoue;
+      const end = t.livree || dispo ? isoDay(today) : sc.end != null ? workDate(sc.end, today) : null;
+      out.push({ id: t.id, raw: t, num: t.num || "", gamme: g, step: M.lbl(t.step), ready, sansRoue, dispo, end, livree: t.livree || "", missing: !!sc.missing, roue: t.roue || "", affaire: t.affaire || "", besoin: t.besoin || "" });
     });
   });
   return out;
 }
 
-// Besoins (PJ en cours + SAV) et turbines disponibles
+// Besoins (PJ en cours + SAV), emplacements, turbines disponibles
 export function buildNeeds(doc, rows, metaOf, today = new Date()) {
   const open = (rows || []).filter(r => r && r.pj && r.etat !== "SHIPPED" && r.etat !== "SLOT_LIBRE");
-  const ids = (rows || []).map(r => r.pj), openIds = new Set(open.map(r => r.pj));
+  const ids = (rows || []).map(r => r.pj);
   const needs = [];
-  open.forEach(r => { const m = (metaOf && metaOf(r)) || {}, cfg = pjCfg(m, r.gamme); if (!cfg && !m.turbCfg) return;
-    needs.push({ key: "pj:" + r.pj, kind: "pj", pj: r.pj, label: r.pj, sub: m.nomProjet || "", r, cfg, cfgSet: !!m.turbCfg, roue: m.turbRoue || "", inj: m.turbInj || "", date: isoOf(r.arrivee) }); });
+  open.forEach(r => { const m = (metaOf && metaOf(r)) || {}, cfg = pjCfg(m, r.gamme); if (!cfg) return;
+    needs.push({ key: "pj:" + r.pj, kind: "pj", pj: r.pj, label: r.pj, sub: m.nomProjet && m.nomProjet !== "—" ? m.nomProjet : "", r, cfg, cfgSet: !!m.turbCfg, roue: m.turbRoue || "", inj: m.turbInj || "", injB: m.turbInjB == null ? null : +m.turbInjB, date: isoOf(r.arrivee) }); });
   Object.entries((doc && doc.besoins) || {}).forEach(([id, b]) => { if (!b || b.done) return;
-    needs.push({ key: "sav:" + id, kind: "sav", id, label: b.label || "SAV", sub: b.note || "", raw: b, cfg: cfgById(b.cfg) || TURB_CFGS[1], cfgSet: true, roue: b.roue || "", inj: b.inj || "", date: isoOf(b.date) }); });
+    needs.push({ key: "sav:" + id, kind: "sav", id, label: b.label || "SAV", sub: b.note || "", raw: b, cfg: cfgById(b.cfg) || TURB_CFGS[1], cfgSet: true, roue: b.roue || "", inj: b.inj || "", injB: b.injB == null || b.injB === "" ? null : +b.injB, date: isoOf(b.date) }); });
   const keys = new Set(needs.map(n => n.key));
   const turbs = allTurbines(doc, today), by = {}, free = [];
   turbs.forEach(x => {
-    const k = x.besoin || (() => { const pj = pjOfAffaire(x.affaire, ids); return pj ? "pj:" + pj : null; })(); // une turbine attribuée (même à un PJ expédié ou un SAV terminé) n’est plus disponible
+    const k = x.besoin || (() => { const pj = pjOfAffaire(x.affaire, ids); return pj ? "pj:" + pj : null; })();
     if (k) { if (keys.has(k)) (by[k] = by[k] || []).push(x); return; }
     if (!x.livree) free.push(x);
   });
+  const allocs = Object.entries((doc && doc.allocs) || {}).map(([id, a]) => ({ id, ...a }));
   needs.forEach(n => {
-    const got = by[n.key] || [], issues = [], want = n.cfg ? n.cfg.n : 0;
+    const got = by[n.key] || [], want = n.cfg.n, issues = [];
+    const mine = allocs.filter(a => a.besoin === n.key);
+    const slots = [];
+    for (let i = 0; i < Math.max(want, got.length); i++) {
+      const t = got[i] || null;
+      const roue = mine.find(a => a.kind === "roue" && +a.slot === i) || null, inj = mine.find(a => a.kind === "inj" && +a.slot === i) || null;
+      const roueMontee = t && t.roue && !t.sansRoue ? t.roue : "";
+      slots.push({ i, t, roue, inj, roueMontee, roueOk: !!(roue || roueMontee), extra: i >= want });
+    }
     if (want > got.length) issues.push({ bad: true, t: (want - got.length) + " turbine" + (want - got.length > 1 ? "s" : "") + " à attribuer" });
-    if (n.kind === "pj" && !n.cfgSet && n.cfg) issues.push({ bad: false, t: "configuration déduite de la gamme : à confirmer dans la fiche projet" });
-    if (!n.roue) issues.push({ bad: false, t: "roue à choisir" });
-    if (!n.inj) issues.push({ bad: false, t: "injecteur à choisir" });
-    got.forEach(x => {
-      if (n.cfg && x.gamme !== n.cfg.g) issues.push({ bad: true, t: (x.num || "Turbine") + " : " + x.gamme + " kW au lieu de " + n.cfg.g + " kW" });
-      if (n.roue && x.roue && x.roue !== n.roue) issues.push({ bad: true, t: (x.num || "Turbine") + " : roue " + x.roue + " au lieu de " + n.roue });
-      if (x.missing && !x.ready && !x.livree) issues.push({ bad: true, t: (x.num || "Turbine") + " : pas d'arbre prévu" });
-      else if (!x.ready && !x.livree && x.end && n.date && x.end > n.date) issues.push({ bad: true, t: (x.num || "Turbine") + " prête le " + fd(x.end) + ", après le besoin du " + fd(n.date) });
+    slots.forEach(s => {
+      const t = s.t, nm = t ? t.num || "Turbine" : "Emplacement " + (s.i + 1);
+      if (t && t.gamme !== n.cfg.g) issues.push({ bad: true, t: nm + " : " + t.gamme + " kW au lieu de " + n.cfg.g + " kW" });
+      const rr = s.roue ? s.roue.ref : s.roueMontee;
+      if (n.roue && rr && U(rr) !== U(n.roue)) issues.push({ bad: true, t: nm + " : roue " + rr + " au lieu de " + n.roue });
+      if (n.inj && s.inj && U(s.inj.ref) !== U(n.inj)) issues.push({ bad: true, t: nm + " : injecteur " + s.inj.ref + " au lieu de " + n.inj });
+      if (s.inj && n.injB != null && s.inj.bouches != null && +s.inj.bouches !== n.injB) issues.push({ bad: true, t: nm + " : injecteur à " + s.inj.bouches + " bouchages au lieu de " + n.injB });
+      if (t && !t.dispo && !t.livree && t.missing) issues.push({ bad: true, t: nm + " : pas d'arbre prévu" });
+      else if (t && !t.dispo && !t.livree && t.end && n.date && t.end > n.date) issues.push({ bad: true, t: nm + " prête le " + fd(t.end) + ", après le besoin du " + fd(n.date) });
     });
-    Object.assign(n, { got, issues, want });
+    const roueMiss = slots.filter(s => !s.extra && !s.roueOk).length, injMiss = slots.filter(s => !s.extra && !s.inj).length;
+    Object.assign(n, { got, want, slots, issues, roueMiss, injMiss, complete: got.length >= want && !roueMiss && !injMiss });
   });
   needs.sort((a, b) => String(a.date || "9").localeCompare(String(b.date || "9")) || a.label.localeCompare(b.label));
-  free.sort((a, b) => (b.ready - a.ready) || String(a.end || "9").localeCompare(String(b.end || "9")) || a.num.localeCompare(b.num));
-  return { needs, free, openIds };
+  free.sort((a, b) => (b.ready - a.ready) || (b.sansRoue - a.sansRoue) || String(a.end || "9").localeCompare(String(b.end || "9")) || a.num.localeCompare(b.num));
+  return { needs, free };
 }
 
-// Écritures pour attribuer une turbine à un besoin. Renvoie { writes: [{ c, id, data }], msg, warn }
+const clean = o => { const x = { ...o }; delete x.id; return x; };
+// Turbine → emplacement d'un besoin. Une turbine disponible (prête ou testée sans roue) sort du stock (avec son arbre).
 export function assignOps(doc, x, need, today = new Date()) {
-  const t = { ...x.raw }; delete t.id;
-  const writes = [], notes = [];
+  const t = clean(x.raw), writes = [];
   t.besoin = need.key; t.affaire = need.kind === "pj" ? need.label + (need.sub ? " - " + need.sub : "") : "SAV · " + need.label;
-  if (need.roue && !t.roue) { t.roue = need.roue; notes.push("roue " + need.roue + " attribuée"); }
-  let warn = need.roue && x.roue && x.roue !== need.roue ? "La turbine a déjà la roue " + x.roue + " (demandée : " + need.roue + ")." : "";
-  if (x.ready && !x.livree) {
-    t.livree = isoDay(today); t.sortieOrc = isoDay(today); notes.push("sortie du stock de la production");
-    if (need.inj) { const s = stockOf(doc, "injecteurs", need.inj);
-      if (s && (+s[1].qte || 0) > 0) { const inj = { ...s[1] }; delete inj.id; inj.qte = (+inj.qte || 0) - 1; writes.push({ c: "injecteurs", id: s[0], data: inj }); t.injPris = s[0]; notes.push("1 injecteur " + need.inj + " sorti du stock"); }
-      else warn = (warn ? warn + " " : "") + "Pas d'injecteur " + need.inj + " vierge en stock : à sortir à la main."; }
-    if (t.arbreId && doc.arbres && doc.arbres[t.arbreId] && !doc.arbres[t.arbreId].livree) { const a = { ...doc.arbres[t.arbreId], livree: isoDay(today) }; delete a.id; writes.push({ c: "arbres", id: t.arbreId, data: a }); }
-  } else if (need.inj) t.injDemande = need.inj;
+  let note = "réservée";
+  if (x.dispo && !x.livree) {
+    t.livree = isoDay(today); t.sortieOrc = isoDay(today); note = "sortie du stock de la production";
+    if (t.arbreId && doc.arbres && doc.arbres[t.arbreId] && !doc.arbres[t.arbreId].livree) writes.push({ c: "arbres", id: t.arbreId, data: { ...clean(doc.arbres[t.arbreId]), livree: isoDay(today) } });
+  }
   writes.unshift({ c: "turbines", id: x.id, data: t });
-  return { writes, msg: (x.num || "Turbine") + " → " + need.label + (notes.length ? " (" + notes.join(", ") + ")" : ""), warn };
+  const warn = need.roue && x.roue && !x.sansRoue && U(x.roue) !== U(need.roue) ? "Elle a déjà la roue " + x.roue + " (prévue : " + need.roue + ")." : "";
+  return { writes, msg: (x.num || "Turbine") + " → " + need.label + " (" + note + ")", warn };
 }
-// Retirer l'attribution : la turbine redevient disponible ; si elle était sortie du stock par l'attribution, elle y revient (avec son injecteur)
 export function unassignOps(doc, x) {
-  const t = { ...x.raw }; delete t.id; const writes = [];
-  const fromStock = !!t.sortieOrc;
+  const t = clean(x.raw), writes = [], fromStock = !!t.sortieOrc;
   delete t.besoin; delete t.injDemande; t.affaire = "";
   if (fromStock) {
     delete t.livree; delete t.sortieOrc;
-    if (t.injPris && doc.injecteurs && doc.injecteurs[t.injPris]) { const inj = { ...doc.injecteurs[t.injPris] }; delete inj.id; inj.qte = (+inj.qte || 0) + 1; writes.push({ c: "injecteurs", id: t.injPris, data: inj }); }
+    if (t.injPris && doc.injecteurs && doc.injecteurs[t.injPris]) writes.push({ c: "injecteurs", id: t.injPris, data: { ...clean(doc.injecteurs[t.injPris]), qte: (+doc.injecteurs[t.injPris].qte || 0) + 1 } });
     delete t.injPris;
-    if (t.arbreId && doc.arbres && doc.arbres[t.arbreId] && doc.arbres[t.arbreId].livree) { const a = { ...doc.arbres[t.arbreId] }; delete a.id; delete a.livree; writes.push({ c: "arbres", id: t.arbreId, data: a }); }
+    if (t.arbreId && doc.arbres && doc.arbres[t.arbreId] && doc.arbres[t.arbreId].livree) { const a = clean(doc.arbres[t.arbreId]); delete a.livree; writes.push({ c: "arbres", id: t.arbreId, data: a }); }
   }
   writes.unshift({ c: "turbines", id: x.id, data: t });
   return { writes, msg: (x.num || "Turbine") + " retirée" + (fromStock ? " et remise dans le stock de la production" : "") };
 }
-
-// Demandes pour le planning de la production (page de Jérémie) : une ligne par besoin non couvert ou en cours
-export function demandesOf(needs) {
-  return (needs || []).filter(n => n.cfg).map(n => ({ key: n.key, kind: n.kind, label: n.label, sub: n.sub, date: n.date, gamme: n.cfg.g, n: n.cfg.n, cfg: n.cfg.l, roue: n.roue, inj: n.inj,
-    turbines: n.got.map(x => ({ num: x.num, ready: x.ready || !!x.livree, end: x.end, livree: x.livree })), manque: Math.max(0, n.cfg.n - n.got.length) }))
-    .filter(d => d.manque > 0 || d.turbines.some(t => !t.livree));
+// Quantité d'une tuile de stock modifiée de d (roue : qte ; injecteur : vierges ou variante « bouches »)
+function bump(doc, tile, d) {
+  const c = tile.kind === "roue" ? "roues" : "injecteurs", cur = doc && doc[c] && doc[c][tile.stockId]; if (!cur) return null;
+  const x = clean(cur);
+  if (tile.kind === "inj" && tile.bouches != null) {
+    const v = (x.variantes || []).map(y => ({ ...y })), k = v.find(y => +y.bouches === +tile.bouches);
+    if (k) k.qte = Math.max(0, (+k.qte || 0) + d); else if (d > 0) v.push({ bouches: +tile.bouches, qte: d }); else return null;
+    x.variantes = v.filter(y => (+y.qte || 0) > 0);
+  } else x.qte = Math.max(0, (+x.qte || 0) + d);
+  return { c, id: tile.stockId, data: x };
+}
+// Roue ou injecteur du stock → emplacement i d'un besoin : le stock baisse de 1, une allocation garde la trace
+export function allocOps(doc, need, slot, tile, today = new Date(), newId = () => "a" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5)) {
+  if (!tile || tile.qte <= 0) return { error: "Plus de " + (tile && tile.kind === "roue" ? "roue " : "injecteur ") + ((tile && tile.ref) || "") + " en stock." };
+  const s = need.slots[slot]; if (!s) return { error: "Emplacement introuvable." };
+  if (tile.kind === "roue" && (s.roue || s.roueMontee)) return { error: "Cet emplacement a déjà sa roue." };
+  if (tile.kind === "inj" && s.inj) return { error: "Cet emplacement a déjà son injecteur." };
+  const st = bump(doc, tile, -1); if (!st) return { error: "Stock introuvable." };
+  const id = newId(), a = { besoin: need.key, slot, kind: tile.kind, stockId: tile.stockId, ref: tile.ref, at: isoDay(today) };
+  if (tile.kind === "inj") a.bouches = tile.bouches == null ? null : +tile.bouches;
+  const warn = tile.kind === "roue" ? (need.roue && U(need.roue) !== U(tile.ref) ? "Roue prévue : " + need.roue + "." : "")
+    : (need.inj && U(need.inj) !== U(tile.ref) ? "Injecteur prévu : " + need.inj + "." : need.injB != null && tile.bouches == null && need.injB > 0 ? "Injecteur vierge : " + need.injB + " bouchage" + (need.injB > 1 ? "s" : "") + " à faire." : need.injB != null && tile.bouches != null && +tile.bouches !== need.injB ? "Prévu : " + need.injB + " bouchages." : "");
+  return { writes: [st, { c: "allocs", id, data: a }], msg: (tile.kind === "roue" ? "Roue " : "Injecteur ") + tile.ref + (tile.bouches != null ? " (" + tile.bouches + " bouchages)" : "") + " → " + need.label + " · sorti du stock", warn };
+}
+export function unallocOps(doc, alloc) {
+  const st = bump(doc, { kind: alloc.kind, stockId: alloc.stockId, bouches: alloc.kind === "inj" ? alloc.bouches : null }, +1);
+  return { writes: st ? [st] : [], dels: [{ c: "allocs", id: alloc.id }], msg: (alloc.kind === "roue" ? "Roue " : "Injecteur ") + alloc.ref + " remis en stock" };
 }
 
 // Document de la production turbines, fourni par App (fiche projet : listes de roues et d’injecteurs)

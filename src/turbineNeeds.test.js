@@ -1,4 +1,5 @@
-import { defaultCfg, buildNeeds, assignOps, unassignOps, demandesOf, refsOf } from "./turbineNeeds";
+import { defaultCfg, buildNeeds, assignOps, unassignOps, allocOps, unallocOps, stockTiles, maxBouches, refsOf } from "./turbineNeeds";
+import { setResolved, isSeenFor, isResolvedFor } from "./mentions";
 
 // v270 : besoins PJ + SAV, turbines glissées sur un besoin, sortie du stock de la production
 const today = new Date(2026, 10, 4);
@@ -30,30 +31,45 @@ test("besoins : PJ en cours + SAV, turbines attribuées par « besoin » ou par 
   expect(p1.want).toBe(2); expect(p1.got.map(x => x.num)).toEqual(["100N2"]);
   expect(p1.issues.map(i => i.t)).toContain("1 turbine à attribuer");
   expect(needs.find(n => n.key === "sav:s1").got.map(x => x.num)).toEqual(["100N3"]);
-  expect(needs.find(n => n.key === "pj:PJ2").issues.some(i => /déduite de la gamme/.test(i.t))).toBe(true);
+  expect(needs.find(n => n.key === "pj:PJ2")).toMatchObject({ cfgSet: false, want: 1, roueMiss: 1, injMiss: 1 });
   expect(free.map(x => x.num).sort()).toEqual(["100N1", "20N1"]);
   expect(refsOf(doc, "roues", "100")).toEqual(["R1"]);
 });
-test("attribuer une turbine prête : sortie du stock et injecteur décompté ; retirer : tout revient", () => {
+test("turbine prête ou sans roue : sortie du stock ; retirer : retour au stock", () => {
   const { needs, free } = buildNeeds(doc, rows, metaOf, today);
   const x = free.find(t => t.num === "100N1"), p1 = needs.find(n => n.key === "pj:PJ1");
-  const ops = assignOps(doc, x, p1, today);
-  const t = ops.writes.find(w => w.c === "turbines").data;
-  expect(t).toMatchObject({ besoin: "pj:PJ1", livree: "2026-11-04", sortieOrc: "2026-11-04", injPris: "i1" });
-  expect(ops.writes.find(w => w.c === "injecteurs").data.qte).toBe(2);
-  const doc2 = { ...doc, turbines: { ...doc.turbines, a: t }, injecteurs: { i1: { ref: "MT11", qte: 2 } } };
-  const back = unassignOps(doc2, { id: "a", num: "100N1", raw: t });
-  const t2 = back.writes.find(w => w.c === "turbines").data;
-  expect(t2.livree).toBeUndefined(); expect(t2.besoin).toBeUndefined(); expect(t2.affaire).toBe("");
-  expect(back.writes.find(w => w.c === "injecteurs").data.qte).toBe(3);
+  const t = assignOps(doc, x, p1, today).writes[0].data;
+  expect(t).toMatchObject({ besoin: "pj:PJ1", livree: "2026-11-04", sortieOrc: "2026-11-04" });
+  const back = unassignOps(doc, { id: "a", num: "100N1", raw: t }).writes[0].data;
+  expect(back.livree).toBeUndefined(); expect(back.besoin).toBeUndefined(); expect(back.affaire).toBe("");
+  const d = { ...doc, turbines: { e: { num: "100N9", step: "att" }, f: { num: "100N8", step: "s1" } } };
+  const b2 = buildNeeds(d, rows, metaOf, today);
+  expect(b2.free.find(y => y.num === "100N8").sansRoue).toBe(true);
+  expect(assignOps(d, b2.free.find(y => y.num === "100N9"), p1, today).writes[0].data.livree).toBeUndefined(); // en fabrication : réservée
 });
-test("turbine en cours : réservée (roue posée si vide, injecteur demandé) ; demandes pour la production", () => {
-  const d = { ...doc, turbines: { e: { num: "100N9", step: "att" } } };
-  const { needs, free } = buildNeeds(d, rows, metaOf, today);
-  const ops = assignOps(d, free[0], needs.find(n => n.key === "pj:PJ1"), today);
-  expect(ops.writes).toHaveLength(1);
-  expect(ops.writes[0].data).toMatchObject({ besoin: "pj:PJ1", roue: "R1", injDemande: "MT11" });
-  expect(ops.writes[0].data.livree).toBeUndefined();
-  const dem = demandesOf(needs);
-  expect(dem.find(x => x.key === "pj:PJ1")).toMatchObject({ gamme: "100", n: 2, roue: "R1", inj: "MT11", manque: 2, date: "2026-12-01" });
+test("roue et injecteur glissés : stock décompté, allocation, retour au stock", () => {
+  const d = { ...doc, injecteurs: { i1: { ref: "MT11", qte: 3, ouvertures: 12, variantes: [{ bouches: 3, qte: 1 }] } } };
+  const { needs } = buildNeeds(d, rows, metaOf, today), p1 = needs.find(n => n.key === "pj:PJ1");
+  const st = stockTiles(d, "100");
+  expect(st.injs.map(x => [x.ref, x.bouches, x.qte])).toEqual([["MT11", null, 3], ["MT11", 3, 1]]);
+  const r = allocOps(d, p1, 1, st.roues[0], today, () => "A1");
+  expect(r.writes[0]).toEqual({ c: "roues", id: "r1", data: { ref: "R1", qte: 1 } });
+  expect(r.writes[1]).toMatchObject({ c: "allocs", id: "A1", data: { besoin: "pj:PJ1", slot: 1, kind: "roue", ref: "R1" } });
+  const iv = allocOps(d, p1, 1, st.injs[1], today, () => "A2");
+  expect(iv.writes[0].data.variantes).toEqual([]);
+  const d2 = { ...d, allocs: { A1: r.writes[1].data, A2: iv.writes[1].data } };
+  const s1 = buildNeeds(d2, rows, metaOf, today).needs.find(n => n.key === "pj:PJ1").slots[1];
+  expect(s1.roue.ref).toBe("R1"); expect(s1.inj.bouches).toBe(3);
+  expect(allocOps(d2, buildNeeds(d2, rows, metaOf, today).needs.find(n => n.key === "pj:PJ1"), 1, st.roues[0]).error).toMatch(/déjà sa roue/);
+  const back = unallocOps(d2, { id: "A2", ...iv.writes[1].data });
+  expect(back.writes[0].data.variantes).toEqual([{ bouches: 3, qte: 2 }]); expect(back.dels).toEqual([{ c: "allocs", id: "A2" }]);
+  expect(allocOps(d, p1, 0, { ...st.roues[0], qte: 0 }).error).toMatch(/Plus de roue/);
+  expect(maxBouches(12)).toBe(11);
+});
+test("commentaire : « Vu » puis « Traité » (traité vaut vu), visibles de tous", () => {
+  const list = [{ text: "x", mentions: ["g@enogia.com"] }];
+  const a = setResolved(list, 0, "g@enogia.com", true, "2026-11-04T10:00:00Z", "seen");
+  expect(isSeenFor(a[0], "g@enogia.com")).toBe(true); expect(isResolvedFor(a[0], "g@enogia.com")).toBe(false);
+  const b = setResolved(list, 0, "g@enogia.com", true, "2026-11-04T11:00:00Z");
+  expect(isSeenFor(b[0], "g@enogia.com")).toBe(true); expect(isResolvedFor(b[0], "g@enogia.com")).toBe(true);
 });

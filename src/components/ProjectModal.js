@@ -6,6 +6,7 @@ import { fmt, fmtMode } from "../parsers";
 import { MentionPicker, MentionTextarea } from "./MentionPicker";
 import { useMentions } from "../mentionContext";
 import { typedMentions } from "../mentions";
+import { CommentMarks } from "./CommentMarks";
 import { Badge, NavIcon, Select, DelayScopeNote, EmptyState, SuperOnly, NewDelayType, PjPlate } from "./SharedUI";
 import { PHASES } from "./GanttView";
 import { useDetailMode } from "../detailMode";
@@ -253,7 +254,7 @@ export function EditMetaForm({meta,gamme,onSave,onCancel}){
   </div>);
 }
 
-export function ProjectComments({pj,comments,addComment,deleteComment,pinOk,authorName}){
+export function ProjectComments({pj,comments,addComment,deleteComment,pinOk,authorName,resolveComment}){
   const [authorInput,setAuthorInput]=useState("");
   const author=authorName||authorInput;
   const [text,setText]=useState("");
@@ -321,6 +322,7 @@ export function ProjectComments({pj,comments,addComment,deleteComment,pinOk,auth
               <SuperOnly><button onClick={()=>{setDeleteTarget(c._idx);setPinInput("");}} title="Supprimer" style={{background:"none",border:"none",color:T.ink100,cursor:"pointer",fontSize:FZ.xs,padding:0,marginLeft:2}}><NavIcon name="close" size={11}/></button></SuperOnly>
             </div>
             <div style={{background:c.private?T.amber100:T.panel,borderRadius:"3px 12px 12px 12px",padding:"8px 12px",display:"inline-block",maxWidth:"100%",fontSize:FZ.xs,color:T.ink700,whiteSpace:"pre-wrap"}}>{c.text}</div>
+            <CommentMarks c={c} pj={pj} idx={c._idx} me={mctx.me} nameOf={e=>((mctx.options||[]).find(o=>o.email===e)||{}).name||undefined} resolveComment={resolveComment}/>
             {c.linkedDate&&<div style={{marginTop:5,fontSize:FZ.xs,color:T.ink500,fontWeight:600}}>Lié au {fmt(new Date(c.linkedDate))}</div>}
             {deleteTarget===c._idx&&<div style={{marginTop:8,paddingTop:8,borderTop:"1px solid "+T.line,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
               <span style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900}}>Supprimer ce commentaire ?</span>

@@ -13,14 +13,15 @@ import { CdpDialog } from "./CdpReport";
 import { CompCatalogDialog } from "./CompCatalog";
 import { MentionPicker, MentionTextarea } from "./MentionPicker";
 import { useMentions } from "../mentionContext";
-import { typedMentions, mentionsOf, isOpenFor, isResolvedFor, countOpenFor, nameFromEmail, lc } from "../mentions";
+import { typedMentions, mentionsOf, isOpenFor, countOpenFor, nameFromEmail, lc } from "../mentions";
 import { CodirDialog } from "./CodirReport";
 import { CashLinksDialog } from "./CashLinks";
 import { MultiApplyDialog } from "./MultiApply";
 import { ITEM_STATUS, itemStatus, statusPatch, mitText, mitParts, COMP_STEPS, itemsOf, sortedItems, composantsOf, getDefaultComposants, paiementsOf, compPct, payPct, globalProgress, montantOf, fmtEur } from "../pjProgress";
 import { FicheContratPanel, CertifTag } from "./FicheContrat";
+import { CommentMarks } from "./CommentMarks";
 import { livrPrevueOf, contractDatesOf, contractPatch } from "../penalties";
-import { ProdDocCtx, TURB_CFGS, pjCfg, refsOf } from "../turbineNeeds";
+import { ProdDocCtx, TURB_CFGS, pjCfg, stockTiles, injInfo, maxBouches } from "../turbineNeeds";
 import { FEUX, FeuPicker, feuxOf, worstFeu, feuColor, feuText, feuLabel, NOTE_MAX, useRedGate, redNeeds } from "./Feux";
 
 // ── Fiche projet (Manager) ─────────────────────────────────────────────────────────────────────
@@ -307,20 +308,48 @@ function NumField({label,value,onSave,suffix,hint,width=60}){
     {hint&&<div style={{fontSize:FZ.xs,color:T.ink300,marginTop:2}}>{hint}</div>}
   </div>);
 }
-// v270 (demandé : « sur chaque fiche projet, la turbine (2×100 kW, 100 kW, 20 kW, 2×40 kW), la roue et l’injecteur, parmi les listes
-// définies avec le responsable turbines ») : écrit meta.turbCfg / turbRoue / turbInj ; repris par Turbines › Besoins ORC et SAV et par le planning de la production.
-const TurbL=({l,children})=><label style={{display:"flex",flexDirection:"column",gap:3,minWidth:0}}><span style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>{l}</span>{children}</label>;
+// v270 (demandé : « sur chaque fiche projet, la turbine (2×100 kW, 100 kW, 20 kW, 2×40 kW), la roue et l’injecteur ») ;
+// v271 (piste A validée : « cartes et pastilles » ; « l’injecteur n’est peut-être pas encore créé car on doit boucher des aubages : choisir
+// l’injecteur et le nombre de bouchages, borné par l’injecteur choisi ») : meta.turbCfg / turbRoue / turbInj / turbInjB.
+// Chiffre gris d’une pastille = stock de la production turbines (rouge à 0). Repris par Turbines › Besoins ORC et SAV.
+function TurbGlyph({cfg}){const s=cfg.g==="100"?22:15;return <span aria-hidden="true" style={{display:"flex",gap:4,alignItems:"flex-end",height:26}}>{Array.from({length:cfg.n},(_,i)=><span key={i} style={{width:s,height:s,borderRadius:"50%",border:"2.5px solid currentColor",boxSizing:"border-box",display:"grid",placeItems:"center"}}><span style={{width:"38%",height:"38%",borderRadius:"50%",background:"currentColor",opacity:.55}}/></span>)}</span>;}
 function TurbineSection({r,meta,onSave}){
   const prod=React.useContext(ProdDocCtx),cfg=pjCfg(meta,r.gamme),g=cfg?cfg.g:null;
-  const roues=[...new Set([...refsOf(prod,"roues",g),...(meta.turbRoue?[meta.turbRoue]:[])])],injs=[...new Set([...refsOf(prod,"injecteurs",g),...(meta.turbInj?[meta.turbInj]:[])])];
-  const sel={minHeight:30,borderRadius:8,border:"1.5px solid "+T.line,background:T.card,color:T.ink900,fontSize:FZ.sm,fontWeight:600,fontFamily:T.font,padding:"0 8px",width:"100%"};
-  return(<Section title="Turbine" right={<span style={{fontSize:FZ.xs,color:T.ink500}}>{prod?"listes de la production turbines":"listes indisponibles (accès à la production turbines)"}</span>}>
-    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:8}}>
-      <TurbL l="Turbine"><select value={meta.turbCfg||""} onChange={e=>onSave({turbCfg:e.target.value||null})} style={sel}><option value="">{cfg?"D’après la gamme : "+cfg.l:"Pas de turbine"}</option>{TURB_CFGS.map(c=><option key={c.id} value={c.id}>{c.l}</option>)}</select></TurbL>
-      <TurbL l="Roue"><select value={meta.turbRoue||""} onChange={e=>onSave({turbRoue:e.target.value||null})} style={sel}><option value="">À choisir</option>{roues.map(x=><option key={x} value={x}>{x}</option>)}</select></TurbL>
-      <TurbL l="Injecteur"><select value={meta.turbInj||""} onChange={e=>onSave({turbInj:e.target.value||null})} style={sel}><option value="">À choisir</option>{injs.map(x=><option key={x} value={x}>{x}</option>)}</select></TurbL>
+  const tiles=prod&&g?stockTiles(prod,g):{roues:[],injs:[]};
+  const roues=[...tiles.roues.map(t=>({ref:t.ref,q:t.qte}))];if(meta.turbRoue&&!roues.some(x=>x.ref===meta.turbRoue))roues.push({ref:meta.turbRoue,q:null});
+  const injRefs=[...new Set(tiles.injs.map(t=>t.ref))].map(ref=>({ref,q:tiles.injs.filter(t=>t.ref===ref).reduce((s,t)=>s+t.qte,0)}));if(meta.turbInj&&!injRefs.some(x=>x.ref===meta.turbInj))injRefs.push({ref:meta.turbInj,q:null});
+  const ii=meta.turbInj&&prod?injInfo(prod,meta.turbInj):null,mx=ii?maxBouches(ii.ouv):99,nb=meta.turbInjB==null?0:+meta.turbInjB;
+  const prepared=ii?(nb?((ii.variantes.find(v=>v.bouches===nb)||{}).qte||0):ii.vierges):null;
+  const pk=on=>({border:"1px solid "+(on?T.ink900:T.line),background:on?T.ink900:T.card,color:on?T.card:T.ink900,borderRadius:8,minHeight:32,padding:"0 10px",fontSize:FZ.sm,fontWeight:600,cursor:"pointer",fontFamily:T.font,display:"inline-flex",alignItems:"center",gap:6,transition:"background 140ms, border-color 140ms"});
+  const qS=(on,q)=>({fontSize:FZ.xs,fontWeight:500,fontVariantNumeric:"tabular-nums",color:on?T.card:q===0?T.red600:T.ink500,opacity:on?.8:1});
+  const lab={fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk,margin:"0 0 6px"};
+  const step={width:32,height:32,borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink900,cursor:"pointer",fontSize:16,fontFamily:T.font};
+  const missing=[!meta.turbRoue&&"la roue",!meta.turbInj&&"l’injecteur"].filter(Boolean);
+  return(<Section title="Turbine" right={<span style={{fontSize:FZ.xs,color:T.ink500}}>{prod?"chiffres gris : stock de la production turbines":"stock indisponible (accès à la production turbines)"}</span>}>
+    <div role="group" aria-label="Configuration des turbines" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))",gap:8}}>
+      {TURB_CFGS.map(c=>{const on=cfg&&cfg.id===c.id;return <button key={c.id} type="button" aria-pressed={!!on} onClick={()=>onSave({turbCfg:c.id,...(cfg&&cfg.g!==c.g?{turbRoue:null,turbInj:null,turbInjB:null}:{})})}
+        style={{border:"1.5px solid "+(on?T.ink900:T.line),background:on?T.surface:T.card,color:on?T.ink900:T.ink700,borderRadius:10,padding:"10px 8px 8px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:5,fontFamily:T.font,transition:"border-color 140ms, background 140ms"}}>
+        <TurbGlyph cfg={c}/><b style={{fontSize:FZ.sm}}>{c.l}</b><span style={{fontSize:11,color:T.ink500}}>{c.n} turbine{c.n>1?"s":""} {c.g} kW{!meta.turbCfg&&on?" · d’après la gamme":""}</span></button>;})}
     </div>
-    <div style={{fontSize:FZ.xs,color:T.ink500,marginTop:6}}>La demande part dans le planning de la production pour l’arrivée de la machine ; l’attribution d’une turbine se fait dans Turbines › Besoins ORC et SAV.</div>
+    {cfg&&<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:14,marginTop:12}}>
+      <div><p style={lab}>Roue <span style={{fontWeight:400,color:T.ink500}}>· équilibrées en stock</span></p>
+        <div role="group" aria-label="Roue" style={{display:"flex",flexWrap:"wrap",gap:6}}>{roues.length?roues.map(x=>{const on=meta.turbRoue===x.ref;return <button key={x.ref} type="button" aria-pressed={on} onClick={()=>onSave({turbRoue:on?null:x.ref})} style={pk(on)}>{x.ref}{x.q!=null&&<span style={qS(on,x.q)}>{x.q}</span>}</button>;}):<span style={{fontSize:FZ.xs,color:T.ink500}}>Aucune roue {g} kW dans la production.</span>}</div></div>
+      <div><p style={lab}>Injecteur <span style={{fontWeight:400,color:T.ink500}}>· en stock (vierges et bouchés)</span></p>
+        <div role="group" aria-label="Injecteur" style={{display:"flex",flexWrap:"wrap",gap:6}}>{injRefs.length?injRefs.map(x=>{const on=meta.turbInj===x.ref;return <button key={x.ref} type="button" aria-pressed={on} onClick={()=>onSave({turbInj:on?null:x.ref,turbInjB:null})} style={pk(on)}>{x.ref}{x.q!=null&&<span style={qS(on,x.q)}>{x.q}</span>}</button>;}):<span style={{fontSize:FZ.xs,color:T.ink500}}>Aucun injecteur {g} kW dans la production.</span>}</div>
+        {meta.turbInj&&<div style={{display:"flex",alignItems:"center",gap:8,marginTop:8,flexWrap:"wrap"}}>
+          <span style={{fontSize:12,fontWeight:700,color:T.ink700}}>Bouchages</span>
+          <button type="button" aria-label="Un bouchage de moins" disabled={nb<=0} onClick={()=>onSave({turbInjB:nb-1>0?nb-1:null})} style={{...step,opacity:nb<=0?.4:1}}>−</button>
+          <b aria-live="polite" style={{minWidth:24,textAlign:"center",fontVariantNumeric:"tabular-nums",fontSize:FZ.md}}>{nb}</b>
+          <button type="button" aria-label="Un bouchage de plus" disabled={nb>=mx} onClick={()=>onSave({turbInjB:Math.min(mx,nb+1)})} style={{...step,opacity:nb>=mx?.4:1}}>+</button>
+          <span style={{fontSize:FZ.xs,color:T.ink500}}>{ii&&ii.ouv?ii.ouv+" ouvertures : "+mx+" bouchages au plus":"nombre d’ouvertures non renseigné dans la production"}{prepared!=null?" · "+(prepared?prepared+" déjà prêt"+(prepared>1?"s":""):nb?"à boucher par la production":"aucun vierge en stock"):""}</span>
+        </div>}
+      </div>
+    </div>}
+    {cfg&&<div style={{marginTop:12,padding:"8px 12px",borderRadius:10,background:T.surface,fontSize:FZ.sm,color:T.ink700,display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+      <span aria-hidden="true" style={{width:8,height:8,borderRadius:"50%",background:missing.length?T.amber500:T.emerald500}}/>
+      {missing.length?<span>Choisissez {missing.join(" et ")} : ils seront signalés sur ce PJ dans Turbines › Besoins.</span>
+        :<span>À installer : <b>{cfg.n} turbine{cfg.n>1?"s":""} {cfg.g} kW</b>, roue <b>{meta.turbRoue}</b>, injecteur <b>{meta.turbInj}</b>{nb?" ("+nb+" bouchage"+(nb>1?"s":"")+")":""} — à attribuer depuis le stock dans Turbines › Besoins ORC et SAV.</span>}
+    </div>}
   </Section>);
 }
 function ContratSection({r,meta,onSave,onNote}){
@@ -1126,10 +1155,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
                         <span style={{fontSize:FZ.xs,color:T.ink300,display:"inline-flex",alignItems:"center",gap:4}}>{new Date(c.date).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})}{deleteComment&&<TrashBtn title="Supprimer ce commentaire" onClick={()=>{if(window.confirm("Supprimer ce commentaire ?"))deleteComment(r.pj,c._idx);}}/>}</span>
                       </div>
                       <div style={{fontSize:FZ.xs,color:T.ink700,whiteSpace:"pre-wrap",marginTop:2}}>{c.text}</div>
-                      {mn.length>0&&<div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap",marginTop:4}}>
-                        {mn.map(e=>{const done=isResolvedFor(c,e);return(<span key={e} title={done?"Traité":"À traiter"} style={{fontSize:FZ.xs,fontWeight:700,borderRadius:999,padding:"1px 8px",background:done?T.emerald100:T.violet100,color:done?T.emerald600:T.violet600,border:"1px solid "+(done?T.emerald500:T.violet500)}}>{done?"✓ ":"@ "}{nameOf(e)}{done?" · traité":""}</span>);})}
-                        {mn.includes(me)&&resolveComment&&<button type="button" onClick={()=>resolveComment(r.pj,c._idx,me,!isResolvedFor(c,me))} style={{border:"1px solid "+T.line,background:T.card,color:T.ink700,borderRadius:8,padding:"1px 8px",fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font}}>{isResolvedFor(c,me)?"Rouvrir":"Marquer traité ✓"}</button>}
-                      </div>}
+                      {mn.length>0&&<CommentMarks c={c} pj={r.pj} idx={c._idx} me={me} nameOf={nameOf} resolveComment={resolveComment}/>}
                       {c.linkedDate&&<div style={{marginTop:4,fontSize:FZ.xs,color:T.ink500,fontWeight:600}}>Lié au {fmt(new Date(c.linkedDate))}</div>}
                     </div>);
                   })}
