@@ -1960,3 +1960,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Fiches projet : Planning (contrat | jalons), Machine | Finance.
 - Pas de nouvelle donnée, pas de nouvelle clé `localStorage`.
 - Fichiers : components/ManagerPanel.js, components/KpiBilan.js, components/ManagerFiche.js, styles.css, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v276 — Période de la vue CODIR, fiche projet plus compacte
+
+- Demandé : « Promesse vs Réalité : choisir les mois pris en compte » ; « mieux gérer les cadrans des fiches projet (audit apple-design) » ; « installer wshobson/agents et l'utiliser pour les KPI à chaque fois ».
+- KPI › Dérives : période (mois promis) pour toute la vue CODIR et le résumé par étape.
+- Fiches projet : statut global en lignes, indicateurs en une rangée, frises plus basses, jalons payés repliés.
+- Skills installés : `kpi-dashboard-design`, `data-storytelling` (dans `.claude/skills/`, non versionnés).
+- Pas de nouvelle donnée, pas de nouvelle clé `localStorage`.
+- Fichiers : components/ManagerPanel.js, components/ManagerFiche.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

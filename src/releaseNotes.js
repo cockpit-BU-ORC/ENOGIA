@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v276",
+    date: "2026-11-04",
+    title: "V276 : période de la vue CODIR",
+    items: [
+      { t: "KPI", d: "Vue CODIR : choisissez les mois pris en compte.", admin: true },
+      { t: "Fiches projet", d: "Statut global et indicateurs plus compacts, jalons payés repliés.", admin: true },
+    ],
+  },
+  {
     id: "2026-11-v275",
     date: "2026-11-04",
     title: "V275 : vue CODIR et jalons par mois",

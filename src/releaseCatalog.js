@@ -686,4 +686,8 @@ export const RELEASE_CATALOG = [
     ["KPI › Bilan mensuel", "Graphique des départs, tests terminés et arrivées sur les quatre mois.", "admin"],
     ["Fiches projet", "Planning : contrat à gauche, frise des jalons à droite ; Machine et Finance côte à côte.", "admin"],
   ] },
+  { v: "276", t: "Période de la vue CODIR, fiche projet plus compacte", items: [
+    ["KPI › Dérives", "Vue CODIR : choix des mois pris en compte (mois promis au planning initial) — Tout, année en cours, 6 derniers mois, mois passés, ou du … au …", "admin"],
+    ["Fiches projet", "Statut global en une ligne par axe, indicateurs clés sur une rangée, frises plus basses, jalons de paiement payés repliés.", "admin"],
+  ] },
 ];

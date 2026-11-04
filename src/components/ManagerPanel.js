@@ -34,6 +34,9 @@ export function ManagerPanel({planDoc,initialAddFromImport,onOpenCashPage,onNav,
   const [kpiStep,setKpiStep]=useState("depart");
   // v275 (demandé : « la répartition par sévérité est-elle seulement sur les machines expédiées ? je dois pouvoir choisir ») : toutes / en cours / expédiées
   const [codirScope,setCodirScope]=useState("all");
+  // v276 (demandé : « Promesse vs Réalité : choisir les mois pris en compte ») — période sur le mois PROMIS (date du planning initial)
+  // de l'étape ; vide = sans borne. Skill kpi-dashboard-design : période et méthode affichées sur la carte.
+  const [codirFrom,setCodirFrom]=useState(""),[codirTo,setCodirTo]=useState("");
   const [kpiTab,setKpiTab]=useState("synthese"); // sous-onglet KPI par famille
   useEffect(()=>{if(kpiTab==="retards")setKpiTab("synthese");},[kpiTab]); // v217 : l'analyse des retards est passée dans Retards › Analyse
   const [fichePj,setFichePj]=useState(null); // v134 : PJ à ouvrir dans la fiche depuis le Point hebdo
@@ -68,11 +71,17 @@ export function ManagerPanel({planDoc,initialAddFromImport,onOpenCashPage,onNav,
     };
     return{pj:r.pj,gamme:r.gamme,etat:r.etat,hasInitial:!!ini,arrivee:mk("arrivee"),tests:mk("tests"),finProd:mk("finProd"),depart:mk("depart")};
   }),[fk,initialByPJ]);
-  const comparable=driftRows.filter(r=>r.hasInitial&&(codirScope==="all"||(codirScope==="shipped"?r.etat==="SHIPPED":r.etat!=="SHIPPED")));
+  const mKey=v=>{if(!v)return "";const d=new Date(v);return isNaN(d)?"":d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");};
+  const inPeriod=v=>{const k=mKey(v);if(!k)return !codirFrom&&!codirTo;return(!codirFrom||k>=codirFrom)&&(!codirTo||k<=codirTo);};
+  const scoped=driftRows.filter(r=>r.hasInitial&&(codirScope==="all"||(codirScope==="shipped"?r.etat==="SHIPPED":r.etat!=="SHIPPED")));
+  const comparable=scoped.filter(r=>inPeriod(r[kpiStep].ini));
+  // mois proposés : ceux des dates initiales du portefeuille
+  const codirMonths=[...new Set(scoped.flatMap(r=>["arrivee","tests","finProd","depart"].map(k=>mKey(r[k].ini)).filter(Boolean)))].sort();
+  const mLab=k=>{const [y,m]=k.split("-");return MONTHS[+m-1]+" "+y;};
   // v275 (demandé : « un résumé des PJ tenus à date pour chaque étape, compact pour des captures PowerPoint ») : par étape, tenus (écart ≤ 0) / comparés
-  const stepSummary=["arrivee","tests","finProd","depart"].map(k=>{const ds=comparable.map(r=>r[k].delta).filter(d=>d!=null),late=ds.filter(d=>d>0);
+  const stepSummary=["arrivee","tests","finProd","depart"].map(k=>{const base=scoped.filter(r=>inPeriod(r[k].ini)),ds=base.map(r=>r[k].delta).filter(d=>d!=null),late=ds.filter(d=>d>0);
     return{k,l:STEP_LABELS[k],n:ds.length,ok:ds.length-late.length,late:late.length,pct:ds.length?Math.round((ds.length-late.length)/ds.length*100):null,avg:late.length?Math.round(late.reduce((a,b)=>a+b,0)/late.length):0,crit:late.filter(d=>d>30).length,
-      worst:comparable.filter(r=>r[k].delta!=null&&r[k].delta>0).sort((a,b)=>b[k].delta-a[k].delta).slice(0,3).map(r=>r.pj+" +"+r[k].delta+"j")};});
+      worst:base.filter(r=>r[k].delta!=null&&r[k].delta>0).sort((a,b)=>b[k].delta-a[k].delta).slice(0,3).map(r=>r.pj+" +"+r[k].delta+"j")};});
   // v275 (demandé : « plus de graphiques comme dans l'explorer : arrivées par mois, tests par mois… ») : jalons par mois, initial vs révisé, 12 mois glissants
   const monthsBy=(()=>{const base=new Date(today.getFullYear(),today.getMonth()-5,1),list=[];for(let i=0;i<12;i++){const d=new Date(base.getFullYear(),base.getMonth()+i,1);list.push({key:d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"),mois:MONTHS[d.getMonth()]+(d.getMonth()===0||i===0?" "+String(d.getFullYear()).slice(2):"")});}
     const km=v=>{if(!v)return null;const d=new Date(v);return isNaN(d)?null:d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");};
@@ -576,11 +585,15 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
             <div style={{display:"inline-flex",background:T.surfaceAlt,borderRadius:9,padding:2,gap:2}}>
               {[["all","Toutes"],["open","En cours"],["shipped","Expédiées"]].map(([k,l])=><button key={k} type="button" aria-pressed={codirScope===k} onClick={()=>setCodirScope(k)} style={{border:"none",borderRadius:7,minHeight:28,padding:"0 12px",fontSize:12.5,fontWeight:700,cursor:"pointer",fontFamily:T.font,background:codirScope===k?T.card:"transparent",color:codirScope===k?T.ink900:T.ink500,boxShadow:codirScope===k?"0 1px 2px rgba(0,0,0,.08)":"none"}}>{l}</button>)}
             </div>
-            <span style={{fontSize:12,color:T.ink500}}>{comparable.length} machine{comparable.length>1?"s":""} avec un planning initial · s'applique à toute la vue CODIR</span>
+            <span style={{fontSize:12,color:T.ink500,fontWeight:600,marginLeft:8}}>Mois promis :</span>
+            {[["Tout","",""],["Année "+today.getFullYear(),today.getFullYear()+"-01",today.getFullYear()+"-12"],["6 derniers mois",mKey(new Date(today.getFullYear(),today.getMonth()-5,1)),mKey(today)],["Mois passés","",mKey(new Date(today.getFullYear(),today.getMonth()-1,1))]].map(([l,a,b])=>{const on=codirFrom===a&&codirTo===b;return <button key={l} type="button" aria-pressed={on} onClick={()=>{setCodirFrom(a);setCodirTo(b);}} style={{border:"1px solid "+(on?T.ink900:T.line),borderRadius:7,minHeight:28,padding:"0 10px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:T.font,background:on?T.ink900:T.card,color:on?T.card:T.ink700}}>{l}</button>;})}
+            <label style={{fontSize:12,color:T.ink500,display:"inline-flex",alignItems:"center",gap:4}}>du<select value={codirFrom} onChange={e=>setCodirFrom(e.target.value)} style={{minHeight:28,borderRadius:7,border:"1px solid "+T.line,background:T.card,color:T.ink900,fontSize:12,fontFamily:T.font}}><option value="">début</option>{codirMonths.map(k=><option key={k} value={k}>{mLab(k)}</option>)}</select></label>
+            <label style={{fontSize:12,color:T.ink500,display:"inline-flex",alignItems:"center",gap:4}}>au<select value={codirTo} onChange={e=>setCodirTo(e.target.value)} style={{minHeight:28,borderRadius:7,border:"1px solid "+T.line,background:T.card,color:T.ink900,fontSize:12,fontFamily:T.font}}><option value="">fin</option>{codirMonths.map(k=><option key={k} value={k}>{mLab(k)}</option>)}</select></label>
+            <span style={{fontSize:12,color:T.ink500}}>{comparable.length} machine{comparable.length>1?"s":""} ({STEP_LABELS[kpiStep].toLowerCase()} promis{codirFrom||codirTo?" "+(codirFrom?"de "+mLab(codirFrom):"")+(codirTo?" à "+mLab(codirTo):""):""}) · s'applique à toute la vue CODIR</span>
           </div>
           {/* Résumé compact, prêt à capturer : une ligne par étape */}
           <div aria-label="PJ tenus à date par étape" style={{maxWidth:980,border:"1px solid "+T.line,borderRadius:10,overflow:"hidden",marginBottom:12,background:T.card}}>
-            <div style={{display:"flex",alignItems:"baseline",gap:8,padding:"8px 12px",borderBottom:"1px solid "+T.line}}><b style={{fontSize:13.5,color:T.ink900}}>PJ tenus à date, par étape</b><span style={{fontSize:12,color:T.ink500}}>écart au planning initial ≤ 0 · {codirScope==="all"?"toutes les machines":codirScope==="shipped"?"machines expédiées":"machines en cours"} · {new Date().toLocaleDateString("fr-FR")}</span></div>
+            <div style={{display:"flex",alignItems:"baseline",gap:8,padding:"8px 12px",borderBottom:"1px solid "+T.line}}><b style={{fontSize:13.5,color:T.ink900}}>PJ tenus à date, par étape</b><span style={{fontSize:12,color:T.ink500}}>écart au planning initial ≤ 0 · {codirScope==="all"?"toutes les machines":codirScope==="shipped"?"machines expédiées":"machines en cours"}{codirFrom||codirTo?" · jalons promis "+(codirFrom?"de "+mLab(codirFrom)+" ":"")+(codirTo?"à "+mLab(codirTo):""):""} · {new Date().toLocaleDateString("fr-FR")}</span></div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(4,minmax(0,1fr))"}}>
               {stepSummary.map((x,i)=><div key={x.k} style={{padding:"8px 12px",borderLeft:i?"1px solid "+T.line:"none"}}>
                 <div style={{fontSize:12,fontWeight:600,color:T.ink500}}>{x.l}</div>

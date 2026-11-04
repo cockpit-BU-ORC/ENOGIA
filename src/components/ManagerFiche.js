@@ -107,7 +107,7 @@ function NoteField({value,onSave,placeholder,max=NOTE_MAX,big}){
 // date initiale barrée si elle a bougé, et l'écart en pastille (rouge = glissement).
 function Timeline({r,ini,kind}){
   return(<div style={{position:"relative",display:"grid",gridTemplateColumns:"repeat(4,minmax(0,1fr))"}}>
-    <div style={{position:"absolute",left:"12.5%",right:"12.5%",top:7,height:2,background:T.line}}/>
+    <div style={{position:"absolute",left:"12.5%",right:"12.5%",top:6,height:2,background:T.line}}/>
     {MS.map(([k,label],i)=>{
       const rv=dOf(r[k]);const iv=ini?dOf(ini[k]):null;
       const delta=rv&&iv?diffDays(iv,rv):null;
@@ -115,11 +115,11 @@ function Timeline({r,ini,kind}){
       const next=!past&&rv&&(i===0||(dOf(r[MS[i-1][0]])||0)<=today);
       const mk=past?{background:T.navy700,border:"2px solid "+T.navy700}:next?{background:T.card,border:"3px solid "+T.accent,boxShadow:"0 0 0 4px "+T.accent+"33"}:{background:T.card,border:"2px solid "+(rv?T.ink300:T.line)};
       return(<div key={k} style={{position:"relative",textAlign:"center",padding:"0 6px",minWidth:0}}>
-        <div style={{width:16,height:16,borderRadius:"50%",boxSizing:"border-box",margin:"0 auto 4px",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:FZ.xs,fontWeight:800,...mk}}>{past?"✓":""}</div>
+        <div style={{width:14,height:14,borderRadius:"50%",boxSizing:"border-box",margin:"0 auto 2px",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:FZ.xs,fontWeight:800,...mk}}>{past?"✓":""}</div>
         <Cap>{label}</Cap>
-        <div style={{fontSize:FZ.sm,fontWeight:600,color:T.ink900,marginTop:2,whiteSpace:"nowrap",letterSpacing:"-.01em"}}>{rv?fmtLong(rv):"—"}</div>
+        <div style={{fontSize:FZ.sm,fontWeight:600,color:T.ink900,marginTop:0,whiteSpace:"nowrap",letterSpacing:"-.01em"}}>{rv?fmt(rv):"—"}</div>
         {k==="tests"&&r.testsFin&&<div style={{fontSize:FZ.xs,color:T.ink300,marginTop:1}}>→ {fmtLong(dOf(r.testsFin))}</div>}
-        <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:6,marginTop:2,minHeight:16}}>
+        <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:4,marginTop:1,minHeight:14,flexWrap:"wrap"}}>
           {iv&&delta!==0&&<span style={{fontSize:FZ.xs,color:T.ink300,textDecoration:"line-through"}}>{fmt(iv)}</span>}
           {delta!=null&&delta!==0&&<span style={{fontSize:FZ.xs,fontWeight:800,color:driftColor(delta),background:delta>0?T.red100:T.emerald100,borderRadius:999,padding:"1px 8px"}}>{signed(delta)}</span>}
           {delta===0&&<span style={{fontSize:FZ.xs,fontWeight:700,color:T.emerald600}}>conforme</span>}
@@ -180,24 +180,19 @@ function StatutGlobal({meta,pj,onSave,onNote}){
   const f=feuxOf(meta);
   const w=worstFeu(f);
   const notes=meta.notes||{};
-  const ev=FEUX.filter(([k])=>f[k]),ne=FEUX.filter(([k])=>!f[k]);
-  return(<Section title="Statut global" right={<span style={{fontSize:FZ.xs,color:T.ink300,whiteSpace:"nowrap"}}>{gate.dialog}{meta.feuxAt?"évalué le "+fmt(new Date(meta.feuxAt)):"non évalué"}{w?" · pire niveau : "+feuLabel(w).toLowerCase():""}</span>}>
-    {ev.length>0&&<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))",gap:8,alignItems:"stretch"}}>
-      {ev.map(([k,lab])=>{const lv=f[k];return(
-        <div key={k} className="enogia-pilot-card" style={{background:T.card,borderRadius:8,padding:"6px 8px",minWidth:0,display:"flex",flexDirection:"column"}}>
+  // v276 : sur toute la largeur de la zone (column-span) — le commentaire de chaque axe tient sur une ligne
+  return(<Section style={{columnSpan:"all",WebkitColumnSpan:"all"}} title="Statut global" right={<span style={{fontSize:FZ.xs,color:T.ink300,whiteSpace:"nowrap"}}>{gate.dialog}{meta.feuxAt?"évalué le "+fmt(new Date(meta.feuxAt)):"non évalué"}{w?" · pire niveau : "+feuLabel(w).toLowerCase():""}</span>}>
+    {/* v276 (audit apple-design : « cadrans trop hauts ») : une ligne par axe — axe, feu, niveau, commentaire sur une ligne qui s'agrandit au besoin */}
+    <div role="list" aria-label="Axes du statut global" style={{display:"flex",flexDirection:"column"}}>
+      {FEUX.map(([k,lab],i)=>{const lv=f[k];return(
+        <div role="listitem" key={k} style={{display:"grid",gridTemplateColumns:"minmax(110px,150px) auto minmax(70px,90px) minmax(0,1fr)",alignItems:"center",gap:8,padding:"4px 0",borderTop:i?"1px solid "+T.line:"none"}}>
           <Cap>{lab}</Cap>
-          <div style={{marginTop:3,display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
-            <span style={{fontSize:FZ.sm,fontWeight:600,color:feuText(lv),letterSpacing:"-.01em"}}>{feuLabel(lv)}</span>
-            <FeuPicker value={lv} onChange={v=>gate.ask(pj,meta,k,v)} size={20}/>
-          </div>
-          <NoteField value={notes[k]} onSave={t=>lv==="red"&&!String(t||"").trim()?false:onNote(k,t)} placeholder={lv==="red"?"Commentaire obligatoire (statut à risque)":"＋ Commentaire de synthèse"}/>
-          {lv==="red"&&redNeeds(meta,k).length>0&&<div role="alert" style={{marginTop:3,fontSize:FZ.xs,fontWeight:700,color:T.red600}}>À renseigner : {redNeeds(meta,k).join(" et ")}</div>}
+          <FeuPicker value={lv||null} onChange={v=>gate.ask(pj,meta,k,v)} size={18}/>
+          <span style={{fontSize:FZ.sm,fontWeight:600,color:lv?feuText(lv):T.ink300}}>{lv?feuLabel(lv):"non évalué"}</span>
+          <div style={{minWidth:0,marginTop:-4}}>{lv?<NoteField value={notes[k]} onSave={t=>lv==="red"&&!String(t||"").trim()?false:onNote(k,t)} placeholder={lv==="red"?"Commentaire obligatoire (statut à risque)":"＋ Commentaire"}/>:null}
+            {lv==="red"&&redNeeds(meta,k).length>0&&<div role="alert" style={{fontSize:FZ.xs,fontWeight:700,color:T.red600}}>À renseigner : {redNeeds(meta,k).join(" et ")}</div>}</div>
         </div>);})}
-    </div>}
-    {ne.length>0&&<div role="group" aria-label="Axes non évalués" style={{display:"flex",flexWrap:"wrap",alignItems:"center",gap:"2px 18px",marginTop:ev.length?8:0,padding:"3px 8px",borderRadius:8,background:T.card}}>
-      <Cap>{ev.length?"Non évalués":"Aucun axe évalué"}</Cap>
-      {ne.map(([k,lab])=>(<span key={k} style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:FZ.xs,color:T.ink500}}>{lab}<FeuPicker value={null} onChange={v=>gate.ask(pj,meta,k,v)} size={20}/></span>))}
-    </div>}
+    </div>
   </Section>);
 }
 
@@ -402,7 +397,7 @@ function ContratSection({r,meta,onSave,onNote}){
     </div>
 
     {bad&&<div style={{marginTop:8,fontSize:FZ.xs,color:T.amber600,background:T.amber100,borderRadius:8,padding:"4px 8px",display:"inline-flex",alignItems:"center",gap:6}}><NavIcon name="warning" size={12}/>La date de MaD ORC est avant le début : vérifiez la saisie.</div>}
-    {(dTf||dT0)&&<div style={{marginTop:6,position:"relative",height:52}}>
+    {(dTf||dT0)&&<div style={{marginTop:4,position:"relative",height:40}}> {/* v276 : frise plus basse (52 → 40 px) */}
       <div style={{position:"absolute",left:0,right:0,top:20,height:6,background:T.surfaceAlt,borderRadius:8}}/>
       {a!=null&&b!=null&&b>a&&<div style={{position:"absolute",left:a+"%",width:(b-a)+"%",top:20,height:6,background:T.teal500,borderRadius:8}}/>}
       {b!=null&&c!=null&&c>b&&<div style={{position:"absolute",left:b+"%",width:(c-b)+"%",top:20,height:6,background:T.red500,borderRadius:8}} title={"Dépassement "+(ecart)+" j"}/>}
@@ -566,6 +561,8 @@ const PAY_SUGGEST=["Acompte à la commande","Avant expédition","Livraison","Mis
 const fd=iso=>iso?fmt(new Date(iso+"T00:00:00")):"—";
 function PaiementsLinked({items,onOpenCash,pj,onLinks}){
   const SS=statusSoft(),cs=cashSummary(items),pct=payPct({},pj),live=items.filter(p=>!p.epc);
+  // v276 (audit apple-design : « Finance trop haute ») : les jalons payés sont repliés, on montre ce qui reste à facturer / encaisser
+  const [showPaid,setShowPaid]=useState(false),nPaid=items.filter(p=>p.done).length;
   const groups=[];items.forEach(p=>{let g=groups.find(x=>x.k===p.group);if(!g){g={k:p.group,label:p.groupLabel,l:[]};groups.push(g);}g.l.push(p);});
   const chip=p=>{
     if(p.epc)return null;
@@ -579,7 +576,7 @@ function PaiementsLinked({items,onOpenCash,pj,onLinks}){
     {live.length>0&&<div style={{marginBottom:6}}><ProgressBar value={pct||0} height={5}/></div>}
     {groups.map(g=>(<div key={g.k} style={{marginBottom:4}}>
       {(groups.length>1||g.l.some(x=>x.split>1))&&<div style={{fontSize:FZ.xs,fontWeight:700,color:T.ink500,margin:"4px 0 3px"}}>{g.k}{g.label?" · "+g.label:""}{g.l.some(x=>x.split>1)?" · jalons répartis sur "+g.l.find(x=>x.split>1).split+" PJ (÷ "+g.l.find(x=>x.split>1).split+")":""}</div>}
-      {g.l.map(p=>{const c=SS[p.epc?"epc":p.tone]||SS.future,ch=chip(p);
+      {g.l.filter(p=>showPaid||!p.done).map(p=>{const c=SS[p.epc?"epc":p.tone]||SS.future,ch=chip(p);
         return(<div key={p.id} style={{padding:"5px 8px",borderRadius:8,background:c.bg,border:"1px solid "+c.ring,color:c.ink,marginBottom:3,opacity:p.epc?.75:1}}>
           <div style={{display:"flex",alignItems:"baseline",gap:8}}>
             <span style={{flex:1,minWidth:0,fontWeight:700,fontSize:FZ.sm,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} title={p.label}>{p.label}</span>
@@ -593,6 +590,7 @@ function PaiementsLinked({items,onOpenCash,pj,onLinks}){
           </div>
         </div>);})}
     </div>))}
+    {nPaid>0&&<button type="button" onClick={()=>setShowPaid(v=>!v)} aria-expanded={showPaid} style={{border:"none",background:"transparent",padding:"2px 0",minHeight:24,color:T.ink700,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font,textDecoration:"underline",textUnderlineOffset:2}}>{showPaid?"Masquer les "+nPaid+" jalons payés":nPaid+" jalon"+(nPaid>1?"s":"")+" payé"+(nPaid>1?"s":"")+" — afficher"}</button>}
     <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginTop:4}}>
       {onOpenCash&&<button onClick={()=>onOpenCash(pj)} style={BTN(true)}>Ouvrir dans Cash in</button>}
       {onLinks&&<button onClick={onLinks} style={{...BTN(false),border:"1px solid "+T.line,background:T.card,color:T.ink900}}>Modifier la liaison</button>}
@@ -1082,8 +1080,8 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
 </Col>
 <Col>
         {/* ── Indicateurs clés + explication de chacun ── */}
-        <Section title="Indicateurs clés" right={<span style={{fontSize:FZ.xs,color:T.ink300,whiteSpace:"nowrap"}}>{kpi.toDepart==null?"":(kpi.toDepart>=0?"J-"+kpi.toDepart+" avant départ":"départ dépassé de "+Math.abs(kpi.toDepart)+" j")}{kpi.atelier!=null?" · séjour atelier "+kpi.atelier+" j":""}{kpi.tests!=null?" · fenêtre tests "+kpi.tests+" j":""}</span>}>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:8,alignItems:"stretch"}}>
+        <Section style={{columnSpan:"all",WebkitColumnSpan:"all"}} title="Indicateurs clés" right={<span style={{fontSize:FZ.xs,color:T.ink300,whiteSpace:"nowrap"}}>{kpi.toDepart==null?"":(kpi.toDepart>=0?"J-"+kpi.toDepart+" avant départ":"départ dépassé de "+Math.abs(kpi.toDepart)+" j")}{kpi.atelier!=null?" · séjour atelier "+kpi.atelier+" j":""}{kpi.tests!=null?" · fenêtre tests "+kpi.tests+" j":""}</span>}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:8,alignItems:"stretch"}}> {/* v276 : une seule rangée sur toute la largeur */}
             {[
               ["gl","Avancement global",<GlobalTile gp={gp} onSave={savePjMetaOverride?f=>savePjMetaOverride(r.pj,f):null}/>,null],
               ["av","Avancement production",<div style={{display:"flex",alignItems:"center",gap:8}}><Donut v={kpi.pv}/><span style={{fontSize:FZ.xs,color:T.ink300,lineHeight:1.35}}>{r.etat==="SHIPPED"?"expédié":"production chez ENOGIA"}</span></div>,null],
