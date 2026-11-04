@@ -20,6 +20,7 @@ import { MultiApplyDialog } from "./MultiApply";
 import { ITEM_STATUS, itemStatus, statusPatch, mitText, mitParts, COMP_STEPS, itemsOf, sortedItems, composantsOf, getDefaultComposants, paiementsOf, compPct, payPct, globalProgress, montantOf, fmtEur } from "../pjProgress";
 import { FicheContratPanel, CertifTag } from "./FicheContrat";
 import { livrPrevueOf, contractDatesOf, contractPatch } from "../penalties";
+import { ProdDocCtx, TURB_CFGS, pjCfg, refsOf } from "../turbineNeeds";
 import { FEUX, FeuPicker, feuxOf, worstFeu, feuColor, feuText, feuLabel, NOTE_MAX, useRedGate, redNeeds } from "./Feux";
 
 // ── Fiche projet (Manager) ─────────────────────────────────────────────────────────────────────
@@ -305,6 +306,22 @@ function NumField({label,value,onSave,suffix,hint,width=60}){
     <div style={{display:"flex",alignItems:"center",gap:4,marginTop:3}}><input type="number" min={0} step="any" value={v} onChange={e=>setV(e.target.value)} onBlur={save} onKeyDown={e=>{if(e.key==="Enter")e.currentTarget.blur();}} aria-label={label||hint} style={{padding:"4px 8px",borderRadius:8,border:"1.5px solid "+T.line,background:T.card,color:T.ink900,fontSize:FZ.sm,fontWeight:700,fontFamily:T.font,width}}/>{suffix&&<span style={{fontSize:FZ.sm,color:T.ink500}}>{suffix}</span>}</div>
     {hint&&<div style={{fontSize:FZ.xs,color:T.ink300,marginTop:2}}>{hint}</div>}
   </div>);
+}
+// v270 (demandé : « sur chaque fiche projet, la turbine (2×100 kW, 100 kW, 20 kW, 2×40 kW), la roue et l’injecteur, parmi les listes
+// définies avec le responsable turbines ») : écrit meta.turbCfg / turbRoue / turbInj ; repris par Turbines › Besoins ORC et SAV et par le planning de la production.
+const TurbL=({l,children})=><label style={{display:"flex",flexDirection:"column",gap:3,minWidth:0}}><span style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>{l}</span>{children}</label>;
+function TurbineSection({r,meta,onSave}){
+  const prod=React.useContext(ProdDocCtx),cfg=pjCfg(meta,r.gamme),g=cfg?cfg.g:null;
+  const roues=[...new Set([...refsOf(prod,"roues",g),...(meta.turbRoue?[meta.turbRoue]:[])])],injs=[...new Set([...refsOf(prod,"injecteurs",g),...(meta.turbInj?[meta.turbInj]:[])])];
+  const sel={minHeight:30,borderRadius:8,border:"1.5px solid "+T.line,background:T.card,color:T.ink900,fontSize:FZ.sm,fontWeight:600,fontFamily:T.font,padding:"0 8px",width:"100%"};
+  return(<Section title="Turbine" right={<span style={{fontSize:FZ.xs,color:T.ink500}}>{prod?"listes de la production turbines":"listes indisponibles (accès à la production turbines)"}</span>}>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:8}}>
+      <TurbL l="Turbine"><select value={meta.turbCfg||""} onChange={e=>onSave({turbCfg:e.target.value||null})} style={sel}><option value="">{cfg?"D’après la gamme : "+cfg.l:"Pas de turbine"}</option>{TURB_CFGS.map(c=><option key={c.id} value={c.id}>{c.l}</option>)}</select></TurbL>
+      <TurbL l="Roue"><select value={meta.turbRoue||""} onChange={e=>onSave({turbRoue:e.target.value||null})} style={sel}><option value="">À choisir</option>{roues.map(x=><option key={x} value={x}>{x}</option>)}</select></TurbL>
+      <TurbL l="Injecteur"><select value={meta.turbInj||""} onChange={e=>onSave({turbInj:e.target.value||null})} style={sel}><option value="">À choisir</option>{injs.map(x=><option key={x} value={x}>{x}</option>)}</select></TurbL>
+    </div>
+    <div style={{fontSize:FZ.xs,color:T.ink500,marginTop:6}}>La demande part dans le planning de la production pour l’arrivée de la machine ; l’attribution d’une turbine se fait dans Turbines › Besoins ORC et SAV.</div>
+  </Section>);
 }
 function ContratSection({r,meta,onSave,onNote}){
   const cd=contractDatesOf(meta),save=p=>onSave(contractPatch(meta,p));
@@ -1033,6 +1050,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
 </Col>
         </Cols>
         {/* v265 : dates de fin et de livraison sur toute la largeur : contrat / initial / prévision / écart */}
+        {savePjMetaOverride&&<TurbineSection r={r} meta={meta} onSave={f=>savePjMetaOverride(r.pj,f)}/>}
         {savePjMetaOverride&&<Section title="Dates de fin et de livraison" right={<span style={{fontSize:FZ.xs,color:T.ink500}}>contractuelle · prévisionnelle · effectuée</span>}><DatesTable r={r} meta={meta} onSave={f=>savePjMetaOverride(r.pj,f)}/></Section>}
         </Frame>
         {/* ── Finance : prix de la fiche, pénalités, composants et paiements ── */}

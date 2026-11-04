@@ -50,7 +50,7 @@ export function MentionBell({ comments, me, data, resolveComment, onOpen, canSee
         {chg.length > 0 && <div style={{ padding: "6px 8px", borderRadius: 8, background: T.surface, marginBottom: 6 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}><b style={{ fontSize: FZ.xs, color: T.ink900 }}>Vos projets modifiés par le planning</b><button onClick={onSeenPjChanges} style={{ marginLeft: "auto", border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "2px 9px", minHeight: 24, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>Vu</button></div>
           {chg.map(c => <div key={c.pj} style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", padding: "4px 0", borderTop: "1px solid " + T.line }}>
-            <button onClick={() => { setOpen(false); onOpen(c.pj); }} style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer", fontFamily: T.fontMono, fontWeight: 800, fontSize: FZ.sm, color: T.teal600, minHeight: 24 }}>{c.pj}</button>
+            <button onClick={() => { setOpen(false); onOpen(c.pj, "resume"); }} style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer", fontFamily: T.fontMono, fontWeight: 800, fontSize: FZ.sm, color: T.teal600, minHeight: 24 }}>{c.pj}</button>
             <span style={{ fontSize: FZ.xs, color: T.ink500, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.nom || nameOf(c.pj)}</span>
             <span style={{ fontSize: FZ.xs, fontWeight: 700, color: c.isNew ? T.teal600 : c.delta > 0 ? T.red500 : c.delta < 0 ? T.emerald600 : T.ink700, whiteSpace: "nowrap" }}>{c.isNew ? "nouveau" : c.delta > 0 ? "départ +" + c.delta + " j" : c.delta < 0 ? "départ −" + Math.abs(c.delta) + " j" : "dates modifiées"}</span>
             <span style={{ fontSize: FZ.xs, color: T.ink300 }}>{relTime(c.at)}</span>
@@ -60,13 +60,13 @@ export function MentionBell({ comments, me, data, resolveComment, onOpen, canSee
         {n === 0 && <div style={{ padding: "14px 8px", fontSize: FZ.sm, color: T.ink500, textAlign: "center" }}>Rien à traiter pour l'instant.</div>}
         {items.map(({ pj, idx, c }) => (<div key={pj + "-" + idx} style={{ padding: "8px", borderRadius: 8, borderTop: "1px solid " + T.surface, display: "flex", flexDirection: "column", gap: 4 }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
-            <button onClick={() => { setOpen(false); onOpen(pj); }} style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer", fontFamily: T.fontMono, fontWeight: 800, fontSize: FZ.sm, color: T.teal600 }}>{pj}</button>
+            <button onClick={() => { setOpen(false); onOpen(pj, "comments"); }} style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer", fontFamily: T.fontMono, fontWeight: 800, fontSize: FZ.sm, color: T.teal600 }}>{pj}</button>
             <span style={{ fontSize: FZ.xs, color: T.ink500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0, flex: 1 }}>{nameOf(pj)}</span>
             <span style={{ fontSize: FZ.xs, color: T.ink300 }}>{relTime(c.date)}</span>
           </div>
           <div style={{ fontSize: FZ.xs, color: T.ink700, whiteSpace: "pre-wrap", lineHeight: 1.4 }}><b>{c.author || nameFromEmail("")}</b> : {String(c.text || "").length > 220 ? String(c.text).slice(0, 219) + "…" : c.text}</div>
           <div style={{ display: "flex", gap: 6 }}>
-            <button onClick={() => { setOpen(false); onOpen(pj); }} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "2px 9px", fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>{canSeePrivate ? "Ouvrir la fiche" : "Ouvrir le PJ"}</button>
+            <button onClick={() => { setOpen(false); onOpen(pj, "comments"); }} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "2px 9px", fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>{canSeePrivate ? "Ouvrir la fiche" : "Ouvrir le PJ"}</button>
             <button onClick={() => resolveComment(pj, idx, me, true)} style={{ border: "1px solid " + T.violet500, background: T.violet100, color: T.violet600, borderRadius: 8, padding: "2px 9px", fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>✓ Traité</button>
           </div>
         </div>))}

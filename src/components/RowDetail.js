@@ -53,12 +53,13 @@ const MEANING = {
 // Cash in seulement ; pas d'appro ni de turbines pour l'instant.
 const STATUS_TXT = { paid: "Payé", invoiced: "Facture émise", tobill: "À facturer", warn: "À surveiller", late: "En retard", future: "À venir", epc: "EPC" };
 
-export function RowDetail({ r, onClose, comments, addComment, deleteComment, pinOk, delays, delayTypes, setDelayTypes, addDelayAllocation, deleteDelayAllocation, addDelayComment, deleteDelayComment, authorName, savePjMetaOverride, canEditMeta, dayAction }) {
+export function RowDetail({ initialTab, r, onClose, comments, addComment, deleteComment, pinOk, delays, delayTypes, setDelayTypes, addDelayAllocation, deleteDelayAllocation, addDelayComment, deleteDelayComment, authorName, savePjMetaOverride, canEditMeta, dayAction }) {
   const ctx = useContext(PjDialogCtx);
-  const [tab, setTab] = useState("resume"), [open, setOpen] = useState(null), [focus, setFocus] = useState(null); // open : "delays" | "edit"
+  const [tab, setTab] = useState(initialTab || "resume"), [open, setOpen] = useState(null), [focus0, setFocus] = useState(null); // v270 : initialTab (notification d’échange → Commentaires) // open : "delays" | "edit"
   const meta = getPjMeta(r.pj, r), shipped = r.etat === "SHIPPED";
   const cur = Math.max(0, RIBBON.findIndex(s => s.etats.includes(r.etat)));
   const em = ETAT_META[r.etat] || ETAT_META["NOT ORDERED"], bar = em.bar;
+  const focus = focus0 || RIBBON[cur].id; // v270 (demandé : « les sous-étapes doivent être toujours visibles ») : l’étape en cours par défaut
   const [title0, meaning0, next] = MEANING[r.etat] || [em.label, "", ""];
   const ed = ETAT_EDITS[r.etat]; const title = (ed && ed.label) || title0, meaning = (ed && ed.desc) || meaning0;
   const pct = shipped ? 100 : autoPct(r.etat) != null ? autoPct(r.etat) : 0;
@@ -98,17 +99,17 @@ export function RowDetail({ r, onClose, comments, addComment, deleteComment, pin
     <ol aria-label="Parcours de la machine" style={{ listStyle: "none", margin: "12px 0 0", padding: 0, display: "flex", gap: 3 }}>
       {RIBBON.map((s, i) => { const done = shipped || i < cur, isCur = !shipped && i === cur, on = focus === s.id;
         return <li key={s.id} style={{ flex: s.id === "PRE" ? 3 : s.id === "SHIPPED" || s.id === "PACKAGING" ? 1 : 2, minWidth: 0 }}>
-          <button type="button" onClick={() => setFocus(f => (f === s.id ? null : s.id))} aria-pressed={on} aria-current={isCur ? "step" : undefined} title={"Voir les sous-étapes · " + s.label}
+          <button type="button" onClick={() => setFocus(s.id)} aria-pressed={on} aria-current={isCur ? "step" : undefined} title={"Voir les sous-étapes · " + s.label}
             style={{ width: "100%", border: "none", background: "transparent", padding: "0 0 2px", cursor: "pointer", textAlign: "left", fontFamily: T.font, minWidth: 0 }}>
             <span aria-hidden="true" style={{ display: "block", height: 10, borderRadius: 3, background: isCur ? bar : done ? doneBg : T.surfaceAlt, boxShadow: on ? "0 0 0 2px " + T.ink900 : "none" }} />
             <span style={{ display: "block", marginTop: 3, fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: isCur || on ? 700 : 400, color: isCur || on ? T.ink900 : T.ink500 }}>{done ? "✓ " : ""}{s.label}</span>
           </button>
         </li>; })}
     </ol>
-    {focus && (() => { const fi = RIBBON.findIndex(x => x.id === focus), fs0 = RIBBON[fi], st = STAGES.find(x => x.id === focus), state = shipped || fi < cur ? "done" : fi === cur ? "cur" : "todo", col = (ETAT_META[fs0.color] || {}).bar || bar;
+    {(() => { const fi = RIBBON.findIndex(x => x.id === focus), fs0 = RIBBON[fi], st = STAGES.find(x => x.id === focus), state = shipped || fi < cur ? "done" : fi === cur ? "cur" : "todo", col = (ETAT_META[fs0.color] || {}).bar || bar;
       return <div className="enogia-view-in" style={{ marginTop: 8, background: T.surface, borderRadius: 10, padding: "10px 12px", borderLeft: "3px solid " + col }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><b style={{ fontSize: FZ.sm, color: T.ink900 }}>{st ? "Sous-étapes · " + fs0.label : fs0.label}</b><span style={{ fontSize: 11.5, color: T.ink500 }}>{state === "done" ? "étape terminée" : state === "cur" ? "étape en cours" : "à venir"}</span>
-          <button type="button" onClick={() => setFocus(null)} aria-label="Fermer les sous-étapes" style={{ marginLeft: "auto", border: "none", background: "transparent", color: T.ink500, cursor: "pointer", minWidth: 24, minHeight: 24 }}>×</button></div>
+          </div>
         {st ? <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: "2px 16px", marginTop: 4 }}>{st.steps.map(x => <div key={x} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: FZ.xs, color: T.ink700, padding: "2px 0" }}>
           <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: "50%", flexShrink: 0, background: state === "done" ? ETAT_META.SHIPPED.bar : state === "cur" ? col : "transparent", boxShadow: state === "todo" ? "inset 0 0 0 1.5px " + T.ink300 : "none" }} />{x}</div>)}</div>
           : <div style={{ fontSize: FZ.xs, color: T.ink700, lineHeight: 1.5, marginTop: 4 }}>{focus === "PRE" ? "Design de l’ORC, commande, fabrication et montage chez les fournisseurs (armoire et skid) ou stockage externe." : MEANING.SHIPPED[1]}</div>}
@@ -229,5 +230,5 @@ export function RowDialog(props) {
 // Ouvre la fiche d'un PJ à partir de son numéro (Gantt, Calendrier, accueil).
 export function PjDialog({ pj, data, ...rest }) {
   const r = (data || []).find(x => x.pj === pj);
-  return r ? <RowDialog key={pj} r={r} {...rest} /> : null;
+  return r ? <RowDialog key={pj + (rest.initialTab || "")} r={r} {...rest} /> : null;
 }

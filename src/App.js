@@ -22,6 +22,7 @@ import { getPjMeta, chefsOf, orcChefsOf, ALL_ETATS, ETAT_META, registerCustomEta
 import { weekStartOf } from "./parsers";
 import { HomeView } from "./components/HomeView";
 import { TurbinesHub } from "./components/TurbinesHub";
+import { ProdDocCtx } from "./turbineNeeds";
 import { Achats } from "./components/Achats";
 import { PageGuard } from "./components/PageGuard";
 import { ArrangeCtx } from "./components/Arrange"; // v235 : cadrans partagés, réglés par le propriétaire
@@ -54,7 +55,7 @@ import { BetaBanner, UserChip } from "./components/AppChrome";
 import { useTurbineDoc, useTestsDoc, useProdTurbines, useDelays, useCashinSync, useAchats } from "./useAppData";
 import { useListFilters, filterOptions, filterRows } from "./listFilters";
 
-const APP_BUILD_VERSION = "2026-11-04-v269-dates-contrat";
+const APP_BUILD_VERSION = "2026-11-04-v270-turbines-besoins";
 
 export default function App(){
   // Utilisateur connecté via Google, restreint aux comptes @enogia.com (null tant que non connecté).
@@ -229,7 +230,7 @@ export default function App(){
   const canCash=isOwner||(CASH_FOR_ADMINS&&pinOk);
   setSuperAdmin(canEditMeta); // pose le rôle avant que les composants ne le lisent (src/roles.js)
   const [progress,setProgress]=useState({});
-  const [calSel,setCalSel]=useState(null),[calDay,setCalDay]=useState(null); // v221 : jour cliqué dans le Calendrier (bouton « production ce jour » de la fiche)
+  const [calSel,setCalSel]=useState(null),[calDay,setCalDay]=useState(null),[calTab,setCalTab]=useState("resume"); // v221 : jour cliqué dans le Calendrier (bouton « production ce jour » de la fiche)
   const [etatChoice,setEtatChoice]=useState({});
   const [releaseSelection,setReleaseSelection]=useState(null); // v146.16 : sélection en cours dans le catalogue des nouveautés
   const [releaseNotes,setReleaseNotes]=useState(null); // v146.10 : pop-up Nouveautés rédigé dans l'appli (Réglages › Nouveautés)
@@ -1027,13 +1028,13 @@ export default function App(){
           </div>}
           {currentUser&&<div className="enogia-hide-phone" style={{width:1,height:22,background:T.line}}/>}
           {currentUser&&<button onClick={()=>setNavPal(true)} title="Aller à… (Ctrl K)" aria-label="Aller à… (Ctrl K)" style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:32,height:32,padding:0,border:"1px solid transparent",borderRadius:9,cursor:"pointer",background:"transparent",color:T.ink500}} onMouseEnter={e=>{e.currentTarget.style.background=T.surfaceAlt;e.currentTarget.style.color=T.ink900;}} onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=T.ink500;}}><NavIcon name="search" size={18}/></button>}
-          {currentUser&&<MentionBell pjChanges={myPjChanges} onSeenPjChanges={seePjChanges} onOpenChanges={()=>setView("changes")} video={tutoOn?tutoCfg:null} onOpenVideo={()=>setTutoOpen(true)} assignments={myNewAssign} onSeenAssign={seeAssign} onOpenTests={()=>setView("tests")} comments={comments} me={mentionCtx.me} data={dataWithOverrides} resolveComment={resolveComment} canSeePrivate={pinOk} onOpen={pj=>{if(pinOk){setManagerJump({pj,n:Date.now()});setManagerTab("fiche");setView("manager");}else jumpToPj(pj);}}/>}
+          {currentUser&&<MentionBell pjChanges={myPjChanges} onSeenPjChanges={seePjChanges} onOpenChanges={()=>setView("changes")} video={tutoOn?tutoCfg:null} onOpenVideo={()=>setTutoOpen(true)} assignments={myNewAssign} onSeenAssign={seeAssign} onOpenTests={()=>setView("tests")} comments={comments} me={mentionCtx.me} data={dataWithOverrides} resolveComment={resolveComment} canSeePrivate={pinOk} onOpen={(pj,tab)=>{setCalDay(null);setCalTab(tab||"resume");setCalSel(pj);}}/>} {/* v270 (demandé : « quand on clique sur une notification de commentaire, ouvrir la fiche pop-up à l’endroit des commentaires ») */}
           <button onClick={()=>{setManagerTab("fiche");setView("manager");}} title="Espace Manager" aria-label="Espace Manager" aria-pressed={view==="manager"} style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:32,height:32,padding:0,border:"1px solid "+(view==="manager"?T.teal500+"66":"transparent"),borderRadius:9,cursor:"pointer",background:view==="manager"?T.teal100:"transparent",color:view==="manager"?T.teal600:T.ink500,transition:"background .15s ease, color .15s ease"}} onMouseEnter={e=>{if(view!=="manager"){e.currentTarget.style.background=T.surfaceAlt;e.currentTarget.style.color=T.ink900;}}} onMouseLeave={e=>{if(view!=="manager"){e.currentTarget.style.background="transparent";e.currentTarget.style.color=T.ink500;}}}><NavIcon name="manager" size={19}/></button>
           {currentUser&&<UserChip user={currentUser} onSignOut={()=>signOut(auth)} role={isOwner?"Super admin":pinOk?"Admin":null}/>}
         </div>
       </div>
 
-      <PjDialogCtx.Provider value={pjCtx}>
+      <PjDialogCtx.Provider value={pjCtx}><ProdDocCtx.Provider value={prodDoc}>
       <main id="enogia-main" tabIndex={-1} className="enogia-main" style={{padding:D.main,flex:1,outline:"none",...backdropStyle(view)}}><ArrangeCtx.Provider value={arrangeCtx}><ZoomHint/>
         {newVsInitial&&pinOk&&<div role="status" style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",marginBottom:12,padding:"10px 14px",borderRadius:10,background:T.teal100,color:T.teal600,fontFamily:T.font,fontSize:FZ.sm,fontWeight:600}}>
           <NavIcon name="pin" size={16}/>
@@ -1116,7 +1117,7 @@ export default function App(){
             {view==="cashin"&&canCash&&<CashInTab authorName={authorName} focus={cashFocusApp} planRows={dataWithOverrides}/>}
             {view==="achats"&&canAchats&&<PageGuard name="Achats / Appro"><Achats doc={achatsDoc} api={achatsApi} rows={dataWithOverrides.map(r=>({pj:r.pj,nomProjet:getPjMeta(r.pj,r).nomProjet||"",gamme:r.gamme||"",etat:r.etat,arrivee:r.arrivee||null,depart:r.depart||null}))} canEdit owner={isOwner}/></PageGuard>}
             {/* v267 (demandé : « un seul onglet Turbines ») : production (seule saisie) + besoins des ORC (calculés) ; l'ancien pool n'est plus affiché */}
-            {view==="turbines"&&canProdTurb&&<PageGuard name="Turbines"><TurbinesHub doc={prodDoc} api={prodApi} rows={dataWithOverrides} canEdit owner={isOwner}/></PageGuard>}
+            {view==="turbines"&&canProdTurb&&<PageGuard name="Turbines"><TurbinesHub doc={prodDoc} api={prodApi} rows={dataWithOverrides} canEdit owner={isOwner} savePjMeta={savePjMetaOverride}/></PageGuard>}
             {view==="planner"&&isOwner&&<PlannerView productionExclusions={productionExclusions} testers={testsDoc&&Array.isArray(testsDoc.testers)?testsDoc.testers:[]} planLoaded={planLoaded} planDoc={planDoc} rows={dataWithOverrides} closurePeriods={closurePeriods} authorName={authorName}
               onSavePlan={p=>savePlan(p,authorName)} onPublish={async(plan,note,announce)=>{const r=await publishPlan({plan,closurePeriods,productionExclusions,by:authorName,note,announce});/* v224 : un PJ publié depuis le planificateur et absent du planning initial → même bandeau qu’après un import (« Les ancrer dans l’initial ») */if(r&&r.rows&&initialPjsRef.current.size){const fresh=r.rows.filter(x=>x&&x.pj&&x.etat!=="SLOT_LIBRE"&&!isEstimatePj(x.pj)&&!initialPjsRef.current.has(x.pj));setNewVsInitial(fresh.length?{rows:r.rows,pjs:fresh.map(x=>x.pj)}:null);}return r;}} onLoadHistory={loadHistory} onRestorePublication={restorePublication}/>}
             {view==="tests"&&canSeeTests&&<TestsTab doc={testsView} save={saveTests} data={dataWithOverrides} certifs={certifs} canEdit={pinOk} lead={isTestLead} me={currentUser&&currentUser.email} signApi={signApi}/>}
@@ -1128,11 +1129,11 @@ export default function App(){
       </>
     )}
     {/* v203 : fiche unique d'un PJ (même pop-up que la Liste et le Gantt) */}
-    {calSel&&<PjDialog dayAction={calDay&&canEditMeta?(()=>{const off=((productionExclusions||{})[calSel]||[]).includes(calDay),lab=calDay.slice(8,10)+"/"+calDay.slice(5,7);return{off,label:off?"Rétablir la production le "+lab:"Pas de production le "+lab,hint:"Pour "+calSel+" seulement — le Gantt, la charge et le planificateur en tiennent compte",onToggle:()=>setProductionExclusionDays({[calSel]:[calDay]},!off)};})():null} pj={calSel} data={dataWithOverrides} df={df} onClose={()=>{setCalSel(null);setCalDay(null);}} comments={comments} addComment={addComment} deleteComment={deleteComment}
+    {calSel&&<PjDialog dayAction={calDay&&canEditMeta?(()=>{const off=((productionExclusions||{})[calSel]||[]).includes(calDay),lab=calDay.slice(8,10)+"/"+calDay.slice(5,7);return{off,label:off?"Rétablir la production le "+lab:"Pas de production le "+lab,hint:"Pour "+calSel+" seulement — le Gantt, la charge et le planificateur en tiennent compte",onToggle:()=>setProductionExclusionDays({[calSel]:[calDay]},!off)};})():null} pj={calSel} initialTab={calTab} data={dataWithOverrides} df={df} onClose={()=>{setCalSel(null);setCalDay(null);setCalTab("resume");}} comments={comments} addComment={addComment} deleteComment={deleteComment}
       pinOk={pinOk} delays={delays} delayTypes={delayTypes} setDelayTypes={setDelayTypesAndSave} addDelayAllocation={addDelayAllocation} deleteDelayAllocation={deleteDelayAllocation}
       addDelayComment={addDelayComment} deleteDelayComment={deleteDelayComment} authorName={authorName} savePjMetaOverride={savePjMetaOverride} canEditMeta={canEditMeta}/>}
       </ArrangeCtx.Provider></main>
-      </PjDialogCtx.Provider>
+      </ProdDocCtx.Provider></PjDialogCtx.Provider>
     </div>
   </div></ChangeMarksContext.Provider></MentionCtx.Provider>);
 }

@@ -654,4 +654,12 @@ export const RELEASE_CATALOG = [
     ["Fiches projet · contrat", "Échéance du contrat = T0 + une durée en semaines ; case « Livraison sur site client (avec transport) » et nombre de jours : la MàD ORC contractuelle se calcule toute seule.", "admin"],
     ["Fiches projet · dates", "MàD ORC et livraison sur site : date contractuelle, prévisionnelle (mise à jour à chaque publication) et effectuée, avec l'écart au contrat.", "admin"],
   ] },
+  { v: "270", t: "Turbines : besoins PJ et SAV, turbines glissées, roue et injecteur", items: [
+    ["Turbines › Besoins ORC et SAV", "Les PJ en cours et les besoins SAV d'un côté, les turbines disponibles de la production de l'autre : glissez une turbine sur un besoin. Une turbine prête sort du stock de la production (avec un injecteur).", "admin"],
+    ["Turbines › Production", "Nouvel encart « Demandes ORC et SAV » : date, turbine, roue et injecteur attendus, turbines déjà attribuées.", "admin"],
+    ["Fiches projet", "Turbine (2 × 100 kW, 100 kW, 20 kW, 2 × 40 kW), roue et injecteur, choisis dans les listes de la production turbines.", "admin"],
+    ["Fiche d'un PJ", "Les sous-étapes de l'étape en cours sont toujours affichées ; cliquez sur une autre étape pour voir les siennes."],
+    ["Notifications", "Un clic sur un commentaire de la cloche ouvre la fiche du PJ sur ses commentaires."],
+    ["Tests · checklist de debug", "Les cases cochées sont bien enregistrées."],
+  ] },
 ];

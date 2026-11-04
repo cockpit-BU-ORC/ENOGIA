@@ -70,7 +70,7 @@ export default function KitPreview() {
       <button type="button" style={tb} onClick={() => setOwner(v => !v)}>{owner ? "Voir comme le directeur" : "Voir comme le propriétaire"}</button>
       <button type="button" style={tb} onClick={() => setDoc(DEMO)}>Réinitialiser les données</button>
     </div>
-    <ProdTurbines key={dark ? "d" : "l"} doc={doc} api={api} canEdit owner={owner} />
+    <ProdTurbines key={dark ? "d" : "l"} doc={doc} api={api} canEdit owner={owner} pjs={["PJ479-1 - EDF PEI", "PJ481 - Exemple"]} demandes={[{ key: "pj:PJ479-1", kind: "pj", label: "PJ479-1", sub: "EDF PEI", date: "2026-12-01", gamme: "100", n: 2, cfg: "2 × 100 kW", roue: "R-MT11", inj: "MT11", turbines: [], manque: 2 }, { key: "sav:x", kind: "sav", label: "SAV411 - Client", sub: "", date: "2026-11-20", gamme: "100", n: 1, cfg: "100 kW", roue: "", inj: "", turbines: [], manque: 1 }]} />
   </div>);
 }
 `;

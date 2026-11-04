@@ -7,6 +7,17 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v270",
+    date: "2026-11-04",
+    title: "V270 : turbines par PJ et SAV, checklist de debug",
+    items: [
+      { t: "Checklist de debug", d: "Les cases cochées sont bien enregistrées." },
+      { t: "Fiche d'un PJ", d: "Les sous-étapes sont toujours visibles." },
+      { t: "Notifications", d: "Un commentaire de la cloche ouvre la fiche du PJ sur ses commentaires." },
+      { t: "Turbines", d: "Besoins PJ et SAV : glissez une turbine disponible sur un besoin ; roue et injecteur sur la fiche projet ; demandes visibles dans la production.", admin: true },
+    ],
+  },
+  {
     id: "2026-11-v269",
     date: "2026-11-04",
     title: "V269 : sous-étapes et dates du contrat",

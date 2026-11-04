@@ -1900,3 +1900,17 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Nouveaux champs de fiche (`planning/pjMetaOverrides`) : `contratSemaines`, `transport`, `livrReelle` — document déjà couvert par les règles.
 - Pas de nouvelle clé `localStorage`.
 - Fichiers : penalties.js, contractDates.test.js (nouveau), components/ManagerFiche.js, components/RowDetail.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v270 — Turbines par PJ et SAV, checklist de debug, sous-étapes, notifications
+
+- Demandé : « le cochage de la checklist de debug ne fonctionne pas » ; « les sous-étapes doivent être toujours visibles » ; « une notification de commentaire ouvre la fiche pop-up à l'endroit des commentaires » ; « dans les besoins turbines, une liste des PJ et des besoins SAV, on glisse dessus des turbines disponibles de la production ; sur chaque fiche projet la turbine, la roue et l'injecteur ; une turbine libre / terminée prise doit sortir de son stock ; les besoins doivent remonter dans son planning ».
+- Checklist de debug : chaque case cochée est gardée (la précédente était écrasée).
+- Fiche d'un PJ : sous-étapes de l'étape en cours affichées d'office ; clic sur une autre étape = les siennes.
+- Cloche : commentaire → fiche du PJ, onglet Commentaires ; projet modifié → fiche, Résumé.
+- Turbines › Besoins ORC et SAV : PJ en cours + besoins SAV (« ＋ Besoin SAV »), turbines disponibles à glisser (ou « Attribuer… ») ; une turbine prête attribuée sort du stock de la production (marquée livrée, arbre livré, 1 injecteur vierge décompté) ; × = retour au stock.
+- Turbines › Production : encart « Demandes ORC et SAV » (date, turbine, roue, injecteur, stock, turbines attribuées).
+- Fiches projet : section « Turbine » (configuration, roue, injecteur parmi les références de la production).
+- Données : `planning/pjMetaOverrides` (`turbCfg`, `turbRoue`, `turbInj`) ; `planning/prodTurbines` : collection `besoins`, champs de turbine `besoin`, `sortieOrc`, `injPris`, `injDemande` — documents déjà couverts par les règles.
+- Kit de Jérémie : à régénérer (`npm run kit:jeremie`) ; consignes : garder la prop `demandes` et ces champs.
+- Pas de nouvelle clé `localStorage`.
+- Fichiers : turbineNeeds.js (+ test, nouveaux), components/TurbinesHub.js, components/ProdTurbines.js, components/ManagerFiche.js, components/RowDetail.js, components/MentionBell.js, testPlan.js, App.js, turbinesHub.test.js, scripts/prodturb-kit.js, scripts/prodturb-consignes.md, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
