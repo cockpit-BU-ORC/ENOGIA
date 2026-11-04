@@ -42,6 +42,8 @@ service cloud.firestore {
 
       // Production turbines : propriétaire et adresses de sa liste « access »
       allow write: if base(id) == 'prodTurbines' && prodTurbAccess(id);
+      // v262 : Achats / Appro, même principe (liste « access » du document planning/achats)
+      allow write: if base(id) == 'achats' && prodTurbAccess(id);
 
       // Planning publié, planning initial, journal, sauvegardes, types de retard, pool de turbines : admins
       allow write: if isAdmin(id) && (base(id) in ['current', 'initial', 'initialBackup', 'changeLog', 'importIndex', 'delayTypes', 'turbines']

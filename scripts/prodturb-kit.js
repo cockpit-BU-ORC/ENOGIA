@@ -22,6 +22,9 @@ function pageBody(src) {
   return src.slice(from, j).replace(/\s+$/, "") + "\n";
 }
 
+// v262 : en-tête commun aux kits (Production turbines, Achats / Appro)
+const SHARED = "/* ---------- Équivalents des composants communs du site (ne pas modifier) ---------- */\nfunction Hl({ children, color, style }) {\n  return <span style={{ textDecorationLine: \"underline\", textDecorationColor: color || T.accent, textDecorationThickness: \".3em\", textUnderlineOffset: \"-.08em\", textDecorationSkipInk: \"none\", ...style }}>{children}</span>;\n}\nfunction PageHead({ kicker, title, sub, right, style, accent }) {\n  return (<div style={{ display: \"flex\", alignItems: \"flex-end\", gap: 12, flexWrap: \"wrap\", marginBottom: 12, paddingBottom: 6, borderBottom: \"3px solid \" + T.teal500, ...style }}>\n    <div style={{ minWidth: 0, flex: 1, display: \"flex\", alignItems: \"baseline\", gap: \"4px 14px\", flexWrap: \"wrap\" }}>\n      {kicker && <span style={{ fontFamily: T.font, fontSize: 12, fontWeight: 700, color: T.accentInk }}>{kicker}</span>}\n      <h1 style={{ margin: 0, fontFamily: T.fontDisplay, fontSize: \"clamp(32px,3.6vw,44px)\", fontWeight: 600, letterSpacing: \"-.02em\", color: T.ink900, lineHeight: 1.1 }}><Hl color={accent}>{title}</Hl></h1>\n      {sub && <span style={{ fontSize: FZ.sm, color: T.ink500 }}>{sub}</span>}\n    </div>\n    {right}\n  </div>);\n}\nconst ICON_PATHS = { check: \"M5 12.5l4.5 4.5L19 7.5\", warning: \"M12 4l9 16H3L12 4zM12 10v4M12 17.5v.5\", close: \"M6 6l12 12M18 6L6 18\", arrow: \"M5 12h14M13 6l6 6-6 6\" };\nfunction NavIcon({ name, size = 18 }) {\n  const d = ICON_PATHS[name]; if (!d) return null;\n  return <svg width={size} height={size} viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" strokeWidth=\"2\" strokeLinecap=\"round\" strokeLinejoin=\"round\" aria-hidden=\"true\" style={{ flexShrink: 0, verticalAlign: \"-2px\" }}><path d={d} /></svg>;\n}\n\n";
+
 function build() {
   const src = fs.readFileSync(SRC, "utf8");
   const body = pageBody(src);
@@ -36,27 +39,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 /* ---------- Thème du site (copie de src/theme.js — ne pas modifier) ---------- */
 ${theme}
 
-/* ---------- Équivalents des composants communs du site (ne pas modifier) ---------- */
-function Hl({ children, color, style }) {
-  return <span style={{ textDecorationLine: "underline", textDecorationColor: color || T.accent, textDecorationThickness: ".3em", textUnderlineOffset: "-.08em", textDecorationSkipInk: "none", ...style }}>{children}</span>;
-}
-function PageHead({ kicker, title, sub, right, style, accent }) {
-  return (<div style={{ display: "flex", alignItems: "flex-end", gap: 12, flexWrap: "wrap", marginBottom: 12, paddingBottom: 6, borderBottom: "3px solid " + T.teal500, ...style }}>
-    <div style={{ minWidth: 0, flex: 1, display: "flex", alignItems: "baseline", gap: "4px 14px", flexWrap: "wrap" }}>
-      {kicker && <span style={{ fontFamily: T.font, fontSize: 12, fontWeight: 700, color: T.accentInk }}>{kicker}</span>}
-      <h1 style={{ margin: 0, fontFamily: T.fontDisplay, fontSize: "clamp(32px,3.6vw,44px)", fontWeight: 600, letterSpacing: "-.02em", color: T.ink900, lineHeight: 1.1 }}><Hl color={accent}>{title}</Hl></h1>
-      {sub && <span style={{ fontSize: FZ.sm, color: T.ink500 }}>{sub}</span>}
-    </div>
-    {right}
-  </div>);
-}
-const ICON_PATHS = { check: "M5 12.5l4.5 4.5L19 7.5", warning: "M12 4l9 16H3L12 4zM12 10v4M12 17.5v.5", close: "M6 6l12 12M18 6L6 18", arrow: "M5 12h14M13 6l6 6-6 6" };
-function NavIcon({ name, size = 18 }) {
-  const d = ICON_PATHS[name]; if (!d) return null;
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0, verticalAlign: "-2px" }}><path d={d} /></svg>;
-}
-
-${START} (à modifier) =====
+${SHARED}${START} (à modifier) =====
 ${body}${END}
 
 /* ---------- Aperçu du kit : données d'exemple, enregistrement en mémoire (ne pas modifier) ---------- */
@@ -101,4 +84,4 @@ if (require.main === module) {
   const r = build();
   console.log("Kit écrit dans " + r.out + " (" + r.lines + " lignes) : ProdTurbines-kit.jsx + Consignes-pour-Claude.md");
 }
-module.exports = { build, pageBody, hashOf, START, END };
+module.exports = { build, pageBody, hashOf, START, END, SHARED };

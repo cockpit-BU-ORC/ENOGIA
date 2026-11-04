@@ -24,6 +24,8 @@ yarn-error.log*
 
 # v227 : kit Production turbines pour Jérémie (régénéré par npm run kit:jeremie)
 kit-jeremie/
+# v262 : kit Achats / Appro pour le responsable achats (régénéré par npm run kit:achats)
+kit-achats/
 
 # /brag-slim : vidéos de lancement (contiennent de vraies données, jamais dans le dépôt public)
 brag-output*/

@@ -1824,3 +1824,13 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Vérifié dans le site local : Liste (33 machines, filtres), Tests, Turbines, Production turbines, Cash in, accueil.
 - Pas de nouvelle clé `localStorage`, pas de nouveau document Firestore.
 - Fichiers : App.js, useAppData.js (nouveau), listFilters.js (nouveau), listFilters.test.js (nouveau), releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v262 — Page Achats / Appro et kit du responsable achats
+
+- Demandé : « un onglet spécial pour les Achats / Appro, pour le suivi des appros des composants qu'on installe sur nos ORC ; le responsable achats travaille le fond sur son Claude, je lui fournis la forme, comme pour Jérémie ».
+- Page `achats` (menu Gestion) : propriétaire + adresses de la liste « access » (Achats › Réglages). Accueil, Par PJ, Commandes, Composants, Fournisseurs, Réglages (marge avant l'arrivée du PJ, accès). Date de besoin = arrivée du PJ dans le planning − marge, sauf date saisie ; ligne en retard si la livraison prévue dépasse le besoin.
+- **Règles Firestore à republier** : nouvelle ligne `achats` (même principe que `prodTurbines`). Sans elle, la page s'affiche mais n'enregistre rien. Nouveau document `planning/achats` (`beta_achats` en bêta, ajouté à la copie production → bêta).
+- Kit : `npm run kit:achats` → `kit-achats/` (ignoré par git) ; retour : `npm run import:achats -- "<fichier>" --dry` puis sans `--dry`. Marche à suivre complète : `kit-achats/Marche-a-suivre.md` (source `scripts/achats-marche-a-suivre.md`).
+- Production turbines et Achats / Appro : un seul titre (l'en-tête du site n'est plus ajouté au-dessus de celui de la page).
+- Clé `localStorage` : `enogia_achats_tab` (sous-page ouverte).
+- Fichiers : components/Achats.js (nouveau), useAppData.js, appDocs.js, App.js, firestore.rules, achats.test.js (nouveau), scripts/achats-kit.js, achats-import.js, achats-consignes.md, achats-marche-a-suivre.md (nouveaux), scripts/prodturb-kit.js (en-tête commun SHARED, kit de Jérémie inchangé), package.json, .gitignore, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

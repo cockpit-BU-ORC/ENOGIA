@@ -2,7 +2,7 @@
 // turbines, retards, Cash in). Même code qu'avant, regroupé par document ; App.js n'appelle plus que ces crochets.
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { onSnapshot, setDoc, updateDoc, deleteField } from "firebase/firestore";
-import { TURBINES_DOC_REF, TESTS_DOC_REF, PRODTURB_DOC_REF, DELAYS_DOC_REF } from "./appDocs";
+import { TURBINES_DOC_REF, TESTS_DOC_REF, PRODTURB_DOC_REF, DELAYS_DOC_REF, ACHATS_DOC_REF } from "./appDocs";
 import { notify } from "./components/SharedUI";
 import { setCashinDoc, setCashinLinks, getCashinDoc, getCashinLinks, getOrdoPjs, cashGroupsFor } from "./cashinLink";
 import { CASHIN_DOC_REF, CASHIN_LINKS_REF, CASHIN_SHARED_REF, buildSharedCashin } from "./cashinData";
@@ -120,4 +120,26 @@ export function useCashinSync(canCash, currentUser) {
     });
     return ()=>{unsub();unsubL();};
   },[canCash]);
+}
+
+// v262 : Achats / Appro — même principe que Production turbines : lu par les comptes connectés (pour savoir qui a accès),
+// écrit élément par élément (fusion) par le propriétaire et les adresses de la liste « access » (règles Firestore)
+export function useAchats(currentUser, authorName) {
+  const [achatsDoc, setAchatsDoc] = useState(null);
+  useEffect(() => {
+    if (!currentUser) return undefined;
+    return onSnapshot(ACHATS_DOC_REF(), snap => setAchatsDoc(snap.exists() ? snap.data() : {}), err => { console.warn("achats (lecture) :", err && err.message); setAchatsDoc({}); });
+  }, [currentUser]);
+  const achatsApi = useMemo(() => {
+    const R = ACHATS_DOC_REF, stamp = () => ({ updatedAt: new Date().toISOString(), updatedBy: authorName || "" });
+    const fail = e => { console.error(e); notify("Erreur lors de l'enregistrement (Achats / Appro) : " + e.message); return false; };
+    const setField = async (k, v) => { try { await updateDoc(R(), { [k]: v, ...stamp() }); } catch (e) { await setDoc(R(), { [k]: v, ...stamp() }, { merge: true }); } return true; };
+    return {
+      put: async (c, id, data) => { try { await setDoc(R(), { [c]: { [id]: data }, ...stamp() }, { merge: true }); const cur = (achatsDoc && achatsDoc[c] && achatsDoc[c][id]) || {}; const gone = Object.keys(cur).filter(k => !(k in data)); if (gone.length) await updateDoc(R(), Object.fromEntries(gone.map(k => [c + "." + id + "." + k, deleteField()]))); return true; } catch (e) { return fail(e); } },
+      del: async (c, id) => { try { await updateDoc(R(), { [c + "." + id]: deleteField(), ...stamp() }); return true; } catch (e) { return fail(e); } },
+      setParams: async p => { try { return await setField("params", p); } catch (e) { return fail(e); } },
+      setAccess: async list => { try { return await setField("access", list); } catch (e) { return fail(e); } },
+    };
+  }, [authorName, achatsDoc]);
+  return { achatsDoc, achatsApi };
 }

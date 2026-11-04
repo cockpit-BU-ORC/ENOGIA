@@ -26,7 +26,9 @@
     "deploy:beta": "node scripts/deploy.js beta",
     "check:contrast": "node scripts/check-contrast.mjs",
     "kit:jeremie": "node scripts/prodturb-kit.js",
-    "import:jeremie": "node scripts/prodturb-import.js"
+    "import:jeremie": "node scripts/prodturb-import.js",
+    "kit:achats": "node scripts/achats-kit.js",
+    "import:achats": "node scripts/achats-import.js"
   },
   "eslintConfig": {
     "extends": [

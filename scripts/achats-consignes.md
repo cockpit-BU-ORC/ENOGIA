@@ -1,0 +1,19 @@
+# Consignes pour Claude — page « Achats / Appro » (site Cockpit BU ORC, ENOGIA)
+
+À coller au début de la conversation, avec le fichier `Achats-kit.jsx`.
+
+---
+
+Tu travailles sur la page **Achats / Appro** du site interne Cockpit BU ORC d'ENOGIA. Elle sert au suivi des approvisionnements des composants installés sur nos machines ORC (une machine = un PJ). Le fichier joint `Achats-kit.jsx` est un **kit** : il s'ouvre comme artifact React et reproduit le site (thème, en-tête de page, icônes) avec des données d'exemple fictives, pour que je voie le rendu. Gabriel réintègre ensuite automatiquement ton travail dans le site : respecte ces règles à la lettre, sinon l'intégration est refusée.
+
+1. **Ouvre le fichier tel quel comme artifact React**, sans le réécrire, puis fais uniquement les modifications que je demande.
+2. **Ne modifie que ce qui est entre** `// ===== DÉBUT PAGE` et `// ===== FIN PAGE =====`, et ne touche jamais à la ligne « Base du kit » en tête du fichier. Le reste (thème recopié, `PageHead`, `NavIcon`, aperçu `KitPreview`, données d'exemple) ne doit pas changer.
+3. **Pas d'`import`** dans la partie modifiable, pas de nouvelle bibliothèque, pas de Tailwind, pas d'appel à un site extérieur (`fetch`, adresses http) : seulement React (`useState`, `useEffect`, `useMemo`, `useRef`) et ce qui existe déjà dans le fichier (`T`, `FZF`, `PageHead`, `NavIcon`).
+4. **Icônes** : `NavIcon` ne connaît que `check`, `warning`, `close`, `arrow`. Pour autre chose, du texte.
+5. **Couleurs** : uniquement les jetons du thème — `T.card`, `T.surface`, `T.surfaceAlt`, `T.line`, `T.ink900` / `ink700` / `ink500` / `ink300`, `T.red600` / `red100`, `T.amber600` / `amber100`, `T.emerald600` / `emerald100`, `T.teal600`. **Aucune couleur codée en dur** (`#...`, `rgb(...)`) : la page doit marcher en clair et en sombre (bouton « Mode sombre » de l'aperçu). Rouge = problème, ambre = à surveiller, vert = bon ; le reste en gris.
+6. **Polices et tailles** : `T.font` (texte), `T.fontDisplay` (titres, chiffres), `T.fontMono` (n° de PJ, références, PO) ; tailles `FZF.xs` / `sm` / `md` / `lg`. Chiffres en `fontVariantNumeric: "tabular-nums"`.
+7. **Données** : ne passe que par `api.put(collection, id, data)`, `api.del(collection, id)`, `api.setParams(p)`, `api.setAccess(liste)`. Pas de `localStorage` pour les données (seulement pour un réglage d'affichage, clé commençant par `enogia_achats_`), pas de `window.claude`. Garde les collections `composants`, `lignes`, `fournisseurs`, `params`, `access` et les champs existants (décrits en tête de la partie modifiable) ; si tu en ajoutes, dis-le clairement dans ta réponse (Gabriel doit le savoir).
+8. **Le planning est en lecture seule** : la page reçoit `rows` (pj, nomProjet, gamme, etat, arrivee, depart) et ne doit jamais le modifier.
+9. **Garde exportés** `Achats`, `EMPTY_ACHATS`, `STATUTS`, `lineState`, `besoinOf` (le site les teste) et la signature `Achats({ doc, api, rows, canEdit, owner })`.
+10. **Style du site** : cartes plates (bordure fine `T.line`, rayon 10, pas d'ombre sauf fenêtres et menus), tableaux avec en-têtes gris 12 px et lignes d'au moins 36 px, boutons sobres, textes en français, phrases courtes, pas d'emoji, cibles cliquables d'au moins 24 px, `aria-label` sur les boutons-icônes, toute fenêtre avec `role="dialog"` et `aria-modal="true"`.
+11. **À la fin, rends le fichier COMPLET** (du premier au dernier caractère, repères compris) dans un seul bloc de code ou en téléchargement, et liste en 3 à 5 lignes ce que tu as changé.

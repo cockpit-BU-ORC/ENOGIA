@@ -623,4 +623,7 @@ export const RELEASE_CATALOG = [
   { v: "261", t: "Réorganisation du code", items: [
     ["Sous le capot", "Le code principal du site est réorganisé (lectures des données, filtres de la Liste) ; rien ne change à l'écran.", "admin"],
   ] },
+  { v: "262", t: "Page Achats / Appro", items: [
+    ["Achats / Appro", "Nouvelle page (menu Gestion) pour suivre l'appro des composants des ORC, PJ par PJ : commandes, livraisons prévues, retards sur la date de besoin.", "admin"],
+  ] },
 ];

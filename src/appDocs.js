@@ -9,7 +9,7 @@ import { db } from "./firebase";
 export const IS_BETA=process.env.REACT_APP_BETA==="1";
 export const DOC_PFX=IS_BETA?"beta_":"";
 if(IS_BETA&&typeof document!=="undefined")document.title="[BÊTA] Cockpit BU ORC";
-export const BETA_DOCS=["current","initial","overrides","comments","pjMetaSync","pjMetaOverrides","delays","delayTypes","managerEmails","changeLog","cashin","cashinLinks","turbines","tests","profiles","prodTurbines"];
+export const BETA_DOCS=["current","initial","overrides","comments","pjMetaSync","pjMetaOverrides","delays","delayTypes","managerEmails","changeLog","cashin","cashinLinks","turbines","tests","profiles","prodTurbines","achats"];
 export const DOC_REF=()=>doc(db,"planning",DOC_PFX+"current");
 export const INITIAL_DOC_REF=()=>doc(db,"planning",DOC_PFX+"initial");
 export const OVERRIDES_DOC_REF=()=>doc(db,"planning",DOC_PFX+"overrides");
@@ -22,6 +22,7 @@ export const TURBINES_DOC_REF=()=>doc(db,"planning",DOC_PFX+"turbines"); // v146
 export const PRODTURB_DOC_REF=()=>doc(db,"planning",DOC_PFX+"prodTurbines"); // v226 : Production turbines (directeur de production turbines + propriétaire)
 export const TESTS_DOC_REF=()=>doc(db,"planning",DOC_PFX+"tests"); // v154 : testeurs, affectations aux périodes de tests, catalogue FAT
 export const MANAGER_EMAILS_DOC_REF=()=>doc(db,"planning",DOC_PFX+"managerEmails");
+export const ACHATS_DOC_REF=()=>doc(db,"planning",DOC_PFX+"achats"); // v262 : Achats / Appro (responsable achats + propriétaire)
 export const PROFILES_DOC_REF=()=>doc(db,"planning",DOC_PFX+"profiles"); // v188 : rôle et PJ de chaque compte (Manager › Réglages › Personnes et rôles)
 
 // Types de retard génériques par défaut — éditables depuis le panel Manager (onglet Retards)
