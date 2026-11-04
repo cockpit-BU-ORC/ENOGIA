@@ -1838,7 +1838,7 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 ## v263 — Audit apple-design : glisser-déposer, menus, accessibilité
 
 - Demandé : « toutes » (les 8 retouches de l'audit apple-design).
-- Glisser-déposer maison (`src/pointerDrag.js`) dans Tests › Par testeur, le tableau des turbines et le Gantt du planificateur : l'élément suit la souris, la cible s'allume, retour au départ si refusé, Échap annule ; flèches haut / bas au clavier dans Par testeur et le Gantt.
+- Glisser-déposer maison (`src/pointerDrag.js`, avec défilement automatique près des bords comme le glisser du navigateur) dans Tests › Par testeur, le tableau des turbines et le Gantt du planificateur : l'élément suit la souris, la cible s'allume, retour au départ si refusé, Échap annule ; flèches haut / bas au clavier dans Par testeur et le Gantt.
 - Planificateur : barre des Couloirs qui suit la souris en continu puis se pose sur son jour ; frise des bancs qui atterrit depuis l'endroit du lâcher.
 - Menus ancrés sur le bouton cliqué (motion.js) ; « Réduire la transparence » et « Contraste élevé » du système respectés ; pastille « Non commandée » : 3 pulsations puis fixe ; doublons CSS des boutons retirés ; petits textes très légèrement espacés.
 - Pas de nouvelle clé `localStorage`, pas de nouveau document Firestore.

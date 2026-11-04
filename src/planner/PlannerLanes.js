@@ -1,8 +1,9 @@
-import React, { useMemo, useRef, useState, useEffect } from "react";
+import React, { useMemo, useRef, useState, useEffect, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { T } from "../theme";
 import { STEP_LABEL, nodeKey, dayNum, isoOfDay, moveStepTo, setStep, orderOf, rulesOf, schedule, benchOf, stepWork, setWork, startAtKeepLinks, startReason } from "./engine";
 import { fmtIso, STEP_COLOR, headerCells } from "./PlannerGantt";
+import { landFrom } from "../pointerDrag";
 
 // Vue « Couloirs » : le planning lu comme un atelier. Deux rails de jalons (Arrivées en haut, Départs en bas) encadrent
 // trois couloirs de travail (Production, Banc d'essai, Fin de production). Même échelle de temps que le Gantt, défilement
@@ -117,7 +118,12 @@ export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load,
   const [edit, setEdit] = useState(null); const dragged = useRef(0); // v254 : fenêtre d'édition ; dragged = un glisser vient de finir (le clic qui suit ne l'ouvre pas)
   const drag = useRef(null); const tipRef = useRef(null); const [dragKey, setDragKey] = useState(null); const [tip, setTip] = useState("");
   // au lâcher, la barre glisse de la souris jusqu'à son jour (150 ms, sans rebond)
-  const settle = key => requestAnimationFrame(() => { const el = document.querySelector('[data-lane-key="' + (window.CSS && CSS.escape ? CSS.escape(key) : key) + '"]'); if (!el || !el.style.transform) return; el.style.transition = "transform 150ms cubic-bezier(.2,.8,.2,1)"; el.style.transform = ""; setTimeout(() => { el.style.transition = ""; }, 170); });
+  // v263 : la barre déplacée suit la souris (écart jusqu'à la souris, recalculé après chaque rendu) puis atterrit sur son jour
+  const laneEl = key => document.querySelector('[data-lane-key="' + (window.CSS && CSS.escape ? CSS.escape(key) : key) + '"]');
+  const follow = d => { const el = laneEl(d.key); if (el) { el.style.transition = "none"; el.style.transform = "translateX(" + (d.left0 + (d.cx - d.x0) - parseFloat(el.style.left)) + "px)"; } };
+  const landRef = useRef(null);
+  const settle = key => { const el = laneEl(key); if (!el || !el.style.transform) return; landRef.current = { key, rect: el.getBoundingClientRect() }; el.style.transform = ""; };
+  useLayoutEffect(() => { const d = drag.current; if (d && d.kind === "move" && d.left0 != null && d.cx != null) follow(d); const l = landRef.current; if (l) { landRef.current = null; landFrom(laneEl(l.key), l.rect, 150); } });
   const startDrag = (e, d) => {
     if (readOnly || (e.button !== undefined && e.button !== 0)) return;
     e.stopPropagation(); e.preventDefault();
@@ -131,7 +137,7 @@ export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load,
       const d = drag.current; if (!d) return;
       if (tipRef.current) { tipRef.current.style.left = (e.clientX + 14) + "px"; tipRef.current.style.top = (e.clientY + 16) + "px"; }
       // la barre colle à la souris (écart restant jusqu'à la souris, mesuré après le recalcul du plan)
-      if (d.kind === "move" && d.left0 != null) { const cx = e.clientX; requestAnimationFrame(() => { const el = document.querySelector('[data-lane-key="' + (window.CSS && CSS.escape ? CSS.escape(d.key) : d.key) + '"]'); if (el && drag.current === d) { el.style.transition = "none"; el.style.transform = "translateX(" + (d.left0 + (cx - d.x0) - parseFloat(el.style.left)) + "px)"; } }); }
+      if (d.kind === "move" && d.left0 != null) { d.cx = e.clientX; follow(d); }
       const dd = Math.round((e.clientX - d.x0) / px); if (dd === d.dd) return; d.dd = dd;
       if (dd === 0) { d.cand = null; setTip(""); onPreview(null); return; }
       const ns = isoOfDay(dayNum(d.node.start) + dd);

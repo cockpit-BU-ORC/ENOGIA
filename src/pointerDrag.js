@@ -21,6 +21,7 @@ export function usePointerDnD() {
     window.removeEventListener("pointermove", s && s.move); window.removeEventListener("pointerup", s && s.up);
     window.removeEventListener("pointercancel", s && s.cancel); window.removeEventListener("keydown", s && s.key, true);
     if (!s || !s.on) return;
+    if (s.raf) clearTimeout(s.raf);
     document.body.style.cursor = ""; document.body.style.userSelect = "";
     const key = overRef.current, t = key != null && drops.current[key];
     const ok = !cancel && t && t.accepts(s.payload);
@@ -54,10 +55,33 @@ export function usePointerDnD() {
           document.body.style.cursor = "grabbing"; document.body.style.userSelect = "none"; setDrag(payload);
         }
         s.clone.style.transform = "translate(" + dx + "px," + dy + "px)";
-        // cible la plus proche qui accepte (une carte dans une colonne : la carte d'abord, sinon la colonne)
-        let z = document.elementFromPoint(ev.clientX, ev.clientY), k2 = null;
+        s.last = { x: ev.clientX, y: ev.clientY }; s.hit(ev.clientX, ev.clientY);
+        if (!s.raf) s.raf = setTimeout(s.tick, 16);
+      };
+      // cible la plus proche qui accepte (une carte dans une colonne : la carte d'abord, sinon la colonne)
+      s.hit = (x, y) => {
+        let z = document.elementFromPoint(x, y), k2 = null;
         while (z && z.closest && (z = z.closest("[data-dnd-drop]"))) { const key = z.getAttribute("data-dnd-drop"), t = drops.current[key]; if (t && t.accepts(payload)) { k2 = key; break; } z = z.parentElement; }
         if (k2 !== overRef.current) { overRef.current = k2; setOver(k2); }
+      };
+      // près d'un bord (zone qui défile ou fenêtre), la page défile toute seule, comme avec le glisser du navigateur
+      s.tick = () => {
+        if (st.current !== s || !s.on) { s.raf = 0; return; }
+        const { x, y } = s.last, E = 40, step = d => Math.ceil((E - d) / E * 18);
+        let moved = false;
+        const scroll = (el, r) => {
+          let vx = 0, vy = 0;
+          if (y - r.top < E && el.scrollTop > 0) vy = -step(y - r.top); else if (r.bottom - y < E && el.scrollTop + el.clientHeight < el.scrollHeight) vy = step(r.bottom - y);
+          if (x - r.left < E && el.scrollLeft > 0) vx = -step(x - r.left); else if (r.right - x < E && el.scrollLeft + el.clientWidth < el.scrollWidth) vx = step(r.right - x);
+          if (vx || vy) { el.scrollLeft += vx; el.scrollTop += vy; moved = true; }
+        };
+        for (let n = document.elementFromPoint(x, y); n && n !== document.body && !moved; n = n.parentElement) {
+          const cs = getComputedStyle(n);
+          if ((/(auto|scroll)/.test(cs.overflowY) && n.scrollHeight > n.clientHeight + 1) || (/(auto|scroll)/.test(cs.overflowX) && n.scrollWidth > n.clientWidth + 1)) scroll(n, n.getBoundingClientRect());
+        }
+        if (!moved) { const se = document.scrollingElement || document.documentElement; scroll(se, { top: 0, left: 0, bottom: window.innerHeight, right: window.innerWidth }); }
+        if (moved) s.hit(x, y);
+        s.raf = setTimeout(s.tick, 16);
       };
       s.up = () => finish(false); s.cancel = () => finish(true);
       s.key = ev => { if (ev.key === "Escape" && s.on) { ev.preventDefault(); ev.stopPropagation(); finish(true); } };
@@ -65,7 +89,6 @@ export function usePointerDnD() {
       window.addEventListener("pointermove", s.move); window.addEventListener("pointerup", s.up);
       window.addEventListener("pointercancel", s.cancel); window.addEventListener("keydown", s.key, true);
     },
-    style: opt.style,
   });
   const dropProps = (key, accepts, onDrop) => { drops.current[key] = { accepts, onDrop }; return { "data-dnd-drop": key }; };
   return { drag, over, dragProps, dropProps };
@@ -78,5 +101,7 @@ export function landFrom(el, rect, ms = 180) {
   const r = el.getBoundingClientRect(), dx = rect.left - r.left, dy = rect.top - r.top;
   if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
   el.style.transition = "none"; el.style.transform = "translate(" + dx + "px," + dy + "px)";
-  requestAnimationFrame(() => { el.style.transition = "transform " + ms + "ms cubic-bezier(.2,.8,.2,1)"; el.style.transform = ""; setTimeout(() => { el.style.transition = ""; }, ms + 20); });
+  void el.offsetWidth; // le navigateur prend en compte la position de départ avant la transition
+  el.style.transition = "transform " + ms + "ms cubic-bezier(.2,.8,.2,1)"; el.style.transform = "";
+  setTimeout(() => { el.style.transition = ""; }, ms + 20);
 }
