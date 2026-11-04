@@ -649,4 +649,9 @@ export const RELEASE_CATALOG = [
   { v: "268", t: "Import des données de production ouvert à l'équipe turbines", items: [
     ["Turbines › Production", "Le bouton « Importer des données (JSON) » est disponible pour toutes les personnes qui ont accès à la production turbines.", "admin"],
   ] },
+  { v: "269", t: "Sous-étapes au clic, dates contractuelles calculées", items: [
+    ["Fiche d'un PJ", "Un clic sur une étape du parcours (Montage méca…) affiche de nouveau ses sous-étapes."],
+    ["Fiches projet · contrat", "Échéance du contrat = T0 + une durée en semaines ; case « Livraison sur site client (avec transport) » et nombre de jours : la MàD ORC contractuelle se calcule toute seule.", "admin"],
+    ["Fiches projet · dates", "MàD ORC et livraison sur site : date contractuelle, prévisionnelle (mise à jour à chaque publication) et effectuée, avec l'écart au contrat.", "admin"],
+  ] },
 ];

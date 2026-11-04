@@ -10,7 +10,7 @@ import { T, FZF as FZ, inkOn, mixHex, stageSoft } from "../theme";
 import { ETAT_EDITS, getPjMeta, ETAT_META, chefsOf, EpcTag, PresenceChip, presenceKind, presenceFirstDate, presenceDates, CountryFlag, relTime, Avatar } from "../pjMeta";
 import { NavIcon, PjPlate } from "./SharedUI";
 import { ProjectComments, DelayAllocations, EditMetaForm } from "./ProjectModal";
-import { STAGES, autoPct } from "../prodStages";
+import { STAGES, STEP_NOTE, autoPct } from "../prodStages";
 import { planOf, catalogOf, activeSections, progressOf, SECTIONS, selectedIds, statusOf } from "../testPlan";
 import { debugProgress, DEBUG_ITEMS } from "../debugChecklist";
 import { contractLate, livrPrevueOf } from "../penalties";
@@ -55,7 +55,7 @@ const STATUS_TXT = { paid: "Payé", invoiced: "Facture émise", tobill: "À fact
 
 export function RowDetail({ r, onClose, comments, addComment, deleteComment, pinOk, delays, delayTypes, setDelayTypes, addDelayAllocation, deleteDelayAllocation, addDelayComment, deleteDelayComment, authorName, savePjMetaOverride, canEditMeta, dayAction }) {
   const ctx = useContext(PjDialogCtx);
-  const [tab, setTab] = useState("resume"), [open, setOpen] = useState(null); // open : "delays" | "edit"
+  const [tab, setTab] = useState("resume"), [open, setOpen] = useState(null), [focus, setFocus] = useState(null); // open : "delays" | "edit"
   const meta = getPjMeta(r.pj, r), shipped = r.etat === "SHIPPED";
   const cur = Math.max(0, RIBBON.findIndex(s => s.etats.includes(r.etat)));
   const em = ETAT_META[r.etat] || ETAT_META["NOT ORDERED"], bar = em.bar;
@@ -94,13 +94,26 @@ export function RowDetail({ r, onClose, comments, addComment, deleteComment, pin
       {drift !== 0 && !shipped && pill((drift > 0 ? "+" : "−") + Math.abs(drift) + " j sur l'initial", drift > 0 ? T.red600 : T.emerald600, drift > 0 ? T.red100 : T.emerald100, "d")}
     </div>
     <div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 6, lineHeight: 1.45 }}>{meaning}{next ? " Étape suivante : " + next + "." : ""}</div>
-    {/* Parcours : une barre par étape, survol = sous-étapes */}
-    <div role="img" aria-label={"Parcours : " + RIBBON.map((s, i) => s.label + (shipped || i < cur ? " fait" : i === cur ? " en cours" : "")).join(", ")} style={{ display: "flex", gap: 3, marginTop: 12 }}>
-      {RIBBON.map((s, i) => { const done = shipped || i < cur, isCur = !shipped && i === cur, st = STAGES.find(x => x.id === s.id); return <div key={s.id} title={s.label + (st ? " : " + st.steps.join(" · ") : "")} style={{ flex: s.id === "PRE" ? 3 : s.id === "SHIPPED" || s.id === "PACKAGING" ? 1 : 2, height: 10, borderRadius: 3, background: isCur ? bar : done ? doneBg : T.surfaceAlt }} />; })}
-    </div>
-    <div aria-hidden="true" style={{ display: "flex", gap: 3, marginTop: 3, fontSize: 11, color: T.ink500 }}>
-      {RIBBON.map((s, i) => <span key={s.id} style={{ flex: s.id === "PRE" ? 3 : s.id === "SHIPPED" || s.id === "PACKAGING" ? 1 : 2, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: !shipped && i === cur ? 700 : 400, color: !shipped && i === cur ? T.ink900 : T.ink500 }}>{s.label}</span>)}
-    </div>
+    {/* Parcours : une barre par étape ; v269 (demandé : « on ne voit plus les sous-étapes quand on clique dessus ») : clic = ses sous-étapes */}
+    <ol aria-label="Parcours de la machine" style={{ listStyle: "none", margin: "12px 0 0", padding: 0, display: "flex", gap: 3 }}>
+      {RIBBON.map((s, i) => { const done = shipped || i < cur, isCur = !shipped && i === cur, on = focus === s.id;
+        return <li key={s.id} style={{ flex: s.id === "PRE" ? 3 : s.id === "SHIPPED" || s.id === "PACKAGING" ? 1 : 2, minWidth: 0 }}>
+          <button type="button" onClick={() => setFocus(f => (f === s.id ? null : s.id))} aria-pressed={on} aria-current={isCur ? "step" : undefined} title={"Voir les sous-étapes · " + s.label}
+            style={{ width: "100%", border: "none", background: "transparent", padding: "0 0 2px", cursor: "pointer", textAlign: "left", fontFamily: T.font, minWidth: 0 }}>
+            <span aria-hidden="true" style={{ display: "block", height: 10, borderRadius: 3, background: isCur ? bar : done ? doneBg : T.surfaceAlt, boxShadow: on ? "0 0 0 2px " + T.ink900 : "none" }} />
+            <span style={{ display: "block", marginTop: 3, fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: isCur || on ? 700 : 400, color: isCur || on ? T.ink900 : T.ink500 }}>{done ? "✓ " : ""}{s.label}</span>
+          </button>
+        </li>; })}
+    </ol>
+    {focus && (() => { const fi = RIBBON.findIndex(x => x.id === focus), fs0 = RIBBON[fi], st = STAGES.find(x => x.id === focus), state = shipped || fi < cur ? "done" : fi === cur ? "cur" : "todo", col = (ETAT_META[fs0.color] || {}).bar || bar;
+      return <div className="enogia-view-in" style={{ marginTop: 8, background: T.surface, borderRadius: 10, padding: "10px 12px", borderLeft: "3px solid " + col }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><b style={{ fontSize: FZ.sm, color: T.ink900 }}>{st ? "Sous-étapes · " + fs0.label : fs0.label}</b><span style={{ fontSize: 11.5, color: T.ink500 }}>{state === "done" ? "étape terminée" : state === "cur" ? "étape en cours" : "à venir"}</span>
+          <button type="button" onClick={() => setFocus(null)} aria-label="Fermer les sous-étapes" style={{ marginLeft: "auto", border: "none", background: "transparent", color: T.ink500, cursor: "pointer", minWidth: 24, minHeight: 24 }}>×</button></div>
+        {st ? <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: "2px 16px", marginTop: 4 }}>{st.steps.map(x => <div key={x} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: FZ.xs, color: T.ink700, padding: "2px 0" }}>
+          <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: "50%", flexShrink: 0, background: state === "done" ? ETAT_META.SHIPPED.bar : state === "cur" ? col : "transparent", boxShadow: state === "todo" ? "inset 0 0 0 1.5px " + T.ink300 : "none" }} />{x}</div>)}</div>
+          : <div style={{ fontSize: FZ.xs, color: T.ink700, lineHeight: 1.5, marginTop: 4 }}>{focus === "PRE" ? "Design de l’ORC, commande, fabrication et montage chez les fournisseurs (armoire et skid) ou stockage externe." : MEANING.SHIPPED[1]}</div>}
+        {st && st.steps.some(x => x.endsWith("*")) && <div style={{ fontSize: 11, color: T.ink500, marginTop: 4, lineHeight: 1.4 }}>{STEP_NOTE}</div>}
+      </div>; })()}
     {/* Onglets */}
     <div role="tablist" aria-label="Rubriques de la fiche" style={{ display: "flex", gap: 18, borderBottom: "1px solid " + T.line, marginTop: 12 }}>
       {TABS.map(([id, label, badge, warn]) => <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)} style={{ border: "none", background: "transparent", padding: "8px 0", minHeight: 36, cursor: "pointer", fontFamily: T.font, fontSize: FZ.sm, fontWeight: tab === id ? 700 : 500, color: tab === id ? T.ink900 : T.ink500, borderBottom: "2px solid " + (tab === id ? T.ink900 : "transparent"), marginBottom: -1, display: "inline-flex", alignItems: "center", gap: 6 }}>{label}{badge && <span style={{ fontSize: 11, fontWeight: 700, borderRadius: 999, padding: "0 7px", background: warn ? T.red100 : T.surfaceAlt, color: warn ? T.red600 : T.ink700 }}>{badge}</span>}</button>)}

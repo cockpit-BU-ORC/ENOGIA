@@ -1890,3 +1890,13 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Turbines › Production : « Importer des données (JSON) » visible pour toutes les personnes de la liste d'accès de la production (en plus du propriétaire). Les règles Firestore autorisent déjà leurs écritures sur `planning/prodTurbines` : rien à republier.
 - Pas de nouvelle clé `localStorage`.
 - Fichiers : components/TurbinesHub.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v269 — Sous-étapes au clic, dates contractuelles calculées
+
+- Demandé : « on ne voit plus les sous-étapes quand on clique dessus » ; « la Tf contractuelle à côté du T0, calculée par un ajout de semaines ; une ligne MàD ORC et une ligne Livraison sur site avec date contractuelle, prévisionnelle et effectuée ; cocher s'il y a un transport et de combien de jours, la MàD contractuelle se met à jour ».
+- Fiche d'un PJ : clic sur une étape du parcours → ses sous-étapes (re-clic pour fermer).
+- Fiches projet › Contrat & roadmap : T0, durée en semaines, Tf (échéance = T0 + semaines), case « Livraison sur site client (avec transport) » + jours. Avec transport : MàD contractuelle = échéance − transport ; sans : MàD = livraison = échéance. Les dates calculées sont enregistrées dans les champs habituels (pénalités, rapports, alertes).
+- Fiches projet › Dates de fin et de livraison : contractuelle, prévisionnelle (à chaque publication), effectuée (départ réel ; livraison réelle saisie quand il y a transport), écart au contrat.
+- Nouveaux champs de fiche (`planning/pjMetaOverrides`) : `contratSemaines`, `transport`, `livrReelle` — document déjà couvert par les règles.
+- Pas de nouvelle clé `localStorage`.
+- Fichiers : penalties.js, contractDates.test.js (nouveau), components/ManagerFiche.js, components/RowDetail.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

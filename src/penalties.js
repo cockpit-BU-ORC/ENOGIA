@@ -40,10 +40,31 @@ export function ficheBase(meta) {
 //   chargeableWeeks, base, weekly, raw, capEur, amount, capped, startDate }
 // v255 (demandé : « livraison prévue = fin projetée + durée transport, pour que ce soit plus simple ») : quand la fiche a une durée de
 // transport (meta.transportJ, jours calendaires), la livraison prévue se calcule depuis le départ prévu du planning ; sinon, la date saisie.
+// v269 : sans transport (case décochée), la livraison sur site = la MàD ORC = le départ ; ancien fonctionnement gardé si la case n'existe pas.
 export function livrPrevueOf(meta, depart) {
   const m = meta || {}, n = m.transportJ;
+  if (m.transport === false) return depart ? String(depart).slice(0, 10) : null;
   if (n != null && n !== "" && !isNaN(Number(n)) && depart) { const d = new Date(depart); if (!isNaN(d)) { d.setHours(12, 0, 0, 0); d.setDate(d.getDate() + Number(n)); return d.toISOString().slice(0, 10); } }
   return m.livrPrevue || null;
+}
+// v269 (demandé : « la Tf contractuelle à côté du T0, calculée par un ajout de semaines qu'on décide ; sur certains contrats la livraison
+// = MàD ORC, sur d'autres c'est la livraison sur site, avec du transport : je coche s'il y a un transport et de combien de jours, et la MàD
+// contractuelle se met à jour ») : échéance du contrat = T0 + N semaines. Avec transport, l'échéance est la livraison sur site et la MàD
+// contractuelle = échéance − transport ; sans transport, MàD = livraison = échéance. Sans semaines, les dates saisies d'avant restent.
+export const hasTransport = m => (m && m.transport != null ? !!m.transport : !!(m && m.transportJ != null && m.transportJ !== ""));
+const addIso = (iso, n) => { const d = toDay(iso); if (!d) return null; d.setDate(d.getDate() + n); return iso2(d); };
+const iso2 = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+export function contractDatesOf(meta) {
+  const m = meta || {}, w = num(m.contratSemaines), tj = Math.max(0, num(m.transportJ) || 0), tr = hasTransport(m);
+  const deadline = m.contratT0 && w != null && w > 0 ? addIso(m.contratT0, Math.round(w * 7)) : null;
+  if (!deadline) return { auto: false, deadline: null, transport: tr, tj, mad: m.contratTFin || null, livr: m.contratLivr || (!tr ? m.contratTFin || null : null) };
+  return { auto: true, deadline, transport: tr, tj, mad: tr ? addIso(deadline, -tj) : deadline, livr: deadline };
+}
+// Champs à enregistrer après un changement (T0, semaines, transport) : les dates contractuelles calculées sont écrites avec, pour que
+// les pénalités, rapports et alertes lisent toujours contratTFin / contratLivr.
+export function contractPatch(meta, patch) {
+  const next = { ...(meta || {}), ...patch }, cd = contractDatesOf(next);
+  return cd.auto ? { ...patch, contratTFin: cd.mad, contratLivr: cd.livr } : patch;
 }
 export function penaltyCalc(meta, depart, today) {
   const p = { ...PEN_DEFAULT, ...((meta && meta.penalite) || {}) };

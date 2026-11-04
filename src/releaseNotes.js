@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v269",
+    date: "2026-11-04",
+    title: "V269 : sous-étapes et dates du contrat",
+    items: [
+      { t: "Fiche d'un PJ", d: "Cliquez sur une étape du parcours pour voir ses sous-étapes." },
+      { t: "Fiches projet", d: "Dates du contrat calculées (T0 + semaines, transport) et tableau contractuelle / prévisionnelle / effectuée.", admin: true },
+    ],
+  },
+  {
     id: "2026-11-v268",
     date: "2026-11-04",
     title: "V268 : import des données de production",
