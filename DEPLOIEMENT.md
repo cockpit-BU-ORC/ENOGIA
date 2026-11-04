@@ -1926,3 +1926,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Kit de Jérémie à régénérer (`npm run kit:jeremie`) : consignes 7 bis mises à jour (champs `besoin`, `sortieOrc`, collections `besoins` et `allocs`).
 - Pas de nouvelle clé `localStorage`.
 - Fichiers : turbineNeeds.js (+ test), components/TurbinesHub.js, components/ProdTurbines.js (retour V269), components/ManagerFiche.js, components/CommentMarks.js (nouveau), components/ProjectModal.js, components/RowDetail.js, components/MentionBell.js, mentions.js, styles.css, App.js, scripts/prodturb-kit.js, scripts/prodturb-consignes.md, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v272 — Checklist de debug en PDF, section Turbine compacte
+
+- Demandé : « exporter la checklist de debug en PDF uniquement » ; « la place pour les turbines est trop importante dans la fiche synthèse ».
+- Tests › checklist de debug : « Exporter en PDF » ouvre la checklist au format du modèle (A4 paysage) et lance l'impression : choisir « Enregistrer au format PDF ». Le nom proposé est celui du modèle. Si le navigateur bloque la fenêtre, un message le dit.
+- Fiches projet › Turbine : trois lignes courtes (turbine, roue, injecteur + bouchages).
+- Pas de nouvelle clé `localStorage`, pas de nouvelle donnée.
+- Fichiers : debugPdf.js (nouveau), debugDocx.js et zipStore.js (supprimés), debugChecklist.test.js, components/DebugChecklist.js, components/ManagerFiche.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

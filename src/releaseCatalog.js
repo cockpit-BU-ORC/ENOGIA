@@ -668,4 +668,8 @@ export const RELEASE_CATALOG = [
     ["Turbines › Besoins ORC et SAV", "Chaque turbine attendue est un emplacement turbine + roue + injecteur ; glissez-y les turbines (prêtes avec roue, sans roue, en fabrication), les roues et les injecteurs du stock : le stock de la production se met à jour.", "admin"],
     ["Fiches projet", "Turbine choisie sur des cartes, roue et injecteur en pastilles avec leur stock, nombre de bouchages de l'injecteur.", "admin"],
   ] },
+  { v: "272", t: "Checklist de debug en PDF, section Turbine compacte", items: [
+    ["Tests · checklist de debug", "« Exporter en PDF » : même mise en page que le modèle (A4 paysage), à enregistrer en PDF depuis la fenêtre d'impression. L'export Word est retiré."],
+    ["Fiches projet · Turbine", "Section plus compacte : turbine, roue et injecteur sur trois lignes courtes.", "admin"],
+  ] },
 ];

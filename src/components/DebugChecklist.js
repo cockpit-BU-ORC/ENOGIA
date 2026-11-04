@@ -1,10 +1,10 @@
 // v264 (demandé : « une checklist de debug dans l'onglet Tests, un système de cochage de cellule par ligne, pour chaque machine, au
 // début des phases de tests ; le testeur la remplit et la signe ; exportée sous le même format ») : étape « Checklist de debug » de la
-// fiche de tests d'un PJ (résumé + fenêtre de saisie ligne par ligne) et export Word à la forme du modèle PI105-047-XX0003.
+// fiche de tests d'un PJ (résumé + fenêtre de saisie ligne par ligne) et export PDF (v272, à la forme du modèle PI105-047-XX0003).
 import React, { useEffect, useState } from "react";
 import { T, FZF as FZ } from "../theme";
 import { DEBUG_SECTIONS, DEBUG_FIELDS, DEBUG_DOC, debugProgress, setDebugRow } from "../debugChecklist";
-import { buildDebugDocx, debugDocxName, downloadDocx } from "../debugDocx";
+import { openDebugPdf } from "../debugPdf"; // v272 : export PDF seulement (le Word de la V264 est retiré)
 
 const todayIso = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
 const fd = iso => (iso ? String(iso).slice(8, 10) + "/" + String(iso).slice(5, 7) + "/" + String(iso).slice(0, 4) : "—");
@@ -13,16 +13,16 @@ const field = () => ({ padding: "4px 6px", minHeight: 28, borderRadius: 6, borde
 
 // Résumé dans la fiche de tests du PJ : avancement, NOK, signature, boutons
 export function DebugChecklistStep({ r, plan, saveTests, canMark, who, signApi, SignForm }) {
-  const [open, setOpen] = useState(false), [busy, setBusy] = useState(false), [err, setErr] = useState("");
+  const [open, setOpen] = useState(false), [busy] = useState(false), [err, setErr] = useState("");
   const debug = (plan && plan.debug) || {}, pr = debugProgress(debug);
-  const exportWord = async () => {
-    setBusy(true); setErr("");
-    try {
+  const exportWord = () => {
+    setErr("");
+    const ok = openDebugPdf(async () => {
       let sign = null;
       if (debug.signed && signApi) { const imgs = (await signApi.load(r.pj)) || {}; sign = imgs.debug ? { ...debug.signed, img: imgs.debug.img } : debug.signed; }
-      downloadDocx(buildDebugDocx({ pj: r.pj, date: debug.date || todayIso(), name: debug.name || who, debug, sign }), debugDocxName(r.pj));
-    } catch (e) { console.error(e); setErr("Export impossible : " + e.message); }
-    setBusy(false);
+      return { pj: r.pj, date: debug.date || todayIso(), name: debug.name || who, debug, sign };
+    });
+    if (!ok) setErr("Le navigateur a bloqué la fenêtre du PDF : autorisez les fenêtres pour ce site.");
   };
   const pct = Math.round(pr.done / pr.total * 100);
   return (<div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -34,7 +34,7 @@ export function DebugChecklistStep({ r, plan, saveTests, canMark, who, signApi, 
       {pr.signed ? <span style={{ fontSize: 12, fontWeight: 600, color: T.emerald600, background: T.emerald100, borderRadius: 999, padding: "2px 10px" }}>Signée le {fd((debug.signed.at || "").slice(0, 10))} · {debug.signed.name}</span>
         : <span style={{ fontSize: 12, color: T.ink500 }}>Pas encore signée</span>}
       <button type="button" onClick={() => setOpen(true)} style={btn(true)}>{canMark ? (pr.done ? "Continuer la checklist" : "Remplir la checklist") : "Voir la checklist"}</button>
-      <button type="button" onClick={exportWord} disabled={busy} style={btn(true, true)}>Exporter (Word)</button>
+      <button type="button" onClick={exportWord} disabled={busy} style={btn(true, true)}>Exporter en PDF</button>
     </div>
     {err && <div role="alert" style={{ fontSize: FZ.xs, color: T.red600, fontWeight: 600 }}>{err}</div>}
     {open && <DebugChecklistDialog {...{ r, plan, saveTests, canMark, who, signApi, SignForm, onExport: exportWord, onClose: () => setOpen(false) }} />}
@@ -93,7 +93,7 @@ function DebugChecklistDialog({ r, plan, saveTests, canMark, who, signApi, SignF
         {debug.signed ? <span style={{ fontSize: 12, fontWeight: 600, color: changedAfter ? T.amber600 : T.emerald600, background: changedAfter ? T.amber100 : T.emerald100, borderRadius: 999, padding: "2px 10px" }}>Signée le {fd(debug.signed.at.slice(0, 10))} par {debug.signed.name}{changedAfter ? " · modifiée depuis, à signer de nouveau" : ""}</span> : null}
         <span style={{ flex: 1 }} />
         {canMark && !sigOpen && <button type="button" disabled={busy} onClick={() => setSigOpen(true)} style={btn(true, !!debug.signed && !changedAfter)}>{debug.signed ? "Signer de nouveau" : pr.done < pr.total ? "Signer (" + (pr.total - pr.done) + " ligne" + (pr.total - pr.done > 1 ? "s" : "") + " vide" + (pr.total - pr.done > 1 ? "s" : "") + ")" : "Signer la checklist"}</button>}
-        <button type="button" onClick={onExport} style={btn(true, true)}>Exporter (Word)</button>
+        <button type="button" onClick={onExport} style={btn(true, true)}>Exporter en PDF</button>
       </div>
       {sigOpen && <div style={{ padding: "0 16px 14px" }}><SignForm init={{ name: debug.name || who, fn: (debug.signed && debug.signed.fn) || "" }} busy={busy} onCancel={() => setSigOpen(false)} onSave={sign} /></div>}
       {err && <div role="alert" style={{ padding: "0 16px 12px", fontSize: FZ.xs, color: T.red600, fontWeight: 600 }}>{err}</div>}

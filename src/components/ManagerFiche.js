@@ -312,44 +312,46 @@ function NumField({label,value,onSave,suffix,hint,width=60}){
 // v271 (piste A validée : « cartes et pastilles » ; « l’injecteur n’est peut-être pas encore créé car on doit boucher des aubages : choisir
 // l’injecteur et le nombre de bouchages, borné par l’injecteur choisi ») : meta.turbCfg / turbRoue / turbInj / turbInjB.
 // Chiffre gris d’une pastille = stock de la production turbines (rouge à 0). Repris par Turbines › Besoins ORC et SAV.
-function TurbGlyph({cfg}){const s=cfg.g==="100"?22:15;return <span aria-hidden="true" style={{display:"flex",gap:4,alignItems:"flex-end",height:26}}>{Array.from({length:cfg.n},(_,i)=><span key={i} style={{width:s,height:s,borderRadius:"50%",border:"2.5px solid currentColor",boxSizing:"border-box",display:"grid",placeItems:"center"}}><span style={{width:"38%",height:"38%",borderRadius:"50%",background:"currentColor",opacity:.55}}/></span>)}</span>;}
+// v272 (demandé : « la place pour les turbines est trop importante ») : une seule bande compacte — choix segmenté (mini dessin + libellé),
+// pastilles roue / injecteur (stock de la production turbines en gris, rouge à 0), bouchages en − / +, une ligne d’état.
+function TurbGlyph({cfg}){const s=cfg.g==="100"?11:8;return <span aria-hidden="true" style={{display:"inline-flex",gap:2,alignItems:"center"}}>{Array.from({length:cfg.n},(_,i)=><span key={i} style={{width:s,height:s,borderRadius:"50%",border:"2px solid currentColor",boxSizing:"border-box"}}/>)}</span>;}
 function TurbineSection({r,meta,onSave}){
   const prod=React.useContext(ProdDocCtx),cfg=pjCfg(meta,r.gamme),g=cfg?cfg.g:null;
   const tiles=prod&&g?stockTiles(prod,g):{roues:[],injs:[]};
-  const roues=[...tiles.roues.map(t=>({ref:t.ref,q:t.qte}))];if(meta.turbRoue&&!roues.some(x=>x.ref===meta.turbRoue))roues.push({ref:meta.turbRoue,q:null});
+  const roues=tiles.roues.map(t=>({ref:t.ref,q:t.qte}));if(meta.turbRoue&&!roues.some(x=>x.ref===meta.turbRoue))roues.push({ref:meta.turbRoue,q:null});
   const injRefs=[...new Set(tiles.injs.map(t=>t.ref))].map(ref=>({ref,q:tiles.injs.filter(t=>t.ref===ref).reduce((s,t)=>s+t.qte,0)}));if(meta.turbInj&&!injRefs.some(x=>x.ref===meta.turbInj))injRefs.push({ref:meta.turbInj,q:null});
   const ii=meta.turbInj&&prod?injInfo(prod,meta.turbInj):null,mx=ii?maxBouches(ii.ouv):99,nb=meta.turbInjB==null?0:+meta.turbInjB;
   const prepared=ii?(nb?((ii.variantes.find(v=>v.bouches===nb)||{}).qte||0):ii.vierges):null;
-  const pk=on=>({border:"1px solid "+(on?T.ink900:T.line),background:on?T.ink900:T.card,color:on?T.card:T.ink900,borderRadius:8,minHeight:32,padding:"0 10px",fontSize:FZ.sm,fontWeight:600,cursor:"pointer",fontFamily:T.font,display:"inline-flex",alignItems:"center",gap:6,transition:"background 140ms, border-color 140ms"});
-  const qS=(on,q)=>({fontSize:FZ.xs,fontWeight:500,fontVariantNumeric:"tabular-nums",color:on?T.card:q===0?T.red600:T.ink500,opacity:on?.8:1});
-  const lab={fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk,margin:"0 0 6px"};
-  const step={width:32,height:32,borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink900,cursor:"pointer",fontSize:16,fontFamily:T.font};
-  const missing=[!meta.turbRoue&&"la roue",!meta.turbInj&&"l’injecteur"].filter(Boolean);
-  return(<Section title="Turbine" right={<span style={{fontSize:FZ.xs,color:T.ink500}}>{prod?"chiffres gris : stock de la production turbines":"stock indisponible (accès à la production turbines)"}</span>}>
-    <div role="group" aria-label="Configuration des turbines" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(110px,1fr))",gap:8}}>
-      {TURB_CFGS.map(c=>{const on=cfg&&cfg.id===c.id;return <button key={c.id} type="button" aria-pressed={!!on} onClick={()=>onSave({turbCfg:c.id,...(cfg&&cfg.g!==c.g?{turbRoue:null,turbInj:null,turbInjB:null}:{})})}
-        style={{border:"1.5px solid "+(on?T.ink900:T.line),background:on?T.surface:T.card,color:on?T.ink900:T.ink700,borderRadius:10,padding:"10px 8px 8px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:5,fontFamily:T.font,transition:"border-color 140ms, background 140ms"}}>
-        <TurbGlyph cfg={c}/><b style={{fontSize:FZ.sm}}>{c.l}</b><span style={{fontSize:11,color:T.ink500}}>{c.n} turbine{c.n>1?"s":""} {c.g} kW{!meta.turbCfg&&on?" · d’après la gamme":""}</span></button>;})}
-    </div>
-    {cfg&&<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:14,marginTop:12}}>
-      <div><p style={lab}>Roue <span style={{fontWeight:400,color:T.ink500}}>· équilibrées en stock</span></p>
-        <div role="group" aria-label="Roue" style={{display:"flex",flexWrap:"wrap",gap:6}}>{roues.length?roues.map(x=>{const on=meta.turbRoue===x.ref;return <button key={x.ref} type="button" aria-pressed={on} onClick={()=>onSave({turbRoue:on?null:x.ref})} style={pk(on)}>{x.ref}{x.q!=null&&<span style={qS(on,x.q)}>{x.q}</span>}</button>;}):<span style={{fontSize:FZ.xs,color:T.ink500}}>Aucune roue {g} kW dans la production.</span>}</div></div>
-      <div><p style={lab}>Injecteur <span style={{fontWeight:400,color:T.ink500}}>· en stock (vierges et bouchés)</span></p>
-        <div role="group" aria-label="Injecteur" style={{display:"flex",flexWrap:"wrap",gap:6}}>{injRefs.length?injRefs.map(x=>{const on=meta.turbInj===x.ref;return <button key={x.ref} type="button" aria-pressed={on} onClick={()=>onSave({turbInj:on?null:x.ref,turbInjB:null})} style={pk(on)}>{x.ref}{x.q!=null&&<span style={qS(on,x.q)}>{x.q}</span>}</button>;}):<span style={{fontSize:FZ.xs,color:T.ink500}}>Aucun injecteur {g} kW dans la production.</span>}</div>
-        {meta.turbInj&&<div style={{display:"flex",alignItems:"center",gap:8,marginTop:8,flexWrap:"wrap"}}>
-          <span style={{fontSize:12,fontWeight:700,color:T.ink700}}>Bouchages</span>
-          <button type="button" aria-label="Un bouchage de moins" disabled={nb<=0} onClick={()=>onSave({turbInjB:nb-1>0?nb-1:null})} style={{...step,opacity:nb<=0?.4:1}}>−</button>
-          <b aria-live="polite" style={{minWidth:24,textAlign:"center",fontVariantNumeric:"tabular-nums",fontSize:FZ.md}}>{nb}</b>
-          <button type="button" aria-label="Un bouchage de plus" disabled={nb>=mx} onClick={()=>onSave({turbInjB:Math.min(mx,nb+1)})} style={{...step,opacity:nb>=mx?.4:1}}>+</button>
-          <span style={{fontSize:FZ.xs,color:T.ink500}}>{ii&&ii.ouv?ii.ouv+" ouvertures : "+mx+" bouchages au plus":"nombre d’ouvertures non renseigné dans la production"}{prepared!=null?" · "+(prepared?prepared+" déjà prêt"+(prepared>1?"s":""):nb?"à boucher par la production":"aucun vierge en stock"):""}</span>
-        </div>}
+  const pk=on=>({border:"1px solid "+(on?T.ink900:T.line),background:on?T.ink900:T.card,color:on?T.card:T.ink900,borderRadius:7,minHeight:28,padding:"0 9px",fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font,display:"inline-flex",alignItems:"center",gap:5,transition:"background 120ms, border-color 120ms"});
+  const qS=(on,q)=>({fontWeight:500,fontVariantNumeric:"tabular-nums",color:on?T.card:q===0?T.red600:T.ink500,opacity:on?.8:1});
+  const lab={fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk,minWidth:64};
+  const row={display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"};
+  const step={width:28,height:28,borderRadius:7,border:"1px solid "+T.line,background:T.card,color:T.ink900,cursor:"pointer",fontSize:14,fontFamily:T.font,padding:0};
+  const missing=[!meta.turbRoue&&"roue",!meta.turbInj&&"injecteur"].filter(Boolean);
+  const none=(t)=><span style={{fontSize:FZ.xs,color:T.ink500}}>{t}</span>;
+  return(<Section title="Turbine" right={<span style={{fontSize:FZ.xs,color:missing.length?T.amber600:T.emerald600,fontWeight:600}}>{cfg?(missing.length?missing.join(" et ")+" à choisir":"complet"+(nb?" · "+nb+" bouchage"+(nb>1?"s":""):"")):""}</span>}>
+    <div style={{display:"flex",flexDirection:"column",gap:8}}>
+      <div style={row}><span style={lab}>Turbine</span>
+        <div role="radiogroup" aria-label="Configuration des turbines" style={{display:"inline-flex",background:T.surfaceAlt,borderRadius:9,padding:2,gap:2,flexWrap:"wrap"}}>
+          {TURB_CFGS.map(c=>{const on=!!(cfg&&cfg.id===c.id);return <button key={c.id} type="button" role="radio" aria-checked={on} onClick={()=>onSave({turbCfg:c.id,...(cfg&&cfg.g!==c.g?{turbRoue:null,turbInj:null,turbInjB:null}:{})})} title={c.n+" turbine"+(c.n>1?"s":"")+" "+c.g+" kW"+(!meta.turbCfg&&on?" (d’après la gamme)":"")}
+            style={{border:"none",borderRadius:7,minHeight:28,padding:"0 10px",display:"inline-flex",alignItems:"center",gap:6,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font,background:on?T.card:"transparent",color:on?T.ink900:T.ink500,boxShadow:on?"0 1px 2px rgba(0,0,0,.10)":"none",transition:"background 120ms, color 120ms"}}><TurbGlyph cfg={c}/>{c.l}</button>;})}
+        </div>
+        {!meta.turbCfg&&cfg&&<span style={{fontSize:11,color:T.ink500}}>d’après la gamme</span>}
       </div>
-    </div>}
-    {cfg&&<div style={{marginTop:12,padding:"8px 12px",borderRadius:10,background:T.surface,fontSize:FZ.sm,color:T.ink700,display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-      <span aria-hidden="true" style={{width:8,height:8,borderRadius:"50%",background:missing.length?T.amber500:T.emerald500}}/>
-      {missing.length?<span>Choisissez {missing.join(" et ")} : ils seront signalés sur ce PJ dans Turbines › Besoins.</span>
-        :<span>À installer : <b>{cfg.n} turbine{cfg.n>1?"s":""} {cfg.g} kW</b>, roue <b>{meta.turbRoue}</b>, injecteur <b>{meta.turbInj}</b>{nb?" ("+nb+" bouchage"+(nb>1?"s":"")+")":""} — à attribuer depuis le stock dans Turbines › Besoins ORC et SAV.</span>}
-    </div>}
+      {cfg&&<div style={row}><span style={lab}>Roue</span>
+        {roues.length?roues.map(x=>{const on=meta.turbRoue===x.ref;return <button key={x.ref} type="button" aria-pressed={on} onClick={()=>onSave({turbRoue:on?null:x.ref})} style={pk(on)}>{x.ref}{x.q!=null&&<span style={qS(on,x.q)}>{x.q}</span>}</button>;}):none(prod?"aucune roue "+g+" kW dans la production turbines":"liste de la production turbines indisponible")}
+      </div>}
+      {cfg&&<div style={row}><span style={lab}>Injecteur</span>
+        {injRefs.length?injRefs.map(x=>{const on=meta.turbInj===x.ref;return <button key={x.ref} type="button" aria-pressed={on} onClick={()=>onSave({turbInj:on?null:x.ref,turbInjB:null})} style={pk(on)}>{x.ref}{x.q!=null&&<span style={qS(on,x.q)}>{x.q}</span>}</button>;}):none(prod?"aucun injecteur "+g+" kW dans la production turbines":"liste de la production turbines indisponible")}
+        {meta.turbInj&&<span style={{display:"inline-flex",alignItems:"center",gap:4,marginLeft:6,paddingLeft:8,borderLeft:"1px solid "+T.line}}>
+          <span style={{fontSize:FZ.xs,color:T.ink700,fontWeight:600}}>Bouchages</span>
+          <button type="button" aria-label="Un bouchage de moins" disabled={nb<=0} onClick={()=>onSave({turbInjB:nb-1>0?nb-1:null})} style={{...step,opacity:nb<=0?.4:1}}>−</button>
+          <b aria-live="polite" style={{minWidth:20,textAlign:"center",fontVariantNumeric:"tabular-nums",fontSize:FZ.sm}}>{nb}</b>
+          <button type="button" aria-label="Un bouchage de plus" disabled={nb>=mx} onClick={()=>onSave({turbInjB:Math.min(mx,nb+1)})} style={{...step,opacity:nb>=mx?.4:1}}>+</button>
+          <span style={{fontSize:11,color:T.ink500}}>{ii&&ii.ouv?"max "+mx+" (sur "+ii.ouv+")":""}{prepared!=null?(ii&&ii.ouv?" · ":"")+(prepared?prepared+" prêt"+(prepared>1?"s":""):nb?"à boucher":"aucun vierge"):""}</span>
+        </span>}
+      </div>}
+    </div>
   </Section>);
 }
 function ContratSection({r,meta,onSave,onNote}){
