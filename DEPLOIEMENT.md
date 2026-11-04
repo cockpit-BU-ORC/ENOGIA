@@ -1843,3 +1843,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Menus ancrés sur le bouton cliqué (motion.js) ; « Réduire la transparence » et « Contraste élevé » du système respectés ; pastille « Non commandée » : 3 pulsations puis fixe ; doublons CSS des boutons retirés ; petits textes très légèrement espacés.
 - Pas de nouvelle clé `localStorage`, pas de nouveau document Firestore.
 - Fichiers : pointerDrag.js (nouveau), components/TestsTab.js, components/TurbineBoard.js, planner/PlannerGantt.js, planner/PlannerLanes.js, planner/Planner.js, motion.js, theme.js, styles.css, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v264 — Checklist de debug (Tests)
+
+- Demandé : « dans l'onglet Tests, une checklist de debug — un système de cochage de cellule par ligne, pour chaque machine, au début des phases de tests ; le testeur la remplit puis la signe ; exportée sous le même format » (modèle `PI105-047-XX0003-A-Check list debug.docx`).
+- Fiche de tests d'un PJ : nouvelle étape 3 « Checklist de debug (début des tests) » (avancement, NOK, signature) ; « Remplir la checklist » ouvre le tableau : 36 contrôles en 6 sections, OK / NOK (S.O. pour les 7 lignes « Option »), problème rencontré, causalité, correctif, temps correctif, consigne du modèle ; date et nom en tête ; signature (nom, fonction, image) comme les fiches FAT. Les étapes Tests et Signatures deviennent 4 et 5.
+- Export Word au format du modèle (A4 paysage, en-tête ENOGIA, tableaux gris), avec en plus le bloc « Validation » signé.
+- Données : `planning/tests` (`plans[PJ].debug`) et `planning/testsign_<PJ>` (clé `debug`) — documents déjà couverts par les règles, rien à republier.
+- Pas de nouvelle clé `localStorage`.
+- Fichiers : debugChecklist.js, debugDocx.js, debugLogo.js, zipStore.js, components/DebugChecklist.js, debugChecklist.test.js (nouveaux), components/TestsTab.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

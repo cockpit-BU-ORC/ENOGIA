@@ -631,4 +631,7 @@ export const RELEASE_CATALOG = [
     ["Planificateur", "Dans les Couloirs, la barre suit la souris en continu puis se pose sur son jour ; dans les Bancs d'essai, elle glisse jusqu'à sa nouvelle place.", "admin"],
     ["Menus", "Les menus s'ouvrent depuis le bouton cliqué."],
   ] },
+  { v: "264", t: "Checklist de debug", items: [
+    ["Checklist de debug", "Dans la fiche de tests de chaque machine : la checklist de debug à cocher ligne par ligne (OK / NOK), à signer, et à exporter en Word au format de la procédure."],
+  ] },
 ];

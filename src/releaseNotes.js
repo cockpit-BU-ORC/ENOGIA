@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v264",
+    date: "2026-11-04",
+    title: "V264 : checklist de debug",
+    items: [
+      { t: "Checklist de debug", d: "Tests › fiche d'une machine : la checklist de debug se coche ligne par ligne, se signe et s'exporte en Word au format de la procédure." },
+    ],
+  },
+  {
     id: "2026-11-v263",
     date: "2026-11-04",
     title: "V263 : glisser-déposer plus fluide",

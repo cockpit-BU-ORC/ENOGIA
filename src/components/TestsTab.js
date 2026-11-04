@@ -13,6 +13,7 @@ import { NavIcon, PjPlate, pressable } from "./SharedUI";
 import { SECTIONS, DEFAULT_TEST_CATALOG, catalogOf, testersOf, planOf, activeSections, selectedIds, toggleTest, setExtra, setNote, assignTester, unassignTester, setAssignDates, effRange, findConflicts, assignmentsOf, dropTester, dropTestFromPlans, newId, packLanes, addDaysIso, mondayOf, testerOfEmail, doneIds, progressOf, TEST_STATUS, statusOf, statusByOf, setStatus, isForced, setForced } from "../testPlan";
 import { buildIcs, downloadIcs } from "../ics";
 import { usePointerDnD } from "../pointerDrag";
+import { DebugChecklistStep } from "./DebugChecklist";
 import { nameFromEmail } from "../mentions";
 import { gcalUrl } from "../gcal";
 import { openTestReport } from "../testReport";
@@ -482,10 +483,14 @@ function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdi
           : <span style={{ fontSize: FZ.xs, color: T.ink500 }}>Ni client ni NOBO : seuls les tests internes sont à réaliser.</span>}
       </Step>
       {/* ③ Tests : dans le volet, checklist « fait » (et choix des tests à réaliser via « Modifier la liste ») */}
-      {panel && <Step n="3" title="Tests" hint={canMark ? "Indiquez pour chaque test : en cours, réussi ou en échec." : "Consultation : seuls le testeur affecté et les administrateurs renseignent les tests."}>
+      {/* v264 : checklist de debug, au début des tests (modèle Word PI105-047-XX0003) */}
+      {panel && <Step n="3" title="Checklist de debug (début des tests)" hint={canMark ? "À remplir au début des tests : une ligne par contrôle (OK / NOK), puis à signer ; l’export Word reprend le modèle de la procédure." : "Consultation : seuls le testeur affecté et les administrateurs remplissent la checklist."}>
+        <DebugChecklistStep {...{ r, plan, saveTests, canMark, who, signApi, SignForm }} />
+      </Step>}
+      {panel && <Step n="4" title="Tests" hint={canMark ? "Indiquez pour chaque test : en cours, réussi ou en échec." : "Consultation : seuls le testeur affecté et les administrateurs renseignent les tests."}>
         <Checklist {...{ r, plan, catalog, act, canEdit: canTest, canMark, saveTests, who }} />
       </Step>}
-      {panel && <Step n="4" title="Signatures et fiche PDF" hint="Chaque testeur indique son nom, sa fonction et dépose l'image de sa signature ; la fiche PDF reprend tous les tests, les heures et les signatures.">
+      {panel && <Step n="5" title="Signatures et fiche PDF" hint="Chaque testeur indique son nom, sa fonction et dépose l'image de sa signature ; la fiche PDF reprend tous les tests, les heures et les signatures.">
         <Signatures {...{ r, plan, assigned, mine, myTester, canEdit, who, signApi, saveTests, catalog, act, testers, meta, myCerts, kind, pd }} />
       </Step>}
       {!panel && <Step n="3" title="Tests à réaliser" hint={canTest ? "Cochez / décochez les tests à réaliser pour cette machine ; les commentaires sont propres à ce PJ." : "Consultation : seuls les administrateurs modifient les tests."}>
