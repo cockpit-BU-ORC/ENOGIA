@@ -64,8 +64,10 @@ function Frame({title,sub,right,children,style,id}){
   </section>);
 }
 // v146.29 : une zone = plusieurs colonnes verticales côte à côte (3 ou 4 sections), qui s'empilent sur écran étroit
-const Cols=({children,min=300})=><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax("+min+"px,1fr))",gap:D.mode==="compact"?8:14,alignItems:"start",minWidth:0}}>{children}</div>;
-const Col=({children})=><div style={{display:"flex",flexDirection:"column",gap:D.mode==="compact"?8:12,minWidth:0}}>{children}</div>;
+// v274 (demandé : « des cadrans disproportionnés et beaucoup de blancs ») : colonnes qui se remplissent (multicolonne, type maçonnerie) —
+// chaque bloc garde sa hauteur naturelle et se range sous le précédent, plus de ligne à la hauteur du bloc le plus haut.
+const Cols=({children,min=320})=><div className="enogia-cols" style={{columnWidth:min,columnGap:D.mode==="compact"?10:16,minWidth:0,"--cols-gap":(D.mode==="compact"?8:12)+"px"}}>{children}</div>;
+const Col=({children})=><div className="enogia-col" style={{display:"contents"}}>{children}</div>;
 const Big=({children,color})=><div style={{fontFamily:T.font,fontSize:FZ.lg,fontWeight:500,letterSpacing:"-.02em",lineHeight:1,color:color||T.ink900,whiteSpace:"nowrap"}}>{children}</div>;
 
 function ProgressBar({value,height=8,color}){
@@ -275,24 +277,35 @@ function DatesTable({r,meta,onSave}){
   const shipped=r.etat==="SHIPPED",cd=contractDatesOf(meta),tr=cd.transport;
   const madC=dOf(cd.mad),livC=dOf(cd.livr),madP=shipped?null:dOf(r.depart),livP=shipped?null:dOf(tr?livrPrevueOf(meta,r.depart):r.depart);
   const madE=shipped?dOf(r.depart):null,livE=dOf(meta.livrReelle)||(shipped&&!tr?dOf(r.depart):null);
+  // v274 (demandé : « la date effectuée de livraison sur site n'est pas claire, on ne la maîtrise pas toujours ») : avec transport, la livraison
+  // effectuée a trois états — pas encore partie / en transport (date estimée = départ réel + transport, non confirmée) / confirmée (date saisie,
+  // donnée par le client ou le transporteur). L'écart au contrat utilise l'estimation tant que rien n'est confirmé, et le dit.
+  const livEst=tr&&shipped&&!meta.livrReelle?dOf(livrPrevueOf(meta,r.depart)):null;
+  const [livEdit,setLivEdit]=useState(false);
   const gap=(c,x)=>c&&x?diffDays(c,x):null;
   const th={textAlign:"left",fontFamily:T.font,fontSize:12,fontWeight:700,color:T.ink500,padding:"6px 8px",borderBottom:"1px solid "+T.line,verticalAlign:"bottom"};
   const td={padding:"6px 8px",borderBottom:"1px solid "+T.line,fontSize:FZ.sm,verticalAlign:"middle",fontVariantNumeric:"tabular-nums"};
   const ecart=g=>g==null?<span style={{color:T.ink300}}>—</span>:g===0?<span style={{color:T.emerald600,fontWeight:700}}>dans les temps</span>:<span style={{fontWeight:800,color:g>0?T.red600:T.emerald600,background:g>0?T.red100:T.emerald100,borderRadius:999,padding:"1px 8px"}}>{signed(g)}</span>;
   const big=(d,late)=>d?<b style={{color:late?T.red600:T.ink900}}>{fmt(d)}</b>:<span style={{color:T.ink300}}>—</span>;
-  const row=(label,hint,c,cHint,p,pHint,eDate,e,eHint)=>{const g=gap(c,eDate||p);return <tr>
+  const row=(label,hint,c,cHint,p,pHint,eDate,e,eHint,est)=>{const g=gap(c,eDate||est||p);return <tr>
     <td style={{...td,minWidth:170}}><b style={{color:T.ink900}}>{label}</b><div style={{fontSize:FZ.xs,color:T.ink500}}>{hint}</div></td>
     <td style={td}>{big(c)}<div style={{fontSize:FZ.xs,color:T.ink500}}>{cHint}</div></td>
     <td style={{...td,background:T.surface}}>{big(p,c&&p&&p>c)}<div style={{fontSize:FZ.xs,color:T.ink500}}>{pHint}</div></td>
     <td style={td}>{e}<div style={{fontSize:FZ.xs,color:T.ink500}}>{eHint}</div></td>
-    <td style={{...td,textAlign:"right"}}>{ecart(g)}</td></tr>;};
+    <td style={{...td,textAlign:"right"}}>{ecart(g)}{est&&!eDate&&g!=null&&<div style={{fontSize:FZ.xs,color:T.ink500,marginTop:2}}>sur la date estimée</div>}</td></tr>;};
+  const chip=(txt,tone)=><span style={{display:"inline-block",fontSize:FZ.xs,fontWeight:700,borderRadius:999,padding:"1px 9px",background:tone==="ok"?T.emerald100:tone==="warn"?T.amber100:T.surface,color:tone==="ok"?T.emerald600:tone==="warn"?T.amber600:T.ink500}}>{txt}</span>;
+  const livCell=!tr?big(livE):meta.livrReelle&&!livEdit?<div><div style={{display:"flex",alignItems:"center",gap:8}}>{big(livE)}{chip("confirmée","ok")}</div><button type="button" onClick={()=>setLivEdit(true)} style={{border:"none",background:"transparent",padding:0,marginTop:2,color:T.ink500,fontSize:FZ.xs,cursor:"pointer",textDecoration:"underline",textUnderlineOffset:2,fontFamily:T.font}}>modifier</button></div>
+    :!shipped&&!livEdit?<div>{chip("pas encore partie")}</div>
+    :livEdit||meta.livrReelle?<div style={{display:"flex",alignItems:"center",gap:6}}><DateField label="" value={meta.livrReelle||""} onSave={v=>{onSave({livrReelle:v||undefined});setLivEdit(false);}} hint=""/><button type="button" onClick={()=>setLivEdit(false)} style={{border:"none",background:"transparent",color:T.ink500,fontSize:FZ.xs,cursor:"pointer",fontFamily:T.font}}>Annuler</button></div>
+    :<div><div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>{chip("en transport · non confirmée","warn")}{livEst&&<span style={{fontSize:FZ.sm,color:T.ink700,fontStyle:"italic"}}>≈ {fmt(livEst)}</span>}</div>
+      <button type="button" onClick={()=>setLivEdit(true)} style={{marginTop:4,border:"1px solid "+T.line,background:T.card,color:T.ink900,borderRadius:7,minHeight:26,padding:"0 10px",fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font}}>Confirmer la livraison</button></div>;
   return(<div style={{overflowX:"auto"}}>
     <table style={{width:"100%",borderCollapse:"collapse",minWidth:620}}>
-      <thead><tr><th style={th}></th><th style={th}>Contractuelle<div style={{fontWeight:400}}>{cd.auto?"T0 + "+meta.contratSemaines+" sem."+(tr?" − transport":""):"saisie dans Contrat & roadmap"}</div></th><th style={{...th,background:T.surface,color:T.ink900}}>Prévisionnelle<div style={{fontWeight:400,color:T.ink500}}>↻ se met à jour à chaque publication</div></th><th style={th}>Effectuée<div style={{fontWeight:400}}>quand c'est fait</div></th><th style={{...th,textAlign:"right"}}>Écart au contrat</th></tr></thead>
+      <thead><tr><th style={th}></th><th style={th}>Contractuelle<div style={{fontWeight:400}}>{cd.auto?"T0 + "+meta.contratSemaines+" sem."+(tr?" − transport":""):"saisie dans Contrat & roadmap"}</div></th><th style={{...th,background:T.surface,color:T.ink900}}>Prévisionnelle<div style={{fontWeight:400,color:T.ink500}}>↻ se met à jour à chaque publication</div></th><th style={th}>Effectuée<div style={{fontWeight:400}}>MàD : départ réel · livraison : confirmée par le client</div></th><th style={{...th,textAlign:"right"}}>Écart au contrat</th></tr></thead>
       <tbody>
         {row("MàD ORC","départ de l'ORC de l'atelier ENOGIA",madC,tr&&cd.auto?"échéance − "+cd.tj+" j de transport":"",madP,madP?"départ du planning":shipped?"":"pas encore daté",madE,big(madE),shipped?"départ effectif":"pas encore parti")}
         {row("Livraison sur site client",tr?"transport compris ("+cd.tj+" j)":"pas de transport : livraison = MàD ORC",livC,tr?"":"= MàD ORC",livP,livP?(tr?"MàD prévue + "+cd.tj+" j":"= MàD prévue"):"",livE,
-          tr?<DateField label="" value={meta.livrReelle||""} onSave={v=>onSave({livrReelle:v||undefined})} hint=""/>:big(livE),tr?"date de livraison réelle":shipped?"= départ effectif":"")}
+          livCell,tr?(meta.livrReelle?"date donnée par le client ou le transporteur":shipped?"estimée : départ réel + "+cd.tj+" j ; à confirmer quand le client a reçu":"connue après le départ"):shipped?"= départ effectif":"",livEst)}
       </tbody>
     </table>
     <div style={{fontSize:FZ.xs,color:T.ink500,fontStyle:"italic",marginTop:6}}>Le planning initial (dates figées) reste visible dans la frise des jalons ; ce tableau compare le contrat à la prévision et au réel.</div>

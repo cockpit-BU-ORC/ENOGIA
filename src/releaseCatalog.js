@@ -676,4 +676,9 @@ export const RELEASE_CATALOG = [
     ["Turbines › Besoins ORC et SAV", "Chaque turbine attendue est un plateau turbine · roue · injecteur ; la pièce prévue est écrite dans son logement et s'allume en vert quand on glisse la bonne. « Remplir automatiquement » propose le stock (annulable). Toucher une tuile puis un logement marche aussi.", "admin"],
     ["Fiches projet", "Onglets collés en haut (Pilotage, Planning, Machine, Finance, Suivi), chiffres clés sous l'en-tête, zone Machine (S/N, certification, tests, turbine), « Enregistré » après chaque saisie, feux plus grands.", "admin"],
   ] },
+  { v: "274", t: "Bilan mensuel des KPI, roues imposées, fiches sans trous", items: [
+    ["KPI › Bilan mensuel", "Ce qui a été fait les deux derniers mois et ce qui est prévu ce mois-ci et le suivant (départs, fins de production, tests, arrivées), avec l'écart à l'initial et une note par mois.", "admin"],
+    ["Turbines › Besoins", "Turbines prêtes avec roue et sans roue séparées ; une turbine ou une roue d'une autre référence que celle prévue est refusée avec un message. Couleurs ORC (marine) et SAV (violet), drapeaux.", "admin"],
+    ["Fiches projet", "Les blocs se rangent en colonnes sans trous ; textes harmonisés ; livraison sur site : « en transport, non confirmée » avec la date estimée, puis « confirmée ».", "admin"],
+  ] },
 ];

@@ -84,3 +84,11 @@ test("remplir automatiquement : turbine, roue et injecteur prévus, stock décom
   expect(r.writes.find(w => w.c === "injecteurs").data.qte).toBe(1);
   expect(r.writes.filter(w => w.c === "allocs")).toHaveLength(3);
 });
+test("roue imposée : turbine ou roue d'une autre référence refusée", () => {
+  const d = { ...doc, turbines: { a: { num: "100N1", step: "ok", roue: "R9" }, b: { num: "100N2", step: "s1" } }, roues: { r1: { ref: "R1", qte: 2 }, r9: { ref: "R9", qte: 1 } } };
+  const { needs, free } = buildNeeds(d, rows, metaOf, today), p1 = needs.find(n => n.key === "pj:PJ1");
+  expect(assignOps(d, free.find(x => x.num === "100N1"), p1, today).error).toMatch(/attend la roue R1/);
+  expect(assignOps(d, free.find(x => x.num === "100N2"), p1, today).error).toBeUndefined(); // testée sans roue : acceptée
+  expect(allocOps(d, p1, 0, stockTiles(d, "100").roues.find(r => r.ref === "R9")).error).toMatch(/refusée/);
+  expect(autoFill(d, needs, free, today).turbs).toEqual(["b"]);
+});

@@ -17,6 +17,7 @@ import { SanteTab } from "./Feux";
 import { SerieTab } from "./Series";
 import { KpiPilotage, planWeeks } from "./KpiPilotage";
 import { KpiDerivesHead, KpiSemaines } from "./KpiViews";
+import { KpiBilan } from "./KpiBilan";
 import { isSuperAdmin, canCash, isOwner } from "../roles";
 import { PeopleRoles } from "./PeopleRoles";
 import { TutoVideoSettings } from "./TutoVideo";
@@ -319,7 +320,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
   const [focusFiche,setFocusFiche]=useState(()=>{try{return localStorage.getItem("enogia_manager_focus")==="1";}catch(e){return false;}});
   useEffect(()=>{try{localStorage.setItem("enogia_manager_focus",focusFiche?"1":"0");}catch(e){}},[focusFiche]);
   const SUBS={
-    derives:[["synthese","Synthèse"],["semaines","Semaines"],["derives","Dérives"],["charge","Charge"],["avancement","Avancement"],["explorer","Explorer"]],
+    derives:[["synthese","Synthèse"],["bilan","Bilan mensuel"],["semaines","Semaines"],["derives","Dérives"],["charge","Charge"],["avancement","Avancement"],["explorer","Explorer"]],
     fiche:[["fiche","Fiches projet"],["hebdo","Point hebdo"]],
     retards:[["retards","Déclarer"],["retardsKpi","Analyse"]],
     calendrier:[["production","Jours sans production"],["vacances","Fermetures de l'atelier"]],
@@ -387,6 +388,8 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
       <KpiPilotage rows={fk} driftRows={driftRows} closurePeriods={closurePeriods} productionExclusions={productionExclusions} capaWeek={CAPA_ATELIER_SEM} plan={planDoc&&planDoc.plan} hasInitial={hasInitial} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}} onSeeDerives={()=>setKpiTab("derives")}/>
     </div>}
 
+    {/* v274 : bilan mensuel — réalisé des deux derniers mois, objectifs du mois en cours et du suivant */}
+    {me&&tab==="derives"&&kpiTab==="bilan"&&<KpiBilan rows={fk} initialByPJ={initialByPJ} profiles={profiles} saveProfiles={saveProfiles} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}}/>}
     {/* v246 (maquette C de Claude Design) : les 8 prochaines semaines — charge, départs, banc, à décider */}
     {me&&tab==="derives"&&kpiTab==="semaines"&&<KpiSemaines rows={fk} driftRows={driftRows} closurePeriods={closurePeriods} productionExclusions={productionExclusions} capaWeek={CAPA_ATELIER_SEM} plan={planDoc&&planDoc.plan} hasInitial={hasInitial} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}}/>}
 

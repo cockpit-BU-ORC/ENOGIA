@@ -11,8 +11,8 @@ import { PageHead } from "./SharedUI";
 import { ProdTurbines } from "./ProdTurbines";
 import { usePointerDnD } from "../pointerDrag";
 import { createPortal } from "react-dom";
-import { TURB_CFGS, cfgById, refsOf, buildNeeds, assignOps, unassignOps, allocOps, unallocOps, stockTiles, injInfo, maxBouches, autoFill, prodState, workDate, pjOfAffaire } from "../turbineNeeds";
-import { getPjMeta } from "../pjMeta";
+import { TURB_CFGS, cfgById, refsOf, buildNeeds, assignOps, unassignOps, allocOps, unallocOps, stockTiles, injInfo, maxBouches, autoFill, roueConflict, prodState, workDate, pjOfAffaire } from "../turbineNeeds";
+import { getPjMeta, CountryFlag } from "../pjMeta";
 
 const COLLS = ["turbines", "arbres", "pieces", "roues", "injecteurs"];
 export { prodState, workDate, pjOfAffaire };
@@ -89,7 +89,7 @@ function Tile({ ctx, p, k, title, sub, q, disabled }) { const { dnd, canEdit, se
       {...(canEdit && !disabled ? dnd.dragProps(p) : {})}
       onClick={() => { if (!canEdit || disabled) return; setPicked(isPicked(p) ? null : p); }}
       onKeyDown={e => { if ((e.key === "Enter" || e.key === " ") && canEdit && !disabled) { e.preventDefault(); setPicked(isPicked(p) ? null : p); } }}
-      style={{ position: "relative", background: T.card, borderRadius: 10, padding: "6px 9px 6px 13px", minHeight: 42, boxSizing: "border-box", boxShadow: "0 0 0 " + (isPicked(p) ? "2px " + T.teal600 : "1px " + T.line), cursor: canEdit && !disabled ? "grab" : "default", touchAction: "none", userSelect: "none", opacity: on ? 0.25 : disabled ? 0.45 : 1, fontFamily: T.font }}>
+      style={{ position: "relative", background: T.card, borderRadius: 10, padding: "6px 9px 6px 13px", minHeight: 46, height: 46, boxSizing: "border-box", boxShadow: "0 0 0 " + (isPicked(p) ? "2px " + T.teal600 : "1px " + T.line), cursor: canEdit && !disabled ? "grab" : "default", touchAction: "none", userSelect: "none", opacity: on ? 0.25 : disabled ? 0.45 : 1, fontFamily: T.font }}>
       <span aria-hidden="true" style={{ position: "absolute", left: 4, top: 8, bottom: 8, width: 3, borderRadius: 2, background: k }} />
       <div style={{ fontWeight: 700, fontSize: 12.5, fontFamily: p.kind === "turbine" ? T.fontMono : T.font, paddingRight: q != null ? 18 : 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{title}</div>
       <div style={{ fontSize: 11.5, color: T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</div>
@@ -99,16 +99,19 @@ function Sock({ ctx, n, s, kind, label, want, filled, children }) {
     const { dnd, canEdit, picked, active, landed, drop, setMsg, setPop } = ctx;
     const key = n.key + "#" + s.i + ":" + kind, g = n.cfg.g;
     const acc = p => !!p && !filled && p.kind === kind && (!p.g || p.g === g);
-    const can = active && acc(active), match = can && want && (kind === "turbine" ? false : U2((active.ref || "")) === U2(kind === "roue" ? n.roue : n.inj)), over = dnd.over === key && can;
+    const can0 = active && acc(active);
+    // v274 : turbine portant une autre roue, ou roue d'une autre référence = refusée (rouge) ; le dépôt donne le message d'erreur
+    const refused = can0 && n.roue && ((kind === "turbine" && roueConflict({ roue: active.roue, sansRoue: !active.roue }, n)) || (kind === "roue" && U2(active.ref) !== U2(n.roue)));
+    const can = can0 && !refused, match = can && want && (kind === "turbine" ? !!active.roue : U2((active.ref || "")) === U2(kind === "roue" ? n.roue : n.inj)), over = dnd.over === key && can, overBad = dnd.over === key && refused;
     return <div {...(canEdit ? dnd.dropProps(key, acc, d => drop(n, s.i, d)) : {})} className={"enogia-nd-sock" + (landed === key ? " enogia-nd-land" : "")}
       role={!filled ? "button" : undefined} tabIndex={!filled ? 0 : undefined} aria-label={!filled ? label + " pour " + n.label + (want ? ", prévu " + want : "") : undefined}
       onClick={!filled ? (e => { if (!canEdit) return; if (picked) { if (acc(picked)) drop(n, s.i, picked); else setMsg({ t: "Cette pièce ne va pas dans ce logement.", warn: true }); } else if (kind !== "turbine") setPop({ n, kind: kind === "roue" ? "roue" : "inj", el: e.currentTarget }); }) : undefined}
       onKeyDown={!filled ? (e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.currentTarget.click(); } }) : undefined}
       style={{ flex: "1 1 0", minWidth: 0, minHeight: 44, borderRadius: 8, padding: "5px 9px", boxSizing: "border-box", display: "flex", alignItems: "center", gap: 8, cursor: !filled && canEdit ? "pointer" : "default",
-        background: over || match ? T.emerald100 : can ? T.teal100 : filled ? T.card : "transparent",
-        boxShadow: over ? "inset 0 0 0 2px " + T.emerald500 + ", 0 6px 16px rgba(45,106,79,.18)" : match ? "inset 0 0 0 2px " + T.emerald500 : can ? "inset 0 0 0 1.5px " + T.teal500 : filled ? "0 1px 2px rgba(16,24,40,.06)" : "none",
-        transform: over ? "scale(1.03)" : "none", opacity: active && !can && !filled ? 0.35 : 1 }}>
-      {filled ? children : <div style={{ minWidth: 0 }}><span style={{ display: "block", fontSize: 11, fontWeight: 600, color: T.ink500 }}>{label}</span>
+        background: refused ? T.red100 : over || match ? T.emerald100 : can ? T.teal100 : filled ? T.card : "transparent",
+        boxShadow: overBad ? "inset 0 0 0 2px " + T.red600 : refused ? "inset 0 0 0 1.5px " + T.red500 : over ? "inset 0 0 0 2px " + T.emerald500 + ", 0 6px 16px rgba(45,106,79,.18)" : match ? "inset 0 0 0 2px " + T.emerald500 : can ? "inset 0 0 0 1.5px " + T.teal500 : filled ? "0 1px 2px rgba(16,24,40,.06)" : "none",
+        transform: over ? "scale(1.03)" : "none", opacity: active && !can0 && !filled ? 0.35 : 1 }}>
+      {filled ? children : <div style={{ minWidth: 0 }}><span style={{ display: "block", fontSize: 11, fontWeight: 600, color: refused ? T.red600 : T.ink500 }}>{refused ? "Refusé : roue " + n.roue + " prévue" : label}</span>
         <span style={{ fontSize: 12.5, fontWeight: want ? 700 : 600, color: want ? T.teal600 : T.amber600, opacity: want ? 0.8 : 1 }}>{want || (kind === "turbine" ? "glisser une turbine" : "à choisir")}</span></div>}
     </div>;
   }
@@ -178,7 +181,9 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta }) {
             {["100", "20"].map(g => <button key={g} type="button" aria-pressed={gam === g} onClick={() => { setGam(g); setPicked(null); }} style={{ border: "none", borderRadius: 7, minHeight: 28, padding: "0 12px", fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font, background: gam === g ? T.card : "transparent", color: gam === g ? T.ink900 : T.ink500, boxShadow: gam === g ? "0 1px 2px rgba(0,0,0,.08)" : "none" }}>{g} kW</button>)}
           </div>
         </div>
-        <Grp t="Turbines" n={freeG.length}>{freeG.length ? freeG.map(x => <Tile ctx={ctx} key={x.id} p={{ kind: "turbine", id: x.id, g: x.gamme }} k={x.ready ? T.emerald500 : x.sansRoue ? T.amber500 : T.ink300} title={x.num || "sans n°"} sub={x.ready ? (x.roue ? "prête · roue " + x.roue : "prête") : x.sansRoue ? "testée sans roue" : x.step + " · " + fdS(x.end)} />) : none}</Grp>
+        {/* v274 (demandé : « bien séparer les turbines prêtes avec roues et celles sans ») */}
+        {[["Prêtes · avec roue", freeG.filter(x => x.ready && x.roue), T.emerald500, x => "roue " + x.roue], ["Prêtes · sans roue", freeG.filter(x => x.sansRoue || (x.ready && !x.roue)), T.amber500, x => x.sansRoue ? "testée sans roue" : "roue à monter"], ["En fabrication", freeG.filter(x => !x.dispo), T.ink300, x => x.step + " · " + fdS(x.end) + (x.roue ? " · roue " + x.roue : "")]].map(([t, L, k, sub]) =>
+          <Grp key={t} t={t} n={L.length}>{L.length ? L.map(x => <Tile ctx={ctx} key={x.id} p={{ kind: "turbine", id: x.id, g: x.gamme, roue: x.roue && !x.sansRoue ? x.roue : "" }} k={k} title={x.num || "sans n°"} sub={sub(x)} />) : none}</Grp>)}
         <Grp t="Roues équilibrées" n={stock.roues.reduce((s, r) => s + r.qte, 0)}>{stock.roues.length ? stock.roues.map(t => <Tile ctx={ctx} key={t.stockId} p={{ kind: "roue", stockId: t.stockId, ref: t.ref, g: gam }} k={T.teal500} title={t.ref} sub="roue" q={t.qte} disabled={!t.qte} />) : none}</Grp>
         <Grp t="Injecteurs" n={stock.injs.reduce((s, r) => s + r.qte, 0)}>{stock.injs.length ? stock.injs.map(t => <Tile ctx={ctx} key={t.stockId + "-" + t.bouches} p={{ kind: "inj", stockId: t.stockId, ref: t.ref, bouches: t.bouches, g: gam }} k={T.violet500} title={t.ref} sub={t.bouches == null ? "vierge" : t.bouches + " bouchages"} q={t.qte} disabled={!t.qte} />) : none}</Grp>
         <p style={{ fontSize: 11.5, color: T.ink500, padding: "0 12px 14px", margin: 0, lineHeight: 1.45 }}>{picked ? "Pièce choisie : touchez un logement (Échap pour annuler)." : "Les tuiles sont le stock réel de la production turbines."}</p>
@@ -198,10 +203,14 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta }) {
             const T3 = n.want * 3, G3 = n.slots.filter(x => !x.extra).reduce((a, x) => a + !!x.t + !!x.roueOk + !!x.inj, 0), badI = n.issues.filter(i => i.bad && !/à attribuer$/.test(i.t));
             return <React.Fragment key={n.key}>
               {head && <div style={{ position: "sticky", top: 52, zIndex: 2, padding: "8px 0 6px", fontSize: 12, fontWeight: 700, color: T.ink500, background: "linear-gradient(" + T.card + " 70%, transparent)" }}>{wk}</div>}
-              <article className="enogia-nd-need" aria-label={"Besoin " + n.label} style={{ display: "grid", gridTemplateColumns: "180px minmax(0,1fr)", gap: 14, alignItems: "center", padding: "10px 12px", marginBottom: 8, borderRadius: 12, background: T.card, boxShadow: "0 0 0 1px " + (n.complete && !badI.length ? T.emerald500 : badI.length ? T.red500 : T.line), transition: "box-shadow 160ms" }}>
+              <article className="enogia-nd-need" aria-label={(n.kind === "sav" ? "Besoin SAV " : "Besoin ORC ") + n.label} style={{ display: "grid", gridTemplateColumns: "220px minmax(0,1fr)", gap: 14, alignItems: "stretch", padding: "10px 12px 10px 16px", marginBottom: 8, borderRadius: 12, minHeight: 72, boxSizing: "border-box", position: "relative", overflow: "hidden",
+                background: n.kind === "sav" ? T.violet100 : T.card, boxShadow: "0 0 0 1px " + (n.complete && !badI.length ? T.emerald500 : badI.length ? T.red500 : n.kind === "sav" ? T.violet500 : T.line), transition: "box-shadow 160ms" }}>
+                <span aria-hidden="true" style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 5, background: n.kind === "sav" ? T.violet500 : (T.navy700 || T.ink900) }} />
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}><Ring p={T3 ? G3 / T3 : 1} /><b style={{ fontFamily: T.fontMono, fontSize: 13.5 }}>{n.label}</b>{n.kind === "sav" && <span style={{ fontSize: 10.5, fontWeight: 700, color: T.violet600, background: T.violet100, borderRadius: 999, padding: "0 6px" }}>SAV</span>}</div>
-                  {n.sub && <div style={{ fontSize: 12, color: T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{n.sub}</div>}
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}><Ring p={T3 ? G3 / T3 : 1} /><b style={{ fontFamily: T.fontMono, fontSize: 13.5 }}>{n.label}</b>
+                    {n.kind === "pj" && <CountryFlag pays={getPjMeta(n.pj, n.r).pays} size={13} />}
+                    <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: ".02em", color: n.kind === "sav" ? T.card : T.card, background: n.kind === "sav" ? T.violet600 : (T.navy700 || T.ink900), borderRadius: 999, padding: "1px 7px" }}>{n.kind === "sav" ? "SAV" : "ORC"}</span></div>
+                  {n.sub && <div style={{ fontSize: 12, color: T.ink700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", display: "flex", alignItems: "center", gap: 6 }}>{n.sub}{n.kind === "pj" && getPjMeta(n.pj, n.r).pays && getPjMeta(n.pj, n.r).pays !== "—" ? <span style={{ color: T.ink500 }}>· {getPjMeta(n.pj, n.r).pays}</span> : null}</div>}
                   <div style={{ fontSize: 12, color: T.ink700, marginTop: 2 }}>pour le <b style={{ fontVariantNumeric: "tabular-nums" }}>{fd(n.date)}</b> · <button type="button" onClick={e => canEdit && setPop({ n, kind: "cfg", el: e.currentTarget })} style={{ border: "none", background: "transparent", padding: 0, color: T.teal600, fontWeight: 700, fontSize: 12, cursor: canEdit ? "pointer" : "default", textDecoration: "underline", textUnderlineOffset: 2, fontFamily: T.font }}>{n.cfg.l}{n.kind === "pj" && !n.cfgSet ? " (gamme)" : ""}</button>
                     {n.kind === "sav" && canEdit && <> · <button type="button" onClick={() => setSav({ id: n.id, ...n.raw, injB: n.raw.injB == null ? "" : String(n.raw.injB) })} style={{ border: "none", background: "transparent", padding: 0, color: T.ink500, fontSize: 12, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2, fontFamily: T.font }}>modifier</button></>}</div>
                   {badI.length > 0 && <div style={{ marginTop: 4, display: "flex", flexDirection: "column", gap: 1 }}>{badI.map((i, q) => <span key={q} style={{ fontSize: 11.5, fontWeight: 600, color: T.red600 }}>{i.t}</span>)}</div>}

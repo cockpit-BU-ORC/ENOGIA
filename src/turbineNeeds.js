@@ -132,7 +132,11 @@ export function buildNeeds(doc, rows, metaOf, today = new Date()) {
 
 const clean = o => { const x = { ...o }; delete x.id; return x; };
 // Turbine → emplacement d'un besoin. Une turbine disponible (prête ou testée sans roue) sort du stock (avec son arbre).
+// v274 (demandé : « je ne peux pas mettre une turbine avec une roue spécifique sur un PJ qui appelle une autre roue : message d’erreur ») :
+// une turbine qui porte déjà une roue (montée ou attribuée) ne va que sur un besoin qui prévoit cette roue (ou aucune) ; idem pour une roue du stock.
+export const roueConflict = (x, need) => !!(need && need.roue && x && x.roue && !x.sansRoue && U(x.roue) !== U(need.roue));
 export function assignOps(doc, x, need, today = new Date()) {
+  if (roueConflict(x, need)) return { error: (x.num || "Cette turbine") + " a la roue " + x.roue + " : " + need.label + " attend la roue " + need.roue + ". Choisissez une turbine sans roue ou avec la roue " + need.roue + ", ou changez la roue prévue." };
   const t = clean(x.raw), writes = [];
   t.besoin = need.key; t.affaire = need.kind === "pj" ? need.label + (need.sub ? " - " + need.sub : "") : "SAV · " + need.label;
   let note = "réservée";
@@ -172,6 +176,7 @@ export function allocOps(doc, need, slot, tile, today = new Date(), newId = () =
   if (!tile || tile.qte <= 0) return { error: "Plus de " + (tile && tile.kind === "roue" ? "roue " : "injecteur ") + ((tile && tile.ref) || "") + " en stock." };
   const s = need.slots[slot]; if (!s) return { error: "Emplacement introuvable." };
   if (tile.kind === "roue" && (s.roue || s.roueMontee)) return { error: "Cet emplacement a déjà sa roue." };
+  if (tile.kind === "roue" && need.roue && U(need.roue) !== U(tile.ref)) return { error: "Roue " + tile.ref + " refusée : " + need.label + " attend la roue " + need.roue + "." };
   if (tile.kind === "inj" && s.inj) return { error: "Cet emplacement a déjà son injecteur." };
   const st = bump(doc, tile, -1); if (!st) return { error: "Stock introuvable." };
   const id = newId(), a = { besoin: need.key, slot, kind: tile.kind, stockId: tile.stockId, ref: tile.ref, at: isoDay(today) };
@@ -203,7 +208,7 @@ export function autoFill(doc, needs, free, today = new Date(), newId) {
     const n = { ...n0, slots: n0.slots.map(s => ({ ...s })) };
     n.slots.forEach((s, i) => {
       if (s.extra) return;
-      if (!s.t) { const c = pool.filter(x => x.gamme === n.cfg.g).sort((a, b) => rank(a, n) - rank(b, n) || String(a.end || "9").localeCompare(String(b.end || "9")))[0];
+      if (!s.t) { const c = pool.filter(x => x.gamme === n.cfg.g && !roueConflict(x, n)).sort((a, b) => rank(a, n) - rank(b, n) || String(a.end || "9").localeCompare(String(b.end || "9")))[0];
         if (c) { pool.splice(pool.indexOf(c), 1); take(assignOps(d, c, n, today)); s.t = c; s.roueMontee = c.roue && !c.sansRoue ? c.roue : ""; turbs.push(c.id); } }
       if (!s.roue && !s.roueMontee && n.roue) { const t = stockTiles(d, n.cfg.g).roues.find(r => U(r.ref) === U(n.roue) && r.qte > 0);
         if (t) { const id = nid(), ops = allocOps(d, n, i, t, today, () => id); if (!ops.error) { take(ops); s.roue = { id }; allocs.push(id); } } }

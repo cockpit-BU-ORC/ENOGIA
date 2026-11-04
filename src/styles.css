@@ -554,3 +554,13 @@ button { transition: background-color var(--e-dur-micro) var(--e-ease), border-c
 /* v272 : barre d’onglets de la fiche projet — matière translucide (apple-design), pleine si « réduire la transparence » */
 .enogia-fiche-tabs{background:color-mix(in srgb, var(--fiche-bg) 82%, transparent);backdrop-filter:blur(16px) saturate(160%);-webkit-backdrop-filter:blur(16px) saturate(160%)}
 @media (prefers-reduced-transparency: reduce){.enogia-fiche-tabs{background:var(--fiche-bg);backdrop-filter:none;-webkit-backdrop-filter:none}}
+
+/* v274 : fiche projet — colonnes qui se remplissent (blocs insécables) et tailles de texte harmonisées (audit apple-design poussé :
+   trois tailles — 12 px étiquettes, 13 px texte, 15 px et plus pour les chiffres ; pas de 800) */
+.enogia-cols > .enogia-col > *{break-inside:avoid;-webkit-column-break-inside:avoid;margin-bottom:var(--cols-gap,12px);display:block}
+.enogia-cols > .enogia-col > :is([style*="display: flex"],[style*="display:flex"]){display:flex}
+.enogia-cols > .enogia-col > :is([style*="display: grid"],[style*="display:grid"]){display:grid}
+.enogia-mcard-in [style*="font-size: 11px"],.enogia-mcard-in [style*="font-size: 11.5px"]{font-size:12px !important}
+.enogia-mcard-in [style*="font-size: 12.5px"]{font-size:13px !important}
+.enogia-mcard-in [style*="font-weight: 800"]{font-weight:700 !important}
+.enogia-mcard-in{line-height:1.45}

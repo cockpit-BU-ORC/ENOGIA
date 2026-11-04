@@ -1942,3 +1942,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Fiches projet : onglets collés en haut (Pilotage, Planning, Machine, Finance, Suivi) ; chiffres clés sous l'en-tête ; nouvelle zone Machine (S/N, certification, présence aux tests, turbine) ; zones sans bordure ; étiquettes grises ; feux plus grands ; « ✓ Enregistré » (ou l'échec) après chaque saisie.
 - Pas de nouvelle donnée, pas de nouvelle clé `localStorage`.
 - Fichiers : turbineNeeds.js (+ test), needsView.test.js (nouveau), components/TurbinesHub.js, components/ManagerFiche.js, styles.css, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v274 — Bilan mensuel des KPI, roues imposées, fiches sans trous
+
+- Demandé : « liste des accomplissements du mois dernier et du mois d'avant, objectifs du mois en cours et du suivant » ; « livraison sur site effectuée pas claire, on ne la maîtrise pas » ; « cadrans disproportionnés, beaucoup de blancs » ; « séparer les turbines prêtes avec et sans roue ; message d'erreur si la roue ne correspond pas » ; « couleurs SAV / ORC, taille des cadrans, drapeaux » ; « pousser l'audit au max ».
+- KPI › Bilan mensuel : quatre colonnes (deux mois passés, mois en cours, mois suivant), jalons faits / en retard / prévus, écart à l'initial, note libre par mois (enregistrée dans `planning/profiles.monthNotes`).
+- Turbines › Besoins : trois groupes de turbines ; mauvaise roue refusée avec message ; ORC en marine, SAV en violet ; drapeaux.
+- Fiches projet : blocs rangés en colonnes sans trous ; tailles de texte harmonisées ; livraison sur site « en transport · non confirmée » (date estimée) puis « confirmée ».
+- Pas de nouvelle clé `localStorage`. Règles Firestore inchangées (`profiles` déjà écrit par le propriétaire).
+- Fichiers : monthReview.js (+ test), components/KpiBilan.js (nouveaux), components/ManagerPanel.js, components/ManagerFiche.js, components/TurbinesHub.js, turbineNeeds.js (+ test), styles.css, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

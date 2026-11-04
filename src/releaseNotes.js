@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v274",
+    date: "2026-11-04",
+    title: "V274 : bilan mensuel et besoins turbines",
+    items: [
+      { t: "KPI", d: "Bilan mensuel : réalisé des deux derniers mois, objectifs du mois en cours et du suivant.", admin: true },
+      { t: "Turbines", d: "Prêtes avec / sans roue séparées, mauvaise roue refusée, ORC et SAV en couleur.", admin: true },
+      { t: "Fiches projet", d: "Mise en page sans trous, livraison sur site plus claire.", admin: true },
+    ],
+  },
+  {
     id: "2026-11-v273",
     date: "2026-11-04",
     title: "V273 : besoins turbines et fiches projet",
