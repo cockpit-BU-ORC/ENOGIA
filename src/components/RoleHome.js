@@ -228,7 +228,8 @@ export function RoleHome({ role, profile, ui, kpiEl, depEl, parcoursEl, rows, op
     const conflicts = testsDoc ? findConflicts(testsDoc, open).length : 0;
     return sec("tests", "Tests", S.tests.ring, <><Head title="Tests" sub="3 prochaines semaines" />
       {testsDoc ? <div style={grid}><Stat label="machines en test" value={soon.length} onClick={() => onGo("tests")} /><Stat label="sans testeur" value={noTester.length} tone={noTester.length ? T.red500 : undefined} onClick={() => onGo("tests")} /><Stat label="échecs" value={fails} tone={fails ? T.red500 : undefined} /><Stat label="en retard" value={lateT} tone={lateT ? T.amber600 : undefined} /><Stat label="conflits" value={conflicts} tone={conflicts ? T.amber600 : undefined} /></div> : <div style={grey}>Page Tests non disponible.</div>}</>); } };
-  W.turbines = { label: "Turbines (pool)", span: 4, render: () => { const turb = (turbineDoc && turbineDoc.turbines) || []; const tst = turb.map(t => turbineStatus(t, today));
+  // v267 : l'ancien pool (planning/turbines) n'est plus la référence : les turbines viennent de la production (cadrans « pt »)
+  W.turbines = { label: "Turbines (pool)", span: 4, render: () => null, renderOld: () => { const turb = (turbineDoc && turbineDoc.turbines) || []; const tst = turb.map(t => turbineStatus(t, today));
     const nCrit = tst.filter(x => x === "Critique").length, nLateT = tst.filter(x => x === "En retard").length;
     return sec("turbines", "Turbines", H.brand, <><Head title="Turbines" count={turb.length} />
       <div style={grid}><Stat label="critiques" value={nCrit} tone={nCrit ? T.red500 : undefined} /><Stat label="en retard" value={nLateT} tone={nLateT ? T.amber600 : undefined} /></div></>); } };

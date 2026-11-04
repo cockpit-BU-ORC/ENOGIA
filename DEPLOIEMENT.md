@@ -1871,3 +1871,15 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Clé `localStorage` : `enogia_prodturb_gamme` (gamme affichée).
 - Kit régénéré (`npm run kit:jeremie`) : à renvoyer à Jérémie, c'est sa nouvelle base.
 - Fichiers : components/ProdTurbines.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v267 — Un seul onglet Turbines (production + besoins des ORC), reprise des données de Jérémie
+
+- Demandé : « un seul onglet Turbines, avec la prod turbine et la gestion des turbines pour les ORC ; les infos des turbines, roues et injecteurs ne sont vraies que dans la production turbines » ; « récupérer les infos que Jérémie avait dans son outil Claude ».
+- Menu Gestion : « Turbines » remplace « Turbines » (ancien pool) et « Production turbines ». Accès : propriétaire + adresses de la liste d'accès de la production.
+- Production : la page de Jérémie, seule saisie ; le champ « Affaire / client » d'une turbine propose les PJ du planning.
+- Besoins des ORC : calculé, sans saisie (turbines nécessaires, attribuées, date de fin prévue, alertes ; turbines non attribuées ; stocks de roues et d'injecteurs).
+- Importer des données (JSON), propriétaire : reprend le fichier exporté de l'outil de Jérémie ; ajoute seulement les éléments nouveaux, aperçu avant d'écrire.
+- Ancienne page Turbines retirée (ses données `planning/turbines` restent dans Firestore). Cadran « Turbines (pool) » de l'accueil masqué.
+- Clé `localStorage` : `enogia_turbines_tab` (sous-page ouverte).
+- Kit de Jérémie régénéré (consigne : garder la propriété `pjs`).
+- Fichiers : components/TurbinesHub.js (nouveau), turbinesHub.test.js (nouveau), components/ProdTurbines.js, components/TurbinesTab.js et TurbineBoard.js (supprimés), components/RoleHome.js, App.js, scripts/prodturb-consignes.md, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

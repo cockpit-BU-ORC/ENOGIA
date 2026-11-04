@@ -642,4 +642,8 @@ export const RELEASE_CATALOG = [
   { v: "266", t: "Production turbines : gammes 100 kW et 20 kW, roues, reconditionnement", items: [
     ["Production turbines", "Retour de Jérémie : une gamme 100 kW et une gamme 20 kW séparées, lots de roues à équilibrer, turbines reconditionnées avec contrôles OK / NOK, consommation des pièces par étape.", "admin"],
   ] },
+  { v: "267", t: "Un seul onglet Turbines", items: [
+    ["Turbines", "Un seul onglet : la production turbines (seul endroit où l'on saisit turbines, roues et injecteurs) et les besoins des ORC, calculés à partir d'elle.", "admin"],
+    ["Turbines › Besoins des ORC", "Pour chaque PJ en cours : turbines nécessaires d'après la gamme, turbines attribuées (champ « Affaire »), date de fin prévue et ce qui coince ; stocks de roues et d'injecteurs.", "admin"],
+  ] },
 ];

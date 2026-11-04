@@ -291,7 +291,9 @@ function FormDialog({ title, fields, vals, onSave, extra = [], readOnly, onClose
 /* ---------- Page ---------- */
 const TABS = [["accueil", "Accueil"], ["planning", "Planning"], ["stocks", "Stock"], ["parametres", "Gamme & durées"]];
 
-export function ProdTurbines({ doc, api, canEdit, owner }) {
+// pjs (facultatif) : PJ du planning proposés dans « Affaire / client » (« PJ479-1 - EDF PEI ») ; la page Turbines › Besoins des ORC
+// rattache une turbine au PJ dont le numéro commence ce champ.
+export function ProdTurbines({ doc, api, canEdit, owner, pjs }) {
   // Gamme affichée (100 kW ou 20 kW) : préférence d'affichage propre à ce navigateur.
   const [gamme, setGamme] = useState(() => { try { return localStorage.getItem("enogia_prodturb_gamme") === "20" ? "20" : "100"; } catch (e) { return "100"; } });
   useEffect(() => { try { localStorage.setItem("enogia_prodturb_gamme", gamme); } catch (e) { /* stockage indisponible */ } }, [gamme]);
@@ -419,7 +421,7 @@ export function ProdTurbines({ doc, api, canEdit, owner }) {
     const arbreOpts = [["", "Aucun (affectation automatique)"], ...(t.arbreId && S.arbres[t.arbreId] ? [[t.arbreId, "Arbre " + S.arbres[t.arbreId].num]] : []), ...av.map(a => [a.id, "Arbre " + a.num + " (disponible)"])];
     setForm({ title: isNew ? "Nouvelle turbine" : "Turbine " + t.num, vals: { ...t, type: turbineType(t), arbreId: t.arbreId || "", deduire: "oui" },
       fields: [
-        { k: "num", l: "Numéro de turbine", req: true, hint: "Turbine " + gammeL(gamme) + " : " + gammePrefix(gamme) + "XXXXXXX." }, { k: "affaire", l: "Affaire / client" },
+        { k: "num", l: "Numéro de turbine", req: true, hint: "Turbine " + gammeL(gamme) + " : " + gammePrefix(gamme) + "XXXXXXX." }, { k: "affaire", l: "Affaire / client", list: pjs && pjs.length ? pjs : undefined, hint: pjs && pjs.length ? "Choisissez le PJ de l'ORC qui recevra la turbine (vide : stock)." : undefined },
         { k: "type", l: "Type de turbine", type: "select", opts: [["", "Non précisé"], ["LT", "LT"], ["MT", "MT"]], hint: "Détermine les isolants DC014 utilisables : PPS ou PEEK pour MT ; POMC, PPS ou PEEK pour LT." },
         { k: "roue", l: "Roue attribuée", type: "select", opts: [["", "Non attribuée"], ...roueRefs.map(r => [r, r])], hint: "Sans roue, la turbine s'arrête en « Stock testée sans roue » après le banc d'essai sans roue." },
         { k: "step", l: "Étape actuelle", type: "select", opts: T_STEPS.map(s => [s.id, PHASES[s.ph] + " : " + M.lbl(s.id)]) },

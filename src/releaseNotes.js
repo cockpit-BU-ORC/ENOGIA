@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v267",
+    date: "2026-11-04",
+    title: "V267 : un seul onglet Turbines",
+    items: [
+      { t: "Turbines", d: "La production turbines et les besoins des ORC réunis dans un seul onglet ; une turbine est attribuée à un ORC par son champ « Affaire ».", admin: true },
+    ],
+  },
+  {
     id: "2026-11-v266",
     date: "2026-11-04",
     title: "V266 : Production turbines, gammes 100 kW et 20 kW",
