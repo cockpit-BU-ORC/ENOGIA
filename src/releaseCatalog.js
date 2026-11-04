@@ -646,4 +646,7 @@ export const RELEASE_CATALOG = [
     ["Turbines", "Un seul onglet : la production turbines (seul endroit où l'on saisit turbines, roues et injecteurs) et les besoins des ORC, calculés à partir d'elle.", "admin"],
     ["Turbines › Besoins des ORC", "Pour chaque PJ en cours : turbines nécessaires d'après la gamme, turbines attribuées (champ « Affaire »), date de fin prévue et ce qui coince ; stocks de roues et d'injecteurs.", "admin"],
   ] },
+  { v: "268", t: "Import des données de production ouvert à l'équipe turbines", items: [
+    ["Turbines › Production", "Le bouton « Importer des données (JSON) » est disponible pour toutes les personnes qui ont accès à la production turbines.", "admin"],
+  ] },
 ];

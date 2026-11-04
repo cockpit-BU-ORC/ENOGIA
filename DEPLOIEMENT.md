@@ -1883,3 +1883,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Clé `localStorage` : `enogia_turbines_tab` (sous-page ouverte).
 - Kit de Jérémie régénéré (consigne : garder la propriété `pjs`).
 - Fichiers : components/TurbinesHub.js (nouveau), turbinesHub.test.js (nouveau), components/ProdTurbines.js, components/TurbinesTab.js et TurbineBoard.js (supprimés), components/RoleHome.js, App.js, scripts/prodturb-consignes.md, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v268 — Import des données de production ouvert à Jérémie
+
+- Demandé : « mettre à disposition le bouton importer à Jérémie ».
+- Turbines › Production : « Importer des données (JSON) » visible pour toutes les personnes de la liste d'accès de la production (en plus du propriétaire). Les règles Firestore autorisent déjà leurs écritures sur `planning/prodTurbines` : rien à republier.
+- Pas de nouvelle clé `localStorage`.
+- Fichiers : components/TurbinesHub.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

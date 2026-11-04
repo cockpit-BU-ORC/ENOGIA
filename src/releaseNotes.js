@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v268",
+    date: "2026-11-04",
+    title: "V268 : import des données de production",
+    items: [
+      { t: "Turbines › Production", d: "« Importer des données (JSON) » est disponible pour toute l'équipe qui a accès à la production turbines.", admin: true },
+    ],
+  },
+  {
     id: "2026-11-v267",
     date: "2026-11-04",
     title: "V267 : un seul onglet Turbines",
