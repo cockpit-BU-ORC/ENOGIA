@@ -53,7 +53,7 @@ function changesText({ refLabel, summary }) {
   return L.join("\n");
 }
 
-export function ChangesTable({ summary, refs, refId, setRefId, refLabel, q, onOpenPj, removed }) {
+export function ChangesTable({ summary, refs, refId, setRefId, refLabel, q, onOpenPj, removed, bare }) {
   const [filter, setFilter] = useState("all"); const [copied, setCopied] = useState(false);
   const st = summary.stats; const needle = (q || "").trim().toLowerCase();
   const list = useMemo(() => summary.pjs.filter(p => {
@@ -103,7 +103,7 @@ export function ChangesTable({ summary, refs, refId, setRefId, refLabel, q, onOp
 
     {summary.pjs.length === 0 && !(removed && removed.length) ? <div style={{ background: T.emerald100, borderRadius: 12 }}><EmptyState compact tone="ok" icon="check" title="Aucune date ni heure n'a changé entre ces deux versions." /></div>
       : list.length === 0 && gone.length === 0 ? <EmptyState compact icon="search" title="Aucun PJ ne correspond à ce filtre." />
-      : <div style={{ border: "1px solid " + T.line, borderRadius: 12, overflow: "auto", maxHeight: 520 }}>
+      : <div style={{ border: bare ? "none" : "1px solid " + T.line, borderTop: "1px solid " + T.line, borderRadius: bare ? 0 : 12, overflow: "auto", maxHeight: 520 }}>{/* v282 : sans cadre dans une carte (bare) */}
         <table style={{ width: "100%", minWidth: 860, borderCollapse: "collapse", fontSize: FZ.sm }}>
           <thead><tr>
             <th style={{ ...th, textAlign: "left", paddingLeft: 12 }}>PJ</th>

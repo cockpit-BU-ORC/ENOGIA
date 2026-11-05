@@ -709,4 +709,8 @@ export const RELEASE_CATALOG = [
     ["KPI", "Chaque sous-onglet commence par la réponse en une phrase, calculée sur le planning publié, puis les chiffres face aux objectifs (barre, trait d'objectif, écart) et un graphique choisi pour la question, enfin « À faire » avec les PJ concernés. « Voir en tableau » sur chaque graphique ; l'ancien contenu reste dessous en « Détail ».", "admin"],
     ["KPI › Explorer", "Une mesure (machines, départs, arrivées, tests terminés, fins de production) par mois, gamme, pays, chef de projet ou état, en barres triées.", "admin"],
   ] },
+  { v: "282", t: "Confort : cibles plus grandes, textes plus lisibles, une seule capacité atelier", items: [
+    ["Partout", "Les petits boutons ont une zone de clic d'au moins 28 × 28 px (sans changer leur dessin) ; les textes de 11 px passent à 12 px, ceux de 12,5 px à 13 px ; les initiales des avatars ne descendent plus sous 9 px.", "all"],
+    ["Accueil et KPI", "Une seule capacité atelier : celle du planificateur (175 h par semaine s'il n'y a pas de plan). L'accueil compte aussi les jours sans production, comme les KPI.", "admin"],
+  ] },
 ];

@@ -136,7 +136,7 @@ input[type="checkbox"] { transition: background-color .14s ease, border-color .1
 /* changement d'onglet (espace Manager), de PJ (fiche), arrivée d'une carte */
 .enogia-view-in { animation: enogiaViewIn .26s var(--e-ease) backwards; }
 /* barres d'avancement : elles se remplissent depuis la gauche ; les anneaux se dessinent */
-.enogia-bar-fill { animation: enogiaBarGrow .7s var(--e-ease) backwards; transition: width .4s var(--e-ease), background-color .3s ease; }
+.enogia-bar-fill { animation: enogiaBarGrow .7s var(--e-ease) backwards; transition: background-color .3s ease; } /* v282 : plus de largeur animée (mise en page recalculée à chaque image) */
 .enogia-ring     { animation: enogiaRingDraw .8s var(--e-ease) backwards; transition: stroke-dasharray .45s var(--e-ease), stroke .3s ease; }
 /* pastille « nouveautés » : elle jaillit puis émet 3 ondes discrètes pour attirer l'œil, ensuite elle reste fixe */
 .enogia-badge-pop { animation: enogiaBadgePop .42s var(--e-ease) both, enogiaPulseRing 1.8s ease-out .5s 3; }
@@ -249,7 +249,7 @@ body.enogia-present tbody td { font-size: 1.08em; }
 
 /* v165 : zones cliquables élargies (WCAG 2.2, 24 px) pour les petits boutons repérés par a11yFallback.js */
 [data-hit] { position: relative; }
-[data-hit]::after { content: ""; position: absolute; inset: -5px; }
+[data-hit]::after { content: ""; position: absolute; inset: calc(-1 * var(--hy, 5px)) calc(-1 * var(--hx, 5px)); }
 
 /* ── v173 : direction « Éditorial industriel » ─────────────────────────────────────────────── */
 /* Bande des repères de l'accueil : séparateurs verticaux, le dernier sans filet. */
@@ -567,3 +567,12 @@ button { transition: background-color var(--e-dur-micro) var(--e-ease), border-c
 
 /* v275 : fiche projet — blocs côte à côte (Planning : frise à droite ; Machine | Finance), empilés sous 1100 px */
 @media (max-width: 1100px){.enogia-fiche-split{grid-template-columns:1fr !important}}
+
+/* ── v282 (audit apple-design, lot 1) : tailles de texte harmonisées sur tout le site, comme la fiche projet (V274) :
+   11 / 11,5 / 10,5 px → 12 px, 12,5 px → 13 px. Le texte des graphiques SVG (attribut font-size) n'est pas touché. */
+#enogia-main [style*="font-size: 11px"], #enogia-main [style*="font-size: 11.5px"], #enogia-main [style*="font-size: 10.5px"] { font-size: 12px !important; }
+#enogia-main [style*="font-size: 12.5px"] { font-size: 13px !important; }
+[role="dialog"] [style*="font-size: 11px"], [role="dialog"] [style*="font-size: 11.5px"], [role="dialog"] [style*="font-size: 10.5px"] { font-size: 12px !important; }
+[role="dialog"] [style*="font-size: 12.5px"] { font-size: 13px !important; }
+/* cases à cocher et boutons radio : 16 px au moins */
+input[type="checkbox"], input[type="radio"] { min-width: 16px; min-height: 16px; }

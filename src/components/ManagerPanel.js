@@ -15,7 +15,7 @@ import { PointHebdo } from "./PointHebdo";
 import { InitialAddReview } from "./InitialAdd";
 import { SanteTab } from "./Feux";
 import { SerieTab } from "./Series";
-import { planWeeks, loadWeeks } from "./KpiPilotage";
+import { planWeeks, loadWeeks, atelierCap } from "./KpiPilotage";
 import { monthLab } from "./KpiHead";
 import { KpiStory } from "./KpiStory";
 import { weekNum } from "../kpiStory";
@@ -279,7 +279,7 @@ export function ManagerPanel({planDoc,initialAddFromImport,onOpenCashPage,onNav,
   },[fd,chargeYear]);
 
   // ── Charge de travail Atelier / Autom par PJ (heures issues de l'import Excel) ──
-  const CAPA_ATELIER_SEM=175; // capacité 500% (5 postes) × 35h/semaine
+  const CAPA_ATELIER_SEM=atelierCap(planDoc&&planDoc.plan); // v282 : capacité du planificateur (175 h sans plan), la même partout
   const CAPA_AUTOM_SEM=35;    // 1 poste × 35h/semaine
   const workloadByPJ=useMemo(()=>{
     return fd.filter(r=>r.heuresAtelier||r.heuresAutom).map(r=>({
@@ -330,7 +330,7 @@ export function ManagerPanel({planDoc,initialAddFromImport,onOpenCashPage,onNav,
       satAtelier:Math.round((w.atelier/CAPA_ATELIER_SEM)*100),
       satAutom:Math.round((w.autom/CAPA_AUTOM_SEM)*100),
     }));
-  },[fd,satYear,satMonth,closurePeriods,productionExclusions]);
+  },[fd,satYear,satMonth,closurePeriods,productionExclusions,CAPA_ATELIER_SEM]);
 
   const countByPays=useMemo(()=>{
     const m={};

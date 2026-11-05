@@ -6,7 +6,8 @@ import { useEffect } from "react";
 //     texte voisin, placeholder) ;
 //   • boutons sans nom (icône seule) → aria-label déduit du titre ou de l'en-tête de colonne ;
 //   • zones cliquables de moins de 24 px → marquées data-hit : la zone de clic est élargie de 5 px autour du bouton
-//     (styles.css), sans rien changer à l'aspect.
+//     (styles.css), sans rien changer à l'aspect. v282 : la zone est portée à 28 × 28 au moins (--hx / --hy calculés
+//     d'après la taille du bouton, 8 px au plus de chaque côté pour ne pas mordre sur les voisins).
 const first = s => String(s || "").trim().split("\n")[0].trim();
 const clean = s => first(s).replace(/^[＋+]\s*/, "").slice(0, 60);
 
@@ -54,7 +55,12 @@ function pass(root) {
       const r = b.getBoundingClientRect();
       if (r.width > 0 && r.height > 0) {
         b.dataset.hitDone = "1";
-        if (r.width < 24 || r.height < 24) b.dataset.hit = "1";
+        if (r.width < 28 || r.height < 28) {
+          b.dataset.hit = "1";
+          const pad = v => Math.min(8, Math.max(0, Math.ceil((28 - v) / 2)));
+          b.style.setProperty("--hx", pad(r.width) + "px");
+          b.style.setProperty("--hy", pad(r.height) + "px");
+        }
       }
     }
   });

@@ -190,7 +190,7 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta }) {
       </aside>
       <section aria-label="Besoins" style={{ overflowY: "auto", position: "relative", "--nd-bg": T.card }}>
         <div className="enogia-nd-glass" style={{ position: "sticky", top: 0, zIndex: 3, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", padding: "10px 16px", boxShadow: "0 1px 0 " + T.line }}>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}><span aria-hidden="true" style={{ width: 150, height: 6, borderRadius: 3, background: T.surfaceAlt, overflow: "hidden" }}><span style={{ display: "block", height: "100%", width: pct + "%", background: T.emerald500, borderRadius: 3, transition: "width 300ms cubic-bezier(.2,.8,.2,1)" }} /></span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}><span aria-hidden="true" style={{ width: 150, height: 6, borderRadius: 3, background: T.surfaceAlt, overflow: "hidden" }}><span style={{ display: "block", height: "100%", width: "100%", transform: "scaleX(" + Math.max(0, Math.min(1, pct / 100)) + ")", transformOrigin: "left center", background: T.emerald500, transition: "transform 300ms cubic-bezier(.2,.8,.2,1)" }} /></span>
             <span style={{ fontSize: 12.5, color: T.ink500 }}><b style={{ color: T.ink900, fontSize: 15, fontVariantNumeric: "tabular-nums" }}>{pct}</b> % des pièces attribuées</span></span>
           {[[missT, "turbines"], [missR, "roues"], [missI, "injecteurs à attribuer"]].map(([v, l]) => <span key={l} style={{ fontSize: 12.5, color: T.ink500 }}><b style={{ color: T.ink900, fontSize: 15, fontVariantNumeric: "tabular-nums", marginRight: 3 }}>{v}</b>{l}</span>)}
           <span style={{ flex: 1 }} />

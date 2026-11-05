@@ -15,7 +15,11 @@ import { PjPlate } from "./SharedUI";
 import { toLocalISO, weekStartOf } from "../parsers";
 import { workDaysBetween, isClosedDay } from "../workDays";
 import { Arrange } from "./Arrange";
-import { makeCalendar, schedule, loadModel } from "../planner/engine";
+import { makeCalendar, schedule, loadModel, capWeek } from "../planner/engine";
+// v282 (audit apple-design) : une seule capacité d'atelier pour tout le site — celle du planificateur (personnes × heures),
+// 175 h par semaine seulement s'il n'y a pas de plan. Les semaines avec fermeture ou capacité spéciale gardent la leur.
+export const CAPA_DEFAUT = 175;
+export const atelierCap = plan => { try { if (plan && plan.v === 2) { const c = Math.round(capWeek(plan)); if (c > 0) return c; } } catch (e) {} return CAPA_DEFAUT; };
 
 const PROD = ["MONTAGE", "ELEC", "TESTS", "PACKAGING", "En fabrication"];
 const fdm = v => { if (!v) return "—"; const d = new Date(v); return isNaN(d) ? "—" : String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0"); };

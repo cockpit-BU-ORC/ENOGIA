@@ -55,7 +55,7 @@ import { BetaBanner, UserChip } from "./components/AppChrome";
 import { useTurbineDoc, useTestsDoc, useProdTurbines, useDelays, useCashinSync, useAchats } from "./useAppData";
 import { useListFilters, filterOptions, filterRows } from "./listFilters";
 
-const APP_BUILD_VERSION = "2026-11-05-v281-refonte-kpi";
+const APP_BUILD_VERSION = "2026-11-05-v282-audit-lot1";
 
 export default function App(){
   // Utilisateur connecté via Google, restreint aux comptes @enogia.com (null tant que non connecté).
@@ -1078,7 +1078,7 @@ export default function App(){
             {view!=="home"&&view!=="turbines"&&view!=="achats"&&(()=>{const v=VIEWS.find(x=>x.id===view);if(!v)return null; /* v262 : Production turbines et Achats / Appro ont leur propre en-tête (pages des kits) */
               const subs={planner:"Brouillon réservé à vous : déplacez, liez et forcez les PJ ; rien ne change pour les autres avant « Publier »",table:filtered.length+" machine"+(filtered.length>1?"s":"")+" affichée"+(filtered.length>1?"s":"")+" · survolez un état ou un écart pour le détail",gantt:"Chaque machine, étape par étape · Ctrl + molette pour zoomer",calendar:"Arrivées, tests, fins de production et départs",changes:"Ce qui a changé à chaque mise à jour du planning",comments:"Les échanges, machine par machine",tests:"Plans d'essais et affectations des testeurs",cashin:"Encaissements et facturation des PJ",turbines:"Pool de turbines et attributions"};
               /* v183 : plus de sur-titre ; v185 : une couleur de trait par page (demandé) */const SS=stageSoft(),HH=stripeHues(),acc={table:SS.production.solid,gantt:SS.tests.solid,calendar:SS.finProd.solid,changes:T.ember500,comments:HH.note,tests:SS.arrivee.solid,planner:SS.production.solid,cashin:SS.finProd.solid,turbines:SS.depart.solid}[view];return <PageHead title={v.l} sub={subs[view]} accent={acc}/>;})()}
-            {view==="home"&&<HomeView pinOk={pinOk} testsDoc={canSeeTests?testsView:null} data={dataWithOverrides} comments={comments} myEmail={currentUser&&currentUser.email} myName={authorName} people={peopleAll} unseenChanges={unseenChanges} lastImport={lastImport} onOpenPj={setCalSel} onGo={setView} profiles={profiles} owner={isOwner} cash={canCash} turbineDoc={turbineDoc} onOpenCash={canCash?()=>setView("cashin"):null} prodDoc={prodDoc} canProdTurb={canProdTurb} plan={planDoc&&planDoc.plan} closurePeriods={closurePeriods} saveHomeLayout={isOwner?saveHomeLayout:null}/>}
+            {view==="home"&&<HomeView pinOk={pinOk} testsDoc={canSeeTests?testsView:null} data={dataWithOverrides} comments={comments} myEmail={currentUser&&currentUser.email} myName={authorName} people={peopleAll} unseenChanges={unseenChanges} lastImport={lastImport} onOpenPj={setCalSel} onGo={setView} profiles={profiles} owner={isOwner} cash={canCash} turbineDoc={turbineDoc} onOpenCash={canCash?()=>setView("cashin"):null} prodDoc={prodDoc} canProdTurb={canProdTurb} productionExclusions={productionExclusions} plan={planDoc&&planDoc.plan} closurePeriods={closurePeriods} saveHomeLayout={isOwner?saveHomeLayout:null}/>}
             {view==="table"&&<DashboardSummary data={filtered} allData={dataWithOverrides} progress={progressEff} changeLog={changeLog} onOpenChanges={()=>setView("changes")}/>}
             {view==="table"&&<TableView data={filtered} progress={progressEff} df={df} setDf={setDf} setEtatFor={setEtatFor} setClientPresenceFor={setClientPresenceFor}
               selEtats={selEtats} setSelEtats={setSelEtats}

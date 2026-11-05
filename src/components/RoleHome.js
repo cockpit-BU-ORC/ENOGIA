@@ -10,7 +10,7 @@ import { getCashinDoc, cashOverview } from "../cashinLink";
 import { useCashin } from "../useCashin";
 import { fmtEur } from "../pjProgress";
 import { makeModel, EMPTY_PROD } from "./ProdTurbines";
-import { planWeeks } from "./KpiPilotage";
+import { planWeeks, atelierCap, CAPA_DEFAUT } from "./KpiPilotage";
 
 // v188 — Accueils par rôle. v229 (maquettes validées par Gabriel : « Go les 5 accueils ») : un catalogue de cadrans commun et une
 // disposition par poste — chef de projet, testeur, chef d'atelier, directeur de production turbines, autres personnes (+ direction).
@@ -24,7 +24,7 @@ const addD = (s, n) => { const d = new Date(s + "T12:00:00"); d.setDate(d.getDat
 const monday = s => { const d = new Date(s + "T12:00:00"); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return iso(d); };
 const DOW = ["Lun", "Mar", "Mer", "Jeu", "Ven"];
 const workDays = (a, b) => { let n = 0; const d = new Date(a + "T12:00:00"), e = new Date(b + "T12:00:00"); while (d <= e) { const w = d.getDay(); if (w && w !== 6) n++; d.setDate(d.getDate() + 1); } return n; };
-export const CAPA_SEMAINE = 175; // h atelier par semaine (même valeur que les KPI quand il n'y a pas de plan)
+export const CAPA_SEMAINE = CAPA_DEFAUT; // h atelier par semaine sans plan ; avec un plan : atelierCap(plan) (v282)
 
 // Cadrans par défaut de chaque poste (id, largeur sur 12)
 export const HOME_DEFAULTS = {
@@ -72,7 +72,7 @@ export function roleLead(role, d) {
   return ["Bonjour. ", { t: s(d.inProd, "machine", "machines"), c: "production" }, " " + (d.inProd > 1 ? "sont" : "est") + " en production et ", { t: d.next30 + " " + (d.next30 > 1 ? "partent" : "part"), c: "ok" }, " d'ici un mois."];
 }
 
-export function RoleHome({ role, profile, ui, kpiEl, depEl, parcoursEl, rows, open, late, mentions, myPjs, testsDoc, myTester, turbineDoc, prodDoc, plan, closurePeriods, owner, cash, onOpenPj, onGo, onOpenCash, layout, onLayout, hello, renderLead }) {
+export function RoleHome({ role, profile, ui, kpiEl, depEl, parcoursEl, rows, open, late, mentions, myPjs, testsDoc, myTester, turbineDoc, prodDoc, plan, closurePeriods, productionExclusions, owner, cash, onOpenPj, onGo, onOpenCash, layout, onLayout, hello, renderLead }) {
   const { Row, Head, cardS, Pill, presenceOf, nomOf, empty, grey, link, S, H, A } = ui;
   const today = iso(new Date());
   const on = id => blockOn(profile, id);
@@ -105,12 +105,12 @@ export function RoleHome({ role, profile, ui, kpiEl, depEl, parcoursEl, rows, op
   // Charge atelier sur 4 semaines : planificateur s'il est lu, sinon heures atelier du planning réparties sur les jours ouvrés
   const charge = useMemo(() => {
     let pw = null;
-    if (plan && plan.v === 2) { try { pw = planWeeks(plan, closurePeriods, null, 4, new Date(w0 + "T00:00:00")); } catch (e) { pw = null; } }
+    if (plan && plan.v === 2) { try { pw = planWeeks(plan, closurePeriods, productionExclusions, 4, new Date(w0 + "T00:00:00")); } catch (e) { pw = null; } }
     if (pw) return pw.map(w => ({ a: iso(w.a), hours: w.hours, cap: Math.round(w.cap || CAPA_SEMAINE) }));
     return [0, 1, 2, 3].map(i => { const a = addD(w0, 7 * i), b = addD(a, 4); let h = 0;
       rows.forEach(r => { const s = dIso(r.arrivee), e = dIso(r.finProd) || dIso(r.depart), H = Number(r.heuresAtelier) || 0; if (!s || !e || !H || e < a || s > b) return; const tot = workDays(s, e) || 1, ov = workDays(s > a ? s : a, e < b ? e : b); h += H * ov / tot; });
       return { a, hours: Math.round(h), cap: CAPA_SEMAINE }; });
-  }, [plan, closurePeriods, rows, w0]);
+  }, [plan, closurePeriods, productionExclusions, rows, w0]);
   // Production turbines
   const pt = useMemo(() => {
     if (!prodDoc) return null;
@@ -193,7 +193,7 @@ export function RoleHome({ role, profile, ui, kpiEl, depEl, parcoursEl, rows, op
       {L.length === 0 ? empty("inbox", "Aucun résultat pour l'instant", "") : L.map(({ r, q }, i) => <Row key={r.pj} first={i === 0} pj={r.pj} pill={<Pill tone={q.ko ? A.red : S.finProd}>{q.ko ? q.ko + " échec" + (q.ko > 1 ? "s" : "") : q.done === q.total ? "Réussi" : "En cours"}</Pill>} main={nomOf(r) || r.gamme || ""} right={progPill(q)} />)}</>); } };
   // chef d'atelier
   W.charge = { label: "Charge atelier", span: 7, render: () => { const max = Math.max(1, ...charge.map(w => Math.max(w.hours, w.cap)));
-    return sec("charge", "Charge atelier", S.production.ring, <><Head title="Charge atelier" sub={"4 semaines · capacité " + (charge[0] ? charge[0].cap : CAPA_SEMAINE) + " h"} />
+    return sec("charge", "Charge atelier", S.production.ring, <><Head title="Charge atelier" sub={"4 semaines · capacité " + atelierCap(plan) + " h / semaine"} />
       <div style={{ display: "flex", alignItems: "flex-end", gap: 10, height: 120, marginTop: 8 }}>
         {charge.map(w => { const over = w.hours > w.cap; return (<div key={w.a} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, height: "100%", justifyContent: "flex-end", position: "relative" }}>
           <span style={{ fontSize: FZ.xs, fontWeight: 700, color: over ? T.red500 : T.ink900, fontVariantNumeric: "tabular-nums" }}>{w.hours} h</span>

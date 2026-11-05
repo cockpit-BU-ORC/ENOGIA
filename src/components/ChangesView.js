@@ -68,7 +68,7 @@ export function ChangesView({ entries, onOpenPj }) {
           <input value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher un PJ…" aria-label="Rechercher un PJ" style={{ padding: "6px 8px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, width: 200 }} />
         </div>
         <div style={card}>
-          <ChangesTable summary={{ pjs: cur.pjs || [], stats: cur.stats }} removed={cur.removed || []}
+          <ChangesTable bare summary={{ pjs: cur.pjs || [], stats: cur.stats }} removed={cur.removed || []}
             refs={null} refId={cur.at} setRefId={setId} refLabel={refLabel} q={q} onOpenPj={onOpenPj} />
         </div>
       </section>

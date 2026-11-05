@@ -127,7 +127,7 @@ export function relTime(iso){
 export function Avatar({name,tint,size}){
   const s=size||30;
   return(
-    <div style={{width:s,height:s,borderRadius:"50%",background:tint||T.teal500,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:s*0.37,fontWeight:700,flexShrink:0,fontFamily:T.font}}>
+    <div style={{width:s,height:s,borderRadius:"50%",background:tint||T.teal500,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:Math.max(9,s*0.37),fontWeight:700,flexShrink:0,fontFamily:T.font}}>
       {initials(name)}
     </div>
   );

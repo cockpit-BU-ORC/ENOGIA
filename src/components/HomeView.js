@@ -36,7 +36,7 @@ const BLOCKS = [
 const prefKey = email => "enogia_home_" + String(email || "anon").toLowerCase();
 const loadPrefs = email => { try { return JSON.parse(localStorage.getItem(prefKey(email)) || "{}") || {}; } catch (e) { return {}; } };
 
-export function HomeView({ data, comments, myEmail, myName, people, unseenChanges, lastImport, onOpenPj, onGo, pinOk, testsDoc, profiles, owner, cash, turbineDoc, onOpenCash, prodDoc, canProdTurb, plan, closurePeriods, saveHomeLayout }) {
+export function HomeView({ data, comments, myEmail, myName, people, unseenChanges, lastImport, onOpenPj, onGo, pinOk, testsDoc, profiles, owner, cash, turbineDoc, onOpenCash, prodDoc, canProdTurb, plan, closurePeriods, productionExclusions, saveHomeLayout }) {
   const rows = useMemo(() => (data || []).filter(r => r && r.pj && r.etat !== "SLOT_LIBRE"), [data]);
   const today0 = startOfToday();
 
@@ -231,7 +231,7 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
         {role !== autoRole && <span style={{ fontSize: FZ.xs, color: T.ink500 }}>— vue telle que la personne la voit ; la disposition réglée ici vaut pour tout le poste.</span>}
       </div>}
       {role && <RoleHome key={role} kpiEl={kpiEl} depEl={depEl} parcoursEl={parcoursEl} role={role} profile={profile} rows={rows} open={open} late={late} mentions={mentions} myPjs={homePjs} testsDoc={testsDoc} myTester={homeTester} turbineDoc={turbineDoc} owner={owner} cash={cash} onOpenPj={onOpenPj} onGo={onGo} onOpenCash={onOpenCash}
-        prodDoc={canProdTurb ? prodDoc : null} plan={plan} closurePeriods={closurePeriods} hello={hello() + (homeName ? " " + homeName : "")} renderLead={renderLead}
+        prodDoc={canProdTurb ? prodDoc : null} plan={plan} closurePeriods={closurePeriods} productionExclusions={productionExclusions} hello={hello() + (homeName ? " " + homeName : "")} renderLead={renderLead}
         layout={layouts[role] || {}} onLayout={owner && saveHomeLayout ? lay => saveHomeLayout(role, lay) : undefined}
         ui={{ Row, Head, cardS, Pill, presenceOf, nomOf, empty, grey, link, S, H, A }} />}
 

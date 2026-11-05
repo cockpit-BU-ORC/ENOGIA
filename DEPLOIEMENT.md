@@ -2010,3 +2010,13 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Explorer : mesure × découpage × machines en barres triées.
 - Pas de nouvelle donnée, pas de nouvelle clé `localStorage`.
 - Fichiers : kpiStory.js (+ test), components/KpiStory.js (nouveaux), components/ManagerPanel.js, components/KpiHead.js, theme.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v282 — Audit apple-design, lot 1 (sans changement visible)
+
+- Demandé : « Lots 1 et 2 » (lot 2 = maquette à valider d'abord).
+- Zones de clic d'au moins 28 × 28 px pour tous les petits boutons (dessin inchangé) ; cases à cocher ≥ 16 px.
+- Textes 11 / 11,5 / 10,5 px → 12 px et 12,5 → 13 px sur tout le site ; initiales des avatars ≥ 9 px.
+- Une seule capacité atelier (planificateur, 175 h sans plan) pour l'accueil et les KPI ; l'accueil compte les jours sans production.
+- Plus d'animation de largeur (Besoins turbines, barres de progression) ; tableau des Modifications sans double cadre.
+- Pas de nouvelle donnée ni de clé `localStorage`.
+- Fichiers : a11yFallback.js, styles.css, pjMeta.js, components/KpiPilotage.js, RoleHome.js, HomeView.js, ManagerPanel.js, TurbinesHub.js, ChangesTable.js, ChangesView.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
