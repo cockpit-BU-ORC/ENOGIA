@@ -1985,3 +1985,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Données : `planning/tests.debugModel`, `plans[PJ].debug.hide` / `extra` — document déjà couvert par les règles.
 - Pas de nouvelle clé `localStorage`.
 - Fichiers : debugChecklist.js (+ test), debugPdf.js, components/DebugChecklist.js, components/TestsTab.js, components/RowDetail.js, components/KpiPilotage.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v279 — Objectifs chiffrés sur tous les KPI
+
+- Demandé : « objectifs chiffrés, et passer tous les sous-onglets KPI au skill KPI ».
+- KPI : en-tête commun sur chaque sous-onglet (question, période, méthode, objectifs : valeur, objectif, écart) ; « Objectifs » pour les régler (propriétaire, `planning/profiles.kpiTargets`).
+- Pas de nouvelle clé `localStorage`. Règles Firestore inchangées.
+- Fichiers : kpiTargets.js (+ test), components/KpiHead.js (nouveaux), components/ManagerPanel.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

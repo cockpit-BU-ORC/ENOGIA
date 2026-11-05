@@ -697,4 +697,7 @@ export const RELEASE_CATALOG = [
     ["KPI › Synthèse", "Camemberts de répartition des machines (état, gamme, pays, chef de projet ; en cours, expédiées ou toutes), bloc « À surveiller », méthode de calcul de chaque chiffre au survol du « i ».", "admin"],
     ["Tests · checklist de debug", "« Modifier la liste » : retirer une ligne ou en ajouter une, pour cette machine seulement, ou pour toutes (modèle commun, administrateurs). Les lignes retirées se rétablissent."],
   ] },
+  { v: "279", t: "Objectifs chiffrés sur tous les KPI", items: [
+    ["KPI", "Chaque sous-onglet dit la question à laquelle il répond, sa période et sa méthode, et met ses chiffres face à des objectifs (PJ tenus à date, dérive moyenne, charge, jalons du mois tenus, machines expédiées) : vert si tenu, rouge avec l'écart sinon. Bouton « Objectifs » pour les régler.", "admin"],
+  ] },
 ];

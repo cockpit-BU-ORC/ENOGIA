@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v279",
+    date: "2026-11-05",
+    title: "V279 : objectifs chiffrés des KPI",
+    items: [
+      { t: "KPI", d: "Objectifs chiffrés sur chaque sous-onglet, avec l'écart et la méthode de calcul.", admin: true },
+    ],
+  },
+  {
     id: "2026-11-v278",
     date: "2026-11-05",
     title: "V278 : checklist de debug modifiable",

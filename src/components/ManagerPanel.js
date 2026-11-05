@@ -15,7 +15,9 @@ import { PointHebdo } from "./PointHebdo";
 import { InitialAddReview } from "./InitialAdd";
 import { SanteTab } from "./Feux";
 import { SerieTab } from "./Series";
-import { KpiPilotage, planWeeks } from "./KpiPilotage";
+import { KpiPilotage, planWeeks, loadWeeks } from "./KpiPilotage";
+import { KpiHead } from "./KpiHead";
+import { targetsOf, kpiMetrics } from "../kpiTargets";
 import { KpiDerivesHead, KpiSemaines } from "./KpiViews";
 import { KpiBilan } from "./KpiBilan";
 import { isSuperAdmin, canCash, isOwner } from "../roles";
@@ -82,6 +84,20 @@ export function ManagerPanel({planDoc,initialAddFromImport,onOpenCashPage,onNav,
   const stepSummary=["arrivee","tests","finProd","depart"].map(k=>{const base=scoped.filter(r=>inPeriod(r[k].ini)),ds=base.map(r=>r[k].delta).filter(d=>d!=null),late=ds.filter(d=>d>0);
     return{k,l:STEP_LABELS[k],n:ds.length,ok:ds.length-late.length,late:late.length,pct:ds.length?Math.round((ds.length-late.length)/ds.length*100):null,avg:late.length?Math.round(late.reduce((a,b)=>a+b,0)/late.length):0,crit:late.filter(d=>d>30).length,
       worst:base.filter(r=>r[k].delta!=null&&r[k].delta>0).sort((a,b)=>b[k].delta-a[k].delta).slice(0,3).map(r=>r.pj+" +"+r[k].delta+"j")};});
+  // v279 : objectifs et mesures des en-têtes KPI
+  const kpiTg=targetsOf(profiles),kpiM=kpiMetrics(fk,driftRows);
+  const w4h=(()=>{try{const ws=loadWeeks(fk,closurePeriods,productionExclusions,175,planDoc&&planDoc.plan,4,new Date()) /* 175 h = CAPA_ATELIER_SEM, déclarée plus bas */;const h=ws.reduce((a,w)=>a+w.hours,0),c=ws.reduce((a,w)=>a+w.cap,0);return c?Math.round(h/c*100):null;}catch(e){return null;}})();
+  const stepNow=stepSummary.find(x=>x.k===kpiStep)||{};
+  const prevLab=(()=>{const [y,m]=kpiM.prevMonth.split("-");return MONTHS[+m-1]+" "+y;})();
+  const KPI_HEADS={
+    synthese:{q:"Livre-t-on à l'heure, et l'atelier tient-il ?",p:"aujourd'hui, planning publié",how:"filtres du Manager appliqués ; méthode de chaque chiffre au survol du « i »",items:[["tenus",kpiM.tenus],["derive",kpiM.derive],["charge",w4h],["livraisons",kpiM.livraisons,"Expédiées en "+prevLab]]},
+    bilan:{q:"Qu'a-t-on tenu les mois passés, que faut-il tenir maintenant ?",p:"deux mois passés, le mois en cours et le suivant",how:"jalons du planning publié, « fait » quand l'état de la machine a suivi",items:[["realisation",kpiM.realisation,"Jalons tenus en "+prevLab],["livraisons",kpiM.livraisons,"Expédiées en "+prevLab]]},
+    semaines:{q:"Que faut-il décider dans les 8 prochaines semaines ?",p:"8 semaines à partir d'aujourd'hui",how:"charge du planificateur (sinon du planning), départs, bancs, décisions",items:[["charge",w4h]]},
+    derives:{q:"Tient-on les dates promises au client ?",p:(codirFrom||codirTo?"jalons promis "+(codirFrom?"de "+codirFrom:"")+(codirTo?" à "+codirTo:""):"toutes les dates promises")+" · "+(codirScope==="all"?"toutes les machines":codirScope==="shipped"?"machines expédiées":"machines en cours"),how:"écart = date actuelle − date du planning initial",items:[["tenus",stepNow.pct,"Tenus à date ("+(STEP_LABELS[kpiStep]||"").toLowerCase()+")"],["derive",(()=>{const ds=comparable.map(r=>r[kpiStep].delta).filter(d=>d!=null);return ds.length?Math.round(ds.reduce((x,y)=>x+y,0)/ds.length*10)/10:null;})(),"Dérive moyenne ("+(STEP_LABELS[kpiStep]||"").toLowerCase()+")"]]},
+    charge:{q:"L'atelier peut-il absorber ce qui arrive ?",p:"les semaines à venir",how:"heures planifiées ÷ capacité de la semaine (jours fermés et sans production déduits)",items:[["charge",w4h]]},
+    avancement:{q:"Les machines avancent-elles ?",p:"PJ ouverts",how:"avancement saisi par étape (Avant production → Départ)",items:[["tenus",kpiM.tenus]]},
+    explorer:{q:"Explorer le portefeuille",p:"tout le planning publié, filtres du Manager",how:"répartitions et comptages libres, sans objectif",items:[]},
+  };
   // v275 (demandé : « plus de graphiques comme dans l'explorer : arrivées par mois, tests par mois… ») : jalons par mois, initial vs révisé, 12 mois glissants
   const monthsBy=(()=>{const base=new Date(today.getFullYear(),today.getMonth()-5,1),list=[];for(let i=0;i<12;i++){const d=new Date(base.getFullYear(),base.getMonth()+i,1);list.push({key:d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"),mois:MONTHS[d.getMonth()]+(d.getMonth()===0||i===0?" "+String(d.getFullYear()).slice(2):"")});}
     const km=v=>{if(!v)return null;const d=new Date(v);return isNaN(d)?null:d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");};
@@ -402,6 +418,9 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
     </header>
 
     <div key={tab+(tab==="derives"?"/"+kpiTab:"")} className="enogia-view-in" style={{minWidth:0}}>
+    {/* v279 (skill kpi-dashboard-design, demandé : « tous les sous-onglets KPI, avec des objectifs chiffrés ») : chaque sous-onglet dit
+        la question à laquelle il répond, sa période, sa méthode, et met ses chiffres face aux objectifs (réglables : « Objectifs ») */}
+    {me&&tab==="derives"&&(()=>{const H=KPI_HEADS[kpiTab];if(!H)return null;return <KpiHead question={H.q} period={H.p} how={H.how} items={H.items} targets={kpiTg} onSaveTargets={saveProfiles?(o=>saveProfiles({...(profiles||{}),kpiTargets:o})):null}/>;})()}
     {me&&tab==="derives"&&kpiTab==="synthese"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
       {/* v215 (maquette A validée) : tableau de pilotage — 5 chiffres, PJ à risque, charge des 6 semaines, portefeuille par état */}
       <KpiPilotage rows={fk} driftRows={driftRows} closurePeriods={closurePeriods} productionExclusions={productionExclusions} capaWeek={CAPA_ATELIER_SEM} plan={planDoc&&planDoc.plan} hasInitial={hasInitial} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}} onSeeDerives={()=>setKpiTab("derives")}/>
@@ -597,7 +616,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
             <div style={{display:"grid",gridTemplateColumns:"repeat(4,minmax(0,1fr))"}}>
               {stepSummary.map((x,i)=><div key={x.k} style={{padding:"8px 12px",borderLeft:i?"1px solid "+T.line:"none"}}>
                 <div style={{fontSize:12,fontWeight:600,color:T.ink500}}>{x.l}</div>
-                <div style={{display:"flex",alignItems:"baseline",gap:6}}><b style={{fontSize:22,fontVariantNumeric:"tabular-nums",color:x.pct==null?T.ink300:x.pct>=80?T.emerald600:x.pct>=50?T.amber600:T.red600}}>{x.pct==null?"—":x.pct+" %"}</b><span style={{fontSize:12.5,color:T.ink700,fontVariantNumeric:"tabular-nums"}}>{x.ok} / {x.n} tenus</span></div>
+                <div style={{display:"flex",alignItems:"baseline",gap:6}}><b style={{fontSize:22,fontVariantNumeric:"tabular-nums",color:x.pct==null?T.ink300:x.pct>=kpiTg.tenus?T.emerald600:x.pct>=kpiTg.tenus-20?T.amber600:T.red600}}>{x.pct==null?"—":x.pct+" %"}</b><span style={{fontSize:12.5,color:T.ink700,fontVariantNumeric:"tabular-nums"}}>{x.ok} / {x.n} tenus · objectif ≥ {kpiTg.tenus} %</span></div>
                 <div aria-hidden="true" style={{height:5,borderRadius:3,background:T.red100,overflow:"hidden",margin:"4px 0"}}><div style={{height:"100%",width:(x.pct||0)+"%",background:T.emerald500}}/></div>
                 <div style={{fontSize:12,color:T.ink500,fontVariantNumeric:"tabular-nums"}}>{x.late?x.late+" en retard · moy. +"+x.avg+" j"+(x.crit?" · "+x.crit+" > 30 j":""):"aucun retard"}</div>
                 {x.worst.length>0&&<div style={{fontSize:11.5,color:T.red600,fontFamily:T.fontMono,marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{x.worst.join(" · ")}</div>}
