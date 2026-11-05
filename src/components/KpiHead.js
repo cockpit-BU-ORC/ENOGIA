@@ -18,7 +18,7 @@ export function TargetChip({ k, v, targets, label }) {
     <span style={{ fontSize: 11.5, fontWeight: 700, color: tone[0] }}>{j.ok == null ? "pas de donnée" : j.ok ? "tenu" + (j.gap ? " (marge " + Math.abs(j.gap) + (d.unit === "%" ? " pts" : d.unit ? " " + d.unit : "") + ")" : "") : "écart " + Math.abs(j.gap) + (d.unit === "%" ? " pts" : d.unit ? " " + d.unit : "")}</span>
   </div>;
 }
-function TargetsDialog({ targets, onSave, onClose }) {
+export function TargetsDialog({ targets, onSave, onClose }) {
   const [v, setV] = useState(() => ({ ...targets })), [busy, setBusy] = useState(false);
   useEffect(() => { const k = e => { if (e.key === "Escape") onClose(); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose]);
   return (<div onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 10010, background: "rgba(10,20,30,.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
@@ -42,7 +42,7 @@ function TargetsDialog({ targets, onSave, onClose }) {
 const MOIS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
 export const monthLab = k => { if (!k) return ""; const [y, m] = k.split("-"); return MOIS[+m - 1] + " " + y; };
 const mkey = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
-function PeriodPicker({ sel }) {
+export function PeriodPicker({ sel }) {
   const t = new Date(), m = n => mkey(new Date(t.getFullYear(), t.getMonth() + n, 1));
   const presets = [["Mois dernier", m(-1), m(-1)], ["Mois en cours", m(0), m(0)], ["3 derniers mois", m(-3), m(-1)], ["Année " + t.getFullYear(), t.getFullYear() + "-01", t.getFullYear() + "-12"], ["Tout", "", ""]];
   const sl = { minHeight: 28, borderRadius: 7, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: 12, fontFamily: T.font };

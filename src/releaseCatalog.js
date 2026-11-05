@@ -705,4 +705,8 @@ export const RELEASE_CATALOG = [
     ["KPI", "Objectifs calculés sur la période choisie : mois dernier, mois en cours, 3 derniers mois, année, ou du … au ….", "admin"],
     ["KPI › Dérives", "Vue CODIR : « Mois dernier » ne prend plus que les jalons promis le mois dernier (l'ancien « Mois passés » prenait tous les mois précédents).", "admin"],
   ] },
+  { v: "281", t: "Refonte des KPI : réponse, preuve, action", items: [
+    ["KPI", "Chaque sous-onglet commence par la réponse en une phrase, calculée sur le planning publié, puis les chiffres face aux objectifs (barre, trait d'objectif, écart) et un graphique choisi pour la question, enfin « À faire » avec les PJ concernés. « Voir en tableau » sur chaque graphique ; l'ancien contenu reste dessous en « Détail ».", "admin"],
+    ["KPI › Explorer", "Une mesure (machines, départs, arrivées, tests terminés, fins de production) par mois, gamme, pays, chef de projet ou état, en barres triées.", "admin"],
+  ] },
 ];

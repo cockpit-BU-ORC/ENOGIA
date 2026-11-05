@@ -2002,3 +2002,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Données : `planning/tests.debugModel.sections` (document déjà couvert par les règles).
 - Pas de nouvelle clé `localStorage`.
 - Fichiers : checklistImport.js, components/ChecklistsView.js (nouveaux), debugChecklist.js (+ test), components/DebugChecklist.js, components/TestsTab.js, components/RowDetail.js, kpiTargets.js (+ test), components/KpiHead.js, components/ManagerPanel.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v281 — Refonte des KPI (réponse, preuve, action)
+
+- Demandé : « Oui, code-la » (maquette « Refonte KPI »).
+- KPI : sur chaque sous-onglet, la réponse en une phrase calculée sur le planning publié, les chiffres face aux objectifs, un graphique adapté à la question (avec « Voir en tableau »), puis « À faire ». L'ancien contenu reste dessous (« Détail »), sauf la Synthèse dont l'ancien tableau de pilotage est remplacé.
+- Explorer : mesure × découpage × machines en barres triées.
+- Pas de nouvelle donnée, pas de nouvelle clé `localStorage`.
+- Fichiers : kpiStory.js (+ test), components/KpiStory.js (nouveaux), components/ManagerPanel.js, components/KpiHead.js, theme.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

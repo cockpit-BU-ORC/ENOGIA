@@ -20,6 +20,8 @@ const SEMANTIC_LIGHT = {
   amber600:"#8A5700", amber500:"#F9A620", amber100:"#FDF0D5",
   emerald600:"#3B6620", emerald500:"#548C2F", emerald100:"#E6F0DF",
   violet600:"#6249A3", violet500:"#7C63B8", violet100:"#EEEAF8",
+  // v281 : graphiques KPI — 3 séries catégorielles validées par le script du skill dataviz (CVD ΔE ≥ 9,2, clair et sombre) + dégradé de charge d'une seule teinte
+  dv1:"#2a78d6", dv2:"#eb6834", dv3:"#1baf7a", dvSeq2:"#B9D3F3", dvSeq3:"#7FAEE6", dvSeq4:"#3E84D6", dvSeq5:"#1F5FAE",
   red600:"#A82F15", red500:"#B8331A", red100:"#FEE6DF", redFill:"#B8331A", // v177 : tomate assombrie pour rester lisible en texte (≥ 4,5:1) et sous texte blanc
   ember600:"#8E4A12", ember500:"#EE964B", ember100:"#FCEBDD",
   info600:"#2557B8", info500:"#3F72D6", info100:"#E6EEFC", // v139 : bleu = information (identique dans tous les thèmes)
@@ -42,6 +44,7 @@ const SEMANTIC_DARK = {
   amber600:"#FFD27A", amber500:"#F9A620", amber100:"#3A3020",
   emerald600:"#A8D68A", emerald500:"#7FB55A", emerald100:"#22331C",
   violet600:"#BBA9EE", violet500:"#8A72C8", violet100:"#312A50",
+  dv1:"#3987e5", dv2:"#d95926", dv3:"#199e70", dvSeq2:"#294A7A", dvSeq3:"#2F64A8", dvSeq4:"#3E84D6", dvSeq5:"#7FAEE6",
   red600:"#FFAE9C", red500:"#FF957D", red100:"#432823", redFill:"#B83A20", // v139 : red500 éclairci (texte rouge ≥ 4,5:1 sur les fonds sombres) ; redFill = fond plein sous texte blanc
   ember600:"#F5B888", ember500:"#EE964B", ember100:"#3D2D21",
   info600:"#A5BEEE", info500:"#6E93DC", info100:"#232F4A",

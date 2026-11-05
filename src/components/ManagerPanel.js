@@ -15,8 +15,10 @@ import { PointHebdo } from "./PointHebdo";
 import { InitialAddReview } from "./InitialAdd";
 import { SanteTab } from "./Feux";
 import { SerieTab } from "./Series";
-import { KpiPilotage, planWeeks, loadWeeks } from "./KpiPilotage";
-import { KpiHead, monthLab } from "./KpiHead";
+import { planWeeks, loadWeeks } from "./KpiPilotage";
+import { monthLab } from "./KpiHead";
+import { KpiStory } from "./KpiStory";
+import { weekNum } from "../kpiStory";
 import { targetsOf, kpiMetrics } from "../kpiTargets";
 import { KpiDerivesHead, KpiSemaines } from "./KpiViews";
 import { KpiBilan } from "./KpiBilan";
@@ -92,18 +94,9 @@ export function ManagerPanel({planDoc,initialAddFromImport,onOpenCashPage,onNav,
   const kpiSel={from:kpiFrom,to:kpiTo,set:(a,b)=>{setKpiFrom(a);setKpiTo(b);},months:kpiMonths};
   const perLab=kpiFrom||kpiTo?(kpiFrom===kpiTo?monthLab(kpiFrom):(kpiFrom?monthLab(kpiFrom):"début")+" → "+(kpiTo?monthLab(kpiTo):"fin")):"";
   const w4h=(()=>{try{const ws=loadWeeks(fk,closurePeriods,productionExclusions,175,planDoc&&planDoc.plan,4,new Date()) /* 175 h = CAPA_ATELIER_SEM, déclarée plus bas */;const h=ws.reduce((a,w)=>a+w.hours,0),c=ws.reduce((a,w)=>a+w.cap,0);return c?Math.round(h/c*100):null;}catch(e){return null;}})();
-  const stepNow=stepSummary.find(x=>x.k===kpiStep)||{};
-  const prevLab=perLab||(()=>{const [y,m]=kpiM.prevMonth.split("-");return MONTHS[+m-1]+" "+y;})();
-  const multi=kpiM.months.length>1;
-  const KPI_HEADS={
-    synthese:{q:"Livre-t-on à l'heure, et l'atelier tient-il ?",p:"aujourd'hui, planning publié",how:"filtres du Manager appliqués ; méthode de chaque chiffre au survol du « i »",items:[["tenus",kpiM.tenus,perLab?"Tenus à date · départs promis "+perLab:null],["derive",kpiM.derive,perLab?"Dérive moyenne · "+perLab:null],["charge",w4h],["livraisons",kpiM.livraisons,(multi?"Expédiées par mois · ":"Expédiées · ")+prevLab+(multi?" ("+kpiM.shippedTotal+" au total)":"")]],sel:true},
-    bilan:{q:"Qu'a-t-on tenu les mois passés, que faut-il tenir maintenant ?",p:"deux mois passés, le mois en cours et le suivant",how:"jalons du planning publié, « fait » quand l'état de la machine a suivi",items:[["realisation",kpiM.realisation,"Jalons tenus · "+prevLab],["livraisons",kpiM.livraisons,(multi?"Expédiées par mois · ":"Expédiées · ")+prevLab+(multi?" ("+kpiM.shippedTotal+" au total)":"")]],sel:true},
-    semaines:{q:"Que faut-il décider dans les 8 prochaines semaines ?",p:"8 semaines à partir d'aujourd'hui",how:"charge du planificateur (sinon du planning), départs, bancs, décisions",items:[["charge",w4h]]},
-    derives:{q:"Tient-on les dates promises au client ?",p:(codirFrom||codirTo?"jalons promis "+(codirFrom?"de "+codirFrom:"")+(codirTo?" à "+codirTo:""):"toutes les dates promises")+" · "+(codirScope==="all"?"toutes les machines":codirScope==="shipped"?"machines expédiées":"machines en cours"),how:"écart = date actuelle − date du planning initial",items:[["tenus",stepNow.pct,"Tenus à date ("+(STEP_LABELS[kpiStep]||"").toLowerCase()+")"],["derive",(()=>{const ds=comparable.map(r=>r[kpiStep].delta).filter(d=>d!=null);return ds.length?Math.round(ds.reduce((x,y)=>x+y,0)/ds.length*10)/10:null;})(),"Dérive moyenne ("+(STEP_LABELS[kpiStep]||"").toLowerCase()+")"]]},
-    charge:{q:"L'atelier peut-il absorber ce qui arrive ?",p:"les semaines à venir",how:"heures planifiées ÷ capacité de la semaine (jours fermés et sans production déduits)",items:[["charge",w4h]]},
-    avancement:{q:"Les machines avancent-elles ?",p:"PJ ouverts",how:"avancement saisi par étape (Avant production → Départ)",items:[["tenus",kpiM.tenus,perLab?"Tenus à date · départs promis "+perLab:null]],sel:true},
-    explorer:{q:"Explorer le portefeuille",p:"tout le planning publié, filtres du Manager",how:"répartitions et comptages libres, sans objectif",items:[]},
-  };
+  // v281 : semaines de charge pour les récits KPI (planificateur si disponible, sinon planning ; 175 h = CAPA_ATELIER_SEM)
+  const kpiWeeks=n=>{try{return loadWeeks(fk,closurePeriods,productionExclusions,175,planDoc&&planDoc.plan,n,new Date()).map(w=>({...w,lab:"S"+String(weekNum(new Date(w.a))).padStart(2,"0")}));}catch(e){return [];}};
+  // v281 : les en-têtes V279 (KPI_HEADS) sont remplacés par les récits de KpiStory;
   // v275 (demandé : « plus de graphiques comme dans l'explorer : arrivées par mois, tests par mois… ») : jalons par mois, initial vs révisé, 12 mois glissants
   const monthsBy=(()=>{const base=new Date(today.getFullYear(),today.getMonth()-5,1),list=[];for(let i=0;i<12;i++){const d=new Date(base.getFullYear(),base.getMonth()+i,1);list.push({key:d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"),mois:MONTHS[d.getMonth()]+(d.getMonth()===0||i===0?" "+String(d.getFullYear()).slice(2):"")});}
     const km=v=>{if(!v)return null;const d=new Date(v);return isNaN(d)?null:d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");};
@@ -426,11 +419,12 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
     <div key={tab+(tab==="derives"?"/"+kpiTab:"")} className="enogia-view-in" style={{minWidth:0}}>
     {/* v279 (skill kpi-dashboard-design, demandé : « tous les sous-onglets KPI, avec des objectifs chiffrés ») : chaque sous-onglet dit
         la question à laquelle il répond, sa période, sa méthode, et met ses chiffres face aux objectifs (réglables : « Objectifs ») */}
-    {me&&tab==="derives"&&(()=>{const H=KPI_HEADS[kpiTab];if(!H)return null;return <KpiHead question={H.q} period={H.p} how={H.how} items={H.items} targets={kpiTg} sel={H.sel?kpiSel:null} onSaveTargets={saveProfiles?(o=>saveProfiles({...(profiles||{}),kpiTargets:o})):null}/>;})()}
-    {me&&tab==="derives"&&kpiTab==="synthese"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
-      {/* v215 (maquette A validée) : tableau de pilotage — 5 chiffres, PJ à risque, charge des 6 semaines, portefeuille par état */}
-      <KpiPilotage rows={fk} driftRows={driftRows} closurePeriods={closurePeriods} productionExclusions={productionExclusions} capaWeek={CAPA_ATELIER_SEM} plan={planDoc&&planDoc.plan} hasInitial={hasInitial} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}} onSeeDerives={()=>setKpiTab("derives")}/>
-    </div>}
+    {/* v281 (maquette « Refonte KPI » validée) : chaque sous-onglet commence par son récit — réponse, preuve (objectifs, graphique), à faire ;
+        le contenu détaillé d'avant reste dessous comme « détail » */}
+    {me&&tab==="derives"&&<KpiStory tab={kpiTab} rows={fk} driftRows={driftRows} targets={kpiTg} metrics={{...kpiM,charge:w4h}} saveTargets={saveProfiles?(o=>saveProfiles({...(profiles||{}),kpiTargets:o})):null} sel={kpiSel} periodLabel={perLab} scopeLabel={codirScope==="all"?"toutes les machines":codirScope==="shipped"?"machines expédiées":"machines en cours"}
+      weeks6={kpiWeeks(6)} weeks8={kpiWeeks(8)} weeks12={kpiWeeks(12)} notes={(profiles&&profiles.monthNotes)||{}} stepSummary={stepSummary} comparable={comparable} kpiStep={kpiStep} stepLabels={STEP_LABELS} progress={progress||{}} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}}/>}
+    {me&&tab==="derives"&&kpiTab!=="synthese"&&<div style={{fontSize:12,fontWeight:700,color:T.ink500,margin:"4px 0 8px",display:"flex",alignItems:"center",gap:8}}>Détail<span style={{flex:1,height:1,background:T.line}}/></div>}
+    {/* v281 : l'ancien tableau de pilotage (KpiPilotage) est remplacé par le récit de la Synthèse ci-dessus */}
 
     {/* v274 : bilan mensuel — réalisé des deux derniers mois, objectifs du mois en cours et du suivant */}
     {me&&tab==="derives"&&kpiTab==="bilan"&&<KpiBilan rows={fk} initialByPJ={initialByPJ} profiles={profiles} saveProfiles={saveProfiles} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}}/>}
