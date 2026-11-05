@@ -38,7 +38,22 @@ function TargetsDialog({ targets, onSave, onClose }) {
   </div>);
 }
 // question = ce que la page permet de décider ; period = fenêtre de temps ; how = méthode ; items = [[clé, valeur, libellé?]]
-export function KpiHead({ question, period, how, items, targets, onSaveTargets }) {
+// v280 : choix de la période des objectifs (un mois ou plusieurs) — sel = { from, to, set(from, to), months: [AAAA-MM] }
+const MOIS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+export const monthLab = k => { if (!k) return ""; const [y, m] = k.split("-"); return MOIS[+m - 1] + " " + y; };
+const mkey = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+function PeriodPicker({ sel }) {
+  const t = new Date(), m = n => mkey(new Date(t.getFullYear(), t.getMonth() + n, 1));
+  const presets = [["Mois dernier", m(-1), m(-1)], ["Mois en cours", m(0), m(0)], ["3 derniers mois", m(-3), m(-1)], ["Année " + t.getFullYear(), t.getFullYear() + "-01", t.getFullYear() + "-12"], ["Tout", "", ""]];
+  const sl = { minHeight: 28, borderRadius: 7, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: 12, fontFamily: T.font };
+  return <div role="group" aria-label="Période des objectifs" style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", width: "100%" }}>
+    <span style={{ fontSize: 12, fontWeight: 600, color: T.ink500 }}>Période :</span>
+    {presets.map(([l, a, b]) => { const on = sel.from === a && sel.to === b; return <button key={l} type="button" aria-pressed={on} onClick={() => sel.set(a, b)} style={{ border: "1px solid " + (on ? T.ink900 : T.line), borderRadius: 7, minHeight: 28, padding: "0 10px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: T.font, background: on ? T.ink900 : T.card, color: on ? T.card : T.ink700 }}>{l}</button>; })}
+    <label style={{ fontSize: 12, color: T.ink500, display: "inline-flex", alignItems: "center", gap: 4 }}>du<select value={sel.from} onChange={e => sel.set(e.target.value, sel.to && sel.to < e.target.value ? e.target.value : sel.to)} style={sl}><option value="">début</option>{sel.months.map(k => <option key={k} value={k}>{monthLab(k)}</option>)}</select></label>
+    <label style={{ fontSize: 12, color: T.ink500, display: "inline-flex", alignItems: "center", gap: 4 }}>au<select value={sel.to} onChange={e => sel.set(sel.from && sel.from > e.target.value && e.target.value ? e.target.value : sel.from, e.target.value)} style={sl}><option value="">fin</option>{sel.months.map(k => <option key={k} value={k}>{monthLab(k)}</option>)}</select></label>
+  </div>;
+}
+export function KpiHead({ question, period, how, items, targets, onSaveTargets, sel }) {
   const [open, setOpen] = useState(false);
   return (<section aria-label="Question et objectifs de la page" style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "10px 14px", marginBottom: 12, display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
     <div style={{ flex: "1 1 320px", minWidth: 0 }}>
@@ -47,6 +62,7 @@ export function KpiHead({ question, period, how, items, targets, onSaveTargets }
     </div>
     {(items || []).length > 0 && <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>{items.map(([k, v, l]) => <TargetChip key={k} k={k} v={v} label={l} targets={targets} />)}</div>}
     {onSaveTargets && <button type="button" onClick={() => setOpen(true)} style={{ minHeight: 30, padding: "0 12px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink700, fontWeight: 700, fontSize: 12.5, cursor: "pointer", fontFamily: T.font }}>Objectifs</button>}
+    {sel && <PeriodPicker sel={sel} />}
     {open && <TargetsDialog targets={targets} onSave={onSaveTargets} onClose={() => setOpen(false)} />}
   </section>);
 }

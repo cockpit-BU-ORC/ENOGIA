@@ -16,7 +16,7 @@ import { InitialAddReview } from "./InitialAdd";
 import { SanteTab } from "./Feux";
 import { SerieTab } from "./Series";
 import { KpiPilotage, planWeeks, loadWeeks } from "./KpiPilotage";
-import { KpiHead } from "./KpiHead";
+import { KpiHead, monthLab } from "./KpiHead";
 import { targetsOf, kpiMetrics } from "../kpiTargets";
 import { KpiDerivesHead, KpiSemaines } from "./KpiViews";
 import { KpiBilan } from "./KpiBilan";
@@ -85,17 +85,23 @@ export function ManagerPanel({planDoc,initialAddFromImport,onOpenCashPage,onNav,
     return{k,l:STEP_LABELS[k],n:ds.length,ok:ds.length-late.length,late:late.length,pct:ds.length?Math.round((ds.length-late.length)/ds.length*100):null,avg:late.length?Math.round(late.reduce((a,b)=>a+b,0)/late.length):0,crit:late.filter(d=>d>30).length,
       worst:base.filter(r=>r[k].delta!=null&&r[k].delta>0).sort((a,b)=>b[k].delta-a[k].delta).slice(0,3).map(r=>r.pj+" +"+r[k].delta+"j")};});
   // v279 : objectifs et mesures des en-têtes KPI
-  const kpiTg=targetsOf(profiles),kpiM=kpiMetrics(fk,driftRows);
+  // v280 : période des objectifs (un mois ou plusieurs) — vide = tout le portefeuille / mois écoulé
+  const [kpiFrom,setKpiFrom]=useState(""),[kpiTo,setKpiTo]=useState("");
+  const kpiTg=targetsOf(profiles),kpiM=kpiMetrics(fk,driftRows,new Date(),kpiFrom,kpiTo);
+  const kpiMonths=(()=>{const s=new Set();fk.forEach(r=>["arrivee","tests","finProd","depart"].forEach(k=>{const v=r[k];if(v){const d=new Date(v);if(!isNaN(d))s.add(d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"));}}));return [...s].sort();})();
+  const kpiSel={from:kpiFrom,to:kpiTo,set:(a,b)=>{setKpiFrom(a);setKpiTo(b);},months:kpiMonths};
+  const perLab=kpiFrom||kpiTo?(kpiFrom===kpiTo?monthLab(kpiFrom):(kpiFrom?monthLab(kpiFrom):"début")+" → "+(kpiTo?monthLab(kpiTo):"fin")):"";
   const w4h=(()=>{try{const ws=loadWeeks(fk,closurePeriods,productionExclusions,175,planDoc&&planDoc.plan,4,new Date()) /* 175 h = CAPA_ATELIER_SEM, déclarée plus bas */;const h=ws.reduce((a,w)=>a+w.hours,0),c=ws.reduce((a,w)=>a+w.cap,0);return c?Math.round(h/c*100):null;}catch(e){return null;}})();
   const stepNow=stepSummary.find(x=>x.k===kpiStep)||{};
-  const prevLab=(()=>{const [y,m]=kpiM.prevMonth.split("-");return MONTHS[+m-1]+" "+y;})();
+  const prevLab=perLab||(()=>{const [y,m]=kpiM.prevMonth.split("-");return MONTHS[+m-1]+" "+y;})();
+  const multi=kpiM.months.length>1;
   const KPI_HEADS={
-    synthese:{q:"Livre-t-on à l'heure, et l'atelier tient-il ?",p:"aujourd'hui, planning publié",how:"filtres du Manager appliqués ; méthode de chaque chiffre au survol du « i »",items:[["tenus",kpiM.tenus],["derive",kpiM.derive],["charge",w4h],["livraisons",kpiM.livraisons,"Expédiées en "+prevLab]]},
-    bilan:{q:"Qu'a-t-on tenu les mois passés, que faut-il tenir maintenant ?",p:"deux mois passés, le mois en cours et le suivant",how:"jalons du planning publié, « fait » quand l'état de la machine a suivi",items:[["realisation",kpiM.realisation,"Jalons tenus en "+prevLab],["livraisons",kpiM.livraisons,"Expédiées en "+prevLab]]},
+    synthese:{q:"Livre-t-on à l'heure, et l'atelier tient-il ?",p:"aujourd'hui, planning publié",how:"filtres du Manager appliqués ; méthode de chaque chiffre au survol du « i »",items:[["tenus",kpiM.tenus,perLab?"Tenus à date · départs promis "+perLab:null],["derive",kpiM.derive,perLab?"Dérive moyenne · "+perLab:null],["charge",w4h],["livraisons",kpiM.livraisons,(multi?"Expédiées par mois · ":"Expédiées · ")+prevLab+(multi?" ("+kpiM.shippedTotal+" au total)":"")]],sel:true},
+    bilan:{q:"Qu'a-t-on tenu les mois passés, que faut-il tenir maintenant ?",p:"deux mois passés, le mois en cours et le suivant",how:"jalons du planning publié, « fait » quand l'état de la machine a suivi",items:[["realisation",kpiM.realisation,"Jalons tenus · "+prevLab],["livraisons",kpiM.livraisons,(multi?"Expédiées par mois · ":"Expédiées · ")+prevLab+(multi?" ("+kpiM.shippedTotal+" au total)":"")]],sel:true},
     semaines:{q:"Que faut-il décider dans les 8 prochaines semaines ?",p:"8 semaines à partir d'aujourd'hui",how:"charge du planificateur (sinon du planning), départs, bancs, décisions",items:[["charge",w4h]]},
     derives:{q:"Tient-on les dates promises au client ?",p:(codirFrom||codirTo?"jalons promis "+(codirFrom?"de "+codirFrom:"")+(codirTo?" à "+codirTo:""):"toutes les dates promises")+" · "+(codirScope==="all"?"toutes les machines":codirScope==="shipped"?"machines expédiées":"machines en cours"),how:"écart = date actuelle − date du planning initial",items:[["tenus",stepNow.pct,"Tenus à date ("+(STEP_LABELS[kpiStep]||"").toLowerCase()+")"],["derive",(()=>{const ds=comparable.map(r=>r[kpiStep].delta).filter(d=>d!=null);return ds.length?Math.round(ds.reduce((x,y)=>x+y,0)/ds.length*10)/10:null;})(),"Dérive moyenne ("+(STEP_LABELS[kpiStep]||"").toLowerCase()+")"]]},
     charge:{q:"L'atelier peut-il absorber ce qui arrive ?",p:"les semaines à venir",how:"heures planifiées ÷ capacité de la semaine (jours fermés et sans production déduits)",items:[["charge",w4h]]},
-    avancement:{q:"Les machines avancent-elles ?",p:"PJ ouverts",how:"avancement saisi par étape (Avant production → Départ)",items:[["tenus",kpiM.tenus]]},
+    avancement:{q:"Les machines avancent-elles ?",p:"PJ ouverts",how:"avancement saisi par étape (Avant production → Départ)",items:[["tenus",kpiM.tenus,perLab?"Tenus à date · départs promis "+perLab:null]],sel:true},
     explorer:{q:"Explorer le portefeuille",p:"tout le planning publié, filtres du Manager",how:"répartitions et comptages libres, sans objectif",items:[]},
   };
   // v275 (demandé : « plus de graphiques comme dans l'explorer : arrivées par mois, tests par mois… ») : jalons par mois, initial vs révisé, 12 mois glissants
@@ -420,7 +426,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
     <div key={tab+(tab==="derives"?"/"+kpiTab:"")} className="enogia-view-in" style={{minWidth:0}}>
     {/* v279 (skill kpi-dashboard-design, demandé : « tous les sous-onglets KPI, avec des objectifs chiffrés ») : chaque sous-onglet dit
         la question à laquelle il répond, sa période, sa méthode, et met ses chiffres face aux objectifs (réglables : « Objectifs ») */}
-    {me&&tab==="derives"&&(()=>{const H=KPI_HEADS[kpiTab];if(!H)return null;return <KpiHead question={H.q} period={H.p} how={H.how} items={H.items} targets={kpiTg} onSaveTargets={saveProfiles?(o=>saveProfiles({...(profiles||{}),kpiTargets:o})):null}/>;})()}
+    {me&&tab==="derives"&&(()=>{const H=KPI_HEADS[kpiTab];if(!H)return null;return <KpiHead question={H.q} period={H.p} how={H.how} items={H.items} targets={kpiTg} sel={H.sel?kpiSel:null} onSaveTargets={saveProfiles?(o=>saveProfiles({...(profiles||{}),kpiTargets:o})):null}/>;})()}
     {me&&tab==="derives"&&kpiTab==="synthese"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
       {/* v215 (maquette A validée) : tableau de pilotage — 5 chiffres, PJ à risque, charge des 6 semaines, portefeuille par état */}
       <KpiPilotage rows={fk} driftRows={driftRows} closurePeriods={closurePeriods} productionExclusions={productionExclusions} capaWeek={CAPA_ATELIER_SEM} plan={planDoc&&planDoc.plan} hasInitial={hasInitial} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}} onSeeDerives={()=>setKpiTab("derives")}/>
@@ -605,7 +611,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
               {[["all","Toutes"],["open","En cours"],["shipped","Expédiées"]].map(([k,l])=><button key={k} type="button" aria-pressed={codirScope===k} onClick={()=>setCodirScope(k)} style={{border:"none",borderRadius:7,minHeight:28,padding:"0 12px",fontSize:12.5,fontWeight:700,cursor:"pointer",fontFamily:T.font,background:codirScope===k?T.card:"transparent",color:codirScope===k?T.ink900:T.ink500,boxShadow:codirScope===k?"0 1px 2px rgba(0,0,0,.08)":"none"}}>{l}</button>)}
             </div>
             <span style={{fontSize:12,color:T.ink500,fontWeight:600,marginLeft:8}}>Mois promis :</span>
-            {[["Tout","",""],["Année "+today.getFullYear(),today.getFullYear()+"-01",today.getFullYear()+"-12"],["6 derniers mois",mKey(new Date(today.getFullYear(),today.getMonth()-5,1)),mKey(today)],["Mois passés","",mKey(new Date(today.getFullYear(),today.getMonth()-1,1))]].map(([l,a,b])=>{const on=codirFrom===a&&codirTo===b;return <button key={l} type="button" aria-pressed={on} onClick={()=>{setCodirFrom(a);setCodirTo(b);}} style={{border:"1px solid "+(on?T.ink900:T.line),borderRadius:7,minHeight:28,padding:"0 10px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:T.font,background:on?T.ink900:T.card,color:on?T.card:T.ink700}}>{l}</button>;})}
+            {/* v280 (signalé : « mois passé = 6/22 arrivées tenues alors que je n’en avais pas 22 de prévues ») : « Mois passés » prenait tous les mois jusqu’au mois dernier ; remplacé par des raccourcis d’un mois ou de quelques mois fermés */}{[["Mois dernier",mKey(new Date(today.getFullYear(),today.getMonth()-1,1)),mKey(new Date(today.getFullYear(),today.getMonth()-1,1))],["Mois en cours",mKey(today),mKey(today)],["3 derniers mois",mKey(new Date(today.getFullYear(),today.getMonth()-3,1)),mKey(new Date(today.getFullYear(),today.getMonth()-1,1))],["Année "+today.getFullYear(),today.getFullYear()+"-01",today.getFullYear()+"-12"],["Tout","",""]].map(([l,a,b])=>{const on=codirFrom===a&&codirTo===b;return <button key={l} type="button" aria-pressed={on} onClick={()=>{setCodirFrom(a);setCodirTo(b);}} style={{border:"1px solid "+(on?T.ink900:T.line),borderRadius:7,minHeight:28,padding:"0 10px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:T.font,background:on?T.ink900:T.card,color:on?T.card:T.ink700}}>{l}</button>;})}
             <label style={{fontSize:12,color:T.ink500,display:"inline-flex",alignItems:"center",gap:4}}>du<select value={codirFrom} onChange={e=>setCodirFrom(e.target.value)} style={{minHeight:28,borderRadius:7,border:"1px solid "+T.line,background:T.card,color:T.ink900,fontSize:12,fontFamily:T.font}}><option value="">début</option>{codirMonths.map(k=><option key={k} value={k}>{mLab(k)}</option>)}</select></label>
             <label style={{fontSize:12,color:T.ink500,display:"inline-flex",alignItems:"center",gap:4}}>au<select value={codirTo} onChange={e=>setCodirTo(e.target.value)} style={{minHeight:28,borderRadius:7,border:"1px solid "+T.line,background:T.card,color:T.ink900,fontSize:12,fontFamily:T.font}}><option value="">fin</option>{codirMonths.map(k=><option key={k} value={k}>{mLab(k)}</option>)}</select></label>
             <span style={{fontSize:12,color:T.ink500}}>{comparable.length} machine{comparable.length>1?"s":""} ({STEP_LABELS[kpiStep].toLowerCase()} promis{codirFrom||codirTo?" "+(codirFrom?"de "+mLab(codirFrom):"")+(codirTo?" à "+mLab(codirTo):""):""}) · s'applique à toute la vue CODIR</span>

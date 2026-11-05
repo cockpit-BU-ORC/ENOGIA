@@ -19,12 +19,19 @@ export function judge(k, v, targets) {
   const gap = d.dir === "min" ? v - t : t - v;
   return { ok: gap >= 0, gap: Math.round(gap * 10) / 10, target: t };
 }
-// Mesures communes aux sous-onglets
-export function kpiMetrics(rows, driftRows, today = new Date()) {
-  const comp = (driftRows || []).filter(r => r.hasInitial && r.depart && r.depart.delta != null);
+// Mesures communes aux sous-onglets. v280 (demandé : « choisir les données des objectifs par mois ou sur plusieurs mois ») :
+// période from..to (AAAA-MM, inclus). PJ tenus à date et dérive : PJ dont le départ PROMIS (planning initial) tombe dans la période ;
+// jalons tenus : faits ÷ (faits + en retard) sur les mois de la période ; expédiées : moyenne par mois (et total).
+// Sans période : tenus / dérive sur tout le portefeuille, mois écoulé pour les jalons et les expédiées.
+const mk = v => { if (!v) return ""; const d = new Date(v); return isNaN(d) ? "" : d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"); };
+export function monthsBetween(from, to) { const out = []; if (!from || !to || from > to) return out; let k = from; while (k <= to && out.length < 60) { out.push(k); k = addMonths(k, 1); } return out; }
+export function kpiMetrics(rows, driftRows, today = new Date(), from = "", to = "") {
+  const inP = k => !!k && (!from || k >= from) && (!to || k <= to);
+  const comp = (driftRows || []).filter(r => r.hasInitial && r.depart && r.depart.delta != null && (!from && !to ? true : inP(mk(r.depart.ini))));
   const tenus = comp.length ? Math.round(comp.filter(r => r.depart.delta <= 0).length / comp.length * 100) : null;
   const derive = comp.length ? Math.round(comp.reduce((a, r) => a + r.depart.delta, 0) / comp.length * 10) / 10 : null;
-  const prev = addMonths(monthKey(today), -1), mr = monthReview(rows, null, prev, today);
-  const realisation = mr.done + mr.late ? Math.round(mr.done / (mr.done + mr.late) * 100) : null;
-  return { tenus, derive, realisation, livraisons: mr.shipped, prevMonth: prev, nComp: comp.length };
+  const prev = addMonths(monthKey(today), -1);
+  const months = from || to ? monthsBetween(from || to, to || from) : [prev];
+  let done = 0, late = 0, shipped = 0; months.forEach(k => { const m = monthReview(rows, null, k, today); done += m.done; late += m.late; shipped += m.shipped; });
+  return { tenus, derive, realisation: done + late ? Math.round(done / (done + late) * 100) : null, livraisons: months.length ? Math.round(shipped / months.length * 10) / 10 : null, shippedTotal: shipped, months, prevMonth: prev, nComp: comp.length };
 }

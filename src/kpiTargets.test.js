@@ -15,3 +15,11 @@ test("mesures : tenus à date, dérive moyenne, mois écoulé", () => {
   const m = kpiMetrics(rows, drift, new Date(2026, 10, 5));
   expect(m).toMatchObject({ tenus: 67, derive: 2, livraisons: 1, prevMonth: "2026-10", realisation: 50 });
 });
+test("période : un mois ou plusieurs (départs promis dans la période, moyenne mensuelle des expédiées)", () => {
+  const drift = [{ hasInitial: true, depart: { ini: "2026-09-10", delta: 0 } }, { hasInitial: true, depart: { ini: "2026-10-10", delta: 12 } }];
+  const rows = [{ pj: "PJ1", etat: "SHIPPED", depart: "2026-09-12" }, { pj: "PJ2", etat: "SHIPPED", depart: "2026-10-20" }, { pj: "PJ3", etat: "SHIPPED", depart: "2026-10-22" }];
+  const one = kpiMetrics(rows, drift, new Date(2026, 10, 5), "2026-10", "2026-10");
+  expect(one).toMatchObject({ tenus: 0, derive: 12, livraisons: 2, months: ["2026-10"] });
+  const two = kpiMetrics(rows, drift, new Date(2026, 10, 5), "2026-09", "2026-10");
+  expect(two).toMatchObject({ tenus: 50, livraisons: 1.5, shippedTotal: 3 });
+});

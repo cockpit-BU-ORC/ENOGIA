@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v280",
+    date: "2026-11-05",
+    title: "V280 : page Checklists et période des objectifs",
+    items: [
+      { t: "Tests › Checklists", d: "Importez une checklist de debug (Word ou Excel) et modifiez ses lignes ; elle s'applique à toutes les machines.", admin: true },
+      { t: "KPI", d: "Objectifs sur un mois ou plusieurs ; vue CODIR « Mois dernier » corrigée.", admin: true },
+    ],
+  },
+  {
     id: "2026-11-v279",
     date: "2026-11-05",
     title: "V279 : objectifs chiffrés des KPI",

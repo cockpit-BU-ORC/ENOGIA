@@ -42,20 +42,14 @@ export const DEBUG_SECTIONS = [
 export const DEBUG_ITEMS = DEBUG_SECTIONS.flatMap(s => s.items);
 export const DEBUG_FIELDS = [["pb", "Problème rencontré"], ["cause", "Causalité"], ["fix", "Correctif"], ["temps", "Temps correctif"]];
 
-// v278 (demandé : « pouvoir ajouter ou enlever des éléments de la liste de debug ») : sections effectives =
-// modèle Word − lignes retirées + lignes ajoutées, à deux niveaux :
-//  · modèle commun (admins) : planning/tests.debugModel = { removed: [id], added: [{ id, section, label, hint, opt }] } ;
-//  · une machine : plans[PJ].debug.hide = [id] et plans[PJ].debug.extra = [{ id, section, label, hint, opt }].
-export function debugSections(model, debug) {
-  const m = model || {}, d = debug || {};
-  const removed = new Set([...(m.removed || []), ...(d.hide || [])]);
-  const add = [...(m.added || []).map(x => ({ ...x, scope: "model" })), ...(d.extra || []).map(x => ({ ...x, scope: "pj" }))];
-  return DEBUG_SECTIONS.map(s => ({ ...s, items: [...s.items.filter(i => !removed.has(i.id)), ...add.filter(a => a.section === s.id && !removed.has(a.id)).map(a => ({ id: a.id, label: a.label, hint: a.hint || "", opt: !!a.opt, custom: a.scope }))] }));
-}
-// Lignes retirées (pour les rétablir) : { id, label, section, scope: "model" | "pj" }
-export function debugRemoved(model, debug) {
-  const m = model || {}, d = debug || {}, all = [...DEBUG_ITEMS.map(i => ({ ...i, section: DEBUG_SECTIONS.find(s => s.items.includes(i)).id })), ...(m.added || []), ...(d.extra || [])];
-  return [...(m.removed || []).map(id => ({ id, scope: "model" })), ...(d.hide || []).map(id => ({ id, scope: "pj" }))].map(x => ({ ...x, ...(all.find(i => i.id === x.id) || { label: x.id }) , scope: x.scope }));
+// v280 (demandé : « une page pour importer une checklist, ajouter ou modifier des lignes ; impossible sur les PJ ») : le modèle de
+// debug se règle seulement dans Tests › Checklists (admins) : planning/tests.debugModel.sections = [{ id, title, items: [{ id, label, hint, opt }] }]
+// remplace le modèle Word d'origine. Ancien format V278 { removed, added } encore lu ; les réglages par machine (hide / extra) sont ignorés.
+export function debugSections(model) {
+  const m = model || {};
+  if (Array.isArray(m.sections) && m.sections.length) return m.sections.map(s => ({ id: s.id, title: s.title || "Section", items: (s.items || []).filter(i => i && i.label).map(i => ({ id: i.id, label: i.label, hint: i.hint || "", opt: !!i.opt })) }));
+  const removed = new Set(m.removed || []), add = m.added || [];
+  return DEBUG_SECTIONS.map(s => ({ ...s, items: [...s.items.filter(i => !removed.has(i.id)), ...add.filter(x => x.section === s.id && !removed.has(x.id)).map(x => ({ id: x.id, label: x.label, hint: x.hint || "", opt: !!x.opt }))] }));
 }
 export const debugNewId = () => "x" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
 // État d'avancement : lignes renseignées (OK, NOK ou S.O.), NOK, signée ou non — sur les sections effectives

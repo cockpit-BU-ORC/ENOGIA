@@ -14,6 +14,7 @@ import { SECTIONS, DEFAULT_TEST_CATALOG, catalogOf, testersOf, planOf, activeSec
 import { buildIcs, downloadIcs } from "../ics";
 import { usePointerDnD } from "../pointerDrag";
 import { DebugChecklistStep } from "./DebugChecklist";
+import { ChecklistsView } from "./ChecklistsView";
 import { nameFromEmail } from "../mentions";
 import { gcalUrl } from "../gcal";
 import { openTestReport } from "../testReport";
@@ -52,7 +53,7 @@ export function TestsTab({ doc, save, data, certifs, canEdit, lead, me, signApi 
   const conflicts = useMemo(() => findConflicts(doc, rows), [doc, rows]);
   const who = (myTester && myTester.name) || nameFromEmail(me || "");
   const commit = async next => { if (!canEdit && !myTester && !lead) return false; const ok = await save({ ...doc, ...next }); setMsg(ok === false ? "L'enregistrement a échoué." : null); return ok; };
-  const SUBS = [["semaine", "Par semaine"], ["testers", "Par testeur"], ...(canEdit ? [["catalog", "Catalogue"]] : [])];
+  const SUBS = [["semaine", "Par semaine"], ["testers", "Par testeur"], ...(canEdit ? [["catalog", "Catalogue"], ["checklists", "Checklists"]] : [])]; // v280 : modèle de la checklist de debug (import, ajout, modification)
   const openPj = pj => { setFocus({ pj, n: Date.now() }); setSub("semaine"); };
   return (<div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
@@ -70,6 +71,7 @@ export function TestsTab({ doc, save, data, certifs, canEdit, lead, me, signApi 
     {sub === "semaine" && <WeekBoard {...{ doc, rows, testers, catalog, conflicts, commit, certifs, canEdit, lead, myTester, focus, who, signApi }} />}
     {sub === "testers" && <TesterTimeline {...{ doc, rows, testers, catalog, conflicts, commit, canEdit, myTester, openPj, who }} />}
     {sub === "catalog" && canEdit && <CatalogView {...{ doc, catalog, commit }} />}
+    {sub === "checklists" && canEdit && <ChecklistsView doc={doc} commit={commit} />}
   </div>);
 }
 

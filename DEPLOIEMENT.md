@@ -1992,3 +1992,13 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - KPI : en-tête commun sur chaque sous-onglet (question, période, méthode, objectifs : valeur, objectif, écart) ; « Objectifs » pour les régler (propriétaire, `planning/profiles.kpiTargets`).
 - Pas de nouvelle clé `localStorage`. Règles Firestore inchangées.
 - Fichiers : kpiTargets.js (+ test), components/KpiHead.js (nouveaux), components/ManagerPanel.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v280 — Page Checklists, période des objectifs, vue CODIR corrigée
+
+- Demandé : « une page pour importer une checklist, ajouter ou modifier des lignes ; impossible sur les PJ » ; « choisir les données des objectifs par mois ou sur plusieurs mois » ; « vue CODIR : le mois passé ne devrait pas donner 6/22 arrivées tenues ».
+- Tests › Checklists (administrateurs) : import Word (format du modèle) ou Excel collé, édition des sections et contrôles, « Enregistrer », « Modèle d'origine ». Les fiches de tests des PJ n'ont plus « Modifier la liste ».
+- KPI : sélecteur de période sur les objectifs.
+- Vue CODIR : « Mois passés » prenait tous les mois jusqu'au mois dernier (d'où 22 arrivées) ; remplacé par « Mois dernier », « Mois en cours », « 3 derniers mois », « Année », « Tout ».
+- Données : `planning/tests.debugModel.sections` (document déjà couvert par les règles).
+- Pas de nouvelle clé `localStorage`.
+- Fichiers : checklistImport.js, components/ChecklistsView.js (nouveaux), debugChecklist.js (+ test), components/DebugChecklist.js, components/TestsTab.js, components/RowDetail.js, kpiTargets.js (+ test), components/KpiHead.js, components/ManagerPanel.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

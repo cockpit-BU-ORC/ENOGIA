@@ -700,4 +700,9 @@ export const RELEASE_CATALOG = [
   { v: "279", t: "Objectifs chiffrés sur tous les KPI", items: [
     ["KPI", "Chaque sous-onglet dit la question à laquelle il répond, sa période et sa méthode, et met ses chiffres face à des objectifs (PJ tenus à date, dérive moyenne, charge, jalons du mois tenus, machines expédiées) : vert si tenu, rouge avec l'écart sinon. Bouton « Objectifs » pour les régler.", "admin"],
   ] },
+  { v: "280", t: "Page Checklists, période des objectifs, vue CODIR corrigée", items: [
+    ["Tests › Checklists", "Modèle de la checklist de debug : importer un Word au format du modèle ou un tableau collé depuis Excel, ajouter, modifier, déplacer ou supprimer des sections et des contrôles. Il ne se modifie plus depuis un PJ.", "admin"],
+    ["KPI", "Objectifs calculés sur la période choisie : mois dernier, mois en cours, 3 derniers mois, année, ou du … au ….", "admin"],
+    ["KPI › Dérives", "Vue CODIR : « Mois dernier » ne prend plus que les jalons promis le mois dernier (l'ancien « Mois passés » prenait tous les mois précédents).", "admin"],
+  ] },
 ];

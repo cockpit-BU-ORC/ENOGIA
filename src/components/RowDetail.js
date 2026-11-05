@@ -70,7 +70,7 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
   const daysLeft = z ? Math.round((z - day0()) / 864e5) : null;
   // Tests et checklist de debug (page Tests)
   const plan = ctx.testsDoc ? planOf(ctx.testsDoc, r.pj) : null, catalog = ctx.testsDoc ? catalogOf(ctx.testsDoc) : null, act = activeSections(kind);
-  const tq = plan ? progressOf(plan, catalog, act) : null, dbgSecs = plan ? debugSections(ctx.testsDoc && ctx.testsDoc.debugModel, plan.debug) : null, dbg = plan ? debugProgress(plan.debug, dbgSecs) : null;
+  const tq = plan ? progressOf(plan, catalog, act) : null, dbgSecs = plan ? debugSections(ctx.testsDoc && ctx.testsDoc.debugModel) : null, dbg = plan ? debugProgress(plan.debug, dbgSecs) : null;
   const nokAll = (tq ? tq.ko : 0) + (dbg ? dbg.nok : 0); // échecs de tests + NOK de la checklist
   const testers = plan ? plan.assign.map(x => ((ctx.testsDoc.testers || []).find(t => t.id === x.tid) || {}).name).filter(Boolean) : [];
   // Cash (accès Cash in seulement) et contrat (admins ; montant avec l'accès Cash in)
