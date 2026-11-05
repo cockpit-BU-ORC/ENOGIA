@@ -10,10 +10,10 @@ const br = s => x(s).replace(/\n/g, "<br>");
 const frD = iso => { if (!iso) return ""; const d = new Date(String(iso).length <= 10 ? iso + "T12:00:00" : iso); return isNaN(d) ? "" : d.toLocaleDateString("fr-FR"); };
 export const debugPdfName = pj => DEBUG_DOC.ref + "-" + DEBUG_DOC.version + "-Check list debug - " + (pj || "PJ");
 
-export function debugHtml({ pj, date, name, debug, sign }) {
+export function debugHtml({ pj, date, name, debug, sign, sections = DEBUG_SECTIONS }) {
   const rows = (debug && debug.rows) || {};
   const mark = (r, v) => (r === v ? "X" : r === "na" && v === "ok" ? "S.O." : "");
-  const body = DEBUG_SECTIONS.map((s, si) => {
+  const body = sections.map((s, si) => {
     const heads = si === 0 ? [s.title, "OK", "NOK", "Problème rencontré", "Causalité", "Correctif", "Temps correctif", "Commentaires"] : [s.title, "OK", "NOK", "", "", "", "", "Commentaires"];
     return '<tr class="sec">' + heads.map((h, i) => "<th" + (i ? ' class="c"' : "") + ">" + x(h) + "</th>").join("") + "</tr>"
       + s.items.map(it => { const v = rows[it.id] || {};

@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v278",
+    date: "2026-11-05",
+    title: "V278 : checklist de debug modifiable",
+    items: [
+      { t: "Checklist de debug", d: "« Modifier la liste » : ajoutez ou retirez des lignes, pour une machine ou pour toutes." },
+      { t: "KPI", d: "Répartition des machines en camemberts, alertes « À surveiller », méthode de chaque chiffre.", admin: true },
+    ],
+  },
+  {
     id: "2026-11-v277",
     date: "2026-11-05",
     title: "V277 : fiche projet resserrée",

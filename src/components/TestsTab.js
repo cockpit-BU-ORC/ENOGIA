@@ -485,7 +485,7 @@ function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdi
       {/* ③ Tests : dans le volet, checklist « fait » (et choix des tests à réaliser via « Modifier la liste ») */}
       {/* v264 : checklist de debug, au début des tests (modèle Word PI105-047-XX0003) */}
       {panel && <Step n="3" title="Checklist de debug (début des tests)" hint={canMark ? "À remplir au début des tests : une ligne par contrôle (OK / NOK), puis à signer ; l’export Word reprend le modèle de la procédure." : "Consultation : seuls le testeur affecté et les administrateurs remplissent la checklist."}>
-        <DebugChecklistStep {...{ r, plan, saveTests, canMark, who, signApi, SignForm }} />
+        <DebugChecklistStep {...{ r, plan, saveTests, canMark, who, signApi, SignForm, model: doc.debugModel, saveModel: canEdit ? (m => commit({ debugModel: m })) : null }} />
       </Step>}
       {panel && <Step n="4" title="Tests" hint={canMark ? "Indiquez pour chaque test : en cours, réussi ou en échec." : "Consultation : seuls le testeur affecté et les administrateurs renseignent les tests."}>
         <Checklist {...{ r, plan, catalog, act, canEdit: canTest, canMark, saveTests, who }} />

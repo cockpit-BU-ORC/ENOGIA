@@ -1976,3 +1976,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Fiches projet : Finance sur toute la largeur (3 colonnes), Machine à côté de Suivi ; Turbine en lignes courtes ; composants en lignes de 30 px, ajout replié ; actions et mitigations : deux lignes ouvertes visibles, le reste derrière « Afficher tout ». Hauteur d'une fiche type : environ 2 320 → 2 060 px.
 - Pas de nouvelle donnée, pas de nouvelle clé `localStorage`.
 - Fichiers : components/ManagerFiche.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v278 — Répartition des machines, alertes KPI, checklist de debug modifiable
+
+- Demandé : « des camemberts pour la répartition des machines ; utiliser le skill KPI pour l'onglet KPI » ; « pouvoir ajouter ou enlever des éléments de la liste de debug ».
+- KPI › Synthèse : méthode de calcul au survol de chaque chiffre, bloc « À surveiller », répartition des machines (état, gamme, pays, chef de projet) avec le choix En cours / Expédiées / Toutes.
+- Checklist de debug : « Modifier la liste » — pour cette machine (testeur) ou pour toutes (administrateurs, modèle commun) ; l'export PDF suit la liste modifiée.
+- Données : `planning/tests.debugModel`, `plans[PJ].debug.hide` / `extra` — document déjà couvert par les règles.
+- Pas de nouvelle clé `localStorage`.
+- Fichiers : debugChecklist.js (+ test), debugPdf.js, components/DebugChecklist.js, components/TestsTab.js, components/RowDetail.js, components/KpiPilotage.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

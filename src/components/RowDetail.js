@@ -12,7 +12,7 @@ import { NavIcon, PjPlate } from "./SharedUI";
 import { ProjectComments, DelayAllocations, EditMetaForm } from "./ProjectModal";
 import { STAGES, STEP_NOTE, autoPct } from "../prodStages";
 import { planOf, catalogOf, activeSections, progressOf, SECTIONS, selectedIds, statusOf } from "../testPlan";
-import { debugProgress, DEBUG_ITEMS } from "../debugChecklist";
+import { debugProgress, debugSections } from "../debugChecklist";
 import { contractLate, livrPrevueOf } from "../penalties";
 import { linkedPayments, cashSummary } from "../cashinLink";
 import { canCash } from "../roles";
@@ -70,7 +70,7 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
   const daysLeft = z ? Math.round((z - day0()) / 864e5) : null;
   // Tests et checklist de debug (page Tests)
   const plan = ctx.testsDoc ? planOf(ctx.testsDoc, r.pj) : null, catalog = ctx.testsDoc ? catalogOf(ctx.testsDoc) : null, act = activeSections(kind);
-  const tq = plan ? progressOf(plan, catalog, act) : null, dbg = plan ? debugProgress(plan.debug) : null;
+  const tq = plan ? progressOf(plan, catalog, act) : null, dbgSecs = plan ? debugSections(ctx.testsDoc && ctx.testsDoc.debugModel, plan.debug) : null, dbg = plan ? debugProgress(plan.debug, dbgSecs) : null;
   const nokAll = (tq ? tq.ko : 0) + (dbg ? dbg.nok : 0); // échecs de tests + NOK de la checklist
   const testers = plan ? plan.assign.map(x => ((ctx.testsDoc.testers || []).find(t => t.id === x.tid) || {}).name).filter(Boolean) : [];
   // Cash (accès Cash in seulement) et contrat (admins ; montant avec l'accès Cash in)
@@ -166,7 +166,7 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
           </div>; })}
         <div style={{ background: T.surface, borderRadius: 10, padding: "8px 12px" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><b style={{ fontSize: FZ.sm }}>Checklist de debug</b><span style={{ fontSize: FZ.xs, color: T.ink500 }}>{dbg.done} / {dbg.total} renseignés{dbg.signed ? " · signée" : " · pas encore signée"}</span>{dbg.nok > 0 && <span style={{ fontSize: FZ.xs, color: T.red600, fontWeight: 700 }}>{dbg.nok} NOK</span>}</div>
-          {dbg.nok > 0 && <div style={{ fontSize: FZ.xs, color: T.red600, marginTop: 4 }}>{DEBUG_ITEMS.filter(i => plan.debug && plan.debug.rows && plan.debug.rows[i.id] && plan.debug.rows[i.id].r === "nok").map(i => i.label).join(" · ")}</div>}
+          {dbg.nok > 0 && <div style={{ fontSize: FZ.xs, color: T.red600, marginTop: 4 }}>{dbgSecs.flatMap(s => s.items).filter(i => plan.debug && plan.debug.rows && plan.debug.rows[i.id] && plan.debug.rows[i.id].r === "nok").map(i => i.label).join(" · ")}</div>}
         </div>
         <div style={{ fontSize: FZ.xs, color: T.ink500 }}>{testers.length ? "Testeurs : " + testers.join(", ") + "." : "Aucun testeur affecté."} Le détail se remplit dans la page Tests.</div>
       </>}

@@ -3,7 +3,7 @@
 // fiche de tests d'un PJ (résumé + fenêtre de saisie ligne par ligne) et export PDF (v272, à la forme du modèle PI105-047-XX0003).
 import React, { useEffect, useState } from "react";
 import { T, FZF as FZ } from "../theme";
-import { DEBUG_SECTIONS, DEBUG_FIELDS, DEBUG_DOC, debugProgress, setDebugRow } from "../debugChecklist";
+import { DEBUG_FIELDS, DEBUG_DOC, debugProgress, setDebugRow, debugSections, debugRemoved, debugNewId } from "../debugChecklist";
 import { openDebugPdf } from "../debugPdf"; // v272 : export PDF seulement (le Word de la V264 est retiré)
 
 const todayIso = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
@@ -12,15 +12,15 @@ const btn = (primary, ghost) => ({ padding: "6px 12px", minHeight: 32, borderRad
 const field = () => ({ padding: "4px 6px", minHeight: 28, borderRadius: 6, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.xs, fontFamily: T.font, boxSizing: "border-box", width: "100%" });
 
 // Résumé dans la fiche de tests du PJ : avancement, NOK, signature, boutons
-export function DebugChecklistStep({ r, plan, saveTests, canMark, who, signApi, SignForm }) {
+export function DebugChecklistStep({ r, plan, saveTests, canMark, who, signApi, SignForm, model, saveModel }) {
   const [open, setOpen] = useState(false), [busy] = useState(false), [err, setErr] = useState("");
-  const debug = (plan && plan.debug) || {}, pr = debugProgress(debug);
+  const debug = (plan && plan.debug) || {}, sections = debugSections(model, debug), pr = debugProgress(debug, sections);
   const exportWord = () => {
     setErr("");
     const ok = openDebugPdf(async () => {
       let sign = null;
       if (debug.signed && signApi) { const imgs = (await signApi.load(r.pj)) || {}; sign = imgs.debug ? { ...debug.signed, img: imgs.debug.img } : debug.signed; }
-      return { pj: r.pj, date: debug.date || todayIso(), name: debug.name || who, debug, sign };
+      return { pj: r.pj, date: debug.date || todayIso(), name: debug.name || who, debug, sign, sections };
     });
     if (!ok) setErr("Le navigateur a bloqué la fenêtre du PDF : autorisez les fenêtres pour ce site.");
   };
@@ -37,12 +37,22 @@ export function DebugChecklistStep({ r, plan, saveTests, canMark, who, signApi, 
       <button type="button" onClick={exportWord} disabled={busy} style={btn(true, true)}>Exporter en PDF</button>
     </div>
     {err && <div role="alert" style={{ fontSize: FZ.xs, color: T.red600, fontWeight: 600 }}>{err}</div>}
-    {open && <DebugChecklistDialog {...{ r, plan, saveTests, canMark, who, signApi, SignForm, onExport: exportWord, onClose: () => setOpen(false) }} />}
+    {open && <DebugChecklistDialog {...{ r, plan, saveTests, canMark, who, signApi, SignForm, model, saveModel, onExport: exportWord, onClose: () => setOpen(false) }} />}
   </div>);
 }
 
-function DebugChecklistDialog({ r, plan, saveTests, canMark, who, signApi, SignForm, onExport, onClose }) {
-  const debug = (plan && plan.debug) || {}, rows = debug.rows || {}, pr = debugProgress(debug);
+function DebugChecklistDialog({ r, plan, saveTests, canMark, who, signApi, SignForm, model, saveModel, onExport, onClose }) {
+  const debug = (plan && plan.debug) || {}, rows = debug.rows || {}, sections = debugSections(model, debug), pr = debugProgress(debug, sections);
+  // v278 : « Modifier la liste » — retirer une ligne (pour cette machine, ou du modèle commun si admin), ajouter une ligne dans une section
+  const [editing, setEditing] = useState(false), [draft, setDraft] = useState(null); // draft = { section, label, hint, opt, scope }
+  const removed = debugRemoved(model, debug), canModel = !!saveModel, canList = canMark || canModel;
+  const m0 = model || {};
+  const hideHere = id => save({ ...debug, hide: [...new Set([...(debug.hide || []), id])], extra: (debug.extra || []).filter(x => x.id !== id) });
+  const hideModel = id => { if (!window.confirm("Retirer cette ligne du modèle commun ? Elle disparaît de la checklist de toutes les machines (les réponses déjà saisies sont gardées).")) return; saveModel({ ...m0, removed: [...new Set([...(m0.removed || []), id])], added: (m0.added || []).filter(x => x.id !== id) }); };
+  const restore = x => x.scope === "model" ? saveModel({ ...m0, removed: (m0.removed || []).filter(id => id !== x.id) }) : save({ ...debug, hide: (debug.hide || []).filter(id => id !== x.id) });
+  const addLine = () => { const dft = draft; if (!dft || !dft.label.trim()) return; const line = { id: debugNewId(), section: dft.section, label: dft.label.trim(), hint: dft.hint.trim(), opt: !!dft.opt };
+    if (dft.scope === "model" && canModel) saveModel({ ...m0, added: [...(m0.added || []), line] }); else save({ ...debug, extra: [...(debug.extra || []), line] });
+    setDraft(null); };
   const [sigOpen, setSigOpen] = useState(false), [busy, setBusy] = useState(false), [err, setErr] = useState("");
   useEffect(() => { const k = e => { if (e.key === "Escape" && !sigOpen) onClose(); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose, sigOpen]);
   const save = d => saveTests({ ...plan, debug: { date: debug.date || todayIso(), name: debug.name || who, ...d } });
@@ -76,15 +86,29 @@ function DebugChecklistDialog({ r, plan, saveTests, canMark, who, signApi, SignF
       <div style={{ overflow: "auto", flex: 1 }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1180 }}>
           <colgroup><col style={{ width: 190 }} /><col style={{ width: 52 }} /><col style={{ width: 52 }} /><col style={{ width: 150 }} /><col style={{ width: 150 }} /><col style={{ width: 170 }} /><col style={{ width: 90 }} /><col /></colgroup>
-          {DEBUG_SECTIONS.map(s => <tbody key={s.id}>
+          {sections.map(s => <tbody key={s.id}>
             <tr><th style={th}>{s.title}</th><th style={{ ...th, textAlign: "center" }}>OK</th><th style={{ ...th, textAlign: "center" }}>NOK</th>{DEBUG_FIELDS.map(([k, l]) => <th key={k} style={th}>{l}</th>)}<th style={th}>Consigne (commentaires du modèle)</th></tr>
             {s.items.map(it => { const v = rows[it.id] || {}; return (<tr key={it.id} style={{ background: v.r === "nok" ? T.red100 : "transparent" }}>
-              <td style={{ ...td, fontWeight: 600 }}>{it.label}</td>
+              <td style={{ ...td, fontWeight: 600 }}>{it.label}{it.custom && <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 700, color: it.custom === "pj" ? T.amber600 : T.ink500, background: it.custom === "pj" ? T.amber100 : T.surfaceAlt, borderRadius: 999, padding: "0 6px" }}>{it.custom === "pj" ? "cette machine" : "ajoutée"}</span>}
+                {editing && <div style={{ display: "flex", gap: 4, marginTop: 4, flexWrap: "wrap" }}>
+                  {canMark && <button type="button" onClick={() => hideHere(it.id)} style={{ ...btn(false, true), padding: "0 8px", minHeight: 24, fontSize: 11.5 }}>Retirer ici</button>}
+                  {canModel && it.custom !== "pj" && <button type="button" onClick={() => hideModel(it.id)} style={{ ...btn(false, true), padding: "0 8px", minHeight: 24, fontSize: 11.5, color: T.red600 }}>Retirer du modèle</button>}
+                </div>}</td>
               <td style={{ ...td, textAlign: "center" }}><Cell id={it.id} v="" val="ok" label={"OK : " + it.label} tone={OK} /></td>
               <td style={{ ...td, textAlign: "center" }}><Cell id={it.id} v="" val="nok" label={"NOK : " + it.label} tone={NOK} />{it.opt && <div style={{ marginTop: 4 }}><Cell id={it.id} v="S.O." val="na" label={"Sans objet : " + it.label} tone={NA} /></div>}</td>
               {DEBUG_FIELDS.map(([k, l]) => <td key={k} style={td}><textarea rows={1} disabled={!canMark} key={k + it.id + (v[k] || "")} defaultValue={v[k] || ""} aria-label={l + " : " + it.label} onBlur={e => { const t = e.target.value.trim(); if (t !== (v[k] || "")) setRow(it.id, { [k]: t }); }} style={{ ...field(), resize: "vertical", minHeight: 28 }} /></td>)}
               <td style={{ ...td, color: T.ink700, whiteSpace: "pre-line", lineHeight: 1.4 }}>{it.hint}</td>
             </tr>); })}
+            {editing && <tr><td colSpan={8} style={{ ...td, background: T.surface }}>
+              {draft && draft.section === s.id ? <div style={{ display: "flex", gap: 8, alignItems: "flex-end", flexWrap: "wrap" }}>
+                <label style={{ display: "flex", flexDirection: "column", gap: 2, fontSize: 12, color: T.ink500, flex: "1 1 200px" }}>Contrôle<input autoFocus value={draft.label} onChange={e => setDraft({ ...draft, label: e.target.value })} placeholder="Par exemple : TT-06" style={field()} /></label>
+                <label style={{ display: "flex", flexDirection: "column", gap: 2, fontSize: 12, color: T.ink500, flex: "2 1 300px" }}>Consigne<input value={draft.hint} onChange={e => setDraft({ ...draft, hint: e.target.value })} placeholder="Ce qu'il faut vérifier" style={field()} /></label>
+                <label style={{ display: "inline-flex", gap: 6, alignItems: "center", fontSize: 12, color: T.ink700 }}><input type="checkbox" checked={draft.opt} onChange={e => setDraft({ ...draft, opt: e.target.checked })} />Option (S.O. possible)</label>
+                {canModel && <select value={draft.scope} onChange={e => setDraft({ ...draft, scope: e.target.value })} aria-label="Portée de la ligne" style={{ ...field(), width: "auto" }}><option value="pj">Cette machine seulement</option><option value="model">Toutes les machines (modèle)</option></select>}
+                <button type="button" disabled={!draft.label.trim()} onClick={addLine} style={btn(true)}>Ajouter</button>
+                <button type="button" onClick={() => setDraft(null)} style={btn(false, true)}>Annuler</button>
+              </div> : <button type="button" onClick={() => setDraft({ section: s.id, label: "", hint: "", opt: false, scope: canMark ? "pj" : "model" })} style={{ border: "none", background: "transparent", color: T.ink700, fontWeight: 700, fontSize: FZ.xs, cursor: "pointer", fontFamily: T.font, minHeight: 24 }}>＋ Ajouter une ligne dans « {s.title} »</button>}
+            </td></tr>}
           </tbody>)}
         </table>
       </div>
@@ -92,9 +116,15 @@ function DebugChecklistDialog({ r, plan, saveTests, canMark, who, signApi, SignF
         <span style={{ fontSize: FZ.sm, fontWeight: 700 }}>{pr.done} / {pr.total} renseignés{pr.nok ? <span style={{ color: T.red600 }}> · {pr.nok} NOK</span> : ""}</span>
         {debug.signed ? <span style={{ fontSize: 12, fontWeight: 600, color: changedAfter ? T.amber600 : T.emerald600, background: changedAfter ? T.amber100 : T.emerald100, borderRadius: 999, padding: "2px 10px" }}>Signée le {fd(debug.signed.at.slice(0, 10))} par {debug.signed.name}{changedAfter ? " · modifiée depuis, à signer de nouveau" : ""}</span> : null}
         <span style={{ flex: 1 }} />
+        {canList && <button type="button" aria-pressed={editing} onClick={() => { setEditing(v => !v); setDraft(null); }} style={btn(true, !editing)}>{editing ? "Terminer les modifications" : "Modifier la liste"}</button>}
         {canMark && !sigOpen && <button type="button" disabled={busy} onClick={() => setSigOpen(true)} style={btn(true, !!debug.signed && !changedAfter)}>{debug.signed ? "Signer de nouveau" : pr.done < pr.total ? "Signer (" + (pr.total - pr.done) + " ligne" + (pr.total - pr.done > 1 ? "s" : "") + " vide" + (pr.total - pr.done > 1 ? "s" : "") + ")" : "Signer la checklist"}</button>}
         <button type="button" onClick={onExport} style={btn(true, true)}>Exporter en PDF</button>
       </div>
+      {editing && removed.length > 0 && <div style={{ padding: "0 16px 10px", display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", fontSize: FZ.xs }}>
+        <span style={{ color: T.ink500, fontWeight: 600 }}>Lignes retirées :</span>
+        {removed.map(x => <span key={x.scope + x.id} style={{ display: "inline-flex", alignItems: "center", gap: 4, border: "1px solid " + T.line, borderRadius: 999, padding: "1px 4px 1px 9px" }}>{x.label} <span style={{ color: T.ink500 }}>({x.scope === "model" ? "modèle" : "cette machine"})</span>
+          {(x.scope === "model" ? canModel : canMark) && <button type="button" onClick={() => restore(x)} style={{ border: "none", background: "transparent", color: T.ink700, fontWeight: 700, cursor: "pointer", fontSize: FZ.xs, fontFamily: T.font, minHeight: 22 }}>Rétablir</button>}</span>)}
+      </div>}
       {sigOpen && <div style={{ padding: "0 16px 14px" }}><SignForm init={{ name: debug.name || who, fn: (debug.signed && debug.signed.fn) || "" }} busy={busy} onCancel={() => setSigOpen(false)} onSave={sign} /></div>}
       {err && <div role="alert" style={{ padding: "0 16px 12px", fontSize: FZ.xs, color: T.red600, fontWeight: 600 }}>{err}</div>}
     </div>

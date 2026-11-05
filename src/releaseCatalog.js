@@ -693,4 +693,8 @@ export const RELEASE_CATALOG = [
   { v: "277", t: "Fiche projet resserrée", items: [
     ["Fiches projet", "Finance sur toute la largeur en trois colonnes, Machine à côté de Suivi, section Turbine plus basse, composants plus serrés, actions et mitigations : les deux premières ouvertes, le reste derrière « Afficher tout ».", "admin"],
   ] },
+  { v: "278", t: "Répartition des machines, alertes KPI, checklist de debug modifiable", items: [
+    ["KPI › Synthèse", "Camemberts de répartition des machines (état, gamme, pays, chef de projet ; en cours, expédiées ou toutes), bloc « À surveiller », méthode de calcul de chaque chiffre au survol du « i ».", "admin"],
+    ["Tests · checklist de debug", "« Modifier la liste » : retirer une ligne ou en ajouter une, pour cette machine seulement, ou pour toutes (modèle commun, administrateurs). Les lignes retirées se rétablissent."],
+  ] },
 ];
