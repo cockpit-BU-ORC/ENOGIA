@@ -1969,3 +1969,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Skills installés : `kpi-dashboard-design`, `data-storytelling` (dans `.claude/skills/`, non versionnés).
 - Pas de nouvelle donnée, pas de nouvelle clé `localStorage`.
 - Fichiers : components/ManagerPanel.js, components/ManagerFiche.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v277 — Fiche projet resserrée (fin de l'audit apple-design)
+
+- Demandé : « Oui, fais-les » (Machine plus basse, composants plus serrés, Suivi plus court).
+- Fiches projet : Finance sur toute la largeur (3 colonnes), Machine à côté de Suivi ; Turbine en lignes courtes ; composants en lignes de 30 px, ajout replié ; actions et mitigations : deux lignes ouvertes visibles, le reste derrière « Afficher tout ». Hauteur d'une fiche type : environ 2 320 → 2 060 px.
+- Pas de nouvelle donnée, pas de nouvelle clé `localStorage`.
+- Fichiers : components/ManagerFiche.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

@@ -333,25 +333,24 @@ function TurbineSection({r,meta,onSave}){
   const prepared=ii?(nb?((ii.variantes.find(v=>v.bouches===nb)||{}).qte||0):ii.vierges):null;
   const pk=on=>({border:"1px solid "+(on?T.ink900:T.line),background:on?T.ink900:T.card,color:on?T.card:T.ink900,borderRadius:7,minHeight:28,padding:"0 9px",fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font,display:"inline-flex",alignItems:"center",gap:5,transition:"background 120ms, border-color 120ms"});
   const qS=(on,q)=>({fontWeight:500,fontVariantNumeric:"tabular-nums",color:on?T.card:q===0?T.red600:T.ink500,opacity:on?.8:1});
-  const lab={fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk,minWidth:64};
-  const row={display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"};
+  const lab={fontFamily:T.font,fontSize:12,fontWeight:600,color:T.ink500,minWidth:58,flexBasis:"100%"}; // v277 : étiquette au-dessus, contenu dessous (colonne étroite)
+  const row={display:"flex",alignItems:"center",gap:"2px 6px",flexWrap:"wrap"};
   const step={width:28,height:28,borderRadius:7,border:"1px solid "+T.line,background:T.card,color:T.ink900,cursor:"pointer",fontSize:14,fontFamily:T.font,padding:0};
   const missing=[!meta.turbRoue&&"roue",!meta.turbInj&&"injecteur"].filter(Boolean);
   const none=(t)=><span style={{fontSize:FZ.xs,color:T.ink500}}>{t}</span>;
   return(<Section title="Turbine" right={<span style={{fontSize:FZ.xs,color:missing.length?T.amber600:T.emerald600,fontWeight:600}}>{cfg?(missing.length?missing.join(" et ")+" à choisir":"complet"+(nb?" · "+nb+" bouchage"+(nb>1?"s":""):"")):""}</span>}>
     <div style={{display:"flex",flexDirection:"column",gap:8}}>
-      <div style={row}><span style={lab}>Turbine</span>
+      <div style={row}><span style={lab}>Turbine <span style={{fontWeight:400,color:T.ink500}}>kW{!meta.turbCfg&&cfg?" · d’après la gamme":""}</span></span>
         <div role="radiogroup" aria-label="Configuration des turbines" style={{display:"inline-flex",background:T.surfaceAlt,borderRadius:9,padding:2,gap:2,flexWrap:"wrap"}}>
           {TURB_CFGS.map(c=>{const on=!!(cfg&&cfg.id===c.id);return <button key={c.id} type="button" role="radio" aria-checked={on} onClick={()=>onSave({turbCfg:c.id,...(cfg&&cfg.g!==c.g?{turbRoue:null,turbInj:null,turbInjB:null}:{})})} title={c.n+" turbine"+(c.n>1?"s":"")+" "+c.g+" kW"+(!meta.turbCfg&&on?" (d’après la gamme)":"")}
-            style={{border:"none",borderRadius:7,minHeight:28,padding:"0 10px",display:"inline-flex",alignItems:"center",gap:6,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font,background:on?T.card:"transparent",color:on?T.ink900:T.ink500,boxShadow:on?"0 1px 2px rgba(0,0,0,.10)":"none",transition:"background 120ms, color 120ms"}}><TurbGlyph cfg={c}/>{c.l}</button>;})}
+            style={{border:"none",borderRadius:7,minHeight:28,padding:"0 8px",display:"inline-flex",alignItems:"center",gap:5,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font,background:on?T.card:"transparent",color:on?T.ink900:T.ink500,boxShadow:on?"0 1px 2px rgba(0,0,0,.10)":"none",transition:"background 120ms, color 120ms"}}><TurbGlyph cfg={c}/>{c.l.replace(/ kW$/,"").replace(" × ","×")}</button>;})} {/* v277 : libellés courts (2×100, 100, 20, 2×40) : tient sur une ligne dans la colonne Machine */}
         </div>
-        {!meta.turbCfg&&cfg&&<span style={{fontSize:11,color:T.ink500}}>d’après la gamme</span>}
       </div>
       {cfg&&<div style={row}><span style={lab}>Roue</span>
-        {roues.length?roues.map(x=>{const on=meta.turbRoue===x.ref;return <button key={x.ref} type="button" aria-pressed={on} onClick={()=>onSave({turbRoue:on?null:x.ref})} style={pk(on)}>{x.ref}{x.q!=null&&<span style={qS(on,x.q)}>{x.q}</span>}</button>;}):none(prod?"aucune roue "+g+" kW dans la production turbines":"liste de la production turbines indisponible")}
+        {roues.length?roues.map(x=>{const on=meta.turbRoue===x.ref;return <button key={x.ref} type="button" aria-pressed={on} onClick={()=>onSave({turbRoue:on?null:x.ref})} style={pk(on)}>{x.ref}{x.q!=null&&<span style={qS(on,x.q)}>{x.q}</span>}</button>;}):none(prod?"aucune en stock ("+g+" kW)":"stock indisponible")}
       </div>}
       {cfg&&<div style={row}><span style={lab}>Injecteur</span>
-        {injRefs.length?injRefs.map(x=>{const on=meta.turbInj===x.ref;return <button key={x.ref} type="button" aria-pressed={on} onClick={()=>onSave({turbInj:on?null:x.ref,turbInjB:null})} style={pk(on)}>{x.ref}{x.q!=null&&<span style={qS(on,x.q)}>{x.q}</span>}</button>;}):none(prod?"aucun injecteur "+g+" kW dans la production turbines":"liste de la production turbines indisponible")}
+        {injRefs.length?injRefs.map(x=>{const on=meta.turbInj===x.ref;return <button key={x.ref} type="button" aria-pressed={on} onClick={()=>onSave({turbInj:on?null:x.ref,turbInjB:null})} style={pk(on)}>{x.ref}{x.q!=null&&<span style={qS(on,x.q)}>{x.q}</span>}</button>;}):none(prod?"aucun en stock ("+g+" kW)":"stock indisponible")}
         {meta.turbInj&&<span style={{display:"inline-flex",alignItems:"center",gap:4,marginLeft:6,paddingLeft:8,borderLeft:"1px solid "+T.line}}>
           <span style={{fontSize:FZ.xs,color:T.ink700,fontWeight:600}}>Bouchages</span>
           <button type="button" aria-label="Un bouchage de moins" disabled={nb<=0} onClick={()=>onSave({turbInjB:nb-1>0?nb-1:null})} style={{...step,opacity:nb<=0?.4:1}}>−</button>
@@ -449,7 +448,9 @@ function ItemsSection({title,kind,meta,field,atKey,color,showWeek,onSave,onGroup
   };
   const at=meta[atKey]?new Date(meta[atKey]):null;
   const open=items.filter(x=>!x.done).length,closed=items.length-open;
-  const list=sortedItems(items);
+  // v277 (audit apple-design : « Suivi trop long ») : les deux premières lignes ouvertes, le reste (dont les clôturées) derrière « Afficher tout »
+  const [all,setAll]=useState(false);
+  const full=sortedItems(items),shortL=full.filter(x=>!x.done).slice(0,2),list=all?full:shortL,hidden=full.length-shortL.length;
   const inp=(val,onCommit,ph,x)=><input defaultValue={val} key={x.id+"|"+val} placeholder={ph} onBlur={e=>{const t=e.target.value.trim();if(t&&t!==val)onCommit(t);else if(!t)e.target.value=val;}} style={{...FIELD,width:"100%",boxSizing:"border-box",fontWeight:x.done?400:600,color:x.done?T.ink300:T.ink900,textDecoration:x.done?"line-through":"none"}}/>;
   const dateIn=(val,onCh,ex)=><input type="date" value={val||""} onChange={e=>onCh(e.target.value)} style={{...FIELD,colorScheme:T.mode==="dark"?"dark":"light",...ex}}/>;
   return(<Section title={title} right={<span style={{fontSize:FZ.xs,color:T.ink300,whiteSpace:"normal",textAlign:"right"}}>{items.length?open+" ouverte"+(open>1?"s":"")+" · "+closed+" clôturée"+(closed>1?"s":""):"aucune"}{at?" · maj "+fmt(at)+(showWeek?" · S"+isoWeek(at):""):""}</span>}>
@@ -472,6 +473,7 @@ function ItemsSection({title,kind,meta,field,atKey,color,showWeek,onSave,onGroup
         </div>
       </div>);
     })}
+    {hidden>0&&<button type="button" onClick={()=>setAll(v=>!v)} aria-expanded={all} style={{border:"none",background:"transparent",padding:"2px 0",minHeight:24,color:T.ink700,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font,textDecoration:"underline",textUnderlineOffset:2,marginBottom:4}}>{all?"Réduire":"Afficher tout ("+hidden+" de plus"+(closed?", dont "+closed+" clôturée"+(closed>1?"s":""):"")+")"}</button>}
     <div style={{display:"flex",flexDirection:"column",gap:6,marginTop:items.length?6:0,padding:"8px 10px",border:"1px dashed "+T.line,borderRadius:8}}>
       <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
         {mit?<>
@@ -518,7 +520,7 @@ const stepColor=f=>STEP_COLOR[f]||T.teal500;
 const CHECK_SVG="url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-7' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\")";
 const stepBox=(f,on,size=20)=>({appearance:"none",WebkitAppearance:"none",width:size,height:size,margin:2,borderRadius:4,cursor:"pointer",boxSizing:"border-box",border:"2px solid "+stepColor(f),background:on?stepColor(f):"transparent",backgroundImage:on?CHECK_SVG:"none",backgroundSize:"85%",backgroundRepeat:"no-repeat",backgroundPosition:"center",transition:"background .12s ease"});
 function ComposantsSection({meta,onSave,catalog,setCatalog,pjsToComplete,onApplyAll}){
-  const list=composantsOf(meta);const pct=compPct(meta);const [nl,setNl]=useState("");const [catOpen,setCatOpen]=useState(false);
+  const list=composantsOf(meta);const pct=compPct(meta);const [nl,setNl]=useState("");const [catOpen,setCatOpen]=useState(false);const [adding,setAdding]=useState(false); // v277 : champ d'ajout replié
   const missing=(catalog||[]).filter(c=>!list.some(x=>x.label.toLowerCase()===c.toLowerCase())); // composants de la liste générale absents de cette fiche
   const save=next=>onSave({composants:next});
   // v146.18 : une pièce réceptionnée a forcément été designée et commandée → cocher « Réceptionné » coche aussi Design et PO
@@ -526,7 +528,7 @@ function ComposantsSection({meta,onSave,catalog,setCatalog,pjsToComplete,onApply
   const colAll=f=>{const all=list.length>0&&list.every(c=>c[f]);save(list.map(c=>({...c,[f]:!all,...(f==="inst"&&!all?{des:true,cmd:true}:{})})));};
   const add=()=>{const t=nl.trim();if(!t)return;save([...list,{id:"c"+Date.now().toString(36),label:t,des:false,cmd:false,inst:false}]);setNl("");};
   const done=list.reduce((a,c)=>a+COMP_STEPS.filter(([f])=>c[f]).length,0);
-  const GRID="minmax(90px,1fr) 64px 64px 108px 22px";
+  const GRID="minmax(64px,1fr) 48px 40px 74px 24px"; // v277 : tient dans une colonne de Finance (≈ 290 px)
   return(<Section title="Major components" right={<span style={{fontSize:FZ.xs,color:T.ink300,whiteSpace:"nowrap"}}>{done} / {list.length*COMP_STEPS.length} cases · {pct==null?"non démarré":pct+"%"}</span>}>
     <div style={{marginBottom:6}}><ProgressBar value={pct||0} height={5}/></div>
     <div style={{border:"1px solid "+T.line,borderRadius:8,overflow:"hidden"}}>
@@ -535,17 +537,18 @@ function ComposantsSection({meta,onSave,catalog,setCatalog,pjsToComplete,onApply
         {COMP_STEPS.map(([f,l])=><button key={f} onClick={()=>colAll(f)} title={"Cocher / décocher toute la colonne « "+l+" »"+(f==="inst"?" — pièce reçue à ENOGIA ou installée sur la machine":"")} style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk,border:"none",background:"transparent",cursor:"pointer",padding:0,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:4}}><span style={{width:7,height:7,borderRadius:4,background:stepColor(f)}}/>{l}</button>)}
         <span/>
       </div>
-      {list.map(c=>{const all=COMP_STEPS.every(([f])=>c[f]);return(<div key={c.id} style={{display:"grid",gridTemplateColumns:GRID,alignItems:"center",padding:"3px 8px",gap:4,borderTop:"1px solid "+T.line,background:all?T.emerald100:"transparent"}}>
+      {list.map(c=>{const all=COMP_STEPS.every(([f])=>c[f]);return(<div key={c.id} style={{display:"grid",gridTemplateColumns:GRID,alignItems:"center",padding:"1px 8px",minHeight:30,gap:4,borderTop:"1px solid "+T.line,background:all?T.emerald100:"transparent"}}>
         <input defaultValue={c.label} key={c.id+c.label} title="Renommer ce composant (administrateurs)" aria-label={"Nom du composant : "+c.label} onBlur={e=>{const t=e.target.value.trim();if(t&&t!==c.label)save(list.map(x=>x.id===c.id?{...x,label:t}:x));else if(!t)e.target.value=c.label;}} onKeyDown={e=>{if(e.key==="Enter")e.target.blur();}} style={{...FIELD,fontSize:FZ.xs,fontWeight:600,color:T.ink900,background:"transparent",border:"1px solid transparent",padding:"1px 4px",minWidth:0,width:"100%",textOverflow:"ellipsis"}}/>
         {COMP_STEPS.map(([f,l])=><span key={f} style={{textAlign:"center"}}><input type="checkbox" checked={!!c[f]} onChange={()=>toggle(c.id,f)} style={stepBox(f,!!c[f])} aria-label={c.label+" "+l}/></span>)}
         <TrashBtn title="Retirer ce composant" onClick={()=>save(list.filter(x=>x.id!==c.id))}/>
       </div>);})}
       {list.length===0&&<EmptyState compact icon="inbox" title="Aucun composant" hint="Ajoutez-en un ci-dessous."/>}
     </div>
+    {!adding?<button type="button" onClick={()=>setAdding(true)} style={{marginTop:6,border:"none",background:"transparent",padding:"2px 0",minHeight:24,color:T.ink700,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font}}>＋ Ajouter un composant</button>:
     <div style={{display:"flex",gap:6,marginTop:6}}>
-      <input value={nl} onChange={e=>setNl(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")add();}} placeholder="＋ Ajouter un composant (ex. Vanne, Bac à huile…) — nom modifiable, ✕ pour retirer" style={{...FIELD,flex:1,padding:"3px 8px"}}/>
+      <input autoFocus value={nl} onChange={e=>setNl(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")add();else if(e.key==="Escape"){setNl("");setAdding(false);}}} placeholder="＋ Ajouter un composant (ex. Vanne, Bac à huile…) — nom modifiable, ✕ pour retirer" style={{...FIELD,flex:1,padding:"3px 8px"}}/>
       <button onClick={add} disabled={!nl.trim()} style={BTN(!!nl.trim())}>Ajouter</button>
-    </div>
+    </div>}
     {(missing.length>0||setCatalog)&&<div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",marginTop:6}}>
       {missing.length>0&&<span style={{fontSize:FZ.xs,fontWeight:700,color:T.ink500}}>De la liste :</span>}
       {missing.map(c=><button key={c} type="button" onClick={()=>save([...list,{id:"c"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),label:c,des:false,cmd:false,inst:false}])} style={{border:"1px dashed "+T.teal500,background:T.teal100,color:T.teal600,borderRadius:999,padding:"1px 9px",fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font}}>＋ {c}</button>)}
@@ -1019,7 +1022,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
         <div className="enogia-mcard-in" style={{padding:"0 16px 16px",display:"flex",flexDirection:"column",gap:12,flex:1,minHeight:0,overflowY:"auto",overflowX:"hidden"}}>
 
         {/* v272 (audit apple-design « fiche de 2 600 px sans repère ») : onglets collés en haut, translucides ; clic = défilement doux jusqu’à la zone, l’onglet suit le défilement */}
-        <FicheTabs r={r} zone={zone} setZone={setZone} saved={saved} worst={worst} zones={[["pilotage","Pilotage"],["planning","Planning"],["machine","Machine"],...(savePjMetaOverride?[["finance","Finance"],["suivi","Suivi"]]:[])]}/>
+        <FicheTabs r={r} zone={zone} setZone={setZone} saved={saved} worst={worst} zones={[["pilotage","Pilotage"],["planning","Planning"],...(savePjMetaOverride?[["finance","Finance"]]:[]),["machine","Machine"],...(savePjMetaOverride?[["suivi","Suivi"]]:[])]}/>
         {/* ── En-tête : identité, avancement, message clé ── */}
         <div style={{padding:"12px 0 4px"}}>
           <div style={{display:"flex",gap:20,flexWrap:"wrap",alignItems:"center",justifyContent:"space-between"}}>
@@ -1114,20 +1117,9 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
         </div>
         {savePjMetaOverride&&<Section title="Dates de fin et de livraison" right={<span style={{fontSize:FZ.xs,color:T.ink500}}>contractuelle · prévisionnelle · effectuée</span>}><DatesTable r={r} meta={meta} onSave={f=>savePjMetaOverride(r.pj,f)}/></Section>}
         </Frame>
-        {/* v275 (demandé : « remonter des gros blocs à côté, finance et machine par exemple ») : Machine et Finance côte à côte */}
-        <div className="enogia-fiche-split" style={{display:"grid",gridTemplateColumns:savePjMetaOverride?"minmax(280px,1fr) minmax(0,2.2fr)":"1fr",gap:D.mode==="compact"?8:12,alignItems:"start"}}>
-        {/* v272 (audit apple-design « turbine rangée au mauvais endroit ») : zone Machine = S/N, certification, présence aux tests, turbine */}
-        <Frame id="machine" title="Machine" sub="Numéro de série, certification, tests, turbine">
-          <div style={{display:"flex",alignItems:"center",gap:14,flexWrap:"wrap",fontSize:FZ.xs,color:T.ink500}}>
-            <span style={{display:"inline-flex",alignItems:"center",gap:6}}>S/N <SerieTag pj={r.pj} size={12} style={{padding:"1px 8px",lineHeight:"18px",borderRadius:8}}/></span>
-            <span style={{display:"inline-flex",alignItems:"center",gap:6}}><CertifTag r={r} meta={meta} rows={data} getMeta={getPjMeta} save={savePjMetaOverride&&savePjMetaMulti?(f=>savePjMetaOverride(r.pj,f)):null} saveMulti={savePjMetaMulti} certifs={certifs||[]} setCertifs={setCertifs||(async()=>false)}/></span>
-            {kind?<PresenceChip kind={kind} date={presenceFirstDate(r.clientPresence)} dates={presenceDates(r.clientPresence)} fontSize={11.5}/>:<span style={{color:T.ink500}}>Pas de présence client / NOBO aux tests</span>}
-          </div>
-          {savePjMetaOverride&&<TurbineSection r={r} meta={meta} onSave={f=>savePjMetaOverride(r.pj,f)}/>}
-        </Frame>
         {/* ── Finance : prix de la fiche, pénalités, composants et paiements ── */}
         {savePjMetaOverride&&<Frame id="finance" title="Finance" sub="Prix de la fiche, pénalités, composants et paiements">
-        <Cols min={270}>
+        <Cols min={260}>
 <Col>
         {savePjMetaMulti?<FicheContratPanel key={"p"+r.pj} part="contrat" r={r} meta={meta} rows={data} getMeta={getPjMeta} today={today} save={f=>savePjMetaOverride(r.pj,f)} saveMulti={savePjMetaMulti}/>:null}
 </Col>
@@ -1143,9 +1135,19 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
 </Col>
         </Cols>
         </Frame>}
-        </div>
+        {/* v277 (audit apple-design) : Finance sur toute la largeur (3 colonnes) ; Machine à côté de Suivi, de hauteur voisine */}
+        <div className="enogia-fiche-split" style={{display:"grid",gridTemplateColumns:savePjMetaOverride?"minmax(280px,1fr) minmax(0,2.2fr)":"1fr",gap:D.mode==="compact"?8:12,alignItems:"start"}}>
+        {/* v272 (audit apple-design « turbine rangée au mauvais endroit ») : zone Machine = S/N, certification, présence aux tests, turbine */}
+        <Frame id="machine" title="Machine" sub="Numéro de série, certification, tests, turbine">
+          <div style={{display:"flex",alignItems:"center",gap:14,flexWrap:"wrap",fontSize:FZ.xs,color:T.ink500}}>
+            <span style={{display:"inline-flex",alignItems:"center",gap:6}}>S/N <SerieTag pj={r.pj} size={12} style={{padding:"1px 8px",lineHeight:"18px",borderRadius:8}}/></span>
+            <span style={{display:"inline-flex",alignItems:"center",gap:6}}><CertifTag r={r} meta={meta} rows={data} getMeta={getPjMeta} save={savePjMetaOverride&&savePjMetaMulti?(f=>savePjMetaOverride(r.pj,f)):null} saveMulti={savePjMetaMulti} certifs={certifs||[]} setCertifs={setCertifs||(async()=>false)}/></span>
+            {kind?<PresenceChip kind={kind} date={presenceFirstDate(r.clientPresence)} dates={presenceDates(r.clientPresence)} fontSize={11.5}/>:<span style={{color:T.ink500}}>Pas de présence client / NOBO aux tests</span>}
+          </div>
+          {savePjMetaOverride&&<TurbineSection r={r} meta={meta} onSave={f=>savePjMetaOverride(r.pj,f)}/>}
+        </Frame>
         {savePjMetaOverride&&<Frame id="suivi" title="Suivi" sub="Actions, mitigation, retards et commentaires">
-        <Cols>
+        <Cols min={260}>
 <Col>
 
         {/* ── Actions de la semaine ── */}
@@ -1209,6 +1211,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
 </Col>
         </Cols>
         </Frame>}
+        </div>
         </div>
         </div>
       </div>}

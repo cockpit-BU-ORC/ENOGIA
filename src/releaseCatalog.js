@@ -690,4 +690,7 @@ export const RELEASE_CATALOG = [
     ["KPI › Dérives", "Vue CODIR : choix des mois pris en compte (mois promis au planning initial) — Tout, année en cours, 6 derniers mois, mois passés, ou du … au …", "admin"],
     ["Fiches projet", "Statut global en une ligne par axe, indicateurs clés sur une rangée, frises plus basses, jalons de paiement payés repliés.", "admin"],
   ] },
+  { v: "277", t: "Fiche projet resserrée", items: [
+    ["Fiches projet", "Finance sur toute la largeur en trois colonnes, Machine à côté de Suivi, section Turbine plus basse, composants plus serrés, actions et mitigations : les deux premières ouvertes, le reste derrière « Afficher tout ».", "admin"],
+  ] },
 ];

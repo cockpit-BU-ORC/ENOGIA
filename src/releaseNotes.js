@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v277",
+    date: "2026-11-05",
+    title: "V277 : fiche projet resserrée",
+    items: [
+      { t: "Fiches projet", d: "Moins de hauteur : Finance en trois colonnes, Machine à côté de Suivi, listes repliées.", admin: true },
+    ],
+  },
+  {
     id: "2026-11-v276",
     date: "2026-11-04",
     title: "V276 : période de la vue CODIR",
