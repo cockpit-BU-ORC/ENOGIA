@@ -576,3 +576,9 @@ button { transition: background-color var(--e-dur-micro) var(--e-ease), border-c
 [role="dialog"] [style*="font-size: 12.5px"] { font-size: 13px !important; }
 /* cases à cocher et boutons radio : 16 px au moins */
 input[type="checkbox"], input[type="radio"] { min-width: 16px; min-height: 16px; }
+
+/* ── v285 (audit croisé, lot A) : les boutons et champs sans police précisée prenaient Arial (police par défaut du navigateur) */
+button, input, select, textarea { font-family: inherit; }
+.enogia-num-in { animation: enogiaNumIn var(--e-dur-in, 240ms) ease-out; }
+@keyframes enogiaNumIn { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .enogia-num-in { animation: none; } }

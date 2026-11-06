@@ -5,7 +5,7 @@ import { useDetailMode } from "../detailMode";
 
 // ── Choix du thème (v139) : bouton « palette » dans la barre latérale + petit panneau avec les 5 thèmes. ──
 // Le choix est mémorisé par personne et par poste (navigateur) ; il se combine avec le mode clair / sombre.
-export function ThemePicker({ ink, themeId, onPick, density = "comfortable", onDensity, presentation = false, onPresentation, darkMode = false, onDarkMode }) {
+export function ThemePicker({ ink, themeId, onPick, density = "comfortable", onDensity, presentation = false, onPresentation, darkMode = false, darkPref, onDarkMode }) {
   const [open, setOpen] = useState(false);
   const [detailMode, setDetailMode] = useDetailMode();
   const ref = useRef(null);
@@ -24,7 +24,8 @@ export function ThemePicker({ ink, themeId, onPick, density = "comfortable", onD
       {onDarkMode && <>
         <div style={{ fontSize: FZ.sm, fontWeight: 700, marginBottom: 6 }}>Mode</div>
         <div role="radiogroup" aria-label="Mode clair ou sombre" style={{ display: "flex", gap: 4, background: T.surfaceAlt, borderRadius: 12, padding: 4, marginBottom: 12 }}>
-          {[[false, "Clair", "sunSm"], [true, "Sombre", "moon"]].map(([k, l, ic]) => { const on = !!darkMode === k; return (
+          {/* v285 : Auto = suit le réglage clair / sombre de l'ordinateur */}
+          {[["light", "Clair", "sunSm"], ["dark", "Sombre", "moon"], ["system", "Auto", "auto"]].map(([k, l, ic]) => { const on = (darkPref || (darkMode ? "dark" : "light")) === k; return (
             <button key={l} role="radio" aria-checked={on} onClick={() => onDarkMode(k)} style={{ flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, border: "none", borderRadius: 8, padding: "6px 8px", cursor: "pointer", fontFamily: T.font, fontSize: FZ.xs, fontWeight: 700, background: on ? T.card : "transparent", color: on ? T.teal600 : T.ink500, boxShadow: on ? T.shadowCard : "none" }}><NavIcon name={ic} size={14} />{l}</button>); })}
         </div>
       </>}

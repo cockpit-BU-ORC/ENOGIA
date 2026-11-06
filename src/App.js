@@ -55,7 +55,7 @@ import { BetaBanner, UserChip } from "./components/AppChrome";
 import { useTurbineDoc, useTestsDoc, useProdTurbines, useDelays, useCashinSync, useAchats } from "./useAppData";
 import { useListFilters, filterOptions, filterRows } from "./listFilters";
 
-const APP_BUILD_VERSION = "2026-11-06-v284-audit-lot3";
+const APP_BUILD_VERSION = "2026-11-06-v285-audit-croise";
 
 export default function App(){
   // Utilisateur connecté via Google, restreint aux comptes @enogia.com (null tant que non connecté).
@@ -121,9 +121,15 @@ export default function App(){
   const isOwner=!!(currentUser?.email&&OWNER_EMAILS.includes(currentUser.email.toLowerCase())); // v185 : propriétaire (seul à voir le Cash in)
   setOwner(isOwner);
 
-  const [darkMode,setDarkMode]=useState(()=>{
-    try{return localStorage.getItem("enogia_darkMode")==="1";}catch(e){return false;}
+  // v285 (audit croisé, lot B) : mode Clair / Sombre / Auto (= comme le système, par défaut). L'ancien « sombre » choisi est gardé.
+  const [darkPref,setDarkPref]=useState(()=>{
+    try{const p=localStorage.getItem("enogia_darkPref");if(p==="light"||p==="dark"||p==="system")return p;return localStorage.getItem("enogia_darkMode")==="1"?"dark":"system";}catch(e){return "system";}
   });
+    const [sysDark,setSysDark]=useState(()=>{try{return !!window.matchMedia("(prefers-color-scheme: dark)").matches;}catch(e){return false;}});
+  useEffect(()=>{const q=window.matchMedia?window.matchMedia("(prefers-color-scheme: dark)"):null;if(!q)return undefined;const on=e=>setSysDark(!!e.matches);if(q.addEventListener)q.addEventListener("change",on);else q.addListener(on);return()=>{if(q.removeEventListener)q.removeEventListener("change",on);else q.removeListener(on);};},[]);
+  useEffect(()=>{try{localStorage.setItem("enogia_darkPref",darkPref);}catch(e){}},[darkPref]);
+  const darkMode=darkPref==="system"?sysDark:darkPref==="dark";
+  const setDarkMode=v=>setDarkPref(v===true?"dark":v===false?"light":v);
   // v139 : thème de couleurs (Marine, Forêt, Cuivre), mémorisé sur ce poste
   const [themeId,setThemeId]=useState(()=>{
     try{const t=localStorage.getItem(THEME_KEY);return THEMES[t]?t:DEFAULT_THEME;}catch(e){return DEFAULT_THEME;}
@@ -1003,7 +1009,7 @@ export default function App(){
       <button className="enogia-nav-btn" onClick={()=>setScreenOpen(true)} title="Écran atelier : diaporama plein écran pour un téléviseur" aria-label="Écran atelier" style={{width:navCompact?40:"100%",height:36,borderRadius:12,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:navCompact?"center":"flex-start",gap:12,padding:navCompact?0:"0 12px",background:"transparent",color:NAV.ink,fontFamily:T.font,fontSize:FZ.sm,fontWeight:500,whiteSpace:"nowrap"}}
         onMouseEnter={e=>{e.currentTarget.style.background=NAV.hover;}}
         onMouseLeave={e=>{e.currentTarget.style.background="transparent";}}><NavIcon name="screen" size={18}/>{!navCompact&&<span className="enogia-nav-lab">Écran atelier</span>}</button>
-      <div style={{display:"flex",justifyContent:navCompact?"center":"flex-start",paddingLeft:navCompact?0:2}}><ThemePicker ink={NAV.industrial?NAV.ink:undefined} darkMode={darkMode} onDarkMode={setDarkMode} themeId={themeId} onPick={setThemeId} density={density} onDensity={setDensityState} presentation={presentation} onPresentation={setPresentation}/></div>
+      <div style={{display:"flex",justifyContent:navCompact?"center":"flex-start",paddingLeft:navCompact?0:2}}><ThemePicker ink={NAV.industrial?NAV.ink:undefined} darkMode={darkMode} darkPref={darkPref} onDarkMode={setDarkMode} themeId={themeId} onPick={setThemeId} density={density} onDensity={setDensityState} presentation={presentation} onPresentation={setPresentation}/></div>
       {<button className="enogia-nav-toggle" onClick={()=>{clearTimeout(navPeekT.current);setNavPeek(v=>!v);}} aria-expanded={navPeek} aria-label={navPeek?"Réduire le menu":"Ouvrir le menu en entier"} title={navPeek?"Réduire le menu":"Ouvrir le menu en entier"} style={{width:navCompact?40:"100%",height:30,marginTop:4,border:"1px solid "+(NAV.industrial?"rgba(255,255,255,.18)":T.line),background:NAV.industrial?"transparent":T.card,borderRadius:9,display:"flex",justifyContent:"center",alignItems:"center",color:NAV.ink,cursor:"pointer",alignSelf:"center"}}><span style={{display:"inline-flex",transform:"rotate("+(navPeek?"90deg":"-90deg")+")",transition:"transform .28s var(--e-ease)"}}><NavIcon name="chevronDown" size={14}/></span></button>}
     </nav>
     </div>
@@ -1020,7 +1026,7 @@ export default function App(){
 
       {/* Barre de marque — fine, claire, sans dégradé : l'identité tient au logo + à la typo, pas à un bloc de couleur */}
       {/* v179 : le logo passe en haut du menu (même ligne de départ que la page) ; la barre ne garde que les outils, sans fond ni filet. */}
-      <div className={"enogia-bar"+(hdrHidden?" is-hidden":"")} style={{flexShrink:0,minHeight:44,display:"flex",alignItems:"center",gap:12,padding:"6px 28px 0",background:"transparent",flexWrap:"wrap",position:"sticky",top:0,zIndex:25,pointerEvents:hdrHidden?"none":"auto"}}>
+      <div role="banner" className={"enogia-bar"+(hdrHidden?" is-hidden":"")} style={{flexShrink:0,minHeight:44,display:"flex",alignItems:"center",gap:12,padding:"6px 28px 0",background:"transparent",flexWrap:"wrap",position:"sticky",top:0,zIndex:25,pointerEvents:hdrHidden?"none":"auto"}}>
         <div className="enogia-bar-right" aria-hidden={hdrHidden?"true":undefined} style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",opacity:hdrHidden?0:1,transform:hdrHidden?"translateY(-6px)":"none",visibility:hdrHidden?"hidden":"visible",transition:"opacity .25s ease, transform .25s var(--e-ease), visibility 0s linear "+(hdrHidden?".25s":"0s")}}>
           {pinOk&&<div className="enogia-bar-meta" style={{display:"flex",alignItems:"baseline",gap:10,fontSize:FZ.xs}}>
             {/* v233 (demandé : « supprimer ») : plus de « N unités · Mis à jour le … · N PJ modifiés » dans la barre */}
@@ -1076,7 +1082,7 @@ export default function App(){
                 jamais varier selon les filtres actifs sur la liste, demandé explicitement — seules
                 les 4 répartitions en camembert, elles, continuent de suivre les filtres. */}
             {view!=="home"&&view!=="turbines"&&view!=="achats"&&(()=>{const v=VIEWS.find(x=>x.id===view);if(!v)return null; /* v262 : Production turbines et Achats / Appro ont leur propre en-tête (pages des kits) */
-              const subs={planner:"Brouillon réservé à vous : déplacez, liez et forcez les PJ ; rien ne change pour les autres avant « Publier »",table:filtered.length+" machine"+(filtered.length>1?"s":"")+" affichée"+(filtered.length>1?"s":"")+" · survolez un état ou un écart pour le détail",gantt:"Chaque machine, étape par étape · Ctrl + molette pour zoomer",calendar:"Arrivées, tests, fins de production et départs",changes:"Ce qui a changé à chaque mise à jour du planning",comments:"Les échanges, machine par machine",tests:"Plans d'essais et affectations des testeurs",cashin:"Encaissements et facturation des PJ",turbines:"Pool de turbines et attributions"};
+              const subs={planner:"Brouillon réservé à vous : déplacez, liez et forcez les PJ ; rien ne change pour les autres avant « Publier »",table:filtered.length+" machine"+(filtered.length>1?"s":"")+" affichée"+(filtered.length>1?"s":"")+" · "+((typeof window!=="undefined"&&window.matchMedia&&window.matchMedia("(hover: none)").matches)?"touchez":"survolez")+" un état ou un écart pour le détail",gantt:"Chaque machine, étape par étape · Ctrl + molette pour zoomer",calendar:"Arrivées, tests, fins de production et départs",changes:"Ce qui a changé à chaque mise à jour du planning",comments:"Les échanges, machine par machine",tests:"Plans d'essais et affectations des testeurs",cashin:"Encaissements et facturation des PJ",turbines:"Pool de turbines et attributions"};
               /* v183 : plus de sur-titre ; v185 : une couleur de trait par page (demandé) */const SS=stageSoft(),HH=stripeHues(),acc={table:SS.production.solid,gantt:SS.tests.solid,calendar:SS.finProd.solid,changes:T.ember500,comments:HH.note,tests:SS.arrivee.solid,planner:SS.production.solid,cashin:SS.finProd.solid,turbines:SS.depart.solid}[view];return <PageHead title={v.l} sub={subs[view]} accent={acc}/>;})()}
             {view==="home"&&<HomeView pinOk={pinOk} testsDoc={canSeeTests?testsView:null} data={dataWithOverrides} comments={comments} myEmail={currentUser&&currentUser.email} myName={authorName} people={peopleAll} unseenChanges={unseenChanges} lastImport={lastImport} onOpenPj={setCalSel} onGo={setView} profiles={profiles} owner={isOwner} cash={canCash} turbineDoc={turbineDoc} onOpenCash={canCash?()=>setView("cashin"):null} prodDoc={prodDoc} canProdTurb={canProdTurb} productionExclusions={productionExclusions} plan={planDoc&&planDoc.plan} closurePeriods={closurePeriods} saveHomeLayout={isOwner?saveHomeLayout:null}/>}
             {view==="table"&&<DashboardSummary data={filtered} allData={dataWithOverrides} progress={progressEff} changeLog={changeLog} onOpenChanges={()=>setView("changes")}/>}

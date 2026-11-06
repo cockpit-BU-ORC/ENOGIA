@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { AppWindow, ArrowRight, At, Bell, Briefcase, CalendarDots, CaretDown, ChartBarHorizontal, ChartLine, ChatsCircle, Check, Clock, Copy, CurrencyEur, DotsThree, DownloadSimple, Factory, Flag, FloppyDisk, Gauge, GearSix, GitDiff, House, ListBullets, LockSimple, MagnifyingGlass, Moon, Palette, PencilSimple, Play, PushPin, SidebarSimple, SignOut, Stack, Sun, Tag, Television, Trash, Tray, UploadSimple, Warning, X } from "@phosphor-icons/react";
+import { AppWindow, CircleHalf, ArrowRight, At, Bell, Briefcase, CalendarDots, CaretDown, ChartBarHorizontal, ChartLine, ChatsCircle, Check, Clock, Copy, CurrencyEur, DotsThree, DownloadSimple, Factory, Flag, FloppyDisk, Gauge, GearSix, GitDiff, House, ListBullets, LockSimple, MagnifyingGlass, Moon, Palette, PencilSimple, Play, PushPin, SidebarSimple, SignOut, Stack, Sun, Tag, Television, Trash, Tray, UploadSimple, Warning, X } from "@phosphor-icons/react";
 import { createPortal } from "react-dom";
 import { T, FZ, R } from "../theme";
 import { isSuperAdmin } from "../roles";
@@ -298,7 +298,7 @@ export function ImportButton({onImport, busy, label, accent, helpText, warnText,
 
 // ── Icônes de navigation vectorielles (identité "instrument technique", pas d'emoji) ──
 // v177 : icônes Phosphor (phosphoricons.com, demandé par Gabriel) — mêmes noms qu'avant, donc aucun appel à modifier.
-const PH_ICONS={edit:PencilSimple,trash:Trash,bell:Bell,home:House,more:DotsThree,copy:Copy,arrow:ArrowRight,at:At,flag:Flag,palette:Palette,changes:GitDiff,list:ListBullets,gantt:ChartBarHorizontal,calendar:CalendarDots,comments:ChatsCircle,screen:Television,euro:CurrencyEur,sidepanel:SidebarSimple,popup:AppWindow,manager:Briefcase,lock:LockSimple,layers:Stack,gauge:Gauge,check:Check,chart:ChartLine,tag:Tag,warning:Warning,upload:UploadSimple,pin:PushPin,sun:Sun,factory:Factory,sunSm:Sun,moon:Moon,download:DownloadSimple,inbox:Tray,logout:SignOut,clock:Clock,settings:GearSix,save:FloppyDisk,search:MagnifyingGlass,close:X,chevronDown:CaretDown,play:Play};
+const PH_ICONS={edit:PencilSimple,trash:Trash,bell:Bell,home:House,more:DotsThree,copy:Copy,arrow:ArrowRight,at:At,flag:Flag,palette:Palette,changes:GitDiff,list:ListBullets,gantt:ChartBarHorizontal,calendar:CalendarDots,comments:ChatsCircle,screen:Television,euro:CurrencyEur,sidepanel:SidebarSimple,popup:AppWindow,manager:Briefcase,lock:LockSimple,layers:Stack,gauge:Gauge,check:Check,chart:ChartLine,tag:Tag,warning:Warning,upload:UploadSimple,pin:PushPin,sun:Sun,factory:Factory,sunSm:Sun,moon:Moon,auto:CircleHalf,download:DownloadSimple,inbox:Tray,logout:SignOut,clock:Clock,settings:GearSix,save:FloppyDisk,search:MagnifyingGlass,close:X,chevronDown:CaretDown,play:Play};
 export function NavIcon({name,size=18,weight="regular"}){
   const I=PH_ICONS[name];
   return I?<I size={size} weight={weight} aria-hidden="true" style={{flexShrink:0}}/>:null;
@@ -371,25 +371,11 @@ export function SuperOnly({children}){ return isSuperAdmin()?<>{children}</>:nul
 
 // v162 — nombre qui « monte » jusqu'à sa valeur (1re apparition et à chaque changement). Chiffres tabulaires pour éviter tout saut de largeur.
 // Respecte « réduire les animations » : dans ce cas la valeur est affichée directement.
-export function AnimatedNumber({value,duration=300,style}){
+// v285 (audit croisé, lot B) : le chiffre final s'affiche tout de suite — compter depuis 0 montrait un faux chiffre
+// pendant l'animation (capture, coup d'œil). Nom gardé pour ne pas toucher les appels ; un simple fondu quand la valeur change.
+export function AnimatedNumber({value,style}){
   const target=Number(value)||0;
-  const [shown,setShown]=React.useState(()=>{try{if(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches)return target;}catch(e){}return 0;});
-  const fromRef=React.useRef(shown);
-  React.useEffect(()=>{
-    const from=fromRef.current;
-    if(from===target)return undefined;
-    let raf=0,t0=null;
-    const step=t=>{
-      if(t0==null)t0=t;
-      const k=Math.min(1,(t-t0)/duration),e=1-Math.pow(1-k,3);
-      const v=Math.round(from+(target-from)*e);
-      fromRef.current=v;setShown(v);
-      if(k<1)raf=requestAnimationFrame(step);
-    };
-    raf=requestAnimationFrame(step);
-    return()=>cancelAnimationFrame(raf);
-  },[target,duration]);
-  return <span style={{fontVariantNumeric:"tabular-nums",...style}}>{shown}</span>;
+  return <span key={target} className="enogia-num-in" style={{fontVariantNumeric:"tabular-nums",...style}}>{target}</span>;
 }
 
 // ── v162 : bulle d'info au survol (portail, clavier OK) ─────────────────────────────────────────────────────────────────

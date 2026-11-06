@@ -81,11 +81,11 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
   return(<div style={{paddingBottom:folded?10:16,marginBottom:folded?12:16,borderBottom:"1px solid "+T.line,fontFamily:T.font}}>
     {/* Pas de carte ici : le bandeau est posé directement sur le fond de page (direction "Piste A"),
         séparé du reste par un simple filet. L'en-tête reste fixe, avec le contrôle d'affichage ancré à droite. */}
-    <div style={{display:"flex",alignItems:"center",gap:12}}>
+    <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
       {/* v283 (audit apple-design, lot 2) : une ligne de chiffres, les 4 répartitions repliées par défaut derrière « Répartitions » */}
       <div style={{display:"flex",alignItems:"baseline",gap:"6px 16px",flexWrap:"wrap",minWidth:0}}>
-        {[[total,"machine"+(total>1?"s":""),T.ink900],...topEtats.map(x=>[x.value,x.name.toLowerCase(),T.ink900]),[shippedYTD,"livrée"+(shippedYTD>1?"s":"")+" depuis mai",T.emerald600]].map(([n,l,c],i)=>
-          <span key={i} style={{display:"inline-flex",alignItems:"baseline",gap:6,whiteSpace:"nowrap"}}><b style={{fontFamily:T.fontDisplay,fontSize:18,fontWeight:600,color:c,fontVariantNumeric:"tabular-nums"}}>{n}</b><span style={{fontSize:FZ.sm,color:T.ink500}}>{l}</span></span>)}
+        {[[total,"machine"+(total>1?"s":""),T.ink900],...topEtats.map(x=>[x.value,x.name.toLowerCase(),T.ink900]),[shippedYTD,"expédiée"+(shippedYTD>1?"s":"")+" depuis mai",T.emerald600]].map(([n,l,c],i)=>
+          <span key={i} style={{display:"inline-flex",alignItems:"baseline",gap:6,minWidth:0}}><b style={{fontFamily:T.fontDisplay,fontSize:18,fontWeight:600,color:c,fontVariantNumeric:"tabular-nums"}}>{n}</b><span style={{fontSize:FZ.sm,color:T.ink500}}>{l}</span></span>)}
         {notShipped.length>0&&<span title={"Départ passé, état pas encore « Expédiée » : "+notShipped.map(r=>r.pj).join(", ")} style={{fontSize:FZ.xs,fontWeight:700,color:T.amber600}}>+ {notShipped.length} départ{notShipped.length>1?"s":""} passé{notShipped.length>1?"s":""} pas encore « Expédiée »</span>}
       </div>
       <button onClick={toggleCollapsed} aria-expanded={!collapsed} style={{marginLeft:"auto",flexShrink:0,minHeight:30,padding:"0 12px",borderRadius:8,border:"1px solid "+T.line,background:T.card,cursor:"pointer",color:T.ink700,fontWeight:600,fontSize:FZ.sm,fontFamily:T.font,display:"inline-flex",alignItems:"center",gap:6}}>
@@ -100,7 +100,7 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
     {<div className="enogia-dash" style={{display:"flex",alignItems:"center",gap:24,flexWrap:"wrap",marginTop:12}}>
       <div style={{display:"flex",flexDirection:"column",gap:2,minWidth:120,flexShrink:0}}>
         <div style={{fontSize:"clamp(36px,4vw,46px)",fontWeight:300,letterSpacing:"-.03em",color:T.ink900,fontFamily:T.fontDisplay,lineHeight:.95,fontVariantNumeric:"tabular-nums"}}><AnimatedNumber value={shippedYTD}/></div>
-        <div style={{fontSize:FZ.xs,color:T.ink500}}>machine{shippedYTD>1?"s":""} livrée{shippedYTD>1?"s":""}<br/>depuis le {SHIPPED_SINCE_LABEL}</div>
+        <div style={{fontSize:FZ.xs,color:T.ink500}}>machine{shippedYTD>1?"s":""} expédiée{shippedYTD>1?"s":""}<br/>depuis le {SHIPPED_SINCE_LABEL}</div>
         {notShipped.length>0&&<div title={"Départ passé, état pas encore « Expédiée » : "+notShipped.map(r=>r.pj).join(", ")} style={{fontSize:FZ.xs,fontWeight:700,color:T.amber600,marginTop:2}}>+ {notShipped.length} départ{notShipped.length>1?"s":""} passé{notShipped.length>1?"s":""}<br/>pas encore « Expédiée »</div>}
       </div>
 
@@ -131,7 +131,7 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
             </div>
             <div style={{minWidth:0,flex:1}}>
               <div style={{display:"flex",alignItems:"baseline",marginBottom:4}}>
-                <h3 style={{margin:0,fontSize:FZ.xs,fontWeight:700,color:T.ink900}}>Par {d.label.toLowerCase()}</h3>
+                <h2 style={{margin:0,fontSize:FZ.xs,fontWeight:700,color:T.ink900}}>Par {d.label.toLowerCase()}</h2>
                 <span style={{marginLeft:8,fontSize:FZ.xs,fontWeight:700,color:T.ink900,fontVariantNumeric:"tabular-nums"}}>{total}</span>
               </div>
               {total===0?<div style={{fontSize:FZ.xs,color:T.ink500}}>Aucune machine avec ces filtres.</div>:

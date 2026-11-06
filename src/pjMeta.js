@@ -1,5 +1,5 @@
 import React from "react";
-import { T, FZ, mixHex } from "./theme";
+import { T, FZ, mixHex, inkOn } from "./theme";
 import { isEstimatePj } from "./changeDiff";
 
 // Corrections manuelles de gamme, prioritaires sur ce qui est importé/deviné — s'appliquent immédiatement, sans réimport.
@@ -127,7 +127,7 @@ export function relTime(iso){
 export function Avatar({name,tint,size}){
   const s=size||30;
   return(
-    <div style={{width:s,height:s,borderRadius:"50%",background:tint||T.teal500,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:Math.max(9,s*0.37),fontWeight:700,flexShrink:0,fontFamily:T.font}}>
+    <div style={{width:s,height:s,borderRadius:"50%",background:tint||T.teal500,color:inkOn(tint||T.teal500) /* v285 : blanc sur ambre = 2:1 */,display:"flex",alignItems:"center",justifyContent:"center",fontSize:Math.max(9,s*0.37),fontWeight:700,flexShrink:0,fontFamily:T.font}}>
       {initials(name)}
     </div>
   );

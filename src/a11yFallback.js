@@ -46,6 +46,11 @@ function pass(root) {
     if (el.closest("label")) return;
     el.setAttribute("aria-label", contextLabel(el));
   });
+  // v285 : un texte coupé par « … » sans infobulle reçoit son texte complet
+  scope.querySelectorAll('[style*="ellipsis"]').forEach(el => {
+    if (el.title || el.closest("[title]") || el.scrollWidth <= el.clientWidth + 1) return;
+    const t = (el.innerText || "").trim(); if (t) el.title = t;
+  });
   scope.querySelectorAll("button,[role=button]").forEach(b => {
     if (!(b.getAttribute("aria-label") || b.getAttribute("aria-labelledby") || b.title || (b.innerText || "").trim())) {
       const th = b.closest("th");

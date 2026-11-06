@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v285",
+    date: "2026-11-06",
+    title: "V285 : cloche plus juste, mode sombre automatique",
+    items: [
+      { t: "Cloche", d: "En rouge seulement ce qui vous attend ; les projets modifiés par le planning sont en gris." },
+      { t: "Apparence", d: "Choix « Auto » : clair ou sombre comme votre ordinateur." },
+      { t: "Chiffres", d: "« Expédiées depuis mai », et les chiffres s'affichent directement." },
+    ],
+  },
+  {
     id: "2026-11-v284",
     date: "2026-11-06",
     title: "V284 : Cash in et accueil plus faciles à lire",

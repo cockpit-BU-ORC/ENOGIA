@@ -2039,3 +2039,13 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Accueil : chiffres clés en poids 500 ; cadran Tests en une ligne de chiffres.
 - Pas de nouvelle donnée ni de clé `localStorage`.
 - Fichiers : public/cashin.html, cashinData.js, components/HomeView.js, components/RoleHome.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v285 — Audit croisé, lots A et B
+
+- Demandé : « Oui, A et B » (audit multi-skills).
+- Police héritée par les boutons et champs ; contrastes corrigés (liens de l'accueil, initiales des avatars, « i » de la Liste) ; titres h2 et en-tête de page ; texte complet au survol des textes coupés ; Liste au téléphone sans chevauchement.
+- Cloche : rouge = demandes qui vous attendent ; projets modifiés en gris.
+- Mode Clair / Sombre / Auto (comme l'ordinateur, par défaut).
+- « Expédiées depuis mai » ; chiffres affichés directement ; « touchez » sur écran tactile.
+- Clé `localStorage` : `enogia_darkPref` (light / dark / system), `enogia_darkMode` encore écrit.
+- Fichiers : styles.css, a11yFallback.js, pjMeta.js, App.js, components/HomeView.js, TableView.js, DashboardSummary.js, TestsTab.js, MentionBell.js, ThemePicker.js, SharedUI.js, KpiPilotage.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

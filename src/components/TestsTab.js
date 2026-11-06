@@ -165,7 +165,7 @@ function BenchStrip({ rows, doc, catalog, testers, on, onPick }) {
   const next = rows.filter(r => startOf(r) > today).sort((x, y) => startOf(x) - startOf(y))[0];
   return (<section aria-label="Au banc maintenant" style={{ minWidth: 0 }}>
     <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 6 }}>
-      <h3 style={{ margin: 0, fontSize: FZ.sm, fontWeight: 700, color: T.ink900 }}>Au banc maintenant</h3>
+      <h2 style={{ margin: 0, fontSize: FZ.sm, fontWeight: 700, color: T.ink900 }}>Au banc maintenant</h2>
       <Cap>{items.length ? items.length + " machine" + (items.length > 1 ? "s" : "") : "aucune machine aujourd'hui"}</Cap>
     </div>
     <div className="enogia-stagger" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%,240px),1fr))", gap: 10 }}>
@@ -214,7 +214,7 @@ function ResultsFeed({ rows, doc, catalog, onPick }) {
   });
   ev.sort((a, b) => new Date(b.at) - new Date(a.at));
   return (<section aria-label="Derniers résultats" style={{ minWidth: 0, background: T.card, border: "1px solid " + T.line, borderRadius: 10, padding: "10px 12px" }}>
-    <h3 style={{ margin: "0 0 6px", fontSize: FZ.sm, fontWeight: 700, color: T.ink900 }}>Derniers résultats</h3>
+    <h2 style={{ margin: "0 0 6px", fontSize: FZ.sm, fontWeight: 700, color: T.ink900 }}>Derniers résultats</h2>
     {ev.length === 0 && <div style={{ fontSize: FZ.xs, color: T.ink500 }}>Aucun résultat ces 14 derniers jours. Ils apparaissent ici dès qu'un test est marqué réussi ou en échec.</div>}
     <ol className="enogia-stagger" style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column" }}>
       {ev.slice(0, 7).map((e, i) => <li key={e.pj + e.name + e.at} style={{ borderTop: i ? "1px solid " + T.line : "none" }}>
@@ -314,7 +314,7 @@ function BenchGrid({ rows, allRows, doc, catalog, testers, conflicts, on, onPick
   const pres = (k, d) => d ? <><i aria-hidden="true" style={{ width: 8, height: 8, borderRadius: "50%", background: PRESENCE_META[k].color, flexShrink: 0 }} /><span style={{ fontVariantNumeric: "tabular-nums", color: T.ink900 }}>{fdm(dIso(d))}</span></> : d === "" ? <span style={{ color: T.ink500 }}>à fixer</span> : <span style={{ color: T.ink300 }}>—</span>;
   return (<section aria-label="Planning des bancs" className="enogia-bg" style={{ ...CARD, padding: 0, overflow: "hidden" }}>
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "10px 14px", flexWrap: "wrap", borderBottom: "1px solid " + T.line }}>
-      <div><h3 style={{ margin: 0, fontSize: FZ.md, fontWeight: 700, color: T.ink900 }}>Planning des bancs</h3><div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 2 }}>Du {fd(days[0])} au {fd(end)} · {list.length} PJ, dont {inWin} sur ces 3 semaines</div></div>
+      <div><h2 style={{ margin: 0, fontSize: FZ.md, fontWeight: 700, color: T.ink900 }}>Planning des bancs</h2><div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 2 }}>Du {fd(days[0])} au {fd(end)} · {list.length} PJ, dont {inWin} sur ces 3 semaines</div></div>
       <span style={{ display: "inline-flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
         <GridLegend />
         {without.length > 0 && <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: FZ.xs, color: T.ink700, fontWeight: 600, minHeight: 28, cursor: "pointer" }}><input type="checkbox" checked={noPer} onChange={e => setNoPer(e.target.checked)} />PJ sans période ({without.length})</label>}
@@ -721,7 +721,7 @@ export function TesterTimeline({ doc, rows, testers, catalog, conflicts, commit,
   const rowStyle = { display: "flex", borderBottom: "1px solid " + T.line, alignItems: "stretch", minHeight: LANE_H };
   return (<div style={{ ...CARD, overflow: "hidden" }}>
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "10px 14px", flexWrap: "wrap" }}>
-      <div><h3 style={{ margin: 0, fontSize: FZ.md, fontWeight: 700, color: T.ink900 }}>Testeurs</h3><div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 2 }}>Du {fd(days[0])} au {fd(end)} · une ligne par testeur : qui est pris, qui est libre{canEdit ? " · glissez une barre sur un testeur pour l'affecter" : ""}</div></div>
+      <div><h2 style={{ margin: 0, fontSize: FZ.md, fontWeight: 700, color: T.ink900 }}>Testeurs</h2><div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 2 }}>Du {fd(days[0])} au {fd(end)} · une ligne par testeur : qui est pris, qui est libre{canEdit ? " · glissez une barre sur un testeur pour l'affecter" : ""}</div></div>
       <div style={{ display: "inline-flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
         <GridLegend />
         {myTester && <button type="button" onClick={() => testerIcs(doc, myTester, rows)} title="Télécharger mes périodes de banc pour Outlook / Google Agenda. Réimportez le fichier après une mise à jour du planning : les événements sont mis à jour, pas dupliqués." style={{ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "4px 10px", minHeight: 28, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}><NavIcon name="calendar" size={14} />Mon agenda (.ics)</button>}
@@ -790,7 +790,7 @@ function CatalogView({ doc, catalog, commit }) {
     </div>
     {SECTIONS.map(([k, label, hint]) => (<section key={k} aria-label={label} style={{ ...CARD, padding: 0, overflow: "hidden", borderTop: "3px solid " + SEC_BORDER[k]() }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8, padding: "10px 14px", flexWrap: "wrap" }}>
-        <h3 style={{ margin: 0, fontSize: FZ.md, fontWeight: 700, color: T.ink900 }}>{label}</h3>
+        <h2 style={{ margin: 0, fontSize: FZ.md, fontWeight: 700, color: T.ink900 }}>{label}</h2>
         <span style={{ fontSize: FZ.xs, color: T.ink500 }}>{hint} · {catalog[k].length} test{catalog[k].length > 1 ? "s" : ""}</span>
       </div>
       <div style={{ overflowX: "auto" }}>

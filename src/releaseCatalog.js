@@ -724,4 +724,10 @@ export const RELEASE_CATALOG = [
     ["Cash in", "Bouton « Haut de page » en bas à droite dès qu'on a défilé d'un écran ; cases à cocher plus grandes.", "admin"],
     ["Accueil", "Chiffres clés plus lisibles ; le cadran Tests tient en une ligne de chiffres (au banc, sans testeur, échecs, en retard, conflits).", "all"],
   ] },
+  { v: "285", t: "Cloche plus juste, mode sombre automatique, lecture améliorée", items: [
+    ["Cloche", "Le rouge et « à traiter » ne comptent plus que ce qui vous attend (cité, affecté aux tests). Les projets modifiés par le planning s'affichent en gris, comme des mises à jour.", "all"],
+    ["Apparence", "Nouveau choix « Auto » : le Cockpit passe en clair ou en sombre comme votre ordinateur (réglage par défaut).", "all"],
+    ["Accueil et Liste", "« Expédiées depuis mai » au lieu de « livrées » (livrée = arrivée chez le client) ; les chiffres s'affichent directement, sans compter depuis zéro.", "all"],
+    ["Partout", "Police des boutons harmonisée, liens et initiales plus contrastés, texte complet au survol des noms coupés ; au téléphone, la ligne de chiffres de la Liste ne chevauche plus le bouton.", "all"],
+  ] },
 ];
