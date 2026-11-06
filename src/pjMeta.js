@@ -258,7 +258,7 @@ export function PresenceChip({kind,date,dates,compact,fontSize,tiny,short}){
   const title="Présence "+PRESENCE_META[kind].label+" aux tests"+parts.map(k=>dOf(k)?" — "+PRESENCE_META[k].label+" le "+dOf(k):"").join("");
   return(<span title={title} style={{display:"inline-flex",alignItems:"center",gap:4,flexShrink:0}}>
     {parts.map(k=>{const m=PRESENCE_META[k],d=!compact&&!tiny?dOf(k):"";return(
-      <span key={k} style={{display:"inline-flex",alignItems:"center",gap:4,background:T.card,color:T.ink900,border:"1px solid "+T.ink300,borderLeft:"4px solid "+m.color,borderRadius:3,padding:"0 6px 0 4px",fontFamily:T.fontLabel,fontSize:fs,fontWeight:600,lineHeight:(fs+6)+"px",whiteSpace:"nowrap"}}>
+      <span key={k} style={{display:"inline-flex",alignItems:"center",gap:4,background:T.card,color:T.ink900,border:"1px solid "+T.ink300,borderLeft:"4px solid "+m.color,borderRadius:4,padding:"0 6px 0 4px",fontFamily:T.fontLabel,fontSize:fs,fontWeight:600,lineHeight:(fs+6)+"px",whiteSpace:"nowrap"}}>
         {!short&&(k==="nobo"?<ShieldIcon size={fs+1} color={m.color}/>:<PersonIcon size={fs+1} color={m.color}/>)}{short?(k==="client"?"C":"N"):m.short}{d?" "+d:""}
       </span>);})}
   </span>);
@@ -364,7 +364,7 @@ export function SerieTag({pj,size=10.5,style}){
 }
 // v173-v176 : plaque de n° de PJ (plaque signalétique de machine) — police d'identifiant ; v176 : fond clair + filet au lieu du marine plein (jugé « bizarre »).
 export function PjPlate({pj,size="sm",style}){
-  return <span className="enogia-plate" style={{fontFamily:T.fontDisplay,fontWeight:800,fontSize:size==="lg"?15:13,lineHeight:1,letterSpacing:".02em",background:T.surfaceAlt,color:T.ink900,border:"1px solid "+T.line,padding:size==="lg"?"5px 8px":"3px 7px",borderRadius:3,whiteSpace:"nowrap",display:"inline-block",flexShrink:0,fontVariantNumeric:"tabular-nums",...style}}>{pj}</span>;
+  return <span className="enogia-plate" style={{fontFamily:T.fontDisplay,fontWeight:800,fontSize:size==="lg"?15:13,lineHeight:1,letterSpacing:".02em",background:T.surfaceAlt,color:T.ink900,border:"1px solid "+T.line,padding:size==="lg"?"5px 8px":"3px 7px",borderRadius:4,whiteSpace:"nowrap",display:"inline-block",flexShrink:0,fontVariantNumeric:"tabular-nums",...style}}>{pj}</span>;
 }
 export function ProjectLabelCell({pj,r,meta,mark,noSn}){
   const c=ETAT_META[r.etat]||ETAT_META["NOT ORDERED"];

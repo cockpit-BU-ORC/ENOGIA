@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { AppWindow, CircleHalf, ArrowRight, At, Bell, Briefcase, CalendarDots, CaretDown, ChartBarHorizontal, ChartLine, ChatsCircle, Check, Clock, Copy, CurrencyEur, DotsThree, DownloadSimple, Factory, Flag, FloppyDisk, Gauge, GearSix, GitDiff, House, ListBullets, LockSimple, MagnifyingGlass, Moon, Palette, PencilSimple, Play, PushPin, SidebarSimple, SignOut, Stack, Sun, Tag, Television, Trash, Tray, UploadSimple, Warning, X } from "@phosphor-icons/react";
 import { createPortal } from "react-dom";
-import { T, FZ, R } from "../theme";
+import { T, FZ, R, btn } from "../theme";
 import { isSuperAdmin } from "../roles";
 import { ETAT_META, getPjMeta, SerieTag } from "../pjMeta";
 import { parseMSProjectRows } from "../parsers";
@@ -51,7 +51,7 @@ export function Toaster(){
   if(!list.length)return null;
   return(<div aria-live="polite" style={{position:"fixed",right:16,bottom:16,zIndex:10060,display:"flex",flexDirection:"column",gap:8,maxWidth:"min(420px,calc(100vw - 32px))",fontFamily:T.font}}>
     {list.map(t=>{const err=t.kind==="error",ok=t.kind==="ok";return(
-      <div key={t.id} role={err?"alert":"status"} className={"enogia-toast"+(t.leaving?" is-leaving":"")} style={{display:"flex",alignItems:"flex-start",gap:10,background:T.card,color:T.ink900,border:"1px solid "+T.line,borderLeft:"4px solid "+(err?T.red500:ok?T.emerald500:T.teal500),borderRadius:10,padding:"10px 12px",boxShadow:T.shadowFloat,fontSize:FZ.sm,lineHeight:1.45}}>
+      <div key={t.id} role={err?"alert":"status"} className={"enogia-toast"+(t.leaving?" is-leaving":"")} style={{display:"flex",alignItems:"flex-start",gap:10,background:T.card,color:T.ink900,border:"1px solid "+T.line,borderLeft:"4px solid "+(err?T.red500:ok?T.emerald500:T.teal500),borderRadius:12,padding:"10px 12px",boxShadow:T.shadowFloat,fontSize:FZ.sm,lineHeight:1.45}}>
         <span aria-hidden="true" style={{color:err?T.red600:ok?T.emerald600:T.teal600,display:"inline-flex",marginTop:1}}><NavIcon name={err?"warning":ok?"check":"inbox"} size={17}/></span>
         <span style={{flex:1,minWidth:0}}>{t.message}</span>
         <button type="button" onClick={()=>setList(l=>l.filter(x=>x.id!==t.id))} aria-label="Fermer la notification" style={{border:"none",background:"transparent",color:T.ink500,cursor:"pointer",padding:2,minWidth:24,minHeight:24,display:"inline-flex",alignItems:"center",justifyContent:"center"}}><NavIcon name="close" size={14}/></button>
@@ -116,7 +116,7 @@ export function DropFilter({label,options,selected,onChange,getLabel,icon,sort})
           </div>
           <div style={{padding:"8px 12px",borderTop:"1px solid "+T.line,display:"flex",justifyContent:"space-between",alignItems:"center",background:T.surface,flexShrink:0,borderRadius:"0 0 10px 10px"}}>
             <span style={{fontSize:FZ.xs,color:T.ink500,fontWeight:500}}>{selected.size}/{options.length}</span>
-            <button onClick={()=>setOpen(false)} style={{padding:"4px 12px",borderRadius:8,border:"none",background:T.teal500,color:"#fff",fontSize:FZ.xs,fontWeight:700,cursor:"pointer"}}>OK</button>
+            <button onClick={()=>setOpen(false)} style={{padding:"4px 12px",borderRadius:8,border:"none",background:T.ink900,color:T.card,fontSize:FZ.xs,fontWeight:700,cursor:"pointer"}}>OK</button>
           </div>
         </div>
       </>,document.body)}
@@ -187,7 +187,7 @@ export const PIN="2214";
 export function PinGate({onUnlock}){
   const [v,setV]=useState("");const [err,setErr]=useState(false);
   const check=()=>{if(v===PIN)onUnlock();else{setErr(true);setV("");setTimeout(()=>setErr(false),1200);}};
-  return(<div style={{background:T.card,borderRadius:16,padding:36,maxWidth:300,margin:"40px auto",boxShadow:T.shadowLg,textAlign:"center",fontFamily:T.font}}>
+  return(<div style={{background:T.card,borderRadius:12,padding:36,maxWidth:300,margin:"40px auto",boxShadow:T.shadowLg,textAlign:"center",fontFamily:T.font}}>
     <div style={{width:48,height:48,margin:"0 auto 14px",borderRadius:12,background:T.surface,boxShadow:T.insetSm,color:T.teal600,display:"flex",alignItems:"center",justifyContent:"center"}}><NavIcon name="lock" size={22}/></div>
     <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.lg,color:T.ink900,marginBottom:18}}>Accès Manager</div>
     <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,maxWidth:190,margin:"0 auto 14px"}}>
@@ -206,7 +206,7 @@ export function PinGate({onUnlock}){
 // v146 : plus de clavier PIN pour entrer dans l'espace Manager. L'accès se fait uniquement par adresse mail
 // (liste « Accès Manager » + super admin). Cet écran s'affiche aux autres comptes.
 export function ManagerAccessNotice({email}){
-  return(<div role="status" style={{background:T.card,borderRadius:16,padding:"32px 28px",maxWidth:420,margin:"40px auto",boxShadow:T.shadowLg,textAlign:"center",fontFamily:T.font}}>
+  return(<div role="status" style={{background:T.card,borderRadius:12,padding:"32px 28px",maxWidth:420,margin:"40px auto",boxShadow:T.shadowLg,textAlign:"center",fontFamily:T.font}}>
     <div style={{width:48,height:48,margin:"0 auto 14px",borderRadius:12,background:T.surface,boxShadow:T.insetSm,color:T.teal600,display:"flex",alignItems:"center",justifyContent:"center"}}><NavIcon name="lock" size={22}/></div>
     <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.lg,color:T.ink900,marginBottom:8}}>Espace Manager réservé</div>
     <div style={{fontSize:FZ.md,color:T.ink700,lineHeight:1.5}}>
@@ -276,7 +276,7 @@ export function ImportButton({onImport, busy, label, accent, helpText, warnText,
     </button>
     {open&&!busy&&<>
       <div onClick={()=>setOpen(false)} style={{position:"fixed",inset:0,zIndex:9998}}/>
-      <div style={{position:"fixed",top:pos.top,left:pos.left,background:T.card,borderRadius:16,boxShadow:T.shadowLg,border:"1px solid "+T.line,zIndex:9999,width:320,padding:16}}>
+      <div style={{position:"fixed",top:pos.top,left:pos.left,background:T.card,borderRadius:12,boxShadow:T.shadowLg,border:"1px solid "+T.line,zIndex:9999,width:320,padding:16}}>
       <div style={{fontWeight:700,fontSize:FZ.lg,color:T.ink900,marginBottom:8}}>{btnLabel}</div>
       <div style={{fontSize:FZ.md,color:T.ink500,marginBottom:14,lineHeight:1.6}}>
         {helpText||(<>Export Excel (.xlsx) avec colonnes <b>Nom, Début, Niveau hiérarchique</b>.<br/>Niveau 1 = PJ · Niveau 2 = Arrivée / Tests / Fin de production / Départ.</>)}
@@ -428,4 +428,9 @@ export function PageHead({kicker,title,sub,right,style,accent}){ // v185 : accen
     </div>
     {right}
   </div>);
+}
+
+// v286 : bouton commun du site — <Btn v="pri|sec|ghost|dan" size="sm|md" …> ; survol et désactivé via les classes e-btn (styles.css)
+export function Btn({ v = "sec", size = "md", style, className, type = "button", ...rest }) {
+  return <button type={type} className={"e-btn e-btn-" + v + (className ? " " + className : "")} style={{ ...btn(v, size), ...style }} {...rest} />;
 }

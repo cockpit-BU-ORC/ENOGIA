@@ -92,7 +92,7 @@ export function RoleHome({ role, profile, ui, kpiEl, depEl, parcoursEl, rows, op
       <b style={{ fontFamily: T.fontDisplay, fontSize: "clamp(18px,1.5vw,22px)", fontWeight: 600, color: tone || T.ink900, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{value}</b>
       <span style={{ fontSize: FZ.sm, color: T.ink500, whiteSpace: "nowrap" }}>{label}</span></C>; })}
   </div>;
-  const bar = (pct, color) => <div style={{ height: 6, borderRadius: 3, background: T.surfaceAlt, overflow: "hidden" }}><div className="enogia-bar-fill" style={{ width: Math.max(0, Math.min(100, pct)) + "%", height: 6, background: color }} /></div>;
+  const bar = (pct, color) => <div style={{ height: 6, borderRadius: 4, background: T.surfaceAlt, overflow: "hidden" }}><div className="enogia-bar-fill" style={{ width: Math.max(0, Math.min(100, pct)) + "%", height: 6, background: color }} /></div>;
 
   /* ── données communes ── */
   const w0 = monday(today), weekEnd = addD(w0, 6);
@@ -268,7 +268,7 @@ export function RoleHome({ role, profile, ui, kpiEl, depEl, parcoursEl, rows, op
     return sec("ptDates", "Dates prévisionnelles des turbines", S.production.ring, <><Head title="Dates prévisionnelles" sub="prochaines turbines, jours ouvrés" count={pt.upcoming.length} />
       {L.length === 0 ? empty("inbox", "Aucune turbine en cours", "") : L.map(({ t, s }, i) => <div key={t.id} style={{ display: "flex", gap: 10, minHeight: 32, alignItems: "center", borderTop: i ? "1px solid " + T.line : "none", fontSize: FZ.sm }}>
         <b style={{ fontFamily: T.fontMono, width: 64, flex: "none" }}>{t.num}</b>
-        <div style={{ flex: 1, position: "relative", height: 10, background: T.surface, borderRadius: 3 }}>{(s.segs || []).map((g, j) => <i key={j} style={{ position: "absolute", top: 0, bottom: 0, left: pct(g.from) + "%", width: (g.to === null ? 100 - pct(g.from) : pct(g.to) - pct(g.from)) + "%", borderRadius: 2, background: g.ph === "wait" ? "repeating-linear-gradient(135deg," + A.orange.ring + " 0 3px,transparent 3px 7px)" : g.ph === "missing" ? "repeating-linear-gradient(135deg," + A.red.ring + " 0 3px,transparent 3px 7px)" : col(g.ph) }} />)}</div>
+        <div style={{ flex: 1, position: "relative", height: 10, background: T.surface, borderRadius: 4 }}>{(s.segs || []).map((g, j) => <i key={j} style={{ position: "absolute", top: 0, bottom: 0, left: pct(g.from) + "%", width: (g.to === null ? 100 - pct(g.from) : pct(g.to) - pct(g.from)) + "%", borderRadius: 4, background: g.ph === "wait" ? "repeating-linear-gradient(135deg," + A.orange.ring + " 0 3px,transparent 3px 7px)" : g.ph === "missing" ? "repeating-linear-gradient(135deg," + A.red.ring + " 0 3px,transparent 3px 7px)" : col(g.ph) }} />)}</div>
         <span style={{ width: 110, textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 600, color: s.missing ? T.red500 : s.noRoue ? T.amber600 : T.ink700 }}>{s.missing ? "arbre manquant" : s.noRoue ? "roue à attribuer" : s.end != null ? pt.offDate(s.end).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "numeric" }) : "—"}</span></div>)}
       {ptOpen()}</>); } };
   const stockList = (id, label, list, val, sub) => sec(id, label, S.arrivee.ring, <><Head title={label} count={list.reduce((a, r) => a + val(r), 0)} />
@@ -314,7 +314,7 @@ export function RoleHome({ role, profile, ui, kpiEl, depEl, parcoursEl, rows, op
   W.raccourcis = { label: "Raccourcis", span: 4, render: () => sec("raccourcis", "Raccourcis", H.brand, <><Head title="Raccourcis" sub="pages du site" />
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))", gap: 6, marginTop: 6 }}>
       {[["table", "Liste", "list"], ["gantt", "Gantt", "gantt"], ["calendar", "Calendrier", "calendar"], ["tests", "Tests", "check"], ["comments", "Commentaires", "comments"], ["changes", "Modifications", "changes"]].map(([v, l, ic]) =>
-        <button key={v} type="button" onClick={() => onGo && onGo(v)} style={{ display: "flex", alignItems: "center", gap: 6, minHeight: 36, border: "1px solid " + T.line, background: T.card, borderRadius: 6, padding: "0 10px", cursor: "pointer", fontFamily: T.font, fontSize: FZ.sm, fontWeight: 600, color: T.ink900 }}><NavIcon name={ic} size={16} />{l}</button>)}
+        <button key={v} type="button" onClick={() => onGo && onGo(v)} style={{ display: "flex", alignItems: "center", gap: 6, minHeight: 36, border: "1px solid " + T.line, background: T.card, borderRadius: 8, padding: "0 10px", cursor: "pointer", fontFamily: T.font, fontSize: FZ.sm, fontWeight: 600, color: T.ink900 }}><NavIcon name={ic} size={16} />{l}</button>)}
     </div></>) };
 
   /* ── disposition du poste ── */

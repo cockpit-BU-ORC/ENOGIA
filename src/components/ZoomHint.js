@@ -28,7 +28,7 @@ export function ZoomHint() {
   const [off, setOff] = useState(() => { try { return !!localStorage.getItem(KEY); } catch (e) { return false; } });
   if (!a || off) return null;
   const close = () => { setOff(true); try { localStorage.setItem(KEY, "1"); } catch (e) { /* stockage indisponible */ } };
-  return (<div role="status" style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", margin: "0 0 12px", borderRadius: 10, border: "1px solid " + T.line, background: T.card, color: T.ink700, fontSize: FZ.sm, fontFamily: T.font }}>
+  return (<div role="status" style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", margin: "0 0 12px", borderRadius: 12, border: "1px solid " + T.line, background: T.card, color: T.ink700, fontSize: FZ.sm, fontFamily: T.font }}>
     <NavIcon name="screen" size={18} />
     <span style={{ flex: 1, minWidth: 0 }}><b style={{ color: T.ink900 }}>Windows agrandit l'affichage à {a.scale} %</b> : certaines colonnes sont masquées faute de place. {zoomTip(a)}</span>
     <button type="button" onClick={close} aria-label="Ne plus afficher ce conseil" style={{ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, minHeight: 28, padding: "0 10px", fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>Compris</button>

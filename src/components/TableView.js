@@ -48,7 +48,7 @@ export function ColumnPicker({hidden,setHidden}){
         {/* v180 : vues prêtes selon le public (audit : « trop de colonnes à la fois ») — un clic règle les colonnes visibles. */}
         <div role="group" aria-label="Vues prêtes" style={{display:"flex",gap:6,flexWrap:"wrap",padding:"8px 12px",borderBottom:"1px solid "+T.line}}>
           {COLUMN_PRESETS.map(([l,hid])=>{const on=hid.length===hidden.size&&hid.every(h=>hidden.has(h));return(
-            <button key={l} type="button" aria-pressed={on} onClick={()=>setHidden(new Set(hid))} style={{border:"1.5px solid "+T.teal500,background:on?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:on?(T.mode==="dark"?"#0B1130":"#FFFFFF"):T.teal600,borderRadius:7,padding:"4px 10px",minHeight:28,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font}}>{l}</button>);})}
+            <button key={l} type="button" aria-pressed={on} onClick={()=>setHidden(new Set(hid))} style={{border:"1.5px solid "+T.teal500,background:on?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:on?(T.mode==="dark"?"#0B1130":"#FFFFFF"):T.teal600,borderRadius:8,padding:"4px 10px",minHeight:28,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font}}>{l}</button>);})}
         </div>
         <div style={{padding:"8px 12px",fontSize:12,fontWeight:700,color:T.accentInk,borderBottom:"1px solid "+T.line,background:T.surface}}>Colonnes visibles</div>
         {TABLE_COLUMNS.map(c=>{const visible=!hidden.has(c.id);return(
@@ -430,7 +430,7 @@ export function TableView({data,progress,df,setDf,selEtats,setSelEtats,selGammes
               <NewMark mark={marks.get(r.pj)}/>
               <button type="button" className="enogia-rowact" aria-label={"Actions pour "+r.pj} aria-haspopup="menu" aria-expanded={!!rowMenu&&rowMenu.pj===r.pj} title="Actions rapides (clic droit)"
                 onClick={e=>{e.stopPropagation();const b=e.currentTarget.getBoundingClientRect();setRowMenu({pj:r.pj,x:b.left,y:b.bottom+4});}}
-                style={{border:"none",background:"transparent",color:T.ink500,cursor:"pointer",padding:2,borderRadius:6,display:"inline-flex",lineHeight:0}}><NavIcon name="more" size={16}/></button>
+                style={{border:"none",background:"transparent",color:T.ink500,cursor:"pointer",padding:2,borderRadius:8,display:"inline-flex",lineHeight:0}}><NavIcon name="more" size={16}/></button>
             </span>
             {!hiddenCols.has("serie")&&meta.numSerie&&<div title={"N° de série : "+meta.numSerie} style={{fontVariantNumeric:"tabular-nums",fontSize:FZ.xs,color:T.ink500,lineHeight:1.25,marginTop:1,overflow:"hidden",textOverflow:"ellipsis"}}>{meta.numSerie}</div>}
           </td>

@@ -60,7 +60,7 @@ export function PlannerLoad({ plan, load, cal, tl, scrollX, leftW, standalone, m
         <b style={{ color: T.ink900, fontSize: 14 }}>Charge atelier</b>
         <span style={{ fontSize: 12.5, color: T.ink500 }}>{Math.round(capW)} h / sem.</span>
         <span role="img" aria-label={"Charge des " + next.length + " prochaines périodes : " + next.map(b => b.label + " " + (b.cap > 0 ? Math.round(b.hours / b.cap * 100) : 0) + " %").join(", ")} style={{ display: "inline-flex", gap: 2 }}>
-          {next.map(b => { const r = b.cap > 0 ? b.hours / b.cap : 0; return <span key={b.key} title={b.label + " · " + Math.round(b.hours) + " h / " + Math.round(b.cap) + " h (" + Math.round(r * 100) + " %)"} style={{ width: 16, height: 16, borderRadius: 2, background: r > 1 ? T.red500 : r >= 0.9 ? T.amber500 : T.line }} />; })}
+          {next.map(b => { const r = b.cap > 0 ? b.hours / b.cap : 0; return <span key={b.key} title={b.label + " · " + Math.round(b.hours) + " h / " + Math.round(b.cap) + " h (" + Math.round(r * 100) + " %)"} style={{ width: 16, height: 16, borderRadius: 4, background: r > 1 ? T.red500 : r >= 0.9 ? T.amber500 : T.line }} />; })}
         </span>
         <span style={{ fontSize: 12.5, fontWeight: 700, color: over.length ? T.red500 : T.emerald600 }}>{over.length ? over.length + " " + (mode === "month" ? "mois" : "semaine" + (over.length > 1 ? "s" : "")) + " en surcharge · pic " + Math.round(peak * 100) + " %" + (pk ? " (" + pk.label + ")" : "") : "Aucune surcharge"}</span>
         <span style={{ flex: 1 }} />
@@ -101,10 +101,10 @@ export function PlannerLoad({ plan, load, cal, tl, scrollX, leftW, standalone, m
     <div style={{ display: "flex" }}>
       <div style={{ width: standalone ? 190 : leftW, flexShrink: 0, borderRight: "2px solid " + T.line, padding: "0 12px", boxSizing: "border-box", position: "relative", height: H }}>
         <div style={{ position: "absolute", top: 8, left: 12, right: 12, fontSize: 11, color: T.ink500, lineHeight: 1.4 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 14, height: 9, border: "1.5px solid " + T.ink500, borderRadius: 2, display: "inline-block", background: "rgba(23,115,79,.08)" }} />capacité ({unit})</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 14, height: 9, background: "#17734F", borderRadius: 2, display: "inline-block" }} />heures planifiées</div>
-          {!small && <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 14, height: 9, border: "1.5px dashed " + T.amber600, borderRadius: 2, display: "inline-block" }} />semaine spéciale</div>}
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 14, height: 9, background: "#B3261E", borderRadius: 2, display: "inline-block" }} />dépassement</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 14, height: 9, border: "1.5px solid " + T.ink500, borderRadius: 4, display: "inline-block", background: "rgba(23,115,79,.08)" }} />capacité ({unit})</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 14, height: 9, background: "#17734F", borderRadius: 4, display: "inline-block" }} />heures planifiées</div>
+          {!small && <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 14, height: 9, border: "1.5px dashed " + T.amber600, borderRadius: 4, display: "inline-block" }} />semaine spéciale</div>}
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 14, height: 9, background: "#B3261E", borderRadius: 4, display: "inline-block" }} />dépassement</div>
           {!small && <div style={{ marginTop: 4, color: T.ink500 }}>Le vide du cadre = ce qu'il reste possible.</div>}
         </div>
       </div>
@@ -118,7 +118,7 @@ export function PlannerLoad({ plan, load, cal, tl, scrollX, leftW, standalone, m
             return (<div key={b.key} onMouseEnter={e => setHov({ key: b.key, x: e.clientX, y: e.clientY })} onMouseMove={e => setHov({ key: b.key, x: e.clientX, y: e.clientY })} onMouseLeave={() => setHov(null)}
               {...(canEd ? { role: "button", tabIndex: 0, "aria-label": b.label + " : " + Math.round(b.hours) + " h sur " + Math.round(b.cap) + " h. Changer la capacité de cette semaine", onClick: e => { setHov(null); setEd({ key: b.key, week: isoOfDay(b.start), label: b.label, cap: b.cap, special: b.special, x: e.clientX, y: e.clientY }); }, onKeyDown: e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); const r = e.currentTarget.getBoundingClientRect(); setEd({ key: b.key, week: isoOfDay(b.start), label: b.label, cap: b.cap, special: b.special, x: r.left, y: r.top }); } } } : {})}
               style={{ position: "absolute", left: bx, width: bw, top: 0, height: H, cursor: canEd ? "pointer" : "default" }}>
-              <div style={{ position: "absolute", left: 0, right: 0, bottom: PAD_B, height: hCap, border: "1.5px " + (b.special ? "dashed " + T.amber600 : "solid " + T.ink500), borderRadius: 3, background: "rgba(23,115,79,.07)", boxSizing: "border-box" }} />
+              <div style={{ position: "absolute", left: 0, right: 0, bottom: PAD_B, height: hCap, border: "1.5px " + (b.special ? "dashed " + T.amber600 : "solid " + T.ink500), borderRadius: 4, background: "rgba(23,115,79,.07)", boxSizing: "border-box" }} />
               <div style={{ position: "absolute", left: 3, right: 3, bottom: PAD_B, height: inCap, background: b.over ? "#B3261E" : "#17734F", borderRadius: "2px 2px 0 0", opacity: 0.92 }} />
               {ex > 0 && <div style={{ position: "absolute", left: 3, right: 3, bottom: PAD_B + inCap, height: ex, background: "#B3261E", borderRadius: "3px 3px 0 0", backgroundImage: "repeating-linear-gradient(45deg,rgba(255,255,255,.35) 0 3px,transparent 3px 6px)" }} />}
               {bw >= 34 && b.hours > 0 && <div style={{ position: "absolute", left: 0, right: 0, bottom: PAD_B + Math.max(hBar, hCap) + 2, textAlign: "center", fontSize: 11, fontWeight: 700, fontFamily: T.fontMono, color: b.over ? T.red500 : T.ink700, whiteSpace: "nowrap" }}>{b.over ? "▲ " : ""}{Math.round(b.hours)}{bw >= 60 ? " / " + Math.round(b.cap) : ""}</div>}
@@ -129,7 +129,7 @@ export function PlannerLoad({ plan, load, cal, tl, scrollX, leftW, standalone, m
         </div>
       </div>
     </div>
-    {hb && <div style={{ position: "fixed", left: Math.min(hov.x + 14, window.innerWidth - 270), top: Math.max(8, hov.y - 150), width: 252, zIndex: 10002, pointerEvents: "none", background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 10, padding: "10px 12px", fontSize: 12.5, boxShadow: T.shadowLg }}>
+    {hb && <div style={{ position: "fixed", left: Math.min(hov.x + 14, window.innerWidth - 270), top: Math.max(8, hov.y - 150), width: 252, zIndex: 10002, pointerEvents: "none", background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, padding: "10px 12px", fontSize: 12.5, boxShadow: T.shadowLg }}>
       <div style={{ fontWeight: 800, marginBottom: 4 }}>{hb.label}</div>
       <div style={{ fontFamily: T.fontMono }}>{Math.round(hb.hours)} h planifiées / {Math.round(hb.cap)} h ({hb.days} j ouvrés)</div>
       {hb.special && <div style={{ color: T.amber600, fontWeight: 700 }}>Capacité spéciale pour cette semaine</div>}
@@ -145,7 +145,7 @@ function WeekCapEditor({ ed, normal, onClose, onSave }) {
   const [v, setV] = useState(String(Math.round(ed.cap)));
   useEffect(() => { const k = e => { if (e.key === "Escape") onClose(); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose]);
   const ok = () => { const n = Number(String(v).replace(",", ".")); if (!(n >= 0)) return; onSave(n); };
-  return (<div role="dialog" aria-label={"Capacité de la " + ed.label.toLowerCase()} style={{ position: "fixed", left: Math.max(8, Math.min(ed.x - 140, window.innerWidth - 300)), top: Math.max(8, ed.y - 196), width: 288, zIndex: 10003, background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 10, boxShadow: T.shadowLg, padding: "12px 14px", fontSize: 13 }}>
+  return (<div role="dialog" aria-label={"Capacité de la " + ed.label.toLowerCase()} style={{ position: "fixed", left: Math.max(8, Math.min(ed.x - 140, window.innerWidth - 300)), top: Math.max(8, ed.y - 196), width: 288, zIndex: 10003, background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, padding: "12px 14px", fontSize: 13 }}>
     <div style={{ fontWeight: 700, marginBottom: 4 }}>{ed.label}</div>
     <div style={{ color: T.ink500, fontSize: 12, marginBottom: 10 }}>Capacité normale : {normal} h. Saisissez les heures disponibles cette semaine (absences, renfort, fermeture…).</div>
     <label style={{ display: "flex", alignItems: "center", gap: 8 }}>Capacité

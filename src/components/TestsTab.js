@@ -60,12 +60,12 @@ export function TestsTab({ doc, save, data, certifs, canEdit, lead, me, signApi 
       <div>
         <div style={H_SUB}>{canEdit ? "Qui teste quelle machine, quand, et quels tests faire en interne, avec le client et avec NOBO." : lead ? "Les machines en test de tous les testeurs : suivez et renseignez l'avancement de chaque test." : "Vos machines en test : indiquez l'avancement et le résultat de chaque test."}</div>
       </div>
-      <div role="tablist" style={{ display: "inline-flex", background: T.surface, border: "1px solid " + T.line, borderRadius: 10, padding: 2, gap: 2 }}>
+      <div role="tablist" style={{ display: "inline-flex", background: T.surface, border: "1px solid " + T.line, borderRadius: 12, padding: 2, gap: 2 }}>
         {SUBS.map(([id, l]) => <button key={id} role="tab" aria-selected={sub === id} onClick={() => setSub(id)} style={{ border: "none", cursor: "pointer", borderRadius: 8, padding: "6px 14px", fontSize: FZ.sm, fontWeight: 700, fontFamily: T.font, background: sub === id ? T.card : "transparent", color: sub === id ? T.teal600 : T.ink500, boxShadow: sub === id ? T.shadowSm : "none" }}>{l}</button>)}
       </div>
     </div>
     {msg && <div role="alert" style={{ color: T.red500, fontSize: FZ.sm, fontWeight: 600 }}>{msg}</div>}
-    {conflicts.length > 0 && sub !== "catalog" && <div role="status" style={{ background: T.amber100, color: T.amber600, borderRadius: 10, padding: "8px 12px", fontSize: FZ.sm, fontWeight: 600 }}>
+    {conflicts.length > 0 && sub !== "catalog" && <div role="status" style={{ background: T.amber100, color: T.amber600, borderRadius: 12, padding: "8px 12px", fontSize: FZ.sm, fontWeight: 600 }}>
       <span style={{ display: "inline-flex", verticalAlign: "-3px", marginRight: 6 }}><NavIcon name="warning" size={16} /></span>{conflicts.length} chevauchement{conflicts.length > 1 ? "s" : ""} : {conflicts.slice(0, 4).map(c => { const t = testers.find(x => x.id === c.tid); return (t ? t.name : "Testeur") + " sur " + c.a.pj + " et " + c.b.pj; }).join(" · ")}{conflicts.length > 4 ? " …" : ""}
     </div>}
     {sub === "semaine" && <WeekBoard {...{ doc, rows, testers, catalog, conflicts, commit, certifs, canEdit, lead, myTester, focus, who, signApi }} />}
@@ -135,9 +135,9 @@ const segsOf = (plan, catalog, act) => { const out = []; act.forEach(k => select
 const SEG_FILL = { ok: () => stageSoft().finProd.solid, wip: () => stageSoft().tests.solid, ko: () => T.red500, todo: () => T.line };
 const ST_LABEL = Object.fromEntries(TEST_STATUS);
 function SegBar({ segs, h = 8, gap = 2, width }) {
-  if (!segs.length) return <span aria-hidden="true" style={{ width: width || "100%", height: h, borderRadius: 2, background: T.surfaceAlt, display: "block" }} />;
+  if (!segs.length) return <span aria-hidden="true" style={{ width: width || "100%", height: h, borderRadius: 4, background: T.surfaceAlt, display: "block" }} />;
   return (<span aria-hidden="true" className="enogia-segbar" style={{ display: "flex", gap, height: h, width: width || "100%", flexShrink: 0 }}>
-    {segs.map((s, i) => <i key={s.k + s.id} title={s.name + " — " + ST_LABEL[s.v]} style={{ flex: 1, minWidth: 2, borderRadius: 2, background: SEG_FILL[s.v](), animationDelay: (i * 25) + "ms" }} />)}
+    {segs.map((s, i) => <i key={s.k + s.id} title={s.name + " — " + ST_LABEL[s.v]} style={{ flex: 1, minWidth: 2, borderRadius: 4, background: SEG_FILL[s.v](), animationDelay: (i * 25) + "ms" }} />)}
   </span>);
 }
 function Ring({ pct, size = 54 }) {
@@ -193,7 +193,7 @@ function BenchStrip({ rows, doc, catalog, testers, on, onPick }) {
           <div style={{ fontSize: FZ.xs, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{sum || "Aucun test retenu"}</div>
         </div>);
       })}
-      {next && <div {...pressable(() => onPick(next.pj), { "aria-label": "Prochaine machine au banc : " + next.pj })} style={{ border: "1px dashed " + T.line, borderRadius: 10, padding: "10px 12px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 4, cursor: "pointer", minHeight: 72 }}>
+      {next && <div {...pressable(() => onPick(next.pj), { "aria-label": "Prochaine machine au banc : " + next.pj })} style={{ border: "1px dashed " + T.line, borderRadius: 12, padding: "10px 12px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 4, cursor: "pointer", minHeight: 72 }}>
         <Cap>Prochaine au banc</Cap>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}><PjPlate pj={next.pj} /><span style={{ fontSize: FZ.sm, color: T.ink700, fontVariantNumeric: "tabular-nums" }}>{fd(dIso(next.tests))}</span></div>
       </div>}
@@ -213,7 +213,7 @@ function ResultsFeed({ rows, doc, catalog, onPick }) {
     }));
   });
   ev.sort((a, b) => new Date(b.at) - new Date(a.at));
-  return (<section aria-label="Derniers résultats" style={{ minWidth: 0, background: T.card, border: "1px solid " + T.line, borderRadius: 10, padding: "10px 12px" }}>
+  return (<section aria-label="Derniers résultats" style={{ minWidth: 0, background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "10px 12px" }}>
     <h2 style={{ margin: "0 0 6px", fontSize: FZ.sm, fontWeight: 700, color: T.ink900 }}>Derniers résultats</h2>
     {ev.length === 0 && <div style={{ fontSize: FZ.xs, color: T.ink500 }}>Aucun résultat ces 14 derniers jours. Ils apparaissent ici dès qu'un test est marqué réussi ou en échec.</div>}
     <ol className="enogia-stagger" style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column" }}>
@@ -247,7 +247,7 @@ function machineState(r, doc, catalog, todayIso) {
 }
 const toneOfSt = st => { const S = stageSoft(), c = st === "late" ? T.red500 : st === "done" ? S.finProd.solid : st === "wip" ? S.tests.solid : null; return c ? { bg: c, ink: inkOn(c), bd: "none" } : { bg: T.card, ink: T.ink900, bd: "1.5px solid " + T.ink500 }; };
 function GridLegend() {
-  const S = stageSoft(), sw = (bg, bd) => <i aria-hidden="true" style={{ width: 12, height: 9, borderRadius: 2, background: bg, border: bd || "none", boxSizing: "border-box", display: "inline-block" }} />;
+  const S = stageSoft(), sw = (bg, bd) => <i aria-hidden="true" style={{ width: 12, height: 9, borderRadius: 4, background: bg, border: bd || "none", boxSizing: "border-box", display: "inline-block" }} />;
   return (<span style={{ display: "inline-flex", gap: 12, flexWrap: "wrap", fontSize: FZ.xs, color: T.ink500, alignItems: "center" }}>
     <span style={{ display: "inline-flex", gap: 5, alignItems: "center" }}>{sw(S.tests.solid)}en cours</span>
     <span style={{ display: "inline-flex", gap: 5, alignItems: "center" }}>{sw(T.red500)}en retard</span>
@@ -368,12 +368,12 @@ export function TestDialog({ r, onClose, doc, testers, catalog, conflicts, commi
     return () => { window.removeEventListener("keydown", k); document.body.style.overflow = ov; if (prev && prev.focus) prev.focus(); };
   }, [onClose]);
   const plan = planOf(doc, r.pj), kind = presenceKind(r.clientPresence || null), q = progressOf(plan, catalog, activeSections(kind)), meta = getPjMeta(r.pj, r);
-  const Num = ({ l, v, c }) => <div style={{ background: T.surface, borderRadius: 10, padding: "8px 12px", minWidth: 0 }}><div style={{ fontFamily: T.fontLabel, fontSize: 12, color: T.ink500 }}>{l}</div><div style={{ fontFamily: T.fontDisplay, fontSize: 24, fontWeight: 600, color: c || T.ink900, fontVariantNumeric: "tabular-nums", lineHeight: 1.1 }}>{v}</div></div>;
+  const Num = ({ l, v, c }) => <div style={{ background: T.surface, borderRadius: 12, padding: "8px 12px", minWidth: 0 }}><div style={{ fontFamily: T.fontLabel, fontSize: 12, color: T.ink500 }}>{l}</div><div style={{ fontFamily: T.fontDisplay, fontSize: 24, fontWeight: 600, color: c || T.ink900, fontVariantNumeric: "tabular-nums", lineHeight: 1.1 }}>{v}</div></div>;
   return (<div className="enogia-test-overlay" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(8,12,28,.5)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "4vh 12px", overflowY: "auto" }}>
-    <div ref={box} tabIndex={-1} role="dialog" aria-modal="true" aria-label={"Tests de " + r.pj} className="enogia-test-dialog" style={{ width: "min(880px,100%)", background: T.card, borderRadius: 16, border: "1px solid " + T.line, boxShadow: "0 24px 70px rgba(0,0,0,.28)", outline: "none", overflow: "hidden" }}>
+    <div ref={box} tabIndex={-1} role="dialog" aria-modal="true" aria-label={"Tests de " + r.pj} className="enogia-test-dialog" style={{ width: "min(880px,100%)", background: T.card, borderRadius: 12, border: "1px solid " + T.line, boxShadow: "0 24px 70px rgba(0,0,0,.28)", outline: "none", overflow: "hidden" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 18px", borderBottom: "1px solid " + T.line, flexWrap: "wrap", background: T.card, position: "sticky", top: 0, zIndex: 2 }}>
         <PjPlate pj={r.pj} size="lg" />
-        {r.gamme && <span style={{ fontFamily: T.fontLabel, fontSize: FZ.sm, fontWeight: 600, color: T.ink700, border: "1px solid " + T.line, borderRadius: 6, padding: "1px 8px" }}>{r.gamme}</span>}
+        {r.gamme && <span style={{ fontFamily: T.fontLabel, fontSize: FZ.sm, fontWeight: 600, color: T.ink700, border: "1px solid " + T.line, borderRadius: 8, padding: "1px 8px" }}>{r.gamme}</span>}
         <span style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: FZ.lg, color: T.ink900, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: "1 1 160px" }}>{meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : ""}</span>
         <span style={{ fontSize: FZ.xs, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{period(r)}</span>
         <button type="button" onClick={onClose} aria-label="Fermer" style={{ border: "none", background: T.surface, color: T.ink700, borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 18, lineHeight: 1 }}>×</button>
@@ -419,7 +419,7 @@ function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdi
   return (<div id={"fat-" + r.pj} className={panel && !bare ? "enogia-view-in" : undefined} style={bare ? { overflow: "hidden" } : { ...CARD, overflow: "hidden", borderColor: mine ? T.teal500 : undefined }}>
     {panel && (!bare || (canEdit && (ended || forced))) && <div style={{ padding: bare ? "10px 18px 0" : "10px 14px", borderBottom: bare ? "none" : "1px solid " + T.line, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
       {!bare && <><PjPlate pj={r.pj} size="lg" /><span style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: FZ.lg, color: T.ink900 }}>{meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : ""}</span>
-      {r.gamme && <span style={{ fontFamily: T.fontLabel, fontSize: FZ.sm, fontWeight: 600, color: T.ink700, border: "1px solid " + T.line, borderRadius: 6, padding: "1px 8px" }}>{r.gamme}</span>}
+      {r.gamme && <span style={{ fontFamily: T.fontLabel, fontSize: FZ.sm, fontWeight: 600, color: T.ink700, border: "1px solid " + T.line, borderRadius: 8, padding: "1px 8px" }}>{r.gamme}</span>}
       <span style={{ width: "100%", fontSize: FZ.xs, color: T.ink500 }}>Tests {period(r)}{mine ? " · vous êtes testeur" : ""}</span></>}
       {canEdit && (ended || forced) && <div style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", background: forced ? T.emerald100 : T.surface, borderRadius: 8, padding: "6px 10px", marginTop: 2 }}>
         <span style={{ fontSize: FZ.xs, color: forced ? T.emerald600 : T.ink700, fontWeight: 600, flex: "1 1 180px" }}>{forced ? (plan.forced.auto ? "Tests faits : machine expédiée" : "Validée manuellement" + (plan.forced.by ? " par " + plan.forced.by : "")) + " le " + fd(dIso(plan.forced.at)) + "." : "Période terminée : vous pouvez valider ces tests sans testeur ni test coché (anciennes machines)."}</span>
@@ -499,7 +499,7 @@ function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdi
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {SECTIONS.map(([k, label]) => {
             const on = act.includes(k), ids = selectedIds(plan, catalog, k), col = SEC_COLOR[k]();
-            return (<div key={k} style={{ background: T.card, border: "1px solid " + (on ? SEC_BORDER[k]() : T.line), borderRadius: 10, overflow: "hidden", opacity: on ? 1 : .6 }}>
+            return (<div key={k} style={{ background: T.card, border: "1px solid " + (on ? SEC_BORDER[k]() : T.line), borderRadius: 12, overflow: "hidden", opacity: on ? 1 : .6 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, padding: "7px 12px", borderBottom: on ? "1px solid " + T.line : "none" }}>
                 <span><b style={{ color: col, fontSize: FZ.sm }}>{label}</b> <span style={{ fontSize: FZ.xs, color: T.ink300 }}>{on ? SEC_WHEN[k] : "Section non applicable : pas de présence " + (k === "client" ? "client" : "NOBO") + " pour ce PJ"}</span></span>
                 {on && <span style={{ fontSize: FZ.xs, color: T.ink500, fontWeight: 600 }}>{ids.length}/{catalog[k].length} test{catalog[k].length > 1 ? "s" : ""}</span>}
@@ -538,7 +538,7 @@ function Checklist({ r, plan, catalog, act, canEdit, canMark, saveTests, who }) 
     {act.map(k => {
       const label = (SECTIONS.find(x => x[0] === k) || [])[1], sel = selectedIds(plan, catalog, k), done = doneIds(plan, k), items = edit ? catalog[k] : catalog[k].filter(t => sel.includes(t.id));
       const nDone = sel.filter(id => done.includes(id)).length;
-      return (<div key={k} style={{ background: T.card, border: "1px solid " + SEC_BORDER[k](), borderRadius: 10, overflow: "hidden" }}>
+      return (<div key={k} style={{ background: T.card, border: "1px solid " + SEC_BORDER[k](), borderRadius: 12, overflow: "hidden" }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 8, padding: "7px 12px", borderBottom: "1px solid " + T.line }}>
           <b style={{ color: SEC_COLOR[k](), fontSize: FZ.sm }}>{label}</b>
           <span style={{ marginLeft: "auto", fontSize: FZ.xs, fontWeight: 700, color: nDone === sel.length && sel.length ? T.emerald600 : T.ink700, fontVariantNumeric: "tabular-nums" }}>{edit ? sel.length + " retenu" + (sel.length > 1 ? "s" : "") : nDone + " / " + sel.length}</span>
@@ -593,7 +593,7 @@ function Signatures({ r, plan, assigned, mine, myTester, canEdit, who, signApi, 
   return (<div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
     {assigned.length === 0 && <span style={{ fontSize: FZ.xs, color: T.ink500 }}>Aucun testeur affecté.</span>}
     {assigned.map(t => { const key = "t:" + t.id, sg = signs[key], canSign = (!!myTester && myTester.id === t.id) || canEdit; return (
-      <div key={key} style={{ display: "flex", flexDirection: "column", gap: 8, padding: "8px 10px", background: T.card, border: "1px solid " + T.line, borderRadius: 10 }}>
+      <div key={key} style={{ display: "flex", flexDirection: "column", gap: 8, padding: "8px 10px", background: T.card, border: "1px solid " + T.line, borderRadius: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           <div style={{ flex: "1 1 180px", minWidth: 0 }}><div style={{ fontFamily: T.fontLabel, fontSize: 12, color: T.ink500 }}>Réalisé par</div><div style={{ fontSize: FZ.sm, fontWeight: 700, color: T.ink900 }}>{(sg && sg.name) || t.name}{sg && sg.fn ? <span style={{ fontWeight: 500, color: T.ink500 }}> · {sg.fn}</span> : null}</div></div>
           {sg && <span style={{ fontFamily: T.fontLabel, fontSize: 12, fontWeight: 600, color: T.emerald600, background: T.emerald100, borderRadius: 999, padding: "2px 10px" }}>Signé le {fd(dIso(sg.at))}</span>}
@@ -625,7 +625,7 @@ function SignForm({ init, onSave, onCancel, busy }) {
   const [name, setName] = useState(init.name || ""), [fn, setFn] = useState(init.fn || ""), [img, setImg] = useState(null), [err, setErr] = useState("");
   const pick = async e => { const f = e.target.files && e.target.files[0]; e.target.value = ""; if (!f) return; try { setImg(await shrinkImage(f)); setErr(""); } catch (x) { setErr(x.message); } };
   const ok = name.trim() && fn.trim() && img;
-  return (<div className="enogia-view-in" style={{ border: "1.5px solid " + T.teal500, borderRadius: 10, padding: 10, background: T.surface, display: "flex", flexDirection: "column", gap: 8 }}>
+  return (<div className="enogia-view-in" style={{ border: "1.5px solid " + T.teal500, borderRadius: 12, padding: 10, background: T.surface, display: "flex", flexDirection: "column", gap: 8 }}>
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 8 }}>
       <label style={{ display: "flex", flexDirection: "column", gap: 3, fontFamily: T.fontLabel, fontSize: 12, color: T.ink500 }}>Nom<input value={name} onChange={e => setName(e.target.value)} style={field()} /></label>
       <label style={{ display: "flex", flexDirection: "column", gap: 3, fontFamily: T.fontLabel, fontSize: 12, color: T.ink500 }}>Fonction<input value={fn} onChange={e => setFn(e.target.value)} placeholder="Technicien d'essais" style={field()} /></label>
@@ -633,7 +633,7 @@ function SignForm({ init, onSave, onCancel, busy }) {
     <label style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: FZ.xs, fontWeight: 700, color: T.teal600, cursor: "pointer", minHeight: 28 }}>
       <input type="file" accept="image/png,image/jpeg,image/webp" onChange={pick} style={{ fontSize: FZ.xs }} aria-label="Image de la signature" />
     </label>
-    {img && <img src={img} alt="Aperçu de la signature" style={{ maxWidth: 240, maxHeight: 80, background: "#fff", border: "1px solid " + T.line, borderRadius: 6, padding: 4, alignSelf: "flex-start" }} />}
+    {img && <img src={img} alt="Aperçu de la signature" style={{ maxWidth: 240, maxHeight: 80, background: "#fff", border: "1px solid " + T.line, borderRadius: 8, padding: 4, alignSelf: "flex-start" }} />}
     {err && <div role="alert" style={{ fontSize: FZ.xs, color: T.red500, fontWeight: 600 }}>{err}</div>}
     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
       <button type="button" disabled={busy || !ok} onClick={() => onSave(name.trim(), fn.trim(), img)} style={btn(!!ok)}>Valider la signature</button>
@@ -649,7 +649,7 @@ function StatusPick({ value, onPick, disabled, label }) {
   return (<div role="radiogroup" aria-label={"Statut : " + label} style={{ display: "inline-flex", gap: 2, background: T.surface, borderRadius: 8, padding: 2, flex: "0 0 auto" }}>
     {TEST_STATUS.map(([v, l]) => { const on = value === v, [ink, bg] = STATUS_TONE[v](); return (
       <button key={v} type="button" role="radio" aria-checked={on} disabled={disabled} onClick={() => onPick(v)}
-        style={{ border: "none", borderRadius: 6, padding: "4px 8px", minHeight: 28, fontSize: 12, fontWeight: 600, fontFamily: T.fontLabel, cursor: disabled ? "default" : "pointer", background: on ? bg : "transparent", color: on ? ink : T.ink500, opacity: disabled && !on ? .55 : 1, transition: "background-color .15s ease, color .15s ease" }}>{l}</button>); })}
+        style={{ border: "none", borderRadius: 8, padding: "4px 8px", minHeight: 28, fontSize: 12, fontWeight: 600, fontFamily: T.fontLabel, cursor: disabled ? "default" : "pointer", background: on ? bg : "transparent", color: on ? ink : T.ink500, opacity: disabled && !on ? .55 : 1, transition: "background-color .15s ease, color .15s ease" }}>{l}</button>); })}
   </div>);
 }
 

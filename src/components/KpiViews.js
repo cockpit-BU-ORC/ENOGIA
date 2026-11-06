@@ -10,7 +10,7 @@ import { loadWeeks, isoWeek, weekLabel } from "./KpiPilotage";
 
 const fdm = v => { if (!v) return "—"; const d = new Date(v); return isNaN(d) ? "—" : String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0"); };
 const day0 = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
-const card = () => ({ background: T.card, border: "1px solid " + T.line, borderRadius: 10, minWidth: 0 });
+const card = () => ({ background: T.card, border: "1px solid " + T.line, borderRadius: 12, minWidth: 0 });
 const useDrift = driftRows => useMemo(() => { const m = {}; (driftRows || []).forEach(d => { m[d.pj] = d.depart && d.depart.delta; }); return m; }, [driftRows]);
 const nom = r => getPjMeta(r.pj, r).nomProjet || "";
 const plural = (n, a, b) => n > 1 ? b : a;
@@ -62,7 +62,7 @@ export function KpiDerivesHead({ rows, driftRows, delays, hasInitial, onOpenPj }
           </div>}
       </section>
       <div style={{ display: "flex", flexDirection: "column", gap: 14, minWidth: 0, flex: "1 1 300px" }}>
-        <section aria-label="Départs des 30 prochains jours" style={{ background: dark, color: onDark, borderRadius: 10, padding: "12px 16px" }}>
+        <section aria-label="Départs des 30 prochains jours" style={{ background: dark, color: onDark, borderRadius: 12, padding: "12px 16px" }}>
           <h3 style={{ margin: "0 0 6px", fontSize: FZ.md, fontWeight: 700 }}>Départs des 30 prochains jours</h3>
           {dep30.length === 0 ? <div style={{ fontSize: FZ.sm, opacity: .85 }}>Aucun départ prévu.</div> : dep30.map(r => { const d = driftOf[r.pj] || 0; return (
             <button key={r.pj} type="button" onClick={() => onOpenPj && onOpenPj(r.pj)} style={{ display: "flex", width: "100%", justifyContent: "space-between", gap: 8, alignItems: "center", minHeight: 36, border: "none", borderTop: "1px solid " + (onDark === "#FFFFFF" ? "rgba(255,255,255,.18)" : "rgba(16,24,40,.18)"), background: "transparent", color: onDark, cursor: "pointer", padding: 0, fontFamily: T.font, fontSize: FZ.sm, textAlign: "left" }}>
@@ -105,7 +105,7 @@ export function KpiSemaines({ rows, driftRows, closurePeriods, productionExclusi
     ...(hasInitial && late[0] ? [{ key: "late", tone: "amber", title: late[0].pj + " : +" + driftOf[late[0].pj] + " j", text: "Plus forte dérive du portefeuille" + (late[0].depart ? ", départ le " + fdm(late[0].depart) : "") + ".", action: onOpenPj ? { label: "Ouvrir la fiche", run: () => onOpenPj(late[0].pj) } : null }] : []),
   ];
   const Chip = ({ r }) => { const d = driftOf[r.pj] || 0; return (
-    <button type="button" onClick={() => onOpenPj && onOpenPj(r.pj)} aria-label={"Ouvrir la fiche de " + r.pj} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", width: "100%", border: "1px solid " + T.line, borderRadius: 6, background: T.card, padding: "4px 7px", cursor: "pointer", fontFamily: T.font, textAlign: "left", color: T.ink900, minHeight: 36 }}>
+    <button type="button" onClick={() => onOpenPj && onOpenPj(r.pj)} aria-label={"Ouvrir la fiche de " + r.pj} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", width: "100%", border: "1px solid " + T.line, borderRadius: 8, background: T.card, padding: "4px 7px", cursor: "pointer", fontFamily: T.font, textAlign: "left", color: T.ink900, minHeight: 36 }}>
       <span style={{ display: "flex", width: "100%", justifyContent: "space-between", gap: 4, whiteSpace: "nowrap" }}><b style={{ fontFamily: T.fontMono, fontSize: 12.5 }}>{r.pj}</b>{d > 0 && <b style={{ color: T.red500, fontSize: 12, fontVariantNumeric: "tabular-nums" }}>+{d} j</b>}</span>
       <span style={{ fontSize: 12, color: T.ink700, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{nom(r) || fdm(r.depart)}</span>
     </button>); };

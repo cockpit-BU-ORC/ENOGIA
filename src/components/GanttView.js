@@ -204,22 +204,22 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
         {setSelEtats&&<EtatInfoButton/>}
         {allPJs&&<DropFilter label="PJ" options={allPJs} selected={selPJs||new Set(allPJs)} onChange={setSelPJs}/>}
         <button type="button" onClick={()=>setGrouped(!grouped)} aria-pressed={grouped} title="Regrouper les lignes par projet"
-          style={{padding:"5px 11px",borderRadius:7,border:"1px solid "+(grouped?T.teal400:T.line),background:grouped?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:grouped?(T.mode==="dark"?"#0B1130":"#FFFFFF"):T.ink700,fontSize:FZF.sm,fontWeight:700,cursor:"pointer",transition:"background-color .15s ease, color .15s ease",display:"inline-flex",alignItems:"center",gap:6}}><NavIcon name="layers" size={15}/>Par projet</button>
+          style={{padding:"5px 11px",borderRadius:8,border:"1px solid "+(grouped?T.teal400:T.line),background:grouped?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:grouped?(T.mode==="dark"?"#0B1130":"#FFFFFF"):T.ink700,fontSize:FZF.sm,fontWeight:700,cursor:"pointer",transition:"background-color .15s ease, color .15s ease",display:"inline-flex",alignItems:"center",gap:6}}><NavIcon name="layers" size={15}/>Par projet</button>
         <div style={{display:"flex",gap:4}}>
-          <button onClick={zoomOut} disabled={dayW<=ZMIN} style={{padding:"5px 9px",borderRadius:7,border:"1px solid "+T.line,background:"transparent",color:dayW<=ZMIN?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:700,cursor:dayW<=ZMIN?"default":"pointer"}}>−</button>
-          <button onClick={zoomIn} disabled={dayW>=ZMAX} style={{padding:"5px 9px",borderRadius:7,border:"1px solid "+T.line,background:"transparent",color:dayW>=ZMAX?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:700,cursor:dayW>=ZMAX?"default":"pointer"}}>+</button>
+          <button onClick={zoomOut} disabled={dayW<=ZMIN} style={{padding:"5px 9px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:dayW<=ZMIN?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:700,cursor:dayW<=ZMIN?"default":"pointer"}}>−</button>
+          <button onClick={zoomIn} disabled={dayW>=ZMAX} style={{padding:"5px 9px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:dayW>=ZMAX?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:700,cursor:dayW>=ZMAX?"default":"pointer"}}>+</button>
         </div>
-        <button onClick={()=>scrollToDay(dayOf(today))} className="enogia-btn-ind" style={{padding:"5px 11px",borderRadius:7,border:"1.5px solid "+T.teal500,background:"transparent",color:T.teal600,fontSize:FZF.sm,fontWeight:700,cursor:"pointer"}}>Aujourd'hui</button>
+        <button onClick={()=>scrollToDay(dayOf(today))} className="enogia-btn-ind" style={{padding:"5px 11px",borderRadius:8,border:"1.5px solid "+T.teal500,background:"transparent",color:T.teal600,fontSize:FZF.sm,fontWeight:700,cursor:"pointer"}}>Aujourd'hui</button>
       </div>
     </div>
 
     {/* v184 : légende de la maquette validée — v283 : remontée sous la barre d'outils (toujours visible) */}
     <div style={{padding:"6px 18px",borderBottom:"1px solid "+T.line,display:"flex",gap:"6px 18px",flexWrap:"wrap",alignItems:"center",background:T.surface,fontSize:FZF.sm,color:T.ink700}}>
-      {[["Production",stageSoft().production.solid],["Tests",stageSoft().tests.solid],["Fin de prod → départ",stageSoft().finProd.solid]].map(([l,c])=><span key={l} style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:18,height:10,borderRadius:2,background:c}}/>{l}</span>)}
+      {[["Production",stageSoft().production.solid],["Tests",stageSoft().tests.solid],["Fin de prod → départ",stageSoft().finProd.solid]].map(([l,c])=><span key={l} style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:18,height:10,borderRadius:4,background:c}}/>{l}</span>)}
       <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:9,height:9,background:T.ink500,transform:"rotate(45deg)"}}/>Départ initial</span>
       <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:18,height:0,borderTop:"2px dotted "+T.red500}}/>Glissement</span>
       <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:2,height:12,background:T.red500}}/>Aujourd'hui</span>
-      <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:18,height:10,borderRadius:2,border:"1.5px dashed "+T.ink300,boxSizing:"border-box"}}/>Dates prévisionnelles</span>
+      <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:18,height:10,borderRadius:4,border:"1.5px dashed "+T.ink300,boxSizing:"border-box"}}/>Dates prévisionnelles</span>
       <span style={{marginLeft:"auto",color:T.ink500}}>Écart : <b style={{color:T.emerald600}}>à l'heure</b> · <b style={{color:T.amber600}}>4 à 10 j</b> · <b style={{color:T.red600}}>plus de 10 j</b></span>
     </div>
     <div ref={topScrollRef} onScroll={syncFromTop} style={{overflowX:"auto",overflowY:"hidden",height:16}}>
@@ -267,7 +267,7 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
         {/* lignes de fond + grille */}
         {items.map((it,ri)=>{
           if(it.g){const gb=bpct(it.from,it.to);return(<div key={"g"+ri} style={{height:GROUP_H,boxSizing:"border-box",position:"relative",background:T.surfaceAlt,borderBottom:"1px solid "+T.line}}>
-            {gb&&<div aria-hidden="true" style={{position:"absolute",left:gb.left,width:gb.width,top:"50%",height:6,transform:"translateY(-50%)",borderRadius:3,background:mixHex(T.surfaceAlt,T.ink500,.45)}}/>}
+            {gb&&<div aria-hidden="true" style={{position:"absolute",left:gb.left,width:gb.width,top:"50%",height:6,transform:"translateY(-50%)",borderRadius:4,background:mixHex(T.surfaceAlt,T.ink500,.45)}}/>}
           </div>);}
           const r=it.r;
           const mb=bpct(r.arrivee,r.depart);

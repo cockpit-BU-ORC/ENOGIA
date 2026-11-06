@@ -9,7 +9,7 @@ const fmtV = (k, v) => v == null ? "—" : (k === "derive" && v > 0 ? "+" : "") 
 export function TargetChip({ k, v, targets, label }) {
   const d = targetDef(k), j = judge(k, v, targets);
   const tone = j.ok == null ? [T.ink500, T.surface, T.line] : j.ok ? [T.emerald600, T.emerald100, T.emerald500] : [T.red600, T.red100, T.red500];
-  return <div title={d.how} style={{ display: "flex", flexDirection: "column", gap: 1, minWidth: 150, padding: "6px 10px", borderRadius: 10, background: tone[1], border: "1px solid " + tone[2] }}>
+  return <div title={d.how} style={{ display: "flex", flexDirection: "column", gap: 1, minWidth: 150, padding: "6px 10px", borderRadius: 12, background: tone[1], border: "1px solid " + tone[2] }}>
     <span style={{ fontSize: 12, color: T.ink700, fontWeight: 600 }}>{label || d.l}</span>
     <span style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
       <b style={{ fontSize: 20, color: tone[0], fontVariantNumeric: "tabular-nums" }}>{fmtV(k, v)}</b>
@@ -28,7 +28,7 @@ export function TargetsDialog({ targets, onSave, onClose }) {
       {KPI_TARGETS.map(d => <label key={d.k} style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) auto 120px", gap: 8, alignItems: "center", fontSize: 13 }}>
         <span><b>{d.l}</b><span style={{ display: "block", fontSize: 12, color: T.ink500 }}>{d.how}</span></span>
         <span style={{ fontSize: 13, color: T.ink700 }}>{d.dir === "min" ? "au moins" : "au plus"}</span>
-        <span style={{ display: "flex", alignItems: "center", gap: 4 }}><input type="number" step="any" value={v[d.k]} onChange={e => setV({ ...v, [d.k]: e.target.value })} aria-label={d.l} style={{ width: 80, minHeight: 32, borderRadius: 7, border: "1px solid " + T.line, background: T.card, color: T.ink900, padding: "0 8px", fontFamily: T.font, fontSize: 13 }} />{d.unit}</span>
+        <span style={{ display: "flex", alignItems: "center", gap: 4 }}><input type="number" step="any" value={v[d.k]} onChange={e => setV({ ...v, [d.k]: e.target.value })} aria-label={d.l} style={{ width: 80, minHeight: 32, borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, padding: "0 8px", fontFamily: T.font, fontSize: 13 }} />{d.unit}</span>
       </label>)}
       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
         <button type="button" onClick={onClose} style={{ minHeight: 34, padding: "0 14px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink700, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>Annuler</button>
@@ -45,10 +45,10 @@ const mkey = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "
 export function PeriodPicker({ sel }) {
   const t = new Date(), m = n => mkey(new Date(t.getFullYear(), t.getMonth() + n, 1));
   const presets = [["Mois dernier", m(-1), m(-1)], ["Mois en cours", m(0), m(0)], ["3 derniers mois", m(-3), m(-1)], ["Année " + t.getFullYear(), t.getFullYear() + "-01", t.getFullYear() + "-12"], ["Tout", "", ""]];
-  const sl = { minHeight: 28, borderRadius: 7, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: 12, fontFamily: T.font };
+  const sl = { minHeight: 28, borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: 12, fontFamily: T.font };
   return <div role="group" aria-label="Période des objectifs" style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", width: "100%" }}>
     <span style={{ fontSize: 12, fontWeight: 600, color: T.ink500 }}>Période :</span>
-    {presets.map(([l, a, b]) => { const on = sel.from === a && sel.to === b; return <button key={l} type="button" aria-pressed={on} onClick={() => sel.set(a, b)} style={{ border: "1px solid " + (on ? T.ink900 : T.line), borderRadius: 7, minHeight: 28, padding: "0 10px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: T.font, background: on ? T.ink900 : T.card, color: on ? T.card : T.ink700 }}>{l}</button>; })}
+    {presets.map(([l, a, b]) => { const on = sel.from === a && sel.to === b; return <button key={l} type="button" aria-pressed={on} onClick={() => sel.set(a, b)} style={{ border: "1px solid " + (on ? T.ink900 : T.line), borderRadius: 8, minHeight: 28, padding: "0 10px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: T.font, background: on ? T.ink900 : T.card, color: on ? T.card : T.ink700 }}>{l}</button>; })}
     <label style={{ fontSize: 12, color: T.ink500, display: "inline-flex", alignItems: "center", gap: 4 }}>du<select value={sel.from} onChange={e => sel.set(e.target.value, sel.to && sel.to < e.target.value ? e.target.value : sel.to)} style={sl}><option value="">début</option>{sel.months.map(k => <option key={k} value={k}>{monthLab(k)}</option>)}</select></label>
     <label style={{ fontSize: 12, color: T.ink500, display: "inline-flex", alignItems: "center", gap: 4 }}>au<select value={sel.to} onChange={e => sel.set(sel.from && sel.from > e.target.value && e.target.value ? e.target.value : sel.from, e.target.value)} style={sl}><option value="">fin</option>{sel.months.map(k => <option key={k} value={k}>{monthLab(k)}</option>)}</select></label>
   </div>;

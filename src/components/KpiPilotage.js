@@ -75,7 +75,7 @@ export function KpiPilotage({ rows, driftRows, closurePeriods, productionExclusi
 
   const risky = open.filter(r => (driftOf[r.pj] || 0) > 0).sort((a, b) => (driftOf[b.pj] || 0) - (driftOf[a.pj] || 0));
   const S = stageSoft();
-  const card = { background: T.card, border: "1px solid " + T.line, borderRadius: 10, padding: "12px 14px", minWidth: 0 };
+  const card = { background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "12px 14px", minWidth: 0 };
   const Kpi = ({ label, value, sub, bad, good, subBad, how }) => (<div style={card}>
     <div style={{ fontSize: 12.5, color: T.ink500, fontFamily: T.fontLabel, display: "flex", alignItems: "center", gap: 6 }}>{label}{how && <span tabIndex={0} role="note" aria-label={"Méthode : " + how} title={"Méthode : " + how} style={{ cursor: "help", fontSize: 11, fontWeight: 700, color: T.ink500, border: "1px solid " + T.line, borderRadius: 999, width: 16, height: 16, display: "inline-grid", placeItems: "center", flexShrink: 0 }}>i</span>}</div>
     <div style={{ fontFamily: T.fontDisplay, fontSize: 32, fontWeight: 600, color: bad ? T.red500 : good ? T.emerald600 : T.ink900, fontVariantNumeric: "tabular-nums", lineHeight: 1.1, marginTop: 4 }}>{value}</div>
@@ -173,13 +173,13 @@ export function KpiPilotage({ rows, driftRows, closurePeriods, productionExclusi
         <section aria-label="Répartition des machines" style={card}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
             <h3 style={{ margin: 0, fontSize: FZ.md, fontWeight: 700, color: T.ink900 }}>Répartition des machines</h3>
-            <div role="group" aria-label="Machines prises en compte" style={{ display: "inline-flex", background: T.surfaceAlt, borderRadius: 9, padding: 2, gap: 2 }}>
-              {[["open", "En cours"], ["shipped", "Expédiées"], ["all", "Toutes"]].map(([k, l]) => <button key={k} type="button" aria-pressed={parc === k} onClick={() => setParc(k)} style={{ border: "none", borderRadius: 7, minHeight: 28, padding: "0 12px", fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: T.font, background: parc === k ? T.card : "transparent", color: parc === k ? T.ink900 : T.ink500, boxShadow: parc === k ? "0 1px 2px rgba(0,0,0,.08)" : "none" }}>{l}</button>)}
+            <div role="group" aria-label="Machines prises en compte" style={{ display: "inline-flex", background: T.surfaceAlt, borderRadius: 8, padding: 2, gap: 2 }}>
+              {[["open", "En cours"], ["shipped", "Expédiées"], ["all", "Toutes"]].map(([k, l]) => <button key={k} type="button" aria-pressed={parc === k} onClick={() => setParc(k)} style={{ border: "none", borderRadius: 8, minHeight: 28, padding: "0 12px", fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: T.font, background: parc === k ? T.card : "transparent", color: parc === k ? T.ink900 : T.ink500, boxShadow: parc === k ? "0 1px 2px rgba(0,0,0,.08)" : "none" }}>{l}</button>)}
             </div>
             <span style={{ fontSize: 12, color: T.ink500 }}>{parcRows.length} machine{parcRows.length > 1 ? "s" : ""} · filtres du Manager appliqués · chef = chef de projet principal</span>
           </div>
           {parcRows.length ? <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,420px),1fr))", gap: 12 }}>
-            {pies.map(([t, data]) => <div key={t} style={{ background: T.surface, borderRadius: 10, padding: "8px 10px", minWidth: 0 }}><div style={{ fontSize: 12.5, fontWeight: 700, color: T.ink900, marginBottom: 4 }}>{t}</div><PieBlock data={data} unit=" machines" size={110} /></div>)}
+            {pies.map(([t, data]) => <div key={t} style={{ background: T.surface, borderRadius: 12, padding: "8px 10px", minWidth: 0 }}><div style={{ fontSize: 12.5, fontWeight: 700, color: T.ink900, marginBottom: 4 }}>{t}</div><PieBlock data={data} unit=" machines" size={110} /></div>)}
           </div> : <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Aucune machine avec ce choix.</div>}
         </section>
   </Arrange>);

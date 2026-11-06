@@ -190,7 +190,7 @@ export function WorkshopScreen({ data, onClose, darkMode, productionExclusions, 
       <div style={{ fontSize: u(22), fontWeight: 800, textTransform: "uppercase", letterSpacing: ".05em", color: T.ink500 }}>{title}</div>
       {items.slice(0, 6).map(([k, v]) => (<div key={k} style={{ display: "grid", gridTemplateColumns: "minmax(0," + u(190) + ") 1fr " + u(40), alignItems: "center", gap: u(12) }}>
         <span style={{ fontSize: u(25), fontWeight: 600, display: "flex", alignItems: "center", gap: u(8), minWidth: 0 }}>{flag && <CountryFlag pays={k} size={Math.round(22 * scale)} />}<span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{k}</span></span>
-        <span style={{ height: u(24), background: T.surfaceAlt, borderRadius: 99, overflow: "hidden" }}><span style={{ display: "block", height: "100%", width: Math.max(6, v / max * 100) + "%", background: byGamme ? gc(k) : T.teal500, borderRadius: 99 }} /></span>
+        <span style={{ height: u(24), background: T.surfaceAlt, borderRadius: 999, overflow: "hidden" }}><span style={{ display: "block", height: "100%", width: Math.max(6, v / max * 100) + "%", background: byGamme ? gc(k) : T.teal500, borderRadius: 999 }} /></span>
         <b style={{ fontSize: u(27), textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{v}</b>
       </div>))}
       {!items.length && <span style={{ color: T.ink300, fontSize: u(22) }}>—</span>}
@@ -252,7 +252,7 @@ export function WorkshopScreen({ data, onClose, darkMode, productionExclusions, 
     </div>
     <div key={cur.id} className="enogia-fade-in" style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>{body}</div>
     <div style={{ display: "flex", alignItems: "center", gap: u(14), marginTop: u(18) }}>
-      {slides.map((s, i) => <span key={s.id} aria-hidden="true" style={{ width: i === idx % n ? u(46) : u(14), height: u(14), borderRadius: 99, background: i === idx % n ? T.accent : T.line, transition: "width .3s" }}/>)}
+      {slides.map((s, i) => <span key={s.id} aria-hidden="true" style={{ width: i === idx % n ? u(46) : u(14), height: u(14), borderRadius: 999, background: i === idx % n ? T.accent : T.line, transition: "width .3s" }}/>)}
       <span style={{ flex: 1 }}/>
       <span style={{ fontSize: u(18), color: T.ink500 }}>{paused ? "⏸ En pause · " : ""}Échap : quitter · ← → : changer de page · Espace : pause</span>
     </div>

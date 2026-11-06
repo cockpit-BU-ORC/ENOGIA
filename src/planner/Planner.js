@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback } from "react";
-import { T } from "../theme";
+import { T, btn } from "../theme";
 import { guessGamme } from "../parsers";
 import {
   STEPS, splitKey, makeCalendar, schedule, planToRows, diffRows, initPlanFromRows,
@@ -26,10 +26,10 @@ import { Pop, MenuItem } from "./PlannerMenu";
 // v208 : styles relus dans le thème à chaque usage (ils étaient figés au chargement : textes illisibles en sombre)
 const live = f => new Proxy({}, { get: (o, k) => f()[k], has: (o, k) => k in f(), ownKeys: () => Reflect.ownKeys(f()), getOwnPropertyDescriptor: (o, k) => { const v = f(); return k in v ? { value: v[k], enumerable: true, configurable: true, writable: true } : undefined; } });
 const INP = live(() => ({ padding: "5px 8px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: 12.5, fontFamily: T.font, boxSizing: "border-box" }));
-const BTN = live(() => ({ padding: "6px 12px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink700, fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: T.font, whiteSpace: "nowrap" }));
-const BTN_P = live(() => ({ ...BTN, border: "none", background: T.ink900, color: T.card }));
+const BTN = live(() => btn("sec", "sm")); // v286 : bouton commun
+const BTN_P = live(() => btn("pri", "sm"));
 const STEP_LABELS = Object.fromEntries(STEPS.map(s => [s[0], s[1]]));
-const CARD = live(() => ({ background: T.card, border: "1px solid " + T.line, borderRadius: 14, boxShadow: "0 1px 3px rgba(0,0,0,.05)" }));
+const CARD = live(() => ({ background: T.card, border: "1px solid " + T.line, borderRadius: 12, boxShadow: "0 1px 3px rgba(0,0,0,.05)" }));
 
 // styles : survol, focus et menus (la spécificité dépasse les règles globales sur les champs)
 const pgCss = () => `
@@ -37,7 +37,7 @@ const pgCss = () => `
 .pg-root .pg-row:hover{background:${T.teal100} !important}
 .pg-root .pg-row .pg-more{opacity:0;transition:opacity .12s}
 .pg-root .pg-row:hover .pg-more,.pg-root .pg-row:focus-within .pg-more{opacity:1}
-.pg-root .pg-cell{width:100%;min-height:24px;line-height:24px;padding:0 4px;box-sizing:border-box;border-radius:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pg-root .pg-cell{width:100%;min-height:24px;line-height:24px;padding:0 4px;box-sizing:border-box;border-radius:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pg-root .pg-ed{cursor:text}
 .pg-root .pg-ed:hover{box-shadow:inset 0 0 0 1px ${T.line};background:${T.card}}
 .pg-root .pg-btn:focus-visible,.pg-root input:focus-visible{outline:2px solid ${T.teal500};outline-offset:1px}
@@ -46,7 +46,7 @@ const pgCss = () => `
 .pg-root .pg-trow:hover .pg-h,.pg-root .pg-h.on{opacity:1}
 .pg-menuitem:hover:not(:disabled){background:${T.teal100} !important}
 .pg-menuitem:focus-visible{outline:2px solid ${T.teal500}}
-.pg-root .pg-tb{border:1px solid ${T.line};background:${T.card};color:${T.ink700};border-radius:6px;padding:2px 8px;min-height:26px;font-size:12px;line-height:16px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit}
+.pg-root .pg-tb{border:1px solid ${T.line};background:${T.card};color:${T.ink700};border-radius:8px;padding:2px 8px;min-height:26px;font-size:12px;line-height:16px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit}
 .pg-root .pg-bar1{display:flex;gap:4px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
 .pg-root .pg-bar1 > label{font-size:12px!important;min-height:24px!important}
 .pg-root .pg-bar1 > .pg-in{height:26px!important;font-size:12px!important;padding:0 6px!important}
@@ -58,7 +58,7 @@ const pgCss = () => `
 
 function Modal({ title, onClose, children, width = 720 }) {
   return (<div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,20,30,.45)", zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, fontFamily: T.font }}>
-    <div onClick={e => e.stopPropagation()} style={{ background: T.card, borderRadius: 16, boxShadow: T.shadowLg, border: "1px solid " + T.line, width: "min(" + width + "px,100%)", maxHeight: "88vh", overflow: "auto", padding: "20px 22px" }}>
+    <div onClick={e => e.stopPropagation()} style={{ background: T.card, borderRadius: 12, boxShadow: T.shadowLg, border: "1px solid " + T.line, width: "min(" + width + "px,100%)", maxHeight: "88vh", overflow: "auto", padding: "20px 22px" }}>
       <div style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: 19, color: T.ink900, marginBottom: 10 }}>{title}</div>
       {children}
     </div>
@@ -230,7 +230,7 @@ function PublishDialog({ plan, sched, rows, pubRows, changes, onClose, onPublish
         <button type="button" style={{ ...BTN, minHeight: 26, padding: "0 10px" }} onClick={() => setAnn(new Set(changes.filter(c => !HOUR_FIELDS.has(c.field)).map(keyOf)))}>Dates seulement</button>
         <button type="button" style={{ ...BTN, minHeight: 26, padding: "0 10px" }} onClick={() => setAnn(new Set())}>Ne rien annoncer</button>
       </div>}
-      {changes.length > 0 && <div style={{ marginTop: 8, border: "1px solid " + T.line, borderRadius: 10, maxHeight: 300, overflow: "auto" }}>
+      {changes.length > 0 && <div style={{ marginTop: 8, border: "1px solid " + T.line, borderRadius: 12, maxHeight: 300, overflow: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}><tbody>
           {Object.keys(byPj).map(pj => byPj[pj].map((c, i) => (<tr key={pj + i} style={{ borderTop: i === 0 ? "1px solid " + T.line : "none", opacity: ann.has(keyOf(c)) ? 1 : 0.6 }}>
             <td style={{ padding: "4px 4px 4px 10px", width: 28 }}><input type="checkbox" checked={ann.has(keyOf(c))} onChange={e => flip([keyOf(c)], e.target.checked)} aria-label={"Annoncer " + pj + " " + (FL[c.field] || c.field)} /></td>
@@ -239,7 +239,7 @@ function PublishDialog({ plan, sched, rows, pubRows, changes, onClose, onPublish
             <td style={{ padding: "4px 10px", color: T.ink700 }}>{c.field === "new" ? fmtIso(c.to) : (typeof c.from === "number" ? c.from : fmtIso(c.from)) + " → " + (typeof c.to === "number" ? c.to : fmtIso(c.to))}</td>
           </tr>)))}
         </tbody></table></div>}
-      {lateList.length > 0 && <div role="alert" style={{ marginTop: 10, border: "1px solid " + T.red500, borderRadius: 10, padding: "8px 12px", background: T.red100 }}>
+      {lateList.length > 0 && <div role="alert" style={{ marginTop: 10, border: "1px solid " + T.red500, borderRadius: 12, padding: "8px 12px", background: T.red100 }}>
         <div style={{ fontWeight: 700, fontSize: 13, color: T.red600, marginBottom: 4 }}>⚠ {lateList.length} PJ dépasse{lateList.length > 1 ? "nt" : ""} sa date contractuelle avec cette publication</div>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, color: T.ink900 }}><tbody>{lateList.map(x => <tr key={x.pj}>
           <td style={{ padding: "2px 8px 2px 0", fontFamily: T.fontMono, fontWeight: 700, width: 90 }}>{x.pj}</td>
@@ -248,7 +248,7 @@ function PublishDialog({ plan, sched, rows, pubRows, changes, onClose, onPublish
           <td style={{ padding: "2px 0 2px 8px", textAlign: "right", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{x.a.amount != null ? <>pénalités {x.b && x.b.amount != null ? fmtEur(x.b.amount) + " → " : ""}<b>{fmtEur(x.a.amount)}</b></> : <span style={{ color: T.ink500 }}>pénalités non renseignées</span>}</td>
         </tr>)}</tbody></table>
       </div>}
-      {cashLate.length > 0 && <div style={{ marginTop: 10, border: "1px solid " + T.amber600, borderRadius: 10, padding: "8px 12px" }}>
+      {cashLate.length > 0 && <div style={{ marginTop: 10, border: "1px solid " + T.amber600, borderRadius: 12, padding: "8px 12px" }}>
         <div style={{ fontWeight: 700, fontSize: 13, color: T.amber600, marginBottom: 4 }}>{cashLate.length} facturation{cashLate.length > 1 ? "s" : ""} liée{cashLate.length > 1 ? "s" : ""} au planning recule{cashLate.length > 1 ? "nt" : ""} ({fmtEur(cashLate.reduce((s, x) => s + (Number(x.r.montant) || 0), 0))})</div>
         {cashLate.slice(0, 8).map(x => <div key={x.r.id} style={{ fontSize: 12.5, color: T.ink700, display: "flex", gap: 8 }}><b style={{ fontFamily: T.fontMono }}>{x.r.pj}</b><span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.r.jalon}</span><span style={{ fontVariantNumeric: "tabular-nums" }}>{fmtIso(x.a)} → {fmtIso(x.b)} (+{x.d} j)</span></div>)}
         <div style={{ fontSize: 12, color: T.ink500, marginTop: 4 }}>Après la publication, le Cash in propose de mettre ces dates à jour.</div>
@@ -343,7 +343,7 @@ function BenchTimeline({ items, lo, hi, cal, bad, today, readOnly, onDrop }) {
   const up = e => { if (!drag) return; const d = drag; const el = box.current && box.current.querySelector('[data-bench-pj="' + (window.CSS && CSS.escape ? CSS.escape(d.pj) : d.pj) + '"]'); if (el) land.current = { pj: d.pj, rect: el.getBoundingClientRect() }; setDrag(null); const days = Math.round(d.dx / BT_PX); const b = d.over && d.over !== d.from ? d.over : null; if (b || days) onDrop(d.pj, b, days ? cal.dateOf(d.s + days) : null); };
   const dayTxt = drag && Math.round(drag.dx / BT_PX) ? cal.dateOf(drag.s + Math.round(drag.dx / BT_PX)) : null;
   if (!items.length) return <div style={{ fontSize: 12.5, color: T.ink500, margin: "6px 0 12px" }}>Aucune machine avec des tests datés sur cette période.</div>;
-  return (<div style={{ border: "1px solid " + T.line, borderRadius: 10, overflow: "hidden", marginBottom: 12 }}>
+  return (<div style={{ border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden", marginBottom: 12 }}>
     <div style={{ fontSize: 12, color: T.ink500, padding: "6px 10px", borderBottom: "1px solid " + T.line, background: T.surface }}>{readOnly ? "Frise des bancs." : dayTxt ? "Début des tests le " + fmtIso(dayTxt) + " (les liens du PJ sont gardés)" : "Glissez une machine sur l'autre banc pour l'y affecter, ou à gauche / droite pour changer ses dates (liens gardés). Au clavier : flèches."}</div>
     <div style={{ overflowX: "auto" }}>
       <div ref={box} style={{ position: "relative", width: BT_LBL + W, minWidth: "100%" }} onPointerMove={move} onPointerUp={up} onPointerCancel={() => setDrag(null)}>
@@ -378,7 +378,7 @@ function BenchDialog({ plan, sched, cal, hide, skip, readOnly, onClose, onApply 
   const shown = items.filter(x => past || x.n.finish >= t0);
   const lo = shown.length ? Math.min(...shown.map(x => x.n.s)) : 0, hi = shown.length ? Math.max(...shown.map(x => x.n.f)) : 1;
   const withRule = np => benchOrderByStart({ ...np, rules: { ...rulesOf(np), banc: true } }, cal);
-  const tb = { border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 6, padding: "2px 8px", fontSize: 11.5, fontWeight: 700, cursor: readOnly ? "default" : "pointer", minHeight: 24, fontFamily: T.font };
+  const tb = { border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "2px 8px", fontSize: 11.5, fontWeight: 700, cursor: readOnly ? "default" : "pointer", minHeight: 24, fontFamily: T.font };
   return (<div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,20,30,.45)", zIndex: 10010, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
     <div role="dialog" aria-modal="true" aria-label="Bancs d'essai" onClick={e => e.stopPropagation()} style={{ background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, width: "min(980px,100%)", maxHeight: "90vh", overflow: "auto", padding: "16px 18px", fontFamily: T.font }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
@@ -420,7 +420,7 @@ function BenchDialog({ plan, sched, cal, hide, skip, readOnly, onClose, onApply 
 
 function Banner({ tone, children }) {
   const c = { warn: [T.amber100, T.amber600], bad: [T.red100, T.red500], ok: [T.emerald100, T.emerald600] }[tone];
-  return <div role="status" style={{ background: c[0], color: c[1], borderRadius: 10, padding: "8px 14px", fontWeight: 600, fontSize: 13, marginBottom: 10 }}>{children}</div>;
+  return <div role="status" style={{ background: c[0], color: c[1], borderRadius: 12, padding: "8px 14px", fontWeight: 600, fontSize: 13, marginBottom: 10 }}>{children}</div>;
 }
 
 export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, productionExclusions, authorName, onSavePlan, onPublish, onLoadHistory, onRestorePublication, testers }) {
@@ -566,7 +566,7 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
     return (<div className="pg-root"><style>{pgCss()}</style>
       <div style={{ ...CARD, padding: "24px 28px", maxWidth: 760 }}>
         <div style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: 24, color: T.ink900 }}>Planification</div>
-        {plan && plan.v !== 2 && <div style={{ background: T.amber100, color: T.amber600, borderRadius: 10, padding: "8px 14px", margin: "12px 0", fontWeight: 600, fontSize: 13 }}>Le plan enregistré date d'une ancienne version. Recréez-le : le planning actuel n'est pas modifié tant que vous ne publiez pas.</div>}
+        {plan && plan.v !== 2 && <div style={{ background: T.amber100, color: T.amber600, borderRadius: 12, padding: "8px 14px", margin: "12px 0", fontWeight: 600, fontSize: 13 }}>Le plan enregistré date d'une ancienne version. Recréez-le : le planning actuel n'est pas modifié tant que vous ne publiez pas.</div>}
         <p style={{ fontSize: 14.5, lineHeight: 1.65, color: T.ink700, margin: "14px 0 20px" }}>Un Gantt modifiable en direct, à la place de MS Project : chaque PJ suit <b>Arrivée, Production, Tests, Fin de production, Départ</b>, avec ses dates, durées, travail (heures), liens entre tâches et priorité. La charge atelier est comparée à la capacité par semaine ou par mois. À la création, <b>toutes les dates sont reprises à l'identique</b> du planning actuel.</p>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <button style={{ ...BTN_P, padding: "10px 18px", fontSize: 14 }} onClick={() => { setPlanState(fillMissingHours(initPlanFromRows(rows || [], cal), rows || [], null).plan); setUndo([]); setRedo([]); }}>Créer le plan depuis le planning actuel ({(rows || []).length} PJ)</button>
@@ -595,24 +595,24 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
       <div style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: 14, color: T.ink900, marginRight: 4 }}>Planification</div>
       <span style={{ fontSize: 11, color: T.ink500 }}>{plan.pjs.length} PJ · {nLinks} lien{nLinks > 1 ? "s" : ""}</span>
       {nEst + nNoH > 0 && <span title="La charge vient des heures atelier du planning. Sans heures, un PJ reprend le modèle de sa gamme ou la moyenne des PJ de la même gamme." style={{ fontSize: 12, color: T.amber600 }}>{nEst ? nEst + " PJ aux heures estimées" : ""}{nEst && nNoH ? " · " : ""}{nNoH ? nNoH + " PJ sans heures (hors charge)" : ""}</span>}
-      <span role="button" tabIndex={0} onClick={() => { setRefId("pub"); setUi({ view: "changes" }); }} onKeyDown={e => { if (e.key === "Enter") { setRefId("pub"); setUi({ view: "changes" }); } }} title="Voir la synthèse des modifications" style={{ cursor: "pointer", borderRadius: 99, padding: "1px 8px", fontSize: 11, fontWeight: 700, background: changes.length ? T.amber100 : T.emerald100, color: changes.length ? T.amber600 : T.emerald600 }}>{changes.length ? changes.length + " modification" + (changes.length > 1 ? "s" : "") + " non publiée" + (changes.length > 1 ? "s" : "") : "À jour avec le planning actuel"}</span>
+      <span role="button" tabIndex={0} onClick={() => { setRefId("pub"); setUi({ view: "changes" }); }} onKeyDown={e => { if (e.key === "Enter") { setRefId("pub"); setUi({ view: "changes" }); } }} title="Voir la synthèse des modifications" style={{ cursor: "pointer", borderRadius: 999, padding: "1px 8px", fontSize: 11, fontWeight: 700, background: changes.length ? T.amber100 : T.emerald100, color: changes.length ? T.amber600 : T.emerald600 }}>{changes.length ? changes.length + " modification" + (changes.length > 1 ? "s" : "") + " non publiée" + (changes.length > 1 ? "s" : "") : "À jour avec le planning actuel"}</span>
       <span style={{ fontSize: 12, color: T.ink500 }} aria-live="polite">{saveSt}</span>
       <span style={{ flex: 1 }} />
       <span style={{ display: "inline-flex", gap: 8, flexWrap: "wrap", fontSize: 12, color: T.ink500, alignItems: "center" }}>
-        {[["arrivee", "Arrivée", 1], ["production", "Production"], ["tests", "Tests"], ["finProd", "Packing"], ["depart", "Départ", 1]].map(([k, l, ms]) => <span key={k} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><span style={{ width: ms ? 9 : 16, height: 9, background: STEP_COLOR[k], transform: ms ? "rotate(45deg)" : "none", borderRadius: 2, display: "inline-block" }} />{l}</span>)}
+        {[["arrivee", "Arrivée", 1], ["production", "Production"], ["tests", "Tests"], ["finProd", "Packing"], ["depart", "Départ", 1]].map(([k, l, ms]) => <span key={k} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><span style={{ width: ms ? 9 : 16, height: 9, background: STEP_COLOR[k], transform: ms ? "rotate(45deg)" : "none", borderRadius: 4, display: "inline-block" }} />{l}</span>)}
         <span><span style={{ color: T.ink500 }}>→</span> lien</span>
       </span>
       {!ui.lock && <button className="pg-tb" style={{ background: T.ink900, color: T.card, borderColor: T.ink900, padding: "2px 14px" }} onClick={() => setDlg("publish")}>Publier</button>}
       {ui.lock && <button className="pg-tb" aria-pressed onClick={() => setUi({ lock: false })} title="Quitter la lecture seule">Lecture seule · quitter</button>}
     </div>
-    <div className="pg-bar1" role="toolbar" aria-label="Outils du planificateur" style={{ marginBottom: 6, flexWrap: "nowrap", overflowX: "auto" }}>
+    <div className="pg-bar1" role="toolbar" aria-label="Outils du planificateur" style={{ marginBottom: 6, flexWrap: "wrap", rowGap: 4 }}>
       {!ui.lock && <>
         <button className="pg-tb" disabled={!undo.length} onClick={doUndo} aria-label="Annuler la dernière modification" title="Annuler (Ctrl + Z)">↶</button>
         <button className="pg-tb" disabled={!redo.length} onClick={doRedo} aria-label="Rétablir" title="Rétablir">↷</button>
         <span aria-hidden="true" style={{ width: 1, height: 18, background: T.line, margin: "0 2px", flexShrink: 0 }} />
       </>}
       <div role="group" aria-label="Vue" style={{ display: "inline-flex" }}>
-        {[["list", "Liste"], ["both", "Liste + Gantt"], ["gantt", "Gantt"], ["lanes", "Couloirs"], ["changes", "Modifications"]].map(([k, l], i, arr) => <button key={k} className="pg-tb" aria-pressed={ui.view === k} onClick={() => setUi({ view: k })} style={{ borderRadius: i === 0 ? "6px 0 0 6px" : i === arr.length - 1 ? "0 6px 6px 0" : 0, marginLeft: i ? -1 : 0 }}>{l}{k === "changes" && nTouched > 0 && <span style={{ marginLeft: 6, background: ui.view === k ? "rgba(255,255,255,.25)" : T.amber100, color: ui.view === k ? "#fff" : T.amber600, borderRadius: 99, padding: "0 7px", fontSize: 11.5 }}>{nTouched}</span>}</button>)}
+        {[["list", "Liste"], ["both", "Liste + Gantt"], ["gantt", "Gantt"], ["lanes", "Couloirs"], ["changes", "Modifications"]].map(([k, l], i, arr) => <button key={k} className="pg-tb" aria-pressed={ui.view === k} onClick={() => setUi({ view: k })} style={{ borderRadius: i === 0 ? "6px 0 0 6px" : i === arr.length - 1 ? "0 6px 6px 0" : 0, marginLeft: i ? -1 : 0 }}>{l}{k === "changes" && nTouched > 0 && <span style={{ marginLeft: 6, background: ui.view === k ? "rgba(255,255,255,.25)" : T.amber100, color: ui.view === k ? "#fff" : T.amber600, borderRadius: 999, padding: "0 7px", fontSize: 11.5 }}>{nTouched}</span>}</button>)}
       </div>
       <button className="pg-tb" onClick={() => setDlg("bench")} title="Attribuer les 2 bancs d'essai (une seule machine par banc à la fois)">Bancs d'essai{conflicts.length ? <span style={{ color: T.red500 }}> ⚠ {conflicts.length}</span> : null}</button>
       <span aria-hidden="true" style={{ width: 1, height: 18, background: T.line, margin: "0 2px", flexShrink: 0 }} />

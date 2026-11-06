@@ -276,9 +276,9 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
 
   return(<div className="enogia-view-in" style={{background:stripeBg(T.teal500,T.surface,4),borderRadius:12,overflow:"hidden",border:"1px solid "+T.line,fontFamily:T.font}}>
     <div style={{display:"flex",alignItems:"center",gap:10,padding:"14px 18px",borderBottom:"1px solid "+T.line,background:T.surface,flexWrap:"wrap"}}>
-      <div style={{display:"flex",gap:4,background:T.surfaceAlt,borderRadius:9,padding:3}}>
-        <button onClick={()=>setMode("week")} style={{padding:"6px 14px",borderRadius:7,border:"none",background:mode==="week"?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:mode==="week"?(T.mode==="dark"?"#0B1130":"#FFFFFF"):T.ink500,transition:"background-color .15s ease, color .15s ease",fontWeight:700,fontSize:FZF.md,cursor:"pointer",boxShadow:mode==="week"?T.shadowSm:"none"}}>Semaine</button>
-        <button onClick={()=>setMode("day")} style={{padding:"6px 14px",borderRadius:7,border:"none",background:mode==="day"?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:mode==="day"?(T.mode==="dark"?"#0B1130":"#FFFFFF"):T.ink500,transition:"background-color .15s ease, color .15s ease",fontWeight:700,fontSize:FZF.md,cursor:"pointer",boxShadow:mode==="day"?T.shadowSm:"none"}}>Jour</button>
+      <div style={{display:"flex",gap:4,background:T.surfaceAlt,borderRadius:8,padding:3}}>
+        <button onClick={()=>setMode("week")} style={{padding:"6px 14px",borderRadius:8,border:"none",background:mode==="week"?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:mode==="week"?(T.mode==="dark"?"#0B1130":"#FFFFFF"):T.ink500,transition:"background-color .15s ease, color .15s ease",fontWeight:700,fontSize:FZF.md,cursor:"pointer",boxShadow:mode==="week"?T.shadowSm:"none"}}>Semaine</button>
+        <button onClick={()=>setMode("day")} style={{padding:"6px 14px",borderRadius:8,border:"none",background:mode==="day"?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:mode==="day"?(T.mode==="dark"?"#0B1130":"#FFFFFF"):T.ink500,transition:"background-color .15s ease, color .15s ease",fontWeight:700,fontSize:FZF.md,cursor:"pointer",boxShadow:mode==="day"?T.shadowSm:"none"}}>Jour</button>
       </div>
       <span style={{fontFamily:T.fontDisplay,fontWeight:300,fontSize:22,letterSpacing:"-.02em",color:T.ink900,minWidth:220,textAlign:"center",fontVariantNumeric:"tabular-nums"}}>
         {mode==="week"
@@ -286,8 +286,8 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
           :days[0].toLocaleDateString("fr-FR",{day:"numeric",month:"short"})+" → "+days[Math.min(effCount,days.length)-1].toLocaleDateString("fr-FR",{day:"numeric",month:"short",year:"numeric"})}
       </span>
       <div style={{display:"flex",gap:4}}>
-        <button onClick={()=>pageScroll(-1)} title="Période précédente" style={{padding:"5px 10px",borderRadius:7,border:"1px solid "+T.line,background:"transparent",color:T.ink700,fontSize:FZF.md,fontWeight:700,cursor:"pointer"}}>‹</button>
-        <button onClick={()=>pageScroll(1)} title="Période suivante" style={{padding:"5px 10px",borderRadius:7,border:"1px solid "+T.line,background:"transparent",color:T.ink700,fontSize:FZF.md,fontWeight:700,cursor:"pointer"}}>›</button>
+        <button onClick={()=>pageScroll(-1)} title="Période précédente" style={{padding:"5px 10px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:T.ink700,fontSize:FZF.md,fontWeight:700,cursor:"pointer"}}>‹</button>
+        <button onClick={()=>pageScroll(1)} title="Période suivante" style={{padding:"5px 10px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:T.ink700,fontSize:FZF.md,fontWeight:700,cursor:"pointer"}}>›</button>
       </div>
       {/* Même filtre État + PJ que le Gantt, au même format et au même emplacement (demandé
           explicitement : "je veux le même format au même emplacement quelque chose de simple et
@@ -298,10 +298,10 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
         {setSelEtats&&<EtatInfoButton/>}
         {allPJs&&<DropFilter label="PJ" options={allPJs} selected={selPJs||new Set(allPJs)} onChange={setSelPJs}/>}
         <div style={{display:"flex",gap:4}}>
-          <button onClick={zoomOut} disabled={zoomLevel>=maxZoomLevel} style={{padding:"5px 9px",borderRadius:7,border:"1px solid "+T.line,background:"transparent",color:zoomLevel>=maxZoomLevel?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:700,cursor:zoomLevel>=maxZoomLevel?"default":"pointer"}}>−</button>
-          <button onClick={zoomIn} disabled={zoomLevel<=0} style={{padding:"5px 9px",borderRadius:7,border:"1px solid "+T.line,background:"transparent",color:zoomLevel<=0?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:700,cursor:zoomLevel<=0?"default":"pointer"}}>+</button>
+          <button onClick={zoomOut} disabled={zoomLevel>=maxZoomLevel} style={{padding:"5px 9px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:zoomLevel>=maxZoomLevel?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:700,cursor:zoomLevel>=maxZoomLevel?"default":"pointer"}}>−</button>
+          <button onClick={zoomIn} disabled={zoomLevel<=0} style={{padding:"5px 9px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:zoomLevel<=0?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:700,cursor:zoomLevel<=0?"default":"pointer"}}>+</button>
         </div>
-        <button onClick={goToday} className="enogia-btn-ind" style={{padding:"5px 11px",borderRadius:7,border:"1.5px solid "+T.teal500,background:"transparent",color:T.teal600,fontSize:FZF.sm,fontWeight:700,cursor:"pointer"}}>Aujourd'hui</button>
+        <button onClick={goToday} className="enogia-btn-ind" style={{padding:"5px 11px",borderRadius:8,border:"1.5px solid "+T.teal500,background:"transparent",color:T.teal600,fontSize:FZF.sm,fontWeight:700,cursor:"pointer"}}>Aujourd'hui</button>
       </div>
     </div>
 
@@ -464,7 +464,7 @@ function DayProdMenu({menu,data,closurePeriods,productionExclusions,setClosurePe
   const W=320,left=Math.max(8,Math.min(menu.x,window.innerWidth-W-8)),top=Math.min(menu.y+4,window.innerHeight-120);
   const btn={border:"1px solid "+T.line,background:T.card,color:T.ink900,borderRadius:8,padding:"7px 10px",fontSize:FZF.sm,fontWeight:700,cursor:"pointer",fontFamily:T.font,minHeight:34,textAlign:"left"};
   return(<><div onClick={onClose} style={{position:"fixed",inset:0,zIndex:1300}}/>
-    <div role="dialog" aria-label={"Production du "+d.toLocaleDateString("fr-FR")} style={{position:"fixed",left,top,width:W,maxHeight:"min(70vh,520px)",overflow:"auto",zIndex:1301,background:T.card,color:T.ink900,border:"1px solid "+T.line,borderRadius:10,boxShadow:T.shadowFloat||T.shadowLg,padding:12,fontFamily:T.font}}>
+    <div role="dialog" aria-label={"Production du "+d.toLocaleDateString("fr-FR")} style={{position:"fixed",left,top,width:W,maxHeight:"min(70vh,520px)",overflow:"auto",zIndex:1301,background:T.card,color:T.ink900,border:"1px solid "+T.line,borderRadius:12,boxShadow:T.shadowFloat||T.shadowLg,padding:12,fontFamily:T.font}}>
       <div style={{fontWeight:700,fontSize:FZF.md,marginBottom:2}}>{d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})}</div>
       <div style={{fontSize:FZF.xs,color:T.ink500,marginBottom:10}}>{closed?"Atelier fermé ce jour.":"Jour travaillé."} Le Gantt et la charge en tiennent compte.</div>
       {menu.pj&&!closed&&<div style={{border:"1px solid "+T.line,borderRadius:8,padding:10,marginBottom:10}}>

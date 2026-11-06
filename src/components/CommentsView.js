@@ -15,12 +15,12 @@ function OpenAsks({comments,data,seePrivate,options,me,onReply,onResolve}){
   const [all,setAll]=useState(false);
   const nameOfEmail=e=>{const o=(options||[]).find(x=>lc(x.email)===lc(e));return o?o.name:nameFromEmail(e);};
   const list=useMemo(()=>{const out=[];Object.entries(comments||{}).forEach(([pj,cs])=>(cs||[]).forEach((c,idx)=>{if(!c||(c.private&&!seePrivate))return;const open=mentionsOf(c).filter(e=>!isResolvedFor(c,e));if(open.length)out.push({pj,idx,c,open});}));return out.sort((a,b)=>String(b.c.date||"").localeCompare(String(a.c.date||"")));},[comments,seePrivate]);
-  if(!list.length)return <div role="status" style={{margin:"4px 0 12px",padding:"8px 12px",borderRadius:10,border:"1px dashed "+T.line,fontSize:FZ.sm,color:T.ink500,background:T.card}}><b style={{color:T.ink700}}>Aucune demande en attente.</b> Pour demander une réponse à quelqu'un, citez-le avec @ dans un commentaire : la demande s'affichera ici tant qu'il ne l'aura pas marquée « traité ».</div>;
+  if(!list.length)return <div role="status" style={{margin:"4px 0 12px",padding:"8px 12px",borderRadius:12,border:"1px dashed "+T.line,fontSize:FZ.sm,color:T.ink500,background:T.card}}><b style={{color:T.ink700}}>Aucune demande en attente.</b> Pour demander une réponse à quelqu'un, citez-le avec @ dans un commentaire : la demande s'affichera ici tant qu'il ne l'aura pas marquée « traité ».</div>;
   const shown=all?list:list.slice(0,6),nom=pj=>{const r=(data||[]).find(x=>x.pj===pj);return r?getPjMeta(pj,r).nomProjet||"":"";};
   return(<section aria-label="Demandes à traiter" style={{margin:"4px 0 14px"}}>
     <h2 style={{margin:"0 0 8px",fontSize:FZ.lg,fontWeight:700,color:T.ink900,fontFamily:T.fontDisplay}}>{list.length} demande{list.length>1?"s":""} attend{list.length>1?"ent":""} une réponse</h2>
     <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,340px),1fr))",gap:10}}>
-      {shown.map(({pj,idx,c,open})=>{const mine=isOpenFor(c,me);return(<article key={pj+"-"+idx} style={{background:T.card,border:"1px solid "+T.line,borderTop:"4px solid "+T.violet500,borderRadius:10,padding:"10px 12px",display:"flex",flexDirection:"column",gap:6,minWidth:0}}>
+      {shown.map(({pj,idx,c,open})=>{const mine=isOpenFor(c,me);return(<article key={pj+"-"+idx} style={{background:T.card,border:"1px solid "+T.line,borderTop:"4px solid "+T.violet500,borderRadius:12,padding:"10px 12px",display:"flex",flexDirection:"column",gap:6,minWidth:0}}>
         <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}><PjPlate pj={pj}/><span style={{fontSize:FZ.xs,color:T.ink500,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{nom(pj)}</span><span style={{marginLeft:"auto",fontSize:FZ.xs,color:T.ink500}}>{relTime(c.date)}</span></div>
         <p style={{margin:0,fontSize:FZ.sm,color:T.ink900,lineHeight:1.45,whiteSpace:"pre-wrap",display:"-webkit-box",WebkitLineClamp:4,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{c.text}</p>
         <div style={{fontSize:FZ.xs,color:T.ink500}}>{c.author||"—"} · attend : <b style={{color:T.ink900}}>{open.map(nameOfEmail).join(", ")}</b>{c.private?<span style={{marginLeft:6,color:T.amber600,fontWeight:700}}>privé</span>:null}</div>
@@ -173,7 +173,7 @@ export function CommentsView({data,comments,addComment,deleteComment,pinOk,addCo
   <div style={{display:"flex",gap:12,fontFamily:T.font,height:"calc(100dvh - 250px)",minHeight:480}}>
 
     {/* ── Liste des fils (par PJ) ── */}
-    <div style={{width:280,flexShrink:0,background:T.card,borderRadius:16,boxShadow:T.shadowMd,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+    <div style={{width:280,flexShrink:0,background:T.card,borderRadius:12,boxShadow:T.shadowMd,display:"flex",flexDirection:"column",overflow:"hidden"}}>
       <div style={{padding:12,borderBottom:"1px solid "+T.line,display:"flex",flexDirection:"column",gap:8}}>
         <input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher un PJ, un projet..."
           style={{width:"100%",padding:"8px 12px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700,boxSizing:"border-box"}}/>
@@ -237,7 +237,7 @@ export function CommentsView({data,comments,addComment,deleteComment,pinOk,addCo
     </div>
 
     {/* ── Fil sélectionné / composition groupée ── */}
-    <div style={{flex:1,minWidth:0,background:T.card,borderRadius:16,boxShadow:T.shadowMd,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+    <div style={{flex:1,minWidth:0,background:T.card,borderRadius:12,boxShadow:T.shadowMd,display:"flex",flexDirection:"column",overflow:"hidden"}}>
       {multiSelectMode?<>
         <div style={{padding:"12px 20px",borderBottom:"1px solid "+T.line}}>
           <div style={{fontFamily:T.fontDisplay,fontWeight:300,fontSize:22,letterSpacing:"-.02em",color:T.ink900,marginBottom:10}}>Commentaire groupé — choisir les PJ</div>

@@ -407,7 +407,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
         {subItems.map(([id,l])=>{const on=subValue===id;return(
           <button key={id} type="button" role="tab" aria-selected={on} onClick={()=>onSub(id)} style={{border:"none",background:"transparent",borderBottom:"3px solid "+(on?T.ink900:"transparent"),marginBottom:-1,padding:"8px 14px",minHeight:36,fontSize:FZ.sm,fontWeight:on?700:600,color:on?T.ink900:T.ink500,cursor:"pointer",fontFamily:T.font,whiteSpace:"nowrap"}}>{l}</button>);})}
       </div>}
-      {showFilters&&filtersOpen&&<div className="enogia-view-in" style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",padding:"8px 10px",background:T.surface,border:"1px solid "+T.line,borderRadius:10}}>
+      {showFilters&&filtersOpen&&<div className="enogia-view-in" style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",padding:"8px 10px",background:T.surface,border:"1px solid "+T.line,borderRadius:12}}>
         <DropFilter label="Statut" options={ALL_ETATS} selected={fEtat} onChange={setFEtat} getLabel={o=>ETAT_META[o]?.label||o}/>
         <EtatInfoButton/>
         <DropFilter label="Gamme" options={ALL_GAMMES} selected={fGamme} onChange={setFGamme}/>
@@ -434,13 +434,13 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
     {/* v219 (demandé : « l'imbrication des KPI est un peu brouillonne ») : répartitions et explorateur sur leur propre sous-page */}
     {me&&tab==="derives"&&kpiTab==="explorer"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,380px),1fr))",gap:12}}>
-        {countByPays.length>0&&<div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line}}>
+        {countByPays.length>0&&<div style={{background:T.card,borderRadius:12,padding:20,border:"1px solid "+T.line}}>
           <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:4}}>Répartition par pays</div>
           <div style={{fontSize:FZ.sm,color:T.ink300,marginBottom:10}}>Destinations des machines du portefeuille</div>
           <PieBlock data={topSlices(countByPays.map(x=>({name:x.pays,value:x.n})),8)} unit=" PJ"/>
         </div>}
 
-        <div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line}}>
+        <div style={{background:T.card,borderRadius:12,padding:20,border:"1px solid "+T.line}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8,marginBottom:10}}>
             <div>
               <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900}}>Explorateur libre</div>
@@ -462,7 +462,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
           </ResponsiveContainer>
         </div>
 
-      <div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line}}>
+      <div style={{background:T.card,borderRadius:12,padding:20,border:"1px solid "+T.line}}>
         <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:10}}>Départs par mois</div>
         <div style={{display:"flex",gap:4,alignItems:"flex-end",height:84}}>
           {byMonth.map((n,i)=>{const iC=i===today.getMonth();return(<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
@@ -472,7 +472,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
           </div>);})}
         </div>
       </div>
-      <div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line}}>
+      <div style={{background:T.card,borderRadius:12,padding:20,border:"1px solid "+T.line}}>
         <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:10}}>Par gamme</div>
         <PieBlock data={topSlices(Object.entries(gammeCounts).map(([g,n])=>({name:g,value:n,color:GAMME_COLORS[g]})),8)} unit=" PJ"/>
       </div>
@@ -481,7 +481,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
 
     {me&&tab==="derives"&&kpiTab==="charge"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
       <PlanLoadCard weeks={planWeeks(planDoc&&planDoc.plan,closurePeriods,productionExclusions,12,weekStartOf(today))}/>
-        {fd.length>0&&<div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line,gridColumn:"1 / -1"}}>
+        {fd.length>0&&<div style={{background:T.card,borderRadius:12,padding:20,border:"1px solid "+T.line,gridColumn:"1 / -1"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8}}>
             <div>
               <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:4}}>Charge prévisionnelle par étape et par mois</div>
@@ -505,7 +505,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
           </ResponsiveContainer>:<div style={{padding:"40px 0",textAlign:"center",color:T.ink300,fontSize:FZ.sm}}>Aucune donnée pour cette période</div>}
         </div>}
 
-        {workloadByPJ.length>0&&<div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line,gridColumn:"1 / -1"}}>
+        {workloadByPJ.length>0&&<div style={{background:T.card,borderRadius:12,padding:20,border:"1px solid "+T.line,gridColumn:"1 / -1"}}>
           <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:4,display:"flex",alignItems:"center",gap:8}}><NavIcon name="gauge" size={17}/>Charge de travail Atelier / Autom</div>
           <div style={{fontSize:FZ.sm,color:T.ink300,marginBottom:14}}>Heures de travail par PJ, issues du planning</div>
 
@@ -586,7 +586,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
       {initialData.length>0&&<>
           <KpiRow items={[[avgDelay==null?"—":(avgDelay>0?"+":"")+avgDelay+"j","Retard moyen départ",avgDelay>0?T.red500:T.emerald500],[lateCount,"PJ en retard",T.red500],[onTimeOrEarlyCount,"PJ à l'heure / en avance",T.emerald500],[onTimeRate==null?"—":onTimeRate+"%","Taux de respect délais",onTimeRate>=70?T.emerald500:onTimeRate>=40?T.amber500:T.red500],[comparable.length,"PJ comparables",T.ink500]]}/>
 
-        <div style={{background:T.card,borderRadius:16,padding:"16px 20px",border:"1px solid "+T.line}}>
+        <div style={{background:T.card,borderRadius:12,padding:"16px 20px",border:"1px solid "+T.line}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8,marginBottom:2}}>
             <div>
               <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,display:"flex",alignItems:"center",gap:8}}><NavIcon name="chart" size={19}/>Vue CODIR — Promesse vs Réalité</div>
@@ -601,23 +601,23 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
           </div>
           <div role="group" aria-label="Machines prises en compte" style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",margin:"8px 0 10px"}}>
             <span style={{fontSize:12,color:T.ink500,fontWeight:600}}>Machines :</span>
-            <div style={{display:"inline-flex",background:T.surfaceAlt,borderRadius:9,padding:2,gap:2}}>
-              {[["all","Toutes"],["open","En cours"],["shipped","Expédiées"]].map(([k,l])=><button key={k} type="button" aria-pressed={codirScope===k} onClick={()=>setCodirScope(k)} style={{border:"none",borderRadius:7,minHeight:28,padding:"0 12px",fontSize:12.5,fontWeight:700,cursor:"pointer",fontFamily:T.font,background:codirScope===k?T.card:"transparent",color:codirScope===k?T.ink900:T.ink500,boxShadow:codirScope===k?"0 1px 2px rgba(0,0,0,.08)":"none"}}>{l}</button>)}
+            <div style={{display:"inline-flex",background:T.surfaceAlt,borderRadius:8,padding:2,gap:2}}>
+              {[["all","Toutes"],["open","En cours"],["shipped","Expédiées"]].map(([k,l])=><button key={k} type="button" aria-pressed={codirScope===k} onClick={()=>setCodirScope(k)} style={{border:"none",borderRadius:8,minHeight:28,padding:"0 12px",fontSize:12.5,fontWeight:700,cursor:"pointer",fontFamily:T.font,background:codirScope===k?T.card:"transparent",color:codirScope===k?T.ink900:T.ink500,boxShadow:codirScope===k?"0 1px 2px rgba(0,0,0,.08)":"none"}}>{l}</button>)}
             </div>
             <span style={{fontSize:12,color:T.ink500,fontWeight:600,marginLeft:8}}>Mois promis :</span>
-            {/* v280 (signalé : « mois passé = 6/22 arrivées tenues alors que je n’en avais pas 22 de prévues ») : « Mois passés » prenait tous les mois jusqu’au mois dernier ; remplacé par des raccourcis d’un mois ou de quelques mois fermés */}{[["Mois dernier",mKey(new Date(today.getFullYear(),today.getMonth()-1,1)),mKey(new Date(today.getFullYear(),today.getMonth()-1,1))],["Mois en cours",mKey(today),mKey(today)],["3 derniers mois",mKey(new Date(today.getFullYear(),today.getMonth()-3,1)),mKey(new Date(today.getFullYear(),today.getMonth()-1,1))],["Année "+today.getFullYear(),today.getFullYear()+"-01",today.getFullYear()+"-12"],["Tout","",""]].map(([l,a,b])=>{const on=codirFrom===a&&codirTo===b;return <button key={l} type="button" aria-pressed={on} onClick={()=>{setCodirFrom(a);setCodirTo(b);}} style={{border:"1px solid "+(on?T.ink900:T.line),borderRadius:7,minHeight:28,padding:"0 10px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:T.font,background:on?T.ink900:T.card,color:on?T.card:T.ink700}}>{l}</button>;})}
-            <label style={{fontSize:12,color:T.ink500,display:"inline-flex",alignItems:"center",gap:4}}>du<select value={codirFrom} onChange={e=>setCodirFrom(e.target.value)} style={{minHeight:28,borderRadius:7,border:"1px solid "+T.line,background:T.card,color:T.ink900,fontSize:12,fontFamily:T.font}}><option value="">début</option>{codirMonths.map(k=><option key={k} value={k}>{mLab(k)}</option>)}</select></label>
-            <label style={{fontSize:12,color:T.ink500,display:"inline-flex",alignItems:"center",gap:4}}>au<select value={codirTo} onChange={e=>setCodirTo(e.target.value)} style={{minHeight:28,borderRadius:7,border:"1px solid "+T.line,background:T.card,color:T.ink900,fontSize:12,fontFamily:T.font}}><option value="">fin</option>{codirMonths.map(k=><option key={k} value={k}>{mLab(k)}</option>)}</select></label>
+            {/* v280 (signalé : « mois passé = 6/22 arrivées tenues alors que je n’en avais pas 22 de prévues ») : « Mois passés » prenait tous les mois jusqu’au mois dernier ; remplacé par des raccourcis d’un mois ou de quelques mois fermés */}{[["Mois dernier",mKey(new Date(today.getFullYear(),today.getMonth()-1,1)),mKey(new Date(today.getFullYear(),today.getMonth()-1,1))],["Mois en cours",mKey(today),mKey(today)],["3 derniers mois",mKey(new Date(today.getFullYear(),today.getMonth()-3,1)),mKey(new Date(today.getFullYear(),today.getMonth()-1,1))],["Année "+today.getFullYear(),today.getFullYear()+"-01",today.getFullYear()+"-12"],["Tout","",""]].map(([l,a,b])=>{const on=codirFrom===a&&codirTo===b;return <button key={l} type="button" aria-pressed={on} onClick={()=>{setCodirFrom(a);setCodirTo(b);}} style={{border:"1px solid "+(on?T.ink900:T.line),borderRadius:8,minHeight:28,padding:"0 10px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:T.font,background:on?T.ink900:T.card,color:on?T.card:T.ink700}}>{l}</button>;})}
+            <label style={{fontSize:12,color:T.ink500,display:"inline-flex",alignItems:"center",gap:4}}>du<select value={codirFrom} onChange={e=>setCodirFrom(e.target.value)} style={{minHeight:28,borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink900,fontSize:12,fontFamily:T.font}}><option value="">début</option>{codirMonths.map(k=><option key={k} value={k}>{mLab(k)}</option>)}</select></label>
+            <label style={{fontSize:12,color:T.ink500,display:"inline-flex",alignItems:"center",gap:4}}>au<select value={codirTo} onChange={e=>setCodirTo(e.target.value)} style={{minHeight:28,borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink900,fontSize:12,fontFamily:T.font}}><option value="">fin</option>{codirMonths.map(k=><option key={k} value={k}>{mLab(k)}</option>)}</select></label>
             <span style={{fontSize:12,color:T.ink500}}>{comparable.length} machine{comparable.length>1?"s":""} ({STEP_LABELS[kpiStep].toLowerCase()} promis{codirFrom||codirTo?" "+(codirFrom?"de "+mLab(codirFrom):"")+(codirTo?" à "+mLab(codirTo):""):""}) · s'applique à toute la vue CODIR</span>
           </div>
           {/* Résumé compact, prêt à capturer : une ligne par étape */}
-          <div aria-label="PJ tenus à date par étape" style={{maxWidth:980,border:"1px solid "+T.line,borderRadius:10,overflow:"hidden",marginBottom:12,background:T.card}}>
+          <div aria-label="PJ tenus à date par étape" style={{maxWidth:980,border:"1px solid "+T.line,borderRadius:12,overflow:"hidden",marginBottom:12,background:T.card}}>
             <div style={{display:"flex",alignItems:"baseline",gap:8,padding:"8px 12px",borderBottom:"1px solid "+T.line}}><b style={{fontSize:13.5,color:T.ink900}}>PJ tenus à date, par étape</b><span style={{fontSize:12,color:T.ink500}}>écart au planning initial ≤ 0 · {codirScope==="all"?"toutes les machines":codirScope==="shipped"?"machines expédiées":"machines en cours"}{codirFrom||codirTo?" · jalons promis "+(codirFrom?"de "+mLab(codirFrom)+" ":"")+(codirTo?"à "+mLab(codirTo):""):""} · {new Date().toLocaleDateString("fr-FR")}</span></div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(4,minmax(0,1fr))"}}>
               {stepSummary.map((x,i)=><div key={x.k} style={{padding:"8px 12px",borderLeft:i?"1px solid "+T.line:"none"}}>
                 <div style={{fontSize:12,fontWeight:600,color:T.ink500}}>{x.l}</div>
                 <div style={{display:"flex",alignItems:"baseline",gap:6}}><b style={{fontSize:22,fontVariantNumeric:"tabular-nums",color:x.pct==null?T.ink300:x.pct>=kpiTg.tenus?T.emerald600:x.pct>=kpiTg.tenus-20?T.amber600:T.red600}}>{x.pct==null?"—":x.pct+" %"}</b><span style={{fontSize:12.5,color:T.ink700,fontVariantNumeric:"tabular-nums"}}>{x.ok} / {x.n} tenus · objectif ≥ {kpiTg.tenus} %</span></div>
-                <div aria-hidden="true" style={{height:5,borderRadius:3,background:T.red100,overflow:"hidden",margin:"4px 0"}}><div style={{height:"100%",width:(x.pct||0)+"%",background:T.emerald500}}/></div>
+                <div aria-hidden="true" style={{height:5,borderRadius:4,background:T.red100,overflow:"hidden",margin:"4px 0"}}><div style={{height:"100%",width:(x.pct||0)+"%",background:T.emerald500}}/></div>
                 <div style={{fontSize:12,color:T.ink500,fontVariantNumeric:"tabular-nums"}}>{x.late?x.late+" en retard · moy. +"+x.avg+" j"+(x.crit?" · "+x.crit+" > 30 j":""):"aucun retard"}</div>
                 {x.worst.length>0&&<div style={{fontSize:11.5,color:T.red600,fontFamily:T.fontMono,marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{x.worst.join(" · ")}</div>}
               </div>)}
@@ -730,10 +730,10 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
           </div>
         </div>
 
-        <div style={{background:T.card,borderRadius:16,padding:"14px 16px",border:"1px solid "+T.line}}>
+        <div style={{background:T.card,borderRadius:12,padding:"14px 16px",border:"1px solid "+T.line}}>
           <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap",marginBottom:8}}><b style={{fontSize:FZ.md,color:T.ink900}}>Jalons par mois</b><span style={{fontSize:12,color:T.ink500}}>12 mois (5 passés, le mois en cours, 6 à venir) · gris : planning initial · couleur : planning actuel</span></div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,300px),1fr))",gap:12}}>
-            {monthsBy.map(g=><div key={g.k} style={{background:T.surface,borderRadius:10,padding:"8px 10px"}}>
+            {monthsBy.map(g=><div key={g.k} style={{background:T.surface,borderRadius:12,padding:"8px 10px"}}>
               <div style={{fontSize:12.5,fontWeight:700,color:T.ink900,marginBottom:2}}>{g.k==="arrivee"?"Arrivées":g.k==="tests"?"Débuts de tests":g.k==="finProd"?"Fins de production":"Départs"} par mois <span style={{fontWeight:400,color:T.ink500}}>· {g.data.reduce((a,b)=>a+b.revise,0)} au total</span></div>
               <ResponsiveContainer width="100%" height={130}>
                 <BarChart data={g.data} barGap={1} margin={{top:6,right:4,left:-26,bottom:0}}>
@@ -750,7 +750,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
         </div>
 
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,380px),1fr))",gap:16}}>
-          {driftByGamme.length>0&&<div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line}}>
+          {driftByGamme.length>0&&<div style={{background:T.card,borderRadius:12,padding:20,border:"1px solid "+T.line}}>
             <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:4}}>Dérive moyenne par gamme</div>
             <div style={{fontSize:FZ.sm,color:T.ink300,marginBottom:10}}>Écart moyen (jours) entre départ initial et révisé, par gamme</div>
             <ResponsiveContainer width="100%" height={Math.max(180,driftByGamme.length*36)}>
@@ -766,7 +766,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
             </ResponsiveContainer>
           </div>}
 
-          {driftByMilestone.some(d=>d.moyenne!=null)&&<div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line}}>
+          {driftByMilestone.some(d=>d.moyenne!=null)&&<div style={{background:T.card,borderRadius:12,padding:20,border:"1px solid "+T.line}}>
             <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:4}}>Dérive moyenne par jalon</div>
             <div style={{fontSize:FZ.sm,color:T.ink300,marginBottom:10}}>Où le retard se creuse le plus dans la chaîne de production</div>
             <ResponsiveContainer width="100%" height={220}>
@@ -782,7 +782,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
             </ResponsiveContainer>
           </div>}
 
-          {comparable.length>0&&<div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line}}>
+          {comparable.length>0&&<div style={{background:T.card,borderRadius:12,padding:20,border:"1px solid "+T.line}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8}}>
               <div>
                 <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:4}}>Dérive moyenne par mois de départ</div>
@@ -938,7 +938,7 @@ export function ClosurePeriodsManager({closurePeriods,setClosurePeriods}){
     const next=closurePeriods.filter((_,idx)=>idx!==i);
     setClosurePeriods(next);
   };
-  return(<div style={{background:T.card,borderRadius:16,padding:20,border:"1px solid "+T.line,marginTop:16}}>
+  return(<div style={{background:T.card,borderRadius:12,padding:20,border:"1px solid "+T.line,marginTop:16}}>
     <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:4,display:"flex",alignItems:"center",gap:8}}><NavIcon name="sun" size={17}/>Périodes de fermeture (vacances)</div>
     <div style={{fontSize:FZ.sm,color:T.ink500,marginBottom:14}}>
       Les semaines/jours concernés seront grisés dans le Calendrier pour tous les utilisateurs.
@@ -972,11 +972,11 @@ export function ClosurePeriodsManager({closurePeriods,setClosurePeriods}){
 
 // v219 : charge atelier des 12 prochaines semaines d'après le planificateur (heures planifiées et capacité de chaque semaine)
 function PlanLoadCard({weeks}){
-  if(!weeks)return(<div style={{background:T.card,border:"1px solid "+T.line,borderRadius:10,padding:"12px 14px",fontSize:FZ.sm,color:T.ink500}}>La charge d'après le planificateur s'affiche ici dès qu'un plan existe (onglet Planificateur).</div>);
+  if(!weeks)return(<div style={{background:T.card,border:"1px solid "+T.line,borderRadius:12,padding:"12px 14px",fontSize:FZ.sm,color:T.ink500}}>La charge d'après le planificateur s'affiche ici dès qu'un plan existe (onglet Planificateur).</div>);
   const H=140,maxH=Math.max(1,...weeks.map(w=>Math.max(w.hours,w.cap)))*1.15;
   const wk=d=>{const x=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const n=x.getUTCDay()||7;x.setUTCDate(x.getUTCDate()+4-n);const y=new Date(Date.UTC(x.getUTCFullYear(),0,1));return Math.ceil(((x-y)/86400000+1)/7);};
   const over=weeks.filter(w=>w.hours>w.cap+0.5).length;
-  return(<section aria-label="Charge d'après le planificateur" style={{background:T.card,border:"1px solid "+T.line,borderRadius:10,padding:"12px 14px"}}>
+  return(<section aria-label="Charge d'après le planificateur" style={{background:T.card,border:"1px solid "+T.line,borderRadius:12,padding:"12px 14px"}}>
     <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap",marginBottom:10}}><h3 style={{margin:0,fontSize:FZ.md,fontWeight:700,color:T.ink900}}>Charge atelier — 12 semaines</h3><span style={{fontSize:12,color:T.ink500}}>d'après le planificateur · trait = capacité de la semaine</span><span style={{marginLeft:"auto",fontSize:12.5,fontWeight:700,color:over?T.red500:T.emerald600}}>{over?over+" semaine"+(over>1?"s":"")+" en surcharge":"aucune surcharge"}</span></div>
     <div role="img" aria-label={weeks.map(w=>"S"+wk(w.a)+" "+w.hours+" h sur "+Math.round(w.cap)).join(", ")} style={{display:"flex",alignItems:"flex-end",gap:6,height:H,borderBottom:"1px solid "+T.line}}>
       {weeks.map(w=>{const h=Math.round(w.hours/maxH*H),c=Math.round(w.cap/maxH*H),o=w.hours>w.cap+0.5;return(<div key={w.key} title={"S"+wk(w.a)+" : "+w.hours+" h / "+Math.round(w.cap)+" h"} style={{flex:1,position:"relative",height:"100%",minWidth:0}}>

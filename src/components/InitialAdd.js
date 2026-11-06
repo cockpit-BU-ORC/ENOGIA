@@ -27,7 +27,7 @@ export function InitialAddReview({parsed,initialData,onConfirm,onCancel,busy}){
   const th={textAlign:"left",padding:"6px 8px",fontSize:FZ.xs,fontWeight:700,color:T.ink500,whiteSpace:"nowrap"};
   const td={padding:"8px 8px",fontSize:FZ.sm,color:T.ink700,whiteSpace:"nowrap"};
   return(<div onClick={onCancel} style={{position:"fixed",inset:0,background:"rgba(10,20,30,.45)",zIndex:10000,display:"flex",alignItems:"center",justifyContent:"center",padding:16,fontFamily:T.font}}>
-    <div role="dialog" aria-modal="true" aria-label="Ajouter à l'initial" onClick={e=>e.stopPropagation()} style={{background:T.card,borderRadius:16,boxShadow:T.shadowLg,border:"1px solid "+T.line,width:"min(640px,100%)",maxHeight:"88vh",overflow:"auto",padding:"20px 20px"}}>
+    <div role="dialog" aria-modal="true" aria-label="Ajouter à l'initial" onClick={e=>e.stopPropagation()} style={{background:T.card,borderRadius:12,boxShadow:T.shadowLg,border:"1px solid "+T.line,width:"min(640px,100%)",maxHeight:"88vh",overflow:"auto",padding:"20px 20px"}}>
       <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.lg,color:T.ink900,display:"flex",alignItems:"center",gap:8}}><NavIcon name="pin" size={18}/>Ajouter à l'initial</div>
       <div style={{fontSize:FZ.sm,color:T.ink500,marginTop:6,lineHeight:1.5}}>
         {fresh.length>0

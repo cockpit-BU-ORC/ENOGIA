@@ -243,7 +243,7 @@ body.enogia-present tbody td { font-size: 1.08em; }
 .enogia-mhandle:hover > span, .enogia-mhandle:focus-visible > span { background: var(--e-accent); }
 .enogia-mhandle:focus-visible { outline: none; }
 @media (max-width: 760px) { .enogia-mhandle { display: none !important; } }
-.enogia-skip { position: fixed; left: 12px; top: -48px; z-index: 11000; background: var(--e-card); color: var(--e-ink900); border: 2px solid var(--e-accent); border-radius: 10px; padding: 8px 14px; font-weight: 700; font-size: 13px; text-decoration: none; transition: top .15s ease; }
+.enogia-skip { position: fixed; left: 12px; top: -48px; z-index: 11000; background: var(--e-card); color: var(--e-ink900); border: 2px solid var(--e-accent); border-radius: 12px; padding: 8px 14px; font-weight: 700; font-size: 13px; text-decoration: none; transition: top .15s ease; }
 .enogia-skip:focus { top: 12px; }
 .enogia-mhandle:focus-visible > span { width: 5px; outline: 2px solid var(--e-accent); outline-offset: 2px; }
 
@@ -400,9 +400,9 @@ button:not(:disabled):active { transform: scale(.97); }
 /* v201 — règle des cadres proportionnés (frontend-design, maquette validée) : sur tous les écrans, un cadre prend la taille de son
    contenu — marges internes ramenées à 12–14 px, deux rayons seulement (6 px contrôles, 10 px cadres) (graphiques à la hauteur de leurs données).
    Les pastilles arrondies (999 px) ne sont pas touchées. */
-#enogia-main div[style*="border-radius: 16px"], #enogia-main section[style*="border-radius: 16px"],
-#enogia-main div[style*="border-radius: 14px"], #enogia-main section[style*="border-radius: 14px"],
-#enogia-main div[style*="border-radius: 12px"], #enogia-main section[style*="border-radius: 12px"] { border-radius: 10px !important; }
+#enogia-main div[style*="border-radius: 12px"], #enogia-main section[style*="border-radius: 12px"],
+#enogia-main div[style*="border-radius: 12px"], #enogia-main section[style*="border-radius: 12px"],
+#enogia-main div[style*="border-radius: 12px"], #enogia-main section[style*="border-radius: 12px"] { border-radius: 12px !important; }
 #enogia-main div[style*="padding: 20px"], #enogia-main section[style*="padding: 20px"],
 #enogia-main div[style*="padding: 18px"], #enogia-main section[style*="padding: 18px"] { padding: 12px 14px !important; }
 #enogia-main div[style*="padding: 16px"], #enogia-main section[style*="padding: 16px"] { padding: 12px 14px !important; }
@@ -544,7 +544,7 @@ button { transition: background-color var(--e-dur-micro) var(--e-ease), border-c
 
 /* v271 : cloche (piste C) — tintement + halo quand le nombre de demandes augmente, aperçu qui sort de la cloche */
 .enogia-bell-ring svg{animation:enogiaBellRing 900ms cubic-bezier(.2,.8,.2,1) 1;transform-origin:50% 10%}
-.enogia-bell-ring::after{content:"";position:absolute;inset:-2px;border-radius:11px;pointer-events:none;animation:enogiaBellHalo 1.6s ease-out 2}
+.enogia-bell-ring::after{content:"";position:absolute;inset:-2px;border-radius:12px;pointer-events:none;animation:enogiaBellHalo 1.6s ease-out 2}
 @keyframes enogiaBellRing{0%{transform:rotate(0)}15%{transform:rotate(14deg)}30%{transform:rotate(-12deg)}45%{transform:rotate(8deg)}60%{transform:rotate(-5deg)}75%{transform:rotate(2deg)}100%{transform:rotate(0)}}
 @keyframes enogiaBellHalo{0%{box-shadow:0 0 0 0 rgba(168,47,21,.45)}100%{box-shadow:0 0 0 12px rgba(168,47,21,0)}}
 .enogia-bell-peek{animation:enogiaBellPeek 240ms cubic-bezier(.2,.8,.2,1)}
@@ -582,3 +582,9 @@ button, input, select, textarea { font-family: inherit; }
 .enogia-num-in { animation: enogiaNumIn var(--e-dur-in, 240ms) ease-out; }
 @keyframes enogiaNumIn { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .enogia-num-in { animation: none; } }
+
+/* ── v286 : bouton commun (Btn / btn() de theme.js) — survol, désactivé ── */
+.e-btn:disabled { opacity: .45; cursor: default; }
+.e-btn-pri:hover:not(:disabled) { filter: brightness(1.18); }
+.e-btn-sec:hover:not(:disabled), .e-btn-ghost:hover:not(:disabled) { background: var(--enogia-hover, rgba(127,140,160,.14)) !important; }
+.e-btn-dan:hover:not(:disabled) { background: rgba(184,51,26,.10) !important; }

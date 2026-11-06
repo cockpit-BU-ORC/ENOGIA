@@ -10,8 +10,8 @@ import { parseDocxXml, parseChecklistText, docxDocumentXml } from "../checklistI
 
 const nid = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const btn = (primary, ghost) => ({ padding: "0 12px", minHeight: 32, borderRadius: 8, border: "1px solid " + (primary && !ghost ? T.ink900 : T.line), background: primary && !ghost ? T.ink900 : T.card, color: primary && !ghost ? T.card : T.ink700, fontSize: FZ.sm, fontWeight: 700, cursor: "pointer", fontFamily: T.font });
-const field = { padding: "4px 8px", minHeight: 30, borderRadius: 6, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, boxSizing: "border-box", width: "100%" };
-const mini = { border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 6, minWidth: 28, minHeight: 28, cursor: "pointer", fontFamily: T.font, fontSize: 13 };
+const field = { padding: "4px 8px", minHeight: 30, borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, boxSizing: "border-box", width: "100%" };
+const mini = { border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, minWidth: 28, minHeight: 28, cursor: "pointer", fontFamily: T.font, fontSize: 13 };
 
 function ImportDialog({ onApply, onClose }) {
   const [txt, setTxt] = useState(""), [res, setRes] = useState(null), [err, setErr] = useState(""), [busy, setBusy] = useState(false);

@@ -116,7 +116,7 @@ export function PointHebdo({ data, savePjMetaOverride, onOpenPj }) {
         {groups.map(g => {
           const { r, meta } = g;
           const dl = r.depart ? new Date(r.depart) : null;
-          return (<section key={r.pj} aria-label={r.pj} style={{ background: T.surface, border: "1px solid " + T.line, borderRadius: 16, padding: "8px 12px 12px", minWidth: 0 }}>
+          return (<section key={r.pj} aria-label={r.pj} style={{ background: T.surface, border: "1px solid " + T.line, borderRadius: 12, padding: "8px 12px 12px", minWidth: 0 }}>
             <button onClick={() => onOpenPj && onOpenPj(r.pj)} title="Ouvrir la fiche de ce projet" style={{ all: "unset", cursor: onOpenPj ? "pointer" : "default", display: "flex", alignItems: "center", gap: 8, width: "100%", boxSizing: "border-box", marginBottom: 8 }}>
               <span aria-hidden="true" style={{ width: 4, alignSelf: "stretch", borderRadius: 4, background: T.accent, flexShrink: 0 }} />
               <span style={{ fontSize: FZ.md, fontWeight: 700, color: T.ink900, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{r.pj}</span>

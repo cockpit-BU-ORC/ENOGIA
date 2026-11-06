@@ -67,7 +67,7 @@ export function LoginScreen(){
           <h2 style={{margin:"0 0 6px",fontFamily:T.fontDisplay,fontWeight:500,fontSize:28,letterSpacing:"-.02em",color:T.ink900}}>Connexion</h2>
           <p style={{margin:"0 0 26px",fontSize:FZ.sm,color:T.ink500,lineHeight:1.5}}>Utilisez votre compte Google ENOGIA. La session se ferme chaque soir à minuit.</p>
           <button type="button" onClick={handleGoogleSignIn} disabled={busy} aria-busy={busy} className="enogia-btn-tap enogia-login-btn"
-            style={{width:"100%",minHeight:48,display:"flex",alignItems:"center",justifyContent:"center",gap:10,background:T.card,color:T.ink900,border:"1.5px solid "+T.teal500,borderRadius:10,padding:"12px 16px",fontFamily:T.font,fontSize:FZ.md,fontWeight:700,cursor:busy?"progress":"pointer",opacity:busy?.75:1,transition:"background-color .15s ease, color .15s ease, transform .15s ease"}}>
+            style={{width:"100%",minHeight:48,display:"flex",alignItems:"center",justifyContent:"center",gap:10,background:T.card,color:T.ink900,border:"1.5px solid "+T.teal500,borderRadius:12,padding:"12px 16px",fontFamily:T.font,fontSize:FZ.md,fontWeight:700,cursor:busy?"progress":"pointer",opacity:busy?.75:1,transition:"background-color .15s ease, color .15s ease, transform .15s ease"}}>
             {busy?
               <span aria-hidden="true" style={{width:16,height:16,borderRadius:"50%",border:"2px solid "+T.line,borderTopColor:T.teal500,display:"inline-block",animation:"enogiaSpin .8s linear infinite"}}/>
               :<svg aria-hidden="true" viewBox="0 0 20 20" style={{width:19,height:19,flexShrink:0}}><path fill="#4285F4" d="M19.6 10.23c0-.68-.06-1.36-.18-2H10v3.79h5.38a4.6 4.6 0 0 1-2 3.02v2.5h3.23c1.9-1.75 2.99-4.33 2.99-7.31z"/><path fill="#34A853" d="M10 20c2.7 0 4.96-.89 6.62-2.42l-3.23-2.5c-.9.6-2.05.95-3.39.95-2.6 0-4.8-1.76-5.59-4.12H1.07v2.59A10 10 0 0 0 10 20z"/><path fill="#FBBC05" d="M4.41 11.9a6 6 0 0 1 0-3.8V5.51H1.07a10 10 0 0 0 0 8.98l3.34-2.59z"/><path fill="#EA4335" d="M10 3.98c1.47 0 2.79.5 3.83 1.5l2.87-2.87A9.6 9.6 0 0 0 10 0 10 10 0 0 0 1.07 5.51L4.41 8.1C5.2 5.74 7.4 3.98 10 3.98z"/></svg>}
@@ -101,7 +101,7 @@ export function LoginTransition({name}){
           <div style={{fontSize:FZ.sm,color:"#C9D4E2",marginTop:6}}>{SITE_SUB}</div>
         </div>
         <div style={{fontSize:FZ.md,fontWeight:600}}>{firstName?"Bienvenue, "+firstName+".":"Bienvenue."} <span style={{fontWeight:400,color:"#C9D4E2"}}>Chargement du planning…</span></div>
-        <div aria-hidden="true" style={{width:"100%",height:3,borderRadius:2,background:"rgba(255,255,255,.14)",overflow:"hidden"}}><div className="enogia-tr-bar" style={{height:"100%",background:"#F4D35E"}}/></div>
+        <div aria-hidden="true" style={{width:"100%",height:3,borderRadius:4,background:"rgba(255,255,255,.14)",overflow:"hidden"}}><div className="enogia-tr-bar" style={{height:"100%",background:"#F4D35E"}}/></div>
       </div>
     </div>
   );

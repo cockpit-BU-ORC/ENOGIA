@@ -41,7 +41,7 @@ export function CertifDialog({ onClose, certifs, setCertifs, usage }) {
   const lbl = { fontSize: FZ.xs, fontWeight: 800, color: T.ink500, textTransform: "uppercase", letterSpacing: ".04em", margin: "0 0 6px" };
   return createPortal(<div role="dialog" aria-modal="true" aria-label="Certifications" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}
     style={{ position: "fixed", inset: 0, zIndex: 20010, background: "rgba(10,16,28,.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 12 }}>
-    <div style={{ background: T.card, color: T.ink900, borderRadius: 16, boxShadow: T.shadowLg, border: "1px solid " + T.line, width: "min(560px,100%)", maxHeight: "90vh", overflow: "auto", padding: 20, fontFamily: T.font }}>
+    <div style={{ background: T.card, color: T.ink900, borderRadius: 12, boxShadow: T.shadowLg, border: "1px solid " + T.line, width: "min(560px,100%)", maxHeight: "90vh", overflow: "auto", padding: 20, fontFamily: T.font }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
         <div style={{ flex: 1, fontFamily: T.fontDisplay, fontWeight: 700, fontSize: FZ.md }}>Certifications</div>
         <button onClick={onClose} style={btn()}>Fermer</button>
@@ -50,7 +50,7 @@ export function CertifDialog({ onClose, certifs, setCertifs, usage }) {
       {certifs.length > 0 && <>
         <div style={lbl}>Existantes</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
-          {certifs.map(c => (<div key={c.id} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "6px 10px", border: "1px solid " + T.line, borderRadius: 10 }}>
+          {certifs.map(c => (<div key={c.id} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "6px 10px", border: "1px solid " + T.line, borderRadius: 12 }}>
             <CertifChip c={c} />
             <input defaultValue={c.name} key={c.id + c.name} aria-label={"Nom de la certification " + c.name} maxLength={40} onBlur={ev => { const t = ev.target.value.trim(); if (t && t !== c.name) patch(c.id, { name: t }); else ev.target.value = c.name; }} style={{ ...fld, flex: 1, minWidth: 120 }} />
             <input type="color" value={c.color} onChange={ev => patch(c.id, { color: ev.target.value })} aria-label={"Couleur de " + c.name} style={{ width: 38, height: 30, border: "1px solid " + T.line, borderRadius: 8, background: "transparent", padding: 2, cursor: "pointer" }} />
@@ -67,7 +67,7 @@ export function CertifDialog({ onClose, certifs, setCertifs, usage }) {
       <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap", marginTop: 10 }}>
         {ETAT_SWATCHES.map(c => <button key={c} onClick={() => setColor(c)} title={c} aria-label={"Couleur " + c} style={{ width: 20, height: 20, borderRadius: "50%", border: "2px solid " + (color === c ? T.ink900 : "transparent"), background: c, cursor: "pointer", padding: 0 }} />)}
         {name.trim() && <span style={{ marginLeft: 8 }}><CertifChip c={{ name: name.trim(), color }} /></span>}
-        <button onClick={add} disabled={!name.trim()} style={{ marginLeft: "auto", border: "none", borderRadius: 10, padding: "7px 14px", background: name.trim() ? T.navy700 : T.ink100, color: name.trim() ? "#fff" : T.ink500, fontWeight: 800, fontSize: FZ.sm, cursor: name.trim() ? "pointer" : "default", fontFamily: T.font }}>Créer</button>
+        <button onClick={add} disabled={!name.trim()} style={{ marginLeft: "auto", border: "none", borderRadius: 12, padding: "7px 14px", background: name.trim() ? T.navy700 : T.ink100, color: name.trim() ? "#fff" : T.ink500, fontWeight: 800, fontSize: FZ.sm, cursor: name.trim() ? "pointer" : "default", fontFamily: T.font }}>Créer</button>
       </div>
       {err && <div role="alert" style={{ marginTop: 8, fontSize: FZ.xs, color: T.red600, fontWeight: 700 }}>{err}</div>}
     </div>
@@ -208,7 +208,7 @@ export function FicheContratPanel({ part, r, meta, rows, getMeta, today, save, s
     const cell = (lab, val, vcol, sub, big) => <div style={{ minWidth: 0 }}><div style={{ ...capLbl(), fontSize:11, whiteSpace: "nowrap" }}>{lab}</div>
       <div style={{ fontWeight: 700, fontSize: big ? FZ.lg : FZ.sm, color: vcol, marginTop: 2, letterSpacing: "-.01em", whiteSpace: "nowrap" }}>{val}</div>
       <div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={sub}>{sub}</div></div>;
-    return <div style={{ marginTop: 8, background: T.surfaceAlt, borderRadius: 10, padding: "7px 10px", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(80px,1fr))", gap: 8 }}>
+    return <div style={{ marginTop: 8, background: T.surfaceAlt, borderRadius: 12, padding: "7px 10px", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(80px,1fr))", gap: 8 }}>
       {cell("Pénalités", calc.amount > 0 ? fmtEur(calc.amount) : "0 €", col, calc.capped ? "plafond atteint" : calc.provisional ? "à ce jour" : "prévision", true)}
       {cell("Retard", late ? calc.lateDays + " j" : "dans les temps", late ? T.red500 : T.emerald600, fd(calc.contract) + " → " + (calc.effective ? fd(calc.effective) : "—"))}
       {cell("Semaines", String(calc.chargeableWeeks), T.ink900, calc.weekly != null ? fmtEur(calc.weekly) + " / sem." : "") }
@@ -234,7 +234,7 @@ export function FicheContratPanel({ part, r, meta, rows, getMeta, today, save, s
         <span style={{ fontSize: FZ.sm, color: T.ink300 }}>Aucune condition de pénalité sur cette fiche.</span>
         <button onClick={() => save({ penalite: { ...PEN_DEFAULT } })} style={{ ...btn(), color: T.navy700 }}>＋ Définir les pénalités</button>
       </div> : <>
-        <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 12px", borderRadius: 10, cursor: "pointer", marginBottom: 6,
+        <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 12px", borderRadius: 12, cursor: "pointer", marginBottom: 6,
           background: active ? T.red100 : T.surfaceAlt, border: "1.5px solid " + (active ? T.red500 : T.line) }}>
           <input type="checkbox" checked={active} onChange={e => setPen({ actif: e.target.checked })} style={{ width: 17, height: 17, accentColor: T.red500, cursor: "pointer", flexShrink: 0 }} />
           <span style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
@@ -254,7 +254,7 @@ export function FicheContratPanel({ part, r, meta, rows, getMeta, today, save, s
         </div>
         {others.length > 0 && <div style={{ marginTop: 6 }}><button onClick={() => copyTo({ penalite: pen }, "Conditions")} style={btn()}>Copier les conditions sur les {others.length} autre{others.length > 1 ? "s" : ""} fiche{others.length > 1 ? "s" : ""} du {pjBase(r.pj)}</button></div>}
       </>}
-      {sib.length > 1 && sibRows.some(x => x.c.status !== "off") && <div style={{ marginTop: 10, border: "1px solid " + T.line, borderRadius: 10, overflow: "hidden" }}>
+      {sib.length > 1 && sibRows.some(x => x.c.status !== "off") && <div style={{ marginTop: 10, border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden" }}>
         <div style={{ ...capLbl(), padding: "6px 10px", background: T.surfaceAlt }}>Pénalités du {pjBase(r.pj)} · toutes fiches</div>
         {sibRows.map(x => <div key={x.pj} style={{ display: "flex", gap: 10, alignItems: "baseline", padding: "4px 10px", fontSize: FZ.xs, borderTop: "1px solid " + T.line, background: x.pj === r.pj ? T.surfaceAlt : "transparent", flexWrap: "wrap" }}>
           <span style={{ fontWeight: 800, color: T.ink900, minWidth: 74 }}>{x.pj}</span>

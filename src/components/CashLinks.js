@@ -39,7 +39,7 @@ function Editor({ g, links, ordo, onSave, onCancel, onAuto, busy }) {
   const has = p => draft.some(d => same(d, p));
   const flip = p => setDraft(has(p) ? draft.filter(d => !same(d, p)) : [...draft, p]);
   const n = draft.length;
-  return (<div style={{ marginTop: 8, padding: 10, borderRadius: 10, background: T.surface, border: "1px solid " + T.line }}>
+  return (<div style={{ marginTop: 8, padding: 10, borderRadius: 12, background: T.surface, border: "1px solid " + T.line }}>
     <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 6 }}>
       <input value={q} onChange={e => setQ(e.target.value)} placeholder="Chercher un PJ ou un projet de l'ordo" aria-label="Chercher un PJ de l'ordo" style={{ ...field, flex: "1 1 220px" }}/>
       <span style={{ fontSize: FZ.sm, fontWeight: 700, color: T.ink900 }}>{n === 0 ? "Aucun PJ coché" : n === 1 ? "1 machine : elle reçoit tous les jalons (" + fmtEur(g.total) + ")" : n + " machines : chaque jalon est divisé par " + n + ", sauf ceux que vous mettez sur des « machines cochées » ci-dessous"}</span>
@@ -72,7 +72,7 @@ function RowsEditor({ g, links, ordo, onSave, busy }) {
   const save = () => { const n = { ...links }; g.rows.forEach(r => { const v = draft[r.id]; if (v) n[rowKey(r.id)] = v; else delete n[rowKey(r.id)]; }); onSave(n); };
   if (targets.length < 2) return null;
   const seg = on => ({ padding: "2px 10px", border: "1px solid " + (on ? T.teal600 : T.line), background: on ? T.teal600 : "transparent", color: on ? "#fff" : T.ink500, fontSize: FZ.xs, fontWeight: 700, fontFamily: T.font, cursor: "pointer" });
-  return (<div style={{ marginTop: 8, padding: 10, borderRadius: 10, background: T.surface, border: "1px solid " + T.line }}>
+  return (<div style={{ marginTop: 8, padding: 10, borderRadius: 12, background: T.surface, border: "1px solid " + T.line }}>
     <div style={{ fontSize: FZ.sm, fontWeight: 700, color: T.ink900, marginBottom: 2 }}>Jalon par jalon : réparti, ou sur des machines cochées ?</div>
     <div style={{ fontSize: FZ.xs, color: T.ink700, marginBottom: 8, lineHeight: 1.5 }}><b>Réparti</b> : le jalon concerne toutes les machines de la même façon, le montant est divisé entre elles. <b>Machines cochées</b> : le montant reste entier — cochez <b>une</b> machine pour un jalon qui lui est propre (FAT, livraison de l'ORC n°1…), ou <b>plusieurs</b> pour un paiement unique du contrat (acompte, avance), qui n'est alors compté qu'une fois : ne l'additionnez pas d'une machine à l'autre.</div>
     {g.rows.map(r => { const v = draft[r.id], shared = !!v, cur = v || targets; return (<div key={r.id} style={{ padding: "5px 0", borderTop: "1px solid " + T.line }}>
@@ -86,7 +86,7 @@ function RowsEditor({ g, links, ordo, onSave, busy }) {
         </span>
       </div>
       {shared && <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 4 }}>
-        {targets.map(p => { const on = cur.some(x => same(x, p)); return (<button key={p} onClick={() => flip(r, p)} aria-pressed={on} title={getOrdoName(p)} style={{ padding: "2px 9px", borderRadius: 99, border: "1px solid " + (on ? T.teal600 : T.line), background: on ? T.teal100 : "transparent", color: on ? T.teal600 : T.ink500, fontSize: FZ.xs, fontWeight: 700, fontFamily: T.font, cursor: "pointer" }}>{p}</button>); })}
+        {targets.map(p => { const on = cur.some(x => same(x, p)); return (<button key={p} onClick={() => flip(r, p)} aria-pressed={on} title={getOrdoName(p)} style={{ padding: "2px 9px", borderRadius: 999, border: "1px solid " + (on ? T.teal600 : T.line), background: on ? T.teal100 : "transparent", color: on ? T.teal600 : T.ink500, fontSize: FZ.xs, fontWeight: 700, fontFamily: T.font, cursor: "pointer" }}>{p}</button>); })}
       </div>}
     </div>); })}
     <div style={{ marginTop: 8 }}><button style={btn(true, !busy)} disabled={busy} onClick={save}>Enregistrer les jalons</button></div>
@@ -122,7 +122,7 @@ export function CashLinksDialog({ onClose, authorName, focusPj }) {
 
   return (<div role="dialog" aria-modal="true" aria-label="Liaisons Cash in et ordo" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}
     style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(14,23,38,.45)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "5vh 12px", overflowY: "auto" }}>
-    <div style={{ width: "min(940px,100%)", background: T.card, color: T.ink900, borderRadius: 14, boxShadow: T.shadowCard || "0 10px 40px rgba(0,0,0,.25)", padding: 16, fontFamily: T.font }}>
+    <div style={{ width: "min(940px,100%)", background: T.card, color: T.ink900, borderRadius: 12, boxShadow: T.shadowCard || "0 10px 40px rgba(0,0,0,.25)", padding: 16, fontFamily: T.font }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
         <div style={{ fontSize: FZ.lg, fontWeight: 700, flex: 1 }}>{focusPj ? "Lier un PJ du Cash in à " + focusPj : "Liaisons Cash in ↔ ordo"}</div>
         <button style={btn(false)} onClick={onClose}>Fermer</button>
@@ -138,7 +138,7 @@ export function CashLinksDialog({ onClose, authorName, focusPj }) {
       {!groups.length && <div style={{ fontSize: FZ.sm, color: T.ink500, padding: 12 }}>Aucun jalon dans le Cash in pour l'instant.</div>}
       {list.map(g => {
         const s = linkSummary(g, links, ordo), isOpen = open === g.pj, on = linkedToFocus(g);
-        return (<div key={g.pj} style={{ padding: "7px 10px", borderRadius: 10, background: s.tone.bg, border: "1px solid " + s.tone.ring, color: s.tone.ink, marginBottom: 5 }}>
+        return (<div key={g.pj} style={{ padding: "7px 10px", borderRadius: 12, background: s.tone.bg, border: "1px solid " + s.tone.ring, color: s.tone.ink, marginBottom: 5 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
             <div style={{ flex: "1 1 180px", minWidth: 0 }}>
               <div style={{ fontWeight: 700, fontSize: FZ.sm }}>{g.pj}{g.label ? <span style={{ fontWeight: 400 }}> · {g.label}</span> : null}</div>

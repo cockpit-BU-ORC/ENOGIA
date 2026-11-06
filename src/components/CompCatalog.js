@@ -23,7 +23,7 @@ export function CompCatalogDialog({ catalog, setCatalog, nPj, missingCount, onAp
   };
   return createPortal(<div role="dialog" aria-modal="true" aria-label="Liste des composants" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}
     style={{ position: "fixed", inset: 0, zIndex: 20010, background: "rgba(10,16,28,.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 12 }}>
-    <div style={{ background: T.card, color: T.ink900, borderRadius: 16, boxShadow: T.shadowLg, border: "1px solid " + T.line, width: "min(520px,100%)", maxHeight: "90vh", overflow: "auto", padding: 20, fontFamily: T.font }}>
+    <div style={{ background: T.card, color: T.ink900, borderRadius: 12, boxShadow: T.shadowLg, border: "1px solid " + T.line, width: "min(520px,100%)", maxHeight: "90vh", overflow: "auto", padding: 20, fontFamily: T.font }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
         <div style={{ flex: 1, fontFamily: T.fontDisplay, fontWeight: 700, fontSize: FZ.md }}>Liste des composants</div>
         <button onClick={onClose} style={btn()}>Fermer</button>
@@ -39,7 +39,7 @@ export function CompCatalogDialog({ catalog, setCatalog, nPj, missingCount, onAp
       </div>
       <div style={{ display: "flex", gap: 8, paddingTop: 12, borderTop: "1px solid " + T.line }}>
         <input value={name} autoFocus onChange={e => { setName(e.target.value); setErr(""); }} onKeyDown={e => { if (e.key === "Enter") add(); }} placeholder="Nouveau composant (ex. Vanne, Bac à huile…)" aria-label="Nouveau composant" maxLength={40} style={{ ...fld, flex: 1, minWidth: 0 }} />
-        <button onClick={add} disabled={!name.trim()} style={{ border: "none", borderRadius: 10, padding: "7px 14px", background: name.trim() ? T.navy700 : T.ink100, color: name.trim() ? "#fff" : T.ink500, fontWeight: 800, fontSize: FZ.sm, cursor: name.trim() ? "pointer" : "default", fontFamily: T.font }}>Ajouter</button>
+        <button onClick={add} disabled={!name.trim()} style={{ border: "none", borderRadius: 12, padding: "7px 14px", background: name.trim() ? T.navy700 : T.ink100, color: name.trim() ? "#fff" : T.ink500, fontWeight: 800, fontSize: FZ.sm, cursor: name.trim() ? "pointer" : "default", fontFamily: T.font }}>Ajouter</button>
       </div>
       {err && <div role="alert" style={{ marginTop: 8, fontSize: FZ.xs, color: T.red600, fontWeight: 700 }}>{err}</div>}
       {onApplyAll && <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid " + T.line, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>

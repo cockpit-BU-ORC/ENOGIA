@@ -51,12 +51,12 @@ export function PeopleRoles({ profiles, saveProfiles, data }) {
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
         <input value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher une personne" aria-label="Rechercher une personne" style={{ ...field(), flex: "1 1 200px" }} />
         <input value={newEmail} onChange={e => { setNewEmail(e.target.value); setErr(""); }} onKeyDown={e => { if (e.key === "Enter") add(); }} placeholder="prenom.nom@enogia.com" aria-label="Ajouter une personne par e-mail" style={{ ...field(), flex: "1 1 220px" }} />
-        <button type="button" onClick={add} style={{ ...field(), background: T.teal500, color: T.card, border: "none", fontWeight: 700, cursor: "pointer" }}>Ajouter</button>
+        <button type="button" onClick={add} style={{ ...field(), background: T.ink900, color: T.card, border: "none", fontWeight: 700, cursor: "pointer" }}>Ajouter</button>
         <button type="button" onClick={() => { setBulk(bulk === null ? "" : null); setBulkMsg(""); }} aria-expanded={bulk !== null} style={{ ...field(), cursor: "pointer", fontWeight: 700, color: T.ink700 }}>Coller une liste</button>
         {bulk !== null && <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 6 }}>
           <textarea value={bulk} onChange={e => { setBulk(e.target.value); setBulkMsg(""); }} rows={6} aria-label="Liste de personnes à ajouter" placeholder={"Une personne par ligne :\nPrénom NOM <prenom.nom@enogia.com>\nou simplement prenom.nom@enogia.com"} style={{ ...field(), width: "100%", fontFamily: T.fontMono, fontSize: FZ.xs, resize: "vertical" }} />
           <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-            <button type="button" onClick={addBulk} style={{ ...field(), background: T.teal500, color: T.card, border: "none", fontWeight: 700, cursor: "pointer" }}>Ajouter {parsePeopleList(bulk).length || ""} personne{parsePeopleList(bulk).length > 1 ? "s" : ""}</button>
+            <button type="button" onClick={addBulk} style={{ ...field(), background: T.ink900, color: T.card, border: "none", fontWeight: 700, cursor: "pointer" }}>Ajouter {parsePeopleList(bulk).length || ""} personne{parsePeopleList(bulk).length > 1 ? "s" : ""}</button>
             <span style={{ fontSize: FZ.xs, color: T.ink500 }}>Seules les adresses @enogia.com sont gardées. Les personnes ajoutées peuvent être taguées avant leur première connexion.</span>
           </div>
         </div>}

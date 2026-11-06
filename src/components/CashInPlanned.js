@@ -35,8 +35,8 @@ export function PlannedDialog({ rows, labels, today, onClose, onOpenRow }) {
         <button type="button" onClick={onClose} aria-label="Fermer" style={{ ...btn(false) }}><NavIcon name="close" size={14} />Fermer</button>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 8, padding: "12px 16px 4px" }}>
-        <div style={{ background: T.surface, borderRadius: 10, padding: "8px 12px" }}><div style={{ fontFamily: T.fontLabel, fontSize: 12, color: T.ink500 }}>À facturer d'ici fin {UNTIL.slice(0, 4)}</div><div style={{ fontFamily: T.fontDisplay, fontSize: 22, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{fmtEur(sum("facture"))}</div></div>
-        <div style={{ background: T.surface, borderRadius: 10, padding: "8px 12px" }}><div style={{ fontFamily: T.fontLabel, fontSize: 12, color: T.ink500 }}>À encaisser d'ici fin {UNTIL.slice(0, 4)}</div><div style={{ fontFamily: T.fontDisplay, fontSize: 22, fontWeight: 600, fontVariantNumeric: "tabular-nums", color: T.emerald600 }}>{fmtEur(sum("encaissement"))}</div></div>
+        <div style={{ background: T.surface, borderRadius: 12, padding: "8px 12px" }}><div style={{ fontFamily: T.fontLabel, fontSize: 12, color: T.ink500 }}>À facturer d'ici fin {UNTIL.slice(0, 4)}</div><div style={{ fontFamily: T.fontDisplay, fontSize: 22, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{fmtEur(sum("facture"))}</div></div>
+        <div style={{ background: T.surface, borderRadius: 12, padding: "8px 12px" }}><div style={{ fontFamily: T.fontLabel, fontSize: 12, color: T.ink500 }}>À encaisser d'ici fin {UNTIL.slice(0, 4)}</div><div style={{ fontFamily: T.fontDisplay, fontSize: 22, fontWeight: 600, fontVariantNumeric: "tabular-nums", color: T.emerald600 }}>{fmtEur(sum("encaissement"))}</div></div>
       </div>
       <div role="group" aria-label="Afficher" style={{ display: "flex", gap: 6, padding: "8px 16px", flexWrap: "wrap" }}>{tab("all", "Tout")}{tab("facture", "Facturations")}{tab("encaissement", "Encaissements")}</div>
       <div style={{ padding: "0 16px 16px", overflowX: "auto" }}>

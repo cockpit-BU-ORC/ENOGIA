@@ -63,7 +63,7 @@ export function AvPopBody({pval,etat}){
       const f=Math.max(0,Math.min(1,(p-a)/(b-a)));
       return(<div key={l} style={{marginBottom:7}}>
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}><span>{l}</span><span style={{fontVariantNumeric:"tabular-nums",color:T.ink500}}>{Math.round(f*100)}%</span></div>
-        <div style={{height:5,borderRadius:3,background:T.surfaceAlt,overflow:"hidden"}}><div style={{width:f*100+"%",height:"100%",background:f>=1?T.emerald500:T.teal500,borderRadius:3}}/></div>
+        <div style={{height:5,borderRadius:4,background:T.surfaceAlt,overflow:"hidden"}}><div style={{width:f*100+"%",height:"100%",background:f>=1?T.emerald500:T.teal500,borderRadius:4}}/></div>
       </div>);
     })}
     <div style={{marginTop:6,paddingTop:8,borderTop:"1px solid "+T.line,color:T.ink500,fontSize:FZ.xs}}>Déduit de l'état de la machine ({ETAT_META[etat]?.label||etat}).</div>

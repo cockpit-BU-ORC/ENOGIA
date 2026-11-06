@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useLayoutEffect, useRef } from "react";
-import { T, FZF as FZ, D, statusSoft, stripeBg, stripeHues } from "../theme";
+import { T, FZF as FZ, D, statusSoft, stripeBg, stripeHues, btn } from "../theme";
 import { SerieTag, getPjMeta, CountryFlag, Avatar, GAMME_COLORS, ETAT_META, etatInk, PresenceChip, PRESENCE_META, presenceKind, presenceDates, presenceFirstDate, today, PjPlate, orcChefsOf, epcChefOf, EpcTag } from "../pjMeta";
 import { ChefsEpcEditor } from "./ChefsEpc";
 import { fmt, diffDays } from "../parsers";
@@ -53,7 +53,7 @@ function Section({title,right,children,style}){
 // v129 : cadre par thème (Pilotage, Planning, Suivi…). Fond crème, filet, coin arrondi ; les tuiles à l'intérieur sont blanches.
 function Frame({title,sub,right,children,style,id}){
   // v272 (audit apple-design « trop de cadres dans les cadres ») : la zone est un fond uni, sans bordure ; id = cible des onglets de la fiche
-  return(<section id={id} data-fiche-zone={id} aria-label={title} style={{scrollMarginTop:56,background:T.surface,border:"none",borderRadius:14,padding:D.mode==="compact"?"6px 10px 8px":"8px 12px 12px",display:"flex",flexDirection:"column",gap:D.mode==="compact"?4:8,minWidth:0,...style}}>
+  return(<section id={id} data-fiche-zone={id} aria-label={title} style={{scrollMarginTop:56,background:T.surface,border:"none",borderRadius:12,padding:D.mode==="compact"?"6px 10px 8px":"8px 12px 12px",display:"flex",flexDirection:"column",gap:D.mode==="compact"?4:8,minWidth:0,...style}}>
     <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
       <span aria-hidden="true" style={{width:4,alignSelf:"stretch",minHeight:18,borderRadius:4,background:T.accent,flexShrink:0}}/>
       <span style={{fontSize:FZ.md,fontWeight:700,letterSpacing:"-.01em",color:T.ink900}}>{title}</span>
@@ -135,7 +135,7 @@ function Timeline({r,ini,kind}){
 // Mêmes fonctions et mêmes données que la fiche du tableau et l'onglet Retards, rien de nouveau côté stockage.
 // Getters : les couleurs suivent le thème (clair / sombre) à chaque rendu au lieu d'être figées à l'import.
 const FIELD={padding:"4px 8px",borderRadius:8,get border(){return "1px solid "+T.line;},get background(){return T.card;},get color(){return T.ink900;},fontSize:FZ.xs,get fontFamily(){return T.font;},minWidth:0};
-const BTN=(on)=>({border:"none",borderRadius:8,padding:"6px 12px",fontSize:FZ.xs,fontWeight:700,fontFamily:T.font,cursor:on?"pointer":"default",background:on?T.navy700:T.ink100,color:"#fff",flexShrink:0});
+const BTN=(on)=>({...btn("pri","sm"),flexShrink:0,...(on?{}:{background:T.ink100,borderColor:T.ink100,color:T.ink500,cursor:"default"})}); // v286 : bouton commun
 function CommentComposer({onAdd,options,me,info,pj}){
   const [text,setText]=useState("");const [priv,setPriv]=useState(false);const [busy,setBusy]=useState(false);
   const ok=text.trim().length>0&&!busy;
@@ -293,7 +293,7 @@ function DatesTable({r,meta,onSave}){
     :!shipped&&!livEdit?<div>{chip("pas encore partie")}</div>
     :livEdit||meta.livrReelle?<div style={{display:"flex",alignItems:"center",gap:6}}><DateField label="" value={meta.livrReelle||""} onSave={v=>{onSave({livrReelle:v||undefined});setLivEdit(false);}} hint=""/><button type="button" onClick={()=>setLivEdit(false)} style={{border:"none",background:"transparent",color:T.ink500,fontSize:FZ.xs,cursor:"pointer",fontFamily:T.font}}>Annuler</button></div>
     :<div><div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>{chip("en transport · non confirmée","warn")}{livEst&&<span style={{fontSize:FZ.sm,color:T.ink700,fontStyle:"italic"}}>≈ {fmt(livEst)}</span>}</div>
-      <button type="button" onClick={()=>setLivEdit(true)} style={{marginTop:4,border:"1px solid "+T.line,background:T.card,color:T.ink900,borderRadius:7,minHeight:26,padding:"0 10px",fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font}}>Confirmer la livraison</button></div>;
+      <button type="button" onClick={()=>setLivEdit(true)} style={{marginTop:4,border:"1px solid "+T.line,background:T.card,color:T.ink900,borderRadius:8,minHeight:26,padding:"0 10px",fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font}}>Confirmer la livraison</button></div>;
   return(<div style={{overflowX:"auto"}}>
     <table style={{width:"100%",borderCollapse:"collapse",minWidth:620}}>
       <thead><tr><th style={th}></th><th style={th}>Contractuelle<div style={{fontWeight:400}}>{cd.auto?"T0 + "+meta.contratSemaines+" sem."+(tr?" − transport":""):"saisie dans Contrat & roadmap"}</div></th><th style={{...th,background:T.surface,color:T.ink900}}>Prévisionnelle<div style={{fontWeight:400,color:T.ink500}}>↻ se met à jour à chaque publication</div></th><th style={th}>Effectuée<div style={{fontWeight:400}}>MàD : départ réel · livraison : confirmée par le client</div></th><th style={{...th,textAlign:"right"}}>Écart au contrat</th></tr></thead>
@@ -331,19 +331,19 @@ function TurbineSection({r,meta,onSave}){
   const injRefs=[...new Set(tiles.injs.map(t=>t.ref))].map(ref=>({ref,q:tiles.injs.filter(t=>t.ref===ref).reduce((s,t)=>s+t.qte,0)}));if(meta.turbInj&&!injRefs.some(x=>x.ref===meta.turbInj))injRefs.push({ref:meta.turbInj,q:null});
   const ii=meta.turbInj&&prod?injInfo(prod,meta.turbInj):null,mx=ii?maxBouches(ii.ouv):99,nb=meta.turbInjB==null?0:+meta.turbInjB;
   const prepared=ii?(nb?((ii.variantes.find(v=>v.bouches===nb)||{}).qte||0):ii.vierges):null;
-  const pk=on=>({border:"1px solid "+(on?T.ink900:T.line),background:on?T.ink900:T.card,color:on?T.card:T.ink900,borderRadius:7,minHeight:28,padding:"0 9px",fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font,display:"inline-flex",alignItems:"center",gap:5,transition:"background 120ms, border-color 120ms"});
+  const pk=on=>({border:"1px solid "+(on?T.ink900:T.line),background:on?T.ink900:T.card,color:on?T.card:T.ink900,borderRadius:8,minHeight:28,padding:"0 9px",fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font,display:"inline-flex",alignItems:"center",gap:5,transition:"background 120ms, border-color 120ms"});
   const qS=(on,q)=>({fontWeight:500,fontVariantNumeric:"tabular-nums",color:on?T.card:q===0?T.red600:T.ink500,opacity:on?.8:1});
   const lab={fontFamily:T.font,fontSize:12,fontWeight:600,color:T.ink500,minWidth:58,flexBasis:"100%"}; // v277 : étiquette au-dessus, contenu dessous (colonne étroite)
   const row={display:"flex",alignItems:"center",gap:"2px 6px",flexWrap:"wrap"};
-  const step={width:28,height:28,borderRadius:7,border:"1px solid "+T.line,background:T.card,color:T.ink900,cursor:"pointer",fontSize:14,fontFamily:T.font,padding:0};
+  const step={width:28,height:28,borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink900,cursor:"pointer",fontSize:14,fontFamily:T.font,padding:0};
   const missing=[!meta.turbRoue&&"roue",!meta.turbInj&&"injecteur"].filter(Boolean);
   const none=(t)=><span style={{fontSize:FZ.xs,color:T.ink500}}>{t}</span>;
   return(<Section title="Turbine" right={<span style={{fontSize:FZ.xs,color:missing.length?T.amber600:T.emerald600,fontWeight:600}}>{cfg?(missing.length?missing.join(" et ")+" à choisir":"complet"+(nb?" · "+nb+" bouchage"+(nb>1?"s":""):"")):""}</span>}>
     <div style={{display:"flex",flexDirection:"column",gap:8}}>
       <div style={row}><span style={lab}>Turbine <span style={{fontWeight:400,color:T.ink500}}>kW{!meta.turbCfg&&cfg?" · d’après la gamme":""}</span></span>
-        <div role="radiogroup" aria-label="Configuration des turbines" style={{display:"inline-flex",background:T.surfaceAlt,borderRadius:9,padding:2,gap:2,flexWrap:"wrap"}}>
+        <div role="radiogroup" aria-label="Configuration des turbines" style={{display:"inline-flex",background:T.surfaceAlt,borderRadius:8,padding:2,gap:2,flexWrap:"wrap"}}>
           {TURB_CFGS.map(c=>{const on=!!(cfg&&cfg.id===c.id);return <button key={c.id} type="button" role="radio" aria-checked={on} onClick={()=>onSave({turbCfg:c.id,...(cfg&&cfg.g!==c.g?{turbRoue:null,turbInj:null,turbInjB:null}:{})})} title={c.n+" turbine"+(c.n>1?"s":"")+" "+c.g+" kW"+(!meta.turbCfg&&on?" (d’après la gamme)":"")}
-            style={{border:"none",borderRadius:7,minHeight:28,padding:"0 8px",display:"inline-flex",alignItems:"center",gap:5,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font,background:on?T.card:"transparent",color:on?T.ink900:T.ink500,boxShadow:on?"0 1px 2px rgba(0,0,0,.10)":"none",transition:"background 120ms, color 120ms"}}><TurbGlyph cfg={c}/>{c.l.replace(/ kW$/,"").replace(" × ","×")}</button>;})} {/* v277 : libellés courts (2×100, 100, 20, 2×40) : tient sur une ligne dans la colonne Machine */}
+            style={{border:"none",borderRadius:8,minHeight:28,padding:"0 8px",display:"inline-flex",alignItems:"center",gap:5,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font,background:on?T.card:"transparent",color:on?T.ink900:T.ink500,boxShadow:on?"0 1px 2px rgba(0,0,0,.10)":"none",transition:"background 120ms, color 120ms"}}><TurbGlyph cfg={c}/>{c.l.replace(/ kW$/,"").replace(" × ","×")}</button>;})} {/* v277 : libellés courts (2×100, 100, 20, 2×40) : tient sur une ligne dans la colonne Machine */}
         </div>
       </div>
       {cfg&&<div style={row}><span style={lab}>Roue</span>
@@ -685,7 +685,7 @@ function ProjectSummary({rows,pvOf,comments,delays,onPick}){
     <div style={{fontFamily:T.fontDisplay,fontSize:26,fontWeight:500,lineHeight:1.1,color:tone||T.ink900,fontVariantNumeric:"tabular-nums"}}>{v}</div>
     {sub&&<div style={{fontSize:FZ.xs,color:T.ink500}}>{sub}</div>}
   </div>);
-  return(<section aria-label="Résumé du projet" style={{border:"1px solid "+T.line,borderRadius:10,padding:"12px 14px",marginBottom:12,background:T.card}}>
+  return(<section aria-label="Résumé du projet" style={{border:"1px solid "+T.line,borderRadius:12,padding:"12px 14px",marginBottom:12,background:T.card}}>
     <div style={{display:"flex",alignItems:"baseline",gap:10,flexWrap:"wrap",marginBottom:10}}>
       <h3 style={{margin:0,fontSize:FZ.md,fontWeight:700,color:T.ink900}}>Résumé du projet</h3>
       <span style={{fontSize:FZ.sm,color:T.ink500}}>{[m0.nomProjet&&m0.nomProjet!=="—"?m0.nomProjet:null,m0.pays,gammes.join(", "),chefs.length?"Chef"+(chefs.length>1?"s":"")+" : "+chefs.join(", "):null].filter(Boolean).join(" · ")}</span>
@@ -698,11 +698,11 @@ function ProjectSummary({rows,pvOf,comments,delays,onPick}){
       {kpi("FAT client / NOBO",fats,"à venir")}
     </div>
     <div style={{fontSize:12,color:T.ink500,marginBottom:4}}>États des machines</div>
-    <div role="img" aria-label={etats.map(([e,n])=>n+" "+(ETAT_META[e]||{label:e}).label).join(", ")} style={{display:"flex",height:10,borderRadius:3,overflow:"hidden",gap:2,marginBottom:6}}>
+    <div role="img" aria-label={etats.map(([e,n])=>n+" "+(ETAT_META[e]||{label:e}).label).join(", ")} style={{display:"flex",height:10,borderRadius:4,overflow:"hidden",gap:2,marginBottom:6}}>
       {etats.map(([e,n])=><span key={e} style={{flex:n,background:(ETAT_META[e]||ETAT_META["NOT ORDERED"]).bar}}/>)}
     </div>
     <div style={{display:"flex",flexWrap:"wrap",gap:"4px 14px",fontSize:FZ.xs,color:T.ink700,marginBottom:12}}>
-      {etats.map(([e,n])=><span key={e} style={{display:"inline-flex",alignItems:"center",gap:5}}><span style={{width:8,height:8,borderRadius:2,background:(ETAT_META[e]||ETAT_META["NOT ORDERED"]).bar}}/>{(ETAT_META[e]||{label:e}).label} <b style={{fontVariantNumeric:"tabular-nums"}}>{n}</b></span>)}
+      {etats.map(([e,n])=><span key={e} style={{display:"inline-flex",alignItems:"center",gap:5}}><span style={{width:8,height:8,borderRadius:4,background:(ETAT_META[e]||ETAT_META["NOT ORDERED"]).bar}}/>{(ETAT_META[e]||{label:e}).label} <b style={{fontVariantNumeric:"tabular-nums"}}>{n}</b></span>)}
     </div>
     <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,320px),1fr))",gap:14}}>
       <div>
@@ -939,7 +939,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
         {!listMini&&<input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher un PJ, projet, pays, chef, gamme…" style={{width:"100%",padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.xs,fontFamily:T.font,color:T.ink700,boxSizing:"border-box"}}/>}
         {!listMini&&<div style={{fontSize:FZ.xs,color:T.ink300,marginTop:4,display:"flex",alignItems:"center",justifyContent:"space-between",gap:6}}><span>{filteredList.length} PJ</span><span style={{display:"inline-flex",gap:10}}><label style={{display:"inline-flex",alignItems:"center",gap:4,cursor:"pointer"}}><input type="checkbox" checked={showShipped} onChange={e=>setShowShipped(e.target.checked)}/>Expédiées</label><label style={{display:"inline-flex",alignItems:"center",gap:4,cursor:"pointer"}}><input type="checkbox" checked={showSlots} onChange={e=>setShowSlots(e.target.checked)}/>Slots libres</label></span></div>}
         {!listMini&&<div role="tablist" aria-label="Regrouper la liste" style={{display:"flex",gap:2,marginTop:6,background:T.surface,borderRadius:8,padding:2}}>
-          {[["chef","Par chef"],["all","Tous"],["mine","Mes PJ"]].map(([id,l])=><button key={id} type="button" role="tab" aria-selected={groupBy===id} onClick={()=>setGroupBy(id)} style={{flex:1,border:"none",borderRadius:6,minHeight:26,fontSize:FZ.xs,fontWeight:700,fontFamily:T.font,cursor:"pointer",background:groupBy===id?T.card:"transparent",color:groupBy===id?T.teal600:T.ink500,boxShadow:groupBy===id?T.shadowSm:"none"}}>{l}{id==="mine"&&myPjs.size?" "+myPjs.size:""}</button>)}
+          {[["chef","Par chef"],["all","Tous"],["mine","Mes PJ"]].map(([id,l])=><button key={id} type="button" role="tab" aria-selected={groupBy===id} onClick={()=>setGroupBy(id)} style={{flex:1,border:"none",borderRadius:8,minHeight:26,fontSize:FZ.xs,fontWeight:700,fontFamily:T.font,cursor:"pointer",background:groupBy===id?T.card:"transparent",color:groupBy===id?T.teal600:T.ink500,boxShadow:groupBy===id?T.shadowSm:"none"}}>{l}{id==="mine"&&myPjs.size?" "+myPjs.size:""}</button>)}
         </div>}
       </div>
       <div style={{overflowY:"auto",overflowX:"hidden",flex:1}}>
@@ -1004,16 +1004,16 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
     </div>
 
     {!listMini&&!focus&&<div className="enogia-mhandle" role="separator" aria-orientation="vertical" aria-label="Redimensionner la liste (flèches gauche/droite)" tabIndex={0} onPointerDown={startDrag} onKeyDown={onHandleKey} onDoubleClick={()=>setListW(340)} title="Glisser pour élargir ou réduire la liste · double-clic : taille d'origine"
-      style={{width:10,alignSelf:"stretch",minHeight:300,margin:"0 -6px",cursor:"col-resize",flexShrink:0,display:"flex",justifyContent:"center",touchAction:"none"}}><span style={{width:3,borderRadius:2,background:T.line,margin:"8px 0"}}/></div>}
+      style={{width:10,alignSelf:"stretch",minHeight:300,margin:"0 -6px",cursor:"col-resize",flexShrink:0,display:"flex",justifyContent:"center",touchAction:"none"}}><span style={{width:3,borderRadius:4,background:T.line,margin:"8px 0"}}/></div>}
     <div style={{flex:"1 1 560px",minWidth:340,maxWidth:"none"}}>
       {/* v146.15 : les rapports se lancent depuis une barre AU-DESSUS de la fiche, pas dedans (lecture de la synthèse) */}
       {clusterView&&!chefView&&<ChefOverview name={clusterView.label} rows={clusterView.rows} pvOf={pvOf} onPick={pick} onClose={()=>setClusterView(null)} summary={{comments,delays}}/>}
       {chefView&&<ChefOverview name={chefView} rows={(groups.find(g=>g.head===chefView)||{rows:data.filter(x=>x.etat!=="SLOT_LIBRE"&&x.etat!=="SHIPPED"&&(orcChefsOf(getPjMeta(x.pj,x)).includes(chefView)||(!chefOfRow(x)&&chefView==="Sans chef de projet")))}).rows} pvOf={pvOf} onPick={pick} onClose={()=>setChefView(null)}/>}
       {!chefView&&!clusterView&&r&&<div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:8,flexWrap:"wrap",marginBottom:8}}>
         <span style={{fontSize:FZ.xs,color:T.ink300,marginRight:"auto"}}>Rapports pour {r.pj}</span>
-        {savePjMetaMulti&&<button onClick={()=>setMultiOpen(true)} title="Ajouter une action, un plan de mitigation, un commentaire ou un statut à plusieurs projets en une fois" style={{display:"inline-flex",alignItems:"center",gap:6,padding:"5px 10px",border:"1px solid "+T.line,borderRadius:10,background:T.card,color:T.ink700,fontWeight:700,fontSize:FZ.xs,fontFamily:T.font,cursor:"pointer"}}>＋ Sur plusieurs projets…</button>}
-        <button onClick={()=>setCdpOpen(true)} title="Générer le rapport PowerPoint du chef de projet" style={{display:"inline-flex",alignItems:"center",gap:6,padding:"5px 10px",border:"1px solid "+T.line,borderRadius:10,background:T.card,color:T.ink700,fontWeight:700,fontSize:FZ.xs,fontFamily:T.font,cursor:"pointer"}}><NavIcon name="chart" size={13}/>Rapport chef de projet</button>
-        {isSuperAdmin()&&<button onClick={()=>setCodirOpen(true)} title="Générer la synthèse CODIR (PDF)" style={{display:"inline-flex",alignItems:"center",gap:6,padding:"5px 10px",border:"none",borderRadius:10,background:T.navy700,color:"#fff",fontWeight:700,fontSize:FZ.xs,fontFamily:T.font,cursor:"pointer"}}><NavIcon name="chart" size={13}/>Rapport CODIR</button>}
+        {savePjMetaMulti&&<button onClick={()=>setMultiOpen(true)} title="Ajouter une action, un plan de mitigation, un commentaire ou un statut à plusieurs projets en une fois" style={{display:"inline-flex",alignItems:"center",gap:6,padding:"5px 10px",border:"1px solid "+T.line,borderRadius:12,background:T.card,color:T.ink700,fontWeight:700,fontSize:FZ.xs,fontFamily:T.font,cursor:"pointer"}}>＋ Sur plusieurs projets…</button>}
+        <button onClick={()=>setCdpOpen(true)} title="Générer le rapport PowerPoint du chef de projet" style={{display:"inline-flex",alignItems:"center",gap:6,padding:"5px 10px",border:"1px solid "+T.line,borderRadius:12,background:T.card,color:T.ink700,fontWeight:700,fontSize:FZ.xs,fontFamily:T.font,cursor:"pointer"}}><NavIcon name="chart" size={13}/>Rapport chef de projet</button>
+        {isSuperAdmin()&&<button onClick={()=>setCodirOpen(true)} title="Générer la synthèse CODIR (PDF)" style={{display:"inline-flex",alignItems:"center",gap:6,padding:"5px 10px",border:"none",borderRadius:12,background:T.ink900,color:T.card,fontWeight:700,fontSize:FZ.xs,fontFamily:T.font,cursor:"pointer"}}><NavIcon name="chart" size={13}/>Rapport CODIR</button>}
       </div>}
       {(chefView||clusterView)?null:!r?<div style={{...CARD,padding:28,textAlign:"center",color:T.ink300}}>Sélectionnez un PJ dans la liste.</div>:
       <div key={r.pj} className="enogia-view-in enogia-mcard" style={{...CARD,overflow:"hidden",display:"flex",flexDirection:"column",height:"calc(100dvh - 244px)",minHeight:420}}>

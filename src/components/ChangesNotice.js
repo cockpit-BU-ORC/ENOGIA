@@ -86,7 +86,7 @@ export function ChangesPopup({ entries, onOpen, onLater, onRead, userName }) {
   const shown = entries.slice(0, 3), more = entries.length - shown.length;
   const first = (userName || "").split(/[\s@]/)[0];
   return (<div className="enogia-modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) onLater(); }} style={{ position: "fixed", inset: 0, zIndex: 10000, background: "rgba(15,25,40,.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, fontFamily: T.font }}>
-    <div role="dialog" aria-modal="true" aria-labelledby="chg-title" className="enogia-modal-pop" style={{ background: T.card, color: T.ink900, borderRadius: 16, border: "1px solid " + T.line, boxShadow: T.shadowLg, width: "100%", maxWidth: 520, maxHeight: "86vh", overflowY: "auto", padding: "20px 20px 16px" }}>
+    <div role="dialog" aria-modal="true" aria-labelledby="chg-title" className="enogia-modal-pop" style={{ background: T.card, color: T.ink900, borderRadius: 12, border: "1px solid " + T.line, boxShadow: T.shadowLg, width: "100%", maxWidth: 520, maxHeight: "86vh", overflowY: "auto", padding: "20px 20px 16px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
         <span aria-hidden="true" style={{ width: 4, height: 22, borderRadius: 4, background: T.accent }} />
         <h2 id="chg-title" style={{ margin: 0, fontSize: FZ.lg, fontWeight: 700, letterSpacing: "-.01em" }}>Le planning a été mis à jour</h2>
@@ -116,7 +116,7 @@ export function ChangesPopup({ entries, onOpen, onLater, onRead, userName }) {
       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap", marginTop: 16 }}>
         <button onClick={onLater} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "8px 12px", fontSize: FZ.sm, fontWeight: 600, cursor: "pointer", fontFamily: T.font, minHeight: 34 }}>Plus tard</button>
         {onRead && <button onClick={onRead} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink900, borderRadius: 8, padding: "8px 12px", fontSize: FZ.sm, fontWeight: 600, cursor: "pointer", fontFamily: T.font, minHeight: 34 }}>J'ai pris connaissance</button>}
-        <button ref={openRef} onClick={onOpen} style={{ border: "none", background: T.navy700, color: "#fff", borderRadius: 8, padding: "8px 16px", fontSize: FZ.sm, fontWeight: 700, cursor: "pointer", fontFamily: T.font, minHeight: 34 }}>Voir les modifications</button>
+        <button ref={openRef} onClick={onOpen} style={{ border: "none", background: T.ink900, color: T.card, borderRadius: 8, padding: "8px 16px", fontSize: FZ.sm, fontWeight: 700, cursor: "pointer", fontFamily: T.font, minHeight: 34 }}>Voir les modifications</button>
       </div>
       <div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 10, textAlign: "right" }}>« Plus tard » : le message reviendra à la prochaine actualisation de la page, tant que vous n'avez pas cliqué sur « Voir les modifications » ou « J'ai pris connaissance ».</div>
     </div>

@@ -146,7 +146,7 @@ export function Arrange({ id, children, spans = {}, defaultSpan = 6, labels = {}
     const P0 = current(), p = P0[k]; const n = e.shiftKey ? norm({ ...p, w: p.w + dx, h: p.h + dy * 4 }) : norm({ ...p, x: p.x + dx, y: p.y + dy * 4 });
     save({ ...lay, pos: resolve({ ...P0, [k]: n }, k) }); };
 
-  const tb = { border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 6, minWidth: 26, minHeight: 26, fontWeight: 700, cursor: "pointer", fontFamily: T.font, fontSize: 13, padding: 0 };
+  const tb = { border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, minWidth: 26, minHeight: 26, fontWeight: 700, cursor: "pointer", fontFamily: T.font, fontSize: 13, padding: 0 };
   const on = can && edit && !!(onLayout || !shared);
   const grip = (k, dir, st, cursor) => <span aria-hidden="true" data-arr-resize="1" title={dir === "x" ? "Tirer pour la largeur" : dir === "y" ? "Tirer pour la hauteur" : "Tirer pour la largeur et la hauteur"} onPointerDown={e => startResize(k, e, dir)}
     style={{ position: "absolute", zIndex: 4, cursor, touchAction: "none", display: "flex", alignItems: "center", justifyContent: "center", ...st }} />;
@@ -163,23 +163,23 @@ export function Arrange({ id, children, spans = {}, defaultSpan = 6, labels = {}
     <div ref={grid} className={"enogia-arr-grid" + (free ? " enogia-arr-free" : "")} style={free
       ? { display: "grid", gridTemplateColumns: "repeat(12,minmax(0,1fr))", columnGap: GAP, rowGap: 0, gridAutoRows: ROW + "px", position: "relative", userSelect: live ? "none" : undefined }
       : { display: "grid", gridTemplateColumns: "repeat(12,minmax(0,1fr))", gap: GAP, alignItems: "start", gridAutoFlow: "row dense", userSelect: live ? "none" : undefined }}>
-      {ghost && <div aria-hidden="true" style={{ gridColumn: (ghost.x + 1) + " / span " + ghost.w, gridRow: (ghost.y + 1) + " / span " + ghost.h, marginBottom: GAP, border: "2px dashed " + T.teal500, borderRadius: 10, background: T.panelDim || "transparent", opacity: .6 }} />}
+      {ghost && <div aria-hidden="true" style={{ gridColumn: (ghost.x + 1) + " / span " + ghost.w, gridRow: (ghost.y + 1) + " / span " + ghost.h, marginBottom: GAP, border: "2px dashed " + T.teal500, borderRadius: 12, background: T.panelDim || "transparent", opacity: .6 }} />}
       {(free ? ids : flowOrder).map(k => { const c = byId[k]; if (!c) return null; const lab = labels[k] || (c.props && c.props["aria-label"]) || k; const act = live && live.k === k;
         const p = free ? showPos[k] : null; const sp = p ? p.w : spanOf(k);
         const place = p ? { gridColumn: (p.x + 1) + " / span " + p.w, gridRow: (p.y + 1) + " / span " + p.h } : { gridColumn: "span " + sp };
         return (<div key={k} ref={el => { els.current[k] = el; }} data-arr-k={k} className="enogia-arr-item" onPointerDown={on ? e => startDrag(k, e) : undefined}
-          style={{ ...place, minWidth: 0, minHeight: 0, position: "relative", outline: on ? "2px dashed " + (act ? T.teal500 : T.line) : "none", outlineOffset: 3, borderRadius: 10, marginBottom: p ? GAP : undefined, opacity: act && live.mode === "drag" ? .9 : 1, zIndex: act ? 5 : undefined, cursor: on ? (act && live.mode === "drag" ? "grabbing" : "grab") : undefined, touchAction: on ? "none" : undefined, boxShadow: act && live.mode === "drag" ? T.shadowLg : undefined }}>
+          style={{ ...place, minWidth: 0, minHeight: 0, position: "relative", outline: on ? "2px dashed " + (act ? T.teal500 : T.line) : "none", outlineOffset: 3, borderRadius: 12, marginBottom: p ? GAP : undefined, opacity: act && live.mode === "drag" ? .9 : 1, zIndex: act ? 5 : undefined, cursor: on ? (act && live.mode === "drag" ? "grabbing" : "grab") : undefined, touchAction: on ? "none" : undefined, boxShadow: act && live.mode === "drag" ? T.shadowLg : undefined }}>
           {on && <span role="button" tabIndex={0} aria-label={lab + " : flèches pour déplacer, Maj + flèches pour la largeur et la hauteur"} onKeyDown={e => nudge(k, e)}
-            style={{ position: "absolute", inset: 0, zIndex: 3, borderRadius: 10 }} />}
-          {on && onRemove && <button type="button" data-arr-resize="1" onClick={() => onRemove(k)} aria-label={"Retirer « " + lab + " » de la page"} style={{ position: "absolute", right: 8, top: 8, zIndex: 4, border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 6, padding: "0 8px", minHeight: 24, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>Retirer</button>}
-          {act && live.mode === "size" && <span aria-hidden="true" style={{ position: "absolute", right: 8, bottom: 8, zIndex: 4, background: T.ink900, color: T.card, borderRadius: 6, padding: "1px 7px", fontSize: FZ.xs, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{Math.round(sp / 12 * 100)} % · {p ? p.h * ROW - GAP : ""} px</span>}
+            style={{ position: "absolute", inset: 0, zIndex: 3, borderRadius: 12 }} />}
+          {on && onRemove && <button type="button" data-arr-resize="1" onClick={() => onRemove(k)} aria-label={"Retirer « " + lab + " » de la page"} style={{ position: "absolute", right: 8, top: 8, zIndex: 4, border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "0 8px", minHeight: 24, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>Retirer</button>}
+          {act && live.mode === "size" && <span aria-hidden="true" style={{ position: "absolute", right: 8, bottom: 8, zIndex: 4, background: T.ink900, color: T.card, borderRadius: 8, padding: "1px 7px", fontSize: FZ.xs, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{Math.round(sp / 12 * 100)} % · {p ? p.h * ROW - GAP : ""} px</span>}
           <div className={p ? "enogia-arr-fit" : undefined} style={{ pointerEvents: on ? "none" : "auto", height: p ? "100%" : undefined, overflow: p ? "auto" : undefined }}>{c}</div>
           {on && <span>
             {grip(k, "x", { top: 0, bottom: 14, right: -9, width: 12 }, "ew-resize")}
             {grip(k, "y", { left: 0, right: 14, bottom: -9, height: 12 }, "ns-resize")}
             {grip(k, "xy", { right: -9, bottom: -9, width: 18, height: 18 }, "nwse-resize")}
-            <span aria-hidden="true" style={{ position: "absolute", right: -5, top: "50%", marginTop: -20, width: 4, height: 40, borderRadius: 2, background: act && live.mode === "size" ? T.teal500 : T.ink300, pointerEvents: "none", zIndex: 4 }} />
-            <span aria-hidden="true" style={{ position: "absolute", bottom: -5, left: "50%", marginLeft: -20, height: 4, width: 40, borderRadius: 2, background: act && live.mode === "size" ? T.teal500 : T.ink300, pointerEvents: "none", zIndex: 4 }} />
+            <span aria-hidden="true" style={{ position: "absolute", right: -5, top: "50%", marginTop: -20, width: 4, height: 40, borderRadius: 4, background: act && live.mode === "size" ? T.teal500 : T.ink300, pointerEvents: "none", zIndex: 4 }} />
+            <span aria-hidden="true" style={{ position: "absolute", bottom: -5, left: "50%", marginLeft: -20, height: 4, width: 40, borderRadius: 4, background: act && live.mode === "size" ? T.teal500 : T.ink300, pointerEvents: "none", zIndex: 4 }} />
           </span>}
         </div>); })}
     </div>

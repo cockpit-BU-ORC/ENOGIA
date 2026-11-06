@@ -250,8 +250,8 @@ function phaseColors() {
 }
 
 /* ---------- Petits éléments communs ---------- */
-const card = () => ({ background: T.card, border: "1px solid " + T.line, borderRadius: 10, padding: "12px 14px", minWidth: 0, boxSizing: "border-box" });
-const btn = (kind) => ({ border: kind === "primary" ? "1px solid " + T.ink900 : "1px solid " + (kind === "danger" ? T.red500 : T.line), background: kind === "primary" ? T.ink900 : T.card, color: kind === "primary" ? T.card : kind === "danger" ? T.red500 : T.ink700, borderRadius: 6, padding: "4px 10px", minHeight: 28, fontSize: FZF.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font, whiteSpace: "nowrap" });
+const card = () => ({ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "12px 14px", minWidth: 0, boxSizing: "border-box" });
+const btn = (kind) => ({ border: kind === "primary" ? "1px solid " + T.ink900 : "1px solid " + (kind === "danger" ? T.red500 : T.line), background: kind === "primary" ? T.ink900 : T.card, color: kind === "primary" ? T.card : kind === "danger" ? T.red500 : T.ink700, borderRadius: 8, padding: "4px 10px", minHeight: 28, fontSize: FZF.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font, whiteSpace: "nowrap" });
 const H2 = ({ children, sub, right }) => (<div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap", margin: "4px 0 8px" }}>
   <h2 style={{ margin: 0, fontFamily: T.fontDisplay, fontSize: FZF.lg, fontWeight: 600, color: T.ink900 }}>{children}</h2>
   {sub && <span style={{ fontSize: FZF.xs, color: T.ink500 }}>{sub}</span>}
@@ -588,12 +588,12 @@ export function ProdTurbines({ doc, api, canEdit, owner, pjs }) {
       pretes: (kpi("Turbines prêtes", ready.length, ready.length ? ready.map(t => <div key={t.id} style={li}><b>{t.num}</b><span style={{ color: T.ink500, fontSize: FZF.xs }}>{t.roue ? "roue " + t.roue : "config. roue à renseigner"}</span></div>) : <Muted>Aucune turbine prête pour l'instant.</Muted>)),
       sansroue: (kpi("Testées sans roue", noWheel.length, noWheel.length ? noWheel.map(t => <div key={t.id} style={li}><b>{t.num}</b><span style={{ color: T.ink500, fontSize: FZF.xs }}>{t.roue ? "roue " + t.roue + " attribuée" : "en stock depuis le " + fmtShort(parseD(t.since))}</span></div>) : <Muted>Aucune turbine en stock sans roue.</Muted>)),
       roues: (kpi("Roues équilibrées par réf.", sumR, roues.length ? roues.map(r => <div key={r.id} style={{ ...li, display: "block", padding: "4px 0" }}><div style={{ display: "flex", justifyContent: "space-between" }}><span>{r.ref}</span><b style={{ fontVariantNumeric: "tabular-nums" }}>{+r.qte || 0}</b></div>
-          <div style={{ height: 4, background: T.surfaceAlt, borderRadius: 2, marginTop: 3 }}><div style={{ width: ((+r.qte || 0) / maxR * 100) + "%", height: 4, borderRadius: 2, background: P.arbre.c }} /></div></div>) : <Muted>Ajoutez les références dans l'onglet Stocks.</Muted>)),
+          <div style={{ height: 4, background: T.surfaceAlt, borderRadius: 4, marginTop: 3 }}><div style={{ width: ((+r.qte || 0) / maxR * 100) + "%", height: 4, borderRadius: 4, background: P.arbre.c }} /></div></div>) : <Muted>Ajoutez les références dans l'onglet Stocks.</Muted>)),
       injecteurs: (kpi("Injecteurs par réf.", sumI, injs.length ? injs.map(r => <div key={r.id} style={{ ...li, alignItems: "flex-start", padding: "4px 0" }}><span>{r.ref}<br /><span style={{ fontSize: FZF.xs, color: T.ink500 }}>{+r.qte || 0} vierge{(+r.qte || 0) > 1 ? "s" : ""}</span>{vars(r).map(v => <span key={v.bouches} style={{ display: "block", fontSize: FZF.xs, color: T.ink700 }}>{v.qte} avec {v.bouches}/{r.ouvertures || "?"} bouchages</span>)}</span><b style={{ fontVariantNumeric: "tabular-nums" }}>{injTotal(r)}</b></div>) : <Muted>Ajoutez les références dans l'onglet Stocks.</Muted>)),
       vision: (
       <section aria-label="Dates prévisionnelles des prochaines turbines" style={card()}>
         <H2 sub="jours ouvrés" right={<span style={{ display: "inline-flex", gap: 10, flexWrap: "wrap", fontSize: FZF.xs, color: T.ink500 }}>
-          {[["carter", "Montage carter"], ["assy", "Assemblage / finition"], ["tests", "Tests"], ["wait", "Attente arbre"]].map(([k, l]) => <span key={k} style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><i style={{ width: 14, height: 9, borderRadius: 2, background: k === "wait" ? hatch(P.wait.c) : P[k].c, display: "inline-block" }} />{l}</span>)}
+          {[["carter", "Montage carter"], ["assy", "Assemblage / finition"], ["tests", "Tests"], ["wait", "Attente arbre"]].map(([k, l]) => <span key={k} style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><i style={{ width: 14, height: 9, borderRadius: 4, background: k === "wait" ? hatch(P.wait.c) : P[k].c, display: "inline-block" }} />{l}</span>)}
         </span>}>Dates prévisionnelles des prochaines turbines</H2>
         {upcoming.length === 0 ? <Muted>Aucune turbine en cours. Créez-en une depuis l'onglet Planning.</Muted> : (() => { const manyV = upcoming.length > 6, fullV = !!fullBoards.vision; return (<>
           <div role="region" tabIndex={0} aria-label={"Dates prévisionnelles" + (manyV && !fullV ? ", faire défiler pour voir toutes les turbines" : "")} style={{ overflow: "auto", maxHeight: manyV && !fullV ? "min(62vh, 540px)" : undefined }}>
@@ -611,11 +611,11 @@ export function ProdTurbines({ doc, api, canEdit, owner, pjs }) {
                 <button type="button" onClick={() => openTurbine(t)} style={{ border: "none", background: T.card, textAlign: "left", padding: "4px 0", cursor: "pointer", fontFamily: T.font, color: T.ink900, minWidth: 0, position: "sticky", left: 0, zIndex: 1, alignSelf: "stretch" }}>
                   <b style={{ fontFamily: T.fontMono, fontSize: FZF.sm }}>{t.num}</b>{t.roue ? <span style={{ fontSize: FZF.xs, color: T.ink500 }}> roue {t.roue}</span> : null}
                   <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: FZF.xs, color: T.ink700 }}><i style={{ width: 8, height: 8, borderRadius: 4, background: pc.c, display: "inline-block", flexShrink: 0 }} /><span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{M.lbl(st.id)}</span></div>
-                  <div style={{ height: 3, background: T.surfaceAlt, borderRadius: 2, marginTop: 3 }}><div style={{ width: Math.round(M.progressOf(t) * 100) + "%", height: 3, borderRadius: 2, background: pc.c }} /></div>
+                  <div style={{ height: 3, background: T.surfaceAlt, borderRadius: 4, marginTop: 3 }}><div style={{ width: Math.round(M.progressOf(t) * 100) + "%", height: 3, borderRadius: 4, background: pc.c }} /></div>
                 </button>
-                <div style={{ position: "relative", height: 16, background: T.surface, borderRadius: 3 }}>
+                <div style={{ position: "relative", height: 16, background: T.surface, borderRadius: 4 }}>
                   {ticks.slice(1).map(k => <i key={k.k} style={{ position: "absolute", left: pct(k.k) + "%", top: -4, bottom: -4, width: 1, background: T.line }} />)}
-                  {s.segs.map((g, i) => <div key={i} title={g.ph === "wait" ? "Attente arbre" : g.ph === "missing" ? "Aucun arbre prévu" : PHASES[g.ph]} style={{ position: "absolute", top: 2, bottom: 2, left: pct(g.from) + "%", width: (g.to === null ? 100 - pct(g.from) : pct(g.to) - pct(g.from)) + "%", borderRadius: 2, background: g.ph === "wait" ? hatch(P.wait.c) : g.ph === "missing" ? hatch(P.missing.c) : (P[g.ph] || P.att).c }} />)}
+                  {s.segs.map((g, i) => <div key={i} title={g.ph === "wait" ? "Attente arbre" : g.ph === "missing" ? "Aucun arbre prévu" : PHASES[g.ph]} style={{ position: "absolute", top: 2, bottom: 2, left: pct(g.from) + "%", width: (g.to === null ? 100 - pct(g.from) : pct(g.to) - pct(g.from)) + "%", borderRadius: 4, background: g.ph === "wait" ? hatch(P.wait.c) : g.ph === "missing" ? hatch(P.missing.c) : (P[g.ph] || P.att).c }} />)}
                   <i title="Aujourd'hui" style={{ position: "absolute", left: 0, top: -6, bottom: -6, width: 2, background: T.red500 }} />
                 </div>
                 <div style={{ textAlign: "right", fontSize: FZF.sm, display: "flex", flexDirection: "column", lineHeight: 1.25 }}>{end}</div>
@@ -639,7 +639,7 @@ export function ProdTurbines({ doc, api, canEdit, owner, pjs }) {
     const item = drag && drag.kind === kind ? itemOf(kind, drag.id) : null;
     return (<div>
       <div role="region" tabIndex={0} aria-label={"Tableau " + KLABEL[kind].toLowerCase() + (many && !full ? ", faire défiler pour voir toutes les lignes" : "")}
-        style={{ overflow: "auto", maxHeight: many && !full ? "min(62vh, 540px)" : undefined, border: "1px solid " + T.line, borderRadius: 10, background: T.card }}>
+        style={{ overflow: "auto", maxHeight: many && !full ? "min(62vh, 540px)" : undefined, border: "1px solid " + T.line, borderRadius: 12, background: T.card }}>
       <table style={{ borderCollapse: "separate", borderSpacing: 0, width: "max-content", minWidth: "100%", fontFamily: T.font }}>
         <thead>
           <tr><th rowSpan={2} style={{ ...th, left: 0, zIndex: 3, minWidth: 190, verticalAlign: "bottom" }}>{KLABEL[kind]}</th>
@@ -655,7 +655,7 @@ export function ProdTurbines({ doc, api, canEdit, owner, pjs }) {
                 return (<td key={c.id} data-step={c.id} data-row={x.id} style={{ borderTop: "1px solid " + T.line, borderLeft: c.id === lockId ? "2px solid " + T.ink500 : "1px solid " + T.line, padding: 4, verticalAlign: "middle", minWidth: 104, height: 52, boxSizing: "border-box",
                   background: hot ? (st === "blocked" ? P.missing.bg : pc.bg) : st === "blocked" ? "repeating-linear-gradient(135deg," + T.surfaceAlt + " 0 4px,transparent 4px 8px)" : j < idx ? T.surface : "transparent", outline: hot ? "2px solid " + (st === "blocked" ? P.missing.c : pc.c) : "none", outlineOffset: -2 }}>
                   {isCur && <button type="button" aria-label={KLABEL[kind] + " " + itemName(kind, x) + " : " + M.lbl(c.id) + ". Glisser sur la ligne pour changer d'étape, cliquer pour la fiche."} onPointerDown={e => onCardDown(e, kind, x.id)} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openItem(kind, x); } }}
-                    style={{ width: "100%", textAlign: "left", border: "1px solid " + pc.c, borderLeft: "4px solid " + pc.c, background: pc.bg, color: pc.ink, borderRadius: 6, padding: "4px 6px", cursor: readOnly ? "pointer" : "grab", fontFamily: T.font, touchAction: "none", opacity: dragging ? 0.45 : 1 }}>
+                    style={{ width: "100%", textAlign: "left", border: "1px solid " + pc.c, borderLeft: "4px solid " + pc.c, background: pc.bg, color: pc.ink, borderRadius: 8, padding: "4px 6px", cursor: readOnly ? "pointer" : "grab", fontFamily: T.font, touchAction: "none", opacity: dragging ? 0.45 : 1 }}>
                     <b style={{ display: "block", fontFamily: T.fontMono, fontSize: 12 }}>{itemName(kind, x)}</b><span style={{ fontSize: 11 }}>{cardText(x, c)}</span>
                   </button>}
                 </td>); })}
@@ -678,7 +678,7 @@ export function ProdTurbines({ doc, api, canEdit, owner, pjs }) {
     const late = { color: T.red600, fontWeight: 600 };
     const pItem = (p, meta, acts) => (<div key={p.id} style={{ display: "flex", gap: 8, alignItems: "center", borderTop: "1px solid " + T.line, padding: "6px 0", minHeight: 36 }}>
       <button type="button" onClick={() => openPiece(p)} style={{ flex: 1, minWidth: 0, border: "none", background: "transparent", textAlign: "left", cursor: "pointer", fontFamily: T.font, color: T.ink900, padding: 0 }}>
-        <span style={{ fontSize: FZF.sm, fontWeight: 600 }}>{p.designation || "Pièce"}{p.qte > 1 ? <span style={{ color: T.ink500 }}> ×{p.qte}</span> : null}{p.turbine ? <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 700, background: T.surfaceAlt, color: T.ink700, borderRadius: 99, padding: "0 7px" }}>{p.turbine}</span> : null}</span>
+        <span style={{ fontSize: FZF.sm, fontWeight: 600 }}>{p.designation || "Pièce"}{p.qte > 1 ? <span style={{ color: T.ink500 }}> ×{p.qte}</span> : null}{p.turbine ? <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 700, background: T.surfaceAlt, color: T.ink700, borderRadius: 999, padding: "0 7px" }}>{p.turbine}</span> : null}</span>
         <span style={{ display: "block", fontSize: FZF.xs, color: T.ink500 }}>{meta}</span>
       </button>
       {!readOnly && <span style={{ display: "inline-flex", gap: 4 }}>{acts}</span>}
@@ -691,7 +691,7 @@ export function ProdTurbines({ doc, api, canEdit, owner, pjs }) {
     const arbres = Object.values(S.arbres).filter(a => !M.used.has(a.id) && !a.livree).sort((a, b) => (AI[b.step] ?? 0) - (AI[a.step] ?? 0) || sortNum(a, b));
     const mounted = Object.values(S.arbres).filter(a => M.used.has(a.id));
     const nAvail = M.availableArbres().length;
-    const chip = (ok, txt, soft) => <span style={{ display: "inline-block", marginTop: 3, fontSize: 11, fontWeight: 700, borderRadius: 99, padding: "0 7px", background: ok ? P.dispo.bg : P.missing.bg, color: ok ? P.dispo.ink : P.missing.ink, opacity: soft ? 0.8 : 1 }}>{txt}</span>;
+    const chip = (ok, txt, soft) => <span style={{ display: "inline-block", marginTop: 3, fontSize: 11, fontWeight: 700, borderRadius: 999, padding: "0 7px", background: ok ? P.dispo.bg : P.missing.bg, color: ok ? P.dispo.ink : P.missing.ink, opacity: soft ? 0.8 : 1 }}>{txt}</span>;
     const blocks = {
       pieces: (
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,300px),1fr))", gap: 12, alignItems: "start" }}>
@@ -821,7 +821,7 @@ export function ProdTurbines({ doc, api, canEdit, owner, pjs }) {
   const renderParams = () => {
     const cur = pd || { d: { ...S.params.d }, l: { ...S.params.l } };
     const dOf = id => (cur.d[id] != null ? cur.d[id] : STEP[id].d), lOf = id => cur.l[id] != null ? cur.l[id] : M.lbl(id);
-    const inp = { height: 30, border: "1px solid " + T.line, borderRadius: 6, background: T.card, color: T.ink900, padding: "0 8px", fontSize: FZF.sm, fontFamily: T.font, boxSizing: "border-box" };
+    const inp = { height: 30, border: "1px solid " + T.line, borderRadius: 8, background: T.card, color: T.ink900, padding: "0 8px", fontSize: FZF.sm, fontFamily: T.font, boxSizing: "border-box" };
     const rows = steps => steps.map(s => <tr key={s.id}><td style={tdS}><input aria-label={"Nom de l'étape " + STEP[s.id].l} disabled={readOnly} value={lOf(s.id)} onChange={e => setPd({ ...cur, l: { ...cur.l, [s.id]: e.target.value } })} style={{ ...inp, width: "100%" }} />{needsTable(gamme)[s.id] && <div style={{ fontSize: FZF.xs, color: T.ink500, marginTop: 3 }}>Consomme : {needsTable(gamme)[s.id].map(n => n.l).join(", ")}</div>}{RECO_CHECKS[s.id] && <div style={{ fontSize: FZF.xs, color: T.ink500, marginTop: 3 }}>Contrôles : {RECO_CHECKS[s.id].map(c => c.l).join(", ")}</div>}</td>
       <td style={{ ...tdS, width: 110 }}><input aria-label={"Durée en jours ouvrés de " + STEP[s.id].l} disabled={readOnly} type="number" min={0} step={0.5} value={dOf(s.id)} onChange={e => setPd({ ...cur, d: { ...cur.d, [s.id]: e.target.value } })} style={{ ...inp, width: 90, textAlign: "right", fontVariantNumeric: "tabular-nums" }} /></td></tr>);
     const grp = (title, ph, steps) => <><tr><td colSpan={2} style={{ ...tdS, fontWeight: 700, color: T.ink900, borderLeft: "4px solid " + (P[ph] || P.att).c, background: T.surface }}>{title}</td></tr>{rows(steps)}</>;
@@ -877,8 +877,8 @@ export function ProdTurbines({ doc, api, canEdit, owner, pjs }) {
       {tab === "parametres" && renderParams()}
     </div>
     {form && <FormDialog {...form} readOnly={readOnly} notify={notify} onClose={() => setForm(null)} />}
-    {drag && drag.x != null && <div aria-hidden="true" style={{ position: "fixed", left: drag.x + 12, top: drag.y + 12, zIndex: 10020, pointerEvents: "none", background: T.ink900, color: T.card, borderRadius: 6, padding: "3px 8px", fontSize: 12, fontWeight: 700, fontFamily: T.fontMono, boxShadow: T.shadowLg }}>{itemName(drag.kind, itemOf(drag.kind, drag.id))}{drag.target ? " → " + M.lbl(drag.target) : ""}</div>}
-    {toast && <div role="status" aria-live="polite" style={{ position: "fixed", left: "50%", bottom: 24, transform: "translateX(-50%)", zIndex: 10030, background: toast.err ? T.redFill : T.ink900, color: toast.err ? "#fff" : T.card, borderRadius: 10, padding: "8px 14px", fontSize: FZF.sm, fontWeight: 600, boxShadow: T.shadowLg, maxWidth: "min(560px,92vw)" }}><NavIcon name={toast.err ? "warning" : "check"} size={14} /> {toast.msg}</div>}
+    {drag && drag.x != null && <div aria-hidden="true" style={{ position: "fixed", left: drag.x + 12, top: drag.y + 12, zIndex: 10020, pointerEvents: "none", background: T.ink900, color: T.card, borderRadius: 8, padding: "3px 8px", fontSize: 12, fontWeight: 700, fontFamily: T.fontMono, boxShadow: T.shadowLg }}>{itemName(drag.kind, itemOf(drag.kind, drag.id))}{drag.target ? " → " + M.lbl(drag.target) : ""}</div>}
+    {toast && <div role="status" aria-live="polite" style={{ position: "fixed", left: "50%", bottom: 24, transform: "translateX(-50%)", zIndex: 10030, background: toast.err ? T.redFill : T.ink900, color: toast.err ? "#fff" : T.card, borderRadius: 12, padding: "8px 14px", fontSize: FZF.sm, fontWeight: 600, boxShadow: T.shadowLg, maxWidth: "min(560px,92vw)" }}><NavIcon name={toast.err ? "warning" : "check"} size={14} /> {toast.msg}</div>}
   </div>);
 }
 // ===== FIN PAGE =====

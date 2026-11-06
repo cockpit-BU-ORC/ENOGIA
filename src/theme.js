@@ -107,7 +107,7 @@ const SHARED = {
   fontDisplay:"'Cabinet Grotesk','Satoshi',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
   font:"'Satoshi',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
   fontMono:"'JetBrains Mono','SF Mono',Consolas,monospace",
-  fontLabel:"'IBM Plex Sans','Satoshi',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif", // v188 : étiquettes (choix de Gabriel)
+  fontLabel:"'Satoshi',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif", // v286 (lot D, choix B) : étiquettes en Satoshi — IBM Plex Sans (V188) retirée, 3 familles
   // v162 : Montserrat abandonnée — une seule famille (Roboto) pour toute l'app ; le token reste pour compatibilité.
   fontMontserrat:"'Satoshi',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
 };
@@ -128,7 +128,7 @@ export function buildPalette(themeId, dark){
 // xl  = grands chiffres                              xxl, hero = très grands chiffres
 // Toute nouvelle taille doit être prise dans cette liste (FZ.xs, FZ.sm…) plutôt qu'écrite en dur.
 // v140 : une seule grille. Rayons 4 / 8 / 12 / 16 (+ pastille 999) ; espacements en multiples de 4 (2 et 6 tolérés pour les micro-ajustements).
-export const R = { xs: 4, sm: 8, md: 12, lg: 16, pill: 999 };
+export const R = { xs: 4, sm: 8, md: 12, lg: 12, pill: 999 }; // v286 (rayons B) : 4 · 8 · 12 · pilule (lg = md)
 export const SP = { 1: 4, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24 };
 // Mélange de deux couleurs #RRGGBB (t = part de b) → couleur opaque (zébrage, survol : une teinte opaque reste lisible sous une colonne collante).
 export function mixHex(a, b, t) {
@@ -262,4 +262,20 @@ export function stagePalette() {
     "Fin prod":   { c: S.finProd.solid,    t: inkOn(S.finProd.solid),    bold: true },
     "Départ":     { c: S.depart.solid,     t: inkOn(S.depart.solid),     bold: true },
   };
+}
+
+// ── v286 (lot D du système de design, choix de Gabriel : rayons B, boutons, 3 polices, bulle maison) ──────────────────
+// Rayons : petit 4 (plaques, barres, cases) · contrôle 8 (boutons, champs, menus, bulles) · cadre 12 (cartes, cadrans,
+// fenêtres) · pilule (étiquettes, compteurs). Les fenêtres de 18 à 22 px (fiche d'un PJ) gardent le leur.
+// jetons : R (plus haut) — xs 4, sm 8, md 12, pill.
+// Bouton commun : variantes pri (action principale, une seule pleine par écran) · sec · ghost (discret) · dan (danger) ;
+// tailles sm 28 px · md 34 px. Lu au rendu (T change en place avec le mode). Composant : Btn (SharedUI.js).
+export function btn(variant = "sec", size = "md") {
+  const sm = size === "sm";
+  const base = { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: R.sm, minHeight: sm ? 28 : 34, padding: sm ? "0 10px" : "0 14px",
+    fontSize: sm ? 12.5 : 13.5, fontWeight: 600, fontFamily: T.font, cursor: "pointer", whiteSpace: "nowrap", border: "1px solid transparent", boxSizing: "border-box" };
+  if (variant === "pri") return { ...base, background: T.ink900, color: T.card, borderColor: T.ink900 };
+  if (variant === "ghost") return { ...base, background: "transparent", color: T.ink700 };
+  if (variant === "dan") return { ...base, background: T.card, color: T.red500, borderColor: T.line };
+  return { ...base, background: T.card, color: T.ink900, borderColor: T.line };
 }

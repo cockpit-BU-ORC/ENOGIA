@@ -2049,3 +2049,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - « Expédiées depuis mai » ; chiffres affichés directement ; « touchez » sur écran tactile.
 - Clé `localStorage` : `enogia_darkPref` (light / dark / system), `enogia_darkMode` encore écrit.
 - Fichiers : styles.css, a11yFallback.js, pjMeta.js, App.js, components/HomeView.js, TableView.js, DashboardSummary.js, TestsTab.js, MentionBell.js, ThemePicker.js, SharedUI.js, KpiPilotage.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v286 — Système de design (lot D de l'audit croisé)
+
+- Demandé : « B, B, B, bulle maison » (maquette v286-systeme).
+- Rayons 4 / 8 / 12 + pilule partout (313 valeurs ramenées) ; bouton commun `btn()` / `Btn`, action principale en encre ; étiquettes en Satoshi (IBM Plex Sans retirée).
+- Bulle maison (`src/tips.js`) à la place des bulles du navigateur : souris, clavier, doigt.
+- Planificateur : barre d'outils sur deux lignes quand l'écran est étroit.
+- Pas de nouvelle donnée ni de clé `localStorage`. Kits de Jérémie et du responsable achats à renvoyer (rayons changés dans leurs pages).
+- Fichiers : theme.js, tips.js (nouveau), index.js, styles.css, components/SharedUI.js, ManagerFiche.js, ReleaseNotes.js, SavedViews.js, planner/Planner.js, public/index.html, + rayons dans la plupart des composants, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

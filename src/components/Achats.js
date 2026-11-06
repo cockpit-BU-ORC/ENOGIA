@@ -61,7 +61,7 @@ const TONE = () => ({
 });
 
 /* ---------- Petits composants ---------- */
-const CARD = () => ({ background: T.card, border: "1px solid " + T.line, borderRadius: 10, padding: "12px 14px", boxSizing: "border-box" });
+const CARD = () => ({ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "12px 14px", boxSizing: "border-box" });
 const btn = primary => ({ minHeight: 30, padding: "0 12px", borderRadius: 8, border: "1px solid " + (primary ? T.ink900 : T.line), background: primary ? T.ink900 : T.card, color: primary ? T.card : T.ink700, fontFamily: T.font, fontSize: FZF.sm, fontWeight: 700, cursor: "pointer" });
 const field = () => ({ padding: "5px 8px", minHeight: 32, borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontFamily: T.font, fontSize: FZF.sm, boxSizing: "border-box", width: "100%" });
 const th = () => ({ textAlign: "left", padding: "8px 10px", fontSize: 12, fontWeight: 500, color: T.ink500, borderBottom: "1px solid " + T.line, whiteSpace: "nowrap", position: "sticky", top: 0, background: T.card });
@@ -196,7 +196,7 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
     {tab === "pj" && <div style={{ display: "grid", gridTemplateColumns: "minmax(200px,260px) 1fr", gap: 12, alignItems: "start" }}>
       <nav aria-label="PJ" style={{ ...CARD(), padding: 6, maxHeight: "70vh", overflow: "auto" }}>
         {openPjs.map(r => { const L = lines.filter(l => l.pj === r.pj), bad = L.some(l => l.st.k === "late" || l.st.k === "nc"), on = (pjSel || (openPjs[0] && openPjs[0].pj)) === r.pj; return (
-          <button key={r.pj} type="button" onClick={() => setPjSel(r.pj)} aria-current={on ? "true" : undefined} style={{ display: "flex", width: "100%", alignItems: "center", gap: 8, border: "none", borderRadius: 6, padding: "6px 8px", minHeight: 36, background: on ? T.surfaceAlt : "transparent", cursor: "pointer", textAlign: "left", fontFamily: T.font, color: T.ink900 }}>
+          <button key={r.pj} type="button" onClick={() => setPjSel(r.pj)} aria-current={on ? "true" : undefined} style={{ display: "flex", width: "100%", alignItems: "center", gap: 8, border: "none", borderRadius: 8, padding: "6px 8px", minHeight: 36, background: on ? T.surfaceAlt : "transparent", cursor: "pointer", textAlign: "left", fontFamily: T.font, color: T.ink900 }}>
             <span style={{ flex: 1, minWidth: 0 }}><b style={{ fontFamily: T.fontMono, fontSize: FZF.sm }}>{r.pj}</b><span style={{ display: "block", fontSize: FZF.xs, color: T.ink500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.nomProjet || ""} · arrivée {fd(isoOf(r.arrivee))}</span></span>
             <span style={{ fontSize: FZF.xs, color: bad ? T.red600 : T.ink500, fontWeight: 700 }}>{L.length ? L.filter(l => l.st.k === "done").length + "/" + L.length : "—"}</span>
           </button>); })}

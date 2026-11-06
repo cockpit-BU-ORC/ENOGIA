@@ -730,4 +730,9 @@ export const RELEASE_CATALOG = [
     ["Accueil et Liste", "« Expédiées depuis mai » au lieu de « livrées » (livrée = arrivée chez le client) ; les chiffres s'affichent directement, sans compter depuis zéro.", "all"],
     ["Partout", "Police des boutons harmonisée, liens et initiales plus contrastés, texte complet au survol des noms coupés ; au téléphone, la ligne de chiffres de la Liste ne chevauche plus le bouton.", "all"],
   ] },
+  { v: "286", t: "Un seul système de design : formes, boutons, polices, bulles", items: [
+    ["Partout", "Les infos au survol s'affichent dans une bulle maison : plus rapide à la souris, et maintenant aussi au clavier (Tab) et d'un appui au doigt.", "all"],
+    ["Partout", "Trois arrondis seulement (petit, contrôle, cadre), une seule couleur pour l'action principale, et des étiquettes dans la même police que le texte.", "all"],
+    ["Planificateur", "Sur un écran plus étroit, la barre d'outils passe sur deux lignes au lieu de cacher ses menus.", "owner"],
+  ] },
 ];

@@ -13,7 +13,7 @@ import { Select, NavIcon, PjChecklist, DelayScopeNote, EmptyState, SuperOnly, Ne
 
 // Accesseurs (et non valeurs figées) : ces objets sont créés une seule fois à l'import, avant que le
 // thème sombre ne soit appliqué — des valeurs fixes resteraient blanches en mode sombre.
-export const CARD={get background(){return T.card;},borderRadius:10,get border(){return "1px solid "+T.line;}};
+export const CARD={get background(){return T.card;},borderRadius:12,get border(){return "1px solid "+T.line;}};
 export const H_TITLE={get fontFamily(){return T.fontDisplay;},fontWeight:600,fontSize:FZ.md,get color(){return T.ink900;}};
 export const H_SUB={fontSize:FZ.xs,get color(){return T.ink300;},marginTop:2};
 
@@ -62,7 +62,7 @@ export function topSlices(list,n,colors){n=Infinity;const all=(list||[]).filter(
 export function KpiRow({items,min=150}){
   return(<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,"+min+"px),1fr))",gap:8}}>
     {items.map(([v,l,c,sub])=>{const tone=c===T.red500||c===T.red600?T.red500:c===T.emerald500||c===T.emerald600?T.emerald600:T.ink900;return(
-      <div key={l} style={{background:T.card,border:"1px solid "+T.line,borderRadius:10,padding:"12px 14px",minWidth:0}}>
+      <div key={l} style={{background:T.card,border:"1px solid "+T.line,borderRadius:12,padding:"12px 14px",minWidth:0}}>
         <div style={{fontSize:12.5,color:T.ink500,fontFamily:T.fontLabel}}>{l}</div>
         <div style={{fontFamily:T.fontDisplay,fontSize:28,fontWeight:600,color:tone,lineHeight:1.15,marginTop:4,fontVariantNumeric:"tabular-nums"}}>{v}</div>
         {sub&&<div style={{fontSize:12,color:T.ink500,marginTop:4}}>{sub}</div>}
@@ -75,7 +75,7 @@ export function RankBars({items,unit="",color,max=10,onPick}){
   return(<div style={{display:"flex",flexDirection:"column",gap:6}}>
     {list.map(x=>(<div key={x.label} {...(onPick?{role:"button",tabIndex:0,onClick:()=>onPick(x),onKeyDown:e=>{if(e.key==="Enter")onPick(x);}}:{})} style={{display:"grid",gridTemplateColumns:"minmax(90px,30%) minmax(0,1fr) 64px",alignItems:"center",gap:10,minHeight:28,cursor:onPick?"pointer":"default"}}>
       <span title={x.label} style={{fontSize:FZ.sm,color:T.ink900,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{x.label}</span>
-      <span style={{height:10,background:T.surfaceAlt,borderRadius:2,overflow:"hidden"}}><span className="enogia-bar-fill" style={{display:"block",width:(x.value/top*100)+"%",height:"100%",background:color||T.navy600}}/></span>
+      <span style={{height:10,background:T.surfaceAlt,borderRadius:4,overflow:"hidden"}}><span className="enogia-bar-fill" style={{display:"block",width:(x.value/top*100)+"%",height:"100%",background:color||T.navy600}}/></span>
       <span style={{textAlign:"right",fontSize:FZ.sm,fontWeight:700,color:T.ink900,fontVariantNumeric:"tabular-nums"}}>{x.value}{unit}</span>
     </div>))}
     {(items||[]).length>max&&<div style={{fontSize:12,color:T.ink500}}>+ {(items||[]).length-max} autres</div>}
@@ -140,7 +140,7 @@ export function PresenceEditor({r,presence,onChange}){
       ?<span style={{fontSize:FZ.xs,color:T.red500,fontWeight:600}}>Période de tests non définie — date impossible</span>
       :<>
         {(kind==="both"?["client","nobo"]:[kind]).map(w=><label key={w} style={{display:"inline-flex",alignItems:"center",gap:5,fontSize:FZ.xs,fontWeight:700,color:PRESENCE_META[w].ink}}>
-          <span style={{background:presenceBg(w),borderRadius:6,padding:"2px 8px"}}>{w==="client"?"Client":"NOBO"}</span>
+          <span style={{background:presenceBg(w),borderRadius:8,padding:"2px 8px"}}>{w==="client"?"Client":"NOBO"}</span>
           <input type="date" value={pDates[w]||""} min={minD||undefined} max={maxD||undefined} onChange={e=>onDate(w,e.target.value)}
             style={{padding:"3px 8px",borderRadius:8,border:"1.5px solid "+PRESENCE_META[w].color,fontSize:FZ.xs,fontFamily:T.font,color:T.ink700,fontWeight:600}}/>
         </label>)}
@@ -392,7 +392,7 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
       <div style={{width:190}}>
         <Select compact value={filterPj} onChange={e=>setFilterPj(e.target.value)} options={[{value:"",label:"Tous les PJ"},...data.map(d=>({value:d.pj,label:d.pj}))]}/>
       </div>
-      <button onClick={()=>openForm(filterPj?{pj:filterPj}:{})} style={{marginLeft:"auto",padding:"8px 16px",borderRadius:12,border:"none",background:T.teal500,color:"#fff",fontSize:FZ.sm,fontWeight:700,cursor:"pointer",fontFamily:T.font,boxShadow:T.shadowSm}}>+ Déclarer un retard</button>
+      <button onClick={()=>openForm(filterPj?{pj:filterPj}:{})} style={{marginLeft:"auto",padding:"8px 16px",borderRadius:12,border:"none",background:T.ink900,color:T.card,fontSize:FZ.sm,fontWeight:700,cursor:"pointer",fontFamily:T.font,boxShadow:T.shadowSm}}>+ Déclarer un retard</button>
     </div>
 
     {view==="fil"

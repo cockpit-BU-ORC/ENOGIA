@@ -104,7 +104,7 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
         {notShipped.length>0&&<div title={"Départ passé, état pas encore « Expédiée » : "+notShipped.map(r=>r.pj).join(", ")} style={{fontSize:FZ.xs,fontWeight:700,color:T.amber600,marginTop:2}}>+ {notShipped.length} départ{notShipped.length>1?"s":""} passé{notShipped.length>1?"s":""}<br/>pas encore « Expédiée »</div>}
       </div>
 
-      <div className="enogia-dash-sep" style={{width:3,alignSelf:"stretch",background:T.teal500,flexShrink:0,borderRadius:1}}/>
+      <div className="enogia-dash-sep" style={{width:3,alignSelf:"stretch",background:T.teal500,flexShrink:0,borderRadius:4}}/>
 
       {/* v176 (demandé : « la hauteur est trop importante, je préfère les camemberts avec les couleurs ») :
           un petit anneau coloré par répartition, légende à côté (et non dessous) pour limiter la hauteur. */}
@@ -122,7 +122,7 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
                   <Tooltip content={({active,payload})=>{
                     if(!active||!payload||!payload.length)return null;const p=payload[0];
                     return(<div style={{background:T.card,border:"1px solid "+T.line,borderRadius:8,padding:"4px 8px",fontSize:FZ.xs,fontFamily:T.font,color:T.ink900,display:"flex",alignItems:"center",gap:6}}>
-                      <span style={{width:7,height:7,borderRadius:2,background:p.payload&&p.payload.color,flexShrink:0}}/><span>{p.name}</span><strong>{p.value}</strong>
+                      <span style={{width:7,height:7,borderRadius:4,background:p.payload&&p.payload.color,flexShrink:0}}/><span>{p.name}</span><strong>{p.value}</strong>
                     </div>);
                   }}/>
                 </PieChart>
@@ -137,7 +137,7 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
               {total===0?<div style={{fontSize:FZ.xs,color:T.ink500}}>Aucune machine avec ces filtres.</div>:
                 <div style={{display:"grid",gridTemplateColumns:pie.length>6?"repeat(2,minmax(0,max-content))":"minmax(0,max-content)",columnGap:12,rowGap:1,overflow:"hidden","--lw":/* v195 : noms à la largeur du plus long (max 18 car.), chiffre juste après */Math.min(18,Math.max(...pie.map(x=>String(x.name).length)))+1+"ch"}}>
                   {pie.map((x,xi)=><div key={x.name} className="enogia-pie-leg" style={{display:"grid",gridTemplateColumns:"8px minmax(0,var(--lw)) auto",justifyContent:"start",alignItems:"center",columnGap:6,fontSize:FZ.xs,color:T.ink700,lineHeight:1.35,animationDelay:Math.min(200,di*40+xi*20)+"ms"}}>
-                    <span aria-hidden="true" style={{width:8,height:8,borderRadius:2,flexShrink:0,background:x.color}}/>
+                    <span aria-hidden="true" style={{width:8,height:8,borderRadius:4,flexShrink:0,background:x.color}}/>
                     <span title={x.name} style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",minWidth:0,fontWeight:500}}>{x.name}</span>
                     <span style={{fontWeight:700,color:T.ink900,fontVariantNumeric:"tabular-nums",textAlign:"right",minWidth:"2ch"}}>{x.value}</span>
                   </div>)}

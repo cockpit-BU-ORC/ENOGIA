@@ -24,7 +24,7 @@ function SavDialog({ doc, init, onSave, onDelete, onClose }) {
   const [v, setV] = useState(() => ({ label: "", cfg: "100", roue: "", inj: "", injB: "", date: "", note: "", ...(init || {}) }));
   useEffect(() => { const k = e => { if (e.key === "Escape") onClose(); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose]);
   const g = (cfgById(v.cfg) || TURB_CFGS[1]).g, roues = refsOf(doc, "roues", g), injs = refsOf(doc, "injecteurs", g), ii = v.inj ? injInfo(doc, v.inj) : null, mx = ii ? maxBouches(ii.ouv) : 99;
-  const f = { minHeight: 32, borderRadius: 6, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, padding: "0 8px", width: "100%", boxSizing: "border-box" };
+  const f = { minHeight: 32, borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, padding: "0 8px", width: "100%", boxSizing: "border-box" };
   const btn = p => ({ minHeight: 34, padding: "0 14px", borderRadius: 8, border: "1px solid " + (p ? T.ink900 : T.line), background: p ? T.ink900 : T.card, color: p ? T.card : T.ink700, fontWeight: 700, fontSize: FZ.sm, cursor: "pointer", fontFamily: T.font });
   return (<div onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 10010, background: "rgba(10,20,30,.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
     <div role="dialog" aria-modal="true" aria-label={init ? "Besoin SAV " + (init.label || "") : "Nouveau besoin SAV"} style={{ background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, width: "min(520px,100%)", padding: "16px 18px", fontFamily: T.font, display: "flex", flexDirection: "column", gap: 10 }}>
@@ -89,8 +89,8 @@ function Tile({ ctx, p, k, title, sub, q, disabled }) { const { dnd, canEdit, se
       {...(canEdit && !disabled ? dnd.dragProps(p) : {})}
       onClick={() => { if (!canEdit || disabled) return; setPicked(isPicked(p) ? null : p); }}
       onKeyDown={e => { if ((e.key === "Enter" || e.key === " ") && canEdit && !disabled) { e.preventDefault(); setPicked(isPicked(p) ? null : p); } }}
-      style={{ position: "relative", background: T.card, borderRadius: 10, padding: "6px 9px 6px 13px", minHeight: 46, height: 46, boxSizing: "border-box", boxShadow: "0 0 0 " + (isPicked(p) ? "2px " + T.teal600 : "1px " + T.line), cursor: canEdit && !disabled ? "grab" : "default", touchAction: "none", userSelect: "none", opacity: on ? 0.25 : disabled ? 0.45 : 1, fontFamily: T.font }}>
-      <span aria-hidden="true" style={{ position: "absolute", left: 4, top: 8, bottom: 8, width: 3, borderRadius: 2, background: k }} />
+      style={{ position: "relative", background: T.card, borderRadius: 12, padding: "6px 9px 6px 13px", minHeight: 46, height: 46, boxSizing: "border-box", boxShadow: "0 0 0 " + (isPicked(p) ? "2px " + T.teal600 : "1px " + T.line), cursor: canEdit && !disabled ? "grab" : "default", touchAction: "none", userSelect: "none", opacity: on ? 0.25 : disabled ? 0.45 : 1, fontFamily: T.font }}>
+      <span aria-hidden="true" style={{ position: "absolute", left: 4, top: 8, bottom: 8, width: 3, borderRadius: 4, background: k }} />
       <div style={{ fontWeight: 700, fontSize: 12.5, fontFamily: p.kind === "turbine" ? T.fontMono : T.font, paddingRight: q != null ? 18 : 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{title}</div>
       <div style={{ fontSize: 11.5, color: T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</div>
       {q != null && <span style={{ position: "absolute", top: 6, right: 8, fontSize: 12, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: q ? T.ink700 : T.red600 }}>{q}</span>}
@@ -165,7 +165,7 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta }) {
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(122px,1fr))", gap: 6 }}>{children}</div></div>;
   const none = <span style={{ fontSize: FZ.xs, color: T.ink500 }}>Aucune.</span>;
   // logement d'un plateau
-  const xBtn = (lab, fn) => canEdit && <button type="button" data-no-drag aria-label={lab} title="Remettre dans le stock" onClick={e => { e.stopPropagation(); fn(); }} style={{ marginLeft: "auto", border: "none", background: "transparent", color: T.ink500, cursor: "pointer", minWidth: 24, minHeight: 24, borderRadius: 6, fontSize: 15, lineHeight: 1 }}>×</button>;
+  const xBtn = (lab, fn) => canEdit && <button type="button" data-no-drag aria-label={lab} title="Remettre dans le stock" onClick={e => { e.stopPropagation(); fn(); }} style={{ marginLeft: "auto", border: "none", background: "transparent", color: T.ink500, cursor: "pointer", minWidth: 24, minHeight: 24, borderRadius: 8, fontSize: 15, lineHeight: 1 }}>×</button>;
   const Val = ({ lab, v, mono, note, bad }) => <div style={{ minWidth: 0 }}><span style={{ display: "block", fontSize: 11, fontWeight: 600, color: T.ink500 }}>{lab}</span><span style={{ fontWeight: 700, fontSize: 12.5, fontFamily: mono ? T.fontMono : T.font }}>{v}</span> <span style={{ fontSize: 11, fontWeight: bad ? 700 : 600, color: bad ? T.red600 : T.emerald600 }}>{note}</span></div>;
   const injTxt = n => n.inj ? n.inj + (n.injB ? " · " + n.injB + " bouch." : "") : "";
   const ctx = { dnd, canEdit, picked, setPicked, isPicked, active, landed, drop, setMsg, setPop };
@@ -173,12 +173,12 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta }) {
   return (<div style={{ display: "flex", flexDirection: "column", gap: 10, "--nd-bg": T.card }}>
     <style>{NEEDS_CSS}</style>
     <PageHead title="Besoins ORC et SAV" sub="Glissez (ou touchez puis posez) une turbine, une roue ou un injecteur du stock dans le plateau d'un PJ : le stock de la production se met à jour. × la remet." />
-    <div className="enogia-nd-app" style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 16, overflow: "hidden", display: "grid", gridTemplateColumns: "300px minmax(0,1fr)", height: "min(78vh, 900px)" }}>
+    <div className="enogia-nd-app" style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden", display: "grid", gridTemplateColumns: "300px minmax(0,1fr)", height: "min(78vh, 900px)" }}>
       <aside className="enogia-nd-stock" aria-label="Stock de la production turbines" style={{ background: T.surface, borderRight: "1px solid " + T.line, overflowY: "auto", "--nd-bg": T.surface }}>
         <div className="enogia-nd-glass" style={{ position: "sticky", top: 0, zIndex: 2, padding: "12px 12px 10px", display: "flex", flexDirection: "column", gap: 8 }}>
           <b style={{ fontSize: 13 }}>Stock de la production</b>
-          <div role="group" aria-label="Gamme" style={{ display: "inline-flex", background: T.surfaceAlt, borderRadius: 9, padding: 2, gap: 2, alignSelf: "flex-start" }}>
-            {["100", "20"].map(g => <button key={g} type="button" aria-pressed={gam === g} onClick={() => { setGam(g); setPicked(null); }} style={{ border: "none", borderRadius: 7, minHeight: 28, padding: "0 12px", fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font, background: gam === g ? T.card : "transparent", color: gam === g ? T.ink900 : T.ink500, boxShadow: gam === g ? "0 1px 2px rgba(0,0,0,.08)" : "none" }}>{g} kW</button>)}
+          <div role="group" aria-label="Gamme" style={{ display: "inline-flex", background: T.surfaceAlt, borderRadius: 8, padding: 2, gap: 2, alignSelf: "flex-start" }}>
+            {["100", "20"].map(g => <button key={g} type="button" aria-pressed={gam === g} onClick={() => { setGam(g); setPicked(null); }} style={{ border: "none", borderRadius: 8, minHeight: 28, padding: "0 12px", fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font, background: gam === g ? T.card : "transparent", color: gam === g ? T.ink900 : T.ink500, boxShadow: gam === g ? "0 1px 2px rgba(0,0,0,.08)" : "none" }}>{g} kW</button>)}
           </div>
         </div>
         {/* v274 (demandé : « bien séparer les turbines prêtes avec roues et celles sans ») */}
@@ -190,7 +190,7 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta }) {
       </aside>
       <section aria-label="Besoins" style={{ overflowY: "auto", position: "relative", "--nd-bg": T.card }}>
         <div className="enogia-nd-glass" style={{ position: "sticky", top: 0, zIndex: 3, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", padding: "10px 16px", boxShadow: "0 1px 0 " + T.line }}>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}><span aria-hidden="true" style={{ width: 150, height: 6, borderRadius: 3, background: T.surfaceAlt, overflow: "hidden" }}><span style={{ display: "block", height: "100%", width: "100%", transform: "scaleX(" + Math.max(0, Math.min(1, pct / 100)) + ")", transformOrigin: "left center", background: T.emerald500, transition: "transform 300ms cubic-bezier(.2,.8,.2,1)" }} /></span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}><span aria-hidden="true" style={{ width: 150, height: 6, borderRadius: 4, background: T.surfaceAlt, overflow: "hidden" }}><span style={{ display: "block", height: "100%", width: "100%", transform: "scaleX(" + Math.max(0, Math.min(1, pct / 100)) + ")", transformOrigin: "left center", background: T.emerald500, transition: "transform 300ms cubic-bezier(.2,.8,.2,1)" }} /></span>
             <span style={{ fontSize: 12.5, color: T.ink500 }}><b style={{ color: T.ink900, fontSize: 15, fontVariantNumeric: "tabular-nums" }}>{pct}</b> % des pièces attribuées</span></span>
           {[[missT, "turbines"], [missR, "roues"], [missI, "injecteurs à attribuer"]].map(([v, l]) => <span key={l} style={{ fontSize: 12.5, color: T.ink500 }}><b style={{ color: T.ink900, fontSize: 15, fontVariantNumeric: "tabular-nums", marginRight: 3 }}>{v}</b>{l}</span>)}
           <span style={{ flex: 1 }} />
@@ -217,7 +217,7 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta }) {
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}>
                   {n.slots.map(s => { const rr = s.roue ? s.roue.ref : s.roueMontee, full = !!(s.t && s.roueOk && s.inj);
-                    return <div key={s.i} style={{ display: "flex", alignItems: "stretch", gap: 3, padding: 3, borderRadius: 11, background: full ? T.emerald100 : T.surface, transition: "background 200ms" }}>
+                    return <div key={s.i} style={{ display: "flex", alignItems: "stretch", gap: 3, padding: 3, borderRadius: 12, background: full ? T.emerald100 : T.surface, transition: "background 200ms" }}>
                       <span aria-hidden="true" style={{ width: 18, display: "grid", placeItems: "center", fontSize: 11, fontWeight: 700, color: T.ink300 }}>{n.want > 1 ? s.i + 1 : ""}</span>
                       <Sock ctx={ctx} n={n} s={s} kind="turbine" label={"Turbine " + n.cfg.g + " kW"} filled={!!s.t}>{s.t && <><Val lab={"Turbine " + n.cfg.g + " kW"} v={s.t.num} mono note={s.t.livree ? "sortie du stock" : s.t.dispo ? "prête" : "réservée · fin " + fdS(s.t.end)} />{xBtn("Retirer " + s.t.num, () => outTurbine(s.t))}</>}</Sock>
                       <Sock ctx={ctx} n={n} s={s} kind="roue" label="Roue" want={n.roue} filled={s.roueOk}>{s.roueOk && <><Val lab="Roue" v={rr} note={n.roue && U2(rr) !== U2(n.roue) ? "prévue " + n.roue : s.roue ? "✓" : "montée"} bad={!!(n.roue && U2(rr) !== U2(n.roue))} />{s.roue && xBtn("Remettre la roue " + rr + " en stock", () => outAlloc(s.roue))}</>}</Sock>
@@ -297,7 +297,7 @@ function ImportDialog({ doc, api, onClose }) {
         {err && <div role="alert" style={{ color: T.red600, fontWeight: 600, fontSize: FZ.sm, marginTop: 10 }}>{err}</div>}
         {plan && <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
           <label style={{ fontSize: FZ.sm, color: T.ink700, display: "flex", gap: 8, alignItems: "center" }}>Gamme des éléments sans gamme
-            <select value={gamme} onChange={e => setGamme(e.target.value)} style={{ minHeight: 30, borderRadius: 6, border: "1px solid " + T.line, background: T.card, color: T.ink900 }}><option value="100">100 kW</option><option value="20">20 kW</option></select></label>
+            <select value={gamme} onChange={e => setGamme(e.target.value)} style={{ minHeight: 30, borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900 }}><option value="100">100 kW</option><option value="20">20 kW</option></select></label>
           <table style={{ borderCollapse: "collapse", fontSize: FZ.sm, fontVariantNumeric: "tabular-nums" }}><tbody>
             {COLLS.map(c => <tr key={c}><td style={{ padding: "3px 12px 3px 0", color: T.ink700 }}>{LBL[c]}</td><td style={{ padding: "3px 12px", fontWeight: 700 }}>{count(c, false)} à ajouter</td><td style={{ padding: "3px 0", color: T.ink500 }}>{count(c, true) ? count(c, true) + " déjà présent" + (count(c, true) > 1 ? "s" : "") + ", ignoré" + (count(c, true) > 1 ? "s" : "") : ""}</td></tr>)}
           </tbody></table>

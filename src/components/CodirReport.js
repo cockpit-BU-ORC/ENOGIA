@@ -64,7 +64,7 @@ function Donut({v,size=62,color}){
     <text x={m} y={m} textAnchor="middle" dominantBaseline="central" fontFamily={F_DISPLAY} fontSize={size*.27} fontWeight="600" fill={C.ink}>{v}%</text>
   </svg>);
 }
-function Chip({children,color,bg,style}){return <span style={{display:"inline-block",background:bg,color,borderRadius:99,padding:"2px 9px",fontSize:9.5,fontWeight:800,letterSpacing:".02em",whiteSpace:"nowrap",...style}}>{children}</span>;}
+function Chip({children,color,bg,style}){return <span style={{display:"inline-block",background:bg,color,borderRadius:999,padding:"2px 9px",fontSize:9.5,fontWeight:800,letterSpacing:".02em",whiteSpace:"nowrap",...style}}>{children}</span>;}
 const delta=d=>d==null||d===0?null:<Chip color={d>0?C.red:C.green} bg={d>0?TINT.red:TINT.green}>{sg(d)}</Chip>;
 
 // ── Données d'un PJ pour le rapport ───────────────────────────────────────────────────────────────────────────
@@ -187,7 +187,7 @@ function SummaryPage({chunk,idx,label,page,total,all}){
             {FEUX.map(([k,lab])=>{const n=all.length||1;const none=all.filter(i=>!i.feux[k]).length;return(
               <div key={k} style={{display:"grid",gridTemplateColumns:"92px 1fr 70px",gap:10,alignItems:"center",padding:"3.5px 0",fontSize:10.5}}>
                 <span style={{fontWeight:600,color:C.ink2}}>{lab.replace(" / Problèmes","").replace(" client","")}</span>
-                <div style={{display:"flex",height:7,borderRadius:7,overflow:"hidden",background:C.wash}}>{["red","yellow","green"].map(lv=>count(k,lv)>0&&<div key={lv} style={{width:count(k,lv)/n*100+"%",background:FC[lv]}}/>)}</div>
+                <div style={{display:"flex",height:7,borderRadius:8,overflow:"hidden",background:C.wash}}>{["red","yellow","green"].map(lv=>count(k,lv)>0&&<div key={lv} style={{width:count(k,lv)/n*100+"%",background:FC[lv]}}/>)}</div>
                 <span style={{fontSize:10,fontWeight:700,display:"flex",gap:6}}>{["red","yellow","green"].map(lv=><span key={lv} style={{color:FC[lv],opacity:count(k,lv)?1:.3}}>{count(k,lv)}</span>)}{none>0&&<span style={{color:C.faint,fontWeight:500}}>·{none}</span>}</span>
               </div>);})}
           </Section>
@@ -265,7 +265,7 @@ function Roadmap({i,h=196}){
 
 // ── Jalons de paiement (cases + barre + montants) et gros composants (désigné / commandé / réceptionné (reçu à ENOGIA ou installé)) ─────────
 const STEP_C={des:"#D79A2B",cmd:"#4F6FC4",inst:"#2F9E6E"};
-const Box=({on,color,size=11})=><span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:size,height:size,borderRadius:3,border:"1.5px solid "+color,background:on?color:"#fff",color:"#fff",fontSize:size-3,fontWeight:900,lineHeight:1,boxSizing:"border-box",flexShrink:0}}>{on?"✓":""}</span>;
+const Box=({on,color,size=11})=><span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:size,height:size,borderRadius:4,border:"1.5px solid "+color,background:on?color:"#fff",color:"#fff",fontSize:size-3,fontWeight:900,lineHeight:1,boxSizing:"border-box",flexShrink:0}}>{on?"✓":""}</span>;
 function PayBlock({m,pj,mt}){
   const l=paiementsOf(m,pj),pct=payPct(m,pj);
   const lk=l.some(p=>p.linked); // V146.1 : jalons du Cash in → montants réels, rouge si en retard, orange si à surveiller
@@ -273,7 +273,7 @@ function PayBlock({m,pj,mt}){
   if(!l.length)return <div style={{color:C.faint,fontSize:10.5,padding:"2px 0"}}>Aucun jalon de paiement renseigné dans la fiche projet.</div>;
   return(<div>
     <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
-      <div style={{flex:1,height:7,borderRadius:7,background:C.hair,overflow:"hidden"}}><div style={{width:(pct||0)+"%",height:"100%",background:C.brass,borderRadius:7}}/></div>
+      <div style={{flex:1,height:7,borderRadius:8,background:C.hair,overflow:"hidden"}}><div style={{width:(pct||0)+"%",height:"100%",background:C.brass,borderRadius:8}}/></div>
       <b style={{fontSize:11,color:C.navy}}>{pct}%</b>
       {lk?(()=>{const live=l.filter(p=>!p.epc),paid=live.filter(p=>p.done).reduce((a,p)=>a+p.montant,0);return <span style={{fontSize:10,color:C.mute,whiteSpace:"nowrap"}}>{fmtEur(paid)} <span style={{color:C.faint}}>encaissés</span></span>;})():mt&&<span style={{fontSize:10,color:C.mute,whiteSpace:"nowrap"}}>{fmtEur(mt*(pct||0)/100)} <span style={{color:C.faint}}>encaissés</span></span>}
     </div>
@@ -314,9 +314,9 @@ function PjPage({i,label,page,total}){
   const big=(v,c)=><div style={{fontFamily:F_DISPLAY,fontSize:27,fontWeight:500,color:c||C.navy,lineHeight:1,letterSpacing:"-.02em",whiteSpace:"nowrap"}}>{v}</div>;
   const note=t=><div style={{fontSize:9.5,color:C.mute,marginTop:4,lineHeight:1.35}}>{t}</div>;
   return(<Page>
-    <Masthead eyebrow={label} title={<span style={{display:"inline-flex",alignItems:"baseline",gap:16}}><span style={{fontSize:36,fontWeight:700,letterSpacing:"-.02em",whiteSpace:"nowrap"}}>{r.pj}</span>{r.gamme&&<span style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:26,fontWeight:500,color:C.navy3}}><span style={{width:11,height:11,borderRadius:"50%",background:C.brass,alignSelf:"center"}}/>{r.gamme}</span>}{m.numSerie&&<span title="N° de série" style={{alignSelf:"center",fontSize:14,fontWeight:600,color:C.navy2,background:C.wash,border:"1px solid "+C.hair,borderRadius:7,padding:"2px 10px",letterSpacing:".02em",whiteSpace:"nowrap"}}>S/N {m.numSerie}</span>}</span>}
+    <Masthead eyebrow={label} title={<span style={{display:"inline-flex",alignItems:"baseline",gap:16}}><span style={{fontSize:36,fontWeight:700,letterSpacing:"-.02em",whiteSpace:"nowrap"}}>{r.pj}</span>{r.gamme&&<span style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:26,fontWeight:500,color:C.navy3}}><span style={{width:11,height:11,borderRadius:"50%",background:C.brass,alignSelf:"center"}}/>{r.gamme}</span>}{m.numSerie&&<span title="N° de série" style={{alignSelf:"center",fontSize:14,fontWeight:600,color:C.navy2,background:C.wash,border:"1px solid "+C.hair,borderRadius:8,padding:"2px 10px",letterSpacing:".02em",whiteSpace:"nowrap"}}>S/N {m.numSerie}</span>}</span>}
       sub={<><span style={{fontSize:14,fontWeight:500,color:C.ink2}}>{m.nomProjet||r.pj}</span>{m.chefProjet&&m.chefProjet!=="—"&&<span>{m.chefProjet}</span>}<span style={{display:"inline-flex",alignItems:"center",gap:6,color:C.ink2,fontWeight:600}}><span style={{width:7,height:7,borderRadius:"50%",background:em.text}}/>{em.label}</span>{hasPays&&<span style={{display:"inline-flex",alignItems:"center",gap:6}}><CountryFlag pays={m.pays} size={12}/>{m.pays}</span>}</>}
-      right={wl?<span style={{display:"inline-flex",alignItems:"center",gap:4,background:TINT[wl],color:FC[wl],borderRadius:99,padding:"3px 12px 3px 5px",fontSize:10.5,fontWeight:800}}><Orb lv={wl} size={7}/>&nbsp;Statut global : {LEV[wl]}</span>:null}/>
+      right={wl?<span style={{display:"inline-flex",alignItems:"center",gap:4,background:TINT[wl],color:FC[wl],borderRadius:999,padding:"3px 12px 3px 5px",fontSize:10.5,fontWeight:800}}><Orb lv={wl} size={7}/>&nbsp;Statut global : {LEV[wl]}</span>:null}/>
     <div style={{flex:1,minHeight:0,padding:"4mm 12mm 0",display:"flex",flexDirection:"column",gap:"4mm"}}>
       <Section title="Statut global" right={i.meta.feuxAt?"évalué le "+fd(dOf(i.meta.feuxAt)):null}>
         <div style={{display:"flex"}}>
@@ -348,7 +348,7 @@ function PjPage({i,label,page,total}){
               {k==="tests"&&r.testsFin&&<div style={{fontSize:9.5,color:C.mute,marginTop:1}}>→ {fd(dOf(r.testsFin))}</div>}
               <div style={{marginTop:4,minHeight:17,display:"flex",justifyContent:"center",alignItems:"center",gap:7,fontSize:9.5,color:C.faint,flexWrap:"wrap"}}>
                 {iv&&dl!==0&&<span style={{textDecoration:"line-through"}}>{fdm(iv)}</span>}{delta(dl)}
-                {k==="tests"&&kind&&<span style={{background:presenceBg(kind),color:PRESENCE_META[kind].ink,borderRadius:99,padding:"2px 10px",fontWeight:800,fontSize:9.5}}>{PRESENCE_META[kind].label}{presenceDateText(r.clientPresence)?" · "+presenceDateText(r.clientPresence):""}</span>}
+                {k==="tests"&&kind&&<span style={{background:presenceBg(kind),color:PRESENCE_META[kind].ink,borderRadius:999,padding:"2px 10px",fontWeight:800,fontSize:9.5}}>{PRESENCE_META[kind].label}{presenceDateText(r.clientPresence)?" · "+presenceDateText(r.clientPresence):""}</span>}
               </div>
             </div>);})}
         </div>
@@ -365,7 +365,7 @@ function PjPage({i,label,page,total}){
         <Section title="Risques & points d'attention" style={{minWidth:0}}>
           {i.types.length===0&&<div style={{display:"flex",alignItems:"center",gap:9,fontSize:11.5,color:C.mute,padding:"4px 0"}}><Orb lv="green" size={9}/>Aucun point signalé sur ce projet.</div>}
           {i.types.slice(0,4).map(([t,d])=><div key={t} style={{display:"grid",gridTemplateColumns:"1fr 74px 34px",gap:10,alignItems:"center",fontSize:11,padding:"4px 0"}}>
-            <span style={{fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{t}</span><div style={{height:5,borderRadius:5,background:C.hair,overflow:"hidden"}}><div style={{width:d/i.types[0][1]*100+"%",height:"100%",background:C.red,borderRadius:5}}/></div><b style={{textAlign:"right",fontVariantNumeric:"tabular-nums"}}>{d} j</b></div>)}
+            <span style={{fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{t}</span><div style={{height:5,borderRadius:4,background:C.hair,overflow:"hidden"}}><div style={{width:d/i.types[0][1]*100+"%",height:"100%",background:C.red,borderRadius:4}}/></div><b style={{textAlign:"right",fontVariantNumeric:"tabular-nums"}}>{d} j</b></div>)}
           {i.types.length>4&&<div style={{fontSize:9.5,color:C.mute,marginTop:2}}>+ {i.types.length-4} autre{i.types.length-4>1?"s":""} {plural(i.types.length-4,"cause","causes")}</div>}
           <div style={{marginTop:"4mm"}}><Cap style={{fontSize:8,marginBottom:4}}>Major components{compPct(m)!=null?" · "+compPct(m)+" %":""}</Cap><CompBlock m={m}/></div>
         </Section>
@@ -446,8 +446,8 @@ export function CodirDialog({data,initialData,comments,delays,progress,initialPj
         <label style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:12.5,color:T.ink500,fontWeight:600,cursor:"pointer"}}><input type="checkbox" checked={withCover} onChange={e=>setWithCover(e.target.checked)}/>Page de garde</label>
         <label style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:12.5,color:T.ink500,fontWeight:600,cursor:"pointer"}}><input type="checkbox" checked={withSummary} onChange={e=>setWithSummary(e.target.checked)}/>Page de synthèse</label>
         <span style={{marginLeft:"auto",fontSize:12.5,color:T.ink500}}>{chosen.length} projet{chosen.length>1?"s":""} · {total} page{total>1?"s":""}</span>
-        <button disabled={total===0} onClick={()=>window.print()} style={{border:"none",borderRadius:9,padding:"8px 16px",fontWeight:700,fontSize:13.5,fontFamily:T.font,color:"#fff",cursor:total?"pointer":"default",background:total?T.navy700:T.ink100}}>Exporter en PDF</button>
-        <button onClick={onClose} style={{border:"1px solid "+T.line,borderRadius:9,padding:"7px 14px",fontWeight:700,fontSize:13,fontFamily:T.font,background:"transparent",color:T.ink700,cursor:"pointer"}}>Fermer</button>
+        <button disabled={total===0} onClick={()=>window.print()} style={{border:"none",borderRadius:8,padding:"8px 16px",fontWeight:700,fontSize:13.5,fontFamily:T.font,color:"#fff",cursor:total?"pointer":"default",background:total?T.navy700:T.ink100}}>Exporter en PDF</button>
+        <button onClick={onClose} style={{border:"1px solid "+T.line,borderRadius:8,padding:"7px 14px",fontWeight:700,fontSize:13,fontFamily:T.font,background:"transparent",color:T.ink700,cursor:"pointer"}}>Fermer</button>
       </div>
       <div style={{flex:1,minHeight:0,display:"flex"}}>
         <div className="codir-noprint" style={{width:290,flexShrink:0,borderRight:"1px solid "+T.line,background:T.card,display:"flex",flexDirection:"column",minHeight:0}}>

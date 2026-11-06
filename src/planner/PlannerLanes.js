@@ -38,15 +38,15 @@ function StepDialog({ it, step, plan, cal, onApply, onClose }) {
     if (w0 != null && work !== "" && Number(work) !== w0) np = setWork(np, it.pj, step, Number(work));
     onApply(np, { pj: it.pj, key: !free && start !== n.start ? it.key : null, want: !free && start !== n.start ? cal.dateOf(cal.idxOnOrAfter(start)) : null });
   };
-  const fld = { padding: "6px 8px", minHeight: 32, border: "1px solid " + C.line, borderRadius: 6, background: C.bg, color: C.ink, fontFamily: FONT, fontSize: 13, boxSizing: "border-box", width: "100%" };
+  const fld = { padding: "6px 8px", minHeight: 32, border: "1px solid " + C.line, borderRadius: 8, background: C.bg, color: C.ink, fontFamily: FONT, fontSize: 13, boxSizing: "border-box", width: "100%" };
   const lab = { display: "flex", flexDirection: "column", gap: 4, fontSize: 12, fontWeight: 600, color: C.ink3 };
-  const btn = primary => ({ minHeight: 34, padding: "0 14px", borderRadius: 6, border: primary ? "none" : "1px solid " + C.line, background: primary ? C.ink : C.bg, color: primary ? C.bg : C.ink2, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: FONT });
+  const btn = primary => ({ minHeight: 34, padding: "0 14px", borderRadius: 8, border: primary ? "none" : "1px solid " + C.line, background: primary ? C.ink : C.bg, color: primary ? C.bg : C.ink2, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: FONT });
   const unit = step === "tests" ? "heures d'essai" : "heures atelier";
   // rendu dans <body> : à l’intérieur de la zone qui défile du planificateur, la fenêtre se plaçait hors de l’écran
   return createPortal(<div onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 10005, background: "rgba(8,12,28,.4)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-    <div role="dialog" aria-modal="true" aria-label={"Modifier " + it.pj + " · " + STEP_LABEL[step]} style={{ width: "min(420px,100%)", background: C.bg, color: C.ink, border: "1px solid " + C.line, borderRadius: 10, boxShadow: T.shadowLg, fontFamily: FONT }}>
+    <div role="dialog" aria-modal="true" aria-label={"Modifier " + it.pj + " · " + STEP_LABEL[step]} style={{ width: "min(420px,100%)", background: C.bg, color: C.ink, border: "1px solid " + C.line, borderRadius: 12, boxShadow: T.shadowLg, fontFamily: FONT }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderBottom: "1px solid " + C.line }}>
-        <span style={{ width: 12, height: 12, borderRadius: 3, background: STEP_COLOR[step], flex: "none" }} />
+        <span style={{ width: 12, height: 12, borderRadius: 4, background: STEP_COLOR[step], flex: "none" }} />
         <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontWeight: 700, fontSize: 15 }}><span style={{ fontFamily: MONO }}>{it.pj}</span> · {STEP_LABEL[step]}</div>
           <div style={{ fontSize: 12, color: C.ink3 }}>Actuellement : {fmtIso(n.start)}{ms ? "" : " → " + fmtIso(n.finish) + " · " + n.dur + " j ouvrés"}{w0 != null ? " · " + w0 + " h" : ""}</div>
           <div style={{ fontSize: 12, color: n.snet ? C.ink : C.ink3, marginTop: 2 }}>{n.snet ? "📌 " : ""}{startReason(plan, n)}</div></div>
@@ -204,8 +204,8 @@ export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load,
               {tl.zoom === "day" && <span style={{ fontSize: 9, color: C.ink3 }}>{m.sub}</span>}<span style={m.today ? { background: C.ink, color: C.bg, borderRadius: 8, padding: "0 5px" } : undefined}>{m.label}</span></div>)}
             {showGauge && Array.from({ length: Math.ceil((tl.hi - lo + 1) / 7) }, (_, i) => {
               const n = lo + i * 7, w = wmap.get(isoOfDay(n)); if (!w) return null; const r = w.cap > 0 ? w.hours / w.cap : (w.hours > 0 ? 9 : 0); const over = w.over;
-              return (<div key={"g" + i} title={Math.round(w.hours) + " h planifiées / " + Math.round(w.cap) + " h de capacité"} style={{ position: "absolute", left: i * 7 * px + 3, width: 7 * px - 6, top: HEAD1 + HEAD2 + 7, height: 4, borderRadius: 2, background: C.line2 }}>
-                <div style={{ width: Math.min(100, r * 100) + "%", height: "100%", borderRadius: 2, background: over ? C.bad : r > 0.85 ? C.warn : C.ok }} />
+              return (<div key={"g" + i} title={Math.round(w.hours) + " h planifiées / " + Math.round(w.cap) + " h de capacité"} style={{ position: "absolute", left: i * 7 * px + 3, width: 7 * px - 6, top: HEAD1 + HEAD2 + 7, height: 4, borderRadius: 4, background: C.line2 }}>
+                <div style={{ width: Math.min(100, r * 100) + "%", height: "100%", borderRadius: 4, background: over ? C.bad : r > 0.85 ? C.warn : C.ok }} />
                 {px >= 10 && <span style={{ position: "absolute", left: 0, top: 5, fontSize: 9, fontFamily: MONO, color: over ? C.bad : C.ink3, whiteSpace: "nowrap" }}>{Math.round(w.hours)}</span>}
               </div>);
             })}
@@ -241,13 +241,13 @@ export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load,
               if (l.ms) {
                 const y = it.y; return (<div key={it.key} {...common} onPointerDown={e => startDrag(e, { kind: "move", pj: it.pj, step: l.step, key: it.key, node: n })} onClick={() => { setSel({ pj: it.pj, step: l.step }); if (!readOnly && Date.now() - dragged.current > 300) setEdit({ it, step: l.step }); }}
                   style={{ position: "absolute", left: it.cx - 6, top: y, height: BH, display: "flex", alignItems: "center", gap: 6, opacity: dim ? 0.3 : 1, cursor: readOnly ? "default" : "grab", zIndex: on ? 5 : 2, whiteSpace: "nowrap" }}>
-                  <span style={{ width: 11, height: 11, background: col, transform: "rotate(45deg)", borderRadius: 1.5, outline: on ? "2px solid " + C.ink : ch ? "2px dashed #E08A00" : "none", outlineOffset: 2, flex: "none", marginLeft: 0 }} />
+                  <span style={{ width: 11, height: 11, background: col, transform: "rotate(45deg)", borderRadius: 4, outline: on ? "2px solid " + C.ink : ch ? "2px dashed #E08A00" : "none", outlineOffset: 2, flex: "none", marginLeft: 0 }} />
                   <span style={{ fontSize: FS + 0.5, fontWeight: on ? 700 : 500, color: on ? C.ink : C.ink2, fontFamily: MONO }}>{it.pj}</span>
                 </div>);
               }
               return (<div key={it.key} {...common} onPointerDown={e => startDrag(e, { kind: "move", pj: it.pj, step: l.step, key: it.key, node: n })} onClick={() => { setSel({ pj: it.pj, step: l.step }); if (!readOnly && Date.now() - dragged.current > 300) setEdit({ it, step: l.step }); }}
-                style={{ position: "absolute", left: it.x, top: it.y, width: it.w, height: BH, borderRadius: 3, background: col, opacity: dim ? 0.28 : 1, outline: on ? "2px solid " + C.ink : ch ? "2px dashed #E08A00" : "none", outlineOffset: 1, display: "flex", alignItems: "center", padding: "0 6px", gap: 5, color: "#fff", fontSize: FS, fontWeight: 500, overflow: "hidden", whiteSpace: "nowrap", cursor: readOnly ? "default" : "grab", zIndex: on ? 5 : 2, boxSizing: "border-box" }}>
-                {rank > 0 && it.w > 36 && <span style={{ fontFamily: MONO, fontSize: 9.5, background: "rgba(255,255,255,.25)", borderRadius: 3, padding: "0 3px", flex: "none" }}>{rank}</span>}
+                style={{ position: "absolute", left: it.x, top: it.y, width: it.w, height: BH, borderRadius: 4, background: col, opacity: dim ? 0.28 : 1, outline: on ? "2px solid " + C.ink : ch ? "2px dashed #E08A00" : "none", outlineOffset: 1, display: "flex", alignItems: "center", padding: "0 6px", gap: 5, color: "#fff", fontSize: FS, fontWeight: 500, overflow: "hidden", whiteSpace: "nowrap", cursor: readOnly ? "default" : "grab", zIndex: on ? 5 : 2, boxSizing: "border-box" }}>
+                {rank > 0 && it.w > 36 && <span style={{ fontFamily: MONO, fontSize: 9.5, background: "rgba(255,255,255,.25)", borderRadius: 4, padding: "0 3px", flex: "none" }}>{rank}</span>}
                 <span style={{ fontFamily: MONO, pointerEvents: "none", overflow: "hidden", textOverflow: "ellipsis" }}>{it.out ? "" : label(it)}</span>
                 {it.w > 96 && <span style={{ marginLeft: "auto", opacity: 0.85, pointerEvents: "none", flex: "none", fontFamily: MONO }}>{n.dur} j</span>}
                 {pinned && <span aria-hidden="true" style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: "rgba(0,0,0,.35)" }} />}

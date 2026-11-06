@@ -22,7 +22,7 @@ export function StageTimelineDialog({ onClose }) {
   const nodes = [...STAGES.map(s => ({ id: s.id, label: s.label, range: s.from + " → " + s.to + " %", steps: s.steps })), { id: "SHIPPED", label: "Expédiée", range: "100 %", steps: ["Machine expédiée au client"] }];
   const wrap = { overflowWrap: "anywhere", minWidth: 0 };
   return createPortal(<div className="enogia-modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 20010, background: "rgba(15,25,40,.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-    <div role="dialog" aria-modal="true" aria-labelledby="stg-title" className="enogia-modal-pop" style={{ background: T.card, color: T.ink900, borderRadius: 16, border: "1px solid " + T.line, boxShadow: T.shadowLg, width: "min(1040px,100%)", maxHeight: "92vh", overflowY: "auto", overflowX: "hidden", fontFamily: T.font, padding: "22px 26px 26px", boxSizing: "border-box" }}>
+    <div role="dialog" aria-modal="true" aria-labelledby="stg-title" className="enogia-modal-pop" style={{ background: T.card, color: T.ink900, borderRadius: 12, border: "1px solid " + T.line, boxShadow: T.shadowLg, width: "min(1040px,100%)", maxHeight: "92vh", overflowY: "auto", overflowX: "hidden", fontFamily: T.font, padding: "22px 26px 26px", boxSizing: "border-box" }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
         <div style={{ flex: 1, ...wrap }}>
           <h2 id="stg-title" style={{ margin: 0, fontSize: FZ.lg, fontWeight: 700 }}>Étapes de production chez ENOGIA</h2>

@@ -25,7 +25,7 @@ export function CompareFiles({ onOpenPj, defaultOpen }) {
   const [open, setOpen] = useState(!!defaultOpen);
   const [oldF, setOldF] = useState(null); const [newF, setNewF] = useState(null);
   const [res, setRes] = useState(null); const [err, setErr] = useState(""); const [busy, setBusy] = useState(false);
-  const card = { background: T.card, border: "1px solid " + T.line, borderRadius: 16, boxShadow: "0 1px 3px rgba(0,0,0,.05)", overflow: "hidden" };
+  const card = { background: T.card, border: "1px solid " + T.line, borderRadius: 12, boxShadow: "0 1px 3px rgba(0,0,0,.05)", overflow: "hidden" };
   const run = async () => {
     setBusy(true); setErr(""); setRes(null);
     try {

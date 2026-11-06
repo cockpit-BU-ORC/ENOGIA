@@ -84,7 +84,7 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
         {!embedded&&<><PjPlate pj={pj} size="lg"/>
         <Badge etat={r.etat}/></>}
         <EpcTag meta={meta}/>
-        {r.gamme&&<span style={{fontFamily:T.fontLabel,fontSize:12,fontWeight:600,color:T.ink700,border:"1px solid "+T.line,borderRadius:6,padding:"1px 7px"}}>{r.gamme}</span>}
+        {r.gamme&&<span style={{fontFamily:T.fontLabel,fontSize:12,fontWeight:600,color:T.ink700,border:"1px solid "+T.line,borderRadius:8,padding:"1px 7px"}}>{r.gamme}</span>}
         {!editingMeta&&meta.nomProjet&&meta.nomProjet!=="—"&&<span style={{fontFamily:T.fontDisplay,fontSize:20,fontWeight:600,letterSpacing:"-.01em",color:T.ink900,minWidth:0,lineHeight:1.15,flex:"1 1 140px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} title={meta.nomProjet}>{meta.nomProjet}</span>}
         <span style={{display:"inline-flex",gap:6,alignItems:"center",marginLeft:"auto",flexShrink:0}}>
           {!embedded&&<button onClick={()=>setDetailMode(detailMode==="popup"?"panel":"popup")} title={detailMode==="popup"?"Afficher les fiches dans un volet à droite":"Afficher les fiches dans une fenêtre centrale"} aria-label={detailMode==="popup"?"Passer en volet latéral":"Passer en pop-up central"} style={{background:T.panel,border:"none",borderRadius:8,height:30,padding:"0 9px",fontSize:FZ.xs,fontWeight:700,cursor:"pointer",color:T.ink700,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font}}><NavIcon name={detailMode==="popup"?"sidepanel":"popup"} size={13}/>{detailMode==="popup"?"Volet":"Pop-up"}</button>}
@@ -111,7 +111,7 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
         const nDays=next?Math.round((next[2]-t0)/86400000):null;
         const pd=presenceDates(r.clientPresence),pres=pd.client||pd.nobo;
         const nCom=(comments?.[pj]||[]).filter(c=>!c.private).length;
-        const Num=({l,v,c})=><div style={{background:T.panel,borderRadius:10,padding:"7px 10px",minWidth:0}}><div style={{fontFamily:T.fontLabel,fontSize:12,color:T.ink500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{l}</div><div style={{fontFamily:T.fontDisplay,fontSize:17,fontWeight:600,color:c||T.ink900,fontVariantNumeric:"tabular-nums",lineHeight:1.2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{v}</div></div>;
+        const Num=({l,v,c})=><div style={{background:T.panel,borderRadius:12,padding:"7px 10px",minWidth:0}}><div style={{fontFamily:T.fontLabel,fontSize:12,color:T.ink500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{l}</div><div style={{fontFamily:T.fontDisplay,fontSize:17,fontWeight:600,color:c||T.ink900,fontVariantNumeric:"tabular-nums",lineHeight:1.2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{v}</div></div>;
         return(<>
           <div role="list" aria-label="Parcours de la machine" style={{display:"grid",gridTemplateColumns:"repeat(5,minmax(0,1fr))",gap:3,marginBottom:10}}>
             {steps.map(([k,l,dt,tone],i)=>{const done=i<curI||(i===curI&&i===4),on=i===curI&&i!==4,fill=done||on;return(
@@ -144,7 +144,7 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
 
       {tab==="apercu"&&<>
         {(()=>{const L=(comments?.[pj]||[]).filter(c=>!c.private);const c=L.slice().sort((a,b)=>String(a.date||"").localeCompare(String(b.date||""))).pop();return c?(
-          <button type="button" onClick={()=>setTab("commentaires")} style={{display:"block",width:"100%",textAlign:"left",background:T.panel,border:"none",borderRadius:10,padding:"8px 10px",marginBottom:14,cursor:"pointer",fontFamily:T.font,color:T.ink700,fontSize:FZ.xs,lineHeight:1.45}}>
+          <button type="button" onClick={()=>setTab("commentaires")} style={{display:"block",width:"100%",textAlign:"left",background:T.panel,border:"none",borderRadius:12,padding:"8px 10px",marginBottom:14,cursor:"pointer",fontFamily:T.font,color:T.ink700,fontSize:FZ.xs,lineHeight:1.45}}>
             <span style={{color:T.ink500}}>Dernier commentaire · {c.author||"—"} · {relTime(c.date)} : </span>« {String(c.text||"").replace(/\s+/g," ").slice(0,160)}{String(c.text||"").length>160?"…":""} »
           </button>):null;})()}
         {!embedded&&<><div style={{display:"grid",gridTemplateColumns:"repeat("+months.length+",minmax(0,1fr))",gap:8}}>
@@ -191,7 +191,7 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
   // v199 : sous la ligne de la Liste, la fiche est un simple bloc déplié (liseré de l'état à gauche, fond légèrement teinté)
   if(embedded)return(<div className="enogia-row-open" style={{padding:"10px 16px 12px",background:T.surface,borderLeft:"3px solid "+(((r&&ETAT_META[r.etat])||{}).bar||T.teal500),fontFamily:T.font}}>{body()}</div>);
   return(<div className={inline?"":"enogia-panel-backdrop"} onClick={inline?undefined:onClose} style={inline?{width:"100%",height:"100%"}:center?{position:"fixed",inset:0,background:"rgba(8,12,28,.45)",backdropFilter:"blur(3px)",WebkitBackdropFilter:"blur(3px)",zIndex:9998,fontFamily:T.font,display:"flex",alignItems:"center",justifyContent:"center",padding:16}:{position:"fixed",inset:0,background:"transparent",zIndex:9998,fontFamily:T.font}}>
-    <div role={inline?undefined:"dialog"} aria-modal={inline?undefined:"true"} aria-label={inline?undefined:"Fiche "+pj} className={inline?"":center?"enogia-pop-in":"enogia-panel-slide"} onClick={inline?undefined:e=>e.stopPropagation()} style={inline?{position:"sticky",top:16,width:"100%",maxHeight:"calc(100dvh - 32px)",background:stripeBg(((r&&ETAT_META[r.etat])||{}).bar||stripeHues().brand,T.card,4),padding:pad,overflowY:"auto",border:"1px solid "+T.line,borderRadius:12,boxSizing:"border-box"}:center?{position:"relative",width:"min(600px,100%)",maxHeight:"min(90vh,860px)",background:stripeBg(((r&&ETAT_META[r.etat])||{}).bar||stripeHues().brand,T.card,4),padding:pad+4,overflowY:"auto",border:"1px solid "+T.line,borderRadius:16,boxShadow:"0 24px 70px rgba(0,0,0,.35)",boxSizing:"border-box"}:{position:"fixed",top:0,right:0,bottom:0,width:"min(440px,100vw)",background:stripeBg(((r&&ETAT_META[r.etat])||{}).bar||stripeHues().brand,T.card,4),padding:pad,overflowY:"auto",boxShadow:"-10px 0 36px rgba(12,36,54,.28)"}}>
+    <div role={inline?undefined:"dialog"} aria-modal={inline?undefined:"true"} aria-label={inline?undefined:"Fiche "+pj} className={inline?"":center?"enogia-pop-in":"enogia-panel-slide"} onClick={inline?undefined:e=>e.stopPropagation()} style={inline?{position:"sticky",top:16,width:"100%",maxHeight:"calc(100dvh - 32px)",background:stripeBg(((r&&ETAT_META[r.etat])||{}).bar||stripeHues().brand,T.card,4),padding:pad,overflowY:"auto",border:"1px solid "+T.line,borderRadius:12,boxSizing:"border-box"}:center?{position:"relative",width:"min(600px,100%)",maxHeight:"min(90vh,860px)",background:stripeBg(((r&&ETAT_META[r.etat])||{}).bar||stripeHues().brand,T.card,4),padding:pad+4,overflowY:"auto",border:"1px solid "+T.line,borderRadius:12,boxShadow:"0 24px 70px rgba(0,0,0,.35)",boxSizing:"border-box"}:{position:"fixed",top:0,right:0,bottom:0,width:"min(440px,100vw)",background:stripeBg(((r&&ETAT_META[r.etat])||{}).bar||stripeHues().brand,T.card,4),padding:pad,overflowY:"auto",boxShadow:"-10px 0 36px rgba(12,36,54,.28)"}}>
       {body()}
     </div>
   </div>);
@@ -248,7 +248,7 @@ export function EditMetaForm({meta,gamme,onSave,onCancel}){
     </div>
     <ChefsEpcFields value={extra} onChange={setExtra} mainChef={chefProjet}/>
     <div style={{display:"flex",gap:8,marginTop:2}}>
-      <button onClick={submit} disabled={saving} style={{padding:"8px 16px",borderRadius:8,border:"none",background:T.teal500,color:"#fff",fontSize:FZ.sm,fontWeight:700,cursor:saving?"default":"pointer",opacity:saving?.6:1}}>{saving?"Enregistrement…":"Enregistrer"}</button>
+      <button onClick={submit} disabled={saving} style={{padding:"8px 16px",borderRadius:8,border:"none",background:T.ink900,color:T.card,fontSize:FZ.sm,fontWeight:700,cursor:saving?"default":"pointer",opacity:saving?.6:1}}>{saving?"Enregistrement…":"Enregistrer"}</button>
       <button onClick={onCancel} style={{padding:"8px 12px",borderRadius:8,border:"none",background:T.panel,color:T.ink700,fontSize:FZ.sm,fontWeight:600,cursor:"pointer"}}>Annuler</button>
     </div>
   </div>);
@@ -381,7 +381,7 @@ export function DelayAllocations({pj,delays,delayTypes,setDelayTypes,addDelayAll
         capricieux." tenait à peine dans l'ancien champ. */}
     <textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="Note (optionnel)" rows={2} maxLength={300} style={{width:"100%",padding:"8px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700,resize:"vertical",boxSizing:"border-box",marginBottom:8,background:T.card}}/>
     <div style={{display:"flex",justifyContent:"flex-end",marginBottom:10}}>
-      <button onClick={submit} style={{padding:"8px 16px",borderRadius:8,border:"none",background:T.teal500,color:"#fff",fontSize:FZ.sm,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>Allouer</button>
+      <button onClick={submit} style={{padding:"8px 16px",borderRadius:8,border:"none",background:T.ink900,color:T.card,fontSize:FZ.sm,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>Allouer</button>
     </div>
     {err&&<div style={{fontSize:FZ.sm,color:T.red500,marginBottom:8}}>{err}</div>}
     {delays.length>0&&<div style={{display:"flex",flexDirection:"column",gap:8,maxHeight:220,overflowY:"auto"}}>

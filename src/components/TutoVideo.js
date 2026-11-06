@@ -37,7 +37,7 @@ export function TutoVideoModal({ cfg, onClose }) {
           <div id="tuto-title" style={{ fontFamily: T.fontDisplay, fontWeight: 700, fontSize: FZ.lg }}>{(cfg && cfg.title) || "Le tour du Cockpit en vidéo"}</div>
           <div style={{ fontSize: FZ.xs, color: T.ink500 }}>À revoir jusqu'au {fmt(cfg.until)} depuis la cloche en haut à droite.</div>
         </div>
-        <button type="button" onClick={onClose} aria-label="Fermer la vidéo" style={{ display: "inline-flex", alignItems: "center", gap: 6, border: "1px solid " + T.line, background: T.card, color: T.ink900, borderRadius: 9, height: 36, padding: "0 12px", cursor: "pointer", fontSize: FZ.sm, fontWeight: 700, fontFamily: T.font, flexShrink: 0 }}><NavIcon name="close" size={14} />Fermer</button>
+        <button type="button" onClick={onClose} aria-label="Fermer la vidéo" style={{ display: "inline-flex", alignItems: "center", gap: 6, border: "1px solid " + T.line, background: T.card, color: T.ink900, borderRadius: 8, height: 36, padding: "0 12px", cursor: "pointer", fontSize: FZ.sm, fontWeight: 700, fontFamily: T.font, flexShrink: 0 }}><NavIcon name="close" size={14} />Fermer</button>
       </div>
       <div style={{ position: "relative", width: "100%", aspectRatio: "16 / 9", background: "#000" }}>
         {v.kind === "video"
@@ -50,7 +50,7 @@ export function TutoVideoModal({ cfg, onClose }) {
 
 // Bouton « Vidéo » (plus affiché dans la barre depuis la v243 : la vidéo est dans la cloche)
 export function TutoVideoButton({ onOpen }) {
-  return <button type="button" onClick={onOpen} title="Revoir la vidéo de présentation" aria-label="Revoir la vidéo de présentation" style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 32, padding: "0 10px", border: "1px solid " + T.line, borderRadius: 9, background: T.card, color: T.ink900, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}><NavIcon name="play" size={14} />Vidéo</button>;
+  return <button type="button" onClick={onOpen} title="Revoir la vidéo de présentation" aria-label="Revoir la vidéo de présentation" style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 32, padding: "0 10px", border: "1px solid " + T.line, borderRadius: 8, background: T.card, color: T.ink900, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}><NavIcon name="play" size={14} />Vidéo</button>;
 }
 
 // Manager › Réglages › Nouveautés (propriétaire) : lien, date de fin, titre ; « Publier » change l'identifiant → elle se rouvre pour tous
@@ -73,7 +73,7 @@ export function TutoVideoSettings({ profiles, saveProfiles }) {
       <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: FZ.xs, fontWeight: 600, color: T.ink500, flex: "2 1 320px" }}>Lien de la vidéo<input value={url} onChange={e => { setUrl(e.target.value); setMsg(""); }} placeholder="https://drive.google.com/file/d/…/view" style={field} /></label>
       <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: FZ.xs, fontWeight: 600, color: T.ink500, flex: "1 1 200px" }}>Titre<input value={title} onChange={e => setTitle(e.target.value)} style={field} /></label>
       <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: FZ.xs, fontWeight: 600, color: T.ink500 }}>Disponible jusqu'au<input type="date" value={until} onChange={e => setUntil(e.target.value)} style={field} /></label>
-      <button type="button" onClick={() => save(true)} style={{ ...field, background: T.teal500, color: T.card, border: "none", fontWeight: 700, cursor: "pointer" }}>Publier</button>
+      <button type="button" onClick={() => save(true)} style={{ ...field, background: T.ink900, color: T.card, border: "none", fontWeight: 700, cursor: "pointer" }}>Publier</button>
       {cur.id && <button type="button" onClick={() => save(false)} style={{ ...field, cursor: "pointer", fontWeight: 700 }}>Enregistrer sans rouvrir</button>}
       {cur.id && <button type="button" onClick={stop} style={{ ...field, cursor: "pointer", fontWeight: 700, color: T.red500 }}>Retirer</button>}
     </div>

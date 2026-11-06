@@ -45,7 +45,7 @@ export function ChangesView({ entries, onOpenPj }) {
   return (<div>
     {title}
     <div style={{ display: "flex", flexWrap: "wrap", gap: 14, alignItems: "flex-start" }}>
-      <nav aria-label="Publications" style={{ flex: "1 1 260px", maxWidth: 320, background: T.card, border: "1px solid " + T.line, borderRadius: 10, padding: "6px 0", position: "sticky", top: 8 }}>
+      <nav aria-label="Publications" style={{ flex: "1 1 260px", maxWidth: 320, background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "6px 0", position: "sticky", top: 8 }}>
         {entries.map((e, i) => { const on = e === cur, n = e.stats ? e.stats.nPj : 0; return (
           <button key={e.at} type="button" onClick={() => setId(e.at)} aria-current={on ? "true" : undefined}
             style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", border: "none", padding: "8px 14px", cursor: "pointer", fontFamily: T.font, color: T.ink900, textAlign: "left", background: on ? T.surfaceAlt : "transparent", boxShadow: on ? "inset 3px 0 0 " + T.ember500 : "none", minHeight: 44 }}>
@@ -59,7 +59,7 @@ export function ChangesView({ entries, onOpenPj }) {
         {idx === entries.length - 1 && <div style={{ fontSize: FZ.xs, color: T.ink500, padding: "6px 14px" }}>Plus ancienne comparaison conservée (20 dernières versions).</div>}
       </nav>
       <section aria-label="Détail de la publication" style={{ flex: "999 1 620px", minWidth: 0, display: "flex", flexDirection: "column", gap: 12 }}>
-        <div style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 10, padding: "12px 16px" }}>
+        <div style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "12px 16px" }}>
           <div style={{ fontSize: FZ.xs, color: T.ink500, fontFamily: T.fontLabel }}>{srcLabel(cur)} du {fmtAt(cur.at)}{cur.by ? " · " + cur.by : ""} — nouvelle version {nowL}, comparée à la {prev}{cur.note ? " — " + cur.note : ""}</div>
           <h2 style={{ margin: "4px 0 0", fontFamily: T.fontDisplay, fontSize: FZ.lg, fontWeight: 700, color: T.ink900 }}>{s.head}</h2>
           {s.sub && <p style={{ margin: "4px 0 0", fontSize: FZ.sm, color: T.ink700 }}>{s.sub}</p>}

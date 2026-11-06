@@ -37,7 +37,7 @@ export function EtatsDialog({ onClose, customEtats, setCustomEtats, etatEdits = 
 
   return createPortal(<div role="dialog" aria-modal="true" aria-label="États des machines" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}
     style={{ position: "fixed", inset: 0, zIndex: 20010, background: "rgba(10,16,28,.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 12 }}>
-    <div style={{ background: T.card, color: T.ink900, borderRadius: 16, boxShadow: T.shadowLg, border: "1px solid " + T.line, width: "min(680px,100%)", maxHeight: "90vh", overflow: "auto", padding: 20, fontFamily: T.font }}>
+    <div style={{ background: T.card, color: T.ink900, borderRadius: 12, boxShadow: T.shadowLg, border: "1px solid " + T.line, width: "min(680px,100%)", maxHeight: "90vh", overflow: "auto", padding: 20, fontFamily: T.font }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
         <div style={{ flex: 1, fontFamily: T.fontDisplay, fontWeight: 700, fontSize: FZ.md }}>États des machines</div>
         <button onClick={onClose} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 999, padding: "4px 12px", fontSize: FZ.xs, fontWeight: 700, cursor: "pointer" }}>Fermer</button>
@@ -47,7 +47,7 @@ export function EtatsDialog({ onClose, customEtats, setCustomEtats, etatEdits = 
       <div style={lbl}>Existants</div>
       {setEtatEdits ? <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
         {builtin.map(e => { const o = etatOrig(e) || {}; const ed = etatEdits[e] || {}; const m = ETAT_META[e]; const changed = !!etatEdits[e];
-          return (<div key={e} style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) auto auto", gap: 8, alignItems: "center", padding: "8px 10px", border: "1px solid " + T.line, borderRadius: 10 }}>
+          return (<div key={e} style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) auto auto", gap: 8, alignItems: "center", padding: "8px 10px", border: "1px solid " + T.line, borderRadius: 12 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flexWrap: "wrap" }}><Chip m={m} label={m.label} />{changed && <span style={{ fontSize: FZ.xs, color: T.ink500 }}>origine : {o.label}</span>}</div>
             <span style={{ fontSize: FZ.xs, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{used(e)} PJ</span>
             {changed ? <button type="button" onClick={() => { const n = { ...etatEdits }; delete n[e]; setEtatEdits(n); }} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "4px 10px", minHeight: 26, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer" }}>Rétablir</button> : <span />}
@@ -63,7 +63,7 @@ export function EtatsDialog({ onClose, customEtats, setCustomEtats, etatEdits = 
       {customEtats.length > 0 && <>
         <div style={lbl}>Créés par vous</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
-          {customEtats.map(e => (<div key={e.id} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "6px 10px", border: "1px solid " + T.line, borderRadius: 10 }}>
+          {customEtats.map(e => (<div key={e.id} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "6px 10px", border: "1px solid " + T.line, borderRadius: 12 }}>
             {ETAT_META[e.id] && <Chip m={ETAT_META[e.id]} label={e.label} />}
             <input defaultValue={e.label} key={e.id + e.label} aria-label={"Nom de l'état " + e.label} maxLength={30} onBlur={ev => { const t = ev.target.value.trim(); if (t && t !== e.label) patch(e.id, { label: t }); else ev.target.value = e.label; }} style={{ ...fld, flex: 1, minWidth: 110 }} />
             <input type="color" value={e.color} onChange={ev => patch(e.id, { color: ev.target.value })} aria-label={"Couleur de l'état " + e.label} style={{ width: 38, height: 30, border: "1px solid " + T.line, borderRadius: 8, background: "transparent", padding: 2, cursor: "pointer" }} />
@@ -81,7 +81,7 @@ export function EtatsDialog({ onClose, customEtats, setCustomEtats, etatEdits = 
       <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap", marginTop: 10 }}>
         {ETAT_SWATCHES.map(c => <button key={c} onClick={() => setColor(c)} title={c} aria-label={"Couleur " + c} style={{ width: 20, height: 20, borderRadius: "50%", border: "2px solid " + (color === c ? T.ink900 : "transparent"), background: c, cursor: "pointer", padding: 0 }} />)}
         {label.trim() && <span style={{ marginLeft: 8 }}><Chip m={pm} label={label.trim()} /></span>}
-        <button onClick={add} disabled={!label.trim()} style={{ marginLeft: "auto", border: "none", borderRadius: 10, padding: "7px 14px", background: label.trim() ? T.navy700 : T.ink100, color: label.trim() ? "#fff" : T.ink500, fontWeight: 800, fontSize: FZ.sm, cursor: label.trim() ? "pointer" : "default" }}>Créer l'état</button>
+        <button onClick={add} disabled={!label.trim()} style={{ marginLeft: "auto", border: "none", borderRadius: 12, padding: "7px 14px", background: label.trim() ? T.navy700 : T.ink100, color: label.trim() ? "#fff" : T.ink500, fontWeight: 800, fontSize: FZ.sm, cursor: label.trim() ? "pointer" : "default" }}>Créer l'état</button>
       </div>
       {err && <div role="alert" style={{ marginTop: 8, fontSize: FZ.xs, color: T.red600, fontWeight: 700 }}>{err}</div>}
     </div>
