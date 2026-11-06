@@ -333,6 +333,12 @@ tr.addtr td{border-bottom:1px solid var(--line);padding:3px 8px 5px;border-left:
   .drow{grid-template-columns:1fr 100px}
   .drow .dt{grid-column:1 / -1;order:3}
 }
+/* v284 (audit apple-design, lot 3) : cases à cocher de 16 px, bouton « Haut de page » après un écran de défilement */
+input[type=checkbox]{width:16px;height:16px;flex-shrink:0}
+#toTop{position:fixed;right:18px;bottom:18px;z-index:50;min-height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-weight:600;font-size:13px;font-family:inherit;cursor:pointer;box-shadow:0 6px 18px rgba(15,25,45,.16);opacity:0;transform:translateY(8px);pointer-events:none;transition:opacity .16s ease,transform .16s ease}
+#toTop.on{opacity:1;transform:none;pointer-events:auto}
+#toTop:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){#toTop{transition:none;transform:none}}
 </style>
 
 <div class="wrap">
@@ -1522,4 +1528,9 @@ setSave('load');render();startDb();
 })();
 </script>
 
+<button id="toTop" type="button" aria-label="Revenir en haut de la page">↑ Haut de page</button>
+<script>(function(){var b=document.getElementById('toTop');if(!b)return;var se=document.scrollingElement||document.documentElement;
+function on(){b.classList.toggle('on',(se.scrollTop||window.scrollY||0)>window.innerHeight);}
+window.addEventListener('scroll',on,{passive:true});on();
+b.addEventListener('click',function(){var rm=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;window.scrollTo({top:0,behavior:rm?'auto':'smooth'});});})();</script>
 </body></html>
