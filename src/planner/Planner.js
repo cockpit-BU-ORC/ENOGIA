@@ -56,10 +56,19 @@ const pgCss = () => `
 .pg-root .pg-split:hover,.pg-root .pg-split:focus-visible{background:linear-gradient(90deg,transparent 3px,${T.teal500} 3px,${T.teal500} 6px,transparent 6px);outline:none}
 `;
 
+// v287 (audit par skill) : fenêtre commune du planificateur déclarée comme les autres fenêtres du site — aria-modal sur le fond
+// (motion.js : entrée / sortie animées, focus placé dedans, Tab piégé, focus rendu à la fermeture), nom = titre, Échap ferme.
+let modalSeq = 0;
 function Modal({ title, onClose, children, width = 720 }) {
-  return (<div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,20,30,.45)", zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, fontFamily: T.font }}>
+  const id = useRef("pg-modal-" + (++modalSeq)).current;
+  const closeRef = useRef(onClose); closeRef.current = onClose;
+  useEffect(() => {
+    const k = e => { if (e.key !== "Escape") return; const top = [...document.querySelectorAll('[aria-modal="true"]')].pop(); if (top && top.getAttribute("aria-labelledby") === id) { e.stopPropagation(); closeRef.current && closeRef.current(); } };
+    document.addEventListener("keydown", k); return () => document.removeEventListener("keydown", k);
+  }, [id]);
+  return (<div role="dialog" aria-modal="true" aria-labelledby={id} onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,20,30,.45)", zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, fontFamily: T.font }}>
     <div onClick={e => e.stopPropagation()} style={{ background: T.card, borderRadius: 12, boxShadow: T.shadowLg, border: "1px solid " + T.line, width: "min(" + width + "px,100%)", maxHeight: "88vh", overflow: "auto", padding: "20px 22px" }}>
-      <div style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: 19, color: T.ink900, marginBottom: 10 }}>{title}</div>
+      <div id={id} style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: 19, color: T.ink900, marginBottom: 10 }}>{title}</div>
       {children}
     </div>
   </div>);

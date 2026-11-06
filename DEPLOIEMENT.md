@@ -2058,3 +2058,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Planificateur : barre d'outils sur deux lignes quand l'écran est étroit.
 - Pas de nouvelle donnée ni de clé `localStorage`. Kits de Jérémie et du responsable achats à renvoyer (rayons changés dans leurs pages).
 - Fichiers : theme.js, tips.js (nouveau), index.js, styles.css, components/SharedUI.js, ManagerFiche.js, ReleaseNotes.js, SavedViews.js, planner/Planner.js, public/index.html, + rayons dans la plupart des composants, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v287 — Fenêtres du Planificateur au clavier
+
+- Demandé : « Fait les corrections + continue l'audit » (audit par skill).
+- Planificateur : les 7 fenêtres (Publier, Modèles par gamme, Historique, Plan vierge, Nouveau PJ, Nouvelle tâche, Niveler) sont modales et nommées, prennent le focus, se ferment avec Échap.
+- Rapport : maquettes-design/audit-par-skill.html (publié).
+- À faire par Gabriel : retirer les pénalités ajoutées par erreur sur PJ473 (Fiches projet › PJ473 › Pénalités de retard › Retirer).
+- Pas de nouvelle donnée ni de clé `localStorage`.
+- Fichiers : planner/Planner.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

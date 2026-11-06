@@ -55,7 +55,7 @@ import { BetaBanner, UserChip } from "./components/AppChrome";
 import { useTurbineDoc, useTestsDoc, useProdTurbines, useDelays, useCashinSync, useAchats } from "./useAppData";
 import { useListFilters, filterOptions, filterRows } from "./listFilters";
 
-const APP_BUILD_VERSION = "2026-11-06-v286-systeme-design";
+const APP_BUILD_VERSION = "2026-11-06-v287-fenetres-planificateur";
 
 export default function App(){
   // Utilisateur connecté via Google, restreint aux comptes @enogia.com (null tant que non connecté).

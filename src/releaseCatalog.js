@@ -735,4 +735,7 @@ export const RELEASE_CATALOG = [
     ["Partout", "Trois arrondis seulement (petit, contrôle, cadre), une seule couleur pour l'action principale, et des étiquettes dans la même police que le texte.", "all"],
     ["Planificateur", "Sur un écran plus étroit, la barre d'outils passe sur deux lignes au lieu de cacher ses menus.", "owner"],
   ] },
+  { v: "287", t: "Fenêtres du Planificateur au clavier", items: [
+    ["Planificateur", "Les fenêtres Publier, Modèles par gamme, Historique, Plan vierge, Nouveau PJ, Nouvelle tâche et Niveler se ferment avec Échap, reçoivent le focus clavier et s'ouvrent comme les autres fenêtres du site.", "owner"],
+  ] },
 ];

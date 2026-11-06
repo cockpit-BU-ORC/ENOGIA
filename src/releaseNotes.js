@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v287",
+    date: "2026-11-06",
+    title: "V287 : fenêtres du Planificateur au clavier",
+    items: [
+      { t: "Planificateur", d: "Les fenêtres se ferment avec Échap et se manient au clavier.", owner: true },
+    ],
+  },
+  {
     id: "2026-11-v286",
     date: "2026-11-06",
     title: "V286 : un seul système de design",
