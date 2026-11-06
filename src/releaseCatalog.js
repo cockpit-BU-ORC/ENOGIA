@@ -713,4 +713,11 @@ export const RELEASE_CATALOG = [
     ["Partout", "Les petits boutons ont une zone de clic d'au moins 28 × 28 px (sans changer leur dessin) ; les textes de 11 px passent à 12 px, ceux de 12,5 px à 13 px ; les initiales des avatars ne descendent plus sous 9 px.", "all"],
     ["Accueil et KPI", "Une seule capacité atelier : celle du planificateur (175 h par semaine s'il n'y a pas de plan). L'accueil compte aussi les jours sans production, comme les KPI.", "admin"],
   ] },
+  { v: "283", t: "Pages plus lisibles : Liste, Planificateur, Gantt, Retards, Personnes", items: [
+    ["Liste", "La vue d'ensemble tient en une ligne de chiffres ; « Répartitions » déplie les quatre graphiques. Le tableau commence plus haut.", "all"],
+    ["Gantt", "La légende est en haut, toujours visible ; chaque machine tient sur deux lignes (le n° de série s'affiche au survol), on en voit davantage.", "all"],
+    ["Planificateur", "Une seule barre d'outils avec les menus « Affichage », « Outils » et « ＋ Ajouter » ; la charge atelier est repliée en une ligne (« Déplier » pour le graphique).", "owner"],
+    ["Retards", "Une cause sans retard devient une bande étroite avec « + » : toutes les autres tiennent à l'écran.", "admin"],
+    ["Personnes et site", "Une ligne par personne, filtres par rôle ; les accès Manager ont leur propre onglet « Accès ».", "owner"],
+  ] },
 ];

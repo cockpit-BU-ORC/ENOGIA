@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v283",
+    date: "2026-11-06",
+    title: "V283 : pages plus lisibles",
+    items: [
+      { t: "Liste", d: "La vue d'ensemble tient en une ligne ; « Répartitions » déplie les graphiques." },
+      { t: "Gantt", d: "Légende en haut et lignes plus basses : plus de machines visibles d'un coup." },
+      { t: "Retards", d: "Les causes sans retard ne prennent plus de place.", admin: true },
+    ],
+  },
+  {
     id: "2026-11-v282",
     date: "2026-11-05",
     title: "V282 : cibles plus grandes, textes plus lisibles",

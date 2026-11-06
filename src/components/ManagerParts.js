@@ -407,7 +407,14 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
         {cols.map(col=>{
           const c=view==="pj"?T.red500:colorOf(col.key);
           const mm=view==="pj"?meta(col.pj):null;
-          return(<div key={col.key} style={{width:268,flexShrink:0,background:T.surfaceAlt,borderRadius:12,display:"flex",flexDirection:"column",maxHeight:"calc(100dvh - 290px)",minHeight:120}}>
+          // v283 (audit apple-design, lot 2) : une cause sans retard devient une bande étroite (nom vertical, « + » pour en déclarer un)
+          if(view!=="pj"&&col.items.length===0)return(<button key={col.key} type="button" onClick={()=>openForm({type:col.key})} title={col.title+" — aucun retard. Cliquer pour en déclarer un."} aria-label={col.title+" : aucun retard. Déclarer un retard dans cette cause"}
+            style={{width:46,flexShrink:0,alignSelf:"stretch",minHeight:200,maxHeight:"calc(100dvh - 290px)",border:"1px dashed "+T.line,borderRadius:12,background:"transparent",display:"flex",flexDirection:"column",alignItems:"center",gap:8,padding:"8px 0",cursor:"pointer",fontFamily:T.font}}>
+            <span aria-hidden="true" style={{width:28,height:28,borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink500,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:FZ.md}}>+</span>
+            <span aria-hidden="true" style={{width:9,height:9,borderRadius:"50%",background:c,flexShrink:0}}/>
+            <span aria-hidden="true" style={{writingMode:"vertical-rl",transform:"rotate(180deg)",fontSize:FZ.sm,fontWeight:600,color:T.ink500,whiteSpace:"nowrap"}}>{col.title} · 0</span>
+          </button>);
+          return(<div key={col.key} style={{flex:"1 1 240px",minWidth:210,maxWidth:340,background:T.surfaceAlt,borderRadius:12,display:"flex",flexDirection:"column",maxHeight:"calc(100dvh - 290px)",minHeight:120}}>
             <div style={{padding:"8px 12px 8px",borderBottom:"2px solid "+c,display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
               <div style={{minWidth:0,flex:1}}>
                 <div style={{display:"flex",alignItems:"center",gap:6,minWidth:0}}>
@@ -417,7 +424,7 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
                 <div style={{fontSize:FZ.xs,color:T.ink500,marginTop:2,overflowWrap:"anywhere"}}>{view==="pj"?(mm.nomProjet||""):col.items.length+" retard"+(col.items.length>1?"s":"")}{view==="pj"?" · "+col.items.length+" retard"+(col.items.length>1?"s":""):""}</div>
               </div>
               <span style={{fontFamily:T.fontDisplay,fontWeight:800,fontSize:FZ.md,color:col.days>0?T.red500:T.ink300,flexShrink:0}}>{col.days}j</span>
-              <button onClick={()=>openForm(view==="pj"?{pj:col.pj}:{type:col.key})} title="Ajouter un retard ici" style={{width:24,height:24,borderRadius:8,border:"none",background:T.card,color:T.ink900,fontSize:FZ.md,fontWeight:700,cursor:"pointer",flexShrink:0}}>+</button>
+              <button onClick={()=>openForm(view==="pj"?{pj:col.pj}:{type:col.key})} title="Ajouter un retard ici" aria-label="Ajouter un retard ici" style={{width:28,height:28,borderRadius:8,border:"none",background:T.card,color:T.ink900,fontSize:FZ.md,fontWeight:700,cursor:"pointer",flexShrink:0}}>+</button>
             </div>
             <div style={{padding:8,display:"flex",flexDirection:"column",gap:8,overflowY:"auto",minHeight:0}}>
               {col.items.length===0&&<div style={{color:T.ink300,fontSize:FZ.xs,textAlign:"center",padding:"12px 6px"}}>Aucun retard.</div>}

@@ -40,7 +40,7 @@ export function bucketsOf(load, cal, mode, plan) {
   return out;
 }
 
-export function PlannerLoad({ plan, load, cal, tl, scrollX, leftW, standalone, mode, setMode, cap, onCap, onCapWeek, small, setSmall, readOnly, onPropose, hasLevelNow, nTooDense }) {
+export function PlannerLoad({ plan, load, cal, tl, scrollX, leftW, standalone, mode, setMode, cap, onCap, onCapWeek, small, setSmall, readOnly, onPropose, hasLevelNow, nTooDense, folded, setFolded, today }) {
   const buckets = useMemo(() => bucketsOf(load, cal, mode, plan), [load, cal, mode, plan]);
   const [hov, setHov] = useState(null); const [ed, setEd] = useState(null); const H = small ? H_SMALL : H_FULL;
   const nSpecial = Object.keys((plan && plan.capWeeks) || {}).length;
@@ -51,9 +51,28 @@ export function PlannerLoad({ plan, load, cal, tl, scrollX, leftW, standalone, m
   const free = buckets.reduce((s, b) => s + Math.max(0, b.cap - b.hours), 0);
   const capW = (Number(cap.people) || 0) * (Number(cap.hours) || 0);
   const hb = hov != null ? buckets.find(b => b.key === hov.key) : null;
+  // v283 (audit apple-design, lot 2) : charge repliée par défaut en une ligne — 12 prochaines périodes en cases (gris = tient, ambre ≥ 90 %, rouge = surcharge)
+  if (folded) {
+    const next = buckets.filter(b => today == null || b.end > today).slice(0, 12);
+    const pk = over.length ? over.reduce((m, b) => (b.cap > 0 && b.hours / b.cap > m.hours / (m.cap || 1) ? b : m), over[0]) : null;
+    return (<section aria-label="Charge atelier (repliée)" className="pg-load" style={{ borderTop: "1px solid " + T.line, background: T.card, position: "sticky", bottom: 0, zIndex: 9 }}>
+      <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", padding: "8px 14px" }}>
+        <b style={{ color: T.ink900, fontSize: 14 }}>Charge atelier</b>
+        <span style={{ fontSize: 12.5, color: T.ink500 }}>{Math.round(capW)} h / sem.</span>
+        <span role="img" aria-label={"Charge des " + next.length + " prochaines périodes : " + next.map(b => b.label + " " + (b.cap > 0 ? Math.round(b.hours / b.cap * 100) : 0) + " %").join(", ")} style={{ display: "inline-flex", gap: 2 }}>
+          {next.map(b => { const r = b.cap > 0 ? b.hours / b.cap : 0; return <span key={b.key} title={b.label + " · " + Math.round(b.hours) + " h / " + Math.round(b.cap) + " h (" + Math.round(r * 100) + " %)"} style={{ width: 16, height: 16, borderRadius: 2, background: r > 1 ? T.red500 : r >= 0.9 ? T.amber500 : T.line }} />; })}
+        </span>
+        <span style={{ fontSize: 12.5, fontWeight: 700, color: over.length ? T.red500 : T.emerald600 }}>{over.length ? over.length + " " + (mode === "month" ? "mois" : "semaine" + (over.length > 1 ? "s" : "")) + " en surcharge · pic " + Math.round(peak * 100) + " %" + (pk ? " (" + pk.label + ")" : "") : "Aucune surcharge"}</span>
+        <span style={{ flex: 1 }} />
+        {!readOnly && <button className="pg-btn" onClick={() => onPropose("level")} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "4px 12px", fontSize: 12.5, fontWeight: 700, cursor: "pointer", minHeight: 30 }}>Niveler…</button>}
+        <button className="pg-btn" onClick={() => setFolded(false)} aria-expanded="false" style={{ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "4px 12px", fontSize: 12.5, fontWeight: 700, cursor: "pointer", minHeight: 30 }}>Déplier ▴</button>
+      </div>
+    </section>);
+  }
   return (<section aria-label="Charge atelier et capacité" className="pg-load" style={{ borderTop: "2px solid " + T.line, background: T.card, position: "sticky", bottom: 0, zIndex: 9, boxShadow: "0 -8px 18px rgba(0,0,0,.10)" }}>
     <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", padding: "10px 14px" }}>
       <b style={{ color: T.ink900, fontSize: 14 }}>Charge atelier</b>
+      {setFolded && <button className="pg-btn" onClick={() => setFolded(true)} aria-expanded="true" style={{ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "4px 10px", fontSize: 12, fontWeight: 700, cursor: "pointer", minHeight: 28 }}>Replier ▾</button>}
       <button className="pg-btn" onClick={() => setSmall(!small)} aria-pressed={!!small} title={small ? "Agrandir le graphique de charge" : "Réduire le graphique de charge"} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "4px 10px", fontSize: 12, fontWeight: 700, cursor: "pointer", minHeight: 28 }}>{small ? "Agrandir" : "Réduire"}</button>
       <span style={{ display: "inline-flex", gap: 6, alignItems: "center", fontSize: 12.5, color: T.ink500 }}>capacité
         <NumField label="Nombre de personnes" value={cap.people} width={52} onCommit={v => onCap({ people: Math.max(0, Number(v) || 0) })} /> pers. ×

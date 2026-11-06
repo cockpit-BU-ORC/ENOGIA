@@ -89,7 +89,7 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
     return Math.min(380,Math.max(240,Math.ceil(w+16*2+6)));
   },[data]);
   const endPad=Math.round((typeof window!=="undefined"?window.innerWidth:1400)/2);
-  const rowH=60; // v184 : lignes un peu plus hautes (maquette validée)
+  const rowH=44; // v283 (audit apple-design, lot 2) : 2 lignes d'étiquette (PJ + gamme, client), n° de série au survol — 60 px avant
   // En-tête à 3 bandes — mois, puis numéro de semaine ("SXX", demandé explicitement : "rajouter les
   // SXX (numéro de semaine) dans la page gantt"), puis le repère jour existant — plutôt que de
   // remplacer ce dernier, pour ne pas perdre le détail jour tout en ajoutant le numéro de semaine.
@@ -213,6 +213,15 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
       </div>
     </div>
 
+    {/* v184 : légende de la maquette validée — v283 : remontée sous la barre d'outils (toujours visible) */}
+    <div style={{padding:"6px 18px",borderBottom:"1px solid "+T.line,display:"flex",gap:"6px 18px",flexWrap:"wrap",alignItems:"center",background:T.surface,fontSize:FZF.sm,color:T.ink700}}>
+      {[["Production",stageSoft().production.solid],["Tests",stageSoft().tests.solid],["Fin de prod → départ",stageSoft().finProd.solid]].map(([l,c])=><span key={l} style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:18,height:10,borderRadius:2,background:c}}/>{l}</span>)}
+      <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:9,height:9,background:T.ink500,transform:"rotate(45deg)"}}/>Départ initial</span>
+      <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:18,height:0,borderTop:"2px dotted "+T.red500}}/>Glissement</span>
+      <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:2,height:12,background:T.red500}}/>Aujourd'hui</span>
+      <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:18,height:10,borderRadius:2,border:"1.5px dashed "+T.ink300,boxSizing:"border-box"}}/>Dates prévisionnelles</span>
+      <span style={{marginLeft:"auto",color:T.ink500}}>Écart : <b style={{color:T.emerald600}}>à l'heure</b> · <b style={{color:T.amber600}}>4 à 10 j</b> · <b style={{color:T.red600}}>plus de 10 j</b></span>
+    </div>
     <div ref={topScrollRef} onScroll={syncFromTop} style={{overflowX:"auto",overflowY:"hidden",height:16}}>
       <div style={{width:colW+totalDays*dayW+endPad,height:1}}/>
     </div>
@@ -226,10 +235,10 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
           const r=it.r;
           const meta=getPjMeta(r.pj,r);
           const isSel=sel===r.pj;
-          return(<div key={ri} className="enogia-lblcell" {...pressable(()=>setSel(isSel?null:r.pj),{"aria-pressed":isSel})} style={{height:rowH,boxSizing:"border-box",padding:"6px 16px",display:"flex",flexDirection:"column",justifyContent:"center",gap:2,borderBottom:"1px solid "+T.surfaceAlt,borderLeft:"3px solid "+(isSel?T.teal500:"transparent"),background:isSel?T.surfaceAlt:"transparent",cursor:"pointer",transition:"background .12s ease, border-color .12s ease"}}
+          return(<div key={ri} className="enogia-lblcell" {...pressable(()=>setSel(isSel?null:r.pj),{"aria-pressed":isSel})} title={meta.numSerie?"S/N "+meta.numSerie:undefined} style={{height:rowH,boxSizing:"border-box",padding:"3px 16px",display:"flex",flexDirection:"column",justifyContent:"center",gap:1,borderBottom:"1px solid "+T.surfaceAlt,borderLeft:"3px solid "+(isSel?T.teal500:"transparent"),background:isSel?T.surfaceAlt:"transparent",cursor:"pointer",transition:"background .12s ease, border-color .12s ease"}}
             onMouseEnter={e=>{if(!isSel)e.currentTarget.style.background=T.surfaceAlt;}}
             onMouseLeave={e=>{if(!isSel)e.currentTarget.style.background="transparent";}}>
-            <ProjectLabelCell pj={r.pj} r={r} meta={meta}/>
+            <ProjectLabelCell pj={r.pj} r={r} meta={meta} noSn/>
           </div>);
         })}
       </div>
@@ -310,15 +319,6 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
     </div>
 
 
-    {/* v184 : légende de la maquette validée */}
-    <div style={{padding:"10px 18px",borderTop:"1px solid "+T.line,display:"flex",gap:"6px 18px",flexWrap:"wrap",alignItems:"center",background:T.surface,fontSize:FZF.sm,color:T.ink700}}>
-      {[["Production",stageSoft().production.solid],["Tests",stageSoft().tests.solid],["Fin de prod → départ",stageSoft().finProd.solid]].map(([l,c])=><span key={l} style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:18,height:10,borderRadius:2,background:c}}/>{l}</span>)}
-      <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:9,height:9,background:T.ink500,transform:"rotate(45deg)"}}/>Départ initial</span>
-      <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:18,height:0,borderTop:"2px dotted "+T.red500}}/>Glissement</span>
-      <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:2,height:12,background:T.red500}}/>Aujourd'hui</span>
-      <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:18,height:10,borderRadius:2,border:"1.5px dashed "+T.ink300,boxSizing:"border-box"}}/>Dates prévisionnelles</span>
-      <span style={{marginLeft:"auto",color:T.ink500}}>Écart : <b style={{color:T.emerald600}}>à l'heure</b> · <b style={{color:T.amber600}}>4 à 10 j</b> · <b style={{color:T.red600}}>plus de 10 j</b></span>
-    </div>
 
     {tip&&(()=>{
       const r=tip.r,meta=getPjMeta(r.pj,r),W=270,left=Math.min(tip.x+16,(typeof window!=="undefined"?window.innerWidth:1400)-W-12),top=Math.max(8,Math.min(tip.y+16,(typeof window!=="undefined"?window.innerHeight:800)-270));

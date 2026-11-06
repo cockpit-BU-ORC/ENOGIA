@@ -366,7 +366,7 @@ export function SerieTag({pj,size=10.5,style}){
 export function PjPlate({pj,size="sm",style}){
   return <span className="enogia-plate" style={{fontFamily:T.fontDisplay,fontWeight:800,fontSize:size==="lg"?15:13,lineHeight:1,letterSpacing:".02em",background:T.surfaceAlt,color:T.ink900,border:"1px solid "+T.line,padding:size==="lg"?"5px 8px":"3px 7px",borderRadius:3,whiteSpace:"nowrap",display:"inline-block",flexShrink:0,fontVariantNumeric:"tabular-nums",...style}}>{pj}</span>;
 }
-export function ProjectLabelCell({pj,r,meta,mark}){
+export function ProjectLabelCell({pj,r,meta,mark,noSn}){
   const c=ETAT_META[r.etat]||ETAT_META["NOT ORDERED"];
   // Le numéro de PJ et le nom du projet doivent TOUJOURS être lisibles (demandé explicitement) :
   // 1re ligne = pastille d'état + code + gamme, 2e ligne = drapeau + nom du projet sur toute la largeur
@@ -385,7 +385,7 @@ export function ProjectLabelCell({pj,r,meta,mark}){
       <CountryFlag pays={meta.pays} size={11}/>
       <span style={{fontSize:FZ.xs,fontWeight:500,color:T.ink700,whiteSpace:"nowrap",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",lineHeight:1.25}}>{meta.nomProjet}</span>
     </div>
-    {sn&&<div style={{paddingLeft:15,fontVariantNumeric:"tabular-nums",fontSize:11,fontWeight:600,color:T.ink500,whiteSpace:"nowrap",lineHeight:1.2}}>S/N {sn}</div>}
+    {sn&&!noSn&&<div style={{paddingLeft:15,fontVariantNumeric:"tabular-nums",fontSize:11,fontWeight:600,color:T.ink500,whiteSpace:"nowrap",lineHeight:1.2}}>S/N {sn}</div>}
   </>);
 }
 export const ALL_GAMMES=Object.keys(GAMME_COLORS);

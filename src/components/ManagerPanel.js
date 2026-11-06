@@ -346,7 +346,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
   // supprimer Imports ; fusionner Accès Manager et Personnes et rôles ») :
   // v217 (demandé : « bien regrouper les pages entre elles si elles ont un rapport ») : Pilotage (KPI, Retards), Projets (Fiches projet,
   // Machines ORC), Réglages (Personnes et accès, Calendrier de production, Nouveautés). Cash in et Turbines sont des pages du site.
-  const GROUP_OF={fiche:"fiche",hebdo:"fiche",derives:"derives",serie:"orc",orc:"orc",retards:"retards",retardsKpi:"retards",personnes:"reglages",vacances:"calendrier",production:"calendrier",nouveautes:"reglages"};
+  const GROUP_OF={fiche:"fiche",hebdo:"fiche",derives:"derives",serie:"orc",orc:"orc",retards:"retards",retardsKpi:"retards",personnes:"reglages",acces:"reglages",vacances:"calendrier",production:"calendrier",nouveautes:"reglages"};
   const superAdmin=isSuperAdmin(),owner=canCash(),me=isOwner(); // v224 (demandé : « garder l'accès KPI uniquement pour moi comme Personnes et site ») : me = propriétaire seul → KPI, Personnes et site // v210 : « owner » = accès au Cash in (propriétaire ou admin) // v185 : superAdmin = propriétaire ou admin ; owner = propriétaire (Cash in) // v143 : seul le super admin voit l'onglet « Réglages » (changer le site) ; un admin n'a que les onglets d'usage
   // v158 : menu groupé (rail latéral) ; chaque entrée sait où aller. Cash in et Réglages : super admin seulement.
   const [railMin,setRailMin]=useRailCollapsed(),[palOpen,setPalOpen]=useState(false),phone=useIsPhone();
@@ -358,10 +358,10 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
     fiche:[["fiche","Fiches projet"],["hebdo","Point hebdo"]],
     retards:[["retards","Déclarer"],["retardsKpi","Analyse"]],
     calendrier:[["production","Jours sans production"],["vacances","Fermetures de l'atelier"]],
-    reglages:[["personnes","Personnes, rôles et accès"],["nouveautes","Nouveautés"]],
+    reglages:[["personnes","Personnes"],["acces","Accès"],["nouveautes","Nouveautés"]], // v283 : accès dans son onglet
   };
   const group=GROUP_OF[tab]||"derives";
-  useEffect(()=>{const old={orc:"serie",acces:"personnes",imports:"derives",sante:"fiche",suivi:"serie",statut:"serie",cash:"derives",turbines:"derives"}[tab];if(old){setTab(old);return;}if(!me&&(GROUP_OF[tab]||"derives")==="derives"){setTab("fiche");return;}if((!me&&GROUP_OF[tab]==="reglages")||(!superAdmin&&GROUP_OF[tab]==="calendrier")||(!owner&&GROUP_OF[tab]==="cash"))setTab(me?"derives":"fiche");},[superAdmin,owner,me,tab]); // eslint-disable-line react-hooks/exhaustive-deps -- GROUP_OF est fixe, setTab vient du parent ; v212 : anciens onglets mémorisés → leur nouvelle place // un admin qui arrive sur un onglet Réglages (ancien état mémorisé) est ramené aux KPI
+  useEffect(()=>{const old={orc:"serie",imports:"derives",sante:"fiche",suivi:"serie",statut:"serie",cash:"derives",turbines:"derives"}[tab];if(old){setTab(old);return;}if(!me&&(GROUP_OF[tab]||"derives")==="derives"){setTab("fiche");return;}if((!me&&GROUP_OF[tab]==="reglages")||(!superAdmin&&GROUP_OF[tab]==="calendrier")||(!owner&&GROUP_OF[tab]==="cash"))setTab(me?"derives":"fiche");},[superAdmin,owner,me,tab]); // eslint-disable-line react-hooks/exhaustive-deps -- GROUP_OF est fixe, setTab vient du parent ; v212 : anciens onglets mémorisés → leur nouvelle place // un admin qui arrive sur un onglet Réglages (ancien état mémorisé) est ramené aux KPI
   const subItems=SUBS[group]||null;
   const subValue=group==="derives"?kpiTab:tab;
   const onSub=id=>{if(group==="derives")setKpiTab(id);else setTab(id);};
@@ -846,7 +846,8 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
     {tab==="retards"&&<DelaysTab data={data} delays={delays} delayTypes={delayTypes} setDelayTypes={setDelayTypes} addDelayAllocationMulti={addDelayAllocationMulti} deleteDelayAllocation={deleteDelayAllocation} authorName={authorName}/>}
     {me&&tab==="personnes"&&<>
       <PeopleRoles profiles={profiles} saveProfiles={saveProfiles} data={data}/>
-      <div style={{height:14}}/>
+    </>}
+    {me&&tab==="acces"&&<>
       <ManagerAccessManager managerEmails={managerEmails} setManagerEmails={setManagerEmails} currentUserEmail={currentUserEmail}/>
       {/* Nom du build : réservé au propriétaire (demandé : « uniquement visible par moi, dans l'onglet manager »). */}
       {buildVersion&&<div style={{...CARD,padding:"8px 12px",marginTop:14,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>

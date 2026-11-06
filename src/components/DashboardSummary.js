@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { isPhone } from "../useIsPhone";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { T, FZ } from "../theme";
 import { getPjMeta, ETAT_META, GAMME_COLORS, countShippedYTD, departedNotShipped } from "../pjMeta";
@@ -28,7 +27,7 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
   // 4 camemberts de répartition ci-dessous).
   const fullData=allData||data;
   const [collapsed,setCollapsed]=useState(()=>{
-    try{const v=localStorage.getItem("enogia-dashboard-collapsed");if(v==null)return isPhone();return v==="1";}catch(e){return false;}
+    try{const v=localStorage.getItem("enogia-dashboard-collapsed2");if(v==null)return true;return v==="1";}catch(e){return true;}
   });
   // v178 : repli automatique au défilement (demandé) — se replie quand on descend, se rouvre en haut de page ; le choix manuel reste enregistré à part.
   const [autoHid,setAutoHid]=useState(false);
@@ -40,7 +39,7 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
   const toggleCollapsed=()=>{
     setCollapsed(c=>{
       const next=!c;
-      try{localStorage.setItem("enogia-dashboard-collapsed",next?"1":"0");}catch(e){}
+      try{localStorage.setItem("enogia-dashboard-collapsed2",next?"1":"0");}catch(e){}
       return next;
     });
   };
@@ -71,6 +70,9 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
     return out;
   },[data]);
 
+  // v283 : ligne de chiffres — total et les 3 états les plus nombreux (machines de la liste filtrée)
+  const total=breakdownsByDim.etat.reduce((a,x)=>a+x.value,0);
+  const topEtats=breakdownsByDim.etat.slice(0,3);
   const etatColor=name=>{const e=Object.entries(ETAT_META).find(([,v])=>v.label===name);return e?e[1].bar:T.ink300;};
   const colorFor=(dimKey,name,i)=>dimKey==="gamme"&&GAMME_COLORS[name]?GAMME_COLORS[name]:dimKey==="etat"?etatColor(name):PALETTE[i%PALETTE.length];
   // v259 (demandé : « ne pas avoir la légende Autres mais bien tout indiquer ») : toutes les valeurs, légende sur 2 colonnes au-delà de 6.
@@ -80,12 +82,15 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
     {/* Pas de carte ici : le bandeau est posé directement sur le fond de page (direction "Piste A"),
         séparé du reste par un simple filet. L'en-tête reste fixe, avec le contrôle d'affichage ancré à droite. */}
     <div style={{display:"flex",alignItems:"center",gap:12}}>
-      <h2 style={{margin:0,fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>Vue d'ensemble</h2>
-      {folded&&<span style={{fontSize:FZ.sm,color:T.ink700}}><strong style={{color:T.teal600}}>{shippedYTD}</strong> expédiée{shippedYTD>1?"s":""} depuis le {SHIPPED_SINCE_LABEL}</span>}
-      <button onClick={toggleCollapsed} title={collapsed?"Afficher la répartition":"Masquer la répartition"} aria-label={collapsed?"Afficher la répartition":"Masquer la répartition"} aria-expanded={!collapsed} style={{marginLeft:"auto",flexShrink:0,width:26,height:26,borderRadius:8,border:"none",background:"transparent",cursor:"pointer",color:T.ink300,display:"flex",alignItems:"center",justifyContent:"center"}}
-        onMouseEnter={e=>{e.currentTarget.style.background=T.surface;}}
-        onMouseLeave={e=>{e.currentTarget.style.background="transparent";}}>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{transform:collapsed?"rotate(180deg)":"rotate(0deg)",transition:"transform .18s ease"}}>
+      {/* v283 (audit apple-design, lot 2) : une ligne de chiffres, les 4 répartitions repliées par défaut derrière « Répartitions » */}
+      <div style={{display:"flex",alignItems:"baseline",gap:"6px 16px",flexWrap:"wrap",minWidth:0}}>
+        {[[total,"machine"+(total>1?"s":""),T.ink900],...topEtats.map(x=>[x.value,x.name.toLowerCase(),T.ink900]),[shippedYTD,"livrée"+(shippedYTD>1?"s":"")+" depuis mai",T.emerald600]].map(([n,l,c],i)=>
+          <span key={i} style={{display:"inline-flex",alignItems:"baseline",gap:6,whiteSpace:"nowrap"}}><b style={{fontFamily:T.fontDisplay,fontSize:18,fontWeight:600,color:c,fontVariantNumeric:"tabular-nums"}}>{n}</b><span style={{fontSize:FZ.sm,color:T.ink500}}>{l}</span></span>)}
+        {notShipped.length>0&&<span title={"Départ passé, état pas encore « Expédiée » : "+notShipped.map(r=>r.pj).join(", ")} style={{fontSize:FZ.xs,fontWeight:700,color:T.amber600}}>+ {notShipped.length} départ{notShipped.length>1?"s":""} passé{notShipped.length>1?"s":""} pas encore « Expédiée »</span>}
+      </div>
+      <button onClick={toggleCollapsed} aria-expanded={!collapsed} style={{marginLeft:"auto",flexShrink:0,minHeight:30,padding:"0 12px",borderRadius:8,border:"1px solid "+T.line,background:T.card,cursor:"pointer",color:T.ink700,fontWeight:600,fontSize:FZ.sm,fontFamily:T.font,display:"inline-flex",alignItems:"center",gap:6}}>
+        Répartitions
+        <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{transform:collapsed?"rotate(180deg)":"rotate(0deg)",transition:"transform .18s ease"}}>
           <polyline points="18 15 12 9 6 15"/>
         </svg>
       </button>

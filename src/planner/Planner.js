@@ -16,7 +16,7 @@ import { landFrom } from "../pointerDrag";
 import { PlannerLoad } from "./PlannerLoad";
 import { PlannerLanes } from "./PlannerLanes";
 import { PlannerChanges } from "./PlannerChanges";
-import { Pop } from "./PlannerMenu";
+import { Pop, MenuItem } from "./PlannerMenu";
 
 // ── Module « Planification » (super admin) : remplace MS Project pour construire le planning d'ordonnancement ──
 // Un seul tableau Gantt modifiable en direct (dates, durées, travail, prédécesseurs, priorité) + la charge atelier sous le Gantt.
@@ -46,10 +46,10 @@ const pgCss = () => `
 .pg-root .pg-trow:hover .pg-h,.pg-root .pg-h.on{opacity:1}
 .pg-menuitem:hover:not(:disabled){background:${T.teal100} !important}
 .pg-menuitem:focus-visible{outline:2px solid ${T.teal500}}
-.pg-root .pg-tb{border:1px solid ${T.line};background:${T.card};color:${T.ink700};border-radius:6px;padding:2px 7px;min-height:22px;font-size:11px;line-height:16px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit}
+.pg-root .pg-tb{border:1px solid ${T.line};background:${T.card};color:${T.ink700};border-radius:6px;padding:2px 8px;min-height:26px;font-size:12px;line-height:16px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit}
 .pg-root .pg-bar1{display:flex;gap:4px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
-.pg-root .pg-bar1 label{font-size:11px!important;min-height:22px!important}
-.pg-root .pg-bar1 .pg-in{height:22px!important;font-size:11px!important;padding:0 6px!important}
+.pg-root .pg-bar1 > label{font-size:12px!important;min-height:24px!important}
+.pg-root .pg-bar1 > .pg-in{height:26px!important;font-size:12px!important;padding:0 6px!important}
 .pg-root .pg-tb:hover:not(:disabled):not([aria-pressed=true]){background:${T.teal100}}
 .pg-root .pg-tb:disabled{opacity:.45;cursor:default}
 .pg-root .pg-tb[aria-pressed=true]{background:${T.ink900};color:${T.card};border-color:${T.ink900}}
@@ -584,12 +584,13 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
   // v211 : en Liste + Gantt, la liste prend au plus ~42 % de la largeur tant qu'on ne l'a pas réglée (sinon le Gantt n'apparaît pas sur un petit écran)
   const listW = ui.listW || (ui.view === "both" && typeof window !== "undefined" ? Math.max(380, Math.min(736, Math.round(window.innerWidth * 0.42))) : null);
   const noT = ui.view === "list" || ui.view === "changes"; const cmp = proposal && proposal.cmp; const ro = ui.lock || !!proposal;
-  const loadEl = load && !ui.loadHide ? <PlannerLoad plan={live} load={load} cal={cal} tl={tl} scrollX={scrollX} leftW={ui.view === "lanes" ? LANE_LABEL_W : leftWidthWith(ui.view, listW)} onCapWeek={(w, h) => apply(setCapWeek(plan, w, h))} small={!!ui.loadSmall} setSmall={v => setUi({ loadSmall: v })} standalone={ui.view === "list"} mode={ui.loadMode} setMode={m => setUi({ loadMode: m })} cap={cap}
+  const loadEl = load && !ui.loadHide ? <PlannerLoad folded={ui.loadFold !== false} setFolded={v => setUi({ loadFold: v })} today={tl.today} plan={live} load={load} cal={cal} tl={tl} scrollX={scrollX} leftW={ui.view === "lanes" ? LANE_LABEL_W : leftWidthWith(ui.view, listW)} onCapWeek={(w, h) => apply(setCapWeek(plan, w, h))} small={!!ui.loadSmall} setSmall={v => setUi({ loadSmall: v })} standalone={ui.view === "list"} mode={ui.loadMode} setMode={m => setUi({ loadMode: m })} cap={cap}
         onCap={patch => apply(setCap(plan, patch))} readOnly={ro} onPropose={startProposal} hasLevelNow={hasLevel(plan)} nTooDense={load.tooDense.length} /> : null;
   return (<div className="pg-root">
     <style>{pgCss()}</style>
     <datalist id="plan-add">{rowsNotInPlan.map(r => <option key={r.pj} value={r.pj} />)}</datalist>
-    {/* en-tête */}
+    {/* v283 (audit apple-design, lot 2, maquette validée) : une ligne d'état (titre, statut, légende, Publier) et une seule ligne d'outils ;
+        les réglages d'affichage et les outils rares passent dans deux menus ancrés « Affichage » et « Outils ». */}
     <div className="pg-bar1">
       <div style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: 14, color: T.ink900, marginRight: 4 }}>Planification</div>
       <span style={{ fontSize: 11, color: T.ink500 }}>{plan.pjs.length} PJ · {nLinks} lien{nLinks > 1 ? "s" : ""}</span>
@@ -597,49 +598,61 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
       <span role="button" tabIndex={0} onClick={() => { setRefId("pub"); setUi({ view: "changes" }); }} onKeyDown={e => { if (e.key === "Enter") { setRefId("pub"); setUi({ view: "changes" }); } }} title="Voir la synthèse des modifications" style={{ cursor: "pointer", borderRadius: 99, padding: "1px 8px", fontSize: 11, fontWeight: 700, background: changes.length ? T.amber100 : T.emerald100, color: changes.length ? T.amber600 : T.emerald600 }}>{changes.length ? changes.length + " modification" + (changes.length > 1 ? "s" : "") + " non publiée" + (changes.length > 1 ? "s" : "") : "À jour avec le planning actuel"}</span>
       <span style={{ fontSize: 12, color: T.ink500 }} aria-live="polite">{saveSt}</span>
       <span style={{ flex: 1 }} />
-      <button className="pg-tb" aria-pressed={ui.lock} onClick={() => { setUi({ lock: !ui.lock }); setProposal(null); }} title="Verrouille l'édition (lecture en réunion)">{ui.lock ? "🔒 Lecture" : "Lecture"}</button>
-      {!ui.lock && <>
-        <button className="pg-tb" disabled={!undo.length} onClick={doUndo} aria-label="Annuler la dernière modification">↶ Annuler</button>
-        <button className="pg-tb" disabled={!redo.length} onClick={doRedo} aria-label="Rétablir">↷ Rétablir</button>
-        <button className="pg-tb" onClick={() => { if (window.confirm("Reprendre toutes les dates du planning actuel (" + (rows || []).length + " PJ) ? Le plan en cours est remplacé ; la capacité et les modèles par gamme sont gardés. Annuler (Ctrl+Z) reste possible.")) { const np = refreshPlanFromRows(plan, rows || [], cal); setSel(null); apply(np); setNotice({ tone: "warn", text: "Plan recréé depuis le planning actuel : " + np.pjs.length + " PJ, dates reprises telles quelles." }); } }} title="Recrée le plan avec les dates du planning actuel (la capacité et les modèles par gamme sont gardés)">Reprendre les dates du planning</button>
-        <button className="pg-tb" onClick={() => setDlg("templates")} title="Durées et heures habituelles par gamme, applicables aux PJ">Modèles par gamme…</button>
-        <button className="pg-tb" onClick={() => setDlg("blank")} title="Repartir de zéro avec quelques PJ, sans dates ni durées">Plan vierge…</button>
-        <button className="pg-tb" onClick={() => setDlg("history")}>Historique</button>
-        <button className="pg-tb" style={{ background: T.ink900, color: T.card, borderColor: T.ink900 }} onClick={() => setDlg("publish")}>Publier</button>
-      </>}
+      <span style={{ display: "inline-flex", gap: 8, flexWrap: "wrap", fontSize: 12, color: T.ink500, alignItems: "center" }}>
+        {[["arrivee", "Arrivée", 1], ["production", "Production"], ["tests", "Tests"], ["finProd", "Packing"], ["depart", "Départ", 1]].map(([k, l, ms]) => <span key={k} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><span style={{ width: ms ? 9 : 16, height: 9, background: STEP_COLOR[k], transform: ms ? "rotate(45deg)" : "none", borderRadius: 2, display: "inline-block" }} />{l}</span>)}
+        <span><span style={{ color: T.ink500 }}>→</span> lien</span>
+      </span>
+      {!ui.lock && <button className="pg-tb" style={{ background: T.ink900, color: T.card, borderColor: T.ink900, padding: "2px 14px" }} onClick={() => setDlg("publish")}>Publier</button>}
+      {ui.lock && <button className="pg-tb" aria-pressed onClick={() => setUi({ lock: false })} title="Quitter la lecture seule">Lecture seule · quitter</button>}
     </div>
-    {/* barre d'outils */}
-    <div className="pg-bar1" style={{ marginBottom: 6 }}>
+    <div className="pg-bar1" role="toolbar" aria-label="Outils du planificateur" style={{ marginBottom: 6, flexWrap: "nowrap", overflowX: "auto" }}>
+      {!ui.lock && <>
+        <button className="pg-tb" disabled={!undo.length} onClick={doUndo} aria-label="Annuler la dernière modification" title="Annuler (Ctrl + Z)">↶</button>
+        <button className="pg-tb" disabled={!redo.length} onClick={doRedo} aria-label="Rétablir" title="Rétablir">↷</button>
+        <span aria-hidden="true" style={{ width: 1, height: 18, background: T.line, margin: "0 2px", flexShrink: 0 }} />
+      </>}
+      <div role="group" aria-label="Vue" style={{ display: "inline-flex" }}>
+        {[["list", "Liste"], ["both", "Liste + Gantt"], ["gantt", "Gantt"], ["lanes", "Couloirs"], ["changes", "Modifications"]].map(([k, l], i, arr) => <button key={k} className="pg-tb" aria-pressed={ui.view === k} onClick={() => setUi({ view: k })} style={{ borderRadius: i === 0 ? "6px 0 0 6px" : i === arr.length - 1 ? "0 6px 6px 0" : 0, marginLeft: i ? -1 : 0 }}>{l}{k === "changes" && nTouched > 0 && <span style={{ marginLeft: 6, background: ui.view === k ? "rgba(255,255,255,.25)" : T.amber100, color: ui.view === k ? "#fff" : T.amber600, borderRadius: 99, padding: "0 7px", fontSize: 11.5 }}>{nTouched}</span>}</button>)}
+      </div>
+      <button className="pg-tb" onClick={() => setDlg("bench")} title="Attribuer les 2 bancs d'essai (une seule machine par banc à la fois)">Bancs d'essai{conflicts.length ? <span style={{ color: T.red500 }}> ⚠ {conflicts.length}</span> : null}</button>
+      <span aria-hidden="true" style={{ width: 1, height: 18, background: T.line, margin: "0 2px", flexShrink: 0 }} />
       <button className="pg-tb" disabled={noT} onClick={goToday}>Aujourd'hui</button>
       <div role="group" aria-label="Zoom" style={{ display: "inline-flex", gap: 0 }}>
         <button className="pg-tb" disabled={noT || tl.px <= PX_MIN} onClick={() => zoomFn.current(1 / 1.4)} aria-label="Dézoomer" title="Dézoomer (Ctrl + molette)" style={{ borderRadius: "6px 0 0 6px" }}>−</button>
         {[["day", "Jour"], ["week", "Sem."], ["month", "Mois"]].map(([k, l]) => <button key={k} className="pg-tb" disabled={noT} aria-pressed={(!ui.px && ui.zoom === k) || ui.px === ZOOM_PX[k]} onClick={() => setUi({ zoom: k, px: null })} style={{ borderRadius: 0, marginLeft: -1 }}>{l}</button>)}
         <button className="pg-tb" disabled={noT || tl.px >= PX_MAX} onClick={() => zoomFn.current(1.4)} aria-label="Zoomer" title="Zoomer (Ctrl + molette)" style={{ borderRadius: "0 6px 6px 0", marginLeft: -1 }}>+</button>
       </div>
-      <button className="pg-tb" aria-pressed={!ui.loadHide} onClick={() => setUi({ loadHide: !ui.loadHide })} title={ui.loadHide ? "Afficher la charge atelier en bas" : "Masquer la charge atelier pour agrandir le Gantt"}>Charge</button>
-      <button className="pg-tb" onClick={() => setDlg("bench")} title="Attribuer les 2 bancs d'essai (une seule machine par banc à la fois)">Bancs d'essai{conflicts.length ? <span style={{ color: T.red500 }}> ⚠ {conflicts.length}</span> : null}</button>
-      <button className="pg-tb" onClick={() => setExp(s => s.size ? new Set() : new Set(plan.pjs.map(p => p.pj)))}>{exp.size ? "Tout replier" : "Tout déplier"}</button>
-      <button className="pg-tb" disabled={noT} aria-pressed={ui.links} onClick={() => setUi({ links: !ui.links })} title="Affiche toutes les flèches de liens (sinon seulement celles du PJ sélectionné)">Liens</button>
-<div role="group" aria-label="Affichage" style={{ display: "inline-flex" }}>
-        {[["list", "Liste"], ["both", "Liste + Gantt"], ["gantt", "Gantt"], ["lanes", "Couloirs"], ["changes", "Modifications"]].map(([k, l], i, arr) => <button key={k} className="pg-tb" aria-pressed={ui.view === k} onClick={() => setUi({ view: k })} style={{ borderRadius: i === 0 ? "6px 0 0 6px" : i === arr.length - 1 ? "0 6px 6px 0" : 0, marginLeft: i ? -1 : 0 }}>{l}{k === "changes" && nTouched > 0 && <span style={{ marginLeft: 6, background: ui.view === k ? "rgba(255,255,255,.25)" : T.amber100, color: ui.view === k ? "#fff" : T.amber600, borderRadius: 99, padding: "0 7px", fontSize: 11.5 }}>{nTouched}</span>}</button>)}
-      </div>
-      {ui.view !== "lanes" && ui.view !== "changes" && <label style={{ display: "inline-flex", alignItems: "center", gap: 4, fontWeight: 700, color: T.ink700 }}>Lignes
-        <input type="range" min={24} max={44} step={2} value={ui.rowH || 32} onChange={e => setUi({ rowH: Number(e.target.value) })} aria-label="Hauteur des lignes du Gantt" style={{ width: 70 }} /></label>}
-      {ui.view === "lanes" && <label style={{ display: "inline-flex", alignItems: "center", gap: 4, fontWeight: 700, color: T.ink700 }}>Couloirs
-        <input type="range" min={8} max={30} step={1} value={laneBH} onChange={e => setUi({ laneH: Number(e.target.value) })} aria-label="Hauteur des couloirs" style={{ width: 70 }} /></label>}
-      {ui.view !== "lanes" && ui.view !== "changes" && <span role="group" aria-label="Colonnes affichées" style={{ display: "inline-flex" }}>
-        <button className="pg-tb" aria-pressed={!ui.hidePrio} onClick={() => setUi({ hidePrio: !ui.hidePrio })} title="Afficher ou masquer la priorité (P n) devant chaque PJ" style={{ borderRadius: "6px 0 0 6px" }}>Priorité</button>
-        <button className="pg-tb" aria-pressed={!ui.hideSn} onClick={() => setUi({ hideSn: !ui.hideSn })} title="Afficher ou masquer le n° de série à côté de chaque PJ" style={{ borderRadius: "0 6px 6px 0", marginLeft: -1 }}>S/N</button>
-      </span>}
-      {nArch > 0 && <label title="PJ archivés ou expédiés : ils gardent leurs dernières dates mais sont masqués" style={{ display: "inline-flex", alignItems: "center", gap: 4, fontWeight: 700, color: T.ink700, cursor: "pointer" }}><input type="checkbox" checked={!!ui.showArch} onChange={e => setUi({ showArch: e.target.checked })} />Archivés ({nArch})</label>}
-      {ui.view === "lanes" && <button className="pg-tb" aria-pressed={!!ui.lanesTable} onClick={() => setUi({ lanesTable: !ui.lanesTable })} title="Afficher ou masquer le tableau des tâches sous les couloirs">Tableau des tâches</button>}
-      <input value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher un PJ…" aria-label="Rechercher un PJ" className="pg-in" style={{ ...INP, width: 130 }} />
-      {!ui.lock && <>
-        <span style={{ display: "inline-flex", gap: 4 }}>
-          <button className="pg-tb" disabled={!!proposal} onClick={() => setDlg("newpj")} title="Créer un PJ avec ses tâches (production, tests, packing) et ses ressources">＋ Nouveau PJ</button>
-          <button className="pg-tb" disabled={!!proposal || !selPj} onClick={() => { setTaskPj(null); setDlg("task"); }} title={selPj ? "Ajouter une tâche à " + selPj.pj : "Sélectionnez d'abord un PJ (clic sur sa ligne)"}>＋ Tâche{selPj ? " à " + selPj.pj : ""}</button>
-        </span>
-        <Pop width={330} align="left" trigger={(o, t) => <button className="pg-tb" aria-haspopup="menu" aria-expanded={o} onClick={t}>Règles ▾{overlaps && !rules.prod && !rules.banc ? <span style={{ color: T.amber600 }}> ⚠ {overlaps}</span> : null}</button>}>
+      <span aria-hidden="true" style={{ width: 1, height: 18, background: T.line, margin: "0 2px", flexShrink: 0 }} />
+      <Pop width={270} align="left" trigger={(o, t) => <button className="pg-tb" aria-haspopup="menu" aria-expanded={o} onClick={t}>Affichage ▾</button>}>
+        {close => (<div style={{ display: "flex", flexDirection: "column" }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: T.ink500, padding: "2px 8px" }}>Afficher</div>
+          <label title="Masquer la charge atelier pour agrandir le Gantt" style={{ display: "flex", alignItems: "center", gap: 8, minHeight: 32, padding: "0 8px", cursor: "pointer", fontWeight: 600, color: T.ink900 }}><input type="checkbox" checked={!ui.loadHide} onChange={() => setUi({ loadHide: !ui.loadHide })} />Charge atelier en bas</label>
+          <label title="Toutes les flèches de liens (sinon seulement celles du PJ sélectionné)" style={{ display: "flex", alignItems: "center", gap: 8, minHeight: 32, padding: "0 8px", cursor: "pointer", fontWeight: 600, color: T.ink900 }}><input type="checkbox" checked={!!ui.links} onChange={() => setUi({ links: !ui.links })} />Tous les liens</label>
+          {ui.view !== "lanes" && ui.view !== "changes" && <>
+            <label title="Priorité devant chaque PJ" style={{ display: "flex", alignItems: "center", gap: 8, minHeight: 32, padding: "0 8px", cursor: "pointer", fontWeight: 600, color: T.ink900 }}><input type="checkbox" checked={!ui.hidePrio} onChange={() => setUi({ hidePrio: !ui.hidePrio })} />Priorité (P n)</label>
+            <label title="N° de série à côté de chaque PJ" style={{ display: "flex", alignItems: "center", gap: 8, minHeight: 32, padding: "0 8px", cursor: "pointer", fontWeight: 600, color: T.ink900 }}><input type="checkbox" checked={!ui.hideSn} onChange={() => setUi({ hideSn: !ui.hideSn })} />N° de série</label>
+          </>}
+          {nArch > 0 && <label title="PJ archivés ou expédiés : ils gardent leurs dernières dates mais sont masqués" style={{ display: "flex", alignItems: "center", gap: 8, minHeight: 32, padding: "0 8px", cursor: "pointer", fontWeight: 600, color: T.ink900 }}><input type="checkbox" checked={!!ui.showArch} onChange={() => setUi({ showArch: !ui.showArch })} />Archivés ({nArch})</label>}
+          {ui.view === "lanes" && <label title="Tableau des tâches sous les couloirs" style={{ display: "flex", alignItems: "center", gap: 8, minHeight: 32, padding: "0 8px", cursor: "pointer", fontWeight: 600, color: T.ink900 }}><input type="checkbox" checked={!!ui.lanesTable} onChange={() => setUi({ lanesTable: !ui.lanesTable })} />Tableau des tâches</label>}
+          <div style={{ borderTop: "1px solid " + T.line, margin: "6px 0" }} />
+          {ui.view !== "lanes" && ui.view !== "changes" && <label style={{ display: "flex", alignItems: "center", gap: 8, minHeight: 32, padding: "0 8px", fontWeight: 600, color: T.ink900 }}>Hauteur des lignes
+            <input type="range" min={24} max={44} step={2} value={ui.rowH || 32} onChange={e => setUi({ rowH: Number(e.target.value) })} aria-label="Hauteur des lignes du Gantt" style={{ flex: 1 }} /></label>}
+          {ui.view === "lanes" && <label style={{ display: "flex", alignItems: "center", gap: 8, minHeight: 32, padding: "0 8px", fontWeight: 600, color: T.ink900 }}>Hauteur des couloirs
+            <input type="range" min={8} max={30} step={1} value={laneBH} onChange={e => setUi({ laneH: Number(e.target.value) })} aria-label="Hauteur des couloirs" style={{ flex: 1 }} /></label>}
+          <MenuItem onClick={() => { close(); setExp(s => s.size ? new Set() : new Set(plan.pjs.map(p => p.pj))); }}>{exp.size ? "Tout replier" : "Tout déplier"}</MenuItem>
+          <MenuItem onClick={() => { close(); setUi({ lock: !ui.lock }); setProposal(null); }}>{ui.lock ? "Quitter la lecture seule" : "Lecture seule (réunion)"}<div style={{ fontSize: 11.5, color: T.ink500, fontWeight: 400 }}>Verrouille l'édition</div></MenuItem>
+        </div>)}
+      </Pop>
+      {!ui.lock && <Pop width={300} align="left" trigger={(o, t) => <button className="pg-tb" aria-haspopup="menu" aria-expanded={o} onClick={t}>Outils ▾</button>}>
+        {close => (<>
+          <MenuItem onClick={() => { close(); if (window.confirm("Reprendre toutes les dates du planning actuel (" + (rows || []).length + " PJ) ? Le plan en cours est remplacé ; la capacité et les modèles par gamme sont gardés. Annuler (Ctrl+Z) reste possible.")) { const np = refreshPlanFromRows(plan, rows || [], cal); setSel(null); apply(np); setNotice({ tone: "warn", text: "Plan recréé depuis le planning actuel : " + np.pjs.length + " PJ, dates reprises telles quelles." }); } }}>Reprendre les dates du planning<div style={{ fontSize: 11.5, color: T.ink500, fontWeight: 400 }}>Recrée le plan avec les dates actuelles (capacité et modèles gardés)</div></MenuItem>
+          <MenuItem onClick={() => { close(); setDlg("templates"); }}>Modèles par gamme…<div style={{ fontSize: 11.5, color: T.ink500, fontWeight: 400 }}>Durées et heures habituelles par gamme</div></MenuItem>
+          <MenuItem onClick={() => { close(); setDlg("history"); }}>Historique des publications</MenuItem>
+          <div style={{ borderTop: "1px solid " + T.line, margin: "6px 0" }} />
+          <MenuItem onClick={() => { close(); setDlg("blank"); }}>Plan vierge…<div style={{ fontSize: 11.5, color: T.ink500, fontWeight: 400 }}>Repartir de zéro avec quelques PJ, sans dates</div></MenuItem>
+        </>)}
+      </Pop>}
+      {!ui.lock && <Pop width={330} align="left" trigger={(o, t) => <button className="pg-tb" aria-haspopup="menu" aria-expanded={o} onClick={t}>Règles ▾{overlaps && !rules.prod && !rules.banc ? <span style={{ color: T.amber600 }}> ⚠ {overlaps}</span> : null}</button>}>
           {close => (<div style={{ padding: 4, fontSize: 13, color: T.ink700, display: "flex", flexDirection: "column", gap: 8 }}>
             <label style={{ display: "flex", gap: 8, alignItems: "flex-start", cursor: "pointer" }}><input type="checkbox" checked={rules.prod} onChange={e => { close(); startProposal("rules", { prod: e.target.checked }); }} /><span><b>Une production à la fois</b><br /><span style={{ fontSize: 12, color: T.ink500 }}>Les productions passent l'une après l'autre (ordre = priorité). Aperçu avant application.</span></span></label>
             <label style={{ display: "flex", gap: 8, alignItems: "flex-start", cursor: "pointer" }}><input type="checkbox" checked={rules.banc} onChange={e => { close(); startProposal("rules", { banc: e.target.checked }); }} /><span><b>Un test à la fois par banc</b><br /><span style={{ fontSize: 12, color: T.ink500 }}>2 bancs : chaque banc enchaîne ses PJ. Le banc se choisit sur la ligne Tests (« Banc 1 / 2 »).</span></span></label>
@@ -647,13 +660,15 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
             <label style={{ display: "flex", gap: 8, alignItems: "flex-start", cursor: "pointer" }}><input type="checkbox" checked={holidays} onChange={e => { close(); apply({ ...plan, cal: { ...(plan.cal || {}), holidays: e.target.checked } }); }} /><span><b>Jours fériés non ouvrés</b><br /><span style={{ fontSize: 12, color: T.ink500 }}>Modifie le calendrier : les dates se recalculent (annulable).</span></span></label>
             <div style={{ fontSize: 12, color: overlaps ? T.amber600 : T.emerald600, borderTop: "1px solid " + T.line, paddingTop: 6 }}>{overlaps ? overlaps + " chevauchement" + (overlaps > 1 ? "s" : "") + " de Production / Tests dans le plan actuel." : "Aucun chevauchement de Production / Tests."}</div>
           </div>)}
-        </Pop>
-      </>}
+        </Pop>}
+      <input value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher un PJ…" aria-label="Rechercher un PJ" className="pg-in" style={{ ...INP, width: 140, flexShrink: 0 }} />
       <span style={{ flex: 1 }} />
-      <span style={{ display: "inline-flex", gap: 8, flexWrap: "wrap", fontSize: 10.5, color: T.ink500, alignItems: "center" }}>
-        {[["arrivee", "Arrivée", 1], ["production", "Production"], ["tests", "Tests"], ["finProd", "Packing"], ["depart", "Départ", 1]].map(([k, l, ms]) => <span key={k} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><span style={{ width: ms ? 9 : 16, height: 9, background: STEP_COLOR[k], transform: ms ? "rotate(45deg)" : "none", borderRadius: 2, display: "inline-block" }} />{l}</span>)}
-        <span><span style={{ color: T.ink500 }}>→</span> lien</span>
-      </span>
+      {!ui.lock && <Pop width={240} align="right" trigger={(o, t) => <button className="pg-tb" aria-haspopup="menu" aria-expanded={o} disabled={!!proposal} onClick={t}>＋ Ajouter ▾</button>}>
+        {close => (<>
+          <MenuItem onClick={() => { close(); setDlg("newpj"); }}>Nouveau PJ<div style={{ fontSize: 11.5, color: T.ink500, fontWeight: 400 }}>Avec ses tâches et ses ressources</div></MenuItem>
+          <MenuItem disabled={!selPj} onClick={() => { close(); setTaskPj(null); setDlg("task"); }}>Tâche{selPj ? " à " + selPj.pj : ""}<div style={{ fontSize: 11.5, color: T.ink500, fontWeight: 400 }}>{selPj ? "Ajoutée au PJ sélectionné" : "Sélectionnez d'abord un PJ"}</div></MenuItem>
+        </>)}
+      </Pop>}
     </div>
 
     {load && load.tooDense.length > 0 && !proposal && !ui.lock && <Banner tone="warn">
@@ -679,7 +694,7 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
     </div>}
     {ui.view !== "changes" && (ui.view !== "lanes" || ui.lanesTable) && <div style={{ ...CARD, overflow: "clip" }}>
       <PlannerGantt listW={listW} onListW={w => setUi({ listW: w })} testers={testers} onInfo={t => setNotice({ tone: "ok", text: t })} rowH={ui.rowH || 32} onAddTask={pj => { setSel({ pj, step: null }); setTaskPj(pj); setDlg("task"); }} plan={live} basePlan={plan} sched={sched} cal={cal} closurePeriods={closurePeriods} tl={tl} pjs={pjsShown} sel={selPj} setSel={setSel} expanded={exp} toggleExp={toggleExp}
-        showLinks={ui.links} view={ui.view} readOnly={ro} onPreview={setPreview} onCommit={onCommit} onError={onError} onReorder={reorder} scrollRef={gref} onScrollX={setScrollX} showPrio={!ui.hidePrio} showSn={!ui.hideSn} maxH={ui.loadHide ? 150 : ui.loadSmall ? 260 : 360} />
+        showLinks={ui.links} view={ui.view} readOnly={ro} onPreview={setPreview} onCommit={onCommit} onError={onError} onReorder={reorder} scrollRef={gref} onScrollX={setScrollX} showPrio={!ui.hidePrio} showSn={!ui.hideSn} maxH={ui.loadHide ? 150 : ui.loadFold !== false ? 200 : ui.loadSmall ? 260 : 360} />
       {ui.view !== "lanes" && loadEl}
     </div>}
     {ui.view !== "changes" && <div style={{ fontSize: 11, color: T.ink500, marginTop: 4, lineHeight: 1.5 }}>

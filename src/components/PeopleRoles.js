@@ -19,6 +19,7 @@ export function PeopleRoles({ profiles, saveProfiles, data }) {
   const chefs = useMemo(() => chefNames(rows), [rows]);
   const [q, setQ] = useState(""), [newEmail, setNewEmail] = useState(""), [open, setOpen] = useState(null), [err, setErr] = useState("");
   const [bulk, setBulk] = useState(null), [bulkMsg, setBulkMsg] = useState(""), [showRemoved, setShowRemoved] = useState(false);
+  const [rf, setRf] = useState("*"); // v283 : filtre par rôle (« * » = toutes, « » = automatique)
   const removed = useMemo(() => Object.values((profiles && profiles.byEmail) || {}).filter(p => p && p.email && p.removed).sort((a, b) => (a.name || a.email).localeCompare(b.name || b.email, "fr")), [profiles]);
   const people = useMemo(() => {
     const m = new Map();
@@ -26,7 +27,7 @@ export function PeopleRoles({ profiles, saveProfiles, data }) {
     Object.values((profiles && profiles.byEmail) || {}).forEach(p => { if (p && p.email && !p.removed && !m.has(lc(p.email))) m.set(lc(p.email), { email: lc(p.email), name: p.name || nameFromEmail(p.email) }); });
     return [...m.values()].sort((a, b) => a.name.localeCompare(b.name, "fr"));
   }, [ctx.options, profiles]);
-  const shown = people.filter(p => !q.trim() || (p.name + " " + p.email).toLowerCase().includes(q.trim().toLowerCase()));
+  const shown = people.filter(p => (!q.trim() || (p.name + " " + p.email).toLowerCase().includes(q.trim().toLowerCase())) && (rf === "*" || (profileOf(profiles, p.email).role || "") === rf));
   const save = (email, patch) => saveProfiles(setProfile(profiles, email, patch));
   const add = () => {
     const v = lc(newEmail);
@@ -41,7 +42,7 @@ export function PeopleRoles({ profiles, saveProfiles, data }) {
     list.forEach(({ email, name }) => { const pr = profileOf(next, email), known = people.some(x => x.email === email); if (!known) n++; next = setProfile(next, email, { name: pr.name || name || nameFromEmail(email), removed: false }); });
     saveProfiles(next); setBulk(null); setBulkMsg(n + " personne" + (n > 1 ? "s" : "") + " ajoutée" + (n > 1 ? "s" : "") + (list.length > n ? ", " + (list.length - n) + " déjà dans la liste" : "") + ".");
   };
-  const counts = ROLES.map(([id, l]) => [l, people.filter(p => profileOf(profiles, p.email).role === id).length]);
+  const counts = [["*", "Toutes", people.length], ...ROLES.map(([id, l]) => [id, l, people.filter(p => profileOf(profiles, p.email).role === id).length]), ["", "Automatique", people.filter(p => !profileOf(profiles, p.email).role).length]].filter(x => x[0] === "*" || x[2] > 0);
 
   return (<div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
     <div style={{ background: T.card, borderRadius: 12, padding: 16, border: "1px solid " + T.line }}>
@@ -60,19 +61,23 @@ export function PeopleRoles({ profiles, saveProfiles, data }) {
           </div>
         </div>}
         {bulkMsg && <span role="status" style={{ fontSize: FZ.xs, color: T.ink700, fontWeight: 600 }}>{bulkMsg}</span>}
-        <span style={{ fontSize: FZ.xs, color: T.ink500, width: "100%" }}>{counts.map(([l, n]) => l + " : " + n).join(" · ")}</span>
+        <div role="group" aria-label="Filtrer par rôle" style={{ display: "flex", gap: 6, flexWrap: "wrap", width: "100%" }}>
+          {counts.map(([id, l, n]) => <button key={id || "auto"} type="button" aria-pressed={rf === id} onClick={() => setRf(id)} style={{ ...chip(rf === id), minHeight: 30 }}>{l} <span style={{ fontWeight: 500, fontVariantNumeric: "tabular-nums" }}>{n}</span></button>)}
+        </div>
         {err && <span role="alert" style={{ fontSize: FZ.xs, color: T.red500, fontWeight: 600 }}>{err}</span>}
       </div>
     </div>
     <div style={{ background: T.card, borderRadius: 12, border: "1px solid " + T.line, overflow: "hidden" }}>
-      {shown.length === 0 && <div style={{ padding: 16, fontSize: FZ.sm, color: T.ink500 }}>Aucune personne. Les comptes apparaissent ici après leur première connexion, ou ajoutez-les par e-mail.</div>}
+      {shown.length === 0 && rf !== "*" && <div style={{ padding: 16, fontSize: FZ.sm, color: T.ink500 }}>Aucune personne avec ce rôle.</div>}
+      {shown.length === 0 && rf === "*" && <div style={{ padding: 16, fontSize: FZ.sm, color: T.ink500 }}>Aucune personne. Les comptes apparaissent ici après leur première connexion, ou ajoutez-les par e-mail.</div>}
       {shown.map((p, i) => {
         const pr = profileOf(profiles, p.email), mine = pjsOfProfile(pr, rows), isOpen = open === p.email;
         return (<div key={p.email} style={{ borderTop: i ? "1px solid " + T.line : "none" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", flexWrap: "wrap" }}>
-            <div style={{ flex: "1 1 220px", minWidth: 0 }}>
-              <div style={{ fontSize: FZ.sm, fontWeight: 700, color: T.ink900 }}>{p.name}</div>
-              <div style={{ fontSize: FZ.xs, color: T.ink500, fontFamily: T.fontMono, overflow: "hidden", textOverflow: "ellipsis" }}>{p.email}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "4px 14px", minHeight: 40, flexWrap: "wrap" }}>
+            {/* v283 (audit apple-design, lot 2) : une ligne par personne — nom puis adresse en gris */}
+            <div style={{ flex: "1 1 260px", minWidth: 0, display: "flex", alignItems: "baseline", gap: 8, overflow: "hidden" }}>
+              <span style={{ fontSize: FZ.sm, fontWeight: 700, color: T.ink900, whiteSpace: "nowrap" }}>{p.name}</span>
+              <span title={p.email} style={{ fontSize: FZ.xs, color: T.ink500, fontFamily: T.fontMono, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{p.email}</span>
             </div>
             <select value={pr.role} onChange={e => save(p.email, { role: e.target.value, name: pr.name || p.name })} aria-label={"Rôle de " + p.name} style={{ ...field(), minWidth: 170 }}>
               <option value="">Automatique</option>

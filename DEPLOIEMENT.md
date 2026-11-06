@@ -2020,3 +2020,14 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Plus d'animation de largeur (Besoins turbines, barres de progression) ; tableau des Modifications sans double cadre.
 - Pas de nouvelle donnée ni de clé `localStorage`.
 - Fichiers : a11yFallback.js, styles.css, pjMeta.js, components/KpiPilotage.js, RoleHome.js, HomeView.js, ManagerPanel.js, TurbinesHub.js, ChangesTable.js, ChangesView.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v283 — Audit apple-design, lot 2 (mise en page)
+
+- Demandé : « Go, les cinq » (maquette du lot 2).
+- Liste : vue d'ensemble en une ligne, « Répartitions » déplie les 4 graphiques (repliée par défaut).
+- Planificateur : une ligne d'état + une ligne d'outils (menus Affichage, Outils, ＋ Ajouter) ; charge atelier repliée en une ligne.
+- Retards : causes sans retard en bande étroite.
+- Personnes et site : onglet « Accès » séparé, une ligne par personne, filtres par rôle.
+- Gantt : légende en haut, lignes de 44 px, n° de série au survol.
+- Clé `localStorage` : `enogia-dashboard-collapsed2` (remplace `enogia-dashboard-collapsed`) ; réglage du planificateur `ui.loadFold`.
+- Fichiers : components/DashboardSummary.js, planner/Planner.js, planner/PlannerLoad.js, components/ManagerParts.js, components/PeopleRoles.js, components/ManagerPanel.js, components/GanttView.js, pjMeta.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
