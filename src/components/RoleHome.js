@@ -85,6 +85,13 @@ export function RoleHome({ role, profile, ui, kpiEl, depEl, parcoursEl, rows, op
   const progPill = q => <span style={{ fontVariantNumeric: "tabular-nums" }}>{q.done} / {q.total}{q.ko ? " · " + q.ko + " échec" + (q.ko > 1 ? "s" : "") : ""}</span>;
   const Stat = ({ label, value, tone, onClick }) => <button type="button" onClick={onClick} disabled={!onClick} style={{ border: "none", background: T.surface, borderRadius: 8, padding: "8px 10px", textAlign: "left", cursor: onClick ? "pointer" : "default", fontFamily: T.font, minWidth: 0 }}><div style={{ fontFamily: T.fontDisplay, fontSize: "clamp(18px,1.5vw,24px)", fontWeight: 600, lineHeight: 1.1, color: tone || T.ink900, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{value}</div><div style={{ ...grey, fontFamily: T.fontLabel }}>{label}</div></button>;
   const grid = { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(110px,1fr))", gap: 6, marginTop: 6 };
+  // v284 (audit apple-design, lot 3) : une ligne de chiffres sans boîtes (le cadran Tests empilait 5 mini-boîtes)
+  const StatLine = ({ items }) => <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "6px 0", marginTop: 8 }}>
+    {items.map(({ label, value, tone, onClick }, i) => { const C = onClick ? "button" : "span"; return <C key={label} type={onClick ? "button" : undefined} onClick={onClick}
+      style={{ display: "inline-flex", alignItems: "baseline", gap: 5, border: "none", background: "transparent", padding: "2px 12px", minHeight: 28, borderLeft: i ? "1px solid " + T.line : "none", paddingLeft: i ? 12 : 0, cursor: onClick ? "pointer" : "default", fontFamily: T.font }}>
+      <b style={{ fontFamily: T.fontDisplay, fontSize: "clamp(18px,1.5vw,22px)", fontWeight: 600, color: tone || T.ink900, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{value}</b>
+      <span style={{ fontSize: FZ.sm, color: T.ink500, whiteSpace: "nowrap" }}>{label}</span></C>; })}
+  </div>;
   const bar = (pct, color) => <div style={{ height: 6, borderRadius: 3, background: T.surfaceAlt, overflow: "hidden" }}><div className="enogia-bar-fill" style={{ width: Math.max(0, Math.min(100, pct)) + "%", height: 6, background: color }} /></div>;
 
   /* ── données communes ── */
@@ -227,7 +234,7 @@ export function RoleHome({ role, profile, ui, kpiEl, depEl, parcoursEl, rows, op
     const lateT = testsDoc ? open.filter(r => r.tests && tEnd(r) < w0 && !isForced(planOf(testsDoc, r.pj)) && (q => q.total > q.done)(prog(r))).length : 0;
     const conflicts = testsDoc ? findConflicts(testsDoc, open).length : 0;
     return sec("tests", "Tests", S.tests.ring, <><Head title="Tests" sub="3 prochaines semaines" />
-      {testsDoc ? <div style={grid}><Stat label="machines en test" value={soon.length} onClick={() => onGo("tests")} /><Stat label="sans testeur" value={noTester.length} tone={noTester.length ? T.red500 : undefined} onClick={() => onGo("tests")} /><Stat label="échecs" value={fails} tone={fails ? T.red500 : undefined} /><Stat label="en retard" value={lateT} tone={lateT ? T.amber600 : undefined} /><Stat label="conflits" value={conflicts} tone={conflicts ? T.amber600 : undefined} /></div> : <div style={grey}>Page Tests non disponible.</div>}</>); } };
+      {testsDoc ? <StatLine items={[{ label: "au banc", value: soon.length, onClick: () => onGo("tests") }, { label: "sans testeur", value: noTester.length, tone: noTester.length ? T.red500 : undefined, onClick: () => onGo("tests") }, { label: "échecs", value: fails, tone: fails ? T.red500 : undefined }, { label: "en retard", value: lateT, tone: lateT ? T.amber600 : undefined }, { label: "conflits", value: conflicts, tone: conflicts ? T.amber600 : undefined }]} /> : <div style={grey}>Page Tests non disponible.</div>}</>); } };
   // v267 : l'ancien pool (planning/turbines) n'est plus la référence : les turbines viennent de la production (cadrans « pt »)
   W.turbines = { label: "Turbines (pool)", span: 4, render: () => null, renderOld: () => { const turb = (turbineDoc && turbineDoc.turbines) || []; const tst = turb.map(t => turbineStatus(t, today));
     const nCrit = tst.filter(x => x === "Critique").length, nLateT = tst.filter(x => x === "En retard").length;

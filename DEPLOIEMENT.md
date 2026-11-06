@@ -2031,3 +2031,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Gantt : légende en haut, lignes de 44 px, n° de série au survol.
 - Clé `localStorage` : `enogia-dashboard-collapsed2` (remplace `enogia-dashboard-collapsed`) ; réglage du planificateur `ui.loadFold`.
 - Fichiers : components/DashboardSummary.js, planner/Planner.js, planner/PlannerLoad.js, components/ManagerParts.js, components/PeopleRoles.js, components/ManagerPanel.js, components/GanttView.js, pjMeta.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v284 — Audit apple-design, lot 3
+
+- Demandé : « Oui, le lot 3 ».
+- Cash in : bouton « Haut de page » flottant, cases à cocher 16 px (format artefact gardé ; `CASHIN_PAGE_VERSION` 284).
+- Accueil : chiffres clés en poids 500 ; cadran Tests en une ligne de chiffres.
+- Pas de nouvelle donnée ni de clé `localStorage`.
+- Fichiers : public/cashin.html, cashinData.js, components/HomeView.js, components/RoleHome.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

@@ -720,4 +720,8 @@ export const RELEASE_CATALOG = [
     ["Retards", "Une cause sans retard devient une bande étroite avec « + » : toutes les autres tiennent à l'écran.", "admin"],
     ["Personnes et site", "Une ligne par personne, filtres par rôle ; les accès Manager ont leur propre onglet « Accès ».", "owner"],
   ] },
+  { v: "284", t: "Cash in et accueil plus faciles à lire", items: [
+    ["Cash in", "Bouton « Haut de page » en bas à droite dès qu'on a défilé d'un écran ; cases à cocher plus grandes.", "admin"],
+    ["Accueil", "Chiffres clés plus lisibles ; le cadran Tests tient en une ligne de chiffres (au banc, sans testeur, échecs, en retard, conflits).", "all"],
+  ] },
 ];

@@ -107,7 +107,7 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
   const Kpi = ({ label, value, tone, onClick, hint, sub }) => (
     <button type="button" onClick={onClick} disabled={!onClick} className="enogia-kpi enogia-kpi-ed" title={hint}
       style={{ border: "none", borderRight: "1px solid " + T.line, background: "transparent", textAlign: "left", cursor: onClick ? "pointer" : "default", fontFamily: T.font, display: "flex", flexDirection: "column", gap: 4, padding: "12px 16px 6px 0", minWidth: 0 }}>
-      <span style={{ fontSize: "clamp(40px,5vw,56px)", fontWeight: 300, lineHeight: .95, letterSpacing: "-.03em", fontFamily: T.fontDisplay, color: tone || T.ink900, fontVariantNumeric: "tabular-nums" }}><AnimatedNumber value={value} /></span>
+      <span style={{ fontSize: "clamp(40px,5vw,56px)", fontWeight: 500 /* v284 : 300 → 500, plus lisible (audit apple-design, lot 3) */, lineHeight: .95, letterSpacing: "-.03em", fontFamily: T.fontDisplay, color: tone || T.ink900, fontVariantNumeric: "tabular-nums" }}><AnimatedNumber value={value} /></span>
       <span style={{ fontSize: FZ.sm, fontWeight: 500, color: T.ink700 }}>{label}</span>
       {sub && <span style={{ ...grey, minHeight: 16 }}>{sub}</span>}
     </button>
