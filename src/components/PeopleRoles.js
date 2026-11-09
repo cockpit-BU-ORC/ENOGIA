@@ -4,6 +4,7 @@ import { PjPlate } from "./SharedUI";
 import { useMentions } from "../mentionContext";
 import { ROLES, ROLE_BLOCKS, profileOf, setProfile, chefNames, pjsOfProfile, removePerson, parsePeopleList } from "../profiles";
 import { nameFromEmail } from "../mentions";
+import { askConfirm } from "../confirm";
 
 // v188 — Manager › Réglages › Personnes et rôles : pour chaque compte, le rôle (donc l'accueil qu'il voit) et ses PJ.
 // Les PJ s'associent un par un, ou d'un coup en choisissant un nom de chef de projet (tous ses PJ, y compris les futurs).
@@ -34,7 +35,7 @@ export function PeopleRoles({ profiles, saveProfiles, data }) {
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) { setErr("Adresse e-mail invalide."); return; }
     setErr(""); const pr = profileOf(profiles, v); saveProfiles(setProfile(profiles, v, { name: pr.name || nameFromEmail(v), removed: false })); setNewEmail(""); setOpen(v);
   };
-  const remove = p => { if (window.confirm("Retirer " + p.name + " de la liste ? Son rôle et ses PJ sont effacés ; vous pourrez la rétablir.")) { saveProfiles(removePerson(profiles, p.email)); if (open === p.email) setOpen(null); } };
+  const remove = async p => { if (await askConfirm({ title: "Retirer " + p.name + " de la liste ?", message: "Son rôle et ses PJ sont effacés ; vous pourrez la rétablir (Personnes retirées).", confirmLabel: "Retirer la personne", danger: true })) { saveProfiles(removePerson(profiles, p.email)); if (open === p.email) setOpen(null); } };
   const addBulk = () => {
     const list = parsePeopleList(bulk);
     if (!list.length) { setBulkMsg("Aucune adresse @enogia.com trouvée."); return; }

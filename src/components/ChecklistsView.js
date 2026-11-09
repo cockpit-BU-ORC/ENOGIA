@@ -7,6 +7,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { T, FZF as FZ } from "../theme";
 import { DEBUG_DOC, debugSections } from "../debugChecklist";
 import { parseDocxXml, parseChecklistText, docxDocumentXml } from "../checklistImport";
+import { askConfirm } from "../confirm";
 
 const nid = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const btn = (primary, ghost) => ({ padding: "0 12px", minHeight: 32, borderRadius: 8, border: "1px solid " + (primary && !ghost ? T.ink900 : T.line), background: primary && !ghost ? T.ink900 : T.card, color: primary && !ghost ? T.card : T.ink700, fontSize: FZ.sm, fontWeight: 700, cursor: "pointer", fontFamily: T.font });
@@ -50,7 +51,7 @@ export function ChecklistsView({ doc, commit }) {
   const upd = fn => { setSecs(s => fn(s.map(x => ({ ...x, items: x.items.map(i => ({ ...i })) })))); setDirty(true); };
   const move = (arr, i, d) => { const j = i + d; if (j < 0 || j >= arr.length) return arr; const c = arr.slice(); [c[i], c[j]] = [c[j], c[i]]; return c; };
   const save = async () => { setBusy(true); const ok = await commit({ debugModel: { sections: secs, at: new Date().toISOString() } }); setBusy(false); if (ok !== false) { setDirty(false); setMsg({ t: "Checklist enregistrée : elle s'applique à toutes les machines." }); } else setMsg({ t: "L'enregistrement a échoué.", bad: true }); };
-  const reset = async () => { if (!window.confirm("Revenir au modèle Word d'origine (" + DEBUG_DOC.ref + ") ? Les lignes ajoutées ou modifiées seront perdues pour toutes les machines.")) return; setBusy(true); const ok = await commit({ debugModel: null }); setBusy(false); if (ok !== false) { setDirty(false); setMsg({ t: "Modèle d'origine rétabli." }); } };
+  const reset = async () => { if (!(await askConfirm({ title: "Revenir au modèle Word d'origine ?", message: "Modèle " + DEBUG_DOC.ref + ". Les lignes ajoutées ou modifiées seront perdues pour toutes les machines.", confirmLabel: "Revenir au modèle d'origine", danger: true }))) return; setBusy(true); const ok = await commit({ debugModel: null }); setBusy(false); if (ok !== false) { setDirty(false); setMsg({ t: "Modèle d'origine rétabli." }); } };
   const total = secs.reduce((a, s) => a + s.items.length, 0);
   return (<div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
     <section style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
@@ -70,7 +71,7 @@ export function ChecklistsView({ doc, commit }) {
         <span style={{ fontSize: 12, color: T.ink500, marginRight: "auto" }}>{s.items.length} contrôle{s.items.length > 1 ? "s" : ""}</span>
         <button type="button" aria-label="Monter la section" style={mini} disabled={si === 0} onClick={() => upd(a => move(a, si, -1))}>↑</button>
         <button type="button" aria-label="Descendre la section" style={mini} disabled={si === secs.length - 1} onClick={() => upd(a => move(a, si, 1))}>↓</button>
-        <button type="button" aria-label="Supprimer la section" style={{ ...mini, color: T.red600 }} onClick={() => { if (window.confirm("Supprimer la section « " + s.title + " » et ses " + s.items.length + " contrôles ?")) upd(a => a.filter((_, k) => k !== si)); }}>×</button>
+        <button type="button" aria-label="Supprimer la section" style={{ ...mini, color: T.red600 }} onClick={async () => { if (await askConfirm({ title: "Supprimer la section « " + s.title + " » ?", message: "Ses " + s.items.length + " contrôles seront retirés du modèle (rien n'est enregistré avant « Enregistrer »).", confirmLabel: "Supprimer la section", danger: true })) upd(a => a.filter((_, k) => k !== si)); }}>×</button>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "minmax(160px,1fr) minmax(220px,2fr) 82px 120px", gap: 0 }}>
         {["Contrôle", "Consigne", "Option", ""].map(h => <div key={h} style={{ fontSize: 12, color: T.ink500, padding: "6px 8px", borderBottom: "1px solid " + T.line }}>{h}</div>)}

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { T, FZF as FZ } from "../theme";
 import { DEFAULT_COMPOSANTS } from "../pjProgress";
+import { askConfirm } from "../confirm";
 
 const btn = (extra = {}) => ({ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "4px 10px", fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font, ...extra });
 const fld = { padding: "6px 10px", borderRadius: 8, border: "1px solid " + T.line, background: T.surface, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font };
@@ -18,7 +19,7 @@ export function CompCatalogDialog({ catalog, setCatalog, nPj, missingCount, onAp
   const move = (i, d) => { const j = i + d; if (j < 0 || j >= list.length) return; const n = [...list];[n[i], n[j]] = [n[j], n[i]]; setCatalog(n); };
   const del = i => { if (list.length <= 1) { setErr("Gardez au moins un composant."); return; } setCatalog(list.filter((_, k) => k !== i)); };
   const apply = async () => {
-    if (!window.confirm("Ajouter les composants manquants à la liste des " + nPj + " PJ en cours ? Les cases déjà cochées ne changent pas, aucun composant n'est retiré.")) return;
+    if (!(await askConfirm({ title: "Ajouter les composants manquants aux " + nPj + " PJ en cours ?", message: "Les cases déjà cochées ne changent pas, aucun composant n'est retiré.", confirmLabel: "Ajouter aux " + nPj + " PJ" }))) return;
     const n = await onApplyAll(list); setMsg(n === false ? "" : "Liste complétée sur " + n + " PJ.");
   };
   return createPortal(<div role="dialog" aria-modal="true" aria-label="Liste des composants" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}

@@ -5,6 +5,7 @@ import { STEP_KEYS, STEP_LABEL, STEP_IS_MS, STEP_KIND, stepKeysOf, stepLabel, is
 import { numberRows, predText, applyPredText } from "./predecessors";
 import { Pop, MenuItem } from "./PlannerMenu";
 import { usePointerDnD } from "../pointerDrag";
+import { askConfirm } from "../confirm";
 
 export const fmtIso = iso => iso ? iso.slice(8, 10) + "/" + iso.slice(5, 7) + "/" + iso.slice(2, 4) : "—";
 export const STEP_COLOR_BASE = { arrivee: "#7A5A1C", production: "#17734F", tests: "#5A44A6", finProd: "#A4570B", depart: "#A8332F" };
@@ -288,7 +289,7 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
                 <MenuItem disabled={idx === 0} onClick={() => { close(); onReorder(p.pj, plan.pjs[idx - 1].pj); }}>▲ Monter dans la priorité</MenuItem>
                 <MenuItem disabled={idx === plan.pjs.length - 1} onClick={() => { close(); onReorder(p.pj, plan.pjs[idx + 1].pj); }}>▼ Baisser dans la priorité</MenuItem>
                 <MenuItem onClick={() => { close(); go(setArchived(base, p.pj, !p.archived), null); if (!p.archived) setSel(null); }}>{p.archived ? "Sortir des archives" : "Archiver (garde ses dates, masqué du Gantt)"}</MenuItem>
-                <MenuItem danger onClick={() => { close(); if (window.confirm("Retirer " + p.pj + " du plan ? (Le planning actuel publié n'est pas modifié.)")) { go(removePj(base, p.pj), null); setSel(null); } }}>Retirer ce PJ du plan</MenuItem>
+                <MenuItem danger onClick={async () => { close(); if (await askConfirm({ title: "Retirer " + p.pj + " du plan ?", message: "Le planning actuel publié n'est pas modifié. Annuler (Ctrl + Z) reste possible.", confirmLabel: "Retirer du plan", danger: true })) { go(removePj(base, p.pj), null); setSel(null); } }}>Retirer ce PJ du plan</MenuItem>
               </>)}
             </Pop>}
           </>, { gap: 2 });
@@ -332,7 +333,7 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
           {rank ? <span title={"Ordre de passage : " + rank} style={{ fontSize: 10.5, fontWeight: 700, color: T.teal600, background: "rgba(46,125,154,.14)", borderRadius: 8, padding: "0 5px" }}>#{rank}</span> : null}
           <span style={{ flex: 1 }} />
           {!readOnly && <button className="pg-btn pg-more" aria-label={"Lier " + stepLabel(p, k) + " de " + p.pj + " à une autre tâche"} title="Lier à une autre tâche : cliquez ensuite la tâche qui doit suivre" onClick={e => { e.stopPropagation(); setLinkDlg(key); }} style={{ border: "1px solid " + T.line, background: T.card, color: T.teal600, borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: "pointer", padding: "0 6px", marginRight: 4, lineHeight: "18px" }}>Lier</button>}
-          {!readOnly && <button className="pg-btn pg-more" aria-label={"Supprimer l'étape " + stepLabel(p, k) + " de " + p.pj} title="Supprimer cette étape" onClick={e => { e.stopPropagation(); if (window.confirm("Supprimer l'étape « " + stepLabel(p, k) + " » de " + p.pj + " (et ses liens) ?")) go(removeStep(base, p.pj, k), { pj: p.pj, key: null, want: null }); }} style={{ border: 0, background: "none", color: T.red500, cursor: "pointer", fontSize: 13, padding: "0 6px" }}>✕</button>}
+          {!readOnly && <button className="pg-btn pg-more" aria-label={"Supprimer l'étape " + stepLabel(p, k) + " de " + p.pj} title="Supprimer cette étape" onClick={async e => { e.stopPropagation(); if (await askConfirm({ title: "Supprimer l'étape « " + stepLabel(p, k) + " » de " + p.pj + " ?", message: "Ses liens sont supprimés aussi. Annuler (Ctrl + Z) reste possible.", confirmLabel: "Supprimer l'étape", danger: true })) go(removeStep(base, p.pj, k), { pj: p.pj, key: null, want: null }); }} style={{ border: 0, background: "none", color: T.red500, cursor: "pointer", fontSize: 13, padding: "0 6px" }}>✕</button>}
         </>, { gap: 2 });
         if (c === "start") return cell(c, w, <EditCell disabled={readOnly} type="date" value={n && n.s !== null ? n.start : ""} onCommit={v => editStart(p, k, v)} mono title={pinned ? "Date imposée : « pas avant ce jour »" : n && n.s !== null ? "Date calculée par un lien. Cliquez pour imposer une date." : "Pas de date : imposez-en une ou ajoutez un prédécesseur"}
           display={<>{n && n.s !== null ? fmtIso(n.start) : "—"}{n && n.snetIgnored && !String(n.driver || "").startsWith("seq:") ? <span title="La date imposée est antérieure à ce que permettent les liens : elle n'a pas d'effet" style={{ color: T.amber600 }}> ⚠</span> : null}</>} style={{ fontSize: 12, fontWeight: pinned ? 700 : 400, color: ch ? T.amber600 : pinned ? T.ink900 : T.ink500, background: ch ? T.amber100 : "transparent", borderRadius: 8 }} />);

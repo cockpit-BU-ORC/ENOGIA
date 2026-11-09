@@ -5,6 +5,7 @@ import { T, FZ, R, btn } from "../theme";
 import { isSuperAdmin } from "../roles";
 import { ETAT_META, getPjMeta, SerieTag } from "../pjMeta";
 import { parseMSProjectRows } from "../parsers";
+import { askConfirm } from "../confirm";
 
 export function useSheetJS(){
   const [ready,setReady]=useState(!!window.XLSX);
@@ -234,9 +235,9 @@ export function ImportButton({onImport, busy, label, accent, helpText, warnText,
     setOpen(v=>!v);
   };
 
-  const proceedImport=parsed=>{
+  const proceedImport=async parsed=>{
     if(hasExisting&&confirmMessage){
-      const ok=window.confirm(confirmMessage);
+      const ok=await askConfirm({title:"Remplacer les données ?",message:confirmMessage,confirmLabel:"Remplacer",danger:true});
       if(!ok)return false;
     }
     onImport(parsed,"");
@@ -257,13 +258,13 @@ export function ImportButton({onImport, busy, label, accent, helpText, warnText,
         const affRows=affSheetName?window.XLSX.utils.sheet_to_json(wb.Sheets[affSheetName],{header:1,raw:false}):null;
         const parsed=parseMSProjectRows(rows,affRows);
         if(!parsed||parsed.length===0){setErr("Aucun PJ reconnu. Vérifiez les colonnes Nom / Début / Niveau hiérarchique.");return;}
-        if(proceedImport(parsed))setOpen(false);
+        if(await proceedImport(parsed))setOpen(false);
       } else {
         const text=await file.text();
         const rows=text.trim().split("\n").map(l=>l.split("\t"));
         const parsed=parseMSProjectRows(rows);
         if(!parsed||parsed.length===0){setErr("Aucun PJ reconnu dans ce fichier texte.");return;}
-        if(proceedImport(parsed))setOpen(false);
+        if(await proceedImport(parsed))setOpen(false);
       }
     }catch(e){setErr("Erreur de lecture : "+e.message);}
   };

@@ -9,6 +9,7 @@ import { fmtEur } from "../pjProgress";
 import { NavIcon } from "./SharedUI";
 import { ETAT_SWATCHES } from "./EtatsDialog";
 import { PEN_REFS, PEN_DEFAULT, penaltyCalc, ficheBase, siblingsOf, pjBase } from "../penalties";
+import { askConfirm } from "../confirm";
 
 const fd = iso => iso ? new Date(String(iso).slice(0, 10) + "T12:00:00").toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 const capLbl = () => ({ fontSize: FZ.xs, fontWeight: 700, color: T.ink500, textTransform: "uppercase", letterSpacing: ".04em" });
@@ -36,7 +37,7 @@ export function CertifDialog({ onClose, certifs, setCertifs, usage }) {
     if (await setCertifs([...certifs, { id, name: t, color }])) setName("");
   };
   const patch = (id, f) => setCertifs(certifs.map(c => c.id === id ? { ...c, ...f } : c));
-  const del = id => { const n = usage(id); if (n > 0) { setErr("Cette certification est utilisée par " + n + " fiche" + (n > 1 ? "s" : "") + " : retirez-la d'abord de ces fiches."); return; } if (window.confirm("Supprimer cette certification ?")) setCertifs(certifs.filter(c => c.id !== id)); };
+  const del = id => { const n = usage(id); if (n > 0) { setErr("Cette certification est utilisée par " + n + " fiche" + (n > 1 ? "s" : "") + " : retirez-la d'abord de ces fiches."); return; } askConfirm({ title: "Supprimer cette certification ?", message: "Elle ne sera plus proposée dans les fiches. Aucune fiche ne l'utilise.", confirmLabel: "Supprimer la certification", danger: true }).then(ok => { if (ok) setCertifs(certifs.filter(c => c.id !== id)); }); };
   const fld = { padding: "6px 10px", borderRadius: 8, border: "1px solid " + T.line, background: T.surface, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font };
   const lbl = { fontSize: FZ.xs, fontWeight: 800, color: T.ink500, textTransform: "uppercase", letterSpacing: ".04em", margin: "0 0 6px" };
   return createPortal(<div role="dialog" aria-modal="true" aria-label="Certifications" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}
@@ -186,9 +187,15 @@ export function CertifTag({ r, meta, rows, getMeta, save, saveMulti, certifs, se
 export function FicheContratPanel({ part, r, meta, rows, getMeta, today, save, saveMulti }) {
   const [copied, setCopied] = useState("");
   const sib = siblingsOf(rows, r.pj), others = sib.filter(x => x.pj !== r.pj);
-  const pen = meta.penalite ? { ...PEN_DEFAULT, ...meta.penalite } : null;
-  const setPen = f => save({ penalite: { ...(pen || PEN_DEFAULT), ...f } });
-  const calc = penaltyCalc(meta, r.depart, today), active = !pen || pen.actif !== false;
+  // v288 (lot E, sécurité des actions) : « ＋ Définir les pénalités » ouvre un brouillon — rien n'est enregistré ni compté
+  // dans les totaux avant « Enregistrer les pénalités » (avant : un clic enregistrait des pénalités actives par défaut).
+  const savedPen = meta.penalite ? { ...PEN_DEFAULT, ...meta.penalite } : null;
+  const [draft, setDraft] = useState(null);
+  useEffect(() => { setDraft(null); }, [r.pj]);
+  const isDraft = !savedPen && !!draft;
+  const pen = savedPen || draft;
+  const setPen = f => { if (savedPen) save({ penalite: { ...savedPen, ...f } }); else setDraft(d => ({ ...(d || PEN_DEFAULT), ...f })); };
+  const calc = penaltyCalc(isDraft ? { ...meta, penalite: draft } : meta, r.depart, today), active = !pen || pen.actif !== false;
   const base = ficheBase(meta);
 
   const flash = t => { setCopied(t); setTimeout(() => setCopied(""), 3500); };
@@ -229,11 +236,16 @@ export function FicheContratPanel({ part, r, meta, rows, getMeta, today, save, s
 
     {/* Pénalités */}
     {<div>
-      <Sub title="Pénalités de retard" right={pen ? <button onClick={() => { if (window.confirm("Retirer les conditions de pénalité de cette fiche ?")) save({ penalite: undefined }); }} style={{ ...btn(), padding: "1px 8px" }}>Retirer</button> : null} />
+      <Sub title="Pénalités de retard" right={savedPen ? <button onClick={async () => { if (await askConfirm({ title: "Retirer les pénalités de cette fiche ?", message: "Les conditions de pénalité sont effacées et ne comptent plus dans les totaux ni les rapports.", confirmLabel: "Retirer les pénalités", danger: true })) save({ penalite: undefined }); }} style={{ ...btn(), padding: "1px 8px" }}>Retirer</button> : null} />
       {!pen ? <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <span style={{ fontSize: FZ.sm, color: T.ink300 }}>Aucune condition de pénalité sur cette fiche.</span>
-        <button onClick={() => save({ penalite: { ...PEN_DEFAULT } })} style={{ ...btn(), color: T.navy700 }}>＋ Définir les pénalités</button>
+        <button onClick={() => setDraft({ ...PEN_DEFAULT })} style={{ ...btn(), color: T.navy700 }}>＋ Définir les pénalités</button>
       </div> : <>
+        {isDraft && <div role="status" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "8px 12px", borderRadius: 8, background: T.amber100, color: T.ink900, marginBottom: 8, fontSize: FZ.sm }}>
+          <span style={{ flex: "1 1 220px" }}><b>Brouillon</b> — rien n'est enregistré ni compté dans les totaux tant que vous n'avez pas enregistré.</span>
+          <button type="button" className="e-btn e-btn-sec" onClick={() => setDraft(null)} style={{ ...btn(), minHeight: 30 }}>Annuler</button>
+          <button type="button" className="e-btn e-btn-pri" onClick={() => { save({ penalite: { ...draft } }); setDraft(null); }} style={{ ...btn(), minHeight: 30, background: T.ink900, color: T.card, borderColor: T.ink900 }}>Enregistrer les pénalités</button>
+        </div>}
         <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 12px", borderRadius: 12, cursor: "pointer", marginBottom: 6,
           background: active ? T.red100 : T.surfaceAlt, border: "1.5px solid " + (active ? T.red500 : T.line) }}>
           <input type="checkbox" checked={active} onChange={e => setPen({ actif: e.target.checked })} style={{ width: 17, height: 17, accentColor: T.red500, cursor: "pointer", flexShrink: 0 }} />
@@ -252,7 +264,7 @@ export function FicheContratPanel({ part, r, meta, rows, getMeta, today, save, s
         <div style={{ fontSize: FZ.xs, color: T.ink300, marginTop: 6 }}>
           {pen.ref === "mad" ? "Prévision = fin projetée du planning, comparée à la MaD ORC contractuelle." : "Prévision = « Livraison prévue » de la section Planning ; à défaut, la date du jour si l'échéance est dépassée."} Semaine entamée = semaine due, après la période de grâce.
         </div>
-        {others.length > 0 && <div style={{ marginTop: 6 }}><button onClick={() => copyTo({ penalite: pen }, "Conditions")} style={btn()}>Copier les conditions sur les {others.length} autre{others.length > 1 ? "s" : ""} fiche{others.length > 1 ? "s" : ""} du {pjBase(r.pj)}</button></div>}
+        {others.length > 0 && !isDraft && <div style={{ marginTop: 6 }}><button onClick={() => copyTo({ penalite: pen }, "Conditions")} style={btn()}>Copier les conditions sur les {others.length} autre{others.length > 1 ? "s" : ""} fiche{others.length > 1 ? "s" : ""} du {pjBase(r.pj)}</button></div>}
       </>}
       {sib.length > 1 && sibRows.some(x => x.c.status !== "off") && <div style={{ marginTop: 10, border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden" }}>
         <div style={{ ...capLbl(), padding: "6px 10px", background: T.surfaceAlt }}>Pénalités du {pjBase(r.pj)} · toutes fiches</div>

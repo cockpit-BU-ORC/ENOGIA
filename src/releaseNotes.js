@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v288",
+    date: "2026-11-09",
+    title: "V288 : actions plus sûres",
+    items: [
+      { t: "Confirmations", d: "Une fenêtre claire qui dit ce qui va se passer, avec un bouton qui nomme l'action." },
+      { t: "Fiches projet", d: "Pénalités en brouillon avant d'enregistrer, et « Annuler » 5 s après chaque enregistrement.", admin: true },
+    ],
+  },
+  {
     id: "2026-11-v287",
     date: "2026-11-06",
     title: "V287 : fenêtres du Planificateur au clavier",

@@ -738,4 +738,9 @@ export const RELEASE_CATALOG = [
   { v: "287", t: "Fenêtres du Planificateur au clavier", items: [
     ["Planificateur", "Les fenêtres Publier, Modèles par gamme, Historique, Plan vierge, Nouveau PJ, Nouvelle tâche et Niveler se ferment avec Échap, reçoivent le focus clavier et s'ouvrent comme les autres fenêtres du site.", "owner"],
   ] },
+  { v: "288", t: "Actions plus sûres : confirmations claires, brouillon, annulation", items: [
+    ["Partout", "Les confirmations s'ouvrent dans une fenêtre du site : la question, sa conséquence, et un bouton qui nomme l'action (« Retirer les pénalités », « Supprimer l'étape »…) ; pour une suppression, Entrée ne valide pas par mégarde.", "all"],
+    ["Fiches projet", "« ＋ Définir les pénalités » ouvre un brouillon : rien n'est enregistré ni compté avant « Enregistrer les pénalités ».", "admin"],
+    ["Fiches projet", "Après chaque enregistrement, « Annuler » reste proposé 5 secondes à côté de « ✓ Enregistré ».", "admin"],
+  ] },
 ];

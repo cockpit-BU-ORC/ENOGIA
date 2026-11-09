@@ -7,6 +7,7 @@ import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { T, FZF as FZ } from "../theme";
 import { ETAT_META, ASSIGNABLE_ETATS, ALL_ETATS, isCustomEtat, etatColors, etatOrig } from "../pjMeta";
+import { askConfirm } from "../confirm";
 
 export const ETAT_SWATCHES = ["#4a64b8", "#2e8fbf", "#4f9fa8", "#4f9a7f", "#7c9a3c", "#c79a2e", "#b68a56", "#b86a63", "#9b72b3", "#8a9199"];
 export const etatSlug = t => "CUSTOM_" + t.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_|_$/g, "");
@@ -26,7 +27,7 @@ export function EtatsDialog({ onClose, customEtats, setCustomEtats, etatEdits = 
     if (await setCustomEtats([...customEtats, { id, label: t, color }])) setLabel("");
   };
   const patch = (id, f) => setCustomEtats(customEtats.map(e => e.id === id ? { ...e, ...f } : e));
-  const del = id => { const n = used(id); if (n > 0) { setErr("Cet état est utilisé par " + n + " PJ : changez d'abord leur état dans la liste."); return; } if (window.confirm("Supprimer cet état ?")) setCustomEtats(customEtats.filter(e => e.id !== id)); };
+  const del = async id => { const n = used(id); if (n > 0) { setErr("Cet état est utilisé par " + n + " PJ : changez d'abord leur état dans la liste."); return; } if (await askConfirm({ title: "Supprimer cet état ?", message: "Il ne sera plus proposé dans les listes. Aucun PJ ne l'utilise.", confirmLabel: "Supprimer l'état", danger: true })) setCustomEtats(customEtats.filter(e => e.id !== id)); };
   const fld = { padding: "6px 10px", borderRadius: 8, border: "1px solid " + T.line, background: T.surface, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font };
   const lbl = { fontSize: FZ.xs, fontWeight: 800, color: T.ink500, textTransform: "uppercase", letterSpacing: ".04em", margin: "0 0 6px" };
   const builtin = ASSIGNABLE_ETATS.filter(e => !isCustomEtat(e));

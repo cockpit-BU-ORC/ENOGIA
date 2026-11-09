@@ -4,6 +4,7 @@ import { T, FZ } from "../theme";
 import { CARD } from "./ManagerParts";
 import { EmptyState } from "./SharedUI";
 import { loadBackupIndex, restoreBackup, BACKUPS_KEPT } from "../importBackups";
+import { askConfirm } from "../confirm";
 
 const fmtAt = iso => { try { return new Date(iso).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" }); } catch (e) { return iso; } };
 const thS = () => ({ textAlign: "left", padding: "8px 12px", fontSize: FZ.xs, fontWeight: 700, color: T.ink500, textTransform: "uppercase", letterSpacing: ".04em", whiteSpace: "nowrap" });
@@ -22,7 +23,7 @@ export function ImportHistory({ authorName }) {
 
   const restore = async en => {
     const lbl = (en.lastImport || "planning sans date");
-    if (!window.confirm("Remettre le planning du " + lbl + " (" + en.count + " unités) ?\n\nLe planning actuel est d'abord copié ici : vous pourrez le restaurer ensuite.\nLes saisies faites sur le site (états, avancement, commentaires…) ne sont pas touchées.")) return;
+    if (!(await askConfirm({ title: "Remettre le planning du " + lbl + " ?", message: en.count + " unités. Le planning actuel est d'abord copié ici : vous pourrez le restaurer ensuite.\nLes saisies faites sur le site (états, avancement, commentaires…) ne sont pas touchées.", confirmLabel: "Remettre ce planning" }))) return;
     setBusyId(en.id); setErr(""); setDone("");
     try {
       const r = await restoreBackup(en.id, { by: authorName || "" });

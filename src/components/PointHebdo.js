@@ -5,6 +5,7 @@ import { itemsOf } from "../pjProgress";
 import { EmptyState } from "./SharedUI";
 import { fmt } from "../parsers";
 import { enteredOn, todayIso } from "./ManagerFiche";
+import { showText } from "../confirm";
 
 // ── Point hebdo (v134) ─────────────────────────────────────────────────────────────────────────────────────────
 // Toutes les actions de la semaine et tous les plans de mitigation OUVERTS, PJ par PJ, sur un seul écran : on anime la réunion sans
@@ -80,7 +81,7 @@ export function PointHebdo({ data, savePjMetaOverride, onOpenPj }) {
       lines.push("", g.r.pj + (g.meta.nomProjet && g.meta.nomProjet !== "—" ? " · " + g.meta.nomProjet : "") + (g.meta.chefProjet && g.meta.chefProjet !== "—" ? " (" + g.meta.chefProjet + ")" : ""));
       g.open.forEach(it => { const e = enteredOn(it); lines.push("- [" + KINDS[it.kind].label + "] " + it.text + (e ? " (saisie le " + e.short + (it.age != null ? ", " + it.age + " j" : "") + ")" : "")); });
     });
-    try { await navigator.clipboard.writeText(lines.join("\n")); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch (e) { window.prompt("Copiez le texte :", lines.join("\n")); }
+    try { await navigator.clipboard.writeText(lines.join("\n")); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch (e) { showText({ title: "Copier le point hebdo", text: lines.join("\n") }); }
   };
 
   const chip = (label, val, tone) => (<div style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "8px 12px", minWidth: 120 }}>

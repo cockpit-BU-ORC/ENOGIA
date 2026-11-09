@@ -17,6 +17,7 @@ import { PlannerLoad } from "./PlannerLoad";
 import { PlannerLanes } from "./PlannerLanes";
 import { PlannerChanges } from "./PlannerChanges";
 import { Pop, MenuItem } from "./PlannerMenu";
+import { askConfirm } from "../confirm";
 
 // ── Module « Planification » (super admin) : remplace MS Project pour construire le planning d'ordonnancement ──
 // Un seul tableau Gantt modifiable en direct (dates, durées, travail, prédécesseurs, priorité) + la charge atelier sous le Gantt.
@@ -302,7 +303,7 @@ function HistoryDialog({ onClose, onLoad, onRestorePlan, onRestorePub }) {
       <div style={{ flex: 1, minWidth: 220 }}><div style={{ fontWeight: 700, fontSize: 13.5, color: T.ink900 }}>{new Date(e.at).toLocaleString("fr-FR")} · {e.by || "—"}</div>
         <div style={{ fontSize: 12.5, color: T.ink500 }}>{e.nChanges} changement(s){e.note ? " · " + e.note : ""}</div></div>
       <button style={{ ...BTN }} title="Recharge le plan tel qu'il était à cette publication (n'est pas publié automatiquement)" onClick={() => { onRestorePlan(e.plan); setMsg("Plan rechargé dans l'éditeur (non publié)."); }}>Recharger ce plan</button>
-      <button style={{ ...BTN, color: T.red500 }} title="Remet dans le planning actuel les dates d'avant cette publication" onClick={async () => { if (!window.confirm("Annuler cette publication et remettre le planning actuel dans son état d'avant ?")) return; try { await onRestorePub(e.at); setMsg("Publication annulée : le planning actuel est revenu à l'état précédent."); } catch (x) { setErr(x.message); } }}>Annuler cette publication</button>
+      <button style={{ ...BTN, color: T.red500 }} title="Remet dans le planning actuel les dates d'avant cette publication" onClick={async () => { if (!(await askConfirm({ title: "Annuler cette publication ?", message: "Le planning actuel revient aux dates d'avant cette publication, pour tout le monde.", confirmLabel: "Annuler la publication", cancelLabel: "Garder", danger: true }))) return; try { await onRestorePub(e.at); setMsg("Publication annulée : le planning actuel est revenu à l'état précédent."); } catch (x) { setErr(x.message); } }}>Annuler cette publication</button>
     </div>))}
     <div style={{ textAlign: "right", marginTop: 10 }}><button style={{ ...BTN }} onClick={onClose}>Fermer</button></div>
   </Modal>);
@@ -654,7 +655,7 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
       </Pop>
       {!ui.lock && <Pop width={300} align="left" trigger={(o, t) => <button className="pg-tb" aria-haspopup="menu" aria-expanded={o} onClick={t}>Outils ▾</button>}>
         {close => (<>
-          <MenuItem onClick={() => { close(); if (window.confirm("Reprendre toutes les dates du planning actuel (" + (rows || []).length + " PJ) ? Le plan en cours est remplacé ; la capacité et les modèles par gamme sont gardés. Annuler (Ctrl+Z) reste possible.")) { const np = refreshPlanFromRows(plan, rows || [], cal); setSel(null); apply(np); setNotice({ tone: "warn", text: "Plan recréé depuis le planning actuel : " + np.pjs.length + " PJ, dates reprises telles quelles." }); } }}>Reprendre les dates du planning<div style={{ fontSize: 11.5, color: T.ink500, fontWeight: 400 }}>Recrée le plan avec les dates actuelles (capacité et modèles gardés)</div></MenuItem>
+          <MenuItem onClick={async () => { close(); if (await askConfirm({ title: "Reprendre toutes les dates du planning actuel ?", message: (rows || []).length + " PJ. Le plan en cours est remplacé ; la capacité et les modèles par gamme sont gardés. Annuler (Ctrl+Z) reste possible.", confirmLabel: "Reprendre les dates" })) { const np = refreshPlanFromRows(plan, rows || [], cal); setSel(null); apply(np); setNotice({ tone: "warn", text: "Plan recréé depuis le planning actuel : " + np.pjs.length + " PJ, dates reprises telles quelles." }); } }}>Reprendre les dates du planning<div style={{ fontSize: 11.5, color: T.ink500, fontWeight: 400 }}>Recrée le plan avec les dates actuelles (capacité et modèles gardés)</div></MenuItem>
           <MenuItem onClick={() => { close(); setDlg("templates"); }}>Modèles par gamme…<div style={{ fontSize: 11.5, color: T.ink500, fontWeight: 400 }}>Durées et heures habituelles par gamme</div></MenuItem>
           <MenuItem onClick={() => { close(); setDlg("history"); }}>Historique des publications</MenuItem>
           <div style={{ borderTop: "1px solid " + T.line, margin: "6px 0" }} />

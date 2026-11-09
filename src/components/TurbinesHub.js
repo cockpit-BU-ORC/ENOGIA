@@ -13,6 +13,7 @@ import { usePointerDnD } from "../pointerDrag";
 import { createPortal } from "react-dom";
 import { TURB_CFGS, cfgById, refsOf, buildNeeds, assignOps, unassignOps, allocOps, unallocOps, stockTiles, injInfo, maxBouches, autoFill, roueConflict, prodState, workDate, pjOfAffaire } from "../turbineNeeds";
 import { getPjMeta, CountryFlag } from "../pjMeta";
+import { askConfirm } from "../confirm";
 
 const COLLS = ["turbines", "arbres", "pieces", "roues", "injecteurs"];
 export { prodState, workDate, pjOfAffaire };
@@ -151,7 +152,7 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta }) {
     return ok; };
   const saveSav = async v => { const id = (sav && sav.id) || "s" + Date.now().toString(36); const data = { label: v.label, cfg: v.cfg, roue: v.roue, inj: v.inj, injB: v.injB === "" ? null : +v.injB, date: v.date, note: v.note, at: new Date().toISOString() };
     if (await api.put("besoins", id, data)) { setSav(null); setMsg({ t: "Besoin SAV « " + v.label + " » enregistré." }); } };
-  const delSav = async () => { if (!sav || !window.confirm("Supprimer le besoin SAV « " + sav.label + " » ? Turbines, roues et injecteurs attribués retournent dans le stock.")) return;
+  const delSav = async () => { if (!sav || !(await askConfirm({ title: "Supprimer le besoin SAV « " + sav.label + " » ?", message: "Turbines, roues et injecteurs attribués retournent dans le stock.", confirmLabel: "Supprimer le besoin", danger: true }))) return;
     const n = needs.find(x => x.key === "sav:" + sav.id); if (n) { for (const s of n.slots) { if (s.roue) await run(unallocOps(doc, s.roue)); if (s.inj) await run(unallocOps(doc, s.inj)); if (s.t) await run(unassignOps(doc, s.t)); } }
     await api.del("besoins", sav.id); setSav(null); };
   const shown = needs.filter(n => !onlyOpen || !n.complete || n.issues.some(i => i.bad));

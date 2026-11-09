@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useLayoutEffect, useRef } from "react";
 import { T, FZF as FZ, D, statusSoft, stripeBg, stripeHues, btn } from "../theme";
-import { SerieTag, getPjMeta, CountryFlag, Avatar, GAMME_COLORS, ETAT_META, etatInk, PresenceChip, PRESENCE_META, presenceKind, presenceDates, presenceFirstDate, today, PjPlate, orcChefsOf, epcChefOf, EpcTag } from "../pjMeta";
+import { SerieTag, getPjMeta, PJ_META_OVERRIDES, CountryFlag, Avatar, GAMME_COLORS, ETAT_META, etatInk, PresenceChip, PRESENCE_META, presenceKind, presenceDates, presenceFirstDate, today, PjPlate, orcChefsOf, epcChefOf, EpcTag } from "../pjMeta";
 import { ChefsEpcEditor } from "./ChefsEpc";
 import { fmt, diffDays } from "../parsers";
 import { Badge, NavIcon, EmptyState, SuperOnly, pressable } from "./SharedUI";
@@ -23,6 +23,7 @@ import { CommentMarks } from "./CommentMarks";
 import { livrPrevueOf, contractDatesOf, contractPatch } from "../penalties";
 import { ProdDocCtx, TURB_CFGS, pjCfg, stockTiles, injInfo, maxBouches } from "../turbineNeeds";
 import { FEUX, FeuPicker, feuxOf, worstFeu, feuColor, feuText, feuLabel, NOTE_MAX, useRedGate, redNeeds } from "./Feux";
+import { askConfirm } from "../confirm";
 
 // ── Fiche projet (Manager) ─────────────────────────────────────────────────────────────────────
 // Demandé : « la fiche projet manque cruellement de style, fais-nous une fiche plus dense en
@@ -437,7 +438,7 @@ function ItemsSection({title,kind,meta,field,atKey,color,showWeek,onSave,onGroup
     save(items.map(x=>x.id===id?{...x,...f}:x));
     // une ligne saisie sur plusieurs projets peut être clôturée / rouverte d'un coup sur les autres
     const x=items.find(i=>i.id===id);
-    if(onGroup&&x&&x.groupId&&Array.isArray(x.groupPjs)&&x.groupPjs.length>1&&("done" in f)&&window.confirm("Cette ligne a été saisie sur "+x.groupPjs.length+" projets ("+x.groupPjs.join(", ")+").\nL'appliquer aussi aux autres ?"))onGroup(x,field,atKey,f);
+    if(onGroup&&x&&x.groupId&&Array.isArray(x.groupPjs)&&x.groupPjs.length>1&&("done" in f))askConfirm({title:"Appliquer aussi aux autres projets ?",message:"Cette ligne a été saisie sur "+x.groupPjs.length+" projets ("+x.groupPjs.join(", ")+").",confirmLabel:"Appliquer aux "+x.groupPjs.length+" projets",cancelLabel:"Seulement celui-ci"}).then(ok=>{if(ok)onGroup(x,field,atKey,f);});
   };
   const canAdd=!!a.trim()&&(!mit||!!b.trim())&&!!nd;
   const add=()=>{
@@ -759,7 +760,7 @@ function ChefOverview({name,rows,pvOf,onPick,onClose,summary}){
 
 // v272 : barre d’onglets de la fiche — matière translucide (le contenu défile dessous), onglet actif = zone visible (IntersectionObserver),
 // clic = défilement doux (instantané si « réduire les animations »), « Enregistré » ou l’échec affiché à droite.
-function FicheTabs({r,zones,zone,setZone,saved,worst}){
+function FicheTabs({r,zones,zone,setZone,saved,worst,onUndo}){
   const ref=React.useRef(null);
   useEffect(()=>{
     const root=ref.current&&ref.current.closest(".enogia-mcard-in");if(!root||typeof IntersectionObserver==="undefined")return undefined;
@@ -774,15 +775,24 @@ function FicheTabs({r,zones,zone,setZone,saved,worst}){
       {zones.map(([id,l])=><button key={id} type="button" role="tab" aria-selected={zone===id} onClick={()=>go(id)} style={{border:"none",background:"transparent",padding:"10px 0",minHeight:40,cursor:"pointer",fontFamily:T.font,fontSize:FZ.sm,fontWeight:zone===id?700:500,color:zone===id?T.ink900:T.ink500,borderBottom:"2px solid "+(zone===id?T.ink900:"transparent"),whiteSpace:"nowrap",transition:"color 120ms, border-color 120ms"}}>{l}</button>)}
     </div>
     <span style={{flex:1}}/>
-    {saved&&<span role="status" className="enogia-bell-peek" style={{fontSize:FZ.xs,fontWeight:700,color:saved.ok?T.emerald600:T.red600,whiteSpace:"nowrap"}}>{saved.ok?"✓ Enregistré":"Échec de l’enregistrement, réessayez"}</span>}
+    {saved&&<span role="status" className="enogia-bell-peek" style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:FZ.xs,fontWeight:700,color:saved.ok?T.emerald600:T.red600,whiteSpace:"nowrap"}}>{!saved.ok?"Échec de l’enregistrement, réessayez":saved.undone?"↶ Modification annulée":"✓ Enregistré"}
+      {saved.ok&&saved.undo&&onUndo&&<button type="button" onClick={onUndo} className="e-btn e-btn-sec" style={{...btn("sec","sm"),minHeight:26}}>Annuler</button>}</span>}
     {worst&&<span style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:FZ.xs,fontWeight:700,color:feuText(worst),whiteSpace:"nowrap"}}><span style={{width:8,height:8,borderRadius:"50%",background:feuColor(worst)}}/>{feuLabel(worst)}</span>}
   </div>);
 }
 export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,managerEmails,currentUserEmail,resolveComment,certifs,setCertifs,openPj,openNonce,lastChange,data,initialData,comments,delays,progress,savePjMetaOverride:saveMetaRaw,savePjMetaMulti,addCommentMulti,addComment,deleteComment,addDelayAllocationMulti,deleteDelayAllocation,delayTypes,setDelayTypes,changeLog,authorName,onOpenCash}){
   // v272 (audit apple-design « enregistrement silencieux ») : chaque enregistrement de la fiche affiche « Enregistré » (ou l’échec) dans la barre d’onglets
   const [saved,setSaved]=useState(null);
-  useEffect(()=>{if(!saved)return undefined;const t=setTimeout(()=>setSaved(null),saved.ok?1600:5000);return()=>clearTimeout(t);},[saved]);
-  const savePjMetaOverride=saveMetaRaw?(async(pj,fields)=>{const ok=await saveMetaRaw(pj,fields);setSaved({ok:ok!==false,n:Date.now()});return ok;}):saveMetaRaw;
+  // v288 (lot E, sécurité des actions) : « Annuler » pendant 5 s après chaque enregistrement — remet les valeurs d'avant
+  // (champ absent avant = effacé), comme si la saisie n'avait pas eu lieu.
+  useEffect(()=>{if(!saved)return undefined;const t=setTimeout(()=>setSaved(null),saved.undo?5000:saved.ok?1600:5000);return()=>clearTimeout(t);},[saved]);
+  const savePjMetaOverride=saveMetaRaw?(async(pj,fields)=>{
+    const before=PJ_META_OVERRIDES[pj]||{},prev={};
+    Object.keys(fields||{}).forEach(k=>{prev[k]=before[k]===undefined?undefined:JSON.parse(JSON.stringify(before[k]));});
+    const ok=await saveMetaRaw(pj,fields);
+    setSaved({ok:ok!==false,n:Date.now(),undo:ok!==false?{pj,prev}:null});return ok;
+  }):saveMetaRaw;
+  const undoSave=async()=>{const u=saved&&saved.undo;if(!u||!saveMetaRaw)return;setSaved(null);const ok=await saveMetaRaw(u.pj,u.prev);setSaved({ok:ok!==false,n:Date.now(),undone:true});};
   const [zone,setZone]=useState("pilotage");
   const [search,setSearch]=useState("");
   // v164 : colonne de gauche redimensionnable (glisser la poignée) et réductible en mini-liste (n° de PJ + état), mémorisées sur ce poste
@@ -1022,7 +1032,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
         <div className="enogia-mcard-in" style={{padding:"0 16px 16px",display:"flex",flexDirection:"column",gap:12,flex:1,minHeight:0,overflowY:"auto",overflowX:"hidden"}}>
 
         {/* v272 (audit apple-design « fiche de 2 600 px sans repère ») : onglets collés en haut, translucides ; clic = défilement doux jusqu’à la zone, l’onglet suit le défilement */}
-        <FicheTabs r={r} zone={zone} setZone={setZone} saved={saved} worst={worst} zones={[["pilotage","Pilotage"],["planning","Planning"],...(savePjMetaOverride?[["finance","Finance"]]:[]),["machine","Machine"],...(savePjMetaOverride?[["suivi","Suivi"]]:[])]}/>
+        <FicheTabs r={r} zone={zone} setZone={setZone} saved={saved} onUndo={undoSave} worst={worst} zones={[["pilotage","Pilotage"],["planning","Planning"],...(savePjMetaOverride?[["finance","Finance"]]:[]),["machine","Machine"],...(savePjMetaOverride?[["suivi","Suivi"]]:[])]}/>
         {/* ── En-tête : identité, avancement, message clé ── */}
         <div style={{padding:"12px 0 4px"}}>
           <div style={{display:"flex",gap:20,flexWrap:"wrap",alignItems:"center",justifyContent:"space-between"}}>
@@ -1174,7 +1184,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
                     return(<div key={d.id} style={{background:T.card,borderRadius:8,padding:"4px 8px",borderLeft:"3px solid "+T.red500}}>
                       <div style={{display:"flex",justifyContent:"space-between",gap:8,flexWrap:"wrap"}}>
                         <span style={{fontWeight:700,color:T.ink900,fontSize:FZ.xs,display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>{d.type} — {d.days}j{others.length>0&&<span style={{fontSize:FZ.xs,color:T.violet600,background:T.violet100,borderRadius:4,padding:"1px 8px",fontWeight:700}}>aussi : {others.join(", ")}</span>}</span>
-                        <span style={{fontSize:FZ.xs,color:T.ink300,display:"inline-flex",alignItems:"center",gap:4}}>{d.author} · {new Date(d.date).toLocaleDateString("fr-FR")}{deleteDelayAllocation&&<TrashBtn title="Supprimer cette cause de retard" onClick={()=>{if(window.confirm("Supprimer cette cause de retard ("+d.type+", "+d.days+" j) ?"))deleteDelayAllocation(r.pj,d.id);}}/>}</span>
+                        <span style={{fontSize:FZ.xs,color:T.ink300,display:"inline-flex",alignItems:"center",gap:4}}>{d.author} · {new Date(d.date).toLocaleDateString("fr-FR")}{deleteDelayAllocation&&<TrashBtn title="Supprimer cette cause de retard" onClick={async()=>{if(await askConfirm({title:"Supprimer cette cause de retard ?",message:d.type+", "+d.days+" j sur "+r.pj+".",confirmLabel:"Supprimer la cause",danger:true}))deleteDelayAllocation(r.pj,d.id);}}/>}</span>
                       </div>
                       {d.note&&<div style={{fontSize:FZ.xs,color:T.ink500,marginTop:2}}>{d.note}</div>}
                     </div>);
@@ -1198,7 +1208,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
                     return(<div key={c._idx} style={{background:c.private?T.amber100:mine?T.violet100:T.card,borderRadius:8,padding:"4px 8px",borderLeft:"3px solid "+(c.private?T.amber500:mn.length?T.violet500:T.teal500)}}>
                       <div style={{display:"flex",justifyContent:"space-between",gap:8,flexWrap:"wrap"}}>
                         <span style={{fontWeight:700,color:T.teal600,fontSize:FZ.xs,display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>{c.author}{c.private&&<span style={{fontSize:FZ.xs,color:T.amber600,background:T.amber100,borderRadius:4,padding:"1px 6px",fontWeight:700}}>Privé</span>}{others.length>0&&<span style={{fontSize:FZ.xs,color:T.violet600,background:T.violet100,borderRadius:4,padding:"1px 6px",fontWeight:700}}>aussi : {others.join(", ")}</span>}</span>
-                        <span style={{fontSize:FZ.xs,color:T.ink300,display:"inline-flex",alignItems:"center",gap:4}}>{new Date(c.date).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})}{deleteComment&&<TrashBtn title="Supprimer ce commentaire" onClick={()=>{if(window.confirm("Supprimer ce commentaire ?"))deleteComment(r.pj,c._idx);}}/>}</span>
+                        <span style={{fontSize:FZ.xs,color:T.ink300,display:"inline-flex",alignItems:"center",gap:4}}>{new Date(c.date).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})}{deleteComment&&<TrashBtn title="Supprimer ce commentaire" onClick={async()=>{if(await askConfirm({title:"Supprimer ce commentaire ?",message:"Il disparaît pour tout le monde.",confirmLabel:"Supprimer le commentaire",danger:true}))deleteComment(r.pj,c._idx);}}/>}</span>
                       </div>
                       <div style={{fontSize:FZ.xs,color:T.ink700,whiteSpace:"pre-wrap",marginTop:2}}>{c.text}</div>
                       {mn.length>0&&<CommentMarks c={c} pj={r.pj} idx={c._idx} me={me} nameOf={nameOf} resolveComment={resolveComment}/>}

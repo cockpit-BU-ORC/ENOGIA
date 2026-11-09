@@ -2067,3 +2067,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - À faire par Gabriel : retirer les pénalités ajoutées par erreur sur PJ473 (Fiches projet › PJ473 › Pénalités de retard › Retirer).
 - Pas de nouvelle donnée ni de clé `localStorage`.
 - Fichiers : planner/Planner.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v288 — Actions plus sûres (lot E)
+
+- Demandé : « Oui, le lot E ».
+- Fenêtre de confirmation du site (`src/confirm.js`) à la place de 18 confirmations et d'une saisie du navigateur ; restent les 3 de Production turbines (kit de Jérémie).
+- Pénalités : brouillon avant enregistrement. Fiche projet : « Annuler » 5 s après chaque enregistrement.
+- Pas de nouvelle donnée ni de clé `localStorage`.
+- Fichiers : confirm.js (nouveau), components/AppChrome.js, ChecklistsView.js, CompCatalog.js, EtatsDialog.js, FicheContrat.js, ImportHistory.js, ManagerFiche.js, PeopleRoles.js, PointHebdo.js, TurbinesHub.js, SharedUI.js, planner/Planner.js, PlannerGantt.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

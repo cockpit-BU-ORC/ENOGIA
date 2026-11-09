@@ -5,12 +5,13 @@ import { db } from "../firebase";
 import { T, FZ } from "../theme";
 import { BETA_DOCS } from "../appDocs";
 import { NavIcon } from "./SharedUI";
+import { askConfirm } from "../confirm";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 export function BetaBanner({canCopy}){
   const [st,setSt]=useState("");
   const copy=async()=>{
-    if(!window.confirm("Copier les données de la PRODUCTION vers la BÊTA ?\n\nLes données actuelles de la bêta seront remplacées. La production n'est pas modifiée."))return;
+    if(!(await askConfirm({title:"Copier la production vers la bêta ?",message:"Les données actuelles de la bêta seront remplacées. La production n'est pas modifiée.",confirmLabel:"Remplacer la bêta",danger:true})))return;
     setSt("Copie en cours…");let n=0;
     try{
       for(const name of BETA_DOCS){const snap=await getDoc(doc(db,"planning",name));if(snap.exists()){await setDoc(doc(db,"planning","beta_"+name),snap.data());n++;}}
