@@ -160,7 +160,7 @@ function PresenceCell({r,tight,onChange}){
     setPos({left:Math.max(8,Math.min(b.left,window.innerWidth-W-8)),top:b.bottom+6>window.innerHeight-170?Math.max(8,b.top-150):b.bottom+6,W});
   };
   return(<span onClick={e=>e.stopPropagation()} style={{flexShrink:0,display:"inline-flex"}}>
-    <button onClick={open} title={kind?"Modifier la présence client / NOBO":"Ajouter une présence client / NOBO"} aria-label="Modifier la présence client / NOBO" style={{border:kind?"none":"1px dashed "+T.line,background:"transparent",padding:kind?0:"1px 6px",borderRadius:999,cursor:"pointer",display:"inline-flex",alignItems:"center",color:T.ink300,fontSize:11,fontWeight:700,fontFamily:T.font,lineHeight:1.4}}>
+    <button onClick={open} title={kind?"Modifier la présence client / NOBO":"Ajouter une présence client / NOBO"} aria-label="Modifier la présence client / NOBO" style={{border:kind?"none":"1px dashed "+T.line,background:"transparent",padding:kind?0:"1px 6px",borderRadius:999,cursor:"pointer",display:"inline-flex",alignItems:"center",color:T.ink300,fontSize: 12,fontWeight:700,fontFamily:T.font,lineHeight:1.4}}>
       {kind
         ?<PresenceChip kind={kind} date={presenceFirstDate(r.clientPresence)} dates={presenceDates(r.clientPresence)} compact tiny short={tight} fontSize={10.5}/>
         :<span>＋ Client/NOBO</span>}

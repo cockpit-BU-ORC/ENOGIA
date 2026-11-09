@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
-import { T, FZ, inkOn } from "../theme";
+import { T, FZ, inkOn, btn } from "../theme";
 import { SerieTag, getPjMeta, Avatar, relTime, PjPlate } from "../pjMeta";
 import { fmt, toLocalISO } from "../parsers";
 import { EtatsDialog } from "./EtatsDialog";
@@ -64,7 +64,7 @@ export function KpiRow({items,min=150}){
   return(<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,"+min+"px),1fr))",gap:8}}>
     {items.map(([v,l,c,sub])=>{const tone=c===T.red500||c===T.red600?T.red500:c===T.emerald500||c===T.emerald600?T.emerald600:T.ink900;return(
       <div key={l} style={{background:T.card,border:"1px solid "+T.line,borderRadius:12,padding:"12px 14px",minWidth:0}}>
-        <div style={{fontSize:12.5,color:T.ink500,fontFamily:T.fontLabel}}>{l}</div>
+        <div style={{fontSize: 13,color:T.ink500,fontFamily:T.fontLabel}}>{l}</div>
         <div style={{fontFamily:T.fontDisplay,fontSize:28,fontWeight:600,color:tone,lineHeight:1.15,marginTop:4,fontVariantNumeric:"tabular-nums"}}>{v}</div>
         {sub&&<div style={{fontSize:12,color:T.ink500,marginTop:4}}>{sub}</div>}
       </div>);})}
@@ -335,7 +335,7 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
       <div style={{width:190}}>
         <Select compact value={filterPj} onChange={e=>setFilterPj(e.target.value)} options={[{value:"",label:"Tous les PJ"},...data.map(d=>({value:d.pj,label:d.pj}))]}/>
       </div>
-      <button onClick={()=>openForm(filterPj?{pj:filterPj}:{})} style={{marginLeft:"auto",padding:"8px 16px",borderRadius:12,border:"none",background:T.ink900,color:T.card,fontSize:FZ.sm,fontWeight:700,cursor:"pointer",fontFamily:T.font,boxShadow:T.shadowSm}}>+ Déclarer un retard</button>
+      <button className="e-btn e-btn-pri" onClick={()=>openForm(filterPj?{pj:filterPj}:{})} style={{...btn("pri","md"),marginLeft:"auto"}}>+ Déclarer un retard</button>
     </div>
 
     {view==="fil"
@@ -351,8 +351,8 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
           const c=view==="pj"?T.red500:colorOf(col.key);
           const mm=view==="pj"?meta(col.pj):null;
           // v283 (audit apple-design, lot 2) : une cause sans retard devient une bande étroite (nom vertical, « + » pour en déclarer un)
-          if(view!=="pj"&&col.items.length===0)return(<button key={col.key} type="button" onClick={()=>openForm({type:col.key})} title={col.title+" — aucun retard. Cliquer pour en déclarer un."} aria-label={col.title+" : aucun retard. Déclarer un retard dans cette cause"}
-            style={{width:46,flexShrink:0,alignSelf:"stretch",minHeight:200,maxHeight:"calc(100dvh - 290px)",border:"1px dashed "+T.line,borderRadius:12,background:"transparent",display:"flex",flexDirection:"column",alignItems:"center",gap:8,padding:"8px 0",cursor:"pointer",fontFamily:T.font}}>
+          if(view!=="pj"&&col.items.length===0)return(<button className="e-btn e-btn-sec" key={col.key} type="button" onClick={()=>openForm({type:col.key})} title={col.title+" — aucun retard. Cliquer pour en déclarer un."} aria-label={col.title+" : aucun retard. Déclarer un retard dans cette cause"}
+            style={{...btn("sec","md"),width:46,flexShrink:0,alignSelf:"stretch",flexDirection:"column"}}>
             <span aria-hidden="true" style={{width:28,height:28,borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink500,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:FZ.md}}>+</span>
             <span aria-hidden="true" style={{width:9,height:9,borderRadius:"50%",background:c,flexShrink:0}}/>
             <span aria-hidden="true" style={{writingMode:"vertical-rl",transform:"rotate(180deg)",fontSize:FZ.sm,fontWeight:600,color:T.ink500,whiteSpace:"nowrap"}}>{col.title} · 0</span>

@@ -3,7 +3,7 @@
 // et un bouton recopie les conditions de pénalité / les certifications sur les autres fiches du PJ.
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { T, FZF as FZ } from "../theme";
+import { T, FZF as FZ, btn as themeBtn } from "../theme";
 import { etatColors } from "../pjMeta";
 import { fmtEur } from "../pjProgress";
 import { NavIcon } from "./SharedUI";
@@ -14,7 +14,7 @@ import { askConfirm } from "../confirm";
 const fd = iso => iso ? new Date(String(iso).slice(0, 10) + "T12:00:00").toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 const capLbl = () => ({ fontSize: FZ.xs, fontWeight: 700, color: T.ink500, textTransform: "uppercase", letterSpacing: ".04em" });
 const inp = dirty => ({ padding: "4px 8px", borderRadius: 8, border: "1.5px solid " + (dirty ? T.teal500 : T.line), background: T.card, color: T.ink900, fontSize: FZ.sm, fontWeight: 700, fontFamily: T.font, minWidth: 0, width: "100%" });
-const btn = () => ({ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "4px 10px", fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font });
+const btn = () => themeBtn("sec", "sm"); // v291 (lot H) : bouton commun
 
 // ── Certifications : catalogue global (nom + couleur) ───────────────────────────────────────────
 export const certifSlug = t => "CERT_" + t.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_|_$/g, "");
@@ -164,7 +164,7 @@ export function CertifTag({ r, meta, rows, getMeta, save, saveMulti, certifs, se
             border: triggerP ? "1.5px solid " + triggerP.border : "1.5px dashed " + T.teal500, background: triggerP ? triggerP.bg : T.teal100, color: triggerP ? triggerP.text : T.teal600 }}>
           <span aria-hidden="true" style={{ width: 9, height: 9, borderRadius: "50%", background: triggerP ? triggerP.bar : T.teal500, flexShrink: 0 }} />
           <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{cur ? cur.name : first ? first + " (supprimée)" : "Choisir…"}</span>
-          <span aria-hidden="true" style={{ fontSize:11, opacity: .8 }}>▾</span>
+          <span aria-hidden="true" style={{ fontSize: 12, opacity: .8 }}>▾</span>
         </button>
         {open && <div role="listbox" aria-label="Certifications machine" style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, zIndex: 40, minWidth: 230, maxHeight: 320, overflowY: "auto", background: T.card, border: "1px solid " + T.line, borderRadius: 12, boxShadow: "0 12px 32px rgba(0,0,0,.18)", padding: 6, display: "flex", flexDirection: "column", gap: 2 }}>
           <button type="button" role="option" aria-selected={!first} onClick={() => choose("")} style={{ ...itemSt, color: T.ink500 }}>— Aucune —</button>
@@ -212,7 +212,7 @@ export function FicheContratPanel({ part, r, meta, rows, getMeta, today, save, s
     if (calc.status === "incomplete") return <div style={{ marginTop: 8, fontSize: FZ.xs, color: T.amber600, background: T.amber100, borderRadius: 8, padding: "5px 9px", display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}><NavIcon name="warning" size={12} />À compléter pour le calcul : {calc.missing.join(", ")}.</div>;
     const late = calc.lateDays > 0;
     const col = calc.amount > 0 ? T.red500 : late ? T.amber600 : T.emerald600;
-    const cell = (lab, val, vcol, sub, big) => <div style={{ minWidth: 0 }}><div style={{ ...capLbl(), fontSize:11, whiteSpace: "nowrap" }}>{lab}</div>
+    const cell = (lab, val, vcol, sub, big) => <div style={{ minWidth: 0 }}><div style={{ ...capLbl(), fontSize: 12, whiteSpace: "nowrap" }}>{lab}</div>
       <div style={{ fontWeight: 700, fontSize: big ? FZ.lg : FZ.sm, color: vcol, marginTop: 2, letterSpacing: "-.01em", whiteSpace: "nowrap" }}>{val}</div>
       <div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={sub}>{sub}</div></div>;
     return <div style={{ marginTop: 8, background: T.surfaceAlt, borderRadius: 12, padding: "7px 10px", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(80px,1fr))", gap: 8 }}>

@@ -3,7 +3,7 @@
 // Les dates de venue du client / de NOBO se règlent dans la Liste : ici elles sont en lecture seule.
 // Les données vivent dans planning/tests (un seul document).
 import React, { useMemo, useState, useEffect, useRef } from "react";
-import { T, FZF as FZ, stageSoft, inkOn } from "../theme";
+import { T, FZF as FZ, stageSoft, inkOn, btn as themeBtn } from "../theme";
 import { getPjMeta, PRESENCE_META, PresenceChip, presenceKind, presenceDates, presenceFirstDate, Avatar, personTint } from "../pjMeta";
 import { fmt, toLocalISO } from "../parsers";
 import { useMentions } from "../mentionContext";
@@ -22,7 +22,8 @@ import { makeCalendar } from "../planner/engine";
 import { Arrange } from "./Arrange";
 
 const field = () => ({ padding: "5px 9px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, minWidth: 0 });
-const btn = (on = true, kind) => ({ border: kind === "ghost" ? "1px solid " + T.line : "none", borderRadius: 8, padding: "5px 12px", fontSize: FZ.xs, fontWeight: 700, fontFamily: T.font, cursor: on ? "pointer" : "default", background: kind === "ghost" ? T.card : on ? T.navy700 : T.ink100, color: kind === "ghost" ? T.ink700 : "#fff", flexShrink: 0 });
+// v291 (lot H) : branché sur le bouton commun (theme.js) — principal encre, secondaire bordé, désactivé gris
+const btn = (on = true, kind) => ({ ...themeBtn(kind === "ghost" ? "sec" : "pri", "sm"), flexShrink: 0, ...(on || kind === "ghost" ? {} : { background: T.ink100, borderColor: T.ink100, color: T.ink500, cursor: "default" }) });
 // mêmes couleurs que les pastilles de présence client / NOBO (lisibles en clair comme en sombre)
 const SEC_COLOR = { interne: () => T.teal600, client: () => PRESENCE_META.client.ink, nobo: () => PRESENCE_META.nobo.ink };
 const SEC_BORDER = { interne: () => T.teal500, client: () => PRESENCE_META.client.color, nobo: () => PRESENCE_META.nobo.color };
@@ -223,7 +224,7 @@ function ResultsFeed({ rows, doc, catalog, onPick }) {
           <span style={{ fontSize: FZ.xs, fontWeight: 700, color: e.v === "ok" ? T.emerald600 : T.red600 }}>{e.v === "ok" ? "Réussi" : "Échec"}</span>
           <span style={{ fontSize: FZ.xs, color: T.ink900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.name}</span>
           <span />
-          <span style={{ fontSize: 11, color: T.ink500, fontVariantNumeric: "tabular-nums" }}><span style={{ fontFamily: T.fontMono || "monospace" }}>{e.pj}</span>{e.by ? " · " + e.by : ""} · {whenTxt(e.at)}</span>
+          <span style={{ fontSize: 12, color: T.ink500, fontVariantNumeric: "tabular-nums" }}><span style={{ fontFamily: T.fontMono || "monospace" }}>{e.pj}</span>{e.by ? " · " + e.by : ""} · {whenTxt(e.at)}</span>
         </button>
       </li>)}
     </ol>
@@ -266,7 +267,7 @@ function GridHead({ days, todayIso, labelStyle, label }) {
     <div style={{ ...labelStyle, fontFamily: T.fontLabel, fontSize: 12, fontWeight: 600, color: T.ink500, display: "flex", alignItems: "flex-end", paddingBottom: 6 }}>{label}</div>
     <div style={{ flex: 1, minWidth: 0, display: "grid", gridTemplateColumns: "repeat(" + days.length + ",minmax(0,1fr))" }}>
       {days.filter((d, i) => i % 5 === 0).map((d, i) => <div key={"w" + d} style={{ gridColumn: "span 5", padding: "7px 8px 2px", fontSize: 12, fontWeight: 700, color: T.ink900, borderLeft: i ? "2px solid " + T.line : "none", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{wk(d)}</div>)}
-      {days.map((d, i) => { const td = d === todayIso, off = !HOLI.isWork(d); return <div key={d} title={off ? "Jour férié" : td ? "Aujourd'hui" : undefined} style={{ padding: "3px 0 6px", textAlign: "center", fontSize: 11.5, fontWeight: td ? 700 : 500, color: td ? S.tests.ink : off ? T.ink300 : T.ink500, background: td ? S.tests.bg : "transparent", borderRadius: td ? "6px 6px 0 0" : 0, borderLeft: i % 5 === 0 && i ? "2px solid " + T.line : "none", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", overflow: "hidden" }}>{off ? "férié" : DOW1[i % 5] + " " + Number(d.slice(8, 10))}</div>; })}
+      {days.map((d, i) => { const td = d === todayIso, off = !HOLI.isWork(d); return <div key={d} title={off ? "Jour férié" : td ? "Aujourd'hui" : undefined} style={{ padding: "3px 0 6px", textAlign: "center", fontSize: 12, fontWeight: td ? 700 : 500, color: td ? S.tests.ink : off ? T.ink300 : T.ink500, background: td ? S.tests.bg : "transparent", borderRadius: td ? "6px 6px 0 0" : 0, borderLeft: i % 5 === 0 && i ? "2px solid " + T.line : "none", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", overflow: "hidden" }}>{off ? "férié" : DOW1[i % 5] + " " + Number(d.slice(8, 10))}</div>; })}
     </div>
   </div>);
 }
@@ -311,7 +312,7 @@ function BenchGrid({ rows, allRows, doc, catalog, testers, conflicts, on, onPick
   const head = (<div style={{ ...COLS, height: "auto", alignSelf: "stretch" }}>
     <span style={{ padding: "0 8px", display: "flex", alignItems: "flex-end" }}>PJ</span>{hc("Gamme", "c-opt")}{hc("Testeur")}{hc("Client", "c-opt")}{hc("NOBO", "c-opt")}{hc("Tests", "", true)}
   </div>);
-  const cellS = { padding: "0 8px", display: "flex", alignItems: "center", gap: 5, minWidth: 0, borderLeft: "1px solid " + T.line, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontSize: 12.5 };
+  const cellS = { padding: "0 8px", display: "flex", alignItems: "center", gap: 5, minWidth: 0, borderLeft: "1px solid " + T.line, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontSize: 13 };
   const pres = (k, d) => d ? <><i aria-hidden="true" style={{ width: 8, height: 8, borderRadius: "50%", background: PRESENCE_META[k].color, flexShrink: 0 }} /><span style={{ fontVariantNumeric: "tabular-nums", color: T.ink900 }}>{fdm(dIso(d))}</span></> : d === "" ? <span style={{ color: T.ink500 }}>à fixer</span> : <span style={{ color: T.ink300 }}>—</span>;
   return (<section aria-label="Planning des bancs" className="enogia-bg" style={{ ...CARD, padding: 0, overflow: "hidden" }}>
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "10px 14px", flexWrap: "wrap", borderBottom: "1px solid " + T.line }}>
@@ -344,10 +345,10 @@ function BenchGrid({ rows, allRows, doc, catalog, testers, conflicts, on, onPick
             <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
               <TrackBg days={days} todayIso={todayIso} />
               {c0 >= 0 && <button type="button" className="enogia-bg-bar" onClick={() => onPick(r.pj)} aria-label={aria} title={r.pj + " · " + fd(ms.a) + " → " + fd(ms.b) + " · " + info + (conf ? " · testeur en conflit" : "")}
-                style={{ position: "absolute", left: "calc(" + pctOf(c0, days.length) + " + 3px)", width: "calc(" + pctOf(c1 - c0 + 1, days.length) + " - 6px)", top: 10, bottom: 10, border: tn.bd, boxShadow: conf ? "0 0 0 2px " + T.amber600 : sel ? "0 0 0 2px " + T.ink900 : "none", borderRadius: 4, background: tn.bg, color: tn.ink, cursor: "pointer", padding: "0 6px", fontSize: 11, fontWeight: 700, fontFamily: T.font, textAlign: "left", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", boxSizing: "border-box" }}>
+                style={{ position: "absolute", left: "calc(" + pctOf(c0, days.length) + " + 3px)", width: "calc(" + pctOf(c1 - c0 + 1, days.length) + " - 6px)", top: 10, bottom: 10, border: tn.bd, boxShadow: conf ? "0 0 0 2px " + T.amber600 : sel ? "0 0 0 2px " + T.ink900 : "none", borderRadius: 4, background: tn.bg, color: tn.ink, cursor: "pointer", padding: "0 6px", fontSize: 12, fontWeight: 700, fontFamily: T.font, textAlign: "left", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", boxSizing: "border-box" }}>
                 <span className="bg-bar-txt">{info}</span>
               </button>}
-              {out && <span style={{ position: "absolute", top: 0, bottom: 0, display: "flex", alignItems: "center", fontSize: 11.5, color: ms.st === "late" ? T.red600 : T.ink500, fontWeight: 600, whiteSpace: "nowrap", ...(out === "after" ? { right: 10 } : { left: 10 }) }}>
+              {out && <span style={{ position: "absolute", top: 0, bottom: 0, display: "flex", alignItems: "center", fontSize: 12, color: ms.st === "late" ? T.red600 : T.ink500, fontWeight: 600, whiteSpace: "nowrap", ...(out === "after" ? { right: 10 } : { left: 10 }) }}>
                 {out === "after" ? "tests le " + fd(ms.a) + " →" : out === "before" ? "← " + info + " (" + fd(ms.a) + " → " + fd(ms.b) + ")" : "période de tests à définir"}
               </span>}
               {dots.map(x => <span key={x.k} title={(x.k === "client" ? "Client" : "NOBO") + " présent le " + fd(x.d)} aria-label={(x.k === "client" ? "Client" : "NOBO") + " présent le " + fd(x.d)} role="img" style={{ position: "absolute", left: "calc(" + pctOf(x.i + 1, days.length) + " - 12px)", top: 3, width: 8, height: 8, borderRadius: "50%", background: PRESENCE_META[x.k].color, boxShadow: "0 0 0 2px " + T.card, zIndex: 2 }} />)}
@@ -377,7 +378,7 @@ export function TestDialog({ r, onClose, doc, testers, catalog, conflicts, commi
         {r.gamme && <span style={{ fontFamily: T.fontLabel, fontSize: FZ.sm, fontWeight: 600, color: T.ink700, border: "1px solid " + T.line, borderRadius: 8, padding: "1px 8px" }}>{r.gamme}</span>}
         <span style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: FZ.lg, color: T.ink900, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: "1 1 160px" }}>{meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : ""}</span>
         <span style={{ fontSize: FZ.xs, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{period(r)}</span>
-        <button type="button" onClick={onClose} aria-label="Fermer" style={{ border: "none", background: T.surface, color: T.ink700, borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 18, lineHeight: 1 }}>×</button>
+        <button type="button" onClick={onClose} aria-label="Fermer" style={{ border: "none", background: T.surface, color: T.ink700, borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
       </div>
       <div style={{ padding: "12px 18px 0", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(130px,1fr))", gap: 8 }}>
         <Num l="Avancement" v={q.done + " / " + q.total} /><Num l="Réussis" v={q.ok} c={T.emerald600} /><Num l="Échecs" v={q.ko} c={q.ko ? T.red600 : undefined} /><Num l="En cours" v={q.wip} c={q.wip ? T.amber600 : undefined} />
@@ -430,7 +431,7 @@ function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdi
     {!panel && <div onClick={onToggle} role="button" aria-expanded={open} tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(); } }}
       style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 14px", cursor: "pointer", flexWrap: "wrap" }}>
       <div style={{ minWidth: 150, flex: "0 1 190px" }}>
-        <div style={{ fontFamily: T.fontMono, fontWeight: 700, fontSize: FZ.sm, color: T.teal600 }}>{r.pj}{mine && <span style={{ marginLeft: 6, fontFamily: T.font, fontSize:11, background: T.teal100, color: T.teal600, borderRadius: 999, padding: "1px 7px" }}>Mon test</span>}</div>
+        <div style={{ fontFamily: T.fontMono, fontWeight: 700, fontSize: FZ.sm, color: T.teal600 }}>{r.pj}{mine && <span style={{ marginLeft: 6, fontFamily: T.font, fontSize: 12, background: T.teal100, color: T.teal600, borderRadius: 999, padding: "1px 7px" }}>Mon test</span>}</div>
         <div title={meta.nomProjet || ""} style={{ fontSize: FZ.xs, color: T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{meta.nomProjet || ""} {r.gamme ? "· " + r.gamme : ""}</div>
       </div>
       <div style={{ fontSize: FZ.sm, color: T.ink700, fontWeight: 600, minWidth: 170 }}>{period(r)}</div>
@@ -551,7 +552,7 @@ function Checklist({ r, plan, catalog, act, canEdit, canMark, saveTests, who }) 
               onChange={() => saveTests(toggleTest(plan, catalog, k, tst.id))} style={{ marginTop: 3, width: 16, height: 16, accentColor: stageSoft().finProd.solid }} />}
             <div style={{ flex: "1 1 180px", minWidth: 0 }}>
               <div style={{ fontSize: FZ.sm, fontWeight: 700, color: T.ink900, textDecoration: !edit && chk ? "line-through" : "none", textDecorationColor: T.ink300 }}>{tst.name}</div>
-              {!edit && by && stv !== "todo" && <div style={{ fontSize: 11, color: T.ink500, marginTop: 2 }}>{(TEST_STATUS.find(x => x[0] === stv) || [])[1]}{by.by ? " · " + by.by : ""}{by.at ? " · " + stamp(by.at) : ""}</div>}
+              {!edit && by && stv !== "todo" && <div style={{ fontSize: 12, color: T.ink500, marginTop: 2 }}>{(TEST_STATUS.find(x => x[0] === stv) || [])[1]}{by.by ? " · " + by.by : ""}{by.at ? " · " + stamp(by.at) : ""}</div>}
               {(edit || !chk) && tst.obj && <div style={{ fontSize: FZ.xs, color: T.ink500, whiteSpace: "pre-line", lineHeight: 1.45, marginTop: 2 }}>{tst.obj}</div>}
               {!edit && (canMark
                 ? <input defaultValue={plan.notes[tst.id] || ""} key={r.pj + tst.id + (plan.notes[tst.id] || "")} onBlur={e => { if (e.target.value !== (plan.notes[tst.id] || "")) saveTests(setNote(plan, tst.id, e.target.value)); }} placeholder="Commentaire" aria-label={"Commentaire : " + tst.name} maxLength={300} style={{ ...field(), fontSize: FZ.xs, width: "100%", boxSizing: "border-box", marginTop: 6 }} />
@@ -604,7 +605,7 @@ function Signatures({ r, plan, assigned, mine, myTester, canEdit, who, signApi, 
         {form && form.key === key && <SignForm init={form} busy={busy} onCancel={() => setForm(null)} onSave={(name, fn, img) => sign(key, name, fn, img)} />}
       </div>); })}
     <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-      <button type="button" onClick={pdf} disabled={busy} className="enogia-btn-ind" style={{ border: "none", background: T.ink900, color: T.card, borderRadius: 8, padding: "7px 14px", minHeight: 32, fontSize: FZ.sm, fontWeight: 700, cursor: "pointer", fontFamily: T.font, display: "inline-flex", alignItems: "center", gap: 6 }}><NavIcon name="copy" size={15} />PV de debug (PDF)</button>
+      <button type="button" onClick={pdf} disabled={busy} className="enogia-btn-ind" style={{...themeBtn("pri","md")}}><NavIcon name="copy" size={15} />PV de debug (PDF)</button>
       <span style={{ fontSize: FZ.xs, color: T.ink500 }}>S'ouvre dans un nouvel onglet : Imprimer → « Enregistrer au format PDF ».</span>
     </div>
     {err && <div role="alert" style={{ fontSize: FZ.xs, color: T.red500, fontWeight: 600 }}>{err}</div>}
@@ -709,7 +710,7 @@ export function TesterTimeline({ doc, rows, testers, catalog, conflicts, commit,
       onClick={() => openPj(it.pj)} title={it.pj + (r.gamme ? " · " + r.gamme : "") + " · " + (getPjMeta(it.pj, r).nomProjet || "") + " · " + fd(it.from) + " → " + fd(it.to) + " · " + q.done + "/" + q.total + " tests" + (warn ? " · chevauche un autre PJ" : "") + (canEdit ? " · glisser pour affecter (flèches haut / bas : testeur voisin)" : "")}
       style={{ opacity: dnd.drag && dnd.drag.pj === it.pj && dnd.drag.from === (fromTid || "") ? 0.35 : 1, position: "absolute", left: "calc(" + pct(pl.a) + " + 3px)", width: "calc(" + pct(pl.b - pl.a + 1) + " - 6px)", top: it.lane * LANE_H + 8, height: LANE_H - 16, boxSizing: "border-box",
         background: free ? "transparent" : tn.bg, color: free ? T.red600 : tn.ink, border: free ? "1.5px dashed " + T.red500 : tn.bd, boxShadow: warn ? "0 0 0 2px " + T.amber600 : "none", borderRadius: 4,
-        fontFamily: T.fontLabel, fontSize: 11, fontWeight: 600, cursor: canEdit ? "grab" : "pointer", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", padding: "0 6px", textAlign: "left", display: "flex", alignItems: "center", gap: 6 }}>
+        fontFamily: T.fontLabel, fontSize: 12, fontWeight: 600, cursor: canEdit ? "grab" : "pointer", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", padding: "0 6px", textAlign: "left", display: "flex", alignItems: "center", gap: 6 }}>
       <b style={{ fontFamily: T.fontMono }}>{it.pj}</b>{r.gamme && <span>{r.gamme}</span>}{q.total > 0 && <span style={{ marginLeft: "auto", fontVariantNumeric: "tabular-nums" }}>{q.done}/{q.total}</span>}
     </button>);
   };
@@ -725,7 +726,7 @@ export function TesterTimeline({ doc, rows, testers, catalog, conflicts, commit,
       <div><h2 style={{ margin: 0, fontSize: FZ.md, fontWeight: 700, color: T.ink900 }}>Testeurs</h2><div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 2 }}>Du {fd(days[0])} au {fd(end)} · une ligne par testeur : qui est pris, qui est libre{canEdit ? " · glissez une barre sur un testeur pour l'affecter" : ""}</div></div>
       <div style={{ display: "inline-flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
         <GridLegend />
-        {myTester && <button type="button" onClick={() => testerIcs(doc, myTester, rows)} title="Télécharger mes périodes de banc pour Outlook / Google Agenda. Réimportez le fichier après une mise à jour du planning : les événements sont mis à jour, pas dupliqués." style={{ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "4px 10px", minHeight: 28, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}><NavIcon name="calendar" size={14} />Mon agenda (.ics)</button>}
+        {myTester && <button className="e-btn e-btn-sec" type="button" onClick={() => testerIcs(doc, myTester, rows)} title="Télécharger mes périodes de banc pour Outlook / Google Agenda. Réimportez le fichier après une mise à jour du planning : les événements sont mis à jour, pas dupliqués." style={{...themeBtn("sec","sm")}}><NavIcon name="calendar" size={14} />Mon agenda (.ics)</button>}
         <GridNav off={offset} setOff={setOffset} />
       </div>
     </div>
@@ -749,7 +750,7 @@ export function TesterTimeline({ doc, rows, testers, catalog, conflicts, commit,
                   <Avatar name={t.name} tint={personTint(t.name)[0]} size={24} />
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ fontSize: FZ.sm, fontWeight: 700, color: myTester && myTester.id === t.id ? T.teal600 : T.ink900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</div>
-                    {conflict ? <div style={{ fontFamily: T.fontLabel, fontSize: 11, fontWeight: 600, color: T.amber600 }}>Chevauchement</div> : <div style={{ fontSize: 11, color: T.ink500 }}>{items.length ? items.length + " machine" + (items.length > 1 ? "s" : "") : "libre"}{!t.email ? " · sans e-mail" : ""}</div>}
+                    {conflict ? <div style={{ fontFamily: T.fontLabel, fontSize: 12, fontWeight: 600, color: T.amber600 }}>Chevauchement</div> : <div style={{ fontSize: 12, color: T.ink500 }}>{items.length ? items.length + " machine" + (items.length > 1 ? "s" : "") : "libre"}{!t.email ? " · sans e-mail" : ""}</div>}
                   </div>
                   <button onClick={() => testerIcs(doc, t, rows)} aria-label={"Agenda de " + t.name + " (.ics)"} title={"Agenda de " + t.name + " (.ics) pour Outlook / Google Agenda"} style={{ border: "none", background: "transparent", color: T.ink500, cursor: "pointer", minWidth: 24, minHeight: 24, padding: 2, lineHeight: 0 }}><NavIcon name="calendar" size={15} /></button>
                   {canEdit && <button onClick={() => setEdit(t.id)} aria-label={"Modifier " + t.name} title="Modifier / retirer" style={{ border: "none", background: "transparent", color: T.ink500, cursor: "pointer", minWidth: 24, minHeight: 24, padding: 2, lineHeight: 0 }}><NavIcon name="edit" size={15} /></button>}

@@ -752,4 +752,8 @@ export const RELEASE_CATALOG = [
     ["Rapport CODIR", "Texte plus lisible : 5 tailles, casse normale, couleurs de texte foncées (le gabarit ENOGIA ne change pas).", "admin"],
     ["KPI", "Dérives et Bilan mensuel : le détail est replié derrière un bouton ; les écarts en vert sont plus lisibles.", "admin"],
   ] },
+  { v: "291", t: "Boutons et textes harmonisés", items: [
+    ["Fiches projet, Tests, Retards", "Mêmes boutons partout : une seule action principale pleine (encre), les autres bordées, mêmes hauteurs et mêmes arrondis.", "admin"],
+    ["Partout", "Les fiches et le Manager utilisent la même échelle de texte (12 · 13 · 14 · 16 px).", "all"],
+  ] },
 ];

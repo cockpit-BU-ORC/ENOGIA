@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v291",
+    date: "2026-11-09",
+    title: "V291 : boutons et textes harmonisés",
+    items: [
+      { t: "Apparence", d: "Mêmes boutons et même échelle de texte dans les fiches projet, Tests et Retards." },
+    ],
+  },
+  {
     id: "2026-11-v290",
     date: "2026-11-09",
     title: "V290 : Rapport CODIR plus clair",

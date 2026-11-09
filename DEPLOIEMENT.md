@@ -2094,3 +2094,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Point hebdo, Machines ORC, Couloirs : couleurs de texte et casse corrigées.
 - Pas de nouvelle donnée ni de clé `localStorage`.
 - Fichiers : components/CodirReport.js, ManagerPanel.js, PointHebdo.js, Series.js, planner/PlannerLanes.js, styles.css, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v291 — Cohérence finale (lot H)
+
+- Demandé : « Oui, le lot H ».
+- Boutons : style commun dans Fiches projet, Tests et Retards (une seule action principale pleine).
+- Texte : jetons `FZF` à l'échelle 12 · 13 · 14 · 16 ; tailles en dur alignées dans ces pages.
+- Graphiques : déjà conformes (valeurs écrites, une couleur par graphique dans les récits) — pas de changement.
+- Pas de nouvelle donnée ni de clé `localStorage`.
+- Fichiers : theme.js, components/ManagerFiche.js, FicheContrat.js, TestsTab.js, ManagerParts.js, TableView.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

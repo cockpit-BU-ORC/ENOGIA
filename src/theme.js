@@ -139,7 +139,7 @@ export function mixHex(a, b, t) {
 
 export const FZ = { xs: 12, sm: 14, md: 16, lg: 20, xl: 28, xxl: 40, hero: 64 };
 // v132 : même échelle, un cran plus petite, pour les fiches synthèse (fiche Manager et volet de droite) : plus d'informations à l'écran, moins de défilement.
-export const FZF = { xs: 11, sm: 12.5, md: 14.5, lg: 17, xl: 24, xxl: 34, hero: 52 };
+export const FZF = { xs: 12, sm: 13, md: 14, lg: 16, xl: 24, xxl: 34, hero: 52 }; // v291 (lot H) : échelle 12 · 13 · 14 · 16 (avant 11 · 12,5 · 14,5 · 17)
 
 export const T = buildPalette(DEFAULT_THEME,false);
 
