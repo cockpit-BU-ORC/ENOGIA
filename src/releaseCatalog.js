@@ -747,4 +747,9 @@ export const RELEASE_CATALOG = [
     ["Partout", "Le site se charge presque deux fois plus vite à la connexion : le Planificateur, l'espace Manager, Tests, Turbines, Achats, le Cash in et les autres grandes pages ne se chargent qu'à leur première ouverture.", "all"],
     ["Tests", "Le planning des bancs s'affiche sans animer chaque barre de machine en même temps.", "all"],
   ] },
+  { v: "290", t: "Rapport CODIR : la réponse et les décisions d'abord", items: [
+    ["Rapport CODIR", "La synthèse commence par la réponse en une phrase, puis « À décider aujourd'hui » (3 sujets au plus, reformulables avant l'export), 4 chiffres et le tableau. Chaque page PJ dit en une phrase où en est la machine, puis où en est-on · ce qui coince · ce qu'on fait, et le contrat sur une ligne.", "admin"],
+    ["Rapport CODIR", "Texte plus lisible : 5 tailles, casse normale, couleurs de texte foncées (le gabarit ENOGIA ne change pas).", "admin"],
+    ["KPI", "Dérives et Bilan mensuel : le détail est replié derrière un bouton ; les écarts en vert sont plus lisibles.", "admin"],
+  ] },
 ];

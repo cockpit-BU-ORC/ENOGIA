@@ -588,3 +588,5 @@ button, input, select, textarea { font-family: inherit; }
 .e-btn-pri:hover:not(:disabled) { filter: brightness(1.18); }
 .e-btn-sec:hover:not(:disabled), .e-btn-ghost:hover:not(:disabled) { background: var(--enogia-hover, rgba(127,140,160,.14)) !important; }
 .e-btn-dan:hover:not(:disabled) { background: rgba(184,51,26,.10) !important; }
+/* v290 : le Rapport CODIR (page A4) garde son échelle de texte 9,5 · 11 · 14 · 24 · 36 (la règle 11 → 12 px des fenêtres ne s'y applique pas) */
+#codir-root .codir-page [style*="font-size: 11px"] { font-size: 11px !important; }

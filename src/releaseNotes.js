@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v290",
+    date: "2026-11-09",
+    title: "V290 : Rapport CODIR plus clair",
+    items: [
+      { t: "Rapport CODIR", d: "La réponse et les décisions d'abord, puis les preuves ; une page PJ en trois colonnes.", admin: true },
+      { t: "KPI", d: "Dérives et Bilan mensuel : le détail est replié derrière un bouton.", admin: true },
+    ],
+  },
+  {
     id: "2026-11-v289",
     date: "2026-11-09",
     title: "V289 : démarrage plus rapide",

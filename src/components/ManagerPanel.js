@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend } from "recharts";
-import { T, FZ, stageSoft } from "../theme";
+import { T, FZ, stageSoft, btn } from "../theme";
 import { SerieTag, getPjMeta, initials, GAMME_COLORS, ETAT_META, ALL_ETATS, ALL_GAMMES, MONTHS, today, PjPlate } from "../pjMeta";
 import { fmt, toLocalISO, diffDays, weekStartOf } from "../parsers";
 import { workDaysBetween } from "../workDays";
@@ -42,6 +42,8 @@ export function ManagerPanel({planDoc,initialAddFromImport,onOpenCashPage,onNav,
   // de l'étape ; vide = sans borne. Skill kpi-dashboard-design : période et méthode affichées sur la carte.
   const [codirFrom,setCodirFrom]=useState(""),[codirTo,setCodirTo]=useState("");
   const [kpiTab,setKpiTab]=useState("synthese"); // sous-onglet KPI par famille
+  const [kpiDetail,setKpiDetail]=useState(false); // v290 (lot F) : détail de Dérives et du Bilan mensuel replié par défaut
+  useEffect(()=>{setKpiDetail(false);},[kpiTab]);
   useEffect(()=>{if(kpiTab==="retards")setKpiTab("synthese");},[kpiTab]); // v217 : l'analyse des retards est passée dans Retards › Analyse
   const [fichePj,setFichePj]=useState(null); // v134 : PJ à ouvrir dans la fiche depuis le Point hebdo
   useEffect(()=>{if(jumpFiche&&jumpFiche.pj)setFichePj(jumpFiche);},[jumpFiche]);
@@ -423,11 +425,11 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
         le contenu détaillé d'avant reste dessous comme « détail » */}
     {me&&tab==="derives"&&<KpiStory tab={kpiTab} rows={fk} driftRows={driftRows} targets={kpiTg} metrics={{...kpiM,charge:w4h}} saveTargets={saveProfiles?(o=>saveProfiles({...(profiles||{}),kpiTargets:o})):null} sel={kpiSel} periodLabel={perLab} scopeLabel={codirScope==="all"?"toutes les machines":codirScope==="shipped"?"machines expédiées":"machines en cours"}
       weeks6={kpiWeeks(6)} weeks8={kpiWeeks(8)} weeks12={kpiWeeks(12)} notes={(profiles&&profiles.monthNotes)||{}} stepSummary={stepSummary} comparable={comparable} kpiStep={kpiStep} stepLabels={STEP_LABELS} progress={progress||{}} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}}/>}
-    {me&&tab==="derives"&&kpiTab!=="synthese"&&<div style={{fontSize:12,fontWeight:700,color:T.ink500,margin:"4px 0 8px",display:"flex",alignItems:"center",gap:8}}>Détail<span style={{flex:1,height:1,background:T.line}}/></div>}
+    {me&&tab==="derives"&&kpiTab!=="synthese"&&<div style={{fontSize:12,fontWeight:700,color:T.ink500,margin:"4px 0 8px",display:"flex",alignItems:"center",gap:8}}>Détail<span style={{flex:1,height:1,background:T.line}}/>{(kpiTab==="derives"||kpiTab==="bilan")&&<button type="button" aria-expanded={kpiDetail} onClick={()=>setKpiDetail(v=>!v)} className="e-btn e-btn-sec" style={{...btn("sec","sm")}}>{kpiDetail?"Replier le détail":kpiTab==="derives"?"Voir le détail par PJ et par étape":"Voir les jalons de chaque mois"}</button>}</div>}
     {/* v281 : l'ancien tableau de pilotage (KpiPilotage) est remplacé par le récit de la Synthèse ci-dessus */}
 
     {/* v274 : bilan mensuel — réalisé des deux derniers mois, objectifs du mois en cours et du suivant */}
-    {me&&tab==="derives"&&kpiTab==="bilan"&&<KpiBilan rows={fk} initialByPJ={initialByPJ} profiles={profiles} saveProfiles={saveProfiles} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}}/>}
+    {me&&tab==="derives"&&kpiTab==="bilan"&&kpiDetail&&<KpiBilan rows={fk} initialByPJ={initialByPJ} profiles={profiles} saveProfiles={saveProfiles} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}}/>}
     {/* v246 (maquette C de Claude Design) : les 8 prochaines semaines — charge, départs, banc, à décider */}
     {me&&tab==="derives"&&kpiTab==="semaines"&&<KpiSemaines rows={fk} driftRows={driftRows} closurePeriods={closurePeriods} productionExclusions={productionExclusions} capaWeek={CAPA_ATELIER_SEM} plan={planDoc&&planDoc.plan} hasInitial={hasInitial} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}}/>}
 
@@ -579,12 +581,12 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
 
     {pendingAdd&&<InitialAddReview parsed={pendingAdd} initialData={initialData} busy={initialImporting} onCancel={()=>setPendingAdd(null)} onConfirm={async(rows,fixRows)=>{await onInitialAdd(rows,fixRows);setPendingAdd(null);}}/>}
 
-    {me&&tab==="derives"&&kpiTab==="derives"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
+    {me&&tab==="derives"&&kpiTab==="derives"&&kpiDetail&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
       {/* v246 (maquette B de Claude Design) : la réponse en titre, classement des dérives, départs du mois */}
       <KpiDerivesHead rows={fk} driftRows={driftRows} delays={delays} hasInitial={hasInitial} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}}/>
       {!hasInitial&&<div style={{background:T.amber100,color:T.amber600,borderRadius:12,padding:"16px 16px",fontSize:FZ.sm,display:"flex",alignItems:"center",gap:8}}><NavIcon name="warning" size={16}/>Aucun planning initial — les dérives ne peuvent pas être calculées. Après une publication du Planificateur, ancrez les PJ dans l'initial avec le bandeau proposé.</div>}
       {initialData.length>0&&<>
-          <KpiRow items={[[avgDelay==null?"—":(avgDelay>0?"+":"")+avgDelay+"j","Retard moyen départ",avgDelay>0?T.red500:T.emerald500],[lateCount,"PJ en retard",T.red500],[onTimeOrEarlyCount,"PJ à l'heure / en avance",T.emerald500],[onTimeRate==null?"—":onTimeRate+"%","Taux de respect délais",onTimeRate>=70?T.emerald500:onTimeRate>=40?T.amber500:T.red500],[comparable.length,"PJ comparables",T.ink500]]}/>
+          <KpiRow items={[[avgDelay==null?"—":(avgDelay>0?"+":"")+avgDelay+"j","Retard moyen départ",avgDelay>0?T.red500:T.emerald600],[lateCount,"PJ en retard",T.red500],[onTimeOrEarlyCount,"PJ à l'heure / en avance",T.emerald600],[onTimeRate==null?"—":onTimeRate+"%","Taux de respect délais",onTimeRate>=70?T.emerald600:onTimeRate>=40?T.amber500:T.red500],[comparable.length,"PJ comparables",T.ink500]]}/>
 
         <div style={{background:T.card,borderRadius:12,padding:"16px 20px",border:"1px solid "+T.line}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8,marginBottom:2}}>
@@ -623,7 +625,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
               </div>)}
             </div>
           </div>
-          <KpiRow items={[[totalDelayDays+"j","Retard cumulé généré ("+STEP_LABELS[kpiStep]+")",T.red500],[totalGainDays+"j","Avance cumulée gagnée",T.emerald500],[reliabilityRate==null?"—":reliabilityRate+"%","PJ exactement à la date promise (écart 0)",T.teal500],[dureeCompare.ecart==null?"—":(dureeCompare.ecart>0?"+":"")+dureeCompare.ecart+"j","Écart durée moy. production",dureeCompare.ecart>0?T.red500:T.emerald500]]} min={170}/>
+          <KpiRow items={[[totalDelayDays+"j","Retard cumulé généré ("+STEP_LABELS[kpiStep]+")",T.red500],[totalGainDays+"j","Avance cumulée gagnée",T.emerald600],[reliabilityRate==null?"—":reliabilityRate+"%","PJ exactement à la date promise (écart 0)",T.teal500],[dureeCompare.ecart==null?"—":(dureeCompare.ecart>0?"+":"")+dureeCompare.ecart+"j","Écart durée moy. production",dureeCompare.ecart>0?T.red500:T.emerald600]]} min={170}/>
 
           {promiseVsReality.length>0&&<div style={{background:T.surface,borderRadius:12,padding:12,marginBottom:14}}>
             <div style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,marginBottom:8}}>{STEP_LABELS[kpiStep]} promis (initial) vs maintenus dans le mois (révisé)</div>
@@ -724,7 +726,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
               <div style={{display:"flex",gap:20,alignItems:"baseline"}}>
                 <div><div style={{fontFamily:T.fontDisplay,fontSize:FZ.xl,fontWeight:700,color:T.ink500}}>{dureeCompare.avgIni}j</div><div style={{fontSize:FZ.xs,color:T.ink300}}>Initial</div></div>
                 <div style={{fontSize:FZ.lg,color:T.ink300}}>→</div>
-                <div><div style={{fontFamily:T.fontDisplay,fontSize:FZ.xl,fontWeight:700,color:dureeCompare.ecart>0?T.red500:T.emerald500}}>{dureeCompare.avgRev}j</div><div style={{fontSize:FZ.xs,color:T.ink300}}>Révisé</div></div>
+                <div><div style={{fontFamily:T.fontDisplay,fontSize:FZ.xl,fontWeight:700,color:dureeCompare.ecart>0?T.red500:T.emerald600}}>{dureeCompare.avgRev}j</div><div style={{fontSize:FZ.xs,color:T.ink300}}>Révisé</div></div>
               </div>
             </div>}
           </div>
@@ -805,7 +807,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
 
         {worstDrifts.length>0&&<div style={{background:T.card,borderRadius:12,padding:12,border:"1px solid "+T.line,maxWidth:520}}>
           <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:8}}>Top 5 dérives — {STEP_LABELS[kpiStep]} (vs planning initial)</div>
-          {worstDrifts.map(r=>{const d=r[kpiStep].delta;const c=d>0?T.red500:d<0?T.emerald500:T.ink500;return(
+          {worstDrifts.map(r=>{const d=r[kpiStep].delta;const c=d>0?T.red500:d<0?T.emerald600:T.ink500;return(
             <div key={r.pj} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:"1px solid "+T.surface}}>
               <span style={{fontWeight:700,color:T.teal600,fontSize:FZ.sm,minWidth:85}}><PjPlate pj={r.pj}/><SerieTag pj={r.pj} style={{marginLeft:7}}/></span>
               <span style={{color:T.ink300,fontSize:FZ.xs,minWidth:50}}>{r.gamme}</span>
@@ -819,13 +821,13 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
           <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,padding:"16px 16px 0"}}>Détail par PJ — Initial vs Révisé</div>
           <table style={{width:"100%",borderCollapse:"collapse",marginTop:10,tableLayout:"auto"}}>
             <thead><tr style={{borderBottom:"1px solid "+T.line}}>
-              {["N° PJ","Gamme","Arrivée","Δ","Tests","Δ","Fin prod","Δ","Départ","Δ"].map((h,i)=><th key={i} style={{padding:"8px 12px",textAlign:"left",fontWeight:700,color:T.ink500,fontSize:FZ.sm,whiteSpace:"nowrap",textTransform:"uppercase",letterSpacing:".03em"}}>{h}</th>)}
+              {["N° PJ","Gamme","Arrivée","Δ","Tests","Δ","Fin prod","Δ","Départ","Δ"].map((h,i)=><th key={i} style={{padding:"8px 12px",textAlign:"left",fontWeight:700,color:T.ink500,fontSize:FZ.sm,whiteSpace:"nowrap",letterSpacing:".03em"}}>{h}</th>)}
             </tr></thead>
             <tbody>{driftRows.map((r,i)=>(
               <tr key={i} style={{borderBottom:"1px solid "+T.surface,background:r.hasInitial?T.card:T.surface}}>
                 <td style={{padding:"8px 12px",fontWeight:700,color:T.teal600,fontSize:FZ.md,whiteSpace:"nowrap"}}>{r.pj} <SerieTag pj={r.pj} size={11}/></td>
                 <td style={{padding:"8px 12px",color:T.ink500,fontSize:FZ.md,whiteSpace:"nowrap"}}>{r.gamme}</td>
-                {["arrivee","tests","finProd","depart"].map(k=>{const c=r[k];const d=c.delta;const col=d==null?T.ink300:d>0?T.red500:d<0?T.emerald500:T.ink500;return(<React.Fragment key={k}>
+                {["arrivee","tests","finProd","depart"].map(k=>{const c=r[k];const d=c.delta;const col=d==null?T.ink300:d>0?T.red500:d<0?T.emerald600:T.ink500;return(<React.Fragment key={k}>
                   <td style={{padding:"8px 12px",fontSize:FZ.md,color:T.ink700,whiteSpace:"nowrap"}}>{c.rev?fmt(new Date(c.rev)):"—"}</td>
                   <td style={{padding:"8px 12px",fontSize:FZ.md,fontWeight:700,color:col,whiteSpace:"nowrap",textAlign:"right",fontVariantNumeric:"tabular-nums"}}>{d==null?"—":(d>0?"+":"")+d+" j"}</td>
                 </React.Fragment>);})}

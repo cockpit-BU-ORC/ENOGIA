@@ -183,7 +183,7 @@ export function SerieTab({data,savePjMetaOverride,etatChoice,setEtatFor,clientPr
     {msg&&<div style={{padding:"6px 16px",fontSize:FZ.xs,fontWeight:700,color:T.teal600,background:T.teal100}}>{msg}</div>}
     <div style={{overflow:"auto",maxHeight:"calc(100dvh - 290px)"}}>
       <table style={{width:"100%",borderCollapse:"collapse"}}>
-        <thead><tr>{["N° PJ","Projet","Gamme","Chef de projet","Pays","État",...(setClientPresenceFor?["Présence aux tests"]:[]),"N° de série"].map(h=><th key={h} style={{position:"sticky",top:0,zIndex:2,background:T.surface,boxShadow:"0 1px 0 "+T.line,textAlign:"left",padding:"8px 12px",fontSize:FZ.xs,fontWeight:700,color:T.ink500,textTransform:"uppercase",letterSpacing:".05em"}}>{h}</th>)}</tr></thead>
+        <thead><tr>{["N° PJ","Projet","Gamme","Chef de projet","Pays","État",...(setClientPresenceFor?["Présence aux tests"]:[]),"N° de série"].map(h=><th key={h} style={{position:"sticky",top:0,zIndex:2,background:T.surface,boxShadow:"0 1px 0 "+T.line,textAlign:"left",padding:"8px 12px",fontSize:FZ.xs,fontWeight:700,color:T.ink500}}>{h}</th>)}</tr></thead>
         <tbody>
           {shown.map(({r,meta})=><Row key={r.pj} r={r} meta={meta} value={meta.numSerie} onSave={save} onPasteMany={pasteMany} saveMeta={savePjMetaOverride} etat={etatChoice&&etatChoice[r.pj]} setEtat={setEtatFor} presence={clientPresence&&clientPresence[r.pj]} setPresence={setClientPresenceFor}/>)}
           {shown.length===0&&<tr><td colSpan={8}><EmptyState compact icon="search" title="Aucun PJ."/></td></tr>}

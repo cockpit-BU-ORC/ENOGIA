@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState, useEffect, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
-import { T } from "../theme";
+import { T, inkOn } from "../theme";
 import { STEP_LABEL, nodeKey, dayNum, isoOfDay, moveStepTo, setStep, orderOf, rulesOf, schedule, benchOf, stepWork, setWork, startAtKeepLinks, startReason } from "./engine";
 import { fmtIso, STEP_COLOR, headerCells } from "./PlannerGantt";
 import { landFrom } from "../pointerDrag";
@@ -246,7 +246,7 @@ export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load,
                 </div>);
               }
               return (<div key={it.key} {...common} onPointerDown={e => startDrag(e, { kind: "move", pj: it.pj, step: l.step, key: it.key, node: n })} onClick={() => { setSel({ pj: it.pj, step: l.step }); if (!readOnly && Date.now() - dragged.current > 300) setEdit({ it, step: l.step }); }}
-                style={{ position: "absolute", left: it.x, top: it.y, width: it.w, height: BH, borderRadius: 4, background: col, opacity: dim ? 0.28 : 1, outline: on ? "2px solid " + C.ink : ch ? "2px dashed #E08A00" : "none", outlineOffset: 1, display: "flex", alignItems: "center", padding: "0 6px", gap: 5, color: "#fff", fontSize: FS, fontWeight: 500, overflow: "hidden", whiteSpace: "nowrap", cursor: readOnly ? "default" : "grab", zIndex: on ? 5 : 2, boxSizing: "border-box" }}>
+                style={{ position: "absolute", left: it.x, top: it.y, width: it.w, height: BH, borderRadius: 4, background: col, opacity: dim ? 0.28 : 1, outline: on ? "2px solid " + C.ink : ch ? "2px dashed #E08A00" : "none", outlineOffset: 1, display: "flex", alignItems: "center", padding: "0 6px", gap: 5, color: inkOn(col), fontSize: FS, fontWeight: 500, overflow: "hidden", whiteSpace: "nowrap", cursor: readOnly ? "default" : "grab", zIndex: on ? 5 : 2, boxSizing: "border-box" }}>
                 {rank > 0 && it.w > 36 && <span style={{ fontFamily: MONO, fontSize: 9.5, background: "rgba(255,255,255,.25)", borderRadius: 4, padding: "0 3px", flex: "none" }}>{rank}</span>}
                 <span style={{ fontFamily: MONO, pointerEvents: "none", overflow: "hidden", textOverflow: "ellipsis" }}>{it.out ? "" : label(it)}</span>
                 {it.w > 96 && <span style={{ marginLeft: "auto", opacity: 0.85, pointerEvents: "none", flex: "none", fontFamily: MONO }}>{n.dur} j</span>}

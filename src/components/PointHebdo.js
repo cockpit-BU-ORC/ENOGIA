@@ -13,7 +13,7 @@ import { showText } from "../confirm";
 // jour, exactement comme dans la fiche. L'ancienneté se calcule à partir de la date de saisie ; les lignes sans date (anciennes notes
 // converties) n'ont pas d'ancienneté.
 const KINDS = {
-  actions: { label: "Action", plural: "Actions", field: "actions", atKey: "semAt", get color() { return T.accent; } },
+  actions: { label: "Action", plural: "Actions", field: "actions", atKey: "semAt", get color() { return T.accentInk; } }, // v290 : T.accent en texte = 3,2:1
   mitigations: { label: "Mitigation", plural: "Mitigations", field: "mitigations", atKey: "mitAt", get color() { return T.red500; } },
 };
 const ageOf = x => {
@@ -85,7 +85,7 @@ export function PointHebdo({ data, savePjMetaOverride, onOpenPj }) {
   };
 
   const chip = (label, val, tone) => (<div style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "8px 12px", minWidth: 120 }}>
-    <div style={{ fontSize: FZ.xs, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: T.ink500 }}>{label}</div>
+    <div style={{ fontSize: FZ.xs, fontWeight: 700, color: T.ink500 }}>{label}</div>
     <div style={{ fontSize: FZ.lg, fontWeight: 600, letterSpacing: "-.02em", color: tone || T.ink900, lineHeight: "26px" }}>{val}</div>
   </div>);
 
@@ -132,7 +132,7 @@ export function PointHebdo({ data, savePjMetaOverride, onOpenPj }) {
                 return (<div key={it.kind + it.id} style={{ display: "flex", alignItems: "flex-start", gap: 8, background: T.card, borderRadius: 8, borderLeft: "3px solid " + K.color, padding: "6px 8px" }}>
                   <input type="checkbox" checked={false} onChange={() => toggle(r, meta, it.kind, it.id)} title="Clôturer (date du jour)" aria-label={"Clôturer : " + it.text} style={{ marginTop: 2, flexShrink: 0, width: 15, height: 15, cursor: "pointer", accentColor: T.teal500 }} />
                   <span style={{ flex: 1, minWidth: 0, fontSize: FZ.sm, color: T.ink900, fontWeight: 600, lineHeight: 1.35, overflowWrap: "anywhere" }}>
-                    <span style={{ fontSize: FZ.xs, fontWeight: 700, color: K.color, marginRight: 6, textTransform: "uppercase", letterSpacing: ".04em" }}>{K.label}</span>{it.text}
+                    <span style={{ fontSize: FZ.xs, fontWeight: 700, color: K.color, marginRight: 6 }}>{K.label}</span>{it.text}
                   </span>
                   <span style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0, lineHeight: 1.25 }}>
                     <span style={{ fontSize: FZ.xs, fontWeight: 700, color: ageTone(it.age) }}>{it.age == null ? "—" : it.age === 0 ? "aujourd'hui" : it.age + " j"}</span>
@@ -152,7 +152,7 @@ export function PointHebdo({ data, savePjMetaOverride, onOpenPj }) {
           <div key={g.r.pj + it.kind + it.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: FZ.xs, color: T.ink500, padding: "2px 4px" }}>
             <input type="checkbox" checked onChange={() => toggle(g.r, g.meta, it.kind, it.id)} title="Rouvrir" aria-label={"Rouvrir : " + it.text} style={{ width: 14, height: 14, cursor: "pointer", accentColor: T.teal500 }} />
             <b style={{ color: T.ink700, fontVariantNumeric: "tabular-nums" }}>{g.r.pj}</b>
-            <span style={{ textTransform: "uppercase", fontWeight: 700, color: KINDS[it.kind].color }}>{KINDS[it.kind].label}</span>
+            <span style={{ fontWeight: 700, color: KINDS[it.kind].color }}>{KINDS[it.kind].label}</span>
             <span style={{ flex: 1, minWidth: 0, textDecoration: "line-through", overflowWrap: "anywhere" }}>{it.text}</span>
             <span style={{ whiteSpace: "nowrap" }}>clôturée le {it.doneAt && fmt(new Date(it.doneAt))}</span>
           </div>)))}

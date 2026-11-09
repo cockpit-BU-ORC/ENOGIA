@@ -2085,3 +2085,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Après déploiement : le premier clic sur une grande page la télécharge (≈ 10 à 115 Ko), ensuite elle est en cache.
 - Pas de nouvelle donnée ni de clé `localStorage`.
 - Fichiers : App.js, loadWeeks.js (nouveau), components/EtatControls.js (nouveau), components/MiniPie.js (nouveau), KpiPilotage.js, ManagerParts.js, RoleHome.js, TableView.js, DashboardSummary.js, TestsTab.js, RowMenu.js, SharedUI.js, tips.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v290 — Rapport CODIR plus clair (lot F)
+
+- Demandé : « Go » (maquette du lot F).
+- Rapport CODIR : réponse en une phrase, « À décider aujourd'hui » (reformulable avant l'export), 4 chiffres, tableau ; page PJ en trois colonnes ; 5 tailles de texte, casse normale, couleurs de texte lisibles. Gabarit ENOGIA inchangé.
+- KPI › Dérives (886 px replié au lieu de 5 659) et Bilan mensuel : détail derrière un bouton.
+- Point hebdo, Machines ORC, Couloirs : couleurs de texte et casse corrigées.
+- Pas de nouvelle donnée ni de clé `localStorage`.
+- Fichiers : components/CodirReport.js, ManagerPanel.js, PointHebdo.js, Series.js, planner/PlannerLanes.js, styles.css, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
