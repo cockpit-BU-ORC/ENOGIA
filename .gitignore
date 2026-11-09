@@ -31,3 +31,6 @@ kit-achats/
 brag-output*/
 # v265 : fichiers de travail des canevas Claude Design (maquettes), jamais commités
 maquettes-design/
+
+# v294 : dépendances de la Cloud Function Odoo (cd functions && npm install)
+functions/node_modules/

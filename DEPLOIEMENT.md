@@ -2121,3 +2121,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Synchronisation Odoo : la page n'appelle jamais Odoo ; une fonction serveur (à écrire) lit `params.odoo` et la clé API dans un coffre de secrets, écrit `po` et `odooSync`.
 - Planificateur : jours sans production en tête de la production → début reculé, fin inchangée.
 - Fichiers : components/Achats.js, achats.test.js, planner/engine.js (+test), components/CalendarView.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v294 — Synchronisation Odoo des PO (Cloud Function)
+
+- Demandé : « faire la synchronisation avec Odoo sur la page achats / appros » (choix : Cloud Function Firebase).
+- Nouveau dossier `functions/` (fonctions `odooSyncDemandeProd`, `odooSyncDemandeBeta`, `odooSyncNuit`), `firebase.json`, `.firebaserc` ; mode d'emploi `functions/LISEZMOI.md`.
+- À faire par Gabriel : compte technique + clé API Odoo, forfait Blaze, `firebase functions:secrets:set ODOO_API_KEY`, `firebase deploy --only functions`, puis Réglages › Connexion Odoo dans la page (bêta d'abord).
+- Le site lui-même ne change pas (page Achats déjà prête depuis la V293) ; pas de nouvelle règle Firestore (la fonction écrit avec les droits du serveur).
+- Fichiers : functions/index.js, odoo.js, convert.js, test/*.js, package.json, LISEZMOI.md ; firebase.json, .firebaserc, .gitignore, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

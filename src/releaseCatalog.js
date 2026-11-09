@@ -768,4 +768,7 @@ export const RELEASE_CATALOG = [
     ["Achats / Appro", "Réglages : connexion Odoo préparée pour importer les PO (la clé API reste sur le serveur, jamais dans la page).", "owner"],
     ["Planificateur", "Un jour sans production au début de la production en recule le début ; la fin ne change pas.", "owner"],
   ] },
+  { v: "294", t: "Synchronisation Odoo des PO", items: [
+    ["Achats / Appro", "Les commandes d'achat d'Odoo arrivent dans l'onglet PO chaque nuit et sur « Synchroniser maintenant » (après la mise en service du serveur).", "admin"],
+  ] },
 ];
