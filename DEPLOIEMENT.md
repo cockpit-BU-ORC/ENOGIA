@@ -2075,3 +2075,13 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Pénalités : brouillon avant enregistrement. Fiche projet : « Annuler » 5 s après chaque enregistrement.
 - Pas de nouvelle donnée ni de clé `localStorage`.
 - Fichiers : confirm.js (nouveau), components/AppChrome.js, ChecklistsView.js, CompCatalog.js, EtatsDialog.js, FicheContrat.js, ImportHistory.js, ManagerFiche.js, PeopleRoles.js, PointHebdo.js, TurbinesHub.js, SharedUI.js, planner/Planner.js, PlannerGantt.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v289 — Démarrage plus rapide (lot G)
+
+- Demandé : « Lot G (rapidité) ».
+- Paquet JavaScript de départ : 759 → 399 Ko compressé (−47 %). Les grandes pages sont chargées à leur première ouverture ; la bibliothèque de graphiques n'est plus chargée au démarrage.
+- Écoutes du défilement passives ; Tests : barres de la grille sans animation d'entrée.
+- Non fait : sortir les états d'App.js (69) — gain faible, risque élevé.
+- Après déploiement : le premier clic sur une grande page la télécharge (≈ 10 à 115 Ko), ensuite elle est en cache.
+- Pas de nouvelle donnée ni de clé `localStorage`.
+- Fichiers : App.js, loadWeeks.js (nouveau), components/EtatControls.js (nouveau), components/MiniPie.js (nouveau), KpiPilotage.js, ManagerParts.js, RoleHome.js, TableView.js, DashboardSummary.js, TestsTab.js, RowMenu.js, SharedUI.js, tips.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

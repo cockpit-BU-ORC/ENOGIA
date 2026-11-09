@@ -8,7 +8,7 @@ import { HoverPop, useSheetJS, Badge, DropFilter, NavIcon, useCloseOnSignal, Emp
 import { RowDialog } from "./RowDetail";
 import { RowMenu } from "./RowMenu";
 import { EtatPopBody, DriftPopBody, AvPopBody } from "./RowPops";
-import { EtatSelect, PresenceEditor } from "./ManagerParts";
+import { EtatSelect, PresenceEditor } from "./EtatControls"; // v289 : sans les graphiques du Manager
 import { exportPlanningXlsx } from "../exportExcel";
 import { useIsPhone } from "../useIsPhone";
 import { useZoomAdvice, zoomTip } from "./ZoomHint";

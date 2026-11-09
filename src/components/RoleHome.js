@@ -10,7 +10,7 @@ import { getCashinDoc, cashOverview } from "../cashinLink";
 import { useCashin } from "../useCashin";
 import { fmtEur } from "../pjProgress";
 import { makeModel, EMPTY_PROD } from "./ProdTurbines";
-import { planWeeks, atelierCap, CAPA_DEFAUT } from "./KpiPilotage";
+import { planWeeks, atelierCap, CAPA_DEFAUT } from "../loadWeeks"; // v289 : sans les graphiques du Manager
 
 // v188 — Accueils par rôle. v229 (maquettes validées par Gabriel : « Go les 5 accueils ») : un catalogue de cadrans commun et une
 // disposition par poste — chef de projet, testeur, chef d'atelier, directeur de production turbines, autres personnes (+ direction).

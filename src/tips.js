@@ -98,5 +98,5 @@ export function initTips() {
     touchTimer = setTimeout(hide, 5000);
   }, true);
   document.addEventListener("keydown", e => { if (e.key === "Escape" && cur) hide(); });
-  window.addEventListener("scroll", () => { if (cur) hide(); }, true);
+  window.addEventListener("scroll", () => { if (cur) hide(); }, { capture: true, passive: true });
 }

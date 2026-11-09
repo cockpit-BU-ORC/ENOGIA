@@ -7,7 +7,6 @@ import { isEstimatePj } from "./changeDiff";
 import { MentionCtx } from "./mentionContext";
 import { MentionBell } from "./components/MentionBell";
 import { ZoomHint } from "./components/ZoomHint";
-import { TestsTab } from "./components/TestsTab";
 import { testerOfEmail, assignmentsSince } from "./testPlan";
 import { setDefaultComposants } from "./pjProgress";
 import { doc, setDoc, getDoc, onSnapshot, updateDoc, FieldPath, deleteField } from "firebase/firestore";
@@ -21,29 +20,19 @@ import { setOrdoPjs } from "./cashinLink";
 import { getPjMeta, chefsOf, orcChefsOf, ALL_ETATS, ETAT_META, registerCustomEtats, registerEtatEdits, today, setSyncedPjMeta, setPjMetaOverrides, GAMME_OVERRIDE } from "./pjMeta";
 import { weekStartOf } from "./parsers";
 import { HomeView } from "./components/HomeView";
-import { TurbinesHub } from "./components/TurbinesHub";
 import { ProdDocCtx } from "./turbineNeeds";
-import { Achats } from "./components/Achats";
 import { PageGuard } from "./components/PageGuard";
 import { ArrangeCtx } from "./components/Arrange"; // v235 : cadrans partagés, réglés par le propriétaire
 import { backdropStyle } from "./pageBackdrop"; // v225 : un fond léger par page
 import { useA11yFallback } from "./a11yFallback";
-import { CashInTab } from "./components/CashInTab";
 import { ManagerAccessNotice, PIN, NavIcon, Hl, EmptyState, LoadingSkeleton, PageHead, notify, Toaster } from "./components/SharedUI";
-import { GanttView } from "./components/GanttView";
 import { PjDialog, PjDialogCtx } from "./components/RowDetail";
-import { PlannerView } from "./planner/Planner";
 import { listenPlan, savePlan, loadHistory, publishPlan, restorePublication } from "./planner/store";
-import { CommentsView } from "./components/CommentsView";
 import { TableView } from "./components/TableView";
-import { CalendarView } from "./components/CalendarView";
-import { ManagerPanel } from "./components/ManagerPanel";
 import { ManagerPalette } from "./components/ManagerNav";
 import { LoginScreen, LoginTransition } from "./components/LoginScreen";
 import { SITE_NAME, SITE_SCOPE, SITE_SUB, SITE_TITLE } from "./siteName";
 import { DashboardSummary } from "./components/DashboardSummary";
-import { ChangesView } from "./components/ChangesView";
-import { WorkshopScreen } from "./components/WorkshopScreen";
 import { normalizeEtat, buildProgress } from "./prodStages";
 import { ReleasePopup, useUnseenReleases, mergeReleases } from "./components/ReleaseNotes";
 import { ChangesPopup, ChangesBadge, useUnseenChanges, useChangeMarks, ChangeMarksContext } from "./components/ChangesNotice";
@@ -54,8 +43,21 @@ import { IS_BETA, DOC_PFX, DOC_REF, INITIAL_DOC_REF, OVERRIDES_DOC_REF, COMMENTS
 import { BetaBanner, UserChip } from "./components/AppChrome";
 import { useTurbineDoc, useTestsDoc, useProdTurbines, useDelays, useCashinSync, useAchats } from "./useAppData";
 import { useListFilters, filterOptions, filterRows } from "./listFilters";
+// v289 (lot G « rapidité ») : les grandes pages ne sont chargées qu'à leur première ouverture (paquet de départ allégé) ;
+// en attendant, un squelette s'affiche dans la zone principale (Suspense).
+const TestsTab = React.lazy(() => import("./components/TestsTab").then(m => ({ default: m.TestsTab })));
+const TurbinesHub = React.lazy(() => import("./components/TurbinesHub").then(m => ({ default: m.TurbinesHub })));
+const Achats = React.lazy(() => import("./components/Achats").then(m => ({ default: m.Achats })));
+const CashInTab = React.lazy(() => import("./components/CashInTab").then(m => ({ default: m.CashInTab })));
+const GanttView = React.lazy(() => import("./components/GanttView").then(m => ({ default: m.GanttView })));
+const PlannerView = React.lazy(() => import("./planner/Planner").then(m => ({ default: m.PlannerView })));
+const CommentsView = React.lazy(() => import("./components/CommentsView").then(m => ({ default: m.CommentsView })));
+const CalendarView = React.lazy(() => import("./components/CalendarView").then(m => ({ default: m.CalendarView })));
+const ManagerPanel = React.lazy(() => import("./components/ManagerPanel").then(m => ({ default: m.ManagerPanel })));
+const ChangesView = React.lazy(() => import("./components/ChangesView").then(m => ({ default: m.ChangesView })));
+const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-09-v288-actions-sures";
+const APP_BUILD_VERSION = "2026-11-09-v289-rapidite";
 
 export default function App(){
   // Utilisateur connecté via Google, restreint aux comptes @enogia.com (null tant que non connecté).
@@ -965,7 +967,7 @@ export default function App(){
     <style>{"*{box-sizing:border-box;}"}</style>
     <Toaster/>
     {presentation&&<button onClick={()=>setPresentation(false)} title="Quitter le mode présentation (Échap)" className="enogia-btn-tap" style={{position:"fixed",right:16,bottom:16,zIndex:10010,border:"none",borderRadius:999,padding:"8px 16px",background:T.ink900,color:T.surface,fontFamily:T.font,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",boxShadow:T.shadowFloat}}>Mode présentation · Quitter (Échap)</button>}
-    {screenOpen&&<WorkshopScreen data={dataWithOverrides} productionExclusions={productionExclusions} closurePeriods={closurePeriods} changeLog={changeLog} darkMode={darkMode} onClose={()=>setScreenOpen(false)}/>}
+    {screenOpen&&<React.Suspense fallback={null}><WorkshopScreen data={dataWithOverrides} productionExclusions={productionExclusions} closurePeriods={closurePeriods} changeLog={changeLog} darkMode={darkMode} onClose={()=>setScreenOpen(false)}/></React.Suspense>}
     {loggedIn&&!justLoggedIn&&!screenOpen&&overridesLoaded&&unseenReleases.length>0&&<ReleasePopup releases={unseenReleases} userName={authorName} onClose={markReleasesSeen}/>}
     {loggedIn&&!justLoggedIn&&!screenOpen&&tutoOn&&(tutoOpen||(overridesLoaded&&unseenReleases.length===0&&currentUser&&tutoClosedId!==((tutoCfg&&tutoCfg.id)||"x")&&!tutoSeen(tutoCfg,currentUser.email)))&&<TutoVideoModal cfg={tutoCfg} onClose={closeTuto}/>}
     {noticeOpen&&!screenOpen&&overridesLoaded&&!unseenReleases.length&&unseenChanges.length>0&&<ChangesPopup entries={unseenChanges} userName={authorName} onLater={closeNoticeLater} onRead={()=>{markChangesSeen();setNoticeOpen(false);}} onOpen={()=>{setNoticeOpen(false);setView("changes");}}/>}
@@ -1041,7 +1043,7 @@ export default function App(){
       </div>
 
       <PjDialogCtx.Provider value={pjCtx}><ProdDocCtx.Provider value={prodDoc}>
-      <main id="enogia-main" tabIndex={-1} className="enogia-main" style={{padding:D.main,flex:1,outline:"none",...backdropStyle(view)}}><ArrangeCtx.Provider value={arrangeCtx}><ZoomHint/>
+      <main id="enogia-main" tabIndex={-1} className="enogia-main" style={{padding:D.main,flex:1,outline:"none",...backdropStyle(view)}}><ArrangeCtx.Provider value={arrangeCtx}><React.Suspense fallback={<LoadingSkeleton/>}><ZoomHint/>
         {newVsInitial&&pinOk&&<div role="status" style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",marginBottom:12,padding:"10px 14px",borderRadius:12,background:T.teal100,color:T.teal600,fontFamily:T.font,fontSize:FZ.sm,fontWeight:600}}>
           <NavIcon name="pin" size={16}/>
           <span style={{flex:"1 1 320px"}}>{newVsInitial.pjs.length} PJ de cet import {newVsInitial.pjs.length>1?"ne sont pas":"n'est pas"} dans le planning initial : {newVsInitial.pjs.slice(0,6).join(", ")}{newVsInitial.pjs.length>6?"…":""}. Sans initial, leur dérive ne se calcule pas.</span>
@@ -1138,7 +1140,7 @@ export default function App(){
     {calSel&&<PjDialog dayAction={calDay&&canEditMeta?(()=>{const off=((productionExclusions||{})[calSel]||[]).includes(calDay),lab=calDay.slice(8,10)+"/"+calDay.slice(5,7);return{off,label:off?"Rétablir la production le "+lab:"Pas de production le "+lab,hint:"Pour "+calSel+" seulement — le Gantt, la charge et le planificateur en tiennent compte",onToggle:()=>setProductionExclusionDays({[calSel]:[calDay]},!off)};})():null} pj={calSel} initialTab={calTab} resolveComment={resolveComment} data={dataWithOverrides} df={df} onClose={()=>{setCalSel(null);setCalDay(null);setCalTab("resume");}} comments={comments} addComment={addComment} deleteComment={deleteComment}
       pinOk={pinOk} delays={delays} delayTypes={delayTypes} setDelayTypes={setDelayTypesAndSave} addDelayAllocation={addDelayAllocation} deleteDelayAllocation={deleteDelayAllocation}
       addDelayComment={addDelayComment} deleteDelayComment={deleteDelayComment} authorName={authorName} savePjMetaOverride={savePjMetaOverride} canEditMeta={canEditMeta}/>}
-      </ArrangeCtx.Provider></main>
+      </React.Suspense></ArrangeCtx.Provider></main>
       </ProdDocCtx.Provider></PjDialogCtx.Provider>
     </div>
   </div></ChangeMarksContext.Provider></MentionCtx.Provider>);

@@ -18,7 +18,7 @@ export function RowMenu({ pj, x, y, canSetEtat, etat, onOpen, onComment, onSetEt
     const mv = () => onClose();
     document.addEventListener("mousedown", away, true);
     document.addEventListener("keydown", key, true);
-    window.addEventListener("scroll", mv, true);
+    window.addEventListener("scroll", mv, { capture: true, passive: true });
     window.addEventListener("resize", mv);
     return () => { document.removeEventListener("mousedown", away, true); document.removeEventListener("keydown", key, true); window.removeEventListener("scroll", mv, true); window.removeEventListener("resize", mv); };
   }, [onClose]);

@@ -134,9 +134,10 @@ const DAY = 86400000;
 const segsOf = (plan, catalog, act) => { const out = []; act.forEach(k => selectedIds(plan, catalog, k).forEach(id => { const t = (catalog[k] || []).find(x => x.id === id); out.push({ k, id, name: t ? t.name : id, v: statusOf(plan, k, id) }); })); return out; };
 const SEG_FILL = { ok: () => stageSoft().finProd.solid, wip: () => stageSoft().tests.solid, ko: () => T.red500, todo: () => T.line };
 const ST_LABEL = Object.fromEntries(TEST_STATUS);
-function SegBar({ segs, h = 8, gap = 2, width }) {
+// v289 (lot G) : still = sans animation d'entrée (grille des bancs : une barre par machine, tout bougeait en même temps)
+function SegBar({ segs, h = 8, gap = 2, width, still }) {
   if (!segs.length) return <span aria-hidden="true" style={{ width: width || "100%", height: h, borderRadius: 4, background: T.surfaceAlt, display: "block" }} />;
-  return (<span aria-hidden="true" className="enogia-segbar" style={{ display: "flex", gap, height: h, width: width || "100%", flexShrink: 0 }}>
+  return (<span aria-hidden="true" className={still ? undefined : "enogia-segbar"} style={{ display: "flex", gap, height: h, width: width || "100%", flexShrink: 0 }}>
     {segs.map((s, i) => <i key={s.k + s.id} title={s.name + " — " + ST_LABEL[s.v]} style={{ flex: 1, minWidth: 2, borderRadius: 4, background: SEG_FILL[s.v](), animationDelay: (i * 25) + "ms" }} />)}
   </span>);
 }
@@ -337,7 +338,7 @@ function BenchGrid({ rows, allRows, doc, catalog, testers, conflicts, on, onPick
                 <span style={{ ...cellS, color: names.length ? T.ink900 : T.red600, fontWeight: names.length ? 500 : 700 }} title={names.join(", ")}>{names.length ? names.join(", ") : "sans testeur"}</span>
                 <span className="c-opt" style={cellS}>{pres("client", pd.client)}</span>
                 <span className="c-opt" style={cellS}>{pres("nobo", pd.nobo)}</span>
-                <span style={{ ...cellS, justifyContent: "flex-end", gap: 6 }}><SegBar segs={segs} h={7} gap={1} width={Math.max(18, Math.min(40, segs.length * 4))} /><span style={{ fontWeight: 700, color: T.ink700, fontVariantNumeric: "tabular-nums" }}>{ms.q.done}/{ms.q.total}</span></span>
+                <span style={{ ...cellS, justifyContent: "flex-end", gap: 6 }}><SegBar still segs={segs} h={7} gap={1} width={Math.max(18, Math.min(40, segs.length * 4))} /><span style={{ fontWeight: 700, color: T.ink700, fontVariantNumeric: "tabular-nums" }}>{ms.q.done}/{ms.q.total}</span></span>
               </span>
             </button>
             <div style={{ position: "relative", flex: 1, minWidth: 0 }}>

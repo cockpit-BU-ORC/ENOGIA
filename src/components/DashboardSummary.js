@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { T, FZ } from "../theme";
 import { getPjMeta, ETAT_META, GAMME_COLORS, countShippedYTD, departedNotShipped } from "../pjMeta";
 import { AnimatedNumber } from "./SharedUI";
+// v289 : camembert chargé à l'ouverture de « Répartitions »
+const MiniPie = React.lazy(() => import("./MiniPie"));
 
 // v176 : retour aux camemberts colorés (demandé), en version basse : anneau de 76 px + légende à côté, 4 valeurs + « Autres ».
 // Bandeau de synthèse en haut de la page : nombre de machines expédiées depuis le 1er janvier +
@@ -114,19 +115,7 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
           const pie=list.map((x,i)=>({...x,color:x.other?T.ink300:colorFor(d.key,x.name,i)}));
           return(<section key={d.key} className="enogia-pie-card" aria-label={"Répartition par "+d.label.toLowerCase()} style={{minWidth:0,display:"flex",alignItems:"center",gap:12,animationDelay:(di*90)+"ms"}}>
             <div role="img" aria-label={"Par "+d.label.toLowerCase()+" : "+all.map(x=>x.name+" "+x.value).join(", ")} style={{width:76,height:76,flexShrink:0,position:"relative"}}>
-              {total>0&&<ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={pie} dataKey="value" nameKey="name" innerRadius={22} outerRadius={37} paddingAngle={pie.length>1?2:0} stroke="none" isAnimationActive={true} animationBegin={120+di*120} animationDuration={600} animationEasing="ease-out">
-                    {pie.map(x=><Cell key={x.name} fill={x.color}/>)}
-                  </Pie>
-                  <Tooltip content={({active,payload})=>{
-                    if(!active||!payload||!payload.length)return null;const p=payload[0];
-                    return(<div style={{background:T.card,border:"1px solid "+T.line,borderRadius:8,padding:"4px 8px",fontSize:FZ.xs,fontFamily:T.font,color:T.ink900,display:"flex",alignItems:"center",gap:6}}>
-                      <span style={{width:7,height:7,borderRadius:4,background:p.payload&&p.payload.color,flexShrink:0}}/><span>{p.name}</span><strong>{p.value}</strong>
-                    </div>);
-                  }}/>
-                </PieChart>
-              </ResponsiveContainer>}
+              {total>0&&!folded&&<React.Suspense fallback={null}><MiniPie pie={pie} di={di}/></React.Suspense>}
               {/* v191 : total au centre retiré (demandé) */}
             </div>
             <div style={{minWidth:0,flex:1}}>

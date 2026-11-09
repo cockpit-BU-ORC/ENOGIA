@@ -400,7 +400,7 @@ export function HoverPop({render,children,delay=220,width=260,style,disabled}){
   useEffect(()=>{
     if(!pos)return;
     const k=e=>{if(e.key==="Escape")close();};
-    window.addEventListener("scroll",close,true);window.addEventListener("keydown",k);
+    window.addEventListener("scroll",close,{capture:true,passive:true});window.addEventListener("keydown",k);
     return()=>{window.removeEventListener("scroll",close,true);window.removeEventListener("keydown",k);};
   },[pos]);
   useEffect(()=>()=>clearTimeout(timer.current),[]);

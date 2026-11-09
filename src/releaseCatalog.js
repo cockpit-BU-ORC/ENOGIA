@@ -743,4 +743,8 @@ export const RELEASE_CATALOG = [
     ["Fiches projet", "« ＋ Définir les pénalités » ouvre un brouillon : rien n'est enregistré ni compté avant « Enregistrer les pénalités ».", "admin"],
     ["Fiches projet", "Après chaque enregistrement, « Annuler » reste proposé 5 secondes à côté de « ✓ Enregistré ».", "admin"],
   ] },
+  { v: "289", t: "Démarrage plus rapide", items: [
+    ["Partout", "Le site se charge presque deux fois plus vite à la connexion : le Planificateur, l'espace Manager, Tests, Turbines, Achats, le Cash in et les autres grandes pages ne se chargent qu'à leur première ouverture.", "all"],
+    ["Tests", "Le planning des bancs s'affiche sans animer chaque barre de machine en même temps.", "all"],
+  ] },
 ];
