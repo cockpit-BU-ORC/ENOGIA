@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
-import { T } from "../theme";
+import { T, stageSoft, inkOn, btn } from "../theme";
 import { SerieTag } from "../pjMeta";
-import { STEP_KEYS, STEP_LABEL, STEP_IS_MS, STEP_KIND, stepKeysOf, stepLabel, isCustomKey, addCustomStep, addLink, removeLink, updateLink, nodeKey, splitKey, dayNum, isoOfDay, setStep, setWork, stepWork, shiftPj, moveStepTo, startAtKeepLinks, removeStep, removePj, allLinks, orderOf, rulesOf, schedule as scheduleOf, moveStepOrder, setStepMeta, benchOf, PHASE_LABEL, PHASES, setBench, setPrio, setArchived } from "./engine";
+import { STEP_KEYS, STEP_LABEL, STEP_IS_MS, STEP_KIND, stepKeysOf, stepLabel, isCustomKey, addCustomStep, addLink, removeLink, updateLink, nodeKey, splitKey, dayNum, isoOfDay, setStep, setWork, stepWork, shiftPj, moveStepTo, startAtKeepLinks, removeStep, removePj, allLinks, orderOf, rulesOf, schedule as scheduleOf, moveStepOrder, setStepMeta, benchOf, PHASES, setBench, setPrio, setArchived } from "./engine";
 import { numberRows, predText, applyPredText } from "./predecessors";
 import { Pop, MenuItem } from "./PlannerMenu";
 import { usePointerDnD } from "../pointerDrag";
@@ -9,7 +9,11 @@ import { askConfirm } from "../confirm";
 
 export const fmtIso = iso => iso ? iso.slice(8, 10) + "/" + iso.slice(5, 7) + "/" + iso.slice(2, 4) : "—";
 export const STEP_COLOR_BASE = { arrivee: "#7A5A1C", production: "#17734F", tests: "#5A44A6", finProd: "#A4570B", depart: "#A8332F" };
-export const STEP_COLOR = new Proxy(STEP_COLOR_BASE, { get: (o, k) => o[k] || "#3F5875" });
+// v292 (demandé : « MAJ des couleurs de tâches ») : mêmes couleurs d'étape que le Gantt et le Calendrier (stageSoft du thème,
+// clair / sombre) ; STEP_COLOR_BASE reste l'ancienne palette (repli si le thème ne connaît pas l'étape).
+export const STEP_COLOR = new Proxy(STEP_COLOR_BASE, { get: (o, k) => { const S = stageSoft(); return (S[k] && S[k].solid) || o[k] || "#3F5875"; } });
+// Couleur d'une tâche : une tâche ajoutée (« ＋ Tâche ») prend la couleur de sa phase (production, tests, packing).
+export const stepColor = (p, k) => { if (!isCustomKey(k)) return STEP_COLOR[k]; const ph = p && p.steps && p.steps[k] && p.steps[k].phase; return ph ? STEP_COLOR[ph] : "#3F5875"; };
 const MONTHS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
 const MONTHS_L = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 const dow = n => (((n + 3) % 7) + 7) % 7; // 0 = lundi
@@ -264,7 +268,7 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
 
   const leftRow = r => {
     if (r.type === "add") return (<div key={"a" + r.p.pj} style={{ display: "flex", height: ROW_H, background: T.card, borderBottom: "1px solid " + T.line, alignItems: "center", paddingLeft: 66 }}>
-      {!readOnly && <button className="pg-btn" onClick={() => addTask(r.p.pj)} aria-label={"Ajouter une tâche à " + r.p.pj} style={{ border: "1px dashed " + T.line, background: "transparent", color: T.teal600, fontWeight: 700, fontSize: 12, borderRadius: 8, padding: "3px 12px", cursor: "pointer" }}>＋ Ajouter une tâche</button>}
+      {!readOnly && <button className="pg-btn" onClick={() => addTask(r.p.pj)} aria-label={"Ajouter une tâche à " + r.p.pj} style={{...btn("sec","sm")}}>＋ Ajouter une tâche</button>}
     </div>);
     if (r.type === "pj") {
       const p = r.p; const on = sel && sel.pj === p.pj && !sel.step; const open = expanded.has(p.pj);
@@ -311,13 +315,13 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
         if (c === "id") return cell(c, w, <span style={{ fontSize: 11, color: T.ink300, fontFamily: T.fontMono, width: "100%", textAlign: "center" }}>{nums.idOf[key]}</span>);
         if (c === "name") return cell(c, w, <>
           {!readOnly ? <span role="button" tabIndex={0} {...dnd.dragProps({ t: "step", pj: p.pj, k }, { ghost: el => el.closest(".pg-row") })} onClick={e => e.stopPropagation()} onKeyDown={e => { if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return; const ks = stepKeysOf(p), j = ks.indexOf(k) + (e.key === "ArrowDown" ? 1 : -1); if (ks[j]) { e.preventDefault(); go(moveStepOrder(base, p.pj, k, ks[j]), { pj: p.pj, key: null, want: null }); } }} aria-label={"Déplacer la tâche " + stepLabel(p, k) + " dans la liste (flèches haut / bas)"} title="Glisser pour changer l'ordre des tâches (ou flèches haut / bas)" style={{ width: 12, flex: "none", cursor: "grab", color: T.ink300, fontSize: 12, marginLeft: 14 }}>⋮⋮</span> : <span style={{ width: 12, flex: "none" }} />}
-          <span style={{ width: 9, height: 9, borderRadius: ms ? 2 : 3, transform: ms ? "rotate(45deg)" : "none", background: STEP_COLOR[k], flexShrink: 0, margin: "0 6px 0 8px" }} />
+          <span style={{ width: 9, height: 9, borderRadius: ms ? 2 : 3, transform: ms ? "rotate(45deg)" : "none", background: stepColor(p, k), flexShrink: 0, margin: "0 6px 0 8px" }} />
           {isCustomKey(k)
-            ? <EditCell autoEdit={newKey === key} disabled={readOnly} value={stepLabel(p, k)} onCommit={v => { if (v.trim()) go(setStep(base, p.pj, k, { name: v.trim() }), { pj: p.pj, key: null, want: null }); }} display={stepLabel(p, k)} title="Cliquez pour renommer cette tâche" style={{ color: T.ink900, fontWeight: 600, width: "auto", maxWidth: 190 }} />
+            ? <EditCell autoEdit={newKey === key} disabled={readOnly} value={stepLabel(p, k)} onCommit={v => { if (v.trim()) go(setStep(base, p.pj, k, { name: v.trim() }), { pj: p.pj, key: null, want: null }); }} display={stepLabel(p, k)} title="Cliquez pour renommer cette tâche" style={{ color: T.ink900, fontWeight: 600, width: "auto", maxWidth: 190, minWidth: 64, flexShrink: 0 }} />
             : <span style={{ color: T.ink900, fontWeight: 600, whiteSpace: "nowrap" }}>{STEP_LABEL[k]}</span>}
           {STEP_KIND[k] === "jalon" ? <span style={{ fontSize: 10.5, color: T.ink500, whiteSpace: "nowrap" }}>jalon</span>
             : <span style={{ fontSize: 10.5, color: T.ink500, whiteSpace: "nowrap", display: "inline-flex", gap: 4, alignItems: "center" }}>
-              {isCustomKey(k) && p.steps[k].phase ? <span>{PHASE_LABEL[p.steps[k].phase]} ·</span> : null}
+              {/* v292 : la phase d'une tâche ajoutée se lit à la couleur de sa pastille (plus de « Production · » qui écrasait le nom) */}
               {k === "tests" ? <button type="button" className="pg-btn" disabled={readOnly} title="Banc d'essai (cliquer pour changer)" onClick={e => { e.stopPropagation(); go(setBench(base, cal, p.pj, benchOf(p) === 2 ? 1 : 2), { pj: p.pj, key: null, want: null }); }} style={{ border: "1px solid " + T.line, background: T.surface, color: T.ink700, borderRadius: 8, fontSize: 10.5, fontWeight: 700, padding: "0 5px", cursor: readOnly ? "default" : "pointer", lineHeight: "16px" }}>Banc {benchOf(p)}</button> : null}
               {readOnly ? <span>{resName(p, k)}</span> : <Pop width={240} align="left" trigger={(o, t) => <button type="button" className="pg-btn" aria-haspopup="menu" aria-expanded={o} onClick={e => { e.stopPropagation(); t(); }} title="Phase et ressource de la tâche" style={{ border: "1px dashed " + T.ink300, background: "transparent", color: T.ink700, borderRadius: 8, fontSize: 10.5, padding: "0 5px", cursor: "pointer", lineHeight: "16px", fontWeight: 600 }}>{resName(p, k)} ▾</button>}>
                 {close => { const st = p.steps[k] || {}, defRes = k === "tests" || st.phase === "tests" ? "testeur" : "atelier", curRes = st.res || defRes; const info = { pj: p.pj, key: null, want: null };
@@ -332,7 +336,7 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
             </span>}
           {rank ? <span title={"Ordre de passage : " + rank} style={{ fontSize: 10.5, fontWeight: 700, color: T.teal600, background: "rgba(46,125,154,.14)", borderRadius: 8, padding: "0 5px" }}>#{rank}</span> : null}
           <span style={{ flex: 1 }} />
-          {!readOnly && <button className="pg-btn pg-more" aria-label={"Lier " + stepLabel(p, k) + " de " + p.pj + " à une autre tâche"} title="Lier à une autre tâche : cliquez ensuite la tâche qui doit suivre" onClick={e => { e.stopPropagation(); setLinkDlg(key); }} style={{ border: "1px solid " + T.line, background: T.card, color: T.teal600, borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: "pointer", padding: "0 6px", marginRight: 4, lineHeight: "18px" }}>Lier</button>}
+          {!readOnly && <button className="pg-btn pg-more" aria-label={"Lier " + stepLabel(p, k) + " de " + p.pj + " à une autre tâche"} title="Lier à une autre tâche : cliquez ensuite la tâche qui doit suivre" onClick={e => { e.stopPropagation(); setLinkDlg(key); }} style={{...btn("sec","sm"),marginRight: 4}}>Lier</button>}
           {!readOnly && <button className="pg-btn pg-more" aria-label={"Supprimer l'étape " + stepLabel(p, k) + " de " + p.pj} title="Supprimer cette étape" onClick={async e => { e.stopPropagation(); if (await askConfirm({ title: "Supprimer l'étape « " + stepLabel(p, k) + " » de " + p.pj + " ?", message: "Ses liens sont supprimés aussi. Annuler (Ctrl + Z) reste possible.", confirmLabel: "Supprimer l'étape", danger: true })) go(removeStep(base, p.pj, k), { pj: p.pj, key: null, want: null }); }} style={{ border: 0, background: "none", color: T.red500, cursor: "pointer", fontSize: 13, padding: "0 6px" }}>✕</button>}
         </>, { gap: 2 });
         if (c === "start") return cell(c, w, <EditCell disabled={readOnly} type="date" value={n && n.s !== null ? n.start : ""} onCommit={v => editStart(p, k, v)} mono title={pinned ? "Date imposée : « pas avant ce jour »" : n && n.s !== null ? "Date calculée par un lien. Cliquez pour imposer une date." : "Pas de date : imposez-en une ou ajoutez un prédécesseur"}
@@ -390,7 +394,7 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
             }
             const key = nodeKey(r.p.pj, r.k), n = sched.nodes[key]; const on = sel && sel.pj === r.p.pj && sel.step === r.k; const ch = changed.has(key);
             if (!n || n.s === null) return <div key={key} style={{ ...rowStyle, cursor: readOnly ? "default" : "crosshair" }} title={readOnly ? undefined : "Cliquez ici pour placer la tâche à cette date"} onClick={e => { if (readOnly || !tlBody.current) return; const b = tlBody.current.getBoundingClientRect(); const d = lo + Math.floor((e.clientX - b.left) / px); editStart(r.p, r.k, isoOfDay(d)); setSel({ pj: r.p.pj, step: r.k }); }} />;
-            const col = STEP_COLOR[r.k]; const pinned = n.driver === "snet";
+            const col = stepColor(r.p, r.k); const pinned = n.driver === "snet";
             const bw = (dayNum(n.finish) - dayNum(n.start) + 1) * px, lab = r.p.pj + " · " + stepLabel(r.p, r.k), fits = !n.ms && bw >= lab.length * 6.4 + 16;
             const tipTxt = r.p.pj + " · " + stepLabel(r.p, r.k) + "\n" + fmtIso(n.start) + (n.ms ? "" : " → " + fmtIso(n.finish) + " (" + n.dur + " j ouvrés)") + (pinned ? "\nDate imposée" : n.driver ? "\nCalée par un lien" : "") + (readOnly ? "" : "\nGlisser pour déplacer");
             return (<div key={key} style={rowStyle} className="pg-trow" data-key={key}>
@@ -398,7 +402,7 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
                 ? <div title={tipTxt} onMouseDown={e => startDrag(e, { kind: "move", pj: r.p.pj, step: r.k, node: n })} onClick={() => pick(r.p.pj, r.k)} onDoubleClick={e => { if (!readOnly) setQe({ pj: r.p.pj, step: r.k, x: e.clientX, y: e.clientY }); }} data-key={key} className="pg-bar"
                     style={{ position: "absolute", left: X(n.start) + px / 2 - 8, top: MID - Math.min(8, BAR_H / 2), width: Math.min(16, BAR_H), height: Math.min(16, BAR_H), transform: "rotate(45deg)", background: col, border: on ? "2px solid " + T.ink900 : "1px solid #fff", outline: ch ? "2px dashed #E08A00" : "none", outlineOffset: 2, boxSizing: "border-box", cursor: readOnly ? "default" : "grab", borderRadius: 4 }} />
                 : <div title={tipTxt} onMouseDown={e => startDrag(e, { kind: "move", pj: r.p.pj, step: r.k, node: n })} onClick={() => pick(r.p.pj, r.k)} onDoubleClick={e => { if (!readOnly) setQe({ pj: r.p.pj, step: r.k, x: e.clientX, y: e.clientY }); }} data-key={key} className="pg-bar"
-                    style={{ position: "absolute", left: X(n.start), width: Math.max(px, (dayNum(n.finish) - dayNum(n.start) + 1) * px), top: BAR_T, height: BAR_H, borderRadius: 4, background: col, outline: on ? "2px solid " + T.ink900 : ch ? "2px dashed #E08A00" : "none", outlineOffset: 1, cursor: readOnly ? "default" : "grab", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 11, fontWeight: 700, overflow: "hidden", boxSizing: "border-box" }}>
+                    style={{ position: "absolute", left: X(n.start), width: Math.max(px, (dayNum(n.finish) - dayNum(n.start) + 1) * px), top: BAR_T, height: BAR_H, borderRadius: 4, background: col, outline: on ? "2px solid " + T.ink900 : ch ? "2px dashed #E08A00" : "none", outlineOffset: 1, cursor: readOnly ? "default" : "grab", display: "flex", alignItems: "center", justifyContent: "center", color: inkOn(col), fontSize: 11, fontWeight: 700, overflow: "hidden", boxSizing: "border-box" }}>
                     {fits ? <span style={{ pointerEvents: "none", padding: "0 8px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{lab}</span> : bw >= 40 ? <span style={{ pointerEvents: "none", fontFamily: T.fontMono }}>{n.noDur ? "?" : n.dur + " j"}</span> : null}
                     {!readOnly && <div onMouseDown={e => startDrag(e, { kind: "resize", pj: r.p.pj, step: r.k, node: n })} style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 7, cursor: "ew-resize", background: "rgba(0,0,0,.25)" }} />}
                   </div>}
@@ -461,7 +465,7 @@ function LinkDialog({ nodeKey_, plan, base, pjs, onClose, onAdd, onRemove, onPic
       </div>
       <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
         <button type="button" disabled={!pred && !succ} onClick={ok} style={{ border: "none", borderRadius: 8, padding: "8px 14px", background: pred || succ ? T.ink900 : T.surfaceAlt, color: pred || succ ? T.card : T.ink500, fontWeight: 700, cursor: pred || succ ? "pointer" : "default", minHeight: 34 }}>Créer le lien</button>
-        <button type="button" onClick={onPick} style={{ border: "1px solid " + T.line, borderRadius: 8, padding: "8px 14px", background: T.card, color: T.ink700, fontWeight: 700, cursor: "pointer", minHeight: 34 }}>Ou cliquer la tâche suivante dans le Gantt</button>
+        <button className="e-btn e-btn-sec" type="button" onClick={onPick} style={{...btn("sec","md")}}>Ou cliquer la tâche suivante dans le Gantt</button>
         <button type="button" onClick={onClose} style={{ marginLeft: "auto", border: "none", background: "transparent", color: T.ink500, cursor: "pointer", minHeight: 34 }}>Fermer</button>
       </div>
       <div style={{ borderTop: "1px solid " + T.line, marginTop: 14, paddingTop: 10 }}>
@@ -469,7 +473,7 @@ function LinkDialog({ nodeKey_, plan, base, pjs, onClose, onAdd, onRemove, onPic
         {mine.length === 0 && <div style={{ fontSize: 12.5, color: T.ink500 }}>Aucun lien pour l'instant.</div>}
         {mine.map(l => <div key={l.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, padding: "4px 0", minHeight: 30 }}>
           <span style={{ flex: 1, minWidth: 0 }}>{labOf(l.from)} <span style={{ color: T.ink500 }}>→</span> {labOf(l.to)} <span style={{ color: T.ink500, fontSize: 12 }}>({(LTYPES.find(t => t[0] === l.type) || LTYPES[0])[1]}{l.lag ? ", " + (l.lag > 0 ? "+" : "") + l.lag + " j" : ""})</span></span>
-          <button type="button" onClick={() => onRemove(l.id)} aria-label="Supprimer ce lien" style={{ border: "1px solid " + T.line, background: T.card, color: T.red500, borderRadius: 8, padding: "2px 8px", cursor: "pointer", fontWeight: 700 }}>Supprimer</button>
+          <button className="e-btn e-btn-sec" type="button" onClick={() => onRemove(l.id)} aria-label="Supprimer ce lien" style={{...btn("sec","sm")}}>Supprimer</button>
         </div>)}
       </div>
     </div>

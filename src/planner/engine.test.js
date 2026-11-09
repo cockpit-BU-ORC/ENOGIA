@@ -52,12 +52,16 @@ describe("planificateur (v204)", () => {
     const two = splitBenches({ ...plan, rules: { banc: true } }, cal); const seqB = allLinks(two).filter(l => l.res === "banc");
     seqB.forEach(l => { const a = two.pjs.find(x => x.pj === l.from.split("|")[0]), b = two.pjs.find(x => x.pj === l.to.split("|")[0]); expect(benchOf(a)).toBe(benchOf(b)); });
   });
-  test("v218 : jours sans production d'un PJ (Calendrier) : la production s'allonge, pas de charge ces jours-là", () => {
+  test("v292 : jours sans production d'un PJ (Calendrier) : même fin, charge répartie sur les jours restants", () => {
     const rh = rows.map(r => ({ ...r, heuresAtelier: 200 })), plan = initPlanFromRows(rh, cal), base = schedule(plan, cal).nodes[nodeKey("PJ1", "production")];
     const off = makeCalendar({ closurePeriods: [], pjOff: { PJ1: ["2026-10-05", "2026-10-06"] } }), n = schedule(plan, off).nodes[nodeKey("PJ1", "production")];
-    expect(n.f - n.s).toBe(base.f - base.s + 2); expect(n.off.size).toBe(2);
-    const lm = loadModel(plan, schedule(plan, off), off), i = [...n.off][0];
+    expect(n.s).toBe(base.s); expect(n.f).toBe(base.f); expect(n.finish).toBe(base.finish); expect(n.off.size).toBe(2);
+    const lm0 = loadModel(plan, schedule(plan, cal), cal), lm = loadModel(plan, schedule(plan, off), off), i = [...n.off][0];
     expect(lm.day.get(i) || 0).toBe(0);
+    const tot = m => [...m.day.values()].reduce((a, b) => a + b, 0);
+    expect(Math.round(tot(lm))).toBe(Math.round(tot(lm0))); // les heures ne se perdent pas
+    const other = [...Array(n.f - n.s + 1).keys()].map(k => n.s + k).find(k => !n.off.has(k));
+    expect(lm.day.get(other)).toBeGreaterThan(lm0.day.get(other)); // plus d'heures les autres jours
   });
 });
 

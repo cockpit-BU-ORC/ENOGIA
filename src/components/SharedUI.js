@@ -374,9 +374,24 @@ export function SuperOnly({children}){ return isSuperAdmin()?<>{children}</>:nul
 // Respecte « réduire les animations » : dans ce cas la valeur est affichée directement.
 // v285 (audit croisé, lot B) : le chiffre final s'affiche tout de suite — compter depuis 0 montrait un faux chiffre
 // pendant l'animation (capture, coup d'œil). Nom gardé pour ne pas toucher les appels ; un simple fondu quand la valeur change.
-export function AnimatedNumber({value,style}){
+export function AnimatedNumber({value,style,count,duration=600}){
   const target=Number(value)||0;
-  return <span key={target} className="enogia-num-in" style={{fontVariantNumeric:"tabular-nums",...style}}>{target}</span>;
+  // v292 (demandé : « remettre le comptage depuis zéro » sur la page Liste) : count = le chiffre se compte de 0 à sa valeur
+  // (300 ms à 600 ms, décélération) ; « réduire les animations » l'affiche directement.
+  const calm=(()=>{try{return window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;}catch(e){return false;}})();
+  const [shown,setShown]=React.useState(count&&!calm?0:target);
+  const fromRef=React.useRef(count&&!calm?0:target);
+  React.useEffect(()=>{
+    if(!count||calm){setShown(target);fromRef.current=target;return undefined;}
+    const from=fromRef.current;if(from===target)return undefined;
+    let t0=null,id=0;const step=t=>{if(t0==null)t0=t;const k=Math.min(1,(t-t0)/duration),e=1-Math.pow(1-k,3),v=Math.round(from+(target-from)*e);fromRef.current=v;setShown(v);if(k<1)id=requestAnimationFrame(step);};
+    id=requestAnimationFrame(step);
+    // sécurité : onglet en arrière-plan (requestAnimationFrame suspendu) → valeur finale quand même
+    const safe=setTimeout(()=>{cancelAnimationFrame(id);fromRef.current=target;setShown(target);},duration+150);
+    return()=>{cancelAnimationFrame(id);clearTimeout(safe);};
+  },[target,count,calm,duration]);
+  if(!count)return <span key={target} className="enogia-num-in" style={{fontVariantNumeric:"tabular-nums",...style}}>{target}</span>;
+  return <span style={{fontVariantNumeric:"tabular-nums",...style}}>{shown}</span>;
 }
 
 // ── v162 : bulle d'info au survol (portail, clavier OK) ─────────────────────────────────────────────────────────────────

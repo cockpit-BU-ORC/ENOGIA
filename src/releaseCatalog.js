@@ -756,4 +756,11 @@ export const RELEASE_CATALOG = [
     ["Fiches projet, Tests, Retards", "Mêmes boutons partout : une seule action principale pleine (encre), les autres bordées, mêmes hauteurs et mêmes arrondis.", "admin"],
     ["Partout", "Les fiches et le Manager utilisent la même échelle de texte (12 · 13 · 14 · 16 px).", "all"],
   ] },
+  { v: "292", t: "Jours sans production : même date de fin, charge répartie", items: [
+    ["Planificateur", "Un jour sans production (Calendrier) ne repousse plus la fin de la production du PJ : ses heures se répartissent sur ses autres jours de production.", "owner"],
+    ["Planificateur", "Bandeau : les modifications du brouillon (dont celles du calendrier de production) n'apparaissent dans le Gantt, le Calendrier et la Liste qu'après « Publier ».", "owner"],
+    ["Calendrier", "Le menu « Production du … » rappelle l'effet sur le planning et le moment où le Gantt change.", "admin"],
+    ["Planificateur", "Mêmes couleurs d'étape que le Gantt ; une tâche ajoutée prend la couleur de sa phase et son nom reste lisible dans la liste.", "owner"],
+    ["Liste", "Les chiffres se comptent à nouveau depuis zéro ; plus de mention « départ passé pas encore Expédiée ».", "all"],
+  ] },
 ];

@@ -6,7 +6,7 @@
 //    dans la production, leur date de fin prévue (calcul de la production) et ce qui coince ; stocks de roues et d'injecteurs.
 // Plus : « Importer des données (JSON) » (propriétaire et liste d’accès de la production, v268) pour reprendre les données de l'outil Claude de Jérémie, avec aperçu avant écriture.
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { T, FZF as FZ } from "../theme";
+import { T, FZF as FZ, btn as themeBtn } from "../theme";
 import { PageHead } from "./SharedUI";
 import { ProdTurbines } from "./ProdTurbines";
 import { usePointerDnD } from "../pointerDrag";
@@ -26,7 +26,7 @@ function SavDialog({ doc, init, onSave, onDelete, onClose }) {
   useEffect(() => { const k = e => { if (e.key === "Escape") onClose(); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose]);
   const g = (cfgById(v.cfg) || TURB_CFGS[1]).g, roues = refsOf(doc, "roues", g), injs = refsOf(doc, "injecteurs", g), ii = v.inj ? injInfo(doc, v.inj) : null, mx = ii ? maxBouches(ii.ouv) : 99;
   const f = { minHeight: 32, borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, padding: "0 8px", width: "100%", boxSizing: "border-box" };
-  const btn = p => ({ minHeight: 34, padding: "0 14px", borderRadius: 8, border: "1px solid " + (p ? T.ink900 : T.line), background: p ? T.ink900 : T.card, color: p ? T.card : T.ink700, fontWeight: 700, fontSize: FZ.sm, cursor: "pointer", fontFamily: T.font });
+  const btn = p => themeBtn(p ? "pri" : "sec", "md"); // v292 : bouton commun
   return (<div onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 10010, background: "rgba(10,20,30,.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
     <div role="dialog" aria-modal="true" aria-label={init ? "Besoin SAV " + (init.label || "") : "Nouveau besoin SAV"} style={{ background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, width: "min(520px,100%)", padding: "16px 18px", fontFamily: T.font, display: "flex", flexDirection: "column", gap: 10 }}>
       <div style={{ fontFamily: T.fontDisplay, fontSize: FZ.lg, fontWeight: 600 }}>{init ? "Besoin SAV" : "Nouveau besoin SAV"}</div>
@@ -286,7 +286,7 @@ function ImportDialog({ doc, api, onClose }) {
     if (useParams && params) { const ok = await api.setParams(gamme === "20" ? { ...((doc && doc.params) || {}), r20: params } : { ...params, ...(((doc && doc.params) || {}).r20 ? { r20: doc.params.r20 } : {}) }); if (!ok) ko++; }
     setBusy(false); setDone({ n, ko });
   };
-  const btn = p => ({ minHeight: 34, padding: "0 14px", borderRadius: 8, border: "1px solid " + (p ? T.ink900 : T.line), background: p ? T.ink900 : T.card, color: p ? T.card : T.ink700, fontWeight: 700, fontSize: FZ.sm, cursor: "pointer", fontFamily: T.font });
+  const btn = p => themeBtn(p ? "pri" : "sec", "md"); // v292 : bouton commun
   const count = (c, dup) => (plan || []).filter(x => x.c === c && x.dup === dup).length;
   const LBL = { turbines: "Turbines", arbres: "Arbres", pieces: "Pièces", roues: "Roues", injecteurs: "Injecteurs" };
   return (<div onMouseDown={e => { if (e.target === e.currentTarget && !busy) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 10010, background: "rgba(10,20,30,.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>

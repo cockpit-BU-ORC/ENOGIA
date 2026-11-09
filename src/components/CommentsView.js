@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { T, FZ } from "../theme";
+import { T, FZ, btn } from "../theme";
 import { fmt } from "../parsers";
 import { SerieTag, getPjMeta, CountryFlag, relTime, Avatar, PjPlate } from "../pjMeta";
 import { PjChecklist, NavIcon, SuperOnly, pressable } from "./SharedUI";
@@ -25,7 +25,7 @@ function OpenAsks({comments,data,seePrivate,options,me,onReply,onResolve}){
         <p style={{margin:0,fontSize:FZ.sm,color:T.ink900,lineHeight:1.45,whiteSpace:"pre-wrap",display:"-webkit-box",WebkitLineClamp:4,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{c.text}</p>
         <div style={{fontSize:FZ.xs,color:T.ink500}}>{c.author||"—"} · attend : <b style={{color:T.ink900}}>{open.map(nameOfEmail).join(", ")}</b>{c.private?<span style={{marginLeft:6,color:T.amber600,fontWeight:700}}>privé</span>:null}</div>
         <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-          <button type="button" onClick={()=>onReply(pj)} style={{minHeight:30,padding:"0 12px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink700,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font}}>Répondre</button>
+          <button className="e-btn e-btn-sec" type="button" onClick={()=>onReply(pj)} style={{...btn("sec","sm")}}>Répondre</button>
           {mine&&onResolve&&<button type="button" onClick={()=>onResolve(pj,idx,me,true)} style={{minHeight:30,padding:"0 12px",borderRadius:8,border:"none",background:T.violet100,color:T.violet600,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font}}>✓ Marquer traité</button>}
         </div>
       </article>);})}

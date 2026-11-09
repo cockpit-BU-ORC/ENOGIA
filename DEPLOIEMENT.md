@@ -2103,3 +2103,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Graphiques : déjà conformes (valeurs écrites, une couleur par graphique dans les récits) — pas de changement.
 - Pas de nouvelle donnée ni de clé `localStorage`.
 - Fichiers : theme.js, components/ManagerFiche.js, FicheContrat.js, TestsTab.js, ManagerParts.js, TableView.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v292 — Jours sans production, lien calendrier / planificateur, tâches ajoutées
+
+- Demandé : bouton commun sur les pages restantes ; jour sans production = charge répartie sans changer la date de fin ; avertissement sur le lien Planificateur / Calendrier / Gantt ; noms et couleurs des tâches ajoutées ; comptage des chiffres de la Liste ; retrait de « départ passé pas encore Expédiée » sur la Liste.
+- Planificateur : un jour sans production garde la fin de la production et répartit les heures sur les autres jours ; bandeau « modifications pas encore publiées ».
+- Calendrier : note dans le menu « Production du … ».
+- Couleurs d'étape du planificateur = celles du Gantt ; tâches ajoutées à la couleur de leur phase, nom lisible.
+- Pas de nouvelle donnée ni de clé `localStorage`.
+- Fichiers : planner/engine.js (+test), planner/Planner.js, PlannerGantt.js, PlannerLoad.js, PlannerLanes.js, components/CalendarView.js, DashboardSummary.js, SharedUI.js, TableView.js, CommentsView.js, CommentsKanban.js, TurbinesHub.js, ChangesView.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

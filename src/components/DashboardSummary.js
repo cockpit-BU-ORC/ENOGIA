@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { T, FZ } from "../theme";
-import { getPjMeta, ETAT_META, GAMME_COLORS, countShippedYTD, departedNotShipped } from "../pjMeta";
+import { T, FZ, btn } from "../theme";
+import { getPjMeta, ETAT_META, GAMME_COLORS, countShippedYTD } from "../pjMeta";
 import { AnimatedNumber } from "./SharedUI";
 // v289 : camembert chargé à l'ouverture de « Répartitions »
 const MiniPie = React.lazy(() => import("./MiniPie"));
@@ -48,7 +48,6 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
   // Compteur 100 % automatique (départs passés), compté depuis la première machine présente sur le
   // site : le 19/05/2026 (demandé : « garder la base auto … dire que c'est depuis le 19/05 »).
   const shippedYTD=useMemo(()=>countShippedYTD(fullData),[fullData]);
-  const notShipped=useMemo(()=>departedNotShipped(fullData),[fullData]); // v243 : départ passé mais pas « Expédiée »
 
 
   // Une répartition (breakdown) par dimension, calculées ensemble pour les 4 petits camemberts.
@@ -86,10 +85,10 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
       {/* v283 (audit apple-design, lot 2) : une ligne de chiffres, les 4 répartitions repliées par défaut derrière « Répartitions » */}
       <div style={{display:"flex",alignItems:"baseline",gap:"6px 16px",flexWrap:"wrap",minWidth:0}}>
         {[[total,"machine"+(total>1?"s":""),T.ink900],...topEtats.map(x=>[x.value,x.name.toLowerCase(),T.ink900]),[shippedYTD,"expédiée"+(shippedYTD>1?"s":"")+" depuis mai",T.emerald600]].map(([n,l,c],i)=>
-          <span key={i} style={{display:"inline-flex",alignItems:"baseline",gap:6,minWidth:0}}><b style={{fontFamily:T.fontDisplay,fontSize:18,fontWeight:600,color:c,fontVariantNumeric:"tabular-nums"}}>{n}</b><span style={{fontSize:FZ.sm,color:T.ink500}}>{l}</span></span>)}
-        {notShipped.length>0&&<span title={"Départ passé, état pas encore « Expédiée » : "+notShipped.map(r=>r.pj).join(", ")} style={{fontSize:FZ.xs,fontWeight:700,color:T.amber600}}>+ {notShipped.length} départ{notShipped.length>1?"s":""} passé{notShipped.length>1?"s":""} pas encore « Expédiée »</span>}
+          <span key={i} style={{display:"inline-flex",alignItems:"baseline",gap:6,minWidth:0}}><b style={{fontFamily:T.fontDisplay,fontSize:18,fontWeight:600,color:c,fontVariantNumeric:"tabular-nums"}}><AnimatedNumber count value={n}/></b><span style={{fontSize:FZ.sm,color:T.ink500}}>{l}</span></span>)}
+        {/* v292 (demandé) : plus de « + N départs passés pas encore Expédiée » sur la Liste */}
       </div>
-      <button onClick={toggleCollapsed} aria-expanded={!collapsed} style={{marginLeft:"auto",flexShrink:0,minHeight:30,padding:"0 12px",borderRadius:8,border:"1px solid "+T.line,background:T.card,cursor:"pointer",color:T.ink700,fontWeight:600,fontSize:FZ.sm,fontFamily:T.font,display:"inline-flex",alignItems:"center",gap:6}}>
+      <button className="e-btn e-btn-sec" onClick={toggleCollapsed} aria-expanded={!collapsed} style={{...btn("sec","md"),marginLeft:"auto",flexShrink:0}}>
         Répartitions
         <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{transform:collapsed?"rotate(180deg)":"rotate(0deg)",transition:"transform .18s ease"}}>
           <polyline points="18 15 12 9 6 15"/>
@@ -100,9 +99,9 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
     <div className="enogia-fold" style={{display:"grid",gridTemplateRows:folded?"0fr":"1fr",opacity:folded?0:1,transform:folded?"translateY(-6px)":"none",transition:"opacity .22s ease, transform .22s var(--e-ease)"}} aria-hidden={folded?"true":undefined}><div style={{overflow:"hidden",minHeight:0}}>
     {<div className="enogia-dash" style={{display:"flex",alignItems:"center",gap:24,flexWrap:"wrap",marginTop:12}}>
       <div style={{display:"flex",flexDirection:"column",gap:2,minWidth:120,flexShrink:0}}>
-        <div style={{fontSize:"clamp(36px,4vw,46px)",fontWeight:300,letterSpacing:"-.03em",color:T.ink900,fontFamily:T.fontDisplay,lineHeight:.95,fontVariantNumeric:"tabular-nums"}}><AnimatedNumber value={shippedYTD}/></div>
+        <div style={{fontSize:"clamp(36px,4vw,46px)",fontWeight:300,letterSpacing:"-.03em",color:T.ink900,fontFamily:T.fontDisplay,lineHeight:.95,fontVariantNumeric:"tabular-nums"}}><AnimatedNumber count value={shippedYTD}/></div>
         <div style={{fontSize:FZ.xs,color:T.ink500}}>machine{shippedYTD>1?"s":""} expédiée{shippedYTD>1?"s":""}<br/>depuis le {SHIPPED_SINCE_LABEL}</div>
-        {notShipped.length>0&&<div title={"Départ passé, état pas encore « Expédiée » : "+notShipped.map(r=>r.pj).join(", ")} style={{fontSize:FZ.xs,fontWeight:700,color:T.amber600,marginTop:2}}>+ {notShipped.length} départ{notShipped.length>1?"s":""} passé{notShipped.length>1?"s":""}<br/>pas encore « Expédiée »</div>}
+        
       </div>
 
       <div className="enogia-dash-sep" style={{width:3,alignSelf:"stretch",background:T.teal500,flexShrink:0,borderRadius:4}}/>

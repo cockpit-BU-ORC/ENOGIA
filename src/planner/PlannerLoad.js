@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { T } from "../theme";
+import { T, btn } from "../theme";
 import { dayNum, isoOfDay, capDayFn } from "./engine";
 import { Pop, MenuItem } from "./PlannerMenu";
 
@@ -64,16 +64,16 @@ export function PlannerLoad({ plan, load, cal, tl, scrollX, leftW, standalone, m
         </span>
         <span style={{ fontSize: 12.5, fontWeight: 700, color: over.length ? T.red500 : T.emerald600 }}>{over.length ? over.length + " " + (mode === "month" ? "mois" : "semaine" + (over.length > 1 ? "s" : "")) + " en surcharge · pic " + Math.round(peak * 100) + " %" + (pk ? " (" + pk.label + ")" : "") : "Aucune surcharge"}</span>
         <span style={{ flex: 1 }} />
-        {!readOnly && <button className="pg-btn" onClick={() => onPropose("level")} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "4px 12px", fontSize: 12.5, fontWeight: 700, cursor: "pointer", minHeight: 30 }}>Niveler…</button>}
-        <button className="pg-btn" onClick={() => setFolded(false)} aria-expanded="false" style={{ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "4px 12px", fontSize: 12.5, fontWeight: 700, cursor: "pointer", minHeight: 30 }}>Déplier ▴</button>
+        {!readOnly && <button className="pg-btn" onClick={() => onPropose("level")} style={{...btn("sec","sm")}}>Niveler…</button>}
+        <button className="pg-btn" onClick={() => setFolded(false)} aria-expanded="false" style={{...btn("sec","sm")}}>Déplier ▴</button>
       </div>
     </section>);
   }
   return (<section aria-label="Charge atelier et capacité" className="pg-load" style={{ borderTop: "2px solid " + T.line, background: T.card, position: "sticky", bottom: 0, zIndex: 9, boxShadow: "0 -8px 18px rgba(0,0,0,.10)" }}>
     <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", padding: "10px 14px" }}>
       <b style={{ color: T.ink900, fontSize: 14 }}>Charge atelier</b>
-      {setFolded && <button className="pg-btn" onClick={() => setFolded(true)} aria-expanded="true" style={{ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "4px 10px", fontSize: 12, fontWeight: 700, cursor: "pointer", minHeight: 28 }}>Replier ▾</button>}
-      <button className="pg-btn" onClick={() => setSmall(!small)} aria-pressed={!!small} title={small ? "Agrandir le graphique de charge" : "Réduire le graphique de charge"} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "4px 10px", fontSize: 12, fontWeight: 700, cursor: "pointer", minHeight: 28 }}>{small ? "Agrandir" : "Réduire"}</button>
+      {setFolded && <button className="pg-btn" onClick={() => setFolded(true)} aria-expanded="true" style={{...btn("sec","sm")}}>Replier ▾</button>}
+      <button className="pg-btn" onClick={() => setSmall(!small)} aria-pressed={!!small} title={small ? "Agrandir le graphique de charge" : "Réduire le graphique de charge"} style={{...btn("sec","sm")}}>{small ? "Agrandir" : "Réduire"}</button>
       <span style={{ display: "inline-flex", gap: 6, alignItems: "center", fontSize: 12.5, color: T.ink500 }}>capacité
         <NumField label="Nombre de personnes" value={cap.people} width={52} onCommit={v => onCap({ people: Math.max(0, Number(v) || 0) })} /> pers. ×
         <NumField label="Heures par personne et par semaine" value={cap.hours} width={58} onCommit={v => onCap({ hours: Math.max(0, Number(v) || 0) })} /> h =
@@ -87,8 +87,8 @@ export function PlannerLoad({ plan, load, cal, tl, scrollX, leftW, standalone, m
       {!readOnly && mode === "week" && <span style={{ fontSize: 12, color: T.ink500 }}>{nSpecial ? nSpecial + " semaine" + (nSpecial > 1 ? "s" : "") + " à capacité spéciale · " : ""}cliquez une semaine pour changer sa capacité</span>}
       <span style={{ flex: 1 }} />
       {!readOnly && <>
-        <button className="pg-btn" onClick={() => onPropose("level")} title="Choisir la période et la capacité, puis voir le décalage des phases des PJ les moins prioritaires (aperçu avant d'appliquer)" style={{ border: "none", background: T.ink900, color: T.card, borderRadius: 8, padding: "6px 14px", fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>Niveler la charge</button>
-        <Pop width={290} align="right" trigger={(o, t) => <button className="pg-btn" aria-haspopup="menu" aria-expanded={o} onClick={t} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "6px 12px", fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>Plus ▾</button>}>
+        <button className="pg-btn" onClick={() => onPropose("level")} title="Choisir la période et la capacité, puis voir le décalage des phases des PJ les moins prioritaires (aperçu avant d'appliquer)" style={{...btn("pri","sm")}}>Niveler la charge</button>
+        <Pop width={290} align="right" trigger={(o, t) => <button className="pg-btn" aria-haspopup="menu" aria-expanded={o} onClick={t} style={{...btn("sec","sm")}}>Plus ▾</button>}>
           {close => (<>
             <MenuItem onClick={() => { close(); onPropose("early"); }}>Voir au plus tôt<div style={{ fontSize: 11.5, color: T.ink500 }}>Libère les dates imposées (sauf arrivées et départs)</div></MenuItem>
             <MenuItem disabled={!nTooDense} onClick={() => { close(); onPropose("fit"); }}>Ajuster les durées{nTooDense ? " (" + nTooDense + ")" : ""}<div style={{ fontSize: 11.5, color: T.ink500 }}>Allonge les phases dont les heures ne tiennent pas</div></MenuItem>
@@ -151,8 +151,8 @@ function WeekCapEditor({ ed, normal, onClose, onSave }) {
     <label style={{ display: "flex", alignItems: "center", gap: 8 }}>Capacité
       <input autoFocus type="number" min={0} value={v} onChange={e => setV(e.target.value)} onKeyDown={e => { if (e.key === "Enter") ok(); }} className="pg-in" style={{ width: 90, height: 32, padding: "0 8px", border: "1px solid " + T.line, borderRadius: 8, background: T.card, color: T.ink900, fontFamily: T.fontMono, fontSize: 13, textAlign: "right" }} /> h</label>
     <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-      <button className="pg-btn" onClick={ok} style={{ border: "none", background: T.ink900, color: T.card, borderRadius: 8, padding: "6px 12px", fontWeight: 700, cursor: "pointer", minHeight: 32 }}>Appliquer</button>
-      {ed.special && <button className="pg-btn" onClick={() => onSave(null)} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "6px 12px", fontWeight: 700, cursor: "pointer", minHeight: 32 }}>Revenir à la normale</button>}
+      <button className="pg-btn" onClick={ok} style={{...btn("pri","md")}}>Appliquer</button>
+      {ed.special && <button className="pg-btn" onClick={() => onSave(null)} style={{...btn("sec","md")}}>Revenir à la normale</button>}
       <button className="pg-btn" onClick={onClose} style={{ border: "none", background: "transparent", color: T.ink500, borderRadius: 8, padding: "6px 10px", cursor: "pointer", minHeight: 32 }}>Fermer</button>
     </div>
   </div>);

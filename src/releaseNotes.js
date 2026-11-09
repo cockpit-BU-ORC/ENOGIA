@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v292",
+    date: "2026-11-09",
+    title: "V292 : jours sans production et planificateur",
+    items: [
+      { t: "Jours sans production", d: "La date de fin ne bouge plus : les heures se répartissent sur les autres jours." },
+      { t: "Liste", d: "Les chiffres se comptent à nouveau à l'ouverture." },
+    ],
+  },
+  {
     id: "2026-11-v291",
     date: "2026-11-09",
     title: "V291 : boutons et textes harmonisés",

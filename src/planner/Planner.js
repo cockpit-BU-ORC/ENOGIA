@@ -612,7 +612,7 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
         {[["arrivee", "Arrivée", 1], ["production", "Production"], ["tests", "Tests"], ["finProd", "Packing"], ["depart", "Départ", 1]].map(([k, l, ms]) => <span key={k} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><span style={{ width: ms ? 9 : 16, height: 9, background: STEP_COLOR[k], transform: ms ? "rotate(45deg)" : "none", borderRadius: 4, display: "inline-block" }} />{l}</span>)}
         <span><span style={{ color: T.ink500 }}>→</span> lien</span>
       </span>
-      {!ui.lock && <button className="pg-tb" style={{ background: T.ink900, color: T.card, borderColor: T.ink900, padding: "2px 14px" }} onClick={() => setDlg("publish")}>Publier</button>}
+      {!ui.lock && <button className="pg-tb" style={{...btn("pri","sm")}} onClick={() => setDlg("publish")}>Publier</button>}
       {ui.lock && <button className="pg-tb" aria-pressed onClick={() => setUi({ lock: false })} title="Quitter la lecture seule">Lecture seule · quitter</button>}
     </div>
     <div className="pg-bar1" role="toolbar" aria-label="Outils du planificateur" style={{ marginBottom: 6, flexWrap: "wrap", rowGap: 4 }}>
@@ -693,6 +693,8 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
     </div>}
     {sched.cycle && <Banner tone="bad">Boucle de liens détectée ({sched.cycle.slice(0, 4).map(k => { const x = splitKey(k); return x.pj + " · " + STEP_LABELS[x.step]; }).join(" → ")}…) : certaines dates ne peuvent pas être calculées. Corrigez la colonne Prédécesseurs.</Banner>}
     {notice && <Banner tone={notice.tone}>{notice.text}</Banner>}
+    {/* v292 : le brouillon n'est vu que par vous ; le Gantt, le Calendrier et la Liste affichent le planning publié */}
+    {changes.length > 0 && !proposal && !ui.lock && <Banner tone="warn">{changes.length} modification{changes.length > 1 ? "s" : ""} du brouillon (dont celles venues du calendrier de production) {changes.length > 1 ? "ne sont" : "n'est"} pas encore dans le Gantt, le Calendrier et la Liste : elles y apparaîtront après « Publier ».</Banner>}
 
     {/* v208 (demandé : « la charge atelier toujours visible en bas de l'écran ») : la charge colle au bas de l'écran ; en Couloirs elle suit les couloirs */}
     {ui.view === "lanes" && <div style={{ ...CARD, overflow: "clip", marginBottom: 12 }}>

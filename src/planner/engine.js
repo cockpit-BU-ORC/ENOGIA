@@ -163,9 +163,16 @@ export function schedule(plan, cal) {
     if (n.snet && driver !== "snet") n.snetIgnored = true;
     if (lower === null) return;
     n.s = Math.max(0, lower); n.f = n.ms ? n.s : n.s + n.dur - 1; n.driver = driver;
-    // v218 : tâche d'atelier d'un PJ qui a des jours sans production → elle s'allonge pour garder sa durée en jours travaillés
+    // v292 (demandé : « répartition de la charge sur les jours restants, pas de modification de date de fin ») : les jours sans
+    // production d'un PJ (Calendrier) restent dans la tâche d'atelier — même début, même fin — et ses heures se répartissent sur
+    // les jours restants (atelierPhases : heures ÷ jours travaillés). Si TOUS ses jours sont sans production, elle s'allonge
+    // (comme en V218) pour ne pas perdre d'heures. Avant la V292, elle s'allongeait toujours.
     const off = !n.ms && cal.offOf ? cal.offOf(n.pj) : null;
-    if (off && atelierStep(plan, n.pj, n.step)) { let c = 0, i = n.s; const hit = []; for (let g = 0; g < 2000; g++) { if (off.has(i)) hit.push(i); else if (++c >= n.dur) break; i++; } n.f = i; if (hit.length) n.off = new Set(hit); }
+    if (off && atelierStep(plan, n.pj, n.step)) {
+      const hit = []; for (let i = n.s; i <= n.f; i++) if (off.has(i)) hit.push(i);
+      if (hit.length >= n.dur) { let c = 0, i = n.s; hit.length = 0; for (let g = 0; g < 2000; g++) { if (off.has(i)) hit.push(i); else if (++c >= n.dur) break; i++; } n.f = i; }
+      if (hit.length) n.off = new Set(hit);
+    }
     // Une date imposée est conservée telle quelle même si elle tombe un jour non ouvré (ex. date issue d'un ancien planning) ;
     // seules les dates calculées par les liens sont toujours des jours ouvrés.
     n.start = driver === "snet" ? n.snet : cal.dateOf(n.s);
@@ -228,6 +235,8 @@ function atelierStep(plan, pj, step) {
   if (!isCustomKey(step)) return false; const p = (plan.pjs || []).find(x => x.pj === pj), st = p && p.steps && p.steps[step];
   return !!st && (st.res || "atelier") === "atelier" && st.phase !== "tests";
 }
+// v292 : jours réellement travaillés d'une tâche (f − s + 1 jours ouvrés, moins ses jours sans production), au moins 1
+const workedDays = n => Math.max(1, (n.f - n.s + 1) - (n.off ? n.off.size : 0));
 export function atelierPhases(plan, sched) {
   const out = []; const ord = orderOf(plan, "prod");
   (plan.pjs || []).forEach((p, pi) => {
@@ -236,13 +245,13 @@ export function atelierPhases(plan, sched) {
     ["production", "finProd"].forEach(step => {
       const n = sched.nodes[nodeKey(p.pj, step)]; if (!n || n.s === null || !h[step]) return;
       const pos = ord.indexOf(p.pj);
-      out.push({ key: nodeKey(p.pj, step), pj: p.pj, step, s: n.s, f: n.f, dur: n.dur, hours: h[step], daily: h[step] / n.dur, prio: pos >= 0 ? pos : 1000 + pi, off: n.off || null });
+      out.push({ key: nodeKey(p.pj, step), pj: p.pj, step, s: n.s, f: n.f, dur: n.dur, hours: h[step], daily: h[step] / workedDays(n), prio: pos >= 0 ? pos : 1000 + pi, off: n.off || null });
     });
     // v211 : une tâche libre affectée à l'atelier compte dans la charge avec ses heures
     Object.keys(p.steps || {}).filter(isCustomKey).forEach(k => {
       const st = p.steps[k], hrs = Number(st && st.work) || 0; if (!st || (st.res || "atelier") !== "atelier" || hrs <= 0) return;
       const n = sched.nodes[nodeKey(p.pj, k)]; if (!n || n.s === null) return; const pos = ord.indexOf(p.pj);
-      out.push({ key: nodeKey(p.pj, k), pj: p.pj, step: k, s: n.s, f: n.f, dur: n.dur, hours: hrs, daily: hrs / Math.max(1, n.dur), prio: pos >= 0 ? pos : 1000 + pi, off: n.off || null });
+      out.push({ key: nodeKey(p.pj, k), pj: p.pj, step: k, s: n.s, f: n.f, dur: n.dur, hours: hrs, daily: hrs / workedDays(n), prio: pos >= 0 ? pos : 1000 + pi, off: n.off || null });
     });
   });
   return out;
