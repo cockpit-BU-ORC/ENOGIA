@@ -2112,3 +2112,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Couleurs d'étape du planificateur = celles du Gantt ; tâches ajoutées à la couleur de leur phase, nom lisible.
 - Pas de nouvelle donnée ni de clé `localStorage`.
 - Fichiers : planner/engine.js (+test), planner/Planner.js, PlannerGantt.js, PlannerLoad.js, PlannerLanes.js, components/CalendarView.js, DashboardSummary.js, SharedUI.js, TableView.js, CommentsView.js, CommentsKanban.js, TurbinesHub.js, ChangesView.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v293 — Achats / Appro (retour du kit) et début de production
+
+- Demandé : intégrer la mise à jour du kit achats ; « la production peut avoir sa date de début qui change ».
+- Achats / Appro : page du responsable achats (fiches machine, nomenclatures, articles, fournisseurs, PO, configuration, connexion Odoo sans clé API).
+- Nouvelles collections dans le même document `planning/achats` : `projets`, `po`, `odooSync` ; `params.odoo`, `params.odooDemande`, `params.scopes`. Règles Firestore inchangées.
+- Synchronisation Odoo : la page n'appelle jamais Odoo ; une fonction serveur (à écrire) lit `params.odoo` et la clé API dans un coffre de secrets, écrit `po` et `odooSync`.
+- Planificateur : jours sans production en tête de la production → début reculé, fin inchangée.
+- Fichiers : components/Achats.js, achats.test.js, planner/engine.js (+test), components/CalendarView.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

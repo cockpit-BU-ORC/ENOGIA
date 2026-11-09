@@ -763,4 +763,9 @@ export const RELEASE_CATALOG = [
     ["Planificateur", "Mêmes couleurs d'étape que le Gantt ; une tâche ajoutée prend la couleur de sa phase et son nom reste lisible dans la liste.", "owner"],
     ["Liste", "Les chiffres se comptent à nouveau depuis zéro ; plus de mention « départ passé pas encore Expédiée ».", "all"],
   ] },
+  { v: "293", t: "Achats / Appro refait par le responsable achats", items: [
+    ["Achats / Appro", "Nouvelle page : fiches machine (projets), nomenclatures, articles, fournisseurs, PO, configuration ; rétro-planning des commandes (besoin − marge − délai fournisseur − transport).", "admin"],
+    ["Achats / Appro", "Réglages : connexion Odoo préparée pour importer les PO (la clé API reste sur le serveur, jamais dans la page).", "owner"],
+    ["Planificateur", "Un jour sans production au début de la production en recule le début ; la fin ne change pas.", "owner"],
+  ] },
 ];

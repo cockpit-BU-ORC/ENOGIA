@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v293",
+    date: "2026-11-09",
+    title: "V293 : Achats / Appro",
+    items: [
+      { t: "Achats / Appro", d: "Nomenclatures par machine et rétro-planning des approvisionnements." },
+    ],
+  },
+  {
     id: "2026-11-v292",
     date: "2026-11-09",
     title: "V292 : jours sans production et planificateur",

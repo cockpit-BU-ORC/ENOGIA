@@ -171,11 +171,14 @@ export function schedule(plan, cal) {
     if (off && atelierStep(plan, n.pj, n.step)) {
       const hit = []; for (let i = n.s; i <= n.f; i++) if (off.has(i)) hit.push(i);
       if (hit.length >= n.dur) { let c = 0, i = n.s; hit.length = 0; for (let g = 0; g < 2000; g++) { if (off.has(i)) hit.push(i); else if (++c >= n.dur) break; i++; } n.f = i; }
+      // v293 (demandé : « la production peut avoir sa date de début qui change ») : jours sans production au début de la tâche →
+      // le début passe au premier jour travaillé (la fin reste la même, les heures se répartissent sur les jours restants).
+      else { let shift = false; while (n.s < n.f && off.has(n.s)) { n.s++; shift = true; } if (shift) { n.offStart = true; hit.splice(0, hit.length, ...hit.filter(i => i >= n.s)); } }
       if (hit.length) n.off = new Set(hit);
     }
     // Une date imposée est conservée telle quelle même si elle tombe un jour non ouvré (ex. date issue d'un ancien planning) ;
     // seules les dates calculées par les liens sont toujours des jours ouvrés.
-    n.start = driver === "snet" ? n.snet : cal.dateOf(n.s);
+    n.start = driver === "snet" && !n.offStart ? n.snet : cal.dateOf(n.s);
     n.finish = n.ms ? n.start : cal.dateOf(n.f);
   });
   return { nodes, cycle };

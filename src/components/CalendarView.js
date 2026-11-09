@@ -486,7 +486,7 @@ function DayProdMenu({menu,data,closurePeriods,productionExclusions,setClosurePe
       {!closed&&inProd.length===0&&<div style={{marginTop:10,fontSize:FZF.xs,color:T.ink500}}>Aucun PJ en production ce jour.</div>}
       {/* v292 (demandé : « warning sur le lien planificateur / calendrier / Gantt ») : ce qui change, et quand */}
       <div role="note" style={{marginTop:12,padding:"8px 10px",borderRadius:8,background:T.surfaceAlt,fontSize:FZF.xs,color:T.ink700,lineHeight:1.45}}>
-        <b>Effet sur le planning.</b> Jour sans production : la date de fin ne bouge pas, les heures se répartissent sur les autres jours de production (charge du Planificateur). Jour fermé pour l'atelier : le Planificateur décale les dates de son brouillon. Le Gantt, le Calendrier et la Liste ne changent qu'après « Publier » dans le Planificateur.
+        <b>Effet sur le planning.</b> Jour sans production : la date de fin ne bouge pas (le début peut reculer si c'est un premier jour de production), les heures se répartissent sur les autres jours de production (charge du Planificateur). Jour fermé pour l'atelier : le Planificateur décale les dates de son brouillon. Le Gantt, le Calendrier et la Liste ne changent qu'après « Publier » dans le Planificateur.
       </div>
     </div></>);
 }

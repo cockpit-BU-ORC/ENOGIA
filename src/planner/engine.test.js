@@ -63,6 +63,13 @@ describe("planificateur (v204)", () => {
     const other = [...Array(n.f - n.s + 1).keys()].map(k => n.s + k).find(k => !n.off.has(k));
     expect(lm.day.get(other)).toBeGreaterThan(lm0.day.get(other)); // plus d'heures les autres jours
   });
+  test("v293 : premier jour de production sans production → le début se décale, la fin reste", () => {
+    const rh = rows.map(r => ({ ...r, heuresAtelier: 200 })), plan = initPlanFromRows(rh, cal), base = schedule(plan, cal).nodes[nodeKey("PJ1", "production")];
+    const off = makeCalendar({ closurePeriods: [], pjOff: { PJ1: [base.start] } }), n = schedule(plan, off).nodes[nodeKey("PJ1", "production")];
+    expect(n.s).toBe(base.s + 1); expect(n.start).toBe(off.dateOf(base.s + 1)); expect(n.finish).toBe(base.finish); expect(n.off).toBeFalsy();
+    const tot = m => [...m.day.values()].reduce((a, b) => a + b, 0);
+    expect(Math.round(tot(loadModel(plan, schedule(plan, off), off)))).toBe(Math.round(tot(loadModel(plan, schedule(plan, cal), cal))));
+  });
 });
 
 describe("v258 : début d'une tâche choisi en gardant les liens du PJ", () => {
