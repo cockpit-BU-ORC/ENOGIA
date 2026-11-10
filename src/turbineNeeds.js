@@ -109,7 +109,10 @@ export function buildNeeds(doc, rows, metaOf, today = new Date()) {
       const t = got[i] || null;
       const roue = mine.find(a => a.kind === "roue" && +a.slot === i) || null, inj = mine.find(a => a.kind === "inj" && +a.slot === i) || null;
       const roueMontee = t && t.roue && !t.sansRoue ? t.roue : "";
-      slots.push({ i, t, roue, inj, roueMontee, roueOk: !!(roue || roueMontee), extra: i >= want });
+      // v299 : installée (montée sur la machine, date) ; disponibilité de la turbine attribuée (prête = aujourd'hui, sinon fin prévue)
+      const installee = t && t.raw && t.raw.installee ? String(t.raw.installee) : "";
+      const dispo = !t || installee ? null : t.livree || t.dispo ? isoDay(today) : t.end || null;
+      slots.push({ i, t, roue, inj, roueMontee, roueOk: !!(roue || roueMontee), extra: i >= want, installee, dispo, estimee: false, estNum: "" });
     }
     if (want > got.length) issues.push({ bad: true, t: (want - got.length) + " turbine" + (want - got.length > 1 ? "s" : "") + " à attribuer" });
     slots.forEach(s => {
@@ -126,6 +129,21 @@ export function buildNeeds(doc, rows, metaOf, today = new Date()) {
     Object.assign(n, { got, want, slots, issues, roueMiss, injMiss, complete: got.length >= want && !roueMiss && !injMiss });
   });
   needs.sort((a, b) => String(a.date || "9").localeCompare(String(b.date || "9")) || a.label.localeCompare(b.label));
+  // v299 (demandé : « date estimative de mise à disposition de la turbine par rapport à notre besoin ») : emplacement vide =
+  // prochaine turbine libre de la gamme (prête d'abord, puis la plus tôt finie), dans l'ordre des besoins ; écart = besoin − disponibilité.
+  const pool = free.filter(x => !x.livree).sort((a, b) => (b.dispo - a.dispo) || String(a.end || "9").localeCompare(String(b.end || "9")));
+  needs.forEach(n => {
+    n.slots.forEach(sl => {
+      if (!sl.t && !sl.extra) { const k = pool.findIndex(x => x.gamme === n.cfg.g && !roueConflict(x, n));
+        if (k >= 0) { const x = pool.splice(k, 1)[0]; sl.dispo = x.dispo ? isoDay(today) : x.end || null; sl.estNum = x.num || ""; }
+        sl.estimee = true; }
+      sl.ecart = sl.dispo && n.date ? Math.round((new Date(n.date + "T00:00:00") - new Date(sl.dispo + "T00:00:00")) / 864e5) : null;
+    });
+    const live = n.slots.filter(sl => !sl.extra && !sl.installee);
+    n.installees = n.slots.filter(sl => !sl.extra && sl.installee).length;
+    n.dispo = live.some(sl => !sl.dispo) ? null : live.reduce((m, sl) => (!m || sl.dispo > m ? sl.dispo : m), null);
+    n.late = live.some(sl => sl.ecart != null && sl.ecart < 0);
+  });
   free.sort((a, b) => (b.ready - a.ready) || (b.sansRoue - a.sansRoue) || String(a.end || "9").localeCompare(String(b.end || "9")) || a.num.localeCompare(b.num));
   return { needs, free };
 }
@@ -148,7 +166,14 @@ export function assignOps(doc, x, need, today = new Date()) {
   const warn = need.roue && x.roue && !x.sansRoue && U(x.roue) !== U(need.roue) ? "Elle a déjà la roue " + x.roue + " (prévue : " + need.roue + ")." : "";
   return { writes, msg: (x.num || "Turbine") + " → " + need.label + " (" + note + ")", warn };
 }
+// v299 (demandé : « différencier une turbine allouée d'une turbine installée ») : installée = montée sur la machine (date), à la main
+export function installOps(doc, x, on, today = new Date()) {
+  if (!x || !x.raw) return { error: "Turbine introuvable." };
+  const t = clean(x.raw); if (on) t.installee = isoDay(today); else delete t.installee;
+  return { writes: [{ c: "turbines", id: x.id, data: t }], msg: (x.num || "Turbine") + (on ? " marquée installée le " + fd(isoDay(today)) : " : installation annulée") };
+}
 export function unassignOps(doc, x) {
+  if (x && x.raw && x.raw.installee) return { error: (x.num || "Cette turbine") + " est marquée installée : annulez d'abord l'installation." };
   const t = clean(x.raw), writes = [], fromStock = !!t.sortieOrc;
   delete t.besoin; delete t.injDemande; t.affaire = "";
   if (fromStock) {

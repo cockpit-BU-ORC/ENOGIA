@@ -1,4 +1,4 @@
-import { defaultCfg, buildNeeds, assignOps, unassignOps, allocOps, unallocOps, stockTiles, maxBouches, refsOf, autoFill } from "./turbineNeeds";
+import { defaultCfg, buildNeeds, assignOps, unassignOps, installOps, allocOps, unallocOps, stockTiles, maxBouches, refsOf, autoFill } from "./turbineNeeds";
 import { setResolved, isSeenFor, isResolvedFor } from "./mentions";
 
 // v270 : besoins PJ + SAV, turbines glissées sur un besoin, sortie du stock de la production
@@ -91,4 +91,21 @@ test("roue imposée : turbine ou roue d'une autre référence refusée", () => {
   expect(assignOps(d, free.find(x => x.num === "100N2"), p1, today).error).toBeUndefined(); // testée sans roue : acceptée
   expect(allocOps(d, p1, 0, stockTiles(d, "100").roues.find(r => r.ref === "R9")).error).toMatch(/refusée/);
   expect(autoFill(d, needs, free, today).turbs).toEqual(["b"]);
+});
+
+test("v299 : disponibilité (attribuée, estimée), écart au besoin, installée", () => {
+  const { needs } = buildNeeds(doc, rows, metaOf, today);
+  const sav = needs.find(n => n.key === "sav:s1").slots[0];
+  expect(sav).toMatchObject({ dispo: "2026-11-04", estimee: false, ecart: 11 });          // prête : aujourd'hui ; besoin le 15/11
+  const p1 = needs.find(n => n.key === "pj:PJ1").slots[1];
+  expect(p1).toMatchObject({ estimee: true, estNum: "100N1", dispo: "2026-11-04", ecart: 27 }); // emplacement vide : prochaine turbine libre
+  expect(needs.find(n => n.key === "pj:PJ2").slots[0]).toMatchObject({ estimee: true, estNum: "20N1" });
+  // installée : plus de date, retrait refusé tant que l'installation n'est pas annulée
+  const x = needs.find(n => n.key === "sav:s1").slots[0].t, op = installOps(doc, x, true, today);
+  expect(op.writes[0].data.installee).toBe("2026-11-04");
+  const d2 = { ...doc, turbines: { ...doc.turbines, d: { ...doc.turbines.d, installee: "2026-11-04" } } };
+  const s2 = buildNeeds(d2, rows, metaOf, today).needs.find(n => n.key === "sav:s1");
+  expect(s2.slots[0]).toMatchObject({ installee: "2026-11-04", dispo: null }); expect(s2.installees).toBe(1);
+  expect(unassignOps(d2, s2.slots[0].t).error).toMatch(/installée/);
+  expect(installOps(d2, s2.slots[0].t, false, today).writes[0].data.installee).toBeUndefined();
 });

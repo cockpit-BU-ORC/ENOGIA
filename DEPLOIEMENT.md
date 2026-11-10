@@ -2158,3 +2158,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Kit Achats : données d'exemple au format actuel, synchronisation Odoo simulée dans l'aperçu ; consignes mises à jour (Odoo, collections, rayons, Réglages).
 - Rien ne change dans le site. Kits régénérés : `kit-achats/` et `kit-jeremie/` (à renvoyer).
 - Fichiers : scripts/prodturb-kit.js, achats-kit.js, achats-import.js, achats-consignes.md, achats-marche-a-suivre.md, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v299 — Besoins turbines : onglets ORC / SAV, cartes et frise (piste B)
+
+- Demandé : autre présentation des Besoins ORC et SAV ; roues et injecteurs plus visibles que le S/N ; différencier turbine allouée / installée ; date estimée de mise à disposition face au besoin. Maquette V299, piste B validée.
+- Onglets Besoins ORC / Besoins SAV, cartes par besoin, roue et injecteur en grand, Allouée (bleu) / Installée (vert, date, bouton « Marquer installée »), disponibilité et écart sur une frise.
+- Nouvelle donnée : `planning/prodTurbines.turbines[id].installee` (date ISO), écrite seulement par le bouton (même document, règles inchangées). Nouvelle clé `localStorage` : `enogia_nd_kind` (onglet ORC / SAV).
+- Fichiers : turbineNeeds.js (+test), components/TurbinesHub.js, needsView.test.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

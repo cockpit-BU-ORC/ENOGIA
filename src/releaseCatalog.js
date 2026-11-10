@@ -783,4 +783,9 @@ export const RELEASE_CATALOG = [
   { v: "298", t: "Kits Achats et Production turbines réparés", items: [
     ["Kits", "Les kits envoyés au responsable achats et au directeur de production turbines s'ouvrent de nouveau dans Claude ; le kit Achats a des données d'exemple à jour et simule la synchronisation Odoo.", "owner"],
   ] },
+  { v: "299", t: "Besoins turbines : onglets ORC / SAV, cartes et frise", items: [
+    ["Turbines", "Besoins ORC et SAV en deux onglets, une carte par besoin : roue et injecteur en grand, numéro de série en petit.", "owner"],
+    ["Turbines", "Turbine allouée (bleu) ou installée (vert, avec sa date) : bouton « Marquer installée ».", "owner"],
+    ["Turbines", "Date de disponibilité de chaque turbine (estimée pour un emplacement vide) et écart avec le besoin, sur une petite frise.", "owner"],
+  ] },
 ];

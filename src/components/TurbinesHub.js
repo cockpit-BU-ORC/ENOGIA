@@ -6,12 +6,12 @@
 //    dans la production, leur date de fin prévue (calcul de la production) et ce qui coince ; stocks de roues et d'injecteurs.
 // Plus : « Importer des données (JSON) » (propriétaire et liste d’accès de la production, v268) pour reprendre les données de l'outil Claude de Jérémie, avec aperçu avant écriture.
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { T, FZF as FZ, btn as themeBtn } from "../theme";
+import { T, FZF as FZ, btn as themeBtn, inkOn } from "../theme";
 import { PageHead } from "./SharedUI";
 import { ProdTurbines } from "./ProdTurbines";
 import { usePointerDnD } from "../pointerDrag";
 import { createPortal } from "react-dom";
-import { TURB_CFGS, cfgById, refsOf, buildNeeds, assignOps, unassignOps, allocOps, unallocOps, stockTiles, injInfo, maxBouches, autoFill, roueConflict, prodState, workDate, pjOfAffaire } from "../turbineNeeds";
+import { TURB_CFGS, cfgById, refsOf, buildNeeds, assignOps, unassignOps, installOps, isoDay, allocOps, unallocOps, stockTiles, injInfo, maxBouches, autoFill, roueConflict, prodState, workDate, pjOfAffaire } from "../turbineNeeds";
 import { getPjMeta, CountryFlag } from "../pjMeta";
 import { askConfirm } from "../confirm";
 
@@ -113,7 +113,7 @@ function Sock({ ctx, n, s, kind, label, want, filled, children }) {
         boxShadow: overBad ? "inset 0 0 0 2px " + T.red600 : refused ? "inset 0 0 0 1.5px " + T.red500 : over ? "inset 0 0 0 2px " + T.emerald500 + ", 0 6px 16px rgba(45,106,79,.18)" : match ? "inset 0 0 0 2px " + T.emerald500 : can ? "inset 0 0 0 1.5px " + T.teal500 : filled ? "0 1px 2px rgba(16,24,40,.06)" : "none",
         transform: over ? "scale(1.03)" : "none", opacity: active && !can0 && !filled ? 0.35 : 1 }}>
       {filled ? children : <div style={{ minWidth: 0 }}><span style={{ display: "block", fontSize: 11, fontWeight: 600, color: refused ? T.red600 : T.ink500 }}>{refused ? "Refusé : roue " + n.roue + " prévue" : label}</span>
-        <span style={{ fontSize: 12.5, fontWeight: want ? 700 : 600, color: want ? T.teal600 : T.amber600, opacity: want ? 0.8 : 1 }}>{want || (kind === "turbine" ? "glisser une turbine" : "à choisir")}</span></div>}
+        <span style={{ display: "block", fontFamily: want ? T.fontDisplay : T.font, fontSize: want ? 17 : 13, lineHeight: 1.2, fontWeight: 700, color: want ? (kind === "inj" ? T.violet600 : T.accentInk) : T.amber600, opacity: want ? 0.75 : 1 }}>{want || (kind === "turbine" ? "glisser une turbine" : "à choisir")}</span></div>}
     </div>;
   }
 function NeedsView({ doc, api, rows, canEdit, savePjMeta }) {
@@ -155,9 +155,14 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta }) {
   const delSav = async () => { if (!sav || !(await askConfirm({ title: "Supprimer le besoin SAV « " + sav.label + " » ?", message: "Turbines, roues et injecteurs attribués retournent dans le stock.", confirmLabel: "Supprimer le besoin", danger: true }))) return;
     const n = needs.find(x => x.key === "sav:" + sav.id); if (n) { for (const s of n.slots) { if (s.roue) await run(unallocOps(doc, s.roue)); if (s.inj) await run(unallocOps(doc, s.inj)); if (s.t) await run(unassignOps(doc, s.t)); } }
     await api.del("besoins", sav.id); setSav(null); };
-  const shown = needs.filter(n => !onlyOpen || !n.complete || n.issues.some(i => i.bad));
-  const tot = needs.reduce((s, n) => s + n.want * 3, 0), got = needs.reduce((s, n) => s + n.slots.filter(x => !x.extra).reduce((a, x) => a + !!x.t + !!x.roueOk + !!x.inj, 0), 0), pct = tot ? Math.round(got / tot * 100) : 100;
-  const missT = needs.reduce((s, n) => s + Math.max(0, n.want - n.got.length), 0), missR = needs.reduce((s, n) => s + n.roueMiss, 0), missI = needs.reduce((s, n) => s + n.injMiss, 0);
+  // v299 (maquette V299, piste B « cartes et frise » validée) : deux onglets Besoins ORC / Besoins SAV ; une carte par besoin ;
+  // roue et injecteur en grand ; turbine allouée (bleu) ou installée (vert plein, date) ; disponibilité estimée et écart au besoin.
+  const [kind, setKind0] = useState(() => { try { return localStorage.getItem("enogia_nd_kind") === "sav" ? "sav" : "pj"; } catch (e) { return "pj"; } });
+  const setKind = k => { setKind0(k); try { localStorage.setItem("enogia_nd_kind", k); } catch (e) { /* stockage indisponible */ } };
+  const ofKind = needs.filter(n => n.kind === kind), nOrc = needs.filter(n => n.kind === "pj").length, nSav = needs.length - nOrc;
+  const shown = ofKind.filter(n => !onlyOpen || !n.complete || n.late || n.installees < n.want || n.issues.some(i => i.bad));
+  const SL = ofKind.flatMap(n => n.slots.filter(x => !x.extra));
+  const kInst = SL.filter(x => x.installee).length, kAlloc = SL.filter(x => x.t && !x.installee).length, kFree = SL.filter(x => !x.t).length, kLate = SL.filter(x => !x.installee && x.ecart != null && x.ecart < 0).length;
   const freeG = free.filter(x => x.gamme === gam).sort((a, b) => (b.ready - a.ready) || (b.sansRoue - a.sansRoue) || String(a.end || "9").localeCompare(String(b.end || "9")));
   const active = dnd.drag || picked;
   const isPicked = p => picked && picked.kind === p.kind && (p.kind === "turbine" ? picked.id === p.id : picked.stockId === p.stockId && String(picked.bouches) === String(p.bouches));
@@ -167,13 +172,31 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta }) {
   const none = <span style={{ fontSize: FZ.xs, color: T.ink500 }}>Aucune.</span>;
   // logement d'un plateau
   const xBtn = (lab, fn) => canEdit && <button type="button" data-no-drag aria-label={lab} title="Remettre dans le stock" onClick={e => { e.stopPropagation(); fn(); }} style={{ marginLeft: "auto", border: "none", background: "transparent", color: T.ink500, cursor: "pointer", minWidth: 24, minHeight: 24, borderRadius: 8, fontSize: 15, lineHeight: 1 }}>×</button>;
-  const Val = ({ lab, v, mono, note, bad }) => <div style={{ minWidth: 0 }}><span style={{ display: "block", fontSize: 11, fontWeight: 600, color: T.ink500 }}>{lab}</span><span style={{ fontWeight: 700, fontSize: 12.5, fontFamily: mono ? T.fontMono : T.font }}>{v}</span> <span style={{ fontSize: 11, fontWeight: bad ? 700 : 600, color: bad ? T.red600 : T.emerald600 }}>{note}</span></div>;
+  const partEl = (lab, ref, note, color, bad, x) => <><div style={{ minWidth: 0, flex: 1 }}><span style={{ display: "block", fontSize: 12, fontWeight: 600, color: T.ink500 }}>{lab}</span>
+    <span style={{ display: "block", fontFamily: T.fontDisplay, fontWeight: 700, fontSize: 18, letterSpacing: "-.01em", lineHeight: 1.15, color, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ref}</span>
+    <span style={{ fontSize: 12, fontWeight: bad ? 700 : 500, color: bad ? T.red600 : T.ink500 }}>{note}</span></div>{x}</>;
+  const chipS = { display: "inline-flex", alignItems: "center", gap: 4, borderRadius: 999, padding: "2px 9px", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap" };
+  const stChip = x => x.installee ? <span style={{ ...chipS, background: T.emerald600, color: inkOn(T.emerald600) }}>✓ Installée le {fdS(x.installee)}</span>
+    : x.t ? <span style={{ ...chipS, background: T.info100, color: T.info600, boxShadow: "inset 0 0 0 1.5px " + T.info600 }}>Allouée</span>
+      : <span style={{ ...chipS, background: T.surfaceAlt, color: T.ink500 }}>À attribuer</span>;
+  const gapEl = x => x.installee ? null : x.ecart == null ? <span style={{ fontSize: 12, color: T.ink500 }}>{x.t && x.t.missing ? "pas d'arbre prévu" : "pas de date"}</span>
+    : <span style={{ fontSize: 13, fontWeight: 700, whiteSpace: "nowrap", color: x.ecart < 0 ? T.red600 : x.ecart < 5 ? T.amber600 : T.emerald600 }}>{x.ecart < 0 ? -x.ecart + " j de retard" : x.ecart + " j d'avance"}</span>;
+  const t0 = isoDay(new Date()), dd = v => (v ? Math.round((new Date(v + "T00:00:00") - new Date(t0 + "T00:00:00")) / 864e5) : 0);
+  const track = (n, x) => { const a = Math.max(0, dd(x.dispo)), b = Math.max(0, dd(n.date)), span = Math.max(14, a, b) * 1.12, pos = v => Math.min(100, v / span * 100), late = x.ecart != null && x.ecart < 0;
+    return <div role="img" aria-label={(x.dispo ? "Disponible le " + fdS(x.dispo) + (x.estimee ? " (estimée)" : "") : "Pas de date de disponibilité") + (n.date ? ", besoin le " + fdS(n.date) : "")} style={{ marginTop: 16 }}>
+      <div style={{ position: "relative", height: 12, borderRadius: 4, background: T.surfaceAlt }}>
+        {x.dispo && <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: Math.max(2, pos(a)) + "%", borderRadius: 4, background: late ? T.red500 : (T.navy700 || T.ink700) }} />}
+        {n.date && <div style={{ position: "absolute", top: -4, bottom: -4, left: pos(b) + "%", width: 2, background: T.ink900 }}>
+          <span style={{ position: "absolute", bottom: "100%", marginBottom: 1, ...(pos(b) > 78 ? { right: 0 } : pos(b) < 14 ? { left: 0 } : { left: "50%", transform: "translateX(-50%)" }), fontSize: 11, fontWeight: 700, whiteSpace: "nowrap", color: T.ink900 }}>{dd(n.date) < 0 ? "besoin dépassé (" + fdS(n.date) + ")" : "besoin " + fdS(n.date)}</span></div>}
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 12, color: T.ink500, marginTop: 2, fontVariantNumeric: "tabular-nums" }}><span>aujourd'hui</span><span>{x.dispo ? "disponible le " + fdS(x.dispo) + (x.estimee ? " (estimée)" : "") : "pas de date"}</span></div>
+    </div>; };
   const injTxt = n => n.inj ? n.inj + (n.injB ? " · " + n.injB + " bouch." : "") : "";
   const ctx = { dnd, canEdit, picked, setPicked, isPicked, active, landed, drop, setMsg, setPop };
   let lastWk = "";
   return (<div style={{ display: "flex", flexDirection: "column", gap: 10, "--nd-bg": T.card }}>
     <style>{NEEDS_CSS}</style>
-    <PageHead title="Besoins ORC et SAV" sub="Glissez (ou touchez puis posez) une turbine, une roue ou un injecteur du stock dans le plateau d'un PJ : le stock de la production se met à jour. × la remet." />
+    <PageHead title="Besoins ORC et SAV" sub="Une carte par besoin : roue et injecteur à monter, turbine allouée ou installée, et sa date de disponibilité face au besoin. Glissez (ou touchez puis posez) une pièce du stock sur une carte ; × la remet." />
     <div className="enogia-nd-app" style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden", display: "grid", gridTemplateColumns: "300px minmax(0,1fr)", height: "min(78vh, 900px)" }}>
       <aside className="enogia-nd-stock" aria-label="Stock de la production turbines" style={{ background: T.surface, borderRight: "1px solid " + T.line, overflowY: "auto", "--nd-bg": T.surface }}>
         <div className="enogia-nd-glass" style={{ position: "sticky", top: 0, zIndex: 2, padding: "12px 12px 10px", display: "flex", flexDirection: "column", gap: 8 }}>
@@ -190,44 +213,56 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta }) {
         <p style={{ fontSize: 11.5, color: T.ink500, padding: "0 12px 14px", margin: 0, lineHeight: 1.45 }}>{picked ? "Pièce choisie : touchez un logement (Échap pour annuler)." : "Les tuiles sont le stock réel de la production turbines."}</p>
       </aside>
       <section aria-label="Besoins" style={{ overflowY: "auto", position: "relative", "--nd-bg": T.card }}>
-        <div className="enogia-nd-glass" style={{ position: "sticky", top: 0, zIndex: 3, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", padding: "10px 16px", boxShadow: "0 1px 0 " + T.line }}>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}><span aria-hidden="true" style={{ width: 150, height: 6, borderRadius: 4, background: T.surfaceAlt, overflow: "hidden" }}><span style={{ display: "block", height: "100%", width: "100%", transform: "scaleX(" + Math.max(0, Math.min(1, pct / 100)) + ")", transformOrigin: "left center", background: T.emerald500, transition: "transform 300ms cubic-bezier(.2,.8,.2,1)" }} /></span>
-            <span style={{ fontSize: 12.5, color: T.ink500 }}><b style={{ color: T.ink900, fontSize: 15, fontVariantNumeric: "tabular-nums" }}>{pct}</b> % des pièces attribuées</span></span>
-          {[[missT, "turbines"], [missR, "roues"], [missI, "injecteurs à attribuer"]].map(([v, l]) => <span key={l} style={{ fontSize: 12.5, color: T.ink500 }}><b style={{ color: T.ink900, fontSize: 15, fontVariantNumeric: "tabular-nums", marginRight: 3 }}>{v}</b>{l}</span>)}
+        <div className="enogia-nd-glass" style={{ position: "sticky", top: 0, zIndex: 3, display: "flex", alignItems: "center", gap: "8px 18px", flexWrap: "wrap", padding: "10px 16px", boxShadow: "0 1px 0 " + T.line }}>
+          <div role="tablist" aria-label="Type de besoin" style={{ display: "inline-flex", background: T.surfaceAlt, borderRadius: 8, padding: 2, gap: 2 }}>
+            {[["pj", "Besoins ORC", nOrc], ["sav", "Besoins SAV", nSav]].map(([k, l, c]) => <button key={k} type="button" role="tab" aria-selected={kind === k} onClick={() => { setKind(k); setPicked(null); }}
+              style={{ border: "none", borderRadius: 8, minHeight: 30, padding: "0 12px", fontSize: FZ.sm, fontWeight: 700, cursor: "pointer", fontFamily: T.font, background: kind === k ? T.card : "transparent", color: kind === k ? T.ink900 : T.ink500, boxShadow: kind === k ? "0 1px 2px rgba(0,0,0,.08)" : "none" }}>{l} <span style={{ fontWeight: 500, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{c}</span></button>)}
+          </div>
+          {[[SL.length, "attendues", T.ink900], [kInst, "installées", kInst ? T.emerald600 : T.ink900], [kAlloc, "allouées", T.ink900], [kFree, "à attribuer", T.ink900], [kLate, "disponibles après le besoin", kLate ? T.red600 : T.emerald600]].map(([v, l, c]) =>
+            <span key={l} style={{ fontSize: FZ.sm, color: T.ink500 }}><b style={{ color: c, fontFamily: T.fontDisplay, fontSize: 20, fontWeight: 600, fontVariantNumeric: "tabular-nums", marginRight: 4 }}>{v}</b>{l}</span>)}
           <span style={{ flex: 1 }} />
           <label style={{ fontSize: FZ.xs, color: T.ink700, display: "inline-flex", gap: 6, alignItems: "center", cursor: "pointer" }}><input type="checkbox" checked={onlyOpen} onChange={e => setOnlyOpen(e.target.checked)} />À compléter</label>
-          {canEdit && <button type="button" disabled={busy} onClick={auto} title="Propose une affectation du stock (par date de besoin, pièces prévues), annulable" style={{ minHeight: 32, borderRadius: 8, padding: "0 12px", border: "1px solid " + T.line, background: T.card, color: T.ink700, fontWeight: 700, fontSize: FZ.xs, cursor: "pointer", fontFamily: T.font }}>Remplir automatiquement</button>}
-          {canEdit && <button type="button" onClick={() => setSav({})} style={{ minHeight: 32, borderRadius: 8, padding: "0 12px", border: "1px solid " + T.ink900, background: T.ink900, color: T.card, fontWeight: 700, fontSize: FZ.xs, cursor: "pointer", fontFamily: T.font }}>＋ Besoin SAV</button>}
+          {canEdit && <button type="button" disabled={busy} onClick={auto} title="Propose une affectation du stock (par date de besoin, pièces prévues), annulable" style={{ ...themeBtn("sec", "sm") }}>Remplir automatiquement</button>}
+          {canEdit && kind === "sav" && <button type="button" onClick={() => setSav({})} style={{ ...themeBtn("pri", "sm") }}>＋ Besoin SAV</button>}
         </div>
-        <div style={{ padding: "0 16px 20px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 400px), 1fr))", gap: 12, padding: "0 16px 20px", alignItems: "start" }}>
           {shown.map(n => { const wk = wkOf(n.date), head = wk !== lastWk; lastWk = wk;
-            const T3 = n.want * 3, G3 = n.slots.filter(x => !x.extra).reduce((a, x) => a + !!x.t + !!x.roueOk + !!x.inj, 0), badI = n.issues.filter(i => i.bad && !/à attribuer$/.test(i.t));
+            const T3 = n.want * 3, G3 = n.slots.filter(x => !x.extra).reduce((q, x) => q + !!x.t + !!x.roueOk + !!x.inj, 0), badI = n.issues.filter(i => i.bad && !/à attribuer$/.test(i.t) && !/après le besoin/.test(i.t));
+            const meta = n.kind === "pj" ? getPjMeta(n.pj, n.r) : null;
             return <React.Fragment key={n.key}>
-              {head && <div style={{ position: "sticky", top: 52, zIndex: 2, padding: "8px 0 6px", fontSize: 12, fontWeight: 700, color: T.ink500, background: "linear-gradient(" + T.card + " 70%, transparent)" }}>{wk}</div>}
-              <article className="enogia-nd-need" aria-label={(n.kind === "sav" ? "Besoin SAV " : "Besoin ORC ") + n.label} style={{ display: "grid", gridTemplateColumns: "220px minmax(0,1fr)", gap: 14, alignItems: "stretch", padding: "10px 12px 10px 16px", marginBottom: 8, borderRadius: 12, minHeight: 72, boxSizing: "border-box", position: "relative", overflow: "hidden",
-                background: n.kind === "sav" ? T.violet100 : T.card, boxShadow: "0 0 0 1px " + (n.complete && !badI.length ? T.emerald500 : badI.length ? T.red500 : n.kind === "sav" ? T.violet500 : T.line), transition: "box-shadow 160ms" }}>
-                <span aria-hidden="true" style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 5, background: n.kind === "sav" ? T.violet500 : (T.navy700 || T.ink900) }} />
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}><Ring p={T3 ? G3 / T3 : 1} /><b style={{ fontFamily: T.fontMono, fontSize: 13.5 }}>{n.label}</b>
-                    {n.kind === "pj" && <CountryFlag pays={getPjMeta(n.pj, n.r).pays} size={13} />}
-                    <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: ".02em", color: n.kind === "sav" ? T.card : T.card, background: n.kind === "sav" ? T.violet600 : (T.navy700 || T.ink900), borderRadius: 999, padding: "1px 7px" }}>{n.kind === "sav" ? "SAV" : "ORC"}</span></div>
-                  {n.sub && <div style={{ fontSize: 12, color: T.ink700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", display: "flex", alignItems: "center", gap: 6 }}>{n.sub}{n.kind === "pj" && getPjMeta(n.pj, n.r).pays && getPjMeta(n.pj, n.r).pays !== "—" ? <span style={{ color: T.ink500 }}>· {getPjMeta(n.pj, n.r).pays}</span> : null}</div>}
-                  <div style={{ fontSize: 12, color: T.ink700, marginTop: 2 }}>pour le <b style={{ fontVariantNumeric: "tabular-nums" }}>{fd(n.date)}</b> · <button type="button" onClick={e => canEdit && setPop({ n, kind: "cfg", el: e.currentTarget })} style={{ border: "none", background: "transparent", padding: 0, color: T.teal600, fontWeight: 700, fontSize: 12, cursor: canEdit ? "pointer" : "default", textDecoration: "underline", textUnderlineOffset: 2, fontFamily: T.font }}>{n.cfg.l}{n.kind === "pj" && !n.cfgSet ? " (gamme)" : ""}</button>
-                    {n.kind === "sav" && canEdit && <> · <button type="button" onClick={() => setSav({ id: n.id, ...n.raw, injB: n.raw.injB == null ? "" : String(n.raw.injB) })} style={{ border: "none", background: "transparent", padding: 0, color: T.ink500, fontSize: 12, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2, fontFamily: T.font }}>modifier</button></>}</div>
-                  {badI.length > 0 && <div style={{ marginTop: 4, display: "flex", flexDirection: "column", gap: 1 }}>{badI.map((i, q) => <span key={q} style={{ fontSize: 11.5, fontWeight: 600, color: T.red600 }}>{i.t}</span>)}</div>}
+              {head && <div style={{ gridColumn: "1 / -1", position: "sticky", top: 54, zIndex: 2, padding: "10px 0 4px", fontSize: 12, fontWeight: 700, color: T.ink500, background: "linear-gradient(" + T.card + " 70%, transparent)" }}>{wk}</div>}
+              <article className="enogia-nd-need" aria-label={(n.kind === "sav" ? "Besoin SAV " : "Besoin ORC ") + n.label} style={{ display: "flex", flexDirection: "column", gap: 8, padding: "12px 14px", borderRadius: 12, minWidth: 0, boxSizing: "border-box",
+                background: n.kind === "sav" ? T.violet100 : T.card, boxShadow: "0 0 0 1px " + (n.late || badI.length ? T.red500 : n.complete ? T.emerald500 : n.kind === "sav" ? T.violet500 : T.line), transition: "box-shadow 160ms" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", minWidth: 0 }}>
+                  <Ring p={T3 ? G3 / T3 : 1} /><b style={{ fontFamily: T.fontMono, fontSize: 15 }}>{n.label}</b>
+                  {meta && <CountryFlag pays={meta.pays} size={13} />}
+                  <span style={{ ...chipS, background: n.kind === "sav" ? T.violet600 : (T.navy700 || T.ink900), color: inkOn(n.kind === "sav" ? T.violet600 : (T.navy700 || T.ink900)), fontSize: 11 }}>{n.kind === "sav" ? "SAV" : "ORC"} · {n.cfg.g} kW</span>
+                  {n.sub && <span style={{ fontSize: 13, color: T.ink700, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", flex: "1 1 120px" }}>{n.sub}{meta && meta.pays && meta.pays !== "—" ? <span style={{ color: T.ink500 }}> · {meta.pays}</span> : null}</span>}
+                  <span style={{ marginLeft: "auto", fontSize: 13, color: T.ink700, whiteSpace: "nowrap" }}>pour le <b style={{ fontVariantNumeric: "tabular-nums" }}>{fd(n.date)}</b></span>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}>
-                  {n.slots.map(s => { const rr = s.roue ? s.roue.ref : s.roueMontee, full = !!(s.t && s.roueOk && s.inj);
-                    return <div key={s.i} style={{ display: "flex", alignItems: "stretch", gap: 3, padding: 3, borderRadius: 12, background: full ? T.emerald100 : T.surface, transition: "background 200ms" }}>
-                      <span aria-hidden="true" style={{ width: 18, display: "grid", placeItems: "center", fontSize: 11, fontWeight: 700, color: T.ink300 }}>{n.want > 1 ? s.i + 1 : ""}</span>
-                      <Sock ctx={ctx} n={n} s={s} kind="turbine" label={"Turbine " + n.cfg.g + " kW"} filled={!!s.t}>{s.t && <><Val lab={"Turbine " + n.cfg.g + " kW"} v={s.t.num} mono note={s.t.livree ? "sortie du stock" : s.t.dispo ? "prête" : "réservée · fin " + fdS(s.t.end)} />{xBtn("Retirer " + s.t.num, () => outTurbine(s.t))}</>}</Sock>
-                      <Sock ctx={ctx} n={n} s={s} kind="roue" label="Roue" want={n.roue} filled={s.roueOk}>{s.roueOk && <><Val lab="Roue" v={rr} note={n.roue && U2(rr) !== U2(n.roue) ? "prévue " + n.roue : s.roue ? "✓" : "montée"} bad={!!(n.roue && U2(rr) !== U2(n.roue))} />{s.roue && xBtn("Remettre la roue " + rr + " en stock", () => outAlloc(s.roue))}</>}</Sock>
-                      <Sock ctx={ctx} n={n} s={s} kind="inj" label="Injecteur" want={injTxt(n)} filled={!!s.inj}>{s.inj && <><Val lab="Injecteur" v={s.inj.ref} note={(n.inj && U2(s.inj.ref) !== U2(n.inj)) ? "prévu " + n.inj : (s.inj.bouches == null ? "vierge" : s.inj.bouches + " bouch.") + (n.injB && s.inj.bouches == null ? " · " + n.injB + " à boucher" : " ✓")} bad={!!(n.inj && U2(s.inj.ref) !== U2(n.inj))} />{xBtn("Remettre l'injecteur " + s.inj.ref + " en stock", () => outAlloc(s.inj))}</>}</Sock>
-                    </div>; })}
-                </div>
+                <div style={{ fontSize: 12, color: T.ink700 }}><button type="button" onClick={e => canEdit && setPop({ n, kind: "cfg", el: e.currentTarget })} style={{ border: "none", background: "transparent", padding: 0, color: T.accentInk, fontWeight: 700, fontSize: 12, cursor: canEdit ? "pointer" : "default", textDecoration: "underline", textUnderlineOffset: 2, fontFamily: T.font }}>{n.cfg.l}{n.kind === "pj" && !n.cfgSet ? " (gamme)" : ""}</button>
+                  {n.kind === "sav" && canEdit && <> · <button type="button" onClick={() => setSav({ id: n.id, ...n.raw, injB: n.raw.injB == null ? "" : String(n.raw.injB) })} style={{ border: "none", background: "transparent", padding: 0, color: T.ink500, fontSize: 12, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2, fontFamily: T.font }}>modifier</button></>}
+                  {n.installees > 0 && <span style={{ color: T.emerald600, fontWeight: 700 }}> · {n.installees}/{n.want} installée{n.installees > 1 ? "s" : ""}</span>}</div>
+                {badI.length > 0 && <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>{badI.map((i, q) => <span key={q} style={{ fontSize: 12, fontWeight: 600, color: T.red600 }}>{i.t}</span>)}</div>}
+                {n.slots.map(x => { const rr = x.roue ? x.roue.ref : x.roueMontee, roueBad = !!(n.roue && rr && U2(rr) !== U2(n.roue)), injBad = !!(n.inj && x.inj && U2(x.inj.ref) !== U2(n.inj));
+                  return <div key={x.i} style={{ display: "flex", flexDirection: "column", gap: 6, padding: "8px 10px 10px", borderRadius: 12, background: x.installee ? T.emerald100 : x.t ? T.info100 : T.surface, boxShadow: x.t && !x.installee ? "inset 0 0 0 1.5px " + T.info600 : "none", transition: "background 200ms" }}>
+                    {n.want > 1 && <span style={{ fontSize: 12, fontWeight: 700, color: T.ink500 }}>Turbine {x.i + 1}{x.extra ? " (en plus)" : ""}</span>}
+                    <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 6 }}>
+                      <Sock ctx={ctx} n={n} s={x} kind="roue" label="Roue" want={n.roue} filled={x.roueOk}>{x.roueOk && partEl("Roue", rr, roueBad ? "prévue " + n.roue : x.roue ? "attribuée" : "montée sur la turbine", T.accentInk, roueBad, x.roue && xBtn("Remettre la roue " + rr + " en stock", () => outAlloc(x.roue)))}</Sock>
+                      <Sock ctx={ctx} n={n} s={x} kind="inj" label="Injecteur" want={injTxt(n)} filled={!!x.inj}>{x.inj && partEl("Injecteur", x.inj.ref, injBad ? "prévu " + n.inj : (x.inj.bouches == null ? "vierge" : x.inj.bouches + " bouchage" + (x.inj.bouches > 1 ? "s" : "")) + (n.injB && x.inj.bouches == null ? " · " + n.injB + " à boucher" : ""), T.violet600, injBad, xBtn("Remettre l'injecteur " + x.inj.ref + " en stock", () => outAlloc(x.inj)))}</Sock>
+                    </div>
+                    <Sock ctx={ctx} n={n} s={x} kind="turbine" label={"Turbine " + n.cfg.g + " kW"} filled={!!x.t}>{x.t && <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", flex: 1, minWidth: 0 }}>
+                      {stChip(x)}<span style={{ fontFamily: T.fontMono, fontSize: 12, color: T.ink500 }}>{x.t.num}</span>
+                      {!x.installee && <span style={{ fontSize: 12, color: T.ink500 }}>{x.t.livree ? "sortie du stock" : x.t.dispo ? "prête" : x.t.step}</span>}
+                      <span style={{ flex: 1 }} />{gapEl(x)}
+                      {canEdit && <button type="button" data-no-drag disabled={busy} onClick={e => { e.stopPropagation(); run(installOps(doc, x.t, !x.installee)); }} style={{ ...themeBtn("sec", "sm") }}>{x.installee ? "Annuler l'installation" : "Marquer installée"}</button>}
+                      {!x.installee && xBtn("Retirer " + x.t.num, () => outTurbine(x.t))}</div>}</Sock>
+                    {!x.t && !x.extra && <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", fontSize: 12, color: T.ink500 }}>{stChip(x)}<span>{x.estNum ? "prochaine turbine libre : " + x.estNum : "aucune turbine libre de cette gamme"}</span><span style={{ flex: 1 }} />{gapEl(x)}</div>}
+                    {!x.installee && !x.extra && x.dispo && track(n, x)}
+                  </div>; })}
               </article>
             </React.Fragment>; })}
-          {!shown.length && <div style={{ padding: 30, textAlign: "center", color: T.ink500, fontSize: FZ.sm }}>{needs.length ? "Tous les besoins sont complets. Décochez « À compléter » pour tout voir." : "Aucun PJ en cours avec une turbine, ni besoin SAV."}</div>}
+          {!shown.length && <div style={{ gridColumn: "1 / -1", padding: 30, textAlign: "center", color: T.ink500, fontSize: FZ.sm }}>{ofKind.length ? "Tous les besoins sont complets et installés. Décochez « À compléter » pour tout voir." : kind === "sav" ? "Aucun besoin SAV : « ＋ Besoin SAV » pour en ajouter un." : "Aucun PJ en cours avec une turbine."}</div>}
         </div>
       </section>
     </div>
