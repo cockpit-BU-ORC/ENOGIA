@@ -164,7 +164,9 @@ export function assignOps(doc, x, need, today = new Date()) {
   }
   writes.unshift({ c: "turbines", id: x.id, data: t });
   const warn = need.roue && x.roue && !x.sansRoue && U(x.roue) !== U(need.roue) ? "Elle a déjà la roue " + x.roue + " (prévue : " + need.roue + ")." : "";
-  return { writes, msg: (x.num || "Turbine") + " → " + need.label + " (" + note + ")", warn };
+  // v301 (demandé : « une turbine montée avec roue ne doit pas changer le stock de roues ») : on ne touche jamais aux roues ici ; on le dit
+  const roueNote = x.roue && !x.sansRoue ? " · roue " + x.roue + " déjà montée : stock de roues inchangé" : "";
+  return { writes, msg: (x.num || "Turbine") + " → " + need.label + " (" + note + ")" + roueNote, warn };
 }
 // v299 (demandé : « différencier une turbine allouée d'une turbine installée ») : installée = montée sur la machine (date), à la main
 export function installOps(doc, x, on, today = new Date()) {

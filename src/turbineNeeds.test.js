@@ -109,3 +109,11 @@ test("v299 : disponibilité (attribuée, estimée), écart au besoin, installée
   expect(unassignOps(d2, s2.slots[0].t).error).toMatch(/installée/);
   expect(installOps(d2, s2.slots[0].t, false, today).writes[0].data.installee).toBeUndefined();
 });
+
+test("v301 : allouer une turbine qui a déjà sa roue ne change pas le stock de roues", () => {
+  const { needs, free } = buildNeeds(doc, rows, metaOf, today);
+  const x = free.find(t => t.num === "100N1"), p1 = needs.find(n => n.key === "pj:PJ1"); // 100N1 : prête, roue R1 montée
+  const op = assignOps(doc, x, p1, today);
+  expect(op.writes.some(w => w.c === "roues")).toBe(false);
+  expect(op.msg).toMatch(/roue R1 déjà montée/);
+});

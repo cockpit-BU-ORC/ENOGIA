@@ -794,4 +794,10 @@ export const RELEASE_CATALOG = [
     ["Turbines", "Chaque roue, injecteur et turbine montre son état : pointillé à attribuer, teinté et coché attribué, vert installé, rouge refusé.", "owner"],
     ["Turbines", "Stock : roues et injecteurs d'abord, puis turbines prêtes avec roue, sans roue, en fabrication. Une turbine sans roue s'alloue, la roue reste à poser.", "owner"],
   ] },
+  { v: "301", t: "Besoins turbines : noms complets, ordre de besoin, stock lisible", items: [
+    ["Turbines", "Chaque besoin porte son rang (ordre de besoin par date) ; cartes ORC bleu-gris pâle, SAV violet pâle.", "owner"],
+    ["Turbines", "Noms complets des roues, injecteurs et turbines (sur deux lignes si besoin), avec le détail : montée, prise dans le stock, bouchages, prête, fin prévue.", "owner"],
+    ["Turbines", "« Marquer installée » dès qu'une turbine est allouée ; s'il manque une pièce, le site le demande avant.", "owner"],
+    ["Turbines", "Stock : injecteurs regroupés par référence avec leurs variantes ; turbines prêtes affichées par leur roue ; une turbine qui a déjà sa roue ne touche pas au stock de roues.", "owner"],
+  ] },
 ];

@@ -57,7 +57,7 @@ const ManagerPanel = React.lazy(() => import("./components/ManagerPanel").then(m
 const ChangesView = React.lazy(() => import("./components/ChangesView").then(m => ({ default: m.ChangesView })));
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-10-v300-besoins-compact";
+const APP_BUILD_VERSION = "2026-11-10-v301-besoins-lisibles";
 
 export default function App(){
   // Utilisateur connecté via Google, restreint aux comptes @enogia.com (null tant que non connecté).
