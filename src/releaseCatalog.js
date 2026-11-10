@@ -780,4 +780,7 @@ export const RELEASE_CATALOG = [
   { v: "297", t: "Réglages des achats ouverts au responsable achats", items: [
     ["Achats / Appro", "Les personnes qui ont accès à la page voient aussi Réglages (marge, connexion Odoo, synchronisation) ; la liste d'accès reste au propriétaire.", "admin"],
   ] },
+  { v: "298", t: "Kits Achats et Production turbines réparés", items: [
+    ["Kits", "Les kits envoyés au responsable achats et au directeur de production turbines s'ouvrent de nouveau dans Claude ; le kit Achats a des données d'exemple à jour et simule la synchronisation Odoo.", "owner"],
+  ] },
 ];

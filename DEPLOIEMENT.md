@@ -2150,3 +2150,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Réglages visibles par toute personne de la liste d'accès ; la liste d'accès elle-même reste au propriétaire.
 - Règles Firestore inchangées (la liste d'accès pouvait déjà écrire le document). Kit achats régénéré.
 - Fichiers : components/Achats.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v298 — Kits Achats et Production turbines réparés
+
+- Demandé : « le nouveau kit pour Alexis afin qu'il l'utilise sur son Claude ».
+- Défaut trouvé en le testant : depuis la V286, les kits ne s'ouvraient plus (`btn` déclaré deux fois). Corrigé pour les deux kits (`themeFor`).
+- Kit Achats : données d'exemple au format actuel, synchronisation Odoo simulée dans l'aperçu ; consignes mises à jour (Odoo, collections, rayons, Réglages).
+- Rien ne change dans le site. Kits régénérés : `kit-achats/` et `kit-jeremie/` (à renvoyer).
+- Fichiers : scripts/prodturb-kit.js, achats-kit.js, achats-import.js, achats-consignes.md, achats-marche-a-suivre.md, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

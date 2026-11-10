@@ -25,10 +25,20 @@ function pageBody(src) {
 // v262 : en-tête commun aux kits (Production turbines, Achats / Appro)
 const SHARED = "/* ---------- Équivalents des composants communs du site (ne pas modifier) ---------- */\nfunction Hl({ children, color, style }) {\n  return <span style={{ textDecorationLine: \"underline\", textDecorationColor: color || T.accent, textDecorationThickness: \".3em\", textUnderlineOffset: \"-.08em\", textDecorationSkipInk: \"none\", ...style }}>{children}</span>;\n}\nfunction PageHead({ kicker, title, sub, right, style, accent }) {\n  return (<div style={{ display: \"flex\", alignItems: \"flex-end\", gap: 12, flexWrap: \"wrap\", marginBottom: 12, paddingBottom: 6, borderBottom: \"3px solid \" + T.teal500, ...style }}>\n    <div style={{ minWidth: 0, flex: 1, display: \"flex\", alignItems: \"baseline\", gap: \"4px 14px\", flexWrap: \"wrap\" }}>\n      {kicker && <span style={{ fontFamily: T.font, fontSize: 12, fontWeight: 700, color: T.accentInk }}>{kicker}</span>}\n      <h1 style={{ margin: 0, fontFamily: T.fontDisplay, fontSize: \"clamp(32px,3.6vw,44px)\", fontWeight: 600, letterSpacing: \"-.02em\", color: T.ink900, lineHeight: 1.1 }}><Hl color={accent}>{title}</Hl></h1>\n      {sub && <span style={{ fontSize: FZ.sm, color: T.ink500 }}>{sub}</span>}\n    </div>\n    {right}\n  </div>);\n}\nconst ICON_PATHS = { check: \"M5 12.5l4.5 4.5L19 7.5\", warning: \"M12 4l9 16H3L12 4zM12 10v4M12 17.5v.5\", close: \"M6 6l12 12M18 6L6 18\", arrow: \"M5 12h14M13 6l6 6-6 6\" };\nfunction NavIcon({ name, size = 18 }) {\n  const d = ICON_PATHS[name]; if (!d) return null;\n  return <svg width={size} height={size} viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" strokeWidth=\"2\" strokeLinecap=\"round\" strokeLinejoin=\"round\" aria-hidden=\"true\" style={{ flexShrink: 0, verticalAlign: \"-2px\" }}><path d={d} /></svg>;\n}\n\n";
 
+// v298 : thème recopié dans un kit — un nom du thème déjà déclaré par la page (ex. btn depuis la V286) est renommé
+// dans la copie du thème (btn → btn__theme), sinon le fichier unique du kit a deux déclarations et ne s'ouvre pas.
+function themeFor(body, themePath) {
+  let theme = fs.readFileSync(themePath, "utf8").replace(/^export (const|function|let) /gm, "$1 ");
+  const pageNames = new Set([...body.matchAll(/^(?:export\s+)?(?:const|let|var|function)\s+([A-Za-z_$][\w$]*)/gm)].map(m => m[1]));
+  const themeNames = [...theme.matchAll(/^(?:const|let|var|function)\s+([A-Za-z_$][\w$]*)/gm)].map(m => m[1]);
+  themeNames.filter(n => pageNames.has(n)).forEach(n => { theme = theme.replace(new RegExp("(^|[^\\w$.])" + n.replace(/\$/g, "\\$") + "(?![\\w$])", "gm"), "$1" + n + "__theme"); });
+  return theme;
+}
+
 function build() {
   const src = fs.readFileSync(SRC, "utf8");
   const body = pageBody(src);
-  const theme = fs.readFileSync(THEME, "utf8").replace(/^export (const|function|let) /gm, "$1 ");
+  const theme = themeFor(body, THEME);
   const version = (fs.readFileSync(path.join(ROOT, "src", "App.js"), "utf8").match(/APP_BUILD_VERSION\s*=\s*"([^"]+)"/) || [])[1] || "";
   const kit = `// Kit « Production turbines » — ENOGIA, BU ORC (site ${version || "planning"})
 // Fichier unique à ouvrir comme artifact React dans Claude. NE MODIFIER QUE ce qui est entre les repères
@@ -84,4 +94,4 @@ if (require.main === module) {
   const r = build();
   console.log("Kit écrit dans " + r.out + " (" + r.lines + " lignes) : ProdTurbines-kit.jsx + Consignes-pour-Claude.md");
 }
-module.exports = { build, pageBody, hashOf, START, END, SHARED };
+module.exports = { build, pageBody, hashOf, themeFor, START, END, SHARED };

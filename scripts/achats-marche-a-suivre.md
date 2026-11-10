@@ -6,7 +6,8 @@ Le responsable achats fait évoluer le fond de la page sur son Claude ; Gabriel 
 
 1. **Publier les règles Firestore** : console Firebase › Firestore › Règles, coller le contenu de `firestore.rules` du dépôt, Publier (la ligne `achats` est nouvelle). Sans cela, la page s'affiche mais rien ne s'enregistre.
 2. **Déployer** le site (`npm run deploy:beta` pour essayer, puis `npm run deploy`).
-3. Ouvrir **Gestion › Achats / Appro › Réglages**, saisir l'adresse @enogia.com du responsable achats dans « Accès à la page ». Il voit alors la page dans son menu et peut la modifier. Régler aussi la marge (jours avant l'arrivée du PJ où un composant doit être là).
+3. Ouvrir **Gestion › Achats / Appro › Réglages**, saisir l'adresse @enogia.com du responsable achats dans « Accès à la page ». Il voit alors la page dans son menu et peut la modifier. Il voit tous les onglets, Réglages compris (marge, connexion Odoo) ; seule la liste « Accès à la page » vous reste.
+4. **Synchronisation Odoo** (V294) : fonction serveur dans `functions/`, mode d'emploi `functions/LISEZMOI.md` (`firebase deploy --only functions` après chaque changement du serveur).
 
 ## 2. Envoyer le kit au responsable achats
 
@@ -32,4 +33,4 @@ Le responsable achats fait évoluer le fond de la page sur son Claude ; Gabriel 
 
 ## Données
 
-Document Firestore `planning/achats` (`planning/beta_achats` en bêta) : `composants`, `lignes`, `fournisseurs`, `params` (marge), `access` (adresses). Le planning n'est que lu. Ne jamais mettre de vraies données (fournisseurs, prix, collègues) dans le dépôt : il est public.
+Document Firestore `planning/achats` (`planning/beta_achats` en bêta) : `composants` (articles), `fournisseurs`, `projets` (fiches machine), `lignes` (nomenclatures), `po` (saisies ou venues d'Odoo), `params` (marge, scopes, connexion Odoo), `odooSync` (compte rendu écrit par le serveur seulement), `access` (adresses). Si un retour du kit change les champs des PO ou de `params.odoo`, adapter `functions/convert.js` avant de déployer. Le planning n'est que lu. Ne jamais mettre de vraies données (fournisseurs, prix, collègues) dans le dépôt : il est public.

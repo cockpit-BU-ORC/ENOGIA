@@ -5,7 +5,7 @@
 // Usage : npm run kit:achats   → kit-achats/Achats-kit.jsx + Consignes-pour-Claude.md + Marche-a-suivre.md
 const fs = require("fs");
 const path = require("path");
-const { pageBody, hashOf, START, END, SHARED } = require("./prodturb-kit");
+const { pageBody, hashOf, themeFor, START, END, SHARED } = require("./prodturb-kit");
 
 const ROOT = path.join(__dirname, "..");
 const SRC = path.join(ROOT, "src", "components", "Achats.js");
@@ -14,7 +14,7 @@ const OUT = path.join(ROOT, "kit-achats");
 
 function build() {
   const body = pageBody(fs.readFileSync(SRC, "utf8"));
-  const theme = fs.readFileSync(THEME, "utf8").replace(/^export (const|function|let) /gm, "$1 ");
+  const theme = themeFor(body, THEME);
   const version = (fs.readFileSync(path.join(ROOT, "src", "App.js"), "utf8").match(/APP_BUILD_VERSION\s*=\s*"([^"]+)"/) || [])[1] || "";
   const kit = `// Kit « Achats / Appro » — ENOGIA, BU ORC (site ${version || "planning"})
 // Fichier unique à ouvrir comme artifact React dans Claude. NE MODIFIER QUE ce qui est entre les repères
@@ -38,22 +38,37 @@ const DEMO_ROWS = [
   { pj: "PJ903-2", nomProjet: "Client C", gamme: "40LTV2R", etat: "NOT ORDERED", arrivee: kd(55), depart: kd(105) },
 ];
 const DEMO = {
-  fournisseurs: { f1: { nom: "Fournisseur Échangeurs", contact: "M. Exemple", email: "contact@exemple.fr", tel: "04 00 00 00 00" }, f2: { nom: "Fournisseur Pompes" }, f3: { nom: "Fournisseur Électrique" } },
+  // v298 : données d'exemple au format actuel de la page (fiches machine, nomenclatures, PO saisies et venues d'Odoo)
+  fournisseurs: { f1: { nom: "Fournisseur Échangeurs", ltJ: 60, ltTransportJ: 5 }, f2: { nom: "Fournisseur Pompes", ltJ: 40, ltTransportJ: 3 }, f3: { nom: "Fournisseur Électrique", ltJ: 30, ltTransportJ: 2 } },
   composants: {
-    c1: { ref: "EVAP-180", designation: "Évaporateur 180 kW", famille: "Échangeurs", fournisseurId: "f1", delaiJ: 70 },
-    c2: { ref: "COND-180", designation: "Condenseur 180 kW", famille: "Échangeurs", fournisseurId: "f1", delaiJ: 70 },
-    c3: { ref: "POMPE-ORC", designation: "Pompe fluide organique", famille: "Pompes", fournisseurId: "f2", delaiJ: 45 },
-    c4: { ref: "ARM-ORC", designation: "Armoire électrique", famille: "Électrique / armoire", fournisseurId: "f3", delaiJ: 40 },
+    c1: { ref: "EVAP-180", designation: "Évaporateur 180 kW", type: "achat", famille: "SKID", fournisseurId: "f1", actif: true },
+    c2: { ref: "POMPE-CYC", designation: "Pompe de cycle", type: "achat", famille: "POMPE CYCLE", fournisseurId: "f2", actif: true },
+    c3: { ref: "ARM-ORC", designation: "Armoire électrique", type: "achat", famille: "ARMOIRE", fournisseurId: "f3", actif: true },
+    c4: { ref: "CAPT-P", designation: "Capteur de pression", type: "achat", famille: "SKID", fournisseurId: "f3", delaiJ: 20, actif: true },
+    o1: { ref: "ORC-180", designation: "Machine ORC 180 kW (exemple)", type: "orc", actif: true,
+      enfants: [{ ref: "EVAP-180", qte: 1 }, { ref: "POMPE-CYC", qte: 1 }, { ref: "ARM-ORC", qte: 1 }, { ref: "CAPT-P", qte: 4 }],
+      scopes: { SKID: { actif: true, decalJ: -10 }, ARMOIRE: { actif: true, decalJ: 0 }, "POMPE CYCLE": { actif: true, decalJ: -5 } } },
+  },
+  projets: {
+    p1: { projet: "PJ901", machine: "PJ901", modele: "ORC-180", marge: 10, dateDebut: kd(-20), scopesDecal: { SKID: -10, ARMOIRE: 0, "POMPE CYCLE": -5 } },
+    p2: { projet: "PJ902", machine: "PJ902", modele: "ORC-180", marge: 10, dateDebut: kd(40), scopesDecal: { SKID: -10, ARMOIRE: 0, "POMPE CYCLE": -5 } },
   },
   lignes: {
-    l1: { pj: "PJ901", composantId: "c1", qte: 1, fournisseurId: "f1", po: "PO-0001", statut: "recu", dateRecue: kd(-25) },
-    l2: { pj: "PJ901", composantId: "c3", qte: 1, fournisseurId: "f2", po: "PO-0002", statut: "confirme", datePrevue: kd(5) },
-    l3: { pj: "PJ902", composantId: "c1", qte: 1, fournisseurId: "f1", po: "PO-0003", statut: "commande", datePrevue: kd(8) },
-    l4: { pj: "PJ902", composantId: "c4", qte: 1, fournisseurId: "f3", statut: "besoin" },
-    l5: { pj: "PJ903-1", composantId: "c2", qte: 1, statut: "consult" },
-    l6: { pj: "PJ901", designation: "Capteur de pression", qte: 4, statut: "nc", note: "mauvaise plage de mesure" },
+    l1: { projetId: "p1", ref: "EVAP-180", famille: "SKID", qte: 1, poId: "o5001" },
+    l2: { projetId: "p1", ref: "POMPE-CYC", famille: "POMPE CYCLE", qte: 1, poId: "pPO-0002_1" },
+    l3: { projetId: "p2", ref: "EVAP-180", famille: "SKID", qte: 1 },
+    l4: { projetId: "p2", ref: "ARM-ORC", famille: "ARMOIRE", qte: 1 },
+    l5: { projetId: "p2", ref: "CAPT-P", famille: "SKID", qte: 4 },
   },
-  params: { marge: 10 }, access: [],
+  po: {
+    o5001: { numero: "P00101", ligne: "1", ref: "EVAP-180", designation: "Évaporateur 180 kW", qte: 1, qteRecue: 1, dateCommande: kd(-90), dateLivraison: kd(-25), statut: "livre", projet: "PJ901", source: "odoo", odooId: 5001, annule: false, majOdoo: kd(-1) },
+    o5002: { numero: "P00102", ligne: "1", ref: "EVAP-180", designation: "Évaporateur 180 kW", qte: 1, qteRecue: 0, dateCommande: kd(-3), dateLivraison: kd(50), statut: "envoyee", projet: "PJ902", source: "odoo", odooId: 5002, annule: false, majOdoo: kd(-1) },
+    "pPO-0002_1": { numero: "PO-0002", ligne: "1", ref: "POMPE-CYC", designation: "Pompe de cycle", qte: 1, dateCommande: kd(-40), dateLivraison: kd(5), statut: "attente", projet: "PJ901", source: "" },
+  },
+  params: { marge: 10, odoo: { domaine: "exemple.odoo.com", base: "exemple", login: "compte@exemple.fr", protocole: "jsonrpc", champProjet: "x_projet", depuis: kd(-120), seulementFiches: true, auto: true } },
+  // odooSync : écrit par le serveur dans le site ; ici l'aperçu le simule après « Synchroniser maintenant »
+  odooSync: { etat: "ok", debut: new Date(Date.now() - 86400000).toISOString(), fin: new Date(Date.now() - 86399000).toISOString(), nb: 2, ajoutees: 0, maj: 1, annulees: 0, message: "2 commande(s) et 2 ligne(s) lues dans Odoo (exemple).", cle: true },
+  access: [],
 };
 export default function KitPreview() {
   const [dark, setDark] = useState(false), [owner, setOwner] = useState(true), [doc, setDoc] = useState(DEMO);
@@ -61,10 +76,13 @@ export default function KitPreview() {
   const api = {
     put: async (c, id, data) => { const d = { ...data }; delete d.id; setDoc(o => ({ ...o, [c]: { ...(o[c] || {}), [id]: d } })); return true; },
     del: async (c, id) => { setDoc(o => { const m = { ...(o[c] || {}) }; delete m[id]; return { ...o, [c]: m }; }); return true; },
-    setParams: async p => { setDoc(o => ({ ...o, params: p })); return true; },
+    setParams: async p => { setDoc(o => ({ ...o, params: p }));
+      // simulation du serveur Odoo (dans le site : fonction serveur) — répond 1,5 s après « Synchroniser maintenant »
+      if (p.odooDemande) setTimeout(() => setDoc(o => (o.params.odooDemande !== p.odooDemande ? o : { ...o, odooSync: { ...(o.odooSync || {}), etat: "ok", debut: p.odooDemande, fin: new Date().toISOString(), nb: 2, ajoutees: 0, maj: 0, annulees: 0, message: "Simulation de l'aperçu : rien n'est lu dans Odoo.", cle: true } })), 1500);
+      return true; },
     setAccess: async list => { setDoc(o => ({ ...o, access: list })); return true; },
   };
-  const tb = { border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 6, padding: "3px 10px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: T.font };
+  const tb = { border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "3px 10px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: T.font };
   return (<div style={{ minHeight: "100vh", background: T.surface, color: T.ink900, fontFamily: T.font, padding: 16, boxSizing: "border-box" }}>
     <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 12, fontSize: 12, color: T.ink500 }}>
       <b style={{ color: T.ink700 }}>Aperçu du kit</b> · données d'exemple fictives, rien n'est enregistré

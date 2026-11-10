@@ -9,7 +9,7 @@ const { pageBody, hashOf, START, END } = require("./prodturb-kit");
 const ROOT = path.join(__dirname, "..");
 const SRC = path.join(ROOT, "src", "components", "Achats.js");
 const EXPORTS = ["EMPTY_ACHATS", "STATUTS", "lineState", "besoinOf"]; // utilisés par les tests du site (src/achats.test.js)
-const COLLECTIONS = ["composants", "lignes", "fournisseurs", "params", "access"];
+const COLLECTIONS = ["composants", "lignes", "fournisseurs", "projets", "po", "params", "access"]; // v298 : projets, po (V293)
 
 function check(body, cur) {
   const errors = [], warns = [];
@@ -18,6 +18,7 @@ function check(body, cur) {
   EXPORTS.forEach(n => { if (!new RegExp("export (const|function) " + n + "\\b").test(body)) errors.push("« " + n + " » doit rester exporté (utilisé par les tests du site)."); });
   if (/window\.claude|localStorage\.setItem\(\s*["'](?!enogia_achats_)/.test(body)) errors.push("La page enregistre ailleurs que par « api » (window.claude ou localStorage) : les données doivent passer par api.put / api.del / api.setParams / api.setAccess.");
   if (/fetch\(|XMLHttpRequest|https?:\/\//.test(body.replace(/\/\/[^\n]*/g, ""))) errors.push("La page appelle un site extérieur (fetch / adresse http) : refusé, tout passe par « api ».");
+  if (/api\.put\(\s*["']odooSync/.test(body) || /odooSync\s*:/.test(body.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, ""))) errors.push("La page écrit « odooSync » : ce compte rendu est réservé au serveur de synchronisation Odoo.");
   ["api.put", "api.del"].forEach(n => { if (!body.includes(n)) warns.push("« " + n + " » n'est plus utilisé : vérifier l'enregistrement."); });
   const hex = s => new Set((s.match(/#[0-9A-Fa-f]{6}\b|#[0-9A-Fa-f]{3}\b/g) || []).map(x => x.toUpperCase()));
   const before = hex(cur), added = [...hex(body)].filter(x => !before.has(x));
