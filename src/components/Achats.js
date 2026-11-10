@@ -540,11 +540,15 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
   const poPlein = p => { const q = num(p && p.qte), a = affects[p && p.id]; return q != null && q > 0 && !!a && a.qte >= q; };
   const poList = useMemo(() => Object.values(S.po), [S]);
   const odoo = S.params.odoo || {}, sync = (doc && doc.odooSync) || {}, odooPret = !!(odoo.domaine && odoo.base && odoo.login);
-  const demandeEnCours = !!S.params.odooDemande && (!sync.fin || String(sync.fin) < String(S.params.odooDemande)) && sync.etat !== "erreur";
+  // v295 : une demande restée sans réponse plus de 5 min (serveur pas encore en place, arrêté…) ne bloque plus le bouton
+  const demandeOuverte = !!S.params.odooDemande && (!sync.fin || String(sync.fin) < String(S.params.odooDemande)) && sync.etat !== "erreur";
+  const demandeSansReponse = demandeOuverte && Date.now() - Date.parse(S.params.odooDemande) > 5 * 60 * 1000;
+  const demandeEnCours = demandeOuverte && !demandeSansReponse;
   const demanderSync = async () => { const ok = await api.setParams({ ...S.params, odooDemande: new Date().toISOString() });
     notify(ok ? "Synchronisation demandée : le serveur la traite dans quelques instants." : "Demande impossible, réessayez dans un instant.", !ok); };
   const syncTexte = () => sync.etat === "en_cours" ? "Synchronisation en cours depuis " + fdt(sync.debut) + "."
     : demandeEnCours ? "Synchronisation demandée le " + fdt(S.params.odooDemande) + ", en attente du serveur."
+    : demandeSansReponse ? "La demande du " + fdt(S.params.odooDemande) + " est restée sans réponse du serveur : cliquez de nouveau sur « Synchroniser maintenant »."
       : sync.fin ? "Dernière synchronisation " + fdt(sync.fin) + (sync.etat === "erreur" ? " en échec" + (sync.message ? " : " + sync.message : ".") : " : " + (sync.nb || 0) + " ligne(s), " + (sync.ajoutees || 0) + " ajoutée(s), " + (sync.maj || 0) + " mise(s) à jour, " + (sync.annulees || 0) + " annulée(s).")
         : "Jamais synchronisé.";
   // Ordre de la nomenclature : niveau 1 par famille puis référence, chaque ligne suivie de ses sous-lignes (niveau 2)

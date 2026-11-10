@@ -2129,3 +2129,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - À faire par Gabriel : compte technique + clé API Odoo, forfait Blaze, `firebase functions:secrets:set ODOO_API_KEY`, `firebase deploy --only functions`, puis Réglages › Connexion Odoo dans la page (bêta d'abord).
 - Le site lui-même ne change pas (page Achats déjà prête depuis la V293) ; pas de nouvelle règle Firestore (la fonction écrit avec les droits du serveur).
 - Fichiers : functions/index.js, odoo.js, convert.js, test/*.js, package.json, LISEZMOI.md ; firebase.json, .firebaserc, .gitignore, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v295 — Synchronisation Odoo débloquée
+
+- Constat : demande faite le 09/11 avant le déploiement des fonctions → jamais traitée, bouton « Synchroniser maintenant » désactivé pour toujours.
+- Correctif : une demande sans réponse depuis plus de 5 min ne bloque plus le bouton ; message « restée sans réponse du serveur ».
+- Pas de nouvelle donnée ni de clé `localStorage`. Kit achats régénéré (`npm run kit:achats`).
+- Fichiers : components/Achats.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

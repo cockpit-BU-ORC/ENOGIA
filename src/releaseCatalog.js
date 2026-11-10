@@ -771,4 +771,7 @@ export const RELEASE_CATALOG = [
   { v: "294", t: "Synchronisation Odoo des PO", items: [
     ["Achats / Appro", "Les commandes d'achat d'Odoo arrivent dans l'onglet PO chaque nuit et sur « Synchroniser maintenant » (après la mise en service du serveur).", "admin"],
   ] },
+  { v: "295", t: "Synchronisation Odoo débloquée", items: [
+    ["Achats / Appro", "Une demande de synchronisation restée sans réponse plus de 5 minutes ne bloque plus le bouton « Synchroniser maintenant ».", "admin"],
+  ] },
 ];

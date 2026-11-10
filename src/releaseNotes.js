@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v295",
+    date: "2026-11-10",
+    title: "V295 : synchronisation Odoo",
+    items: [
+      { t: "Achats / Appro", d: "Le bouton « Synchroniser maintenant » ne reste plus bloqué si une demande n'a pas eu de réponse." },
+    ],
+  },
+  {
     id: "2026-11-v294",
     date: "2026-11-09",
     title: "V294 : Odoo et Achats / Appro",
