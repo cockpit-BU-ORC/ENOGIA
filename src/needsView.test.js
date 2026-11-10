@@ -15,11 +15,12 @@ test("Besoins v2 : rendu avec stock, turbines attribuées, roues et injecteurs",
   const root = createRoot(el);
   act(() => { root.render(<TurbinesHub doc={doc} api={{ put: async () => true, del: async () => true }} rows={rows} canEdit owner />); });
   const t = el.textContent;
-  // v299 : onglet Besoins ORC — cartes, turbine allouée, bouton d'installation, disponibilité ; stock à gauche
-  expect(t).toContain("Besoins ORC"); expect(t).toContain("attendues"); expect(t).toContain("100N1"); expect(t).toContain("Allouée"); expect(t).toContain("Marquer installée");
-  expect(t).toContain("disponible le"); expect(t).toContain("100N2"); expect(t).toContain("testée sans roue"); expect(t).not.toContain("SAV411");
-  const sav = [...el.querySelectorAll("[role=tab]")].find(b => /Besoins SAV/.test(b.textContent));
-  act(() => { sav.click(); });
-  expect(el.textContent).toContain("SAV411"); expect(el.textContent).toContain("Besoin SAV");
+  // v300 : une seule feuille ORC + SAV, bascule Production / Besoins, logements à 4 états, stock roues / injecteurs d'abord
+  expect(t).toContain("Besoins ORC et SAV"); expect(t).toContain("à attribuer"); expect(t).toContain("100N1"); expect(t).toContain("Allouée · prête");
+  expect(t).toContain("Marquer installée"); expect(t).toContain("dispo"); expect(t).toContain("100N2"); expect(t).toContain("testée sans roue"); expect(t).toContain("SAV411");
+  expect(t.indexOf("Roues équilibrées")).toBeLessThan(t.indexOf("Turbines prêtes"));
+  const orc = [...el.querySelectorAll("button")].find(x => /^ORC/.test(x.textContent.trim()));
+  act(() => { orc.click(); });
+  expect(el.textContent).not.toContain("SAV411");
   act(() => root.unmount());
 });

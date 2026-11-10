@@ -2165,3 +2165,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Onglets Besoins ORC / Besoins SAV, cartes par besoin, roue et injecteur en grand, Allouée (bleu) / Installée (vert, date, bouton « Marquer installée »), disponibilité et écart sur une frise.
 - Nouvelle donnée : `planning/prodTurbines.turbines[id].installee` (date ISO), écrite seulement par le bouton (même document, règles inchangées). Nouvelle clé `localStorage` : `enogia_nd_kind` (onglet ORC / SAV).
 - Fichiers : turbineNeeds.js (+test), components/TurbinesHub.js, needsView.test.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v300 — Besoins turbines compacts (maquette V300)
+
+- Demandé : ORC et SAV dans la même feuille ; autre passage Production → Besoins ; cadrans trop grands ; l'attribution cassait la mise en page ; pas d'indication visuelle de l'attribution ; roues et injecteurs en premier dans le stock ; pouvoir allouer une turbine sans roue (déjà possible, gardé et rendu visible).
+- Bascule Production / Besoins en deux grands boutons chiffrés ; une feuille ORC + SAV filtrable ; cartes compactes, logements de hauteur fixe à 4 états ; stock réordonné.
+- Clé `localStorage` `enogia_nd_kind` : valeurs all / pj / sav (défaut all). Pas de nouvelle donnée.
+- Fichiers : components/TurbinesHub.js, needsView.test.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

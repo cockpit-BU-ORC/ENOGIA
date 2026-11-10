@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v300",
+    date: "2026-11-10",
+    title: "V300 : besoins turbines compacts",
+    items: [
+      { t: "Turbines", d: "Une seule feuille ORC et SAV, plus de cartes à l'écran, état de chaque pièce visible d'un coup d'œil." },
+    ],
+  },
+  {
     id: "2026-11-v299",
     date: "2026-11-10",
     title: "V299 : besoins turbines",

@@ -788,4 +788,10 @@ export const RELEASE_CATALOG = [
     ["Turbines", "Turbine allouée (bleu) ou installée (vert, avec sa date) : bouton « Marquer installée ».", "owner"],
     ["Turbines", "Date de disponibilité de chaque turbine (estimée pour un emplacement vide) et écart avec le besoin, sur une petite frise.", "owner"],
   ] },
+  { v: "300", t: "Besoins turbines compacts : une seule feuille, états lisibles", items: [
+    ["Turbines", "Production et Besoins ORC et SAV : deux grands boutons avec leurs chiffres (en fabrication, prêtes ; à attribuer, en retard).", "owner"],
+    ["Turbines", "ORC et SAV dans la même feuille (filtre Tout · ORC · SAV), cartes compactes : une turbine par ligne, trois colonnes à l'écran.", "owner"],
+    ["Turbines", "Chaque roue, injecteur et turbine montre son état : pointillé à attribuer, teinté et coché attribué, vert installé, rouge refusé.", "owner"],
+    ["Turbines", "Stock : roues et injecteurs d'abord, puis turbines prêtes avec roue, sans roue, en fabrication. Une turbine sans roue s'alloue, la roue reste à poser.", "owner"],
+  ] },
 ];
