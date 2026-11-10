@@ -12,7 +12,7 @@ const logger = require("firebase-functions/logger");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { readPurchases, clean } = require("./odoo");
-const { buildPo, plan } = require("./convert");
+const { buildPo, plan, summary } = require("./convert");
 
 // Région : doit correspondre à l'emplacement de la base Firestore (eur3 → europe-west1). À changer ici si le déploiement le demande.
 const REGION = "europe-west1";
@@ -55,7 +55,7 @@ async function syncDoc(docId, why) {
       return await fin("erreur", { message: "Trop de lignes de PO pour la page (limite de taille du document) : restreindre « Commandes depuis » ou cocher « Seulement les projets ayant une fiche machine »." });
     const writes = [...Object.entries(p.set).map(([id, v]) => ["po." + id, v]), ...p.del.map(id => ["po." + id, FieldValue.delete()])];
     for (let i = 0; i < writes.length; i += 400) await ref.update({ ...Object.fromEntries(writes.slice(i, i + 400)), updatedAt: new Date().toISOString(), updatedBy: AUTHOR });
-    await fin("ok", { ...p.stats, message: data.orders.length + " commande(s) lue(s) dans Odoo" + (depuis ? " depuis le " + depuis.split("-").reverse().join("/") : "") + "." });
+    await fin("ok", { ...p.stats, message: summary(data, built, { depuis, fiches, champProjet: odoo.champProjet }) });
     logger.info("Synchro Odoo terminée", { docId, why, ...p.stats });
   } catch (e) {
     const message = clean(e && e.message, key);

@@ -2,7 +2,7 @@
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert");
-const { buildPo, plan, statutOf } = require("../convert");
+const { buildPo, plan, summary, statutOf } = require("../convert");
 
 const orders = [
   { id: 1, name: "P00010", date_approve: "2026-10-02 08:00:00", date_order: "2026-10-01 09:00:00", state: "purchase" },
@@ -69,4 +69,13 @@ test("plan : ajout, mise à jour, saisie manuelle intacte, annulée affectée, d
   assert.deepStrictEqual(r.stats, { nb: 2, ajoutees: 1, maj: 1, annulees: 3 });
   const again = plan({ ...doc, po: { ...doc.po, ...r.set } }, b, "2026-01-01");
   assert.strictEqual(again.stats.maj, 0); assert.strictEqual(again.stats.ajoutees, 0); // deuxième passage : rien à changer
+});
+
+test("compte rendu : lues, sans projet, écartées avec exemples, aucune fiche", () => {
+  const b = buildPo(orders, lines, products, { champProjet: "x_projet", projetsFiches: new Set(["PJ999"]), now });
+  const m = summary({ orders, lines }, b, { depuis: "2026-10-01", fiches: new Set(["PJ999"]), champProjet: "x_projet" });
+  assert.match(m, /3 commande\(s\) et 4 ligne\(s\) lues dans Odoo depuis le 01\/10\/2026/);
+  assert.match(m, /1 ligne\(s\) sans n° de projet/);
+  assert.match(m, /3 ligne\(s\) écartée\(s\).*valeurs Odoo : PJ100/);
+  assert.match(summary({ orders, lines }, b, { fiches: new Set(), champProjet: "x_projet" }), /aucune fiche machine/);
 });

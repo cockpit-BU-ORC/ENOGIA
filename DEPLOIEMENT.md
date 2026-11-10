@@ -2136,3 +2136,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Correctif : une demande sans réponse depuis plus de 5 min ne bloque plus le bouton ; message « restée sans réponse du serveur ».
 - Pas de nouvelle donnée ni de clé `localStorage`. Kit achats régénéré (`npm run kit:achats`).
 - Fichiers : components/Achats.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v296 — Compte rendu de la synchronisation Odoo
+
+- Constat : « 0 ligne(s) » sans explication.
+- Compte rendu : commandes et lignes lues, lignes de commandes annulées, sans n° de projet, écartées faute de fiche machine (exemples de valeurs Odoo).
+- À déployer : `firebase deploy --only functions` (serveur) et le site (affichage du message).
+- Fichiers : functions/convert.js, functions/index.js, functions/test/convert.test.js, components/Achats.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

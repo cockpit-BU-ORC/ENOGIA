@@ -774,4 +774,7 @@ export const RELEASE_CATALOG = [
   { v: "295", t: "Synchronisation Odoo débloquée", items: [
     ["Achats / Appro", "Une demande de synchronisation restée sans réponse plus de 5 minutes ne bloque plus le bouton « Synchroniser maintenant ».", "admin"],
   ] },
+  { v: "296", t: "Compte rendu de la synchronisation Odoo", items: [
+    ["Achats / Appro", "Le compte rendu dit combien de commandes et de lignes ont été lues dans Odoo, et pourquoi des lignes ont été écartées (pas de fiche machine, pas de n° de projet), avec des exemples.", "admin"],
+  ] },
 ];

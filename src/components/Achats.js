@@ -549,7 +549,7 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
   const syncTexte = () => sync.etat === "en_cours" ? "Synchronisation en cours depuis " + fdt(sync.debut) + "."
     : demandeEnCours ? "Synchronisation demandée le " + fdt(S.params.odooDemande) + ", en attente du serveur."
     : demandeSansReponse ? "La demande du " + fdt(S.params.odooDemande) + " est restée sans réponse du serveur : cliquez de nouveau sur « Synchroniser maintenant »."
-      : sync.fin ? "Dernière synchronisation " + fdt(sync.fin) + (sync.etat === "erreur" ? " en échec" + (sync.message ? " : " + sync.message : ".") : " : " + (sync.nb || 0) + " ligne(s), " + (sync.ajoutees || 0) + " ajoutée(s), " + (sync.maj || 0) + " mise(s) à jour, " + (sync.annulees || 0) + " annulée(s).")
+      : sync.fin ? "Dernière synchronisation " + fdt(sync.fin) + (sync.etat === "erreur" ? " en échec" + (sync.message ? " : " + sync.message : ".") : " : " + (sync.nb || 0) + " ligne(s), " + (sync.ajoutees || 0) + " ajoutée(s), " + (sync.maj || 0) + " mise(s) à jour, " + (sync.annulees || 0) + " annulée(s)." + (sync.message ? " " + sync.message : ""))
         : "Jamais synchronisé.";
   // Ordre de la nomenclature : niveau 1 par famille puis référence, chaque ligne suivie de ses sous-lignes (niveau 2)
   const tree = list => { const ids = new Set(list.map(l => l.id)), kids = {};

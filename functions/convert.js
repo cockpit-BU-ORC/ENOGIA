@@ -90,4 +90,26 @@ function plan(doc, built, depuis) {
   return { set, del, stats };
 }
 
-module.exports = { buildPo, plan, statutOf, m2oId, projetOf, dayOf };
+/**
+ * v296 : compte rendu lisible (affiché dans la page) — ce qui a été lu et pourquoi des lignes ont été écartées.
+ * d : { orders, lines } lus ; built : buildPo ; o : { depuis, fiches (Set ou null), champProjet }
+ */
+function summary(d, built, o) {
+  const x = o || {}, ids = Object.keys(built.po), out = ids.filter(id => built.outOfScope.has(id));
+  const sansProjet = ids.filter(id => !built.po[id].projet).length;
+  const fmt = s => s.split("-").reverse().join("/");
+  const parts = [d.orders.length + " commande(s) et " + d.lines.length + " ligne(s) lues dans Odoo" + (x.depuis ? " depuis le " + fmt(x.depuis) : "")];
+  if (built.cancelled.size) parts.push(built.cancelled.size + " ligne(s) de commandes annulées");
+  if (!x.champProjet) parts.push("champ projet non renseigné dans les réglages");
+  else if (sansProjet) parts.push(sansProjet + " ligne(s) sans n° de projet dans « " + x.champProjet + " »");
+  if (x.fiches) {
+    if (!x.fiches.size) parts.push("aucune fiche machine dans l'onglet Projets : avec « Seulement les projets ayant une fiche machine », tout est écarté");
+    else if (out.length) {
+      const vals = [...new Set(out.map(id => built.po[id].projet).filter(Boolean))].slice(0, 5);
+      parts.push(out.length + " ligne(s) écartée(s) car leur projet n'a pas de fiche machine" + (vals.length ? " (valeurs Odoo : " + vals.join(", ") + ")" : ""));
+    }
+  }
+  return parts.join(" ; ") + ".";
+}
+
+module.exports = { buildPo, plan, summary, statutOf, m2oId, projetOf, dayOf };

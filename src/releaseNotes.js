@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v296",
+    date: "2026-11-10",
+    title: "V296 : compte rendu Odoo",
+    items: [
+      { t: "Achats / Appro", d: "Le compte rendu de la synchronisation explique ce qui a été lu et écarté." },
+    ],
+  },
+  {
     id: "2026-11-v295",
     date: "2026-11-10",
     title: "V295 : synchronisation Odoo",
