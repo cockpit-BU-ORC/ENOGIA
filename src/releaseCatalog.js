@@ -777,4 +777,7 @@ export const RELEASE_CATALOG = [
   { v: "296", t: "Compte rendu de la synchronisation Odoo", items: [
     ["Achats / Appro", "Le compte rendu dit combien de commandes et de lignes ont été lues dans Odoo, et pourquoi des lignes ont été écartées (pas de fiche machine, pas de n° de projet), avec des exemples.", "admin"],
   ] },
+  { v: "297", t: "Réglages des achats ouverts au responsable achats", items: [
+    ["Achats / Appro", "Les personnes qui ont accès à la page voient aussi Réglages (marge, connexion Odoo, synchronisation) ; la liste d'accès reste au propriétaire.", "admin"],
+  ] },
 ];

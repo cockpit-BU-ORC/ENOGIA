@@ -895,7 +895,7 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
   };
 
   /* ---- affichage ---- */
-  const visibleTabs = TABS.filter(t => t[0] !== "reglages" || owner);
+  const visibleTabs = TABS.filter(t => t[0] !== "reglages" || owner || canEdit); // v297 : Réglages ouverts à ceux qui modifient la page (responsable achats)
   const nDiff = fiches.filter(f => f.ecartOrdo).length;
   const fichesF = fiches.filter(f => (!seulDiff || f.ecartOrdo) && (!low(qFiche) || [f.machine, f.projet, f.modeleEff].some(s => low(s).includes(low(qFiche)))));
   const cur = (ficheSel && ficheById[ficheSel]) || fichesF[0] || null;
@@ -1118,7 +1118,7 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
       return (<section aria-label="PO" style={CARD()}>
         <div role="status" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", background: sync.etat === "erreur" && !demandeEnCours ? T.red100 : T.surfaceAlt, borderRadius: 8, padding: "6px 10px", marginBottom: 10, fontSize: FZF.sm, color: sync.etat === "erreur" && !demandeEnCours ? T.red600 : T.ink700, fontVariantNumeric: "tabular-nums" }}>
           <b style={{ color: T.ink900 }}>Odoo</b>
-          <span style={{ flex: 1, minWidth: 200 }}>{odooPret ? syncTexte() : "Connexion non configurée" + (owner ? " : voir Réglages." : " : à faire par le propriétaire de la page.")}</span>
+          <span style={{ flex: 1, minWidth: 200 }}>{odooPret ? syncTexte() : "Connexion non configurée" + (owner || canEdit ? " : voir Réglages." : " : à faire par le propriétaire de la page.")}</span>
           {canEdit && odooPret && <button type="button" style={sbtn()} disabled={demandeEnCours || sync.etat === "en_cours"} onClick={demanderSync}>Synchroniser maintenant</button>}
         </div>
         <div style={toolbar}>
@@ -1312,7 +1312,7 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
           Utilisés mais absents de la liste : {hors.join(", ")}.{canEdit && <button type="button" style={sbtn()} onClick={() => setScopes([...scopeList, ...hors])}>Les ajouter</button>}</div>}
       </section>); })()}
 
-    {tab === "reglages" && owner && <section aria-label="Réglages" style={{ ...CARD(), display: "grid", gap: 14, maxWidth: 720 }}>
+    {tab === "reglages" && (owner || canEdit) && <section aria-label="Réglages" style={{ ...CARD(), display: "grid", gap: 14, maxWidth: 720 }}>
       <label style={{ ...LBL, maxWidth: 320 }}>Marge par défaut des nouvelles fiches (jours)
         <input key={"m" + S.params.marge} type="number" min={0} defaultValue={S.params.marge} onBlur={e => { const n = Math.max(0, Number(e.target.value) || 0); if (n !== S.params.marge) api.setParams({ ...S.params, marge: n }).then(ok => notify(ok ? "Marge enregistrée." : "Enregistrement impossible.", !ok)); }} style={field()} />
         <span style={{ fontWeight: 400, color: T.ink500 }}>Chaque fiche machine a sa propre marge ; celle-ci sert de valeur de départ et pour les fiches sans marge.</span></label>
@@ -1320,11 +1320,11 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
         <OdooReglages key={JSON.stringify(odoo)} odoo={odoo} sync={sync} texte={syncTexte()} demandeEnCours={demandeEnCours} onSync={demanderSync}
           onSave={async cfg => { const ok = await api.setParams({ ...S.params, odoo: cfg }); notify(ok ? "Connexion Odoo enregistrée." : "Enregistrement impossible.", !ok); }} />
       </div>
-      <div style={{ borderTop: "1px solid " + T.line, paddingTop: 14 }}>
+      {owner && <div style={{ borderTop: "1px solid " + T.line, paddingTop: 14 }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: T.ink700, marginBottom: 4 }}>Accès à la page (en plus de vous)</div>
         <textarea key={"a" + S.access.join()} rows={3} defaultValue={S.access.join("\n")} aria-label="Adresses ayant accès, une par ligne" onBlur={e => { const list = e.target.value.split(/[\s,;]+/).map(x => x.trim().toLowerCase()).filter(x => /@enogia\.com$/.test(x)); if (list.join() !== S.access.join()) api.setAccess(list).then(ok => notify(ok ? "Accès enregistrés." : "Enregistrement impossible.", !ok)); }} style={{ ...field(), resize: "vertical", fontFamily: T.fontMono }} />
-        <div style={{ fontSize: FZF.xs, color: T.ink500, marginTop: 4 }}>Une adresse @enogia.com par ligne. Ces personnes voient la page Achats / Appro et peuvent la modifier.</div>
-      </div>
+        <div style={{ fontSize: FZF.xs, color: T.ink500, marginTop: 4 }}>Une adresse @enogia.com par ligne. Ces personnes voient la page Achats / Appro et peuvent la modifier, réglages compris (sauf cette liste).</div>
+      </div>}
     </section>}
 
     {form && <FormDialog key={form.vals.id || form.title} {...form} onClose={() => setForm(null)} />}

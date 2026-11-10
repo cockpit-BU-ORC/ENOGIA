@@ -2143,3 +2143,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Compte rendu : commandes et lignes lues, lignes de commandes annulées, sans n° de projet, écartées faute de fiche machine (exemples de valeurs Odoo).
 - À déployer : `firebase deploy --only functions` (serveur) et le site (affichage du message).
 - Fichiers : functions/convert.js, functions/index.js, functions/test/convert.test.js, components/Achats.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v297 — Réglages des achats ouverts au responsable achats
+
+- Demandé : « que Alexis ait accès à la page Réglages dans l'onglet Achats / Appro ».
+- Réglages visibles par toute personne de la liste d'accès ; la liste d'accès elle-même reste au propriétaire.
+- Règles Firestore inchangées (la liste d'accès pouvait déjà écrire le document). Kit achats régénéré.
+- Fichiers : components/Achats.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
