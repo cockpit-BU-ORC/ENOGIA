@@ -10,7 +10,7 @@ import { T, FZF as FZ, btn as themeBtn } from "../theme";
 import { ProdTurbines } from "./ProdTurbines";
 import { usePointerDnD } from "../pointerDrag";
 import { createPortal } from "react-dom";
-import { allTurbines, TURB_CFGS, cfgById, refsOf, buildNeeds, assignOps, unassignOps, installOps, isoDay, allocOps, unallocOps, stockTiles, injInfo, maxBouches, autoFill, roueConflict, prodState, workDate, pjOfAffaire } from "../turbineNeeds";
+import { allTurbines, monthOf, moveNeedOrder, TURB_CFGS, cfgById, refsOf, buildNeeds, assignOps, unassignOps, installOps, allocOps, unallocOps, stockTiles, injInfo, maxBouches, autoFill, roueConflict, prodState, workDate, pjOfAffaire } from "../turbineNeeds";
 import { getPjMeta, CountryFlag } from "../pjMeta";
 import { askConfirm } from "../confirm";
 
@@ -70,7 +70,6 @@ function ChoicePop({ anchor, title, options, value, onPick, onClose, extra }) {
 // (clavier, tablette). Clic sur un logement vide sans pièce choisie = choisir la référence prévue. « Remplir automatiquement » propose
 // une affectation du stock (annulable). Anneau d'avancement par PJ, barre « % des pièces attribuées ». × = retour au stock.
 const fdS = s => (s ? String(s).slice(8, 10) + "/" + String(s).slice(5, 7) : "—");
-const wkOf = iso => { if (!iso) return "Sans date"; const d = new Date(iso + "T12:00:00"), t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day); const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return "Semaine " + Math.ceil(((t - y0) / 86400000 + 1) / 7) + " · " + t.getUTCFullYear(); };
 const U2 = v => String(v || "").trim().toUpperCase();
 const NEEDS_CSS = `
 .enogia-nd-glass{background:color-mix(in srgb, var(--nd-bg) 80%, transparent);backdrop-filter:blur(16px) saturate(160%);-webkit-backdrop-filter:blur(16px) saturate(160%)}
@@ -109,20 +108,22 @@ const TONES = () => ({
 function Sock({ ctx, n, s, kind, label, want, tone, empty, hint, children }) {
     const { dnd, canEdit, picked, active, landed, drop, setMsg, setPop } = ctx;
     const filled = !!tone, key = n.key + "#" + s.i + ":" + kind, g = n.cfg.g;
-    const acc = p => !!p && !filled && p.kind === kind && (!p.g || p.g === g);
+    // v302 (demandé : « quand la turbine est marquée installée, impossible de supprimer l'injecteur ou la roue ») : logement verrouillé
+    const lock = !!s.installee && kind !== "turbine";
+    const acc = p => !lock && !!p && !filled && p.kind === kind && (!p.g || p.g === g);
     const can0 = active && acc(active);
     // v274 : turbine portant une autre roue, ou roue d'une autre référence = refusée (rouge) ; le dépôt donne le message d'erreur
     const refused = can0 && n.roue && ((kind === "turbine" && roueConflict({ roue: active.roue, sansRoue: !active.roue }, n)) || (kind === "roue" && U2(active.ref) !== U2(n.roue)));
     const can = can0 && !refused, over = dnd.over === key && can;
     const bd = refused ? "1.5px solid " + T.red600 : over ? "2px solid " + T.emerald600 : can ? "1.5px solid " + T.ink700 : filled ? "1.5px solid " + tone.bd : "1.5px dashed " + (want || kind === "turbine" ? T.ink300 : T.amber600);
     return <div {...(canEdit ? dnd.dropProps(key, acc, d => drop(n, s.i, d)) : {})} className={"enogia-nd-sock" + (landed === key ? " enogia-nd-land" : "")}
-      role={!filled ? "button" : undefined} tabIndex={!filled ? 0 : undefined} aria-label={!filled ? label + " pour " + n.label + (want ? ", prévu " + want : "") : undefined}
-      onClick={!filled ? (e => { if (!canEdit) return; if (picked) { if (acc(picked)) drop(n, s.i, picked); else setMsg({ t: "Cette pièce ne va pas dans ce logement.", warn: true }); } else if (kind !== "turbine") setPop({ n, kind: kind === "roue" ? "roue" : "inj", el: e.currentTarget }); }) : undefined}
+      role={!filled && !lock ? "button" : undefined} tabIndex={!filled && !lock ? 0 : undefined} aria-label={!filled ? label + " pour " + n.label + (lock ? ", verrouillé : turbine installée" : want ? ", prévu " + want : "") : undefined}
+      onClick={!filled ? (e => { if (!canEdit || lock) return; if (picked) { if (acc(picked)) drop(n, s.i, picked); else setMsg({ t: "Cette pièce ne va pas dans ce logement.", warn: true }); } else if (kind !== "turbine") setPop({ n, kind: kind === "roue" ? "roue" : "inj", el: e.currentTarget }); }) : undefined}
       onKeyDown={!filled ? (e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.currentTarget.click(); } }) : undefined}
-      style={{ position: "relative", minWidth: 0, minHeight: 50, borderRadius: 8, padding: "3px 7px", boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "center", border: bd, cursor: !filled && canEdit ? "pointer" : "default",
+      style={{ position: "relative", minWidth: 0, minHeight: 50, borderRadius: 8, padding: "3px 7px", boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "center", border: bd, cursor: !filled && canEdit && !lock ? "pointer" : "default",
         background: refused ? T.red100 : over ? T.emerald100 : can ? T.surfaceAlt : filled ? tone.bg : "transparent", transform: over ? "scale(1.03)" : "none", opacity: active && !can0 && !filled ? 0.35 : 1 }}>
       {filled ? children : <>
-        <span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11, fontWeight: 600, lineHeight: 1.15, color: refused ? T.red600 : T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{IC.plus}{refused ? "Refusé : roue " + n.roue + " prévue" : label}</span>
+        <span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11, fontWeight: 600, lineHeight: 1.15, color: refused ? T.red600 : T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{lock ? IC.lock : IC.plus}{refused ? "Refusé : roue " + n.roue + " prévue" : lock ? label + " · verrouillé" : label}</span>
         <span style={{ ...REF_ST, fontFamily: want ? T.fontDisplay : T.font, fontSize: want ? 14 : 13, fontWeight: want ? 600 : 700, color: want ? T.ink500 : T.ink700 }}>{want || empty || (kind === "turbine" ? "glisser une turbine" : "à choisir")}</span>
         {hint && <span style={{ fontSize: 11, lineHeight: 1.15, color: T.ink500 }}>{hint}</span>}</>}
     </div>;
@@ -184,8 +185,12 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta }) {
   const freeG = free.filter(x => x.gamme === gam).sort((a, b) => (b.ready - a.ready) || (b.sansRoue - a.sansRoue) || String(a.end || "9").localeCompare(String(b.end || "9")));
   const active = dnd.drag || picked;
   const isPicked = p => picked && picked.kind === p.kind && (p.kind === "turbine" ? picked.id === p.id : picked.stockId === p.stockId && String(picked.bouches) === String(p.bouches));
-  const Grp = ({ t, n, cols, children }) => <div style={{ padding: "2px 10px 8px" }}><div style={{ display: "flex", justifyContent: "space-between", margin: "8px 2px 5px", fontSize: 12, fontWeight: 600, color: T.ink500 }}><span>{t}</span><span style={{ fontVariantNumeric: "tabular-nums" }}>{n}</span></div>
-    <div style={{ display: "grid", gridTemplateColumns: cols || "minmax(0,1fr)", gap: 4 }}>{children}</div></div>;
+  // v302 (demandé : « bien séparer les types de stock dans le panneau de gauche ») : une section encadrée par type, titre et pastille de couleur
+  const Sect = ({ t, n, k, note, children }) => <section aria-label={t} style={{ margin: "10px 10px 0", background: T.card, border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "7px 10px", borderBottom: "1px solid " + T.line, background: T.surface }}>
+      <i aria-hidden="true" style={{ width: 10, height: 10, borderRadius: 3, background: k, flexShrink: 0 }} /><b style={{ fontSize: 13, flex: 1 }}>{t}</b><span style={{ fontSize: 12, fontWeight: 700, color: T.ink700, fontVariantNumeric: "tabular-nums" }}>{n}</span></div>
+    <div style={{ padding: 8, display: "flex", flexDirection: "column", gap: 6 }}>{children}{note && <span style={{ fontSize: 11, color: T.ink500, lineHeight: 1.35 }}>{note}</span>}</div></section>;
+  const Sub = ({ t, n, children }) => <div style={{ display: "flex", flexDirection: "column", gap: 3 }}><div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 600, color: T.ink500, padding: "0 2px" }}><span>{t}</span><span style={{ fontVariantNumeric: "tabular-nums" }}>{n}</span></div>{children}</div>;
   const none = <span style={{ fontSize: 12, color: T.ink500 }}>Aucune.</span>;
   const xBtn = (lab, fn) => canEdit && <button type="button" data-no-drag aria-label={lab} title="Remettre dans le stock" onClick={e => { e.stopPropagation(); fn(); }} style={{ position: "absolute", top: 1, right: 2, border: "none", background: "transparent", color: "inherit", opacity: 0.7, cursor: "pointer", width: 22, height: 22, borderRadius: 4, fontSize: 14, lineHeight: 1, padding: 0 }}>×</button>;
   const injTxt = n => n.inj || "";
@@ -193,21 +198,22 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta }) {
   const TN = TONES();
   // v301 (demandé : « pas la vision de l'ordre dont on a besoin des turbines ») : rang de chaque besoin, par date (tous types confondus)
   const rankOf = new Map(needs.map((n, i) => [n.key, i + 1]));
+  // v302 : ▲ ▼ = un cran plus tôt / plus tard dans le mois (parmi les besoins affichés) ; enregistré dans planning/prodTurbines.ordre.besoins
+  const shownKeys = new Set(shown.map(n => n.key)), vis = n => shownKeys.has(n.key); // les flèches sautent les cartes masquées
+  const moveNeed = async (n, dir) => { const keys = moveNeedOrder(needs, n.key, dir, vis); if (!keys || busy) return;
+    if (await api.put("ordre", "besoins", { keys, at: new Date().toISOString() })) setMsg({ t: n.label + (dir < 0 ? " remonte" : " descend") + " d'un cran dans l'ordre de besoin." }); else setMsg({ t: "L'enregistrement a échoué.", bad: true }); };
+  const monthLab = iso => { if (!iso) return "Sans date"; const d = new Date(String(iso).slice(0, 7) + "-01T12:00:00"); const t = d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" }); return t.charAt(0).toUpperCase() + t.slice(1); };
+  const arrowB = { width: 24, height: 24, borderRadius: 4, border: "1px solid " + T.line, background: T.card, color: T.ink700, cursor: "pointer", fontSize: 10, lineHeight: 1, padding: 0, display: "inline-grid", placeItems: "center" };
+  let lastMo = "";
   const install = async (n, x, full) => {
     if (!x.installee && !full) { const miss = [!x.roueOk && "la roue", !x.inj && "l'injecteur"].filter(Boolean);
       if (!(await askConfirm({ title: "Marquer " + (x.t.num || "la turbine") + " installée ?", message: "Il manque " + miss.join(" et ") + " pour " + n.label + ". La turbine sera quand même marquée installée.", confirmLabel: "Marquer installée" }))) return; }
     run(installOps(doc, x.t, !x.installee)); };
   const pill = { display: "inline-flex", alignItems: "center", borderRadius: 999, padding: "1px 7px", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" };
   const linkB = { border: "none", background: "transparent", padding: 0, fontSize: 12, fontWeight: 700, cursor: canEdit ? "pointer" : "default", textDecoration: "underline", textUnderlineOffset: 2, fontFamily: T.font, whiteSpace: "nowrap" };
-  const gapEl = x => x.ecart == null ? null : <span style={{ fontWeight: 700, color: x.ecart < 0 ? T.red600 : x.ecart < 5 ? T.amber600 : T.emerald600 }}>{x.ecart < 0 ? -x.ecart + " j de retard" : x.ecart + " j d'avance"}</span>;
-  const t0 = isoDay(new Date()), dd = v => (v ? Math.round((new Date(v + "T00:00:00") - new Date(t0 + "T00:00:00")) / 864e5) : 0);
-  const rail = (n, x) => { const a = Math.max(0, dd(x.dispo)), b = Math.max(0, dd(n.date)), span = Math.max(14, a, b) * 1.15, pos = v => Math.min(100, v / span * 100), late = x.ecart != null && x.ecart < 0;
-    return <span role="img" aria-label={"Disponible le " + fdS(x.dispo) + (n.date ? ", besoin le " + fdS(n.date) : "")} style={{ position: "relative", display: "block", height: 4, borderRadius: 2, background: T.surfaceAlt }}>
-      <span style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: Math.max(2, pos(a)) + "%", borderRadius: 2, background: late ? T.red500 : (T.navy700 || T.ink700) }} />
-      {n.date && <span style={{ position: "absolute", top: -3, bottom: -3, left: pos(b) + "%", width: 2, background: T.ink900 }} />}
-    </span>; };
+  const gapEl = x => x.ecart == null ? null : <span style={{ fontWeight: 700, color: x.ecart < 0 ? T.red600 : x.ecart < 5 ? T.amber600 : T.emerald600 }}>{x.ecart < 0 ? -x.ecart + " j de retard" : x.ecart === 0 ? "juste à temps" : x.ecart + " j de marge"}</span>;
   const legend = [["à attribuer", { border: "1.5px dashed " + T.ink300 }], ["roue", { background: TN.roue.bg, border: "1.5px solid " + TN.roue.bd }], ["injecteur", { background: TN.inj.bg, border: "1.5px solid " + TN.inj.bd }],
-    ["turbine allouée", { background: TN.turbine.bg, border: "1.5px solid " + TN.turbine.bd }], ["installée", { background: TN.inst.bg, border: "1.5px solid " + TN.inst.bd }], ["refusé", { background: TN.bad.bg, border: "1.5px solid " + TN.bad.bd }]];
+    ["turbine allouée", { background: TN.turbine.bg, border: "1.5px solid " + TN.turbine.bd }], ["installée (roue et injecteur verrouillés)", { background: TN.inst.bg, border: "1.5px solid " + TN.inst.bd }], ["refusé", { background: TN.bad.bg, border: "1.5px solid " + TN.bad.bd }]];
   return (<div style={{ display: "flex", flexDirection: "column", gap: 10, "--nd-bg": T.card }}>
     <style>{NEEDS_CSS}</style>
     <div className="enogia-nd-app" style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden", display: "grid", gridTemplateColumns: "260px minmax(0,1fr)", height: "min(80vh, 940px)" }}>
@@ -218,20 +224,22 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta }) {
             {["100", "20"].map(g => <button key={g} type="button" aria-pressed={gam === g} onClick={() => { setGam(g); setPicked(null); }} style={{ border: "none", borderRadius: 8, minHeight: 26, padding: "0 10px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: T.font, background: gam === g ? T.card : "transparent", color: gam === g ? T.ink900 : T.ink500, boxShadow: gam === g ? "0 1px 2px rgba(0,0,0,.08)" : "none" }}>{g} kW</button>)}
           </div>
         </div>
-        {/* v300 (demandé : « voir en premier la roue et l'injecteur dans le stock ») */}
-        <Grp t="Roues équilibrées (seules)" n={stock.roues.reduce((q, r) => q + r.qte, 0)}>{stock.roues.length ? stock.roues.map(t => <Tile ctx={ctx} key={t.stockId} p={{ kind: "roue", stockId: t.stockId, ref: t.ref, g: gam }} k={TN.roue.bd} tc={TN.roue.ink} title={t.ref} sub="" q={t.qte} disabled={!t.qte} />) : none}</Grp>
-        <p style={{ margin: "-4px 12px 2px", fontSize: 11, color: T.ink500, lineHeight: 1.35 }}>Une turbine qui a déjà sa roue ne consomme pas ce stock.</p>
-        {/* v301 (demandé : « la gestion de l'injecteur n'est pas claire ») : une référence = un titre, puis ses variantes (vierge, N bouchages) */}
-        <Grp t="Injecteurs" n={stock.injs.reduce((q, r) => q + r.qte, 0)}>{stock.injs.length ? [...new Set(stock.injs.map(t => t.stockId))].map(id => { const L = stock.injs.filter(t => t.stockId === id);
-          return <div key={id} style={{ display: "flex", flexDirection: "column", gap: 3, marginBottom: 4 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: TN.inj.ink, overflowWrap: "anywhere", padding: "0 2px" }}>{L[0].ref}{L[0].ouv ? <span style={{ fontWeight: 500, color: T.ink500 }}> · {L[0].ouv} ouvertures</span> : null}</span>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: 3 }}>{L.map(t => <Tile ctx={ctx} key={t.stockId + "-" + t.bouches} p={{ kind: "inj", stockId: t.stockId, ref: t.ref, bouches: t.bouches, g: gam }} k={TN.inj.bd} title={t.bouches == null ? "vierge" : t.bouches + " bouchage" + (t.bouches > 1 ? "s" : "")} sub="" q={t.qte} disabled={!t.qte} />)}</div>
-          </div>; }) : none}</Grp>
-        {[["Turbines prêtes · avec roue", freeG.filter(x => x.ready && x.roue), T.emerald600, x => "roue " + x.roue], ["Turbines prêtes · sans roue", freeG.filter(x => x.sansRoue || (x.ready && !x.roue)), T.amber500, x => x.sansRoue ? "testée sans roue" : "roue à monter"], ["En fabrication", freeG.filter(x => !x.dispo), T.ink300, x => (x.end ? "fin " + fdS(x.end) : "sans date") + (x.roue ? " · " + x.roue : "")]].map(([t, L, k, sub]) =>
-          <Grp key={t} t={t} n={L.length}>{L.length ? L.map(x => { const hasR = !!(x.roue && !x.sansRoue);
-            // v301 (demandé : « voir la roue en priorité sur les turbines prêtes ») : la roue en titre, le n° de série en petit
-            return <Tile ctx={ctx} key={x.id} p={{ kind: "turbine", id: x.id, g: x.gamme, roue: hasR ? x.roue : "" }} k={k} tc={hasR ? TN.roue.ink : T.ink700} title={hasR ? "roue " + x.roue : sub(x)} sub={(x.num || "sans n°") + (hasR && !x.dispo ? " · " + (x.end ? "fin " + fdS(x.end) : "sans date") : "")} subMono />; }) : none}</Grp>)}
-        <p style={{ fontSize: 12, color: T.ink500, padding: "0 12px 14px", margin: 0, lineHeight: 1.45 }}>{picked ? "Pièce choisie : touchez un logement (Échap pour annuler)." : "Glissez une pièce sur un logement en pointillé, ou touchez-la puis touchez le logement. Une turbine sans roue s'alloue aussi : la roue reste à poser."}</p>
+        {/* v300 / v302 : roues, puis injecteurs, puis turbines — trois sections séparées */}
+        <Sect t="Roues équilibrées" n={stock.roues.reduce((q, r) => q + r.qte, 0)} k={TN.roue.bd} note="Roues seules. Une turbine qui a déjà sa roue ne consomme pas ce stock.">
+          {stock.roues.length ? <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: 3 }}>{stock.roues.map(t => <Tile ctx={ctx} key={t.stockId} p={{ kind: "roue", stockId: t.stockId, ref: t.ref, g: gam }} k={TN.roue.bd} tc={TN.roue.ink} title={t.ref} sub="" q={t.qte} disabled={!t.qte} />)}</div> : none}
+        </Sect>
+        <Sect t="Injecteurs" n={stock.injs.reduce((q, r) => q + r.qte, 0)} k={TN.inj.bd}>
+          {stock.injs.length ? [...new Set(stock.injs.map(t => t.stockId))].map(id => { const L = stock.injs.filter(t => t.stockId === id);
+            return <Sub key={id} t={<span style={{ color: TN.inj.ink, fontWeight: 700, overflowWrap: "anywhere" }}>{L[0].ref}{L[0].ouv ? <span style={{ fontWeight: 500, color: T.ink500 }}> · {L[0].ouv} ouvertures</span> : null}</span>} n={L.reduce((q, t) => q + t.qte, 0)}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: 3 }}>{L.map(t => <Tile ctx={ctx} key={t.stockId + "-" + t.bouches} p={{ kind: "inj", stockId: t.stockId, ref: t.ref, bouches: t.bouches, g: gam }} k={TN.inj.bd} title={t.bouches == null ? "vierge" : t.bouches + " bouchage" + (t.bouches > 1 ? "s" : "")} sub="" q={t.qte} disabled={!t.qte} />)}</div></Sub>; }) : none}
+        </Sect>
+        <Sect t="Turbines libres" n={freeG.length} k={TN.turbine.bd}>
+          {[["Prêtes · avec roue", freeG.filter(x => x.ready && x.roue), T.emerald600, x => "roue " + x.roue], ["Prêtes · sans roue", freeG.filter(x => x.sansRoue || (x.ready && !x.roue)), T.amber500, x => x.sansRoue ? "testée sans roue" : "roue à monter"], ["En fabrication", freeG.filter(x => !x.dispo), T.ink300, x => (x.end ? "fin " + fdS(x.end) : "sans date") + (x.roue ? " · " + x.roue : "")]].map(([t, L, k, sub]) =>
+            <Sub key={t} t={t} n={L.length}>{L.length ? L.map(x => { const hasR = !!(x.roue && !x.sansRoue);
+              // v301 (demandé : « voir la roue en priorité sur les turbines prêtes ») : la roue en titre, le n° de série en petit
+              return <Tile ctx={ctx} key={x.id} p={{ kind: "turbine", id: x.id, g: x.gamme, roue: hasR ? x.roue : "" }} k={k} tc={hasR ? TN.roue.ink : T.ink700} title={hasR ? "roue " + x.roue : sub(x)} sub={(x.num || "sans n°") + (hasR && !x.dispo ? " · " + (x.end ? "fin " + fdS(x.end) : "sans date") : "")} subMono />; }) : none}</Sub>)}
+        </Sect>
+        <p style={{ fontSize: 12, color: T.ink500, padding: "10px 12px 14px", margin: 0, lineHeight: 1.45 }}>{picked ? "Pièce choisie : touchez un logement (Échap pour annuler)." : "Glissez une pièce sur un logement en pointillé, ou touchez-la puis touchez le logement. Une turbine sans roue s'alloue aussi : la roue reste à poser."}</p>
       </aside>
       <section aria-label="Besoins ORC et SAV" style={{ overflowY: "auto", position: "relative" }}>
         <div style={{ position: "sticky", top: 0, zIndex: 3, background: T.card, display: "flex", alignItems: "center", gap: "6px 12px", flexWrap: "wrap", padding: "8px 12px", boxShadow: "0 1px 0 " + T.line }}>
@@ -241,28 +249,34 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta }) {
           </div>
           <label style={{ fontSize: 12, color: T.ink700, display: "inline-flex", gap: 6, alignItems: "center", cursor: "pointer" }}><input type="checkbox" checked={onlyOpen} onChange={e => setOnlyOpen(e.target.checked)} />À compléter</label>
           <span aria-label="Légende" style={{ display: "inline-flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: T.ink500 }}>{legend.map(([l, st]) => <span key={l} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><i aria-hidden="true" style={{ width: 16, height: 12, borderRadius: 4, boxSizing: "border-box", display: "inline-block", ...st }} />{l}</span>)}</span>
-          <span style={{ fontSize: 12, color: T.ink500 }}>Cartes dans l'ordre du besoin (n° = rang).</span>
+          <span style={{ fontSize: 12, color: T.ink500 }}>Par mois de besoin ; n° = ordre de priorité (▲ ▼ pour le changer).</span>
           <span style={{ flex: 1 }} />
           {canEdit && <button type="button" disabled={busy} onClick={auto} title="Propose une affectation du stock (par date de besoin, pièces prévues), annulable" style={{ ...themeBtn("sec", "sm") }}>Remplir automatiquement</button>}
           {canEdit && <button type="button" onClick={() => setSav({})} style={{ ...themeBtn("pri", "sm") }}>＋ Besoin SAV</button>}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 420px), 1fr))", gap: 8, padding: "8px 12px 16px", alignItems: "start" }}>
-          {shown.map(n => {
+          {shown.map(n => { const mo = monthOf(n.date), head = mo !== lastMo; lastMo = mo;
+            const canUp = canEdit && !!moveNeedOrder(needs, n.key, -1, vis), canDown = canEdit && !!moveNeedOrder(needs, n.key, 1, vis);
             const T3 = n.want * 3, G3 = n.slots.filter(x => !x.extra).reduce((q, x) => q + !!x.t + !!x.roueOk + !!x.inj, 0), badI = n.issues.filter(i => i.bad && !/à attribuer$/.test(i.t) && !/après le besoin/.test(i.t));
-            const meta = n.kind === "pj" ? getPjMeta(n.pj, n.r) : null, wk = (wkOf(n.date).match(/d+/) || [""])[0], done = allDone(n);
-            // v301 (demandé : « cadrans en couleur légère pour différencier ORC et SAV ») : fond bleu-gris pâle ORC, violet pâle SAV
-            const rk = rankOf.get(n.key);
-            return <article key={n.key} className="enogia-nd-need" aria-label={"Besoin n° " + rk + ", " + (n.kind === "sav" ? "SAV " : "ORC ") + n.label} style={{ display: "flex", flexDirection: "column", gap: 6, padding: "8px 10px", borderRadius: 12, minWidth: 0, boxSizing: "border-box", background: n.kind === "sav" ? T.violet100 : T.teal100,
-              boxShadow: "inset 0 0 0 " + (n.late || badI.length ? "1.5px " + T.red600 : "1px " + (done ? T.emerald600 : n.kind === "sav" ? T.violet500 : T.line)) }}>
+            const meta = n.kind === "pj" ? getPjMeta(n.pj, n.r) : null, done = allDone(n);
+            // v302 (demandé : « plus léger sur ORC (bleu léger) et violet sur SAV ») : bleu information très pâle / violet pâle, mêlés au fond de carte
+            const rk = rankOf.get(n.key), bgC = n.kind === "sav" ? "color-mix(in srgb, " + T.violet100 + " 80%, " + T.card + ")" : "color-mix(in srgb, " + T.info100 + " 45%, " + T.card + ")";
+            return <React.Fragment key={n.key}>
+              {head && <h3 style={{ gridColumn: "1 / -1", margin: "6px 2px 0", fontSize: 13, fontWeight: 700, color: T.ink700, fontFamily: T.font }}>{monthLab(n.date)}</h3>}
+              <article className="enogia-nd-need" aria-label={"Besoin n° " + rk + ", " + (n.kind === "sav" ? "SAV " : "ORC ") + n.label} style={{ display: "flex", flexDirection: "column", gap: 6, padding: "8px 10px", borderRadius: 12, minWidth: 0, boxSizing: "border-box", background: bgC,
+              boxShadow: "inset 0 0 0 " + (n.late || badI.length ? "1.5px " + T.red600 : "1px " + (done ? T.emerald600 : n.kind === "sav" ? "color-mix(in srgb, " + T.violet500 + " 45%, transparent)" : "color-mix(in srgb, " + T.info600 + " 22%, transparent)")) }}>
               <div style={{ display: "flex", alignItems: "center", gap: "4px 6px", flexWrap: "wrap", minWidth: 0, minHeight: 24 }}>
+                {canEdit && <span style={{ display: "inline-flex", gap: 2 }}>
+                  <button type="button" aria-label={"Monter " + n.label + " d'un cran dans l'ordre de besoin"} disabled={!canUp} onClick={() => moveNeed(n, -1)} style={{ ...arrowB, opacity: canUp ? 1 : 0.35, cursor: canUp ? "pointer" : "default" }}>▲</button>
+                  <button type="button" aria-label={"Descendre " + n.label + " d'un cran dans l'ordre de besoin"} disabled={!canDown} onClick={() => moveNeed(n, 1)} style={{ ...arrowB, opacity: canDown ? 1 : 0.35, cursor: canDown ? "pointer" : "default" }}>▼</button></span>}
                 <span title={"Ordre de besoin : n° " + rk} style={{ minWidth: 22, height: 22, padding: "0 5px", boxSizing: "border-box", borderRadius: 999, background: T.ink900, color: T.card, display: "inline-grid", placeItems: "center", fontSize: 12, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{rk}</span>
                 <Ring p={T3 ? G3 / T3 : 1} /><b style={{ fontFamily: T.fontMono, fontSize: 13, whiteSpace: "nowrap" }}>{n.label}</b>
                 {meta && <CountryFlag pays={meta.pays} size={13} />}
                 <span style={{ ...pill, background: T.card, color: n.kind === "sav" ? T.violet600 : T.ink700 }}>{n.kind === "sav" ? "SAV" : "ORC"}</span>
-                <button type="button" onClick={e => canEdit && setPop({ n, kind: "cfg", el: e.currentTarget })} title="Changer la configuration" style={{ ...linkB, color: T.accentInk }}>{n.cfg.l}{n.kind === "pj" && !n.cfgSet ? " (gamme)" : ""}</button>
                 <span title={n.sub} style={{ flex: "1 1 80px", minWidth: 0, fontSize: 12, color: T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{n.sub}{meta && meta.pays && meta.pays !== "—" ? " · " + meta.pays : ""}</span>
                 {n.kind === "sav" && canEdit && <button type="button" onClick={() => setSav({ id: n.id, ...n.raw, injB: n.raw.injB == null ? "" : String(n.raw.injB) })} style={{ ...linkB, color: T.ink500, fontWeight: 500 }}>modifier</button>}
-                <span style={{ fontSize: 12, color: T.ink700, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{wk ? "S" + wk + " · " : ""}pour le <b>{fdS(n.date)}</b></span>
+                <span style={{ fontSize: 12, color: T.ink700, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>pour le <b>{fdS(n.date)}</b></span>
+                {canEdit && <button type="button" aria-label={"Configuration des turbines de " + n.label + " (" + n.cfg.l + ")"} title={"Configuration : " + n.cfg.l} onClick={e => setPop({ n, kind: "cfg", el: e.currentTarget })} style={{ ...arrowB, fontSize: 14, border: "none", background: "transparent" }}>⋯</button>}
               </div>
               {badI.length > 0 && <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>{badI.map((i, q) => <span key={q} style={{ fontSize: 12, fontWeight: 600, color: T.red600 }}>{i.t}</span>)}</div>}
               {n.slots.map(x => {
@@ -274,24 +288,26 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta }) {
                   <div style={{ display: "grid", gridTemplateColumns: "16px repeat(3, minmax(0, 1fr))", gap: 4, alignItems: "stretch" }}>
                     <span aria-hidden="true" style={{ display: "grid", placeItems: "center", fontSize: 11, fontWeight: 700, color: T.ink300 }}>{n.want > 1 || x.extra ? x.i + 1 : ""}</span>
                     <Sock ctx={ctx} n={n} s={x} kind="roue" label={x.t && !x.roueOk ? "Roue à poser" : "Roue"} want={n.roue} hint={n.roue ? "prévue" : ""} tone={x.roueOk ? (roueBad ? TN.bad : TN.roue) : null}>
-                      {x.roueOk && <Piece tone={roueBad ? TN.bad : TN.roue} icon={roueBad ? null : IC.ok} label="Roue" val={rr} detail={roueBad ? "prévue " + n.roue : x.roue ? "prise dans le stock" : "montée sur la turbine"} x={x.roue && xBtn("Remettre la roue " + rr + " en stock", () => outAlloc(x.roue))} />}</Sock>
+                      {x.roueOk && <Piece tone={roueBad ? TN.bad : TN.roue} icon={roueBad ? null : IC.ok} label="Roue" val={rr} detail={roueBad ? "prévue " + n.roue : x.roue ? "prise dans le stock" : "montée sur la turbine"} x={x.roue && !x.installee && xBtn("Remettre la roue " + rr + " en stock", () => outAlloc(x.roue))} />}</Sock>
                     <Sock ctx={ctx} n={n} s={x} kind="inj" label="Injecteur" want={injTxt(n)} hint={n.inj ? (n.injB ? n.injB + " bouchage" + (n.injB > 1 ? "s" : "") + " prévu" + (n.injB > 1 ? "s" : "") : "vierge prévu") : ""} tone={x.inj ? (injBad ? TN.bad : TN.inj) : null}>
-                      {x.inj && <Piece tone={injBad ? TN.bad : TN.inj} icon={injBad ? null : IC.ok} label="Injecteur" val={x.inj.ref} detail={injBad ? "prévu " + n.inj : injDet} x={xBtn("Remettre l'injecteur " + x.inj.ref + " en stock", () => outAlloc(x.inj))} />}</Sock>
+                      {x.inj && <Piece tone={injBad ? TN.bad : TN.inj} icon={injBad ? null : IC.ok} label="Injecteur" val={x.inj.ref} detail={injBad ? "prévu " + n.inj : injDet} x={!x.installee && xBtn("Remettre l'injecteur " + x.inj.ref + " en stock", () => outAlloc(x.inj))} />}</Sock>
                     <Sock ctx={ctx} n={n} s={x} kind="turbine" label={"Turbine " + n.cfg.g + " kW"} want={x.estNum} hint={x.estNum ? "prochaine libre" : ""} empty={x.estNum ? "" : "glisser une turbine"} tone={x.t ? tT : null}>
                       {x.t && <Piece tone={tT} icon={x.installee ? IC.lock : IC.ok} label={x.installee ? "Installée" : "Turbine allouée"} val={x.t.num || "sans n°"} mono detail={tDet} x={!x.installee && xBtn("Retirer " + (x.t.num || "la turbine"), () => outTurbine(x.t))} />}</Sock>
                   </div>
                   {!x.extra && <div style={{ display: "grid", gridTemplateColumns: "16px minmax(0, 1fr) auto", gap: 6, alignItems: "center", minHeight: 24, fontSize: 12, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>
                     <span />
-                    {x.installee ? <span style={{ color: T.emerald600, fontWeight: 700 }}>montée sur la machine le {fdS(x.installee)}</span>
-                      : x.dispo ? rail(n, x) : <span>{x.t && x.t.missing ? "pas de date : pas d'arbre prévu" : "pas de date : aucune turbine libre de cette gamme"}</span>}
+                    {/* v302 (demandé : « la frise chronologique n'est pas claire du tout ») : une phrase — disponible le … pour un besoin le … — et l'écart */}
+                    {x.installee ? <span style={{ color: T.emerald600, fontWeight: 700 }}>Installée sur la machine le {fdS(x.installee)}</span>
+                      : x.dispo ? <span style={{ color: T.ink700 }}>{x.t ? "Turbine disponible le " : "Prochaine turbine libre le "}<b>{fdS(x.dispo)}</b>{x.estimee ? " (estimée)" : ""}, besoin le <b>{fdS(n.date)}</b></span>
+                        : <span>{x.t && x.t.missing ? "Pas de date : pas d'arbre prévu" : "Pas de date : aucune turbine libre de cette gamme"}</span>}
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}>
-                      {!x.installee && x.dispo && <span>dispo {fdS(x.dispo)}{x.estimee ? " (estimée)" : ""} · {gapEl(x)}</span>}
+                      {!x.installee && x.ecart != null && <span style={{ ...pill, padding: "2px 8px", fontSize: 12, background: x.ecart < 0 ? T.red100 : x.ecart < 5 ? T.amber100 : T.emerald100 }}>{gapEl(x)}</span>}
                       {/* v301 (demandé : « je ne peux pas valider des turbines allouées ») : bouton dès qu'une turbine est allouée ; s'il manque une pièce, on le confirme */}
                       {canEdit && x.t && <button type="button" disabled={busy} onClick={() => install(n, x, full)} style={{ ...themeBtn(x.installee ? "ghost" : "sec", "sm"), minHeight: 24, padding: "0 8px" }}>{x.installee ? "Annuler l'installation" : "Marquer installée"}</button>}
                     </span>
                   </div>}
                 </React.Fragment>; })}
-            </article>; })}
+            </article></React.Fragment>; })}
           {!shown.length && <div style={{ gridColumn: "1 / -1", padding: 30, textAlign: "center", color: T.ink500, fontSize: FZ.sm }}>{needs.length ? "Tout est installé. Décochez « À compléter » pour tout voir." : "Aucun PJ en cours avec une turbine, ni besoin SAV."}</div>}
         </div>
       </section>

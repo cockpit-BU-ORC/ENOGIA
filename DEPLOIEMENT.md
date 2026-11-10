@@ -2179,3 +2179,9 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Rang de besoin sur chaque carte, fonds ORC / SAV, logements sur 3 lignes avec noms complets, « Marquer installée » dès l'allocation (confirmation s'il manque une pièce), stock d'injecteurs par référence, turbines prêtes titrées par leur roue.
 - Pas de nouvelle donnée ni de clé `localStorage`.
 - Fichiers : components/TurbinesHub.js, turbineNeeds.js (+test), needsView.test.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v302 — Besoins turbines : priorité modifiable, regroupement par mois
+
+- Demandé : turbine installée = roue et injecteur non modifiables ; fonds plus légers (ORC bleu, SAV violet) ; changer l'ordre de priorité et regrouper par mois ; frise peu claire ; retirer « 2 × 100 kW (gamme) » des tuiles ; bien séparer les types de stock.
+- Nouvelle donnée : `planning/prodTurbines.ordre.besoins = { keys, at }` (ordre choisi), même document, règles inchangées. Pas de nouvelle clé `localStorage`.
+- Fichiers : turbineNeeds.js (+test), components/TurbinesHub.js, needsView.test.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

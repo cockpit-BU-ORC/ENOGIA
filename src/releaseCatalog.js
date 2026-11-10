@@ -800,4 +800,10 @@ export const RELEASE_CATALOG = [
     ["Turbines", "« Marquer installée » dès qu'une turbine est allouée ; s'il manque une pièce, le site le demande avant.", "owner"],
     ["Turbines", "Stock : injecteurs regroupés par référence avec leurs variantes ; turbines prêtes affichées par leur roue ; une turbine qui a déjà sa roue ne touche pas au stock de roues.", "owner"],
   ] },
+  { v: "302", t: "Besoins turbines : priorité modifiable, par mois, installée verrouillée", items: [
+    ["Turbines", "Ordre de priorité modifiable (▲ ▼ dans le mois) ; il sert aussi aux dates estimées et à « Remplir automatiquement ». Cartes regroupées par mois.", "owner"],
+    ["Turbines", "Turbine installée : sa roue et son injecteur sont verrouillés, on ne peut plus agir que sur la turbine.", "owner"],
+    ["Turbines", "Plus de frise : « Turbine disponible le …, besoin le … » avec la marge ou le retard. Fonds ORC bleu léger, SAV violet léger ; la configuration passe dans le bouton ⋯.", "owner"],
+    ["Turbines", "Stock en trois sections séparées : roues équilibrées, injecteurs, turbines libres.", "owner"],
+  ] },
 ];

@@ -1,4 +1,4 @@
-import { defaultCfg, buildNeeds, assignOps, unassignOps, installOps, allocOps, unallocOps, stockTiles, maxBouches, refsOf, autoFill } from "./turbineNeeds";
+import { defaultCfg, buildNeeds, moveNeedOrder, assignOps, unassignOps, installOps, allocOps, unallocOps, stockTiles, maxBouches, refsOf, autoFill } from "./turbineNeeds";
 import { setResolved, isSeenFor, isResolvedFor } from "./mentions";
 
 // v270 : besoins PJ + SAV, turbines glissées sur un besoin, sortie du stock de la production
@@ -116,4 +116,13 @@ test("v301 : allouer une turbine qui a déjà sa roue ne change pas le stock de 
   const op = assignOps(doc, x, p1, today);
   expect(op.writes.some(w => w.c === "roues")).toBe(false);
   expect(op.msg).toMatch(/roue R1 déjà montée/);
+});
+
+test("v302 : ordre de priorité choisi à la main, dans le mois, et déplacement d'un cran", () => {
+  const d2 = { ...doc, besoins: { ...doc.besoins, s2: { label: "SAV2", cfg: "100", date: "2026-11-28" } }, ordre: { besoins: { keys: ["sav:s2", "sav:s1", "pj:PJ2"] } } };
+  const { needs } = buildNeeds(d2, rows, metaOf, today);
+  expect(needs.map(n => n.key)).toEqual(["sav:s2", "sav:s1", "pj:PJ2", "pj:PJ1"]); // novembre (ordre choisi) puis décembre
+  expect(moveNeedOrder(needs, "sav:s1", -1)).toEqual(["sav:s1", "sav:s2", "pj:PJ2", "pj:PJ1"]);
+  expect(moveNeedOrder(needs, "pj:PJ2", 1)).toBeNull(); // PJ1 est en décembre : on ne change pas de mois
+  expect(moveNeedOrder(needs, "pj:PJ2", -1, n => n.kind === "pj")).toBeNull(); // pas d'autre PJ avant dans le mois
 });
