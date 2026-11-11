@@ -819,4 +819,10 @@ export const RELEASE_CATALOG = [
     ["Accès", "Les nouveaux accès ne s'appliquent qu'après « Activer » ; d'ici là, chacun garde ses droits d'avant.", "owner"],
     ["Menu", "Chacun ne voit dans le menu que les pages permises par son rôle (une fois les accès activés)."],
   ] },
+  { v: "306", t: "Menu masqué, sélecteur de vues, sombre graphite", items: [
+    ["Menu", "Le menu se cache comme la barre des tâches Windows : il apparaît quand la souris touche le bord gauche, avec ☰ en haut ou Ctrl + B. « Épingler le menu » le garde ouvert."],
+    ["Menu", "Les sous-pages d'une entrée se déplient sous elle (page active, ou au survol)."],
+    ["Planning", "Liste, Gantt et Calendrier se choisissent dans un sélecteur à côté du titre (touches 1, 2, 3) ; Planificateur et Modifications sont des boutons à part."],
+    ["Thème", "Mode sombre en gris neutres (graphite) au lieu de l'ardoise bleue."],
+  ] },
 ];

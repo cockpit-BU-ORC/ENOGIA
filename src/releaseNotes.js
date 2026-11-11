@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v306",
+    date: "2026-11-12",
+    title: "V306 : menu et vues",
+    items: [
+      { t: "Menu", d: "Le menu se cache au bord gauche : approchez la souris du bord, cliquez ☰ ou faites Ctrl + B. « Épingler le menu » le garde ouvert." },
+      { t: "Planning", d: "Liste, Gantt et Calendrier se choisissent à côté du titre (ou avec les touches 1, 2, 3)." },
+      { t: "Mode sombre", d: "Plus neutre : du gris graphite au lieu du bleu." },
+    ],
+  },
+  {
     id: "2026-11-v305",
     date: "2026-11-12",
     title: "V305 : accès par rôle",

@@ -2206,3 +2206,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - **Règles Firestore à republier avant d'activer** (firestore.rules, voir SECURITE.md) : sinon les personnes qui reçoivent un accès Modifier sur Turbines, Achats ou Finance ne pourront pas enregistrer, et les anciens admins garderont leurs droits côté base.
 - Après activation : la liste « Accès Manager » (managerEmails) et les listes « Accès » des Turbines et des Achats ne comptent plus.
 - Fichiers : access.js (+test), components/AccessPage.js, App.js, components/ManagerPanel.js, profiles.js, appDocs.js, useAppData.js, firestore.rules, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v306 — Menu masqué, sélecteur de vues, sombre graphite
+
+- Maquette `maquettes-design/v306-navigation.html` (choix A + 1 + 2).
+- Menu caché au bord gauche (zone de 8 px, ☰, Ctrl + B), épinglable ; sous-pages dépliées sous l'entrée active et au survol.
+- Planning : sélecteur segmenté Liste · Gantt · Calendrier (touches 1, 2, 3) + boutons Planificateur et Modifications.
+- Mode sombre en gris neutres (graphite).
+- Nouvelle clé `localStorage` : `enogia_nav_pin2` (menu épinglé). Pas de nouvelle donnée.
+- Fichiers : App.js, components/PlanSwitch.js, theme.js, styles.css, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

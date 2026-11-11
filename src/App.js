@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect, useRef } from "react"
 import { db, auth, ALLOWED_EMAIL_DOMAIN } from "./firebase";
 import { setResolved as setCommentResolved, peopleOptions, userKey, chefAccount, withChef, lc as lcMention } from "./mentions";
 import { profileOf, pjsOfProfile } from "./profiles";
+import { PlanSwitch } from "./components/PlanSwitch";
 import { myAccess, atLeast } from "./access";
 import { TutoVideoModal, tutoActive, tutoSeen, markTutoSeen } from "./components/TutoVideo";
 import { isEstimatePj } from "./changeDiff";
@@ -59,7 +60,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-12-v305-acces";
+const APP_BUILD_VERSION = "2026-11-12-v306-navigation";
 
 export default function App(){
   // Utilisateur connecté via Google, restreint aux comptes @enogia.com (null tant que non connecté).
@@ -980,8 +981,18 @@ export default function App(){
   const testsView=useMemo(()=>{const plans={...((testsDoc&&testsDoc.plans)||{})};(dataWithOverrides||[]).forEach(r=>{if(!r||r.etat!=="SHIPPED")return;const p=plans[r.pj]||{};if(p.forced&&p.forced.at)return;plans[r.pj]={...p,forced:{at:String(r.depart||r.testsFin||r.tests||new Date().toISOString()).slice(0,10),by:"Machine expédiée",auto:true}};});return{...testsDoc,plans};},[testsDoc,dataWithOverrides]);
   const pjCtxTests=canSeeTests?testsView:null,pjCtx=useMemo(()=>({testsDoc:pjCtxTests,turbineDoc}),[pjCtxTests,turbineDoc]); // v203 : pastilles de la fiche d'un PJ // v196 : entrées du Manager affichées dans ce menu (fournies par ManagerPanel)
   const closePeek=delay=>{clearTimeout(navPeekT.current);navPeekT.current=setTimeout(()=>setNavPeek(false),delay||0);};
-  const navOverlay=true;
-  const navCompact=navOverlay&&!navPeek; // dans l'espace Manager, un seul menu large : celui du Manager
+  // v306 (maquette v306-navigation, choix « 1 ») : menu masqué comme la barre des tâches Windows — caché, il glisse par-dessus la page
+  // quand la souris touche le bord gauche (zone de 8 px), quand on clique ☰ ou avec Ctrl + B ; il se cache 0,35 s après qu'on l'a quitté.
+  // « Épingler le menu » le garde ouvert à gauche (enogia_nav_pin2). Plus de barre d'icônes de 64 px.
+  const [navPin,setNavPin0]=useState(()=>{try{return localStorage.getItem("enogia_nav_pin2")==="1";}catch(e){return false;}});
+  const setNavPin=v=>{setNavPin0(v);try{localStorage.setItem("enogia_nav_pin2",v?"1":"0");}catch(e){}};
+  const navOpen=navPin||navPeek;
+  useEffect(()=>{const f=e=>{if((e.ctrlKey||e.metaKey)&&!e.altKey&&String(e.key).toLowerCase()==="b"&&loggedIn&&!navPin){e.preventDefault();clearTimeout(navPeekT.current);setNavPeek(v=>!v);}};window.addEventListener("keydown",f);return()=>window.removeEventListener("keydown",f);},[loggedIn,navPin]);
+  useEffect(()=>{const f=e=>{if(e.ctrlKey||e.metaKey||e.altKey||!["table","gantt","calendar","changes"].includes(view))return;const t=e.target,tag=t&&t.tagName;if(t&&(t.isContentEditable||/^(INPUT|SELECT|TEXTAREA)$/.test(tag)))return;if(document.querySelector('[aria-modal="true"]'))return;const v={"1":"table","2":"gantt","3":"calendar"}[e.key];if(v&&v!==view){e.preventDefault();setView(v);}};window.addEventListener("keydown",f);return()=>window.removeEventListener("keydown",f);},[view]); // v306 : touches 1, 2, 3 = Liste, Gantt, Calendrier
+  // v306 : sous-pages d'une entrée dépliées au survol (en plus de celles de la page active)
+  const [navHover,setNavHover]=useState(null),navHoverT=useRef(0);
+  const navOverlay=!navPin;
+  const navCompact=false; // dans l'espace Manager, un seul menu large : celui du Manager
   const [navPal,setNavPal]=useState(false);
   useEffect(()=>{const f=e=>{if((e.ctrlKey||e.metaKey)&&!e.altKey&&String(e.key).toLowerCase()==="k"&&view!=="manager"&&loggedIn){e.preventDefault();setNavPal(o=>!o);}};window.addEventListener("keydown",f);return()=>window.removeEventListener("keydown",f);},[view,loggedIn]);
   const palettePjs=useMemo(()=>dataWithOverrides.filter(r=>r&&r.pj).map(r=>({pj:r.pj,etat:r.etat,nomProjet:getPjMeta(r.pj,r).nomProjet||""})),[dataWithOverrides]);
@@ -1005,8 +1016,10 @@ export default function App(){
 
     {/* ── Rail de navigation : icônes de vue + accès Manager + mode sombre ── */}
     <a href="#enogia-main" className="enogia-skip" onClick={e=>{e.preventDefault();const m=document.getElementById("enogia-main");if(m){m.focus();m.scrollIntoView&&m.scrollIntoView({block:"start"});}}}>Aller au contenu</a>
-    <div style={{width:64,flexShrink:0,position:"relative",zIndex:30}}>
-    <nav className={"enogia-nav"+(NAV.industrial?" enogia-nav-ind":"")} aria-label="Pages" onMouseEnter={()=>clearTimeout(navPeekT.current)} onMouseLeave={()=>{if(navPeek)closePeek(350);}} onKeyDown={e=>{if(e.key==="Escape"&&navPeek)setNavPeek(false);}} style={{width:navCompact?64:216,boxShadow:navOverlay&&navPeek?"8px 0 28px rgba(8,12,28,.28)":"none",transition:"box-shadow .18s ease",flexShrink:0,background:NAV.bg,borderRight:"1px solid "+NAV.border,display:"flex",flexDirection:"column",alignItems:navCompact?"center":"stretch",padding:navCompact?"16px 0":"16px 10px",gap:4,position:"sticky",top:0,zIndex:30,height:"100vh",overflowY:"auto",overflowX:"hidden",scrollbarWidth:"none"}}>
+    {!navPin&&<div aria-hidden="true" onMouseEnter={()=>{clearTimeout(navPeekT.current);setNavPeek(true);}} style={{position:"fixed",left:0,top:0,bottom:0,width:8,zIndex:29}}/>}
+    {!navPin&&!navPeek&&<span aria-hidden="true" style={{position:"fixed",left:0,top:"50%",transform:"translateY(-50%)",width:4,height:56,borderRadius:"0 4px 4px 0",background:NAV.mark==="currentColor"?T.accent:NAV.mark,opacity:.55,zIndex:29,pointerEvents:"none"}}/>}
+    <div style={{width:navPin?216:0,flexShrink:0,position:"relative",zIndex:30}}>
+    <nav className={"enogia-nav"+(NAV.industrial?" enogia-nav-ind":"")} aria-label="Pages" onMouseEnter={()=>clearTimeout(navPeekT.current)} onMouseLeave={()=>{clearTimeout(navHoverT.current);setNavHover(null);if(navPeek)closePeek(350);}} onKeyDown={e=>{if(e.key==="Escape"&&navPeek)setNavPeek(false);}} style={{width:216,boxShadow:navOverlay&&navPeek?"12px 0 40px rgba(0,0,0,.35)":"none",transform:navOpen?"none":"translateX(-100%)",visibility:navOpen?"visible":"hidden",transition:"transform .22s var(--e-ease), box-shadow .22s ease, visibility 0s linear "+(navOpen?"0s":".22s"),flexShrink:0,background:NAV.bg,borderRight:"1px solid "+NAV.border,display:"flex",flexDirection:"column",alignItems:navCompact?"center":"stretch",padding:navCompact?"16px 0":"16px 10px",gap:4,position:navPin?"sticky":"fixed",top:0,left:0,zIndex:30,height:"100vh",overflowY:"auto",overflowX:"hidden",scrollbarWidth:"none"}}>
       {/* v179 (demandé : « le logo en haut à gauche pour avoir le début de la page au même niveau ») : le logo ouvre le menu, en blanc sur le marine. */}
       <button type="button" onClick={()=>setView("home")} aria-label={SITE_TITLE+" — accueil"} title="Accueil" style={{border:"none",background:"transparent",cursor:"pointer",padding:navCompact?"2px 0 10px":"2px 10px 12px",display:"flex",justifyContent:navCompact?"center":"flex-start",alignItems:"center",minHeight:44}}>
         <span style={{display:"flex",flexDirection:"column",alignItems:navCompact?"center":"flex-start",gap:6,minWidth:0}}>
@@ -1017,13 +1030,14 @@ export default function App(){
       {NAV_TREE.map(({g,items})=><React.Fragment key={g}>
         {!navCompact&&<div className="enogia-nav-grp" style={{fontSize:12,fontWeight:700,color:NAV.group,fontFamily:T.font,padding:"12px 10px 4px",whiteSpace:"nowrap"}}>{g}</div>}
         {navCompact&&<div className="enogia-nav-grp" style={{width:18,height:1,background:NAV.industrial?"rgba(255,255,255,.18)":T.line,margin:"4px 0"}}/>}
-        {items.map(it=>{const on=it.on,showSubs=on&&!navCompact&&it.subs&&it.subs.length>1;return(<React.Fragment key={it.id}>
+        {items.map(it=>{const on=it.on,showSubs=(on||navHover===it.id)&&it.subs&&it.subs.length>1;return(<React.Fragment key={it.id}>
           <button className="enogia-nav-btn" onClick={()=>{it.go();setNavPeek(false);}} title={it.l} aria-label={it.badge?it.l+", "+it.badge+" nouvelle"+(it.badge>1?"s":"")+" mise"+(it.badge>1?"s":"")+" à jour":it.l} aria-current={on?"page":undefined}
             style={{position:"relative",width:navCompact?40:"100%",height:40,borderRadius:navCompact?12:10,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:navCompact?"center":"flex-start",gap:12,padding:navCompact?0:"0 12px",background:on?NAV.bgOn:"transparent",color:on?NAV.inkOn:NAV.ink,fontFamily:T.font,fontSize:FZ.sm,fontWeight:on?700:500,whiteSpace:"nowrap",transition:"background .15s ease, color .15s ease","--nav-mark":NAV.mark}}
-            onMouseEnter={e=>{if(!on){e.currentTarget.style.background=NAV.hover;e.currentTarget.style.color=NAV.hoverInk;}}}
-            onMouseLeave={e=>{if(!on){e.currentTarget.style.background="transparent";e.currentTarget.style.color=NAV.ink;}}}>
-            <NavIcon name={it.icon} size={19}/>{!navCompact&&<span className="enogia-nav-lab" style={{flex:1,textAlign:"left"}}>{it.l}</span>}{it.id==="planning"&&<ChangesBadge n={unseenChanges.length}/>}</button>
-          {showSubs&&<div role="group" aria-label={"Pages de "+it.l} style={{display:"flex",flexDirection:"column",margin:"0 0 4px 30px",paddingLeft:8,borderLeft:"1px solid "+(NAV.industrial?"rgba(255,255,255,.16)":T.line)}}>
+            onMouseEnter={e=>{clearTimeout(navHoverT.current);if(it.subs&&it.subs.length>1){const id=it.id;navHoverT.current=setTimeout(()=>setNavHover(id),220);}if(!on){e.currentTarget.style.background=NAV.hover;e.currentTarget.style.color=NAV.hoverInk;}}}
+            onMouseLeave={e=>{clearTimeout(navHoverT.current);if(!on){e.currentTarget.style.background="transparent";e.currentTarget.style.color=NAV.ink;}}}
+            aria-expanded={it.subs&&it.subs.length>1?!!showSubs:undefined}>
+            <NavIcon name={it.icon} size={19}/>{!navCompact&&<span className="enogia-nav-lab" style={{flex:1,textAlign:"left"}}>{it.l}</span>}{it.subs&&it.subs.length>1&&<span aria-hidden="true" style={{display:"inline-flex",opacity:.6,transform:showSubs?"rotate(0deg)":"rotate(-90deg)",transition:"transform .18s var(--e-ease)"}}><NavIcon name="chevronDown" size={13}/></span>}{it.id==="planning"&&<ChangesBadge n={unseenChanges.length}/>}</button>
+          {showSubs&&<div role="group" aria-label={"Pages de "+it.l} className="enogia-nav-subs" style={{display:"flex",flexDirection:"column",margin:"0 0 4px 30px",paddingLeft:8,borderLeft:"1px solid "+(NAV.industrial?"rgba(255,255,255,.16)":T.line)}}>
             {it.subs.map(sb=><button key={sb.id} type="button" className="enogia-nav-sub" onClick={()=>{sb.go();setNavPeek(false);}} aria-current={sb.on?"page":undefined}
               style={{border:"none",background:"transparent",textAlign:"left",cursor:"pointer",padding:"6px 8px",minHeight:30,borderRadius:8,fontFamily:T.font,fontSize:FZ.sm,fontWeight:sb.on?700:500,color:sb.on?NAV.inkOn:NAV.ink,whiteSpace:"nowrap"}}>{sb.l}</button>)}
           </div>}
@@ -1034,7 +1048,7 @@ export default function App(){
         onMouseEnter={e=>{e.currentTarget.style.background=NAV.hover;}}
         onMouseLeave={e=>{e.currentTarget.style.background="transparent";}}><NavIcon name="screen" size={18}/>{!navCompact&&<span className="enogia-nav-lab">Écran atelier</span>}</button>
       <div style={{display:"flex",justifyContent:navCompact?"center":"flex-start",paddingLeft:navCompact?0:2}}><ThemePicker ink={NAV.industrial?NAV.ink:undefined} darkMode={darkMode} darkPref={darkPref} onDarkMode={setDarkMode} themeId={themeId} onPick={setThemeId} density={density} onDensity={setDensityState} presentation={presentation} onPresentation={setPresentation}/></div>
-      {<button className="enogia-nav-toggle" onClick={()=>{clearTimeout(navPeekT.current);setNavPeek(v=>!v);}} aria-expanded={navPeek} aria-label={navPeek?"Réduire le menu":"Ouvrir le menu en entier"} title={navPeek?"Réduire le menu":"Ouvrir le menu en entier"} style={{width:navCompact?40:"100%",height:30,marginTop:4,border:"1px solid "+(NAV.industrial?"rgba(255,255,255,.18)":T.line),background:NAV.industrial?"transparent":T.card,borderRadius:8,display:"flex",justifyContent:"center",alignItems:"center",color:NAV.ink,cursor:"pointer",alignSelf:"center"}}><span style={{display:"inline-flex",transform:"rotate("+(navPeek?"90deg":"-90deg")+")",transition:"transform .28s var(--e-ease)"}}><NavIcon name="chevronDown" size={14}/></span></button>}
+      <button type="button" className="enogia-nav-toggle" onClick={()=>{setNavPin(!navPin);setNavPeek(false);}} aria-pressed={navPin} title={navPin?"Masquer le menu au bord gauche":"Garder le menu ouvert"} style={{width:"100%",minHeight:32,marginTop:4,border:"1px solid "+(navPin?NAV.mark==="currentColor"?T.accent:NAV.mark:(NAV.industrial?"rgba(255,255,255,.18)":T.line)),background:navPin?(NAV.industrial?"rgba(244,211,94,.14)":T.accentSoft):(NAV.industrial?"transparent":T.card),borderRadius:8,display:"flex",justifyContent:"center",alignItems:"center",gap:8,color:navPin?NAV.inkOn:NAV.ink,cursor:"pointer",fontFamily:T.font,fontSize:FZ.xs,fontWeight:600}}><NavIcon name="pin" size={14}/>{navPin?"Détacher le menu":"Épingler le menu"}</button>
     </nav>
     </div>
     {navPal&&<ManagerPalette groups={navGroups} data={palettePjs} activeKey={view+":"} storageKey="enogia_nav_recent" onGo={f=>f()} onOpenPj={pj=>setCalSel(pj)} onClose={()=>setNavPal(false)}/>}
@@ -1046,6 +1060,7 @@ export default function App(){
       {/* Barre de marque — fine, claire, sans dégradé : l'identité tient au logo + à la typo, pas à un bloc de couleur */}
       {/* v179 : le logo passe en haut du menu (même ligne de départ que la page) ; la barre ne garde que les outils, sans fond ni filet. */}
       <div role="banner" className={"enogia-bar"+(hdrHidden?" is-hidden":"")} style={{flexShrink:0,minHeight:44,display:"flex",alignItems:"center",gap:12,padding:"6px 28px 0",background:"transparent",flexWrap:"wrap",position:"sticky",top:0,zIndex:25,pointerEvents:hdrHidden?"none":"auto"}}>
+        {!navPin&&<button type="button" onClick={()=>{clearTimeout(navPeekT.current);setNavPeek(v=>!v);}} aria-label="Menu (Ctrl + B)" title="Menu (Ctrl + B)" aria-expanded={navPeek} style={{border:"none",background:"transparent",width:34,height:34,borderRadius:8,display:"inline-grid",placeItems:"center",color:T.ink700,cursor:"pointer",marginLeft:-10}}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>}
         <div className="enogia-bar-right" aria-hidden={hdrHidden?"true":undefined} style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",opacity:hdrHidden?0:1,transform:hdrHidden?"translateY(-6px)":"none",visibility:hdrHidden?"hidden":"visible",transition:"opacity .25s ease, transform .25s var(--e-ease), visibility 0s linear "+(hdrHidden?".25s":"0s")}}>
           {pinOk&&<div className="enogia-bar-meta" style={{display:"flex",alignItems:"baseline",gap:10,fontSize:FZ.xs}}>
             {/* v233 (demandé : « supprimer ») : plus de « N unités · Mis à jour le … · N PJ modifiés » dans la barre */}
@@ -1100,13 +1115,12 @@ export default function App(){
             {/* allData (non filtré) pour le compteur "expédiées depuis le 1er janvier" : il ne doit
                 jamais varier selon les filtres actifs sur la liste, demandé explicitement — seules
                 les 4 répartitions en camembert, elles, continuent de suivre les filtres. */}
-            {PLANNING_VIEWS.includes(view)&&<div role="tablist" aria-label="Vues du planning" className="enogia-plan-tabs" style={{display:"flex",gap:2,flexWrap:"wrap",borderBottom:"1px solid "+T.line,marginBottom:10}}>
-              {NAV_TREE[0].items.find(x=>x.id==="planning").subs.map(sb=><button key={sb.id} role="tab" type="button" aria-selected={sb.on} onClick={sb.go}
-                style={{border:"none",background:"transparent",cursor:"pointer",padding:"8px 12px",minHeight:36,marginBottom:-1,borderBottom:"2px solid "+(sb.on?T.ink900:"transparent"),fontFamily:T.font,fontSize:FZ.sm,fontWeight:sb.on?700:500,color:sb.on?T.ink900:T.ink500}}>{sb.l}{sb.id==="changes"&&unseenChanges.length?<span style={{marginLeft:6,fontSize:12,fontWeight:700,color:T.ember500}}>{unseenChanges.length}</span>:null}</button>)}
-            </div>}
             {view!=="home"&&view!=="turbines"&&view!=="achats"&&(()=>{const v=VIEWS.find(x=>x.id===view);if(!v)return null; /* v262 : Production turbines et Achats / Appro ont leur propre en-tête (pages des kits) */
               const subs={planner:"Brouillon réservé à vous : déplacez, liez et forcez les PJ ; rien ne change pour les autres avant « Publier »",table:filtered.length+" machine"+(filtered.length>1?"s":"")+" affichée"+(filtered.length>1?"s":"")+" · "+((typeof window!=="undefined"&&window.matchMedia&&window.matchMedia("(hover: none)").matches)?"touchez":"survolez")+" un état ou un écart pour le détail",gantt:"Chaque machine, étape par étape · Ctrl + molette pour zoomer",calendar:"Arrivées, tests, fins de production et départs",changes:"Ce qui a changé à chaque mise à jour du planning",comments:"Les échanges, machine par machine",tests:"Plans d'essais et affectations des testeurs",cashin:"Encaissements et facturation des PJ",turbines:"Pool de turbines et attributions"};
-              /* v183 : plus de sur-titre ; v185 : une couleur de trait par page (demandé) */const SS=stageSoft(),HH=stripeHues(),acc={table:SS.production.solid,gantt:SS.tests.solid,calendar:SS.finProd.solid,changes:T.ember500,comments:HH.note,tests:SS.arrivee.solid,planner:SS.production.solid,cashin:SS.finProd.solid,turbines:SS.depart.solid}[view];return <PageHead title={v.l} sub={subs[view]} accent={acc}/>;})()}
+              /* v183 : plus de sur-titre ; v185 : une couleur de trait par page (demandé) */const SS=stageSoft(),HH=stripeHues(),acc={table:SS.production.solid,gantt:SS.tests.solid,calendar:SS.finProd.solid,changes:T.ember500,comments:HH.note,tests:SS.arrivee.solid,planner:SS.production.solid,cashin:SS.finProd.solid,turbines:SS.depart.solid}[view];const inPlan=PLANNING_VIEWS.includes(view),PV=["table","gantt","calendar"].includes(view);
+              return <PageHead title={PV?"Planning":v.l} sub={subs[view]} accent={acc} right={inPlan?<PlanSwitch label="Vue du planning" value={view} onGo={setView}
+                views={[{id:"table",l:"Liste",icon:"list",key:"1"},{id:"gantt",l:"Gantt",icon:"gantt",key:"2"},{id:"calendar",l:"Calendrier",icon:"calendar",key:"3"}]}
+                tools={[...(isOwner?[{id:"planner",l:"Planificateur",icon:"edit",hint:"Brouillon, puis « Publier »"}]:[]),{id:"changes",l:"Modifications",icon:"changes",badge:unseenChanges.length,hint:"Ce qui a changé à chaque publication"}]}/>:undefined}/>;})()}
             {view==="home"&&<HomeView pinOk={pinOk} testsDoc={canSeeTests?testsView:null} data={dataWithOverrides} comments={comments} myEmail={currentUser&&currentUser.email} myName={authorName} people={peopleAll} unseenChanges={unseenChanges} lastImport={lastImport} onOpenPj={setCalSel} onGo={setView} profiles={profiles} owner={isOwner} cash={canCash} turbineDoc={turbineDoc} onOpenCash={canCash?()=>setView("cashin"):null} prodDoc={prodDoc} canProdTurb={canProdTurb} productionExclusions={productionExclusions} plan={planDoc&&planDoc.plan} closurePeriods={closurePeriods} saveHomeLayout={isOwner?saveHomeLayout:null}/>}
             {view==="table"&&<DashboardSummary data={filtered} allData={dataWithOverrides} progress={progressEff} changeLog={changeLog} onOpenChanges={()=>setView("changes")}/>}
             {view==="table"&&<TableView data={filtered} progress={progressEff} df={df} setDf={setDf} setEtatFor={setEtatFor} setClientPresenceFor={setClientPresenceFor}

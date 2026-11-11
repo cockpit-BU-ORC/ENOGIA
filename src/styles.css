@@ -590,3 +590,7 @@ button, input, select, textarea { font-family: inherit; }
 .e-btn-dan:hover:not(:disabled) { background: rgba(184,51,26,.10) !important; }
 /* v290 : le Rapport CODIR (page A4) garde son échelle de texte 9,5 · 11 · 14 · 24 · 36 (la règle 11 → 12 px des fenêtres ne s'y applique pas) */
 #codir-root .codir-page [style*="font-size: 11px"] { font-size: 11px !important; }
+
+/* v306 : sélecteur segmenté (PlanSwitch) — la pastille glisse sous la vue active */
+.enogia-seg-thumb{transition:transform 260ms var(--e-ease, cubic-bezier(.2,.8,.2,1))}
+@media (prefers-reduced-motion: reduce){.enogia-seg-thumb{transition:none}}

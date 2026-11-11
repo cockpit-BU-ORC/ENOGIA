@@ -77,11 +77,12 @@ export const THEMES = {
       line:"#DDE2EA", panel:"#F1F3F7", panelDim:"#E7EAF0", contour:"#C7D2DE",
       accent:"#0A9DB5", accentInk:"#076477", accentSoft:"#D3F0F6" },
     dark:{ ...grad("#082440","#0D3B66","#4A6F92"),
-      navy900:"#0B1220", navy800:"#C9D6E6", navy700:"#2E5A88", navy600:"#6F93BD",
-      teal600:"#D0DCEB", teal500:"#4A73A3", teal400:"#9DB6D3", teal100:"#24364F",
-      surface:"#16202E", surfaceAlt:"#22304A", card:"#1F2B3D",
-      ink900:"#F1F5FA", ink700:"#D2DCE8", ink500:"#B6C3D3", ink300:"#A7B5C7", ink100:"#33435C",
-      line:"#33435C", panel:"#243247", panelDim:"#2B3B55", contour:"#36445F",
+      navy900:"#0B0C0D", navy800:"#C9D6E6", navy700:"#2E5A88", navy600:"#6F93BD",
+      teal600:"#D0DCEB", teal500:"#4A73A3", teal400:"#9DB6D3", teal100:"#262A31",
+      // v306 (maquette v306-navigation, choix « 2 » : Graphite — demandé : « le mode sombre est plus bleu que sombre ») : gris neutres sans teinte
+      surface:"#111214", surfaceAlt:"#1F2125", card:"#191A1D",
+      ink900:"#F2F3F5", ink700:"#D3D5DA", ink500:"#A3A7AF", ink300:"#979BA3", ink100:"#2A2C31",
+      line:"#2A2C31", panel:"#1D1F22", panelDim:"#232529", contour:"#3A3D43",
       accent:"#F4D35E", accentInk:"#F7DE84", accentSoft:"#4A3E22" } }, // v197 (demandé : « garder un seul thème ») : clair d'Ardoise + sombre de Salle de contrôle};
 };
 export const THEME_IDS = Object.keys(THEMES);
@@ -93,7 +94,7 @@ export const THEME_KEY = "enogia_theme3"; // v185 : nouvelle clé pour que le no
 // v173 : menu latéral « industriel » (fond marine, repère jaune) pour le thème Atelier ; les autres thèmes gardent leur menu clair.
 export function navTokens(){
   // v197 : thème unique — en sombre, menu « Salle de contrôle » (ardoise très sombre, repère or) ; en clair, menu clair.
-  if (T.mode === "dark") return { industrial:true, bg:"#0E1622", border:"#22304A", ink:"#C9D4E2", inkOn:"#FFFFFF", bgOn:"rgba(244,211,94,.14)", hover:"rgba(255,255,255,.07)", hoverInk:"#FFFFFF", group:"#F4D35E", mark:"#F4D35E" };
+  if (T.mode === "dark") return { industrial:true, bg:"#0B0C0D", border:"#25272B", ink:"#C7CAD0", inkOn:"#FFFFFF", bgOn:"rgba(244,211,94,.14)", hover:"rgba(255,255,255,.07)", hoverInk:"#FFFFFF", group:"#F4D35E", mark:"#F4D35E" };
   if (T.themeId !== "atelier") return { // (le thème « atelier » n'existe plus depuis v183 : branche conservée pour Ardoise)
  industrial:false, bg:T.card, border:T.line, ink:T.ink500, inkOn:T.teal600, bgOn:T.teal100, hover:T.surface, hoverInk:T.ink900, group:T.ink500, mark:"currentColor" };
   const dark = T.mode === "dark";
