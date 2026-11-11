@@ -2221,3 +2221,9 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Sélecteur segmenté (PlanSwitch) dans Tests, Turbines, Projets (Fiches projet · Point hebdo · Machines ORC), KPI, Retards, Calendrier de production, Personnes et site ; vues de Tests et de Turbines dans le menu. Titre « Espace Manager » et bouton mallette retirés. Achats / Appro inchangé (page du kit).
 - Pas de nouvelle donnée ni de nouvelle clé `localStorage`.
 - Fichiers : App.js, components/PlanSwitch.js, ManagerPanel.js, TestsTab.js, TurbinesHub.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v308 — Accès : Rôles, puis Accès par page
+
+- Page Régler › Accès en deux sous-pages : Rôles (création, renommage, membres) et Accès par page (un rôle à la fois, niveau par page et par sous-page).
+- `planning/access.levels` contient aussi les sous-pages (« planning.gantt », « tests.catalog »…) ; le niveau d'une page reste le plus haut de ses sous-pages (règles Firestore inchangées depuis la V305 : toujours à republier avant d'activer).
+- Fichiers : access.js (+test), components/AccessPage.js, App.js, ManagerPanel.js, TestsTab.js, TurbinesHub.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

@@ -45,7 +45,7 @@ function TesterChip({ t, warn, on, onClick, disabled, small }) {
   </span>);
 }
 
-export function TestsTab({ doc, save, data, certifs, canEdit, lead, me, signApi, sub: subP, onSub }) {
+export function TestsTab({ doc, save, data, certifs, canEdit, lead, me, signApi, sub: subP, onSub, allowSubs }) {
   const [sub0, setSub0] = useState("semaine"); // v186 : vue par semaine par défaut (maquette validée)
   const sub = subP || sub0, setSub = onSub || setSub0; // v307 : sous-page choisie aussi depuis le menu (App)
   const [focus, setFocus] = useState(null);
@@ -56,7 +56,7 @@ export function TestsTab({ doc, save, data, certifs, canEdit, lead, me, signApi,
   const conflicts = useMemo(() => findConflicts(doc, rows), [doc, rows]);
   const who = (myTester && myTester.name) || nameFromEmail(me || "");
   const commit = async next => { if (!canEdit && !myTester && !lead) return false; const ok = await save({ ...doc, ...next }); setMsg(ok === false ? "L'enregistrement a échoué." : null); return ok; };
-  const SUBS = [["semaine", "Par semaine"], ["testers", "Par testeur"], ...(canEdit ? [["catalog", "Catalogue"], ["checklists", "Checklists"]] : [])]; // v280 : modèle de la checklist de debug (import, ajout, modification)
+  const SUBS = [["semaine", "Par semaine"], ["testers", "Par testeur"], ...(canEdit ? [["catalog", "Catalogue"], ["checklists", "Checklists"]] : [])].filter(([id]) => !allowSubs || allowSubs.includes(id)); // v308 : sous-pages permises par la page Accès // v280 : modèle de la checklist de debug (import, ajout, modification)
   const openPj = pj => { setFocus({ pj, n: Date.now() }); setSub("semaine"); };
   return (<div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>

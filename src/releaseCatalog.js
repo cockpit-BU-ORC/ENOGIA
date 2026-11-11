@@ -830,4 +830,8 @@ export const RELEASE_CATALOG = [
     ["Menu", "Les vues de Tests et de Turbines sont aussi dans le menu de gauche."],
     ["Projets", "Fiches projet, Point hebdo et Machines ORC réunis sous « Projets »."],
   ] },
+  { v: "308", t: "Accès plus simples : Rôles, puis Accès par page", items: [
+    ["Accès", "Sous-page Rôles : créer, renommer, supprimer un rôle ; voir ses membres, en ajouter, en retirer.", "owner"],
+    ["Accès", "Sous-page Accès par page : un rôle à la fois, un niveau pour chaque page et chaque sous-page, copie depuis un autre rôle, aperçu du menu.", "owner"],
+  ] },
 ];

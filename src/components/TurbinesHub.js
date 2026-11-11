@@ -405,7 +405,7 @@ function ImportDialog({ doc, api, onClose }) {
 }
 
 const TABS = [["prod", "Production"], ["orc", "Besoins ORC et SAV"]]; // identifiants gardés (clé enogia_turbines_tab)
-export function TurbinesHub({ doc, api, rows, canEdit, owner, savePjMeta, tab: tabP, onTab }) {
+export function TurbinesHub({ doc, api, rows, canEdit, owner, savePjMeta, tab: tabP, onTab, allowTabs }) {
   const [tab0, setTab0] = useState(() => { try { const v = localStorage.getItem("enogia_turbines_tab"); return TABS.some(t => t[0] === v) ? v : "prod"; } catch (e) { return "prod"; } });
   const tab = tabP || tab0, setTab = onTab || setTab0; // v307 : sous-page choisie aussi depuis le menu (App)
   useEffect(() => { try { localStorage.setItem("enogia_turbines_tab", tab); } catch (e) { /* stockage indisponible */ } }, [tab]);
@@ -419,7 +419,7 @@ export function TurbinesHub({ doc, api, rows, canEdit, owner, savePjMeta, tab: t
     {/* v307 (même sélecteur sur toutes les pages) : remplace les deux grands boutons de la V300 ; les chiffres passent en pastilles */}
     <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 10 }}>
       <PlanSwitch label="Turbines" value={tab} onGo={setTab} tools={[]} views={[{ id: "prod", l: "Production", badge: counts.ready ? counts.ready + " prêtes" : null },
-        { id: "orc", l: "Besoins ORC et SAV", badge: counts.todo ? counts.todo + " à attribuer" : null, badgeBad: counts.late > 0 }]} />
+        { id: "orc", l: "Besoins ORC et SAV", badge: counts.todo ? counts.todo + " à attribuer" : null, badgeBad: counts.late > 0 }].filter(v => !allowTabs || allowTabs.includes(v.id))} />
       <span style={{ fontSize: 12, color: T.ink500 }}>{tab === "prod" ? counts.fab + " en fabrication · " + counts.ready + " prêtes, libres" : counts.todo + " à attribuer" + (counts.late ? " · " + counts.late + " en retard" : "")}</span>
     </div>
     <div style={{ display: tab === "prod" && canEdit ? "flex" : "none", justifyContent: "flex-end", marginBottom: 8 }}>
