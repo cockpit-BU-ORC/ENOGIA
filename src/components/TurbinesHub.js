@@ -5,6 +5,7 @@
 //  · (v267, remplacé en v270 par turbineNeeds.js : besoins PJ + SAV, turbines glissées) Besoins des ORC : rien à saisir — pour chaque PJ en cours, les turbines nécessaires d'après sa gamme, celles qui lui sont attribuées
 //    dans la production, leur date de fin prévue (calcul de la production) et ce qui coince ; stocks de roues et d'injecteurs.
 // Plus : « Importer des données (JSON) » (propriétaire et liste d’accès de la production, v268) pour reprendre les données de l'outil Claude de Jérémie, avec aperçu avant écriture.
+import { PlanSwitch } from "./PlanSwitch";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { T, FZF as FZ, btn as themeBtn } from "../theme";
 import { ProdTurbines } from "./ProdTurbines";
@@ -404,8 +405,9 @@ function ImportDialog({ doc, api, onClose }) {
 }
 
 const TABS = [["prod", "Production"], ["orc", "Besoins ORC et SAV"]]; // identifiants gardés (clé enogia_turbines_tab)
-export function TurbinesHub({ doc, api, rows, canEdit, owner, savePjMeta }) {
-  const [tab, setTab] = useState(() => { try { const v = localStorage.getItem("enogia_turbines_tab"); return TABS.some(t => t[0] === v) ? v : "prod"; } catch (e) { return "prod"; } });
+export function TurbinesHub({ doc, api, rows, canEdit, owner, savePjMeta, tab: tabP, onTab }) {
+  const [tab0, setTab0] = useState(() => { try { const v = localStorage.getItem("enogia_turbines_tab"); return TABS.some(t => t[0] === v) ? v : "prod"; } catch (e) { return "prod"; } });
+  const tab = tabP || tab0, setTab = onTab || setTab0; // v307 : sous-page choisie aussi depuis le menu (App)
   useEffect(() => { try { localStorage.setItem("enogia_turbines_tab", tab); } catch (e) { /* stockage indisponible */ } }, [tab]);
   const [imp, setImp] = useState(false);
   const pjs = useMemo(() => (rows || []).filter(r => r && r.pj && r.etat !== "SHIPPED" && r.etat !== "SLOT_LIBRE").map(r => r.pj + (getPjMeta(r.pj, r).nomProjet ? " - " + getPjMeta(r.pj, r).nomProjet : "")), [rows]);
@@ -413,15 +415,12 @@ export function TurbinesHub({ doc, api, rows, canEdit, owner, savePjMeta }) {
   // v300 (demandé : « changer le design pour passer de la page Production à la page Besoins ») : deux grands boutons avec leurs chiffres
   const counts = useMemo(() => { const tb = allTurbines(doc).filter(x => !x.livree && !x.besoin), { needs } = buildNeeds(doc, rows, r => getPjMeta(r.pj, r)), sl = needs.flatMap(n => n.slots.filter(x => !x.extra));
     return { fab: tb.filter(x => !x.dispo).length, ready: tb.filter(x => x.dispo).length, todo: sl.filter(x => !x.t).length, late: sl.filter(x => !x.installee && x.ecart != null && x.ecart < 0).length }; }, [doc, rows]);
-  const SW = [["prod", "Production", "Turbines, arbres, roues, injecteurs", [[counts.fab, "en fabrication"], [counts.ready, "prêtes, libres"]]],
-    ["orc", "Besoins ORC et SAV", "Ce qu'il faut monter, et si ce sera là à temps", [[counts.todo, "à attribuer"], [counts.late, "en retard", counts.late ? T.red600 : null]]]];
   return (<div ref={top}>
-    <div role="tablist" aria-label="Turbines" className="enogia-turb-switch" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 8, marginBottom: 10 }}>
-      {SW.map(([id, l, d, k]) => <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)} style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left", cursor: "pointer", fontFamily: T.font, borderRadius: 12, padding: "8px 14px", minHeight: 56, background: T.card, color: T.ink900,
-        border: "1px solid " + (tab === id ? T.ink900 : T.line), boxShadow: tab === id ? "inset 0 0 0 1px " + T.ink900 : "none" }}>
-        <span style={{ minWidth: 0, flex: 1 }}><span style={{ display: "block", fontFamily: T.fontDisplay, fontSize: 18, fontWeight: 600, lineHeight: 1.15, color: tab === id ? T.ink900 : T.ink700 }}>{l}</span><span style={{ display: "block", fontSize: 12, color: T.ink500 }}>{d}</span></span>
-        {k.map(([v, t, c]) => <span key={t} style={{ fontSize: 12, color: T.ink500, textAlign: "right", whiteSpace: "nowrap" }}><b style={{ display: "block", fontFamily: T.fontDisplay, fontSize: 18, fontWeight: 600, color: c || T.ink900, fontVariantNumeric: "tabular-nums" }}>{v}</b>{t}</span>)}
-      </button>)}
+    {/* v307 (même sélecteur sur toutes les pages) : remplace les deux grands boutons de la V300 ; les chiffres passent en pastilles */}
+    <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 10 }}>
+      <PlanSwitch label="Turbines" value={tab} onGo={setTab} tools={[]} views={[{ id: "prod", l: "Production", badge: counts.ready ? counts.ready + " prêtes" : null },
+        { id: "orc", l: "Besoins ORC et SAV", badge: counts.todo ? counts.todo + " à attribuer" : null, badgeBad: counts.late > 0 }]} />
+      <span style={{ fontSize: 12, color: T.ink500 }}>{tab === "prod" ? counts.fab + " en fabrication · " + counts.ready + " prêtes, libres" : counts.todo + " à attribuer" + (counts.late ? " · " + counts.late + " en retard" : "")}</span>
     </div>
     <div style={{ display: tab === "prod" && canEdit ? "flex" : "none", justifyContent: "flex-end", marginBottom: 8 }}>
       {/* v268 (demandé : « mettre à disposition le bouton importer à Jérémie ») : toute personne qui peut modifier la production (propriétaire + liste d’accès) */}

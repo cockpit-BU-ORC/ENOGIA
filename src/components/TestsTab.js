@@ -2,6 +2,7 @@
 // fiches de test par machine (modèle OP022-DP001-A), affectation des testeurs aux périodes de tests, frise des testeurs.
 // Les dates de venue du client / de NOBO se règlent dans la Liste : ici elles sont en lecture seule.
 // Les données vivent dans planning/tests (un seul document).
+import { PlanSwitch } from "./PlanSwitch";
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import { T, FZF as FZ, stageSoft, inkOn, btn as themeBtn } from "../theme";
 import { getPjMeta, PRESENCE_META, PresenceChip, presenceKind, presenceDates, presenceFirstDate, Avatar, personTint } from "../pjMeta";
@@ -44,8 +45,9 @@ function TesterChip({ t, warn, on, onClick, disabled, small }) {
   </span>);
 }
 
-export function TestsTab({ doc, save, data, certifs, canEdit, lead, me, signApi }) {
-  const [sub, setSub] = useState("semaine"); // v186 : vue par semaine par défaut (maquette validée)
+export function TestsTab({ doc, save, data, certifs, canEdit, lead, me, signApi, sub: subP, onSub }) {
+  const [sub0, setSub0] = useState("semaine"); // v186 : vue par semaine par défaut (maquette validée)
+  const sub = subP || sub0, setSub = onSub || setSub0; // v307 : sous-page choisie aussi depuis le menu (App)
   const [focus, setFocus] = useState(null);
   const [msg, setMsg] = useState(null);
   const testers = testersOf(doc), catalog = catalogOf(doc);
@@ -61,9 +63,7 @@ export function TestsTab({ doc, save, data, certifs, canEdit, lead, me, signApi 
       <div>
         <div style={H_SUB}>{canEdit ? "Qui teste quelle machine, quand, et quels tests faire en interne, avec le client et avec NOBO." : lead ? "Les machines en test de tous les testeurs : suivez et renseignez l'avancement de chaque test." : "Vos machines en test : indiquez l'avancement et le résultat de chaque test."}</div>
       </div>
-      <div role="tablist" style={{ display: "inline-flex", background: T.surface, border: "1px solid " + T.line, borderRadius: 12, padding: 2, gap: 2 }}>
-        {SUBS.map(([id, l]) => <button key={id} role="tab" aria-selected={sub === id} onClick={() => setSub(id)} style={{ border: "none", cursor: "pointer", borderRadius: 8, padding: "6px 14px", fontSize: FZ.sm, fontWeight: 700, fontFamily: T.font, background: sub === id ? T.card : "transparent", color: sub === id ? T.teal600 : T.ink500, boxShadow: sub === id ? T.shadowSm : "none" }}>{l}</button>)}
-      </div>
+      <PlanSwitch label="Vue des tests" value={sub} onGo={setSub} views={SUBS.map(([id, l]) => ({ id, l }))} tools={[]} />
     </div>
     {msg && <div role="alert" style={{ color: T.red500, fontSize: FZ.sm, fontWeight: 600 }}>{msg}</div>}
     {conflicts.length > 0 && sub !== "catalog" && <div role="status" style={{ background: T.amber100, color: T.amber600, borderRadius: 12, padding: "8px 12px", fontSize: FZ.sm, fontWeight: 600 }}>

@@ -60,7 +60,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-12-v306-navigation";
+const APP_BUILD_VERSION = "2026-11-12-v307-selecteur-partout";
 
 export default function App(){
   // Utilisateur connecté via Google, restreint aux comptes @enogia.com (null tant que non connecté).
@@ -922,6 +922,9 @@ export default function App(){
   // v304 (maquette « menu par métier » validée) : un seul menu en trois rubriques — Travailler, Suivre, Régler. Planning réunit Liste,
   // Gantt, Calendrier, Planificateur et Modifications ; l'Espace Manager disparaît du menu : ses pages vont dans Projets, Pilotage et Régler.
   const PLANNING_VIEWS=["table","gantt","calendar","planner","changes"];
+  // v307 : sous-pages de Tests et de Turbines choisies depuis le menu ou le sélecteur de la page
+  const [testsSub,setTestsSub]=useState("semaine");
+  const [turbTab,setTurbTab]=useState(()=>{try{const v=localStorage.getItem("enogia_turbines_tab");return v==="orc"?"orc":"prod";}catch(e){return "prod";}});
   const lastPlanRef=useRef("table");/* v305 */if(PLANNING_VIEWS.includes(view))lastPlanRef.current=view;
   const goMgr=t=>()=>{setManagerTab(t);setView("manager");};
   const mgrOn=tabs=>view==="manager"&&tabs.includes(managerTab);
@@ -930,8 +933,10 @@ export default function App(){
       {id:"home",l:"Aujourd'hui",icon:"home",on:view==="home",go:()=>setView("home")},
       ...(planOk?[{id:"planning",l:"Planning",icon:"gantt",on:PLANNING_VIEWS.includes(view),go:()=>setView(lastPlanRef.current),badge:unseenChanges.length,
         subs:[["table","Liste"],["gantt","Gantt"],["calendar","Calendrier"],...(isOwner?[["planner","Planificateur"]]:[]),["changes","Modifications"]].map(([id,l])=>({id,l,on:view===id,go:()=>setView(id)}))}]:[]),
-      ...(canSeeTests?[{id:"tests",l:"Tests",icon:"check",on:view==="tests",go:()=>setView("tests")}]:[]),
-      ...(canProdTurb?[{id:"turbines",l:"Turbines",icon:"gauge",on:view==="turbines",go:()=>setView("turbines")}]:[]),
+      ...(canSeeTests?[{id:"tests",l:"Tests",icon:"check",on:view==="tests",go:()=>setView("tests"),
+        subs:[["semaine","Par semaine"],["testers","Par testeur"],...(testsAdmin?[["catalog","Catalogue"],["checklists","Checklists"]]:[])].map(([id,l])=>({id,l,on:view==="tests"&&testsSub===id,go:()=>{setTestsSub(id);setView("tests");}}))}]:[]),
+      ...(canProdTurb?[{id:"turbines",l:"Turbines",icon:"gauge",on:view==="turbines",go:()=>setView("turbines"),
+        subs:[["prod","Production"],["orc","Besoins ORC et SAV"]].map(([id,l])=>({id,l,on:view==="turbines"&&turbTab===id,go:()=>{setTurbTab(id);setView("turbines");}}))}]:[]),
       ...(canAchats?[{id:"achats",l:"Achats / Appro",icon:"inbox",on:view==="achats",go:()=>setView("achats")}]:[])]},
     {g:"Suivre",items:[
       ...(projOk?[{id:"projets",l:"Projets",icon:"manager",on:mgrOn(["fiche","hebdo","serie","orc"]),go:goMgr("fiche"),
@@ -1069,7 +1074,6 @@ export default function App(){
           {currentUser&&<div className="enogia-hide-phone" style={{width:1,height:22,background:T.line}}/>}
           {currentUser&&<button onClick={()=>setNavPal(true)} title="Aller à… (Ctrl K)" aria-label="Aller à… (Ctrl K)" style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:32,height:32,padding:0,border:"1px solid transparent",borderRadius:8,cursor:"pointer",background:"transparent",color:T.ink500}} onMouseEnter={e=>{e.currentTarget.style.background=T.surfaceAlt;e.currentTarget.style.color=T.ink900;}} onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=T.ink500;}}><NavIcon name="search" size={18}/></button>}
           {currentUser&&<MentionBell pjChanges={myPjChanges} onSeenPjChanges={seePjChanges} onOpenChanges={()=>setView("changes")} video={tutoOn?tutoCfg:null} onOpenVideo={()=>setTutoOpen(true)} assignments={myNewAssign} onSeenAssign={seeAssign} onOpenTests={()=>setView("tests")} comments={comments} me={mentionCtx.me} data={dataWithOverrides} resolveComment={resolveComment} canSeePrivate={pinOk} onOpen={(pj,tab)=>{setCalDay(null);setCalTab(tab||"resume");setCalSel(pj);}}/>} {/* v270 (demandé : « quand on clique sur une notification de commentaire, ouvrir la fiche pop-up à l’endroit des commentaires ») */}
-          <button onClick={()=>{setManagerTab("fiche");setView("manager");}} title="Espace Manager" aria-label="Espace Manager" aria-pressed={view==="manager"} style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:32,height:32,padding:0,border:"1px solid "+(view==="manager"?T.teal500+"66":"transparent"),borderRadius:8,cursor:"pointer",background:view==="manager"?T.teal100:"transparent",color:view==="manager"?T.teal600:T.ink500,transition:"background .15s ease, color .15s ease"}} onMouseEnter={e=>{if(view!=="manager"){e.currentTarget.style.background=T.surfaceAlt;e.currentTarget.style.color=T.ink900;}}} onMouseLeave={e=>{if(view!=="manager"){e.currentTarget.style.background="transparent";e.currentTarget.style.color=T.ink500;}}}><NavIcon name="manager" size={19}/></button>
           {currentUser&&<UserChip user={currentUser} onSignOut={()=>signOut(auth)} role={isOwner?"Super admin":accMe?null:pinOk?"Admin":null}/>}
         </div>
       </div>
@@ -1098,9 +1102,6 @@ export default function App(){
       <>
         {view==="manager"?(mgrOk?
           <div>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-              <span style={{fontFamily:T.fontDisplay,fontWeight:600,color:T.ink900,fontSize:FZ.lg,display:"flex",alignItems:"center",gap:8}}><NavIcon name="manager" size={20}/>Espace Manager</span>
-            </div>
             <ManagerPanel kpiOk={accMe?pilOk:false} calOk={accMe?accAt("calprod","w"):false} planDoc={planDoc} initialAddFromImport={initialAddFromImport} changeLog={changeLog} data={dataWithOverrides} progress={progressEff} setProgress={setProgress} releases={releasesAll} saveReleaseNotes={saveReleaseNotes} releaseSelection={releaseSelection} saveReleaseSelection={saveReleaseSelection} publishRelease={publishRelease} isBeta={IS_BETA} initialData={initialData} lastInitialImport={lastInitialImport} lastInitialAdd={lastInitialAdd} onInitialImport={handleInitialImport} onInitialAdd={handleInitialAdd} initialImporting={initialImporting}
               etatChoice={etatChoiceEff} setEtatFor={setEtatFor} saveProgress={saveProgress} savingProgress={savingProgress} progressSaved={progressSaved}
               tab={managerTab} setTab={setManagerTab} jumpFiche={managerJump} clientPresence={clientPresence} setClientPresenceFor={setClientPresenceFor}
@@ -1161,10 +1162,10 @@ export default function App(){
             {view==="cashin"&&canCash&&<CashInTab authorName={authorName} focus={cashFocusApp} planRows={dataWithOverrides}/>}
             {view==="achats"&&canAchats&&<PageGuard name="Achats / Appro"><Achats doc={achatsDoc} api={achatsApi} rows={dataWithOverrides.map(r=>({pj:r.pj,nomProjet:getPjMeta(r.pj,r).nomProjet||"",gamme:r.gamme||"",etat:r.etat,arrivee:r.arrivee||null,depart:r.depart||null}))} canEdit={achEdit} owner={isOwner}/></PageGuard>}
             {/* v267 (demandé : « un seul onglet Turbines ») : production (seule saisie) + besoins des ORC (calculés) ; l'ancien pool n'est plus affiché */}
-            {view==="turbines"&&canProdTurb&&<PageGuard name="Turbines"><TurbinesHub doc={prodDoc} api={prodApi} rows={dataWithOverrides} canEdit={turbEdit} owner={isOwner} savePjMeta={savePjMetaOverride}/></PageGuard>}
+            {view==="turbines"&&canProdTurb&&<PageGuard name="Turbines"><TurbinesHub doc={prodDoc} api={prodApi} rows={dataWithOverrides} canEdit={turbEdit} owner={isOwner} tab={turbTab} onTab={setTurbTab} savePjMeta={savePjMetaOverride}/></PageGuard>}
             {view==="planner"&&isOwner&&<PlannerView productionExclusions={productionExclusions} testers={testsDoc&&Array.isArray(testsDoc.testers)?testsDoc.testers:[]} planLoaded={planLoaded} planDoc={planDoc} rows={dataWithOverrides} closurePeriods={closurePeriods} authorName={authorName}
               onSavePlan={p=>savePlan(p,authorName)} onPublish={async(plan,note,announce)=>{const r=await publishPlan({plan,closurePeriods,productionExclusions,by:authorName,note,announce});/* v224 : un PJ publié depuis le planificateur et absent du planning initial → même bandeau qu’après un import (« Les ancrer dans l’initial ») */if(r&&r.rows&&initialPjsRef.current.size){const fresh=r.rows.filter(x=>x&&x.pj&&x.etat!=="SLOT_LIBRE"&&!isEstimatePj(x.pj)&&!initialPjsRef.current.has(x.pj));setNewVsInitial(fresh.length?{rows:r.rows,pjs:fresh.map(x=>x.pj)}:null);}return r;}} onLoadHistory={loadHistory} onRestorePublication={restorePublication}/>}
-            {view==="tests"&&canSeeTests&&<TestsTab doc={testsView} save={saveTests} data={dataWithOverrides} certifs={certifs} canEdit={testsAdmin} lead={isTestLead} me={currentUser&&currentUser.email} signApi={signApi}/>}
+            {view==="tests"&&canSeeTests&&<TestsTab doc={testsView} save={saveTests} data={dataWithOverrides} certifs={certifs} canEdit={testsAdmin} lead={isTestLead} sub={testsSub} onSub={setTestsSub} me={currentUser&&currentUser.email} signApi={signApi}/>}
             {view==="changes"&&<ChangesView entries={changeLog} onOpenPj={jumpToPj}/>}
             {view==="comments"&&<CommentsView data={filtered} comments={comments} addComment={addComment} deleteComment={deleteComment}
               pinOk={pinOk} addCommentMulti={addCommentMulti} jumpToPj={jumpToPj} authorName={authorName} resolveComment={resolveComment}/>}

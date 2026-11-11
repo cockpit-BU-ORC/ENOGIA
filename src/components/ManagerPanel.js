@@ -1,3 +1,4 @@
+import { PlanSwitch } from "./PlanSwitch";
 import React, { useState, useMemo, useEffect } from "react";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend } from "recharts";
 import { T, FZ, stageSoft, btn } from "../theme";
@@ -364,7 +365,8 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
   };
   const group=GROUP_OF[tab]||"derives";
   useEffect(()=>{const old={orc:"serie",imports:"derives",sante:"fiche",suivi:"serie",statut:"serie",cash:"derives",turbines:"derives"}[tab];if(old){setTab(old);return;}if(!kpi&&(GROUP_OF[tab]||"derives")==="derives"){setTab("fiche");return;}if((!me&&GROUP_OF[tab]==="reglages")||(!cal&&GROUP_OF[tab]==="calendrier")||(!owner&&GROUP_OF[tab]==="cash"))setTab(me?"derives":"fiche");},[superAdmin,owner,me,tab]); // eslint-disable-line react-hooks/exhaustive-deps -- GROUP_OF est fixe, setTab vient du parent ; v212 : anciens onglets mémorisés → leur nouvelle place // un admin qui arrive sur un onglet Réglages (ancien état mémorisé) est ramené aux KPI
-  const subItems=SUBS[group]||null;
+  // v307 : Projets réunit Fiches projet, Point hebdo et Machines ORC (comme le menu)
+  const subItems=(group==="fiche"||group==="orc")?[["fiche","Fiches projet"],["hebdo","Point hebdo"],["serie","Machines ORC"]]:(SUBS[group]||null);
   const subValue=group==="derives"?kpiTab:tab;
   const onSub=id=>{if(group==="derives")setKpiTab(id);else setTab(id);};
   const goSub=(top,id)=>()=>{if(top==="derives"){setTab("derives");setKpiTab(id);}else setTab(id);};
@@ -397,7 +399,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
     <header className="enogia-mgr-head" style={{display:"flex",flexDirection:"column",gap:8}}>
       <div style={{display:"flex",alignItems:"flex-end",gap:10,flexWrap:"wrap"}}>
         <div style={{flex:"1 1 260px",minWidth:0}}>
-          <h1 style={{margin:0,fontFamily:T.fontDisplay,fontSize:"clamp(24px,2.4vw,30px)",fontWeight:600,letterSpacing:"-.01em",color:T.ink900,lineHeight:1.15}}>{activeEntry.label}</h1>
+          <h1 style={{margin:0,fontFamily:T.fontDisplay,fontSize:"clamp(24px,2.4vw,30px)",fontWeight:600,letterSpacing:"-.01em",color:T.ink900,lineHeight:1.15}}>{(group==="fiche"||group==="orc")?"Projets":activeEntry.label}</h1>
           <div style={{fontSize:FZ.sm,color:T.ink500,marginTop:2}}>{PAGE_DESC[activeEntry.id]||""}</div>
         </div>
         {!phone&&tab==="fiche"&&<button type="button" className="enogia-btn-ind" onClick={()=>setFocusFiche(v=>!v)} aria-pressed={focusFiche} title={focusFiche?"Réafficher le menu complet et la liste des projets":"Replier le menu et la liste pour laisser toute la place à la fiche"}
@@ -405,10 +407,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
         {showFilters&&<button type="button" onClick={()=>setFiltersOpen(v=>!v)} aria-expanded={filtersOpen} style={{display:"inline-flex",alignItems:"center",gap:6,height:32,padding:"0 12px",borderRadius:8,border:"1px solid "+(nFilters?T.teal500:T.line),background:nFilters?T.teal100:T.card,color:nFilters?T.teal600:T.ink700,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font}}><NavIcon name="layers" size={14}/>Filtres{nFilters?" · "+nFilters:""}</button>}
         <button type="button" onClick={()=>setPalOpen(true)} aria-label="Aller à… (Ctrl K)" style={{display:"inline-flex",alignItems:"center",gap:8,height:32,padding:"0 12px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink500,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font}}><NavIcon name="search" size={14}/>Aller à…<kbd style={{fontFamily:T.fontMono,fontSize:11,color:T.ink500,border:"1px solid "+T.line,borderRadius:4,padding:"0 4px"}}>Ctrl K</kbd></button>
       </div>
-      {subItems&&<div role="tablist" aria-label={"Sous-pages : "+activeEntry.label} style={{display:"flex",gap:2,borderBottom:"1px solid "+T.line,overflowX:"auto"}}>
-        {subItems.map(([id,l])=>{const on=subValue===id;return(
-          <button key={id} type="button" role="tab" aria-selected={on} onClick={()=>onSub(id)} style={{border:"none",background:"transparent",borderBottom:"3px solid "+(on?T.ink900:"transparent"),marginBottom:-1,padding:"8px 14px",minHeight:36,fontSize:FZ.sm,fontWeight:on?700:600,color:on?T.ink900:T.ink500,cursor:"pointer",fontFamily:T.font,whiteSpace:"nowrap"}}>{l}</button>);})}
-      </div>}
+      {subItems&&<PlanSwitch label={"Sous-pages : "+((group==="fiche"||group==="orc")?"Projets":activeEntry.label)} value={subValue} onGo={onSub} views={subItems.map(([id,l])=>({id,l}))} tools={[]}/>}
       {showFilters&&filtersOpen&&<div className="enogia-view-in" style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",padding:"8px 10px",background:T.surface,border:"1px solid "+T.line,borderRadius:12}}>
         <DropFilter label="Statut" options={ALL_ETATS} selected={fEtat} onChange={setFEtat} getLabel={o=>ETAT_META[o]?.label||o}/>
         <EtatInfoButton/>

@@ -825,4 +825,9 @@ export const RELEASE_CATALOG = [
     ["Planning", "Liste, Gantt et Calendrier se choisissent dans un sélecteur à côté du titre (touches 1, 2, 3) ; Planificateur et Modifications sont des boutons à part."],
     ["Thème", "Mode sombre en gris neutres (graphite) au lieu de l'ardoise bleue."],
   ] },
+  { v: "307", t: "Le même sélecteur de vues partout", items: [
+    ["Navigation", "Tests, Turbines, Projets, KPI, Retards, Calendrier de production et Personnes et site changent de vue avec le même sélecteur que le Planning."],
+    ["Menu", "Les vues de Tests et de Turbines sont aussi dans le menu de gauche."],
+    ["Projets", "Fiches projet, Point hebdo et Machines ORC réunis sous « Projets »."],
+  ] },
 ];

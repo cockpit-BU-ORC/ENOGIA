@@ -2215,3 +2215,9 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Mode sombre en gris neutres (graphite).
 - Nouvelle clé `localStorage` : `enogia_nav_pin2` (menu épinglé). Pas de nouvelle donnée.
 - Fichiers : App.js, components/PlanSwitch.js, theme.js, styles.css, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v307 — Le même sélecteur de vues partout
+
+- Sélecteur segmenté (PlanSwitch) dans Tests, Turbines, Projets (Fiches projet · Point hebdo · Machines ORC), KPI, Retards, Calendrier de production, Personnes et site ; vues de Tests et de Turbines dans le menu. Titre « Espace Manager » et bouton mallette retirés. Achats / Appro inchangé (page du kit).
+- Pas de nouvelle donnée ni de nouvelle clé `localStorage`.
+- Fichiers : App.js, components/PlanSwitch.js, ManagerPanel.js, TestsTab.js, TurbinesHub.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
