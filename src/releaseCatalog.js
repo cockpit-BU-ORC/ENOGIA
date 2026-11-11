@@ -809,4 +809,9 @@ export const RELEASE_CATALOG = [
   { v: "303", t: "Besoins turbines : titres de mois collants en verre dépoli", items: [
     ["Turbines", "Barre d'outils et titres de mois en verre dépoli, collés en haut pendant que les cartes défilent dessous ; les logements à remplir s'enfoncent légèrement à l'appui. Le stock reste visible à gauche.", "owner"],
   ] },
+  { v: "304", t: "Menu par métier : Travailler, Suivre, Régler", items: [
+    ["Menu", "Un seul menu en trois rubriques : Travailler (Aujourd'hui, Planning, Tests, Turbines, Achats), Suivre (Projets, Finance, Pilotage, Commentaires), Régler (Calendrier de production, Personnes et site)."],
+    ["Planning", "Liste, Gantt, Calendrier, Planificateur et Modifications sont réunis sous « Planning », avec des onglets en haut de la page."],
+    ["Menu", "L'Espace Manager n'est plus une entrée à part : ses pages sont dans Projets, Pilotage et Régler.", "admin"],
+  ] },
 ];

@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v304",
+    date: "2026-11-11",
+    title: "V304 : nouveau menu",
+    items: [
+      { t: "Menu", d: "Les pages sont rangées en trois rubriques : Travailler, Suivre, Régler." },
+      { t: "Planning", d: "Liste, Gantt, Calendrier et Modifications sont réunis sous « Planning », avec des onglets en haut de la page." },
+    ],
+  },
+  {
     id: "2026-11-v303",
     date: "2026-11-11",
     title: "V303 : besoins turbines, titres de mois collants",

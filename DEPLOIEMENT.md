@@ -2191,3 +2191,9 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Maquette `maquettes-design/v303-effets-skills.html` (effets des autres skills) ; choix : apple-design sans cacher le stock.
 - Barre d'outils et titres de mois en verre dépoli, collés en haut ; appui 0,97 sur les logements à remplir. Pas de nouvelle donnée, pas de nouvelle clé `localStorage`.
 - Fichiers : components/TurbinesHub.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v304 — Menu par métier
+
+- Maquette `maquettes-design/v304-menu-acces.html` (onglet « Le menu » validé).
+- Menu en trois rubriques (Travailler, Suivre, Régler) ; Planning réunit Liste, Gantt, Calendrier, Planificateur et Modifications (onglets en tête de page) ; l'Espace Manager n'est plus une entrée : Projets, Pilotage, Calendrier de production, Personnes et site ouvrent ses pages. Droits inchangés. Pas de nouvelle donnée, pas de nouvelle clé `localStorage`.
+- Fichiers : App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
