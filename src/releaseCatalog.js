@@ -806,4 +806,7 @@ export const RELEASE_CATALOG = [
     ["Turbines", "Plus de frise : « Turbine disponible le …, besoin le … » avec la marge ou le retard. Fonds ORC bleu léger, SAV violet léger ; la configuration passe dans le bouton ⋯.", "owner"],
     ["Turbines", "Stock en trois sections séparées : roues équilibrées, injecteurs, turbines libres.", "owner"],
   ] },
+  { v: "303", t: "Besoins turbines : titres de mois collants en verre dépoli", items: [
+    ["Turbines", "Barre d'outils et titres de mois en verre dépoli, collés en haut pendant que les cartes défilent dessous ; les logements à remplir s'enfoncent légèrement à l'appui. Le stock reste visible à gauche.", "owner"],
+  ] },
 ];

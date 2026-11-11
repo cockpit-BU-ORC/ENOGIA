@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v303",
+    date: "2026-11-11",
+    title: "V303 : besoins turbines, titres de mois collants",
+    items: [
+      { t: "Turbines", d: "Les titres de mois restent visibles en haut pendant le défilement des besoins." },
+    ],
+  },
+  {
     id: "2026-11-v302",
     date: "2026-11-10",
     title: "V302 : priorité des besoins turbines",

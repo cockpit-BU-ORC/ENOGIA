@@ -2185,3 +2185,9 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Demandé : turbine installée = roue et injecteur non modifiables ; fonds plus légers (ORC bleu, SAV violet) ; changer l'ordre de priorité et regrouper par mois ; frise peu claire ; retirer « 2 × 100 kW (gamme) » des tuiles ; bien séparer les types de stock.
 - Nouvelle donnée : `planning/prodTurbines.ordre.besoins = { keys, at }` (ordre choisi), même document, règles inchangées. Pas de nouvelle clé `localStorage`.
 - Fichiers : turbineNeeds.js (+test), components/TurbinesHub.js, needsView.test.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v303 — Besoins turbines : titres de mois collants en verre dépoli
+
+- Maquette `maquettes-design/v303-effets-skills.html` (effets des autres skills) ; choix : apple-design sans cacher le stock.
+- Barre d'outils et titres de mois en verre dépoli, collés en haut ; appui 0,97 sur les logements à remplir. Pas de nouvelle donnée, pas de nouvelle clé `localStorage`.
+- Fichiers : components/TurbinesHub.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
