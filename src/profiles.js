@@ -14,7 +14,9 @@ export const ROLES = [
   ["resptest", "Responsable des testeurs", "Les tests de tous les testeurs : au banc, semaine, fiches à signer, résultats ; renseigne l'avancement de chaque test"],
   ["atelier", "Chef d'atelier", "Charge atelier, arrivées et départs, machines en montage, postes de test"],
   ["turbines", "Directeur production turbines", "Turbines prêtes et sans roue, pièces à suivre, dates prévisionnelles, stocks roues et injecteurs"],
-  ["autre", "Autres personnes", "Chiffres clés, prochains départs, où en sont les machines"],
+  ["achats", "Achats", "Achats et approvisionnements ; accueil commun en attendant le sien"], // v305 : rôles de la page Accès
+  ["sav", "SAV / MES", "SAV et mises en service ; accueil commun en attendant le sien"],
+  ["autre", "Autres personnes","Chiffres clés, prochains départs, où en sont les machines"],
 ];
 // v191 : blocs de l'accueil de chaque rôle, cochés par le super admin pour chaque personne (profile.blocks ; absent = tous).
 export const ROLE_BLOCKS = {

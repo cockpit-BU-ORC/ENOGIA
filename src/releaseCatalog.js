@@ -814,4 +814,9 @@ export const RELEASE_CATALOG = [
     ["Planning", "Liste, Gantt, Calendrier, Planificateur et Modifications sont réunis sous « Planning », avec des onglets en haut de la page."],
     ["Menu", "L'Espace Manager n'est plus une entrée à part : ses pages sont dans Projets, Pilotage et Régler.", "admin"],
   ] },
+  { v: "305", t: "Accès par rôle et par page", items: [
+    ["Accès", "Nouvelle page Régler › Accès : un rôle par personne, et pour chaque rôle un niveau par page (Masqué, Lecture, Modifier, Admin), avec l'aperçu du menu.", "owner"],
+    ["Accès", "Les nouveaux accès ne s'appliquent qu'après « Activer » ; d'ici là, chacun garde ses droits d'avant.", "owner"],
+    ["Menu", "Chacun ne voit dans le menu que les pages permises par son rôle (une fois les accès activés)."],
+  ] },
 ];

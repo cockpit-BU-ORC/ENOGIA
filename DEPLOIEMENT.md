@@ -2197,3 +2197,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Maquette `maquettes-design/v304-menu-acces.html` (onglet « Le menu » validé).
 - Menu en trois rubriques (Travailler, Suivre, Régler) ; Planning réunit Liste, Gantt, Calendrier, Planificateur et Modifications (onglets en tête de page) ; l'Espace Manager n'est plus une entrée : Projets, Pilotage, Calendrier de production, Personnes et site ouvrent ses pages. Droits inchangés. Pas de nouvelle donnée, pas de nouvelle clé `localStorage`.
 - Fichiers : App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v305 — Accès par rôle et par page
+
+- Maquette `maquettes-design/v304-menu-acces.html` (onglet « Les accès » validé).
+- Page Régler › Accès (propriétaire seul) : rôle de chaque personne (planning/profiles, le même que l'accueil), niveau par page et par rôle (Masqué, Lecture, Modifier, Admin), aperçu du menu.
+- Nouveau document `planning/access` (`beta_access` en bêta) : `{ on, roles, levels, at, by }`. Rien ne change tant que « Activer les nouveaux accès » n'a pas été cliqué.
+- **Règles Firestore à republier avant d'activer** (firestore.rules, voir SECURITE.md) : sinon les personnes qui reçoivent un accès Modifier sur Turbines, Achats ou Finance ne pourront pas enregistrer, et les anciens admins garderont leurs droits côté base.
+- Après activation : la liste « Accès Manager » (managerEmails) et les listes « Accès » des Turbines et des Achats ne comptent plus.
+- Fichiers : access.js (+test), components/AccessPage.js, App.js, components/ManagerPanel.js, profiles.js, appDocs.js, useAppData.js, firestore.rules, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

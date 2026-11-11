@@ -33,7 +33,7 @@ export function PeriodFilter({yearsAvailable,year,setYear,month,setMonth,showMon
     {showMonth&&<div style={{width:128}}><Select compact value={month==null?"":month} onChange={e=>setMonth(e.target.value===""?null:+e.target.value)} options={[{value:"",label:"Tous les mois"},...MONTHS.map((m,i)=>({value:i,label:m}))]}/></div>}
   </div>);
 }
-export function ManagerPanel({planDoc,initialAddFromImport,onOpenCashPage,onNav,profiles,saveProfiles,jumpFiche,changeLog,data,progress,setProgress,releases,saveReleaseNotes,releaseSelection,saveReleaseSelection,publishRelease,isBeta,initialData,lastInitialImport,lastInitialAdd,onInitialImport,onInitialAdd,initialImporting,etatChoice,setEtatFor,saveProgress,savingProgress,progressSaved,tab,setTab,clientPresence,setClientPresenceFor,closurePeriods,setClosurePeriods,customEtats,setCustomEtats,etatEdits,setEtatEdits,productionExclusions,setProductionExclusionDays,comments,delays,delayTypes,setDelayTypes,addDelayAllocationMulti,deleteDelayAllocation,managerEmails,setManagerEmails,currentUserEmail,authorName,buildVersion,savePjMetaOverride,savePjMetaMulti,addCommentMulti,addComment,resolveComment,deleteComment,turbineDoc,saveTurbines,certifs,setCertifs,compCatalog,setCompCatalog}){
+export function ManagerPanel({kpiOk,calOk,planDoc,initialAddFromImport,onOpenCashPage,onNav,profiles,saveProfiles,jumpFiche,changeLog,data,progress,setProgress,releases,saveReleaseNotes,releaseSelection,saveReleaseSelection,publishRelease,isBeta,initialData,lastInitialImport,lastInitialAdd,onInitialImport,onInitialAdd,initialImporting,etatChoice,setEtatFor,saveProgress,savingProgress,progressSaved,tab,setTab,clientPresence,setClientPresenceFor,closurePeriods,setClosurePeriods,customEtats,setCustomEtats,etatEdits,setEtatEdits,productionExclusions,setProductionExclusionDays,comments,delays,delayTypes,setDelayTypes,addDelayAllocationMulti,deleteDelayAllocation,managerEmails,setManagerEmails,currentUserEmail,authorName,buildVersion,savePjMetaOverride,savePjMetaMulti,addCommentMulti,addComment,resolveComment,deleteComment,turbineDoc,saveTurbines,certifs,setCertifs,compCatalog,setCompCatalog}){
   const [fEtat,setFEtat]=useState(new Set(ALL_ETATS));
   const [kpiStep,setKpiStep]=useState("depart");
   // v275 (demandé : « la répartition par sévérité est-elle seulement sur les machines expédiées ? je dois pouvoir choisir ») : toutes / en cours / expédiées
@@ -349,7 +349,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
   // v217 (demandé : « bien regrouper les pages entre elles si elles ont un rapport ») : Pilotage (KPI, Retards), Projets (Fiches projet,
   // Machines ORC), Réglages (Personnes et accès, Calendrier de production, Nouveautés). Cash in et Turbines sont des pages du site.
   const GROUP_OF={fiche:"fiche",hebdo:"fiche",derives:"derives",serie:"orc",orc:"orc",retards:"retards",retardsKpi:"retards",personnes:"reglages",acces:"reglages",vacances:"calendrier",production:"calendrier",nouveautes:"reglages"};
-  const superAdmin=isSuperAdmin(),owner=canCash(),me=isOwner(); // v224 (demandé : « garder l'accès KPI uniquement pour moi comme Personnes et site ») : me = propriétaire seul → KPI, Personnes et site // v210 : « owner » = accès au Cash in (propriétaire ou admin) // v185 : superAdmin = propriétaire ou admin ; owner = propriétaire (Cash in) // v143 : seul le super admin voit l'onglet « Réglages » (changer le site) ; un admin n'a que les onglets d'usage
+  const superAdmin=isSuperAdmin(),owner=canCash(),me=isOwner(),kpi=me||!!kpiOk,cal=superAdmin||!!calOk; // v305 : KPI (Pilotage) et calendrier de production ouverts par la page Accès // v224 (demandé : « garder l'accès KPI uniquement pour moi comme Personnes et site ») : me = propriétaire seul → KPI, Personnes et site // v210 : « owner » = accès au Cash in (propriétaire ou admin) // v185 : superAdmin = propriétaire ou admin ; owner = propriétaire (Cash in) // v143 : seul le super admin voit l'onglet « Réglages » (changer le site) ; un admin n'a que les onglets d'usage
   // v158 : menu groupé (rail latéral) ; chaque entrée sait où aller. Cash in et Réglages : super admin seulement.
   const [railMin,setRailMin]=useRailCollapsed(),[palOpen,setPalOpen]=useState(false),phone=useIsPhone();
   // v178 : « fiche plein écran » — menu réduit aux icônes (sous-pages au survol) et liste des projets masquée en fondu.
@@ -363,16 +363,16 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
     reglages:[["personnes","Personnes"],["acces","Accès"],["nouveautes","Nouveautés"]], // v283 : accès dans son onglet
   };
   const group=GROUP_OF[tab]||"derives";
-  useEffect(()=>{const old={orc:"serie",imports:"derives",sante:"fiche",suivi:"serie",statut:"serie",cash:"derives",turbines:"derives"}[tab];if(old){setTab(old);return;}if(!me&&(GROUP_OF[tab]||"derives")==="derives"){setTab("fiche");return;}if((!me&&GROUP_OF[tab]==="reglages")||(!superAdmin&&GROUP_OF[tab]==="calendrier")||(!owner&&GROUP_OF[tab]==="cash"))setTab(me?"derives":"fiche");},[superAdmin,owner,me,tab]); // eslint-disable-line react-hooks/exhaustive-deps -- GROUP_OF est fixe, setTab vient du parent ; v212 : anciens onglets mémorisés → leur nouvelle place // un admin qui arrive sur un onglet Réglages (ancien état mémorisé) est ramené aux KPI
+  useEffect(()=>{const old={orc:"serie",imports:"derives",sante:"fiche",suivi:"serie",statut:"serie",cash:"derives",turbines:"derives"}[tab];if(old){setTab(old);return;}if(!kpi&&(GROUP_OF[tab]||"derives")==="derives"){setTab("fiche");return;}if((!me&&GROUP_OF[tab]==="reglages")||(!cal&&GROUP_OF[tab]==="calendrier")||(!owner&&GROUP_OF[tab]==="cash"))setTab(me?"derives":"fiche");},[superAdmin,owner,me,tab]); // eslint-disable-line react-hooks/exhaustive-deps -- GROUP_OF est fixe, setTab vient du parent ; v212 : anciens onglets mémorisés → leur nouvelle place // un admin qui arrive sur un onglet Réglages (ancien état mémorisé) est ramené aux KPI
   const subItems=SUBS[group]||null;
   const subValue=group==="derives"?kpiTab:tab;
   const onSub=id=>{if(group==="derives")setKpiTab(id);else setTab(id);};
   const goSub=(top,id)=>()=>{if(top==="derives"){setTab("derives");setKpiTab(id);}else setTab(id);};
   const entry=(id,label,icon,hint,extra)=>{const subs=SUBS[id]?SUBS[id].map(([sid,sl])=>({id:sid,label:sl,go:goSub(id,sid)})):null;return{id,label,icon,hint,subs,go:subs?subs[0].go:()=>setTab(id),...(extra||{})};};
   const navGroups=[
-    {label:"Pilotage",entries:[...(me?[entry("derives","KPI","chart","synthèse dérives charge avancement",{lock:true})]:[]),entry("retards","Retards","warning","délais allocation")]},
+    {label:"Pilotage",entries:[...(kpi?[entry("derives","KPI","chart","synthèse dérives charge avancement",{lock:true})]:[]),entry("retards","Retards","warning","délais allocation")]},
     {label:"Projets",entries:[entry("fiche","Fiches projet","list","pj commentaires dates point hebdo semaine"),entry("orc","Machines ORC","gauge","n° de série statut état chef pays présence client nobo",{go:()=>setTab("serie")})]},
-    ...(superAdmin?[{label:"Réglages",entries:[entry("calendrier","Calendrier de production","calendar","jours sans production fermetures vacances",{lock:true}),...(me?[entry("reglages","Personnes et site","lock","personnes rôles accès nouveautés",{lock:true})]:[])]}]:[]),
+    ...(cal||me?[{label:"Réglages",entries:[...(cal?[entry("calendrier","Calendrier de production","calendar","jours sans production fermetures vacances",{lock:true})]:[]),...(me?[entry("reglages","Personnes et site","lock","personnes rôles accès nouveautés",{lock:true})]:[])]}]:[]),
   ];
   const activeEntry=navGroups.flatMap(g=>g.entries).find(e=>e.id===group)||navGroups[0].entries[0];
   // v196 : publie les entrées du Manager vers le menu du site (une seule barre de navigation) ; retirées en quittant le Manager.
@@ -423,18 +423,18 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
         la question à laquelle il répond, sa période, sa méthode, et met ses chiffres face aux objectifs (réglables : « Objectifs ») */}
     {/* v281 (maquette « Refonte KPI » validée) : chaque sous-onglet commence par son récit — réponse, preuve (objectifs, graphique), à faire ;
         le contenu détaillé d'avant reste dessous comme « détail » */}
-    {me&&tab==="derives"&&<KpiStory tab={kpiTab} rows={fk} driftRows={driftRows} targets={kpiTg} metrics={{...kpiM,charge:w4h}} saveTargets={saveProfiles?(o=>saveProfiles({...(profiles||{}),kpiTargets:o})):null} sel={kpiSel} periodLabel={perLab} scopeLabel={codirScope==="all"?"toutes les machines":codirScope==="shipped"?"machines expédiées":"machines en cours"}
+    {kpi&&tab==="derives"&&<KpiStory tab={kpiTab} rows={fk} driftRows={driftRows} targets={kpiTg} metrics={{...kpiM,charge:w4h}} saveTargets={me&&saveProfiles?(o=>saveProfiles({...(profiles||{}),kpiTargets:o})):null} sel={kpiSel} periodLabel={perLab} scopeLabel={codirScope==="all"?"toutes les machines":codirScope==="shipped"?"machines expédiées":"machines en cours"}
       weeks6={kpiWeeks(6)} weeks8={kpiWeeks(8)} weeks12={kpiWeeks(12)} notes={(profiles&&profiles.monthNotes)||{}} stepSummary={stepSummary} comparable={comparable} kpiStep={kpiStep} stepLabels={STEP_LABELS} progress={progress||{}} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}}/>}
-    {me&&tab==="derives"&&kpiTab!=="synthese"&&<div style={{fontSize:12,fontWeight:700,color:T.ink500,margin:"4px 0 8px",display:"flex",alignItems:"center",gap:8}}>Détail<span style={{flex:1,height:1,background:T.line}}/>{(kpiTab==="derives"||kpiTab==="bilan")&&<button type="button" aria-expanded={kpiDetail} onClick={()=>setKpiDetail(v=>!v)} className="e-btn e-btn-sec" style={{...btn("sec","sm")}}>{kpiDetail?"Replier le détail":kpiTab==="derives"?"Voir le détail par PJ et par étape":"Voir les jalons de chaque mois"}</button>}</div>}
+    {kpi&&tab==="derives"&&kpiTab!=="synthese"&&<div style={{fontSize:12,fontWeight:700,color:T.ink500,margin:"4px 0 8px",display:"flex",alignItems:"center",gap:8}}>Détail<span style={{flex:1,height:1,background:T.line}}/>{(kpiTab==="derives"||kpiTab==="bilan")&&<button type="button" aria-expanded={kpiDetail} onClick={()=>setKpiDetail(v=>!v)} className="e-btn e-btn-sec" style={{...btn("sec","sm")}}>{kpiDetail?"Replier le détail":kpiTab==="derives"?"Voir le détail par PJ et par étape":"Voir les jalons de chaque mois"}</button>}</div>}
     {/* v281 : l'ancien tableau de pilotage (KpiPilotage) est remplacé par le récit de la Synthèse ci-dessus */}
 
     {/* v274 : bilan mensuel — réalisé des deux derniers mois, objectifs du mois en cours et du suivant */}
-    {me&&tab==="derives"&&kpiTab==="bilan"&&kpiDetail&&<KpiBilan rows={fk} initialByPJ={initialByPJ} profiles={profiles} saveProfiles={saveProfiles} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}}/>}
+    {kpi&&tab==="derives"&&kpiTab==="bilan"&&kpiDetail&&<KpiBilan rows={fk} initialByPJ={initialByPJ} profiles={profiles} saveProfiles={saveProfiles} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}}/>}
     {/* v246 (maquette C de Claude Design) : les 8 prochaines semaines — charge, départs, banc, à décider */}
-    {me&&tab==="derives"&&kpiTab==="semaines"&&<KpiSemaines rows={fk} driftRows={driftRows} closurePeriods={closurePeriods} productionExclusions={productionExclusions} capaWeek={CAPA_ATELIER_SEM} plan={planDoc&&planDoc.plan} hasInitial={hasInitial} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}}/>}
+    {kpi&&tab==="derives"&&kpiTab==="semaines"&&<KpiSemaines rows={fk} driftRows={driftRows} closurePeriods={closurePeriods} productionExclusions={productionExclusions} capaWeek={CAPA_ATELIER_SEM} plan={planDoc&&planDoc.plan} hasInitial={hasInitial} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}}/>}
 
     {/* v219 (demandé : « l'imbrication des KPI est un peu brouillonne ») : répartitions et explorateur sur leur propre sous-page */}
-    {me&&tab==="derives"&&kpiTab==="explorer"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
+    {kpi&&tab==="derives"&&kpiTab==="explorer"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,380px),1fr))",gap:12}}>
         {countByPays.length>0&&<div style={{background:T.card,borderRadius:12,padding:20,border:"1px solid "+T.line}}>
           <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:4}}>Répartition par pays</div>
@@ -481,7 +481,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
       </div>
     </div>}
 
-    {me&&tab==="derives"&&kpiTab==="charge"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
+    {kpi&&tab==="derives"&&kpiTab==="charge"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
       <PlanLoadCard weeks={planWeeks(planDoc&&planDoc.plan,closurePeriods,productionExclusions,12,weekStartOf(today))}/>
         {fd.length>0&&<div style={{background:T.card,borderRadius:12,padding:20,border:"1px solid "+T.line,gridColumn:"1 / -1"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8}}>
@@ -581,7 +581,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
 
     {pendingAdd&&<InitialAddReview parsed={pendingAdd} initialData={initialData} busy={initialImporting} onCancel={()=>setPendingAdd(null)} onConfirm={async(rows,fixRows)=>{await onInitialAdd(rows,fixRows);setPendingAdd(null);}}/>}
 
-    {me&&tab==="derives"&&kpiTab==="derives"&&kpiDetail&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
+    {kpi&&tab==="derives"&&kpiTab==="derives"&&kpiDetail&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
       {/* v246 (maquette B de Claude Design) : la réponse en titre, classement des dérives, départs du mois */}
       <KpiDerivesHead rows={fk} driftRows={driftRows} delays={delays} hasInitial={hasInitial} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}}/>
       {!hasInitial&&<div style={{background:T.amber100,color:T.amber600,borderRadius:12,padding:"16px 16px",fontSize:FZ.sm,display:"flex",alignItems:"center",gap:8}}><NavIcon name="warning" size={16}/>Aucun planning initial — les dérives ne peuvent pas être calculées. Après une publication du Planificateur, ancrez les PJ dans l'initial avec le bandeau proposé.</div>}
@@ -838,7 +838,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
       </>}
     </div>}
 
-    {me&&tab==="derives"&&kpiTab==="avancement"&&<KpiAvancement rows={fk} progress={progress}/>}
+    {kpi&&tab==="derives"&&kpiTab==="avancement"&&<KpiAvancement rows={fk} progress={progress}/>}
     {tab==="retardsKpi"&&<DelayInsights delays={delays} delayTypes={delayTypes}/>}
 
     {tab==="sante"&&<SanteTab rows={fk} onSave={(pj,f)=>savePjMetaOverride&&savePjMetaOverride(pj,f)}/>}

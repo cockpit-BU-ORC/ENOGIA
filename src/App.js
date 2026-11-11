@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect, useRef } from "react"
 import { db, auth, ALLOWED_EMAIL_DOMAIN } from "./firebase";
 import { setResolved as setCommentResolved, peopleOptions, userKey, chefAccount, withChef, lc as lcMention } from "./mentions";
 import { profileOf, pjsOfProfile } from "./profiles";
+import { myAccess, atLeast } from "./access";
 import { TutoVideoModal, tutoActive, tutoSeen, markTutoSeen } from "./components/TutoVideo";
 import { isEstimatePj } from "./changeDiff";
 import { MentionCtx } from "./mentionContext";
@@ -41,7 +42,7 @@ import { listenChangeLog } from "./changeLog";
 // v260 : documents Firestore, bandeau bêta et identité du compte sortis de ce fichier (appDocs.js, components/AppChrome.js)
 import { IS_BETA, DOC_PFX, DOC_REF, INITIAL_DOC_REF, OVERRIDES_DOC_REF, COMMENTS_DOC_REF, PJ_META_SYNC_DOC_REF, PJ_META_OVERRIDES_DOC_REF, DELAYS_DOC_REF, DELAY_TYPES_DOC_REF, MANAGER_EMAILS_DOC_REF, PROFILES_DOC_REF, DEFAULT_DELAY_TYPES } from "./appDocs";
 import { BetaBanner, UserChip } from "./components/AppChrome";
-import { useTurbineDoc, useTestsDoc, useProdTurbines, useDelays, useCashinSync, useAchats } from "./useAppData";
+import { useAccessDoc, useTurbineDoc, useTestsDoc, useProdTurbines, useDelays, useCashinSync, useAchats } from "./useAppData";
 import { useListFilters, filterOptions, filterRows } from "./listFilters";
 // v289 (lot G « rapidité ») : les grandes pages ne sont chargées qu'à leur première ouverture (paquet de départ allégé) ;
 // en attendant, un squelette s'affiche dans la zone principale (Suspense).
@@ -55,9 +56,10 @@ const CommentsView = React.lazy(() => import("./components/CommentsView").then(m
 const CalendarView = React.lazy(() => import("./components/CalendarView").then(m => ({ default: m.CalendarView })));
 const ManagerPanel = React.lazy(() => import("./components/ManagerPanel").then(m => ({ default: m.ManagerPanel })));
 const ChangesView = React.lazy(() => import("./components/ChangesView").then(m => ({ default: m.ChangesView })));
+const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-11-v304-menu-metier";
+const APP_BUILD_VERSION = "2026-11-12-v305-acces";
 
 export default function App(){
   // Utilisateur connecté via Google, restreint aux comptes @enogia.com (null tant que non connecté).
@@ -230,12 +232,19 @@ export default function App(){
   // v261 : filtres de la Liste (listFilters.js)
   const {selEtats,setSelEtats,selGammes,setSelGammes,selMoisArrivee,setSelMoisArrivee,selMoisTests,setSelMoisTests,selMoisFinProd,setSelMoisFinProd,selMoisDepart,setSelMoisDepart,selPJs,setSelPJs,selProjets,setSelProjets,selPays,setSelPays,selChefs,setSelChefs,onlyDrift,setOnlyDrift}=useListFilters();
   const [df,setDf]=useState("date");
-  const [pinOk,setPinOk]=useState(false);
+  const [pinOkL,setPinOk]=useState(false); // droits d'avant : admins du Manager (liste « Accès Manager »)
+  const [profiles,setProfiles]=useState({byEmail:{}}); // v188 (lu plus bas) ; v238 : les personnes ajoutées dans Personnes et rôles sont taguables ; v305 : déclaré ici (le rôle donne les accès)
+  // v305 (page Régler › Accès) : une fois les nouveaux accès activés, chaque page s'ouvre selon le rôle de la personne (accMe[page] = n / r / w / a) ;
+  // accMe = null tant qu'ils ne sont pas activés → droits d'avant. Le propriétaire reste seul super admin (a partout).
+  const {accessDoc,saveAccess}=useAccessDoc(currentUser,authorName);
+  const accMe=useMemo(()=>myAccess(accessDoc,currentUser?profileOf(profiles,currentUser.email).role:"",isOwner),[accessDoc,profiles,currentUser,isOwner]);
+  const accAt=(page,min)=>!!accMe&&atLeast(accMe[page]||"n",min);
+  const pinOk=accMe?(isOwner||accAt("planning","a")||accAt("projets","a")):pinOkL;
   // v185 : droits d'administration complets pour le propriétaire et les admins (accès Manager) — sauf le Cash in (isOwner).
-  const canEditMeta=isOwner||pinOk;
+  const canEditMeta=isOwner||pinOk||accAt("projets","w");
   // v210 : Cash in ouvrable aux admins (chefs de projet) ; v221 (demandé : « Planificateur, Cash in et Turbines restent visibles uniquement par moi pour l'instant ») :
   // réservé au propriétaire tant que CASH_FOR_ADMINS vaut false (le passer à true rouvre le Cash in aux admins, règles Firestore à ouvrir — DEPLOIEMENT v210).
-  const canCash=isOwner||(CASH_FOR_ADMINS&&pinOk);
+  const canCash=accMe?accAt("finance","r"):(isOwner||(CASH_FOR_ADMINS&&pinOk));
   setSuperAdmin(canEditMeta); // pose le rôle avant que les composants ne le lisent (src/roles.js)
   const [progress,setProgress]=useState({});
   const [calSel,setCalSel]=useState(null),[calDay,setCalDay]=useState(null),[calTab,setCalTab]=useState("resume"); // v221 : jour cliqué dans le Calendrier (bouton « production ce jour » de la fiche)
@@ -541,7 +550,6 @@ export default function App(){
   useEffect(()=>{const h=e=>{const pj=e.detail&&e.detail.pj;if(!pj||!pinOkRef.current)return;setCalSel(null);setManagerJump({pj,n:Date.now()});setManagerTab("fiche");setView("manager");};window.addEventListener("enogia:openSynthese",h);return()=>window.removeEventListener("enogia:openSynthese",h);},[]);
   // v153 : registre des comptes déjà connectés au site (planning/knownUsers) → personnes que l'on peut taguer avec @
   const [knownUsers,setKnownUsers]=useState([]);
-  const [profiles,setProfiles]=useState({byEmail:{}}); // v188 (lu plus bas) ; v238 : déclaré ici, les personnes ajoutées dans Personnes et rôles sont taguables
   useEffect(()=>{
     if(!currentUser||!currentUser.email)return;
     const ref=doc(db,"planning","knownUsers");
@@ -636,16 +644,21 @@ export default function App(){
   }),[]);
   // Page « Tests » (rail de gauche) : administrateurs + testeurs de la liste (adresse renseignée) ; les testeurs consultent seulement
   // v238 : le responsable des testeurs (rôle « resptest » dans Personnes et rôles) voit et renseigne les tests de tous les testeurs
-  const isTestLead=!!currentUser&&profileOf(profiles,currentUser.email).role==="resptest";
-  const canSeeTests=!!(pinOk||isTestLead||testerOfEmail(testsDoc,currentUser&&currentUser.email));
+  const isTestLead=accMe?accAt("tests","w"):(!!currentUser&&profileOf(profiles,currentUser.email).role==="resptest");
+  const canSeeTests=!!((accMe?accAt("tests","r"):pinOk)||isTestLead||testerOfEmail(testsDoc,currentUser&&currentUser.email));
+  const testsAdmin=accMe?accAt("tests","a"):pinOk;
   useEffect(()=>{if(view==="tests"&&testsLoaded&&!canSeeTests)setView("table");},[view,testsLoaded,canSeeTests]); // accès retiré ou ancien choix mémorisé
   // v226 : Production turbines — v261 : useAppData.js
   const {prodDoc,prodApi}=useProdTurbines(currentUser,authorName);
   const myMail=String((currentUser&&currentUser.email)||"").toLowerCase();
-  const canProdTurb=!!(isOwner||(prodDoc&&Array.isArray(prodDoc.access)&&prodDoc.access.map(x=>String(x).toLowerCase()).includes(myMail)));
+  const canProdTurbL=!!(isOwner||(prodDoc&&Array.isArray(prodDoc.access)&&prodDoc.access.map(x=>String(x).toLowerCase()).includes(myMail)));
   // v262 : Achats / Appro — propriétaire et adresses de sa liste « access » (Achats › Réglages)
+  const canProdTurb=accMe?accAt("turbines","r"):canProdTurbL,turbEdit=accMe?accAt("turbines","w"):canProdTurbL;
   const {achatsDoc,achatsApi}=useAchats(currentUser,authorName);
-  const canAchats=!!(isOwner||(achatsDoc&&Array.isArray(achatsDoc.access)&&achatsDoc.access.map(x=>String(x).toLowerCase()).includes(myMail)));
+  const canAchatsL=!!(isOwner||(achatsDoc&&Array.isArray(achatsDoc.access)&&achatsDoc.access.map(x=>String(x).toLowerCase()).includes(myMail)));
+  const canAchats=accMe?accAt("achats","r"):canAchatsL,achEdit=accMe?accAt("achats","w"):canAchatsL;
+  const planOk=accMe?accAt("planning","r"):true,comOk=accMe?accAt("comments","r"):true;
+  const projOk=accMe?accAt("projets","r"):pinOk,pilOk=accMe?accAt("pilotage","r"):pinOk,calOk=accMe?accAt("calprod","r"):pinOk,mgrOk=projOk||pilOk||calOk;
 
   // Lecture temps réel des types de retard génériques (configurables par le Manager)
   useEffect(()=>{
@@ -908,27 +921,27 @@ export default function App(){
   // v304 (maquette « menu par métier » validée) : un seul menu en trois rubriques — Travailler, Suivre, Régler. Planning réunit Liste,
   // Gantt, Calendrier, Planificateur et Modifications ; l'Espace Manager disparaît du menu : ses pages vont dans Projets, Pilotage et Régler.
   const PLANNING_VIEWS=["table","gantt","calendar","planner","changes"];
-  const lastPlanRef=useRef("table");if(PLANNING_VIEWS.includes(view))lastPlanRef.current=view;
+  const lastPlanRef=useRef("table");/* v305 */if(PLANNING_VIEWS.includes(view))lastPlanRef.current=view;
   const goMgr=t=>()=>{setManagerTab(t);setView("manager");};
   const mgrOn=tabs=>view==="manager"&&tabs.includes(managerTab);
   const NAV_TREE=[
     {g:"Travailler",items:[
       {id:"home",l:"Aujourd'hui",icon:"home",on:view==="home",go:()=>setView("home")},
-      {id:"planning",l:"Planning",icon:"gantt",on:PLANNING_VIEWS.includes(view),go:()=>setView(lastPlanRef.current),badge:unseenChanges.length,
-        subs:[["table","Liste"],["gantt","Gantt"],["calendar","Calendrier"],...(isOwner?[["planner","Planificateur"]]:[]),["changes","Modifications"]].map(([id,l])=>({id,l,on:view===id,go:()=>setView(id)}))},
+      ...(planOk?[{id:"planning",l:"Planning",icon:"gantt",on:PLANNING_VIEWS.includes(view),go:()=>setView(lastPlanRef.current),badge:unseenChanges.length,
+        subs:[["table","Liste"],["gantt","Gantt"],["calendar","Calendrier"],...(isOwner?[["planner","Planificateur"]]:[]),["changes","Modifications"]].map(([id,l])=>({id,l,on:view===id,go:()=>setView(id)}))}]:[]),
       ...(canSeeTests?[{id:"tests",l:"Tests",icon:"check",on:view==="tests",go:()=>setView("tests")}]:[]),
       ...(canProdTurb?[{id:"turbines",l:"Turbines",icon:"gauge",on:view==="turbines",go:()=>setView("turbines")}]:[]),
       ...(canAchats?[{id:"achats",l:"Achats / Appro",icon:"inbox",on:view==="achats",go:()=>setView("achats")}]:[])]},
     {g:"Suivre",items:[
-      ...(pinOk?[{id:"projets",l:"Projets",icon:"manager",on:mgrOn(["fiche","hebdo","serie","orc"]),go:goMgr("fiche"),
+      ...(projOk?[{id:"projets",l:"Projets",icon:"manager",on:mgrOn(["fiche","hebdo","serie","orc"]),go:goMgr("fiche"),
         subs:[["fiche","Fiches projet"],["hebdo","Point hebdo"],["serie","Machines ORC"]].map(([id,l])=>({id,l,on:mgrOn(id==="serie"?["serie","orc"]:[id]),go:goMgr(id)}))}]:[]),
       ...(canCash?[{id:"cashin",l:"Finance",icon:"euro",on:view==="cashin",go:()=>setView("cashin")}]:[]),
-      ...(pinOk?[{id:"pilotage",l:"Pilotage",icon:"chart",on:mgrOn(["derives","retards","retardsKpi"]),go:goMgr(isOwner?"derives":"retards"),
-        subs:[...(isOwner?[["derives","KPI"]]:[]),["retards","Retards"]].map(([id,l])=>({id,l,on:mgrOn(id==="retards"?["retards","retardsKpi"]:[id]),go:goMgr(id)}))}]:[]),
-      {id:"comments",l:"Commentaires",icon:"comments",on:view==="comments",go:()=>setView("comments")}]},
+      ...(pilOk?[{id:"pilotage",l:"Pilotage",icon:"chart",on:mgrOn(["derives","retards","retardsKpi"]),go:goMgr(isOwner||accMe?"derives":"retards"),
+        subs:[...(isOwner||accMe?[["derives","KPI"]]:[]),["retards","Retards"]].map(([id,l])=>({id,l,on:mgrOn(id==="retards"?["retards","retardsKpi"]:[id]),go:goMgr(id)}))}]:[]),
+      ...(comOk?[{id:"comments",l:"Commentaires",icon:"comments",on:view==="comments",go:()=>setView("comments")}]:[])]},
     {g:"Régler",items:[
-      ...(pinOk?[{id:"calprod",l:"Calendrier de production",icon:"calendar",on:mgrOn(["production","vacances"]),go:goMgr("production")}]:[]),
-      ...(isOwner?[{id:"people",l:"Personnes et site",icon:"settings",on:mgrOn(["personnes","acces","nouveautes"]),go:goMgr("personnes")}]:[])]},
+      ...(calOk?[{id:"calprod",l:"Calendrier de production",icon:"calendar",on:mgrOn(["production","vacances"]),go:goMgr("production")}]:[]),
+      ...(isOwner?[{id:"people",l:"Personnes et site",icon:"settings",on:mgrOn(["personnes","acces","nouveautes"]),go:goMgr("personnes")},{id:"access",l:"Accès",icon:"lock",on:view==="access",go:()=>setView("access")}]:[])]},
   ].filter(g=>g.items.length);
 
   // v159 : menu principal libellé (réductible, mémorisé) + recherche « Aller à… » (Ctrl K) sur toutes les pages
@@ -943,7 +956,7 @@ export default function App(){
   useEffect(()=>{if(!currentUser||!((isOwner&&view==="planner")||(pinOk&&(view==="manager"||view==="home"))))return undefined; // v229 : aussi l'accueil (charge atelier d'après le planificateur)
   return listenPlan(d=>{setPlanDoc(d);setPlanLoaded(true);});},[currentUser,isOwner,pinOk,view]);
   useEffect(()=>{if(view==="planner"&&currentUser&&!isOwner)setView("table");},[view,currentUser,isOwner]);
-  useEffect(()=>{if(!currentUser)return;if((view==="cashin"&&!canCash)||(view==="turbines"&&prodDoc!==null&&!canProdTurb)||(view==="achats"&&achatsDoc!==null&&!canAchats))setView("home");},[view,currentUser,canCash,isOwner,prodDoc,canProdTurb,achatsDoc,canAchats]);
+  useEffect(()=>{if(!currentUser)return;if((view==="access"&&!isOwner)||(PLANNING_VIEWS.includes(view)&&!planOk)||(view==="comments"&&!comOk)||(view==="manager"&&!mgrOk)||(view==="cashin"&&!canCash)||(view==="turbines"&&prodDoc!==null&&!canProdTurb)||(view==="achats"&&achatsDoc!==null&&!canAchats))setView("home");},[view,currentUser,canCash,isOwner,prodDoc,canProdTurb,achatsDoc,canAchats,planOk,comOk,mgrOk]); // eslint-disable-line react-hooks/exhaustive-deps -- PLANNING_VIEWS est fixe
   const [cashFocusApp,setCashFocusApp]=useState(null); // v217 : PJ à afficher dans la page Cash in (depuis une fiche projet)
   // v231 (demandé : « toute machine déjà expédiée a déjà effectué ses tests ») : à l'affichage, une machine expédiée a ses tests
   // validés (forced.auto, « Machine expédiée ») ; rien n'est écrit en base (retiré par saveTests).
@@ -1042,7 +1055,7 @@ export default function App(){
           {currentUser&&<button onClick={()=>setNavPal(true)} title="Aller à… (Ctrl K)" aria-label="Aller à… (Ctrl K)" style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:32,height:32,padding:0,border:"1px solid transparent",borderRadius:8,cursor:"pointer",background:"transparent",color:T.ink500}} onMouseEnter={e=>{e.currentTarget.style.background=T.surfaceAlt;e.currentTarget.style.color=T.ink900;}} onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=T.ink500;}}><NavIcon name="search" size={18}/></button>}
           {currentUser&&<MentionBell pjChanges={myPjChanges} onSeenPjChanges={seePjChanges} onOpenChanges={()=>setView("changes")} video={tutoOn?tutoCfg:null} onOpenVideo={()=>setTutoOpen(true)} assignments={myNewAssign} onSeenAssign={seeAssign} onOpenTests={()=>setView("tests")} comments={comments} me={mentionCtx.me} data={dataWithOverrides} resolveComment={resolveComment} canSeePrivate={pinOk} onOpen={(pj,tab)=>{setCalDay(null);setCalTab(tab||"resume");setCalSel(pj);}}/>} {/* v270 (demandé : « quand on clique sur une notification de commentaire, ouvrir la fiche pop-up à l’endroit des commentaires ») */}
           <button onClick={()=>{setManagerTab("fiche");setView("manager");}} title="Espace Manager" aria-label="Espace Manager" aria-pressed={view==="manager"} style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:32,height:32,padding:0,border:"1px solid "+(view==="manager"?T.teal500+"66":"transparent"),borderRadius:8,cursor:"pointer",background:view==="manager"?T.teal100:"transparent",color:view==="manager"?T.teal600:T.ink500,transition:"background .15s ease, color .15s ease"}} onMouseEnter={e=>{if(view!=="manager"){e.currentTarget.style.background=T.surfaceAlt;e.currentTarget.style.color=T.ink900;}}} onMouseLeave={e=>{if(view!=="manager"){e.currentTarget.style.background="transparent";e.currentTarget.style.color=T.ink500;}}}><NavIcon name="manager" size={19}/></button>
-          {currentUser&&<UserChip user={currentUser} onSignOut={()=>signOut(auth)} role={isOwner?"Super admin":pinOk?"Admin":null}/>}
+          {currentUser&&<UserChip user={currentUser} onSignOut={()=>signOut(auth)} role={isOwner?"Super admin":accMe?null:pinOk?"Admin":null}/>}
         </div>
       </div>
 
@@ -1068,12 +1081,12 @@ export default function App(){
       </div>
     ):(
       <>
-        {view==="manager"?(pinOk?
+        {view==="manager"?(mgrOk?
           <div>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
               <span style={{fontFamily:T.fontDisplay,fontWeight:600,color:T.ink900,fontSize:FZ.lg,display:"flex",alignItems:"center",gap:8}}><NavIcon name="manager" size={20}/>Espace Manager</span>
             </div>
-            <ManagerPanel planDoc={planDoc} initialAddFromImport={initialAddFromImport} changeLog={changeLog} data={dataWithOverrides} progress={progressEff} setProgress={setProgress} releases={releasesAll} saveReleaseNotes={saveReleaseNotes} releaseSelection={releaseSelection} saveReleaseSelection={saveReleaseSelection} publishRelease={publishRelease} isBeta={IS_BETA} initialData={initialData} lastInitialImport={lastInitialImport} lastInitialAdd={lastInitialAdd} onInitialImport={handleInitialImport} onInitialAdd={handleInitialAdd} initialImporting={initialImporting}
+            <ManagerPanel kpiOk={accMe?pilOk:false} calOk={accMe?accAt("calprod","w"):false} planDoc={planDoc} initialAddFromImport={initialAddFromImport} changeLog={changeLog} data={dataWithOverrides} progress={progressEff} setProgress={setProgress} releases={releasesAll} saveReleaseNotes={saveReleaseNotes} releaseSelection={releaseSelection} saveReleaseSelection={saveReleaseSelection} publishRelease={publishRelease} isBeta={IS_BETA} initialData={initialData} lastInitialImport={lastInitialImport} lastInitialAdd={lastInitialAdd} onInitialImport={handleInitialImport} onInitialAdd={handleInitialAdd} initialImporting={initialImporting}
               etatChoice={etatChoiceEff} setEtatFor={setEtatFor} saveProgress={saveProgress} savingProgress={savingProgress} progressSaved={progressSaved}
               tab={managerTab} setTab={setManagerTab} jumpFiche={managerJump} clientPresence={clientPresence} setClientPresenceFor={setClientPresenceFor}
               closurePeriods={closurePeriods} setClosurePeriods={setClosurePeriodsAndSave}
@@ -1130,13 +1143,14 @@ export default function App(){
               selEtats={selEtats} setSelEtats={setSelEtats} allPJs={allPJs} selPJs={selPJs} setSelPJs={setSelPJs}/>}
             {/* v204 (demandé : « un onglet uniquement pour moi, sous Tests ») : le module de planification (src/planner), brouillon séparé du planning ;
                 « Publier » seul modifie le planning lu par tous. Liens entre PJ, dates imposées, une production / un banc à la fois, charge par semaine. */}
+            {view==="access"&&isOwner&&<AccessPage profiles={profiles} saveProfiles={saveProfiles} accessDoc={accessDoc} saveAccess={saveAccess} people={peopleAll} ownerEmails={OWNER_EMAILS}/>}
             {view==="cashin"&&canCash&&<CashInTab authorName={authorName} focus={cashFocusApp} planRows={dataWithOverrides}/>}
-            {view==="achats"&&canAchats&&<PageGuard name="Achats / Appro"><Achats doc={achatsDoc} api={achatsApi} rows={dataWithOverrides.map(r=>({pj:r.pj,nomProjet:getPjMeta(r.pj,r).nomProjet||"",gamme:r.gamme||"",etat:r.etat,arrivee:r.arrivee||null,depart:r.depart||null}))} canEdit owner={isOwner}/></PageGuard>}
+            {view==="achats"&&canAchats&&<PageGuard name="Achats / Appro"><Achats doc={achatsDoc} api={achatsApi} rows={dataWithOverrides.map(r=>({pj:r.pj,nomProjet:getPjMeta(r.pj,r).nomProjet||"",gamme:r.gamme||"",etat:r.etat,arrivee:r.arrivee||null,depart:r.depart||null}))} canEdit={achEdit} owner={isOwner}/></PageGuard>}
             {/* v267 (demandé : « un seul onglet Turbines ») : production (seule saisie) + besoins des ORC (calculés) ; l'ancien pool n'est plus affiché */}
-            {view==="turbines"&&canProdTurb&&<PageGuard name="Turbines"><TurbinesHub doc={prodDoc} api={prodApi} rows={dataWithOverrides} canEdit owner={isOwner} savePjMeta={savePjMetaOverride}/></PageGuard>}
+            {view==="turbines"&&canProdTurb&&<PageGuard name="Turbines"><TurbinesHub doc={prodDoc} api={prodApi} rows={dataWithOverrides} canEdit={turbEdit} owner={isOwner} savePjMeta={savePjMetaOverride}/></PageGuard>}
             {view==="planner"&&isOwner&&<PlannerView productionExclusions={productionExclusions} testers={testsDoc&&Array.isArray(testsDoc.testers)?testsDoc.testers:[]} planLoaded={planLoaded} planDoc={planDoc} rows={dataWithOverrides} closurePeriods={closurePeriods} authorName={authorName}
               onSavePlan={p=>savePlan(p,authorName)} onPublish={async(plan,note,announce)=>{const r=await publishPlan({plan,closurePeriods,productionExclusions,by:authorName,note,announce});/* v224 : un PJ publié depuis le planificateur et absent du planning initial → même bandeau qu’après un import (« Les ancrer dans l’initial ») */if(r&&r.rows&&initialPjsRef.current.size){const fresh=r.rows.filter(x=>x&&x.pj&&x.etat!=="SLOT_LIBRE"&&!isEstimatePj(x.pj)&&!initialPjsRef.current.has(x.pj));setNewVsInitial(fresh.length?{rows:r.rows,pjs:fresh.map(x=>x.pj)}:null);}return r;}} onLoadHistory={loadHistory} onRestorePublication={restorePublication}/>}
-            {view==="tests"&&canSeeTests&&<TestsTab doc={testsView} save={saveTests} data={dataWithOverrides} certifs={certifs} canEdit={pinOk} lead={isTestLead} me={currentUser&&currentUser.email} signApi={signApi}/>}
+            {view==="tests"&&canSeeTests&&<TestsTab doc={testsView} save={saveTests} data={dataWithOverrides} certifs={certifs} canEdit={testsAdmin} lead={isTestLead} me={currentUser&&currentUser.email} signApi={signApi}/>}
             {view==="changes"&&<ChangesView entries={changeLog} onOpenPj={jumpToPj}/>}
             {view==="comments"&&<CommentsView data={filtered} comments={comments} addComment={addComment} deleteComment={deleteComment}
               pinOk={pinOk} addCommentMulti={addCommentMulti} jumpToPj={jumpToPj} authorName={authorName} resolveComment={resolveComment}/>}

@@ -17,19 +17,36 @@ service cloud.firestore {
     function isOwner() { return signedIn() && mail() == 'gabriel.vincent@enogia.com'; }
     function pfx(id) { return id.matches('^beta_.*') ? 'beta_' : ''; }
     function base(id) { return id.replace('^beta_', ''); }
+    // v305 : page Régler › Accès. planning/access = { on, levels: { page: { rôle: 'n' | 'r' | 'w' | 'a' } } } ; le rôle d'une personne est
+    // celui de planning/profiles.byEmail[adresse avec . # $ [ ] / remplacés par _].role (vide = 'autre'). Tant que « on » n'est pas vrai,
+    // seules les anciennes listes comptent (admins du Manager, listes « access » des Turbines et des Achats) ; une fois activé, elles ne
+    // comptent plus et seul le niveau du rôle donne des droits (le propriétaire garde tout).
+    function accRef(id) { return /databases/$(database)/documents/planning/$(pfx(id) + 'access'); }
+    function accOn(id) { return exists(accRef(id)) && get(accRef(id)).data.get('on', false) == true; }
+    function myRole(id) {
+      let p = /databases/$(database)/documents/planning/$(pfx(id) + 'profiles');
+      let r = exists(p) ? get(p).data.get('byEmail', {}).get(mail().replace('[.#$\\[\\]/]', '_'), {}).get('role', '') : '';
+      return r == '' ? 'autre' : r;
+    }
+    function lvl(id, page) { return signedIn() && accOn(id) ? get(accRef(id)).data.get('levels', {}).get(page, {}).get(myRole(id), 'n') : 'n'; }
+    function canRead(id, page) { return lvl(id, page) in ['r', 'w', 'a']; }
+    function canWrite(id, page) { return lvl(id, page) in ['w', 'a']; }
     function isAdmin(id) {
       let ref = /databases/$(database)/documents/planning/$(pfx(id) + 'managerEmails');
-      return isOwner() || (signedIn() && exists(ref)
+      return isOwner() || (signedIn() && !accOn(id) && exists(ref)
         && get(ref).data.get('emails', []).toSet().hasAny([mail(), request.auth.token.email]));
     }
     function prodTurbAccess(id) {
-      return isOwner() || (signedIn() && exists(/databases/$(database)/documents/planning/$(id))
+      return isOwner() || (signedIn() && !accOn(id) && exists(/databases/$(database)/documents/planning/$(id))
         && get(/databases/$(database)/documents/planning/$(id)).data.get('access', []).toSet().hasAny([mail(), request.auth.token.email]));
     }
 
     match /planning/{id} {
       // Cash in complet : propriétaire et admins (v252 : CASH_FOR_ADMINS = true dans roles.js)
       allow read, write: if base(id) in ['cashin', 'cashinLinks'] && isAdmin(id);
+      // v305 : page Finance ouverte par la page Accès (lecture : r, w, a ; écriture : w, a)
+      allow read: if base(id) in ['cashin', 'cashinLinks', 'cashinShared'] && canRead(id, 'finance');
+      allow write: if base(id) in ['cashin', 'cashinLinks'] && canWrite(id, 'finance');
       // Copie réduite du Cash in : écrite par le propriétaire, lue par les admins
       allow read: if base(id) == 'cashinShared' && isAdmin(id);
       allow write: if base(id) == 'cashinShared' && isOwner();
@@ -38,15 +55,17 @@ service cloud.firestore {
       allow read: if signedIn() && !(base(id) in ['cashin', 'cashinLinks', 'cashinShared']);
 
       // Réglages du propriétaire : rôles, dispositions des cadrans, accès Manager, planificateur
-      allow write: if isOwner() && base(id) in ['profiles', 'managerEmails', 'plan', 'planHistory'];
+      allow write: if isOwner() && base(id) in ['profiles', 'managerEmails', 'plan', 'planHistory', 'access'];
 
-      // Production turbines : propriétaire et adresses de sa liste « access »
-      allow write: if base(id) == 'prodTurbines' && prodTurbAccess(id);
-      // v262 : Achats / Appro, même principe (liste « access » du document planning/achats)
-      allow write: if base(id) == 'achats' && prodTurbAccess(id);
+      // Production turbines : propriétaire et adresses de sa liste « access » (v305 : ou rôle « Modifier » / « Admin » sur Turbines)
+      allow write: if base(id) == 'prodTurbines' && (prodTurbAccess(id) || canWrite(id, 'turbines'));
+      // v262 : Achats / Appro, même principe (liste « access » du document planning/achats ; v305 : ou rôle sur Achats)
+      allow write: if base(id) == 'achats' && (prodTurbAccess(id) || canWrite(id, 'achats'));
 
       // Planning publié, planning initial, journal, sauvegardes, types de retard, pool de turbines : admins
-      allow write: if isAdmin(id) && (base(id) in ['current', 'initial', 'initialBackup', 'changeLog', 'importIndex', 'delayTypes', 'turbines']
+      // (v305 : ou rôle « Admin » sur Planning ou Projets, comme les admins du site)
+      allow write: if (isAdmin(id) || lvl(id, 'planning') == 'a' || lvl(id, 'projets') == 'a')
+        && (base(id) in ['current', 'initial', 'initialBackup', 'changeLog', 'importIndex', 'delayTypes', 'turbines']
         || base(id).matches('^backup_.*'));
 
       // Travail de tous les jours (commentaires, tests, signatures, retards, états, fiches PJ, comptes connus) : tout compte ENOGIA

@@ -2,11 +2,25 @@
 // turbines, retards, Cash in). Même code qu'avant, regroupé par document ; App.js n'appelle plus que ces crochets.
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { onSnapshot, setDoc, updateDoc, deleteField } from "firebase/firestore";
-import { TURBINES_DOC_REF, TESTS_DOC_REF, PRODTURB_DOC_REF, DELAYS_DOC_REF, ACHATS_DOC_REF } from "./appDocs";
+import { TURBINES_DOC_REF, TESTS_DOC_REF, PRODTURB_DOC_REF, DELAYS_DOC_REF, ACHATS_DOC_REF, ACCESS_DOC_REF } from "./appDocs";
 import { notify } from "./components/SharedUI";
 import { setCashinDoc, setCashinLinks, getCashinDoc, getCashinLinks, getOrdoPjs, cashGroupsFor } from "./cashinLink";
 import { CASHIN_DOC_REF, CASHIN_LINKS_REF, CASHIN_SHARED_REF, buildSharedCashin } from "./cashinData";
 import { useCashin } from "./useCashin";
+
+// v305 : accès par page (planning/access) — lu par tous les comptes connectés (le menu en dépend), écrit par le super admin seul
+export function useAccessDoc(currentUser, authorName) {
+  const [accessDoc,setAccessDoc]=useState(null);
+  useEffect(()=>{
+    if(!currentUser)return undefined;
+    return onSnapshot(ACCESS_DOC_REF(),snap=>setAccessDoc(snap.exists()?snap.data():{}),err=>{console.warn("access (lecture) :",err&&err.message);setAccessDoc({});});
+  },[currentUser]);
+  const saveAccess=useCallback(async next=>{
+    try{await setDoc(ACCESS_DOC_REF(),{...next,at:new Date().toISOString(),by:authorName||""});return true;}
+    catch(e){console.error(e);notify("Accès non enregistrés : "+e.message);return false;}
+  },[authorName]);
+  return {accessDoc,saveAccess};
+}
 
 // Pool de turbines : lu par le Manager (pinOk), enregistré en bloc
 export function useTurbineDoc(pinOk, authorName) {
