@@ -5,7 +5,7 @@
 // le dernier commentaire et trois actions (commentaires, retard, fiche projet) qui s'ouvrent dans la fenêtre.
 // Fenêtre centrale floutée (téléphone : monte du bas), entrée 240 ms / sortie 180 ms, Échap / clic à côté / croix pour fermer.
 // v265 : contenu refait d'après la maquette B (onglets) — voir RowDetail plus bas.
-import React, { createContext, useContext, useEffect, useRef, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { T, FZF as FZ, inkOn, mixHex, stageSoft } from "../theme";
 import { ETAT_EDITS, getPjMeta, ETAT_META, chefsOf, EpcTag, PresenceChip, presenceKind, presenceFirstDate, presenceDates, CountryFlag, relTime, Avatar } from "../pjMeta";
 import { NavIcon, PjPlate } from "./SharedUI";
@@ -17,6 +17,7 @@ import { contractLate, livrPrevueOf } from "../penalties";
 import { linkedPayments, cashSummary } from "../cashinLink";
 import { canCash } from "../roles";
 import { fmtEur } from "../pjProgress";
+import { turbineOf, achatsOf, ACHAT_ST } from "../pjDossier";
 
 // Données de contexte fournies par App (tests, turbines) pour les pastilles, sans les faire passer par chaque vue.
 export const PjDialogCtx = createContext({ testsDoc: null, turbineDoc: null });
@@ -78,11 +79,17 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
   const nextPay = pays.filter(p => !p.done && !p.epc).sort((a, b) => String(a.factPrevue || a.encPrevue || "9").localeCompare(String(b.factPrevue || b.encPrevue || "9")))[0];
   const ct = pinOk ? contractLate(meta, r.depart, new Date()) : null;
   const livr = livrPrevueOf(meta, r.depart);
+  // v309 (revue, point 3 : « le PJ, centre de tout ») : turbine (Turbines › Besoins) et achats (Achats / Appro) du PJ, en lecture,
+  // pour qui a accès à ces pages (ctx.prodDoc / ctx.achatsDoc fournis par App) ; « Ouvrir » mène à la page d'origine.
+  const turb = useMemo(() => (ctx.prodDoc ? turbineOf(ctx.prodDoc, ctx.rows || [r], r.pj, x => getPjMeta(x.pj, x)) : null), [ctx.prodDoc, ctx.rows, r]);
+  const ach = useMemo(() => (ctx.achatsDoc ? achatsOf(ctx.achatsDoc, r.pj) : null), [ctx.achatsDoc, r.pj]);
+  const openPage = (v, sub) => { if (ctx.openPage) { ctx.openPage(v, sub); if (onClose) onClose(); } };
+  const gapTxt = g => g == null ? "" : g > 0 ? g + " j de marge" : g < 0 ? -g + " j de retard" : "juste à temps";
   const pill = (txt, ink, bg, key) => <span key={key} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontFamily: T.fontLabel, fontSize: 12, fontWeight: 600, color: ink, background: bg, borderRadius: 999, padding: "2px 10px", whiteSpace: "nowrap" }}>{txt}</span>;
   const btn = primary => ({ display: "inline-flex", alignItems: "center", gap: 6, minHeight: 36, padding: "0 14px", borderRadius: 999, border: primary ? "none" : "1px solid " + T.line, background: primary ? T.ink900 : T.card, color: primary ? T.card : T.ink700, fontFamily: T.font, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" });
   const toggle = id => setOpen(o => (o === id ? null : id));
   const doneBg = mixHex(T.card, ETAT_META.SHIPPED.bar, T.mode === "dark" ? .3 : .28);
-  const TABS = [["resume", "Résumé", ""], ...(plan ? [["tests", "Tests", nokAll ? nokAll + " NOK" : "", true]] : []), ...(cash ? [["cash", "Cash", cash.lateN ? cash.lateN + " en retard" : "", true]] : []), ["comments", "Commentaires", pub.length ? String(pub.length) : ""]];
+  const TABS = [["resume", "Résumé", ""], ...(plan ? [["tests", "Tests", nokAll ? nokAll + " NOK" : "", true]] : []), ...(turb ? [["turbine", "Turbine", turb.issues.length ? turb.issues.length + " à voir" : "", true]] : []), ...(ach ? [["achats", "Achats", ach.retards ? ach.retards + " en retard" : "", true]] : []), ...(cash ? [["cash", "Cash", cash.lateN ? cash.lateN + " en retard" : "", true]] : []), ["comments", "Commentaires", pub.length ? String(pub.length) : ""]];
   const tile = { textAlign: "left", border: "1px solid " + T.line, borderRadius: 12, background: T.card, padding: "10px 12px", cursor: "pointer", fontFamily: T.font, color: T.ink900, display: "flex", flexDirection: "column", gap: 4, minWidth: 0 };
   const meter = (p, c) => <span aria-hidden="true" style={{ display: "block", height: 6, borderRadius: 4, background: T.surfaceAlt, overflow: "hidden", marginTop: "auto" }}><span style={{ display: "block", height: "100%", width: Math.max(0, Math.min(100, p)) + "%", background: c }} /></span>;
   const dateTile = (label, value, sub, bad) => <div key={label} style={{ background: T.surface, borderRadius: 12, padding: "8px 12px", minWidth: 0 }}><div style={{ fontFamily: T.fontLabel, fontSize: 12, color: T.ink500 }}>{label}</div><div style={{ fontFamily: T.fontDisplay, fontSize: 19, fontWeight: 600, color: T.ink900, fontVariantNumeric: "tabular-nums" }}>{value || "—"}</div>{sub && <div style={{ fontSize: 11.5, color: bad ? T.red600 : T.ink500 }}>{sub}</div>}</div>;
@@ -128,7 +135,7 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
           {dateTile(shipped ? "Départ" : "Départ prévu", dmy(r.depart), zInit ? "initial " + dmy(zInit) : "", drift > 0)}
           {dateTile("Livraison prévue", dmy(livr), livr ? "sur site client, transport compris" : "transport non renseigné")}
         </div>
-        {(tq || ct || cash) && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 8 }}>
+        {(tq || ct || cash || turb || ach) && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 8 }}>
           {tq && <button type="button" onClick={() => setTab("tests")} style={tile}>
             <span style={{ display: "flex", alignItems: "center", gap: 8 }}><b style={{ fontSize: FZ.sm }}>Tests</b>{tq.total ? pill(tq.ko ? tq.ko + " échec" + (tq.ko > 1 ? "s" : "") : tq.done === tq.total ? "terminés" : "en cours", tq.ko ? T.red600 : tq.done === tq.total ? T.emerald600 : T.amber600, tq.ko ? T.red100 : tq.done === tq.total ? T.emerald100 : T.amber100, "s") : null}</span>
             <span style={{ fontSize: FZ.xs, color: T.ink700 }}>{tq.total ? tq.done + " test" + (tq.done > 1 ? "s" : "") + " sur " + tq.total + " renseigné" + (tq.done > 1 ? "s" : "") : "Aucun test choisi"}</span>
@@ -140,6 +147,17 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
             <span style={{ fontSize: FZ.xs, color: T.ink700 }}>{ct.refLabel} au contrat : {dmy(ct.contract)}</span>
             <span style={{ fontSize: FZ.xs, color: T.ink500 }}>{cashOk ? (ct.amount != null ? "Pénalités estimées : " + fmtEur(ct.amount) : "Pas de conditions de pénalité saisies") : "Prévu : " + dmy(ct.effective)}</span>
           </div>}
+          {turb && <button type="button" onClick={() => setTab("turbine")} style={tile}>
+            <span style={{ display: "flex", alignItems: "center", gap: 8 }}><b style={{ fontSize: FZ.sm }}>Turbine</b>{pill(turb.installees >= turb.want ? "installée" : turb.late ? "en retard" : turb.complete ? "complète" : turb.slots.filter(s => s.allouee).length + " / " + turb.want + " allouée" + (turb.want > 1 ? "s" : ""), turb.late ? T.red600 : turb.installees >= turb.want ? T.emerald600 : T.ink700, turb.late ? T.red100 : turb.installees >= turb.want ? T.emerald100 : T.surfaceAlt, "t")}</span>
+            <span style={{ fontSize: FZ.xs, color: T.ink700 }}>{turb.cfg.l}{turb.slots.some(s => s.num) ? " · " + turb.slots.filter(s => s.num).map(s => s.num).join(", ") : ""}</span>
+            <span style={{ fontSize: FZ.xs, color: turb.issues.length ? T.red600 : T.ink500 }}>{turb.issues.length ? turb.issues[0] : "Besoin le " + dmy(turb.date)}</span>
+          </button>}
+          {ach && <button type="button" onClick={() => setTab("achats")} style={tile}>
+            <span style={{ display: "flex", alignItems: "center", gap: 8 }}><b style={{ fontSize: FZ.sm }}>Achats</b>{pill(ach.retards ? ach.retards + " commande" + (ach.retards > 1 ? "s" : "") + " en retard" : ach.counts.apasser ? ach.counts.apasser + " à commander" : "à jour", ach.retards ? T.red600 : ach.counts.apasser ? T.amber600 : T.emerald600, ach.retards ? T.red100 : ach.counts.apasser ? T.amber100 : T.emerald100, "a")}</span>
+            <span style={{ fontSize: FZ.xs, color: T.ink700 }}>{ach.counts.livre} livrée{ach.counts.livre > 1 ? "s" : ""} sur {ach.lignes} ligne{ach.lignes > 1 ? "s" : ""}</span>
+            <span style={{ fontSize: FZ.xs, color: T.ink500 }}>{ach.pos.length} commande{ach.pos.length > 1 ? "s" : ""} (PO)</span>
+            {meter(ach.lignes ? ach.counts.livre / ach.lignes * 100 : 0, T.emerald500)}
+          </button>}
           {cash && <button type="button" onClick={() => setTab("cash")} style={tile}>
             <span style={{ display: "flex", alignItems: "center", gap: 8 }}><b style={{ fontSize: FZ.sm }}>Cash</b>{pill(cash.lateN ? fmtEur(cash.late) + " en retard" : "à jour", cash.lateN ? T.red600 : T.ink700, cash.lateN ? T.red100 : T.surfaceAlt, "k")}</span>
             <span style={{ fontSize: FZ.xs, color: T.ink700 }}>Encaissé {fmtEur(cash.paid)} sur {fmtEur(cash.total)}</span>
@@ -170,6 +188,30 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
         </div>
         <div style={{ fontSize: FZ.xs, color: T.ink500 }}>{testers.length ? "Testeurs : " + testers.join(", ") + "." : "Aucun testeur affecté."} Le détail se remplit dans la page Tests.</div>
       </>}
+
+      {tab === "turbine" && turb && <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ fontSize: FZ.xs, color: T.ink700 }}>{turb.cfg.l} · besoin le <b>{dmy(turb.date)}</b>{turb.roue ? " · roue prévue " + turb.roue : ""}{turb.inj ? " · injecteur prévu " + turb.inj : ""}</div>
+        {turb.slots.map((s, i) => <div key={i} style={{ display: "grid", gridTemplateColumns: "minmax(120px,1.2fr) repeat(2,minmax(100px,1fr)) minmax(120px,auto)", gap: 8, alignItems: "center", padding: "8px 12px", background: T.surface, borderRadius: 12, fontSize: FZ.xs }}>
+          <span><span style={{ display: "block", color: T.ink500 }}>Turbine{turb.slots.length > 1 ? " " + (i + 1) : ""}</span><b style={{ color: s.allouee ? T.ink900 : T.ink500 }}>{s.num || (s.estNum ? "prochaine libre : " + s.estNum : "à attribuer")}</b></span>
+          <span><span style={{ display: "block", color: T.ink500 }}>Roue</span><b style={{ color: s.roue ? T.ink900 : T.ink500 }}>{s.roue || "—"}</b></span>
+          <span><span style={{ display: "block", color: T.ink500 }}>Injecteur</span><b style={{ color: s.inj ? T.ink900 : T.ink500 }}>{s.inj || "—"}</b></span>
+          <span style={{ textAlign: "right" }}>{s.installee ? pill("Installée le " + dmy(s.installee), T.emerald600, T.emerald100, "i") : s.dispo ? <><span style={{ display: "block", color: T.ink500 }}>{s.estimee ? "estimée" : "disponible"} le {dmy(s.dispo)}</span><b style={{ color: s.ecart < 0 ? T.red600 : s.ecart < 5 ? T.amber600 : T.emerald600 }}>{gapTxt(s.ecart)}</b></> : <span style={{ color: T.ink500 }}>pas de date</span>}</span>
+        </div>)}
+        {turb.issues.length > 0 && <div style={{ fontSize: FZ.xs, color: T.red600 }}>{turb.issues.join(" · ")}</div>}
+        {ctx.openPage && <button type="button" onClick={() => openPage("turbines", "orc")} style={{ ...btn(false), alignSelf: "flex-start" }}>Ouvrir dans Turbines › Besoins</button>}
+      </div>}
+
+      {tab === "achats" && ach && <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))", gap: 8 }}>
+          {ACHAT_ST.filter(([k]) => k !== "nc" || ach.counts.nc).map(([k, l]) => dateTile(l, String(ach.counts[k]), "", k === "nc" && ach.counts.nc > 0))}
+        </div>
+        {ach.pos.length > 0 ? ach.pos.map(p => <div key={p.numero} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 10px", background: T.surface, borderRadius: 8, fontSize: FZ.xs }}>
+          <span style={{ fontFamily: T.fontMono, fontWeight: 600, color: T.ink900 }}>{p.numero}</span>
+          <span style={{ flex: 1, color: T.ink500 }}>{p.lignes} ligne{p.lignes > 1 ? "s" : ""}{p.source === "odoo" ? " · Odoo" : ""}</span>
+          <span style={{ color: p.retard ? T.red600 : T.ink700, fontWeight: p.retard ? 700 : 500 }}>{(ACHAT_ST.find(x => x[0] === p.statut) || ["", ""])[1]}{p.livraison ? " · livraison " + dmy(p.livraison) : ""}{p.retard ? " · en retard" : ""}</span>
+        </div>) : <div style={{ fontSize: FZ.xs, color: T.ink500 }}>Aucune commande (PO) pour l'instant.</div>}
+        {ctx.openPage && <button type="button" onClick={() => openPage("achats")} style={{ ...btn(false), alignSelf: "flex-start" }}>Ouvrir dans Achats / Appro</button>}
+      </div>}
 
       {tab === "cash" && cash && <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         {pays.map(p => <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 10px", background: T.surface, borderRadius: 8, fontSize: FZ.xs }}>

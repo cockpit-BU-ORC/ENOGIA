@@ -2227,3 +2227,9 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Page Régler › Accès en deux sous-pages : Rôles (création, renommage, membres) et Accès par page (un rôle à la fois, niveau par page et par sous-page).
 - `planning/access.levels` contient aussi les sous-pages (« planning.gantt », « tests.catalog »…) ; le niveau d'une page reste le plus haut de ses sous-pages (règles Firestore inchangées depuis la V305 : toujours à republier avant d'activer).
 - Fichiers : access.js (+test), components/AccessPage.js, App.js, ManagerPanel.js, TestsTab.js, TurbinesHub.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v309 — La fiche d'un PJ montre sa turbine et ses achats
+
+- Fiche d'un PJ (Liste, Gantt, Calendrier, accueil) : onglets et tuiles Turbine (Turbines › Besoins) et Achats (Achats / Appro), en lecture, pour les personnes qui ont accès à ces pages ; bouton pour ouvrir la page d'origine.
+- Pas de nouvelle donnée ni de nouvelle clé `localStorage`.
+- Fichiers : pjDossier.js (+test), components/RowDetail.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

@@ -834,4 +834,8 @@ export const RELEASE_CATALOG = [
     ["Accès", "Sous-page Rôles : créer, renommer, supprimer un rôle ; voir ses membres, en ajouter, en retirer.", "owner"],
     ["Accès", "Sous-page Accès par page : un rôle à la fois, un niveau pour chaque page et chaque sous-page, copie depuis un autre rôle, aperçu du menu.", "owner"],
   ] },
+  { v: "309", t: "La fiche d'un PJ montre sa turbine et ses achats", items: [
+    ["Fiche d'un PJ", "Onglet et tuile Turbine : turbines attribuées, roue, injecteur, installée, date de disponibilité face au besoin."],
+    ["Fiche d'un PJ", "Onglet et tuile Achats : lignes par statut, commandes (PO) avec leur livraison et leurs retards."],
+  ] },
 ];

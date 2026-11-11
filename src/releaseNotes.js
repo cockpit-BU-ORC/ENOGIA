@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v309",
+    date: "2026-11-12",
+    title: "V309 : la fiche d'un PJ rassemble tout",
+    items: [
+      { t: "Fiche d'un PJ", d: "Nouveaux onglets Turbine et Achats : où en sont la turbine et les commandes de la machine, sans changer de page." },
+    ],
+  },
+  {
     id: "2026-11-v308",
     date: "2026-11-12",
     title: "V308 : accès par rôle",
