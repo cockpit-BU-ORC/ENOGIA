@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v319",
+    date: "2026-11-12",
+    title: "V319 : réactions et version anglaise",
+    items: [
+      { t: "Commentaires", d: "Plus de « Vu » ni de « Traité » : quand on vous cite, un 👍 suffit, la demande se ferme." },
+      { t: "English", d: "Drapeaux FR / EN en haut à droite : le site passe en anglais, page par page." },
+    ],
+  },
+  {
     id: "2026-11-v318",
     date: "2026-11-12",
     title: "V318 : Production turbines mise à jour",

@@ -4,9 +4,11 @@ import App from './App';
 import { initMotion } from './motion';
 import { initPan } from './pan';
 import { initTips } from './tips';
+import { initI18n } from './i18n';
 
 initMotion(); // v247 : sortie animée et focus clavier communs à toutes les fenêtres
 initPan(); // v259 : clic droit maintenu = faire défiler, partout
+initI18n(); // v319 : version anglaise (drapeaux FR / EN)
 initTips(); // v286 : bulle maison à la place des bulles du navigateur (souris, clavier, doigt)
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

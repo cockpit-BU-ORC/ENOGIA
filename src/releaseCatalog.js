@@ -875,4 +875,8 @@ export const RELEASE_CATALOG = [
   { v: "318", t: "Production turbines : mise à jour de Jérémie", items: [
     ["Turbines", "Production : charge de l'équipe (personnes × heures), lancements lissés sur cette capacité, banc d'essai commun aux deux gammes avec ordre de passage, attentes de table et de banc dans les dates prévisionnelles, retards par étape, cadrans de l'accueil réordonnables, export et import des données."],
   ] },
+  { v: "319", t: "Réactions à la place de Vu / Traité, version anglaise", items: [
+    ["Commentaires", "Plus de boutons « Vu » et « Traité » : quand on vous cite, réagissez d'un emoji ; la demande se ferme et l'auteur voit votre réaction."],
+    ["Langue", "Drapeaux FR / EN en haut à droite : le site passe en anglais (menu, Commentaires, À traiter, états des machines ; les autres pages suivent)."],
+  ] },
 ];

@@ -172,7 +172,7 @@ function Thread({ pj, meta, list, seePrivate, pinOk, me, data, myPjs, seeAll, au
                 {c.private && <Pill tone="warn">privé</Pill>}
                 {grp.length > 0 && <Pill tone="neutral" title={"Aussi envoyé à " + grp.join(", ")}>aussi sur {grp.length > 2 ? grp.slice(0, 2).join(", ") + " +" + (grp.length - 2) : grp.join(", ")}</Pill>}
               </div>
-              <div style={{ fontSize: FZ.sm, color: T.ink900, lineHeight: 1.5, whiteSpace: "pre-wrap", overflowWrap: "anywhere", marginTop: 2 }}>{c.text}</div>
+              <div data-no-i18n="1" style={{ fontSize: FZ.sm, color: T.ink900, lineHeight: 1.5, whiteSpace: "pre-wrap", overflowWrap: "anywhere", marginTop: 2 }}>{c.text}</div>
               {c.linkedDate && <div style={{ marginTop: 4, fontSize: FZ.xs, color: T.ink500 }}>Lié au {fmt(new Date(c.linkedDate))}</div>}
               <CommentMarks c={c} pj={pj} idx={idx} me={me} nameOf={nameOf} resolveComment={resolveComment} />
               <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>

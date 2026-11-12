@@ -20,6 +20,7 @@ import { MultiApplyDialog } from "./MultiApply";
 import { ITEM_STATUS, itemStatus, statusPatch, mitText, mitParts, COMP_STEPS, itemsOf, sortedItems, composantsOf, getDefaultComposants, paiementsOf, compPct, payPct, globalProgress, montantOf, fmtEur } from "../pjProgress";
 import { FicheContratPanel, CertifTag } from "./FicheContrat";
 import { CommentMarks } from "./CommentMarks";
+import { Reactions } from "./Reactions";
 import { livrPrevueOf, contractDatesOf, contractPatch } from "../penalties";
 import { ProdDocCtx, TURB_CFGS, pjCfg, stockTiles, injInfo, maxBouches } from "../turbineNeeds";
 import { FEUX, FeuPicker, feuxOf, worstFeu, feuColor, feuText, feuLabel, NOTE_MAX, useRedGate, redNeeds } from "./Feux";
@@ -717,7 +718,7 @@ function ProjectSummary({rows,pvOf,comments,delays,onPick}){
         {msgs.length===0?<div style={{fontSize:FZ.sm,color:T.ink300,borderTop:"1px solid "+T.line,paddingTop:6}}>Aucun message sur ces machines.</div>:
           msgs.map((c,i)=><button type="button" key={i} onClick={()=>onPick(c.pj)} style={{display:"flex",gap:8,alignItems:"flex-start",width:"100%",textAlign:"left",border:"none",borderTop:"1px solid "+T.line,background:"transparent",padding:"6px 0",cursor:"pointer",fontFamily:T.font,color:T.ink900}}>
             <PjPlate pj={c.pj}/>
-            <span style={{minWidth:0,flex:1}}><span style={{fontSize:FZ.xs,color:T.ink500}}>{c.author||""}{c.date?" · "+fmt(new Date(c.date)):""}</span><span style={{display:"block",fontSize:FZ.sm,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{c.text}</span></span>
+            <span style={{minWidth:0,flex:1}}><span style={{fontSize:FZ.xs,color:T.ink500}}>{c.author||""}{c.date?" · "+fmt(new Date(c.date)):""}</span><span data-no-i18n="1" style={{display:"block",fontSize:FZ.sm,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{c.text}</span></span>
           </button>)}
       </div>
     </div>
@@ -1209,8 +1210,9 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
                         <span style={{fontWeight:700,color:T.teal600,fontSize:FZ.xs,display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>{c.author}{c.private&&<span style={{fontSize:FZ.xs,color:T.amber600,background:T.amber100,borderRadius:4,padding:"1px 6px",fontWeight:700}}>Privé</span>}{others.length>0&&<span style={{fontSize:FZ.xs,color:T.violet600,background:T.violet100,borderRadius:4,padding:"1px 6px",fontWeight:700}}>aussi : {others.join(", ")}</span>}</span>
                         <span style={{fontSize:FZ.xs,color:T.ink300,display:"inline-flex",alignItems:"center",gap:4}}>{new Date(c.date).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})}{deleteComment&&<TrashBtn title="Supprimer ce commentaire" onClick={async()=>{if(await askConfirm({title:"Supprimer ce commentaire ?",message:"Il disparaît pour tout le monde.",confirmLabel:"Supprimer le commentaire",danger:true}))deleteComment(r.pj,c._idx);}}/>}</span>
                       </div>
-                      <div style={{fontSize:FZ.xs,color:T.ink700,whiteSpace:"pre-wrap",marginTop:2}}>{c.text}</div>
-                      {mn.length>0&&<CommentMarks c={c} pj={r.pj} idx={c._idx} me={me} nameOf={nameOf} resolveComment={resolveComment}/>}
+                      <div data-no-i18n="1" style={{fontSize:FZ.xs,color:T.ink700,whiteSpace:"pre-wrap",marginTop:2}}>{c.text}</div>
+                      {mn.length>0&&<CommentMarks c={c} nameOf={nameOf}/>}
+                      <Reactions c={c} pj={r.pj} idx={c._idx}/>
                       {c.linkedDate&&<div style={{marginTop:4,fontSize:FZ.xs,color:T.ink500,fontWeight:600}}>Lié au {fmt(new Date(c.linkedDate))}</div>}
                     </div>);
                   })}

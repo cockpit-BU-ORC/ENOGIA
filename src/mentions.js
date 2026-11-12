@@ -39,7 +39,10 @@ export const isSeenFor = (c, email) => !!(c && Array.isArray(c.seen) && c.seen.s
 export const markOf = (c, email, field) => ((c && Array.isArray(c[field]) && c[field].find(x => lc(x.email) === lc(email))) || null);
 export const isResolvedFor = (c, email) => !!(c && Array.isArray(c.resolved) && c.resolved.some(x => lc(x.email) === lc(email)));
 // Demande ouverte pour cette personne : elle est citée et n'a pas marqué « traité »
-export const isOpenFor = (c, email) => !!email && mentionsOf(c).includes(lc(email)) && !isResolvedFor(c, email);
+// v319 (demandé : « enlever Vu et Traité, laisser uniquement les émojis ») : une réaction de la personne citée ferme la demande ;
+// les anciens « vu » / « traité » enregistrés la ferment aussi.
+export const reactedBy = (c, email) => !!(c && c.reactions && email && Object.values(c.reactions).some(l => (l || []).map(lc).includes(lc(email))));
+export const isOpenFor = (c, email) => !!email && mentionsOf(c).includes(lc(email)) && !isResolvedFor(c, email) && !isSeenFor(c, email) && !reactedBy(c, email);
 export const countOpenFor = (list, email) => (list || []).filter(c => isOpenFor(c, email)).length;
 
 // Nouvelle liste de commentaires après « traité » / « rouvrir »

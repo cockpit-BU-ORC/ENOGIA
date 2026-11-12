@@ -2297,3 +2297,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Export / import JSON dans la page (« Tout remplacer » réservé au propriétaire).
 - Clé `localStorage` : `enogia_prodturb_order` (ordre des cadrans de la page).
 - Fichiers : components/ProdTurbines.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md. Kit régénéré (`npm run kit:jeremie`).
+
+## v319 — Réactions à la place de Vu / Traité, version anglaise (lot 1)
+
+- Commentaires : boutons « Vu » / « Traité » retirés (cloche, À traiter, fiches) ; une réaction de la personne citée ferme la demande (anciens vu / traité toujours lus).
+- Anglais : `src/i18n.js` + dictionnaire `src/i18n/en.js` (traduction de l'affichage à la volée), drapeaux FR / EN dans la barre du haut.
+- Nouvelle clé `localStorage` : `enogia_lang` (fr / en).
+- Fichiers : i18n.js, i18n/en.js (nouveaux), index.js, mentions.js(+test), components/CommentMarks.js, MentionBell.js, InboxPage.js, ManagerFiche.js, ProjectModal.js, CommentsView.js, AppChrome.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

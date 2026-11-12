@@ -8,6 +8,7 @@ import { openMentionsFor, isSeenFor } from "../mentions";
 import { relTime, getPjMeta } from "../pjMeta";
 import { gcalUrl } from "../gcal";
 import { PageHead, Panel, Pill, Btn, PjPlate, EmptyState, NavIcon } from "./SharedUI";
+import { Reactions } from "./Reactions";
 
 const Row = ({ children, first }) => <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "8px 0", borderTop: first ? "none" : "1px solid " + T.line, minHeight: 40 }}>{children}</div>;
 const PjBtn = ({ pj, onClick }) => <button type="button" onClick={onClick} aria-label={"Ouvrir la fiche de " + pj} style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer" }}><PjPlate pj={pj} /></button>;
@@ -49,12 +50,11 @@ export function InboxPage({ me, comments, data, resolveComment, canSeePrivate, o
           <PjBtn pj={pj} onClick={() => onOpen(pj, "comments")} />
           <div style={{ flex: "1 1 320px", minWidth: 0, opacity: seen ? 0.8 : 1 }}>
             <div style={{ fontSize: FZ.xs, color: T.ink500 }}><b style={{ color: T.ink900 }}>{c.author || "Un collègue"}</b> · {nameOf(pj)} · {relTime(c.date)}</div>
-            <div style={{ fontSize: FZ.sm, color: T.ink700, whiteSpace: "pre-wrap", lineHeight: 1.4 }}>{String(c.text || "").length > 260 ? String(c.text).slice(0, 259) + "…" : c.text}</div>
+            <div data-no-i18n="1" style={{ fontSize: FZ.sm, color: T.ink700, whiteSpace: "pre-wrap", lineHeight: 1.4 }}>{String(c.text || "").length > 260 ? String(c.text).slice(0, 259) + "…" : c.text}</div>
           </div>
           <span style={{ display: "inline-flex", gap: 6 }}>
             <Btn size="sm" onClick={() => onOpen(pj, "comments")}>Répondre</Btn>
-            {!seen && <Btn size="sm" onClick={() => resolveComment(pj, idx, me, true, "seen")} title="Montrer à l'auteur que vous l'avez pris en compte">✓ Vu</Btn>}
-            <Btn size="sm" onClick={() => resolveComment(pj, idx, me, true)}>✓ Traité</Btn>
+            <Reactions c={c} pj={pj} idx={idx} />
           </span>
         </Row>; })}
     </Panel>

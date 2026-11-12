@@ -4,11 +4,14 @@ import { openMentionsFor, nameFromEmail, isSeenFor } from "../mentions";
 import { relTime, getPjMeta } from "../pjMeta";
 import { gcalUrl } from "../gcal";
 import { NavIcon } from "./SharedUI";
+import { Reactions } from "./Reactions";
+import { useMentions } from "../mentionContext";
 
 // v152 — Cloche de l'en-tête : les demandes où l'on est cité (@) et qu'on n'a pas encore marquées « traitées », tous PJ confondus.
 // v188 : + les nouvelles affectations aux tests (assignments = [{ pj, at, by, from, to }]), « Vu » les retire, lien Google Agenda.
 // v315 (revue, point 6) : avec onGoInbox, la cloche mène à la page « À traiter » (plus de liste déroulante) et compte aussi les demandes à valider (extra).
-export function MentionBell({ comments, me, data, resolveComment, onOpen, canSeePrivate, assignments, onSeenAssign, onOpenTests, video, onOpenVideo, pjChanges, onSeenPjChanges, onOpenChanges, onGoInbox, extra = 0 }) {
+export function MentionBell({ comments, me, data, onOpen, canSeePrivate, assignments, onSeenAssign, onOpenTests, video, onOpenVideo, pjChanges, onSeenPjChanges, onOpenChanges, onGoInbox, extra = 0 }) {
+  const mctx = useMentions();
   const [open, setOpen] = useState(false);
   const items = useMemo(() => openMentionsFor(comments, me).filter(x => canSeePrivate || !x.c.private), [comments, me, canSeePrivate]); // un compte sans accès Manager ne voit jamais un message privé
   useEffect(() => {
@@ -53,10 +56,10 @@ export function MentionBell({ comments, me, data, resolveComment, onOpen, canSee
     </button>
     {peek && !open && <div role="status" className="enogia-bell-peek" style={{ position: "absolute", right: 0, top: 40, width: 300, zIndex: 9997, background: T.card, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, padding: "10px 12px", transformOrigin: "top right" }}>
       <div style={{ fontSize: FZ.xs, color: T.ink500 }}><b style={{ color: T.ink900 }}>{peek.c.author || "Un collègue"}</b> vous cite · <span style={{ fontFamily: T.fontMono, fontWeight: 700, color: T.ink900 }}>{peek.pj}</span></div>
-      <div style={{ fontSize: FZ.sm, color: T.ink700, margin: "4px 0 8px", lineHeight: 1.4 }}>« {String(peek.c.text || "").length > 140 ? String(peek.c.text).slice(0, 139) + "…" : peek.c.text} »</div>
+      <div data-no-i18n="1" style={{ fontSize: FZ.sm, color: T.ink700, margin: "4px 0 8px", lineHeight: 1.4 }}>« {String(peek.c.text || "").length > 140 ? String(peek.c.text).slice(0, 139) + "…" : peek.c.text} »</div>
       <div style={{ display: "flex", gap: 6 }}>
         <button type="button" onClick={() => { const p = peek; setPeek(null); onOpen(p.pj, "comments"); }} style={{ border: "1px solid " + T.ink900, background: T.ink900, color: T.card, borderRadius: 8, minHeight: 28, padding: "0 12px", fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>Ouvrir</button>
-        <button type="button" onClick={() => { const p = peek; setPeek(null); resolveComment(p.pj, p.idx, me, true, "seen"); }} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, minHeight: 28, padding: "0 12px", fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>✓ Vu</button>
+        <button type="button" onClick={() => { const p = peek; setPeek(null); if (mctx.react) mctx.react(p.pj, p.idx, "👍"); }} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, minHeight: 28, padding: "0 12px", fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>👍 Bien reçu</button>
         <button type="button" aria-label="Fermer l'aperçu" onClick={() => setPeek(null)} style={{ marginLeft: "auto", border: "none", background: "transparent", color: T.ink500, cursor: "pointer", minWidth: 24, minHeight: 24 }}>×</button>
       </div>
     </div>}
@@ -100,8 +103,7 @@ export function MentionBell({ comments, me, data, resolveComment, onOpen, canSee
           <div style={{ fontSize: FZ.xs, color: T.ink700, whiteSpace: "pre-wrap", lineHeight: 1.4 }}><b>{c.author || nameFromEmail("")}</b> : {String(c.text || "").length > 220 ? String(c.text).slice(0, 219) + "…" : c.text}</div>
           <div style={{ display: "flex", gap: 6 }}>
             <button onClick={() => { setOpen(false); onOpen(pj, "comments"); }} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "2px 9px", fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>{canSeePrivate ? "Ouvrir la fiche" : "Ouvrir le PJ"}</button>
-            {!seen && <button onClick={() => resolveComment(pj, idx, me, true, "seen")} title="Montrer à l'auteur que vous l'avez pris en compte" style={{ border: "1px solid " + T.emerald500, background: T.emerald100, color: T.emerald600, borderRadius: 8, padding: "2px 9px", fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>✓ Vu</button>}
-            <button onClick={() => resolveComment(pj, idx, me, true)} style={{ border: "1px solid " + T.violet500, background: T.violet100, color: T.violet600, borderRadius: 8, padding: "2px 9px", fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>✓ Traité</button>
+            <Reactions c={c} pj={pj} idx={idx} />
           </div>
         </div></React.Fragment>); })}
       </div>

@@ -1,4 +1,4 @@
-import { nameFromEmail, mentionOptions, typedMentions, toggleToken, isOpenFor, countOpenFor, setResolved, mailtoFor, openMentionsFor, peopleOptions, mentionQueryAt, suggestMentions, insertMention, firstNameSpan, chefAccount, withChef } from "./mentions";
+import { nameFromEmail, mentionOptions, typedMentions, toggleToken, isOpenFor, countOpenFor, setResolved, mailtoFor, openMentionsFor, peopleOptions, mentionQueryAt, suggestMentions, insertMention, firstNameSpan, chefAccount, withChef, toggleReaction } from "./mentions";
 
 const opts = mentionOptions(["emmy.bourelly@enogia.com", "Gabriel.Vincent@enogia.com", "emmy.bourelly@enogia.com"], "nordine.sakhri@enogia.com");
 
@@ -21,8 +21,10 @@ test("demande ouverte, traitée, rouverte", () => {
   const done = setResolved(list, 0, "emmy.bourelly@enogia.com", true, "2026-10-21T10:00:00Z");
   expect(countOpenFor(done, "emmy.bourelly@enogia.com")).toBe(0);
   expect(done[0].resolved[0].at).toBe("2026-10-21T10:00:00Z");
-  const back = setResolved(done, 0, "emmy.bourelly@enogia.com", false);
-  expect(countOpenFor(back, "emmy.bourelly@enogia.com")).toBe(1); expect(back[0].resolved).toBeUndefined();
+  // v319 : une réaction de la personne citée ferme la demande ; la retirer la rouvre
+  const r1 = toggleReaction(list, 0, "👍", "emmy.bourelly@enogia.com");
+  expect(countOpenFor(r1, "emmy.bourelly@enogia.com")).toBe(0);
+  expect(countOpenFor(toggleReaction(r1, 0, "👍", "emmy.bourelly@enogia.com"), "emmy.bourelly@enogia.com")).toBe(1);
 });
 
 test("mailtoFor : destinataires cités sans soi-même, null si personne", () => {
