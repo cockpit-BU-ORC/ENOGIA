@@ -23,7 +23,7 @@ import { weekStartOf } from "./parsers";
 import { HomeView } from "./components/HomeView";
 import { ProdDocCtx, buildNeeds } from "./turbineNeeds";
 import { planSerials, registerSerialPlan, serialsDue } from "./serialNumbers";
-import { assignSerialsFlow } from "./components/Series";
+import { assignSerialsFlow } from "./assignSerials"; // v317 : pas Series.js (tirerait recharts dans le paquet de départ)
 import { InboxPage } from "./components/InboxPage";
 import { openMentionsFor, isSeenFor, toggleReaction } from "./mentions";
 import { PageGuard } from "./components/PageGuard";
