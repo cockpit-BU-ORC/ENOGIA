@@ -138,3 +138,18 @@ export function withChef(mentions, chef, myEmail) {
   if (chef && chef.email && lc(chef.email) !== lc(myEmail) && !list.includes(lc(chef.email))) list.push(lc(chef.email));
   return list;
 }
+
+// v317 (demandé : « réactions emoji sur les machines, comme un pouce en l'air ») : c.reactions = { "👍": [adresses] }
+export const REACTIONS = ["👍", "✅", "👀", "🙏", "🎉", "❗"];
+export function toggleReaction(list, idx, emoji, email) {
+  const me = lc(email); if (!me || !emoji) return list || [];
+  return (list || []).map((c, i) => {
+    if (i !== idx || !c) return c;
+    const r = { ...(c.reactions || {}) }, cur = (r[emoji] || []).map(lc);
+    const nextE = cur.includes(me) ? cur.filter(x => x !== me) : [...cur, me];
+    if (nextE.length) r[emoji] = nextE; else delete r[emoji];
+    const next = { ...c, reactions: r };
+    if (!Object.keys(r).length) delete next.reactions;
+    return next;
+  });
+}

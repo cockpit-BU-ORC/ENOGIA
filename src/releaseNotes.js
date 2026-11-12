@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v317",
+    date: "2026-11-12",
+    title: "V317 : Commentaires plus simples",
+    items: [
+      { t: "Commentaires", d: "Les machines à gauche, le fil à droite. Filtres À répondre, Mes PJ et Tous : chacun voit d'abord ce qui le concerne." },
+      { t: "Réactions", d: "Un 👍 ou un ✅ suffit souvent : réagissez d'un clic à un commentaire, ici ou dans la fiche d'un PJ." },
+      { t: "Envoyer à…", d: "Le même message peut partir sur plusieurs PJ à la fois." },
+    ],
+  },
+  {
     id: "2026-11-v316",
     date: "2026-11-12",
     title: "V316 : Commentaires dans Opérations",

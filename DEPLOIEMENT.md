@@ -2281,3 +2281,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 ## v316 — Commentaires dans Opérations
 
 - Menu : Commentaires passe de Gestion à Opérations (App.js `NAV_TREE`, access.js).
+
+## v317 — Commentaires simplifiés et réactions
+
+- Page Commentaires réécrite : liste des machines + fil ; filtres À répondre / Mes PJ / Tous (Tous : admins, propriétaire, rôle direction) ; un CdP voit ses PJ et les fils où il est cité.
+- Réactions emoji sur un commentaire : champ `reactions` des commentaires (`planning/comments`, déjà écrit par tous les comptes : règles inchangées).
+- « Envoyer à… » remplace la sélection multiple ; Kanban retiré (CommentsKanban.js supprimé).
+- Nouvelles clés `localStorage` : `enogia_cmt_filter`, `enogia_cmt_seen_<adresse>` (anciennes `enogia_commentsMode` plus lue).
+- Fichiers : components/CommentsView.js, components/Reactions.js (nouveau), commentThreads.js (+test), mentions.js, components/ProjectModal.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

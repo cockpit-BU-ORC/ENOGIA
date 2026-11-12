@@ -867,4 +867,9 @@ export const RELEASE_CATALOG = [
   { v: "316", t: "Commentaires dans Opérations", items: [
     ["Menu", "Commentaires passe dans la rubrique Opérations."],
   ] },
+  { v: "317", t: "Commentaires plus simples et réactions", items: [
+    ["Commentaires", "Une liste des machines et le fil du PJ choisi ; filtres À répondre, Mes PJ et Tous (direction et admins). Un chef de projet voit ses PJ et les fils où on le cite."],
+    ["Réactions", "Réagissez à un commentaire d'un emoji (👍 ✅ 👀 🙏 🎉 ❗), sur la page Commentaires et dans la fiche d'un PJ."],
+    ["Envoyer à…", "Un même message peut partir sur plusieurs PJ depuis le fil (remplace la sélection multiple et le Kanban)."],
+  ] },
 ];

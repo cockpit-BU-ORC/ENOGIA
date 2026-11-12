@@ -1,360 +1,206 @@
+// v317 — page Commentaires simplifiée (maquette maquettes-design/v316-commentaires.html validée : « Go, code-la »).
+// À gauche les machines (filtres À répondre / Mes PJ / Tous), à droite le fil du PJ choisi avec réactions et réponse.
+// Un chef de projet ne voit que ses PJ et les fils où on le cite ; « Tous » = direction et admins (seeAll).
+// Plus de Kanban ni de sélection multiple : « Envoyer à… » ajoute d'autres PJ au message.
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { T, FZ, btn } from "../theme";
+import { T, FZ } from "../theme";
 import { fmt } from "../parsers";
-import { SerieTag, getPjMeta, CountryFlag, relTime, Avatar, PjPlate } from "../pjMeta";
-import { PjChecklist, NavIcon, SuperOnly, pressable } from "./SharedUI";
-import { CommentsKanban } from "./CommentsKanban";
+import { getPjMeta, Avatar, PjPlate, relTime } from "../pjMeta";
+import { PjChecklist, NavIcon, Segmented, Pill, Btn } from "./SharedUI";
 import { MentionPicker, MentionTextarea } from "./MentionPicker";
 import { useMentions } from "../mentionContext";
-import { typedMentions, mentionsOf, isResolvedFor, isOpenFor, lc, nameFromEmail } from "../mentions";
+import { typedMentions, firstNameOf, lc } from "../mentions";
+import { CommentMarks } from "./CommentMarks";
+import { Reactions } from "./Reactions";
+import { threadsOf, filterThreads } from "../commentThreads";
+import { askConfirm } from "../confirm";
 
-// v255 (maquette B « À traiter d'abord » du canevas Claude Design, choisie par Gabriel) : en tête de la page, les demandes qui attendent
-// une réponse = commentaires où quelqu'un est cité (@) et ne l'a pas encore marqué « traité ». « Répondre » ouvre le fil du PJ ;
-// « Marquer traité » pour les demandes qui me citent. Le Kanban et le Fil (vision globale) restent en dessous.
-function OpenAsks({comments,data,seePrivate,options,me,onReply,onResolve}){
-  const [all,setAll]=useState(false);
-  const nameOfEmail=e=>{const o=(options||[]).find(x=>lc(x.email)===lc(e));return o?o.name:nameFromEmail(e);};
-  const list=useMemo(()=>{const out=[];Object.entries(comments||{}).forEach(([pj,cs])=>(cs||[]).forEach((c,idx)=>{if(!c||(c.private&&!seePrivate))return;const open=mentionsOf(c).filter(e=>!isResolvedFor(c,e));if(open.length)out.push({pj,idx,c,open});}));return out.sort((a,b)=>String(b.c.date||"").localeCompare(String(a.c.date||"")));},[comments,seePrivate]);
-  if(!list.length)return <div role="status" style={{margin:"4px 0 12px",padding:"8px 12px",borderRadius:12,border:"1px dashed "+T.line,fontSize:FZ.sm,color:T.ink500,background:T.card}}><b style={{color:T.ink700}}>Aucune demande en attente.</b> Pour demander une réponse à quelqu'un, citez-le avec @ dans un commentaire : la demande s'affichera ici tant qu'il ne l'aura pas marquée « traité ».</div>;
-  const shown=all?list:list.slice(0,6),nom=pj=>{const r=(data||[]).find(x=>x.pj===pj);return r?getPjMeta(pj,r).nomProjet||"":"";};
-  return(<section aria-label="Demandes à traiter" style={{margin:"4px 0 14px"}}>
-    <h2 style={{margin:"0 0 8px",fontSize:FZ.lg,fontWeight:700,color:T.ink900,fontFamily:T.fontDisplay}}>{list.length} demande{list.length>1?"s":""} attend{list.length>1?"ent":""} une réponse</h2>
-    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,340px),1fr))",gap:10}}>
-      {shown.map(({pj,idx,c,open})=>{const mine=isOpenFor(c,me);return(<article key={pj+"-"+idx} style={{background:T.card,border:"1px solid "+T.line,borderTop:"4px solid "+T.violet500,borderRadius:12,padding:"10px 12px",display:"flex",flexDirection:"column",gap:6,minWidth:0}}>
-        <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}><PjPlate pj={pj}/><span style={{fontSize:FZ.xs,color:T.ink500,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{nom(pj)}</span><span style={{marginLeft:"auto",fontSize:FZ.xs,color:T.ink500}}>{relTime(c.date)}</span></div>
-        <p style={{margin:0,fontSize:FZ.sm,color:T.ink900,lineHeight:1.45,whiteSpace:"pre-wrap",display:"-webkit-box",WebkitLineClamp:4,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{c.text}</p>
-        <div style={{fontSize:FZ.xs,color:T.ink500}}>{c.author||"—"} · attend : <b style={{color:T.ink900}}>{open.map(nameOfEmail).join(", ")}</b>{c.private?<span style={{marginLeft:6,color:T.amber600,fontWeight:700}}>privé</span>:null}</div>
-        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-          <button className="e-btn e-btn-sec" type="button" onClick={()=>onReply(pj)} style={{...btn("sec","sm")}}>Répondre</button>
-          {mine&&onResolve&&<button type="button" onClick={()=>onResolve(pj,idx,me,true)} style={{minHeight:30,padding:"0 12px",borderRadius:8,border:"none",background:T.violet100,color:T.violet600,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font}}>✓ Marquer traité</button>}
-        </div>
-      </article>);})}
-    </div>
-    {list.length>6&&<button type="button" onClick={()=>setAll(v=>!v)} style={{marginTop:8,border:"none",background:"transparent",color:T.teal600,fontWeight:700,fontSize:FZ.sm,cursor:"pointer",fontFamily:T.font,padding:0,minHeight:28}}>{all?"Réduire":"Voir les "+(list.length-6)+" autres"}</button>}
-  </section>);
+const ls = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : v; } catch (e) { return d; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* stockage indisponible */ } };
+const dayLabel = iso => {
+  const d = new Date(iso); if (isNaN(d)) return "";
+  const t = new Date(); t.setHours(0, 0, 0, 0); const x = new Date(d); x.setHours(0, 0, 0, 0);
+  const diff = Math.round((t - x) / 864e5);
+  if (diff === 0) return "Aujourd'hui"; if (diff === 1) return "Hier";
+  return d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+};
+const hm = iso => { const d = new Date(iso); return isNaN(d) ? "" : String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); };
+
+function useNarrow(q = "(max-width: 760px)") {
+  const [n, setN] = useState(() => { try { return window.matchMedia(q).matches; } catch (e) { return false; } });
+  useEffect(() => { let m; try { m = window.matchMedia(q); } catch (e) { return undefined; } const f = () => setN(m.matches); m.addEventListener("change", f); return () => m.removeEventListener("change", f); }, [q]);
+  return n;
 }
 
-export function CommentsView({data,comments,addComment,deleteComment,pinOk,addCommentMulti,jumpToPj,authorName,resolveComment}){
-  // Vue Kanban (une colonne par PJ + colonne des commentaires groupés) ou Fil (liste + conversation) —
-  // choix mémorisé.
-  const [mode,setMode]=useState(()=>{try{return localStorage.getItem("enogia_commentsMode")||"kanban";}catch(e){return "kanban";}});
-  const changeMode=m=>{setMode(m);try{localStorage.setItem("enogia_commentsMode",m);}catch(e){}};
-  // Affichage du Kanban (tuiles réduites, 2 étages) et mode "présentation" qui masque les commentaires
-  // privés même en accès Manager (demandé explicitement : ne pas les montrer en partage d'écran).
-  const lsBool=(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:v==="1";}catch(e){return d;}};
-  const [hidePrivate,setHidePrivate]=useState(()=>lsBool("enogia_cmtHidePrivate",false));
-  const flip=(k,set)=>set(v=>{const n=!v;try{localStorage.setItem(k,n?"1":"0");}catch(e){}return n;});
-  const seePrivate=pinOk&&!hidePrivate;
-  const [search,setSearch]=useState("");
-  const [multiSelectMode,setMultiSelectMode]=useState(false);
-  const [viewPjs,setViewPjs]=useState(new Set());
-  const [viewAll,setViewAll]=useState(false);
-  const [authorInput,setAuthorInput]=useState(()=>{try{return localStorage.getItem("enogia_comment_author")||"";}catch(e){return "";}});
-  const author=authorName||authorInput;
-  const [text,setText]=useState("");
-  const [isPrivate,setIsPrivate]=useState(false);
-  const mctx=useMentions();
-  const [err,setErr]=useState("");
-  const [deleteTarget,setDeleteTarget]=useState(null); // {pj,idx}
-  const [pinInput,setPinInput]=useState("");
-  const feedEndRef=useRef(null);
+export function CommentsView({ data, comments, addComment, addCommentMulti, deleteComment, pinOk, seeAll, myPjs, openPj, authorName, resolveComment }) {
+  const mctx = useMentions(), me = mctx.me;
+  const narrow = useNarrow();
+  const seenKey = "enogia_cmt_seen_" + lc(me);
+  const [lastSeen, setLastSeen] = useState(() => { try { return JSON.parse(ls(seenKey, "{}")) || {}; } catch (e) { return {}; } });
+  const [hidePrivate, setHidePrivate] = useState(() => ls("enogia_cmtHidePrivate", "0") === "1");
+  const seePrivate = pinOk && !hidePrivate;
+  const [filter, setFilterS] = useState(() => ls("enogia_cmt_filter", "mine"));
+  const setFilter = f => { setFilterS(f); lsSet("enogia_cmt_filter", f); };
+  const [search, setSearch] = useState("");
+  const [sel, setSel] = useState(null);
+  const [showList, setShowList] = useState(true);
 
-  useEffect(()=>{if(!authorName)try{localStorage.setItem("enogia_comment_author",authorInput);}catch(e){}},[authorInput,authorName]);
+  const pjs = useMemo(() => (data || []).map(r => r.pj), [data]);
+  const metaOf = useMemo(() => { const m = {}; (data || []).forEach(r => { m[r.pj] = getPjMeta(r.pj, r); }); return m; }, [data]);
+  const threads = useMemo(() => threadsOf({ comments, pjs, me, myName: authorName, myPjs, seeAll, seePrivate, lastSeen }), [comments, pjs, me, authorName, myPjs, seeAll, seePrivate, lastSeen]);
+  const eff = filter === "all" && !seeAll ? "mine" : filter;
+  const n = { at: filterThreads(threads, "at").length, mine: filterThreads(threads, "mine").length, all: threads.length };
+  const shown = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    let l = filterThreads(threads, eff);
+    if (q) l = l.filter(t => t.pj.toLowerCase().includes(q) || String((metaOf[t.pj] || {}).nomProjet || "").toLowerCase().includes(q) || (t.last && String(t.last.text || "").toLowerCase().includes(q)));
+    return l;
+  }, [threads, eff, search, metaOf]);
+  useEffect(() => { if (!narrow && shown.length && !shown.some(t => t.pj === sel)) setSel(shown[0].pj); }, [shown, sel, narrow]);
 
-  const allComments=useMemo(()=>{
-    const out=[];
-    Object.entries(comments).forEach(([pj,list])=>list.forEach((c,idx)=>out.push({...c,pj,_idx:idx})));
-    return out;
-  },[comments]);
-  const visibleComments=seePrivate?allComments:allComments.filter(c=>!c.private);
+  // Fil ouvert = lu (sur ce poste)
+  const cur = threads.find(t => t.pj === sel);
+  const curLast = cur && cur.last && cur.last.date;
+  useEffect(() => {
+    if (!sel) return;
+    setLastSeen(prev => { const next = { ...prev, [sel]: new Date().toISOString() }; lsSet(seenKey, JSON.stringify(next)); return next; });
+  }, [sel, curLast, seenKey]);
 
-  // Aperçu par PJ pour la liste de gauche : dernier commentaire visible + total
-  const perPj=useMemo(()=>{
-    const m={};
-    visibleComments.forEach(c=>{
-      if(!m[c.pj])m[c.pj]={count:0,last:null};
-      m[c.pj].count++;
-      if(!m[c.pj].last||new Date(c.date)>new Date(m[c.pj].last.date))m[c.pj].last=c;
-    });
-    return m;
-  },[visibleComments]);
-
-  const sidebarList=useMemo(()=>{
-    const q=search.trim().toLowerCase();
-    let list=data.map(d=>{
-      const meta=getPjMeta(d.pj,d);
-      const info=perPj[d.pj];
-      return {pj:d.pj,meta,count:info?info.count:0,last:info?info.last:null};
-    });
-    if(q)list=list.filter(r=>r.pj.toLowerCase().includes(q)||(r.meta.nomProjet||"").toLowerCase().includes(q));
-    return list.sort((a,b)=>{
-      if(a.last&&b.last)return new Date(b.last.date)-new Date(a.last.date);
-      if(a.last)return -1;
-      if(b.last)return 1;
-      return a.pj.localeCompare(b.pj);
-    });
-  },[data,search,perPj]);
-
-  const feed=useMemo(()=>{
-    const targets=viewAll?new Set(data.map(d=>d.pj)):viewPjs;
-    const raw=visibleComments.filter(c=>targets.has(c.pj)).sort((a,b)=>new Date(a.date)-new Date(b.date));
-    // Un commentaire groupé est dupliqué dans chaque PJ concerné — on n'en affiche qu'une seule fois dans le fil.
-    const seenGroups=new Set();
-    return raw.filter(c=>{
-      if(!c.groupId)return true;
-      if(seenGroups.has(c.groupId))return false;
-      seenGroups.add(c.groupId);
-      return true;
-    });
-  },[visibleComments,viewPjs,viewAll,data]);
-
-  // Commentaires groupés distincts (un seul représentant par groupId), pour la section dédiée de la barre latérale.
-  const groupsList=useMemo(()=>{
-    const m={};
-    visibleComments.forEach(c=>{
-      if(!c.groupId)return;
-      if(!m[c.groupId]||new Date(c.date)>new Date(m[c.groupId].date))m[c.groupId]=c;
-    });
-    return Object.values(m).sort((a,b)=>new Date(b.date)-new Date(a.date));
-  },[visibleComments]);
-
-  useEffect(()=>{feedEndRef.current?.scrollIntoView({block:"end"});},[feed.length,viewPjs,viewAll]);
-
-  const selectSingle=pj=>{setViewAll(false);setViewPjs(new Set([pj]));};
-  const selectAll=()=>{setViewAll(true);setViewPjs(new Set());};
-  const selectGroup=pjList=>{setViewAll(false);setMultiSelectMode(true);setViewPjs(new Set(pjList));};
-
-  const composeTargets=[...viewPjs];
-  const canCompose=!viewAll&&composeTargets.length>0;
-
-  const submit=async ()=>{
-    if(!author.trim()){setErr("Le nom est obligatoire pour publier un commentaire.");return;}
-    if(!text.trim()||!canCompose)return;
-    setErr("");
-    const tagged=typedMentions(text,mctx.options).map(o=>o.email);
-    const ok=composeTargets.length>1
-      ?await addCommentMulti(composeTargets,author,text,null,isPrivate,tagged)
-      :await addComment(composeTargets[0],author,text,null,isPrivate,tagged);
-    if(ok){setText("");setIsPrivate(false);}
-  };
-  const onComposerKeyDown=e=>{
-    if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();submit();}
-  };
-  const confirmDelete=async ()=>{
-    const ok=await deleteComment(deleteTarget.pj,deleteTarget.idx,pinInput);
-    if(ok){setDeleteTarget(null);setPinInput("");}
-  };
-
-  const headerLabel=viewAll?"Tous les commentaires":
-    composeTargets.length===0?null:
-    composeTargets.length===1?composeTargets[0]:
-    composeTargets.length+" PJ sélectionnés";
-
-  const modeToggle=(<div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12,flexWrap:"wrap"}}>
-    <div style={{display:"flex",gap:4,background:T.surfaceAlt,borderRadius:8,padding:3}}>
-      {[["kanban","Kanban"],["fil","Fil"]].map(([k,l])=><button key={k} onClick={()=>changeMode(k)} style={{padding:"4px 12px",borderRadius:8,border:"none",background:mode===k?T.card:"transparent",color:mode===k?T.teal600:T.ink500,fontWeight:700,fontSize:FZ.sm,cursor:"pointer",boxShadow:mode===k?T.shadowSm:"none"}}>{l}</button>)}
+  const pick = pj => { setSel(pj); if (narrow) setShowList(false); };
+  const listCol = (<section aria-label="Machines" style={{ display: "flex", flexDirection: "column", minHeight: 0, background: T.card, border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden" }}>
+    <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 8, borderBottom: "1px solid " + T.line }}>
+      <Segmented label="Filtrer les fils" value={eff} onChange={setFilter} options={[
+        ["at", <span key="a">À répondre <Count n={n.at} bad /></span>],
+        ["mine", <span key="m">Mes PJ <Count n={n.mine} /></span>],
+        ...(seeAll ? [["all", <span key="t">Tous <Count n={n.all} /></span>]] : [])]} />
+      <input type="search" value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher un PJ, un client, un texte…" aria-label="Rechercher un fil"
+        style={{ width: "100%", boxSizing: "border-box", minHeight: 32, padding: "0 10px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font }} />
     </div>
-    {pinOk&&<button onClick={()=>flip("enogia_cmtHidePrivate",setHidePrivate)} title="Masquer les commentaires privés (partage d'écran)" style={{padding:"4px 12px",borderRadius:8,border:"1px solid "+(hidePrivate?T.amber500:T.line),background:hidePrivate?T.amber100:"transparent",color:hidePrivate?T.amber600:T.ink500,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",marginLeft:"auto"}}>{hidePrivate?"Privés masqués":"Masquer les privés"}</button>}
-    {mode==="kanban"&&<input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher un PJ, un projet, un texte…" style={{width:260,padding:"6px 12px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700,background:T.card}}/>}
+    <div style={{ overflowY: "auto", flex: 1 }}>
+      {shown.map(t => { const m = metaOf[t.pj] || {}, on = t.pj === sel;
+        return <button key={t.pj} type="button" onClick={() => pick(t.pj)} aria-current={on ? "true" : undefined} className="e-hov" data-on={on ? "1" : "0"}
+          style={{ display: "grid", gridTemplateColumns: "auto 1fr auto", gap: "2px 8px", alignItems: "center", width: "100%", textAlign: "left", padding: "10px 12px", border: "none", borderBottom: "1px solid " + T.line, borderLeft: "3px solid " + (on ? T.accent : "transparent"), background: on ? T.surfaceAlt : "transparent", cursor: "pointer", fontFamily: T.font, color: T.ink900, "--e-hov-bg": T.surface }}>
+          <PjPlate pj={t.pj} />
+          <span style={{ fontSize: FZ.sm, fontWeight: 600, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.nomProjet || ""}</span>
+          <span style={{ fontSize: FZ.xs, color: T.ink500, whiteSpace: "nowrap" }}>{t.last ? relTime(t.last.date) : ""}</span>
+          <span style={{ gridColumn: "1 / -1", fontSize: FZ.xs, color: T.ink500, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.last ? (t.last.author || "—") + " : " + t.last.text : "Aucun commentaire"}</span>
+          {(t.atMe > 0 || t.newN > 0 || (t.priv && seePrivate)) && <span style={{ gridColumn: "1 / -1", display: "flex", gap: 4, flexWrap: "wrap" }}>
+            {t.atMe > 0 && <Pill tone="violet">@ vous</Pill>}
+            {t.newN > 0 && <Pill tone="info">{t.newN} nouveau{t.newN > 1 ? "x" : ""}</Pill>}
+            {t.priv && seePrivate && <Pill tone="warn">privé</Pill>}
+          </span>}
+        </button>; })}
+      {!shown.length && <div role="status" style={{ padding: 16, fontSize: FZ.sm, color: T.ink500 }}>
+        {eff === "at" ? "Personne ne vous attend : aucune demande ouverte." : search ? "Aucun fil ne correspond à la recherche." : "Aucune machine à afficher."}</div>}
+    </div>
+  </section>);
+
+  const thread = sel ? <Thread key={sel} pj={sel} meta={metaOf[sel] || {}} list={(comments || {})[sel] || []} seePrivate={seePrivate} pinOk={pinOk} me={me}
+    data={data} myPjs={myPjs} seeAll={seeAll} authorName={authorName} addComment={addComment} addCommentMulti={addCommentMulti} deleteComment={deleteComment}
+    resolveComment={resolveComment} openPj={openPj} onBack={narrow ? () => setShowList(true) : null} /> :
+    <div style={{ display: "grid", placeItems: "center", color: T.ink500, fontSize: FZ.sm, background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: 24 }}>Choisissez une machine.</div>;
+
+  return (<div style={{ fontFamily: T.font, display: "flex", flexDirection: "column", gap: 10 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+      <span style={{ fontSize: FZ.sm, color: T.ink500 }}>{seeAll ? "Toutes les machines, et en premier les fils où l'on vous attend." : "Vos PJ et les fils où l'on vous cite."}</span>
+      {pinOk && <button type="button" aria-pressed={hidePrivate} onClick={() => { const v = !hidePrivate; setHidePrivate(v); lsSet("enogia_cmtHidePrivate", v ? "1" : "0"); }} title="Pour un partage d'écran"
+        style={{ marginLeft: "auto", minHeight: 28, padding: "0 10px", borderRadius: 8, border: "1px solid " + (hidePrivate ? T.amber500 : T.line), background: hidePrivate ? T.amber100 : "transparent", color: hidePrivate ? T.amber600 : T.ink500, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>{hidePrivate ? "Privés masqués" : "Masquer les privés"}</button>}
+    </div>
+    {narrow ? (showList || !sel ? listCol : thread) :
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(260px, 340px) minmax(0, 1fr)", gap: 12, height: "calc(100dvh - 210px)", minHeight: 480 }}>{listCol}{thread}</div>}
   </div>);
+}
 
-  const asks=<OpenAsks comments={comments} data={data} seePrivate={seePrivate} options={mctx.options} me={mctx.me} onResolve={resolveComment} onReply={pj=>{setMultiSelectMode(false);selectSingle(pj);changeMode("fil");}}/>;
-  if(mode==="kanban")return(<div style={{fontFamily:T.font}}>
-    {asks}
-    {modeToggle}
-    <CommentsKanban data={data} comments={comments} addComment={addComment} deleteComment={deleteComment} pinOk={seePrivate} isAdmin={pinOk} hidePrivate={hidePrivate} onTogglePrivate={()=>flip("enogia_cmtHidePrivate",setHidePrivate)} authorName={authorName} jumpToPj={jumpToPj} search={search}
-      onOpenThread={pj=>{setMultiSelectMode(false);selectSingle(pj);changeMode("fil");}}
-      onGroupCompose={()=>{setViewAll(false);setMultiSelectMode(true);changeMode("fil");}}/>
-  </div>);
+function Count({ n, bad }) {
+  return <span style={{ marginLeft: 4, fontVariantNumeric: "tabular-nums", color: bad && n ? T.red600 : T.ink500 }}>{n}</span>;
+}
 
-  return(<div style={{fontFamily:T.font}}>
-  {asks}
-  {modeToggle}
-  <div style={{display:"flex",gap:12,fontFamily:T.font,height:"calc(100dvh - 250px)",minHeight:480}}>
+function Thread({ pj, meta, list, seePrivate, pinOk, me, data, myPjs, seeAll, authorName, addComment, addCommentMulti, deleteComment, resolveComment, openPj, onBack }) {
+  const mctx = useMentions();
+  const [text, setText] = useState("");
+  const [isPrivate, setIsPrivate] = useState(false);
+  const [sendTo, setSendTo] = useState(new Set());
+  const [sendOpen, setSendOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const endRef = useRef(null);
+  const items = useMemo(() => list.map((c, idx) => ({ c, idx })).filter(x => x.c && (seePrivate || !x.c.private)).sort((a, b) => String(a.c.date || "").localeCompare(String(b.c.date || ""))), [list, seePrivate]);
+  useEffect(() => { if (endRef.current) endRef.current.scrollIntoView({ block: "end" }); }, [items.length]);
+  const chef = (meta.chefProjet || "").trim();
+  const others = [...sendTo].filter(p => p !== pj);
+  const nameOf = e => ((mctx.options || []).find(o => o.email === e) || {}).name || undefined;
+  const pickData = useMemo(() => { if (seeAll) return data || []; const s = new Set(myPjs || []); return (data || []).filter(r => s.has(r.pj)); }, [data, myPjs, seeAll]);
 
-    {/* ── Liste des fils (par PJ) ── */}
-    <div style={{width:280,flexShrink:0,background:T.card,borderRadius:12,boxShadow:T.shadowMd,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-      <div style={{padding:12,borderBottom:"1px solid "+T.line,display:"flex",flexDirection:"column",gap:8}}>
-        <input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher un PJ, un projet..."
-          style={{width:"100%",padding:"8px 12px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700,boxSizing:"border-box"}}/>
-        <label style={{display:"flex",alignItems:"center",gap:6,fontSize:FZ.xs,color:T.ink500,fontWeight:600,cursor:"pointer"}}>
-          <input type="checkbox" checked={multiSelectMode} onChange={e=>{setMultiSelectMode(e.target.checked);if(!e.target.checked&&viewPjs.size>1){setViewPjs(new Set([...viewPjs].slice(0,1)));}}}/>
-          Sélection multiple (commentaire groupé)
-        </label>
-      </div>
+  const send = async () => {
+    if (!text.trim() || !authorName || busy) return;
+    setBusy(true);
+    const tagged = typedMentions(text, mctx.options).map(o => o.email);
+    const ok = others.length ? await addCommentMulti([pj, ...others], authorName, text, null, isPrivate, tagged) : await addComment(pj, authorName, text, null, isPrivate, tagged);
+    setBusy(false);
+    if (ok) { setText(""); setIsPrivate(false); setSendTo(new Set()); setSendOpen(false); }
+  };
+  const reply = c => {
+    const o = (mctx.options || []).find(x => lc(x.name) === lc(c.author));
+    const tag = o ? "@" + firstNameOf(o) + " " : "";
+    setText(t => (t.startsWith(tag) ? t : tag + t));
+    setTimeout(() => { const el = document.querySelector("#enogia-cmt-compose textarea"); if (el) el.focus(); }, 0);
+  };
+  const del = async idx => { if (await askConfirm({ title: "Supprimer ce commentaire ?", message: "Il disparaît pour tout le monde.", confirmLabel: "Supprimer", danger: true })) deleteComment(pj, idx); };
 
-      {pinOk&&<div {...pressable(selectAll,{"aria-pressed":viewAll})} style={{padding:"8px 12px",cursor:"pointer",background:viewAll?T.teal100:T.card,borderBottom:"1px solid "+T.line,display:"flex",alignItems:"center",gap:8}}>
-        <div style={{width:30,height:30,borderRadius:8,background:T.surface,color:T.teal600,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><NavIcon name="list" size={15}/></div>
-        <div style={{minWidth:0}}>
-          <div style={{fontWeight:700,color:T.ink900,fontSize:FZ.sm}}>Tous les commentaires</div>
-          <div style={{fontSize:FZ.xs,color:T.ink300}}>Vue globale Manager</div>
-        </div>
-      </div>}
-
-      {groupsList.length>0&&<div style={{borderBottom:"1px solid "+T.line}}>
-        <div style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk,padding:"8px 12px 4px"}}>Commentaires groupés ({groupsList.length})</div>
-        <div style={{maxHeight:180,overflowY:"auto"}}>
-          {groupsList.map(g=>{
-            const active=!viewAll&&g.groupPjs.every(p=>viewPjs.has(p))&&viewPjs.size===g.groupPjs.length;
-            return(<div key={g.groupId} {...pressable(()=>selectGroup(g.groupPjs))} className="e-hov" data-on={active?"1":"0"}
-              style={{padding:"8px 12px",cursor:"pointer",background:active?T.violet100:"transparent",display:"flex",alignItems:"center",gap:8,"--e-hov-bg":T.surface}}>
-              <div style={{width:30,height:30,borderRadius:8,background:T.violet100,color:T.violet600,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><NavIcon name="layers" size={15}/></div>
-              <div style={{minWidth:0,flex:1}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:6}}>
-                  <span style={{fontWeight:700,color:T.violet600,fontSize:FZ.xs}}>{g.groupPjs.length} PJ</span>
-                  <span style={{fontSize:FZ.xs,color:T.ink300,flexShrink:0}}>{relTime(g.date)}</span>
-                </div>
-                <div style={{fontSize:FZ.xs,color:T.ink500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{g.text}</div>
+  let lastDay = "";
+  return (<section aria-label={"Fil de " + pj} style={{ display: "flex", flexDirection: "column", minHeight: 0, background: T.card, border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden" }}>
+    <header style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "10px 14px", borderBottom: "1px solid " + T.line }}>
+      {onBack && <Btn size="sm" onClick={onBack} aria-label="Retour à la liste">← Liste</Btn>}
+      <PjPlate pj={pj} />
+      <h2 style={{ margin: 0, fontSize: FZ.lg, fontWeight: 600, fontFamily: T.fontDisplay, color: T.ink900, minWidth: 0 }}>{meta.nomProjet || pj}</h2>
+      {chef && <span style={{ fontSize: FZ.xs, color: T.ink500 }}>CdP {chef}</span>}
+      <span style={{ flex: 1 }} />
+      {openPj && <Btn size="sm" onClick={() => openPj(pj)}>Ouvrir la fiche</Btn>}
+    </header>
+    <div style={{ flex: 1, overflowY: "auto", padding: "12px 14px", display: "flex", flexDirection: "column", gap: 12 }}>
+      {!items.length && <div role="status" style={{ color: T.ink500, fontSize: FZ.sm, padding: "24px 0", textAlign: "center" }}>Pas encore de commentaire sur {pj}. Écrivez le premier ci-dessous ; @ pour citer quelqu'un.</div>}
+      {items.map(({ c, idx }) => {
+        const d = dayLabel(c.date), sep = d !== lastDay; lastDay = d;
+        const grp = Array.isArray(c.groupPjs) ? c.groupPjs.filter(p => p !== pj) : [];
+        return <React.Fragment key={idx}>
+          {sep && <div style={{ alignSelf: "center", fontSize: FZ.xs, color: T.ink500, fontWeight: 600, padding: "2px 10px", borderRadius: 999, background: T.surfaceAlt }}>{d}</div>}
+          <article style={{ display: "flex", gap: 10, padding: c.private ? "8px 10px" : 0, borderRadius: 12, background: c.private ? T.amber100 : "transparent" }}>
+            <Avatar name={c.author} tint={c.private ? T.amber500 : T.teal500} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+                <b style={{ fontSize: FZ.sm, color: T.ink900 }}>{c.author || "—"}</b>
+                <span style={{ fontSize: FZ.xs, color: T.ink500 }}>{hm(c.date)}</span>
+                {c.private && <Pill tone="warn">privé</Pill>}
+                {grp.length > 0 && <Pill tone="neutral" title={"Aussi envoyé à " + grp.join(", ")}>aussi sur {grp.length > 2 ? grp.slice(0, 2).join(", ") + " +" + (grp.length - 2) : grp.join(", ")}</Pill>}
               </div>
-            </div>);
-          })}
-        </div>
-      </div>}
-
-      <div style={{overflowY:"auto",flex:1}}>
-        {sidebarList.map(row=>{
-          const active=viewAll?false:(!multiSelectMode&&viewPjs.has(row.pj));
-          return(<div key={row.pj} {...pressable(()=>{if(!multiSelectMode)selectSingle(row.pj);})}
-            style={{padding:"8px 12px",cursor:multiSelectMode?"default":"pointer",opacity:multiSelectMode?.55:1,background:active?T.teal100:T.card,borderBottom:"1px solid "+T.surface,display:"flex",alignItems:"center",gap:8}}>
-            {row.last?<Avatar name={row.last.author} tint={row.last.private?T.amber500:T.teal500}/>:
-              <div style={{width:30,height:30,borderRadius:"50%",background:T.surfaceAlt,flexShrink:0}}/>}
-            <div style={{minWidth:0,flex:1}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:6}}>
-                <span style={{fontWeight:700,color:T.ink900,fontSize:FZ.sm,display:"flex",alignItems:"center",gap:4,whiteSpace:"nowrap"}}><PjPlate pj={row.pj}/><SerieTag pj={row.pj}/><CountryFlag pays={row.meta.pays} size={11}/></span>
-                {row.last&&<span style={{fontSize:FZ.xs,color:T.ink300,flexShrink:0}}>{relTime(row.last.date)}</span>}
-              </div>
-              <div style={{fontSize:FZ.xs,color:T.ink500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                {row.last?row.last.text:row.meta.nomProjet}
+              <div style={{ fontSize: FZ.sm, color: T.ink900, lineHeight: 1.5, whiteSpace: "pre-wrap", overflowWrap: "anywhere", marginTop: 2 }}>{c.text}</div>
+              {c.linkedDate && <div style={{ marginTop: 4, fontSize: FZ.xs, color: T.ink500 }}>Lié au {fmt(new Date(c.linkedDate))}</div>}
+              <CommentMarks c={c} pj={pj} idx={idx} me={me} nameOf={nameOf} resolveComment={resolveComment} />
+              <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                <Reactions c={c} pj={pj} idx={idx} />
+                <button type="button" onClick={() => reply(c)} className="e-hov-ink" style={{ marginTop: 6, minHeight: 26, padding: "0 8px", border: "none", background: "transparent", color: T.ink500, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font, "--e-hov-ink": T.ink900 }}>Répondre</button>
+                {pinOk && <button type="button" onClick={() => del(idx)} aria-label="Supprimer ce commentaire" title="Supprimer" className="e-hov-ink" style={{ marginTop: 6, minHeight: 26, minWidth: 26, border: "none", background: "transparent", color: T.ink300, cursor: "pointer", "--e-hov-ink": T.red600 }}><NavIcon name="close" size={12} /></button>}
               </div>
             </div>
-            {row.count>0&&<span style={{fontSize:FZ.xs,fontWeight:700,color:T.teal600,background:T.teal100,borderRadius:999,padding:"2px 8px",flexShrink:0}}>{row.count}</span>}
-          </div>);
-        })}
-        {sidebarList.length===0&&<div style={{padding:20,textAlign:"center",color:T.ink300,fontSize:FZ.sm}}>Aucun résultat.</div>}
+          </article>
+        </React.Fragment>; })}
+      <div ref={endRef} />
+    </div>
+    <div id="enogia-cmt-compose" style={{ borderTop: "1px solid " + T.line, padding: "10px 14px", display: "flex", flexDirection: "column", gap: 8 }}>
+      {sendOpen && <div style={{ border: "1px solid " + T.line, borderRadius: 12, padding: 10, background: T.surface }}>
+        <div style={{ fontSize: FZ.xs, color: T.ink500, marginBottom: 6 }}>Envoyer aussi ce message à :</div>
+        <PjChecklist data={pickData.filter(r => r.pj !== pj)} selected={sendTo} onChange={setSendTo} maxHeight={180} />
+      </div>}
+      <MentionTextarea value={text} onChange={e => setText(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+        placeholder="Écrire un commentaire… @ pour citer quelqu'un (Entrée pour envoyer)" aria-label={"Nouveau commentaire sur " + pj} rows={2} maxLength={1000}
+        style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, resize: "vertical" }} />
+      <MentionPicker text={text} pjs={[pj, ...others]} />
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        {pinOk && <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: FZ.xs, color: T.ink500, cursor: "pointer" }}><input type="checkbox" checked={isPrivate} onChange={e => setIsPrivate(e.target.checked)} /> Privé (direction et admins)</label>}
+        <Btn size="sm" aria-expanded={sendOpen} onClick={() => setSendOpen(v => !v)}>{others.length ? "Envoyer à " + (others.length + 1) + " PJ" : "Envoyer à…"}</Btn>
+        <span style={{ flex: 1 }} />
+        {!authorName && <span style={{ fontSize: FZ.xs, color: T.red600 }}>Connectez-vous pour écrire.</span>}
+        <Btn v="pri" size="sm" disabled={!text.trim() || !authorName || busy} onClick={send}>Envoyer</Btn>
       </div>
     </div>
-
-    {/* ── Fil sélectionné / composition groupée ── */}
-    <div style={{flex:1,minWidth:0,background:T.card,borderRadius:12,boxShadow:T.shadowMd,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-      {multiSelectMode?<>
-        <div style={{padding:"12px 20px",borderBottom:"1px solid "+T.line}}>
-          <div style={{fontFamily:T.fontDisplay,fontWeight:300,fontSize:22,letterSpacing:"-.02em",color:T.ink900,marginBottom:10}}>Commentaire groupé — choisir les PJ</div>
-          <PjChecklist data={data} selected={viewPjs} onChange={setViewPjs} maxHeight={220}/>
-        </div>
-        {viewPjs.size>0?<div style={{flex:1,overflowY:"auto",padding:"16px 20px",display:"flex",flexDirection:"column",gap:12}}>
-          {feed.length===0&&<div style={{color:T.ink300,fontSize:FZ.sm,textAlign:"center",padding:"28px 0"}}>Aucun commentaire pour l'instant sur ces PJ.</div>}
-          {feed.map(c=>{
-            const isTarget=deleteTarget&&deleteTarget.pj===c.pj&&deleteTarget.idx===c._idx;
-            return(<div key={c.pj+"-"+c._idx} style={{display:"flex",gap:8}}>
-              <Avatar name={c.author} tint={c.private?T.amber500:T.teal500}/>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap",marginBottom:2}}>
-                  <span onClick={()=>jumpToPj&&jumpToPj(c.pj)} style={{fontWeight:700,fontSize:FZ.sm,color:T.teal600,fontFamily:T.fontMono,whiteSpace:"nowrap",cursor:jumpToPj?"pointer":"default"}}><PjPlate pj={c.pj}/></span><SerieTag pj={c.pj}/>
-                  <span style={{color:T.ink300,fontSize:FZ.xs}}>·</span>
-                  <span style={{fontWeight:600,color:T.ink700,fontSize:FZ.sm}}>{c.author}</span>
-                  {c.private&&<span title="Privé (BU ORC uniquement)" style={{fontSize:FZ.xs,color:T.amber600,background:T.amber100,borderRadius:4,padding:"1px 6px",fontWeight:700}}>Privé</span>}
-                  {c.groupPjs&&(()=>{const others=c.groupPjs.filter(p=>p!==c.pj);return <span style={{fontSize:FZ.xs,color:T.violet600,background:T.violet100,borderRadius:4,padding:"1px 8px",fontWeight:700}}>groupé avec {others.length>3?others.slice(0,3).join(", ")+" +"+(others.length-3):others.join(", ")}</span>;})()}
-                  <span style={{fontSize:FZ.xs,color:T.ink300}}>{relTime(c.date)}</span>
-                  <SuperOnly><button onClick={()=>{setDeleteTarget({pj:c.pj,idx:c._idx});setPinInput("");}} title="Supprimer" style={{background:"none",border:"none",color:T.ink100,cursor:"pointer",fontSize:FZ.xs,padding:0,marginLeft:2}}><NavIcon name="close" size={11}/></button></SuperOnly>
-                </div>
-                <div style={{background:c.private?T.amber100:T.surface,borderRadius:"3px 12px 12px 12px",padding:"8px 12px",display:"inline-block",maxWidth:"100%",fontSize:FZ.sm,color:T.ink700,whiteSpace:"pre-wrap"}}>{c.text}</div>
-                {isTarget&&<div style={{marginTop:7,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
-                  <span style={{fontSize:FZ.xs,fontWeight:700,color:T.ink900}}>Supprimer ce commentaire ?</span>
-                  <button onClick={confirmDelete} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.redFill,color:"#fff",fontSize:FZ.xs,fontWeight:700,cursor:"pointer"}}>Confirmer</button>
-                  <button onClick={()=>setDeleteTarget(null)} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.surface,boxShadow:T.outline,color:T.ink700,fontSize:FZ.xs,cursor:"pointer"}}>Annuler</button>
-                </div>}
-              </div>
-            </div>);
-          })}
-          <div ref={feedEndRef}/>
-        </div>:<div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",color:T.ink300,fontSize:FZ.sm,padding:28,textAlign:"center"}}>Cochez au moins un PJ ci-dessus pour composer un commentaire groupé.</div>}
-
-        {canCompose&&<div style={{borderTop:"1px solid "+T.line,padding:"12px 20px",flexShrink:0}}>
-          <div style={{display:"flex",gap:8,marginBottom:8,alignItems:"center"}}>
-            {authorName?
-              <span style={{fontSize:FZ.xs,color:T.ink500}}>En tant que <strong style={{color:T.ink700}}>{authorName}</strong></span>
-            :<input type="text" value={authorInput} onChange={e=>{setAuthorInput(e.target.value);setErr("");}} placeholder="Votre nom" maxLength={40}
-              style={{width:150,padding:"8px 12px",borderRadius:8,border:"1px solid "+(err?T.red500:T.line),fontSize:FZ.sm,fontFamily:T.font,color:T.ink700}}/>}
-            {pinOk&&<label style={{display:"flex",alignItems:"center",gap:4,fontSize:FZ.xs,color:T.ink500,fontWeight:600,cursor:"pointer"}}>
-              <input type="checkbox" checked={isPrivate} onChange={e=>setIsPrivate(e.target.checked)}/> Privé
-            </label>}
-            {err&&<span style={{fontSize:FZ.xs,color:T.red500,alignSelf:"center"}}>{err}</span>}
-          </div>
-          <div style={{display:"flex",gap:8,alignItems:"flex-end"}}>
-            <MentionTextarea value={text} onChange={e=>setText(e.target.value)} onKeyDown={onComposerKeyDown}
-              placeholder={"Message pour les "+composeTargets.length+" PJ sélectionnés... (Entrée pour envoyer)"}
-              rows={2} maxLength={1000}
-              style={{flex:1,padding:"8px 12px",borderRadius:12,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700,resize:"none"}}/>
-            <button onClick={submit} disabled={!text.trim()} style={{padding:"8px 16px",borderRadius:12,border:"none",background:text.trim()?T.teal500:T.surfaceAlt,color:text.trim()?"#fff":T.ink300,fontSize:FZ.sm,fontWeight:700,cursor:text.trim()?"pointer":"default",flexShrink:0}}>Envoyer</button>
-          </div>
-          <MentionPicker text={text} pjs={composeTargets}/>
-        </div>}
-      </>:!headerLabel?
-        <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:8,color:T.ink300,padding:28,textAlign:"center"}}>
-          <div style={{color:T.ink300}}><NavIcon name="comments" size={30}/></div>
-          <div style={{fontSize:FZ.md,fontWeight:600,color:T.ink500}}>Sélectionnez un PJ pour voir ses commentaires</div>
-          <div style={{fontSize:FZ.sm}}>Ou cochez "Sélection multiple" pour un commentaire groupé sur plusieurs projets.</div>
-        </div>
-      :<>
-        <div style={{padding:"12px 20px",borderBottom:"1px solid "+T.line,display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,flexWrap:"wrap"}}>
-          <div style={{fontFamily:T.fontDisplay,fontWeight:300,fontSize:22,letterSpacing:"-.02em",color:T.ink900}}>{headerLabel}</div>
-          <span style={{fontSize:FZ.xs,color:T.ink300}}>{feed.length} commentaire{feed.length!==1?"s":""}</span>
-        </div>
-
-        <div style={{flex:1,overflowY:"auto",padding:"16px 20px",display:"flex",flexDirection:"column",gap:12}}>
-          {feed.length===0&&<div style={{color:T.ink300,fontSize:FZ.sm,textAlign:"center",padding:"28px 0"}}>Aucun commentaire pour l'instant.</div>}
-          {feed.map(c=>{
-            const isTarget=deleteTarget&&deleteTarget.pj===c.pj&&deleteTarget.idx===c._idx;
-            return(<div key={c.pj+"-"+c._idx} style={{display:"flex",gap:8}}>
-              <Avatar name={c.author} tint={c.private?T.amber500:T.teal500}/>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap",marginBottom:2}}>
-                  <span onClick={()=>jumpToPj&&jumpToPj(c.pj)} style={{fontWeight:700,fontSize:FZ.sm,color:T.teal600,fontFamily:T.fontMono,whiteSpace:"nowrap",cursor:jumpToPj?"pointer":"default"}}><PjPlate pj={c.pj}/></span><SerieTag pj={c.pj}/>
-                  <span style={{color:T.ink300,fontSize:FZ.xs}}>·</span>
-                  <span style={{fontWeight:600,color:T.ink700,fontSize:FZ.sm}}>{c.author}</span>
-                  {c.private&&<span title="Privé (BU ORC uniquement)" style={{fontSize:FZ.xs,color:T.amber600,background:T.amber100,borderRadius:4,padding:"1px 6px",fontWeight:700}}>Privé</span>}
-                  {c.groupPjs&&(()=>{const others=c.groupPjs.filter(p=>p!==c.pj);return <span style={{fontSize:FZ.xs,color:T.violet600,background:T.violet100,borderRadius:4,padding:"1px 8px",fontWeight:700}}>groupé avec {others.length>3?others.slice(0,3).join(", ")+" +"+(others.length-3):others.join(", ")}</span>;})()}
-                  <span style={{fontSize:FZ.xs,color:T.ink300}}>{relTime(c.date)}</span>
-                  <SuperOnly><button onClick={()=>{setDeleteTarget({pj:c.pj,idx:c._idx});setPinInput("");}} title="Supprimer" style={{background:"none",border:"none",color:T.ink100,cursor:"pointer",fontSize:FZ.xs,padding:0,marginLeft:2}}><NavIcon name="close" size={11}/></button></SuperOnly>
-                </div>
-                <div style={{background:c.private?T.amber100:T.surface,borderRadius:"3px 12px 12px 12px",padding:"8px 12px",display:"inline-block",maxWidth:"100%",fontSize:FZ.sm,color:T.ink700,whiteSpace:"pre-wrap"}}>{c.text}</div>
-                {c.linkedDate&&<div style={{marginTop:4,fontSize:FZ.xs,color:T.ink500,fontWeight:600}}>Lié au {fmt(new Date(c.linkedDate))}</div>}
-                {isTarget&&<div style={{marginTop:7,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
-                  <span style={{fontSize:FZ.xs,fontWeight:700,color:T.ink900}}>Supprimer ce commentaire ?</span>
-                  <button onClick={confirmDelete} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.redFill,color:"#fff",fontSize:FZ.xs,fontWeight:700,cursor:"pointer"}}>Confirmer</button>
-                  <button onClick={()=>setDeleteTarget(null)} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.surface,boxShadow:T.outline,color:T.ink700,fontSize:FZ.xs,cursor:"pointer"}}>Annuler</button>
-                </div>}
-              </div>
-            </div>);
-          })}
-          <div ref={feedEndRef}/>
-        </div>
-
-        {canCompose?<div style={{borderTop:"1px solid "+T.line,padding:"12px 20px",flexShrink:0}}>
-          <div style={{display:"flex",gap:8,marginBottom:8,alignItems:"center"}}>
-            {authorName?
-              <span style={{fontSize:FZ.xs,color:T.ink500}}>En tant que <strong style={{color:T.ink700}}>{authorName}</strong></span>
-            :<input type="text" value={authorInput} onChange={e=>{setAuthorInput(e.target.value);setErr("");}} placeholder="Votre nom" maxLength={40}
-              style={{width:150,padding:"8px 12px",borderRadius:8,border:"1px solid "+(err?T.red500:T.line),fontSize:FZ.sm,fontFamily:T.font,color:T.ink700}}/>}
-            {pinOk&&<label style={{display:"flex",alignItems:"center",gap:4,fontSize:FZ.xs,color:T.ink500,fontWeight:600,cursor:"pointer"}}>
-              <input type="checkbox" checked={isPrivate} onChange={e=>setIsPrivate(e.target.checked)}/> Privé
-            </label>}
-            {err&&<span style={{fontSize:FZ.xs,color:T.red500,alignSelf:"center"}}>{err}</span>}
-          </div>
-          <div style={{display:"flex",gap:8,alignItems:"flex-end"}}>
-            <MentionTextarea value={text} onChange={e=>setText(e.target.value)} onKeyDown={onComposerKeyDown}
-              placeholder="Écrire un commentaire... (Entrée pour envoyer)"
-              rows={2} maxLength={1000}
-              style={{flex:1,padding:"8px 12px",borderRadius:12,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700,resize:"none"}}/>
-            <button onClick={submit} disabled={!text.trim()} style={{padding:"8px 16px",borderRadius:12,border:"none",background:text.trim()?T.teal500:T.surfaceAlt,color:text.trim()?"#fff":T.ink300,fontSize:FZ.sm,fontWeight:700,cursor:text.trim()?"pointer":"default",flexShrink:0}}>Envoyer</button>
-          </div>
-          <MentionPicker text={text} pjs={composeTargets}/>
-        </div>
-        :<div style={{borderTop:"1px solid "+T.line,padding:"12px 20px",flexShrink:0,fontSize:FZ.sm,color:T.ink300,textAlign:"center"}}>
-          Sélectionnez un PJ pour écrire un message.
-        </div>}
-      </>}
-    </div>
-  </div>
-  </div>);
+  </section>);
 }

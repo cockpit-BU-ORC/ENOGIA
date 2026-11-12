@@ -25,7 +25,7 @@ import { ProdDocCtx, buildNeeds } from "./turbineNeeds";
 import { planSerials, registerSerialPlan, serialsDue } from "./serialNumbers";
 import { assignSerialsFlow } from "./components/Series";
 import { InboxPage } from "./components/InboxPage";
-import { openMentionsFor, isSeenFor } from "./mentions";
+import { openMentionsFor, isSeenFor, toggleReaction } from "./mentions";
 import { PageGuard } from "./components/PageGuard";
 import { ArrangeCtx } from "./components/Arrange"; // v235 : cadrans partagés, réglés par le propriétaire
 import { backdropStyle } from "./pageBackdrop"; // v225 : un fond léger par page
@@ -63,7 +63,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-12-v316-commentaires-operations";
+const APP_BUILD_VERSION = "2026-11-12-v317-commentaires-simples";
 
 export default function App(){
   // Utilisateur connecté via Google, restreint aux comptes @enogia.com (null tant que non connecté).
@@ -572,13 +572,21 @@ export default function App(){
   const peopleAll=useMemo(()=>peopleOptions(knownUsers,managerEmails,currentUser&&currentUser.email,currentUser&&currentUser.displayName,profiles),[knownUsers,managerEmails,currentUser,profiles]);
   const chefOfRef=useRef(()=>({name:"",account:null}));
   chefOfRef.current=pj=>{const row=dataRef.current.find(r=>r.pj===pj);const name=row?(getPjMeta(pj,row).chefProjet||""):"";return{name,account:chefAccount(name,peopleAll)};};
-  const mentionCtx=useMemo(()=>({options:peopleOptions(knownUsers,[],currentUser&&currentUser.email,currentUser&&currentUser.displayName,profiles),me:lcMention(currentUser&&currentUser.email),chefOf:pj=>chefOfRef.current(pj)}),[knownUsers,currentUser,profiles]);
+  const reactRef=useRef(null);
+  const mentionCtx=useMemo(()=>({options:peopleOptions(knownUsers,[],currentUser&&currentUser.email,currentUser&&currentUser.displayName,profiles),me:lcMention(currentUser&&currentUser.email),chefOf:pj=>chefOfRef.current(pj),react:currentUser?((pj,idx,emoji)=>reactRef.current&&reactRef.current(pj,idx,emoji)):null}),[knownUsers,currentUser,profiles]);
   const resolveComment=useCallback(async (pj,idx,email,on,field)=>{ // v271 : field = "seen" pour « Vu »
     const nextAll={...comments,[pj]:setCommentResolved(comments[pj]||[],idx,email,on,new Date().toISOString(),field||"resolved")};
     try{await setDoc(COMMENTS_DOC_REF(),{byPj:nextAll},{merge:true});return true;}
     catch(e){console.error(e);notify("Erreur lors de l'enregistrement : "+e.message);return false;}
   },[comments]);
 
+  // v317 : réactions emoji sur un commentaire (comments[PJ][i].reactions)
+  reactRef.current=async (pj,idx,emoji)=>{
+    if(!currentUser||!currentUser.email)return false;
+    const nextAll={...comments,[pj]:toggleReaction(comments[pj]||[],idx,emoji,currentUser.email)};
+    try{await setDoc(COMMENTS_DOC_REF(),{byPj:nextAll},{merge:true});return true;}
+    catch(e){console.error(e);notify("Erreur lors de l'enregistrement de la réaction : "+e.message);return false;}
+  };
   // Ajoute le même commentaire à plusieurs PJ à la fois (ex. décalage affectant toute une ligne de projets)
   const addCommentMulti=useCallback(async (pjList,author,text,linkedDate,isPrivate,mentions)=>{
     if(!author.trim()||!text.trim()||!pjList||pjList.length===0)return false;
@@ -1010,16 +1018,24 @@ export default function App(){
   const chgSeenKey="enogia_mypjchg_seen_"+String((currentUser&&currentUser.email)||"").toLowerCase();
   const [chgSeen,setChgSeen]=useState(()=>{try{return localStorage.getItem(chgSeenKey)||"";}catch(e){return "";}});
   useEffect(()=>{try{setChgSeen(localStorage.getItem(chgSeenKey)||"");}catch(e){}},[chgSeenKey]);
-  const myPjChanges=useMemo(()=>{
-    if(!currentUser||!Array.isArray(changeLog)||!changeLog.length)return [];
+  // v317 : PJ dont je suis chef (aussi pour la page Commentaires : un CdP ne voit que ses PJ)
+  const myPjSet=useMemo(()=>{
+    if(!currentUser)return new Set();
     const email=currentUser.email||"",pr=profileOf(profiles,email),low=s=>String(s||"").toLowerCase().trim();
     const mine=new Set(pr?pjsOfProfile(pr,dataWithOverrides):[]),nm=low((pr&&pr.name)||authorName);
     if(nm)dataWithOverrides.forEach(x=>{const m=getPjMeta(x.pj,x);if([...chefsOf(m),...orcChefsOf(m)].some(c=>low(c)===nm))mine.add(x.pj);});
+    return mine;
+  },[currentUser,profiles,dataWithOverrides,authorName]);
+  const myPjList=useMemo(()=>[...myPjSet],[myPjSet]);
+  const seeAllComments=pinOk||isOwner||(!!currentUser&&profileOf(profiles,currentUser.email).role==="direction");
+  const myPjChanges=useMemo(()=>{
+    if(!currentUser||!Array.isArray(changeLog)||!changeLog.length)return [];
+    const mine=myPjSet;
     if(!mine.size)return [];
     const since=chgSeen||new Date(Date.now()-14*864e5).toISOString(),out=[];
     changeLog.forEach(e=>{if(!e||!e.at||e.at<=since)return;(e.pjs||[]).forEach(p=>{if(mine.has(p.pj)&&!out.some(o=>o.pj===p.pj))out.push({pj:p.pj,at:e.at,isNew:!!p.isNew,delta:p.departDelta||0,nom:p.nomProjet||""});});});
     return out;
-  },[currentUser,changeLog,profiles,dataWithOverrides,authorName,chgSeen]);
+  },[currentUser,changeLog,myPjSet,chgSeen]);
   const seePjChanges=()=>{const v=new Date().toISOString();setChgSeen(v);try{localStorage.setItem(chgSeenKey,v);}catch(e){}};
   const testsView=useMemo(()=>{const plans={...((testsDoc&&testsDoc.plans)||{})};(dataWithOverrides||[]).forEach(r=>{if(!r||r.etat!=="SHIPPED")return;const p=plans[r.pj]||{};if(p.forced&&p.forced.at)return;plans[r.pj]={...p,forced:{at:String(r.depart||r.testsFin||r.tests||new Date().toISOString()).slice(0,10),by:"Machine expédiée",auto:true}};});return{...testsDoc,plans};},[testsDoc,dataWithOverrides]);
   // v312 (demandé : « changer les dates de départ directement sur Liste, Gantt ou Calendrier ; accès aux admins ») : admins du planning (pinOk)
@@ -1208,8 +1224,8 @@ export default function App(){
               onSavePlan={p=>savePlan(p,authorName)} onPublish={async(plan,note,announce)=>{const r=await publishPlan({plan,closurePeriods,productionExclusions,by:authorName,note,announce});/* v224 : un PJ publié depuis le planificateur et absent du planning initial → même bandeau qu’après un import (« Les ancrer dans l’initial ») */if(r&&r.rows&&initialPjsRef.current.size){const fresh=r.rows.filter(x=>x&&x.pj&&x.etat!=="SLOT_LIBRE"&&!isEstimatePj(x.pj)&&!initialPjsRef.current.has(x.pj));setNewVsInitial(fresh.length?{rows:r.rows,pjs:fresh.map(x=>x.pj)}:null);}return r;}} onLoadHistory={loadHistory} onRestorePublication={restorePublication}/>}
             {view==="tests"&&canSeeTests&&<TestsTab doc={testsView} save={saveTests} data={dataWithOverrides} certifs={certifs} canEdit={testsAdmin} lead={isTestLead} sub={testsSub} onSub={setTestsSub} allowSubs={testsAllowed} focusPj={testsFocus} me={currentUser&&currentUser.email} signApi={signApi}/>}
             {view==="changes"&&<ChangesView entries={changeLog} onOpenPj={jumpToPj}/>}
-            {view==="comments"&&<CommentsView data={filtered} comments={comments} addComment={addComment} deleteComment={deleteComment}
-              pinOk={pinOk} addCommentMulti={addCommentMulti} jumpToPj={jumpToPj} authorName={authorName} resolveComment={resolveComment}/>}
+            {view==="comments"&&<CommentsView data={dataWithOverrides} comments={comments} addComment={addComment} deleteComment={deleteComment}
+              pinOk={pinOk} seeAll={seeAllComments} myPjs={myPjList} addCommentMulti={addCommentMulti} openPj={pj=>{setCalDay(null);setCalTab("resume");setCalSel(pj);}} authorName={authorName} resolveComment={resolveComment}/>}
           </div>
         )}
       </>
