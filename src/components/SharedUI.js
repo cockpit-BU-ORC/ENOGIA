@@ -418,8 +418,12 @@ export function HoverPop({render,children,delay=220,width=260,style,disabled}){
     return()=>{window.removeEventListener("scroll",close,true);window.removeEventListener("keydown",k);};
   },[pos]);
   useEffect(()=>()=>clearTimeout(timer.current),[]);
+  // v314 : au doigt (pas de survol), un toucher ouvre la bulle, un autre toucher (ici ou ailleurs) la ferme
+  const touched=React.useRef(false);
+  useEffect(()=>{if(!pos)return undefined;const t=e=>{if(ref.current&&ref.current.contains(e.target))return;close();};document.addEventListener("touchstart",t,{passive:true});return()=>document.removeEventListener("touchstart",t);},[pos]);
   return(<>
-    <span ref={ref} onMouseEnter={open} onMouseLeave={close} onMouseDown={close} onFocus={open} onBlur={close} style={{display:"inline-flex",maxWidth:"100%",...style}}>{children}</span>
+    <span ref={ref} onTouchStart={()=>{touched.current=true;}} onClick={e=>{if(!touched.current)return;touched.current=false;if(pos)close();else{e.stopPropagation();clearTimeout(timer.current);const el=ref.current;if(!el||disabled)return;const b=el.getBoundingClientRect(),vw=window.innerWidth,vh=window.innerHeight;const left=Math.max(8,Math.min(vw-width-8,b.left));setPos(vh-b.bottom>200||b.top<200?{left,top:b.bottom+6}:{left,bottom:vh-b.top+6});}}}
+      onMouseEnter={()=>{if(!touched.current)open();}} onMouseLeave={close} onMouseDown={()=>{if(!touched.current)close();}} onFocus={()=>{if(!touched.current)open();}} onBlur={close} style={{display:"inline-flex",maxWidth:"100%",...style}}>{children}</span>
     {pos&&createPortal(
       <div role="tooltip" style={{position:"fixed",zIndex:2600,left:pos.left,top:pos.top,bottom:pos.bottom,width,padding:"12px 14px",borderRadius:R.md,background:T.card,color:T.ink900,border:"1px solid "+T.line,boxShadow:"0 12px 32px rgba(10,20,40,.22), 0 2px 6px rgba(10,20,40,.12)",fontSize:FZ.sm,lineHeight:1.4,pointerEvents:"none",animation:"enogiaFadeInUp .14s ease-out"}}>{render()}</div>,
       document.body)}

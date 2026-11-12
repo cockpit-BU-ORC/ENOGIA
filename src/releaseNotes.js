@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v314",
+    date: "2026-11-12",
+    title: "V314 : plus confortable sur tablette",
+    items: [
+      { t: "Tablette", d: "Sur tablette et écran tactile, boutons et lignes plus grands (réglage « Auto » de la densité), menus et bulles d'info qui s'ouvrent au toucher." },
+      { t: "Menu", d: "Les rubriques s'appellent maintenant Opérations, Gestion et Administration." },
+    ],
+  },
+  {
     id: "2026-11-v313",
     date: "2026-11-12",
     title: "V313 : tableaux et filtres harmonisés",

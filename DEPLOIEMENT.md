@@ -2262,3 +2262,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Tableaux branchés : CashInPlanned, KpiPilotage, KpiStory, ManagerFiche, InitialAdd, ImportHistory, ChangesTable, PlannerChanges, TestsTab.
 - Filtres branchés : ManagerPanel, KpiPilotage, PointHebdo, KpiHead.
 - Pas de nouvelle donnée ni de nouvelle clé `localStorage`.
+
+## v314 — Tablette et écran tactile (revue, point 5) ; noms des rubriques du menu
+
+- Densité « Auto » (nouvelle clé `localStorage` `enogia_density3`) : confortable au doigt, compacte à la souris.
+- `@media (pointer: coarse)` (styles.css) : cibles ≥ 44 px, champs 16 px ; a11yFallback : zones de clic 44 px au doigt.
+- Menu : sous-pages au premier toucher ; HoverPop : ouverture au toucher. Bandeau « Ctrl et − » retiré.
+- Menu : Opérations, Gestion, Administration. Liste : « Début prod » entre Arrivée et Tests.
+- Fichiers : App.js, ThemePicker.js, SharedUI.js, a11yFallback.js, styles.css, access.js, AccessPage.js, TableView.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

@@ -60,9 +60,11 @@ function pass(root) {
       const r = b.getBoundingClientRect();
       if (r.width > 0 && r.height > 0) {
         b.dataset.hitDone = "1";
-        if (r.width < 28 || r.height < 28) {
+        // v314 : 44 px au doigt (tablette, écran tactile), 28 px à la souris ; jamais plus de 10 px de débord par côté
+        const MIN = COARSE() ? 44 : 28, MAXP = COARSE() ? 10 : 8;
+        if (r.width < MIN || r.height < MIN) {
           b.dataset.hit = "1";
-          const pad = v => Math.min(8, Math.max(0, Math.ceil((28 - v) / 2)));
+          const pad = v => Math.min(MAXP, Math.max(0, Math.ceil((MIN - v) / 2)));
           b.style.setProperty("--hx", pad(r.width) + "px");
           b.style.setProperty("--hy", pad(r.height) + "px");
         }
@@ -71,6 +73,7 @@ function pass(root) {
   });
 }
 
+const COARSE = () => { try { return window.matchMedia("(pointer: coarse)").matches; } catch (e) { return false; } };
 export function useA11yFallback() {
   useEffect(() => {
     let t = null;

@@ -854,4 +854,10 @@ export const RELEASE_CATALOG = [
   { v: "313", t: "Tableaux et filtres communs", items: [
     ["Site", "En-têtes de tableau, lignes et filtres dessinés une seule fois : KPI, fiches projet, point hebdo, modifications, tests, Cash in prévu."],
   ] },
+  { v: "314", t: "Tablette et écran tactile ; menu Opérations, Gestion, Administration", items: [
+    ["Site", "Densité « Auto » : confortable sur tablette et écran tactile (boutons et lignes de 44 px), compacte à la souris."],
+    ["Site", "Au doigt : un toucher sur une entrée du menu déplie ses sous-pages, un toucher sur une bulle d'info l'ouvre."],
+    ["Menu", "Rubriques renommées : Opérations, Gestion, Administration."],
+    ["Liste", "La colonne « Début prod » est entre Arrivée et Tests."],
+  ] },
 ];

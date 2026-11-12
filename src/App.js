@@ -8,7 +8,6 @@ import { TutoVideoModal, tutoActive, tutoSeen, markTutoSeen } from "./components
 import { isEstimatePj } from "./changeDiff";
 import { MentionCtx } from "./mentionContext";
 import { MentionBell } from "./components/MentionBell";
-import { ZoomHint } from "./components/ZoomHint";
 import { testerOfEmail, assignmentsSince } from "./testPlan";
 import { setDefaultComposants } from "./pjProgress";
 import { doc, setDoc, getDoc, onSnapshot, updateDoc, FieldPath, deleteField } from "firebase/firestore";
@@ -60,7 +59,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-12-v313-tableaux-filtres";
+const APP_BUILD_VERSION = "2026-11-12-v314-tablette";
 
 export default function App(){
   // Utilisateur connecté via Google, restreint aux comptes @enogia.com (null tant que non connecté).
@@ -140,7 +139,12 @@ export default function App(){
     try{const t=localStorage.getItem(THEME_KEY);return THEMES[t]?t:DEFAULT_THEME;}catch(e){return DEFAULT_THEME;}
   });
   // v141 : densité (confortable / compacte, mémorisée sur ce poste) et mode présentation (propre à l'onglet : on n'y reste pas par mégarde)
-  const [density,setDensityState]=useState(()=>{try{return localStorage.getItem("enogia_density2")==="comfortable"?"comfortable":"compact";}catch(e){return "compact";}});
+  // v314 (revue, point 5 « la tablette et l'atelier sont des citoyens de seconde zone ») : densité « Auto » par défaut — confortable au doigt
+  // (tablette, écran tactile : lignes et boutons de 44 px), compacte à la souris ; Confortable / Compacte restent au choix de chacun.
+  const [density,setDensityState]=useState(()=>{try{const v=localStorage.getItem("enogia_density3");if(v==="auto"||v==="comfortable"||v==="compact")return v;return localStorage.getItem("enogia_density2")==="comfortable"?"comfortable":"auto";}catch(e){return "auto";}});
+  const [coarse,setCoarse]=useState(()=>{try{return window.matchMedia("(pointer: coarse)").matches;}catch(e){return false;}});
+  useEffect(()=>{let m;try{m=window.matchMedia("(pointer: coarse)");}catch(e){return undefined;}const f=()=>setCoarse(m.matches);if(m.addEventListener)m.addEventListener("change",f);return()=>{if(m.removeEventListener)m.removeEventListener("change",f);};},[]);
+  const densityEff=density==="auto"?(coarse?"comfortable":"compact"):density;
   const [presentation,setPresentation]=useState(()=>{try{return sessionStorage.getItem("enogia_present")==="1";}catch(e){return false;}});
   setThemeMode(darkMode,themeId,presentation); // mute T en place avant que quoi que ce soit ne le lise pendant ce rendu
   const NAV=navTokens(); // v173 : couleurs du menu latéral (marine + repère jaune pour le thème Atelier)
@@ -153,9 +157,9 @@ export default function App(){
     window.addEventListener("scroll",on,{passive:true});
     return()=>{window.removeEventListener("scroll",on);cancelAnimationFrame(raf);};
   },[]);
-  setDensity(density);
+  setDensity(densityEff);
   useA11yFallback(); // v165 : étiquettes et zones cliquables de secours
-  useEffect(()=>{try{localStorage.setItem("enogia_density2",density);}catch(e){}},[density]);
+  useEffect(()=>{try{localStorage.setItem("enogia_density3",density);}catch(e){}},[density]);
   useEffect(()=>{try{sessionStorage.setItem("enogia_present",presentation?"1":"0");}catch(e){}},[presentation]);
   useEffect(()=>{
     if(!presentation)return;
@@ -941,7 +945,7 @@ export default function App(){
   const goMgr=t=>()=>{setManagerTab(t);setView("manager");};
   const mgrOn=tabs=>view==="manager"&&tabs.includes(managerTab);
   const NAV_TREE=[
-    {g:"Travailler",items:[
+    {g:"Opérations",items:[
       {id:"home",l:"Aujourd'hui",icon:"home",on:view==="home",go:()=>setView("home")},
       ...(planOk?[{id:"planning",l:"Planning",icon:"gantt",on:PLANNING_VIEWS.includes(view),go:()=>setView(planViewOk(lastPlanRef.current)?lastPlanRef.current:firstPlanView()),badge:unseenChanges.length,
         subs:[["table","Liste"],["gantt","Gantt"],["calendar","Calendrier"],...(isOwner?[["planner","Planificateur"]]:[]),["changes","Modifications"]].filter(([id])=>planViewOk(id)).map(([id,l])=>({id,l,on:view===id,go:()=>setView(id)}))}]:[]),
@@ -950,14 +954,14 @@ export default function App(){
       ...(canProdTurb?[{id:"turbines",l:"Turbines",icon:"gauge",on:view==="turbines",go:()=>setView("turbines"),
         subs:[["prod","Production"],["orc","Besoins ORC et SAV"]].filter(([id])=>turbAllowed.includes(id)).map(([id,l])=>({id,l,on:view==="turbines"&&turbTab===id,go:()=>{setTurbTab(id);setView("turbines");}}))}]:[]),
       ...(canAchats?[{id:"achats",l:"Achats / Appro",icon:"inbox",on:view==="achats",go:()=>setView("achats")}]:[])]},
-    {g:"Suivre",items:[
+    {g:"Gestion",items:[
       ...(projOk?[{id:"projets",l:"Projets",icon:"manager",on:mgrOn(["fiche","hebdo","serie","orc"]),go:goMgr(["fiche","hebdo","serie"].find(t=>!mgrHidden.includes(t))||"fiche"),
         subs:[["fiche","Fiches projet"],["hebdo","Point hebdo"],["serie","Machines ORC"]].filter(([id])=>!mgrHidden.includes(id)).map(([id,l])=>({id,l,on:mgrOn(id==="serie"?["serie","orc"]:[id]),go:goMgr(id)}))}]:[]),
       ...(canCash?[{id:"cashin",l:"Finance",icon:"euro",on:view==="cashin",go:()=>setView("cashin")}]:[]),
       ...(pilOk?[{id:"pilotage",l:"Pilotage",icon:"chart",on:mgrOn(["derives","retards","retardsKpi"]),go:goMgr((isOwner||accMe)&&!mgrHidden.includes("derives")?"derives":"retards"),
         subs:[...(isOwner||accMe?[["derives","KPI"]]:[]),["retards","Retards"]].filter(([id])=>!mgrHidden.includes(id)).map(([id,l])=>({id,l,on:mgrOn(id==="retards"?["retards","retardsKpi"]:[id]),go:goMgr(id)}))}]:[]),
       ...(comOk?[{id:"comments",l:"Commentaires",icon:"comments",on:view==="comments",go:()=>setView("comments")}]:[])]},
-    {g:"Régler",items:[
+    {g:"Administration",items:[
       ...(calOk?[{id:"calprod",l:"Calendrier de production",icon:"calendar",on:mgrOn(["production","vacances"]),go:goMgr("production")}]:[]),
       ...(isOwner?[{id:"people",l:"Personnes et site",icon:"settings",on:mgrOn(["personnes","acces","nouveautes"]),go:goMgr("personnes")},{id:"access",l:"Accès",icon:"lock",on:view==="access",go:()=>setView("access")}]:[])]},
   ].filter(g=>g.items.length);
@@ -1052,7 +1056,7 @@ export default function App(){
         {!navCompact&&<div className="enogia-nav-grp" style={{fontSize:12,fontWeight:700,color:NAV.group,fontFamily:T.font,padding:"12px 10px 4px",whiteSpace:"nowrap"}}>{g}</div>}
         {navCompact&&<div className="enogia-nav-grp" style={{width:18,height:1,background:NAV.industrial?"rgba(255,255,255,.18)":T.line,margin:"4px 0"}}/>}
         {items.map(it=>{const on=it.on,showSubs=(on||navHover===it.id)&&it.subs&&it.subs.length>1;return(<React.Fragment key={it.id}>
-          <button className="enogia-nav-btn e-hov e-hov-ink" data-on={on?"1":"0"} onClick={()=>{it.go();setNavPeek(false);}} title={it.l} aria-label={it.badge?it.l+", "+it.badge+" nouvelle"+(it.badge>1?"s":"")+" mise"+(it.badge>1?"s":"")+" à jour":it.l} aria-current={on?"page":undefined}
+          <button className="enogia-nav-btn e-hov e-hov-ink" data-on={on?"1":"0"} onClick={()=>{if(coarse&&!on&&it.subs&&it.subs.length>1&&navHover!==it.id){setNavHover(it.id);return;}it.go();setNavPeek(false);}} title={it.l} aria-label={it.badge?it.l+", "+it.badge+" nouvelle"+(it.badge>1?"s":"")+" mise"+(it.badge>1?"s":"")+" à jour":it.l} aria-current={on?"page":undefined}
             style={{position:"relative",width:navCompact?40:"100%",height:40,borderRadius:navCompact?12:10,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:navCompact?"center":"flex-start",gap:12,padding:navCompact?0:"0 12px",background:on?NAV.bgOn:"transparent",color:on?NAV.inkOn:NAV.ink,fontFamily:T.font,fontSize:FZ.sm,fontWeight:on?700:500,whiteSpace:"nowrap",transition:"background .15s ease, color .15s ease","--nav-mark":NAV.mark,"--e-hov-bg":NAV.hover,"--e-hov-ink":NAV.hoverInk}}
             onMouseEnter={e=>{clearTimeout(navHoverT.current);if(it.subs&&it.subs.length>1){const id=it.id;navHoverT.current=setTimeout(()=>setNavHover(id),220);}}}
             onMouseLeave={()=>clearTimeout(navHoverT.current)}
@@ -1093,7 +1097,7 @@ export default function App(){
       </div>
 
       <PjDialogCtx.Provider value={pjCtx}><ProdDocCtx.Provider value={prodDoc}>
-      <main id="enogia-main" tabIndex={-1} className="enogia-main" style={{padding:D.main,flex:1,outline:"none",...backdropStyle(view)}}><ArrangeCtx.Provider value={arrangeCtx}><React.Suspense fallback={<LoadingSkeleton/>}><ZoomHint/>
+      <main id="enogia-main" tabIndex={-1} className="enogia-main" style={{padding:D.main,flex:1,outline:"none",...backdropStyle(view)}}><ArrangeCtx.Provider value={arrangeCtx}><React.Suspense fallback={<LoadingSkeleton/>}>
         {newVsInitial&&pinOk&&<div role="status" style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",marginBottom:12,padding:"10px 14px",borderRadius:12,background:T.teal100,color:T.teal600,fontFamily:T.font,fontSize:FZ.sm,fontWeight:600}}>
           <NavIcon name="pin" size={16}/>
           <span style={{flex:"1 1 320px"}}>{newVsInitial.pjs.length} PJ de cet import {newVsInitial.pjs.length>1?"ne sont pas":"n'est pas"} dans le planning initial : {newVsInitial.pjs.slice(0,6).join(", ")}{newVsInitial.pjs.length>6?"…":""}. Sans initial, leur dérive ne se calcule pas.</span>

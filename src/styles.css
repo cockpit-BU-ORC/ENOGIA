@@ -610,3 +610,13 @@ button, input, select, textarea { font-family: inherit; }
 
 /* v312 : crayon « changer le départ » de la Liste — visible au survol de la ligne ou au clavier ; toujours visible sur tablette */
 @media (hover: hover){ tr .e-editbtn{opacity:0;transition:opacity .12s ease} tr:hover .e-editbtn, .e-editbtn:focus-visible{opacity:1} }
+
+/* v314 (revue, point 5) : au doigt (tablette, écran tactile de l'atelier) — boutons, puces, entrées du menu et champs d'au moins 44 px,
+   champs en 16 px (pas de zoom automatique du navigateur), actions de ligne toujours visibles. */
+@media (pointer: coarse){
+  .e-btn, .e-chip, .enogia-nav-btn, .enogia-nav-sub, [role="tab"], button[aria-pressed]{min-height:44px!important}
+  .e-chip{padding-left:14px!important;padding-right:14px!important}
+  input:not([type="checkbox"]):not([type="radio"]), select, textarea{font-size:16px!important;min-height:40px}
+  input[type="checkbox"], input[type="radio"]{width:22px;height:22px}
+  .e-editbtn, .enogia-rowact{opacity:1!important}
+}

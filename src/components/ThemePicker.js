@@ -44,8 +44,9 @@ export function ThemePicker({ ink, themeId, onPick, density = "comfortable", onD
         })}
       </div></>}
       <div style={{ fontSize: FZ.sm, fontWeight: 700, margin: "12px 0 6px" }}>Densité</div>
+      <div style={{ fontSize: FZ.xs, color: T.ink500, margin: "-2px 0 6px" }}>Auto : confortable sur tablette et écran tactile, compacte à la souris.</div>
       <div role="radiogroup" aria-label="Densité d'affichage" style={{ display: "flex", gap: 4, background: T.surfaceAlt, borderRadius: 12, padding: 4 }}>
-        {[["comfortable", "Confortable"], ["compact", "Compacte"]].map(([k, l]) => { const on = density === k; return (
+        {[["auto", "Auto"], ["comfortable", "Confortable"], ["compact", "Compacte"]].map(([k, l]) => { const on = density === k; return (
           <button key={k} role="radio" aria-checked={on} onClick={() => onDensity && onDensity(k)} style={{ flex: 1, border: "none", borderRadius: 8, padding: "6px 8px", cursor: "pointer", fontFamily: T.font, fontSize: FZ.xs, fontWeight: 700, background: on ? T.card : "transparent", color: on ? T.ink900 : T.ink500, boxShadow: on ? T.shadowFlat : "none" }}>{l}</button>); })}
       </div>
       <div style={{ fontSize: FZ.sm, fontWeight: 700, margin: "12px 0 6px" }}>Fiche d'un PJ</div>

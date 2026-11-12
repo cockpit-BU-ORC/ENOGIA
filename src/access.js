@@ -17,20 +17,20 @@ const maxLevel = arr => arr.reduce((m, l) => (rank(l) > rank(m) ? l : m), "n");
 // Pages et sous-pages réglables (Personnes et site, Planificateur et Accès restent au super admin).
 // Sous-pages : identifiants des vues du site (Planning : view ; Tests : sub ; Turbines : tab ; Projets / Pilotage : onglets du Manager).
 export const ACCESS_PAGES = [
-  { id: "home", g: "Travailler", l: "Aujourd'hui", d: "accueil du poste", adm: "", min: "r" },
-  { id: "planning", g: "Travailler", l: "Planning", d: "le planning publié", adm: "changer les états, déclarer et classer les retards",
+  { id: "home", g: "Opérations", l: "Aujourd'hui", d: "accueil du poste", adm: "", min: "r" },
+  { id: "planning", g: "Opérations", l: "Planning", d: "le planning publié", adm: "changer les états, déclarer et classer les retards",
     subs: [["table", "Liste"], ["gantt", "Gantt"], ["calendar", "Calendrier"], ["changes", "Modifications"]] },
-  { id: "tests", g: "Travailler", l: "Tests", d: "bancs, testeurs, fiches", adm: "affecter les testeurs, catalogue, checklists",
+  { id: "tests", g: "Opérations", l: "Tests", d: "bancs, testeurs, fiches", adm: "affecter les testeurs, catalogue, checklists",
     subs: [["semaine", "Par semaine"], ["testers", "Par testeur"], ["catalog", "Catalogue"], ["checklists", "Checklists"]] },
-  { id: "turbines", g: "Travailler", l: "Turbines", d: "production et besoins", adm: "import de données, gammes et durées",
+  { id: "turbines", g: "Opérations", l: "Turbines", d: "production et besoins", adm: "import de données, gammes et durées",
     subs: [["prod", "Production"], ["orc", "Besoins ORC et SAV"]] },
-  { id: "achats", g: "Travailler", l: "Achats / Appro", d: "projets, PO, fournisseurs", adm: "réglages, synchronisation Odoo" },
-  { id: "projets", g: "Suivre", l: "Projets", d: "fiches projet, point hebdo, machines", adm: "gérer les états, machines ORC",
+  { id: "achats", g: "Opérations", l: "Achats / Appro", d: "projets, PO, fournisseurs", adm: "réglages, synchronisation Odoo" },
+  { id: "projets", g: "Gestion", l: "Projets", d: "fiches projet, point hebdo, machines", adm: "gérer les états, machines ORC",
     subs: [["fiche", "Fiches projet"], ["hebdo", "Point hebdo"], ["serie", "Machines ORC"]] },
-  { id: "finance", g: "Suivre", l: "Finance", d: "Cash in, montants", adm: "" },
-  { id: "pilotage", g: "Suivre", l: "Pilotage", d: "KPI, retards", adm: "", subs: [["kpi", "KPI"], ["retards", "Retards"]] },
-  { id: "comments", g: "Suivre", l: "Commentaires", d: "fils par PJ", adm: "supprimer un commentaire" },
-  { id: "calprod", g: "Régler", l: "Calendrier de production", d: "fermetures, jours sans production", adm: "" },
+  { id: "finance", g: "Gestion", l: "Finance", d: "Cash in, montants", adm: "" },
+  { id: "pilotage", g: "Gestion", l: "Pilotage", d: "KPI, retards", adm: "", subs: [["kpi", "KPI"], ["retards", "Retards"]] },
+  { id: "comments", g: "Gestion", l: "Commentaires", d: "fils par PJ", adm: "supprimer un commentaire" },
+  { id: "calprod", g: "Administration", l: "Calendrier de production", d: "fermetures, jours sans production", adm: "" },
 ];
 export const ACCESS_IDS = ACCESS_PAGES.flatMap(p => [p.id, ...(p.subs || []).map(([s]) => p.id + "." + s)]);
 const pageOf = id => ACCESS_PAGES.find(p => p.id === String(id).split(".")[0]);

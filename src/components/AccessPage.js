@@ -122,7 +122,7 @@ export default function AccessPage({ profiles, saveProfiles, accessDoc, saveAcce
   const aRole = R.some(r => r[0] === prevRole) ? prevRole : R[0][0];
   const lv = id => (L[id] || {})[aRole] || "n";
   const change = (id, v) => setLevels(setLevel(L, id, aRole, v));
-  const groups = ["Travailler", "Suivre", "Régler"];
+  const groups = ["Opérations", "Gestion", "Administration"]; // v314 : noms plus pro (ex-Travailler, Suivre, Régler)
   const accesView = <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(220px,280px)", gap: 14, alignItems: "start" }} className="enogia-access-grid">
     <section aria-label="Accès par page" style={card}>
       <div role="group" aria-label="Rôle" style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 10 }}>
