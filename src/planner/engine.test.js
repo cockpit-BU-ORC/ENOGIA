@@ -98,3 +98,16 @@ describe("v259 : nivellement sur une période", () => {
     expect(levelPlan(plan, cal, { from: "2026-01-01", to: "2027-12-31", cap: 30 }).moved).toBeGreaterThan(0);
   });
 });
+
+test("v312 : départ changé hors planificateur reporté dans le plan, début de production publié", () => {
+  const { applyPendingDeparts } = require("./engine");
+  const cal = makeCalendar({ closurePeriods: [] });
+  const plan = initPlanFromRows(rows, cal), s = schedule(plan, cal), d0 = pjDates(s, "PJ1");
+  expect(d0.debutProd).toBeTruthy();
+  expect(planToRows(plan, s, rows, null, cal).find(r => r.pj === "PJ1").debutProd).toBe(d0.debutProd);
+  const later = cal.addWork(d0.depart, 4), earlier = cal.addWork(d0.depart, -2);
+  const a = applyPendingDeparts(plan, cal, { PJ1: { date: later } });
+  expect(a.applied).toEqual(["PJ1"]); expect(pjDates(schedule(a.plan, cal), "PJ1").depart).toBe(later);
+  const b = applyPendingDeparts(plan, cal, { PJ1: { date: earlier }, PJ999: { date: later } });
+  expect(pjDates(schedule(b.plan, cal), "PJ1").depart).toBe(earlier); expect(b.applied).toEqual(["PJ1"]);
+});

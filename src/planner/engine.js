@@ -283,7 +283,7 @@ export function loadModel(plan, sched, cal) {
 export const ROW_FIELDS = ["arrivee", "tests", "testsFin", "finProd", "depart"];
 export function pjDates(sched, pj) {
   const g = (step, w) => { const n = sched.nodes[nodeKey(pj, step)]; return n && n.s !== null ? n[w] : null; };
-  return { arrivee: g("arrivee", "start"), tests: g("tests", "start"), testsFin: g("tests", "finish"), finProd: g("finProd", "finish"), depart: g("depart", "start") };
+  return { arrivee: g("arrivee", "start"), tests: g("tests", "start"), testsFin: g("tests", "finish"), finProd: g("finProd", "finish"), depart: g("depart", "start"), debutProd: g("production", "start") };
 }
 // Lignes à publier : on ne touche qu'aux PJ du plan ; gamme / nom / état déjà présents sont conservés.
 export function planToRows(plan, sched, currentRows, guessGamme, cal) {
@@ -301,6 +301,7 @@ export function planToRows(plan, sched, currentRows, guessGamme, cal) {
       if (cal && v && old && old !== v && !cal.isWork(old) && (cal.dateOf(cal.idxOnOrAfter(old)) === v || cal.dateOf(cal.idxOnOrBefore(old)) === v)) v = old;
       base[f] = v;
     });
+    base.debutProd = d.debutProd || null; // v312 : début de production publié (affiché dans la Liste, le Gantt, le Calendrier ; pas annoncé comme un changement)
     if (p.hAt != null && !p.hEst) base.heuresAtelier = p.hAt; // v206 : des heures estimées (hEst) servent à la charge, pas au planning publié
     if (p.hAu != null) base.heuresAutom = p.hAu;
     if (idx[p.pj] != null) rows[idx[p.pj]] = base; else rows.push(base);
@@ -507,6 +508,18 @@ export function moveStepTo(plan, cal, pj, step, wantedIso) {
 // par PJ ») : la tâche commence le jour choisi. Plus tard que ses liens : date imposée (pas avant). Plus tôt : le lien du même PJ
 // qui la repousse est GARDÉ et prend une avance (décalage négatif) pour qu'elle commence ce jour-là. Un lien vers un autre PJ
 // ou l'ordre de passage ne sont pas modifiés : blocked = ce qui empêche (texte), la tâche commence alors au plus tôt possible.
+// v312 : départs changés par un admin dans la Liste, le Gantt ou le Calendrier (planning/current.pendingDeparts = { PJ: { date, by, at } })
+// → reportés dans le plan (date du départ, liens du PJ gardés) pour que la prochaine publication ne les efface pas.
+export function applyPendingDeparts(plan, cal, pending) {
+  let np = plan; const applied = [], blocked = [];
+  Object.entries(pending || {}).forEach(([pj, v]) => {
+    if (!v || !v.date || !(np.pjs || []).some(p => p.pj === pj)) return;
+    const r = startAtKeepLinks(np, cal, pj, "depart", v.date); np = r.plan;
+    const n = schedule(np, cal).nodes[nodeKey(pj, "depart")];
+    if (n && n.start === v.date) applied.push(pj); else blocked.push({ pj, date: v.date, got: n ? n.start : null, why: r.blocked || "" });
+  });
+  return { plan: np, applied, blocked };
+}
 export function startAtKeepLinks(plan, cal, pj, step, iso) {
   let np = moveStepTo(plan, cal, pj, step, iso); const want = cal.idxOnOrAfter(iso), key = nodeKey(pj, step);
   for (let g = 0; g < 8; g++) {

@@ -2248,3 +2248,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Survols JavaScript remplacés par du CSS : App (menu), TableView, GanttView, CalendarView, CommentsView, Feux, ManagerParts, ManagerFiche, bouton d'import.
 - Pastilles / puces locales branchées sur les briques : RowDetail, HomeView, ManagerFiche, Series, MultiApply, PeopleRoles.
 - Pas de nouvelle donnée ni de nouvelle clé `localStorage`.
+
+## v312 — Calendrier en barres continues, début de production, départ modifiable
+
+- Calendrier (Jour / Semaine) : une barre par machine (réception, production, tests, packaging), visites en étiquettes, bouton « Planning initial » (clé `localStorage` `enogia_cal_ini`).
+- Début de production : champ `debutProd` des lignes de `planning/current`, rempli **à la prochaine publication** du planificateur ; colonne « Début prod » de la Liste, fiche d'un PJ, Gantt, Calendrier.
+- Départ modifiable par les admins (Liste, fiche d'un PJ) : écrit dans `planning/current` (+ `pendingDeparts`) et le journal des modifications ; repris dans le plan à l'ouverture du planificateur ou à la publication. Règles Firestore inchangées.
+- Fichiers : planner/engine.js (+test), planner/store.js, planner/Planner.js, components/CalendarView.js, TableView.js, RowDetail.js, GanttView.js, App.js, styles.css, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

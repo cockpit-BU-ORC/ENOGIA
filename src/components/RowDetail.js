@@ -83,6 +83,9 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
   // pour qui a accès à ces pages (ctx.prodDoc / ctx.achatsDoc fournis par App) ; « Ouvrir » mène à la page d'origine.
   const turb = useMemo(() => (ctx.prodDoc ? turbineOf(ctx.prodDoc, ctx.rows || [r], r.pj, x => getPjMeta(x.pj, x)) : null), [ctx.prodDoc, ctx.rows, r]);
   const ach = useMemo(() => (ctx.achatsDoc ? achatsOf(ctx.achatsDoc, r.pj) : null), [ctx.achatsDoc, r.pj]);
+  // v312 : départ modifiable (admins, ctx.setDepart) 
+  const [depEd, setDepEd] = useState(false), [depV, setDepV] = useState("");
+  const saveDep = () => { if (depV && ctx.setDepart) ctx.setDepart(r.pj, depV); setDepEd(false); };
   const openPage = (v, sub) => { if (ctx.openPage) { ctx.openPage(v, sub); if (onClose) onClose(); } };
   const gapTxt = g => g == null ? "" : g > 0 ? g + " j de marge" : g < 0 ? -g + " j de retard" : "juste à temps";
   const pill = (txt, ink, bg, key) => <Pill key={key} ink={ink} bg={bg} size="md">{txt}</Pill>; // v311 : pastille commune
@@ -131,8 +134,17 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
       {tab === "resume" && <>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(130px,1fr))", gap: 8 }}>
           {dateTile("Arrivée", dmy(r.arrivee))}
+          {r.debutProd && dateTile("Début de production", dmy(r.debutProd))}
           {dateTile(r.testsFin ? "Fin des tests" : "Tests", dmy(r.testsFin || r.tests), r.tests && r.testsFin ? "début " + dmy(r.tests) : "")}
-          {dateTile(shipped ? "Départ" : "Départ prévu", dmy(r.depart), zInit ? "initial " + dmy(zInit) : "", drift > 0)}
+          {depEd ? <div style={{ background: T.surface, borderRadius: 12, padding: "8px 12px", minWidth: 0, display: "flex", flexDirection: "column", gap: 6 }}>
+            <label style={{ fontFamily: T.fontLabel, fontSize: 12, color: T.ink500 }}>Nouvelle date de départ
+              <input type="date" autoFocus value={depV} onChange={e => setDepV(e.target.value)} onKeyDown={e => { if (e.key === "Escape") { e.stopPropagation(); setDepEd(false); } if (e.key === "Enter") saveDep(); }}
+                style={{ display: "block", marginTop: 4, font: "inherit", fontSize: FZ.sm, padding: "4px 6px", border: "1px solid " + T.teal500, borderRadius: 8, background: T.card, color: T.ink900, width: "100%", boxSizing: "border-box" }} /></label>
+            <span style={{ display: "flex", gap: 6 }}><button type="button" onClick={saveDep} disabled={!depV} style={{ ...btn(true), minHeight: 30 }}>Enregistrer</button><button type="button" onClick={() => setDepEd(false)} style={{ ...btn(false), minHeight: 30 }}>Annuler</button></span>
+          </div>
+          : <div style={{ position: "relative", minWidth: 0 }}>{dateTile(shipped ? "Départ" : "Départ prévu", dmy(r.depart), zInit ? "initial " + dmy(zInit) : "", drift > 0)}
+            {ctx.setDepart && !shipped && <button type="button" onClick={() => { setDepV(r.depart ? String(r.depart).slice(0, 10) : ""); setDepEd(true); }} aria-label={"Changer la date de départ de " + r.pj} title="Changer la date de départ (admins) — reprise ensuite dans le planificateur"
+              style={{ position: "absolute", top: 6, right: 6, width: 28, height: 28, border: "none", borderRadius: 8, background: "transparent", color: T.ink500, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }} className="e-hov" ><NavIcon name="edit" size={14} /></button>}</div>}
           {dateTile("Livraison prévue", dmy(livr), livr ? "sur site client, transport compris" : "transport non renseigné")}
         </div>
         {(tq || ct || cash || turb || ach) && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 8 }}>

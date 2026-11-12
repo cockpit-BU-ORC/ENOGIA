@@ -7,7 +7,7 @@ import {
 } from "./engine";
 import { PlannerGantt, fmtIso, makeTimeline, leftWidthWith, STEP_COLOR, ZOOM_PX, PX_MIN, PX_MAX } from "./PlannerGantt";
 import { LABEL_W as LANE_LABEL_W } from "./PlannerLanes";
-import { benchOrderByStart, setBench, benchMoveUp, benchConflicts, splitBenches as splitBenchesV, isEstimatePj, startAtKeepLinks } from "./engine";
+import { benchOrderByStart, setBench, benchMoveUp, benchConflicts, splitBenches as splitBenchesV, isEstimatePj, startAtKeepLinks, applyPendingDeparts } from "./engine";
 import { getPjMeta } from "../pjMeta";
 import { contractLate } from "../penalties";
 import { getCashinDoc, anchoredBill, diffDays } from "../cashinLink";
@@ -433,7 +433,7 @@ function Banner({ tone, children }) {
   return <div role="status" style={{ background: c[0], color: c[1], borderRadius: 12, padding: "8px 14px", fontWeight: 600, fontSize: 13, marginBottom: 10 }}>{children}</div>;
 }
 
-export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, productionExclusions, authorName, onSavePlan, onPublish, onLoadHistory, onRestorePublication, testers }) {
+export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, productionExclusions, authorName, onSavePlan, onPublish, onLoadHistory, onRestorePublication, testers, pendingDeparts, onPendingApplied }) {
   const [plan, setPlanState] = useState(null); const [preview, setPreview] = useState(null); const [proposal, setProposal] = useState(null);
   const [undo, setUndo] = useState([]); const [redo, setRedo] = useState([]);
   const [sel, setSel] = useState(null); const [exp, setExp] = useState(() => new Set());
@@ -461,6 +461,17 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
     const t = setTimeout(async () => { try { await onSavePlan(plan); lastSaved.current = js; setSaveSt("Brouillon enregistré ✓"); } catch (e) { console.error(e); setSaveSt("Échec de l'enregistrement"); } }, 900);
     return () => clearTimeout(t);
   }, [plan]); // eslint-disable-line
+  // v312 : départs changés dans la Liste / la fiche d'un PJ par un admin → reportés dans le plan (date du départ, liens gardés), une fois
+  const pendDone = useRef("");
+  useEffect(() => {
+    const keys = Object.keys(pendingDeparts || {}); if (!plan || plan.v !== 2 || !keys.length) return;
+    const sig = JSON.stringify(pendingDeparts); if (pendDone.current === sig) return; pendDone.current = sig;
+    const r = applyPendingDeparts(plan, cal, pendingDeparts);
+    if (r.plan !== plan) { setUndo(u => [...u.slice(-29), plan]); setRedo([]); setPlanState(r.plan); }
+    const fr = iso => iso ? iso.split("-").reverse().join("/") : "—";
+    setNotice({ tone: r.blocked.length ? "warn" : "ok", text: (r.applied.length ? "Départ changé hors planificateur repris : " + r.applied.map(pj => pj + " (" + fr(pendingDeparts[pj].date) + ")").join(", ") + ". " : "") + (r.blocked.length ? "Pas pu placer : " + r.blocked.map(b => b.pj + " le " + fr(b.date) + " (calculé : " + fr(b.got) + ")").join(", ") + "." : "") });
+    if (onPendingApplied) onPendingApplied(keys).catch(e => console.warn(e));
+  }, [plan, pendingDeparts]); // eslint-disable-line react-hooks/exhaustive-deps
   // premier affichage : tout déplié si le plan est petit
   useEffect(() => { if (plan && plan.v === 2 && !expInit.current) { expInit.current = true; if (plan.pjs.length <= 12) setExp(new Set(plan.pjs.map(p => p.pj))); } }, [plan]);
 

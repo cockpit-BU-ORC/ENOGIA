@@ -277,9 +277,10 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
                 production (arrivée → tests), tests (tests → fin prod), fin de prod (fin prod → départ) —, l'écart écrit en clair
                 au bout de la barre, le planning initial en pointillés dessous. Plus de pastilles A/T/F/D superposées. */}
             {mb&&(()=>{
-              const S=stageSoft(),dOf=v=>v?new Date(v):null,arr=dOf(r.arrivee),dep=dOf(r.depart),tst=dOf(r.tests),fin=dOf(r.finProd);
+              const S=stageSoft(),dOf=v=>v?new Date(v):null,arr=dOf(r.arrivee),dep=dOf(r.depart),tst=dOf(r.tests),fin=dOf(r.finProd),dp=dOf(r.debutProd);
               const prevision=r.etat==="NOT ORDERED";
-              const cuts=[[arr,tst||fin||dep,S.production.solid,"Production"],[tst,fin||dep,S.tests.solid,"Tests"],[fin,dep,S.finProd.solid,"Fin de prod → départ"]].filter(([x,y])=>x&&y&&y>x);
+              const p0=dp&&dp>arr?dp:arr; // v312 : début de production (planificateur) ; avant = réception
+              const cuts=[[arr,p0,S.arrivee.solid,"Réception (arrivée → début de production)"],[p0,tst||fin||dep,S.production.solid,"Production"],[tst,fin||dep,S.tests.solid,"Tests"],[fin,dep,S.finProd.solid,"Fin de prod → départ"]].filter(([x,y])=>x&&y&&y>x);
               const total=Math.max(1,dep-arr);
               const ini=r.drift?bpct(r.arrivee,new Date(new Date(r.depart).getTime()-r.drift*86400000)):null;
               const lvl=r.drift==null?null:r.drift>10?"late":r.drift>3?"warn":"ok";

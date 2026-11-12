@@ -6,7 +6,7 @@
 import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase";
 import { guessGamme } from "../parsers";
-import { makeCalendar, schedule, planToRows, diffRows, ROW_FIELDS } from "./engine";
+import { makeCalendar, schedule, planToRows, diffRows, ROW_FIELDS, applyPendingDeparts } from "./engine";
 import { buildEntry, appendChangeLog } from "../changeLog";
 
 const PFX = process.env.REACT_APP_BETA === "1" ? "beta_" : "";
@@ -32,11 +32,15 @@ export async function loadHistory() {
 // différaient de celles affichées et les mêmes changements revenaient après « Publier » (« ça ne se publie pas »).
 // announce = ensemble « PJ|champ » des changements annoncés aux utilisateurs (journal des modifications, cloche, repères) ;
 // tout est publié dans le planning, seuls les changements cochés sont annoncés. null = tout annoncer.
-export async function publishPlan({ plan, closurePeriods, productionExclusions, by, note, announce }) {
+export async function publishPlan({ plan: plan0, closurePeriods, productionExclusions, by, note, announce }) {
   const snap = await getDoc(CURRENT_REF());
   const cur = snap.exists() ? snap.data() : {};
   const curRows = cur.rows || [];
-  const cal = makeCalendar({ closurePeriods, holidays: !(plan.cal && plan.cal.holidays === false), pjOff: productionExclusions || null });
+  const cal = makeCalendar({ closurePeriods, holidays: !(plan0.cal && plan0.cal.holidays === false), pjOff: productionExclusions || null });
+  // v312 : départs changés entre-temps dans la Liste / le Gantt / le Calendrier → reportés dans le plan avant de publier
+  const pend = cur.pendingDeparts && Object.keys(cur.pendingDeparts).length ? applyPendingDeparts(plan0, cal, cur.pendingDeparts) : null;
+  const plan = pend ? pend.plan : plan0;
+  if (pend) await savePlan(plan, by);
   const sched = schedule(plan, cal);
   if (sched.cycle) throw new Error("Le plan contient une boucle de liens : " + sched.cycle.slice(0, 4).join(", "));
   const rows = planToRows(plan, sched, curRows, guessGamme, cal);
@@ -47,7 +51,8 @@ export async function publishPlan({ plan, closurePeriods, productionExclusions, 
   entries = [plain({ at, by: by || "", note: note || "", nChanges: changes.length, plan, prevRows: curRows }), ...entries].slice(0, 8);
   while (JSON.stringify(entries).length > 900000 && entries.length > 1) entries.pop(); // limite Firestore : 1 Mo par document
   await setDoc(HIST_REF(), { entries });
-  await setDoc(CURRENT_REF(), { ...cur, rows: plain(rows), lastImport: new Date(at).toLocaleString("fr-FR"), lastPublish: { at, by: by || "" } });
+  const { pendingDeparts: _pd, ...curRest } = cur; // eslint-disable-line no-unused-vars -- v312 : reportés dans le plan
+  await setDoc(CURRENT_REF(), { ...curRest, rows: plain(rows), lastImport: new Date(at).toLocaleString("fr-FR"), lastPublish: { at, by: by || "" } });
   const shown = announcedRows(curRows, rows, announce);
   if (shown) try { await appendChangeLog(buildEntry(curRows, shown, { source: "publication", by: by || "", note: note || "", label: new Date(at).toLocaleString("fr-FR"), prevLabel: cur.lastImport || "", prevIndice: cur.indice || "", indice: cur.indice || "" })); }
   catch (e) { console.warn("Journal des modifications non enregistré (la publication est bien faite) :", e); }
@@ -63,6 +68,29 @@ export function announcedRows(curRows, rows, announce) {
     const x = { ...o }; [...ROW_FIELDS, "heuresAtelier", "heuresAutom"].forEach(f => { if (announce.has(r.pj + "|" + f)) x[f] = r[f]; }); return x;
   }).filter(Boolean);
   return diffRows(curRows, out).length ? out : null;
+}
+
+// v312 (demandé : « changer les dates de départ directement sur Liste, Gantt ou Calendrier, accès aux admins ») : le départ est changé
+// tout de suite dans le planning publié (tout le monde le voit), annoncé dans le journal des modifications, et noté dans
+// pendingDeparts pour être reporté dans le plan du planificateur (à son ouverture, ou au plus tard à la publication).
+export async function setDepartDate(pj, iso, by) {
+  const snap = await getDoc(CURRENT_REF());
+  const cur = snap.exists() ? snap.data() : {};
+  const curRows = cur.rows || [];
+  if (!curRows.some(r => r.pj === pj)) throw new Error(pj + " n'est pas dans le planning publié.");
+  const rows = curRows.map(r => r.pj === pj ? { ...r, depart: iso } : r);
+  const at = new Date().toISOString();
+  const pendingDeparts = { ...(cur.pendingDeparts || {}), [pj]: { date: iso, by: by || "", at } };
+  await setDoc(CURRENT_REF(), { ...cur, rows: plain(rows), pendingDeparts });
+  try { await appendChangeLog(buildEntry(curRows, rows, { source: "modification", by: by || "", note: "Départ de " + pj + " changé hors planificateur", label: new Date(at).toLocaleString("fr-FR"), prevLabel: cur.lastImport || "", prevIndice: cur.indice || "", indice: cur.indice || "" })); }
+  catch (e) { console.warn("Journal des modifications non enregistré :", e); }
+}
+// Retire des départs en attente ceux qui ont été reportés dans le plan.
+export async function clearPendingDeparts(pjs) {
+  const snap = await getDoc(CURRENT_REF());
+  const cur = snap.exists() ? snap.data() : {};
+  const p = { ...(cur.pendingDeparts || {}) }; (pjs || []).forEach(k => { delete p[k]; });
+  await setDoc(CURRENT_REF(), { ...cur, pendingDeparts: p });
 }
 
 // Annule une publication : remet dans « current » les lignes d'avant cette publication.

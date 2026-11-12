@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v312",
+    date: "2026-11-12",
+    title: "V312 : le Calendrier en barres, le début de production et le départ modifiable",
+    items: [
+      { t: "Calendrier", d: "Vues Jour et Semaine : une barre par machine, avec réception, production, tests et packaging, et les dates écrites dessus." },
+      { t: "Liste", d: "Nouvelle colonne « Début prod », aussi dans la fiche d'un PJ, le Gantt et le Calendrier." },
+      { t: "Départ", d: "Les admins peuvent changer la date de départ dans la Liste ou dans la fiche d'un PJ." },
+    ],
+  },
+  {
     id: "2026-11-v311",
     date: "2026-11-12",
     title: "V311 : un site plus homogène",

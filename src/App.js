@@ -29,7 +29,7 @@ import { backdropStyle } from "./pageBackdrop"; // v225 : un fond léger par pag
 import { useA11yFallback } from "./a11yFallback";
 import { ManagerAccessNotice, PIN, NavIcon, Hl, EmptyState, LoadingSkeleton, PageHead, notify, Toaster } from "./components/SharedUI";
 import { PjDialog, PjDialogCtx } from "./components/RowDetail";
-import { listenPlan, savePlan, loadHistory, publishPlan, restorePublication } from "./planner/store";
+import { listenPlan, savePlan, loadHistory, publishPlan, restorePublication, setDepartDate, clearPendingDeparts } from "./planner/store";
 import { TableView } from "./components/TableView";
 import { ManagerPalette } from "./components/ManagerNav";
 import { LoginScreen, LoginTransition } from "./components/LoginScreen";
@@ -60,7 +60,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-12-v311-briques";
+const APP_BUILD_VERSION = "2026-11-12-v312-barres-depart";
 
 export default function App(){
   // Utilisateur connecté via Google, restreint aux comptes @enogia.com (null tant que non connecté).
@@ -280,6 +280,7 @@ export default function App(){
         const d = snap.data();
         setData(d.rows || []);
         setLastImport(d.lastImport || null);
+        setPendingDeparts(d.pendingDeparts || {}); // v312 : départs changés hors planificateur, à reporter dans le plan
       }
       setLoading(false);
       setSyncLost(false); // v252 : la lecture repart (après connexion) → le bandeau disparaît
@@ -927,7 +928,8 @@ export default function App(){
   const planViewOk=v=>v==="planner"?isOwner:subOk("planning."+v); // v308
   // v307 : sous-pages de Tests et de Turbines choisies depuis le menu ou le sélecteur de la page
   const [testsSub,setTestsSub]=useState("semaine");
-  const [testsFocus,setTestsFocus]=useState(null); // v310 : PJ à ouvrir dans Tests depuis sa fiche
+  const [testsFocus,setTestsFocus]=useState(null);
+  const [pendingDeparts,setPendingDeparts]=useState({}); // v312 // v310 : PJ à ouvrir dans Tests depuis sa fiche
   const [turbTab,setTurbTab]=useState(()=>{try{const v=localStorage.getItem("enogia_turbines_tab");return v==="orc"?"orc":"prod";}catch(e){return "prod";}});
   const lastPlanRef=useRef("table");/* v305 */if(PLANNING_VIEWS.includes(view))lastPlanRef.current=view;
   const firstPlanView=()=>["table","gantt","calendar","changes"].find(planViewOk)||"home";
@@ -994,9 +996,11 @@ export default function App(){
   },[currentUser,changeLog,profiles,dataWithOverrides,authorName,chgSeen]);
   const seePjChanges=()=>{const v=new Date().toISOString();setChgSeen(v);try{localStorage.setItem(chgSeenKey,v);}catch(e){}};
   const testsView=useMemo(()=>{const plans={...((testsDoc&&testsDoc.plans)||{})};(dataWithOverrides||[]).forEach(r=>{if(!r||r.etat!=="SHIPPED")return;const p=plans[r.pj]||{};if(p.forced&&p.forced.at)return;plans[r.pj]={...p,forced:{at:String(r.depart||r.testsFin||r.tests||new Date().toISOString()).slice(0,10),by:"Machine expédiée",auto:true}};});return{...testsDoc,plans};},[testsDoc,dataWithOverrides]);
-  const pjCtxTests=canSeeTests?testsView:null,pjCtx=useMemo(()=>({testsDoc:pjCtxTests,turbineDoc,prodDoc:canProdTurb&&subOk("turbines.orc")?prodDoc:null,achatsDoc:canAchats?achatsDoc:null,rows:dataWithOverrides,
+  // v312 (demandé : « changer les dates de départ directement sur Liste, Gantt ou Calendrier ; accès aux admins ») : admins du planning (pinOk)
+  const onSetDepart=pinOk?(async(pj,iso)=>{try{await setDepartDate(pj,iso,authorName);notify("Départ de "+pj+" : "+iso.split("-").reverse().join("/")+". Il sera repris dans le planificateur.","ok");}catch(e){notify("Départ non enregistré : "+e.message);}}):null;
+  const pjCtxTests=canSeeTests?testsView:null,pjCtx=useMemo(()=>({setDepart:onSetDepart,testsDoc:pjCtxTests,turbineDoc,prodDoc:canProdTurb&&subOk("turbines.orc")?prodDoc:null,achatsDoc:canAchats?achatsDoc:null,rows:dataWithOverrides,
     testsOk:canSeeTests&&testsAllowed.includes("semaine"),
-    openPage:(v,sub)=>{if(v==="turbines"&&sub)setTurbTab(sub);if(v==="tests"){setTestsSub("semaine");if(sub)setTestsFocus({pj:sub,n:Date.now()});}setCalSel(null);setView(v);}}),[pjCtxTests,turbineDoc,canProdTurb,prodDoc,canAchats,achatsDoc,dataWithOverrides,accMe,canSeeTests]); // eslint-disable-line react-hooks/exhaustive-deps -- v309 : turbine et achats dans la fiche d'un PJ // v203 : pastilles de la fiche d'un PJ // v196 : entrées du Manager affichées dans ce menu (fournies par ManagerPanel)
+    openPage:(v,sub)=>{if(v==="turbines"&&sub)setTurbTab(sub);if(v==="tests"){setTestsSub("semaine");if(sub)setTestsFocus({pj:sub,n:Date.now()});}setCalSel(null);setView(v);}}),[pjCtxTests,turbineDoc,canProdTurb,prodDoc,canAchats,achatsDoc,dataWithOverrides,accMe,canSeeTests,pinOk,authorName]); // eslint-disable-line react-hooks/exhaustive-deps -- v309 : turbine et achats dans la fiche d'un PJ // v203 : pastilles de la fiche d'un PJ // v196 : entrées du Manager affichées dans ce menu (fournies par ManagerPanel)
   const closePeek=delay=>{clearTimeout(navPeekT.current);navPeekT.current=setTimeout(()=>setNavPeek(false),delay||0);};
   // v306 (maquette v306-navigation, choix « 1 ») : menu masqué comme la barre des tâches Windows — caché, il glisse par-dessus la page
   // quand la souris touche le bord gauche (zone de 8 px), quand on clique ☰ ou avec Ctrl + B ; il se cache 0,35 s après qu'on l'a quitté.
@@ -1134,7 +1138,7 @@ export default function App(){
                 tools={[...(isOwner?[{id:"planner",l:"Planificateur",icon:"edit",hint:"Brouillon, puis « Publier »"}]:[]),...(planViewOk("changes")?[{id:"changes",l:"Modifications",icon:"changes",badge:unseenChanges.length,hint:"Ce qui a changé à chaque publication"}]:[])]}/>:undefined}/>;})()}
             {view==="home"&&<HomeView pinOk={pinOk} testsDoc={canSeeTests?testsView:null} data={dataWithOverrides} comments={comments} myEmail={currentUser&&currentUser.email} myName={authorName} people={peopleAll} unseenChanges={unseenChanges} lastImport={lastImport} onOpenPj={setCalSel} onGo={setView} profiles={profiles} owner={isOwner} cash={canCash} turbineDoc={turbineDoc} onOpenCash={canCash?()=>setView("cashin"):null} prodDoc={prodDoc} canProdTurb={canProdTurb} productionExclusions={productionExclusions} plan={planDoc&&planDoc.plan} closurePeriods={closurePeriods} saveHomeLayout={isOwner?saveHomeLayout:null}/>}
             {view==="table"&&<DashboardSummary data={filtered} allData={dataWithOverrides} progress={progressEff} changeLog={changeLog} onOpenChanges={()=>setView("changes")}/>}
-            {view==="table"&&<TableView data={filtered} progress={progressEff} df={df} setDf={setDf} setEtatFor={setEtatFor} setClientPresenceFor={setClientPresenceFor}
+            {view==="table"&&<TableView data={filtered} progress={progressEff} df={df} setDf={setDf} onSetDepart={onSetDepart} setEtatFor={setEtatFor} setClientPresenceFor={setClientPresenceFor}
               selEtats={selEtats} setSelEtats={setSelEtats}
               selGammes={selGammes} setSelGammes={setSelGammes}
               allPJs={allPJs} selPJs={selPJs} setSelPJs={setSelPJs}
@@ -1173,7 +1177,7 @@ export default function App(){
             {view==="achats"&&canAchats&&<PageGuard name="Achats / Appro"><Achats doc={achatsDoc} api={achatsApi} rows={dataWithOverrides.map(r=>({pj:r.pj,nomProjet:getPjMeta(r.pj,r).nomProjet||"",gamme:r.gamme||"",etat:r.etat,arrivee:r.arrivee||null,depart:r.depart||null}))} canEdit={achEdit} owner={isOwner}/></PageGuard>}
             {/* v267 (demandé : « un seul onglet Turbines ») : production (seule saisie) + besoins des ORC (calculés) ; l'ancien pool n'est plus affiché */}
             {view==="turbines"&&canProdTurb&&<PageGuard name="Turbines"><TurbinesHub doc={prodDoc} api={prodApi} rows={dataWithOverrides} canEdit={turbEdit} owner={isOwner} tab={turbTab} onTab={setTurbTab} allowTabs={turbAllowed} savePjMeta={savePjMetaOverride}/></PageGuard>}
-            {view==="planner"&&isOwner&&<PlannerView productionExclusions={productionExclusions} testers={testsDoc&&Array.isArray(testsDoc.testers)?testsDoc.testers:[]} planLoaded={planLoaded} planDoc={planDoc} rows={dataWithOverrides} closurePeriods={closurePeriods} authorName={authorName}
+            {view==="planner"&&isOwner&&<PlannerView productionExclusions={productionExclusions} testers={testsDoc&&Array.isArray(testsDoc.testers)?testsDoc.testers:[]} planLoaded={planLoaded} planDoc={planDoc} rows={dataWithOverrides} closurePeriods={closurePeriods} authorName={authorName} pendingDeparts={pendingDeparts} onPendingApplied={clearPendingDeparts}
               onSavePlan={p=>savePlan(p,authorName)} onPublish={async(plan,note,announce)=>{const r=await publishPlan({plan,closurePeriods,productionExclusions,by:authorName,note,announce});/* v224 : un PJ publié depuis le planificateur et absent du planning initial → même bandeau qu’après un import (« Les ancrer dans l’initial ») */if(r&&r.rows&&initialPjsRef.current.size){const fresh=r.rows.filter(x=>x&&x.pj&&x.etat!=="SLOT_LIBRE"&&!isEstimatePj(x.pj)&&!initialPjsRef.current.has(x.pj));setNewVsInitial(fresh.length?{rows:r.rows,pjs:fresh.map(x=>x.pj)}:null);}return r;}} onLoadHistory={loadHistory} onRestorePublication={restorePublication}/>}
             {view==="tests"&&canSeeTests&&<TestsTab doc={testsView} save={saveTests} data={dataWithOverrides} certifs={certifs} canEdit={testsAdmin} lead={isTestLead} sub={testsSub} onSub={setTestsSub} allowSubs={testsAllowed} focusPj={testsFocus} me={currentUser&&currentUser.email} signApi={signApi}/>}
             {view==="changes"&&<ChangesView entries={changeLog} onOpenPj={jumpToPj}/>}

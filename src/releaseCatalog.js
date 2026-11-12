@@ -846,4 +846,9 @@ export const RELEASE_CATALOG = [
     ["Site", "Survols du menu, de la Liste, du Gantt, du Calendrier et des Commentaires en CSS : plus fluides, et rien ne reste allumé sous le doigt sur tablette."],
     ["Site", "Pastilles et puces de choix dessinées une seule fois et réutilisées (fiche d'un PJ, accueil, fiches projet, séries, personnes)."],
   ] },
+  { v: "312", t: "Calendrier en barres continues, début de production, départ modifiable", items: [
+    ["Calendrier", "Vues Jour et Semaine : une barre par machine (réception, production, tests, packaging) avec les dates écrites ; visites client / NOBO en étiquettes ; planning initial derrière un bouton."],
+    ["Liste", "Nouvelle colonne « Début prod » (date du planificateur, après publication) ; aussi dans la fiche d'un PJ, le Gantt et le Calendrier."],
+    ["Planning", "Les admins changent la date de départ dans la Liste (crayon) ou dans la fiche d'un PJ ; elle est reprise dans le planificateur."],
+  ] },
 ];

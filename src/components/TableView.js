@@ -22,13 +22,14 @@ export const TABLE_COLUMNS=[
   {id:"gamme",label:"Gamme"},
   {id:"etat",label:"État"},
   {id:"arrivee",label:"Arrivée"},
+  {id:"debprod",label:"Début prod"},
   {id:"tests",label:"Tests"},
   {id:"finprod",label:"Fin prod"},
   {id:"depart",label:"Départ"},
   {id:"avancement",label:"Avancement"},
 ];
 // v180 : vues prêtes — [libellé, colonnes masquées].
-const COLUMN_PRESETS=[["Atelier",["serie","pays","chef","gamme"]],["Direction",["serie","commentaires","arrivee","tests","finprod"]],["Tout afficher",[]]];
+const COLUMN_PRESETS=[["Atelier",["serie","pays","chef","gamme"]],["Direction",["serie","commentaires","arrivee","debprod","tests","finprod"]],["Tout afficher",[]]];
 export function ColumnPicker({hidden,setHidden}){
   const [open,setOpen]=useState(false);
   useCloseOnSignal(setOpen);
@@ -100,7 +101,7 @@ function useDpr(){
   React.useEffect(()=>{const f=()=>setD(window.devicePixelRatio||1);window.addEventListener("resize",f);return()=>window.removeEventListener("resize",f);},[]);
   return d;
 }
-export const DEFAULT_COL_WIDTHS_PCT={pj:7,serie:7,projet:13,pays:8,chef:5,gamme:7,etat:8,arrivee:8,tests:16,finprod:8,depart:8,avancement:7,commentaires:5};
+export const DEFAULT_COL_WIDTHS_PCT={pj:7,serie:7,projet:12,pays:8,chef:5,gamme:7,etat:8,arrivee:7,debprod:7,tests:15,finprod:7,depart:9,avancement:7,commentaires:5};
 export function ResizeHandle({colId,nextColId,colWidths,setColWidths,order,userSized,markSized}){
   const onMouseDown=e=>{
     e.preventDefault();
@@ -178,7 +179,17 @@ function PresenceCell({r,tight,onChange}){
   </span>);
 }
 
-export function TableView({data,progress,df,setDf,selEtats,setSelEtats,selGammes,setSelGammes,allPJs,selPJs,setSelPJs,allProjets,selProjets,setSelProjets,allPays,selPays,setSelPays,allChefs,selChefs,setSelChefs,selMoisArrivee,setSelMoisArrivee,selMoisTests,setSelMoisTests,selMoisFinProd,setSelMoisFinProd,selMoisDepart,setSelMoisDepart,comments,addComment,deleteComment,pinOk,delays,delayTypes,setDelayTypes,addDelayAllocation,deleteDelayAllocation,addDelayComment,deleteDelayComment,externalSel,setExternalSel,authorName,savePjMetaOverride,canEditMeta,onlyDrift,setOnlyDrift,onlyChanged,setOnlyChanged,setEtatFor,setClientPresenceFor}){
+// v312 : départ modifiable dans la Liste (admins) — crayon au survol de la cellule, champ date, Entrée ou sortie du champ = enregistrer, Échap = annuler.
+function DepartEdit({r,onSet,children}){
+  const [ed,setEd]=useState(false),[v,setV]=useState("");
+  const iso=r.depart?String(r.depart).slice(0,10):"";
+  if(!onSet)return children;
+  if(ed)return <input type="date" autoFocus value={v} aria-label={"Nouvelle date de départ de "+r.pj} onClick={e=>e.stopPropagation()} onChange={e=>setV(e.target.value)}
+    onKeyDown={e=>{e.stopPropagation();if(e.key==="Escape")setEd(false);if(e.key==="Enter"){setEd(false);if(v&&v!==iso)onSet(r.pj,v);}}}
+    onBlur={()=>{setEd(false);if(v&&v!==iso)onSet(r.pj,v);}} style={{font:"inherit",fontSize:FZ.sm,padding:"2px 4px",border:"1px solid "+T.teal500,borderRadius:8,background:T.card,color:T.ink900,maxWidth:140}}/>;
+  return <span className="e-editcell" style={{display:"inline-flex",alignItems:"center",gap:4}}>{children}<button type="button" className="e-editbtn" aria-label={"Changer la date de départ de "+r.pj} title="Changer la date de départ (admins)" onClick={e=>{e.stopPropagation();setV(iso);setEd(true);}} style={{border:"none",background:"transparent",color:T.ink500,cursor:"pointer",padding:2,borderRadius:4,display:"inline-flex"}}><NavIcon name="edit" size={13}/></button></span>;
+}
+export function TableView({data,onSetDepart,progress,df,setDf,selEtats,setSelEtats,selGammes,setSelGammes,allPJs,selPJs,setSelPJs,allProjets,selProjets,setSelProjets,allPays,selPays,setSelPays,allChefs,selChefs,setSelChefs,selMoisArrivee,setSelMoisArrivee,selMoisTests,setSelMoisTests,selMoisFinProd,setSelMoisFinProd,selMoisDepart,setSelMoisDepart,comments,addComment,deleteComment,pinOk,delays,delayTypes,setDelayTypes,addDelayAllocation,deleteDelayAllocation,addDelayComment,deleteDelayComment,externalSel,setExternalSel,authorName,savePjMetaOverride,canEditMeta,onlyDrift,setOnlyDrift,onlyChanged,setOnlyChanged,setEtatFor,setClientPresenceFor}){
   const {marks,clear:clearMarks}=useMarks();
   const [selInternal,setSelInternal]=useState(null);
   const sel=externalSel!==undefined?externalSel:selInternal;
@@ -228,12 +239,12 @@ export function TableView({data,progress,df,setDf,selEtats,setSelEtats,selGammes
       chef:r=>getPjMeta(r.pj,r).chefProjet,
       gamme:r=>r.gamme,
       etat:r=>{const i=ALL_ETATS.indexOf(r.etat);return i<0?null:i;},
-      arrivee:r=>T0(r.arrivee),tests:r=>T0(r.tests),finprod:r=>T0(r.finProd),depart:r=>T0(r.depart),
+      arrivee:r=>T0(r.arrivee),debprod:r=>T0(r.debutProd),tests:r=>T0(r.tests),finprod:r=>T0(r.finProd),depart:r=>T0(r.depart),
       avancement:r=>progress[r.pj]
     };
     const g=GET[sort.col];if(!g)return data;
     const a=[...data];
-    const DATE_COLS={arrivee:r=>[T0(r.arrivee),T0(r.arrivee)],tests:r=>{const a=T0(r.tests);return [a,T0(r.testsFin)??a];},finprod:r=>[T0(r.finProd),T0(r.finProd)],depart:r=>[T0(r.depart),T0(r.depart)]};
+    const DATE_COLS={arrivee:r=>[T0(r.arrivee),T0(r.arrivee)],debprod:r=>[T0(r.debutProd),T0(r.debutProd)],tests:r=>{const a=T0(r.tests);return [a,T0(r.testsFin)??a];},finprod:r=>[T0(r.finProd),T0(r.finProd)],depart:r=>[T0(r.depart),T0(r.depart)]};
     if(DATE_COLS[sort.col]&&sort.dir==="asc"){
       // v146.14 « Prochaine date d'abord » : ce qui arrive en premier dans le calendrier à partir d'aujourd'hui (en cours ou à venir, le plus proche en tête),
       // puis les dates passées (la plus récente d'abord), puis les PJ sans date. Pour les tests, un passage au banc en cours compte comme à venir.
@@ -280,7 +291,7 @@ export function TableView({data,progress,df,setDf,selEtats,setSelEtats,selGammes
   // v130 : la liste doit tenir dans sa largeur sans défilement horizontal. Le N° de série passe sous le N° PJ, le pays devient un drapeau ;
   // si cela ne suffit pas, les colonnes les moins importantes sont masquées une à une, automatiquement, jusqu'à ce que tout tienne (mesure réelle
   // du tableau, pas une estimation). Elles reviennent d'elles-mêmes dès qu'il y a de la place (volet de droite réduit, écran plus large).
-  const AUTO_ORDER=["arrivee","finprod","chef","gamme","pays","commentaires","tests","avancement"];
+  const AUTO_ORDER=["debprod","arrivee","finprod","chef","gamme","pays","commentaires","tests","avancement"];
   const boxRef=React.useRef(null);
   const fitKey=listW+"|"+data.length+"|"+[...hiddenCols].sort().join(",")+"|"+df+"|"+(userSized?"u":"a");
   const [fit,setFit]=useState({key:"",n:0});
@@ -332,8 +343,8 @@ export function TableView({data,progress,df,setDf,selEtats,setSelEtats,selGammes
     window.XLSX.writeFile(wb,"Planning_Enogia_"+dateStr+".xlsx");
   };
   // Liste ordonnée des colonnes actuellement visibles, pour savoir quelle est "la suivante" lors du redimensionnement
-  const visibleColOrder=["pj","projet","pays","chef","gamme","etat","arrivee","tests","finprod","depart","avancement","commentaires"].filter(id=>id==="pj"||show(id));
-  const allColOrder=["pj","projet","pays","chef","gamme","etat","arrivee","tests","finprod","depart","avancement","commentaires"].filter(id=>id==="pj"||show(id));
+  const visibleColOrder=["pj","projet","pays","chef","gamme","etat","arrivee","debprod","tests","finprod","depart","avancement","commentaires"].filter(id=>id==="pj"||show(id));
+  const allColOrder=["pj","projet","pays","chef","gamme","etat","arrivee","debprod","tests","finprod","depart","avancement","commentaires"].filter(id=>id==="pj"||show(id));
   const nextVisible=id=>{const i=visibleColOrder.indexOf(id);return i>=0&&i<visibleColOrder.length-1?visibleColOrder[i+1]:null;};
   // v162 : ni zébrage ni fond de survol global (liseré + teinte d état par ligne)
   const thBase={padding:(D.cellY+2)+"px "+PX+"px",textAlign:"left",fontWeight:600,color:T.ink500,fontSize:FZ.xs,lineHeight:1.25,whiteSpace:"normal",position:"sticky",top:0,zIndex:10,background:T.surface,borderBottom:"1px solid "+T.line,backgroundClip:"padding-box",overflow:"hidden",verticalAlign:"middle",boxShadow:"1px 0 0 0 "+T.surfaceAlt}; // v146.21 : l'ombre de 1 px recouvre le filet sombre qui apparaissait entre deux en-têtes (arrondis de largeur)
@@ -387,6 +398,7 @@ export function TableView({data,progress,df,setDf,selEtats,setSelEtats,selGammes
         {show("gamme")&&<col style={{width:cw("gamme")}}/>}
         {show("etat")&&<col style={{width:cw("etat")}}/>}
         {show("arrivee")&&<col style={{width:cw("arrivee")}}/>}
+        {show("debprod")&&<col style={{width:cw("debprod")}}/>}
         {show("tests")&&<col style={{width:cw("tests")}}/>}
         {show("finprod")&&<col style={{width:cw("finprod")}}/>}
         {show("depart")&&<col style={{width:cw("depart")}}/>}
@@ -402,6 +414,8 @@ export function TableView({data,progress,df,setDf,selEtats,setSelEtats,selGammes
         {show("etat")&&<th aria-sort={ariaSort("etat")} style={thBase}><span style={{whiteSpace:"nowrap"}}>État {setSelEtats&&<DropFilter label="" icon sort={{...sortOf("etat"),asc:"Ordre d'avancement",desc:"Ordre inverse"}} options={ALL_ETATS} selected={selEtats} onChange={setSelEtats} getLabel={o=>ETAT_META[o]?.label||o}/>}{setSelEtats&&<EtatInfoButton style={{marginLeft:4,verticalAlign:"middle"}}/>}</span><ResizeHandle colId="etat" nextColId={nextVisible("etat")} colWidths={colWidths} setColWidths={setColWidths} order={allColOrder} userSized={userSized} markSized={()=>setUserSized(true)}/></th>}
         {show("arrivee")&&<th aria-sort={ariaSort("arrivee")} style={thBase}>Arrivée {setSelMoisArrivee&&<DropFilter label="" icon sort={{...sortOf("arrivee"),asc:"Prochaine date d'abord (à venir)",desc:"Date la plus tardive d'abord",extra:[{id:"old",label:"Date la plus ancienne d'abord"}]}} options={MONTHS} selected={selMoisArrivee} onChange={setSelMoisArrivee}/>}<ResizeHandle colId="arrivee" nextColId={nextVisible("arrivee")} colWidths={colWidths} setColWidths={setColWidths} order={allColOrder} userSized={userSized} markSized={()=>setUserSized(true)}/></th>}
         {show("tests")&&<th aria-sort={ariaSort("tests")} style={thBase}>Tests {setSelMoisTests&&<DropFilter label="" icon sort={{...sortOf("tests"),asc:"Prochaine date d'abord (à venir)",desc:"Date la plus tardive d'abord",extra:[{id:"old",label:"Date la plus ancienne d'abord"}]}} options={MONTHS} selected={selMoisTests} onChange={setSelMoisTests}/>}<ResizeHandle colId="tests" nextColId={nextVisible("tests")} colWidths={colWidths} setColWidths={setColWidths} order={allColOrder} userSized={userSized} markSized={()=>setUserSized(true)}/></th>}
+        {show("debprod")&&<th aria-sort={ariaSort("debprod")} style={thBase} title="Début de production (planificateur, après publication)">{tight?"Déb. prod":"Début prod"} <button type="button" onClick={e=>{e.stopPropagation();const d=sort.col==="debprod"?sort.dir:null;setColSort("debprod")(d==null?"asc":d==="asc"?"desc":null);}} title="Trier par début de production" aria-label="Trier par début de production"
+          style={{padding:"2px 4px",borderRadius:8,border:"none",background:sort.col==="debprod"?T.teal100:"transparent",color:sort.col==="debprod"?T.teal600:T.ink300,fontSize:FZ.xs,fontWeight:800,cursor:"pointer",verticalAlign:"middle",lineHeight:1,fontFamily:T.font}}>{sort.col==="debprod"?(sort.dir==="desc"?"↓":"↑"):"↕"}</button><ResizeHandle colId="debprod" nextColId={nextVisible("debprod")} colWidths={colWidths} setColWidths={setColWidths} order={allColOrder} userSized={userSized} markSized={()=>setUserSized(true)}/></th>}
         {show("finprod")&&<th aria-sort={ariaSort("finprod")} style={thBase}>Fin prod {setSelMoisFinProd&&<DropFilter label="" icon sort={{...sortOf("finprod"),asc:"Prochaine date d'abord (à venir)",desc:"Date la plus tardive d'abord",extra:[{id:"old",label:"Date la plus ancienne d'abord"}]}} options={MONTHS} selected={selMoisFinProd} onChange={setSelMoisFinProd}/>}<ResizeHandle colId="finprod" nextColId={nextVisible("finprod")} colWidths={colWidths} setColWidths={setColWidths} order={allColOrder} userSized={userSized} markSized={()=>setUserSized(true)}/></th>}
         {show("depart")&&<th aria-sort={ariaSort("depart")} style={thBase}>Départ {setSelMoisDepart&&<DropFilter label="" icon sort={{...sortOf("depart"),asc:"Prochaine date d'abord (à venir)",desc:"Date la plus tardive d'abord",extra:[{id:"old",label:"Date la plus ancienne d'abord"},{id:"drift",label:"Plus en retard d'abord (dérive)"}]}} options={MONTHS} selected={selMoisDepart} onChange={setSelMoisDepart}/>}<ResizeHandle colId="depart" nextColId={nextVisible("depart")} colWidths={colWidths} setColWidths={setColWidths} order={allColOrder} userSized={userSized} markSized={()=>setUserSized(true)}/></th>}
         {show("avancement")&&<th aria-sort={ariaSort("avancement")} style={thBase}>{tight?"Avanc.":"Avancement"} <span title="Cet avancement (%) reflète uniquement la production chez ENOGIA. Il ne prend pas en compte l'avancement chez les fournisseurs." style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:16,height:16,borderRadius:"50%",background:T.ink500,color:T.card,fontSize:FZ.xs,fontWeight:700,fontStyle:"italic",cursor:"help",verticalAlign:"middle"}}>i</span>{" "}<button type="button" onClick={e=>{e.stopPropagation();const d=sort.col==="avancement"?sort.dir:null;setColSort("avancement")(d==null?"desc":d==="desc"?"asc":null);}} title="Trier par avancement (cliquer pour changer le sens)" aria-label="Trier par avancement"
@@ -451,8 +465,9 @@ export function TableView({data,progress,df,setDf,selEtats,setSelEtats,selGammes
                 :presenceKind(r.clientPresence)&&<span style={{flexShrink:0,display:"inline-flex"}}><PresenceChip kind={presenceKind(r.clientPresence)} date={presenceFirstDate(r.clientPresence)} dates={presenceDates(r.clientPresence)} compact tiny short={tight} fontSize={10.5}/></span>}
             </div>
           </td>}
+          {show("debprod")&&<td style={{padding:D.cellY+"px "+PX+"px",color:T.ink700,fontSize:FS,whiteSpace:"nowrap"}}>{fmtMode(r.debutProd?new Date(r.debutProd):null,df)}</td>}
           {show("finprod")&&<td style={{padding:D.cellY+"px "+PX+"px",color:T.ink700,fontSize:FS,whiteSpace:"nowrap"}}>{fmtMode(r.finProd?new Date(r.finProd):null,df)}</td>}
-          {show("depart")&&<td style={{padding:D.cellY+"px "+PX+"px",fontWeight:600,color:done?T.emerald600:urgent?T.amber600:T.ink900,fontSize:FS,whiteSpace:"nowrap"}}>{r.drift!=null&&r.drift!==0?<HoverPop width={250} render={()=><DriftPopBody r={r} df={df}/>}><span>{fmtMode(r.depart?new Date(r.depart):null,df)}<span style={{marginLeft:6,fontSize:FZ.xs,fontWeight:700,color:r.drift>0?T.red500:T.emerald600}}>{r.drift>0?"+":""}{r.drift} j</span></span></HoverPop>:fmtMode(r.depart?new Date(r.depart):null,df)}</td>}
+          {show("depart")&&<td style={{padding:D.cellY+"px "+PX+"px",fontWeight:600,color:done?T.emerald600:urgent?T.amber600:T.ink900,fontSize:FS,whiteSpace:"nowrap"}}><DepartEdit r={r} onSet={onSetDepart}>{r.drift!=null&&r.drift!==0?<HoverPop width={250} render={()=><DriftPopBody r={r} df={df}/>}><span>{fmtMode(r.depart?new Date(r.depart):null,df)}<span style={{marginLeft:6,fontSize:FZ.xs,fontWeight:700,color:r.drift>0?T.red500:T.emerald600}}>{r.drift>0?"+":""}{r.drift} j</span></span></HoverPop>:fmtMode(r.depart?new Date(r.depart):null,df)}</DepartEdit></td>}
           {show("avancement")&&<td style={{padding:D.cellY+"px "+PX+"px",whiteSpace:"nowrap",overflow:"hidden"}}>
             {/* Même gabarit sur chaque ligne (piste + valeur à largeur fixe), avec ou sans valeur saisie :
                 sinon les lignes sans avancement ("—") n'ont pas la même hauteur/alignement que les autres. */}

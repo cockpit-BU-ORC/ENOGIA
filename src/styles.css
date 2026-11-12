@@ -607,3 +607,6 @@ button, input, select, textarea { font-family: inherit; }
 /* v311 : pastilles et puces communes (Pill, Chip de SharedUI.js) */
 .e-chip{transition:background-color .12s ease,border-color .12s ease,color .12s ease}
 @media (hover: hover){.e-chip[aria-pressed="false"]:hover{border-color:var(--e-chip-hover)!important}}
+
+/* v312 : crayon « changer le départ » de la Liste — visible au survol de la ligne ou au clavier ; toujours visible sur tablette */
+@media (hover: hover){ tr .e-editbtn{opacity:0;transition:opacity .12s ease} tr:hover .e-editbtn, .e-editbtn:focus-visible{opacity:1} }

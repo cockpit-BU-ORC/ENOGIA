@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { isPhone } from "../useIsPhone";
 import { EtatInfoButton } from "./ProdStagesUI";
-import { T, FZF, stagePalette, stageSoft, stripeBg } from "../theme";
+import { T, FZF, stagePalette, stripeBg } from "../theme";
 import { useMarks, NewMark } from "./ChangesNotice";
-import { getPjMeta, presenceKindAt, PRESENCE_META, MONTHS_FULL, today, ETAT_META, ALL_ETATS, ProjectLabelCell } from "../pjMeta";
+import { getPjMeta, presenceDates, PRESENCE_META, MONTHS_FULL, today, ETAT_META, ALL_ETATS, ProjectLabelCell } from "../pjMeta";
 import { DropFilter, pressable } from "./SharedUI";
 import { toLocalISO, weekStartOf } from "../parsers";
 import { toggleClosedDay, isClosedDay } from "../workDays";
@@ -29,7 +29,8 @@ export function getWeekStatus(r,weekStart,weekEnd){
   if(milestones.length>1)return milestones.join(" + ");
   if(milestones.length===1)return milestones[0];
   // "Production" uniquement entre l'arrivée et la fin de production (pas après)
-  if(a&&a<weekEnd&&(fp?fp>=weekStart:true)&&(dp?dp>=weekStart:true))return"Production";
+  const p0=r.debutProd?new Date(r.debutProd):a; // v312 : avant le début de production, pas de « Production »
+  if(p0&&p0<weekEnd&&(fp?fp>=weekStart:true)&&(dp?dp>=weekStart:true))return"Production";
   return null;
 }
 // v143 : couleurs d'étape dérivées du thème actif (theme.js › stagePalette) — mêmes teintes que le reste de la charte.
@@ -51,7 +52,6 @@ export function stageFill(status){
 
 // v172 : abréviations des étapes, pour les colonnes jour étroites (le mot entier reste affiché quand il tient).
 export const STAGE_SHORT={"Arrivée":"Arr.","Production":"Prod","Tests":"Tests","Fin prod":"Fin","Départ":"Dép."};
-const shortStatus=st=>String(st||"").split(" + ").map(k=>STAGE_SHORT[k]||k).join(" + ");
 
 export function getDayStatus(r,day,excludedDates){
   const dayEnd=new Date(day);dayEnd.setDate(dayEnd.getDate()+1);
@@ -71,30 +71,45 @@ export function getDayStatus(r,day,excludedDates){
 // v252 (maquette A « Semaines affinées » / « Mode Jours » du canevas Claude Design « Cockpit — Calendrier ») : la production devient une
 // bande continue (bords arrondis seulement au début et à la fin de la suite, libellé « Production → date de fin » au début) ; les jalons
 // (arrivée, tests, fin prod, départ) deviennent des pastilles ; la présence client / NOBO, deux ronds « C » / « N ».
-function PresenceDots({kind}){
-  const ks=kind==="both"?["client","nobo"]:[kind];
-  return <span style={{display:"inline-flex",gap:3,flexShrink:0}}>{ks.map(k=>{const m=PRESENCE_META[k];return <span key={k} title={m.label+" présent aux tests"} aria-label={m.label+" présent aux tests"} style={{width:17,height:17,borderRadius:"50%",background:m.bg,border:"2px solid "+m.color,color:m.ink,fontSize:9.5,fontWeight:800,display:"inline-flex",alignItems:"center",justifyContent:"center",boxSizing:"border-box",lineHeight:1}}>{k==="client"?"C":"N"}</span>;})}</span>;
-}
 const fdShort=v=>{const d=v?new Date(v):null;return d&&!isNaN(d)?String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0"):"";};
-// Une tuile : bande (production seule) ou pastille (jalons). runStart / runEnd : la bande continue de la case d'avant / d'après.
-function StageTile({status,label,fill,st,pKind,closed,runStart,runEnd,rowH,compact}){
-  const prod=status==="Production";
-  if(prod){
-    const h=Math.max(16,Math.round(rowH*0.42));
-    return <div style={{position:"absolute",top:"50%",left:runStart?4:-1,right:runEnd?4:0,height:h,marginTop:-h/2,background:fill.background,color:fill.color,borderRadius:(runStart?4:0)+"px "+(runEnd?4:0)+"px "+(runEnd?4:0)+"px "+(runStart?4:0)+"px",opacity:closed?0.45:1,display:"flex",alignItems:"center",padding:runStart?"0 8px":0,overflow:"visible",whiteSpace:"nowrap",zIndex:1,pointerEvents:"none"}}>
-      {runStart&&label&&<span style={{fontSize:FZF.xs,fontWeight:700,position:"relative",zIndex:2}}>{label}</span>}
-    </div>;
-  }
-  const h=Math.max(20,Math.min(30,Math.round(rowH*0.6)));
-  // plusieurs étapes la même case (« Tests + Fin prod ») : une petite pastille par étape, chacune dans sa couleur et son encre
-  // (le fond en diagonale rendait le texte illisible sur le vert foncé)
-  const P=stagePalette(),parts=String(status).split(" + ").filter(Boolean);
-  // colonne jour étroite (compact) : la pastille prend toute la case, texte abrégé plus petit, coupé net plutôt que « … »
-  const pill=(k,txt)=>{const s=P[k]||st;return <span key={k} style={{minWidth:0,flex:compact?"1 1 0":"0 1 auto",background:parts.length>1?s.c:fill.background,color:parts.length>1?s.t:fill.color,borderRadius:compact?4:999,padding:compact?"3px 1px":parts.length>2?"3px 6px":"4px 10px",fontSize:compact?10:FZF.xs,fontWeight:700,lineHeight:1.15,textAlign:"center",whiteSpace:compact||parts.length>1?"nowrap":"normal",overflow:"hidden",textOverflow:compact?"clip":"ellipsis",boxShadow:T.mode==="dark"?"inset 0 0 0 1px "+s.t+"33":"none"}}>{txt}</span>;};
-  return <div style={{position:"absolute",top:"50%",left:3,right:3,minHeight:h,transform:"translateY(-50%)",display:"flex",alignItems:"center",justifyContent:"center",gap:3,opacity:closed?0.45:1,zIndex:2,pointerEvents:"none"}}>
-    {parts.length>1?parts.map(k=>pill(k,compact?(STAGE_SHORT[k]||k):k)):pill(parts[0],label)}
-    {pKind&&<PresenceDots kind={pKind}/>}
-  </div>;
+// v312 (maquette v312-calendrier-lignes, piste A1 « barre continue » validée) : une seule barre par machine, découpée en étapes collées
+// (réception, production, tests, packaging), le nom et la date de fin écrits dedans ; « Arrivée jj/mm » avant la barre, « Départ jj/mm »
+// après ; visite client / NOBO = étiquette au-dessus du jour ; jours sans production / atelier fermé hachurés. Le planning initial
+// n'apparaît qu'avec le bouton « Planning initial » (trait pointillé + écart). La barre ne capte pas les clics : les cases dessous gardent
+// leurs actions (fiche du PJ, options de production du jour).
+const isoD=v=>{if(!v)return null;const d=new Date(v);return isNaN(d)?null:toLocalISO(d);};
+const addIso=(iso,n)=>{const d=new Date(iso+"T12:00:00");d.setDate(d.getDate()+n);return toLocalISO(d);};
+function RowTrack({r,xOf,rowH,showIni,offDates,closedOf,totalW}){
+  const S=SEGMENT_STYLE,arr=isoD(r.arrivee),p0=isoD(r.debutProd)||arr,tst=isoD(r.tests),fin=isoD(r.finProd),dep=isoD(r.depart),tEnd=isoD(r.testsFin)||tst;
+  if(!arr&&!dep)return null;
+  const segs=[];
+  const push=(a,b,k,label)=>{if(a&&b&&b>=a)segs.push({a,b,k,label});};
+  if(arr&&p0&&p0>arr)push(arr,addIso(p0,-1),"Arrivée","Réception");
+  const pEnd=tst?addIso(tst,-1):fin||(dep?addIso(dep,-1):null);
+  push(p0,pEnd,"Production","Production"+(pEnd?" · fin "+fdShort(pEnd):""));
+  const tE=fin&&fin>=(tEnd||"")?fin:tEnd;
+  if(tst)push(tst,tE,"Tests","Tests · fin "+fdShort(tE));
+  if(tE&&dep&&addIso(tE,1)<=addIso(dep,-1))push(addIso(tE,1),addIso(dep,-1),"Fin prod","Packaging");
+  const top=Math.round(rowH*0.38),h=Math.max(20,Math.round(rowH*0.4));
+  const drift=Number(r.drift)||0,ini=showIni&&dep&&drift?addIso(dep,-drift):null;
+  const vis=presenceDates(r.clientPresence);
+  const box=(a,b)=>{const x0=xOf(a,false),x1=xOf(b,true);if(x1<=0||x0>=totalW)return null;return{l:Math.max(0,x0),w:Math.min(totalW,x1)-Math.max(0,x0),cutL:x0<0,cutR:x1>totalW};};
+  const out=[];
+  segs.forEach((s,i)=>{const bx=box(s.a,s.b);if(!bx)return;const st=S[s.k]||S["Production"];const first=i===0&&!bx.cutL,last=i===segs.length-1&&!bx.cutR;
+    out.push(<div key={"s"+i} title={s.label+" ("+fdShort(s.a)+" → "+fdShort(s.b)+")"} style={{position:"absolute",left:bx.l,width:Math.max(2,bx.w),top,height:h,background:st.c,color:st.t,display:"flex",alignItems:"center",padding:"0 8px",boxSizing:"border-box",fontSize:FZF.xs,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",
+      borderRadius:(first?6:0)+"px "+(last?6:0)+"px "+(last?6:0)+"px "+(first?6:0)+"px",boxShadow:i>0&&!bx.cutL?"inset 2px 0 0 "+T.surface:"none"}}><span style={{overflow:"hidden",textOverflow:"ellipsis"}}>{bx.cutL?"← ":""}{bx.w>46?s.label:""}</span></div>);});
+  // jours sans production (ce PJ) et atelier fermé, sur la partie production de la barre
+  (offDates||[]).forEach(d=>{if(!p0||!pEnd||d<p0||d>pEnd)return;const bx=box(d,d);if(!bx)return;out.push(<div key={"o"+d} title={"Pas de production le "+fdShort(d)} style={{position:"absolute",left:bx.l,width:bx.w,top,height:h,backgroundImage:"repeating-linear-gradient(135deg,rgba(255,255,255,.55) 0 3px,transparent 3px 7px)"}}/>);});
+  (closedOf?closedOf(p0,pEnd):[]).forEach(d=>{const bx=box(d,d);if(!bx)return;out.push(<div key={"c"+d} title={"Atelier fermé le "+fdShort(d)} style={{position:"absolute",left:bx.l,width:bx.w,top,height:h,backgroundImage:"repeating-linear-gradient(135deg,rgba(255,255,255,.55) 0 3px,transparent 3px 7px)"}}/>);});
+  const lab={position:"absolute",top,height:h,display:"flex",alignItems:"center",fontSize:FZF.xs,color:T.ink700,whiteSpace:"nowrap"};
+  const start=segs[0]&&segs[0].a;
+  if(start){const x=xOf(start,false);if(x>4&&x<totalW)out.push(<div key="la" style={{...lab,right:totalW-x+6}}>Arrivée&nbsp;<b style={{color:T.ink900}}>{fdShort(arr)}</b></div>);}
+  if(dep){const lastB=segs.length?segs[segs.length-1].b:null,x=Math.max(xOf(addIso(dep,-1),true),lastB?xOf(lastB,true):-1);if(x>=0&&x<totalW-20)out.push(<div key="ld" style={{...lab,left:x+6}}>Départ&nbsp;<b style={{color:T.ink900}}>{fdShort(dep)}</b>{ini&&drift>0?<span style={{color:T.red600,fontWeight:700,marginLeft:4}}>+{drift} j</span>:null}</div>);}
+  if(ini){const x=xOf(ini,false);if(x>=0&&x<totalW)out.push(<div key="ini" title={"Départ au planning initial : "+fdShort(ini)} style={{position:"absolute",left:x,top:2,bottom:2,borderLeft:"2px dashed "+T.ink500,opacity:.75}}/>,<div key="inil" style={{position:"absolute",left:x+3,bottom:1,fontSize:10.5,color:T.ink500,background:T.surface,padding:"0 3px",borderRadius:3,whiteSpace:"nowrap"}}>initial {fdShort(ini)}</div>);}
+  let tagEnd=-1; // deux visites proches : la seconde étiquette se place après la première
+  ["client","nobo"].map(k=>({k,d:isoD(vis[k])})).filter(v=>v.d).sort((p,q)=>p.d<q.d?-1:1).forEach(({k,d})=>{let x=xOf(d,false);if(x<0||x>=totalW)return;const m=PRESENCE_META[k];x=Math.max(x,tagEnd+4);tagEnd=x+2+(m.label.length+6)*6.6+14;
+    out.push(<div key={"v"+k} title={m.label+" présent aux tests le "+fdShort(d)} style={{position:"absolute",left:x+2,top:Math.max(1,top-19),height:17,display:"flex",alignItems:"center",gap:4,padding:"0 6px",borderRadius:4,background:T.card,border:"1px solid "+T.line,boxShadow:"inset 3px 0 0 "+m.color,fontSize:11,fontWeight:700,color:m.ink||T.ink700,whiteSpace:"nowrap",zIndex:2}}>{m.label}<span style={{fontWeight:500,color:T.ink500}}>{fdShort(d)}</span></div>);});
+  return out;
 }
 export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusionDays,data,onSelectPj,mode,setMode,anchor,setAnchor,dayAnchor,setDayAnchor,closurePeriods,productionExclusions,zoomLevel:zoomRaw,setZoomLevel,selEtats,setSelEtats,allPJs,selPJs,setSelPJs}){
   const {marks}=useMarks();
@@ -103,6 +118,8 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
   // v310 : vue Mois (CalendarMonth) — mois affiché, 1er du mois
   const [monthD,setMonthD]=useState(()=>{const d=new Date();return new Date(d.getFullYear(),d.getMonth(),1);});
   const shiftMonth=n=>setMonthD(m=>new Date(m.getFullYear(),m.getMonth()+n,1));
+  const [showIni,setShowIni]=useState(()=>{try{return localStorage.getItem("enogia_cal_ini")==="1";}catch(e){return false;}});
+  const toggleIni=()=>setShowIni(v=>{try{localStorage.setItem("enogia_cal_ini",v?"0":"1");}catch(e){}return !v;});
   useEffect(()=>{if(!dayMenu)return undefined;const k=e=>{if(e.key==="Escape")setDayMenu(null);};window.addEventListener("keydown",k);return()=>window.removeEventListener("keydown",k);},[dayMenu]);
   const isClosurePeriod=(colStart,colEnd)=>{
     if(!closurePeriods||!closurePeriods.length)return false;
@@ -262,10 +279,17 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
   const unit=Math.floor((avail/weightOf(effCount))*100)/100;
   const colPx=unit;
   const wePx=Math.floor(unit*WE_RATIO*100)/100;
-  const showWords=mode==="week"||colPx>=WORD_COL;
   // Plage de colonnes à dessiner [lo, hi] d'après le défilement horizontal.
   const colW=cols.map(c=>mode==="week"?colPx:((c.getDay()===0||c.getDay()===6)?wePx:colPx));
   const colX=[];colW.reduce((acc,w)=>{colX.push(acc);return acc+w;},0);
+  const totalW=colX.length?colX[colX.length-1]+colW[colW.length-1]:0;
+  const base0=cols.length?toLocalISO(cols[0]):null;
+  const dayN=iso=>Math.round((new Date(iso+"T12:00:00")-new Date(base0+"T12:00:00"))/864e5);
+  // x d'une date (début du jour, ou fin du jour si end) ; hors plage = au-delà des bords
+  const xOf=(iso,end)=>{if(!base0)return 0;const n=dayN(iso)+(end?1:0);
+    if(mode==="week"){const wi=Math.floor(n/7),f=(n-wi*7)/7;if(wi<0)return -1;if(wi>=cols.length)return totalW+1;return colX[wi]+f*colW[wi];}
+    if(n<0)return -1;if(n>cols.length)return totalW+1;if(n===cols.length)return totalW;return colX[n];};
+  const closedDays=(a,b)=>{if(!a||!b||!closurePeriods||!closurePeriods.length)return [];const o=[];for(let d=a;d<=b&&o.length<400;d=addIso(d,1))if(isClosedDay(closurePeriods,d))o.push(d);return o;};
   let lo=0;while(lo<cols.length-1&&colX[lo]+colW[lo]<scrollX-VIEW_BUF)lo++;
   let hi=lo;while(hi<cols.length-1&&colX[hi]<scrollX+viewW-LEFT_W+VIEW_BUF)hi++;
   // Lignes de la grille : 1 = mois, (2 = n° de semaine en mode Jour), puis en-tête, puis une ligne par machine.
@@ -302,6 +326,7 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
         {setSelEtats&&<DropFilter label="État" options={ALL_ETATS} selected={selEtats} onChange={setSelEtats} getLabel={o=>ETAT_META[o]?.label||o}/>}
         {setSelEtats&&<EtatInfoButton/>}
         {allPJs&&<DropFilter label="PJ" options={allPJs} selected={selPJs||new Set(allPJs)} onChange={setSelPJs}/>}
+        {mode!=="month"&&<button type="button" onClick={toggleIni} aria-pressed={showIni} title="Afficher le départ prévu au planning initial et l'écart" style={{padding:"5px 10px",borderRadius:8,border:"1px solid "+(showIni?T.teal500:T.line),background:showIni?T.teal100:"transparent",color:showIni?T.teal600:T.ink700,fontSize:FZF.sm,fontWeight:600,cursor:"pointer"}}>Planning initial</button>}
         {mode!=="month"&&<div style={{display:"flex",gap:4}}>
           <button onClick={zoomOut} disabled={zoomLevel>=maxZoomLevel} style={{padding:"5px 9px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:zoomLevel>=maxZoomLevel?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:700,cursor:zoomLevel>=maxZoomLevel?"default":"pointer"}}>−</button>
           <button onClick={zoomIn} disabled={zoomLevel<=0} style={{padding:"5px 9px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:zoomLevel<=0?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:700,cursor:zoomLevel<=0?"default":"pointer"}}>+</button>
@@ -387,19 +412,7 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
               const cellBg=closed?T.ink100:isTodayCol?T.red500+"12":rowBg;
               const todayEdge=isTodayCol?"inset 2px 0 0 "+T.red500+", inset -2px 0 0 "+T.red500:"none";
               if(!status)return<div key={wi} style={{...pos,height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,background:cellBg,boxShadow:todayEdge}}/>;
-              const lastMilestone=status.split(" + ").pop();
-              const st=SEGMENT_STYLE[lastMilestone]||SEGMENT_STYLE["Production"];
-              const fill=stageFill(status);
-              const pKindW=presenceKindAt(r.clientPresence,v=>{const x=new Date(v);return x>=w&&x<we;});
-              const pKind=pKindW,showPresence=!!pKindW;
               return(<div key={wi} className="e-hov" onClick={()=>onSelectPj&&onSelectPj(pj)} style={{"--e-hov-bg":T.teal100+"50",...pos,height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,boxShadow:todayEdge,padding:3,cursor:"pointer",position:"relative",background:cellBg,transition:"background .12s ease"}}>
-                {/* Tuile de nouveau remplie (demandé explicitement : "essaye de les remplir") — le mot
-                    complet doit toujours rester lisible ("je dois toujours réussir à lire l'intégralité
-                    des mots"), donc texte qui s'enroule sur 2 lignes plutôt qu'une troncature. */}
-                {(()=>{const pw=new Date(w);pw.setDate(pw.getDate()-7);const nw=new Date(we);nw.setDate(nw.getDate()+7);
-                  const runStart=status!=="Production"||getWeekStatus(r,pw,w)!=="Production"||wi===lo,runEnd=status!=="Production"||getWeekStatus(r,we,nw)!=="Production";
-                  const label=status==="Production"?"Production"+(r.finProd?" → "+fdShort(r.finProd):""):status;
-                  return <StageTile status={status} label={label} fill={fill} st={st} pKind={showPresence?pKind:null} closed={closed} runStart={runStart} runEnd={runEnd} rowH={rowH}/>;})()}
               </div>);
             }):days.slice(lo,hi+1).map((d,k)=>{
               const di=lo+k,pos={gridColumn:di+2,gridRow:row};
@@ -414,24 +427,17 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
               const inProdRange=r.arrivee&&r.finProd&&toLocalISO(d)>=toLocalISO(new Date(r.arrivee))&&toLocalISO(d)<=toLocalISO(new Date(r.finProd));
               const cellMenu=canEditDays&&!isWE&&inProdRange&&!closed?(e=>{e.stopPropagation();onSelectPj&&onSelectPj(pj,toLocalISO(d));}):null; // v221 : fiche du PJ + bouton « production ce jour »
               if(!status)return(<div key={di} className="enogia-cal-daycell" onClick={cellMenu||undefined} title={cellMenu?pj+" : fiche et production de ce jour":undefined} style={{cursor:cellMenu?"pointer":undefined,...pos,height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,background:cellBg,boxShadow:todayEdge,position:"relative"}}/>);
-              const lastMilestone=status.split(" + ").pop();
-              const st=SEGMENT_STYLE[lastMilestone]||SEGMENT_STYLE["Production"];
-              const fill=stageFill(status);
-              const pKind=presenceKindAt(r.clientPresence,v=>new Date(v).toDateString()===d.toDateString());
-              const showPresence=!!pKind;
               // Texte en diagonale (demandé explicitement : "agrandir la hauteur des lignes ... ça
               // permettra d'écrire en diagonale") pour que le mot complet tienne dans la colonne jour,
               // étroite. Centré au milieu de la tuile (pivot au centre, plutôt qu'ancré au coin
               // bas-gauche) et contenu dans la tuile (overflow:"hidden" sur le conteneur) — demandé
               // explicitement : "les étapes sont pas au milieu des tiles et dépassent de celles-ci".
               return(<div key={di} className="enogia-cal-daycell e-hov" onClick={cellMenu||(()=>onSelectPj&&onSelectPj(pj))} style={{"--e-hov-bg":T.teal100+"50",...pos,height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,boxShadow:todayEdge,cursor:"pointer",background:cellBg,position:"relative",transition:"background .12s ease"}}>
-                {(()=>{const pd=new Date(d);pd.setDate(pd.getDate()-1);const nd=new Date(d);nd.setDate(nd.getDate()+1);
-                  const ex=productionExclusions?.[pj];
-                  const runStart=status!=="Production"||getDayStatus(r,pd,ex)!=="Production"||di===lo,runEnd=status!=="Production"||getDayStatus(r,nd,ex)!=="Production";
-                  const label=status==="Production"?(showWords?"Production"+(r.finProd?" → "+fdShort(r.finProd):""):"Prod"):(showWords?status:shortStatus(status));
-                  return <StageTile status={status} label={label} fill={fill} st={st} pKind={showWords&&showPresence?pKind:null} closed={closed} runStart={runStart} runEnd={runEnd} rowH={rowH} compact={!showWords}/>;})()}
               </div>);
             })}
+            <div aria-hidden="true" style={{gridColumn:"2 / span "+cols.length,gridRow:row,position:"relative",height:rowH,pointerEvents:"none",zIndex:3}}>
+              <RowTrack r={r} xOf={xOf} rowH={rowH} showIni={showIni} totalW={totalW} offDates={mode==="day"?(productionExclusions?.[pj]||[]):[]} closedOf={mode==="day"?closedDays:null}/>
+            </div>
           </React.Fragment>);
         })}
       </div>
@@ -439,16 +445,15 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
 
     {mode!=="month"&&<div style={{padding:"11px 18px",borderTop:"1px solid "+T.line,display:"flex",gap:16,flexWrap:"wrap",background:T.surface,alignItems:"center"}}>
       <span style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>Étapes</span>
-      {Object.entries(SEGMENT_STYLE).map(([label,st])=><span key={label} style={{display:"flex",alignItems:"center",gap:6,fontSize:FZF.md}}>
-        <span style={{width:14,height:14,borderRadius:4,background:st.c,boxShadow:"inset 0 0 0 1.5px "+stageSoft()[{"Arrivée":"arrivee","Production":"production","Tests":"tests","Fin prod":"finProd","Départ":"depart"}[label]].ring}}/>
-        <span style={{color:T.ink700,fontWeight:500}}>{label}{mode==="day"&&!showWords&&STAGE_SHORT[label]!==label?<span style={{color:T.ink500,fontWeight:400}}> ({STAGE_SHORT[label]})</span>:null}</span>
+      {[["Arrivée","Réception"],["Production","Production"],["Tests","Tests"],["Fin prod","Packaging"]].map(([k,label])=><span key={k} style={{display:"flex",alignItems:"center",gap:6,fontSize:FZF.md}}>
+        <span style={{width:14,height:14,borderRadius:4,background:SEGMENT_STYLE[k].c}}/>
+        <span style={{color:T.ink700,fontWeight:500}}>{label}</span>
       </span>)}
-      <span style={{display:"flex",alignItems:"center",gap:8,paddingLeft:16,borderLeft:"1px solid "+T.line}}>
-        <span style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>Présence tests</span>
-        <span style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:FZF.md,color:T.ink700}}><PresenceDots kind="client"/>Client</span><span style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:FZF.md,color:T.ink700}}><PresenceDots kind="nobo"/>NOBO</span>{/* v250 : « Client + NOBO » retiré de la légende (il répétait les deux étiquettes) */}
+      <span style={{display:"flex",alignItems:"center",gap:8,paddingLeft:16,borderLeft:"1px solid "+T.line,fontSize:FZF.md,color:T.ink700}}>
+        {["client","nobo"].map(k=><span key={k} style={{display:"inline-flex",alignItems:"center",height:17,padding:"0 6px",borderRadius:4,background:T.card,border:"1px solid "+T.line,boxShadow:"inset 3px 0 0 "+PRESENCE_META[k].color,fontSize:11,fontWeight:700,color:PRESENCE_META[k].ink||T.ink700}}>{PRESENCE_META[k].label}</span>)}visite aux tests
       </span>
-      <span style={{display:"flex",alignItems:"center",gap:6,paddingLeft:16,borderLeft:"1px solid "+T.line,fontSize:FZF.md,color:T.ink700}}><span style={{background:T.surfaceAlt,color:T.ink700,borderRadius:999,padding:"0 6px",fontSize:11,fontWeight:700,lineHeight:"16px"}}>↻ +5 j</span>décalage de la dernière mise à jour</span>
-      <span style={{fontSize:FZF.md,color:T.ink300,marginLeft:"auto"}}>Couleur de la tuile = étape · Colonne rouge = aujourd'hui · Clic = détail</span>
+      <span style={{display:"flex",alignItems:"center",gap:6,paddingLeft:16,borderLeft:"1px solid "+T.line,fontSize:FZF.md,color:T.ink700}}><span style={{width:14,height:14,borderRadius:4,background:SEGMENT_STYLE["Production"].c,backgroundImage:"repeating-linear-gradient(135deg,rgba(255,255,255,.55) 0 3px,transparent 3px 7px)"}}/>sans production / atelier fermé</span>
+      <span style={{fontSize:FZF.md,color:T.ink500,marginLeft:"auto"}}>Une barre par machine · « Planning initial » = départ prévu à l'origine · Clic = fiche</span>
     </div>}
 
 
