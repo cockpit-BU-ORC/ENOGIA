@@ -2277,3 +2277,7 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - S/N : `serialNumbers.js` (+test) — prévus d'après l'ordo (`AAAA-NNN-CCC`), affichés en italique, fixés par « Attribuer les S/N » (écrit `numSerie` dans `planning/pjMetaOverrides`, après confirmation).
 - Pas de nouvelle clé `localStorage` ; règles Firestore inchangées.
 - Fichiers : serialNumbers.js (+test), components/InboxPage.js (nouveau), MentionBell.js, Series.js, RowDetail.js, TableView.js, pjMeta.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v316 — Commentaires dans Opérations
+
+- Menu : Commentaires passe de Gestion à Opérations (App.js `NAV_TREE`, access.js).

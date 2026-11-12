@@ -29,7 +29,7 @@ export const ACCESS_PAGES = [
     subs: [["fiche", "Fiches projet"], ["hebdo", "Point hebdo"], ["serie", "Machines ORC"]] },
   { id: "finance", g: "Gestion", l: "Finance", d: "Cash in, montants", adm: "" },
   { id: "pilotage", g: "Gestion", l: "Pilotage", d: "KPI, retards", adm: "", subs: [["kpi", "KPI"], ["retards", "Retards"]] },
-  { id: "comments", g: "Gestion", l: "Commentaires", d: "fils par PJ", adm: "supprimer un commentaire" },
+  { id: "comments", g: "Opérations", l: "Commentaires", d: "fils par PJ", adm: "supprimer un commentaire" },
   { id: "calprod", g: "Administration", l: "Calendrier de production", d: "fermetures, jours sans production", adm: "" },
 ];
 export const ACCESS_IDS = ACCESS_PAGES.flatMap(p => [p.id, ...(p.subs || []).map(([s]) => p.id + "." + s)]);

@@ -864,4 +864,7 @@ export const RELEASE_CATALOG = [
     ["À traiter", "Nouvelle page « À traiter » (menu Opérations) : demandes à valider, mentions, affectations aux tests, puis informations. La cloche y mène et ne compte que ce qui attend une action."],
     ["Machines ORC", "S/N prévus d'après l'ordo (année d'arrivée · n° dans l'année · gamme, ex. 2026-034-180), affichés en italique ; « Attribuer les S/N » les fixe à l'arrivée des machines.", "admin"],
   ] },
+  { v: "316", t: "Commentaires dans Opérations", items: [
+    ["Menu", "Commentaires passe dans la rubrique Opérations."],
+  ] },
 ];

@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v316",
+    date: "2026-11-12",
+    title: "V316 : Commentaires dans Opérations",
+    items: [
+      { t: "Menu", d: "La page Commentaires est maintenant dans la rubrique Opérations." },
+    ],
+  },
+  {
     id: "2026-11-v315",
     date: "2026-11-12",
     title: "V315 : une seule page « À traiter »",

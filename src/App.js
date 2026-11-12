@@ -63,7 +63,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-12-v315-a-traiter-sn";
+const APP_BUILD_VERSION = "2026-11-12-v316-commentaires-operations";
 
 export default function App(){
   // Utilisateur connecté via Google, restreint aux comptes @enogia.com (null tant que non connecté).
@@ -975,14 +975,14 @@ export default function App(){
         subs:[["semaine","Par semaine"],["testers","Par testeur"],["catalog","Catalogue"],["checklists","Checklists"]].filter(([id])=>testsAllowed.includes(id)).map(([id,l])=>({id,l,on:view==="tests"&&testsSub===id,go:()=>{setTestsSub(id);setView("tests");}}))}]:[]),
       ...(canProdTurb?[{id:"turbines",l:"Turbines",icon:"gauge",on:view==="turbines",go:()=>setView("turbines"),
         subs:[["prod","Production"],["orc","Besoins ORC et SAV"]].filter(([id])=>turbAllowed.includes(id)).map(([id,l])=>({id,l,on:view==="turbines"&&turbTab===id,go:()=>{setTurbTab(id);setView("turbines");}}))}]:[]),
-      ...(canAchats?[{id:"achats",l:"Achats / Appro",icon:"inbox",on:view==="achats",go:()=>setView("achats")}]:[])]},
+      ...(canAchats?[{id:"achats",l:"Achats / Appro",icon:"inbox",on:view==="achats",go:()=>setView("achats")}]:[]),
+      ...(comOk?[{id:"comments",l:"Commentaires",icon:"comments",on:view==="comments",go:()=>setView("comments")}]:[])]}, // v316 : Commentaires dans Opérations
     {g:"Gestion",items:[
       ...(projOk?[{id:"projets",l:"Projets",icon:"manager",on:mgrOn(["fiche","hebdo","serie","orc"]),go:goMgr(["fiche","hebdo","serie"].find(t=>!mgrHidden.includes(t))||"fiche"),
         subs:[["fiche","Fiches projet"],["hebdo","Point hebdo"],["serie","Machines ORC"]].filter(([id])=>!mgrHidden.includes(id)).map(([id,l])=>({id,l,on:mgrOn(id==="serie"?["serie","orc"]:[id]),go:goMgr(id)}))}]:[]),
       ...(canCash?[{id:"cashin",l:"Finance",icon:"euro",on:view==="cashin",go:()=>setView("cashin")}]:[]),
       ...(pilOk?[{id:"pilotage",l:"Pilotage",icon:"chart",on:mgrOn(["derives","retards","retardsKpi"]),go:goMgr((isOwner||accMe)&&!mgrHidden.includes("derives")?"derives":"retards"),
-        subs:[...(isOwner||accMe?[["derives","KPI"]]:[]),["retards","Retards"]].filter(([id])=>!mgrHidden.includes(id)).map(([id,l])=>({id,l,on:mgrOn(id==="retards"?["retards","retardsKpi"]:[id]),go:goMgr(id)}))}]:[]),
-      ...(comOk?[{id:"comments",l:"Commentaires",icon:"comments",on:view==="comments",go:()=>setView("comments")}]:[])]},
+        subs:[...(isOwner||accMe?[["derives","KPI"]]:[]),["retards","Retards"]].filter(([id])=>!mgrHidden.includes(id)).map(([id,l])=>({id,l,on:mgrOn(id==="retards"?["retards","retardsKpi"]:[id]),go:goMgr(id)}))}]:[])]},
     {g:"Administration",items:[
       ...(calOk?[{id:"calprod",l:"Calendrier de production",icon:"calendar",on:mgrOn(["production","vacances"]),go:goMgr("production")}]:[]),
       ...(isOwner?[{id:"people",l:"Personnes et site",icon:"settings",on:mgrOn(["personnes","acces","nouveautes"]),go:goMgr("personnes")},{id:"access",l:"Accès",icon:"lock",on:view==="access",go:()=>setView("access")}]:[])]},
