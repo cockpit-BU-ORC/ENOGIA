@@ -7,7 +7,7 @@
 // v265 : contenu refait d'après la maquette B (onglets) — voir RowDetail plus bas.
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { T, FZF as FZ, inkOn, mixHex, stageSoft } from "../theme";
-import { ETAT_EDITS, getPjMeta, ETAT_META, chefsOf, EpcTag, PresenceChip, presenceKind, presenceFirstDate, presenceDates, CountryFlag, relTime, Avatar } from "../pjMeta";
+import { plannedSnOf, ETAT_EDITS, getPjMeta, ETAT_META, chefsOf, EpcTag, PresenceChip, presenceKind, presenceFirstDate, presenceDates, CountryFlag, relTime, Avatar } from "../pjMeta";
 import { NavIcon, PjPlate, OpenIn, Pill } from "./SharedUI";
 import { ProjectComments, DelayAllocations, EditMetaForm } from "./ProjectModal";
 import { STAGES, STEP_NOTE, autoPct } from "../prodStages";
@@ -182,7 +182,7 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
           <EpcTag meta={meta} />
           {testers.length > 0 && <span><span style={{ color: T.ink500 }}>Testeurs</span> {testers.join(", ")}</span>}
           {kind && <PresenceChip kind={kind} date={presenceFirstDate(r.clientPresence)} dates={presenceDates(r.clientPresence)} />}
-          {meta.numSerie && <span style={{ fontFamily: T.fontMono, fontSize: 11, color: T.ink500 }}>{meta.numSerie}</span>}
+          {meta.numSerie ? <span style={{ fontFamily: T.fontMono, fontSize: 11, color: T.ink500 }}>{meta.numSerie}</span> : plannedSnOf(r.pj) && <span title="S/N prévu d'après l'ordo, fixé à l'arrivée de la machine" style={{ fontFamily: T.fontMono, fontSize: 11, color: T.ink500, fontStyle: "italic" }}>S/N prévu {plannedSnOf(r.pj).sn}</span>}
           {canEditMeta && savePjMetaOverride && <button type="button" onClick={() => toggle("edit")} aria-expanded={open === "edit"} style={{ border: "none", background: "transparent", color: T.teal600, fontWeight: 700, fontSize: FZ.xs, cursor: "pointer", minHeight: 24, padding: 0, fontFamily: T.font }}>Modifier</button>}
         </div>
         {last && <button type="button" onClick={() => setTab("comments")} style={{ background: T.surface, borderRadius: 12, padding: "10px 12px", display: "block", width: "100%", textAlign: "left", border: "none", cursor: "pointer", fontFamily: T.font, fontSize: FZ.sm, color: T.ink900, lineHeight: 1.45 }}>« {String(last.text || "").replace(/\s+/g, " ").slice(0, 200)}{String(last.text || "").length > 200 ? "…" : ""} » <span style={{ fontSize: FZ.xs, color: T.ink500 }}>{last.author || ""}, {relTime(last.date)}</span></button>}

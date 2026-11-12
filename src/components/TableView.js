@@ -2,7 +2,7 @@ import React, { useState, useLayoutEffect, useEffect } from "react";
 import { T, FZ, D, mixHex } from "../theme";
 import { useMarks, NewMark } from "./ChangesNotice";
 import { EtatInfoButton } from "./ProdStagesUI";
-import { getPjMeta, initials, personTint, PresenceChip, presenceKind, presenceDates, presenceFirstDate, CountryFlag, ETAT_META, ALL_ETATS, ALL_GAMMES, GAMME_COLORS, MONTHS, today, EpcTag } from "../pjMeta";
+import { plannedSnOf, getPjMeta, initials, personTint, PresenceChip, presenceKind, presenceDates, presenceFirstDate, CountryFlag, ETAT_META, ALL_ETATS, ALL_GAMMES, GAMME_COLORS, MONTHS, today, EpcTag } from "../pjMeta";
 import { diffDays, fmtMode } from "../parsers";
 import { HoverPop, useSheetJS, Badge, DropFilter, NavIcon, useCloseOnSignal, EmptyState, pressable, PjPlate, notify } from "./SharedUI";
 import { RowDialog } from "./RowDetail";
@@ -444,6 +444,7 @@ export function TableView({data,onSetDepart,progress,df,setDf,selEtats,setSelEta
                 onClick={e=>{e.stopPropagation();const b=e.currentTarget.getBoundingClientRect();setRowMenu({pj:r.pj,x:b.left,y:b.bottom+4});}}
                 style={{border:"none",background:"transparent",color:T.ink500,cursor:"pointer",padding:2,borderRadius:8,display:"inline-flex",lineHeight:0}}><NavIcon name="more" size={16}/></button>
             </span>
+            {!hiddenCols.has("serie")&&!meta.numSerie&&plannedSnOf(r.pj)&&<div title="S/N prévu d'après l'ordo, fixé à l'arrivée de la machine" style={{fontVariantNumeric:"tabular-nums",fontSize:FZ.xs,color:T.ink500,fontStyle:"italic",lineHeight:1.25,marginTop:1,overflow:"hidden",textOverflow:"ellipsis"}}>prévu {plannedSnOf(r.pj).sn}</div>}
             {!hiddenCols.has("serie")&&meta.numSerie&&<div title={"N° de série : "+meta.numSerie} style={{fontVariantNumeric:"tabular-nums",fontSize:FZ.xs,color:T.ink500,lineHeight:1.25,marginTop:1,overflow:"hidden",textOverflow:"ellipsis"}}>{meta.numSerie}</div>}
           </td>
           {show("projet")&&<td style={{padding:D.cellY+"px "+PX+"px",color:T.ink900,fontSize:FS,fontWeight:600,letterSpacing:"-.005em",lineHeight:1.3,minWidth:tight?84:110}}><div title={meta.nomProjet} style={{display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden",overflowWrap:"break-word"}}>{meta.nomProjet}</div></td>}

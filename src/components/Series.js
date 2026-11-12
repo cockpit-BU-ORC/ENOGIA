@@ -5,6 +5,18 @@ import { CARD, EtatSelect, PresenceEditor } from "./ManagerParts";
 import { EtatsDialog } from "./EtatsDialog";
 import { EmptyState, Pill } from "./SharedUI";
 import { SERIE_SEED_TEXT } from "../serieSeed";
+import { planSerials, serialsDue } from "../serialNumbers";
+import { askConfirm } from "../confirm";
+
+// v315 : attribue (fixe) les S/N prévus des machines arrivées — confirmation avec la liste ; une gamme sans code (conteneur…) reste à saisir.
+export async function assignSerialsFlow(list, save) {
+  const ok = (list || []).filter(x => !x.missingCode), skip = (list || []).filter(x => x.missingCode);
+  if (!ok.length) return 0;
+  const yes = await askConfirm({ title: "Attribuer " + ok.length + " S/N ?", message: ok.map(x => x.pj + " → " + x.sn + " (arrivée le " + x.arrivee.split("-").reverse().join("/") + ")").join("\n") + (skip.length ? "\n\nÀ saisir à la main (gamme sans code) : " + skip.map(x => x.pj).join(", ") : "") + "\n\nUne fois attribués, ils ne bougent plus avec l'ordo.", confirmLabel: "Attribuer les S/N" });
+  if (!yes) return 0;
+  let n = 0; for (const x of ok) { if ((await save(x.pj, { numSerie: x.sn })) !== false) n++; }
+  return n;
+}
 
 // ── N° de série des machines (Manager › Réglages) ─────────────────────────────────────────────────────
 // Un numéro par PJ, saisi ici par les accès Manager, puis repris partout où le PJ apparaît (liste, calendrier,
@@ -19,7 +31,7 @@ function MetaCell({pj,field,value,onSave,width,placeholder}){
   return(<td style={{padding:"4px 8px",whiteSpace:"nowrap"}}><input type="text" value={v} placeholder={placeholder} aria-label={placeholder+" de "+pj} onChange={e=>setV(e.target.value)} onBlur={commit} onKeyDown={e=>{if(e.key==="Enter")e.currentTarget.blur();else if(e.key==="Escape"){setV(value||"");e.currentTarget.blur();}}}
     style={{width,padding:"4px 8px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink900,fontSize:FZ.xs,fontFamily:T.font}}/>{st&&<span style={{marginLeft:6,fontSize:FZ.xs,color:st==="échec"?T.red500:T.emerald600,fontWeight:700}}>{st}</span>}</td>);
 }
-function Row({r,meta,value,onSave,onPasteMany,saveMeta,etat,setEtat,presence,setPresence}){
+function Row({r,meta,value,onSave,onPasteMany,saveMeta,etat,setEtat,presence,setPresence,planned}){
   const [v,setV]=useState(value||"");const [st,setSt]=useState("");
   useEffect(()=>{setV(value||"");},[value]);
   const dirty=v.trim()!==(value||"").trim();
@@ -33,7 +45,7 @@ function Row({r,meta,value,onSave,onPasteMany,saveMeta,etat,setEtat,presence,set
     <td style={{padding:"4px 8px",whiteSpace:"nowrap"}}>{setEtat?<EtatSelect value={etat||"A_DEFINIR"} onChange={e=>setEtat(r.pj,e.target.value)}/>:null}</td>
     {setPresence&&<td style={{padding:"4px 8px",minWidth:260}}><PresenceEditor r={r} presence={presence||{present:false,date:""}} onChange={v=>setPresence(r.pj,v)}/></td>}
     <td style={{padding:"4px 12px",whiteSpace:"nowrap"}}>
-      <input type="text" value={v} placeholder="N° de série" onChange={e=>setV(e.target.value)} onBlur={commit}
+      <input type="text" value={v} placeholder={planned?"prévu "+planned.sn:"N° de série"} title={planned?"S/N prévu d'après l'ordo (arrivée le "+planned.arrivee.split("-").reverse().join("/")+") ; fixé à l'arrivée de la machine":undefined} onChange={e=>setV(e.target.value)} onBlur={commit}
         onKeyDown={e=>{if(e.key==="Enter")e.currentTarget.blur();else if(e.key==="Escape"){setV(value||"");e.currentTarget.blur();}}}
         onPaste={e=>{const t=e.clipboardData.getData("text");if(/[\r\n]/.test(t.trim())){e.preventDefault();onPasteMany(r.pj,t);}}}
         style={{width:170,padding:"4px 8px",borderRadius:8,border:"1.5px solid "+(dirty?T.teal500:T.line),background:T.card,color:T.ink900,fontSize:FZ.sm,fontFamily:T.fontMono,fontWeight:600}}/>
@@ -158,6 +170,8 @@ export function SerieTab({data,savePjMetaOverride,etatChoice,setEtatFor,clientPr
   const filled=rows.filter(x=>x.meta.numSerie).length;
   const shown=(()=>{const s=q.trim().toLowerCase();return rows.filter(({r,meta})=>(!onlyMissing||!meta.numSerie)&&(!s||r.pj.toLowerCase().includes(s)||(meta.nomProjet||"").toLowerCase().includes(s)||(meta.numSerie||"").toLowerCase().includes(s)||(meta.pays||"").toLowerCase().includes(s)||(r.gamme||"").toLowerCase().includes(s)));})();
   const save=async(pj,val)=>savePjMetaOverride?savePjMetaOverride(pj,{numSerie:val}):false;
+  const snPlan=planSerials(data,r=>getPjMeta(r.pj,r)),due=serialsDue(snPlan); // v315 : S/N prévus d'après l'ordo
+  const assignDue=async()=>{const n=await assignSerialsFlow(due,savePjMetaOverride);if(n){setMsg(n+" S/N attribué"+(n>1?"s":"")+".");setTimeout(()=>setMsg(""),4000);}};
   const pasteMany=async(startPj,text)=>{
     const lines=text.replace(/\r/g,"").split("\n").map(x=>x.trim()).filter((x,i,a)=>x!==""||i<a.length-1);
     const i0=shown.findIndex(x=>x.r.pj===startPj);if(i0<0)return;
@@ -176,6 +190,7 @@ export function SerieTab({data,savePjMetaOverride,etatChoice,setEtatFor,clientPr
       <input type="text" value={q} onChange={e=>setQ(e.target.value)} placeholder="Rechercher un PJ, projet, N° de série…" style={{padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink900,fontSize:FZ.xs,fontFamily:T.font,width:230}}/>
       {setCustomEtats&&<button onClick={()=>setEtatsOpen(true)} style={{padding:"6px 12px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink700,fontSize:FZ.xs,fontWeight:700,cursor:"pointer"}}>Gérer les états</button>}
       {etatsOpen&&setCustomEtats&&<EtatsDialog onClose={()=>setEtatsOpen(false)} customEtats={customEtats||[]} setCustomEtats={setCustomEtats} etatEdits={etatEdits||{}} setEtatEdits={setEtatEdits} data={data}/>}
+      {savePjMetaOverride&&due.length>0&&<button onClick={assignDue} title="Fixer les S/N prévus des machines déjà arrivées" style={{padding:"6px 12px",borderRadius:8,border:"1px solid "+T.ink900,background:T.ink900,color:T.card,fontSize:FZ.xs,fontWeight:700,cursor:"pointer"}}>Attribuer les S/N des machines arrivées ({due.length})</button>}
       <button onClick={()=>setImp(v=>!v)} style={{padding:"6px 12px",borderRadius:8,border:"1px solid "+(imp?T.teal500:T.line),background:imp?T.teal100:T.card,color:imp?T.teal600:T.ink700,fontSize:FZ.xs,fontWeight:700,cursor:"pointer"}}>Coller une liste</button>
       <label style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:FZ.xs,color:T.ink500,fontWeight:600,cursor:"pointer"}}><input type="checkbox" checked={onlyMissing} onChange={e=>setOnlyMissing(e.target.checked)}/>Seulement les manquants ({rows.length-filled})</label>
     </div>
@@ -185,7 +200,7 @@ export function SerieTab({data,savePjMetaOverride,etatChoice,setEtatFor,clientPr
       <table style={{width:"100%",borderCollapse:"collapse"}}>
         <thead><tr>{["N° PJ","Projet","Gamme","Chef de projet","Pays","État",...(setClientPresenceFor?["Présence aux tests"]:[]),"N° de série"].map(h=><th key={h} style={{position:"sticky",top:0,zIndex:2,background:T.surface,boxShadow:"0 1px 0 "+T.line,textAlign:"left",padding:"8px 12px",fontSize:FZ.xs,fontWeight:700,color:T.ink500}}>{h}</th>)}</tr></thead>
         <tbody>
-          {shown.map(({r,meta})=><Row key={r.pj} r={r} meta={meta} value={meta.numSerie} onSave={save} onPasteMany={pasteMany} saveMeta={savePjMetaOverride} etat={etatChoice&&etatChoice[r.pj]} setEtat={setEtatFor} presence={clientPresence&&clientPresence[r.pj]} setPresence={setClientPresenceFor}/>)}
+          {shown.map(({r,meta})=><Row key={r.pj} r={r} meta={meta} planned={!meta.numSerie?snPlan.get(r.pj):null} value={meta.numSerie} onSave={save} onPasteMany={pasteMany} saveMeta={savePjMetaOverride} etat={etatChoice&&etatChoice[r.pj]} setEtat={setEtatFor} presence={clientPresence&&clientPresence[r.pj]} setPresence={setClientPresenceFor}/>)}
           {shown.length===0&&<tr><td colSpan={8}><EmptyState compact icon="search" title="Aucun PJ."/></td></tr>}
         </tbody>
       </table>

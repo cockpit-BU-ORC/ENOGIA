@@ -7,7 +7,8 @@ import { NavIcon } from "./SharedUI";
 
 // v152 — Cloche de l'en-tête : les demandes où l'on est cité (@) et qu'on n'a pas encore marquées « traitées », tous PJ confondus.
 // v188 : + les nouvelles affectations aux tests (assignments = [{ pj, at, by, from, to }]), « Vu » les retire, lien Google Agenda.
-export function MentionBell({ comments, me, data, resolveComment, onOpen, canSeePrivate, assignments, onSeenAssign, onOpenTests, video, onOpenVideo, pjChanges, onSeenPjChanges, onOpenChanges }) {
+// v315 (revue, point 6) : avec onGoInbox, la cloche mène à la page « À traiter » (plus de liste déroulante) et compte aussi les demandes à valider (extra).
+export function MentionBell({ comments, me, data, resolveComment, onOpen, canSeePrivate, assignments, onSeenAssign, onOpenTests, video, onOpenVideo, pjChanges, onSeenPjChanges, onOpenChanges, onGoInbox, extra = 0 }) {
   const [open, setOpen] = useState(false);
   const items = useMemo(() => openMentionsFor(comments, me).filter(x => canSeePrivate || !x.c.private), [comments, me, canSeePrivate]); // un compte sans accès Manager ne voit jamais un message privé
   useEffect(() => {
@@ -21,7 +22,7 @@ export function MentionBell({ comments, me, data, resolveComment, onOpen, canSee
   const unseen = items.filter(x => !isSeenFor(x.c, me)), seenL = items.filter(x => isSeenFor(x.c, me));
   // v285 (audit croisé, lot B) : le rouge et « à traiter » = ce qui attend une action (cité, affecté aux tests) ;
   // les projets modifiés par le planning sont de l'information : compteur gris, sans tintement
-  const asg0 = assignments || [], chg0 = pjChanges || [], red = unseen.length + asg0.length, info = chg0.length;
+  const asg0 = assignments || [], chg0 = pjChanges || [], red = unseen.length + asg0.length + (extra || 0), info = chg0.length;
   const [ring, setRing] = useState(0), [peek, setPeek] = useState(null);
   const prev = useRef(null), shown = useRef(new Set());
   useEffect(() => {
@@ -40,10 +41,10 @@ export function MentionBell({ comments, me, data, resolveComment, onOpen, canSee
   const rowOf = pj => (data || []).find(x => x.pj === pj);
   const nameOf = pj => { const r = (data || []).find(x => x.pj === pj); return r ? getPjMeta(pj, r).nomProjet || "" : ""; };
   return (<div style={{ position: "relative", display: "flex", alignItems: "center", gap: 6 }}>
-    {n > 0 && <button type="button" onClick={() => { setPeek(null); setOpen(v => !v); }} aria-hidden="true" tabIndex={-1} className="enogia-bell-ask"
+    {n > 0 && <button type="button" onClick={() => { setPeek(null); if (onGoInbox) onGoInbox(); else setOpen(v => !v); }} aria-hidden="true" tabIndex={-1} className="enogia-bell-ask"
       style={{ display: "inline-flex", alignItems: "center", gap: 6, minHeight: 28, padding: "0 11px 0 9px", borderRadius: 999, border: "none", background: T.red100, color: T.red600, fontWeight: 700, fontSize: FZ.xs, cursor: "pointer", fontFamily: T.font, whiteSpace: "nowrap" }}>
       <span style={{ width: 7, height: 7, borderRadius: "50%", background: T.red600 }} />{n} à traiter</button>}
-    <button key={"b" + ring} className={ring ? "enogia-bell-ring" : undefined} onClick={() => { setPeek(null); setOpen(v => !v); }} title={n ? n + " à traiter (cité ou affecté aux tests)" + (info ? " · " + info + " mise" + (info > 1 ? "s" : "") + " à jour" : "") : info ? info + " projet" + (info > 1 ? "s" : "") + " modifié" + (info > 1 ? "s" : "") + " par le planning" : "Aucune notification"} aria-label={"Notifications : " + n + " à traiter" + (info ? ", " + info + " mise" + (info > 1 ? "s" : "") + " à jour" : "")} aria-expanded={open}
+    <button key={"b" + ring} className={ring ? "enogia-bell-ring" : undefined} onClick={() => { setPeek(null); if (onGoInbox) onGoInbox(); else setOpen(v => !v); }} title={n ? n + " à traiter" + (info ? " · " + info + " mise" + (info > 1 ? "s" : "") + " à jour" : "") : info ? info + " projet" + (info > 1 ? "s" : "") + " modifié" + (info > 1 ? "s" : "") + " par le planning" : "Aucune notification"} aria-label={"Notifications : " + n + " à traiter" + (info ? ", " + info + " mise" + (info > 1 ? "s" : "") + " à jour" : "")} aria-expanded={open}
       style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, padding: 0, border: "1px solid " + (open ? T.violet500 + "66" : "transparent"), borderRadius: 8, cursor: "pointer", background: open ? T.violet100 : "transparent", color: n ? T.red600 : T.ink500 }}>
       {/* v240 (demandé : « mettre la notification de la cloche en rouge ») : cloche, pastille et compteur en rouge ; texte de la pastille = couleur de carte (lisible en clair et en sombre) */}
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.7 21a2 2 0 0 1-3.4 0" /></svg>

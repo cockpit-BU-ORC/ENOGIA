@@ -1,5 +1,6 @@
 import React from "react";
 import { T, FZ, mixHex, inkOn } from "./theme";
+import { plannedSnOf } from "./serialNumbers"; // v315
 import { isEstimatePj } from "./changeDiff";
 
 // Corrections manuelles de gamme, prioritaires sur ce qui est importé/deviné — s'appliquent immédiatement, sans réimport.
@@ -357,6 +358,8 @@ export const isCustomEtat=id=>CUSTOM_IDS.includes(id);
 // suite. Pastille = couleur de l'État (comme la liste), pas la couleur cyclique par machine.
 // Numéro de série de la machine (saisi dans Manager › Réglages › N° de série, champ numSerie de la fiche projet).
 // Étiquette discrète affichée à côté du numéro de PJ partout où il apparaît ; rien si non renseigné.
+// v315 : S/N prévu (serialNumbers.js, registre rempli par App)
+export { plannedSnOf };
 export function SerieTag({pj,size=10.5,style}){
   const n=(getPjMeta(pj)||{}).numSerie;
   if(!n)return null;
@@ -386,6 +389,7 @@ export function ProjectLabelCell({pj,r,meta,mark,noSn}){
       <span style={{fontSize:FZ.xs,fontWeight:500,color:T.ink700,whiteSpace:"nowrap",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",lineHeight:1.25}}>{meta.nomProjet}</span>
     </div>
     {sn&&!noSn&&<div style={{paddingLeft:15,fontVariantNumeric:"tabular-nums",fontSize:11,fontWeight:600,color:T.ink500,whiteSpace:"nowrap",lineHeight:1.2}}>S/N {sn}</div>}
+    {!sn&&!noSn&&plannedSnOf(pj)&&<div title="S/N prévu d'après l'ordo, fixé à l'arrivée de la machine" style={{paddingLeft:15,fontVariantNumeric:"tabular-nums",fontSize:11,fontWeight:500,fontStyle:"italic",color:T.ink500,whiteSpace:"nowrap",lineHeight:1.2}}>S/N prévu {plannedSnOf(pj).sn}</div>}
   </>);
 }
 export const ALL_GAMMES=Object.keys(GAMME_COLORS);

@@ -2270,3 +2270,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Menu : sous-pages au premier toucher ; HoverPop : ouverture au toucher. Bandeau « Ctrl et − » retiré.
 - Menu : Opérations, Gestion, Administration. Liste : « Début prod » entre Arrivée et Tests.
 - Fichiers : App.js, ThemePicker.js, SharedUI.js, a11yFallback.js, styles.css, access.js, AccessPage.js, TableView.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v315 — Page « À traiter » (revue, point 6) et S/N automatiques
+
+- Page « À traiter » (`view` inbox) : demandes à valider (S/N à attribuer, départs à reprendre, PO en retard, besoins turbine en retard), mentions, affectations, informations ; la cloche y mène.
+- S/N : `serialNumbers.js` (+test) — prévus d'après l'ordo (`AAAA-NNN-CCC`), affichés en italique, fixés par « Attribuer les S/N » (écrit `numSerie` dans `planning/pjMetaOverrides`, après confirmation).
+- Pas de nouvelle clé `localStorage` ; règles Firestore inchangées.
+- Fichiers : serialNumbers.js (+test), components/InboxPage.js (nouveau), MentionBell.js, Series.js, RowDetail.js, TableView.js, pjMeta.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

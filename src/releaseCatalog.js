@@ -860,4 +860,8 @@ export const RELEASE_CATALOG = [
     ["Menu", "Rubriques renommées : Opérations, Gestion, Administration."],
     ["Liste", "La colonne « Début prod » est entre Arrivée et Tests."],
   ] },
+  { v: "315", t: "Page « À traiter » et S/N automatiques", items: [
+    ["À traiter", "Nouvelle page « À traiter » (menu Opérations) : demandes à valider, mentions, affectations aux tests, puis informations. La cloche y mène et ne compte que ce qui attend une action."],
+    ["Machines ORC", "S/N prévus d'après l'ordo (année d'arrivée · n° dans l'année · gamme, ex. 2026-034-180), affichés en italique ; « Attribuer les S/N » les fixe à l'arrivée des machines.", "admin"],
+  ] },
 ];
