@@ -808,7 +808,9 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
   const onHandleKey=e=>{if(e.key==="ArrowLeft")setListW(w=>Math.max(220,w-24));else if(e.key==="ArrowRight")setListW(w=>Math.min(640,w+24));};
   const [showSlots,setShowSlots]=useState(false); // les slots libres sont masqués de base
   const [chefEdit,setChefEdit]=useState(false); // v191 : édition des autres chefs / EPC / chef ORC
-  const [showShipped,setShowShipped]=useState(false); // v191 : machines expédiées masquées de base (demandé)
+  // v191 : machines expédiées masquées de base ; v320 (demandé : « garder la possibilité de voir les projets expédiés ») : choix gardé sur ce poste
+  const [showShipped,setShowShipped0]=useState(()=>{try{return localStorage.getItem("enogia_fiche_shipped")==="1";}catch(e){return false;}});
+  const setShowShipped=v=>{setShowShipped0(v);try{localStorage.setItem("enogia_fiche_shipped",v?"1":"0");}catch(e){}};
   // v190 (maquette A validée) : liste regroupée par chef de projet ; un clic sur le nom affiche toutes ses fiches d'un coup.
   const [groupBy,setGroupBy]=useState(()=>{try{const v=localStorage.getItem("enogia_mlist_group");return ["chef","all","mine"].includes(v)?v:"chef";}catch(e){return "chef";}});
   useEffect(()=>{try{localStorage.setItem("enogia_mlist_group",groupBy);}catch(e){}},[groupBy]);

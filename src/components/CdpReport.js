@@ -95,7 +95,9 @@ export function CdpDialog({ data, initialData, delays, comments, progress, chang
   const infos = useMemo(() => data.filter(r => r.etat !== "SLOT_LIBRE").map(r => infoOf(r, { initialByPj, delays, comments, progress, change: chgByPj[r.pj], rows: data, certifs })), [data, initialByPj, delays, comments, progress, chgByPj, certifs]);
   const chefs = useMemo(() => { const m = {}; infos.forEach(i => { m[i.chef] = (m[i.chef] || 0) + 1; }); return Object.keys(m).sort((a, b) => a === NONE ? 1 : b === NONE ? -1 : a.localeCompare(b)).map(c => [c, m[c]]); }, [infos]);
   const [chef, setChef] = useState(initialChef || "__all");
-  const [withShipped, setWithShipped] = useState(false);
+  // v320 : « Inclure les PJ déjà expédiés » gardé sur ce poste (enogia_cdp_shipped)
+  const [withShipped, setWithShipped0] = useState(() => { try { return localStorage.getItem("enogia_cdp_shipped") === "1"; } catch (e) { return false; } });
+  const setWithShipped = v => { setWithShipped0(v); try { localStorage.setItem("enogia_cdp_shipped", v ? "1" : "0"); } catch (e) { /* stockage indisponible */ } };
   const [withChanges, setWithChanges] = useState(true);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");

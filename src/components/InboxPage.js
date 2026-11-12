@@ -38,7 +38,8 @@ export function InboxPage({ me, comments, data, resolveComment, canSeePrivate, o
           </div>
           {a.items && a.items.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", gap: 6, paddingLeft: 14 }}>
             {a.items.slice(0, 12).map(x => <span key={x.pj + (x.text || "")} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: T.surface, borderRadius: 8, padding: "3px 8px 3px 4px", fontSize: FZ.xs, color: T.ink700 }}>
-              <PjBtn pj={x.pj} onClick={() => onOpen(x.pj, "resume")} />{x.text}</span>)}
+              <PjBtn pj={x.pj} onClick={() => onOpen(x.pj, "resume")} />{x.text}
+              {x.yes && <button type="button" onClick={x.yes.onClick} title={x.yes.title} aria-label={x.yes.title} style={{ minHeight: 24, padding: "0 8px", borderRadius: 8, border: "1px solid " + T.emerald500, background: T.emerald100, color: T.emerald600, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>{x.yes.label}</button>}</span>)}
             {a.items.length > 12 && <span style={{ fontSize: FZ.xs, color: T.ink500, alignSelf: "center" }}>et {a.items.length - 12} autres</span>}
           </div>}
         </div>)}

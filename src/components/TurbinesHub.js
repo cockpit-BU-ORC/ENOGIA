@@ -11,7 +11,7 @@ import { T, FZF as FZ, btn as themeBtn } from "../theme";
 import { ProdTurbines } from "./ProdTurbines";
 import { usePointerDnD } from "../pointerDrag";
 import { createPortal } from "react-dom";
-import { allTurbines, monthOf, moveNeedOrder, TURB_CFGS, cfgById, refsOf, buildNeeds, assignOps, unassignOps, installOps, allocOps, unallocOps, stockTiles, injInfo, maxBouches, autoFill, roueConflict, prodState, workDate, pjOfAffaire } from "../turbineNeeds";
+import { allTurbines, monthOf, swapNeedKeys, TURB_CFGS, cfgById, refsOf, buildNeeds, assignOps, unassignOps, installOps, allocOps, unallocOps, stockTiles, injInfo, maxBouches, autoFill, roueConflict, prodState, workDate, pjOfAffaire } from "../turbineNeeds";
 import { getPjMeta, CountryFlag } from "../pjMeta";
 import { askConfirm } from "../confirm";
 
@@ -181,6 +181,9 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta }) {
     await api.del("besoins", sav.id); setSav(null); };
   // v300 (maquette V300 validée) : ORC et SAV dans la même feuille (filtre Tout · ORC · SAV), cartes compactes (une turbine = une ligne
   // de 40 px), logements à 4 états, disponibilité sur une ligne fine ; stock : roues et injecteurs d'abord.
+  const [fold, setFold] = useState(() => { try { return JSON.parse(localStorage.getItem("enogia_nd_fold") || "null") || { "En fabrication": true }; } catch (e) { return { "En fabrication": true }; } });
+  const flipFold = t => setFold(f => { const nx = { ...f, [t]: !f[t] }; try { localStorage.setItem("enogia_nd_fold", JSON.stringify(nx)); } catch (e) { /* stockage indisponible */ } return nx; });
+  const [rankEdit, setRankEdit] = useState(null);
   const [kind, setKind0] = useState(() => { try { const v = localStorage.getItem("enogia_nd_kind"); return v === "pj" || v === "sav" ? v : "all"; } catch (e) { return "all"; } });
   const setKind = k => { setKind0(k); try { localStorage.setItem("enogia_nd_kind", k); } catch (e) { /* stockage indisponible */ } };
   const nOrc = needs.filter(n => n.kind === "pj").length, nSav = needs.length - nOrc;
@@ -190,10 +193,13 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta }) {
   const active = dnd.drag || picked;
   const isPicked = p => picked && picked.kind === p.kind && (p.kind === "turbine" ? picked.id === p.id : picked.stockId === p.stockId && String(picked.bouches) === String(p.bouches));
   // v302 (demandé : « bien séparer les types de stock dans le panneau de gauche ») : une section encadrée par type, titre et pastille de couleur
-  const Sect = ({ t, n, k, note, children }) => <section aria-label={t} style={{ margin: "10px 10px 0", background: T.card, border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden" }}>
-    <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "7px 10px", borderBottom: "1px solid " + T.line, background: T.surface }}>
-      <i aria-hidden="true" style={{ width: 10, height: 10, borderRadius: 3, background: k, flexShrink: 0 }} /><b style={{ fontSize: 13, flex: 1 }}>{t}</b><span style={{ fontSize: 12, fontWeight: 700, color: T.ink700, fontVariantNumeric: "tabular-nums" }}>{n}</span></div>
-    <div style={{ padding: 8, display: "flex", flexDirection: "column", gap: 6 }}>{children}{note && <span style={{ fontSize: 11, color: T.ink500, lineHeight: 1.35 }}>{note}</span>}</div></section>;
+  // v320 (demandé : « menus déroulants pour gagner de la place ») : chaque section se replie ; état gardé sur ce poste (enogia_nd_fold)
+  const Sect = ({ t, n, k, note, children }) => { const open = !fold[t];
+    return <section aria-label={t} style={{ margin: "10px 10px 0", background: T.card, border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden" }}>
+    <button type="button" aria-expanded={open} onClick={() => flipFold(t)} style={{ display: "flex", alignItems: "center", gap: 7, width: "100%", minHeight: 34, padding: "7px 10px", border: "none", borderBottom: open ? "1px solid " + T.line : "none", background: T.surface, color: T.ink900, cursor: "pointer", fontFamily: T.font, textAlign: "left" }}>
+      <span aria-hidden="true" style={{ fontSize: 10, color: T.ink500, width: 10, transform: open ? "rotate(90deg)" : "none", transition: "transform 120ms" }}>▶</span>
+      <i aria-hidden="true" style={{ width: 10, height: 10, borderRadius: 4, background: k, flexShrink: 0 }} /><b style={{ fontSize: 13, flex: 1 }}>{t}</b><span style={{ fontSize: 12, fontWeight: 700, color: T.ink700, fontVariantNumeric: "tabular-nums" }}>{n}</span></button>
+    {open && <div style={{ padding: 8, display: "flex", flexDirection: "column", gap: 6 }}>{children}{note && <span style={{ fontSize: 11, color: T.ink500, lineHeight: 1.35 }}>{note}</span>}</div>}</section>; };
   const Sub = ({ t, n, children }) => <div style={{ display: "flex", flexDirection: "column", gap: 3 }}><div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 600, color: T.ink500, padding: "0 2px" }}><span>{t}</span><span style={{ fontVariantNumeric: "tabular-nums" }}>{n}</span></div>{children}</div>;
   const none = <span style={{ fontSize: 12, color: T.ink500 }}>Aucune.</span>;
   const xBtn = (lab, fn) => canEdit && <button type="button" data-no-drag aria-label={lab} title="Remettre dans le stock" onClick={e => { e.stopPropagation(); fn(); }} style={{ position: "absolute", top: 1, right: 2, border: "none", background: "transparent", color: "inherit", opacity: 0.7, cursor: "pointer", width: 22, height: 22, borderRadius: 4, fontSize: 14, lineHeight: 1, padding: 0 }}>×</button>;
@@ -203,9 +209,12 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta }) {
   // v301 (demandé : « pas la vision de l'ordre dont on a besoin des turbines ») : rang de chaque besoin, par date (tous types confondus)
   const rankOf = new Map(needs.map((n, i) => [n.key, i + 1]));
   // v302 : ▲ ▼ = un cran plus tôt / plus tard dans le mois (parmi les besoins affichés) ; enregistré dans planning/prodTurbines.ordre.besoins
-  const shownKeys = new Set(shown.map(n => n.key)), vis = n => shownKeys.has(n.key); // les flèches sautent les cartes masquées
-  const moveNeed = async (n, dir) => { const keys = moveNeedOrder(needs, n.key, dir, vis); if (!keys || busy) return;
-    if (await api.put("ordre", "besoins", { keys, at: new Date().toISOString() })) setMsg({ t: n.label + (dir < 0 ? " remonte" : " descend") + " d'un cran dans l'ordre de besoin." }); else setMsg({ t: "L'enregistrement a échoué.", bad: true }); };
+  // v320 : ▲ ▼ échangent avec la carte affichée voisine du mois (cartes masquées sautées)
+  const shownD = [...shown].sort((a, b) => monthOf(a.date).localeCompare(monthOf(b.date)) || rankOf.get(a.key) - rankOf.get(b.key));
+  const neighbor = (n, dir) => { const i = shownD.indexOf(n), m = shownD[i + dir]; return m && monthOf(m.date) === monthOf(n.date) ? m : null; };
+  const saveKeys = async (keys, t) => { if (!keys || busy) return; if (await api.put("ordre", "besoins", { keys, at: new Date().toISOString() })) setMsg({ t }); else setMsg({ t: "L'enregistrement a échoué.", bad: true }); };
+  const moveNeed = (n, dir) => { const m = neighbor(n, dir); if (m) saveKeys(swapNeedKeys(needs, n.key, m.key), n.label + (dir < 0 ? " remonte" : " descend") + " d'un cran."); };
+  const setRank = (n, r) => { setRankEdit(null); const m = needs[r - 1]; if (!m || m.key === n.key) return; saveKeys(swapNeedKeys(needs, n.key, m.key), n.label + " passe en priorité n° " + r + " (échangé avec " + m.label + ")."); };
   const monthLab = iso => { if (!iso) return "Sans date"; const d = new Date(String(iso).slice(0, 7) + "-01T12:00:00"); const t = d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" }); return t.charAt(0).toUpperCase() + t.slice(1); };
   const arrowB = { width: 24, height: 24, borderRadius: 4, border: "1px solid " + T.line, background: T.card, color: T.ink700, cursor: "pointer", fontSize: 10, lineHeight: 1, padding: 0, display: "inline-grid", placeItems: "center" };
   let lastMo = "";
@@ -233,7 +242,14 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta }) {
             {["100", "20"].map(g => <button key={g} type="button" aria-pressed={gam === g} onClick={() => { setGam(g); setPicked(null); }} style={{ border: "none", borderRadius: 8, minHeight: 26, padding: "0 10px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: T.font, background: gam === g ? T.card : "transparent", color: gam === g ? T.ink900 : T.ink500, boxShadow: gam === g ? "0 1px 2px rgba(0,0,0,.08)" : "none" }}>{g} kW</button>)}
           </div>
         </div>
-        {/* v300 / v302 : roues, puis injecteurs, puis turbines — trois sections séparées */}
+        {/* v320 (demandé : « voir en premier les turbines prêtes avec roue, puis prêtes sans roue, puis roues et injecteurs ») : sections repliables */}
+        {(() => { const turbTile = (k, sub) => x => { const hasR = !!(x.roue && !x.sansRoue);
+            return <Tile ctx={ctx} key={x.id} p={{ kind: "turbine", id: x.id, g: x.gamme, roue: hasR ? x.roue : "" }} k={k} tc={hasR ? TN.roue.ink : T.ink700} title={hasR ? "roue " + x.roue : sub(x)} sub={(x.num || "sans n°") + (hasR && !x.dispo ? " · " + (x.end ? "fin " + fdS(x.end) : "sans date") : "")} subMono />; };
+          const grid = L => <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: 3 }}>{L}</div>;
+          const withR = freeG.filter(x => x.ready && x.roue && !x.sansRoue), noR = freeG.filter(x => x.sansRoue || (x.ready && !x.roue)), fab = freeG.filter(x => !x.dispo);
+          return <>
+            <Sect t="Turbines prêtes · avec roue" n={withR.length} k={T.emerald600}>{withR.length ? grid(withR.map(turbTile(T.emerald600, x => "roue " + x.roue))) : none}</Sect>
+            <Sect t="Turbines prêtes · sans roue" n={noR.length} k={T.amber500}>{noR.length ? grid(noR.map(turbTile(T.amber500, x => x.sansRoue ? "testée sans roue" : "roue à monter"))) : none}</Sect>
         <Sect t="Roues équilibrées" n={stock.roues.reduce((q, r) => q + r.qte, 0)} k={TN.roue.bd} note="Roues seules. Une turbine qui a déjà sa roue ne consomme pas ce stock.">
           {stock.roues.length ? <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: 3 }}>{stock.roues.map(t => <Tile ctx={ctx} key={t.stockId} p={{ kind: "roue", stockId: t.stockId, ref: t.ref, g: gam }} k={TN.roue.bd} tc={TN.roue.ink} title={t.ref} sub="" q={t.qte} disabled={!t.qte} />)}</div> : none}
         </Sect>
@@ -242,12 +258,8 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta }) {
             return <Sub key={id} t={<span style={{ color: TN.inj.ink, fontWeight: 700, overflowWrap: "anywhere" }}>{L[0].ref}{L[0].ouv ? <span style={{ fontWeight: 500, color: T.ink500 }}> · {L[0].ouv} ouvertures</span> : null}</span>} n={L.reduce((q, t) => q + t.qte, 0)}>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: 3 }}>{L.map(t => <Tile ctx={ctx} key={t.stockId + "-" + t.bouches} p={{ kind: "inj", stockId: t.stockId, ref: t.ref, bouches: t.bouches, g: gam }} k={TN.inj.bd} title={t.bouches == null ? "vierge" : t.bouches + " bouchage" + (t.bouches > 1 ? "s" : "")} sub="" q={t.qte} disabled={!t.qte} />)}</div></Sub>; }) : none}
         </Sect>
-        <Sect t="Turbines libres" n={freeG.length} k={TN.turbine.bd}>
-          {[["Prêtes · avec roue", freeG.filter(x => x.ready && x.roue), T.emerald600, x => "roue " + x.roue], ["Prêtes · sans roue", freeG.filter(x => x.sansRoue || (x.ready && !x.roue)), T.amber500, x => x.sansRoue ? "testée sans roue" : "roue à monter"], ["En fabrication", freeG.filter(x => !x.dispo), T.ink300, x => (x.end ? "fin " + fdS(x.end) : "sans date") + (x.roue ? " · " + x.roue : "")]].map(([t, L, k, sub]) =>
-            <Sub key={t} t={t} n={L.length}>{L.length ? L.map(x => { const hasR = !!(x.roue && !x.sansRoue);
-              // v301 (demandé : « voir la roue en priorité sur les turbines prêtes ») : la roue en titre, le n° de série en petit
-              return <Tile ctx={ctx} key={x.id} p={{ kind: "turbine", id: x.id, g: x.gamme, roue: hasR ? x.roue : "" }} k={k} tc={hasR ? TN.roue.ink : T.ink700} title={hasR ? "roue " + x.roue : sub(x)} sub={(x.num || "sans n°") + (hasR && !x.dispo ? " · " + (x.end ? "fin " + fdS(x.end) : "sans date") : "")} subMono />; }) : none}</Sub>)}
-        </Sect>
+            <Sect t="En fabrication" n={fab.length} k={T.ink300}>{fab.length ? grid(fab.map(turbTile(T.ink300, x => (x.end ? "fin " + fdS(x.end) : "sans date") + (x.roue ? " · " + x.roue : "")))) : none}</Sect>
+          </>; })()}
         <p style={{ fontSize: 12, color: T.ink500, padding: "10px 12px 14px", margin: 0, lineHeight: 1.45 }}>{picked ? "Pièce choisie : touchez un logement (Échap pour annuler)." : "Glissez une pièce sur un logement en pointillé, ou touchez-la puis touchez le logement. Une turbine sans roue s'alloue aussi : la roue reste à poser."}</p>
       </aside>
       <section aria-label="Besoins ORC et SAV" style={{ overflowY: "auto", position: "relative" }}>
@@ -258,14 +270,14 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta }) {
           </div>
           <label style={{ fontSize: 12, color: T.ink700, display: "inline-flex", gap: 6, alignItems: "center", cursor: "pointer" }}><input type="checkbox" checked={onlyOpen} onChange={e => setOnlyOpen(e.target.checked)} />À compléter</label>
           <span aria-label="Légende" style={{ display: "inline-flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: T.ink500 }}>{legend.map(([l, st]) => <span key={l} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><i aria-hidden="true" style={{ width: 16, height: 12, borderRadius: 4, boxSizing: "border-box", display: "inline-block", ...st }} />{l}</span>)}</span>
-          <span style={{ fontSize: 12, color: T.ink500 }}>Par mois de besoin ; n° = ordre de priorité (▲ ▼ pour le changer).</span>
+          <span style={{ fontSize: 12, color: T.ink500 }}>Par mois de besoin ; n° = priorité (cliquer dessus pour l'échanger avec un autre besoin, ▲ ▼ dans le mois).</span>
           <span style={{ flex: 1 }} />
           {canEdit && <button type="button" disabled={busy} onClick={auto} title="Propose une affectation du stock (par date de besoin, pièces prévues), annulable" style={{ ...themeBtn("sec", "sm") }}>Remplir automatiquement</button>}
           {canEdit && <button type="button" onClick={() => setSav({})} style={{ ...themeBtn("pri", "sm") }}>＋ Besoin SAV</button>}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 420px), 1fr))", gap: 8, padding: "8px 12px 16px", alignItems: "start" }}>
-          {shown.map(n => { const mo = monthOf(n.date), head = mo !== lastMo; lastMo = mo;
-            const canUp = canEdit && !!moveNeedOrder(needs, n.key, -1, vis), canDown = canEdit && !!moveNeedOrder(needs, n.key, 1, vis);
+          {shownD.map(n => { const mo = monthOf(n.date), head = mo !== lastMo; lastMo = mo;
+            const canUp = canEdit && !!neighbor(n, -1), canDown = canEdit && !!neighbor(n, 1);
             const T3 = n.want * 3, G3 = n.slots.filter(x => !x.extra).reduce((q, x) => q + !!x.t + !!x.roueOk + !!x.inj, 0), badI = n.issues.filter(i => i.bad && !/à attribuer$/.test(i.t) && !/après le besoin/.test(i.t));
             const meta = n.kind === "pj" ? getPjMeta(n.pj, n.r) : null, done = allDone(n);
             // v302 (demandé : « plus léger sur ORC (bleu léger) et violet sur SAV ») : bleu information très pâle / violet pâle, mêlés au fond de carte
@@ -278,7 +290,11 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta }) {
                 {canEdit && <span style={{ display: "inline-flex", gap: 2 }}>
                   <button type="button" aria-label={"Monter " + n.label + " d'un cran dans l'ordre de besoin"} disabled={!canUp} onClick={() => moveNeed(n, -1)} style={{ ...arrowB, opacity: canUp ? 1 : 0.35, cursor: canUp ? "pointer" : "default" }}>▲</button>
                   <button type="button" aria-label={"Descendre " + n.label + " d'un cran dans l'ordre de besoin"} disabled={!canDown} onClick={() => moveNeed(n, 1)} style={{ ...arrowB, opacity: canDown ? 1 : 0.35, cursor: canDown ? "pointer" : "default" }}>▼</button></span>}
-                <span title={"Ordre de besoin : n° " + rk} style={{ minWidth: 22, height: 22, padding: "0 5px", boxSizing: "border-box", borderRadius: 999, background: T.ink900, color: T.card, display: "inline-grid", placeItems: "center", fontSize: 12, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{rk}</span>
+                {rankEdit === n.key ? <input type="number" min={1} max={needs.length} defaultValue={rk} autoFocus aria-label={"Priorité de " + n.label + " (1 à " + needs.length + ")"}
+                    onKeyDown={e => { if (e.key === "Enter") setRank(n, +e.currentTarget.value); if (e.key === "Escape") setRankEdit(null); }} onBlur={e => setRank(n, +e.currentTarget.value)}
+                    style={{ width: 52, height: 24, borderRadius: 8, border: "1px solid " + T.ink900, background: T.card, color: T.ink900, fontSize: 12, fontWeight: 700, padding: "0 4px", fontFamily: T.font }} />
+                  : <button type="button" disabled={!canEdit} onClick={() => setRankEdit(n.key)} title={canEdit ? "Priorité n° " + rk + " : cliquer pour l'échanger avec un autre besoin, même d'un autre mois" : "Priorité n° " + rk} aria-label={"Priorité n° " + rk + " de " + n.label}
+                    style={{ minWidth: 22, height: 22, padding: "0 5px", boxSizing: "border-box", border: "none", borderRadius: 999, background: T.ink900, color: T.card, display: "inline-grid", placeItems: "center", fontSize: 12, fontWeight: 700, fontVariantNumeric: "tabular-nums", cursor: canEdit ? "pointer" : "default", fontFamily: T.font }}>{rk}</button>}
                 <Ring p={T3 ? G3 / T3 : 1} /><b style={{ fontFamily: T.fontMono, fontSize: 13, whiteSpace: "nowrap" }}>{n.label}</b>
                 {meta && <CountryFlag pays={meta.pays} size={13} />}
                 <span style={{ ...pill, background: T.card, color: n.kind === "sav" ? T.violet600 : T.ink700 }}>{n.kind === "sav" ? "SAV" : "ORC"}</span>

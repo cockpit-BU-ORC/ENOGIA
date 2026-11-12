@@ -2304,3 +2304,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Anglais : `src/i18n.js` + dictionnaire `src/i18n/en.js` (traduction de l'affichage à la volée), drapeaux FR / EN dans la barre du haut.
 - Nouvelle clé `localStorage` : `enogia_lang` (fr / en).
 - Fichiers : i18n.js, i18n/en.js (nouveaux), index.js, mentions.js(+test), components/CommentMarks.js, MentionBell.js, InboxPage.js, ManagerFiche.js, ProjectModal.js, CommentsView.js, AppChrome.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v320 — Stock et priorités des besoins turbines, S/N « Oui », Personnes et accès
+
+- Besoins turbines : stock réordonné et repliable, priorité globale échangeable entre mois (`planning/prodTurbines.ordre.besoins.keys`, même champ).
+- S/N : bouton « ✓ Oui » (Machines ORC, À traiter) → `numSerie` dans `planning/pjMetaOverrides`.
+- Menu Administration : « Personnes et accès » (Personnes, Rôles, Accès par page) et « Réglages du site » (Nouveautés, version).
+- Clés `localStorage` : `enogia_nd_fold`, `enogia_fiche_shipped`, `enogia_cdp_shipped`. Règles Firestore inchangées.
+- Fichiers : turbineNeeds.js(+test), components/TurbinesHub.js, CommentMarks.js, Series.js, InboxPage.js, ManagerFiche.js, CdpReport.js, ManagerPanel.js, AccessPage.js, App.js, versions.

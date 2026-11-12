@@ -93,6 +93,12 @@ export function moveNeedOrder(needs, key, dir, visible = () => true) {
   if (j < 0 || j >= needs.length || monthOf(needs[j].date) !== m) return null;
   [list[i], list[j]] = [list[j], list[i]]; return list;
 }
+// v320 : échanger la priorité de deux besoins (même s'ils ne sont pas dans le même mois) ; renvoie la liste des clés dans le nouvel ordre
+export function swapNeedKeys(needs, a, b) {
+  const list = (needs || []).map(n => n.key), i = list.indexOf(a), j = list.indexOf(b);
+  if (i < 0 || j < 0 || i === j) return null;
+  [list[i], list[j]] = [list[j], list[i]]; return list;
+}
 // Besoins (PJ en cours + SAV), emplacements, turbines disponibles
 export function buildNeeds(doc, rows, metaOf, today = new Date()) {
   const open = (rows || []).filter(r => r && r.pj && r.etat !== "SHIPPED" && r.etat !== "SLOT_LIBRE");
@@ -140,10 +146,15 @@ export function buildNeeds(doc, rows, metaOf, today = new Date()) {
   // v302 (demandé : « l'ordre de priorité est bien, avoir la possibilité de le changer, regrouper par mois ») : tri par mois du besoin,
   // puis ordre choisi à la main (planning/prodTurbines.ordre.besoins.keys = clés dans l'ordre), puis date. Cet ordre sert aussi à
   // l'estimation des dates (prochaine turbine libre) et à « Remplir automatiquement ».
+  // v320 (demandé : « mettre en priorité des PJ avec un petit chiffre, interchangeable avec des PJ d'un autre mois ») : l'ordre choisi
+  // est global (plus limité au mois) ; un besoin absent de la liste enregistrée s'insère à sa date. needs = ordre de priorité.
   const ord = (doc && doc.ordre && doc.ordre.besoins && Array.isArray(doc.ordre.besoins.keys)) ? doc.ordre.besoins.keys : [];
-  const pos = new Map(ord.map((k, i) => [k, i]));
-  needs.sort((a, b) => monthOf(a.date).localeCompare(monthOf(b.date)) || ((pos.has(a.key) ? pos.get(a.key) : 1e6) - (pos.has(b.key) ? pos.get(b.key) : 1e6))
-    || String(a.date || "9").localeCompare(String(b.date || "9")) || a.label.localeCompare(b.label));
+  needs.sort((a, b) => String(a.date || "9").localeCompare(String(b.date || "9")) || a.label.localeCompare(b.label));
+  const present = new Set(needs.map(n => n.key)), dOf = new Map(needs.map(n => [n.key, String(n.date || "9")]));
+  const fin = ord.filter((k, i) => present.has(k) && ord.indexOf(k) === i), inF = new Set(fin);
+  needs.forEach(n => { if (inF.has(n.key)) return; const d = dOf.get(n.key); let i = fin.findIndex(k => dOf.get(k) > d); if (i < 0) i = fin.length; fin.splice(i, 0, n.key); inF.add(n.key); });
+  const pos = new Map(fin.map((k, i) => [k, i]));
+  needs.sort((a, b) => pos.get(a.key) - pos.get(b.key));
   // v299 (demandé : « date estimative de mise à disposition de la turbine par rapport à notre besoin ») : emplacement vide =
   // prochaine turbine libre de la gamme (prête d'abord, puis la plus tôt finie), dans l'ordre des besoins ; écart = besoin − disponibilité.
   const pool = free.filter(x => !x.livree).sort((a, b) => (b.dispo - a.dispo) || String(a.end || "9").localeCompare(String(b.end || "9")));

@@ -879,4 +879,9 @@ export const RELEASE_CATALOG = [
     ["Commentaires", "Plus de boutons « Vu » et « Traité » : quand on vous cite, réagissez d'un emoji ; la demande se ferme et l'auteur voit votre réaction."],
     ["Langue", "Drapeaux FR / EN en haut à droite : le site passe en anglais (menu, Commentaires, À traiter, états des machines ; les autres pages suivent)."],
   ] },
+  { v: "320", t: "Stock des turbines, priorités, S/N en un clic", items: [
+    ["Turbines", "Besoins ORC et SAV : stock dans l'ordre turbines prêtes avec roue, sans roue, roues, injecteurs, en fabrication ; chaque section se replie. Le n° de priorité se clique pour l'échanger avec un autre besoin, même d'un autre mois."],
+    ["Machines ORC", "« ✓ Oui » à côté d'un S/N proposé pour le garder, aussi dans la page À traiter.", "admin"],
+    ["Administration", "« Personnes et accès » réunit Personnes, Rôles et Accès par page ; les Nouveautés et la version passent dans « Réglages du site ».", "admin"],
+  ] },
 ];

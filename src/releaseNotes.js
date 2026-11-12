@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v320",
+    date: "2026-11-12",
+    title: "V320 : stock des turbines et priorités",
+    items: [
+      { t: "Turbines", d: "Les turbines prêtes en premier dans le stock, sections repliables, et une priorité qu'on échange d'un clic, même d'un mois à l'autre." },
+      { t: "S/N", d: "Un S/N proposé vous va ? « ✓ Oui » le fixe." },
+    ],
+  },
+  {
     id: "2026-11-v319",
     date: "2026-11-12",
     title: "V319 : réactions et version anglaise",

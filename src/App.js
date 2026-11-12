@@ -63,7 +63,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-12-v319-emojis-anglais";
+const APP_BUILD_VERSION = "2026-11-12-v320-stock-priorites-sn";
 
 export default function App(){
   // Utilisateur connecté via Google, restreint aux comptes @enogia.com (null tant que non connecté).
@@ -944,6 +944,7 @@ export default function App(){
   const planViewOk=v=>v==="planner"?isOwner:subOk("planning."+v); // v308
   // v307 : sous-pages de Tests et de Turbines choisies depuis le menu ou le sélecteur de la page
   const [testsSub,setTestsSub]=useState("semaine");
+  const [accSub,setAccSub]=useState("roles"); // v320 : sous-page de « Personnes et accès » (Rôles / Accès par page)
   const [testsFocus,setTestsFocus]=useState(null);
   const [pendingDeparts,setPendingDeparts]=useState({}); // v312 // v310 : PJ à ouvrir dans Tests depuis sa fiche
   const [turbTab,setTurbTab]=useState(()=>{try{const v=localStorage.getItem("enogia_turbines_tab");return v==="orc"?"orc":"prod";}catch(e){return "prod";}});
@@ -963,7 +964,7 @@ export default function App(){
   const inboxActions=useMemo(()=>{
     const out=[],todayK=new Date().toISOString().slice(0,10),fr=s=>s?String(s).slice(0,10).split("-").reverse().join("/"):"";
     if(canEditMeta&&savePjMetaOverride){const due=serialsDue(snPlan);if(due.length)out.push({id:"sn",n:due.length,primary:true,title:due.length+" machine"+(due.length>1?"s arrivées":" arrivée")+" sans S/N",detail:"S/N prévus d'après l'ordo (année d'arrivée · n° dans l'année · gamme). Une fois attribués, ils ne bougent plus.",
-      items:due.map(x=>({pj:x.pj,text:x.missingCode?"gamme sans code : à saisir":x.sn})),cta:{label:"Attribuer les S/N",onClick:()=>assignSerialsFlow(due,savePjMetaOverride).then(n=>{if(n)notify(n+" S/N attribué"+(n>1?"s":"")+".","ok");})}});}
+      items:due.map(x=>({pj:x.pj,text:x.missingCode?"gamme sans code : à saisir":x.sn,...(x.missingCode?{}:{yes:{label:"✓ Oui",title:"Garder "+x.sn+" comme S/N de "+x.pj,onClick:()=>savePjMetaOverride(x.pj,{numSerie:x.sn})}})})),cta:{label:"Attribuer les S/N",onClick:()=>assignSerialsFlow(due,savePjMetaOverride).then(n=>{if(n)notify(n+" S/N attribué"+(n>1?"s":"")+".","ok");})}});}
     const pend=Object.keys(pendingDeparts||{});
     if(isOwner&&pend.length)out.push({id:"dep",n:pend.length,tone:"warn",title:pend.length+" départ"+(pend.length>1?"s changés":" changé")+" hors planificateur",detail:"Ils seront repris dans le plan à l'ouverture du planificateur.",items:pend.map(pj=>({pj,text:fr(pendingDeparts[pj].date)+(pendingDeparts[pj].by?" · "+pendingDeparts[pj].by:"")})),cta:{label:"Ouvrir le planificateur",onClick:()=>setView("planner")}});
     if(canAchats&&achatsDoc&&achatsDoc.po){const late=Object.values(achatsDoc.po).filter(p=>p&&!p.annule&&p.statut!=="livre"&&p.dateLivraison&&String(p.dateLivraison).slice(0,10)<todayK);
@@ -993,7 +994,10 @@ export default function App(){
         subs:[...(isOwner||accMe?[["derives","KPI"]]:[]),["retards","Retards"]].filter(([id])=>!mgrHidden.includes(id)).map(([id,l])=>({id,l,on:mgrOn(id==="retards"?["retards","retardsKpi"]:[id]),go:goMgr(id)}))}]:[])]},
     {g:"Administration",items:[
       ...(calOk?[{id:"calprod",l:"Calendrier de production",icon:"calendar",on:mgrOn(["production","vacances"]),go:goMgr("production")}]:[]),
-      ...(isOwner?[{id:"people",l:"Personnes et site",icon:"settings",on:mgrOn(["personnes","acces","nouveautes"]),go:goMgr("personnes")},{id:"access",l:"Accès",icon:"lock",on:view==="access",go:()=>setView("access")}]:[])]},
+      // v320 (demandé : « lier Accès et Personnes et site, Nouveautés seulement dans les réglages ») : Personnes et accès + Réglages du site
+      ...(isOwner?[{id:"people",l:"Personnes et accès",icon:"lock",on:mgrOn(["personnes"])||view==="access",go:goMgr("personnes"),
+        subs:[{id:"personnes",l:"Personnes",on:mgrOn(["personnes"]),go:goMgr("personnes")},{id:"roles",l:"Rôles",on:view==="access"&&accSub==="roles",go:()=>{setAccSub("roles");setView("access");}},{id:"acces",l:"Accès par page",on:view==="access"&&accSub==="acces",go:()=>{setAccSub("acces");setView("access");}}]},
+        {id:"site",l:"Réglages du site",icon:"settings",on:mgrOn(["nouveautes","acces"]),go:goMgr("nouveautes")}]:[])]},
   ].filter(g=>g.items.length);
 
   // v159 : menu principal libellé (réductible, mémorisé) + recherche « Aller à… » (Ctrl K) sur toutes les pages
@@ -1159,7 +1163,7 @@ export default function App(){
       <>
         {view==="manager"?(mgrOk?
           <div>
-            <ManagerPanel hideTabs={mgrHidden} kpiOk={accMe?subOk("pilotage.kpi"):false} calOk={accMe?accAt("calprod","w"):false} planDoc={planDoc} initialAddFromImport={initialAddFromImport} changeLog={changeLog} data={dataWithOverrides} progress={progressEff} setProgress={setProgress} releases={releasesAll} saveReleaseNotes={saveReleaseNotes} releaseSelection={releaseSelection} saveReleaseSelection={saveReleaseSelection} publishRelease={publishRelease} isBeta={IS_BETA} initialData={initialData} lastInitialImport={lastInitialImport} lastInitialAdd={lastInitialAdd} onInitialImport={handleInitialImport} onInitialAdd={handleInitialAdd} initialImporting={initialImporting}
+            <ManagerPanel onAccess={isOwner?(id=>{setAccSub(id);setView("access");}):null} hideTabs={mgrHidden} kpiOk={accMe?subOk("pilotage.kpi"):false} calOk={accMe?accAt("calprod","w"):false} planDoc={planDoc} initialAddFromImport={initialAddFromImport} changeLog={changeLog} data={dataWithOverrides} progress={progressEff} setProgress={setProgress} releases={releasesAll} saveReleaseNotes={saveReleaseNotes} releaseSelection={releaseSelection} saveReleaseSelection={saveReleaseSelection} publishRelease={publishRelease} isBeta={IS_BETA} initialData={initialData} lastInitialImport={lastInitialImport} lastInitialAdd={lastInitialAdd} onInitialImport={handleInitialImport} onInitialAdd={handleInitialAdd} initialImporting={initialImporting}
               etatChoice={etatChoiceEff} setEtatFor={setEtatFor} saveProgress={saveProgress} savingProgress={savingProgress} progressSaved={progressSaved}
               tab={managerTab} setTab={setManagerTab} jumpFiche={managerJump} clientPresence={clientPresence} setClientPresenceFor={setClientPresenceFor}
               closurePeriods={closurePeriods} setClosurePeriods={setClosurePeriodsAndSave}
@@ -1216,7 +1220,7 @@ export default function App(){
               selEtats={selEtats} setSelEtats={setSelEtats} allPJs={allPJs} selPJs={selPJs} setSelPJs={setSelPJs}/>}
             {/* v204 (demandé : « un onglet uniquement pour moi, sous Tests ») : le module de planification (src/planner), brouillon séparé du planning ;
                 « Publier » seul modifie le planning lu par tous. Liens entre PJ, dates imposées, une production / un banc à la fois, charge par semaine. */}
-            {view==="access"&&isOwner&&<AccessPage profiles={profiles} saveProfiles={saveProfiles} accessDoc={accessDoc} saveAccess={saveAccess} people={peopleAll} ownerEmails={OWNER_EMAILS}/>}
+            {view==="access"&&isOwner&&<AccessPage sub={accSub} onSub={setAccSub} onPeople={goMgr("personnes")} profiles={profiles} saveProfiles={saveProfiles} accessDoc={accessDoc} saveAccess={saveAccess} people={peopleAll} ownerEmails={OWNER_EMAILS}/>}
             {view==="cashin"&&canCash&&<CashInTab authorName={authorName} focus={cashFocusApp} planRows={dataWithOverrides}/>}
             {view==="achats"&&canAchats&&<PageGuard name="Achats / Appro"><Achats doc={achatsDoc} api={achatsApi} rows={dataWithOverrides.map(r=>({pj:r.pj,nomProjet:getPjMeta(r.pj,r).nomProjet||"",gamme:r.gamme||"",etat:r.etat,arrivee:r.arrivee||null,depart:r.depart||null}))} canEdit={achEdit} owner={isOwner}/></PageGuard>}
             {/* v267 (demandé : « un seul onglet Turbines ») : production (seule saisie) + besoins des ORC (calculés) ; l'ancien pool n'est plus affiché */}

@@ -40,6 +40,9 @@ function Row({r,meta,value,onSave,onPasteMany,saveMeta,etat,setEtat,presence,set
         onKeyDown={e=>{if(e.key==="Enter")e.currentTarget.blur();else if(e.key==="Escape"){setV(value||"");e.currentTarget.blur();}}}
         onPaste={e=>{const t=e.clipboardData.getData("text");if(/[\r\n]/.test(t.trim())){e.preventDefault();onPasteMany(r.pj,t);}}}
         style={{width:170,padding:"4px 8px",borderRadius:8,border:"1.5px solid "+(dirty?T.teal500:T.line),background:T.card,color:T.ink900,fontSize:FZ.sm,fontFamily:T.fontMono,fontWeight:600}}/>
+      {/* v320 (demandé : « pouvoir cliquer sur oui si le S/N proposé me va ») : fixe le S/N prévu de cette machine */}
+      {!v.trim()&&planned&&!planned.missingCode&&<button type="button" onClick={async()=>{setSt("…");const ok=await onSave(r.pj,planned.sn);setSt(ok===false?"échec":"✓");setTimeout(()=>setSt(""),1400);}} title={"Garder "+planned.sn+" comme S/N de "+r.pj} aria-label={"Oui, garder "+planned.sn+" pour "+r.pj}
+        style={{marginLeft:6,minHeight:26,padding:"0 10px",borderRadius:8,border:"1px solid "+T.emerald500,background:T.emerald100,color:T.emerald600,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font}}>✓ Oui</button>}
       <span style={{marginLeft:8,fontSize:FZ.xs,color:st==="échec"?T.red500:T.emerald600,fontWeight:700}}>{st}</span>
     </td>
   </tr>);

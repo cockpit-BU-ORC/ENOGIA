@@ -31,10 +31,12 @@ function LevelPicker({ value, onChange, label, min }) {
   </div>;
 }
 
-export default function AccessPage({ profiles, saveProfiles, accessDoc, saveAccess, people, ownerEmails }) {
+// v320 (demandé : « lier les pages Accès et Personnes et site ») : une seule entrée « Personnes et accès » — Personnes (Manager) · Rôles · Accès par page
+export default function AccessPage({ profiles, saveProfiles, accessDoc, saveAccess, people, ownerEmails, sub: subP, onSub, onPeople }) {
   const owners = useMemo(() => (ownerEmails || []).map(e => String(e).toLowerCase()), [ownerEmails]);
   const base = useMemo(() => ({ roles: rolesOf(accessDoc), levels: levelsOf(accessDoc) }), [accessDoc]);
-  const [sub, setSub] = useState("roles");
+  const [sub0, setSub0] = useState("roles");
+  const sub = subP || sub0, setSub = id => { if (id === "personnes") { if (onPeople) onPeople(); return; } (onSub || setSub0)(id); };
   const [roles, setRoles] = useState(null), [levels, setLevels] = useState(null), [roleOf, setRoleOf] = useState({}), [busy, setBusy] = useState(false), [msg, setMsg] = useState("");
   const R = roles || base.roles, L = levels || base.levels;
   const roleName = k => (R.find(r => r[0] === k) || ["", "Autres personnes"])[1];
@@ -160,7 +162,7 @@ export default function AccessPage({ profiles, saveProfiles, accessDoc, saveAcce
 
   return (<div style={{ display: "flex", flexDirection: "column", gap: 14, paddingBottom: 70 }}>
     <PageHead title="Accès" sub="Qui a quel rôle, et ce que chaque rôle peut voir ou modifier. Vous seul êtes super admin." accent={T.accentInk}
-      right={<PlanSwitch label="Sous-pages des accès" value={sub} onGo={setSub} tools={[]} views={[{ id: "roles", l: "Rôles" }, { id: "acces", l: "Accès par page" }]} />} />
+      right={<PlanSwitch label="Sous-pages des accès" value={sub} onGo={setSub} tools={[]} views={[...(onPeople ? [{ id: "personnes", l: "Personnes" }] : []), { id: "roles", l: "Rôles" }, { id: "acces", l: "Accès par page" }]} />} />
     <div role="status" style={{ ...card, padding: "10px 14px", display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", background: on ? T.emerald100 : T.amber100 }}>
       <span style={{ flex: "1 1 320px", fontSize: 13, color: T.ink900 }}>{on ? <><b>Nouveaux accès activés.</b> Chacun ne voit que ce que permet son rôle.</> : <><b>Pas encore activés.</b> Tout le monde garde ses droits d'avant. Réglez rôles et accès, enregistrez, puis activez.</>}</span>
       <button type="button" disabled={busy} onClick={toggleOn} style={{ ...btn(on ? "ghost" : "sec", "sm") }}>{on ? "Désactiver" : "Activer les nouveaux accès"}</button>

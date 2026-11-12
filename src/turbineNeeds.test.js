@@ -1,4 +1,4 @@
-import { defaultCfg, buildNeeds, moveNeedOrder, assignOps, unassignOps, installOps, allocOps, unallocOps, stockTiles, maxBouches, refsOf, autoFill } from "./turbineNeeds";
+import { defaultCfg, buildNeeds, moveNeedOrder, swapNeedKeys, assignOps, unassignOps, installOps, allocOps, unallocOps, stockTiles, maxBouches, refsOf, autoFill } from "./turbineNeeds";
 import { setResolved, isSeenFor, isResolvedFor } from "./mentions";
 
 // v270 : besoins PJ + SAV, turbines glissées sur un besoin, sortie du stock de la production
@@ -125,4 +125,13 @@ test("v302 : ordre de priorité choisi à la main, dans le mois, et déplacement
   expect(moveNeedOrder(needs, "sav:s1", -1)).toEqual(["sav:s1", "sav:s2", "pj:PJ2", "pj:PJ1"]);
   expect(moveNeedOrder(needs, "pj:PJ2", 1)).toBeNull(); // PJ1 est en décembre : on ne change pas de mois
   expect(moveNeedOrder(needs, "pj:PJ2", -1, n => n.kind === "pj")).toBeNull(); // pas d'autre PJ avant dans le mois
+});
+
+test("v320 : priorité globale, échange entre deux mois", () => {
+  const d2 = { ...doc, besoins: { ...doc.besoins, s2: { label: "SAV2", cfg: "100", date: "2026-11-28" } }, ordre: { besoins: { keys: ["pj:PJ1", "sav:s1", "pj:PJ2", "sav:s2"] } } };
+  const { needs } = buildNeeds(d2, rows, metaOf, today);
+  expect(needs[0].key).toBe("pj:PJ1"); // PJ1 (décembre) passé en tête à la main
+  const keys = swapNeedKeys(needs, "pj:PJ1", "sav:s1");
+  expect(keys.indexOf("sav:s1")).toBe(0);
+  expect(swapNeedKeys(needs, "pj:PJ1", "pj:PJ1")).toBeNull();
 });
