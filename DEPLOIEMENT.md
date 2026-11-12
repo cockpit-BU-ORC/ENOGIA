@@ -2312,3 +2312,9 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Menu Administration : « Personnes et accès » (Personnes, Rôles, Accès par page) et « Réglages du site » (Nouveautés, version).
 - Clés `localStorage` : `enogia_nd_fold`, `enogia_fiche_shipped`, `enogia_cdp_shipped`. Règles Firestore inchangées.
 - Fichiers : turbineNeeds.js(+test), components/TurbinesHub.js, CommentMarks.js, Series.js, InboxPage.js, ManagerFiche.js, CdpReport.js, ManagerPanel.js, AccessPage.js, App.js, versions.
+
+## v321 — Galerie ?demo et vérification automatique des pages (revue, point 7)
+
+- `src/demo/` : données fictives, liste des pages, galerie (http://localhost:3000/?demo, développement seulement), test `pages.test.js` (10 pages × clair / sombre).
+- Script `npm run check:pages`. Rien ne change dans le site publié (la galerie n'est pas dans le build).
+- Fichiers : src/demo/* (nouveaux), index.js, package.json, App.js, versions, CLAUDE.md.

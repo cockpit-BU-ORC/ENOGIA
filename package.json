@@ -28,7 +28,8 @@
     "kit:jeremie": "node scripts/prodturb-kit.js",
     "import:jeremie": "node scripts/prodturb-import.js",
     "kit:achats": "node scripts/achats-kit.js",
-    "import:achats": "node scripts/achats-import.js"
+    "import:achats": "node scripts/achats-import.js",
+    "check:pages": "react-scripts test --watchAll=false src/demo"
   },
   "eslintConfig": {
     "extends": [

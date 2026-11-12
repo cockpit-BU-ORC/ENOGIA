@@ -18,7 +18,7 @@ test("Besoins v2 : rendu avec stock, turbines attribuées, roues et injecteurs",
   // v300 : une seule feuille ORC + SAV, bascule Production / Besoins, logements à 4 états, stock roues / injecteurs d'abord
   expect(t).toContain("Besoins ORC et SAV"); expect(t).toContain("à attribuer"); expect(t).toContain("100N1"); expect(t).toContain("Turbine allouée"); expect(t).toContain("montée sur la turbine");
   expect(t).toContain("Marquer installée"); expect(t).toContain("dispo"); expect(t).toContain("100N2"); expect(t).toContain("testée sans roue"); expect(t).toContain("SAV411");
-  expect(t.indexOf("Roues équilibrées")).toBeLessThan(t.indexOf("Injecteurs")); expect(t.indexOf("Turbines prêtes · avec roue")).toBeLessThan(t.indexOf("Turbines prêtes · sans roue")); expect(t.indexOf("Turbines prêtes · sans roue")).toBeLessThan(t.indexOf("Roues équilibrées")); // v320 : turbines prêtes en premier expect(t).toContain("12 ouvertures");
+  expect(t.indexOf("Roues équilibrées")).toBeLessThan(t.indexOf("Injecteurs")); expect(t.indexOf("Turbines prêtes · avec roue")).toBeLessThan(t.indexOf("Turbines prêtes · sans roue")); expect(t.indexOf("Turbines prêtes · sans roue")).toBeLessThan(t.indexOf("Roues équilibrées")); expect(t).toContain("12 ouvertures"); // v320 : turbines prêtes en premier
   expect(el.querySelector("[aria-label^=\"Besoin n° 1\"]")).toBeTruthy(); // v301 : rang de besoin
   const orc = [...el.querySelectorAll("button")].find(x => /^ORC/.test(x.textContent.trim()));
   act(() => { orc.click(); });

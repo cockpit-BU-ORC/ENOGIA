@@ -1,0 +1,46 @@
+// v321 (revue, point 7 « chaque vérification est refaite à la main ») : données d'exemple de la galerie ?demo et des tests de pages.
+// Entièrement fictives (PJ 9xx, clients et personnes inventés) : jamais de vraies données ici, le dépôt est public.
+const day = n => { const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+const row = (pj, gamme, etat, a, p, t, tf, fp, dep, drift = 0) => ({ pj, gamme, etat, arrivee: day(a), debutProd: day(p), tests: day(t), testsFin: day(tf), finProd: day(fp), depart: day(dep), drift, clientPresence: null });
+
+export const DEMO_ROWS = [
+  row("PJ901", "180LTV3", "MONTAGE", -20, -15, 10, 14, 18, 21, 4),
+  row("PJ902", "180LTV3", "ELEC", -35, -30, 2, 6, 9, 12, 0),
+  row("PJ903-1", "20LTV3", "TESTS", -50, -45, -3, 2, 4, 7, 11),
+  row("PJ903-2", "20LTV3", "PACKAGING", -55, -50, -12, -8, -3, 2, 0),
+  row("PJ904", "100MT", "NOT ORDERED", 30, 35, 70, 74, 80, 84, 0),
+  row("PJ905", "180LTV3", "En fabrication", 12, 16, 45, 49, 55, 58, -3),
+  row("PJ906", "40LTV3", "SHIPPED", -90, -85, -40, -36, -30, -25, 2),
+  row("PJ907", "180LTV3", "STOCKAGE_EXT", 5, 9, 38, 41, 46, 50, 0),
+];
+export const DEMO_META = {
+  PJ901: { nomProjet: "Papeterie du Nord", pays: "France", chefProjet: "Camille Durand" },
+  PJ902: { nomProjet: "Verrerie Alpes", pays: "Italie", chefProjet: "Camille Durand" },
+  "PJ903-1": { nomProjet: "Biogaz Ouest", pays: "France", chefProjet: "Lou Martin" },
+  "PJ903-2": { nomProjet: "Biogaz Ouest", pays: "France", chefProjet: "Lou Martin" },
+  PJ904: { nomProjet: "Cimenterie Sud", pays: "Espagne", chefProjet: "Lou Martin" },
+  PJ905: { nomProjet: "Fonderie Est", pays: "Allemagne", chefProjet: "Camille Durand" },
+  PJ906: { nomProjet: "Sucrerie Centre", pays: "France", chefProjet: "Sam Petit" },
+  PJ907: { nomProjet: "Chimie Rhône", pays: "UK", chefProjet: "Sam Petit" },
+};
+export const DEMO_ME = { email: "camille.durand@exemple.fr", name: "Camille Durand" };
+export const DEMO_PEOPLE = [DEMO_ME, { email: "lou.martin@exemple.fr", name: "Lou Martin" }, { email: "sam.petit@exemple.fr", name: "Sam Petit" }];
+const at = (d, h) => day(d) + "T" + String(h).padStart(2, "0") + ":15:00.000Z";
+export const DEMO_COMMENTS = {
+  PJ901: [
+    { author: "Lou Martin", text: "Châssis posé, câblage de l'armoire demain.", date: at(-2, 9), reactions: { "👍": ["sam.petit@exemple.fr"] } },
+    { author: "Sam Petit", text: "@Camille on peut caler le NOBO lundi ?", date: at(0, 10), mentions: ["camille.durand@exemple.fr"] },
+  ],
+  "PJ903-1": [{ author: "Lou Martin", text: "Tests jour 3 : débit conforme.", date: at(-1, 15) }],
+  PJ906: [{ author: "Sam Petit", text: "Machine livrée, réception signée.", date: at(-20, 11), private: true }],
+};
+export const DEMO_PROGRESS = { PJ901: 40, PJ902: 65, "PJ903-1": 85, "PJ903-2": 95, PJ906: 100 };
+export const DEMO_TESTS = { testers: ["Lou Martin", "Sam Petit"], plans: {}, catalog: [] };
+export const DEMO_PROD = {
+  turbines: { a: { num: "100N1", step: "ok", roue: "R1" }, b: { num: "100N2", step: "s1" }, c: { num: "100N3", step: "att" }, d: { num: "20N1", step: "ok", roue: "R7", gamme: "20" } },
+  roues: { r1: { ref: "R1", qte: 2 }, r2: { ref: "R2", qte: 1 } },
+  injecteurs: { i1: { ref: "MT11", qte: 3, ouvertures: 12, variantes: [{ bouches: 3, qte: 1 }] } },
+  arbres: {}, pieces: {}, params: { d: {}, l: {} },
+  besoins: { s1: { label: "SAV-12", cfg: "100", date: day(25) } },
+};
+export const demoApi = { put: async () => true, del: async () => true, setParams: async () => true, setAccess: async () => true };

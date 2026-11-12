@@ -884,4 +884,7 @@ export const RELEASE_CATALOG = [
     ["Machines ORC", "« ✓ Oui » à côté d'un S/N proposé pour le garder, aussi dans la page À traiter.", "admin"],
     ["Administration", "« Personnes et accès » réunit Personnes, Rôles et Accès par page ; les Nouveautés et la version passent dans « Réglages du site ».", "admin"],
   ] },
+  { v: "321", t: "Vérification automatique des pages", items: [
+    ["Qualité", "Chaque page principale est désormais vérifiée automatiquement, en clair et en sombre, avant chaque mise à jour du site.", "admin"],
+  ] },
 ];

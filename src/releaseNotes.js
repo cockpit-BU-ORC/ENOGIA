@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v321",
+    date: "2026-11-12",
+    title: "V321 : pages vérifiées automatiquement",
+    items: [
+      { t: "Qualité", d: "Les pages principales sont vérifiées automatiquement avant chaque mise à jour." },
+    ],
+  },
+  {
     id: "2026-11-v320",
     date: "2026-11-12",
     title: "V320 : stock des turbines et priorités",

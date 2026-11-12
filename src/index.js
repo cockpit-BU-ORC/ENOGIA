@@ -11,8 +11,11 @@ initPan(); // v259 : clic droit maintenu = faire défiler, partout
 initI18n(); // v319 : version anglaise (drapeaux FR / EN)
 initTips(); // v286 : bulle maison à la place des bulles du navigateur (souris, clavier, doigt)
 const root = ReactDOM.createRoot(document.getElementById('root'));
+// v321 (revue, point 7) : galerie des pages avec données d'exemple, http://localhost:3000/?demo — en développement seulement
+// (process.env.NODE_ENV vaut « production » dans le site publié : ce code et la galerie n'y sont pas inclus)
+const DemoGallery = process.env.NODE_ENV !== 'production' && /[?&]demo(=|&|$)/.test(window.location.search) ? React.lazy(() => import('./demo/DemoGallery')) : null;
 root.render(
   <React.StrictMode>
-    <App />
+    {DemoGallery ? <React.Suspense fallback={null}><DemoGallery /></React.Suspense> : <App />}
   </React.StrictMode>
 );
