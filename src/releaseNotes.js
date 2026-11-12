@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v311",
+    date: "2026-11-12",
+    title: "V311 : un site plus homogène",
+    items: [
+      { t: "Site", d: "Survols plus fluides dans le menu, la Liste, le Gantt et le Calendrier ; pastilles et puces identiques d'une page à l'autre." },
+    ],
+  },
+  {
     id: "2026-11-v310",
     date: "2026-11-12",
     title: "V310 : le Calendrier en vue Mois",

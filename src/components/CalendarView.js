@@ -392,7 +392,7 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
               const fill=stageFill(status);
               const pKindW=presenceKindAt(r.clientPresence,v=>{const x=new Date(v);return x>=w&&x<we;});
               const pKind=pKindW,showPresence=!!pKindW;
-              return(<div key={wi} onClick={()=>onSelectPj&&onSelectPj(pj)} onMouseEnter={e=>{e.currentTarget.style.background=T.teal100+"50";}} onMouseLeave={e=>{e.currentTarget.style.background=cellBg;}} style={{...pos,height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,boxShadow:todayEdge,padding:3,cursor:"pointer",position:"relative",background:cellBg,transition:"background .12s ease"}}>
+              return(<div key={wi} className="e-hov" onClick={()=>onSelectPj&&onSelectPj(pj)} style={{"--e-hov-bg":T.teal100+"50",...pos,height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,boxShadow:todayEdge,padding:3,cursor:"pointer",position:"relative",background:cellBg,transition:"background .12s ease"}}>
                 {/* Tuile de nouveau remplie (demandé explicitement : "essaye de les remplir") — le mot
                     complet doit toujours rester lisible ("je dois toujours réussir à lire l'intégralité
                     des mots"), donc texte qui s'enroule sur 2 lignes plutôt qu'une troncature. */}
@@ -424,7 +424,7 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
               // étroite. Centré au milieu de la tuile (pivot au centre, plutôt qu'ancré au coin
               // bas-gauche) et contenu dans la tuile (overflow:"hidden" sur le conteneur) — demandé
               // explicitement : "les étapes sont pas au milieu des tiles et dépassent de celles-ci".
-              return(<div key={di} className="enogia-cal-daycell" onClick={cellMenu||(()=>onSelectPj&&onSelectPj(pj))} onMouseEnter={e=>{e.currentTarget.style.background=T.teal100+"50";}} onMouseLeave={e=>{e.currentTarget.style.background=cellBg;}} style={{...pos,height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,boxShadow:todayEdge,cursor:"pointer",background:cellBg,position:"relative",transition:"background .12s ease"}}>
+              return(<div key={di} className="enogia-cal-daycell e-hov" onClick={cellMenu||(()=>onSelectPj&&onSelectPj(pj))} style={{"--e-hov-bg":T.teal100+"50",...pos,height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,boxShadow:todayEdge,cursor:"pointer",background:cellBg,position:"relative",transition:"background .12s ease"}}>
                 {(()=>{const pd=new Date(d);pd.setDate(pd.getDate()-1);const nd=new Date(d);nd.setDate(nd.getDate()+1);
                   const ex=productionExclusions?.[pj];
                   const runStart=status!=="Production"||getDayStatus(r,pd,ex)!=="Production"||di===lo,runEnd=status!=="Production"||getDayStatus(r,nd,ex)!=="Production";

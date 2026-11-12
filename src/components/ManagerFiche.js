@@ -3,7 +3,7 @@ import { T, FZF as FZ, D, statusSoft, stripeBg, stripeHues, btn } from "../theme
 import { SerieTag, getPjMeta, PJ_META_OVERRIDES, CountryFlag, Avatar, GAMME_COLORS, ETAT_META, etatInk, PresenceChip, PRESENCE_META, presenceKind, presenceDates, presenceFirstDate, today, PjPlate, orcChefsOf, epcChefOf, EpcTag } from "../pjMeta";
 import { ChefsEpcEditor } from "./ChefsEpc";
 import { fmt, diffDays } from "../parsers";
-import { Badge, NavIcon, EmptyState, SuperOnly, pressable } from "./SharedUI";
+import { Badge, NavIcon, EmptyState, SuperOnly, pressable, Pill } from "./SharedUI";
 import { CARD, EmptyNote, PieBlock, getDelayColors } from "./ManagerParts";
 import { cashSummary, STATUS_LABEL, getCashinDoc } from "../cashinLink";
 import { useCashin } from "../useCashin";
@@ -171,7 +171,7 @@ function DelayComposer({types,onAdd,onNewType}){
     </>}
   </div>);
 }
-const TrashBtn=({onClick,title})=><SuperOnly><button onClick={onClick} title={title} style={{border:"none",background:"transparent",color:T.ink300,cursor:"pointer",fontSize:FZ.md,lineHeight:1,padding:"0 3px"}} onMouseEnter={e=>e.currentTarget.style.color=T.red500} onMouseLeave={e=>e.currentTarget.style.color=T.ink300}><NavIcon name="close" size={11}/></button></SuperOnly>;
+const TrashBtn=({onClick,title})=><SuperOnly><button onClick={onClick} title={title} className="e-hov-ink" style={{border:"none",background:"transparent",color:T.ink300,cursor:"pointer",fontSize:FZ.md,lineHeight:1,padding:"0 3px","--e-hov-ink":T.red500}}><NavIcon name="close" size={11}/></button></SuperOnly>;
 
 // ── Statut global : 4 feux de confiance (planning / cash / risques / communication client) ──────────
 // v124 : seuls les axes évalués ont leur carte (avec commentaire) ; les axes « Non évalué » sont repliés sur une seule ligne
@@ -289,7 +289,7 @@ function DatesTable({r,meta,onSave}){
     <td style={{...td,background:T.surface}}>{big(p,c&&p&&p>c)}<div style={{fontSize:FZ.xs,color:T.ink500}}>{pHint}</div></td>
     <td style={td}>{e}<div style={{fontSize:FZ.xs,color:T.ink500}}>{eHint}</div></td>
     <td style={{...td,textAlign:"right"}}>{ecart(g)}{est&&!eDate&&g!=null&&<div style={{fontSize:FZ.xs,color:T.ink500,marginTop:2}}>sur la date estimée</div>}</td></tr>;};
-  const chip=(txt,tone)=><span style={{display:"inline-block",fontSize:FZ.xs,fontWeight:700,borderRadius:999,padding:"1px 9px",background:tone==="ok"?T.emerald100:tone==="warn"?T.amber100:T.surface,color:tone==="ok"?T.emerald600:tone==="warn"?T.amber600:T.ink500}}>{txt}</span>;
+  const chip=(txt,tone)=><Pill tone={tone==="ok"||tone==="warn"?tone:"muted"} style={{fontWeight:700}}>{txt}</Pill>; // v311 : pastille commune
   const livCell=!tr?big(livE):meta.livrReelle&&!livEdit?<div><div style={{display:"flex",alignItems:"center",gap:8}}>{big(livE)}{chip("confirmée","ok")}</div><button type="button" onClick={()=>setLivEdit(true)} style={{border:"none",background:"transparent",padding:0,marginTop:2,color:T.ink500,fontSize:FZ.xs,cursor:"pointer",textDecoration:"underline",textUnderlineOffset:2,fontFamily:T.font}}>modifier</button></div>
     :!shipped&&!livEdit?<div>{chip("pas encore partie")}</div>
     :livEdit||meta.livrReelle?<div style={{display:"flex",alignItems:"center",gap:6}}><DateField label="" value={meta.livrReelle||""} onSave={v=>{onSave({livrReelle:v||undefined});setLivEdit(false);}} hint=""/><button type="button" onClick={()=>setLivEdit(false)} style={{border:"none",background:"transparent",color:T.ink500,fontSize:FZ.xs,cursor:"pointer",fontFamily:T.font}}>Annuler</button></div>

@@ -3,7 +3,7 @@ import { T, FZ } from "../theme";
 import { getPjMeta, CountryFlag } from "../pjMeta";
 import { CARD, EtatSelect, PresenceEditor } from "./ManagerParts";
 import { EtatsDialog } from "./EtatsDialog";
-import { EmptyState } from "./SharedUI";
+import { EmptyState, Pill } from "./SharedUI";
 import { SERIE_SEED_TEXT } from "../serieSeed";
 
 // ── N° de série des machines (Manager › Réglages) ─────────────────────────────────────────────────────
@@ -109,7 +109,7 @@ function ImportPanel({rows,save,onClose,onDone}){
     for(let k=0;k<chosen.length;k++){const ok=await save(chosen[k].target,chosen[k].sn);if(ok===false)fail++;setRun({done:k+1,total:chosen.length,fail});}
     onDone(chosen.length-fail,fail);
   };
-  const chip=(label,n,col,bg)=>n>0&&<span style={{fontSize:FZ.xs,fontWeight:700,color:col,background:bg,borderRadius:999,padding:"2px 8px"}}>{n} {label}</span>;
+  const chip=(label,n,col,bg)=>n>0&&<Pill ink={col} bg={bg} style={{fontWeight:700}}>{n} {label}</Pill>; // v311 : pastille commune
   const STX={new:["Nouveau",T.emerald600],approx:["Correspondance approchée",T.amber600],replace:["Remplace",T.amber600],same:["Déjà à jour",T.ink300],dup:["Doublon",T.red500],absent:["Absent du planning",T.ink300]};
   return(<div style={{padding:"12px 16px",borderBottom:"1px solid "+T.line,background:T.surface}}>
     <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:8}}>

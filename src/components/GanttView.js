@@ -235,9 +235,7 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
           const r=it.r;
           const meta=getPjMeta(r.pj,r);
           const isSel=sel===r.pj;
-          return(<div key={ri} className="enogia-lblcell" {...pressable(()=>setSel(isSel?null:r.pj),{"aria-pressed":isSel})} title={meta.numSerie?"S/N "+meta.numSerie:undefined} style={{height:rowH,boxSizing:"border-box",padding:"3px 16px",display:"flex",flexDirection:"column",justifyContent:"center",gap:1,borderBottom:"1px solid "+T.surfaceAlt,borderLeft:"3px solid "+(isSel?T.teal500:"transparent"),background:isSel?T.surfaceAlt:"transparent",cursor:"pointer",transition:"background .12s ease, border-color .12s ease"}}
-            onMouseEnter={e=>{if(!isSel)e.currentTarget.style.background=T.surfaceAlt;}}
-            onMouseLeave={e=>{if(!isSel)e.currentTarget.style.background="transparent";}}>
+          return(<div key={ri} className="enogia-lblcell e-hov" data-on={isSel?"1":"0"} {...pressable(()=>setSel(isSel?null:r.pj),{"aria-pressed":isSel})} title={meta.numSerie?"S/N "+meta.numSerie:undefined} style={{height:rowH,boxSizing:"border-box",padding:"3px 16px",display:"flex",flexDirection:"column",justifyContent:"center",gap:1,borderBottom:"1px solid "+T.surfaceAlt,borderLeft:"3px solid "+(isSel?T.teal500:"transparent"),background:isSel?T.surfaceAlt:"transparent",cursor:"pointer",transition:"background .12s ease, border-color .12s ease","--e-hov-bg":T.surfaceAlt}}>
             <ProjectLabelCell pj={r.pj} r={r} meta={meta} noSn/>
           </div>);
         })}

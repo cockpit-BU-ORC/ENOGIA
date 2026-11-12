@@ -8,7 +8,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { T, FZF as FZ, inkOn, mixHex, stageSoft } from "../theme";
 import { ETAT_EDITS, getPjMeta, ETAT_META, chefsOf, EpcTag, PresenceChip, presenceKind, presenceFirstDate, presenceDates, CountryFlag, relTime, Avatar } from "../pjMeta";
-import { NavIcon, PjPlate, OpenIn } from "./SharedUI";
+import { NavIcon, PjPlate, OpenIn, Pill } from "./SharedUI";
 import { ProjectComments, DelayAllocations, EditMetaForm } from "./ProjectModal";
 import { STAGES, STEP_NOTE, autoPct } from "../prodStages";
 import { planOf, catalogOf, activeSections, progressOf, SECTIONS, selectedIds, statusOf } from "../testPlan";
@@ -85,7 +85,7 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
   const ach = useMemo(() => (ctx.achatsDoc ? achatsOf(ctx.achatsDoc, r.pj) : null), [ctx.achatsDoc, r.pj]);
   const openPage = (v, sub) => { if (ctx.openPage) { ctx.openPage(v, sub); if (onClose) onClose(); } };
   const gapTxt = g => g == null ? "" : g > 0 ? g + " j de marge" : g < 0 ? -g + " j de retard" : "juste à temps";
-  const pill = (txt, ink, bg, key) => <span key={key} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontFamily: T.fontLabel, fontSize: 12, fontWeight: 600, color: ink, background: bg, borderRadius: 999, padding: "2px 10px", whiteSpace: "nowrap" }}>{txt}</span>;
+  const pill = (txt, ink, bg, key) => <Pill key={key} ink={ink} bg={bg} size="md">{txt}</Pill>; // v311 : pastille commune
   const btn = primary => ({ display: "inline-flex", alignItems: "center", gap: 6, minHeight: 36, padding: "0 14px", borderRadius: 999, border: primary ? "none" : "1px solid " + T.line, background: primary ? T.ink900 : T.card, color: primary ? T.card : T.ink700, fontFamily: T.font, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" });
   const toggle = id => setOpen(o => (o === id ? null : id));
   const doneBg = mixHex(T.card, ETAT_META.SHIPPED.bar, T.mode === "dark" ? .3 : .28);

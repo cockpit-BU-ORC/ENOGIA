@@ -196,10 +196,8 @@ export function CommentsView({data,comments,addComment,deleteComment,pinOk,addCo
         <div style={{maxHeight:180,overflowY:"auto"}}>
           {groupsList.map(g=>{
             const active=!viewAll&&g.groupPjs.every(p=>viewPjs.has(p))&&viewPjs.size===g.groupPjs.length;
-            return(<div key={g.groupId} {...pressable(()=>selectGroup(g.groupPjs))}
-              style={{padding:"8px 12px",cursor:"pointer",background:active?T.violet100:"transparent",display:"flex",alignItems:"center",gap:8}}
-              onMouseEnter={e=>{if(!active)e.currentTarget.style.background=T.surface;}}
-              onMouseLeave={e=>{if(!active)e.currentTarget.style.background="transparent";}}>
+            return(<div key={g.groupId} {...pressable(()=>selectGroup(g.groupPjs))} className="e-hov" data-on={active?"1":"0"}
+              style={{padding:"8px 12px",cursor:"pointer",background:active?T.violet100:"transparent",display:"flex",alignItems:"center",gap:8,"--e-hov-bg":T.surface}}>
               <div style={{width:30,height:30,borderRadius:8,background:T.violet100,color:T.violet600,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><NavIcon name="layers" size={15}/></div>
               <div style={{minWidth:0,flex:1}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:6}}>

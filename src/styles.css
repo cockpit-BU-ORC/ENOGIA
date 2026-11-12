@@ -594,3 +594,16 @@ button, input, select, textarea { font-family: inherit; }
 /* v306 : sélecteur segmenté (PlanSwitch) — la pastille glisse sous la vue active */
 .enogia-seg-thumb{transition:transform 260ms var(--e-ease, cubic-bezier(.2,.8,.2,1))}
 @media (prefers-reduced-motion: reduce){.enogia-seg-thumb{transition:none}}
+
+/* v311 (revue, point 4 « les pages ne partagent pas leurs briques ») : survols en CSS. Un élément porte la classe e-hov et la variable
+   --e-hov-bg (fond au survol) ; e-hov-ink et --e-hov-ink pour la couleur du texte ; data-on="1" = élément actif, pas de survol.
+   Seulement sur les écrans à souris (rien ne reste « collé » au doigt sur tablette). Utiliser hoverVars() de SharedUI.js. */
+@media (hover: hover){
+  .e-hov:not([data-on="1"]):hover{background:var(--e-hov-bg)!important}
+  .e-hov-ink:not([data-on="1"]):hover{color:var(--e-hov-ink)!important}
+  .e-lift:not(:disabled):hover{transform:translateY(-1px);box-shadow:var(--e-lift-shadow)!important}
+}
+.e-hov,.e-hov-ink{transition:background-color .12s ease,color .12s ease}
+/* v311 : pastilles et puces communes (Pill, Chip de SharedUI.js) */
+.e-chip{transition:background-color .12s ease,border-color .12s ease,color .12s ease}
+@media (hover: hover){.e-chip[aria-pressed="false"]:hover{border-color:var(--e-chip-hover)!important}}

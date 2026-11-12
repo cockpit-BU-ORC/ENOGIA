@@ -109,8 +109,7 @@ export function StatutTab({rows,etatChoice,setEtatFor,clientPresence,setClientPr
       const current=etatChoice[r.pj]||"A_DEFINIR";
       const presence=clientPresence[r.pj]||{present:false,date:""};
       const meta=getPjMeta(r.pj,r);
-      return(<div key={r.pj} style={{display:"grid",gridTemplateColumns:COLS,gap:12,alignItems:"center",padding:"8px 16px",borderBottom:"1px solid "+T.surface}}
-        onMouseEnter={e=>e.currentTarget.style.background=T.surface} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+      return(<div key={r.pj} className="e-hov" style={{display:"grid",gridTemplateColumns:COLS,gap:12,alignItems:"center",padding:"8px 16px",borderBottom:"1px solid "+T.surface,"--e-hov-bg":T.surface}}>
         <div style={{minWidth:0}}>
           <div style={{fontFamily:T.fontMono,fontWeight:700,fontSize:FZ.sm,color:T.teal600,whiteSpace:"nowrap"}}><PjPlate pj={r.pj}/></div>
           <div title={meta.nomProjet||""} style={{fontSize:FZ.xs,color:T.ink300,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{meta.nomProjet||""}</div>

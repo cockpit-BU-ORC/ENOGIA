@@ -154,8 +154,7 @@ export function SanteTab({rows,onSave}){
         {list.map(({r,m,f})=>{
           const tf=m.contratTFin?new Date(m.contratTFin):null;const dep=r.depart?new Date(r.depart):null;
           const ec=tf&&dep?diffDays(tf,dep):null;
-          return(<div key={r.pj} style={{display:"grid",gridTemplateColumns:COLS,gap:12,alignItems:"center",padding:"8px 16px",borderBottom:"1px solid "+T.surface}}
-            onMouseEnter={e=>e.currentTarget.style.background=T.surface} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+          return(<div key={r.pj} className="e-hov" style={{display:"grid",gridTemplateColumns:COLS,gap:12,alignItems:"center",padding:"8px 16px",borderBottom:"1px solid "+T.surface,"--e-hov-bg":T.surface}}>
             <div style={{minWidth:0}}>
               <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontFamily:T.fontMono,fontWeight:700,fontSize:FZ.sm,color:T.teal600}}>{r.pj}</span><CountryFlag pays={m.pays} size={11}/></div>
               <div title={m.nomProjet||""} style={{fontSize:FZ.xs,color:T.ink300,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{m.nomProjet||""}</div>

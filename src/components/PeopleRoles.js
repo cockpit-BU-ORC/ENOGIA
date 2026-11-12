@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { T, FZ } from "../theme";
-import { PjPlate } from "./SharedUI";
+import { PjPlate, chipStyle } from "./SharedUI";
 import { useMentions } from "../mentionContext";
 import { ROLES, ROLE_BLOCKS, profileOf, setProfile, chefNames, pjsOfProfile, removePerson, parsePeopleList } from "../profiles";
 import { nameFromEmail } from "../mentions";
@@ -11,7 +11,7 @@ import { askConfirm } from "../confirm";
 // v238 : retirer une personne (gardée à part, « Rétablir ») ; coller une liste d'adresses @enogia.com — les personnes ajoutées
 // reçoivent un rôle et peuvent être taguées (@) avant leur première connexion.
 const lc = v => String(v || "").trim().toLowerCase();
-const chip = on => ({ display: "inline-flex", alignItems: "center", gap: 6, minHeight: 26, padding: "2px 10px", borderRadius: 999, border: "1.5px solid " + (on ? T.teal500 : T.line), background: on ? T.teal100 : T.card, color: on ? T.teal600 : T.ink700, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font });
+const chip = chipStyle; // v311 : puce commune
 const field = () => ({ padding: "6px 10px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, minHeight: 32, boxSizing: "border-box" });
 
 export function PeopleRoles({ profiles, saveProfiles, data }) {

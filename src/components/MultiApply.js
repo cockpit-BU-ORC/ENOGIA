@@ -7,6 +7,7 @@ import { T, FZF as FZ } from "../theme";
 import { getPjMeta } from "../pjMeta";
 import { itemsOf, ITEM_STATUS, statusPatch, mitText } from "../pjProgress";
 import { FEUX, FEU_LEVELS, FeuDot, patchFeu, openMitigations, NOTE_MAX } from "./Feux";
+import { chipStyle } from "./SharedUI";
 
 export const newItemId = () => "i" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
 
@@ -81,7 +82,7 @@ export function MultiApplyDialog({ onClose, data, currentPj, savePjMetaMulti, ad
   };
 
   const field = { width: "100%", boxSizing: "border-box", fontFamily: T.font, fontSize: FZ.sm, color: T.ink900, background: T.surface, border: "1px solid " + T.line, borderRadius: 8, padding: "7px 10px" };
-  const chip = on => ({ border: "1px solid " + (on ? T.teal500 : T.line), background: on ? T.teal100 : T.card, color: on ? T.teal600 : T.ink700, borderRadius: 999, padding: "4px 10px", fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font });
+  const chip = chipStyle; // v311 : puce commune
   const lbl = { fontSize: FZ.xs, fontWeight: 700, color: T.ink500, display: "block", marginBottom: 4 };
 
   return createPortal(<div role="dialog" aria-modal="true" aria-label="Saisie sur plusieurs projets" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}

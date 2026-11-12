@@ -2241,3 +2241,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Brique commune `OpenIn` (SharedUI.js) pour les liens « Ouvrir dans … ».
 - Pas de nouvelle donnée Firestore.
 - Fichiers : components/CalendarMonth.js (nouveau), CalendarView.js, RowDetail.js, SharedUI.js, TestsTab.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v311 — Briques communes (revue, point 4, lot 1)
+
+- SharedUI.js : `hoverVars`, `Pill`, `PILL_TONES`, `Chip`, `chipStyle`, `Panel` ; styles.css : classes `e-hov`, `e-hov-ink`, `e-lift`, `e-chip`.
+- Survols JavaScript remplacés par du CSS : App (menu), TableView, GanttView, CalendarView, CommentsView, Feux, ManagerParts, ManagerFiche, bouton d'import.
+- Pastilles / puces locales branchées sur les briques : RowDetail, HomeView, ManagerFiche, Series, MultiApply, PeopleRoles.
+- Pas de nouvelle donnée ni de nouvelle clé `localStorage`.

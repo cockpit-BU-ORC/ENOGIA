@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { T, FZ, R, stageSoft, stripeBg, stripeHues, alertSoft, inkOn } from "../theme";
 import { getPjMeta, chefsOf, ETAT_META, PresenceChip, presenceKind, presenceFirstDate, presenceDates, countShippedYTD, departedNotShipped } from "../pjMeta";
-import { NavIcon, AnimatedNumber, EmptyState, PjPlate, Hl } from "./SharedUI";
+import { NavIcon, AnimatedNumber, EmptyState, PjPlate, Hl, Pill as SPill } from "./SharedUI";
 import { openMentionsFor, chefAccount, nameFromEmail } from "../mentions";
 import { SITE_NAME, SITE_SCOPE, SITE_SUB } from "../siteName";
 import { testerOfEmail, planOf, testersOf } from "../testPlan";
@@ -114,7 +114,7 @@ export function HomeView({ data, comments, myEmail, myName, people, unseenChange
   );
 
   // Pastille d'une ligne « À traiter » : teinte pâle + texte foncé de la même teinte.
-  const Pill = ({ tone, children }) => <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 600, lineHeight: "18px", padding: "0 7px", borderRadius: R.pill, background: tone.bg, color: tone.ink }}>{children}</span>;
+  const Pill = ({ tone, children }) => <SPill bg={tone.bg} ink={tone.ink}>{children}</SPill>; // v311 : pastille commune
   // Ligne de liste : n° de PJ (couleur d'état), texte principal, valeur à droite en chiffres tabulaires.
   const Row = ({ pj, pill, main, right, rightColor, presence, first }) => (
     <button type="button" className="enogia-homeline" onClick={() => onOpenPj && onOpenPj(pj)}

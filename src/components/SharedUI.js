@@ -270,9 +270,8 @@ export function ImportButton({onImport, busy, label, accent, helpText, warnText,
   };
 
   return(<div style={{position:"relative",fontFamily:T.font}}>
-    <button ref={btnRef} onClick={openMenu} disabled={busy} aria-label={btnLabel} title={iconOnly?btnLabel:undefined} style={iconOnly?{width:26,height:26,borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:T.ink500,fontWeight:700,fontSize:FZ.md,lineHeight:1,cursor:busy?"default":"pointer",opacity:busy?.6:1,display:"flex",alignItems:"center",justifyContent:"center",padding:0}:{padding:"4px 8px",borderRadius:8,border:"none",background:bg,color:"#fff",fontWeight:700,fontSize:FZ.xs,cursor:busy?"default":"pointer",opacity:busy?.6:1,display:"flex",alignItems:"center",gap:4,boxShadow:T.shadowSm,transition:"transform .12s ease, box-shadow .12s ease"}}
-      onMouseEnter={e=>{if(!busy){e.currentTarget.style.transform="translateY(-1px)";e.currentTarget.style.boxShadow=T.shadowMd;}}}
-      onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow=T.shadowSm;}}>
+    <button ref={btnRef} onClick={openMenu} disabled={busy} aria-label={btnLabel} title={iconOnly?btnLabel:undefined} style={iconOnly?{"--e-lift-shadow":T.shadowMd,width:26,height:26,borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:T.ink500,fontWeight:700,fontSize:FZ.md,lineHeight:1,cursor:busy?"default":"pointer",opacity:busy?.6:1,display:"flex",alignItems:"center",justifyContent:"center",padding:0}:{"--e-lift-shadow":T.shadowMd,padding:"4px 8px",borderRadius:8,border:"none",background:bg,color:"#fff",fontWeight:700,fontSize:FZ.xs,cursor:busy?"default":"pointer",opacity:busy?.6:1,display:"flex",alignItems:"center",gap:4,boxShadow:T.shadowSm,transition:"transform .12s ease, box-shadow .12s ease"}}
+      className="e-lift">
       {iconOnly?(busy?"…":(iconGlyph||"⋯")):busy?<span style={{display:"inline-flex",alignItems:"center",gap:6}}><span style={{width:10,height:10,borderRadius:"50%",border:"2px solid rgba(255,255,255,.4)",borderTopColor:"#fff",display:"inline-block",animation:"enogiaSpin .8s linear infinite"}}/>Mise à jour...</span>:<span style={{display:"inline-flex",alignItems:"center",gap:4}}><NavIcon name="upload" size={10}/><span className="enogia-import-label">{btnLabel}</span></span>}
     </button>
     {open&&!busy&&<>
@@ -447,6 +446,29 @@ export function PageHead({kicker,title,sub,right,style,accent}){ // v185 : accen
 }
 
 // v286 : bouton commun du site — <Btn v="pri|sec|ghost|dan" size="sm|md" …> ; survol et désactivé via les classes e-btn (styles.css)
+// v311 (revue, point 4) — briques communes. À utiliser dans tout nouveau code à la place des styles écrits sur place :
+//  · hoverVars(fond, encre) + className "e-hov" / "e-hov-ink" : survol en CSS (plus de onMouseEnter / onMouseLeave pour une couleur) ;
+//  · Pill : pastille d'état (fond pâle + texte foncé de la même teinte) — tons ok, warn, bad, info, accent, violet, neutral, muted, ou bg / ink ;
+//  · Chip / chipStyle(on) : puce à cocher (filtres, choix multiples), aria-pressed ;
+//  · Panel : cadre (carte 12 px, filet, titre + actions à droite).
+export const hoverVars = (bg, ink) => ({ ...(bg ? { "--e-hov-bg": bg } : {}), ...(ink ? { "--e-hov-ink": ink } : {}) });
+export const PILL_TONES = () => ({ ok: [T.emerald100, T.emerald600], warn: [T.amber100, T.amber600], bad: [T.red100, T.red600], info: [T.info100, T.info600],
+  accent: [T.accentSoft || T.teal100, T.accentInk || T.teal600], violet: [T.violet100, T.violet600], neutral: [T.surfaceAlt, T.ink700], muted: [T.surface, T.ink500] });
+export function Pill({ tone = "neutral", bg, ink, size = "sm", children, style, title, className }) {
+  const [b, i] = PILL_TONES()[tone] || PILL_TONES().neutral;
+  return <span className={"e-pill" + (className ? " " + className : "")} title={title} style={{ display: "inline-flex", alignItems: "center", gap: 5, flexShrink: 0, fontFamily: T.fontLabel || T.font, fontSize: FZ.xs, fontWeight: 600, lineHeight: size === "md" ? "22px" : "18px", padding: size === "md" ? "0 10px" : "0 8px", borderRadius: 999, background: bg || b, color: ink || i, whiteSpace: "nowrap", ...style }}>{children}</span>;
+}
+export const chipStyle = on => ({ display: "inline-flex", alignItems: "center", gap: 6, minHeight: 28, padding: "2px 10px", borderRadius: 999, border: "1px solid " + (on ? T.teal500 : T.line), background: on ? T.teal100 : T.card, color: on ? T.teal600 : T.ink700, fontFamily: T.font, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", "--e-chip-hover": T.contour || T.ink300 });
+export function Chip({ on, onClick, children, count, style, title, disabled }) {
+  return <button type="button" className="e-chip" aria-pressed={!!on} onClick={onClick} title={title} disabled={disabled} style={{ ...chipStyle(on), ...style }}>{children}{count != null && <span style={{ fontWeight: 600, opacity: 0.75, fontVariantNumeric: "tabular-nums" }}>{count}</span>}</button>;
+}
+export function Panel({ title, right, children, pad = 14, style, id, as: Tag = "section" }) {
+  return <Tag id={id} aria-label={typeof title === "string" ? title : undefined} style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: pad, display: "flex", flexDirection: "column", gap: 10, minWidth: 0, ...style }}>
+    {(title || right) && <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>{title && <h3 style={{ margin: 0, fontFamily: T.font, fontSize: FZ.md, fontWeight: 700, color: T.ink900, flex: 1, minWidth: 0 }}>{title}</h3>}{right}</div>}
+    {children}
+  </Tag>;
+}
+
 // v310 (revue, point 4 « les pages ne partagent pas leurs briques ») : le même lien « Ouvrir dans … » partout où une page renvoie vers une autre
 // (fiche d'un PJ → Tests, Turbines, Achats…). Bouton secondaire, petite taille, flèche à droite.
 export function OpenIn({ label, onClick, style }) {

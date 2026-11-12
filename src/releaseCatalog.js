@@ -842,4 +842,8 @@ export const RELEASE_CATALOG = [
     ["Calendrier", "Vue Mois : le mois sur une page, jalons en plaques pleines, production et tests chaque jour en plaques claires, « + N autres » pour déplier un jour."],
     ["Fiche d'un PJ", "Clic sur la tuile Tests : la page Tests s'ouvre sur la fiche de tests du PJ (si vous avez accès à Tests)."],
   ] },
+  { v: "311", t: "Briques communes : survols, pastilles, puces", items: [
+    ["Site", "Survols du menu, de la Liste, du Gantt, du Calendrier et des Commentaires en CSS : plus fluides, et rien ne reste allumé sous le doigt sur tablette."],
+    ["Site", "Pastilles et puces de choix dessinées une seule fois et réutilisées (fiche d'un PJ, accueil, fiches projet, séries, personnes)."],
+  ] },
 ];

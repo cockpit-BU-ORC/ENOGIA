@@ -60,7 +60,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-12-v310-calendrier-mois";
+const APP_BUILD_VERSION = "2026-11-12-v311-briques";
 
 export default function App(){
   // Utilisateur connecté via Google, restreint aux comptes @enogia.com (null tant que non connecté).
@@ -1048,10 +1048,10 @@ export default function App(){
         {!navCompact&&<div className="enogia-nav-grp" style={{fontSize:12,fontWeight:700,color:NAV.group,fontFamily:T.font,padding:"12px 10px 4px",whiteSpace:"nowrap"}}>{g}</div>}
         {navCompact&&<div className="enogia-nav-grp" style={{width:18,height:1,background:NAV.industrial?"rgba(255,255,255,.18)":T.line,margin:"4px 0"}}/>}
         {items.map(it=>{const on=it.on,showSubs=(on||navHover===it.id)&&it.subs&&it.subs.length>1;return(<React.Fragment key={it.id}>
-          <button className="enogia-nav-btn" onClick={()=>{it.go();setNavPeek(false);}} title={it.l} aria-label={it.badge?it.l+", "+it.badge+" nouvelle"+(it.badge>1?"s":"")+" mise"+(it.badge>1?"s":"")+" à jour":it.l} aria-current={on?"page":undefined}
-            style={{position:"relative",width:navCompact?40:"100%",height:40,borderRadius:navCompact?12:10,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:navCompact?"center":"flex-start",gap:12,padding:navCompact?0:"0 12px",background:on?NAV.bgOn:"transparent",color:on?NAV.inkOn:NAV.ink,fontFamily:T.font,fontSize:FZ.sm,fontWeight:on?700:500,whiteSpace:"nowrap",transition:"background .15s ease, color .15s ease","--nav-mark":NAV.mark}}
-            onMouseEnter={e=>{clearTimeout(navHoverT.current);if(it.subs&&it.subs.length>1){const id=it.id;navHoverT.current=setTimeout(()=>setNavHover(id),220);}if(!on){e.currentTarget.style.background=NAV.hover;e.currentTarget.style.color=NAV.hoverInk;}}}
-            onMouseLeave={e=>{clearTimeout(navHoverT.current);if(!on){e.currentTarget.style.background="transparent";e.currentTarget.style.color=NAV.ink;}}}
+          <button className="enogia-nav-btn e-hov e-hov-ink" data-on={on?"1":"0"} onClick={()=>{it.go();setNavPeek(false);}} title={it.l} aria-label={it.badge?it.l+", "+it.badge+" nouvelle"+(it.badge>1?"s":"")+" mise"+(it.badge>1?"s":"")+" à jour":it.l} aria-current={on?"page":undefined}
+            style={{position:"relative",width:navCompact?40:"100%",height:40,borderRadius:navCompact?12:10,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:navCompact?"center":"flex-start",gap:12,padding:navCompact?0:"0 12px",background:on?NAV.bgOn:"transparent",color:on?NAV.inkOn:NAV.ink,fontFamily:T.font,fontSize:FZ.sm,fontWeight:on?700:500,whiteSpace:"nowrap",transition:"background .15s ease, color .15s ease","--nav-mark":NAV.mark,"--e-hov-bg":NAV.hover,"--e-hov-ink":NAV.hoverInk}}
+            onMouseEnter={e=>{clearTimeout(navHoverT.current);if(it.subs&&it.subs.length>1){const id=it.id;navHoverT.current=setTimeout(()=>setNavHover(id),220);}}}
+            onMouseLeave={()=>clearTimeout(navHoverT.current)}
             aria-expanded={it.subs&&it.subs.length>1?!!showSubs:undefined}>
             <NavIcon name={it.icon} size={19}/>{!navCompact&&<span className="enogia-nav-lab" style={{flex:1,textAlign:"left"}}>{it.l}</span>}{it.subs&&it.subs.length>1&&<span aria-hidden="true" style={{display:"inline-flex",opacity:.6,transform:showSubs?"rotate(0deg)":"rotate(-90deg)",transition:"transform .18s var(--e-ease)"}}><NavIcon name="chevronDown" size={13}/></span>}{it.id==="planning"&&<ChangesBadge n={unseenChanges.length}/>}</button>
           {showSubs&&<div role="group" aria-label={"Pages de "+it.l} className="enogia-nav-subs" style={{display:"flex",flexDirection:"column",margin:"0 0 4px 30px",paddingLeft:8,borderLeft:"1px solid "+(NAV.industrial?"rgba(255,255,255,.16)":T.line)}}>
@@ -1061,9 +1061,7 @@ export default function App(){
         </React.Fragment>);})}
       </React.Fragment>)}
       <div style={{flex:1}}/>
-      <button className="enogia-nav-btn" onClick={()=>setScreenOpen(true)} title="Écran atelier : diaporama plein écran pour un téléviseur" aria-label="Écran atelier" style={{width:navCompact?40:"100%",height:36,borderRadius:12,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:navCompact?"center":"flex-start",gap:12,padding:navCompact?0:"0 12px",background:"transparent",color:NAV.ink,fontFamily:T.font,fontSize:FZ.sm,fontWeight:500,whiteSpace:"nowrap"}}
-        onMouseEnter={e=>{e.currentTarget.style.background=NAV.hover;}}
-        onMouseLeave={e=>{e.currentTarget.style.background="transparent";}}><NavIcon name="screen" size={18}/>{!navCompact&&<span className="enogia-nav-lab">Écran atelier</span>}</button>
+      <button className="enogia-nav-btn e-hov" onClick={()=>setScreenOpen(true)} title="Écran atelier : diaporama plein écran pour un téléviseur" aria-label="Écran atelier" style={{width:navCompact?40:"100%",height:36,borderRadius:12,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:navCompact?"center":"flex-start",gap:12,padding:navCompact?0:"0 12px",background:"transparent",color:NAV.ink,fontFamily:T.font,fontSize:FZ.sm,fontWeight:500,whiteSpace:"nowrap","--e-hov-bg":NAV.hover}}><NavIcon name="screen" size={18}/>{!navCompact&&<span className="enogia-nav-lab">Écran atelier</span>}</button>
       <div style={{display:"flex",justifyContent:navCompact?"center":"flex-start",paddingLeft:navCompact?0:2}}><ThemePicker ink={NAV.industrial?NAV.ink:undefined} darkMode={darkMode} darkPref={darkPref} onDarkMode={setDarkMode} themeId={themeId} onPick={setThemeId} density={density} onDensity={setDensityState} presentation={presentation} onPresentation={setPresentation}/></div>
       <button type="button" className="enogia-nav-toggle" onClick={()=>{setNavPin(!navPin);setNavPeek(false);}} aria-pressed={navPin} title={navPin?"Masquer le menu au bord gauche":"Garder le menu ouvert"} style={{width:"100%",minHeight:32,marginTop:4,border:"1px solid "+(navPin?NAV.mark==="currentColor"?T.accent:NAV.mark:(NAV.industrial?"rgba(255,255,255,.18)":T.line)),background:navPin?(NAV.industrial?"rgba(244,211,94,.14)":T.accentSoft):(NAV.industrial?"transparent":T.card),borderRadius:8,display:"flex",justifyContent:"center",alignItems:"center",gap:8,color:navPin?NAV.inkOn:NAV.ink,cursor:"pointer",fontFamily:T.font,fontSize:FZ.xs,fontWeight:600}}><NavIcon name="pin" size={14}/>{navPin?"Détacher le menu":"Épingler le menu"}</button>
     </nav>
