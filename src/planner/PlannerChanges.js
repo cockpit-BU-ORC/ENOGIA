@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { T } from "../theme";
+import { tableTh } from "../components/SharedUI";
 import { fmtIso } from "./PlannerGantt";
 
 // ── Onglet « Modifications » : synthèse de ce qui a bougé entre le plan en cours et une référence ──────────
@@ -60,7 +61,7 @@ export function PlannerChanges({ summary, planDiff, refs, refId, setRefId, refLa
     ["hours", "Heures modifiées", st.nHours, "PJ concernés", T.ink900],
     ["new", "Nouveaux PJ", st.nNew, ctx === "version" ? st.nRemoved + " retiré" + (st.nRemoved > 1 ? "s" : "") : st.nRemoved ? st.nRemoved + " absent" + (st.nRemoved > 1 ? "s" : "") + " du plan" : "dans le plan", T.ink900],
   ];
-  const th = { padding: "7px 8px", fontSize: 11.5, fontWeight: 700, color: T.ink500, textAlign: "center", whiteSpace: "nowrap", borderBottom: "1px solid " + T.line, background: T.surface, position: "sticky", top: 0, zIndex: 1 };
+  const th = { ...tableTh({ sticky: true, align: "center" }), padding: "7px 8px" }; // v313 : tableau commun
   return (<div style={{ padding: "14px 16px 16px" }}>
     <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 12 }}>
       <span style={{ fontSize: 13, color: T.ink500 }}>{lead || "Plan en cours comparé à"}</span>

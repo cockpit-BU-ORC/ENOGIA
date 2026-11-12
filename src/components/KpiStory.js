@@ -4,6 +4,7 @@
 // bandeau de semaines), « Voir en tableau » sur chaque graphique, infobulle au survol, liste « À faire » (PJ cliquables).
 // Couleurs : jetons du thème (dv1–dv3 validés par le script dataviz ; vert = tenu, rouge = non tenu, toujours avec un mot).
 import React, { useEffect, useMemo, useState } from "react";
+import { tableTh, tableTd } from "./SharedUI";
 import { T, inkOn } from "../theme";
 import { judge, targetDef } from "../kpiTargets";
 import { PeriodPicker, TargetsDialog } from "./KpiHead";
@@ -65,8 +66,7 @@ function Card({ title, sub, table, children }) {
   </section>);
 }
 function Table({ head, rows, right }) {
-  const th = { fontSize: 12, color: T.ink500, fontWeight: 500, textAlign: "left", padding: "6px 8px", borderBottom: "1px solid " + T.line };
-  const td = { padding: "6px 8px", borderBottom: "1px solid " + T.line, fontSize: 13, color: T.ink900, fontVariantNumeric: "tabular-nums" };
+  const th = { ...tableTh(), whiteSpace: "normal" }, td = { ...tableTd({ ink: T.ink900 }), height: "auto", whiteSpace: "normal" }; // v313 : tableau commun
   return <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse" }}><thead><tr>{head.map((h, i) => <th key={i} style={{ ...th, textAlign: (right || []).includes(i) ? "right" : "left" }}>{h}</th>)}</tr></thead>
     <tbody>{rows.map((r, k) => <tr key={k}>{r.map((c, i) => <td key={i} style={{ ...td, textAlign: (right || []).includes(i) ? "right" : "left" }}>{c}</td>)}</tr>)}</tbody></table></div>;
 }

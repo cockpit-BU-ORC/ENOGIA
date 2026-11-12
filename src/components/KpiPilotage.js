@@ -11,7 +11,7 @@ import React, { useMemo, useState } from "react";
 import { PieBlock, topSlices } from "./ManagerParts";
 import { T, FZF as FZ, stageSoft } from "../theme";
 import { getPjMeta, ETAT_META, countShippedYTD, chefsOf, departedNotShipped } from "../pjMeta";
-import { PjPlate } from "./SharedUI";
+import { PjPlate, tableTh, tableTd, Segmented } from "./SharedUI";
 import { Arrange } from "./Arrange";
 import { CAPA_DEFAUT, atelierCap, isoWeek, planWeeks, loadWeeks, weekLabel } from "../loadWeeks";
 export { CAPA_DEFAUT, atelierCap, isoWeek, planWeeks, loadWeeks, weekLabel }; // v289 : définis dans loadWeeks.js
@@ -49,8 +49,7 @@ export function KpiPilotage({ rows, driftRows, closurePeriods, productionExclusi
     <div style={{ fontSize: 12.5, color: subBad ? T.red500 : T.ink500, fontWeight: subBad ? 600 : 400, marginTop: 4 }}>{sub}</div>
   </div>);
   const etatChip = e => { const m = ETAT_META[e]; return m ? <span style={{ background: m.bg, color: m.text, borderRadius: 999, padding: "0 9px", fontSize: 12, fontWeight: 600, lineHeight: "20px", display: "inline-block", maxWidth: 190, overflow: "hidden", textOverflow: "ellipsis", verticalAlign: "middle" }}>{m.label}</span> : (e || "—"); };
-  const th = { fontSize: 12, color: T.ink500, fontWeight: 500, textAlign: "left", padding: "6px 8px", borderBottom: "1px solid " + T.line, whiteSpace: "nowrap" };
-  const td = { padding: "0 8px", height: 40, borderBottom: "1px solid " + T.line, fontSize: FZ.sm, color: T.ink700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 220 };
+  const th = tableTh(), td = { ...tableTd({ h: 40 }), padding: "0 8px", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 220 }; // v313 : tableau commun
 
   // portefeuille par état : 4 états les plus fournis + « autres »
   const etats = useMemo(() => {
@@ -141,7 +140,7 @@ export function KpiPilotage({ rows, driftRows, closurePeriods, productionExclusi
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
             <h3 style={{ margin: 0, fontSize: FZ.md, fontWeight: 700, color: T.ink900 }}>Répartition des machines</h3>
             <div role="group" aria-label="Machines prises en compte" style={{ display: "inline-flex", background: T.surfaceAlt, borderRadius: 8, padding: 2, gap: 2 }}>
-              {[["open", "En cours"], ["shipped", "Expédiées"], ["all", "Toutes"]].map(([k, l]) => <button key={k} type="button" aria-pressed={parc === k} onClick={() => setParc(k)} style={{ border: "none", borderRadius: 8, minHeight: 28, padding: "0 12px", fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: T.font, background: parc === k ? T.card : "transparent", color: parc === k ? T.ink900 : T.ink500, boxShadow: parc === k ? "0 1px 2px rgba(0,0,0,.08)" : "none" }}>{l}</button>)}
+              <Segmented bare options={[["open", "En cours"], ["shipped", "Expédiées"], ["all", "Toutes"]]} value={parc} onChange={setParc} />
             </div>
             <span style={{ fontSize: 12, color: T.ink500 }}>{parcRows.length} machine{parcRows.length > 1 ? "s" : ""} · filtres du Manager appliqués · chef = chef de projet principal</span>
           </div>

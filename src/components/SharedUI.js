@@ -462,6 +462,43 @@ export const chipStyle = on => ({ display: "inline-flex", alignItems: "center", 
 export function Chip({ on, onClick, children, count, style, title, disabled }) {
   return <button type="button" className="e-chip" aria-pressed={!!on} onClick={onClick} title={title} disabled={disabled} style={{ ...chipStyle(on), ...style }}>{children}{count != null && <span style={{ fontWeight: 600, opacity: 0.75, fontVariantNumeric: "tabular-nums" }}>{count}</span>}</button>;
 }
+// v313 (revue, point 4 — lot 2) : tableau et filtres communs.
+//  · tableTh({ num, align, sticky, bg }) / tableTd({ num, ink, h, wrap, dense }) : en-têtes 12 px gris en casse normale, sans bande de fond
+//    (sauf collés en haut), lignes ≥ 36 px, filets 1 px, chiffres tabulaires alignés à droite (num) ;
+//  · SortTh : en-tête triable (bouton, aria-sort, flèche) ; useSort(rows, getters, init) : tri prêt à l'emploi ;
+//  · Segmented : choix exclusif court (2 à 4 valeurs) en piste ; ChipGroup : filtres en puces (un choix ou plusieurs, nombres).
+export const tableTh = (o = {}) => ({ textAlign: o.num ? "right" : o.align || "left", fontFamily: T.font, fontSize: 12, fontWeight: 600, color: T.ink500, padding: "6px 8px", borderBottom: "1px solid " + T.line, whiteSpace: "nowrap", verticalAlign: "bottom",
+  ...(o.sticky ? { position: "sticky", top: 0, zIndex: 1, background: o.bg || T.surface } : {}) });
+export const tableTd = (o = {}) => ({ padding: o.dense ? "4px 8px" : "6px 8px", height: o.h || 36, boxSizing: "border-box", borderBottom: "1px solid " + T.line, fontSize: FZ.sm, color: o.ink || T.ink700,
+  textAlign: o.num ? "right" : o.align || "left", fontVariantNumeric: "tabular-nums", verticalAlign: "middle", whiteSpace: o.wrap ? "normal" : "nowrap" });
+export function useSort(rows, getters, init) {
+  const [sort, setSortS] = React.useState(init || { col: null, dir: null });
+  const sorted = React.useMemo(() => { const g = sort.col && getters[sort.col]; if (!g || !sort.dir) return rows;
+    const k = sort.dir === "desc" ? -1 : 1; return [...rows].sort((a, b) => { const x = g(a), y = g(b); if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1; return (typeof x === "number" && typeof y === "number" ? x - y : String(x).localeCompare(String(y), "fr", { numeric: true })) * k; });
+  }, [rows, sort, getters]); // eslint-disable-line react-hooks/exhaustive-deps
+  const setSort = col => setSortS(s => s.col !== col ? { col, dir: "asc" } : s.dir === "asc" ? { col, dir: "desc" } : { col: null, dir: null });
+  return { sorted, sort, setSort };
+}
+export function SortTh({ label, col, sort, onSort, num, style, title }) {
+  const on = sort && sort.col === col && sort.dir;
+  return <th aria-sort={on ? (sort.dir === "asc" ? "ascending" : "descending") : "none"} style={{ ...tableTh({ num }), ...style }}>
+    <button type="button" onClick={() => onSort(col)} title={title || "Trier"} className="e-hov-ink" style={{ border: "none", background: "transparent", padding: 0, font: "inherit", color: on ? T.ink900 : "inherit", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4, "--e-hov-ink": T.ink900 }}>
+      {label}<span aria-hidden="true" style={{ fontSize: 11, opacity: on ? 1 : 0.45 }}>{on ? (sort.dir === "asc" ? "↑" : "↓") : "↕"}</span></button></th>;
+}
+export function Segmented({ options, value, onChange, label, bare, size = "sm" }) {
+  const items = options.map(([id, l]) => { const on = value === id; return <button key={id} type="button" aria-pressed={on} onClick={() => onChange(id)} className="e-hov-ink"
+    style={{ border: "none", borderRadius: 8, minHeight: size === "md" ? 32 : 28, padding: "0 12px", fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font, background: on ? T.card : "transparent", color: on ? T.ink900 : T.ink500, boxShadow: on ? "0 1px 2px rgba(0,0,0,.08)" : "none", "--e-hov-ink": T.ink900 }}>{l}</button>; });
+  if (bare) return <>{items}</>;
+  return <div role="group" aria-label={label} style={{ display: "inline-flex", background: T.surfaceAlt, borderRadius: 8, padding: 2, gap: 2 }}>{items}</div>;
+}
+export function ChipGroup({ options, value, onChange, label, multi }) {
+  const isOn = id => multi ? (value || []).includes(id) : value === id;
+  const flip = id => multi ? onChange(isOn(id) ? value.filter(x => x !== id) : [...(value || []), id]) : onChange(id);
+  return <div role="group" aria-label={label} style={{ display: "inline-flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+    {options.map(([id, l, count]) => <Chip key={id} on={isOn(id)} onClick={() => flip(id)} count={count}>{l}</Chip>)}
+  </div>;
+}
+
 export function Panel({ title, right, children, pad = 14, style, id, as: Tag = "section" }) {
   return <Tag id={id} aria-label={typeof title === "string" ? title : undefined} style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: pad, display: "flex", flexDirection: "column", gap: 10, minWidth: 0, ...style }}>
     {(title || right) && <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>{title && <h3 style={{ margin: 0, fontFamily: T.font, fontSize: FZ.md, fontWeight: 700, color: T.ink900, flex: 1, minWidth: 0 }}>{title}</h3>}{right}</div>}

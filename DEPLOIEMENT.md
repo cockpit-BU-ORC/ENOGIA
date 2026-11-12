@@ -2255,3 +2255,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Début de production : champ `debutProd` des lignes de `planning/current`, rempli **à la prochaine publication** du planificateur ; colonne « Début prod » de la Liste, fiche d'un PJ, Gantt, Calendrier.
 - Départ modifiable par les admins (Liste, fiche d'un PJ) : écrit dans `planning/current` (+ `pendingDeparts`) et le journal des modifications ; repris dans le plan à l'ouverture du planificateur ou à la publication. Règles Firestore inchangées.
 - Fichiers : planner/engine.js (+test), planner/store.js, planner/Planner.js, components/CalendarView.js, TableView.js, RowDetail.js, GanttView.js, App.js, styles.css, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v313 — Tableaux et filtres communs (revue, point 4, lot 2)
+
+- SharedUI.js : `tableTh`, `tableTd`, `SortTh`, `useSort`, `Segmented`, `ChipGroup`.
+- Tableaux branchés : CashInPlanned, KpiPilotage, KpiStory, ManagerFiche, InitialAdd, ImportHistory, ChangesTable, PlannerChanges, TestsTab.
+- Filtres branchés : ManagerPanel, KpiPilotage, PointHebdo, KpiHead.
+- Pas de nouvelle donnée ni de nouvelle clé `localStorage`.

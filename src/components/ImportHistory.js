@@ -2,13 +2,13 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { T, FZ } from "../theme";
 import { CARD } from "./ManagerParts";
-import { EmptyState } from "./SharedUI";
+import { EmptyState, tableTh, tableTd } from "./SharedUI";
 import { loadBackupIndex, restoreBackup, BACKUPS_KEPT } from "../importBackups";
 import { askConfirm } from "../confirm";
 
 const fmtAt = iso => { try { return new Date(iso).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" }); } catch (e) { return iso; } };
-const thS = () => ({ textAlign: "left", padding: "8px 12px", fontSize: FZ.xs, fontWeight: 700, color: T.ink500, textTransform: "uppercase", letterSpacing: ".04em", whiteSpace: "nowrap" });
-const tdS = () => ({ padding: "10px 12px", fontSize: FZ.sm, color: T.ink700, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" });
+const thS = () => ({ ...tableTh(), padding: "8px 12px" }); // v313 : tableau commun (plus de majuscules)
+const tdS = () => ({ ...tableTd(), padding: "8px 12px", height: 40 });
 
 export function ImportHistory({ authorName }) {
   const [entries, setEntries] = useState(null);

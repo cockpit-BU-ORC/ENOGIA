@@ -1,7 +1,7 @@
 // v260 : fenêtre « Prévu jusqu’à fin 2026 » du Cash in, sortie de l’ancien Cash in du site (CashInNative.js, supprimé).
 import React, { useEffect, useMemo, useState } from "react";
 import { T, FZF as FZ } from "../theme";
-import { NavIcon } from "./SharedUI";
+import { NavIcon, tableTh, tableTd } from "./SharedUI";
 import { plannedUntil } from "../cashinModel";
 import { fmtEur } from "../pjProgress";
 
@@ -22,8 +22,7 @@ export function PlannedDialog({ rows, labels, today, onClose, onOpenRow }) {
   const byMonth = [];
   list.forEach(x => { const m = x.date < today ? "retard" : x.date.slice(0, 7); let g = byMonth.find(b => b.m === m); if (!g) { g = { m, items: [] }; byMonth.push(g); } g.items.push(x); });
   byMonth.sort((a, b) => (a.m === "retard" ? -1 : b.m === "retard" ? 1 : a.m.localeCompare(b.m)));
-  const th = { textAlign: "left", fontSize: 12, fontWeight: 500, color: T.ink500, padding: "6px 8px", borderBottom: "1px solid " + T.line, whiteSpace: "nowrap" };
-  const td = { padding: "0 8px", height: 36, borderBottom: "1px solid " + T.line, fontSize: FZ.sm, color: T.ink700, whiteSpace: "nowrap" };
+  const th = tableTh(), td = { ...tableTd(), padding: "0 8px" }; // v313 : tableau commun
   const tab = (id, l) => <button key={id} type="button" aria-pressed={show === id} onClick={() => setShow(id)} style={{ ...btn(show === id) }}>{l}</button>;
   return (<div onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 3000, background: "rgba(8,12,28,.45)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "5vh 12px", overflowY: "auto" }}>
     <div role="dialog" aria-modal="true" aria-label={"Facturations et encaissements prévus jusqu'au " + fd(UNTIL)} style={{ width: "min(920px,100%)", background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, fontFamily: T.font }}>

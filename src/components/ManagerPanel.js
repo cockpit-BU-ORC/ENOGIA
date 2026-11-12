@@ -5,7 +5,7 @@ import { T, FZ, stageSoft, btn } from "../theme";
 import { SerieTag, getPjMeta, initials, GAMME_COLORS, ETAT_META, ALL_ETATS, ALL_GAMMES, MONTHS, today, PjPlate } from "../pjMeta";
 import { fmt, toLocalISO, diffDays, weekStartOf } from "../parsers";
 import { workDaysBetween } from "../workDays";
-import { DropFilter, NavIcon, Select, notify } from "./SharedUI";
+import { DropFilter, NavIcon, Select, notify, Segmented } from "./SharedUI";
 import { CARD, KpiRow, PieBlock, topSlices, EmptyNote, StatutTab, KpiAvancement, DelayInsights, DelaysTab, ProductionCalendarManager } from "./ManagerParts";
 import { ProjectFileManager } from "./ManagerFiche";
 import { EtatInfoButton } from "./ProdStagesUI";
@@ -596,15 +596,13 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
             </div>
             <div style={{display:"flex",alignItems:"center",gap:8,background:T.surface,borderRadius:12,padding:"6px 8px"}}>
               <span style={{fontSize:FZ.sm,color:T.ink500,fontWeight:600}}>Étape analysée :</span>
-              <div role="group" aria-label="Étape analysée" style={{display:"flex",gap:4}}>
-                {Object.entries(STEP_LABELS).map(([k,l])=><button key={k} onClick={()=>setKpiStep(k)} aria-pressed={kpiStep===k} style={{padding:"6px 12px",borderRadius:8,border:"none",background:kpiStep===k?T.teal500:T.card,color:kpiStep===k?"#fff":T.ink700,fontSize:FZ.sm,fontWeight:600,cursor:"pointer"}}>{l}</button>)}
-              </div>
+              <Segmented label="Étape analysée" options={Object.entries(STEP_LABELS)} value={kpiStep} onChange={setKpiStep}/>
             </div>
           </div>
           <div role="group" aria-label="Machines prises en compte" style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",margin:"8px 0 10px"}}>
             <span style={{fontSize:12,color:T.ink500,fontWeight:600}}>Machines :</span>
             <div style={{display:"inline-flex",background:T.surfaceAlt,borderRadius:8,padding:2,gap:2}}>
-              {[["all","Toutes"],["open","En cours"],["shipped","Expédiées"]].map(([k,l])=><button key={k} type="button" aria-pressed={codirScope===k} onClick={()=>setCodirScope(k)} style={{border:"none",borderRadius:8,minHeight:28,padding:"0 12px",fontSize:12.5,fontWeight:700,cursor:"pointer",fontFamily:T.font,background:codirScope===k?T.card:"transparent",color:codirScope===k?T.ink900:T.ink500,boxShadow:codirScope===k?"0 1px 2px rgba(0,0,0,.08)":"none"}}>{l}</button>)}
+              <Segmented bare options={[["all","Toutes"],["open","En cours"],["shipped","Expédiées"]]} value={codirScope} onChange={setCodirScope}/>
             </div>
             <span style={{fontSize:12,color:T.ink500,fontWeight:600,marginLeft:8}}>Mois promis :</span>
             {/* v280 (signalé : « mois passé = 6/22 arrivées tenues alors que je n’en avais pas 22 de prévues ») : « Mois passés » prenait tous les mois jusqu’au mois dernier ; remplacé par des raccourcis d’un mois ou de quelques mois fermés */}{[["Mois dernier",mKey(new Date(today.getFullYear(),today.getMonth()-1,1)),mKey(new Date(today.getFullYear(),today.getMonth()-1,1))],["Mois en cours",mKey(today),mKey(today)],["3 derniers mois",mKey(new Date(today.getFullYear(),today.getMonth()-3,1)),mKey(new Date(today.getFullYear(),today.getMonth()-1,1))],["Année "+today.getFullYear(),today.getFullYear()+"-01",today.getFullYear()+"-12"],["Tout","",""]].map(([l,a,b])=>{const on=codirFrom===a&&codirTo===b;return <button key={l} type="button" aria-pressed={on} onClick={()=>{setCodirFrom(a);setCodirTo(b);}} style={{border:"1px solid "+(on?T.ink900:T.line),borderRadius:8,minHeight:28,padding:"0 10px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:T.font,background:on?T.ink900:T.card,color:on?T.card:T.ink700}}>{l}</button>;})}

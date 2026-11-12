@@ -851,4 +851,7 @@ export const RELEASE_CATALOG = [
     ["Liste", "Nouvelle colonne « Début prod » (date du planificateur, après publication) ; aussi dans la fiche d'un PJ, le Gantt et le Calendrier."],
     ["Planning", "Les admins changent la date de départ dans la Liste (crayon) ou dans la fiche d'un PJ ; elle est reprise dans le planificateur."],
   ] },
+  { v: "313", t: "Tableaux et filtres communs", items: [
+    ["Site", "En-têtes de tableau, lignes et filtres dessinés une seule fois : KPI, fiches projet, point hebdo, modifications, tests, Cash in prévu."],
+  ] },
 ];

@@ -2,6 +2,7 @@
 // la méthode (« ne pas cacher la méthode »), et les objectifs chiffrés concernés : objectif, valeur, écart, vert si tenu / rouge sinon.
 // « Objectifs » (propriétaire) : fenêtre de réglage, enregistrée dans planning/profiles.kpiTargets.
 import React, { useEffect, useState } from "react";
+import { Chip } from "./SharedUI";
 import { T } from "../theme";
 import { KPI_TARGETS, judge, targetDef } from "../kpiTargets";
 
@@ -48,7 +49,7 @@ export function PeriodPicker({ sel }) {
   const sl = { minHeight: 28, borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: 12, fontFamily: T.font };
   return <div role="group" aria-label="Période des objectifs" style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", width: "100%" }}>
     <span style={{ fontSize: 12, fontWeight: 600, color: T.ink500 }}>Période :</span>
-    {presets.map(([l, a, b]) => { const on = sel.from === a && sel.to === b; return <button key={l} type="button" aria-pressed={on} onClick={() => sel.set(a, b)} style={{ border: "1px solid " + (on ? T.ink900 : T.line), borderRadius: 8, minHeight: 28, padding: "0 10px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: T.font, background: on ? T.ink900 : T.card, color: on ? T.card : T.ink700 }}>{l}</button>; })}
+    {presets.map(([l, a, b]) => <Chip key={l} on={sel.from === a && sel.to === b} onClick={() => sel.set(a, b)}>{l}</Chip>)}
     <label style={{ fontSize: 12, color: T.ink500, display: "inline-flex", alignItems: "center", gap: 4 }}>du<select value={sel.from} onChange={e => sel.set(e.target.value, sel.to && sel.to < e.target.value ? e.target.value : sel.to)} style={sl}><option value="">début</option>{sel.months.map(k => <option key={k} value={k}>{monthLab(k)}</option>)}</select></label>
     <label style={{ fontSize: 12, color: T.ink500, display: "inline-flex", alignItems: "center", gap: 4 }}>au<select value={sel.to} onChange={e => sel.set(sel.from && sel.from > e.target.value && e.target.value ? e.target.value : sel.from, e.target.value)} style={sl}><option value="">fin</option>{sel.months.map(k => <option key={k} value={k}>{monthLab(k)}</option>)}</select></label>
   </div>;

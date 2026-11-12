@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v313",
+    date: "2026-11-12",
+    title: "V313 : tableaux et filtres harmonisés",
+    items: [
+      { t: "Site", d: "Les tableaux et les filtres ont la même allure d'une page à l'autre (KPI, fiches projet, point hebdo, tests, modifications)." },
+    ],
+  },
+  {
     id: "2026-11-v312",
     date: "2026-11-12",
     title: "V312 : le Calendrier en barres, le début de production et le départ modifiable",

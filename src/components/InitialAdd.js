@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { T, FZ } from "../theme";
 import { fmt } from "../parsers";
-import { NavIcon } from "./SharedUI";
+import { NavIcon, tableTh, tableTd } from "./SharedUI";
 
 // Ajout de nouveaux projets au planning initial SANS toucher à ceux déjà ancrés.
 // Le fichier importé (même format que l'import initial) sert uniquement à repérer les PJ qui ne
@@ -24,8 +24,7 @@ export function InitialAddReview({parsed,initialData,onConfirm,onCancel,busy}){
   const [off,setOff]=useState(()=>new Set());
   const chosen=fresh.filter(r=>!off.has(r.pj));
   const toggle=pj=>setOff(s=>{const n=new Set(s);n.has(pj)?n.delete(pj):n.add(pj);return n;});
-  const th={textAlign:"left",padding:"6px 8px",fontSize:FZ.xs,fontWeight:700,color:T.ink500,whiteSpace:"nowrap"};
-  const td={padding:"8px 8px",fontSize:FZ.sm,color:T.ink700,whiteSpace:"nowrap"};
+  const th=tableTh(),td=tableTd(); // v313 : tableau commun
   return(<div onClick={onCancel} style={{position:"fixed",inset:0,background:"rgba(10,20,30,.45)",zIndex:10000,display:"flex",alignItems:"center",justifyContent:"center",padding:16,fontFamily:T.font}}>
     <div role="dialog" aria-modal="true" aria-label="Ajouter à l'initial" onClick={e=>e.stopPropagation()} style={{background:T.card,borderRadius:12,boxShadow:T.shadowLg,border:"1px solid "+T.line,width:"min(640px,100%)",maxHeight:"88vh",overflow:"auto",padding:"20px 20px"}}>
       <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.lg,color:T.ink900,display:"flex",alignItems:"center",gap:8}}><NavIcon name="pin" size={18}/>Ajouter à l'initial</div>

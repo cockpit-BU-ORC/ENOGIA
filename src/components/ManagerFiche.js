@@ -3,7 +3,7 @@ import { T, FZF as FZ, D, statusSoft, stripeBg, stripeHues, btn } from "../theme
 import { SerieTag, getPjMeta, PJ_META_OVERRIDES, CountryFlag, Avatar, GAMME_COLORS, ETAT_META, etatInk, PresenceChip, PRESENCE_META, presenceKind, presenceDates, presenceFirstDate, today, PjPlate, orcChefsOf, epcChefOf, EpcTag } from "../pjMeta";
 import { ChefsEpcEditor } from "./ChefsEpc";
 import { fmt, diffDays } from "../parsers";
-import { Badge, NavIcon, EmptyState, SuperOnly, pressable, Pill } from "./SharedUI";
+import { Badge, NavIcon, EmptyState, SuperOnly, pressable, Pill, tableTh, tableTd } from "./SharedUI";
 import { CARD, EmptyNote, PieBlock, getDelayColors } from "./ManagerParts";
 import { cashSummary, STATUS_LABEL, getCashinDoc } from "../cashinLink";
 import { useCashin } from "../useCashin";
@@ -279,8 +279,7 @@ function DatesTable({r,meta,onSave}){
   const livEst=tr&&shipped&&!meta.livrReelle?dOf(livrPrevueOf(meta,r.depart)):null;
   const [livEdit,setLivEdit]=useState(false);
   const gap=(c,x)=>c&&x?diffDays(c,x):null;
-  const th={textAlign:"left",fontFamily:T.font,fontSize:12,fontWeight:700,color:T.ink500,padding:"6px 8px",borderBottom:"1px solid "+T.line,verticalAlign:"bottom"};
-  const td={padding:"6px 8px",borderBottom:"1px solid "+T.line,fontSize:FZ.sm,verticalAlign:"middle",fontVariantNumeric:"tabular-nums"};
+  const th={...tableTh(),whiteSpace:"normal"},td={...tableTd({ink:T.ink900}),height:"auto",whiteSpace:"normal"}; // v313 : tableau commun
   const ecart=g=>g==null?<span style={{color:T.ink300}}>—</span>:g===0?<span style={{color:T.emerald600,fontWeight:700}}>dans les temps</span>:<span style={{fontWeight:800,color:g>0?T.red600:T.emerald600,background:g>0?T.red100:T.emerald100,borderRadius:999,padding:"1px 8px"}}>{signed(g)}</span>;
   const big=(d,late)=>d?<b style={{color:late?T.red600:T.ink900}}>{fmt(d)}</b>:<span style={{color:T.ink300}}>—</span>;
   const row=(label,hint,c,cHint,p,pHint,eDate,e,eHint,est)=>{const g=gap(c,eDate||est||p);return <tr>

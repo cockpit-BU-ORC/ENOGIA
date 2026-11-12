@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { T, FZ } from "../theme";
-import { EmptyState } from "./SharedUI";
+import { EmptyState, tableTh } from "./SharedUI";
 import { PjPlate } from "../pjMeta";
 const fmtIso = iso => iso ? iso.slice(8, 10) + "/" + iso.slice(5, 7) + "/" + iso.slice(2, 4) : "—";
 
@@ -74,7 +74,7 @@ export function ChangesTable({ summary, refs, refId, setRefId, refLabel, q, onOp
     ["hours", "Heures modifiées", st.nHours, "PJ concernés", T.ink900],
     ["new", "Ajoutés ou retirés", st.nNew + st.nRemoved, st.nNew + " ajouté" + (st.nNew > 1 ? "s" : "") + " · " + st.nRemoved + " retiré" + (st.nRemoved > 1 ? "s" : ""), T.ink900],
   ];
-  const th = { padding: "8px 8px", fontSize: FZ.xs, fontWeight: 700, color: T.ink500, textAlign: "center", whiteSpace: "nowrap", borderBottom: "1px solid " + T.line, background: T.surface, position: "sticky", top: 0, zIndex: 1 };
+  const th = { ...tableTh({ sticky: true, align: "center" }), padding: "8px 8px" }; // v313 : tableau commun
   return (<div style={{ padding: "12px 16px 16px" }}>
     <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 12 }}>
       {refs && refs.length > 0 && <>{/* v255 : sans liste (journal à gauche dans Modifications), seul le bouton Copier reste */}

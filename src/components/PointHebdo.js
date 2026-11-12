@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { T, FZF as FZ } from "../theme";
 import { getPjMeta, Avatar, CountryFlag, today } from "../pjMeta";
 import { itemsOf } from "../pjProgress";
-import { EmptyState } from "./SharedUI";
+import { EmptyState, ChipGroup, Chip } from "./SharedUI";
 import { fmt } from "../parsers";
 import { enteredOn, todayIso } from "./ManagerFiche";
 import { showText } from "../confirm";
@@ -98,10 +98,8 @@ export function PointHebdo({ data, savePjMetaOverride, onOpenPj }) {
     </div>
 
     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-      <div role="group" aria-label="Type" style={{ display: "inline-flex", gap: 4 }}>
-        {[["all", "Tout"], ["actions", "Actions"], ["mitigations", "Mitigations"]].map(([id, l]) => <button key={id} onClick={() => setKind(id)} aria-pressed={kind === id} style={BTN(kind === id)}>{l}</button>)}
-      </div>
-      <button onClick={() => setOld7(v => !v)} aria-pressed={old7} style={BTN(old7)}>{old7 ? "✓ " : ""}Plus de 7 jours seulement</button>
+      <ChipGroup label="Type" options={[["all", "Tout"], ["actions", "Actions"], ["mitigations", "Mitigations"]]} value={kind} onChange={setKind} />
+      <Chip on={old7} onClick={() => setOld7(v => !v)}>{old7 ? "✓ " : ""}Plus de 7 jours seulement</Chip>
       <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: FZ.xs, color: T.ink500 }}>Tri
         <select value={sort} onChange={e => setSort(e.target.value)} aria-label="Trier le point hebdo" style={{ padding: "4px 8px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.xs, fontWeight: 600, fontFamily: T.font, minHeight: 28 }}>
           {SORTS.map(([id, l]) => <option key={id} value={id}>{l}</option>)}

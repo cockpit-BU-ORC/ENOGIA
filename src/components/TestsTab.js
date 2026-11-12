@@ -10,7 +10,7 @@ import { fmt, toLocalISO } from "../parsers";
 import { useMentions } from "../mentionContext";
 import { CARD, H_SUB } from "./ManagerParts";
 import { CertifChip } from "./FicheContrat";
-import { NavIcon, PjPlate, pressable } from "./SharedUI";
+import { NavIcon, PjPlate, pressable, tableTh } from "./SharedUI";
 import { SECTIONS, DEFAULT_TEST_CATALOG, catalogOf, testersOf, planOf, activeSections, selectedIds, toggleTest, setExtra, setNote, assignTester, unassignTester, setAssignDates, effRange, findConflicts, assignmentsOf, dropTester, dropTestFromPlans, newId, packLanes, addDaysIso, mondayOf, testerOfEmail, doneIds, progressOf, TEST_STATUS, statusOf, statusByOf, setStatus, isForced, setForced } from "../testPlan";
 import { buildIcs, downloadIcs } from "../ics";
 import { usePointerDnD } from "../pointerDrag";
@@ -783,7 +783,7 @@ function CatalogView({ doc, catalog, commit }) {
   const [del, setDel] = useState(null), [reset, setReset] = useState(false);
   const setSec = (k, list) => commit({ catalog: { ...catalog, [k]: list } });
   const move = (k, i, d) => { const l = [...catalog[k]]; const j = i + d; if (j < 0 || j >= l.length) return; [l[i], l[j]] = [l[j], l[i]]; setSec(k, l); };
-  const TH = { position: "sticky", top: 0, background: T.surface, color: T.ink500, fontFamily: T.fontLabel, fontSize: 12, fontWeight: 600, textAlign: "left", padding: "8px 10px", borderBottom: "1px solid " + T.line, zIndex: 1 };
+  const TH = { ...tableTh({ sticky: true }), padding: "8px 10px" }; // v313 : tableau commun
   const TD = { padding: "4px 6px", borderBottom: "1px solid " + T.line, verticalAlign: "top" };
   const cell = { ...field(), width: "100%", boxSizing: "border-box", border: "1px solid transparent", background: "transparent", minHeight: 32 };
   return (<div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
