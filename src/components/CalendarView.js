@@ -7,6 +7,7 @@ import { getPjMeta, presenceKindAt, PRESENCE_META, MONTHS_FULL, today, ETAT_META
 import { DropFilter, pressable } from "./SharedUI";
 import { toLocalISO, weekStartOf } from "../parsers";
 import { toggleClosedDay, isClosedDay } from "../workDays";
+import { CalendarMonth } from "./CalendarMonth";
 
 export function getWeekStatus(r,weekStart,weekEnd){
   const a=r.arrivee?new Date(r.arrivee):null;
@@ -99,6 +100,9 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
   const {marks}=useMarks();
   // v213 : un clic sur un jour (vue Jour, admins) ouvre ses options de production
   const [dayMenu,setDayMenu]=useState(null);
+  // v310 : vue Mois (CalendarMonth) — mois affiché, 1er du mois
+  const [monthD,setMonthD]=useState(()=>{const d=new Date();return new Date(d.getFullYear(),d.getMonth(),1);});
+  const shiftMonth=n=>setMonthD(m=>new Date(m.getFullYear(),m.getMonth()+n,1));
   useEffect(()=>{if(!dayMenu)return undefined;const k=e=>{if(e.key==="Escape")setDayMenu(null);};window.addEventListener("keydown",k);return()=>window.removeEventListener("keydown",k);},[dayMenu]);
   const isClosurePeriod=(colStart,colEnd)=>{
     if(!closurePeriods||!closurePeriods.length)return false;
@@ -249,7 +253,7 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
     if(scrollRef.current)scrollRef.current.scrollLeft=0;
     setScrollPos(p=>p.x===0?p:{x:0,y:p.y});
   };
-  const goToday=centerOnToday;
+  const goToday=()=>{if(mode==="month"){const d=new Date();setMonthD(new Date(d.getFullYear(),d.getMonth(),1));return;}centerOnToday();};
   const goTodayRef=useRef(goToday);goTodayRef.current=goToday;
   useEffect(()=>{const h=()=>goTodayRef.current();window.addEventListener("enogia:today",h);return()=>window.removeEventListener("enogia:today",h);},[]);
   useEffect(()=>{if(viewMeasured)centerOnToday();
@@ -279,15 +283,16 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
       <div style={{display:"flex",gap:4,background:T.surfaceAlt,borderRadius:8,padding:3}}>
         <button onClick={()=>setMode("week")} style={{padding:"6px 14px",borderRadius:8,border:"none",background:mode==="week"?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:mode==="week"?(T.mode==="dark"?"#0B1130":"#FFFFFF"):T.ink500,transition:"background-color .15s ease, color .15s ease",fontWeight:700,fontSize:FZF.md,cursor:"pointer",boxShadow:mode==="week"?T.shadowSm:"none"}}>Semaine</button>
         <button onClick={()=>setMode("day")} style={{padding:"6px 14px",borderRadius:8,border:"none",background:mode==="day"?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:mode==="day"?(T.mode==="dark"?"#0B1130":"#FFFFFF"):T.ink500,transition:"background-color .15s ease, color .15s ease",fontWeight:700,fontSize:FZF.md,cursor:"pointer",boxShadow:mode==="day"?T.shadowSm:"none"}}>Jour</button>
+        <button onClick={()=>setMode("month")} style={{padding:"6px 14px",borderRadius:8,border:"none",background:mode==="month"?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:mode==="month"?(T.mode==="dark"?"#0B1130":"#FFFFFF"):T.ink500,transition:"background-color .15s ease, color .15s ease",fontWeight:700,fontSize:FZF.md,cursor:"pointer",boxShadow:mode==="month"?T.shadowSm:"none"}}>Mois</button>
       </div>
       <span style={{fontFamily:T.fontDisplay,fontWeight:300,fontSize:22,letterSpacing:"-.02em",color:T.ink900,minWidth:220,textAlign:"center",fontVariantNumeric:"tabular-nums"}}>
-        {mode==="week"
+        {mode==="month"?MONTHS_FULL[monthD.getMonth()]+" "+monthD.getFullYear():mode==="week"
           ?"Sem. "+weekNum(weeks[0])+" → "+weekNum(weeks[Math.min(effCount,weeks.length)-1])+", "+weeks[0].getFullYear()
           :days[0].toLocaleDateString("fr-FR",{day:"numeric",month:"short"})+" → "+days[Math.min(effCount,days.length)-1].toLocaleDateString("fr-FR",{day:"numeric",month:"short",year:"numeric"})}
       </span>
       <div style={{display:"flex",gap:4}}>
-        <button onClick={()=>pageScroll(-1)} title="Période précédente" style={{padding:"5px 10px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:T.ink700,fontSize:FZF.md,fontWeight:700,cursor:"pointer"}}>‹</button>
-        <button onClick={()=>pageScroll(1)} title="Période suivante" style={{padding:"5px 10px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:T.ink700,fontSize:FZF.md,fontWeight:700,cursor:"pointer"}}>›</button>
+        <button onClick={()=>mode==="month"?shiftMonth(-1):pageScroll(-1)} title={mode==="month"?"Mois précédent":"Période précédente"} style={{padding:"5px 10px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:T.ink700,fontSize:FZF.md,fontWeight:700,cursor:"pointer"}}>‹</button>
+        <button onClick={()=>mode==="month"?shiftMonth(1):pageScroll(1)} title={mode==="month"?"Mois suivant":"Période suivante"} style={{padding:"5px 10px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:T.ink700,fontSize:FZF.md,fontWeight:700,cursor:"pointer"}}>›</button>
       </div>
       {/* Même filtre État + PJ que le Gantt, au même format et au même emplacement (demandé
           explicitement : "je veux le même format au même emplacement quelque chose de simple et
@@ -297,15 +302,15 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
         {setSelEtats&&<DropFilter label="État" options={ALL_ETATS} selected={selEtats} onChange={setSelEtats} getLabel={o=>ETAT_META[o]?.label||o}/>}
         {setSelEtats&&<EtatInfoButton/>}
         {allPJs&&<DropFilter label="PJ" options={allPJs} selected={selPJs||new Set(allPJs)} onChange={setSelPJs}/>}
-        <div style={{display:"flex",gap:4}}>
+        {mode!=="month"&&<div style={{display:"flex",gap:4}}>
           <button onClick={zoomOut} disabled={zoomLevel>=maxZoomLevel} style={{padding:"5px 9px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:zoomLevel>=maxZoomLevel?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:700,cursor:zoomLevel>=maxZoomLevel?"default":"pointer"}}>−</button>
           <button onClick={zoomIn} disabled={zoomLevel<=0} style={{padding:"5px 9px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:zoomLevel<=0?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:700,cursor:zoomLevel<=0?"default":"pointer"}}>+</button>
-        </div>
+        </div>}
         <button onClick={goToday} className="enogia-btn-ind" style={{padding:"5px 11px",borderRadius:8,border:"1.5px solid "+T.teal500,background:"transparent",color:T.teal600,fontSize:FZF.sm,fontWeight:700,cursor:"pointer"}}>Aujourd'hui</button>
       </div>
     </div>
 
-    <div ref={scrollRef} onScroll={onGridScroll}
+    {mode==="month"?<CalendarMonth data={data} month={monthD} closurePeriods={closurePeriods} productionExclusions={productionExclusions} onSelectPj={onSelectPj}/>:<div ref={scrollRef} onScroll={onGridScroll}
       style={{overflowX:"auto",overflowY:"auto",maxHeight:"calc(100dvh - 260px)"}}>
       <div style={{display:"grid",width:"max-content",minWidth:"100%",gridTemplateRows:MONTH_H+"px "+(mode==="day"?WEEK_BAND_H+"px ":"")+"auto"+(pjs.length?" repeat("+pjs.length+","+ROW_PX+"px)":""),gridTemplateColumns:LEFT_W+"px "+(mode==="week"
         ?"repeat("+cols.length+","+colPx+"px)"
@@ -430,9 +435,9 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
           </React.Fragment>);
         })}
       </div>
-    </div>
+    </div>}
 
-    <div style={{padding:"11px 18px",borderTop:"1px solid "+T.line,display:"flex",gap:16,flexWrap:"wrap",background:T.surface,alignItems:"center"}}>
+    {mode!=="month"&&<div style={{padding:"11px 18px",borderTop:"1px solid "+T.line,display:"flex",gap:16,flexWrap:"wrap",background:T.surface,alignItems:"center"}}>
       <span style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>Étapes</span>
       {Object.entries(SEGMENT_STYLE).map(([label,st])=><span key={label} style={{display:"flex",alignItems:"center",gap:6,fontSize:FZF.md}}>
         <span style={{width:14,height:14,borderRadius:4,background:st.c,boxShadow:"inset 0 0 0 1.5px "+stageSoft()[{"Arrivée":"arrivee","Production":"production","Tests":"tests","Fin prod":"finProd","Départ":"depart"}[label]].ring}}/>
@@ -444,7 +449,7 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
       </span>
       <span style={{display:"flex",alignItems:"center",gap:6,paddingLeft:16,borderLeft:"1px solid "+T.line,fontSize:FZF.md,color:T.ink700}}><span style={{background:T.surfaceAlt,color:T.ink700,borderRadius:999,padding:"0 6px",fontSize:11,fontWeight:700,lineHeight:"16px"}}>↻ +5 j</span>décalage de la dernière mise à jour</span>
       <span style={{fontSize:FZF.md,color:T.ink300,marginLeft:"auto"}}>Couleur de la tuile = étape · Colonne rouge = aujourd'hui · Clic = détail</span>
-    </div>
+    </div>}
 
 
   {dayMenu&&<DayProdMenu onOpenPj={onSelectPj} menu={dayMenu} data={data} closurePeriods={closurePeriods} productionExclusions={productionExclusions} setClosurePeriods={setClosurePeriods} setProductionExclusionDays={setProductionExclusionDays} onClose={()=>setDayMenu(null)}/>}

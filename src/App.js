@@ -60,7 +60,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-12-v309-dossier-pj";
+const APP_BUILD_VERSION = "2026-11-12-v310-calendrier-mois";
 
 export default function App(){
   // Utilisateur connecté via Google, restreint aux comptes @enogia.com (null tant que non connecté).
@@ -927,6 +927,7 @@ export default function App(){
   const planViewOk=v=>v==="planner"?isOwner:subOk("planning."+v); // v308
   // v307 : sous-pages de Tests et de Turbines choisies depuis le menu ou le sélecteur de la page
   const [testsSub,setTestsSub]=useState("semaine");
+  const [testsFocus,setTestsFocus]=useState(null); // v310 : PJ à ouvrir dans Tests depuis sa fiche
   const [turbTab,setTurbTab]=useState(()=>{try{const v=localStorage.getItem("enogia_turbines_tab");return v==="orc"?"orc":"prod";}catch(e){return "prod";}});
   const lastPlanRef=useRef("table");/* v305 */if(PLANNING_VIEWS.includes(view))lastPlanRef.current=view;
   const firstPlanView=()=>["table","gantt","calendar","changes"].find(planViewOk)||"home";
@@ -994,7 +995,8 @@ export default function App(){
   const seePjChanges=()=>{const v=new Date().toISOString();setChgSeen(v);try{localStorage.setItem(chgSeenKey,v);}catch(e){}};
   const testsView=useMemo(()=>{const plans={...((testsDoc&&testsDoc.plans)||{})};(dataWithOverrides||[]).forEach(r=>{if(!r||r.etat!=="SHIPPED")return;const p=plans[r.pj]||{};if(p.forced&&p.forced.at)return;plans[r.pj]={...p,forced:{at:String(r.depart||r.testsFin||r.tests||new Date().toISOString()).slice(0,10),by:"Machine expédiée",auto:true}};});return{...testsDoc,plans};},[testsDoc,dataWithOverrides]);
   const pjCtxTests=canSeeTests?testsView:null,pjCtx=useMemo(()=>({testsDoc:pjCtxTests,turbineDoc,prodDoc:canProdTurb&&subOk("turbines.orc")?prodDoc:null,achatsDoc:canAchats?achatsDoc:null,rows:dataWithOverrides,
-    openPage:(v,sub)=>{if(v==="turbines"&&sub)setTurbTab(sub);setCalSel(null);setView(v);}}),[pjCtxTests,turbineDoc,canProdTurb,prodDoc,canAchats,achatsDoc,dataWithOverrides,accMe]); // eslint-disable-line react-hooks/exhaustive-deps -- v309 : turbine et achats dans la fiche d'un PJ // v203 : pastilles de la fiche d'un PJ // v196 : entrées du Manager affichées dans ce menu (fournies par ManagerPanel)
+    testsOk:canSeeTests&&testsAllowed.includes("semaine"),
+    openPage:(v,sub)=>{if(v==="turbines"&&sub)setTurbTab(sub);if(v==="tests"){setTestsSub("semaine");if(sub)setTestsFocus({pj:sub,n:Date.now()});}setCalSel(null);setView(v);}}),[pjCtxTests,turbineDoc,canProdTurb,prodDoc,canAchats,achatsDoc,dataWithOverrides,accMe,canSeeTests]); // eslint-disable-line react-hooks/exhaustive-deps -- v309 : turbine et achats dans la fiche d'un PJ // v203 : pastilles de la fiche d'un PJ // v196 : entrées du Manager affichées dans ce menu (fournies par ManagerPanel)
   const closePeek=delay=>{clearTimeout(navPeekT.current);navPeekT.current=setTimeout(()=>setNavPeek(false),delay||0);};
   // v306 (maquette v306-navigation, choix « 1 ») : menu masqué comme la barre des tâches Windows — caché, il glisse par-dessus la page
   // quand la souris touche le bord gauche (zone de 8 px), quand on clique ☰ ou avec Ctrl + B ; il se cache 0,35 s après qu'on l'a quitté.
@@ -1175,7 +1177,7 @@ export default function App(){
             {view==="turbines"&&canProdTurb&&<PageGuard name="Turbines"><TurbinesHub doc={prodDoc} api={prodApi} rows={dataWithOverrides} canEdit={turbEdit} owner={isOwner} tab={turbTab} onTab={setTurbTab} allowTabs={turbAllowed} savePjMeta={savePjMetaOverride}/></PageGuard>}
             {view==="planner"&&isOwner&&<PlannerView productionExclusions={productionExclusions} testers={testsDoc&&Array.isArray(testsDoc.testers)?testsDoc.testers:[]} planLoaded={planLoaded} planDoc={planDoc} rows={dataWithOverrides} closurePeriods={closurePeriods} authorName={authorName}
               onSavePlan={p=>savePlan(p,authorName)} onPublish={async(plan,note,announce)=>{const r=await publishPlan({plan,closurePeriods,productionExclusions,by:authorName,note,announce});/* v224 : un PJ publié depuis le planificateur et absent du planning initial → même bandeau qu’après un import (« Les ancrer dans l’initial ») */if(r&&r.rows&&initialPjsRef.current.size){const fresh=r.rows.filter(x=>x&&x.pj&&x.etat!=="SLOT_LIBRE"&&!isEstimatePj(x.pj)&&!initialPjsRef.current.has(x.pj));setNewVsInitial(fresh.length?{rows:r.rows,pjs:fresh.map(x=>x.pj)}:null);}return r;}} onLoadHistory={loadHistory} onRestorePublication={restorePublication}/>}
-            {view==="tests"&&canSeeTests&&<TestsTab doc={testsView} save={saveTests} data={dataWithOverrides} certifs={certifs} canEdit={testsAdmin} lead={isTestLead} sub={testsSub} onSub={setTestsSub} allowSubs={testsAllowed} me={currentUser&&currentUser.email} signApi={signApi}/>}
+            {view==="tests"&&canSeeTests&&<TestsTab doc={testsView} save={saveTests} data={dataWithOverrides} certifs={certifs} canEdit={testsAdmin} lead={isTestLead} sub={testsSub} onSub={setTestsSub} allowSubs={testsAllowed} focusPj={testsFocus} me={currentUser&&currentUser.email} signApi={signApi}/>}
             {view==="changes"&&<ChangesView entries={changeLog} onOpenPj={jumpToPj}/>}
             {view==="comments"&&<CommentsView data={filtered} comments={comments} addComment={addComment} deleteComment={deleteComment}
               pinOk={pinOk} addCommentMulti={addCommentMulti} jumpToPj={jumpToPj} authorName={authorName} resolveComment={resolveComment}/>}

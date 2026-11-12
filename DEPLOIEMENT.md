@@ -2233,3 +2233,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Fiche d'un PJ (Liste, Gantt, Calendrier, accueil) : onglets et tuiles Turbine (Turbines › Besoins) et Achats (Achats / Appro), en lecture, pour les personnes qui ont accès à ces pages ; bouton pour ouvrir la page d'origine.
 - Pas de nouvelle donnée ni de nouvelle clé `localStorage`.
 - Fichiers : pjDossier.js (+test), components/RowDetail.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v310 — Calendrier en vue Mois, fiche d'un PJ → Tests
+
+- Calendrier : bouton « Mois » (à côté de Semaine / Jour) — jalons, production et tests jour par jour, « + N autres », clic = fiche du PJ. Clé `enogia_calMode` peut valoir `month`.
+- Fiche d'un PJ : tuile Tests et bouton « Ouvrir dans Tests » → Tests › Par semaine, fiche de tests du PJ ouverte (selon les accès).
+- Brique commune `OpenIn` (SharedUI.js) pour les liens « Ouvrir dans … ».
+- Pas de nouvelle donnée Firestore.
+- Fichiers : components/CalendarMonth.js (nouveau), CalendarView.js, RowDetail.js, SharedUI.js, TestsTab.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.

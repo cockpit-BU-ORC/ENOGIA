@@ -838,4 +838,8 @@ export const RELEASE_CATALOG = [
     ["Fiche d'un PJ", "Onglet et tuile Turbine : turbines attribuées, roue, injecteur, installée, date de disponibilité face au besoin."],
     ["Fiche d'un PJ", "Onglet et tuile Achats : lignes par statut, commandes (PO) avec leur livraison et leurs retards."],
   ] },
+  { v: "310", t: "Calendrier : vue Mois ; la fiche d'un PJ ouvre ses tests", items: [
+    ["Calendrier", "Vue Mois : le mois sur une page, jalons en plaques pleines, production et tests chaque jour en plaques claires, « + N autres » pour déplier un jour."],
+    ["Fiche d'un PJ", "Clic sur la tuile Tests : la page Tests s'ouvre sur la fiche de tests du PJ (si vous avez accès à Tests)."],
+  ] },
 ];

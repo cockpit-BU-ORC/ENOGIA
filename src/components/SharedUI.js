@@ -447,6 +447,12 @@ export function PageHead({kicker,title,sub,right,style,accent}){ // v185 : accen
 }
 
 // v286 : bouton commun du site — <Btn v="pri|sec|ghost|dan" size="sm|md" …> ; survol et désactivé via les classes e-btn (styles.css)
+// v310 (revue, point 4 « les pages ne partagent pas leurs briques ») : le même lien « Ouvrir dans … » partout où une page renvoie vers une autre
+// (fiche d'un PJ → Tests, Turbines, Achats…). Bouton secondaire, petite taille, flèche à droite.
+export function OpenIn({ label, onClick, style }) {
+  return <Btn v="sec" size="sm" onClick={onClick} style={{ alignSelf: "flex-start", gap: 6, ...style }}>{label}<NavIcon name="arrow" size={14} /></Btn>;
+}
+
 export function Btn({ v = "sec", size = "md", style, className, type = "button", ...rest }) {
   return <button type={type} className={"e-btn e-btn-" + v + (className ? " " + className : "")} style={{ ...btn(v, size), ...style }} {...rest} />;
 }

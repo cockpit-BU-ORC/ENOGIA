@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v310",
+    date: "2026-11-12",
+    title: "V310 : le Calendrier en vue Mois",
+    items: [
+      { t: "Calendrier", d: "Nouvelle vue Mois : tous les jalons du mois sur une page, et la production chaque jour tant qu'elle dure." },
+      { t: "Fiche d'un PJ", d: "Un clic sur Tests ouvre directement sa fiche dans la page Tests." },
+    ],
+  },
+  {
     id: "2026-11-v309",
     date: "2026-11-12",
     title: "V309 : la fiche d'un PJ rassemble tout",

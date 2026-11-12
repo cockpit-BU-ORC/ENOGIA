@@ -8,7 +8,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { T, FZF as FZ, inkOn, mixHex, stageSoft } from "../theme";
 import { ETAT_EDITS, getPjMeta, ETAT_META, chefsOf, EpcTag, PresenceChip, presenceKind, presenceFirstDate, presenceDates, CountryFlag, relTime, Avatar } from "../pjMeta";
-import { NavIcon, PjPlate } from "./SharedUI";
+import { NavIcon, PjPlate, OpenIn } from "./SharedUI";
 import { ProjectComments, DelayAllocations, EditMetaForm } from "./ProjectModal";
 import { STAGES, STEP_NOTE, autoPct } from "../prodStages";
 import { planOf, catalogOf, activeSections, progressOf, SECTIONS, selectedIds, statusOf } from "../testPlan";
@@ -136,7 +136,7 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
           {dateTile("Livraison prévue", dmy(livr), livr ? "sur site client, transport compris" : "transport non renseigné")}
         </div>
         {(tq || ct || cash || turb || ach) && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 8 }}>
-          {tq && <button type="button" onClick={() => setTab("tests")} style={tile}>
+          {tq && <button type="button" onClick={() => (ctx.testsOk ? openPage("tests", r.pj) : setTab("tests"))} title={ctx.testsOk ? "Ouvrir la fiche de tests dans la page Tests" : undefined} style={tile}>
             <span style={{ display: "flex", alignItems: "center", gap: 8 }}><b style={{ fontSize: FZ.sm }}>Tests</b>{tq.total ? pill(tq.ko ? tq.ko + " échec" + (tq.ko > 1 ? "s" : "") : tq.done === tq.total ? "terminés" : "en cours", tq.ko ? T.red600 : tq.done === tq.total ? T.emerald600 : T.amber600, tq.ko ? T.red100 : tq.done === tq.total ? T.emerald100 : T.amber100, "s") : null}</span>
             <span style={{ fontSize: FZ.xs, color: T.ink700 }}>{tq.total ? tq.done + " test" + (tq.done > 1 ? "s" : "") + " sur " + tq.total + " renseigné" + (tq.done > 1 ? "s" : "") : "Aucun test choisi"}</span>
             <span style={{ fontSize: FZ.xs, color: dbg && dbg.nok ? T.red600 : T.ink500 }}>Checklist de debug : {dbg ? dbg.done + " / " + dbg.total + (dbg.nok ? ", " + dbg.nok + " NOK" : "") + (dbg.signed ? ", signée" : ", à signer") : "—"}</span>
@@ -187,6 +187,7 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
           {dbg.nok > 0 && <div style={{ fontSize: FZ.xs, color: T.red600, marginTop: 4 }}>{dbgSecs.flatMap(s => s.items).filter(i => plan.debug && plan.debug.rows && plan.debug.rows[i.id] && plan.debug.rows[i.id].r === "nok").map(i => i.label).join(" · ")}</div>}
         </div>
         <div style={{ fontSize: FZ.xs, color: T.ink500 }}>{testers.length ? "Testeurs : " + testers.join(", ") + "." : "Aucun testeur affecté."} Le détail se remplit dans la page Tests.</div>
+        {ctx.testsOk && <OpenIn label="Ouvrir dans Tests" onClick={() => openPage("tests", r.pj)} />}
       </>}
 
       {tab === "turbine" && turb && <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -198,7 +199,7 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
           <span style={{ textAlign: "right" }}>{s.installee ? pill("Installée le " + dmy(s.installee), T.emerald600, T.emerald100, "i") : s.dispo ? <><span style={{ display: "block", color: T.ink500 }}>{s.estimee ? "estimée" : "disponible"} le {dmy(s.dispo)}</span><b style={{ color: s.ecart < 0 ? T.red600 : s.ecart < 5 ? T.amber600 : T.emerald600 }}>{gapTxt(s.ecart)}</b></> : <span style={{ color: T.ink500 }}>pas de date</span>}</span>
         </div>)}
         {turb.issues.length > 0 && <div style={{ fontSize: FZ.xs, color: T.red600 }}>{turb.issues.join(" · ")}</div>}
-        {ctx.openPage && <button type="button" onClick={() => openPage("turbines", "orc")} style={{ ...btn(false), alignSelf: "flex-start" }}>Ouvrir dans Turbines › Besoins</button>}
+        {ctx.openPage && <OpenIn label="Ouvrir dans Turbines › Besoins" onClick={() => openPage("turbines", "orc")} />}
       </div>}
 
       {tab === "achats" && ach && <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -210,7 +211,7 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
           <span style={{ flex: 1, color: T.ink500 }}>{p.lignes} ligne{p.lignes > 1 ? "s" : ""}{p.source === "odoo" ? " · Odoo" : ""}</span>
           <span style={{ color: p.retard ? T.red600 : T.ink700, fontWeight: p.retard ? 700 : 500 }}>{(ACHAT_ST.find(x => x[0] === p.statut) || ["", ""])[1]}{p.livraison ? " · livraison " + dmy(p.livraison) : ""}{p.retard ? " · en retard" : ""}</span>
         </div>) : <div style={{ fontSize: FZ.xs, color: T.ink500 }}>Aucune commande (PO) pour l'instant.</div>}
-        {ctx.openPage && <button type="button" onClick={() => openPage("achats")} style={{ ...btn(false), alignSelf: "flex-start" }}>Ouvrir dans Achats / Appro</button>}
+        {ctx.openPage && <OpenIn label="Ouvrir dans Achats / Appro" onClick={() => openPage("achats")} />}
       </div>}
 
       {tab === "cash" && cash && <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
