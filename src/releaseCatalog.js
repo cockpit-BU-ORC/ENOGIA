@@ -887,4 +887,7 @@ export const RELEASE_CATALOG = [
   { v: "321", t: "Vérification automatique des pages", items: [
     ["Qualité", "Chaque page principale est désormais vérifiée automatiquement, en clair et en sombre, avant chaque mise à jour du site.", "admin"],
   ] },
+  { v: "322", t: "Anglais : planning, fiches, accueil, tests, turbines", items: [
+    ["English", "En anglais, la Liste, le Gantt, le Calendrier, la fiche d'un PJ, Modifications, l'accueil, les Tests, les Turbines (besoins) et les pages d'administration sont traduits."],
+  ] },
 ];

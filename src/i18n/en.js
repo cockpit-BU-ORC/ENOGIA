@@ -1,6 +1,9 @@
 // v319 — dictionnaire anglais : texte français affiché (exact, espaces normalisés) → anglais.
 // Compléter page par page ; un texte absent reste en français. Ne pas y mettre de noms de personnes ni de clients.
-export const EN = {
+import { EN_PLANNING } from "./en-planning";
+import { EN_PAGES } from "./en-pages";
+
+const EN_BASE = {
   // ── Site, barre du haut, menu ──
   "Cockpit": "Cockpit",
   "Ordonnancement · Production · Tests · Projets · Cash in": "Scheduling · Production · Tests · Projects · Cash in",
@@ -245,6 +248,8 @@ export const EN = {
   "Ils seront repris dans le plan à l'ouverture du planificateur.": "They will be applied to the plan when the planner opens.",
 };
 
+export const EN = { ...EN_BASE, ...EN_PLANNING, ...EN_PAGES };
+
 // Textes avec des nombres ou des noms : [motif sur le texte français normalisé, remplacement]
 export const EN_PATTERNS = [
   [/^il y a (\d+) min$/, "$1 min ago"],
@@ -269,4 +274,15 @@ export const EN_PATTERNS = [
   [/^Départ (\d\d\/\d\d)$/, "Departure $1"],
   [/^Arrivée (\d\d\/\d\d)$/, "Arrival $1"],
   [/^CdP (.+)$/, "PM $1"],
+  [/^Affichage : (.+)$/, (v) => "Display: " + (EN_PLANNING[v] || v)],
+  [/^(\d+) colonnes? masquées? faute de place \((.+)\)\.$/, "$1 columns hidden for lack of space ($2)."],
+  [/^(\d+) PJ$/, "$1 PJs"],
+  [/^(\d+) j$/, "$1 d"],
+  [/^\+(\d+) j$/, "+$1 d"],
+  [/^-(\d+) j$/, "-$1 d"],
+  [/^(\d+) à attribuer$/, "$1 to assign"],
+  [/^(\d+) prêtes$/, "$1 ready"],
+  [/^(\d+) en retard$/, "$1 late"],
+  [/^pour le (.+)$/, "for $1"],
+  [/^S\/N prévu (.+)$/, "Planned S/N $1"],
 ];

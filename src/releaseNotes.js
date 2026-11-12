@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v322",
+    date: "2026-11-12",
+    title: "V322 : English, suite",
+    items: [
+      { t: "English", d: "Liste, Gantt, Calendrier, fiches des PJ, accueil, Tests et Turbines passent en anglais avec le drapeau EN." },
+    ],
+  },
+  {
     id: "2026-11-v321",
     date: "2026-11-12",
     title: "V321 : pages vérifiées automatiquement",

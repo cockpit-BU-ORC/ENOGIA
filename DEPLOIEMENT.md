@@ -2318,3 +2318,9 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - `src/demo/` : données fictives, liste des pages, galerie (http://localhost:3000/?demo, développement seulement), test `pages.test.js` (10 pages × clair / sombre).
 - Script `npm run check:pages`. Rien ne change dans le site publié (la galerie n'est pas dans le build).
 - Fichiers : src/demo/* (nouveaux), index.js, package.json, App.js, versions, CLAUDE.md.
+
+## v322 — Anglais, lots 2 et 3
+
+- Dictionnaires `src/i18n/en-planning.js` et `src/i18n/en-pages.js` (+ test `src/i18n/i18n.test.js`).
+- Restent à traduire : Manager (fiches projet, KPI, Retards, Point hebdo, rapports), Planificateur, Achats, Production turbines, Cash in.
+- Aucune clé `localStorage` nouvelle ; règles Firestore inchangées.
