@@ -29,10 +29,12 @@ export const T_STEPS = [
   { id: "a4", ph: "assy", l: "Précharge", d: 0.5 },
   { id: "a5", ph: "assy", l: "Contrôle faux-rond", d: 0.5 },
   { id: "t1", ph: "tests", l: "Test d'étanchéité", d: 0.5 },
+  { id: "tw", ph: "stock", l: "Étanche, attente banc", d: 0 },
   { id: "t2", ph: "tests", l: "Banc d'essai : lubrification", d: 1 },
   { id: "t3", ph: "tests", l: "Banc d'essai : sans roue", d: 1 },
   { id: "s1", ph: "stock", l: "Stock testée sans roue", d: 0 },
   { id: "t4", ph: "tests", l: "Banc d'essai : avec roue", d: 1 },
+  { id: "te", ph: "tests", l: "Équilibrage", d: 1 },
   { id: "ok", ph: "ok", l: "Prête", d: 0 },
 ];
 export const A_STEPS = [
@@ -131,26 +133,55 @@ export function makeModel(S) {
     return x;
   };
   const pushSeg = (segs, ph, from, to) => { if (to <= from) return; const last = segs[segs.length - 1]; if (last && last.ph === ph && Math.abs(last.to - from) < 1e-9) last.to = to; else segs.push({ ph, from, to }); };
-  const runFrom = (t, i, x, segs) => {
-    for (let j = i; j <= IT4; j++) { const s = T_STEPS[j]; if (s.ph === "att") continue;
-      if (s.id === "s1") { if (!t.roue) { segs.noRoue = true; return x; } continue; }
-      const d = j === TI[t.step] ? Math.max(0, dur(s.id) - elapsed(t)) : dur(s.id); pushSeg(segs, s.ph, x, x + d); x += d; }
-    return x;
-  };
+  // Étapes d'index from..to (incluses) à partir de x : durée restante pour l'étape en cours, durée pleine ensuite.
+  const IB = TI.t2;
+  const run = (t, from, to, x, segs) => { for (let j = from; j <= to; j++) { const s = T_STEPS[j]; if (s.ph === "att" || s.ph === "stock") continue;
+      const d = j === TI[t.step] ? Math.max(0, dur(s.id) - elapsed(t)) : dur(s.id); pushSeg(segs, s.ph, x, x + d); x += d; } return x; };
+  // Passage au banc d'essai (lubrification, sans roue, avec roue, puis équilibrage si l'option est choisie : il se fait
+  // aussi sur le banc) : sans roue attribuée, il s'arrête après l'essai sans roue.
+  const benchLen = t => { const i = TI[t.step] ?? 0; let len = 0;
+    for (let j = Math.max(i, IB); j <= IT4; j++) { const s = T_STEPS[j];
+      if (s.id === "s1") { if (!t.roue) return { len, noRoue: true }; continue; }
+      len += j === i ? Math.max(0, dur(s.id) - elapsed(t)) : dur(s.id); }
+    if (t.equilibrage === "oui" && i <= TI.te) len += i === TI.te ? Math.max(0, dur("te") - elapsed(t)) : dur("te");
+    return { len, noRoue: false }; };
+  const jobs = [], tjobs = [];
+  // Poste à capacité 1 (table de montage, banc d'essai) : l'élément déjà sur le poste d'abord ; ensuite, à chaque libération,
+  // parmi les éléments prêts, le plus petit rang de passage, sinon le premier arrivé. Renvoie [{ ...job, st }] dans l'ordre de passage.
+  const serve = all => { const rk = j => typeof j.rang === "number" ? j.rang : Infinity;
+    const pri = (a, b) => rk(a) - rk(b) || a.ready - b.ready || (a.own === b.own ? 0 : a.own ? -1 : 1) || a.ordre - b.ordre;
+    const queue = all.filter(j => j.onBench).sort((a, b) => a.ordre - b.ordre); let rest = all.filter(j => !j.onBench), clock = 0;
+    queue.forEach(j => { clock += j.len; });
+    while (rest.length) { const now0 = clock; let ready = rest.filter(j => j.ready <= now0 + 1e-9);
+      if (!ready.length) { const now1 = Math.min(...rest.map(j => j.ready)); clock = now1; ready = rest.filter(j => j.ready <= now1 + 1e-9); }
+      const pick = ready.sort(pri)[0]; queue.push(pick); rest = rest.filter(j => j !== pick); clock = Math.max(clock, pick.ready) + pick.len; }
+    let free = 0; return queue.map(j => { const st = Math.max(free, j.ready); free = st + j.len; return { ...j, st }; }); };
+  // Table de montage (une par gamme) : « Assemblage rotor dans stator » ; le reste de la finition se fait ensuite, hors table.
+  const finish = (t, k, x, segs, extra) => { const i = TI[t.step] ?? 0;
+    if (i <= IA1) { tjobs.push({ t, ready: x, len: i === IA1 ? Math.max(0, dur("a1") - elapsed(t)) : dur("a1"), onBench: i === IA1, rang: typeof t.rangTable === "number" ? t.rangTable : null, own: true, ordre: t.ordre || 0, segs, extra }); return; }
+    afterTable(t, k, x, segs, extra); };
+  // Fin de l'assemblage et du test d'étanchéité, puis file d'attente du banc (calculée plus bas).
+  const afterTable = (t, k, x, segs, extra) => { const i = TI[t.step] ?? 0;
+    if (k < IB) x = run(t, k, IB - 1, x, segs);
+    const b = benchLen(t);
+    if (b.len <= 0) { sch[t.id] = { segs, end: x, noRoue: b.noRoue, ...extra }; return; }
+    jobs.push({ t, ready: x, len: b.len, noRoue: b.noRoue, onBench: i >= IB && i <= TI.te && t.step !== "s1", rang: typeof t.rangBanc === "number" ? t.rangBanc : null, segs, extra }); };
   const progressOf = t => { let total = 0, done = 0; const i = TI[t.step] ?? 0;
     for (let j = 1; j <= IT4; j++) { const d = dur(T_STEPS[j].id); total += d; if (j < i) done += d; else if (j === i) done += Math.min(d, elapsed(t)); }
     if (t.step === "ok") return 1; return total ? done / total : 0; };
-  const sch = {}, needs = [];
+  const sch = {}, needs = [], launchAt = {};
   for (const t of live) {
     const i = TI[t.step] ?? 0, segs = [];
     if (t.step === "ok") { sch[t.id] = { segs, end: 0, ready: true }; continue; }
     let x = 0;
-    if (i === 0) { const L = parseD(t.lancement); x = L ? Math.max(0, wdBetween(T0(), L)) : 0; }
+    if (i === 0) { const L = parseD(t.lancement); x = L ? Math.max(0, wdBetween(T0(), L)) : 0;
+      // Lissage de la charge : S.launch (facultatif) donne un début au plus tôt, en jours ouvrés, pour les turbines à lancer.
+      x = Math.max(x, ((S.launch || {})[t.id]) || 0); launchAt[t.id] = x; }
     if (i < IA1) {
       for (let j = Math.max(i, 1); j < IA1; j++) { const d = j === i ? Math.max(0, dur(T_STEPS[j].id) - elapsed(t)) : dur(T_STEPS[j].id); pushSeg(segs, "carter", x, x + d); x += d; }
       if (!hasArbre(t)) { needs.push({ t, x, segs }); continue; }
     }
-    sch[t.id] = { segs, end: runFrom(t, Math.max(i, IA1), x, segs), noRoue: segs.noRoue };
+    finish(t, Math.max(i, IA1), x, segs, {});
   }
   // Affectation prévisionnelle des arbres : premier carter terminé = premier arbre prêt
   const pool = Object.values(S.arbres || {}).filter(a => !used.has(a.id) && !a.livree).map(a => ({ a, r: arbreReadyOffset(a) })).sort((p, q) => p.r - q.r);
@@ -159,9 +190,19 @@ export function makeModel(S) {
     const p = pool.shift();
     if (!p) { n.segs.push({ ph: "missing", from: n.x, to: null }); sch[n.t.id] = { segs: n.segs, end: null, missing: true }; continue; }
     if (p.r > n.x) pushSeg(n.segs, "wait", n.x, p.r);
-    sch[n.t.id] = { segs: n.segs, end: runFrom(n.t, IA1, Math.max(n.x, p.r), n.segs), arbrePrevu: p.a.num, wait: Math.max(0, p.r - n.x), noRoue: n.segs.noRoue };
+    finish(n.t, IA1, Math.max(n.x, p.r), n.segs, { arbrePrevu: p.a.num, wait: Math.max(0, p.r - n.x) });
   }
-  return { dur, lbl, live, hasArbre, used, availableArbres, arbreReadyOffset, progressOf, sch };
+  // Table de montage de la gamme (rang de passage : rangTable), puis suite de la finition et file du banc.
+  for (const j of serve(tjobs)) { const st = j.st;
+    if (st > j.ready) pushSeg(j.segs, "table", j.ready, st); pushSeg(j.segs, "assy", st, st + j.len);
+    afterTable(j.t, IA1 + 1, st + j.len, j.segs, { ...j.extra, tableWait: Math.max(0, st - j.ready) }); }
+  // Banc d'essai unique, commun aux gammes 100 kW et 20 kW : S.benchExt apporte les passages de l'autre gamme (rang : rangBanc).
+  const benchJobs = jobs.map(j => ({ ready: j.ready, len: j.len, onBench: j.onBench, rang: j.rang, ordre: j.t.ordre || 0 }));
+  const all = [...jobs.map(j => ({ ...j, own: true, ordre: j.t.ordre || 0 })), ...(S.benchExt || []).map(j => ({ ...j, own: false }))];
+  for (const j of serve(all)) { const st = j.st; if (!j.own) continue;
+    if (st > j.ready) pushSeg(j.segs, "banc", j.ready, st); pushSeg(j.segs, "tests", st, st + j.len);
+    sch[j.t.id] = { segs: j.segs, end: st + j.len, noRoue: j.noRoue, benchWait: Math.max(0, st - j.ready), ...j.extra }; }
+  return { dur, lbl, live, hasArbre, used, availableArbres, arbreReadyOffset, progressOf, sch, benchJobs, launchAt };
 }
 
 // Changement d'étape d'une turbine (mêmes garde-fous que l'original) → { turbine, msg } ou { error }
@@ -187,11 +228,55 @@ const NEEDS = {
   c4: [{ l: "Liner DC037", k: ["dc037"] }],
   a1: [{ l: "Flasque DC027", k: ["dc027"] }],
   a2: [{ l: "Couvercle AR", k: ["couvercle"] }],
-  a3: [{ l: "Isolant DC014 (PEEK ou PPS ; POMC pour LT seulement)", k: ["dc014"], variant: "isolant" }, { l: "Plaque ressort DC047", k: ["dc047"] }],
+  a3: [{ l: "Isolant DC014 (PEEK ; POMC pour LT seulement)", k: ["dc014"], variant: "isolant" }, { l: "Plaque ressort DC047", k: ["dc047"] }],
   b1: [{ l: "Arbre DC019", k: ["dc019"] }, { l: "Rotor", k: ["rotor"] }],
   b5: [{ l: "Douille coulissante DC021", k: ["dc021"] }],
 };
 /* ---------- Gammes de turbines : 100 kW (par défaut, y compris les données sans champ « gamme ») et 20 kW ---------- */
+/* ---------- Heures de travail : les durées sont saisies en heures (journée de 7 h, 35 h par semaine) ---------- */
+// Elles restent enregistrées en jours ouvrés dans params.d (heures / 7), comme avant : le calcul des dates est inchangé.
+const H_PER_DAY = 7;
+const fmtH = d => (Math.round(d * H_PER_DAY * 10) / 10).toLocaleString("fr-FR") + " h";
+const NO_LOAD = new Set(["b2", "r2"]); // équilibrage sous-traité : ne compte pas dans la charge de l'équipe
+const EQUIPE_DEF = { n: 6, h: 35 };
+// Charge restante (en heures) d'une gamme : turbines en cours / à lancer, arbres, roues à préparer, reconditionnement,
+// et répartition par semaine (5 jours ouvrés) des étapes de montage, d'assemblage et de tests des turbines.
+function workload(S, M, weeks) {
+  const h = (it, steps, I, skip) => { let x = 0; const i = I[it.step] ?? 0;
+    for (let j = i; j < steps.length; j++) { const s = steps[j]; if (skip(s)) continue; x += j === i ? Math.max(0, M.dur(s.id) - elapsed(it)) : M.dur(s.id); } return x * H_PER_DAY; };
+  const tSkip = s => s.ph === "att" || s.ph === "stock" || s.ph === "ok";
+  const o = { encours: 0, alancer: 0, autres: 0, week: Array(weeks).fill(0) };
+  M.live.forEach(t => { if (t.step === "ok") return; const v = h(t, T_STEPS, TI, s => tSkip(s) || (s.id === "te" && t.equilibrage !== "oui")); if (t.step === "att") o.alancer += v; else o.encours += v; });
+  Object.values(S.arbres || {}).forEach(a => { if (!a.livree && a.step !== "b6") o.autres += h(a, A_STEPS, AI, s => s.ph !== "arbre" || NO_LOAD.has(s.id)); });
+  Object.values(S.pieces || {}).forEach(p => {
+    if (p.statut === "equil") o.autres += h(p, R_STEPS, RI, s => s.ph !== "roue" || NO_LOAD.has(s.id));
+    if (p.statut === "reco") { const st = p.part === "arbre" ? QA_STEPS : p.part === "carter" ? QC_STEPS : Q_STEPS; o.autres += h(p, st, Object.fromEntries(st.map((s, i) => [s.id, i])), s => s.ph === "fin"); } });
+  Object.values(M.sch || {}).forEach(sc => (sc.segs || []).forEach(g => { if (!["carter", "assy", "tests"].includes(g.ph) || g.to === null) return;
+    for (let w = 0; w < weeks; w++) { const ov = Math.min(g.to, (w + 1) * 5) - Math.max(g.from, w * 5); if (ov > 0) o.week[w] += ov * H_PER_DAY; } }));
+  return o;
+}
+
+// Lissage : les turbines à lancer (les deux gammes, dans l'ordre du planning) démarrent au premier jour où leur charge
+// (montage, assemblage, tests : 7 h par jour de travail) tient, jour par jour, dans la capacité restante de l'équipe.
+// Les turbines déjà commencées ne sont pas décalées. Renvoie { idTurbine: début au plus tôt en jours ouvrés }.
+function levelLaunch(models, capDay) {
+  const HZ = 400, load = Array(HZ).fill(0), launch = {}, LAB = ["carter", "assy", "tests"];
+  const prof = segs => { const p = {}; (segs || []).forEach(g => { if (!LAB.includes(g.ph) || g.to === null) return;
+    for (let d = Math.floor(g.from); d < Math.ceil(g.to); d++) { const ov = Math.min(g.to, d + 1) - Math.max(g.from, d); if (ov > 0) p[d] = (p[d] || 0) + ov * H_PER_DAY; } }); return p; };
+  const att = [];
+  models.forEach(M => M.live.forEach(t => { const sc = M.sch[t.id]; if (!sc || t.step === "ok") return;
+    if (t.step === "att") att.push({ t, p: prof(sc.segs) });
+    else Object.entries(prof(sc.segs)).forEach(([d, h]) => { if (+d < HZ) load[+d] += h; }); }));
+  att.sort((a, b) => (a.t.ordre || 0) - (b.t.ordre || 0) || (a.t.num || "").localeCompare(b.t.num || "", "fr", { numeric: true }));
+  if (!(capDay > 0)) return launch;
+  for (const { t, p } of att) { const days = Object.keys(p).map(Number); if (!days.length) continue; const base = Math.min(...days); let dl = 0;
+    const fits = k => days.every(d => d + k >= HZ || load[d + k] + p[d] <= capDay + 1e-6 || (load[d + k] === 0 && p[d] > capDay));
+    for (; dl < HZ; dl++) if (fits(dl)) break;
+    days.forEach(d => { if (d + dl < HZ) load[d + dl] += p[d]; });
+    if (dl > 0) launch[t.id] = base + dl; }
+  return launch;
+}
+
 const GAMMES = [["100", "100 kW", "100N"], ["20", "20 kW", "20N"]];
 const gammeOf = x => x && String(x.gamme) === "20" ? "20" : "100";
 const gammeL = g => (GAMMES.find(x => x[0] === g) || GAMMES[0])[1];
@@ -216,7 +301,7 @@ const turbineType = t => { const x = String((t && t.type) || "").toUpperCase(); 
 function needsFor(s, item, g) {
   return (needsTable(g)[s] || []).map(n => { if (n.variant !== "isolant") return n; const ty = turbineType(item);
     // Ordre de k = ordre de préférence : MT n'accepte pas le POMC, qui est donc pris en premier pour les LT.
-    return ty === "MT" ? { l: "Isolant DC014 PPS ou PEEK", k: ["dc014 pps", "dc014 peek"] } : ty === "LT" ? { l: "Isolant DC014 POMC, PPS ou PEEK", k: ["dc014 pomc", "dc014 pps", "dc014 peek"] } : { l: "Isolant DC014 (type LT ou MT à préciser sur la fiche turbine)", k: [] }; });
+    return ty === "MT" ? { l: "Isolant DC014 PEEK", k: ["dc014 peek"] } : ty === "LT" ? { l: "Isolant DC014 POMC ou PEEK", k: ["dc014 pomc", "dc014 peek"] } : { l: "Isolant DC014 (type LT ou MT à préciser sur la fiche turbine)", k: [] }; });
 }
 const needIdx = (p, n) => n.k.findIndex(k => normTxt((p.designation || "") + " " + (p.ref || "")).includes(k));
 const byNeed = n => (a, b) => needIdx(a, n) - needIdx(b, n) || byPo(a, b);
@@ -273,6 +358,16 @@ function FormDialog({ title, fields, vals, onSave, extra = [], readOnly, onClose
       {fields.filter(f => !f.show || f.show(cur)).map(f => (<label key={f.k} style={{ display: "block", marginBottom: 10 }}>
         <span style={{ display: "block", fontSize: FZF.xs, fontWeight: 700, color: T.ink700, marginBottom: 4 }}>{f.l}{f.req ? " *" : ""}</span>
         {f.type === "select" ? <select disabled={readOnly} value={v[f.k]} onChange={e => setV({ ...v, [f.k]: e.target.value })} style={inp}>{f.opts.map(([ov, ol]) => <option key={ov} value={ov}>{ol}</option>)}</select>
+          : f.type === "order" ? <ol style={{ listStyle: "none", margin: 0, padding: 0, border: "1px solid " + T.line, borderRadius: 8 }}>
+            {(v[f.k] || []).map((it, i, arr) => { const mv = d => { const n = arr.slice(); [n[i], n[i + d]] = [n[i + d], n[i]]; setV({ ...v, [f.k]: n }); };
+              const ab = { minWidth: 28, minHeight: 28, border: "1px solid " + T.line, borderRadius: 8, background: T.card, color: T.ink700, cursor: "pointer", fontFamily: T.font };
+              return (<li key={it.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", borderTop: i ? "1px solid " + T.line : "none" }}>
+                <b style={{ minWidth: 22, fontVariantNumeric: "tabular-nums", color: T.ink500 }}>{i + 1}</b>
+                <span style={{ flex: 1, fontSize: FZF.sm }}><span style={{ fontFamily: T.fontMono }}>{it.label}</span>{it.sub ? <span style={{ color: T.ink500, fontSize: FZF.xs }}> {it.sub}</span> : null}</span>
+                <button type="button" disabled={readOnly || i === 0} aria-label={"Faire passer " + it.label + " plus tôt"} onClick={() => mv(-1)} style={{ ...ab, opacity: i === 0 ? 0.4 : 1 }}>↑</button>
+                <button type="button" disabled={readOnly || i === arr.length - 1} aria-label={"Faire passer " + it.label + " plus tard"} onClick={() => mv(1)} style={{ ...ab, opacity: i === arr.length - 1 ? 0.4 : 1 }}>↓</button>
+              </li>); })}
+          </ol>
           : f.type === "textarea" ? <textarea disabled={readOnly} value={v[f.k]} onChange={e => setV({ ...v, [f.k]: e.target.value })} style={{ ...inp, height: 70, padding: 8, resize: "vertical" }} />
           : <><input disabled={readOnly} type={f.type || "text"} min={f.type === "number" ? 0 : undefined} value={v[f.k]} list={f.list ? "pt-dl-" + f.k : undefined} onChange={e => setV({ ...v, [f.k]: e.target.value })} style={inp} />
             {f.list && <datalist id={"pt-dl-" + f.k}>{f.list.map(o => <option key={o} value={o} />)}</datalist>}</>}
@@ -299,22 +394,76 @@ export function ProdTurbines({ doc, api, canEdit, owner, pjs }) {
   useEffect(() => { try { localStorage.setItem("enogia_prodturb_gamme", gamme); } catch (e) { /* stockage indisponible */ } }, [gamme]);
   // Chaque élément reçoit son identifiant depuis sa clé (Firestore enregistre les éléments sans le champ id).
   // Seuls les éléments de la gamme affichée sont gardés : planning, stocks, dates et décomptes restent propres à chaque gamme.
-  const S = useMemo(() => { const d = doc || {}, dp = d.params || {};
-    const o = { ...EMPTY_PROD, ...d, gamme, params: gamme === "20" ? { d: {}, l: {}, ...(dp.r20 || {}) } : { d: {}, l: {}, ...dp } };
-    ["turbines", "arbres", "pieces", "roues", "injecteurs"].forEach(c => { o[c] = Object.fromEntries(Object.entries(d[c] || {}).filter(([, v]) => gammeOf(v) === gamme).map(([k, v]) => [k, { ...v, id: k }])); }); return o; }, [doc, gamme]);
-  const M = useMemo(() => makeModel(S), [S]);
+  const buildS = g => { const d = doc || {}, dp = d.params || {};
+    const o = { ...EMPTY_PROD, ...d, gamme: g, params: g === "20" ? { d: {}, l: {}, ...(dp.r20 || {}) } : { d: {}, l: {}, ...dp } };
+    ["turbines", "arbres", "pieces", "roues", "injecteurs"].forEach(c => { o[c] = Object.fromEntries(Object.entries(d[c] || {}).filter(([, v]) => gammeOf(v) === g).map(([k, v]) => [k, { ...v, id: k }])); }); return o; };
+  const S = useMemo(() => buildS(gamme), [doc, gamme]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Charge de l'équipe (commune aux deux gammes) : capacité = personnes × heures par semaine.
+  const equipe = { ...EQUIPE_DEF, ...(((doc && doc.params) || {}).equipe || {}) };
+  // Planification des deux gammes : le banc d'essai est commun (les passages de l'autre gamme entrent dans la file),
+  // puis les lancements des turbines à lancer sont lissés sur la capacité de l'équipe, et tout est recalculé avec ces débuts.
+  const plan = useMemo(() => { const og = gamme === "20" ? "100" : "20", So = buildS(og);
+    const Mo1 = makeModel(So), M1 = makeModel({ ...S, benchExt: Mo1.benchJobs }), Mo2 = makeModel({ ...So, benchExt: M1.benchJobs });
+    const launch = levelLaunch([M1, Mo2], (equipe.n * equipe.h) / 5);
+    const Mo3 = makeModel({ ...So, launch }), Mf = makeModel({ ...S, benchExt: Mo3.benchJobs, launch }), Mof = makeModel({ ...So, benchExt: Mf.benchJobs, launch });
+    return { og, So, M: Mf, Mo: Mof, launch }; }, [doc, gamme, S, equipe.n, equipe.h]); // eslint-disable-line react-hooks/exhaustive-deps
+  const other = useMemo(() => ({ g: plan.og, waiting: plan.Mo.live.filter(t => t.step === "tw").length }), [plan]);
+  const M = plan.M;
+  // Retards : éléments restés à une étape plus longtemps que sa durée déclarée (étapes sans durée exclues),
+  // en ce moment et dans l'historique des étapes déjà quittées. Gamme affichée.
+  const retards = useMemo(() => { const now = [], per = {};
+    const bump = (kind, s, h, cur) => { const k = kind + ":" + s, p = per[k] = per[k] || { kind, s, cur: 0, past: 0, h: 0 }; if (cur) p.cur++; else p.past++; p.h += h; };
+    const look = (kind, it) => { const d = M.dur(it.step); if (!d) return; const e = elapsed(it); if (e > d) { now.push({ kind, it, s: it.step, e, d }); bump(kind, it.step, (e - d) * H_PER_DAY, true); } };
+    M.live.forEach(t => { if (t.step !== "ok") look("turbine", t); });
+    Object.values(S.arbres).forEach(a => { if (!a.livree) look("arbre", a); });
+    [["turbine", Object.values(S.turbines)], ["arbre", Object.values(S.arbres)]].forEach(([kind, list]) => list.forEach(it => (Array.isArray(it.hist) ? it.hist : []).forEach(h => {
+      const d = M.dur(h.s); if (d && h.j > d) bump(kind, h.s, (h.j - d) * H_PER_DAY, false); })));
+    now.sort((a, b) => (b.e - b.d) - (a.e - a.d));
+    return { now, steps: Object.values(per).sort((a, b) => b.h - a.h || (b.cur + b.past) - (a.cur + a.past)) }; }, [S, M]);
+  const lateOf = t => { const d = M.dur(t.step); if (!d || t.step === "ok") return 0; const e = elapsed(t); return e > d ? (e - d) * H_PER_DAY : 0; };
+  const charge = useMemo(() => { const So = plan.So, Mo = plan.Mo;
+    const a = workload(S, M, 8), b = workload(So, Mo, 8), byG = { [gamme]: a, [other.g]: b };
+    return { byG, encours: a.encours + b.encours, alancer: a.alancer + b.alancer, autres: a.autres + b.autres, week100: byG["100"].week, week20: byG["20"].week }; }, [S, M, other, plan, gamme]);
   const P = phaseColors();
   const readOnly = !canEdit;
   const [tab, setTab] = useState(() => { try { const v = localStorage.getItem("enogia_prodturb_tab"); return TABS.some(t => t[0] === v) ? v : "accueil"; } catch (e) { return "accueil"; } });
   useEffect(() => { try { localStorage.setItem("enogia_prodturb_tab", tab); } catch (e) { /* stockage indisponible */ } }, [tab]);
-  const [form, setForm] = useState(null); const [toast, setToast] = useState(null); const tRef = useRef(null);
+  const [form, setForm] = useState(null); const [toast, setToast] = useState(null); const tRef = useRef(null); const fileRef = useRef(null);
   const notify = (msg, err) => { setToast({ msg, err }); clearTimeout(tRef.current); tRef.current = setTimeout(() => setToast(null), err ? 5200 : 3000); };
   const GCOLL = ["turbines", "arbres", "pieces", "roues", "injecteurs"];
   const put = async (c, id, data) => { const d = { ...data }; delete d.id; if (GCOLL.includes(c) && !d.gamme) d.gamme = gamme; const ok = await api.put(c, id, d); if (!ok) notify("Enregistrement impossible, réessayez dans un instant.", true); return ok; };
   const del = (c, id) => api.del(c, id);
+  // Sauvegarde : export de toutes les données (les deux gammes) dans un fichier JSON, et import d'un tel fichier.
+  const COLLS_X = ["turbines", "arbres", "pieces", "roues", "injecteurs"];
+  const COLL_L = { turbines: "turbines", arbres: "arbres", pieces: "pièces", roues: "références de roues", injecteurs: "références d'injecteurs" };
+  const exportData = () => { const d = doc || {}, data = {}; let n = 0;
+    COLLS_X.forEach(c => { data[c] = d[c] || {}; n += Object.keys(data[c]).length; }); data.params = d.params || { d: {}, l: {} };
+    const file = { format: "enogia-production-turbines", version: 1, exporte: new Date().toISOString(), data };
+    try { const url = URL.createObjectURL(new Blob([JSON.stringify(file, null, 2)], { type: "application/json" }));
+      const a = document.createElement("a"); a.href = url; a.download = "production-turbines-" + iso(today0()) + ".json"; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000); notify("Export téléchargé : " + n + " éléments et les paramètres de gamme"); }
+    catch (e) { notify("Téléchargement impossible dans ce navigateur.", true); } };
+  const onImportFile = async e => { const f = e.target.files && e.target.files[0]; e.target.value = ""; if (!f) return;
+    let j; try { j = JSON.parse(await f.text()); } catch (err) { notify("Fichier illisible : ce n'est pas un fichier JSON valide.", true); return; }
+    const data = j && typeof j === "object" ? (j.data && typeof j.data === "object" ? j.data : j) : null;
+    const isObj = v => v && typeof v === "object" && !Array.isArray(v);
+    if (!isObj(data) || !COLLS_X.some(c => isObj(data[c]))) { notify("Ce fichier ne contient pas de données Production turbines.", true); return; }
+    const clean = {}; COLLS_X.forEach(c => { clean[c] = Object.fromEntries(Object.entries(isObj(data[c]) ? data[c] : {}).filter(([k, v]) => k && isObj(v)).map(([k, v]) => { const o = { ...v }; delete o.id; return [k, o]; })); });
+    const params = isObj(data.params) ? data.params : null;
+    const counts = COLLS_X.map(c => Object.keys(clean[c]).length + " " + COLL_L[c]).join(", ");
+    setForm({ title: "Importer « " + f.name + " »", vals: { mode: "merge" },
+      fields: [{ k: "mode", l: "Mode d'import", type: "select", opts: [["merge", "Ajouter et mettre à jour (les éléments absents du fichier sont gardés)"], ...(owner ? [["replace", "Tout remplacer (les éléments absents du fichier sont supprimés)"]] : [])],
+        hint: "Le fichier contient " + counts + (params ? ", et les paramètres de gamme" : "") + ". Les deux gammes (100 kW et 20 kW) sont concernées." + (owner ? "" : " Seul le propriétaire peut tout remplacer.") }],
+      onSave: async v => { const replace = owner && v.mode === "replace";
+        if (replace && !window.confirm("Tout remplacer ? Les éléments absents du fichier seront supprimés, dans les deux gammes.")) return false;
+        let n = 0, k = 0, ko = 0;
+        for (const c of COLLS_X) { for (const [id, o] of Object.entries(clean[c])) { if (await api.put(c, id, o)) n++; else ko++; }
+          if (replace) for (const id of Object.keys((doc || {})[c] || {})) if (!clean[c][id]) { await api.del(c, id); k++; } }
+        if (params) await api.setParams(params);
+        const pl = x => x > 1 ? "s" : ""; notify("Import terminé : " + n + " élément" + pl(n) + " enregistré" + pl(n) + (k ? ", " + k + " supprimé" + pl(k) : "") + (ko ? ", " + ko + " en échec" : "") + ".", ko > 0); return true; } }); };
   // Durées et noms d'étapes : ceux du 100 kW à la racine de params (comme avant), ceux du 20 kW dans params.r20.
   const saveParams = p => { const dp = (doc && doc.params) || {};
-    return gamme === "20" ? api.setParams({ ...dp, r20: p }) : api.setParams(dp.r20 ? { ...p, r20: dp.r20 } : p); };
+    return gamme === "20" ? api.setParams({ ...dp, r20: p }) : api.setParams({ ...p, ...(dp.r20 ? { r20: dp.r20 } : {}), ...(dp.equipe ? { equipe: dp.equipe } : {}) }); };
   // Pièces : vérifie le stock, le décompte (ou le restitue en reculant) puis renvoie la trace des pièces montées.
   const applyStock = async (kind, item, newStep, skip) => {
     if (skip || item.step === newStep) return { conso: item.conso || {} };
@@ -323,23 +472,59 @@ export function ProdTurbines({ doc, api, canEdit, owner, pjs }) {
     for (const [id, n] of Object.entries(r.qte)) await put("pieces", id, { ...S.pieces[id], qte: n });
     return { conso: r.conso };
   };
+  // Historique des étapes (40 dernières) : étape quittée, dates d'entrée et de sortie, jours ouvrés passés. Sert au suivi des dépassements.
+  const withHist = (n, old) => (n.step !== old.step && old.since) ? { ...n, hist: [...(Array.isArray(old.hist) ? old.hist : []), { s: old.step, du: old.since, au: iso(today0()), j: elapsed(old) }].slice(-40) } : n;
   const withConso = (o, conso) => { const n = { ...o }; delete n.deduire; if (conso && Object.keys(conso).length) n.conso = conso; else delete n.conso; return n; };
   // Si le changement d'étape est refusé (arbre, roue ou stock), les autres champs de la fiche sont quand même enregistrés.
-  const saveTurbine = async (old, nv, isNew) => { const r = moveTurbine(S, M, old, nv);
+  // Banc d'essai commun : turbines (des deux gammes) en attente, dans l'ordre de passage, et turbines déjà au banc.
+  const benchQueue = useMemo(() => { const d = (doc && doc.turbines) || {};
+    const rk = t => typeof t.rangBanc === "number" ? t.rangBanc : Infinity;
+    const wait = Object.entries(d).filter(([, t]) => t.step === "tw" && !t.livree).map(([k, t]) => ({ ...t, id: k }))
+      .sort((a, b) => rk(a) - rk(b) || (a.since || "").localeCompare(b.since || "") || sortNum(a, b));
+    const onBench = Object.entries(d).filter(([, t]) => ["t2", "t3", "t4", "te"].includes(t.step) && !t.livree).map(([k, t]) => ({ ...t, id: k }));
+    return { wait, onBench, pos: Object.fromEntries(wait.map((t, i) => [t.id, i + 1])) }; }, [doc]);
+  const openBenchOrder = () => setForm({ title: "Ordre de passage au banc", vals: { file: benchQueue.wait.map(t => ({ id: t.id, label: t.num, sub: gammeL(gammeOf(t)) + (t.affaire ? ", " + t.affaire : "") })) },
+    fields: [{ k: "file", l: "Turbines étanches en attente (100 kW et 20 kW, banc commun)", type: "order" }],
+    onSave: async v => { const d = (doc && doc.turbines) || {}; let ok = true;
+      for (const [i, it] of (v.file || []).entries()) { const t = d[it.id]; if (t && t.rangBanc !== i + 1) ok = (await api.put("turbines", it.id, { ...t, gamme: gammeOf(t), rangBanc: i + 1 })) && ok; }
+      notify(ok ? "Ordre de passage au banc enregistré" : "Une partie de l'ordre n'a pas pu être enregistrée.", !ok); return ok; } });
+  // Table de montage (une par gamme) : carters câblés en attente, dans l'ordre de passage, et turbine déjà sur la table.
+  const tableQueue = useMemo(() => { const rk = t => typeof t.rangTable === "number" ? t.rangTable : Infinity;
+    const wait = Object.values(S.turbines).filter(t => t.step === "cc" && !t.livree).sort((a, b) => rk(a) - rk(b) || (a.since || "").localeCompare(b.since || "") || sortNum(a, b));
+    const onTable = Object.values(S.turbines).filter(t => t.step === "a1" && !t.livree);
+    return { wait, onTable, pos: Object.fromEntries(wait.map((t, i) => [t.id, i + 1])) }; }, [S]);
+  const openTableOrder = () => setForm({ title: "Ordre de passage à la table de montage " + gammeL(gamme), vals: { file: tableQueue.wait.map(t => ({ id: t.id, label: t.num, sub: t.affaire || "" })) },
+    fields: [{ k: "file", l: "Carters câblés en attente d'assemblage", type: "order" }],
+    onSave: async v => { let ok = true;
+      for (const [i, it] of (v.file || []).entries()) { const t = S.turbines[it.id]; if (t && t.rangTable !== i + 1) ok = (await put("turbines", it.id, { ...t, rangTable: i + 1 })) && ok; }
+      notify(ok ? "Ordre de passage à la table enregistré" : "Une partie de l'ordre n'a pas pu être enregistrée.", !ok); return ok; } });
+  const saveTurbine = async (old, nv, isNew) => {
+    // Avertissement si la table de montage de la gamme est déjà occupée par une autre turbine.
+    const toTable = nv.step === "a1" && old.step !== "a1" && (TI[old.step] ?? 0) < IA1;
+    if (toTable) { const occ = tableQueue.onTable.filter(x => x.id !== old.id);
+      if (occ.length && !window.confirm("La table de montage " + gammeL(gamme) + " est déjà occupée par " + occ.map(x => x.num).join(", ") + ". Mettre quand même " + (nv.num || old.num) + " en assemblage ?")) return false; }
+    if ((TI[nv.step] ?? 0) >= IA1 && (TI[old.step] ?? 0) < IA1 && typeof old.rangTable === "number") nv = { ...nv, rangTable: null };
+    // Avertissement si le banc (commun aux deux gammes) est déjà occupé par une autre turbine.
+    const toBench = ["t2", "t3", "t4", "te"].includes(nv.step) && !["t2", "t3", "t4", "te"].includes(old.step);
+    if (toBench) { const occ = benchQueue.onBench.filter(x => x.id !== old.id);
+      if (occ.length && !window.confirm("Le banc d'essai est déjà occupé par " + occ.map(x => x.num).join(", ") + ". Mettre quand même " + (nv.num || old.num) + " au banc ?")) return false; }
+    if (toBench && typeof old.rangBanc === "number") { old = { ...old }; nv = { ...nv, rangBanc: null }; }
+    const r = moveTurbine(S, M, old, nv);
+    const eqErr = !r.error && nv.step && nv.step !== old.step ? equilErr({ ...old, ...nv }, nv.step) : null;
     // Le stock se calcule avec les valeurs saisies dans la fiche (type LT / MT notamment), à partir de l'étape actuelle.
-    const st = r.error ? null : await applyStock("turbine", { ...r.turbine, step: old.step, conso: old.conso }, r.turbine.step, isNew && nv.deduire !== "oui");
-    const err = r.error || st.error;
+    const st = r.error || eqErr ? null : await applyStock("turbine", { ...r.turbine, step: old.step, conso: old.conso }, r.turbine.step, isNew && nv.deduire !== "oui");
+    const err = r.error || eqErr || st.error;
     if (err) {
       if (!isNew && nv.step && nv.step !== old.step) { const keep = moveTurbine(S, M, old, { ...nv, step: old.step });
         if (!keep.error) { const t = withConso(keep.turbine, old.conso); if (await put("turbines", t.id, t)) { notify(err + " Les autres modifications de la fiche sont enregistrées ; l'étape reste « " + M.lbl(old.step) + " ».", true); return true; } } }
       notify(err, true); return false; }
-    if (r.msg) notify(r.msg); const t = withConso(r.turbine, st.conso); return put("turbines", t.id, t); };
+    if (r.msg) notify(r.msg); const t = withHist(withConso(r.turbine, st.conso), old); return put("turbines", t.id, t); };
   const saveArbre = async (a, nv, isNew) => { const n0 = { ...a, ...nv };
     const st = await applyStock("arbre", { ...n0, step: a.step, conso: a.conso }, n0.step, isNew && nv.deduire !== "oui");
     if (st.error) {
       if (!isNew && n0.step !== a.step) { const k = withConso({ ...n0, step: a.step }, a.conso); if (await put("arbres", k.id, k)) { notify(st.error + " Les autres modifications de la fiche sont enregistrées ; l'étape reste « " + M.lbl(a.step) + " ».", true); return true; } }
       notify(st.error, true); return false; }
-    const n = withConso(n0, st.conso); if (n.step !== a.step || !n.since) n.since = iso(today0()); return put("arbres", n.id, n); };
+    const n = withHist(withConso(n0, st.conso), a); if (n.step !== a.step || !n.since) n.since = iso(today0()); return put("arbres", n.id, n); };
   const isRoue = p => normTxt(p.designation).startsWith("roue");
   const lotOffset = x => { const i = RI[x.step] ?? 0; let o = 0;
     for (let j = i; j < RI.r3; j++) { const id = R_STEPS[j].id;
@@ -422,8 +607,9 @@ export function ProdTurbines({ doc, api, canEdit, owner, pjs }) {
     setForm({ title: isNew ? "Nouvelle turbine" : "Turbine " + t.num, vals: { ...t, type: turbineType(t), arbreId: t.arbreId || "", deduire: "oui" },
       fields: [
         { k: "num", l: "Numéro de turbine", req: true, hint: "Turbine " + gammeL(gamme) + " : " + gammePrefix(gamme) + "XXXXXXX." }, { k: "affaire", l: "Affaire / client", list: pjs && pjs.length ? pjs : undefined, hint: pjs && pjs.length ? "Choisissez le PJ de l'ORC qui recevra la turbine (vide : stock)." : undefined },
-        { k: "type", l: "Type de turbine", type: "select", opts: [["", "Non précisé"], ["LT", "LT"], ["MT", "MT"]], hint: "Détermine les isolants DC014 utilisables : PPS ou PEEK pour MT ; POMC, PPS ou PEEK pour LT." },
+        { k: "type", l: "Type de turbine", type: "select", opts: [["", "Non précisé"], ["LT", "LT"], ["MT", "MT"]], hint: "Détermine les isolants DC014 utilisables : PEEK pour MT ; POMC ou PEEK pour LT." },
         { k: "roue", l: "Roue attribuée", type: "select", opts: [["", "Non attribuée"], ...roueRefs.map(r => [r, r])], hint: "Sans roue, la turbine s'arrête en « Stock testée sans roue » après le banc d'essai sans roue." },
+        { k: "equilibrage", l: "Équilibrage", type: "select", opts: [["", "Non"], ["oui", "Oui, équilibrage nécessaire"]], show: v => (TI[v.step] ?? 0) >= TI.t4, hint: "Selon le résultat du banc d'essai avec roue. « Oui » ajoute l'étape « Équilibrage » (7 h), sur le banc d'essai, avant que la turbine soit prête." },
         { k: "step", l: "Étape actuelle", type: "select", opts: T_STEPS.map(s => [s.id, PHASES[s.ph] + " : " + M.lbl(s.id)]) },
         { k: "lancement", l: "Lancement prévu", type: "date", show: v => v.step === "att" },
         deduireField(isNew, "att"),
@@ -501,8 +687,8 @@ export function ProdTurbines({ doc, api, canEdit, owner, pjs }) {
   /* ---- glisser une carte sur sa ligne (souris et tactile) ---- */
   const dragRef = useRef(null); const [drag, setDrag] = useState(null);
   // Ordre des encarts (Accueil, Planning et Stock), propre à chaque utilisateur et à ce navigateur : simple préférence d'affichage.
-  const ORDER_DEF = { accueil: ["pretes", "sansroue", "roues", "injecteurs", "vision"], planning: ["pieces", "turbines", "reco", "arbres", "roues"], stocks: ["roues", "injecteurs", "stock"] };
-  const BLOCK_L = { accueil: { pretes: "Turbines prêtes", sansroue: "Testées sans roue", roues: "Roues équilibrées par réf.", injecteurs: "Injecteurs par réf.", vision: "Dates prévisionnelles des prochaines turbines" }, planning: { pieces: "Appro, contrôle qualité et non-conformités", turbines: "Turbines", reco: "Turbines reconditionnées", arbres: "Arbres", roues: "Roues à équilibrer" },
+  const ORDER_DEF = { accueil: ["pretes", "sansroue", "roues", "injecteurs", "vision", "charge", "retards"], planning: ["pieces", "turbines", "reco", "arbres", "roues"], stocks: ["roues", "injecteurs", "stock"] };
+  const BLOCK_L = { accueil: { pretes: "Turbines prêtes", sansroue: "Testées sans roue", roues: "Roues équilibrées par réf.", injecteurs: "Injecteurs par réf.", vision: "Dates prévisionnelles des prochaines turbines", charge: "Charge de l'équipe", retards: "Retards et blocages" }, planning: { pieces: "Appro, contrôle qualité et non-conformités", turbines: "Turbines", reco: "Turbines reconditionnées", arbres: "Arbres", roues: "Roues à équilibrer" },
     stocks: { roues: "Roues équilibrées", injecteurs: "Injecteurs", stock: "Pièces en stock" } };
   const ORDER_KEY = "enogia_prodturb_order";
   const [blockOrder, setBlockOrder] = useState(() => { try { return JSON.parse(localStorage.getItem(ORDER_KEY) || "{}") || {}; } catch { return {}; } });
@@ -523,7 +709,10 @@ export function ProdTurbines({ doc, api, canEdit, owner, pjs }) {
     </div>)); };
   // Tableaux du planning : hauteur limitée avec en-têtes figés (comme « Figer les volets »), ou toutes les lignes.
   const [fullBoards, setFullBoards] = useState({});
-  const ruleBlocked = (item, stepId) => (TI[stepId] >= IA1 && !M.hasArbre(item) && !M.availableArbres().length) || (TI[stepId] >= TI.t4 && (TI[item.step] ?? 0) < TI.t4 && !item.roue);
+  // Équilibrage : seulement si l'option est choisie ; dans ce cas, la turbine ne peut pas être prête sans y être passée.
+  const equilErr = (t, step) => step === "te" && t.equilibrage !== "oui" ? "Équilibrage non prévu pour " + t.num + " : choisissez « Oui » pour l'option Équilibrage dans sa fiche."
+    : step === "ok" && t.equilibrage === "oui" && (TI[t.step] ?? 0) < TI.te ? "Équilibrage prévu pour " + t.num + " : passez d'abord par l'étape « " + M.lbl("te") + " »." : null;
+  const ruleBlocked = (item, stepId) => !!equilErr(item, stepId) || (TI[stepId] >= IA1 && !M.hasArbre(item) && !M.availableArbres().length) || (TI[stepId] >= TI.t4 && (TI[item.step] ?? 0) < TI.t4 && !item.roue);
   const cellState = (kind, item, stepId) => {
     if (kind === "turbine" && ruleBlocked(item, stepId)) return "blocked";
     if (kind.startsWith("reco")) return recoUnanswered(item, stepId).length || (kind === "reco" && QI[stepId] >= QI.qd && (!item.arbreNum || !item.arbrePo)) ? "blocked" : "valid";
@@ -556,7 +745,7 @@ export function ProdTurbines({ doc, api, canEdit, owner, pjs }) {
       if (!d.moved) { openItem(d.kind, itemOf(d.kind, d.id)); return; }
       setDrag(null); if (!d.target) return;
       if (d.kind === "turbine") { const t = S.turbines[d.id]; if (!t || t.step === d.target) return;
-        if (ruleBlocked(t, d.target)) { notify(TI[d.target] >= TI.t4 && !t.roue ? "Attribuez d'abord une roue à " + t.num + " : cliquez sur sa carte." : "Impossible de passer en assemblage : aucun arbre disponible.", true); return; }
+        if (ruleBlocked(t, d.target)) { notify(equilErr(t, d.target) || (TI[d.target] >= TI.t4 && !t.roue ? "Attribuez d'abord une roue à " + t.num + " : cliquez sur sa carte." : "Impossible de passer en assemblage : aucun arbre disponible."), true); return; }
         await saveTurbine(t, { step: d.target }); }
       else if (d.kind === "arbre") { const a = S.arbres[d.id]; if (a && a.step !== d.target) await saveArbre(a, { step: d.target }); }
       else if (d.kind.startsWith("reco")) { const x = S.pieces[d.id]; if (x && x.step !== d.target) await saveReco(x, { step: d.target }); }
@@ -590,10 +779,70 @@ export function ProdTurbines({ doc, api, canEdit, owner, pjs }) {
       roues: (kpi("Roues équilibrées par réf.", sumR, roues.length ? roues.map(r => <div key={r.id} style={{ ...li, display: "block", padding: "4px 0" }}><div style={{ display: "flex", justifyContent: "space-between" }}><span>{r.ref}</span><b style={{ fontVariantNumeric: "tabular-nums" }}>{+r.qte || 0}</b></div>
           <div style={{ height: 4, background: T.surfaceAlt, borderRadius: 4, marginTop: 3 }}><div style={{ width: ((+r.qte || 0) / maxR * 100) + "%", height: 4, borderRadius: 4, background: P.arbre.c }} /></div></div>) : <Muted>Ajoutez les références dans l'onglet Stocks.</Muted>)),
       injecteurs: (kpi("Injecteurs par réf.", sumI, injs.length ? injs.map(r => <div key={r.id} style={{ ...li, alignItems: "flex-start", padding: "4px 0" }}><span>{r.ref}<br /><span style={{ fontSize: FZF.xs, color: T.ink500 }}>{+r.qte || 0} vierge{(+r.qte || 0) > 1 ? "s" : ""}</span>{vars(r).map(v => <span key={v.bouches} style={{ display: "block", fontSize: FZF.xs, color: T.ink700 }}>{v.qte} avec {v.bouches}/{r.ouvertures || "?"} bouchages</span>)}</span><b style={{ fontVariantNumeric: "tabular-nums" }}>{injTotal(r)}</b></div>) : <Muted>Ajoutez les références dans l'onglet Stocks.</Muted>)),
+      retards: (() => { const hr = v => Math.round(v).toLocaleString("fr-FR") + " h", R = retards, top = R.steps.slice(0, 8), mx = Math.max(1, ...top.map(p => p.h));
+        const tdR = { padding: "6px 8px", borderTop: "1px solid " + T.line, fontSize: FZF.sm, verticalAlign: "top" };
+        return (<section aria-label="Retards et blocages" style={card()}>
+          <H2 sub={"gamme " + gammeL(gamme) + ", au-delà des durées déclarées dans Gamme & durées"}>Retards et blocages</H2>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,420px),1fr))", gap: 18, alignItems: "start" }}>
+            <div>
+              <div style={{ fontSize: FZF.sm, fontWeight: 700, color: T.ink900, marginBottom: 6 }}>Bloqués en ce moment <span style={{ color: R.now.length ? T.red600 : T.ink500, fontVariantNumeric: "tabular-nums" }}>({R.now.length})</span></div>
+              {R.now.length === 0 ? <div style={{ fontSize: FZF.sm, color: T.ink500 }}>Aucune turbine ni aucun arbre au-delà de la durée prévue.</div> :
+              <div style={{ overflowX: "auto", maxHeight: 320, overflowY: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse" }}><thead><tr>
+                {["Élément", "Étape", "Passé", "Prévu", "Dépassement"].map(h => <th key={h} style={{ textAlign: "left", fontSize: FZF.xs, color: T.ink500, fontWeight: 700, padding: "4px 8px", position: "sticky", top: 0, background: T.card }}>{h}</th>)}</tr></thead><tbody>
+                {R.now.map(x => <tr key={x.kind + x.it.id}>
+                  <td style={tdR}><button type="button" onClick={() => openItem(x.kind, x.it)} style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer", fontFamily: T.fontMono, fontSize: FZF.sm, color: T.ink900, minHeight: 24, textAlign: "left" }}>{x.it.num}</button>{x.kind === "arbre" ? <span style={{ fontSize: FZF.xs, color: T.ink500 }}> arbre</span> : null}</td>
+                  <td style={tdR}>{M.lbl(x.s)}</td>
+                  <td style={{ ...tdR, fontVariantNumeric: "tabular-nums" }}>{hr(x.e * H_PER_DAY)}</td>
+                  <td style={{ ...tdR, fontVariantNumeric: "tabular-nums", color: T.ink500 }}>{hr(x.d * H_PER_DAY)}</td>
+                  <td style={{ ...tdR, fontVariantNumeric: "tabular-nums", color: T.red600, fontWeight: 700 }}>+{hr((x.e - x.d) * H_PER_DAY)}</td></tr>)}
+              </tbody></table></div>}
+            </div>
+            <div>
+              <div style={{ fontSize: FZF.sm, fontWeight: 700, color: T.ink900, marginBottom: 6 }}>Étapes où l'on bloque le plus</div>
+              {top.length === 0 ? <div style={{ fontSize: FZF.sm, color: T.ink500 }}>Aucun dépassement enregistré pour l'instant.</div> :
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>{top.map((p, i) => (<div key={p.kind + p.s}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: FZF.sm }}><span>{i === 0 ? <b>{M.lbl(p.s)}</b> : M.lbl(p.s)}{p.kind === "arbre" ? <span style={{ color: T.ink500, fontSize: FZF.xs }}> (arbre)</span> : null}</span>
+                  <span style={{ fontVariantNumeric: "tabular-nums", color: T.ink700 }}>+{hr(p.h)}</span></div>
+                <div aria-hidden="true" style={{ height: 8, background: T.surface, borderRadius: 4, marginTop: 3 }}><div style={{ width: (p.h / mx) * 100 + "%", height: "100%", background: i === 0 ? T.red500 : T.ink500, borderRadius: 4 }} /></div>
+                <div style={{ fontSize: FZF.xs, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{p.cur} en ce moment, {p.past} dépassement{p.past > 1 ? "s" : ""} déjà passé{p.past > 1 ? "s" : ""}</div>
+              </div>))}</div>}
+              <div style={{ fontSize: FZF.xs, color: T.ink500, marginTop: 8 }}>Classement par heures de dépassement cumulées, en cours et passées. Les zones d'attente sans durée (carter câblé, attente banc, stocks) n'en font pas partie : leur nombre de turbines s'affiche dans les en-têtes du planning.</div>
+            </div>
+          </div>
+        </section>); })(),
+      charge: (() => { const cap = equipe.n * equipe.h, w100 = charge.week100, w20 = charge.week20, tot = charge.encours + charge.alancer + charge.autres;
+        const mx = Math.max(cap, ...w100.map((v, i) => v + w20[i])) || 1, hr = v => Math.round(v).toLocaleString("fr-FR") + " h";
+        const fig = (l, v, sub) => <div style={{ minWidth: 150 }}><div style={{ fontSize: FZF.xs, color: T.ink500 }}>{l}</div><div style={{ fontFamily: T.fontDisplay, fontSize: FZF.lg, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{hr(v)}</div>{sub ? <div style={{ fontSize: FZF.xs, color: T.ink500 }}>{sub}</div> : null}</div>;
+        return (<section aria-label="Charge de l'équipe" style={card()}>
+          <H2 sub={equipe.n + " personnes × " + equipe.h + " h = " + cap + " h par semaine, 100 kW et 20 kW"}>Charge de l'équipe</H2>
+          <div style={{ display: "flex", gap: 18, flexWrap: "wrap", marginBottom: 12 }}>
+            {fig("Turbines en cours", charge.encours)}{fig("Turbines à lancer", charge.alancer)}{fig("Arbres, roues, reconditionnement", charge.autres)}
+            {fig("Charge totale", tot, cap ? "soit " + (Math.round(tot / cap * 10) / 10).toLocaleString("fr-FR") + " semaine(s) d'équipe" : "équipe à renseigner")}
+          </div>
+          <div style={{ fontSize: FZF.xs, color: T.ink700, fontWeight: 700, marginBottom: 4 }}>Charge prévue des turbines par semaine, comparée à la capacité</div>
+          <div role="img" aria-label={"Charge par semaine : " + w100.map((v, i) => "semaine du " + fmtShort(addWD(T0(), i * 5)) + " " + hr(v + w20[i])).join(", ") + ". Capacité " + cap + " h."}
+            style={{ position: "relative", display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 6, alignItems: "end", height: 150, borderBottom: "1px solid " + T.line }}>
+            <div aria-hidden="true" style={{ position: "absolute", left: 0, right: 0, bottom: (cap / mx) * 130, borderTop: "2px dashed " + T.ink500, pointerEvents: "none" }}>
+              <span style={{ position: "absolute", right: 0, top: -16, fontSize: FZF.xs, color: T.ink500, background: T.card, padding: "0 4px" }}>capacité {cap} h</span></div>
+            {w100.map((v, i) => { const t = v + w20[i], over = t > cap + 1e-6;
+              return (<div key={i} title={hr(v) + " en 100 kW, " + hr(w20[i]) + " en 20 kW"} style={{ display: "flex", flexDirection: "column", justifyContent: "flex-end", height: 130 }}>
+                <span style={{ fontSize: FZF.xs, textAlign: "center", fontVariantNumeric: "tabular-nums", color: over ? T.red600 : T.ink700, fontWeight: over ? 700 : 400 }}>{hr(t)}</span>
+                <div style={{ height: (w20[i] / mx) * 110, background: T.ink300, borderRadius: "4px 4px 0 0" }} />
+                <div style={{ height: (v / mx) * 110, background: over ? T.red500 : T.ink700 }} />
+              </div>); })}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 6, fontSize: FZF.xs, color: T.ink500, textAlign: "center", marginTop: 4 }}>{w100.map((v, i) => <span key={i}>{fmtShort(addWD(T0(), i * 5))}</span>)}</div>
+          <div style={{ display: "flex", gap: 14, flexWrap: "wrap", fontSize: FZF.xs, color: T.ink500, marginTop: 8 }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><i style={{ width: 14, height: 9, background: T.ink700, display: "inline-block", borderRadius: 4 }} />100 kW</span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><i style={{ width: 14, height: 9, background: T.ink300, display: "inline-block", borderRadius: 4 }} />20 kW</span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><i style={{ width: 14, height: 9, background: T.red500, display: "inline-block", borderRadius: 4 }} />au-dessus de la capacité</span>
+            <span>Semaines de 5 jours ouvrés. Le graphique compte les étapes de montage, d'assemblage et de tests des turbines ; les chiffres du haut comptent aussi les arbres, les roues et le reconditionnement. L'équilibrage sous-traité est exclu. Les turbines à lancer démarrent au fur et à mesure que la capacité le permet (lissage, dans l'ordre du planning) : les dates prévisionnelles en tiennent compte.</span>
+          </div>
+        </section>); })(),
       vision: (
       <section aria-label="Dates prévisionnelles des prochaines turbines" style={card()}>
         <H2 sub="jours ouvrés" right={<span style={{ display: "inline-flex", gap: 10, flexWrap: "wrap", fontSize: FZF.xs, color: T.ink500 }}>
-          {[["carter", "Montage carter"], ["assy", "Assemblage / finition"], ["tests", "Tests"], ["wait", "Attente arbre"]].map(([k, l]) => <span key={k} style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><i style={{ width: 14, height: 9, borderRadius: 4, background: k === "wait" ? hatch(P.wait.c) : P[k].c, display: "inline-block" }} />{l}</span>)}
+          {[["carter", "Montage carter"], ["assy", "Assemblage / finition"], ["tests", "Tests"], ["wait", "Attente arbre"], ["table", "Attente table"], ["banc", "Attente banc"]].map(([k, l]) => <span key={k} style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><i style={{ width: 14, height: 9, borderRadius: 4, background: k === "wait" ? hatch(P.wait.c) : k === "table" ? hatch(P.assy.c) : k === "banc" ? hatch(P.tests.c) : P[k].c, display: "inline-block" }} />{l}</span>)}
         </span>}>Dates prévisionnelles des prochaines turbines</H2>
         {upcoming.length === 0 ? <Muted>Aucune turbine en cours. Créez-en une depuis l'onglet Planning.</Muted> : (() => { const manyV = upcoming.length > 6, fullV = !!fullBoards.vision; return (<>
           <div role="region" tabIndex={0} aria-label={"Dates prévisionnelles" + (manyV && !fullV ? ", faire défiler pour voir toutes les turbines" : "")} style={{ overflow: "auto", maxHeight: manyV && !fullV ? "min(62vh, 540px)" : undefined }}>
@@ -606,7 +855,7 @@ export function ProdTurbines({ doc, api, canEdit, owner, pjs }) {
             {upcoming.map(({ t, s }) => { const st = STEP[t.step] || T_STEPS[0], pc = P[st.ph] || P.att;
               const end = s.missing ? <><b style={{ color: P.missing.ink }}>Arbre manquant</b><small>pas d'arbre en cours</small></>
                 : s.noRoue ? <><b style={{ color: P.wait.ink }}>Roue à attribuer</b><small>{t.step === "s1" ? "en stock, testée sans roue" : "testée sans roue le " + fmtD(offDate(s.end))}</small></>
-                : <><b>{fmtD(offDate(s.end))}</b><small>{s.wait ? "dont " + fmtJ(s.wait) + " d'attente arbre" : t.affaire || " "}</small></>;
+                : <><b>{fmtD(offDate(s.end))}</b><small>{s.wait || s.tableWait || s.benchWait ? "dont " + [s.wait ? fmtJ(s.wait) + " d'attente arbre" : "", s.tableWait ? fmtJ(s.tableWait) + " d'attente table" : "", s.benchWait ? fmtJ(s.benchWait) + " d'attente banc" : ""].filter(Boolean).join(", ") : t.affaire || " "}</small></>;
               return (<div key={t.id} style={{ display: "grid", gridTemplateColumns: "210px 1fr 150px", gap: 10, alignItems: "center", minHeight: 46, borderTop: "1px solid " + T.line }}>
                 <button type="button" onClick={() => openTurbine(t)} style={{ border: "none", background: T.card, textAlign: "left", padding: "4px 0", cursor: "pointer", fontFamily: T.font, color: T.ink900, minWidth: 0, position: "sticky", left: 0, zIndex: 1, alignSelf: "stretch" }}>
                   <b style={{ fontFamily: T.fontMono, fontSize: FZF.sm }}>{t.num}</b>{t.roue ? <span style={{ fontSize: FZF.xs, color: T.ink500 }}> roue {t.roue}</span> : null}
@@ -615,7 +864,7 @@ export function ProdTurbines({ doc, api, canEdit, owner, pjs }) {
                 </button>
                 <div style={{ position: "relative", height: 16, background: T.surface, borderRadius: 4 }}>
                   {ticks.slice(1).map(k => <i key={k.k} style={{ position: "absolute", left: pct(k.k) + "%", top: -4, bottom: -4, width: 1, background: T.line }} />)}
-                  {s.segs.map((g, i) => <div key={i} title={g.ph === "wait" ? "Attente arbre" : g.ph === "missing" ? "Aucun arbre prévu" : PHASES[g.ph]} style={{ position: "absolute", top: 2, bottom: 2, left: pct(g.from) + "%", width: (g.to === null ? 100 - pct(g.from) : pct(g.to) - pct(g.from)) + "%", borderRadius: 4, background: g.ph === "wait" ? hatch(P.wait.c) : g.ph === "missing" ? hatch(P.missing.c) : (P[g.ph] || P.att).c }} />)}
+                  {s.segs.map((g, i) => <div key={i} title={g.ph === "wait" ? "Attente arbre" : g.ph === "table" ? "Attente de la table de montage" : g.ph === "banc" ? "Attente du banc d'essai" : g.ph === "missing" ? "Aucun arbre prévu" : PHASES[g.ph]} style={{ position: "absolute", top: 2, bottom: 2, left: pct(g.from) + "%", width: (g.to === null ? 100 - pct(g.from) : pct(g.to) - pct(g.from)) + "%", borderRadius: 4, background: g.ph === "wait" ? hatch(P.wait.c) : g.ph === "table" ? hatch(P.assy.c) : g.ph === "banc" ? hatch(P.tests.c) : g.ph === "missing" ? hatch(P.missing.c) : (P[g.ph] || P.att).c }} />)}
                   <i title="Aujourd'hui" style={{ position: "absolute", left: 0, top: -6, bottom: -6, width: 2, background: T.red500 }} />
                 </div>
                 <div style={{ textAlign: "right", fontSize: FZF.sm, display: "flex", flexDirection: "column", lineHeight: 1.25 }}>{end}</div>
@@ -629,7 +878,7 @@ export function ProdTurbines({ doc, api, canEdit, owner, pjs }) {
         <div style={{ fontSize: FZF.xs, color: T.ink500, marginTop: 8 }}>Calcul en jours ouvrés à partir des durées de la gamme, du temps déjà passé à l'étape en cours et de la disponibilité des arbres équilibrés.</div>
       </section>),
     };
-    return (<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,230px),1fr))", gap: 12, alignItems: "start" }}>{orderedBlocks("accueil", blocks, k => k === "vision" ? { gridColumn: "1 / -1" } : undefined)}</div>);
+    return (<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,230px),1fr))", gap: 12, alignItems: "start" }}>{orderedBlocks("accueil", blocks, k => k === "vision" || k === "charge" || k === "retards" ? { gridColumn: "1 / -1" } : undefined)}</div>);
   };
 
   const board = (kind, steps, lockId, items, nameCell, cardText) => {
@@ -644,7 +893,11 @@ export function ProdTurbines({ doc, api, canEdit, owner, pjs }) {
         <thead>
           <tr><th rowSpan={2} style={{ ...th, left: 0, zIndex: 3, minWidth: 190, verticalAlign: "bottom" }}>{KLABEL[kind]}</th>
             {groups.map(g => <th key={g.first} colSpan={g.n} style={{ ...th, height: HEAD1, boxSizing: "border-box", verticalAlign: "top", borderTop: "3px solid " + (P[g.ph] || P.att).c, color: T.ink700, fontWeight: 700 }}>{PHASES[g.ph]}{g.first === lockId ? <small style={{ display: "block", fontWeight: 500, color: T.ink500 }}>Arbre disponible requis</small> : null}</th>)}</tr>
-          <tr>{steps.map(s => <th key={s.id} style={{ ...th, top: HEAD1, minWidth: 104, whiteSpace: "normal", lineHeight: 1.2, borderLeft: s.id === lockId ? "2px solid " + T.ink500 : undefined }}>{M.lbl(s.id)}{M.dur(s.id) ? <em style={{ display: "block", fontStyle: "normal", color: T.ink300, fontVariantNumeric: "tabular-nums" }}>{fmtJ(M.dur(s.id))}</em> : null}</th>)}</tr>
+          <tr>{steps.map(s => <th key={s.id} style={{ ...th, top: HEAD1, minWidth: 104, whiteSpace: "normal", lineHeight: 1.2, borderLeft: s.id === lockId ? "2px solid " + T.ink500 : undefined }}>{M.lbl(s.id)}{M.dur(s.id) ? <em style={{ display: "block", fontStyle: "normal", color: T.ink300, fontVariantNumeric: "tabular-nums" }}>{fmtH(M.dur(s.id))}</em>
+            : s.ph === "stock" ? (() => { const n = items.filter(x => x.step === s.id).length; const o = kind === "turbine" && s.id === "tw" ? other.waiting : 0;
+              return <em style={{ display: "block", fontStyle: "normal", fontWeight: n ? 700 : 400, color: n ? T.ink900 : T.ink300, fontVariantNumeric: "tabular-nums" }}>{n ? n + " en attente" : "aucune en attente"}{o ? <span style={{ display: "block", fontWeight: 400, color: T.ink500 }}>+ {o} en {gammeL(other.g)} (banc commun)</span> : null}
+                {kind === "turbine" && s.id === "tw" && !readOnly && benchQueue.wait.length > 1 ? <button type="button" onClick={openBenchOrder} style={{ ...btn(""), display: "block", marginTop: 4, minHeight: 26, fontSize: FZF.xs }}>Ordre de passage</button> : null}
+                {kind === "turbine" && s.id === "cc" && !readOnly && tableQueue.wait.length > 1 ? <button type="button" onClick={openTableOrder} aria-label="Ordre de passage à la table de montage" style={{ ...btn(""), display: "block", marginTop: 4, minHeight: 26, fontSize: FZF.xs }}>Ordre de passage</button> : null}</em>; })() : null}</th>)}</tr>
         </thead>
         <tbody>
           {items.length === 0 && <tr><td colSpan={steps.length + 1} style={{ padding: 14, color: T.ink500, fontSize: FZF.sm }}>{EMPTY_TXT[kind]}</td></tr>}
@@ -711,9 +964,10 @@ export function ProdTurbines({ doc, api, canEdit, owner, pjs }) {
             <div style={{ fontSize: FZF.xs, color: T.ink500 }}>{turbineType(t) ? turbineType(t) + " · " : ""}{t.roue ? "Roue " + t.roue : "Roue non attribuée"}</div>
             {M.hasArbre(t) ? chip(true, "Arbre " + S.arbres[t.arbreId].num) : i < IA1 ? (sc.arbrePrevu ? chip(true, "Arbre prévu : " + sc.arbrePrevu, true) : chip(false, "Aucun arbre prévu")) : t.step === "ok" ? null : chip(false, "Arbre à affecter")}
             {(() => { const n = nextShort("turbine", t); return n ? <div>{chip(false, "Manque pour " + M.lbl(n.step) + " : " + n.missing.join(", "))}</div> : null; })()}
+            {lateOf(t) > 0 ? <div>{chip(false, "Dépasse de " + Math.round(lateOf(t)) + " h la durée prévue")}</div> : null}
             <div style={{ fontSize: FZF.xs, fontWeight: 700, marginTop: 2, color: t.step === "ok" ? P.dispo.ink : sc.missing ? T.red600 : sc.noRoue ? P.wait.ink : T.ink700 }}>{t.step === "ok" ? "Prête" : sc.missing ? "Date bloquée : arbre manquant" : sc.noRoue ? "Roue à attribuer" : "Prête le " + fmtD(offDate(sc.end))}</div>
           </button>); },
-          (t, c) => { const late = M.dur(c.id) && elapsed(t) > M.dur(c.id); const txt = c.id === "ok" ? (t.roue ? "roue " + t.roue : "prête") : c.id === "s1" ? (t.roue ? "roue " + t.roue : "sans roue") : c.id === "cc" ? "attend un arbre" : c.id === "att" ? (t.lancement ? "lancement " + fmtShort(parseD(t.lancement)) : "à lancer") : "J" + (elapsed(t) + 1) + " / " + Math.max(1, Math.ceil(M.dur(c.id))); return late ? <b style={{ color: T.red600 }}>{txt}</b> : txt; })}
+          (t, c) => { const late = M.dur(c.id) && elapsed(t) > M.dur(c.id); const txt = c.id === "ok" ? (t.roue ? "roue " + t.roue : "prête") : c.id === "s1" ? (t.roue ? "roue " + t.roue : "sans roue") : c.id === "cc" ? (tableQueue.pos[t.id] ? "n° " + tableQueue.pos[t.id] + " pour la table" : "attend un arbre") : c.id === "tw" ? (benchQueue.pos[t.id] ? "n° " + benchQueue.pos[t.id] + " pour le banc" : "attend le banc") : c.id === "att" ? ((M.launchAt[t.id] || 0) >= 1 ? "début " + fmtShort(addWD(T0(), Math.floor(M.launchAt[t.id]))) : t.lancement ? "lancement " + fmtShort(parseD(t.lancement)) : "à lancer") : "J" + (elapsed(t) + 1) + " / " + Math.max(1, Math.ceil(M.dur(c.id))); return late ? <b style={{ color: T.red600 }}>{txt}</b> : txt; })}
       </section>),
       reco: (
       <section aria-label="Turbines reconditionnées">
@@ -819,25 +1073,27 @@ export function ProdTurbines({ doc, api, canEdit, owner, pjs }) {
 
   const [pd, setPd] = useState(null); const [mail, setMail] = useState("");
   const renderParams = () => {
-    const cur = pd || { d: { ...S.params.d }, l: { ...S.params.l } };
-    const dOf = id => (cur.d[id] != null ? cur.d[id] : STEP[id].d), lOf = id => cur.l[id] != null ? cur.l[id] : M.lbl(id);
+    // Saisie en heures ; enregistrement en jours ouvrés (heures / 7).
+    const toH = d => Math.round(d * H_PER_DAY * 100) / 100;
+    const cur = pd || { d: Object.fromEntries(Object.entries(S.params.d || {}).map(([k, v]) => [k, toH(v)])), l: { ...S.params.l } };
+    const dOf = id => (cur.d[id] != null ? cur.d[id] : toH(STEP[id].d)), lOf = id => cur.l[id] != null ? cur.l[id] : M.lbl(id);
     const inp = { height: 30, border: "1px solid " + T.line, borderRadius: 8, background: T.card, color: T.ink900, padding: "0 8px", fontSize: FZF.sm, fontFamily: T.font, boxSizing: "border-box" };
-    const rows = steps => steps.map(s => <tr key={s.id}><td style={tdS}><input aria-label={"Nom de l'étape " + STEP[s.id].l} disabled={readOnly} value={lOf(s.id)} onChange={e => setPd({ ...cur, l: { ...cur.l, [s.id]: e.target.value } })} style={{ ...inp, width: "100%" }} />{needsTable(gamme)[s.id] && <div style={{ fontSize: FZF.xs, color: T.ink500, marginTop: 3 }}>Consomme : {needsTable(gamme)[s.id].map(n => n.l).join(", ")}</div>}{RECO_CHECKS[s.id] && <div style={{ fontSize: FZF.xs, color: T.ink500, marginTop: 3 }}>Contrôles : {RECO_CHECKS[s.id].map(c => c.l).join(", ")}</div>}</td>
-      <td style={{ ...tdS, width: 110 }}><input aria-label={"Durée en jours ouvrés de " + STEP[s.id].l} disabled={readOnly} type="number" min={0} step={0.5} value={dOf(s.id)} onChange={e => setPd({ ...cur, d: { ...cur.d, [s.id]: e.target.value } })} style={{ ...inp, width: 90, textAlign: "right", fontVariantNumeric: "tabular-nums" }} /></td></tr>);
+    const rows = steps => steps.map(s => <tr key={s.id}><td style={tdS}><input aria-label={"Nom de l'étape " + STEP[s.id].l} disabled={readOnly} value={lOf(s.id)} onChange={e => setPd({ ...cur, l: { ...cur.l, [s.id]: e.target.value } })} style={{ ...inp, width: "100%" }} />{needsTable(gamme)[s.id] && <div style={{ fontSize: FZF.xs, color: T.ink500, marginTop: 3 }}>Consomme : {needsTable(gamme)[s.id].map(n => n.l).join(", ")}</div>}{RECO_CHECKS[s.id] && <div style={{ fontSize: FZF.xs, color: T.ink500, marginTop: 3 }}>Contrôles : {RECO_CHECKS[s.id].map(c => c.l).join(", ")}</div>}{s.id === "te" && <div style={{ fontSize: FZF.xs, color: T.ink500, marginTop: 3 }}>Seulement si l'option « Équilibrage » est choisie dans la fiche turbine. Se fait sur le banc d'essai.</div>}</td>
+      <td style={{ ...tdS, width: 110 }}><input aria-label={"Durée en heures de " + STEP[s.id].l} disabled={readOnly} type="number" min={0} step={0.5} value={dOf(s.id)} onChange={e => setPd({ ...cur, d: { ...cur.d, [s.id]: e.target.value } })} style={{ ...inp, width: 90, textAlign: "right", fontVariantNumeric: "tabular-nums" }} /></td></tr>);
     const grp = (title, ph, steps) => <><tr><td colSpan={2} style={{ ...tdS, fontWeight: 700, color: T.ink900, borderLeft: "4px solid " + (P[ph] || P.att).c, background: T.surface }}>{title}</td></tr>{rows(steps)}</>;
     const save = async () => { const p = { d: {}, l: {} };
-      Object.keys(cur.d).forEach(id => { const v = parseFloat(String(cur.d[id]).replace(",", ".")); if (!isNaN(v) && v >= 0 && v !== STEP[id].d) p.d[id] = v; });
+      Object.keys(cur.d).forEach(id => { const v = parseFloat(String(cur.d[id]).replace(",", ".")); if (!isNaN(v) && v >= 0 && Math.abs(v / H_PER_DAY - STEP[id].d) > 1e-9) p.d[id] = v / H_PER_DAY; });
       Object.keys(cur.l).forEach(id => { const v = String(cur.l[id] || "").trim(); if (v && v !== STEP[id].l) p.l[id] = v; });
       if (await saveParams(p)) { setPd(null); notify("Gamme " + gammeL(gamme) + " enregistrée"); } };
     const access = Array.isArray(S.access) ? S.access : [];
     return (<div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: FZF.sm, color: T.ink500, maxWidth: 820 }}>Les durées sont en jours ouvrés (lundi à vendredi). Elles alimentent les dates prévisionnelles de l'accueil. Pour l'équilibrage sous-traité, une date de retour saisie sur l'arbre remplace la durée standard.</div>
+      <div style={{ fontSize: FZF.sm, color: T.ink500, maxWidth: 820 }}>Les durées sont en heures de travail, avec des journées de 7 h du lundi au vendredi (7 h = 1 jour). Elles alimentent les dates prévisionnelles et la charge de l'équipe sur l'accueil. L'équilibrage sous-traité (70 h = 2 semaines) ne compte pas dans la charge ; une date de retour saisie sur l'arbre remplace sa durée standard.</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,420px),1fr))", gap: 12, alignItems: "start" }}>
-        <section aria-label="Étapes turbine" style={card()}><table style={{ width: "100%", borderCollapse: "collapse" }}><thead><tr><th style={thS}>Étape turbine</th><th style={thS}>Durée (j)</th></tr></thead><tbody>
+        <section aria-label="Étapes turbine" style={card()}><table style={{ width: "100%", borderCollapse: "collapse" }}><thead><tr><th style={thS}>Étape turbine</th><th style={thS}>Durée (h)</th></tr></thead><tbody>
           {grp("Montage carter", "carter", T_STEPS.filter(s => s.ph === "carter"))}{grp("Assemblage / finition", "assy", T_STEPS.filter(s => s.ph === "assy"))}{grp("Tests", "tests", T_STEPS.filter(s => s.ph === "tests"))}{grp("Turbines reconditionnées", "reco", [...Q_STEPS, ...QA_STEPS, ...QC_STEPS].filter(s => s.ph === "reco" || s.ph === "recond"))}
         </tbody></table></section>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <section aria-label="Étapes arbre" style={card()}><table style={{ width: "100%", borderCollapse: "collapse" }}><thead><tr><th style={thS}>Étape arbre et roue</th><th style={thS}>Durée (j)</th></tr></thead><tbody>
+          <section aria-label="Étapes arbre" style={card()}><table style={{ width: "100%", borderCollapse: "collapse" }}><thead><tr><th style={thS}>Étape arbre et roue</th><th style={thS}>Durée (h)</th></tr></thead><tbody>
             {grp("Arbre", "arbre", A_STEPS.filter(s => s.ph === "arbre"))}{grp("Roues à équilibrer", "roue", R_STEPS.filter(s => s.ph === "roue"))}</tbody></table>
             {!readOnly && <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}><button type="button" style={btn("primary")} onClick={save}>Enregistrer la gamme</button>
               <button type="button" style={btn("")} onClick={async () => { if (window.confirm("Revenir aux durées et noms d'étapes par défaut ?") && await saveParams({ d: {}, l: {} })) { setPd(null); notify("Gamme remise par défaut"); } }}>Revenir aux valeurs par défaut</button></div>}
@@ -852,6 +1108,28 @@ export function ProdTurbines({ doc, api, canEdit, owner, pjs }) {
               <button type="submit" style={btn("primary")}>Ajouter</button>
             </form>
           </section>}
+          <section aria-label="Équipe de montage" style={card()}>
+            <H2 sub="commune aux deux gammes">Équipe de montage</H2>
+            {(() => { const eq = pd && pd.eq ? pd.eq : equipe; const setEq = (k, v) => setPd({ ...cur, eq: { ...eq, [k]: v } });
+              return (<>
+                <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "end" }}>
+                  <label style={{ fontSize: FZF.xs, color: T.ink700, fontWeight: 700 }}>Personnes<br /><input type="number" min={0} step={1} disabled={readOnly} value={eq.n} onChange={e => setEq("n", e.target.value)} style={{ ...inp, width: 90, textAlign: "right", fontVariantNumeric: "tabular-nums" }} /></label>
+                  <label style={{ fontSize: FZF.xs, color: T.ink700, fontWeight: 700 }}>Heures par semaine et par personne<br /><input type="number" min={0} step={0.5} disabled={readOnly} value={eq.h} onChange={e => setEq("h", e.target.value)} style={{ ...inp, width: 90, textAlign: "right", fontVariantNumeric: "tabular-nums" }} /></label>
+                  {!readOnly && <button type="button" style={btn("")} onClick={async () => { const n = Math.max(0, parseInt(eq.n, 10) || 0), hh = Math.max(0, parseFloat(String(eq.h).replace(",", ".")) || 0);
+                    const dp = (doc && doc.params) || {}; if (await api.setParams({ ...dp, equipe: { n, h: hh } })) { setPd(pd ? { ...pd, eq: undefined } : null); notify("Équipe enregistrée : " + n + " × " + hh + " h = " + (n * hh) + " h par semaine"); } }}>Enregistrer l'équipe</button>}
+                </div>
+                <div style={{ fontSize: FZF.xs, color: T.ink500, marginTop: 6 }}>Capacité : {(parseInt(eq.n, 10) || 0) * (parseFloat(String(eq.h).replace(",", ".")) || 0)} h par semaine.</div>
+              </>); })()}
+          </section>
+          <section aria-label="Sauvegarde des données" style={card()}>
+            <H2 sub="les deux gammes">Sauvegarde des données</H2>
+            <div style={{ fontSize: FZF.xs, color: T.ink500, marginBottom: 8 }}>« Exporter » télécharge un fichier JSON avec les turbines, arbres, pièces, roues, injecteurs et paramètres de gamme. « Importer » relit un tel fichier.</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <button type="button" style={btn("")} onClick={exportData}>Exporter</button>
+              {!readOnly && <button type="button" style={btn("")} onClick={() => fileRef.current && fileRef.current.click()}>Importer</button>}
+              {!readOnly && <input ref={fileRef} type="file" accept=".json,application/json" onChange={onImportFile} aria-hidden="true" tabIndex={-1} style={{ display: "none" }} />}
+            </div>
+          </section>
         </div>
       </div>
     </div>);

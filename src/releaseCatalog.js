@@ -872,4 +872,7 @@ export const RELEASE_CATALOG = [
     ["Réactions", "Réagissez à un commentaire d'un emoji (👍 ✅ 👀 🙏 🎉 ❗), sur la page Commentaires et dans la fiche d'un PJ."],
     ["Envoyer à…", "Un même message peut partir sur plusieurs PJ depuis le fil (remplace la sélection multiple et le Kanban)."],
   ] },
+  { v: "318", t: "Production turbines : mise à jour de Jérémie", items: [
+    ["Turbines", "Production : charge de l'équipe (personnes × heures), lancements lissés sur cette capacité, banc d'essai commun aux deux gammes avec ordre de passage, attentes de table et de banc dans les dates prévisionnelles, retards par étape, cadrans de l'accueil réordonnables, export et import des données."],
+  ] },
 ];

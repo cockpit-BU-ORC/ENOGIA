@@ -2289,3 +2289,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - « Envoyer à… » remplace la sélection multiple ; Kanban retiré (CommentsKanban.js supprimé).
 - Nouvelles clés `localStorage` : `enogia_cmt_filter`, `enogia_cmt_seen_<adresse>` (anciennes `enogia_commentsMode` plus lue).
 - Fichiers : components/CommentsView.js, components/Reactions.js (nouveau), commentThreads.js (+test), mentions.js, components/ProjectModal.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md.
+
+## v318 — Production turbines : retour de Jérémie
+
+- Kit renvoyé par Jérémie (parti de la V271) fusionné avec la page du site (rayons V286 gardés).
+- Nouveaux champs dans `planning/prodTurbines` : `params.equipe` (personnes, heures / semaine), `turbines[id].rangBanc` ; collections inchangées, règles inchangées.
+- Export / import JSON dans la page (« Tout remplacer » réservé au propriétaire).
+- Clé `localStorage` : `enogia_prodturb_order` (ordre des cadrans de la page).
+- Fichiers : components/ProdTurbines.js, App.js, releaseNotes.js, releaseCatalog.js(+test), CLAUDE.md, DEPLOIEMENT.md. Kit régénéré (`npm run kit:jeremie`).

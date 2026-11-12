@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v318",
+    date: "2026-11-12",
+    title: "V318 : Production turbines mise à jour",
+    items: [
+      { t: "Turbines", d: "La page Production de Jérémie évolue : charge de l'équipe, lancements lissés, banc d'essai commun aux deux gammes, retards par étape." },
+    ],
+  },
+  {
     id: "2026-11-v317",
     date: "2026-11-12",
     title: "V317 : Commentaires plus simples",
