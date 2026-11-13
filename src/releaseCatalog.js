@@ -948,4 +948,9 @@ export const RELEASE_CATALOG = [
     ["SAV / MES", "Planning : samedi et dimanche visibles (sans demande possible), demandes en une seule barre, interventions à planifier en pointillés."],
     ["SAV / MES", "Carte : bulles par pays, liste des sites à côté, fiche au survol."],
   ] },
+  { v: "336", t: "Carte routière du parc, tests sur 4 semaines", items: [
+    ["SAV / MES", "Carte du parc : vraie carte routière, toujours claire, quel que soit le mode clair ou sombre."],
+    ["SAV / MES", "Planning : le nom du PJ d'une demande n'est plus barré."],
+    ["Tests", "Le planning des bancs couvre les 4 prochaines semaines."],
+  ] },
 ];

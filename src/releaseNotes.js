@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v336",
+    date: "2026-11-13",
+    title: "V336 : carte routière, tests sur 4 semaines",
+    items: [
+      { t: "SAV / MES", d: "La carte du parc est une vraie carte routière, toujours claire." },
+      { t: "Tests", d: "Le planning des bancs montre les 4 prochaines semaines." },
+    ],
+  },
+  {
     id: "2026-11-v335",
     date: "2026-11-13",
     title: "V335 : menu, planning SAV et carte",

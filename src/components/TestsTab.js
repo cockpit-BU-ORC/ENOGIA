@@ -90,7 +90,7 @@ function WeekBoard({ doc, rows, testers, catalog, conflicts, commit, certifs, ca
   const [onlyMine, setOnlyMine] = useState(!!myTester && !canEdit && !lead); // v238 : le responsable des testeurs voit tout
   useEffect(() => { if (focus && focus.pj) setSel(focus.pj); }, [focus]);
   const w0 = mondayD(new Date());
-  const weeks = [0, 1, 2].map(i => { const a = new Date(w0); a.setDate(a.getDate() + 7 * i); const b = new Date(a); b.setDate(b.getDate() + 7); return { a, b, i }; });
+  const weeks = [0, 1, 2, 3].map(i => { const a = new Date(w0); a.setDate(a.getDate() + 7 * i); const b = new Date(a); b.setDate(b.getDate() + 7); return { a, b, i }; });
   const startOf = r => new Date(dIso(r.tests) + "T00:00:00"), endOf = r => new Date((dIso(r.testsFin) || dIso(r.tests)) + "T23:59:59");
   const isMine = r => !!myTester && planOf(doc, r.pj).assign.some(a => a.tid === myTester.id);
   const pr = r => progressOf(planOf(doc, r.pj), catalog, activeSections(presenceKind(r.clientPresence || null)));
@@ -99,7 +99,7 @@ function WeekBoard({ doc, rows, testers, catalog, conflicts, commit, certifs, ca
   // v200 (demandé : « une colonne de tests finis, comme dans un Kanban ») : une machine dont tous les tests sont faits (ou validée) passe dans « Terminés » (60 derniers jours).
   const isDone = r => { const pl = planOf(doc, r.pj), q = pr(r); return isForced(pl) || (q.total > 0 && q.done === q.total); };
   const lim = new Date(w0); lim.setDate(lim.getDate() - 60);
-  const doneCol = { a: null, b: null, i: 3, done: true, items: [] };
+  const doneCol = { a: null, b: null, i: 4, done: true, items: [] };
   withP.forEach(r => {
     if (isDone(r)) { if (endOf(r) >= lim) doneCol.items.push({ r, late: false }); return; }
     const c = cols.find(w => startOf(r) < w.b && endOf(r) >= w.a);
@@ -109,13 +109,13 @@ function WeekBoard({ doc, rows, testers, catalog, conflicts, commit, certifs, ca
   cols.forEach(c => c.items.sort((x, y) => (y.late - x.late) || (startOf(x.r) - startOf(y.r))));
   doneCol.items.sort((x, y) => endOf(y.r) - endOf(x.r));
   cols.push(doneCol);
-  const later = withP.filter(r => startOf(r) >= weeks[2].b).length, noPeriod = rows.filter(r => !r.tests && r.etat !== "SHIPPED").length;
+  const later = withP.filter(r => startOf(r) >= weeks[3].b).length, noPeriod = rows.filter(r => !r.tests && r.etat !== "SHIPPED").length;
   const all = cols.flatMap(c => c.items.map(x => x.r));
   const cur = sel ? (all.find(r => r.pj === sel) || rows.find(r => r.pj === sel) || null) : null;
   return (<div className="enogia-tests-board">
     <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 8 }}>
       <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", fontSize: FZ.xs, color: T.ink500 }}>
-        <span>S{isoWeek(weeks[0].a)} → S{isoWeek(weeks[2].a)} · {all.length} machine{all.length > 1 ? "s" : ""}{later ? " · " + later + " plus tard" : ""}{noPeriod ? " · " + noPeriod + " sans période de tests" : ""}</span>
+        <span>S{isoWeek(weeks[0].a)} → S{isoWeek(weeks[3].a)} · {all.length} machine{all.length > 1 ? "s" : ""}{later ? " · " + later + " plus tard" : ""}{noPeriod ? " · " + noPeriod + " sans période de tests" : ""}</span>
         {myTester && <label style={{ display: "inline-flex", alignItems: "center", gap: 6, marginLeft: "auto", minHeight: 24, cursor: "pointer", color: T.ink700, fontWeight: 600 }}><input type="checkbox" checked={onlyMine} onChange={e => setOnlyMine(e.target.checked)} />Seulement mes tests</label>}
       </div>
       <Arrange id="tests-semaine" spans={{ banc: 8, resultats: 4, grille: 12 }} labels={{ banc: "Au banc maintenant", resultats: "Derniers résultats", grille: "Planning des bancs" }}>
@@ -240,7 +240,7 @@ function ResultsFeed({ rows, doc, catalog, onPick }) {
 // or en cours, rouge en retard (jusqu'à aujourd'hui), vert terminé, contour gris = prévu ; contour orange = testeur en conflit.
 const HOLI = makeCalendar({ closurePeriods: [] });
 const DOW1 = ["L", "M", "M", "J", "V"];
-const GRID_DAYS = 15;
+const GRID_DAYS = 20; // v336 (D11, demandé : « allonger le planning des tests à venir : 4 prochaines semaines ») : 4 semaines au lieu de 3
 const workDaysFrom = (mondayIso, n) => { const out = []; for (let i = 0; out.length < n && i < 40; i++) { const d = addDaysIso(mondayIso, i); const wd = (new Date(d + "T12:00:00").getDay() + 6) % 7; if (wd < 5) out.push(d); } return out; };
 function machineState(r, doc, catalog, todayIso) {
   const a = dIso(r && r.tests), b = dIso(r && r.testsFin) || a; if (!a) return null;
@@ -318,7 +318,7 @@ function BenchGrid({ rows, allRows, doc, catalog, testers, conflicts, on, onPick
   const pres = (k, d) => d ? <><i aria-hidden="true" style={{ width: 8, height: 8, borderRadius: "50%", background: PRESENCE_META[k].color, flexShrink: 0 }} /><span style={{ fontVariantNumeric: "tabular-nums", color: T.ink900 }}>{fdm(dIso(d))}</span></> : d === "" ? <span style={{ color: T.ink500 }}>à fixer</span> : <span style={{ color: T.ink300 }}>—</span>;
   return (<section aria-label="Planning des bancs" className="enogia-bg" style={{ ...CARD, padding: 0, overflow: "hidden" }}>
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "10px 14px", flexWrap: "wrap", borderBottom: "1px solid " + T.line }}>
-      <div><h2 style={{ margin: 0, fontSize: FZ.md, fontWeight: 600, color: T.ink900 }}>Planning des bancs</h2><div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 2 }}>Du {fd(days[0])} au {fd(end)} · {list.length} PJ, dont {inWin} sur ces 3 semaines</div></div>
+      <div><h2 style={{ margin: 0, fontSize: FZ.md, fontWeight: 600, color: T.ink900 }}>Planning des bancs</h2><div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 2 }}>Du {fd(days[0])} au {fd(end)} · {list.length} PJ, dont {inWin} sur ces 4 semaines</div></div>
       <span style={{ display: "inline-flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
         <GridLegend />
         {without.length > 0 && <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: FZ.xs, color: T.ink700, fontWeight: 600, minHeight: 28, cursor: "pointer" }}><input type="checkbox" checked={noPer} onChange={e => setNoPer(e.target.checked)} />PJ sans période ({without.length})</label>}
@@ -733,7 +733,7 @@ export function TesterTimeline({ doc, rows, testers, catalog, conflicts, commit,
       </div>
     </div>
     <div style={{ overflowX: "auto" }}>
-      <div style={{ minWidth: LABEL_W + 15 * 36 }}>
+      <div style={{ minWidth: LABEL_W + GRID_DAYS * 36 }}>
         <GridHead days={days} todayIso={todayIso} labelStyle={labelCell} label="Testeur" />
         {trows.length === 0 && <div style={{ padding: "14px", fontSize: FZ.sm, color: T.ink500, borderTop: "1px solid " + T.line }}>Aucun testeur pour l'instant{canEdit ? " : ajoutez-en un ci-dessous." : "."}</div>}
         {trows.map(({ t, items, lanes, conflict }) => (

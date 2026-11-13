@@ -6,7 +6,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { mapPoints, parseSavHistory, historyPlan } from "../savImport";
 import { usePointerDnD } from "../pointerDrag";
-import { T, FZ, btn } from "../theme";
+import { T, FZ, btn, buildPalette, getThemeId } from "../theme";
 import { getPjMeta } from "../pjMeta";
 import { PlanSwitch } from "./PlanSwitch";
 import { NavIcon, Panel, Pill, Btn, Segmented, PjPlate, tableTh, tableTd, EmptyState, PageHead, useSheetJS, SortTh, useSort } from "./SharedUI";
@@ -458,7 +458,7 @@ function PlanningView({ inters, demandes, techs, canEdit, nomOf, me, myPjs, onOp
             {pendBars.map(p => { const sp = span(p.from, p.to); if (!sp) return null; const named = canEdit || isMine(p), pos = pxOf(sp[0], sp[1]);
               const txt = named ? p.pj + " · " + (p.obj || "") : "Demande en attente";
               return <span key={p.id} title={(named ? "Demande en attente : " + p.pj + " · " + (p.obj || "") + (p.by ? " · " + p.by : "") : "Demande en attente d'un autre chef de projet") + " · " + fd(p.from) + " → " + fd(p.to) + " (" + p.n + " j)"}
-                style={{ position: "absolute", top: 6 + p.lane * LANE, height: LANE - 4, ...pos, boxSizing: "border-box", borderRadius: 4, border: "1px dashed " + T.amber500, background: hatch(T.amber100, T.card), color: T.amber600, fontSize: 11, fontWeight: 600, lineHeight: (LANE - 6) + "px", padding: "0 6px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: named ? "line-through" : "none", pointerEvents: "auto" }}>{pos.width >= 60 ? txt : ""}</span>; })}
+                style={{ position: "absolute", top: 6 + p.lane * LANE, height: LANE - 4, ...pos, boxSizing: "border-box", borderRadius: 4, border: "1px dashed " + T.amber500, background: hatch(T.amber100, T.card), color: T.amber600, fontSize: 11, fontWeight: 600, lineHeight: (LANE - 6) + "px", padding: "0 6px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", pointerEvents: "auto" }}>{pos.width >= 60 ? txt : ""}</span>; })}
           </SRow>
           {techs.length ? techs.map(tc => <SRow labW={labW} width={W} key={tc} label={tc} ink={canEdit ? T.ink900 : T.ink500} grey={!canEdit} h={canEdit ? 40 : 32}>
             {days.map(d => <div key={d} {...(canEdit ? dnd.dropProps(tc + "|" + d, p => !!p, p => moveTo(p, tc, d)) : {})} style={{ ...cellLine(d), background: dnd.over === tc + "|" + d ? T.amber100 : dayBg(d) }} />)}
@@ -621,107 +621,88 @@ function ParcView({ rows, metaOf, parc, tickets, canEdit, onEdit, onOpenPj, four
           <td style={tableTd({ num: true, ink: p.ouverts ? T.ink900 : T.ink500 })}>{p.ouverts}</td></tr>; })}</tbody></table></div>}
   </Panel></>;
 }
-// v330 : fond de carte (Natural Earth 110 m, world-atlas) chargé à l'ouverture du Parc, projection équirectangulaire maison.
-// v332 (demandé : « pouvoir zoomer sur la carte et des cartes par régions pour que ce soit plus clair ») : régions (Monde, Europe, Amériques,
-// Afrique et Moyen-Orient, Asie et Océanie), molette = zoom autour de la souris, glisser = déplacer, + / −, noms écrits dès qu'on zoome.
-let atlasP = null;
-function loadAtlas() {
-  if (atlasP) return atlasP;
-  const lib = window.topojson ? Promise.resolve() : new Promise((ok, ko) => { const sc = document.createElement("script"); sc.src = "https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"; sc.onload = ok; sc.onerror = ko; document.head.appendChild(sc); });
-  atlasP = lib.then(() => fetch("https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json")).then(r => r.json()).then(w => window.topojson.feature(w, w.objects.countries)).catch(e => { atlasP = null; throw e; });
-  return atlasP;
+// v336 (demandé : « la carte du parc ne doit pas suivre le choix clair / sombre : mettre une carte comme Google Maps ») : vraie carte routière
+// (Leaflet 1.9.4 depuis jsdelivr + fond OpenStreetMap standard, sans clé, chargés à l'ouverture du Parc ; CARTO demande une clé), toujours claire :
+// couleurs prises dans la palette claire du thème (buildPalette). Google Maps lui-même demande une clé d'API Google (compte Google Cloud).
+// Vue large (zoom < 5) = une bulle par pays (clic = zoom sur le pays) ; plus près = un point par site avec son n° ; survol = fiche ;
+// Ctrl + molette = zoom (la molette seule fait défiler la page) ; liste des sites de la zone affichée à droite, clic = centrer + filtrer.
+let leafP = null;
+function loadLeaflet() {
+  if (window.L && window.L.map) return Promise.resolve(window.L);
+  if (leafP) return leafP;
+  leafP = new Promise((ok, ko) => {
+    const css = document.createElement("link"); css.rel = "stylesheet"; css.href = "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"; document.head.appendChild(css);
+    const sc = document.createElement("script"); sc.src = "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"; sc.onload = () => ok(window.L); sc.onerror = e => { leafP = null; ko(e); }; document.head.appendChild(sc);
+  });
+  return leafP;
 }
-const MW = 1000, MH = 470, LAT0 = 84, LAT1 = -58;
-const px = (lat, lon) => [(lon + 180) / 360 * MW, (LAT0 - lat) / (LAT0 - LAT1) * MH];
-function ringPath(ring) { let d = "", prev = null; ring.forEach(([lon, lat]) => { const [x, y] = px(lat, lon); d += (prev == null || Math.abs(x - prev) > MW / 2 ? "M" : "L") + x.toFixed(1) + " " + y.toFixed(1); prev = x; }); return d + "Z"; }
-function geoPath(g) { if (!g) return ""; const polys = g.type === "Polygon" ? [g.coordinates] : g.type === "MultiPolygon" ? g.coordinates : []; return polys.map(p => p.map(ringPath).join("")).join(""); }
-const REGIONS = [["monde", "Monde", [-180, 180, LAT1, LAT0]], ["europe", "Europe", [-12, 35, 34, 62]], ["ameriques", "Amériques", [-130, -30, -56, 62]], ["afrique", "Afrique et Moyen-Orient", [-20, 62, -36, 40]], ["asie", "Asie et Océanie", [60, 180, -48, 56]]];
-const inReg = (p, b) => p.lon >= b[0] && p.lon <= b[1] && p.lat >= b[2] && p.lat <= b[3];
-const clampView = v => { const w = Math.max(MW / 40, Math.min(MW, v.w)), h = w * MH / MW; return { w, x: Math.max(0, Math.min(MW - w, v.x)), y: Math.max(0, Math.min(MH - h, v.y)) }; };
-const fitView = b => { const [x0, y0] = px(b[3], b[0]), [x1, y1] = px(b[2], b[1]); let w = x1 - x0, h = y1 - y0; if (w / h < MW / MH) w = h * MW / MH; const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2; return clampView({ w: w * 1.04, x: cx - w * 0.52, y: cy - w * 0.52 * MH / MW }); };
-// v335 (demandé : « la carte est trop brouillon : un système plus joli à voir et à cliquer ») : vue large = une bulle par pays (nombre de sites,
-// liseré rouge s'il y a un ticket ouvert) ; clic sur une bulle = zoom sur le pays ; de près (zoom × 2,5) = un point par site avec son n° ;
-// survol = fiche (PJ, nom, ville, contrat, fournitures, tickets) ; liste des sites visibles à droite, clic = centrer + filtrer le tableau.
-const fitPts = pts => { const la = pts.map(p => p.lat), lo = pts.map(p => p.lon), pad = 2.5;
-  return fitView([Math.min(...lo) - pad * 2, Math.max(...lo) + pad * 2, Math.min(...la) - pad, Math.max(...la) + pad]); };
+const MAP_REGIONS = [["monde", "Monde", [[-50, -150], [70, 170]]], ["europe", "Europe", [[35, -11], [61, 32]]], ["ameriques", "Amériques", [[-55, -125], [60, -35]]], ["afrique", "Afrique et Moyen-Orient", [[-35, -18], [38, 60]]], ["asie", "Asie et Océanie", [[-45, 62], [55, 178]]]];
+const inBox = (p, b) => p.lat >= b[0][0] && p.lat <= b[1][0] && p.lon >= b[0][1] && p.lon <= b[1][1];
+const escH = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 function WorldMap({ points, onPick }) {
-  const [land, setLand] = useState(null), [err, setErr] = useState(false), [hover, setHover] = useState(null), [selPj, setSelPj] = useState(null);
-  const [reg, setReg] = useState("monde"), [view, setView] = useState({ x: 0, y: 0, w: MW });
-  const box = useRef(null), svgRef = useRef(null), drag = useRef(null), moved = useRef(false), [tip, setTip] = useState(null);
-  useEffect(() => { let on = true; loadAtlas().then(f => { if (on) setLand(f); }).catch(() => { if (on) setErr(true); }); return () => { on = false; }; }, []);
-  const paths = useMemo(() => (land ? land.features.map(f => geoPath(f.geometry)) : []), [land]);
-  const [boxW, setBoxW] = useState(700);
-  useEffect(() => { const el = box.current; if (!el || typeof ResizeObserver === "undefined") return undefined; const ro = new ResizeObserver(() => setBoxW(el.clientWidth || 700)); ro.observe(el); setBoxW(el.clientWidth || 700); return () => ro.disconnect(); }, []);
-  const k = MW / view.w, vh = view.w * MH / MW, near = k >= 2.5, u = view.w / Math.max(200, boxW);
-  const zoomAt = (f, fx = 0.5, fy = 0.5) => { setReg(""); setView(v => { const w = v.w / f, h0 = v.w * MH / MW; return clampView({ w, x: v.x + (v.w - w) * fx, y: v.y + (h0 - w * MH / MW) * fy }); }); };
-  // Ctrl + molette = zoom (la molette seule fait défiler la page) ; écouteur non passif pour bloquer le zoom du navigateur
-  useEffect(() => { const el = box.current; if (!el) return undefined;
-    const h = e => { if (!e.ctrlKey && !e.metaKey) return; e.preventDefault(); const r = el.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.25 : 0.8, (e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height); };
-    el.addEventListener("wheel", h, { passive: false }); return () => el.removeEventListener("wheel", h); }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  const down = e => { if (e.button !== 0) return; drag.current = { x: e.clientX, y: e.clientY, v: view }; moved.current = false; };
-  const move = e => { const d = drag.current; if (!d || !box.current) return; const r = box.current.getBoundingClientRect(), dx = (e.clientX - d.x) / r.width * d.v.w, dy = (e.clientY - d.y) / r.height * d.v.w * MH / MW;
-    if (Math.abs(e.clientX - d.x) + Math.abs(e.clientY - d.y) > 4) { moved.current = true; setReg(""); setTip(null); } if (moved.current) setView(clampView({ w: d.v.w, x: d.v.x - dx, y: d.v.y - dy })); };
-  const up = () => { drag.current = null; };
-  const goReg = id => { const R = REGIONS.find(x => x[0] === id); setReg(id); setSelPj(null); setView(fitView(R[2])); };
-  // bulles par pays (vue large)
-  const groups = useMemo(() => { const g = {}; points.forEach(p => { const c = p.pays || "—"; (g[c] = g[c] || []).push(p); });
-    return Object.entries(g).map(([pays, L]) => ({ pays, L, lat: L.reduce((s, p) => s + p.lat, 0) / L.length, lon: L.reduce((s, p) => s + p.lon, 0) / L.length, open: L.reduce((s, p) => s + (p.ouverts || 0), 0) })).sort((a, b) => b.L.length - a.L.length); }, [points]);
-  const inView = p => { const [x, y] = px(p.lat, p.lon); return x >= view.x && x <= view.x + view.w && y >= view.y && y <= view.y + vh; };
-  const listed = points.filter(inView).sort((a, b) => (a.pays || "").localeCompare(b.pays || "") || a.pj.localeCompare(b.pj, "fr", { numeric: true }));
-  const showTip = (p, x, y) => { const svg = svgRef.current, bx = box.current; if (!svg || !bx || !svg.getScreenCTM()) return; const pt = svg.createSVGPoint(); pt.x = x; pt.y = y; const q = pt.matrixTransform(svg.getScreenCTM()), r = bx.getBoundingClientRect(); setTip({ p, x: q.x - r.left, y: q.y - r.top, w: r.width }); };
-  const pick = p => { setSelPj(p.pj); onPick(p.pj); setView(v => { const [x, y] = px(p.lat, p.lon), w = Math.min(v.w, MW / 4); return clampView({ w, x: x - w / 2, y: y - w * MH / MW / 2 }); }); setReg(""); };
+  const LP = useMemo(() => buildPalette(getThemeId(), false), []); // palette claire : la carte ne suit pas le mode sombre
+  const el = useRef(null), mapR = useRef(null), layerR = useRef(null), [ready, setReady] = useState(false), [err, setErr] = useState(false);
+  const [zoom, setZoom] = useState(2), [bounds, setBounds] = useState(null), [reg, setReg] = useState("monde"), [selPj, setSelPj] = useState(null), [hover, setHover] = useState(null);
   const ctrOk = p => p.info && p.info.contrat && p.info.contrat !== "Sans contrat";
-  const dotCol = p => (p.ouverts ? T.red600 : ctrOk(p) ? T.emerald600 : T.info600);
-  const zb = { minWidth: 36, minHeight: 36, borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: 16, fontWeight: 600, cursor: "pointer", fontFamily: T.font, boxShadow: T.shadowSm };
+  const dotCol = p => (p.ouverts ? LP.red600 : ctrOk(p) ? LP.emerald600 : LP.info600);
+  // création de la carte (une fois)
+  useEffect(() => { let on = true;
+    loadLeaflet().then(L => { if (!on || !el.current || mapR.current) return;
+      const m = L.map(el.current, { center: [30, 10], zoom: 2, minZoom: 2, maxZoom: 17, worldCopyJump: true, scrollWheelZoom: false, zoomSnap: 0.5 });
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© contributeurs OpenStreetMap" }).addTo(m);
+      const upd = () => { setZoom(m.getZoom()); const b = m.getBounds(); setBounds([[b.getSouth(), b.getWest()], [b.getNorth(), b.getEast()]]); };
+      m.on("moveend zoomend", upd); upd();
+      const wh = e => { if (!e.ctrlKey && !e.metaKey) return; e.preventDefault(); m.setZoom(m.getZoom() + (e.deltaY < 0 ? 1 : -1)); };
+      el.current.addEventListener("wheel", wh, { passive: false });
+      mapR.current = m; layerR.current = L.layerGroup().addTo(m); setReady(true);
+      setTimeout(() => m.invalidateSize(), 50);
+    }).catch(() => { if (on) setErr(true); });
+    return () => { on = false; if (mapR.current) { mapR.current.remove(); mapR.current = null; } };
+  }, []);
+  const groups = useMemo(() => { const g = {}; points.forEach(p => { const c = p.pays || "—"; (g[c] = g[c] || []).push(p); });
+    return Object.entries(g).map(([pays, L]) => ({ pays, L, lat: L.reduce((s, p) => s + p.lat, 0) / L.length, lon: L.reduce((s, p) => s + p.lon, 0) / L.length, open: L.reduce((s, p) => s + (p.ouverts || 0), 0) })); }, [points]);
+  const near = zoom >= 5;
+  const fitPts = L0 => { const m = mapR.current, L = window.L; if (!m || !L0.length) return; m.fitBounds(L.latLngBounds(L0.map(p => [p.lat, p.lon])).pad(0.6), { maxZoom: 9 }); };
+  const pick = p => { setSelPj(p.pj); setReg(""); onPick(p.pj); if (mapR.current) mapR.current.setView([p.lat, p.lon], Math.max(mapR.current.getZoom(), 8)); };
+  // marqueurs (redessinés à chaque changement de zoom, de sélection ou de données)
+  useEffect(() => { const m = mapR.current, lay = layerR.current, L = window.L; if (!ready || !m || !lay || !L) return; lay.clearLayers();
+    const font = "font-family:" + T.font + ";";
+    if (!near) groups.forEach(g => { const n = g.L.length, s = Math.round(26 + Math.min(22, Math.sqrt(n) * 7));
+      const html = '<div style="' + font + "width:" + s + "px;height:" + s + "px;border-radius:50%;display:grid;place-items:center;background:" + LP.ink900 + ";color:" + LP.card + ";font-weight:700;font-size:13px;box-shadow:0 0 0 " + (g.open ? 3 : 2) + "px " + (g.open ? LP.red600 : LP.card) + ",0 4px 12px rgba(16,24,40,.28)\">" + n + "</div>";
+      const mk = L.marker([g.lat, g.lon], { icon: L.divIcon({ html, className: "", iconSize: [s, s], iconAnchor: [s / 2, s / 2] }), keyboard: true, title: g.pays + " : " + n + " site" + (n > 1 ? "s" : "") });
+      mk.bindTooltip(escH(g.pays) + " · " + n + " site" + (n > 1 ? "s" : "") + (g.open ? " · " + g.open + " ticket" + (g.open > 1 ? "s" : "") + " ouvert" + (g.open > 1 ? "s" : "") : ""), { direction: "top", offset: [0, -s / 2] });
+      mk.on("click", () => { setReg(""); fitPts(g.L); }); mk.addTo(lay); });
+    else points.forEach(p => { const on = selPj === p.pj || hover === p.pj, c = dotCol(p), d = on ? 16 : 12;
+      const html = '<div style="' + font + 'display:flex;align-items:center;gap:6px;white-space:nowrap"><span style="width:' + d + "px;height:" + d + "px;border-radius:50%;background:" + c + ";box-shadow:0 0 0 2px " + LP.card + ",0 0 0 " + (on ? 7 : 5) + "px " + c + '33;flex-shrink:0"></span><span style="font-size:12px;font-weight:700;color:' + LP.ink900 + ";background:" + LP.card + ";border-radius:4px;padding:1px 5px;box-shadow:0 1px 3px rgba(16,24,40,.25)\">" + escH(p.pj) + "</span></div>";
+      const mk = L.marker([p.lat, p.lon], { icon: L.divIcon({ html, className: "", iconSize: [80, 20], iconAnchor: [d / 2, 10] }), keyboard: true, title: p.pj + (p.nom ? " · " + p.nom : ""), zIndexOffset: on ? 1000 : 0 });
+      const card = '<div style="' + font + 'min-width:200px"><b>' + escH(p.pj) + (p.nom ? " · " + escH(p.nom) : "") + '</b><div style="color:' + LP.ink500 + '">' + escH([p.info && p.info.ville, p.pays].filter(Boolean).join(", ") || "lieu inconnu") + (p.exact ? "" : " (centre du pays)") + "</div><div>" + (ctrOk(p) ? escH(p.info.contrat) : "Sans contrat") + (p.ouverts ? ' · <span style="color:' + LP.red600 + '">' + p.ouverts + " ticket" + (p.ouverts > 1 ? "s" : "") + "</span>" : "") + "</div>" + (fournLabel(p.info && p.info.fourn) ? '<div style="color:' + LP.ink700 + '">' + escH(fournLabel(p.info.fourn)) + "</div>" : "") + "</div>";
+      mk.bindTooltip(card, { direction: "top", offset: [0, -10] });
+      mk.on("click", () => pick(p)); mk.on("mouseover", () => setHover(p.pj)); mk.on("mouseout", () => setHover(null)); mk.addTo(lay); });
+  }, [ready, near, groups, points, selPj, hover, LP]); // eslint-disable-line react-hooks/exhaustive-deps
+  const goReg = id => { const R = MAP_REGIONS.find(x => x[0] === id); setReg(id); setSelPj(null); if (mapR.current) mapR.current.fitBounds(R[2]); };
+  const listed = (bounds ? points.filter(p => inBox(p, bounds) || inBox({ ...p, lon: p.lon - 360 }, bounds) || inBox({ ...p, lon: p.lon + 360 }, bounds)) : points)
+    .slice().sort((a, b) => (a.pays || "").localeCompare(b.pays || "") || a.pj.localeCompare(b.pj, "fr", { numeric: true }));
+  const dotUi = p => (p.ouverts ? T.red600 : ctrOk(p) ? T.emerald600 : T.info600);
   return <Panel title={"Carte du parc (" + points.length + " sites)"} right={<span style={{ fontSize: 12, color: T.ink500 }}>{groups.length} pays</span>}>
     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }} role="group" aria-label="Régions">
-      {REGIONS.map(([id, l, b]) => { const n = id === "monde" ? points.length : points.filter(p => inReg(p, b)).length, on = reg === id;
+      {MAP_REGIONS.map(([id, l, b]) => { const n = id === "monde" ? points.length : points.filter(p => inBox(p, b)).length, on = reg === id;
         return <button key={id} type="button" aria-pressed={on} onClick={() => goReg(id)} disabled={!n && id !== "monde"}
           style={{ minHeight: 32, padding: "0 12px", borderRadius: 999, border: "1px solid " + (on ? T.ink900 : T.line), background: on ? T.ink900 : T.card, color: on ? T.card : n ? T.ink700 : T.ink300, fontSize: 12, fontWeight: 600, cursor: n || id === "monde" ? "pointer" : "default", fontFamily: T.font }}>{l} <span style={{ opacity: 0.7, fontVariantNumeric: "tabular-nums" }}>{n}</span></button>; })}</div>
     <div className="enogia-map-split" style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 280px", gap: 12, alignItems: "stretch" }}>
-      <div ref={box} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerLeave={() => { up(); setTip(null); }}
-        style={{ position: "relative", width: "100%", aspectRatio: MW + " / " + MH, maxHeight: "56dvh", background: "color-mix(in srgb, " + T.info100 + " 35%, " + T.card + ")", borderRadius: 12, overflow: "hidden", cursor: "grab", touchAction: "none", border: "1px solid " + T.line }}>
-        {err && <div role="status" style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontSize: FZ.sm, color: T.ink500 }}>Fond de carte indisponible (connexion) : les sites restent placés.</div>}
-        <svg ref={svgRef} viewBox={view.x + " " + view.y + " " + view.w + " " + vh} preserveAspectRatio="xMidYMid meet" role="img" aria-label={"Carte : " + points.length + " sites du parc"} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
-          {paths.map((d, i) => <path key={i} d={d} fill={T.surfaceAlt} stroke={T.card} strokeWidth={0.8 * u} />)}
-          {!near ? groups.map(g => { const [x, y] = px(g.lat, g.lon), n = g.L.length, r = (9 + Math.min(14, Math.sqrt(n) * 4)) * u, on = hover === "g:" + g.pays;
-            return <g key={g.pays} role="button" tabIndex={0} aria-label={g.pays + " : " + n + " site" + (n > 1 ? "s" : "") + (g.open ? ", " + g.open + " ticket ouvert" : "")}
-              onMouseEnter={() => setHover("g:" + g.pays)} onMouseLeave={() => setHover(null)} onKeyDown={e => { if (e.key === "Enter") { setReg(""); setView(fitPts(g.L)); } }}
-              onClick={() => { if (moved.current) return; setReg(""); setSelPj(null); setView(fitPts(g.L)); }} style={{ cursor: "pointer" }}>
-              <title>{g.pays + " · " + n + " site" + (n > 1 ? "s" : "") + " · clic = zoomer"}</title>
-              <circle cx={x} cy={y} r={r + 3 * u} fill={g.open ? T.red600 : T.ink900} opacity={on ? 0.25 : 0.12} />
-              <circle cx={x} cy={y} r={r} fill={on ? T.ink700 : T.ink900} stroke={g.open ? T.red600 : T.card} strokeWidth={(g.open ? 2.5 : 1.5) * u} />
-              <text x={x} y={y + 4.5 * u} textAnchor="middle" fontSize={13 * u} fontWeight={600} fill={T.card} style={{ fontFamily: T.fontDisplay, pointerEvents: "none" }}>{n}</text>
-              {on && <text x={x} y={y - r - 6 * u} textAnchor="middle" fontSize={12 * u} fontWeight={600} fill={T.ink900} stroke={T.card} strokeWidth={3 * u} paintOrder="stroke" style={{ fontFamily: T.font, pointerEvents: "none" }}>{g.pays}</text>}</g>; })
-          : points.map(p => { const [x, y] = px(p.lat, p.lon), on = hover === p.pj || selPj === p.pj;
-            return <g key={p.pj} role="button" tabIndex={0} aria-label={p.pj + (p.nom ? " · " + p.nom : "")}
-              onMouseEnter={() => { setHover(p.pj); showTip(p, x, y); }} onMouseLeave={() => { setHover(null); setTip(null); }} onKeyDown={e => { if (e.key === "Enter") pick(p); }}
-              onClick={() => { if (!moved.current) pick(p); }} style={{ cursor: "pointer" }}>
-              <circle cx={x} cy={y} r={(on ? 12 : 9) * u} fill={dotCol(p)} opacity={0.18} />
-              <circle cx={x} cy={y} r={(on ? 7 : 5.5) * u} fill={dotCol(p)} stroke={T.card} strokeWidth={2 * u} />
-              <text x={x + 10 * u} y={y + 4 * u} fontSize={12 * u} fontWeight={600} fill={T.ink900} stroke={T.card} strokeWidth={3 * u} paintOrder="stroke" style={{ fontFamily: T.font, pointerEvents: "none" }}>{p.pj}</text></g>; })}
-        </svg>
-        {tip && <div role="tooltip" style={{ position: "absolute", left: Math.min(tip.x + 14, tip.w - 250), top: Math.max(8, tip.y - 20), width: 236, background: T.card, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, padding: "10px 12px", pointerEvents: "none", display: "flex", flexDirection: "column", gap: 4, zIndex: 3 }}>
-          <div style={{ display: "flex", gap: 6, alignItems: "center" }}><PjPlate pj={tip.p.pj} /><b style={{ fontSize: FZ.sm, color: T.ink900, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tip.p.nom || ""}</b></div>
-          <div style={{ fontSize: 12, color: T.ink500 }}>{[tip.p.info && tip.p.info.ville, tip.p.pays].filter(Boolean).join(", ") || "lieu inconnu"}{tip.p.exact ? "" : " (centre du pays)"}</div>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>{ctrOk(tip.p) ? <Pill tone="ok">{tip.p.info.contrat}</Pill> : <Pill tone="muted">Sans contrat</Pill>}{tip.p.ouverts ? <Pill tone="bad">{tip.p.ouverts} ticket{tip.p.ouverts > 1 ? "s" : ""} ouvert{tip.p.ouverts > 1 ? "s" : ""}</Pill> : null}</div>
-          {fournLabel(tip.p.info && tip.p.info.fourn) && <div style={{ fontSize: 12, color: T.ink700 }}>{fournLabel(tip.p.info.fourn)}</div>}
-        </div>}
-        <div style={{ position: "absolute", right: 10, top: 10, display: "flex", flexDirection: "column", gap: 6 }} onPointerDown={e => e.stopPropagation()}>
-          <button type="button" onClick={() => zoomAt(1.6)} aria-label="Zoomer sur la carte" style={zb}>+</button>
-          <button type="button" onClick={() => zoomAt(1 / 1.6)} aria-label="Dézoomer la carte" style={zb}>−</button>
-          <button type="button" onClick={() => goReg("monde")} aria-label="Toute la carte" title="Toute la carte" style={{ ...zb, fontSize: 12 }}>⤢</button></div>
-        <div style={{ position: "absolute", left: 10, bottom: 10, display: "flex", gap: 10, flexWrap: "wrap", fontSize: 11, color: T.ink700, background: "color-mix(in srgb, " + T.card + " 88%, transparent)", borderRadius: 8, padding: "4px 8px" }}>
-          {[[T.emerald600, "Sous contrat"], [T.info600, "Sans contrat"], [T.red600, "Ticket ouvert"]].map(([c, l]) => <span key={l} style={{ display: "inline-flex", gap: 5, alignItems: "center" }}><i aria-hidden="true" style={{ width: 9, height: 9, borderRadius: "50%", background: c, display: "inline-block" }} />{l}</span>)}</div>
+      <div style={{ position: "relative", borderRadius: 12, overflow: "hidden", border: "1px solid " + T.line, background: LP.surfaceAlt }}>
+        <div ref={el} role="region" aria-label={"Carte : " + points.length + " sites du parc"} style={{ width: "100%", height: "min(56dvh, 520px)", minHeight: 340, background: LP.surfaceAlt, colorScheme: "light" }} />
+        {err && <div role="status" style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontSize: FZ.sm, color: LP.ink500, background: LP.surfaceAlt }}>Carte indisponible (connexion) : la liste des sites reste à droite.</div>}
+        <div style={{ position: "absolute", left: 10, bottom: 22, zIndex: 500, display: "flex", gap: 10, flexWrap: "wrap", fontSize: 11, color: LP.ink700, background: LP.card, borderRadius: 8, padding: "4px 8px", boxShadow: LP.shadowSm, pointerEvents: "none" }}>
+          {[[LP.emerald600, "Sous contrat"], [LP.info600, "Sans contrat"], [LP.red600, "Ticket ouvert"]].map(([c, l]) => <span key={l} style={{ display: "inline-flex", gap: 5, alignItems: "center" }}><i aria-hidden="true" style={{ width: 9, height: 9, borderRadius: "50%", background: c, display: "inline-block" }} />{l}</span>)}</div>
       </div>
-      <div style={{ border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden", display: "flex", flexDirection: "column", maxHeight: "56dvh", minHeight: 0 }}>
+      <div style={{ border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden", display: "flex", flexDirection: "column", maxHeight: "min(56dvh, 520px)", minHeight: 0 }}>
         <div style={{ padding: "8px 12px", borderBottom: "1px solid " + T.line, background: T.surface, fontSize: 12, fontWeight: 600, color: T.ink700 }}>{listed.length} site{listed.length > 1 ? "s" : ""} dans la zone affichée</div>
         <div style={{ overflowY: "auto", flex: 1 }}>
           {listed.length === 0 ? <div style={{ padding: 12, fontSize: FZ.sm, color: T.ink500 }}>Aucun site ici : dézoomez ou choisissez une région</div> : listed.map((p, i) => { const on = selPj === p.pj || hover === p.pj, head = i === 0 || listed[i - 1].pays !== p.pays;
             return <React.Fragment key={p.pj}>{head && <div style={{ padding: "6px 12px 2px", fontSize: 11, fontWeight: 600, color: T.ink500 }}>{p.pays || "Pays inconnu"}</div>}
               <button type="button" onClick={() => pick(p)} onMouseEnter={() => setHover(p.pj)} onMouseLeave={() => setHover(null)}
-                style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", minHeight: 44, padding: "4px 12px", border: "none", borderLeft: "3px solid " + (on ? dotCol(p) : "transparent"), background: on ? T.surface : "transparent", cursor: "pointer", textAlign: "left", fontFamily: T.font }}>
-                <i aria-hidden="true" style={{ width: 9, height: 9, borderRadius: "50%", background: dotCol(p), flexShrink: 0 }} />
+                style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", minHeight: 44, padding: "4px 12px", border: "none", borderLeft: "3px solid " + (on ? dotUi(p) : "transparent"), background: on ? T.surface : "transparent", cursor: "pointer", textAlign: "left", fontFamily: T.font }}>
+                <i aria-hidden="true" style={{ width: 9, height: 9, borderRadius: "50%", background: dotUi(p), flexShrink: 0 }} />
                 <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", fontSize: FZ.sm, fontWeight: 600, color: T.ink900, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.pj}{p.nom ? " · " + p.nom : ""}</span>
                   <span style={{ display: "block", fontSize: 11, color: T.ink500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{(p.info && p.info.ville) || "ville non saisie"}{ctrOk(p) ? " · " + p.info.contrat : ""}{p.ouverts ? " · " + p.ouverts + " ticket" + (p.ouverts > 1 ? "s" : "") : ""}</span></span>
               </button></React.Fragment>; })}

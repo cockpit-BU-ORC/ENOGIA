@@ -2423,3 +2423,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - SAV : PJ saisi librement dans le ticket et l'intervention ; planning avec samedi et dimanche (pas de demande possible) ; demandes en barres continues ; « Dates validées avec le client » dans l'intervention (Planifiée / À planifier) ; une demande acceptée = intervention À planifier ; carte avec bulles par pays et liste des sites.
 - Aucune clé localStorage nouvelle ; règles Firestore inchangées.
 - Fichiers : App.js, components/SavPage.js, savModel.js(+test), styles.css, versions.
+
+## v336 — carte routière du parc, demandes non barrées, tests sur 4 semaines (D11)
+
+- Carte du parc : Leaflet 1.9.4 (cdn.jsdelivr.net) + tuiles OpenStreetMap (tile.openstreetmap.org), chargées à l'ouverture du Parc ; toujours claire.
+- Planning SAV : nom du PJ des demandes non barré. Tests : planning sur 20 jours ouvrés.
+- Maquette de la fiche de tests (D12 à D14, D10) : maquettes-design/v336-fiche-tests.html, en attente du go.
+- Aucune clé localStorage ; règles Firestore inchangées.
+- Fichiers : components/SavPage.js, components/TestsTab.js, versions.
