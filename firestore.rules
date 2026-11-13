@@ -51,6 +51,9 @@ service cloud.firestore {
       allow read: if base(id) == 'cashinShared' && isAdmin(id);
       allow write: if base(id) == 'cashinShared' && isOwner();
 
+      // v323 : jalons « Produit » du Cash in (copie réduite pour l'accueil du responsable produit) : écrits par la Finance
+      allow write: if base(id) == 'cashinProduit' && (isAdmin(id) || canWrite(id, 'finance'));
+
       // Tout le reste se lit dès qu'on est connecté avec un compte ENOGIA
       allow read: if signedIn() && !(base(id) in ['cashin', 'cashinLinks', 'cashinShared']);
 

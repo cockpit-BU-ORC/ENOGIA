@@ -12,6 +12,7 @@ import { InboxPage } from "../components/InboxPage";
 import { TestsTab } from "../components/TestsTab";
 import { TurbinesHub } from "../components/TurbinesHub";
 import { HomeView } from "../components/HomeView";
+import { userKey } from "../mentions";
 
 const no = () => {}, yes = async () => true;
 const common = { comments: DEMO_COMMENTS, addComment: yes, deleteComment: yes, pinOk: true, delays: [], delayTypes: [], setDelayTypes: no, addDelayAllocation: yes, deleteDelayAllocation: yes, addDelayComment: yes, deleteDelayComment: yes, authorName: DEMO_ME.name, savePjMetaOverride: yes, canEditMeta: true };
@@ -43,8 +44,17 @@ function Turbines({ tab0 = "orc" }) { const [tab, setTab] = useState(tab0); retu
 const Accueil = () => <HomeView pinOk testsDoc={DEMO_TESTS} data={DEMO_ROWS} comments={DEMO_COMMENTS} myEmail={DEMO_ME.email} myName={DEMO_ME.name} people={DEMO_PEOPLE} unseenChanges={[]} lastImport={null} onOpenPj={no} onGo={no}
   profiles={{ byEmail: {} }} owner cash={false} turbineDoc={null} onOpenCash={null} prodDoc={DEMO_PROD} canProdTurb productionExclusions={{}} plan={null} closurePeriods={[]} saveHomeLayout={null} />;
 
+// v323 : accueil du responsable produit (responsable des testeurs) avec les jalons cash « Produit »
+const DEMO_PRODUIT = { items: [
+  { id: "p1", pj: "PJ901", nom: "Papeterie du Nord", jalon: "P&ID validé", montant: 18000, factInit: "2026-11-30", factPrevue: "2026-12-14" },
+  { id: "p2", pj: "PJ905", nom: "Fonderie Est", jalon: "Plans d'implantation", montant: 9500, factInit: "2027-01-15", factPrevue: "2027-01-15" },
+  { id: "p3", pj: "PJ902", nom: "Verrerie Alpes", jalon: "Note de calcul", montant: 6000, factInit: "2026-10-20", factPrevue: "2026-10-20", factReelle: "2026-10-22" } ] };
+const AccueilProduit = () => <HomeView produit={DEMO_PRODUIT} pinOk testsDoc={DEMO_TESTS} data={DEMO_ROWS} comments={DEMO_COMMENTS} myEmail={DEMO_ME.email} myName={DEMO_ME.name} people={DEMO_PEOPLE} unseenChanges={[]} lastImport={null} onOpenPj={no} onGo={no}
+  profiles={{ byEmail: { [userKey(DEMO_ME.email)]: { email: DEMO_ME.email, name: DEMO_ME.name, role: "resptest", pjs: [], chefs: [] } } }} owner={false} cash={false} turbineDoc={null} onOpenCash={null} prodDoc={null} canProdTurb={false} productionExclusions={{}} plan={null} closurePeriods={[]} saveHomeLayout={null} />;
+
 export const DEMO_PAGES = [
   { id: "home", label: "Accueil", Render: Accueil, expect: [] },
+  { id: "home-produit", label: "Accueil · resp. produit", Render: AccueilProduit, expect: ["Livrables Produit", "P&ID validé", "Papeterie du Nord"] },
   { id: "inbox", label: "À traiter", Render: ATraiter, expect: ["Demandes à valider", "PJ902"] },
   { id: "table", label: "Liste", Render: Liste, expect: ["PJ901", "Papeterie du Nord"] },
   { id: "gantt", label: "Gantt", Render: Gantt, expect: ["PJ901"] },

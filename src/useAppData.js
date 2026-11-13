@@ -5,7 +5,7 @@ import { onSnapshot, setDoc, updateDoc, deleteField } from "firebase/firestore";
 import { TURBINES_DOC_REF, TESTS_DOC_REF, PRODTURB_DOC_REF, DELAYS_DOC_REF, ACHATS_DOC_REF, ACCESS_DOC_REF } from "./appDocs";
 import { notify } from "./components/SharedUI";
 import { setCashinDoc, setCashinLinks, getCashinDoc, getCashinLinks, getOrdoPjs, cashGroupsFor } from "./cashinLink";
-import { CASHIN_DOC_REF, CASHIN_LINKS_REF, CASHIN_SHARED_REF, buildSharedCashin } from "./cashinData";
+import { CASHIN_DOC_REF, CASHIN_LINKS_REF, CASHIN_SHARED_REF, CASHIN_PRODUIT_REF, buildSharedCashin } from "./cashinData";
 import { useCashin } from "./useCashin";
 
 // v305 : accès par page (planning/access) — lu par tous les comptes connectés (le menu en dépend), écrit par le super admin seul
@@ -97,6 +97,13 @@ export function useDelays(authUid) {
 }
 
 // Cash in : magasin partagé (cashinLink) alimenté en temps réel pour le propriétaire et les admins, copie réduite publiée pour les autres
+// v323 : jalons « Produit » du Cash in (copie réduite) — lus par tout compte connecté, pour l'accueil du responsable produit
+export function useCashinProduit(currentUser) {
+  const [doc, setDoc0] = useState(null);
+  useEffect(() => { if (!currentUser) return undefined;
+    return onSnapshot(CASHIN_PRODUIT_REF(), s => setDoc0(s.exists() ? s.data() : { items: [] }), e => { console.warn("cashinProduit (lecture) :", e && e.message); setDoc0(null); }); }, [currentUser]);
+  return doc;
+}
 export function useCashinSync(canCash, currentUser) {
   const [,setCashinVer]=useState(0);
   const cashStoreVer=useCashin();

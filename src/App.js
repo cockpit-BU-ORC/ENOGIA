@@ -46,7 +46,7 @@ import { listenChangeLog } from "./changeLog";
 // v260 : documents Firestore, bandeau bêta et identité du compte sortis de ce fichier (appDocs.js, components/AppChrome.js)
 import { IS_BETA, DOC_PFX, DOC_REF, INITIAL_DOC_REF, OVERRIDES_DOC_REF, COMMENTS_DOC_REF, PJ_META_SYNC_DOC_REF, PJ_META_OVERRIDES_DOC_REF, DELAYS_DOC_REF, DELAY_TYPES_DOC_REF, MANAGER_EMAILS_DOC_REF, PROFILES_DOC_REF, DEFAULT_DELAY_TYPES } from "./appDocs";
 import { BetaBanner, UserChip, LangSwitch } from "./components/AppChrome";
-import { useAccessDoc, useTurbineDoc, useTestsDoc, useProdTurbines, useDelays, useCashinSync, useAchats } from "./useAppData";
+import { useAccessDoc, useTurbineDoc, useTestsDoc, useProdTurbines, useCashinProduit, useDelays, useCashinSync, useAchats } from "./useAppData";
 import { useListFilters, filterOptions, filterRows } from "./listFilters";
 // v289 (lot G « rapidité ») : les grandes pages ne sont chargées qu'à leur première ouverture (paquet de départ allégé) ;
 // en attendant, un squelette s'affiche dans la zone principale (Suspense).
@@ -63,7 +63,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-12-v322-anglais-lot2-3";
+const APP_BUILD_VERSION = "2026-11-13-v323-jalons-produit";
 
 export default function App(){
   // Utilisateur connecté via Google, restreint aux comptes @enogia.com (null tant que non connecté).
@@ -668,6 +668,7 @@ export default function App(){
   useEffect(()=>{if(view==="tests"&&testsLoaded&&!canSeeTests)setView("table");},[view,testsLoaded,canSeeTests]); // accès retiré ou ancien choix mémorisé
   // v226 : Production turbines — v261 : useAppData.js
   const {prodDoc,prodApi}=useProdTurbines(currentUser,authorName);
+  const produitDoc=useCashinProduit(currentUser); // v323 : jalons « Produit » du Cash in (accueil du responsable produit)
   const myMail=String((currentUser&&currentUser.email)||"").toLowerCase();
   const canProdTurbL=!!(isOwner||(prodDoc&&Array.isArray(prodDoc.access)&&prodDoc.access.map(x=>String(x).toLowerCase()).includes(myMail)));
   // v262 : Achats / Appro — propriétaire et adresses de sa liste « access » (Achats › Réglages)
@@ -1184,7 +1185,7 @@ export default function App(){
                 views={[{id:"table",l:"Liste",icon:"list",key:"1"},{id:"gantt",l:"Gantt",icon:"gantt",key:"2"},{id:"calendar",l:"Calendrier",icon:"calendar",key:"3"}].filter(x=>planViewOk(x.id))}
                 tools={[...(isOwner?[{id:"planner",l:"Planificateur",icon:"edit",hint:"Brouillon, puis « Publier »"}]:[]),...(planViewOk("changes")?[{id:"changes",l:"Modifications",icon:"changes",badge:unseenChanges.length,hint:"Ce qui a changé à chaque publication"}]:[])]}/>:undefined}/>;})()}
             {view==="inbox"&&currentUser&&<InboxPage me={mentionCtx.me} comments={comments} data={dataWithOverrides} resolveComment={resolveComment} canSeePrivate={pinOk} onOpen={(pj,tab)=>{setCalDay(null);setCalTab(tab||"resume");setCalSel(pj);}} actions={inboxActions} assignments={myNewAssign} onSeenAssign={seeAssign} onOpenTests={pj=>{setTestsSub("semaine");if(pj)setTestsFocus({pj,n:Date.now()});setView("tests");}} video={tutoOn?tutoCfg:null} onOpenVideo={()=>setTutoOpen(true)} pjChanges={myPjChanges} onSeenPjChanges={seePjChanges} onOpenChanges={()=>setView("changes")}/>}
-            {view==="home"&&<HomeView pinOk={pinOk} testsDoc={canSeeTests?testsView:null} data={dataWithOverrides} comments={comments} myEmail={currentUser&&currentUser.email} myName={authorName} people={peopleAll} unseenChanges={unseenChanges} lastImport={lastImport} onOpenPj={setCalSel} onGo={setView} profiles={profiles} owner={isOwner} cash={canCash} turbineDoc={turbineDoc} onOpenCash={canCash?()=>setView("cashin"):null} prodDoc={prodDoc} canProdTurb={canProdTurb} productionExclusions={productionExclusions} plan={planDoc&&planDoc.plan} closurePeriods={closurePeriods} saveHomeLayout={isOwner?saveHomeLayout:null}/>}
+            {view==="home"&&<HomeView produit={produitDoc} pinOk={pinOk} testsDoc={canSeeTests?testsView:null} data={dataWithOverrides} comments={comments} myEmail={currentUser&&currentUser.email} myName={authorName} people={peopleAll} unseenChanges={unseenChanges} lastImport={lastImport} onOpenPj={setCalSel} onGo={setView} profiles={profiles} owner={isOwner} cash={canCash} turbineDoc={turbineDoc} onOpenCash={canCash?()=>setView("cashin"):null} prodDoc={prodDoc} canProdTurb={canProdTurb} productionExclusions={productionExclusions} plan={planDoc&&planDoc.plan} closurePeriods={closurePeriods} saveHomeLayout={isOwner?saveHomeLayout:null}/>}
             {view==="table"&&<DashboardSummary data={filtered} allData={dataWithOverrides} progress={progressEff} changeLog={changeLog} onOpenChanges={()=>setView("changes")}/>}
             {view==="table"&&<TableView data={filtered} progress={progressEff} df={df} setDf={setDf} onSetDepart={onSetDepart} setEtatFor={setEtatFor} setClientPresenceFor={setClientPresenceFor}
               selEtats={selEtats} setSelEtats={setSelEtats}

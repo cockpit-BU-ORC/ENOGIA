@@ -30,7 +30,7 @@ export const CAPA_SEMAINE = CAPA_DEFAUT; // h atelier par semaine sans plan ; av
 export const HOME_DEFAULTS = {
   cdp: [["pjs", 7], ["jalons", 5], ["todo", 4], ["fat", 4], ["avance", 4]],
   testeur: [["today", 8], ["sign", 4], ["week", 12], ["arrivees", 6], ["results", 6]],
-  resptest: [["today", 8], ["sign", 4], ["week", 12], ["arrivees", 6], ["results", 6], ["postes", 6], ["tests", 6]], // v238
+  resptest: [["today", 8], ["sign", 4], ["produit", 12], ["week", 12], ["arrivees", 6], ["results", 6], ["postes", 6], ["tests", 6]], // v238 ; v323 : livrables Produit
   atelier: [["charge", 7], ["arrdep", 5], ["montage", 7], ["postes", 5]],
   turbines: [["ptReady", 3], ["ptNoWheel", 3], ["ptPieces", 6], ["ptDates", 12], ["ptRoues", 6], ["ptInj", 6]],
   autre: [["kpis", 12], ["departs", 6], ["parcours", 6], ["benchWeek", 6], ["visites", 6], ["shipped", 6], ["etats", 6], ["fermetures", 6]],
@@ -72,7 +72,7 @@ export function roleLead(role, d) {
   return ["Bonjour. ", { t: s(d.inProd, "machine", "machines"), c: "production" }, " " + (d.inProd > 1 ? "sont" : "est") + " en production et ", { t: d.next30 + " " + (d.next30 > 1 ? "partent" : "part"), c: "ok" }, " d'ici un mois."];
 }
 
-export function RoleHome({ role, profile, ui, kpiEl, depEl, parcoursEl, rows, open, late, mentions, myPjs, testsDoc, myTester, turbineDoc, prodDoc, plan, closurePeriods, productionExclusions, owner, cash, onOpenPj, onGo, onOpenCash, layout, onLayout, hello, renderLead }) {
+export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl, rows, open, late, mentions, myPjs, testsDoc, myTester, turbineDoc, prodDoc, plan, closurePeriods, productionExclusions, owner, cash, onOpenPj, onGo, onOpenCash, layout, onLayout, hello, renderLead }) {
   const { Row, Head, cardS, Pill, presenceOf, nomOf, empty, grey, link, S, H, A } = ui;
   const today = iso(new Date());
   const on = id => blockOn(profile, id);
@@ -180,6 +180,25 @@ export function RoleHome({ role, profile, ui, kpiEl, depEl, parcoursEl, rows, op
     {!tView ? empty("check", "Vous n'êtes pas dans la liste des testeurs", "Un administrateur vous ajoute depuis la page Tests.") : todayT.length === 0 ? empty("check", "Pas de test aujourd'hui", "Vos prochaines machines sont dans « Ma semaine ».") :
       todayT.map((r, i) => { const e = effOf(r), n = workDays(e.from, today), m = workDays(e.from, e.to); return <Row key={r.pj} first={i === 0} pj={r.pj} pill={<Pill tone={S.tests}>{"jour " + n + " / " + m}</Pill>} main={nomOf(r) || r.gamme || "Tests"} presence={presenceOf(r)} right={progPill(prog(r))} />; })}
     {more("Renseigner mes tests", () => onGo && onGo("tests"))}</>) };
+  // v323 (demandé : « les jalons cash flagués Produit par les CdP remontent sur l'accueil du responsable produit : PJ, nom, jalon, montant,
+  // facture initiale et prévue ») — données planning/cashinProduit (copie des jalons cochés « Produit » dans le Cash in)
+  W.produit = { label: "Livrables Produit (jalons cash)", span: 12, only: () => !!produit, render: () => { const L = (produit && produit.items) || [], todo = L.filter(x => !x.factReelle), done = L.length - todo.length;
+    const late = x => !x.factReelle && x.factPrevue && x.factPrevue < today, shift = x => x.factInit && x.factPrevue && x.factPrevue !== x.factInit;
+    const th = { textAlign: "left", fontSize: 12, fontWeight: 600, color: T.ink500, padding: "6px 8px", borderBottom: "1px solid " + T.line, whiteSpace: "nowrap" };
+    const td = (num, ink) => ({ padding: "6px 8px", height: 36, borderBottom: "1px solid " + T.line, fontSize: FZ.sm, color: ink || T.ink900, textAlign: num ? "right" : "left", fontVariantNumeric: num ? "tabular-nums" : undefined, whiteSpace: num ? "nowrap" : undefined });
+    return sec("produit", "Livrables Produit (jalons cash)", S.tests.ring, <>
+      <Head title="Livrables Produit" sub={"jalons cash flagués par les chefs de projet" + (done ? " · " + done + " déjà facturé" + (done > 1 ? "s" : "") : "")} count={todo.length} />
+      {L.length === 0 ? empty("check", "Aucun jalon Produit", "Les chefs de projet cochent « Produit » sur un jalon du Cash in lié à un livrable (ex. P&ID) : il apparaît ici.") :
+        <div style={{ overflowX: "auto", marginTop: 4 }}><table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead><tr><th style={th}>PJ</th><th style={th}>Projet</th><th style={th}>Jalon</th><th style={{ ...th, textAlign: "right" }}>Montant</th><th style={{ ...th, textAlign: "right" }}>Facture initiale</th><th style={{ ...th, textAlign: "right" }}>Facture prévue</th></tr></thead>
+          <tbody>{[...todo, ...L.filter(x => x.factReelle)].map(x => <tr key={x.id || x.pj + x.jalon} style={{ opacity: x.factReelle ? 0.6 : 1 }}>
+            <td style={td()}>{rows.some(r => r.pj === x.pj) ? <button type="button" onClick={() => onOpenPj && onOpenPj(x.pj)} style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer", fontFamily: T.fontMono, fontWeight: 700, fontSize: FZ.sm, color: T.ink900 }}>{x.pj}</button> : <span style={{ fontFamily: T.fontMono, fontWeight: 700 }}>{x.pj}</span>}</td>
+            <td style={td(false, T.ink700)}>{x.nom || nomOf(rows.find(r => r.pj === x.pj) || { pj: x.pj }) || "—"}</td>
+            <td style={td()}>{x.jalon || "—"}{x.factReelle ? <span style={{ marginLeft: 6 }}><Pill tone={{ bg: T.emerald100, ink: T.emerald600 }}>facturé</Pill></span> : null}</td>
+            <td style={td(true)}>{fmtEur(x.montant)}</td>
+            <td style={td(true, T.ink500)}>{x.factInit ? fmtD(x.factInit) : "—"}</td>
+            <td style={td(true, late(x) ? T.red600 : shift(x) ? T.amber600 : T.ink900)}>{x.factPrevue ? fmtD(x.factPrevue) : "—"}{late(x) ? " · en retard" : ""}</td>
+          </tr>)}</tbody></table></div>}</>); } };
   W.sign = { label: "Fiches à signer", span: 4, render: () => sec("sign", "Fiches à signer", S.finProd.ring, <>
     <Head title="Fiches à signer" sub="tests terminés" count={toSign.length} />
     {toSign.length === 0 ? empty("check", "Rien à signer", "Les fiches de test à signer apparaîtront ici.") : toSign.slice(0, 5).map((r, i) => <Row key={r.pj} first={i === 0} pj={r.pj} main={nomOf(r) || r.gamme || ""} right={progPill(prog(r))} />)}</>) };
@@ -332,7 +351,7 @@ export function RoleHome({ role, profile, ui, kpiEl, depEl, parcoursEl, rows, op
     ["Tests — page Tests", { tests: "machines au banc et tests des 3 semaines", today: "machines au banc aujourd'hui (jour N / M)", sign: "fiches de test à signer", week: "la semaine de tests d'un testeur", arrivees: "machines qui arrivent au banc", results: "réussis et échecs des 14 derniers jours", postes: "occupation des postes de test", benchWeek: "toutes les machines au banc cette semaine" }],
     ["Atelier — Planificateur et Calendrier", { charge: "heures atelier sur 4 semaines face à la capacité", arrdep: "arrivées et départs de la semaine", montage: "machines en montage méca / élec", fermetures: "fermetures de l’atelier à venir" }],
     ["Production turbines", { ptReady: "turbines prêtes", ptNoWheel: "turbines testées sans roue", ptPieces: "pièces à suivre", ptDates: "dates prévisionnelles des turbines", ptRoues: "stock de roues équilibrées", ptInj: "stock d'injecteurs" }],
-    ["Gestion — Turbines et Cash in", { turbines: "pool de turbines", cash: "encaissements à venir" }],
+    ["Gestion — Turbines et Cash in", { turbines: "pool de turbines", cash: "encaissements à venir", produit: "jalons cash liés à un livrable du Produit" }],
     ["Échanges — Commentaires", { mentions: "les mentions qui vous attendent" }],
   ];
   const addable = []; const placed = new Set();

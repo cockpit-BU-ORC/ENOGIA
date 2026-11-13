@@ -890,4 +890,8 @@ export const RELEASE_CATALOG = [
   { v: "322", t: "Anglais : planning, fiches, accueil, tests, turbines", items: [
     ["English", "En anglais, la Liste, le Gantt, le Calendrier, la fiche d'un PJ, Modifications, l'accueil, les Tests, les Turbines (besoins) et les pages d'administration sont traduits."],
   ] },
+  { v: "323", t: "Jalons cash liés aux livrables du Produit", items: [
+    ["Cash in", "Nouvelle case « Produit » sur chaque jalon : cochez-la quand le jalon dépend d'un livrable du Produit (ex. P&ID).", "admin"],
+    ["Accueil", "Le responsable produit voit ces jalons sur son accueil : PJ, projet, jalon, montant, facture initiale et prévue."],
+  ] },
 ];

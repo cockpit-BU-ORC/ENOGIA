@@ -9,11 +9,22 @@ export const CASHIN_DOC_REF = () => doc(db, "planning", CASHIN_DOC_ID);
 // V146.2 : liaisons choisies à la main entre les PJ du Cash in et ceux de l'ordo (document à part : la page Cash in réécrit « cashin » en entier).
 export const CASHIN_LINKS_ID = (process.env.REACT_APP_BETA === "1" ? "beta_" : "") + "cashinLinks";
 export const CASHIN_LINKS_REF = () => doc(db, "planning", CASHIN_LINKS_ID);
+// v323 (demandé : « flaguer les jalons liés à un livrable du Produit ; ils remontent sur l'accueil du responsable produit ») :
+// copie des seuls jalons cochés « Produit » dans le Cash in (PJ, nom, jalon, montant, dates de facture), écrite à chaque enregistrement
+// du Cash in, lisible par tout compte ENOGIA (le Cash in complet reste réservé à la Finance).
+export const CASHIN_PRODUIT_ID = (process.env.REACT_APP_BETA === "1" ? "beta_" : "") + "cashinProduit";
+export const CASHIN_PRODUIT_REF = () => doc(db, "planning", CASHIN_PRODUIT_ID);
+export function produitItems(d) {
+  const labels = (d && d.labels) || {};
+  return ((d && Array.isArray(d.rows)) ? d.rows : []).filter(r => r && r.produit && !r.epc)
+    .map(r => ({ id: r.id || "", pj: r.pj, nom: labels[r.pj] || "", jalon: r.jalon || "", montant: r.montant == null || isNaN(Number(r.montant)) ? null : Number(r.montant), factInit: r.factInit || null, factPrevue: r.factPrevue || null, factReelle: r.factReelle || null }))
+    .sort((a, b) => String(a.factPrevue || a.factInit || "9").localeCompare(String(b.factPrevue || b.factInit || "9")) || a.pj.localeCompare(b.pj));
+}
 // V146.12 : copie réduite du Cash in (seulement les PJ rattachés à un PJ de l'ordo) publiée par le super admin pour que les administrateurs
 // voient les jalons de paiement dans les fiches synthèse (lecture seule). Le document « cashin » complet reste réservé au super admin.
 export const CASHIN_SHARED_ID = (process.env.REACT_APP_BETA === "1" ? "beta_" : "") + "cashinShared";
 export const CASHIN_SHARED_REF = () => doc(db, "planning", CASHIN_SHARED_ID);
-export const CASHIN_PAGE_VERSION = "284"; // change à chaque modification de public/cashin.html (évite le cache du navigateur)
+export const CASHIN_PAGE_VERSION = "323"; // change à chaque modification de public/cashin.html (évite le cache du navigateur)
 export const CASHIN_MAX_BYTES = 900 * 1024;  // limite Firestore : 1 Mo par document
 
 // Le document garde exactement la forme de l'ancien artefact : { rows, labels, totals, owners, updatedAt }.

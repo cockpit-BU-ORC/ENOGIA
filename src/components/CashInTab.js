@@ -9,7 +9,7 @@ import { todayISO, anchorShifts } from "../cashinLink";
 import { applyEdit } from "../cashinModel";
 import { CashAnchorsDialog } from "./CashAnchors";
 import { useCashin } from "../useCashin";
-import { CASHIN_DOC_REF, CASHIN_PAGE_VERSION, CASHIN_MAX_BYTES, cashinTheme, validateCashin } from "../cashinData";
+import { CASHIN_DOC_REF, CASHIN_PAGE_VERSION, CASHIN_MAX_BYTES, cashinTheme, validateCashin, CASHIN_PRODUIT_REF, produitItems } from "../cashinData";
 
 const btn = (primary) => ({ padding: "6px 12px", borderRadius: 8, border: "1px solid " + (primary ? T.teal600 : T.line), background: primary ? T.teal600 : T.card, color: primary ? T.card : T.ink900, fontSize: FZ.sm, fontWeight: 600, cursor: "pointer" });
 
@@ -29,13 +29,17 @@ function CashInLegacy({ authorName, focus, planRows }) {
   const [planOpen, setPlanOpen] = useState(false); // v256 : « Prévu jusqu'à fin 2026 » aussi dans le format artefact
   const [msg, setMsg] = useState(null); // { kind: "ok" | "err", text }
   const [ancOpen, setAncOpen] = useState(false);
+  // v323 : jalons « Produit » recopiés pour l'accueil du responsable produit, seulement quand ils changent
+  const lastProd = useRef(null);
+  const publishProduit = useCallback(body => { const items = produitItems(body), k = JSON.stringify(items); if (k === lastProd.current) return; lastProd.current = k;
+    setDoc(CASHIN_PRODUIT_REF(), { items, at: new Date().toISOString(), by: authorName || "" }).catch(e => { lastProd.current = null; console.warn("Jalons Produit non publiés :", e && e.message); }); }, [authorName]);
   // v260 : jalons liés au planning dont la facturation prévue ne suit plus les dates → bandeau « Mettre à jour »
   const shifts = info.exists ? anchorShifts(planRows || [], latest.current.data) : [];
   const applyShifts = async () => {
     const d = latest.current.data; if (!d || !Array.isArray(d.rows)) return;
     const by = {}; shifts.forEach(s => { by[s.row.id] = s.to; });
     const rows = d.rows.map(r => (by[r.id] ? applyEdit(r, "factPrevue", by[r.id]).row : r));
-    try { const body = { ...d, rows, updatedAt: new Date().toISOString() }; const err = validateCashin(body); if (err) throw new Error(err); await setDoc(CASHIN_DOC_REF(), { ...body, updatedBy: authorName || "" }); setMsg({ kind: "ok", text: shifts.length + " date" + (shifts.length > 1 ? "s" : "") + " de facturation mise" + (shifts.length > 1 ? "s" : "") + " à jour d'après le planning." }); }
+    try { const body = { ...d, rows, updatedAt: new Date().toISOString() }; const err = validateCashin(body); if (err) throw new Error(err); await setDoc(CASHIN_DOC_REF(), { ...body, updatedBy: authorName || "" }); publishProduit(body); setMsg({ kind: "ok", text: shifts.length + " date" + (shifts.length > 1 ? "s" : "") + " de facturation mise" + (shifts.length > 1 ? "s" : "") + " à jour d'après le planning." }); }
     catch (er) { setMsg({ kind: "err", text: "Mise à jour impossible : " + (er && er.message) }); }
   };
 
@@ -89,6 +93,7 @@ function CashInLegacy({ authorName, focus, planRows }) {
           if (JSON.stringify(m.body).length > CASHIN_MAX_BYTES) throw new Error("document trop gros");
           await setDoc(CASHIN_DOC_REF(), { ...m.body, updatedBy: authorName || "" });
           post({ type: "ack", id: m.id, ok: true });
+          publishProduit(m.body);
         } catch (er) {
           console.error("Cash in : écriture refusée", er);
           post({ type: "ack", id: m.id, ok: false, error: String((er && er.message) || er) });
@@ -98,7 +103,7 @@ function CashInLegacy({ authorName, focus, planRows }) {
     };
     window.addEventListener("message", onMsg);
     return () => window.removeEventListener("message", onMsg);
-  }, [authorName, post, sendState, sendTheme]);
+  }, [authorName, post, sendState, sendTheme, publishProduit]);
 
   useEffect(() => { focusRef.current = focus || null; if (focus && readyRef.current) post({ type: "goto", pj: focus.pj }); }, [focus, post]);
 

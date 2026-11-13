@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v323",
+    date: "2026-11-13",
+    title: "V323 : jalons Produit",
+    items: [
+      { t: "Cash in", d: "Cochez « Produit » sur un jalon lié à un livrable du Produit (ex. P&ID)." },
+      { t: "Accueil", d: "Le responsable produit retrouve ces jalons, leur montant et leurs dates de facture sur son accueil." },
+    ],
+  },
+  {
     id: "2026-11-v322",
     date: "2026-11-12",
     title: "V322 : English, suite",

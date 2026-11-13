@@ -41,3 +41,18 @@ describe("copie réduite pour les administrateurs (v146.12)", () => {
     expect(out.links).toEqual({ PJ405: ["PJ405"] });
   });
 });
+
+// v323 : jalons « Produit » recopiés pour l'accueil du responsable produit
+test("produitItems : seulement les jalons cochés Produit, hors EPC, triés par facture prévue", () => {
+  const { produitItems } = require("./cashinData");
+  const d = { labels: { PJ1: "Papeterie" }, rows: [
+    { id: "a", pj: "PJ1", jalon: "P&ID", montant: 12000, produit: true, factInit: "2026-12-01", factPrevue: "2026-12-15" },
+    { id: "b", pj: "PJ2", jalon: "Acompte", montant: 5000 },
+    { id: "c", pj: "PJ1", jalon: "Plans", montant: "800", produit: true, factPrevue: "2026-11-20" },
+    { id: "e", pj: "PJ3", jalon: "EPC", produit: true, epc: true } ] };
+  const L = produitItems(d);
+  expect(L.map(x => x.id)).toEqual(["c", "a"]);
+  expect(L[1]).toMatchObject({ pj: "PJ1", nom: "Papeterie", jalon: "P&ID", montant: 12000, factInit: "2026-12-01", factPrevue: "2026-12-15" });
+  expect(L[0].montant).toBe(800);
+  expect(produitItems(null)).toEqual([]);
+});

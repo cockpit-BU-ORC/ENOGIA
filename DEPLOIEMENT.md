@@ -2324,3 +2324,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Dictionnaires `src/i18n/en-planning.js` et `src/i18n/en-pages.js` (+ test `src/i18n/i18n.test.js`).
 - Restent à traduire : Manager (fiches projet, KPI, Retards, Point hebdo, rapports), Planificateur, Achats, Production turbines, Cash in.
 - Aucune clé `localStorage` nouvelle ; règles Firestore inchangées.
+
+## v323 — Jalons cash « Produit » sur l'accueil du responsable produit
+
+- Cash in (public/cashin.html, version 323) : case « Produit » par jalon.
+- Nouveau document `planning/cashinProduit` (copie des jalons cochés : PJ, nom, jalon, montant, factures initiale / prévue / émise), écrit par la page Cash in à chaque enregistrement.
+- **Règles Firestore à republier** : `allow write` sur `cashinProduit` pour les admins et la Finance (Modifier) ; lecture ouverte aux comptes ENOGIA.
+- Accueil du rôle « Responsable des testeurs » : cadran « Livrables Produit » (ajoutable aussi aux autres postes par « Ajouter un cadran »).
+- Fichiers : public/cashin.html, cashinData.js(+test), components/CashInTab.js, useAppData.js, App.js, HomeView.js, RoleHome.js, demo/demoPages.js, firestore.rules, versions.
