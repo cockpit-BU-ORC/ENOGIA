@@ -914,4 +914,7 @@ export const RELEASE_CATALOG = [
     ["SAV / MES", "Deux plannings : « Techniciens » (équipe SAV, barres à glisser) et « Demandes d'intervention » (jours libres, demandes des chefs de projet) ; mois et semaines (S46) en tête de chaque planning."],
     ["SAV / MES", "Ticket : toutes les étapes visibles, l'étape en cours surlignée ; cliquer une étape y place le ticket, « Passer à … » nomme l'étape suivante."],
   ] },
+  { v: "329", t: "Achats / Appro : mise à jour d'Alexis", items: [
+    ["Achats / Appro", "Synthèse Appro par scope (à commander, à livrer, livrées), avance ou retard de livraison à côté du statut, choix d'une ligne de PO filtré (projet, article, fournisseur), fournisseur des PO repris d'Odoo, options « choisir 1 » à préciser dans les fiches machine."],
+  ] },
 ];

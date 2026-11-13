@@ -2369,3 +2369,9 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - En-tête de page commun (PageHead), boutons d'ajout à gauche ; étapes du ticket en liste cliquable.
 - Clé `localStorage` `enogia_sav_plan` inchangée. Règles inchangées depuis la V326 (à republier si ce n'est pas fait).
 - Fichiers : components/SavPage.js, demo/demoPages.js, versions.
+
+## v329 — Achats / Appro : retour du kit d'Alexis
+
+- Page Achats / Appro mise à jour par Alexis (Synthèse Appro, avance de livraison, choix filtré des lignes de PO, fournisseurs des PO, options à préciser).
+- Mêmes données (`planning/achats`), règles inchangées. Kit achats régénéré (`kit-achats/`) à lui renvoyer.
+- Fichiers : components/Achats.js, versions.

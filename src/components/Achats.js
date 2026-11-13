@@ -12,7 +12,8 @@ import { PageHead, NavIcon } from "./SharedUI";
 // ===== DÉBUT PAGE (kit Achats : tout ce qui suit jusqu’à FIN PAGE est échangé avec le Claude du responsable achats — scripts/achats-kit.js / achats-import.js) =====
 
 /* ---------- Modèle de données ----------
-   fournisseurs { [id]: { nom, ltJ, ltTransportJ, note } }      LT en jours calendaires ; LT transport toujours appliqué (transport géré par Enogia)
+   fournisseurs { [id]: { nom, nomOdoo, ltJ, ltTransportJ, note } }      LT en jours calendaires ; LT transport toujours appliqué (transport géré par Enogia)
+                nomOdoo = nom du fournisseur dans Odoo s'il diffère de nom (facultatif) : sert à relier le fournisseur des PO
                 (anciens champs contact, email, tel conservés s'ils existent, plus affichés : doublon avec l'ERP)
    composants   { [id]: { ref, designation, type, famille, fournisseurId, delaiJ, actif, scopes, enfants: [{ ref, qte }], note } }   = articles
                 type = "achat" (défaut) ou "orc" (machine produite : pas de fournisseur, LT ni scope) ; ancien champ orc (true/false) encore lu
@@ -33,6 +34,8 @@ import { PageHead, NavIcon } from "./SharedUI";
                 config = { statut: "brouillon" | "finalisee", choix: { [clé de groupe]: ref retenue } } : configuration machine si le modèle a des options ;
                 clé = nom du groupe (options du modèle, lignes N1) ou « réf N1 › groupe » (options de la nomenclature d'un N1, lignes N2).
                 En brouillon, la nomenclature n'est pas encore créée dans la fiche.
+                Finalisée avec des groupes « choisir 1 » sans choix (version pas encore connue) : la fiche est « Options à préciser » (calculé, rien de plus
+                n'est enregistré) ; chaque groupe sans choix a une ligne vide (ref vide, optKey = clé du groupe, scope des composants du groupe), en alerte.
                 verrou = true : configuration verrouillée (verrouLe = date ISO) : plus d'ajout, de modification ni de suppression de lignes ;
                 attribution des PO, date d'arrivée, marge et commentaire restent modifiables.
    lignes       { [id]: { projetId, parentId, ref, composantId, designation, famille, fournisseurId, qte, dateBesoin, lieuLiv, poId, note, pj } }
@@ -44,8 +47,11 @@ import { PageHead, NavIcon } from "./SharedUI";
                 optKey = clé du groupe d'options dont la ligne est issue (vide = composant standard ou ajout manuel)
                 famille = scope ; decalJ = décalage propre à cette machine, en jours, toujours modifiable (même verrouillée).
                 (anciens champs encore lus s'ils existent : po, statut, datePrevue, dateRecue)
-   po           { [id]: { numero, ligne, ref, designation, qte, dateCommande, dateLivraison, statut, projet,
+   po           { [id]: { numero, ligne, ref, designation, qte, dateCommande, dateLivraison, statut, projet, fournisseur, fournisseurOdooId,
                           source, odooId, qteRecue, annule, majOdoo } }
+                fournisseur = nom du fournisseur de la commande (Odoo : partner_id de purchase.order ; saisie : nom tapé) ; relié à un fournisseur
+                de la page par son nom ou son nomOdoo (sans tenir compte des accents, espaces ni majuscules). Sans fournisseur (anciennes lignes) :
+                fournisseur de l'article de même réf. fournisseurOdooId = id du partenaire Odoo (écrit par le serveur seulement).
                 saisie manuelle : id = p<numero>_<ligne>, source vide ; import Odoo : id = o<id de purchase.order.line>, source = "odoo", lecture seule ici
    params       { marge, scopes, scopeNiveaux, odoo, odooDemande }   scopes = liste ordonnée des noms de scope (défaut : SCOPES_DEF) ;
                 scopeNiveaux = { [scope]: "N1" | "N2" } (absent = N1). Scope N1 : suivi par les chefs de projet, créé par défaut dans les fiches,
@@ -67,11 +73,12 @@ import { PageHead, NavIcon } from "./SharedUI";
    - se déclenche la nuit si params.odoo.auto, et quand params.odooDemande devient plus récent que odooSync.fin ;
    - lit dans Odoo (domaine params.odoo.domaine, base, login ; protocole "jsonrpc" Odoo 14 à 18 ou "json2" Odoo 19+) :
        purchase.order.line [id, order_id, sequence, product_id, name, product_qty, qty_received, date_planned, state, <champProjet>]
-       purchase.order      [name, date_approve, date_order, state] ; product.product [default_code]
+       purchase.order      [name, date_approve, date_order, state, partner_id] ; product.product [default_code]
      filtre : commandes non annulées depuis params.odoo.depuis ; si seulementFiches, n° de projet présent dans projets.*.projet ;
    - écrit chaque ligne dans po["o" + id] : numero = order.name ; ligne = rang de la ligne dans la commande (tri sequence puis id) ;
      ref = default_code ; designation = name ; qte = product_qty ; qteRecue = qty_received ; dateCommande = date_approve sinon date_order (AAAA-MM-JJ) ;
-     dateLivraison = date_planned (AAAA-MM-JJ) ; projet = valeur du champ champProjet ; source = "odoo" ; odooId = id ; majOdoo = date ISO ;
+     dateLivraison = date_planned (AAAA-MM-JJ) ; projet = valeur du champ champProjet ;
+     fournisseur = nom du partner_id de la commande (texte, vide si absent) ; fournisseurOdooId = id du partner_id ; source = "odoo" ; odooId = id ; majOdoo = date ISO ;
      statut : brouillon ou à approuver → "apasser" ; demande de prix envoyée → "envoyee" ; commande confirmée → "attente" ; qteRecue ≥ qte → "livre" ;
    - ligne annulée ou disparue d'Odoo : annule = true si elle est affectée à une ligne de nomenclature (poId), sinon suppression ;
    - ne modifie jamais les lignes source vide (saisies à la main) ni le champ poId des lignes de nomenclature ;
@@ -80,9 +87,17 @@ export const EMPTY_ACHATS = { composants: {}, lignes: {}, fournisseurs: {}, proj
 export const STATUTS = [["apasser", "Cde à passer"], ["envoyee", "Cde envoyée"], ["attente", "Attente de livraison"], ["livre", "Livré"]];
 const ST_LABEL = Object.fromEntries(STATUTS);
 const LEGACY_ST = { besoin: "apasser", consult: "apasser", commande: "envoyee", confirme: "attente", expedie: "attente", recu: "livre" };
-const SCOPES_DEF = ["SKID", "ARMOIRE", "POMPE CYCLE", "AIR COOLER", "VOLUTE", "TURBINE", "POMPE DE LUB", "POMPE DE COOLING"];   // liste de départ, modifiable dans Configuration
+const SCOPES_DEF = ["SKID", "ARMOIRE", "POMPE CYCLE", "AIR COOLER", "VOLUTE", "TURBINE", "POMPE DE LUB", "POMPE DE COOLING",
+  "ELEC CTRL", "CHOKE", "ELEC PROTECTION TURBINE", "FLUIDE", "CARTER"];   // liste de départ, modifiable dans Configuration
+const SCOPES_NOUVEAUX = ["ELEC CTRL", "CHOKE", "ELEC PROTECTION TURBINE", "FLUIDE", "CARTER"];   // DEV #11 : proposés dans Configuration si la liste est déjà personnalisée
 const up = s => String(s == null ? "" : s).trim().toUpperCase();
 const fmtJ = n => (n > 0 ? "+" + n : n < 0 ? "−" + Math.abs(n) : "0") + " j";
+// Avance de livraison : livraison prévue (PO) avant la livraison cible, en jours (0 sinon). Calculée hors de lineState (dont le résultat est testé).
+const avanceOf = st => (st && st.statut !== "apasser" && st.statut !== "nc" && st.prevue && st.cible && st.prevue < st.cible ? daysBetween(st.prevue, st.cible) : 0);
+// Écart affiché à côté du statut : retard en rouge, avance en vert
+function Ecart({ l }) { const r = l.st.retardJ, a = l.avJ;
+  return r > 0 ? <span style={{ marginLeft: 6, fontSize: FZF.xs, color: T.red600, fontWeight: 700, whiteSpace: "nowrap" }} title={l.st.statut === "apasser" ? "Commande en retard" : "Livraison après la date cible"}>+{r} j</span>
+    : a > 0 ? <span style={{ marginLeft: 6, fontSize: FZF.xs, color: T.emerald600, fontWeight: 700, whiteSpace: "nowrap" }} title="Livraison avant la date cible">−{a} j</span> : null; }
 
 /* ---------- Dates et utilitaires ---------- */
 const today0 = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
@@ -222,9 +237,10 @@ function ConfigDialog({ titre, sousTitre, plan, initial, brouillon, onDraft, onA
         <span style={{ flex: 1 }} />
         <button type="button" style={btn(false)} disabled={busy} onClick={onClose}>Annuler</button>
         {brouillon && <button type="button" style={btn(false)} disabled={busy} onClick={() => run(onDraft)}>Enregistrer le brouillon</button>}
-        <button type="button" style={btn(true)} disabled={busy || P.manquants.length > 0} onClick={() => run(onApply)}>{brouillon ? "Créer la nomenclature" : "Appliquer les changements"}</button>
+        <button type="button" style={btn(true)} disabled={busy} onClick={() => run(onApply)}>{P.manquants.length ? (brouillon ? "Créer, options à préciser" : "Appliquer, options à préciser") : brouillon ? "Créer la nomenclature" : "Appliquer les changements"}</button>
       </div>
-      <div style={{ fontSize: FZF.xs, color: T.ink500, marginTop: 8 }}>{brouillon ? "Le brouillon garde vos choix sans créer la nomenclature : vous la créerez quand toutes les options seront choisies." : "Seules les lignes des options modifiées sont remplacées. Impossible pour une option dont la ligne a un PO attribué."}</div>
+      {P.manquants.length > 0 && <div role="note" style={{ fontSize: FZF.sm, color: T.amber600, background: T.amber100, borderRadius: 8, padding: "6px 10px", marginTop: 10 }}>Version pas encore connue ? Vous pouvez {brouillon ? "créer la nomenclature" : "appliquer"} sans ces choix : chaque option non choisie devient une ligne vide de son scope, en alerte, et la fiche est marquée « Options à préciser » jusqu'à ce que vous les choisissiez ici.</div>}
+      <div style={{ fontSize: FZF.xs, color: T.ink500, marginTop: 8 }}>{brouillon ? "Le brouillon garde vos choix sans créer la nomenclature." : "Seules les lignes des options modifiées sont remplacées. Impossible pour une option dont la ligne a un PO attribué."}</div>
     </div>
   </div>);
 }
@@ -243,7 +259,7 @@ function ScopesEditor({ value, scopes, onChange }) {
 }
 
 function FormDialog({ title, vals, fields: allFields, onSave, onDelete, deleteLabel, derive, extra, lecture, note, onClose }) {
-  const [v, setV] = useState(vals); const [err, setErr] = useState(""); const [conf, setConf] = useState(false); const [busy, setBusy] = useState(false);
+  const [v, setV] = useState(vals); const [err, setErr] = useState(""); const [conf, setConf] = useState(false); const [confX, setConfX] = useState(""); const [busy, setBusy] = useState(false);
   useEscape(onClose);
   const fields = allFields.filter(f => !f.show || f.show(v));
   const set = (k, val) => setV(o => { const n = { ...o, [k]: val }; return derive ? derive(n, o, k) : n; });
@@ -276,7 +292,8 @@ function FormDialog({ title, vals, fields: allFields, onSave, onDelete, deleteLa
       <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
         {!lecture && onDelete && (conf ? <button type="button" style={{ ...btn(false), color: T.red600, borderColor: T.red600 }} onClick={onDelete}>Confirmer la suppression</button>
           : <button type="button" style={{ ...btn(false), color: T.red600 }} onClick={() => setConf(true)}>{deleteLabel || "Supprimer"}</button>)}
-        {(extra || []).map(([l, fn]) => <button key={l} type="button" style={btn(false)} onClick={() => fn(v)}>{l}</button>)}
+        {(extra || []).map(([l, fn, cf]) => cf && confX === l ? <button key={l} type="button" style={{ ...btn(false), color: T.red600, borderColor: T.red600 }} onClick={() => fn(v)}>{cf}</button>
+          : <button key={l} type="button" style={btn(false)} onClick={() => (cf ? setConfX(l) : fn(v))}>{l}</button>)}
         <span style={{ flex: 1 }} />
         <button type="button" style={btn(!!lecture)} onClick={onClose}>{lecture ? "Fermer" : "Annuler"}</button>
         {!lecture && <button type="button" style={btn(true)} disabled={busy} onClick={save}>Enregistrer</button>}
@@ -333,25 +350,57 @@ function ImportDialog({ title, intro, cols, exemple, fichier, analyze, onClose }
   </div>);
 }
 
-// Choix d'une ligne de PO pour une ligne de nomenclature : on saisit le n° de PO, on voit toutes ses lignes avec la quantité déjà affectée,
-// on en choisit une. Une ligne de PO entièrement affectée est grisée et ne peut plus être choisie ; ses affectations peuvent être retirées ici.
-function PoPicker({ line, po, affects, onPick, onClear, onUnassign, canEdit, onClose }) {
-  const [q, setQ] = useState(line.poNum || ""); const inRef = useRef(null);
+// Choix d'une ligne de PO pour une ligne de nomenclature : filtres actifs par défaut (n° de projet de la fiche, code article de la ligne,
+// fournisseur de la ligne, lignes affectées à 100 % masquées), chacun désactivable ou modifiable ; recherche par n° de PO en plus.
+// fourOfPo(p) → { id, nom, src, relie } : fournisseur de la commande, sinon celui de l'article (anciennes lignes sans fournisseur).
+// Une ligne de PO entièrement affectée est grisée et ne peut plus être choisie ; ses affectations peuvent être retirées ici.
+function PoPicker({ line, po, affects, fours, fourOfPo, onPick, onClear, onUnassign, canEdit, onClose }) {
+  const projDef = (line.fiche && line.fiche.projet) || projOf(line.pj), refDef = line.refEff || "", fourDef = line.four ? line.four.id : "";
+  const [q, setQ] = useState(""); const inRef = useRef(null);
+  const [f, setF] = useState({ proj: !!projDef, projV: projDef, ref: !!refDef, refV: refDef, four: !!fourDef, fourV: fourDef, plein: true });
+  const setK = (k, x) => setF(o => ({ ...o, [k]: x }));
   useEscape(onClose);
   useEffect(() => { if (inRef.current) inRef.current.focus(); }, []);
-  const s = low(q), maQte = num(line.qte) || 0;
-  const res = useMemo(() => (!s ? [] : po.filter(p => low(p.numero).includes(s)).sort((a, b) => cmpNat(a.numero, b.numero) || cmpNat(a.ligne, b.ligne))), [po, s]);
-  const shown = res.slice(0, 60);
+  const s = low(q), maQte = num(line.qte) || 0, pv = low(f.projV), rv = low(f.refV);
+  const pleinOf = p => { const pq = num(p.qte), a = affects[p.id]; return pq != null && pq > 0 && !!a && a.qte >= pq; };
+  const tests = [
+    f.proj && pv ? p => low(p.projet) === pv || low(p.projet).startsWith(pv + "-") : null,
+    f.ref && rv ? p => low(p.ref).includes(rv) : null,
+    f.four && f.fourV ? p => fourOfPo(p).id === f.fourV : null,
+    f.plein ? p => !pleinOf(p) : null,
+  ].filter(Boolean);
+  const actif = s || tests.length > 0;
+  const res = useMemo(() => (!actif ? [] : po.filter(p => p.id === line.poId || ((!s || low(p.numero).includes(s)) && tests.every(t => t(p))))
+    .sort((a, b) => (b.id === line.poId) - (a.id === line.poId) || cmpNat(a.numero, b.numero) || cmpNat(a.ligne, b.ligne))),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- tests dépend de f (listé)
+    [po, s, f, affects, line.poId]);
+  const shown = res.slice(0, 60), projets = uniq([projDef, ...po.map(p => p.projet)]).sort(cmpNat);
+  const chip = (k, label, ctl) => (<div style={{ display: "flex", alignItems: "center", gap: 6, border: "1px solid " + (f[k] ? T.ink700 : T.line), borderRadius: 8, padding: "2px 8px", background: f[k] ? T.surfaceAlt : T.card, minHeight: 32 }}>
+    <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: FZF.sm, fontWeight: 600, color: f[k] ? T.ink900 : T.ink500, cursor: "pointer", minHeight: 24 }}>
+      <input type="checkbox" checked={!!f[k]} onChange={e => setK(k, e.target.checked)} style={{ width: 16, height: 16, margin: 0 }} />{label}</label>{ctl}</div>);
+  const ctlS = { ...field(), width: "auto", minHeight: 26, padding: "2px 6px", fontSize: FZF.xs };
   return (<div onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} style={BACKDROP}>
-    <div role="dialog" aria-modal="true" aria-label="Affecter une ligne de PO" style={{ ...CARD(), width: "min(980px,100%)", maxHeight: "90vh", overflow: "auto", boxShadow: T.shadowLg, padding: "16px 18px" }}>
+    <div role="dialog" aria-modal="true" aria-label="Affecter une ligne de PO" style={{ ...CARD(), width: "min(1060px,100%)", maxHeight: "90vh", overflow: "auto", boxShadow: T.shadowLg, padding: "16px 18px" }}>
       <div style={{ fontFamily: T.fontDisplay, fontSize: FZF.lg, fontWeight: 600, color: T.ink900 }}>Affecter une ligne de PO</div>
-      <div style={{ fontSize: FZF.sm, color: T.ink500, marginBottom: 10 }}><span style={{ fontFamily: T.fontMono }}>{line.refEff || "—"}</span> {line.desEff}, quantité {line.qte || "—"}</div>
-      <label style={{ ...LBL, maxWidth: 280, marginBottom: 10 }}>N° de PO
-        <input ref={inRef} type="search" value={q} onChange={e => setQ(e.target.value)} style={{ ...field(), fontFamily: T.fontMono }} /></label>
-      {!s ? <div style={{ color: T.ink500, fontSize: FZF.sm, padding: "8px 0" }}>Saisissez un n° de PO pour voir ses lignes.</div>
-        : !res.length ? <div style={{ color: T.ink500, fontSize: FZF.sm, padding: "8px 0" }}>Aucun PO ne correspond. Vérifiez le numéro ou créez la ligne dans l'onglet PO.</div>
+      <div style={{ fontSize: FZF.sm, color: T.ink500, marginBottom: 10 }}><span style={{ fontFamily: T.fontMono }}>{line.refEff || "—"}</span> {line.desEff}, quantité {line.qte || "—"}{line.fiche ? ", machine " + line.fiche.machine : ""}</div>
+      <div role="group" aria-label="Filtres des lignes de PO" style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 8 }}>
+        {chip("proj", "N° projet", <select value={f.projV} aria-label="N° de projet filtré" onChange={e => setF(o => ({ ...o, projV: e.target.value, proj: true }))} style={{ ...ctlS, fontFamily: T.fontMono }}>{projets.map(x => <option key={x} value={x}>{x}</option>)}{!projets.length && <option value="">—</option>}</select>)}
+        {chip("ref", "Code article", <input type="text" value={f.refV} aria-label="Code article filtré" onChange={e => setF(o => ({ ...o, refV: e.target.value, ref: true }))} style={{ ...ctlS, width: 130, fontFamily: T.fontMono }} />)}
+        {chip("four", "Fournisseur", <select value={f.fourV} aria-label="Fournisseur filtré" onChange={e => setF(o => ({ ...o, fourV: e.target.value, four: !!e.target.value }))} style={ctlS}><option value="">—</option>{fours.map(x => <option key={x.id} value={x.id}>{x.nom}</option>)}</select>)}
+        {chip("plein", "Masquer les lignes affectées à 100 %", null)}
+      </div>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
+        <label style={{ ...LBL, width: 240 }}>N° de PO (facultatif)
+          <input ref={inRef} type="search" value={q} onChange={e => setQ(e.target.value)} style={{ ...field(), fontFamily: T.fontMono }} /></label>
+        <span style={{ fontSize: FZF.sm, color: T.ink500, fontVariantNumeric: "tabular-nums", minHeight: 32, display: "flex", alignItems: "center" }}>{actif ? res.length + " ligne(s) sur " + po.length : ""}</span>
+        <span style={{ flex: 1 }} />
+        <button type="button" style={sbtn()} onClick={() => setF({ proj: !!projDef, projV: projDef, ref: !!refDef, refV: refDef, four: !!fourDef, fourV: fourDef, plein: true })}>Filtres par défaut</button>
+      </div>
+      {f.four && f.fourV && <div style={{ fontSize: FZF.xs, color: T.ink500, marginBottom: 6 }}>Fournisseur d'une ligne de PO : celui de la commande (Odoo ou saisie), sinon celui de l'article de même code. Un fournisseur « non relié » est exclu : ajoutez son nom Odoo dans l'onglet Fournisseurs.</div>}
+      {!actif ? <div style={{ color: T.ink500, fontSize: FZF.sm, padding: "8px 0" }}>Activez un filtre ou saisissez un n° de PO pour voir les lignes.</div>
+        : !res.length ? <div style={{ color: T.ink500, fontSize: FZF.sm, padding: "8px 0" }}>Aucune ligne de PO avec ces filtres. Désactivez ou changez un filtre, ou créez la ligne dans l'onglet PO.</div>
           : <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", fontVariantNumeric: "tabular-nums" }}>
-            <thead><tr><th style={th()}>N° PO</th><th style={th()}>Ligne</th><th style={th()}>Référence</th><th style={th()}>Désignation</th><th style={th(true)}>Qté</th><th style={th(true)}>Affectée</th><th style={th()}>Livraison</th><th style={th()}>Statut</th><th style={th()}>Projet</th><th style={th()}><span style={SR}>Action</span></th></tr></thead>
+            <thead><tr><th style={th()}>N° PO</th><th style={th()}>Ligne</th><th style={th()}>Référence</th><th style={th()}>Désignation</th><th style={th()}>Fournisseur</th><th style={th(true)}>Qté</th><th style={th(true)}>Affectée</th><th style={th()}>Livraison</th><th style={th()}>Statut</th><th style={th()}>Projet</th><th style={th()}><span style={SR}>Action</span></th></tr></thead>
             <tbody>{shown.map(p => {
               const cur = p.id === line.poId, same = p.ref && low(p.ref) === low(line.refEff), a = affects[p.id] || { qte: 0, lines: [] }, pq = num(p.qte);
               const plein = pq != null && pq > 0 && a.qte >= pq && !cur, depasse = !cur && !plein && pq != null && pq > 0 && a.qte + maQte > pq;
@@ -360,7 +409,7 @@ function PoPicker({ line, po, affects, onPick, onClear, onUnassign, canEdit, onC
                 <tr onClick={plein ? undefined : () => onPick(p.id)} style={{ cursor: plein ? "default" : "pointer", height: 36, background: cur || plein ? T.surfaceAlt : "transparent" }}>
                   <td style={tdx({ fontFamily: T.fontMono, fontWeight: 700 })}>{p.numero}</td><td style={tdx({ fontFamily: T.fontMono })}>{p.ligne}</td>
                   <td style={tdx({ fontFamily: T.fontMono })}>{p.ref || "—"}{same && <span style={{ marginLeft: 6, fontFamily: T.font, fontSize: FZF.xs, fontWeight: 700, color: plein ? T.ink500 : T.emerald600 }}>même réf.</span>}</td>
-                  <td style={tdx()}>{p.designation || "—"}</td><td style={tdx({ textAlign: "right" })}>{pq == null ? "—" : pq}</td>
+                  <td style={tdx()}>{p.designation || "—"}</td><td style={tdx({ color: plein ? T.ink500 : T.ink700 })}>{(() => { const fo = fourOfPo(p); return <>{fo.nom || "—"}{fo.src === "article" && <span style={{ marginLeft: 6, fontSize: FZF.xs, color: T.ink500 }}>(article)</span>}{!fo.relie && <span style={{ marginLeft: 6, fontSize: FZF.xs, fontWeight: 700, color: plein ? T.ink500 : T.amber600 }}>non relié</span>}</>; })()}</td><td style={tdx({ textAlign: "right" })}>{pq == null ? "—" : pq}</td>
                   <td style={tdx({ textAlign: "right", whiteSpace: "nowrap", fontWeight: 700, color: plein ? T.ink500 : depasse ? T.amber600 : T.ink700 })}>{a.qte} / {pq == null ? "—" : pq}</td>
                   <td style={tdx({ whiteSpace: "nowrap" })}>{fd(p.dateLivraison)}</td><td style={tdx({ whiteSpace: "nowrap", color: T.ink700 })}>{ST_LABEL[p.statut] || "—"}</td>
                   <td style={tdx({ fontFamily: T.fontMono, color: T.ink700 })}>{p.projet || "—"}</td>
@@ -368,7 +417,7 @@ function PoPicker({ line, po, affects, onPick, onClear, onUnassign, canEdit, onC
                     : plein ? <span style={{ fontSize: FZF.xs, fontWeight: 700 }}>Complète</span>
                       : <>{depasse && <span style={{ fontSize: FZF.xs, color: T.amber600, fontWeight: 700, marginRight: 6 }}>dépassera</span>}<button type="button" style={sbtn()} onClick={e => { e.stopPropagation(); onPick(p.id); }}>Choisir</button></>}</td>
                 </tr>
-                {a.lines.length > 0 && <tr style={{ background: cur || plein ? T.surfaceAlt : "transparent" }}><td colSpan={10} style={{ ...td(), paddingTop: 0, fontSize: FZF.xs, color: T.ink700 }}>
+                {a.lines.length > 0 && <tr style={{ background: cur || plein ? T.surfaceAlt : "transparent" }}><td colSpan={11} style={{ ...td(), paddingTop: 0, fontSize: FZF.xs, color: T.ink700 }}>
                   <span style={{ color: T.ink500, marginRight: 6 }}>Affectée à :</span>
                   {a.lines.map(x => <span key={x.id} style={{ display: "inline-flex", alignItems: "center", gap: 4, marginRight: 10, whiteSpace: "nowrap" }}>
                     <span style={{ fontFamily: T.fontMono }}>{x.machine}</span> · <span style={{ fontFamily: T.fontMono }}>{x.ref}</span> × {x.qte}{x.id === line.id ? " (cette ligne)" : ""}
@@ -376,7 +425,7 @@ function PoPicker({ line, po, affects, onPick, onClear, onUnassign, canEdit, onC
                 </td></tr>}
               </React.Fragment>); })}</tbody>
           </table></div>}
-      {res.length > shown.length && <div style={{ fontSize: FZF.xs, color: T.ink500, marginTop: 6 }}>{shown.length} premières lignes sur {res.length} : précisez le numéro.</div>}
+      {res.length > shown.length && <div style={{ fontSize: FZF.xs, color: T.ink500, marginTop: 6 }}>{shown.length} premières lignes sur {res.length} : ajoutez un filtre ou précisez le n° de PO.</div>}
       <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
         {line.poId && <button type="button" style={{ ...btn(false), color: T.red600 }} onClick={onClear}>Retirer le PO de cette ligne</button>}
         <span style={{ flex: 1 }} />
@@ -423,7 +472,7 @@ function OdooReglages({ odoo, sync, texte, demandeEnCours, onSave, onSync }) {
   </div>);
 }
 
-const TABS = [["projets", "Projets"], ["po", "PO"], ["fournisseurs", "Fournisseurs"], ["articles", "Articles"], ["nomenclatures", "Nomenclatures"], ["configuration", "Configuration"], ["reglages", "Réglages"]];
+const TABS = [["projets", "Projets"], ["synthese", "Synthèse Appro"], ["po", "PO"], ["fournisseurs", "Fournisseurs"], ["articles", "Articles"], ["nomenclatures", "Nomenclatures"], ["configuration", "Configuration"], ["reglages", "Réglages"]];
 const PAGE = 25;
 const COLS_ART = [
   { k: "ref", l: "REF", req: true, alias: ["ref", "refenogia", "reference", "code", "codearticle", "article"] },
@@ -453,7 +502,11 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
   const pref = (k, ok, def) => { try { const v = localStorage.getItem(k); return ok.includes(v) ? v : def; } catch (e) { return def; } };
   const [tab, setTab] = useState(() => pref("enogia_achats_tab", TABS.map(t => t[0]), "projets"));
   const [vue, setVue] = useState(() => pref("enogia_achats_vue", ["tableau", "cartes", "gantt"], "tableau"));
-  useEffect(() => { try { localStorage.setItem("enogia_achats_tab", tab); localStorage.setItem("enogia_achats_vue", vue); } catch (e) { /* stockage indisponible */ } }, [tab, vue]);
+  // Vue tableau : sous-lignes N2 affichées par défaut (réglage global) ; chaque N1 peut être replié ou déplié (n2Ouv, non enregistré)
+  const [n2Vis, setN2Vis] = useState(() => pref("enogia_achats_n2", ["oui", "non"], "oui") === "oui"), [n2Ouv, setN2Ouv] = useState({});
+  // Synthèse Appro : filtre de statut, recherche, scope sélectionné
+  const [synF, setSynF] = useState(() => pref("enogia_achats_synth", ["tout", "commander", "livrer"], "tout")), [synQ, setSynQ] = useState(""), [synScope, setSynScope] = useState("");
+  useEffect(() => { try { localStorage.setItem("enogia_achats_tab", tab); localStorage.setItem("enogia_achats_vue", vue); localStorage.setItem("enogia_achats_n2", n2Vis ? "oui" : "non"); localStorage.setItem("enogia_achats_synth", synF); } catch (e) { /* stockage indisponible */ } }, [tab, vue, n2Vis, synF]);
   const [cfg, setCfg] = useState(null);
   const [seulDiff, setSeulDiff] = useState(false), [deverr, setDeverr] = useState(false);
   const [ficheSel, setFicheSel] = useState(null), [qFiche, setQFiche] = useState(""), [qFour, setQFour] = useState(""), [qPo, setQPo] = useState(""), [poLimit, setPoLimit] = useState(PAGE);
@@ -524,7 +577,7 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
       const refEff = l.ref || (art && art.ref) || "";
       const manque = [!refEff && "référence", !four && "fournisseur", four && st.lt == null && "LT", !st.besoin && "date de besoin", !(num(l.qte) > 0) && "quantité", poAnnule && "PO annulé dans Odoo"].filter(Boolean);
       const r = { ...l, fiche: fi, art, four, poLine, poAnnule, poVerrou: !!poRaw && !poAnnule, parent, st, manque, refEff, desEff: (art && art.designation) || l.designation || "",
-        famEff, decScope: dScope, decLigne: dLigne, poNum: poRaw ? poRaw.numero : (l.po || ""), poLig: poRaw ? poRaw.ligne : "" };
+        famEff, avJ: avanceOf(st), decScope: dScope, decLigne: dLigne, poNum: poRaw ? poRaw.numero : (l.po || ""), poLig: poRaw ? poRaw.ligne : "" };
       out[l.id] = r; return r;
     };
     Object.values(S.lignes).forEach(l => one(l, 0));
@@ -539,6 +592,12 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
   const poUsage = useMemo(() => Object.fromEntries(Object.entries(affects).map(([k, a]) => [k, a.n])), [affects]);
   const poPlein = p => { const q = num(p && p.qte), a = affects[p && p.id]; return q != null && q > 0 && !!a && a.qte >= q; };
   const poList = useMemo(() => Object.values(S.po), [S]);
+  // Fournisseur d'une ligne de PO : nom venu d'Odoo ou saisi, relié par nom ou nomOdoo ; sinon (ancienne ligne sans nom) fournisseur de l'article de même réf.
+  // { id : fournisseur de la page ou "", nom : nom à afficher, src : "po" | "article" | "", relie : false si le nom du PO ne correspond à aucun fournisseur }
+  const fourByNom = useMemo(() => { const m = {}; Object.values(S.fournisseurs).forEach(f => [f.nom, f.nomOdoo].forEach(n => { const k = normH(n); if (k && !m[k]) m[k] = f; })); return m; }, [S]);
+  const fourOfPo = p => { const n = String((p && p.fournisseur) || "").trim();
+    if (n) { const f = fourByNom[normH(n)]; return { id: f ? f.id : "", nom: f ? f.nom : n, src: "po", relie: !!f }; }
+    const a = p && p.ref && artByRef[low(p.ref)], f = a && S.fournisseurs[a.fournisseurId]; return f ? { id: f.id, nom: f.nom, src: "article", relie: true } : { id: "", nom: "", src: "", relie: true }; };
   const odoo = S.params.odoo || {}, sync = (doc && doc.odooSync) || {}, odooPret = !!(odoo.domaine && odoo.base && odoo.login);
   // v295 : une demande restée sans réponse plus de 5 min (serveur pas encore en place, arrêté…) ne bloque plus le bouton
   const demandeOuverte = !!S.params.odooDemande && (!sync.fin || String(sync.fin) < String(S.params.odooDemande)) && sync.etat !== "erreur";
@@ -562,13 +621,21 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
   /* ---- création de lignes depuis le catalogue (copie figée de la nomenclature) ---- */
   const lineFrom = (fiche, art, qte, extra) => ({ projetId: fiche.id, pj: fiche.machine, parentId: "", composantId: art ? art.id : "", ref: art ? art.ref : "", designation: art ? art.designation || "" : "",
     famille: art ? String(art.famille || "").toUpperCase() : "", fournisseurId: (art && art.fournisseurId) || "", qte, dateBesoin: "", lieuLiv: "", poId: "", note: "", ...extra });
-  // Sous-lignes d'un N1 : composants standard + options retenues dans choix (clé « réf N1 › groupe ») ; sans choix, options ignorées
-  const addKids = async (fiche, parentId, art, qteParent, lieu, choix) => { let n = 0;
+  // Ligne vide d'un groupe « choisir 1 » sans choix (version pas encore connue) : scope et quantité des composants du groupe, réf vide (en alerte)
+  const videOf = (fiche, g, qteParent, extra) => { const fams = uniq(g.items.map(i => i.art && up(i.art.famille))), qs = uniq(g.items.map(i => String(i.qte)));
+    return lineFrom(fiche, null, (qs.length === 1 ? Number(qs[0]) : 1) * (qteParent || 1), { famille: fams[0] || "", designation: "Option à préciser : " + g.nom, optKey: g.key || g.nom, ...extra }); };
+  // Sous-lignes d'un N1 : composants standard + options retenues dans choix (clé « réf N1 › groupe ») ; sans choix, options ignorées ;
+  // vides = true (configuration machine) : un groupe « choisir 1 » sans choix donne une sous-ligne vide à préciser
+  const addKids = async (fiche, parentId, art, qteParent, lieu, choix, vides) => { let n = 0;
     for (const e of kidsOf(art)) { if (!e.art || e.art.id === art.id) continue; let optKey = "";
       if (e.option) { const key = art.ref + " › " + e.option; if (!choix || low(choix[key]) !== low(e.ref)) continue; optKey = key; }
       if (await write("lignes", newId(), lineFrom(fiche, e.art, e.qte * qteParent, { parentId, lieuLiv: lieu || "", optKey }))) n++; }
+    if (vides) for (const g of groupsOf(art)) { const key = art.ref + " › " + g.nom;
+      if (g.multi && !g.items.some(i => i.art && low(i.ref) === low((choix || {})[key])) && await write("lignes", newId(), videOf(fiche, { ...g, key }, qteParent, { parentId, lieuLiv: lieu || "" }))) n++; }
     return n; };
-  const addN1 = async (fiche, art, qte, optKey, choix) => { const id = newId(); if (!(await write("lignes", id, lineFrom(fiche, art, qte, { optKey: optKey || "" })))) return 0; return 1 + await addKids(fiche, id, art, qte, "", choix); };
+  const addN1 = async (fiche, art, qte, optKey, choix) => { const id = newId(); if (!(await write("lignes", id, lineFrom(fiche, art, qte, { optKey: optKey || "" })))) return 0; return 1 + await addKids(fiche, id, art, qte, "", choix, true); };
+  // Fiche « Options à préciser » : configuration finalisée mais groupes « choisir 1 » encore sans choix
+  const aPreciser = f => { if (!f || !f.config || f.config.statut !== "finalisee") return []; const m = artByRef[low(f.modele)]; return m ? planOf(m, f.config.choix).manquants : []; };
   const scopesManquants = (modele, fams) => { const c = cfgOf(artByRef[low(modele)]); return scopeList.filter(s => c[s].actif && !fams.has(s)); };
   const addStd = async (fiche, modele, fams) => { let n = 0; for (const s of scopesManquants(modele, fams)) if (await write("lignes", newId(), lineFrom(fiche, null, 1, { famille: s }))) n++; return n; };
   const famsN1 = L => new Set(L.filter(l => !l.parentId).map(l => String(l.famEff || "").toUpperCase()));
@@ -638,12 +705,12 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
   // fiche déjà créée, remplace seulement les lignes des groupes dont le choix a changé (refusé si un PO y est attribué).
   const appliquerConfig = async (fiche, choix) => {
     const raw = S.projets[fiche.id], brouillon = !raw.config || raw.config.statut !== "finalisee", mArt = artByRef[low(fiche.modele)], P = planOf(mArt, choix);
-    if (P.manquants.length) return "Il reste à choisir : " + P.manquants.map(g => g.nom).join(", ") + ".";
     const fi = { id: fiche.id, machine: fiche.machine }, L = linesByFiche[fiche.id] || [];
     let n = 0, s = 0;
     if (brouillon) {
       const fams = famsN1(L);
       for (const x of P.n1) { if (!x.k.art || x.k.art.id === (mArt && mArt.id)) continue; n += await addN1(fi, x.k.art, x.k.qte, x.optKey, choix); if (x.k.art.famille) fams.add(up(x.k.art.famille)); }
+      for (const g of P.manquants.filter(g => !g.parent)) { const v = videOf(fi, g, 1); if (await write("lignes", newId(), v)) n++; if (v.famille) fams.add(v.famille); }
       n += await addStd(fi, fiche.modele, fams);
     } else {
       const lock = l => l.poVerrou || L.some(k => k.parentId === l.id && k.poVerrou), changes = [];
@@ -651,7 +718,9 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
         const par = g.parent ? L.find(l => !l.parentId && low(l.refEff) === low(g.parent.ref)) : null;
         if (g.parent && !par) continue;
         const cur = L.filter(l => l.optKey === g.key && (g.parent ? l.parentId === par.id : !l.parentId)), cible = g.items.find(i => i.art && low(i.ref) === low(g.val)) || null;
-        if (cur.length === (cible ? 1 : 0) && (!cible || low(cur[0].refEff) === low(cible.ref))) continue;
+        // sans choix : une ligne déjà là (vide ou complétée à la main) est gardée ; groupe « choisir 1 » sans ligne : ligne vide à préciser
+        if (!cible && (cur.length || !g.multi)) continue;
+        if (cible && cur.length === 1 && low(cur[0].refEff) === low(cible.ref)) continue;
         if (cur.some(lock)) return "Option « " + g.nom + " » : un PO est attribué à la ligne actuelle. Retirez-le avant de changer cette option.";
         changes.push({ g, par, cur, cible });
       }
@@ -661,10 +730,11 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
         for (const l of cur) { for (const k of L.filter(k => k.parentId === l.id)) { await api.del("lignes", k.id); supprimes.add(k.id); } await api.del("lignes", l.id); supprimes.add(l.id); s++; }
         if (cible && !g.parent) n += await addN1(fi, cible.art, cible.qte, g.key, choix);
         if (cible && g.parent && await write("lignes", newId(), lineFrom(fi, cible.art, cible.qte * (num(par.qte) || 1), { parentId: par.id, optKey: g.key }))) n++;
+        if (!cible && await write("lignes", newId(), videOf(fi, g, g.parent ? (num(par.qte) || 1) : 1, g.parent ? { parentId: par.id } : {}))) n++;
       }
     }
-    const ok = await write("projets", fiche.id, { ...raw, config: { statut: "finalisee", choix } });
-    notify(!ok ? "Enregistrement impossible, réessayez dans un instant." : brouillon ? "Nomenclature créée : " + n + " ligne(s)." : n || s ? "Options appliquées : " + s + " ligne(s) retirée(s), " + n + " ajoutée(s)." : "Aucun changement.", !ok);
+    const ok = await write("projets", fiche.id, { ...raw, config: { statut: "finalisee", choix } }), reste = P.manquants.length ? " " + P.manquants.length + " option(s) à préciser." : "";
+    notify(!ok ? "Enregistrement impossible, réessayez dans un instant." : (brouillon ? "Nomenclature créée : " + n + " ligne(s)." : n || s ? "Options appliquées : " + s + " ligne(s) retirée(s), " + n + " ajoutée(s)." : "Aucun changement.") + reste, !ok);
     return ok;
   };
   const saveFiche = (f, patch) => put("projets", f.id, { ...S.projets[f.id], ...patch });
@@ -688,7 +758,8 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
       note: lockFiche ? "Configuration de la machine verrouillée le " + fdt(fiche.verrouLe) + ". Seule l'attribution du PO reste possible."
         : lockPo ? "PO " + l.poNum + (l.poLig ? " ligne " + l.poLig : "") + " attribué : ligne verrouillée. Retirez le PO pour la modifier."
           : kidsPo ? kidsPo + " sous-ligne(s) ont un PO attribué : suppression impossible tant qu'ils ne sont pas retirés." : null,
-      extra: isNew ? null : [[l.poId ? "Changer ou retirer le PO" : "Attribuer PO", () => { setForm(null); setPick(l.id); }]],
+      extra: isNew ? null : [[l.poId ? "Changer ou retirer le PO" : "Attribuer PO", () => { setForm(null); setPick(l.id); }],
+        ...(!lecture && !kidsPo && l.refEff ? [["Retirer l'article, garder le scope", () => retirerArticle(l, fiche, kids), kids.length ? "Confirmer : retirer l'article et ses " + kids.length + " sous-ligne(s)" : null]] : [])],
       title: isNew ? (parent ? "Sous-ligne de " + (parent.refEff || "la ligne") : "Nouvelle ligne · " + fiche.machine) : (l.famEff || "Ligne") + (raw.ref ? " · " + raw.ref : "") + " · " + fiche.machine, vals: raw,
       derive: (n, o, k) => { if (k !== "ref") return n; const a = A(n);
         return a ? { ...n, composantId: a.id, designation: a.designation || "", famille: n.famille || String(a.famille || "").toUpperCase(), fournisseurId: a.fournisseurId || n.fournisseurId } : { ...n, composantId: "" }; },
@@ -720,6 +791,20 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
         const n = nouveau ? await addKids(fiche, d.id, a, num(d.qte) || 1, d.lieuLiv) : 0, go = nouveau ? groupsOf(a).length : 0;
         notify((n ? "Enregistré, " + n + " sous-ligne(s) ajoutée(s)." : "Enregistré.") + (go ? " " + go + " groupe(s) d'options non ajouté(s) : ajoutez le composant voulu avec ＋ Sous-ligne." : "")); setForm(null);
       } });
+  };
+  // Retirer l'article d'une ligne sans supprimer le scope : la ligne redevient vide (« à attribuer », en alerte) ; quantité, décalage, date de besoin
+  // et note sont gardés ; ses sous-lignes (nomenclature de l'article) sont supprimées. Ligne issue d'une option : le choix est effacé de la
+  // configuration (avec les choix de ses sous-options), la fiche passe « Options à préciser ».
+  const retirerArticle = async (l, fiche, kids) => {
+    const raw = S.lignes[l.id]; if (!raw || fiche.verrou || l.poVerrou) return;
+    const famille = up(raw.famille || l.famEff), groupe = raw.optKey ? raw.optKey.split(" › ").pop() : "";
+    for (const k of kids) await api.del("lignes", k.id);
+    const ok = await write("lignes", l.id, { ...raw, ref: "", composantId: "", designation: groupe ? "Option à préciser : " + groupe : "", fournisseurId: "", famille });
+    const fr = S.projets[fiche.id];
+    if (ok && raw.optKey && fr && fr.config && fr.config.choix) { const ref0 = l.refEff, choix = { ...fr.config.choix };
+      delete choix[raw.optKey]; if (!raw.parentId) Object.keys(choix).forEach(k => { if (low(k).startsWith(low(ref0) + " › ")) delete choix[k]; });
+      await write("projets", fiche.id, { ...fr, config: { ...fr.config, choix } }); }
+    notify(ok ? "Article retiré : le scope " + (famille || "") + " reste, à compléter." : "Enregistrement impossible, réessayez dans un instant.", !ok); if (ok) setForm(null);
   };
   // Décalage propre à une ligne : modifiable même si la ligne ou la fiche est verrouillée (planification, pas configuration)
   const saveDecal = async (l, val) => { const v = String(val).trim() === "" ? "" : Math.round(Number(val)); if (v !== "" && isNaN(v)) return;
@@ -780,21 +865,27 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
 
   /* ---- fournisseur ---- */
   const openFour = f => {
-    const isNew = !f, raw = isNew ? { id: newId(), nom: "", ltJ: "", ltTransportJ: "", note: "" } : { ...S.fournisseurs[f.id] };
+    const isNew = !f, raw = isNew ? { id: newId(), nom: "", nomOdoo: "", ltJ: "", ltTransportJ: "", note: "" } : { nomOdoo: "", ...S.fournisseurs[f.id] };
+    const nomsPo = uniq(poList.map(p => String(p.fournisseur || "").trim())).filter(n => !fourByNom[normH(n)] || fourByNom[normH(n)].id === raw.id).sort(cmpNat);
     const used = allLines.filter(l => l.four && l.four.id === raw.id).length;
     setForm({ title: isNew ? "Nouveau fournisseur" : raw.nom, vals: raw,
-      fields: [{ k: "nom", l: "Nom", req: true, wide: true }, { k: "ltJ", l: "LT fournisseur (jours)", type: "number", hint: "Remplacé par le LT de l'article s'il est défini." }, { k: "ltTransportJ", l: "LT transport (jours)", type: "number", hint: "Toujours appliqué (transport géré par Enogia)." },
+      fields: [{ k: "nom", l: "Nom", req: true, wide: true },
+        { k: "nomOdoo", l: "Nom dans Odoo", wide: true, suggest: nomsPo, hint: v => { const n = poList.filter(p => p.fournisseur && [v.nom, v.nomOdoo].some(x => normH(x) && normH(x) === normH(p.fournisseur))).length;
+          return "À remplir si le nom des PO diffère du nom ci-dessus. Liste : noms de PO pas encore reliés. " + n + " ligne(s) de PO reliée(s)."; } },
+        { k: "ltJ", l: "LT fournisseur (jours)", type: "number", hint: "Remplacé par le LT de l'article s'il est défini." }, { k: "ltTransportJ", l: "LT transport (jours)", type: "number", hint: "Toujours appliqué (transport géré par Enogia)." },
         { k: "note", l: "Note", type: "textarea" }],
       deleteLabel: used ? "Supprimer (utilisé sur " + used + " ligne(s))" : "Supprimer",
       onDelete: isNew ? null : async () => { if (await del("fournisseurs", raw.id)) setForm(null); },
       onSave: async v => { const nom = String(v.nom).trim();
         if (Object.values(S.fournisseurs).some(x => x.id !== v.id && low(x.nom) === low(nom))) return "Un fournisseur porte déjà ce nom.";
-        if (await put("fournisseurs", v.id, { ...v, nom, ltJ: num(v.ltJ) == null ? "" : Math.max(0, num(v.ltJ)), ltTransportJ: num(v.ltTransportJ) == null ? "" : Math.max(0, num(v.ltTransportJ)) })) setForm(null); } });
+        const nomOdoo = String(v.nomOdoo || "").trim(), autre = nomOdoo && Object.values(S.fournisseurs).find(x => x.id !== v.id && [x.nom, x.nomOdoo].some(y => normH(y) === normH(nomOdoo)));
+        if (autre) return "Ce nom Odoo est déjà relié à « " + autre.nom + " ».";
+        if (await put("fournisseurs", v.id, { ...v, nom, nomOdoo, ltJ: num(v.ltJ) == null ? "" : Math.max(0, num(v.ltJ)), ltTransportJ: num(v.ltTransportJ) == null ? "" : Math.max(0, num(v.ltTransportJ)) })) setForm(null); } });
   };
 
   /* ---- ligne de PO ---- */
   const openPo = p => {
-    const isNew = !p, raw = isNew ? { id: "", numero: qPo.trim(), ligne: "", ref: "", designation: "", qte: "", dateCommande: tIso, dateLivraison: "", statut: "envoyee", projet: "" } : { ...S.po[p.id] };
+    const isNew = !p, raw = isNew ? { id: "", numero: qPo.trim(), ligne: "", ref: "", designation: "", qte: "", dateCommande: tIso, dateLivraison: "", statut: "envoyee", projet: "", fournisseur: "" } : { fournisseur: "", ...S.po[p.id] };
     const used = isNew ? 0 : (poUsage[raw.id] || 0), fromOdoo = raw.source === "odoo";
     setForm({ title: isNew ? "Nouvelle ligne de PO" : "PO " + raw.numero + " · ligne " + raw.ligne, vals: raw, lecture: fromOdoo,
       note: fromOdoo ? (raw.annule ? "Annulée dans Odoo. " : "") + "Importée d'Odoo le " + fdt(raw.majOdoo) + ". Modifiable uniquement dans Odoo." + (used ? " Affectée à " + used + " ligne(s)." : "") : null,
@@ -802,12 +893,15 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
         { k: "ref", l: "Référence", mono: true, suggest: refSugg }, { k: "designation", l: "Désignation" }, { k: "qte", l: "Quantité", type: "number" },
         { k: "statut", l: "Statut PO", type: "select", opts: STATUTS }, { k: "dateCommande", l: "Date de commande", type: "date" }, { k: "dateLivraison", l: "Date de livraison", type: "date" },
         { k: "projet", l: "N° projet", suggest: fiches.flatMap(x => [x.projet, x.machine]) },
+        { k: "fournisseur", l: "Fournisseur", suggest: Object.values(S.fournisseurs).map(f => f.nom).sort(cmpNat), hint: v => { const fo = fourOfPo(v);
+          return fromOdoo ? (fo.src === "po" ? (fo.relie ? "Relié à « " + fo.nom + " »." : "Pas relié : ajoutez ce nom Odoo à un fournisseur.") : "Pas de fournisseur dans Odoo pour cette ligne.")
+            : fo.src === "po" ? (fo.relie ? "Fournisseur de la page." : "Inconnu : choisissez un nom de la liste.") : fo.src === "article" ? "Vide : celui de l'article (" + fo.nom + ")." : ""; } },
         ...(fromOdoo ? [{ k: "qteRecue", l: "Quantité reçue", type: "number" }] : [])],
       deleteLabel: used ? "Supprimer (affectée à " + used + " ligne(s))" : "Supprimer",
       onDelete: isNew ? null : async () => { for (const l of Object.values(S.lignes).filter(l => l.poId === raw.id)) await write("lignes", l.id, { ...l, poId: "" }); if (await del("po", raw.id)) setForm(null); },
       onSave: async v => { const numero = String(v.numero).trim(), ligne = String(v.ligne).trim(), id = isNew ? poKey(numero, ligne) : v.id;
         if (isNew && S.po[id]) return "La ligne " + ligne + " du PO " + numero + " existe déjà.";
-        if (await put("po", id, { ...v, numero, ligne })) setForm(null); } });
+        if (await put("po", id, { ...v, numero, ligne, fournisseur: String(v.fournisseur || "").trim() })) setForm(null); } });
   };
 
   /* ---- nomenclatures du catalogue ---- */
@@ -904,7 +998,16 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
   const dateCell = (s, color) => <td style={{ ...td(), whiteSpace: "nowrap", color: color || T.ink900 }}>{fd(s)}</td>;
   const toolbar = { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 8 };
 
-  const renderTableau = (fiche, list) => (<div style={{ overflowX: "auto" }}>
+  const renderTableau = (fiche, all) => { const kids = {}; all.forEach(l => { if (l.niv === 2) (kids[l.parentId] = kids[l.parentId] || []).push(l); });
+    const ouvert = id => (n2Ouv[id] == null ? n2Vis : n2Ouv[id]), list = all.filter(l => l.niv !== 2 || ouvert(l.parentId)), nN2 = all.length - all.filter(l => l.niv === 1).length;
+    const tout = v => { setN2Vis(v); setN2Ouv({}); };
+    return (<div>
+    {nN2 > 0 && <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", fontSize: FZF.sm, color: T.ink700, marginBottom: 6 }}>
+      <span>Sous-lignes N2 ({nN2}) :</span>
+      <button type="button" aria-pressed={n2Vis && !Object.values(n2Ouv).includes(false)} style={sbtn()} onClick={() => tout(true)}>Tout déplier</button>
+      <button type="button" aria-pressed={!n2Vis && !Object.values(n2Ouv).includes(true)} style={sbtn()} onClick={() => tout(false)}>Tout replier</button>
+      <span style={{ fontSize: FZF.xs, color: T.ink500 }}>Ou la flèche devant chaque article N1.</span></div>}
+    <div style={{ overflowX: "auto" }}>
     <table style={{ width: "100%", borderCollapse: "collapse", fontVariantNumeric: "tabular-nums" }}>
       <thead><tr>
         <th style={th()}>Réf Enogia</th><th style={th()}>Désignation</th><th style={th()}>Fournisseur</th><th style={th()}>Scope</th><th style={th(true)}>Qté</th>
@@ -913,11 +1016,16 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
         <th style={th()}><span style={SR}>Actions</span></th>
       </tr></thead>
       <tbody>
-        {list.map(l => { const s = l.st, n2 = l.niv === 2; return (
+        {list.map(l => { const s = l.st, n2 = l.niv === 2, k = !n2 ? kids[l.id] || [] : [], ouv = ouvert(l.id), kBad = !ouv ? k.filter(x => x.st.k === "late" || x.st.k === "nc").length : 0; return (
           <tr key={l.id} onClick={canEdit ? () => openLine(l, fiche, l.parent) : undefined} style={{ cursor: canEdit ? "pointer" : "default", height: 36, background: n2 ? T.surface : "transparent" }}>
-            <td style={{ ...td(), fontFamily: T.fontMono, fontWeight: n2 ? 500 : 700, whiteSpace: "nowrap", paddingLeft: n2 ? 30 : 10 }}>{l.refEff || <span style={{ fontFamily: T.font, fontWeight: 700, color: T.red600 }}>À attribuer</span>}</td>
+            <td style={{ ...td(), fontFamily: T.fontMono, fontWeight: n2 ? 500 : 700, whiteSpace: "nowrap", paddingLeft: n2 ? 40 : 6 }}>
+              {!n2 && (k.length ? <button type="button" aria-expanded={ouv} aria-label={(ouv ? "Masquer" : "Afficher") + " les " + k.length + " sous-ligne(s) de " + (l.refEff || l.famEff || "cette ligne")}
+                onClick={e => { e.stopPropagation(); setN2Ouv(o => ({ ...o, [l.id]: !ouv })); }} style={{ width: 24, height: 24, marginRight: 4, padding: 0, border: "none", borderRadius: 4, background: "transparent", color: T.ink700, cursor: "pointer", fontFamily: T.font, fontSize: FZF.sm, verticalAlign: "middle" }}>{ouv ? "▾" : "▸"}</button>
+                : <span style={{ display: "inline-block", width: 28 }} />)}
+              {l.refEff || <span style={{ fontFamily: T.font, fontWeight: 700, color: T.red600 }}>À attribuer</span>}
+              {!n2 && !ouv && k.length > 0 && <span style={{ marginLeft: 6, fontFamily: T.font, fontSize: FZF.xs, fontWeight: 600, color: kBad ? T.red600 : T.ink500 }}>{k.length} N2{kBad ? ", " + kBad + " en retard" : ""}</span>}</td>
             <td style={{ ...td(), color: n2 ? T.ink700 : T.ink900 }}>{l.desEff || "—"}</td>
-            <td style={{ ...td(), color: l.four ? T.ink700 : T.red600, whiteSpace: "nowrap" }}>{l.four ? l.four.nom : "—"}</td>
+            <td style={{ ...td(), color: l.four ? T.ink700 : T.red600, minWidth: 90, maxWidth: 150, lineHeight: 1.25, overflowWrap: "anywhere" }}>{l.four ? l.four.nom : "—"}</td>
             <td style={{ ...td(), color: T.ink700, whiteSpace: "nowrap" }}>{l.famEff || "—"}</td>
             <td style={{ ...td(), textAlign: "right" }}>{l.qte === "" || l.qte == null ? "—" : l.qte}</td>
             <td style={{ ...td(), whiteSpace: "nowrap", color: T.ink700 }} onClick={e => e.stopPropagation()} title={l.dateBesoin ? "Date de besoin fixée : décalages ignorés." : undefined}>
@@ -932,7 +1040,7 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
             {dateCell(s.auPlusTard, s.statut === "apasser" ? (s.k === "late" ? T.red600 : s.k === "soon" ? T.amber600 : null) : T.ink500)}
             <td style={{ ...td(), fontFamily: T.fontMono, color: l.poAnnule ? T.red600 : T.ink700, whiteSpace: "nowrap" }}>{l.poNum || "—"}{l.poAnnule && <span style={{ fontFamily: T.font, fontSize: FZF.xs, fontWeight: 700, marginLeft: 6 }}>annulé</span>}</td>
             <td style={{ ...td(), fontFamily: T.fontMono, color: T.ink700 }}>{l.poLig || "—"}</td>
-            <td style={{ ...td(), whiteSpace: "nowrap" }}><Pill k={s.k} l={s.l} />{s.retardJ > 0 && <span style={{ marginLeft: 6, fontSize: FZF.xs, color: T.red600, fontWeight: 700 }}>+{s.retardJ} j</span>}</td>
+            <td style={{ ...td(), whiteSpace: "nowrap" }}><Pill k={s.k} l={s.l} /><Ecart l={l} /></td>
             {dateCell(s.prevue, s.k === "late" && s.statut !== "apasser" ? T.red600 : null)}
             <td style={{ ...td(), whiteSpace: "nowrap" }} onClick={e => e.stopPropagation()}>
               {canEdit && <button type="button" style={sbtn()} onClick={() => setPick(l.id)}>{l.poId ? "Changer PO" : "Affecter PO"}</button>}
@@ -942,7 +1050,7 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
         {!list.length && <tr><td colSpan={16} style={empty()}>Nomenclature vide. Ajoutez les lignes de niveau 1 avec « ＋ Ligne ».</td></tr>}
       </tbody>
     </table>
-  </div>);
+  </div></div>); };
 
   // Vue cartes : niveau 1 seulement ; carte rouge si la configuration est incomplète
   const renderCartes = (fiche, list) => { const n1 = list.filter(l => l.niv === 1);
@@ -957,7 +1065,7 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
           <span style={{ fontSize: FZF.xs, color: bad ? T.ink700 : T.ink500, lineHeight: 1.35 }}>{l.desEff || (l.refEff ? l.refEff : "Référence non attribuée")}</span>
           <span style={{ flex: 1 }} />
           <span style={{ fontSize: FZF.sm, color: T.ink700 }}>Livraison prévue <b style={{ fontVariantNumeric: "tabular-nums", color: s.k === "late" && s.statut !== "apasser" ? T.red600 : T.ink900 }}>{fd(s.prevue)}</b></span>
-          <span><Pill k={s.k} l={s.l} />{s.retardJ > 0 && <span style={{ marginLeft: 6, fontSize: FZF.xs, color: T.red600, fontWeight: 700 }}>+{s.retardJ} j</span>}</span>
+          <span><Pill k={s.k} l={s.l} /><Ecart l={l} /></span>
           {bad && <span style={{ fontSize: FZF.xs, fontWeight: 700, color: T.red600 }}>À configurer : {l.manque.join(", ")}</span>}
         </Tag>); })}
     </div>); };
@@ -1017,9 +1125,9 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
                 </> : <span style={{ position: "absolute", left: 8, top: 4, fontSize: FZF.xs, color: T.ink500, whiteSpace: "nowrap" }}>Théorique incomplet{l.manque.length ? " : " + l.manque.join(", ") : ""}</span>}
                 {cde && liv ? <>
                   <div title={"Réel : commandé le " + fd(cde) + ", livraison prévue " + fd(liv) + (enRetard ? ", " + daysBetween(fin, liv) + " j après la cible" : "")} style={{ position: "absolute", top: 23, height: 12, left: x(cde), width: Math.max(3, x(liv) - x(cde)), background: reelCol, borderRadius: 4 }} />
-                  {lab({ right: W - x(cde) + 4 }, T.ink700, dm(cde))}{lab({ left: x(liv) + 4, fontWeight: 700 }, reelCol, dm(liv) + (enRetard && !done ? " +" + daysBetween(fin, liv) + " j" : ""))}
+                  {lab({ right: W - x(cde) + 4 }, T.ink700, dm(cde))}{lab({ left: x(liv) + 4, fontWeight: 700 }, reelCol, dm(liv) + (enRetard && !done ? " +" + daysBetween(fin, liv) + " j" : l.avJ > 0 ? " −" + l.avJ + " j" : ""))}
                 </> : liv ? <>
-                  {pt(x(liv), 25, reelCol, "Livraison prévue " + fd(liv) + " (date de commande inconnue)")}{lab({ left: x(liv) + 6, fontWeight: 700 }, reelCol, dm(liv))}
+                  {pt(x(liv), 25, reelCol, "Livraison prévue " + fd(liv) + " (date de commande inconnue)")}{lab({ left: x(liv) + 6, fontWeight: 700 }, reelCol, dm(liv) + (enRetard && !done ? " +" + daysBetween(fin, liv) + " j" : l.avJ > 0 ? " −" + l.avJ + " j" : ""))}
                 </> : th ? lab({ left: x(deb) + 2 }, cdeRetard ? T.red600 : T.ink500, cdeRetard ? "Non commandé, en retard" : "Non commandé") : null}
               </div>
             </div>); })}
@@ -1050,6 +1158,7 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
             <span style={{ flex: 1, minWidth: 0 }}><b style={{ fontFamily: T.fontMono, fontSize: FZF.sm }}>{f.machine}</b>
               <span style={{ display: "block", fontSize: FZF.xs, color: T.ink500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{[f.modeleEff, "arrivée " + fd(f.dateDebutEff), f.verrou && "verrouillée"].filter(Boolean).join(" · ")}</span>
               {f.config && f.config.statut !== "finalisee" && <span style={{ display: "block", fontSize: FZF.xs, color: T.amber600, fontWeight: 700 }}>Configuration en brouillon</span>}
+              {aPreciser(f).length > 0 && <span style={{ display: "block", fontSize: FZF.xs, color: T.amber600, fontWeight: 700 }}>Options à préciser ({aPreciser(f).length})</span>}
               {f.ecartOrdo !== 0 && <span style={{ display: "block", fontSize: FZF.xs, color: T.amber600, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>≠ ordo ({(f.ecartOrdo > 0 ? "+" : "") + f.ecartOrdo} j)</span>}</span>
             <span style={{ fontSize: FZF.xs, color: bad || cfg ? T.red600 : T.ink500, fontWeight: 700, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums", textAlign: "right" }}>{bad ? bad + " en retard" : cfg ? cfg + " à configurer" : L.length ? L.length + " l." : "—"}</span>
           </button>); })}
@@ -1102,6 +1211,9 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
             return (<div role="note" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", background: T.amber100, color: T.amber600, borderRadius: 8, padding: "8px 10px", fontSize: FZF.sm, fontWeight: 600, margin: "6px 0" }}>
               <NavIcon name="warning" size={14} />Configuration machine en brouillon : {m - P.manquants.length} choix sur {m} faits. La nomenclature sera créée une fois les options choisies.
               {canEdit && !cur.verrou && <button type="button" style={btn(true)} onClick={() => setCfg(cur.id)}>Configurer la machine</button>}</div>); })()}
+          {aPreciser(cur).length > 0 && (() => { const m = aPreciser(cur); return (<div role="note" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", background: T.amber100, color: T.amber600, borderRadius: 8, padding: "8px 10px", fontSize: FZF.sm, fontWeight: 600, margin: "6px 0" }}>
+            <NavIcon name="warning" size={14} />Options à préciser : version de la machine pas encore connue. {m.length} option(s) sans choix : {m.map(g => g.nom + (g.parent ? " (" + g.parent.ref + ")" : "")).join(", ")}. Leurs lignes restent en alerte.
+            {canEdit && !cur.verrou && <button type="button" style={btn(true)} onClick={() => setCfg(cur.id)}>Préciser les options</button>}</div>); })()}
           {canEdit && !cur.verrou && !brouillon && missStd.length > 0 && <div role="note" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", background: T.surfaceAlt, borderRadius: 8, padding: "6px 10px", fontSize: FZF.sm, color: T.ink700, margin: "6px 0" }}>
             Scopes actifs du modèle absents : {missStd.join(", ")}.<button type="button" style={sbtn()} onClick={() => completeStd(cur)}>Les ajouter</button></div>}
           <div style={{ fontSize: FZF.sm, color: T.ink700, margin: "2px 0 10px", fontVariantNumeric: "tabular-nums" }}>
@@ -1112,8 +1224,75 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
         : <section style={{ ...CARD(), color: T.ink500, fontSize: FZF.sm }}>Sélectionnez ou créez une fiche machine.</section>}
     </div>}
 
+    {tab === "synthese" && (() => {
+      // Synthèse Appro : toutes les lignes des fiches, par scope. Catégorie : à commander (statut « Cde à passer »), à livrer (commandé, pas livré,
+      // ou non conforme), livrée. Le tableau de résumé suit la recherche ; le détail suit aussi le filtre de statut et le scope choisi.
+      const catOf = l => (l.st.statut === "livre" ? "livree" : l.st.statut === "apasser" ? "commander" : "livrer");
+      const q = low(synQ), retard = l => l.st.k === "late" || l.st.k === "nc";
+      const base = allLines.filter(l => l.fiche && (!q || [l.fiche.machine, l.fiche.projet, l.refEff, l.desEff, l.four && l.four.nom, l.poNum].some(x => low(x).includes(q))));
+      const scopeOf = l => up(l.famEff) || "SANS SCOPE";
+      const parScope = {}; base.forEach(l => { (parScope[scopeOf(l)] = parScope[scopeOf(l)] || []).push(l); });
+      const scopes = Object.keys(parScope).sort((a, b) => scIdx(a) - scIdx(b) || cmpNat(a, b));
+      const cnt = L => { const c = { n: L.length, cmd: 0, cmdR: 0, liv: 0, livR: 0, ok: 0, avance: 0, prochaine: "" };
+        L.forEach(l => { const k = catOf(l); if (k === "commander") { c.cmd++; if (retard(l)) c.cmdR++; if (l.st.auPlusTard && (!c.prochaine || l.st.auPlusTard < c.prochaine)) c.prochaine = l.st.auPlusTard; }
+          else if (k === "livrer") { c.liv++; if (retard(l)) c.livR++; else if (l.avJ > 0) c.avance++; } else c.ok++; }); return c; };
+      const tot = cnt(base), keep = l => synF === "tout" || catOf(l) === synF;
+      const echeance = l => (catOf(l) === "commander" ? l.st.auPlusTard : l.st.prevue || l.st.cible) || "9999";
+      const detail = scopes.filter(s => !synScope || s === synScope).map(s => [s, parScope[s].filter(keep).sort((a, b) => (retard(b) - retard(a)) || echeance(a).localeCompare(echeance(b)) || cmpNat(a.fiche.machine, b.fiche.machine))]).filter(([, L]) => L.length);
+      const nb = (v, r, col) => (v ? <>{v}{r ? <b style={{ color: T.red600, marginLeft: 6 }}>dont {r} en retard</b> : null}</> : <span style={{ color: T.ink500 }}>—</span>);
+      const segS = on => ({ ...segBtn(on) });
+      return (<div style={{ display: "grid", gap: 12 }}>
+        <section aria-label="Résumé par scope" style={CARD()}>
+          <div style={toolbar}>
+            <input type="search" placeholder="Machine, projet, réf, fournisseur, PO" aria-label="Rechercher dans la synthèse" value={synQ} onChange={e => setSynQ(e.target.value)} style={{ ...field(), width: 300 }} />
+            <div role="group" aria-label="Lignes affichées" style={{ display: "inline-flex", border: "1px solid " + T.line, borderRadius: 8, overflow: "hidden" }}>
+              {[["tout", "Tout voir"], ["commander", "À commander"], ["livrer", "À livrer"]].map(([k, lb], i) => <button key={k} type="button" aria-pressed={synF === k} style={{ ...segS(synF === k), borderLeft: i ? "1px solid " + T.line : "none" }} onClick={() => setSynF(k)}>{lb}</button>)}
+            </div>
+            <span style={{ fontSize: FZF.sm, color: T.ink700, fontVariantNumeric: "tabular-nums" }}>{tot.n} ligne(s) · {tot.cmd} à commander{tot.cmdR ? <b style={{ color: T.red600 }}> ({tot.cmdR} en retard)</b> : null} · {tot.liv} à livrer{tot.livR ? <b style={{ color: T.red600 }}> ({tot.livR} en retard)</b> : null} · {tot.ok} livrée(s)</span>
+          </div>
+          <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", fontVariantNumeric: "tabular-nums" }}>
+            <thead><tr><th style={th()}>Scope</th><th style={th()}>Niveau</th><th style={th(true)}>Lignes</th><th style={th()}>À commander</th><th style={th()}>Prochaine cde au plus tard</th><th style={th()}>À livrer</th><th style={th(true)}>En avance</th><th style={th(true)}>Livrées</th></tr></thead>
+            <tbody>{scopes.map(s => { const c = cnt(parScope[s]), on = synScope === s; return (
+              <tr key={s} onClick={() => setSynScope(on ? "" : s)} aria-selected={on} style={{ cursor: "pointer", height: 36, background: on ? T.surfaceAlt : "transparent" }}>
+                <td style={{ ...td(), fontWeight: 700 }}>{s}{on && <span style={{ marginLeft: 8, fontSize: FZF.xs, fontWeight: 600, color: T.ink500 }}>affiché seul</span>}</td>
+                <td style={{ ...td(), color: T.ink700 }}>{s === "SANS SCOPE" ? "—" : niveauOf(s)}</td>
+                <td style={{ ...td(), textAlign: "right" }}>{c.n}</td>
+                <td style={td()}>{nb(c.cmd, c.cmdR)}</td>
+                <td style={{ ...td(), whiteSpace: "nowrap", color: c.prochaine && c.prochaine < tIso ? T.red600 : c.prochaine && daysBetween(tIso, c.prochaine) <= 14 ? T.amber600 : T.ink700 }}>{c.prochaine ? fd(c.prochaine) : "—"}</td>
+                <td style={td()}>{nb(c.liv, c.livR)}</td>
+                <td style={{ ...td(), textAlign: "right", color: c.avance ? T.emerald600 : T.ink500, fontWeight: c.avance ? 700 : 400 }}>{c.avance || "—"}</td>
+                <td style={{ ...td(), textAlign: "right", color: T.ink500 }}>{c.ok || "—"}</td>
+              </tr>); })}
+              {!scopes.length && <tr><td colSpan={8} style={empty()}>{allLines.some(l => l.fiche) ? "Aucune ligne ne correspond à la recherche." : "Aucune ligne : créez des fiches machine dans l'onglet Projets."}</td></tr>}</tbody>
+          </table></div>
+          {synScope && <div style={{ marginTop: 8 }}><button type="button" style={sbtn()} onClick={() => setSynScope("")}>Voir tous les scopes</button></div>}
+        </section>
+        {detail.map(([s, L]) => (<section key={s} aria-label={"Lignes du scope " + s} style={CARD()}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 6 }}>
+            <span style={{ fontFamily: T.fontDisplay, fontSize: FZF.md, fontWeight: 600, color: T.ink900 }}>{s}</span>
+            <span style={{ fontSize: FZF.sm, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{L.length} ligne(s)</span></div>
+          <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", fontVariantNumeric: "tabular-nums" }}>
+            <thead><tr><th style={th()}>Machine</th><th style={th()}>Réf Enogia</th><th style={th()}>Désignation</th><th style={th()}>Fournisseur</th><th style={th(true)}>Qté</th><th style={th()}>Cde au plus tard</th><th style={th()}>Liv. cible</th><th style={th()}>PO</th><th style={th()}>Liv. prévue</th><th style={th()}>Statut appro</th></tr></thead>
+            <tbody>{L.map(l => { const s2 = l.st, go = canEdit ? () => { setFicheSel(l.fiche.id); setTab("projets"); openLine(l, l.fiche, l.parent); } : undefined; return (
+              <tr key={l.id} onClick={go} style={{ cursor: go ? "pointer" : "default", height: 36 }}>
+                <td style={{ ...td(), fontFamily: T.fontMono, fontWeight: 700, whiteSpace: "nowrap" }}>{l.fiche.machine}</td>
+                <td style={{ ...td(), fontFamily: T.fontMono, whiteSpace: "nowrap" }}>{l.refEff || <span style={{ fontFamily: T.font, fontWeight: 700, color: T.red600 }}>À attribuer</span>}{l.parent && <span style={{ marginLeft: 6, fontFamily: T.font, fontSize: FZF.xs, color: T.ink500 }}>N2</span>}</td>
+                <td style={{ ...td(), color: T.ink700 }}>{l.desEff || "—"}</td>
+                <td style={{ ...td(), color: l.four ? T.ink700 : T.red600, minWidth: 90, maxWidth: 150, lineHeight: 1.25, overflowWrap: "anywhere" }}>{l.four ? l.four.nom : "—"}</td>
+                <td style={{ ...td(), textAlign: "right" }}>{l.qte === "" || l.qte == null ? "—" : l.qte}</td>
+                {dateCell(s2.auPlusTard, s2.statut === "apasser" ? (s2.k === "late" ? T.red600 : s2.k === "soon" ? T.amber600 : null) : T.ink500)}
+                {dateCell(s2.cible)}
+                <td style={{ ...td(), fontFamily: T.fontMono, color: l.poAnnule ? T.red600 : T.ink700, whiteSpace: "nowrap" }}>{l.poNum || "—"}{l.poLig ? " / " + l.poLig : ""}</td>
+                {dateCell(s2.prevue, s2.k === "late" && s2.statut !== "apasser" ? T.red600 : l.avJ > 0 ? T.emerald600 : null)}
+                <td style={{ ...td(), whiteSpace: "nowrap" }}><Pill k={s2.k} l={s2.l} /><Ecart l={l} /></td>
+              </tr>); })}</tbody>
+          </table></div>
+        </section>))}
+        {scopes.length > 0 && !detail.length && <section style={{ ...CARD(), color: T.ink500, fontSize: FZF.sm, textAlign: "center" }}>{synF === "commander" ? "Aucune commande à passer" : synF === "livrer" ? "Aucune livraison attendue" : "Aucune ligne"}{synScope ? " pour " + synScope : ""}.</section>}
+      </div>); })()}
+
     {tab === "po" && (() => { const s = low(qPo);
-      const list = poList.filter(p => !s || low(p.numero).includes(s)).sort((a, b) => cmpNat(a.numero, b.numero) || String(a.dateLivraison || "9").localeCompare(String(b.dateLivraison || "9")) || cmpNat(a.ligne, b.ligne));
+      const list = poList.filter(p => !s || low(p.numero).includes(s) || low(fourOfPo(p).nom).includes(s) || low(p.fournisseur).includes(s)).sort((a, b) => cmpNat(a.numero, b.numero) || String(a.dateLivraison || "9").localeCompare(String(b.dateLivraison || "9")) || cmpNat(a.ligne, b.ligne));
       const shown = list.slice(0, poLimit);
       return (<section aria-label="PO" style={CARD()}>
         <div role="status" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", background: sync.etat === "erreur" && !demandeEnCours ? T.red100 : T.surfaceAlt, borderRadius: 8, padding: "6px 10px", marginBottom: 10, fontSize: FZF.sm, color: sync.etat === "erreur" && !demandeEnCours ? T.red600 : T.ink700, fontVariantNumeric: "tabular-nums" }}>
@@ -1122,16 +1301,18 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
           {canEdit && odooPret && <button type="button" style={sbtn()} disabled={demandeEnCours || sync.etat === "en_cours"} onClick={demanderSync}>Synchroniser maintenant</button>}
         </div>
         <div style={toolbar}>
-          <input type="search" placeholder="N° de PO" aria-label="Filtrer par n° de PO" value={qPo} onChange={e => { setQPo(e.target.value); setPoLimit(PAGE); }} style={{ ...field(), width: 220, fontFamily: T.fontMono }} />
+          <input type="search" placeholder="N° de PO ou fournisseur" aria-label="Filtrer par n° de PO ou fournisseur" value={qPo} onChange={e => { setQPo(e.target.value); setPoLimit(PAGE); }} style={{ ...field(), width: 220, fontFamily: T.fontMono }} />
           <span style={{ fontSize: FZF.sm, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{list.length ? shown.length + " ligne(s) affichée(s) sur " + list.length : ""}</span>
         </div>
         <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", fontVariantNumeric: "tabular-nums" }}>
-          <thead><tr><th style={th()}>N° PO</th><th style={th()}>Ligne</th><th style={th()}>Référence</th><th style={th()}>Désignation</th><th style={th(true)}>Qté</th><th style={th()}>Commande</th><th style={th()}>Livraison</th><th style={th()}>Statut PO</th><th style={th()}>Projet</th><th style={th()}>Source</th><th style={th(true)}>Affectée / qté</th></tr></thead>
+          <thead><tr><th style={th()}>N° PO</th><th style={th()}>Ligne</th><th style={th()}>Référence</th><th style={th()}>Désignation</th><th style={th()}>Fournisseur</th><th style={th(true)}>Qté</th><th style={th()}>Commande</th><th style={th()}>Livraison</th><th style={th()}>Statut PO</th><th style={th()}>Projet</th><th style={th()}>Source</th><th style={th(true)}>Affectée / qté</th></tr></thead>
           <tbody>{shown.map(p => { const lateLiv = p.statut !== "livre" && p.dateLivraison && p.dateLivraison < tIso, a = affects[p.id], pq = num(p.qte), plein = poPlein(p);
             const c = (x, col) => ({ ...td(), ...x, color: plein ? T.ink500 : col || T.ink900 }); return (
             <tr key={p.id} onClick={canEdit ? () => openPo(p) : undefined} style={{ cursor: canEdit ? "pointer" : "default", height: 36, background: plein ? T.surfaceAlt : "transparent" }}>
               <td style={c({ fontFamily: T.fontMono, fontWeight: 700, whiteSpace: "nowrap" })}>{p.numero}</td><td style={c({ fontFamily: T.fontMono })}>{p.ligne}</td>
               <td style={c({ fontFamily: T.fontMono }, T.ink700)}>{p.ref || "—"}</td><td style={c()}>{p.designation || "—"}</td>
+              {(() => { const fo = fourOfPo(p); return <td style={c({ whiteSpace: "nowrap" }, T.ink700)} title={fo.src === "article" ? "Pas de fournisseur sur la ligne de PO : celui de l'article." : !fo.relie ? "Nom inconnu dans l'onglet Fournisseurs : ajoutez-le en « Nom dans Odoo »." : undefined}>
+                {fo.nom || "—"}{fo.src === "article" && <span style={{ marginLeft: 6, fontSize: FZF.xs, color: T.ink500 }}>(article)</span>}{!fo.relie && <span style={{ marginLeft: 6, fontSize: FZF.xs, fontWeight: 700, color: plein ? T.ink500 : T.amber600 }}>non relié</span>}</td>; })()}
               <td style={c({ textAlign: "right" })}>{pq == null ? "—" : pq}</td>
               <td style={c({ whiteSpace: "nowrap" }, T.ink700)}>{fd(p.dateCommande)}</td><td style={c({ whiteSpace: "nowrap" }, lateLiv ? T.red600 : null)}>{fd(p.dateLivraison)}</td>
               <td style={c({ whiteSpace: "nowrap", fontWeight: p.annule ? 700 : 400 }, p.annule ? T.red600 : p.statut === "livre" ? T.ink500 : T.ink700)}>{p.annule ? "Annulée dans Odoo" : ST_LABEL[p.statut] || "—"}</td>
@@ -1140,7 +1321,7 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
               <td style={c({ textAlign: "right", whiteSpace: "nowrap", fontWeight: a ? 700 : 400 }, a && pq != null && a.qte > pq ? T.amber600 : T.ink700)} title={a ? a.lines.map(x => x.machine + " " + x.ref + " × " + x.qte).join(", ") : undefined}>
                 {a ? a.qte + " / " + (pq == null ? "—" : pq) : "—"}{plein && <span style={{ marginLeft: 6, fontSize: FZF.xs }}>complète</span>}</td>
             </tr>); })}
-            {!list.length && <tr><td colSpan={11} style={empty()}>{poList.length ? "Aucun PO ne correspond à ce numéro." : odooPret ? "Aucune ligne de PO. Lancez une synchronisation Odoo." : "Aucune ligne de PO. Configurez Odoo dans Réglages, ou ajoutez-les avec « ＋ Ligne de PO »."}</td></tr>}</tbody>
+            {!list.length && <tr><td colSpan={12} style={empty()}>{poList.length ? "Aucun PO ne correspond à cette recherche." : odooPret ? "Aucune ligne de PO. Lancez une synchronisation Odoo." : "Aucune ligne de PO. Configurez Odoo dans Réglages, ou ajoutez-les avec « ＋ Ligne de PO »."}</td></tr>}</tbody>
         </table></div>
         {list.length > shown.length && <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
           <button type="button" style={btn(false)} onClick={() => setPoLimit(n => n + PAGE)}>Afficher {Math.min(PAGE, list.length - shown.length)} de plus</button>
@@ -1163,7 +1344,7 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
           <thead><tr><th style={th()}>Nom du fournisseur</th><th style={th(true)}>LT fournisseur</th><th style={th(true)}>LT transport</th><th style={th(true)}>LT total</th><th style={th(true)}>Lignes en cours</th><th style={th()}><span style={SR}>Actions</span></th></tr></thead>
           <tbody>{list.map(f => { const a = num(f.ltJ), b = num(f.ltTransportJ); return (
             <tr key={f.id} style={{ height: 36 }}>
-              <td style={{ ...td(), fontWeight: 700 }}>{f.nom}</td>
+              <td style={{ ...td(), fontWeight: 700 }}>{f.nom}{f.nomOdoo && <span style={{ display: "block", fontWeight: 400, fontSize: FZF.xs, color: T.ink500 }}>Odoo : {f.nomOdoo}</span>}</td>
               <td style={{ ...td(), textAlign: "right" }}>{ltInput(f, "ltJ", "LT fournisseur")}</td>
               <td style={{ ...td(), textAlign: "right" }}>{ltInput(f, "ltTransportJ", "LT transport")}</td>
               <td style={{ ...td(), textAlign: "right", color: T.ink700 }}>{a == null ? "—" : (a + (b || 0)) + " j"}</td>
@@ -1308,6 +1489,8 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
           <label style={{ ...LBL, width: 90 }}>Niveau<select value={newNiv} onChange={e => setNewNiv(e.target.value)} style={field()}><option value="N1">N1</option><option value="N2">N2</option></select></label>
           <button type="button" style={btn(false)} onClick={ajouter}>Ajouter</button></div>}
         {scopeErr && <div role="alert" style={{ color: T.red600, fontWeight: 600, fontSize: FZF.sm, marginTop: 6 }}>{scopeErr}</div>}
+        {canEdit && SCOPES_NOUVEAUX.some(x => !scopeList.includes(x)) && <div role="note" style={{ marginTop: 12, background: T.surfaceAlt, color: T.ink700, borderRadius: 8, padding: "6px 10px", fontSize: FZF.sm, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          Nouveaux scopes standard pas encore dans la liste : {SCOPES_NOUVEAUX.filter(x => !scopeList.includes(x)).join(", ")}.<button type="button" style={sbtn()} onClick={() => setScopes([...scopeList, ...SCOPES_NOUVEAUX.filter(x => !scopeList.includes(x))])}>Les ajouter (N1)</button></div>}
         {hors.length > 0 && <div role="note" style={{ marginTop: 12, background: T.amber100, color: T.amber600, borderRadius: 8, padding: "6px 10px", fontSize: FZF.sm, fontWeight: 600, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
           Utilisés mais absents de la liste : {hors.join(", ")}.{canEdit && <button type="button" style={sbtn()} onClick={() => setScopes([...scopeList, ...hors])}>Les ajouter</button>}</div>}
       </section>); })()}
@@ -1334,7 +1517,7 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
         onDraft={async c => { const ok = await write("projets", f.id, { ...S.projets[f.id], config: { statut: "brouillon", choix: c } }); notify(ok ? "Brouillon enregistré." : "Enregistrement impossible, réessayez dans un instant.", !ok); if (ok) setCfg(null); }}
         onApply={async c => { const r = await appliquerConfig(f, c); if (typeof r === "string") return r; if (r) setCfg(null); }} />; })()}
     {imp && <ImportDialog {...IMPORTS[imp]} onClose={() => setImp(null)} />}
-    {pick && calc[pick] && <PoPicker line={calc[pick]} po={poList.filter(p => !p.annule)} affects={affects} onUnassign={unassign} canEdit={canEdit} onPick={id => assignPo(pick, id)} onClear={() => assignPo(pick, "")} onClose={() => setPick(null)} />}
+    {pick && calc[pick] && <PoPicker line={calc[pick]} po={poList.filter(p => !p.annule)} affects={affects} fours={Object.values(S.fournisseurs).sort((a, b) => cmpNat(a.nom, b.nom))} fourOfPo={fourOfPo} onUnassign={unassign} canEdit={canEdit} onPick={id => assignPo(pick, id)} onClear={() => assignPo(pick, "")} onClose={() => setPick(null)} />}
     {toast && <div role="status" style={{ position: "fixed", bottom: 18, left: "50%", transform: "translateX(-50%)", zIndex: 10020, background: toast.err ? T.red600 : T.ink900, color: T.card, padding: "8px 14px", borderRadius: 8, fontSize: FZF.sm, fontWeight: 600, display: "flex", gap: 6, alignItems: "center" }}><NavIcon name={toast.err ? "warning" : "check"} size={15} />{toast.msg}</div>}
   </div>);
 }
