@@ -2,7 +2,7 @@
 // 1. Positions des sites : coordonnées saisies (parc[PJ].lat / lon), sinon centre du pays (table ci-dessous, noms français ou anglais).
 // 2. Reprise unique de l'historique du fichier « [SAV] Tickets et interventions » (export Excel) : feuilles Tickets_SAV, Interventions,
 //    Parc_Projets, Parc_ORC, Suivi_contrats → { tickets, inters, parc, techs } au format de planning/sav. Fonctions pures (testées).
-import { TICKET_TYPES, flowOf, PREP_ITEMS, CLO_ITEMS, INTER_STATUS } from "./savModel";
+import { TICKET_TYPES, flowOf, PREP_ITEMS, CLO_ITEMS, INTER_STATUS, parseFourn } from "./savModel";
 
 const norm = s => String(s == null ? "" : s).normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().replace(/[^A-Z0-9]+/g, " ").trim();
 
@@ -25,10 +25,12 @@ export function mapPoints(parcList) {
   const seen = {}, out = [];
   (parcList || []).forEach(p => {
     const lat = Number(p.info && p.info.lat), lon = Number(p.info && p.info.lon);
-    if (isFinite(lat) && isFinite(lon) && (p.info.lat !== "" && p.info.lat != null)) { out.push({ ...p, lat, lon, exact: true }); return; }
-    const c = countryLL(p.pays); if (!c) return;
+    const has = isFinite(lat) && isFinite(lon) && p.info.lat !== "" && p.info.lat != null;
+    // v332 : plusieurs projets dans la même ville sont aussi écartés en spirale
+    const c = has ? [lat, lon] : countryLL(p.pays); if (!c) return;
     const k = c.join(","), n = seen[k] = (seen[k] || 0) + 1, r = n > 1 ? 0.9 * Math.sqrt(n - 1) : 0, a = n * 2.4;
-    out.push({ ...p, lat: c[0] + r * Math.sin(a), lon: c[1] + r * Math.cos(a), exact: false });
+    const r2 = has ? r * 0.25 : r;
+    out.push({ ...p, lat: c[0] + r2 * Math.sin(a), lon: c[1] + r2 * Math.cos(a), exact: has });
   });
   return out;
 }
@@ -93,6 +95,8 @@ export function parseSavHistory(sheets) {
     const c = s(g(r, "Contrat de maintenance")), contrat = /PREMIUM/i.test(c) ? "Premium" : /STANDARD/i.test(c) ? "Standard" : "Sans contrat";
     parc[pj] = { ...(parc[pj] || {}), nom: s(g(r, "Nom du projet")), pays: cap(g(r, "Pays")), gamme: s(g(r, "Type d'ORC")), nbOrc: parseInt(g(r, "Nombre d'ORC"), 10) || null, mes: isoOf(g(r, "Date de mise en service")),
       application: s(g(r, "Application")), visitable: s(g(r, "Visitable")), contrat, contratNo: s(g(r, "N° de contrat")), adresse: s(g(r, "Adresse du site")), notes: s(g(r, "Dispositions particulières")).replace(/^-$/, ""), statut: s(g(r, "Statut")) };
+    // v332 : fournitures ENOGIA (« ORC + Drycooler ») ; le nombre d ORC de la ligne fixe la quantité d ORC
+    const fo = parseFourn(g(r, "Fourniture Enogia", "Fourniture ENOGIA")); if (fo.length) { const n = parc[pj].nbOrc; parc[pj].fourn = fo.map(x => (x.type === "ORC" && n ? { ...x, qte: n } : x)); }
   });
   rowsOf(sheets.Parc_ORC, "N° de série").forEach(r => {
     const sn = s(g(r, "N° de série")), pjs = list(g(r, "Projet(s) rattaché(s)", "Projet(s) rattache(s)")).map(x => x.toUpperCase()).filter(x => /^PJ/.test(x));

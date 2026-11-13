@@ -2391,3 +2391,14 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Points finaux retirés des messages courts ; boutons Fermer en icône.
 - Aucune clé localStorage, aucune donnée ni règle Firestore modifiée.
 - Fichiers : public/index.html, styles.css, ~90 composants (graisses), RoleHome.js, ReleaseNotes.js, versions.
+
+## v332 — SAV : tri des tableaux, commentaires d'étape, planning unique, carte par régions, fournitures, KPI
+
+- Tableaux SAV triables ; commentaires sur chaque étape d'un ticket (`stepNotes`).
+- Planning unique (défilement continu, ‹ ›, zoom, Aujourd'hui) ; vue chef de projet grisée, jours occupés rayés sans nom de PJ.
+- Carte : régions, Ctrl + molette, glisser ; fiche du parc par ville et pays (recherche de la ville sur OpenStreetMap Nominatim à l'enregistrement : seuls la ville et le pays sont envoyés).
+- Parc : fournitures ENOGIA par projet, types réglables (`planning/sav.fournTypes`), forfait annuel du contrat.
+- Sous-page KPI (accès `sav.kpi`).
+- Clés localStorage : `enogia_sav_zoom` (nouvelle), `enogia_sav_plan` (plus lue).
+- Règles Firestore inchangées (même document `planning/sav`).
+- Fichiers : components/SavPage.js, savModel.js(+test), savImport.js, access.js, App.js, demo/demoPages.js, versions.

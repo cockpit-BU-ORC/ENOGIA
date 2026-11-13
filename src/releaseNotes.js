@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v332",
+    date: "2026-11-13",
+    title: "V332 : SAV, planning, carte et KPI",
+    items: [
+      { t: "SAV / MES", d: "Un seul planning qui défile comme le Calendrier ; les chefs de projet y demandent un jour d'un « + »." },
+      { t: "SAV / MES", d: "Carte du parc par régions et zoomable, fournitures ENOGIA par projet, nouvelle page KPI." },
+    ],
+  },
+  {
     id: "2026-11-v331",
     date: "2026-11-13",
     title: "V331 : textes plus légers",

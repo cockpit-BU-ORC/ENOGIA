@@ -97,7 +97,7 @@ export function parcOf(rows, metaOf, parc, tickets) {
     if (r.depart && String(r.depart) > e.depart) e.depart = String(r.depart).slice(0, 10);
   });
   Object.entries(parc || {}).forEach(([k, p]) => { if (!p) return; const e = by[k] = by[k] || { pj: k, nom: "", pays: "", gammes: [], sn: [], depart: "", manuel: true };
-    Object.assign(e, { nom: e.nom || p.nom || "", pays: e.pays || p.pays || "", info: p });
+    Object.assign(e, { nom: e.nom || p.nom || "", pays: p.pays || e.pays || "", info: p }); // v332 : le pays saisi dans le parc l emporte
     if (Array.isArray(p.sn)) p.sn.forEach(s => { if (s && !e.sn.includes(s)) e.sn.push(s); }); if (p.gamme && !e.gammes.includes(p.gamme)) e.gammes.push(p.gamme); });
   const open = {}; Object.values(tickets || {}).forEach(t => { if (t && !isClosed(t)) { const k = String(t.pj || "").replace(/-\d+[A-Z]*$/, ""); open[k] = (open[k] || 0) + 1; } });
   return Object.values(by).map(e => ({ ...e, info: e.info || {}, ouverts: open[e.pj] || 0 })).sort((a, b) => a.pj.localeCompare(b.pj, "fr", { numeric: true }));
@@ -122,3 +122,69 @@ export function savKpis(doc, dem, today = new Date()) {
     demandes: Object.values((dem && dem.items) || {}).filter(d => d && d.st === "attente").length,
   };
 }
+
+// v332 (demandé : « des KPI sur l'affectation des personnes, interventions, tickets et finance ») — chiffres de la sous-page KPI.
+// Période = les `months` derniers mois (glissants, mois en cours compris) ; à venir = interventions planifiées après aujourd'hui.
+const DONE_ST = ["Réalisée", "Validée", "Non validée"];
+const monthsBack = (t0, n) => { const out = []; const d = new Date(t0.slice(0, 7) + "-01T12:00:00"); for (let k = 0; k < n; k++) { out.unshift(isoD(d).slice(0, 7)); d.setMonth(d.getMonth() - 1); } return out; };
+const workDaysIn = (a, b, from, to) => { const s = a > from ? a : from, e = b < to ? b : to; if (!s || !e || s > e) return 0; let n = 0; const d = new Date(s + "T12:00:00"), E = new Date(e + "T12:00:00"); while (d <= E) { if (d.getDay() % 6) n++; d.setDate(d.getDate() + 1); } return n; };
+export function savStats(doc, techs, today = new Date(), months = 12) {
+  const t0 = isoD(today), M = monthsBack(t0, months), from = M[0] + "-01";
+  const ahead = (() => { const d = new Date(t0 + "T12:00:00"); d.setDate(d.getDate() + 90); return isoD(d); })();
+  const T = Object.entries((doc && doc.tickets) || {}).map(([id, t]) => ({ id, ...t })).filter(t => t && t.type);
+  const I = Object.entries((doc && doc.inters) || {}).map(([id, i]) => ({ id, ...i })).filter(i => i && i.st !== "Annulée");
+  const inPer = i => i.a && i.b && i.b >= from && i.a <= t0;
+  // personnes : jours d'intervention (jours ouvrés) sur la période et dans les 90 prochains jours, comme responsable ou en appui
+  const names = [...new Set([...(techs || []), ...I.flatMap(interTeam)])];
+  const people = names.map(n => { const mine = I.filter(i => interTeam(i).includes(n));
+    return { name: n, past: mine.reduce((s, i) => s + (inPer(i) ? workDaysIn(i.a, i.b, from, t0) : 0), 0), next: mine.reduce((s, i) => s + (i.a && i.b ? workDaysIn(i.a, i.b, isoD(new Date(new Date(t0 + "T12:00:00").getTime() + dayMs)), ahead) : 0), 0),
+      lead: mine.filter(i => i.resp === n && inPer(i)).length, support: mine.filter(i => i.resp !== n && inPer(i)).length }; })
+    .sort((a, b) => b.past + b.next - (a.past + a.next) || a.name.localeCompare(b.name));
+  const workdays = workDaysIn(from, t0, from, t0) || 1;
+  // interventions
+  const per = I.filter(inPer), done = per.filter(i => DONE_ST.includes(i.st));
+  const byType = {}; per.forEach(i => { byType[i.type || "Autre"] = (byType[i.type || "Autre"] || 0) + 1; });
+  const ok = done.filter(i => i.reussite === "Succès").length, judged = done.filter(i => i.reussite).length;
+  const inters = { count: per.length, done: done.length, upcoming: I.filter(i => i.a && i.a > t0).length, toPlan: I.filter(i => !i.a || !i.b || !i.resp).filter(i => !DONE_ST.includes(i.st)).length,
+    avgDays: per.length ? Math.round(per.reduce((s, i) => s + interDays(i), 0) / per.length * 10) / 10 : null,
+    success: judged ? Math.round(ok / judged * 100) : null, prepFull: per.length ? Math.round(per.filter(i => (i.prep || []).length >= PREP_ITEMS.length).length / per.length * 100) : null,
+    cloFull: done.length ? Math.round(done.filter(i => (i.clo || []).length >= CLO_ITEMS.length).length / done.length * 100) : null,
+    byType: Object.entries(byType).sort((a, b) => b[1] - a[1]) };
+  // tickets
+  const opened = T.filter(t => t.date && t.date >= from), closed = T.filter(t => isClosed(t) && t.closedAt && t.closedAt >= from);
+  const ages = closed.map(t => ticketAge(t, today)).filter(x => x != null);
+  const tByType = {}; opened.forEach(t => { const l = typeOf(t.type)[1]; tByType[l] = (tByType[l] || 0) + 1; });
+  const sat = closed.map(t => Number(t.satisf)).filter(x => x > 0);
+  const tickets = { open: T.filter(t => !isClosed(t)).length, high: T.filter(t => !isClosed(t) && t.prio === "h").length, opened: opened.length, closed: closed.length,
+    avgDays: ages.length ? Math.round(ages.reduce((a, b) => a + b, 0) / ages.length) : null, over30: T.filter(t => !isClosed(t) && (ticketAge(t, today) || 0) > 30).length,
+    satisf: sat.length ? Math.round(sat.reduce((a, b) => a + b, 0) / sat.length * 10) / 10 : null,
+    byType: Object.entries(tByType).sort((a, b) => b[1] - a[1]),
+    byMonth: M.map(m => ({ m, opened: T.filter(t => String(t.date || "").slice(0, 7) === m).length, closed: T.filter(t => String(t.closedAt || "").slice(0, 7) === m).length })) };
+  // finance : coûts des interventions par mois (mois d'arrivée), par poste, par PJ ; forfaits des contrats en cours
+  const costM = M.map(m => ({ m, v: I.filter(i => String(i.a || "").slice(0, 7) === m).reduce((s, i) => s + interCost(i), 0) }));
+  const byField = COST_FIELDS.map(([k, l]) => [l, per.reduce((s, i) => s + (Number((i.costs || {})[k]) || 0), 0)]).filter(x => x[1] > 0).sort((a, b) => b[1] - a[1]);
+  const byPj = {}; per.forEach(i => { const c = interCost(i); if (c) byPj[i.pj] = (byPj[i.pj] || 0) + c; });
+  const parc = Object.values((doc && doc.parc) || {}).filter(p => p && p.contrat && p.contrat !== "Sans contrat");
+  const finance = { total: costM.reduce((s, x) => s + x.v, 0), byMonth: costM, byField, byPj: Object.entries(byPj).sort((a, b) => b[1] - a[1]).slice(0, 6),
+    perInter: per.filter(i => interCost(i) > 0).length ? Math.round(per.reduce((s, i) => s + interCost(i), 0) / per.filter(i => interCost(i) > 0).length) : null,
+    contracts: parc.filter(p => (p.contratStatut || "En cours") === "En cours").length, forfaits: parc.filter(p => (p.contratStatut || "En cours") === "En cours").reduce((s, p) => s + (Number(p.forfait) || 0), 0) };
+  return { from, months: M, workdays, people, inters, tickets, finance };
+}
+
+// v332 (demandé : « dans le parc, les fournitures ENOGIA : ORC, drycooler, conteneur… ; ajouter / supprimer des fournitures »)
+export const FOURN_TYPES = ["ORC", "Drycooler", "Conteneur", "Armoire électrique", "Skid", "Turbine", "Échangeur", "Pompe"];
+export const fournTypesOf = doc => (doc && Array.isArray(doc.fournTypes) && doc.fournTypes.length ? doc.fournTypes : FOURN_TYPES);
+// lit la colonne « Fourniture Enogia » du fichier SAV (« ORC + Drycooler », « ORC, conteneur ») → [{ id, type, qte }]
+export function parseFourn(txt, types = FOURN_TYPES) {
+  return String(txt || "").split(/[+,;/]| et /i).map(s => s.trim()).filter(Boolean).map((s, k) => {
+    const m = /^(\d+)\s*[x×]?\s*(.+)$/i.exec(s), name = (m ? m[2] : s).trim(), t = types.find(x => x.toLowerCase() === name.toLowerCase());
+    return { id: "f" + (k + 1), type: t || name.charAt(0).toUpperCase() + name.slice(1), qte: m ? +m[1] : 1 };
+  });
+}
+export const fournLabel = list => (Array.isArray(list) ? list : []).map(f => (f.qte > 1 ? f.qte + " × " : "") + f.type).join(" · ");
+
+// v332 (demandé : « à chaque étape, pouvoir mettre un commentaire ») : ticket.stepNotes = { [n° d'étape]: [{ t, by, at }] }
+export function addStepNote(t, step, text, by, at = new Date().toISOString()) {
+  const n = { ...((t && t.stepNotes) || {}) }; n[step] = [...(n[step] || []), { t: String(text).trim(), by: by || "", at }]; return { ...t, stepNotes: n };
+}
+export function delStepNote(t, step, k) { const n = { ...((t && t.stepNotes) || {}) }; n[step] = (n[step] || []).filter((_, j) => j !== k); if (!n[step].length) delete n[step]; return { ...t, stepNotes: n }; }

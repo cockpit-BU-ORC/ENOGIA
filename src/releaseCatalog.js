@@ -926,4 +926,12 @@ export const RELEASE_CATALOG = [
     ["Affichage", "Textes en gras allégés partout (titres et étiquettes) ; plus d'étiquettes en majuscules espacées."],
     ["Accueil", "Charge atelier : une phrase quand aucune heure n'est prévue, au lieu de colonnes vides."],
   ] },
+  { v: "332", t: "SAV : planning unique, KPI, carte et fournitures", items: [
+    ["SAV / MES", "Tableaux triables : un clic sur le nom d'une colonne trie dans un sens, un second clic dans l'autre."],
+    ["SAV / MES", "Un commentaire possible à chaque étape d'un ticket."],
+    ["SAV / MES", "Un seul planning, qui défile comme le Calendrier (‹ ›, zoom, Aujourd'hui) ; les chefs de projet le voient grisé, jours occupés rayés, sans nom de PJ."],
+    ["SAV / MES", "Carte du parc : régions, zoom et déplacement ; le site se place avec la ville et le pays."],
+    ["SAV / MES", "Parc : fournitures ENOGIA par projet (ORC, drycooler, conteneur…), à ajouter ou supprimer."],
+    ["SAV / MES", "Nouvelle sous-page KPI : affectation de l'équipe, interventions, tickets et coûts."],
+  ] },
 ];

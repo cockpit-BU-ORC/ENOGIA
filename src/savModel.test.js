@@ -49,3 +49,32 @@ test("chiffres : ouverts, coûts, jours-homme, demandes en attente", () => {
   expect(k).toMatchObject({ open: 1, high: 1, avgDays: 10, satisf: 4, toPlan: 1, manDays: 4, monthCost: 320, demandes: 1 });
   expect(interCost(doc.inters.x)).toBe(320);
 });
+
+// v332
+import { savStats, parseFourn, fournLabel, addStepNote, delStepNote } from "./savModel";
+test("v332 : KPI du SAV (personnes, interventions, tickets, finance)", () => {
+  const doc = {
+    tickets: { "TC-26-01": { type: "cur", prio: "h", date: "2026-10-01", step: 0 }, "TC-26-02": { type: "dev", prio: "b", date: "2026-09-01", closedAt: "2026-09-11", satisf: 4, step: 4 } },
+    inters: { "INT-001": { pj: "PJ1", resp: "Lou", who: ["Sam"], a: "2026-11-02", b: "2026-11-04", st: "Réalisée", reussite: "Succès", type: "Maintenance curative", costs: { pdr: 1000, repas: 200 } },
+      "INT-002": { pj: "PJ2", resp: "Lou", a: "2026-11-23", b: "2026-11-24", st: "Planifiée", type: "Mise en service" },
+      "INT-003": { pj: "PJ3", st: "À planifier" } },
+    parc: { PJ1: { contrat: "Premium", contratStatut: "En cours", forfait: 7200 } },
+  };
+  const S = savStats(doc, ["Lou", "Sam", "Noa"], new Date(2026, 10, 13, 12));
+  const lou = S.people.find(p => p.name === "Lou"), noa = S.people.find(p => p.name === "Noa");
+  expect(lou).toMatchObject({ past: 3, next: 2, lead: 1 });
+  expect(S.people.find(p => p.name === "Sam")).toMatchObject({ past: 3, support: 1 });
+  expect(noa).toMatchObject({ past: 0, next: 0 });
+  expect(S.inters).toMatchObject({ count: 1, done: 1, success: 100, toPlan: 1, upcoming: 1 });
+  expect(S.tickets).toMatchObject({ open: 1, high: 1, closed: 1, avgDays: 10, satisf: 4 });
+  expect(S.finance).toMatchObject({ total: 1200, contracts: 1, forfaits: 7200, perInter: 1200 });
+  expect(S.finance.byMonth.find(x => x.m === "2026-11").v).toBe(1200);
+});
+test("v332 : fournitures et commentaires d'étape", () => {
+  expect(parseFourn("ORC + Drycooler, 2x conteneur")).toEqual([{ id: "f1", type: "ORC", qte: 1 }, { id: "f2", type: "Drycooler", qte: 1 }, { id: "f3", type: "Conteneur", qte: 2 }]);
+  expect(fournLabel([{ type: "ORC", qte: 2 }, { type: "Drycooler", qte: 1 }])).toBe("2 × ORC · Drycooler");
+  let t = addStepNote({ type: "cur", step: 1 }, 1, "  Pièce commandée ", "Lou", "2026-11-13T10:00:00Z");
+  t = addStepNote(t, 1, "Reçue", "Sam");
+  expect(t.stepNotes[1].map(n => n.t)).toEqual(["Pièce commandée", "Reçue"]);
+  expect(delStepNote(delStepNote(t, 1, 0), 1, 0).stepNotes[1]).toBeUndefined();
+});
