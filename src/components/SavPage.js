@@ -88,7 +88,7 @@ function Steps({ t }) {
 function Modal({ title, onClose, children, width = 640 }) {
   return <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 10010, background: "rgba(10,14,22,.45)", display: "grid", placeItems: "center", padding: 16 }}>
     <div role="dialog" aria-modal="true" aria-label={title} onClick={e => e.stopPropagation()} onKeyDown={e => { if (e.key === "Escape") onClose(); }}
-      style={{ width, maxWidth: "100%", maxHeight: "90vh", overflowY: "auto", background: T.card, borderRadius: 12, border: "1px solid " + T.line, boxShadow: T.shadowLg, padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+      style={{ width, maxWidth: "100%", maxHeight: "90dvh", overflowY: "auto", background: T.card, borderRadius: 12, border: "1px solid " + T.line, boxShadow: T.shadowLg, padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}><h2 style={{ margin: 0, fontFamily: T.fontDisplay, fontSize: 20, fontWeight: 600, color: T.ink900, flex: 1 }}>{title}</h2>
         <button type="button" onClick={onClose} aria-label="Fermer" style={{ ...btn("ghost", "sm") }}><NavIcon name="close" size={16} /></button></div>
       {children}
@@ -393,7 +393,7 @@ function PlanningView({ inters, demandes, techs, canEdit, nomOf, me, myPjs, onOp
   const fmtT = d => new Date(d + "T12:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
   const title = days[vis[0]] ? fmtT(days[vis[0]]) + " → " + fmtT(days[vis[1]]) + " " + days[vis[1]].slice(0, 4) : "";
   const navBtn = { minWidth: 32, minHeight: 32, borderRadius: 8, border: "1px solid " + T.line, background: "transparent", color: T.ink700, fontSize: FZ.md, fontWeight: 600, cursor: "pointer", fontFamily: T.font };
-  const tools = <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderBottom: "1px solid " + T.line, background: T.surface, flexWrap: "wrap" }}>
+  const tools = <div className="e-tb" style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderBottom: "1px solid " + T.line, background: T.surface, flexWrap: "wrap" }}>
     <span aria-live="polite" style={{ fontFamily: T.fontDisplay, fontWeight: 300, fontSize: 22, letterSpacing: "-.01em", color: T.ink900, minWidth: 230, fontVariantNumeric: "tabular-nums" }}>{title}</span>
     <div style={{ display: "flex", gap: 4 }}><button type="button" onClick={() => page(-1)} title="Période précédente" aria-label="Période précédente" style={navBtn}>‹</button><button type="button" onClick={() => page(1)} title="Période suivante" aria-label="Période suivante" style={navBtn}>›</button></div>
     <span style={{ flex: 1 }} />
@@ -626,7 +626,7 @@ function WorldMap({ points, onPick }) {
         return <button key={id} type="button" aria-pressed={on} onClick={() => goReg(id)} disabled={!n && id !== "monde"}
           style={{ minHeight: 30, padding: "0 12px", borderRadius: 999, border: "1px solid " + (on ? T.ink900 : T.line), background: on ? T.ink900 : T.card, color: on ? T.card : n ? T.ink700 : T.ink300, fontSize: 12, fontWeight: 600, cursor: n || id === "monde" ? "pointer" : "default", fontFamily: T.font }}>{l} <span style={{ opacity: 0.7, fontVariantNumeric: "tabular-nums" }}>{n}</span></button>; })}</div>
     <div ref={box} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerLeave={up}
-      style={{ position: "relative", width: "100%", aspectRatio: MW + " / " + MH, maxHeight: "52vh", background: T.surface, borderRadius: 8, overflow: "hidden", cursor: drag.current ? "grabbing" : "grab", touchAction: "none" }}>
+      style={{ position: "relative", width: "100%", aspectRatio: MW + " / " + MH, maxHeight: "52dvh", background: T.surface, borderRadius: 8, overflow: "hidden", cursor: drag.current ? "grabbing" : "grab", touchAction: "none" }}>
       {err && <div role="status" style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontSize: FZ.sm, color: T.ink500 }}>Fond de carte indisponible (connexion) : les points restent placés.</div>}
       <svg viewBox={view.x + " " + view.y + " " + view.w + " " + vh} preserveAspectRatio="xMidYMid meet" role="img" aria-label={"Carte : " + points.length + " sites du parc"} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
         {paths.map((d, i) => <path key={i} d={d} fill={T.surfaceAlt} stroke={T.line} strokeWidth={0.6 / k} />)}

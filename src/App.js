@@ -66,7 +66,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-13-v332-sav-kpi-carte";
+const APP_BUILD_VERSION = "2026-11-13-v333-tablette";
 
 const ReleasePopup = React.lazy(() => import("./components/ReleaseNotes").then(m => ({ default: m.ReleasePopup })));
 function Navigate0({ go }) { useEffect(() => { go(); }, []); return null; } // eslint-disable-line react-hooks/exhaustive-deps
@@ -1108,9 +1108,11 @@ export default function App(){
     {/* ── Rail de navigation : icônes de vue + accès Manager + mode sombre ── */}
     <a href="#enogia-main" className="enogia-skip" onClick={e=>{e.preventDefault();const m=document.getElementById("enogia-main");if(m){m.focus();m.scrollIntoView&&m.scrollIntoView({block:"start"});}}}>Aller au contenu</a>
     {!navPin&&<div aria-hidden="true" onMouseEnter={()=>{clearTimeout(navPeekT.current);setNavPeek(true);}} style={{position:"fixed",left:0,top:0,bottom:0,width:8,zIndex:29}}/>}
+    {/* v333 (audit tablette) : au doigt, toucher à côté du menu ouvert le referme */}
+    {coarse&&navPeek&&!navPin&&<div aria-hidden="true" onClick={()=>setNavPeek(false)} style={{position:"fixed",inset:0,zIndex:29}}/>}
     {!navPin&&!navPeek&&<span aria-hidden="true" style={{position:"fixed",left:0,top:"50%",transform:"translateY(-50%)",width:4,height:56,borderRadius:"0 4px 4px 0",background:NAV.mark==="currentColor"?T.accent:NAV.mark,opacity:.55,zIndex:29,pointerEvents:"none"}}/>}
     <div style={{width:navPin?216:0,flexShrink:0,position:"relative",zIndex:30}}>
-    <nav className={"enogia-nav"+(NAV.industrial?" enogia-nav-ind":"")} aria-label="Pages" onMouseEnter={()=>clearTimeout(navPeekT.current)} onMouseLeave={()=>{clearTimeout(navHoverT.current);setNavHover(null);if(navPeek)closePeek(350);}} onKeyDown={e=>{if(e.key==="Escape"&&navPeek)setNavPeek(false);}} style={{width:216,boxShadow:navOverlay&&navPeek?"12px 0 40px rgba(0,0,0,.35)":"none",transform:navOpen?"none":"translateX(-100%)",visibility:navOpen?"visible":"hidden",transition:"transform .22s var(--e-ease), box-shadow .22s ease, visibility 0s linear "+(navOpen?"0s":".22s"),flexShrink:0,background:NAV.bg,borderRight:"1px solid "+NAV.border,display:"flex",flexDirection:"column",alignItems:navCompact?"center":"stretch",padding:navCompact?"16px 0":"16px 10px",gap:4,position:navPin?"sticky":"fixed",top:0,left:0,zIndex:30,height:"100vh",overflowY:"auto",overflowX:"hidden",scrollbarWidth:"none"}}>
+    <nav className={"enogia-nav"+(NAV.industrial?" enogia-nav-ind":"")} aria-label="Pages" onMouseEnter={()=>clearTimeout(navPeekT.current)} onMouseLeave={()=>{clearTimeout(navHoverT.current);setNavHover(null);if(navPeek)closePeek(350);}} onKeyDown={e=>{if(e.key==="Escape"&&navPeek)setNavPeek(false);}} style={{width:216,boxShadow:navOverlay&&navPeek?"12px 0 40px rgba(0,0,0,.35)":"none",transform:navOpen?"none":"translateX(-100%)",visibility:navOpen?"visible":"hidden",transition:"transform .22s var(--e-ease), box-shadow .22s ease, visibility 0s linear "+(navOpen?"0s":".22s"),flexShrink:0,background:NAV.bg,borderRight:"1px solid "+NAV.border,display:"flex",flexDirection:"column",alignItems:navCompact?"center":"stretch",padding:navCompact?"16px 0":"16px 10px",gap:4,position:navPin?"sticky":"fixed",top:0,left:0,zIndex:30,height:"100dvh",overflowY:"auto",overflowX:"hidden",scrollbarWidth:"none"}}>
       {/* v179 (demandé : « le logo en haut à gauche pour avoir le début de la page au même niveau ») : le logo ouvre le menu, en blanc sur le marine. */}
       <button type="button" onClick={()=>setView("home")} aria-label={SITE_TITLE+" — accueil"} title="Accueil" style={{border:"none",background:"transparent",cursor:"pointer",padding:navCompact?"2px 0 10px":"2px 10px 12px",display:"flex",justifyContent:navCompact?"center":"flex-start",alignItems:"center",minHeight:44}}>
         <span style={{display:"flex",flexDirection:"column",alignItems:navCompact?"center":"flex-start",gap:6,minWidth:0}}>

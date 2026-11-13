@@ -934,4 +934,9 @@ export const RELEASE_CATALOG = [
     ["SAV / MES", "Parc : fournitures ENOGIA par projet (ORC, drycooler, conteneur…), à ajouter ou supprimer."],
     ["SAV / MES", "Nouvelle sous-page KPI : affectation de l'équipe, interventions, tickets et coûts."],
   ] },
+  { v: "333", t: "Tablette : boutons au doigt et pages resserrées", items: [
+    ["Tablette", "Boutons des barres d'outils à 44 px et zones de toucher élargies sur les petites cibles."],
+    ["Tablette", "Glisser au doigt dans Tests et le Planificateur."],
+    ["Tablette", "Liste : état en pastille compacte ; Turbines › Besoins : stock dans un tiroir en bas de l'écran ; planning des bancs plus large en portrait."],
+  ] },
 ];

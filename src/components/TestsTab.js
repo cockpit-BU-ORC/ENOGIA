@@ -280,7 +280,7 @@ function TrackBg({ days, todayIso }) {
   </div>);
 }
 function GridNav({ off, setOff, step = 1 }) {
-  return (<span style={{ display: "inline-flex", gap: 6 }}>
+  return (<span className="e-tb" style={{ display: "inline-flex", gap: 6 }}>
     <button type="button" onClick={() => setOff(o => o - step)} style={{ ...btn(true, "ghost"), minHeight: 30 }} aria-label="Une semaine plus tôt">◀</button>
     <button type="button" onClick={() => setOff(0)} disabled={off === 0} style={{ ...btn(off !== 0, "ghost"), minHeight: 30 }}>Aujourd'hui</button>
     <button type="button" onClick={() => setOff(o => o + step)} style={{ ...btn(true, "ghost"), minHeight: 30 }} aria-label="Une semaine plus tard">▶</button>

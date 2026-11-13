@@ -71,7 +71,7 @@ function RedGateDialog({pj,meta,axis,onCancel,onConfirm}){
   useEffect(()=>{if(ref.current)ref.current.focus();const k=e=>{if(e.key==="Escape")onCancel();};window.addEventListener("keydown",k);return()=>window.removeEventListener("keydown",k);},[]); // eslint-disable-line
   const box={width:"100%",boxSizing:"border-box",fontFamily:T.font,fontSize:FZ.sm,lineHeight:1.4,color:T.ink900,background:T.surface,border:"1px solid "+T.line,borderRadius:8,padding:"7px 10px"};
   return createPortal(<div role="dialog" aria-modal="true" aria-label={"Statut à risque : "+lab} onClick={onCancel} style={{position:"fixed",inset:0,zIndex:20020,background:"rgba(10,16,28,.55)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
-    <div onClick={e=>e.stopPropagation()} style={{background:T.card,borderRadius:12,boxShadow:T.shadowLg,border:"1px solid "+T.line,width:"min(480px,100%)",maxHeight:"92vh",overflowY:"auto",fontFamily:T.font}}>
+    <div onClick={e=>e.stopPropagation()} style={{background:T.card,borderRadius:12,boxShadow:T.shadowLg,border:"1px solid "+T.line,width:"min(480px,100%)",maxHeight: "92dvh",overflowY:"auto",fontFamily:T.font}}>
       <div style={{padding:"14px 18px",borderBottom:"1px solid "+T.line,display:"flex",alignItems:"center",gap:10}}>
         <span style={{width:14,height:14,borderRadius:4,background:T.red500,flexShrink:0}}/>
         <div style={{minWidth:0}}><div style={{fontSize:FZ.md||FZ.sm,fontWeight:600,color:T.ink900}}>{lab} : à risque</div><div style={{fontSize:FZ.xs,color:T.ink500}}>{pj}{meta&&meta.nomProjet?" · "+meta.nomProjet:""}</div></div>

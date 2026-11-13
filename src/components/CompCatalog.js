@@ -24,7 +24,7 @@ export function CompCatalogDialog({ catalog, setCatalog, nPj, missingCount, onAp
   };
   return createPortal(<div role="dialog" aria-modal="true" aria-label="Liste des composants" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}
     style={{ position: "fixed", inset: 0, zIndex: 20010, background: "rgba(10,16,28,.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 12 }}>
-    <div style={{ background: T.card, color: T.ink900, borderRadius: 12, boxShadow: T.shadowLg, border: "1px solid " + T.line, width: "min(520px,100%)", maxHeight: "90vh", overflow: "auto", padding: 20, fontFamily: T.font }}>
+    <div style={{ background: T.card, color: T.ink900, borderRadius: 12, boxShadow: T.shadowLg, border: "1px solid " + T.line, width: "min(520px,100%)", maxHeight: "90dvh", overflow: "auto", padding: 20, fontFamily: T.font }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
         <div style={{ flex: 1, fontFamily: T.fontDisplay, fontWeight: 600, fontSize: FZ.md }}>Liste des composants</div>
         <button onClick={onClose} style={btn()}>Fermer</button>

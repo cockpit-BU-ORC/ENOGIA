@@ -433,7 +433,7 @@ button:not(:disabled):active { transform: scale(.97); }
 @keyframes enogiaSheetOut { from { transform: none; } to { transform: translateY(100%); } }
 @media (max-width: 640px) {
   .enogia-dlg-backdrop { align-items: flex-end !important; padding: 0 !important; }
-  .enogia-dlg { width: 100% !important; max-height: 92vh !important; border-radius: 22px 22px 0 0 !important; animation: enogiaSheetIn .28s cubic-bezier(.16,1,.3,1) both; }
+  .enogia-dlg { width: 100% !important; max-height: 92dvh !important; border-radius: 22px 22px 0 0 !important; animation: enogiaSheetIn .28s cubic-bezier(.16,1,.3,1) both; }
   .enogia-dlg-backdrop.closing .enogia-dlg { animation: enogiaSheetOut .2s cubic-bezier(.7,0,.84,0) both; }
   .enogia-dlg ol { flex-wrap: wrap; }
   .enogia-dlg ol > li { flex: 1 1 30% !important; }
@@ -457,6 +457,8 @@ button:not(:disabled):active { transform: scale(.97); }
 .enogia-bg-bar:hover { transform: translateY(-1px); }
 .enogia-bg-bar:focus-visible, .enogia-bg-row > button:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
 @media (max-width: 1100px) { .enogia-bg { --bg-lw: 440px; --bg-cols: 92px 70px minmax(80px,1fr) 62px 62px 74px; } }
+/* v333 (audit tablette) : en portrait, Gamme / Client / NOBO masqués (les points client / NOBO restent sur les barres) : ~12 jours visibles au lieu de 5 */
+@media (min-width: 641px) and (max-width: 900px) { .enogia-bg { --bg-lw: 300px; --bg-cols: 92px minmax(90px,1fr) 74px; } .enogia-bg .c-opt { display: none !important; } }
 @media (max-width: 640px) { .enogia-bg { --bg-lw: 236px; --bg-cols: 88px minmax(70px,1fr) 70px; } .enogia-bg .c-opt, .enogia-bg .bg-bar-txt { display: none !important; } }
 .enogia-cat-in:hover, .enogia-cat-in:focus { border-color: rgba(127,127,127,.45) !important; }
 @media (prefers-reduced-motion: reduce) { .enogia-bg-bar, .enogia-bg-bar:hover { transition: none; transform: none; } }
@@ -618,7 +620,11 @@ button, input, select, textarea { font-family: inherit; }
   input:not([type="checkbox"]):not([type="radio"]), select, textarea{font-size:16px!important;min-height:40px}
   input[type="checkbox"], input[type="radio"]{width:22px;height:22px}
   .e-editbtn, .enogia-rowact{opacity:1!important}
+  /* v333 (audit tablette, responsive-craft) : boutons, listes et champs des barres d outils à 44 px ; éléments à glisser sans défilement au doigt */
+  .e-tb button, .e-tb select, .e-tb [role="button"]{min-height:44px!important;min-width:44px}
+  [data-dnd-drag], [data-lane-key], [data-bench-pj]{touch-action:none}
 }
 
 /* v326 : SAV / MES — liste des tickets et fiche côte à côte, empilées sous 1100 px */
-@media (max-width: 1100px) { .enogia-sav-split { grid-template-columns: 1fr !important; } }
+/* v333 (audit tablette) : la fiche du ticket reste à côté de la liste en paysage 1024 px */
+@media (max-width: 980px) { .enogia-sav-split { grid-template-columns: 1fr !important; } }

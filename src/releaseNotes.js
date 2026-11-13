@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v333",
+    date: "2026-11-13",
+    title: "V333 : le Cockpit sur tablette",
+    items: [
+      { t: "Tablette", d: "Boutons plus grands au doigt, glisser-déposer au doigt dans Tests et le Planificateur." },
+      { t: "Tablette", d: "Turbines › Besoins : le stock s'ouvre dans un tiroir en bas de l'écran." },
+    ],
+  },
+  {
     id: "2026-11-v332",
     date: "2026-11-13",
     title: "V332 : SAV, planning, carte et KPI",

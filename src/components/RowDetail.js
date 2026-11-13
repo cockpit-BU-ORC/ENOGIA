@@ -271,7 +271,7 @@ export function RowDialog(props) {
   return (<div className={"enogia-dlg-backdrop" + (closing ? " closing" : "")} onMouseDown={e => { if (e.target === e.currentTarget) close(); }}
     style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(8,12,28,.42)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
     <div ref={box} tabIndex={-1} role="dialog" aria-modal="true" aria-label={"Fiche " + r.pj} className="enogia-dlg"
-      style={{ width: "min(720px, 100%)", maxHeight: "90vh", overflowY: "auto", background: T.card, borderRadius: 22, boxShadow: "0 30px 80px rgba(8,12,28,.35), 0 0 0 1px " + T.line, outline: "none" }}>
+      style={{ width: "min(720px, 100%)", maxHeight: "90dvh", overflowY: "auto", background: T.card, borderRadius: 22, boxShadow: "0 30px 80px rgba(8,12,28,.35), 0 0 0 1px " + T.line, outline: "none" }}>
       <div aria-hidden="true" style={{ height: 6, background: bar }} />
       <div style={{ padding: "16px 22px 22px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>

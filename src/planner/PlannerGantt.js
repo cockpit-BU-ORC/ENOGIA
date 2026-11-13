@@ -452,7 +452,7 @@ function LinkDialog({ nodeKey_, plan, base, pjs, onClose, onAdd, onRemove, onPic
   const sel = { height: 34, border: "1px solid " + T.line, borderRadius: 8, background: T.card, color: T.ink900, fontSize: 13, padding: "0 8px", fontFamily: T.font };
   const ok = () => { if (pred) onAdd(pred, nodeKey_, type, lag); if (succ) onAdd(nodeKey_, succ, type, lag); setPred(""); setSucc(""); };
   return (<div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,20,30,.45)", zIndex: 10010, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-    <div role="dialog" aria-modal="true" aria-label={"Liens de " + labOf(nodeKey_)} onClick={e => e.stopPropagation()} style={{ background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, width: "min(560px,100%)", maxHeight: "88vh", overflow: "auto", padding: "16px 18px", fontFamily: T.font }}>
+    <div role="dialog" aria-modal="true" aria-label={"Liens de " + labOf(nodeKey_)} onClick={e => e.stopPropagation()} style={{ background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, width: "min(560px,100%)", maxHeight: "88dvh", overflow: "auto", padding: "16px 18px", fontFamily: T.font }}>
       <div style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: 18 }}>Liens · {labOf(nodeKey_)}</div>
       <div style={{ fontSize: 12.5, color: T.ink500, margin: "4px 0 12px" }}>Choisissez la tâche qui doit passer avant, ou celle qui attend la fin de celle-ci. Les dates se recalculent aussitôt.</div>
       <div style={{ display: "grid", gap: 10 }}>

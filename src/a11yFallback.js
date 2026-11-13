@@ -61,7 +61,7 @@ function pass(root) {
       if (r.width > 0 && r.height > 0) {
         b.dataset.hitDone = "1";
         // v314 : 44 px au doigt (tablette, écran tactile), 28 px à la souris ; jamais plus de 10 px de débord par côté
-        const MIN = COARSE() ? 44 : 28, MAXP = COARSE() ? 10 : 8;
+        const MIN = COARSE() ? 44 : 28, MAXP = COARSE() ? 14 : 8; // v333 : 14 px par côté au doigt (16 px → 44 px)
         if (r.width < MIN || r.height < MIN) {
           b.dataset.hit = "1";
           const pad = v => Math.min(MAXP, Math.max(0, Math.ceil((MIN - v) / 2)));

@@ -30,7 +30,7 @@ export function CashAnchorsDialog({ planRows, authorName, onClose }) {
     finally { setBusy(false); }
   };
   return (<div onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 10010, background: "rgba(10,20,30,.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-    <div role="dialog" aria-modal="true" aria-label="Jalons liés au planning" style={{ background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, width: "min(980px,100%)", maxHeight: "90vh", display: "flex", flexDirection: "column", fontFamily: T.font }}>
+    <div role="dialog" aria-modal="true" aria-label="Jalons liés au planning" style={{ background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, width: "min(980px,100%)", maxHeight: "90dvh", display: "flex", flexDirection: "column", fontFamily: T.font }}>
       <div style={{ padding: "14px 18px", borderBottom: "1px solid " + T.line }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
           <div style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: 18 }}>Jalons liés au planning</div>

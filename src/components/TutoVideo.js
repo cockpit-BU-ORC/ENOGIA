@@ -31,7 +31,7 @@ export function TutoVideoModal({ cfg, onClose }) {
   useEffect(() => { const k = e => { if (e.key === "Escape") onClose(); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose]);
   const v = videoEmbed(cfg && cfg.url); if (!v) return null;
   return (<div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 10000, background: "rgba(8,16,30,.62)", display: "grid", placeItems: "center", padding: 16 }}>
-    <div role="dialog" aria-modal="true" aria-labelledby="tuto-title" onClick={e => e.stopPropagation()} className="enogia-modal-pop" style={{ background: T.card, color: T.ink900, borderRadius: 18, border: "1px solid " + T.line, boxShadow: "0 30px 80px rgba(8,16,30,.38)", width: "min(1100px, 100%, calc((100vh - 150px) * 16 / 9))", maxHeight: "calc(100vh - 32px)", overflow: "hidden", fontFamily: T.font }}>
+    <div role="dialog" aria-modal="true" aria-labelledby="tuto-title" onClick={e => e.stopPropagation()} className="enogia-modal-pop" style={{ background: T.card, color: T.ink900, borderRadius: 18, border: "1px solid " + T.line, boxShadow: "0 30px 80px rgba(8,16,30,.38)", width: "min(1100px, 100%, calc((100vh - 150px) * 16 / 9))", maxHeight: "calc(100dvh - 32px)", overflow: "hidden", fontFamily: T.font }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 18px", borderBottom: "1px solid " + T.line }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div id="tuto-title" style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: FZ.lg }}>{(cfg && cfg.title) || "Le tour du Cockpit en vidéo"}</div>

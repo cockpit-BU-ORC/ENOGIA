@@ -39,7 +39,9 @@ export function usePointerDnD() {
 
   useEffect(() => () => { if (st.current) finish(true); }, [finish]);
 
+  // v333 : data-dnd-drag → touch-action: none au doigt (styles.css) : le doigt déplace l élément au lieu de faire défiler la page
   const dragProps = (payload, opt = {}) => ({
+    "data-dnd-drag": "1",
     onPointerDown: e => {
       if (e.button !== 0 || (e.target.closest && e.target.closest(SKIP)) || st.current) return;
       const el = e.currentTarget, src = (opt.ghost && opt.ghost(el)) || el;

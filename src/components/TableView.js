@@ -364,7 +364,7 @@ export function TableView({data,onSetDepart,progress,df,setDf,selEtats,setSelEta
   // explicitement ("ça doit être un élément qui suit le défilement vers le bas").
   return(<div style={{display:"flex",gap:16,flexWrap:"wrap",fontFamily:T.font}}>
   <div ref={listRef} style={{flex:"3 1 640px",minWidth:0}}>
-    <div style={{padding:"12px 4px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+    <div className="e-tb" style={{padding:"12px 4px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,flexWrap:"wrap"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
         {setOnlyChanged&&marks.size>0&&<span style={{display:"inline-flex",alignItems:"center",gap:6}}>
           <button onClick={()=>setOnlyChanged(!onlyChanged)} aria-pressed={!!onlyChanged} title="N'afficher que les PJ touchés par les derniers imports (depuis votre dernière lecture)"
@@ -453,7 +453,7 @@ export function TableView({data,onSetDepart,progress,df,setDf,selEtats,setSelEta
             <span title={meta.chefProjet} style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:22,height:22,borderRadius:"50%",background:avTintBg,color:avTint,fontSize:FZ.xs,fontWeight:600,flexShrink:0}}>{initials(meta.chefProjet)}</span>
           </td>}
           {show("gamme")&&<td style={{padding:D.cellY+"px "+PX+"px",color:T.ink500,fontSize:FS,whiteSpace:"nowrap"}}><span style={{display:"inline-flex",alignItems:"center",gap:8}}><span style={{width:7,height:7,borderRadius:"50%",background:GAMME_COLORS[r.gamme]||T.ink300,flexShrink:0}}/>{r.gamme}</span></td>}
-          {show("etat")&&<td style={{padding:D.cellY+"px "+PX+"px"}}>{pinOk&&setEtatFor?<HoverPop width={270} render={()=><EtatPopBody r={r} df={df}/>} style={{display:"inline-block"}}><span onClick={e=>e.stopPropagation()} style={{display:"inline-block",maxWidth:"100%"}}><EtatSelect compact value={r.etat} onChange={e=>setEtatFor(r.pj,e.target.value)}/></span></HoverPop>:<HoverPop width={270} render={()=><EtatPopBody r={r} df={df}/>}><Badge etat={r.etat} wrap={tight}/></HoverPop>}</td>}
+          {show("etat")&&<td style={{padding:D.cellY+"px "+PX+"px"}}>{pinOk&&setEtatFor?<HoverPop width={270} render={()=><EtatPopBody r={r} df={df}/>} style={{display:"inline-block"}}><span onClick={e=>e.stopPropagation()} style={{display:"inline-block",maxWidth:"100%"}}><EtatSelect compact pill={listW<1100} value={r.etat} onChange={e=>setEtatFor(r.pj,e.target.value)}/></span></HoverPop>:<HoverPop width={270} render={()=><EtatPopBody r={r} df={df}/>}><Badge etat={r.etat} wrap={tight}/></HoverPop>}</td>}
           {show("arrivee")&&<td style={{padding:D.cellY+"px "+PX+"px",color:T.ink700,fontSize:FS,whiteSpace:"nowrap"}}>{fmtMode(r.arrivee?new Date(r.arrivee):null,df)}</td>}
           {show("debprod")&&<td style={{padding:D.cellY+"px "+PX+"px",color:T.ink700,fontSize:FS,whiteSpace:"nowrap"}}>{fmtMode(r.debutProd?new Date(r.debutProd):null,df)}</td>}
           {show("tests")&&<td style={{padding:D.cellY+"px "+PX+"px",color:T.ink700,fontSize:FS,lineHeight:1.3}}>

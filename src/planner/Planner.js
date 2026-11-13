@@ -68,7 +68,7 @@ function Modal({ title, onClose, children, width = 720 }) {
     document.addEventListener("keydown", k); return () => document.removeEventListener("keydown", k);
   }, [id]);
   return (<div role="dialog" aria-modal="true" aria-labelledby={id} onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,20,30,.45)", zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, fontFamily: T.font }}>
-    <div onClick={e => e.stopPropagation()} style={{ background: T.card, borderRadius: 12, boxShadow: T.shadowLg, border: "1px solid " + T.line, width: "min(" + width + "px,100%)", maxHeight: "88vh", overflow: "auto", padding: "20px 22px" }}>
+    <div onClick={e => e.stopPropagation()} style={{ background: T.card, borderRadius: 12, boxShadow: T.shadowLg, border: "1px solid " + T.line, width: "min(" + width + "px,100%)", maxHeight: "88dvh", overflow: "auto", padding: "20px 22px" }}>
       <div id={id} style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: 19, color: T.ink900, marginBottom: 10 }}>{title}</div>
       {children}
     </div>
@@ -390,7 +390,7 @@ function BenchDialog({ plan, sched, cal, hide, skip, readOnly, onClose, onApply 
   const withRule = np => benchOrderByStart({ ...np, rules: { ...rulesOf(np), banc: true } }, cal);
   const tb = { border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "2px 8px", fontSize: 11.5, fontWeight: 600, cursor: readOnly ? "default" : "pointer", minHeight: 24, fontFamily: T.font };
   return (<div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,20,30,.45)", zIndex: 10010, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-    <div role="dialog" aria-modal="true" aria-label="Bancs d'essai" onClick={e => e.stopPropagation()} style={{ background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, width: "min(980px,100%)", maxHeight: "90vh", overflow: "auto", padding: "16px 18px", fontFamily: T.font }}>
+    <div role="dialog" aria-modal="true" aria-label="Bancs d'essai" onClick={e => e.stopPropagation()} style={{ background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, width: "min(980px,100%)", maxHeight: "90dvh", overflow: "auto", padding: "16px 18px", fontFamily: T.font }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
         <div style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: 18 }}>Bancs d'essai</div>
         <span style={{ fontSize: 12.5, color: T.ink500 }}>2 bancs : deux machines peuvent être testées en même temps, une seule par banc.</span>

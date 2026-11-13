@@ -86,7 +86,7 @@ export function ChangesPopup({ entries, onOpen, onLater, onRead, userName }) {
   const shown = entries.slice(0, 3), more = entries.length - shown.length;
   const first = (userName || "").split(/[\s@]/)[0];
   return (<div className="enogia-modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) onLater(); }} style={{ position: "fixed", inset: 0, zIndex: 10000, background: "rgba(15,25,40,.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, fontFamily: T.font }}>
-    <div role="dialog" aria-modal="true" aria-labelledby="chg-title" className="enogia-modal-pop" style={{ background: T.card, color: T.ink900, borderRadius: 12, border: "1px solid " + T.line, boxShadow: T.shadowLg, width: "100%", maxWidth: 520, maxHeight: "86vh", overflowY: "auto", padding: "20px 20px 16px" }}>
+    <div role="dialog" aria-modal="true" aria-labelledby="chg-title" className="enogia-modal-pop" style={{ background: T.card, color: T.ink900, borderRadius: 12, border: "1px solid " + T.line, boxShadow: T.shadowLg, width: "100%", maxWidth: 520, maxHeight: "86dvh", overflowY: "auto", padding: "20px 20px 16px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
         <span aria-hidden="true" style={{ width: 4, height: 22, borderRadius: 4, background: T.accent }} />
         <h2 id="chg-title" style={{ margin: 0, fontSize: FZ.lg, fontWeight: 600, letterSpacing: "-.01em" }}>Le planning a été mis à jour</h2>

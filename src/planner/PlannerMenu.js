@@ -20,7 +20,7 @@ export function Pop({ trigger, children, width = 260, align = "left" }) {
   };
   return (<span ref={ref} style={{ display: "inline-flex" }}>
     {trigger(!!pos, toggle)}
-    {pos && <div ref={box} role="menu" style={{ position: "fixed", ...pos, width, zIndex: 10001, background: T.card, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, padding: 8, fontFamily: T.font, fontSize: 13, color: T.ink700, maxHeight: "70vh", overflow: "auto" }}>{typeof children === "function" ? children(close) : children}</div>}
+    {pos && <div ref={box} role="menu" style={{ position: "fixed", ...pos, width, zIndex: 10001, background: T.card, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, padding: 8, fontFamily: T.font, fontSize: 13, color: T.ink700, maxHeight: "70dvh", overflow: "auto" }}>{typeof children === "function" ? children(close) : children}</div>}
   </span>);
 }
 

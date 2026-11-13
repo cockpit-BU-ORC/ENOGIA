@@ -2402,3 +2402,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Clés localStorage : `enogia_sav_zoom` (nouvelle), `enogia_sav_plan` (plus lue).
 - Règles Firestore inchangées (même document `planning/sav`).
 - Fichiers : components/SavPage.js, savModel.js(+test), savImport.js, access.js, App.js, demo/demoPages.js, versions.
+
+## v333 — tablette (audit responsive-craft)
+
+- Au doigt : barres d'outils à 44 px (classe `e-tb`), zones de toucher élargies, glisser au doigt (`touch-action: none` sur les éléments à glisser).
+- Liste : état en pastille compacte sous 1 100 px. Turbines › Besoins : stock en tiroir bas sous 860 px. Bancs : colonnes secondaires masquées en portrait.
+- SAV : fiche du ticket à côté de la liste jusqu'à 980 px. Menu : toucher à côté le referme. Fenêtres en `dvh`.
+- Aucune clé localStorage, aucune donnée ni règle Firestore.
+- Fichiers : styles.css, a11yFallback.js, pointerDrag.js, App.js, components/EtatControls.js, TableView.js, GanttView.js, CalendarView.js, TestsTab.js, TurbinesHub.js, SavPage.js, ~20 fenêtres (vh → dvh), versions.

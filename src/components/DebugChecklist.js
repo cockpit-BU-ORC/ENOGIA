@@ -63,7 +63,7 @@ function DebugChecklistDialog({ r, plan, saveTests, canMark, who, signApi, SignF
       style={{ width: 40, minHeight: 28, borderRadius: 8, border: "1px solid " + (on ? tone[0] : T.line), background: on ? tone[1] : T.card, color: on ? tone[0] : T.ink300, fontWeight: 600, fontSize: FZ.xs, cursor: canMark ? "pointer" : "default", fontFamily: T.font }}>{on ? (val === "na" ? "S.O." : "X") : v}</button>; };
   const OK = [T.emerald600, T.emerald100], NOK = [T.red600, T.red100], NA = [T.ink700, T.surfaceAlt];
   return (<div onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 10010, background: "rgba(10,20,30,.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 12 }}>
-    <div role="dialog" aria-modal="true" aria-label={"Checklist de debug " + r.pj} style={{ width: "min(1480px,100%)", maxHeight: "94vh", display: "flex", flexDirection: "column", background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, fontFamily: T.font }}>
+    <div role="dialog" aria-modal="true" aria-label={"Checklist de debug " + r.pj} style={{ width: "min(1480px,100%)", maxHeight: "94dvh", display: "flex", flexDirection: "column", background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, fontFamily: T.font }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", padding: "12px 16px", borderBottom: "1px solid " + T.line }}>
         <div style={{ flex: "1 1 260px" }}>
           <div style={{ fontFamily: T.fontDisplay, fontSize: FZ.lg, fontWeight: 600 }}>{DEBUG_DOC.subtitle} · <span style={{ fontFamily: T.fontMono }}>{r.pj}</span></div>

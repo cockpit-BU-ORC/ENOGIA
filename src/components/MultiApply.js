@@ -87,7 +87,7 @@ export function MultiApplyDialog({ onClose, data, currentPj, savePjMetaMulti, ad
 
   return createPortal(<div role="dialog" aria-modal="true" aria-label="Saisie sur plusieurs projets" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}
     style={{ position: "fixed", inset: 0, zIndex: 20010, background: "rgba(10,16,28,.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 12 }}>
-    <div style={{ background: T.card, color: T.ink900, borderRadius: 12, boxShadow: T.shadowLg, border: "1px solid " + T.line, width: "min(860px,100%)", maxHeight: "92vh", overflow: "hidden", display: "flex", flexDirection: "column", fontFamily: T.font }}>
+    <div style={{ background: T.card, color: T.ink900, borderRadius: 12, boxShadow: T.shadowLg, border: "1px solid " + T.line, width: "min(860px,100%)", maxHeight: "92dvh", overflow: "hidden", display: "flex", flexDirection: "column", fontFamily: T.font }}>
       <div style={{ padding: "14px 18px", borderBottom: "1px solid " + T.line, display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ flex: 1 }}><div style={{ fontSize: FZ.md, fontWeight: 600 }}>Saisir sur plusieurs projets</div><div style={{ fontSize: FZ.xs, color: T.ink500 }}>Une seule saisie, ajoutée à chaque projet coché — action, mitigation, commentaire ou statut.</div></div>
         <button onClick={onClose} style={chip(false)}>Fermer</button>
