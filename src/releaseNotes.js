@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v325",
+    date: "2026-11-13",
+    title: "V325 : Gestion des accès",
+    items: [
+      { t: "Administration", d: "« Gestion des accès » et « Réglages » : mêmes titres et mêmes boutons au même endroit.", admin: true },
+    ],
+  },
+  {
     id: "2026-11-v324",
     date: "2026-11-13",
     title: "V324 : cloche en pop-up",

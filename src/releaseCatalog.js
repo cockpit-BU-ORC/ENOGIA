@@ -898,4 +898,7 @@ export const RELEASE_CATALOG = [
     ["Cloche", "Un clic sur la cloche ouvre ce qui est à traiter (demandes, mentions, affectations, informations) dans un pop-up ; plus de page « À traiter » ni de message à côté de la cloche."],
     ["Rapidité", "Le site s'ouvre plus vite : moins de choses à charger au démarrage."],
   ] },
+  { v: "325", t: "Gestion des accès et Réglages", items: [
+    ["Administration", "« Gestion des accès » (Personnes, Rôles, Accès par page) avec le même titre et le même sélecteur sur les trois sous-pages ; « Réglages » pour les Nouveautés et la version.", "admin"],
+  ] },
 ];

@@ -2340,3 +2340,9 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Paquet de départ 430 → 340 Ko compressés : Nouveautés et calculs turbines chargés à la demande (`releaseSeen.js`, `prodModel.js`, `prodDocCtx.js`).
 - Règles Firestore inchangées par cette version (celles de la V323 restent à republier).
 - Fichiers : App.js, index.js, components/MentionBell.js, InboxPage.js, AppChrome.js, ReleaseNotes.js, RoleHome.js, RowDetail.js, pjDossier.js(+test), turbineNeeds.js, releaseSeen.js, prodModel.js, prodDocCtx.js (nouveaux), demo/demoPages.js ; supprimés : i18n.js, i18n/*.
+
+## v325 — Gestion des accès, Réglages
+
+- Menu et Manager : « Gestion des accès » (Personnes, Rôles, Accès par page), « Réglages » (Nouveautés, version).
+- Page Accès : même en-tête que le Manager (titre en haut à gauche, sélecteur dessous).
+- Fichiers : App.js, components/AccessPage.js, components/ManagerPanel.js, versions. Rien à republier.

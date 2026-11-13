@@ -64,7 +64,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-13-v324-cloche-rapide";
+const APP_BUILD_VERSION = "2026-11-13-v325-gestion-acces";
 
 const ReleasePopup = React.lazy(() => import("./components/ReleaseNotes").then(m => ({ default: m.ReleasePopup })));
 function Navigate0({ go }) { useEffect(() => { go(); }, []); return null; } // eslint-disable-line react-hooks/exhaustive-deps
@@ -1000,9 +1000,9 @@ export default function App(){
     {g:"Administration",items:[
       ...(calOk?[{id:"calprod",l:"Calendrier de production",icon:"calendar",on:mgrOn(["production","vacances"]),go:goMgr("production")}]:[]),
       // v320 (demandé : « lier Accès et Personnes et site, Nouveautés seulement dans les réglages ») : Personnes et accès + Réglages du site
-      ...(isOwner?[{id:"people",l:"Personnes et accès",icon:"lock",on:mgrOn(["personnes"])||view==="access",go:goMgr("personnes"),
+      ...(isOwner?[{id:"people",l:"Gestion des accès",icon:"lock",on:mgrOn(["personnes"])||view==="access",go:goMgr("personnes"),
         subs:[{id:"personnes",l:"Personnes",on:mgrOn(["personnes"]),go:goMgr("personnes")},{id:"roles",l:"Rôles",on:view==="access"&&accSub==="roles",go:()=>{setAccSub("roles");setView("access");}},{id:"acces",l:"Accès par page",on:view==="access"&&accSub==="acces",go:()=>{setAccSub("acces");setView("access");}}]},
-        {id:"site",l:"Réglages du site",icon:"settings",on:mgrOn(["nouveautes","acces"]),go:goMgr("nouveautes")}]:[])]},
+        {id:"site",l:"Réglages",icon:"settings",on:mgrOn(["nouveautes","acces"]),go:goMgr("nouveautes")}]:[])]},
   ].filter(g=>g.items.length);
 
   // v159 : menu principal libellé (réductible, mémorisé) + recherche « Aller à… » (Ctrl K) sur toutes les pages

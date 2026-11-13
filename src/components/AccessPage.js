@@ -6,8 +6,7 @@
 //    change ses sous-pages ; « Copier les accès de… » ; aperçu du menu du rôle. Activation des nouveaux accès en tête.
 // Brouillon commun aux deux sous-pages : « Enregistrer » écrit planning/profiles (rôles des personnes) et planning/access.
 import React, { useMemo, useState } from "react";
-import { T, btn } from "../theme";
-import { PageHead } from "./SharedUI";
+import { T, FZ, btn } from "../theme";
 import { PlanSwitch } from "./PlanSwitch";
 import { askConfirm } from "../confirm";
 import { profileOf, setProfile, isRemoved } from "../profiles";
@@ -161,8 +160,15 @@ export default function AccessPage({ profiles, saveProfiles, accessDoc, saveAcce
   </div>;
 
   return (<div style={{ display: "flex", flexDirection: "column", gap: 14, paddingBottom: 70 }}>
-    <PageHead title="Accès" sub="Qui a quel rôle, et ce que chaque rôle peut voir ou modifier. Vous seul êtes super admin." accent={T.accentInk}
-      right={<PlanSwitch label="Sous-pages des accès" value={sub} onGo={setSub} tools={[]} views={[...(onPeople ? [{ id: "personnes", l: "Personnes" }] : []), { id: "roles", l: "Rôles" }, { id: "acces", l: "Accès par page" }]} />} />
+    {/* v325 (demandé : « pas de titre en haut à gauche ; nom Gestion des accès ; boutons aux mêmes endroits ») : même en-tête que le Manager
+        (titre, phrase, sélecteur dessous) sur Personnes, Rôles et Accès par page */}
+    <header style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{ minWidth: 0 }}>
+        <h1 style={{ margin: 0, fontFamily: T.fontDisplay, fontSize: "clamp(24px,2.4vw,30px)", fontWeight: 600, letterSpacing: "-.01em", color: T.ink900, lineHeight: 1.15 }}>Gestion des accès</h1>
+        <div style={{ fontSize: FZ.sm, color: T.ink500, marginTop: 2 }}>Personnes, rôles et accès par page</div>
+      </div>
+      <PlanSwitch label="Sous-pages : Gestion des accès" value={sub} onGo={setSub} tools={[]} views={[...(onPeople ? [{ id: "personnes", l: "Personnes" }] : []), { id: "roles", l: "Rôles" }, { id: "acces", l: "Accès par page" }]} />
+    </header>
     <div role="status" style={{ ...card, padding: "10px 14px", display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", background: on ? T.emerald100 : T.amber100 }}>
       <span style={{ flex: "1 1 320px", fontSize: 13, color: T.ink900 }}>{on ? <><b>Nouveaux accès activés.</b> Chacun ne voit que ce que permet son rôle.</> : <><b>Pas encore activés.</b> Tout le monde garde ses droits d'avant. Réglez rôles et accès, enregistrez, puis activez.</>}</span>
       <button type="button" disabled={busy} onClick={toggleOn} style={{ ...btn(on ? "ghost" : "sec", "sm") }}>{on ? "Désactiver" : "Activer les nouveaux accès"}</button>

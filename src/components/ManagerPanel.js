@@ -377,7 +377,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
   const navGroups=[
     {label:"Pilotage",entries:[...(kpi?[entry("derives","KPI","chart","synthèse dérives charge avancement",{lock:true})]:[]),entry("retards","Retards","warning","délais allocation")]},
     {label:"Projets",entries:[entry("fiche","Fiches projet","list","pj commentaires dates point hebdo semaine"),entry("orc","Machines ORC","gauge","n° de série statut état chef pays présence client nobo",{go:()=>setTab("serie")})]},
-    ...(cal||me?[{label:"Réglages",entries:[...(cal?[entry("calendrier","Calendrier de production","calendar","jours sans production fermetures vacances",{lock:true})]:[]),...(me?[entry("reglages","Personnes et accès","lock","personnes rôles accès",{lock:true}),entry("site","Réglages du site","settings","nouveautés vidéo version",{lock:true})]:[])]}]:[]),
+    ...(cal||me?[{label:"Réglages",entries:[...(cal?[entry("calendrier","Calendrier de production","calendar","jours sans production fermetures vacances",{lock:true})]:[]),...(me?[entry("reglages","Gestion des accès","lock","personnes rôles accès",{lock:true}),entry("site","Réglages","settings","nouveautés vidéo version",{lock:true})]:[])]}]:[]),
   ];
   const activeEntry=navGroups.flatMap(g=>g.entries).find(e=>e.id===group)||navGroups[0].entries[0];
   // v196 : publie les entrées du Manager vers le menu du site (une seule barre de navigation) ; retirées en quittant le Manager.
