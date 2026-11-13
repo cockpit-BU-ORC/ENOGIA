@@ -112,6 +112,7 @@ export function useSav(currentUser, authorName) {
       put: async (c, id, data) => { try { await setDoc(R(), { [c]: { [id]: data }, ...stamp() }, { merge: true }); const cur = (docNow && docNow[c] && docNow[c][id]) || {}; const gone = Object.keys(cur).filter(k => !(k in data)); if (gone.length) await updateDoc(R(), Object.fromEntries(gone.map(k => [c + "." + id + "." + k, deleteField()]))); return true; } catch (e) { return fail(e); } },
       del: async (c, id) => { try { await updateDoc(R(), { [c + "." + id]: deleteField(), ...stamp() }); return true; } catch (e) { return fail(e); } },
       setField: async (k, v) => { try { await setDoc(R(), { [k]: v, ...stamp() }, { merge: true }); return true; } catch (e) { return fail(e); } },
+      merge: async obj => { try { await setDoc(R(), { ...obj, ...stamp() }, { merge: true }); return true; } catch (e) { return fail(e); } }, // v330 : reprise de l'historique SAV
     };
   }, [authorName]);
   const savApi = useMemo(() => mk(SAV_DOC_REF, "SAV", savDoc), [mk, savDoc]);

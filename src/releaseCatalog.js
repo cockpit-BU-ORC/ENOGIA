@@ -917,4 +917,9 @@ export const RELEASE_CATALOG = [
   { v: "329", t: "Achats / Appro : mise à jour d'Alexis", items: [
     ["Achats / Appro", "Synthèse Appro par scope (à commander, à livrer, livrées), avance ou retard de livraison à côté du statut, choix d'une ligne de PO filtré (projet, article, fournisseur), fournisseur des PO repris d'Odoo, options « choisir 1 » à préciser dans les fiches machine."],
   ] },
+  { v: "330", t: "SAV : demandes, carte du parc, historique", items: [
+    ["SAV / MES", "Planning des demandes : une ligne « Équipe SAV / MES » avec les jours déjà réservés (PJ), un « + » sur chaque jour pour demander une intervention ; la demande apparaît rayée jusqu'à la réponse du responsable SAV, qui la reçoit dans la cloche."],
+    ["SAV / MES", "Parc : carte du monde des sites (coordonnées GPS facultatives, sinon centre du pays)."],
+    ["SAV / MES", "Reprise de l'historique du fichier SAV (tickets, interventions, parc, contrats) en une fois.", "admin"],
+  ] },
 ];

@@ -3,12 +3,13 @@
 // Droits : level « w » / « a » = équipe SAV (tout modifier) ; « r » = lecture (chefs de projet, direction) + demander une intervention
 // sur un jour libre, dans une vue du planning sur UNE seule ligne (demandé : « la vue chef de projet doit être une seule ligne »).
 // Coûts des interventions visibles seulement si canCost (équipe SAV, direction, propriétaire).
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { mapPoints, parseSavHistory, historyPlan } from "../savImport";
 import { usePointerDnD } from "../pointerDrag";
 import { T, FZ, btn } from "../theme";
 import { getPjMeta } from "../pjMeta";
 import { PlanSwitch } from "./PlanSwitch";
-import { Panel, Pill, Btn, Segmented, PjPlate, tableTh, tableTd, EmptyState, PageHead } from "./SharedUI";
+import { Panel, Pill, Btn, Segmented, PjPlate, tableTh, tableTd, EmptyState, PageHead, useSheetJS } from "./SharedUI";
 import { stageSoft } from "../theme";
 import { askConfirm } from "../confirm";
 import { TICKET_TYPES, typeOf, flowOf, PRIOS, ORIGINS, INTER_TYPES, INTER_STATUS, PREP_ITEMS, CLO_ITEMS, COST_FIELDS, CONTRACTS, DEM_STATUS,
@@ -27,7 +28,7 @@ const lab = { display: "flex", flexDirection: "column", gap: 4, fontSize: 12, co
 const inp = () => ({ minHeight: 32, padding: "0 10px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, boxSizing: "border-box", width: "100%" });
 const SUBS = [["tickets", "Tickets"], ["inters", "Interventions"], ["planning", "Planning des équipes"], ["parc", "Parc"]];
 const DESC = { tickets: "Le ticket est la demande (le problème à régler) ; une intervention est un déplacement sur site pour le traiter", inters: "Interventions sur site : équipe, dates, préparation, clôture et coûts",
-  planning: "Qui est où, à la semaine ou au mois ; glisser une barre change ses dates ou son technicien", parc: "Machines en service, contrats de maintenance et tickets ouverts" };
+  planning: "Qui est où, à la semaine ou au mois ; demandes d'intervention des chefs de projet", parc: "Machines en service, contrats de maintenance et tickets ouverts" };
 
 function Kpi({ l, v, tone }) {
   return <div style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "10px 12px", minWidth: 0 }}>
@@ -116,6 +117,7 @@ export function SavPage({ doc, dem, api, demApi, rows, level = "r", canCost, me,
       {sub === "tickets" && <Btn v="pri" size="sm" onClick={() => setTicketDlg({ id: null, t: { type: "cur", prio: "m", step: 0, orig: "Client", date: todayIso(), resp: myName || "" } })}>＋ Nouveau ticket</Btn>}
       {sub === "inters" && <Btn v="pri" size="sm" onClick={() => setInterDlg({ id: null, i: { st: "À planifier", type: "Maintenance curative", resp: "", who: [], prep: [], clo: [], costs: {} } })}>＋ Intervention sur site</Btn>}
       {sub === "parc" && <Btn size="sm" onClick={() => setParcDlg({ pj: "", p: {}, isNew: true })}>＋ Projet du parc</Btn>}
+      {isAdmin && api.merge && <HistoryImport doc={D} api={api} />}
     </div>}
 
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
@@ -371,15 +373,23 @@ function PlanningView({ inters, demandes, techs, canEdit, nomOf, me, myPjs, onOp
           <span style={{ fontSize: 12, color: T.ink500 }}>{!i.a ? "sans dates" : "sans technicien"}</span><Btn v="pri" size="sm" onClick={() => onOpenInter(id)}>Planifier</Btn></div>)}
       </Panel></>
     : <>
-      <Panel title="Planning des demandes d'intervention" pad={0} right={<span style={{ fontSize: 12, color: T.ink500, padding: "12px 14px 0 0" }}>{canEdit ? "Chiffre = techniciens libres ce jour-là ; en orange, les demandes en attente." : "Chiffre = techniciens libres : cliquez un jour pour demander une intervention ; le responsable SAV accepte ou refuse."}</span>}>
+      <Panel title="Planning des demandes d'intervention" pad={0} right={<span style={{ fontSize: 12, color: T.ink500, padding: "12px 14px 0 0" }}>{"En bleu, les jours déjà réservés ; rayé, une demande en attente de confirmation ; « + » pour demander un jour."}</span>}>
         <div style={{ overflowX: "auto" }}><div style={{ minWidth: N > 12 ? 1200 : 900 }}>
           <DayHeader days={days} labW={labW} label="" t0={t0} />
-          <SRow labW={labW} label="Équipe SAV" h={44}><div style={{ display: "grid", gridTemplateColumns: cols }}>{load.map(x => { const free = x.free - pendOn(x.d).length, past = x.d < t0;
-            return <div key={x.d} style={{ padding: 4, ...weekLines(x.d) }}>{past || free <= 0 || !x.team ? <span style={{ display: "block", minHeight: 32, lineHeight: "32px", textAlign: "center", borderRadius: 4, background: T.surfaceAlt, color: T.ink500, fontSize: 12, fontWeight: 600 }}>{past ? "—" : N > 12 ? "0" : "Complet"}</span>
-              : canEdit ? <span style={{ display: "block", minHeight: 32, lineHeight: "32px", textAlign: "center", borderRadius: 4, background: T.emerald100, color: T.emerald600, fontSize: 12, fontWeight: 700 }}>{free}{N > 12 ? "" : " libre" + (free > 1 ? "s" : "")}</span>
-              : <button type="button" onClick={() => onRequest(x.d)} title={"Demander une intervention le " + fdd(x.d)} aria-label={"Demander une intervention le " + fdd(x.d) + " (" + free + " libre" + (free > 1 ? "s" : "") + ")"}
-                style={{ width: "100%", minHeight: 32, borderRadius: 4, border: "1.5px dashed " + T.emerald500, background: T.emerald100, color: T.emerald600, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: T.font, padding: 0 }}>{N > 12 ? "＋" + free : "＋ " + free + " libre" + (free > 1 ? "s" : "")}</button>}</div>; })}</div></SRow>
-          <SRow labW={labW} label="Demandes" ink={T.amber600} h={44}><div style={{ display: "grid", gridTemplateColumns: cols }}>{days.map(d => <div key={d} style={{ padding: 4, ...weekLines(d) }}>{pendOn(d).map(p => <span key={p.id} title={p.pj + " · " + (p.obj || "") + " · " + (p.by || "")} style={{ display: "block", minHeight: 24, lineHeight: "24px", borderRadius: 4, border: "1.5px dashed " + T.amber500, background: T.amber100, color: T.amber600, fontSize: 11, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", padding: "0 4px", marginBottom: 2 }}>{p.pj}</span>)}</div>)}</div></SRow>
+          {/* v330 (demandé : « une ligne Équipe, les créneaux déjà réservés pour tel PJ, un + sur les jours libres ; la demande rayée en attente
+              de confirmation du responsable SAV ») — ouvert à tous : chef de projet comme équipe SAV peuvent demander un jour */}
+          <SRow labW={labW} label="Équipe SAV / MES" h={64}><div style={{ display: "grid", gridTemplateColumns: cols }}>{load.map(x => {
+            const booked = Object.entries(inters).filter(([, i]) => i && i.a && i.b && i.st !== "Annulée" && i.a <= x.d && i.b >= x.d);
+            const waits = pendOn(x.d), past = x.d < t0, full = x.team > 0 && x.free - waits.length <= 0;
+            return <div key={x.d} style={{ padding: 3, display: "flex", flexDirection: "column", gap: 3, minWidth: 0, ...weekLines(x.d), background: x.d === t0 ? "color-mix(in srgb, " + T.amber100 + " 45%, transparent)" : undefined }}>
+              {booked.map(([id, i]) => <span key={id} title={"Réservé : " + i.pj + " · " + (nomOf(i.pj) || "") + " · " + (i.obj || "") + (interTeam(i).length ? " · " + interTeam(i).join(", ") : "")}
+                style={{ display: "block", minHeight: 22, lineHeight: "22px", borderRadius: 4, background: T.info100, color: T.info600, borderLeft: "3px solid " + T.info600, fontSize: 11, fontWeight: 700, padding: "0 4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{i.pj}</span>)}
+              {waits.map(p => <span key={p.id} title={"Demande en attente de confirmation : " + p.pj + " · " + (p.obj || "") + " · " + (p.by || "")}
+                style={{ display: "block", minHeight: 22, lineHeight: "22px", borderRadius: 4, border: "1px dashed " + T.amber500, background: "repeating-linear-gradient(135deg, " + T.amber100 + " 0 5px, transparent 5px 10px)", color: T.amber600, fontSize: 11, fontWeight: 700, padding: "0 4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "line-through" }}>{p.pj}</span>)}
+              {!past && (full ? <span style={{ fontSize: 11, color: T.ink500, textAlign: "center" }}>complet</span>
+                : <button type="button" onClick={() => onRequest(x.d)} title={"Demander une intervention le " + fdd(x.d)} aria-label={"Demander une intervention le " + fdd(x.d)}
+                  style={{ width: "100%", minHeight: 24, borderRadius: 4, border: "1.5px dashed " + T.emerald500, background: "transparent", color: T.emerald600, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: T.font, padding: 0, lineHeight: 1 }}>+</button>)}
+            </div>; })}</div></SRow>
         </div></div>
       </Panel>
       {canEdit ? <Panel title={<span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>Demandes des chefs de projet {pend.length > 0 && <Pill tone="warn">{pend.length}</Pill>}</span>}>
@@ -427,7 +437,8 @@ function ParcView({ rows, metaOf, parc, tickets, canEdit, onEdit, onOpenPj }) {
   const all = parcOf(rows, metaOf, parc, tickets);
   const L = all.filter(p => filt === "all" || (filt === "ctr" ? p.info.contrat && p.info.contrat !== "Sans contrat" : !p.info.contrat || p.info.contrat === "Sans contrat"))
     .filter(p => !q || (p.pj + " " + p.nom + " " + p.pays + " " + p.sn.join(" ")).toLowerCase().includes(q.toLowerCase()));
-  return <Panel title={"Parc ORC (" + all.length + " projets)"} pad={0} right={<div style={{ display: "flex", gap: 8, padding: "10px 12px 0 0", flexWrap: "wrap" }}>
+  return <><WorldMap points={mapPoints(all)} onPick={pj => setQ(pj)} />
+    <Panel title={"Parc ORC (" + all.length + " projets)"} pad={0} right={<div style={{ display: "flex", gap: 8, padding: "10px 12px 0 0", flexWrap: "wrap" }}>
     <Segmented label="Filtrer le parc" value={filt} onChange={setFilt} options={[["all", "Tous"], ["ctr", "Avec contrat"], ["no", "Sans contrat"]]} />
     <input type="search" value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher un PJ, un S/N…" aria-label="Rechercher dans le parc" style={{ ...inp(), width: 200 }} /></div>}>
     {L.length === 0 ? <EmptyState compact icon="gauge" title="Aucun projet" hint="Le parc se remplit avec les machines expédiées du planning ; « ＋ Projet du parc » pour les machines plus anciennes." /> :
@@ -443,8 +454,76 @@ function ParcView({ rows, metaOf, parc, tickets, canEdit, onEdit, onOpenPj }) {
           <td style={tableTd()}>{c && c !== "Sans contrat" ? <><Pill tone={p.info.contratStatut === "En cours" ? "ok" : "warn"}>{c}</Pill> <span style={{ fontFamily: T.fontMono, fontSize: 11, color: T.ink500 }}>{p.info.contratNo || ""}</span></> : <Pill tone="muted">Sans contrat</Pill>}</td>
           <td style={tableTd()}>{p.info.preventive ? fd(p.info.preventive) + "/" + String(p.info.preventive).slice(2, 4) : "—"}</td>
           <td style={tableTd({ num: true, ink: p.ouverts ? T.ink900 : T.ink500 })}>{p.ouverts}</td></tr>; })}</tbody></table></div>}
+  </Panel></>;
+}
+// v330 (demandé : « une carte du monde pour chaque PJ ») : fond de carte (Natural Earth 110 m, world-atlas) chargé à l'ouverture du Parc,
+// projection équirectangulaire maison ; un point par projet (coordonnées saisies, sinon centre du pays) ; clic = filtrer le tableau.
+let atlasP = null;
+function loadAtlas() {
+  if (atlasP) return atlasP;
+  const lib = window.topojson ? Promise.resolve() : new Promise((ok, ko) => { const sc = document.createElement("script"); sc.src = "https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"; sc.onload = ok; sc.onerror = ko; document.head.appendChild(sc); });
+  atlasP = lib.then(() => fetch("https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json")).then(r => r.json()).then(w => window.topojson.feature(w, w.objects.countries)).catch(e => { atlasP = null; throw e; });
+  return atlasP;
+}
+const MW = 1000, MH = 470, LAT0 = 84, LAT1 = -58;
+const px = (lat, lon) => [(lon + 180) / 360 * MW, (LAT0 - lat) / (LAT0 - LAT1) * MH];
+function ringPath(ring) { let d = "", prev = null; ring.forEach(([lon, lat]) => { const [x, y] = px(lat, lon); d += (prev == null || Math.abs(x - prev) > MW / 2 ? "M" : "L") + x.toFixed(1) + " " + y.toFixed(1); prev = x; }); return d + "Z"; }
+function geoPath(g) { if (!g) return ""; const polys = g.type === "Polygon" ? [g.coordinates] : g.type === "MultiPolygon" ? g.coordinates : []; return polys.map(p => p.map(ringPath).join("")).join(""); }
+function WorldMap({ points, onPick }) {
+  const [land, setLand] = useState(null), [err, setErr] = useState(false), [hover, setHover] = useState(null);
+  useEffect(() => { let on = true; loadAtlas().then(f => { if (on) setLand(f); }).catch(() => { if (on) setErr(true); }); return () => { on = false; }; }, []);
+  const paths = useMemo(() => (land ? land.features.map(f => geoPath(f.geometry)) : []), [land]);
+  const byCountry = points.reduce((m, p) => { m[p.pays || "—"] = (m[p.pays || "—"] || 0) + 1; return m; }, {});
+  return <Panel title={"Carte du parc (" + points.length + " sites)"} right={<span style={{ fontSize: 12, color: T.ink500 }}>{Object.entries(byCountry).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, n]) => k + " " + n).join(" · ")}</span>}>
+    <div style={{ position: "relative", width: "100%", maxWidth: 900, margin: "0 auto", aspectRatio: MW + " / " + MH, background: T.surface, borderRadius: 8, overflow: "hidden" }}>
+      {err && <div role="status" style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontSize: FZ.sm, color: T.ink500 }}>Fond de carte indisponible (connexion) : les points restent placés.</div>}
+      <svg viewBox={"0 0 " + MW + " " + MH} role="img" aria-label={"Carte du monde : " + points.length + " sites du parc"} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
+        {paths.map((d, i) => <path key={i} d={d} fill={T.surfaceAlt} stroke={T.line} strokeWidth={0.6} />)}
+        {points.map(p => { const [x, y] = px(p.lat, p.lon), ok = p.info && p.info.contrat && p.info.contrat !== "Sans contrat", on = hover === p.pj;
+          return <g key={p.pj} onMouseEnter={() => setHover(p.pj)} onMouseLeave={() => setHover(null)} onClick={() => onPick(p.pj)} style={{ cursor: "pointer" }}>
+            <title>{p.pj + (p.nom ? " · " + p.nom : "") + (p.pays ? " · " + p.pays : "") + (p.exact ? "" : " (centre du pays)")}</title>
+            <circle cx={x} cy={y} r={on ? 8 : 5.5} fill={p.ouverts ? T.red600 : ok ? T.emerald600 : T.info600} stroke={T.card} strokeWidth={1.5} />
+            {on && <text x={x + 10} y={y + 4} fontSize={13} fontWeight={700} fill={T.ink900} stroke={T.card} strokeWidth={3} paintOrder="stroke" style={{ fontFamily: T.font }}>{p.pj}{p.nom ? " · " + p.nom : ""}</text>}</g>; })}
+      </svg>
+    </div>
+    <div style={{ display: "flex", gap: 14, flexWrap: "wrap", fontSize: 12, color: T.ink500 }}>
+      {[[T.emerald600, "Sous contrat"], [T.info600, "Sans contrat"], [T.red600, "Ticket ouvert"]].map(([c, l]) => <span key={l} style={{ display: "inline-flex", gap: 6, alignItems: "center" }}><i aria-hidden="true" style={{ width: 10, height: 10, borderRadius: "50%", background: c, display: "inline-block" }} />{l}</span>)}
+      <span>Survol = nom, clic = filtrer le tableau ; sans coordonnées saisies, le point est au centre du pays.</span></div>
   </Panel>;
 }
+
+// v330 (demandé : « d'après le fichier Google Sheet, rajoute le passé dans le Cockpit ») : reprise unique de l'historique, depuis l'export
+// Excel du fichier « [SAV] Tickets et interventions » (Fichier › Télécharger › Microsoft Excel). Ce qui existe déjà dans le Cockpit n'est pas écrasé.
+function HistoryImport({ doc, api }) {
+  const ready = useSheetJS(), ref = useRef(null), [prev, setPrev] = useState(null), [busy, setBusy] = useState(false), [msg, setMsg] = useState("");
+  const read = async f => {
+    if (!f || !window.XLSX) return;
+    try { const wb = window.XLSX.read(await f.arrayBuffer(), { type: "array", cellDates: true });
+      const sh = n => { const k = wb.SheetNames.find(x => x.trim().toLowerCase() === n.toLowerCase()); return k ? window.XLSX.utils.sheet_to_json(wb.Sheets[k], { header: 1, raw: true, defval: "" }) : []; };
+      const hist = parseSavHistory({ Tickets_SAV: sh("Tickets_SAV"), Interventions: sh("Interventions"), Parc_Projets: sh("Parc_Projets"), Parc_ORC: sh("Parc_ORC"), Suivi_contrats: sh("Suivi_contrats") });
+      setPrev({ name: f.name, plan: historyPlan(doc, hist) });
+    } catch (e) { setMsg("Lecture impossible : " + (e && e.message)); }
+  };
+  const go = async () => { if (!prev) return; setBusy(true); const p = prev.plan;
+    const ok = await api.merge({ tickets: p.tickets, inters: p.inters, parc: p.parc, techs: p.techs }); setBusy(false);
+    if (ok) { setMsg("Historique repris : " + p.counts.tickets + " tickets, " + p.counts.inters + " interventions, " + p.counts.parc + " projets du parc."); setPrev(null); } };
+  return <>
+    <Btn size="sm" disabled={!ready} onClick={() => ref.current && ref.current.click()} title="Une seule fois : export Excel du fichier Google Sheets du SAV">Reprendre l'historique (fichier SAV)</Btn>
+    <input ref={ref} type="file" accept=".xlsx,.xls" aria-label="Fichier Excel du SAV" style={{ display: "none" }} onChange={e => { const f = e.target.files && e.target.files[0]; e.target.value = ""; read(f); }} />
+    {msg && <span role="status" style={{ fontSize: 12, color: T.ink700, alignSelf: "center" }}>{msg}</span>}
+    {prev && <Modal title="Reprendre l'historique du SAV" onClose={() => setPrev(null)} width={520}>
+      <div style={{ fontSize: FZ.sm, color: T.ink900 }}>Fichier : <b>{prev.name}</b></div>
+      <ul style={{ margin: 0, paddingLeft: 18, fontSize: FZ.sm, color: T.ink700 }}>
+        <li>{prev.plan.counts.tickets} tickets{prev.plan.counts.dejaT ? " (" + prev.plan.counts.dejaT + " déjà dans le Cockpit, gardés tels quels)" : ""}</li>
+        <li>{prev.plan.counts.inters} interventions{prev.plan.counts.dejaI ? " (" + prev.plan.counts.dejaI + " déjà présentes, gardées)" : ""}</li>
+        <li>{prev.plan.counts.parc} projets du parc (contrats, S/N, mises en service ; ce qui a été saisi dans le Cockpit l'emporte)</li>
+        <li>Équipe : {prev.plan.techs.join(", ") || "—"}</li></ul>
+      <div style={{ fontSize: 12, color: T.ink500 }}>Les coordonnées des clients (e-mail, téléphone) ne sont pas reprises.</div>
+      <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}><Btn size="sm" onClick={() => setPrev(null)}>Annuler</Btn><Btn v="pri" size="sm" disabled={busy} onClick={go}>Reprendre l'historique</Btn></div>
+    </Modal>}
+  </>;
+}
+
 function ParcDialog({ pj: pj0, p: p0, isNew, canEdit, onClose, onSave }) {
   const [pj, setPj] = useState(pj0), [p, setP] = useState({ ...p0, sn: Array.isArray(p0.sn) ? p0.sn.join(", ") : p0.sn || "" }); const set = (k, v) => setP(x => ({ ...x, [k]: v }));
   return <Modal title={isNew ? "Projet du parc" : "Parc · " + pj} onClose={onClose}>
@@ -462,6 +541,8 @@ function ParcDialog({ pj: pj0, p: p0, isNew, canEdit, onClose, onSave }) {
       <Field l="Statut du contrat"><select value={p.contratStatut || ""} onChange={e => set("contratStatut", e.target.value)} disabled={!canEdit} style={inp()}><option value="">—</option>{["En cours", "En attente de signature", "En attente de MES", "Suspendu", "Terminé"].map(x => <option key={x}>{x}</option>)}</select></Field>
       <Field l="Prochaine préventive"><input type="date" value={p.preventive || ""} onChange={e => set("preventive", e.target.value)} disabled={!canEdit} style={inp()} /></Field>
       <Field l="Adresse du site" span><input value={p.adresse || ""} onChange={e => set("adresse", e.target.value)} disabled={!canEdit} style={inp()} /></Field>
+      <Field l="Latitude (carte, facultatif)"><input type="number" step="0.0001" value={p.lat ?? ""} onChange={e => set("lat", e.target.value === "" ? "" : +e.target.value)} disabled={!canEdit} placeholder="ex. 43.3478" style={inp()} /></Field>
+      <Field l="Longitude (carte, facultatif)"><input type="number" step="0.0001" value={p.lon ?? ""} onChange={e => set("lon", e.target.value === "" ? "" : +e.target.value)} disabled={!canEdit} placeholder="ex. 5.3698" style={inp()} /></Field>
       <Field l="Dispositions particulières" span><textarea value={p.notes || ""} onChange={e => set("notes", e.target.value)} disabled={!canEdit} rows={2} style={{ ...inp(), padding: 8, resize: "vertical" }} /></Field>
     </div>
     {canEdit && <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}><Btn size="sm" onClick={onClose}>Annuler</Btn>

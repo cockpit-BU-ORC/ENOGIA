@@ -2375,3 +2375,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Page Achats / Appro mise à jour par Alexis (Synthèse Appro, avance de livraison, choix filtré des lignes de PO, fournisseurs des PO, options à préciser).
 - Mêmes données (`planning/achats`), règles inchangées. Kit achats régénéré (`kit-achats/`) à lui renvoyer.
 - Fichiers : components/Achats.js, versions.
+
+## v330 — SAV : demandes sur une ligne, carte du parc, reprise de l'historique
+
+- Planning des demandes : ligne « Équipe SAV / MES », jours réservés, « + » pour demander, demandes rayées en attente.
+- Parc : carte du monde (fond chargé depuis cdn.jsdelivr.net : topojson-client 3.1.0, world-atlas 2.0.2) ; latitude / longitude facultatives par projet.
+- Reprise unique de l'historique : bouton « Reprendre l'historique (fichier SAV) » (propriétaire) — exporter le Google Sheet en .xlsx, le choisir, vérifier l'aperçu, confirmer. Écrit dans `planning/sav` (règles V326 à republier avant).
+- Fichiers : savImport.js(+test) (nouveau), components/SavPage.js, useAppData.js, demo/demoPages.js, versions.
