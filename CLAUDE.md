@@ -11,7 +11,7 @@ Tableau de bord interne (React 18 + Create React App 5 + Firebase/Firestore) qui
 ## Commandes
 - Développement : `npm start`
 - Build propre : `npm run build` (sous Windows cmd : `set CI=false&& npm run build`). Depuis la V260 : **0 avertissement ESLint** (« Compiled successfully »), à garder.
-- Tests : `set CI=true&& npx react-scripts test --watchAll=false` (207 tests / 40 suites attendus).
+- Tests : `set CI=true&& npx react-scripts test --watchAll=false` (206 tests / 39 suites attendus).
 - Pages : `npm run check:pages` (galerie rendue en clair et en sombre) ; à l'écran : `npm start` puis http://localhost:3000/?demo (`&page=`, `&dark=1`, `&w=phone|tablet|desktop`) — **vérifier une page dans la galerie plutôt qu'avec les vraies données** (localhost lit et écrit la base de production).
 - Contraste : `npm run check:contrast` (doit afficher 0 échec ; le script lit les couleurs littérales de `theme.js` et `pjMeta.js`).
 
