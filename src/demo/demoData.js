@@ -44,3 +44,21 @@ export const DEMO_PROD = {
   besoins: { s1: { label: "SAV-12", cfg: "100", date: day(25) } },
 };
 export const demoApi = { put: async () => true, del: async () => true, setParams: async () => true, setAccess: async () => true };
+
+// v326 : SAV / MES (fictif)
+const dd = n => day(n);
+export const DEMO_SAV = {
+  techs: ["Lou Martin", "Sam Petit", "Noa Roux", "Ezra Klein"],
+  tickets: {
+    "TC-26-41": { pj: "PJ906", type: "cur", prio: "h", step: 3, resp: "Lou Martin", orig: "Client", date: dd(-9), det: "Arrêts répétés sur alarme vibration turbine", inters: ["INT-084"] },
+    "TC-26-42": { pj: "PJ903-2", type: "mes", prio: "h", step: 2, resp: "Sam Petit", orig: "BU ORC", date: dd(-7), det: "Pré-commissioning avant la mise en service", inters: [] },
+    "TC-26-43": { pj: "PJ907", type: "dev", prio: "m", step: 4, resp: "Noa Roux", orig: "Client", date: dd(-16), det: "Devis remplacement échangeur cooling", inters: [] },
+    "TC-26-38": { pj: "PJ906", type: "qtech", prio: "b", step: 3, resp: "Sam Petit", orig: "Client", date: dd(-40), closedAt: dd(-30), satisf: 5, det: "Paramétrage Modbus", inters: [] },
+  },
+  inters: {
+    "INT-084": { tk: "TC-26-41", pj: "PJ906", obj: "Diagnostic vibrations et équilibrage turbine", type: "Maintenance curative", resp: "Lou Martin", who: ["Ezra Klein"], a: dd(1), b: dd(3), st: "Planifiée", prep: ["Planning d'intervention", "Ordre de mission"], clo: [], costs: { heberg: 300, repas: 180 } },
+    "INT-085": { tk: "TC-26-42", pj: "PJ903-2", obj: "Pré-commissioning et essais à froid", type: "Préliminaire à la MES", resp: "", who: [], st: "À planifier", prep: [], clo: [], costs: {} },
+  },
+  parc: { PJ214: { nom: "Ancien site biomasse", pays: "Allemagne", gamme: "20LTV2", contrat: "Premium", contratNo: "MP214-001", contratStatut: "En cours", mes: "2022-10-20", application: "Biomasse", preventive: dd(60) } },
+};
+export const DEMO_SAV_DEM = { items: { d1: { pj: "PJ901", obj: "Réglage de la régulation avec le client", date: dd(7), days: 2, by: "Camille Durand", byEmail: "camille.durand@exemple.fr", at: new Date().toISOString(), st: "attente" } } };

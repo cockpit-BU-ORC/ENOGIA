@@ -25,6 +25,8 @@ export const ACCESS_PAGES = [
   { id: "turbines", g: "Opérations", l: "Turbines", d: "production et besoins", adm: "import de données, gammes et durées",
     subs: [["prod", "Production"], ["orc", "Besoins ORC et SAV"]] },
   { id: "achats", g: "Opérations", l: "Achats / Appro", d: "projets, PO, fournisseurs", adm: "réglages, synchronisation Odoo" },
+  { id: "sav", g: "Opérations", l: "SAV / MES", d: "tickets, interventions, planning des équipes, parc ; en lecture : demander une intervention", adm: "techniciens de l'équipe, suppressions",
+    subs: [["tickets", "Tickets"], ["inters", "Interventions"], ["planning", "Planning des équipes"], ["parc", "Parc"]] },
   { id: "projets", g: "Gestion", l: "Projets", d: "fiches projet, point hebdo, machines", adm: "gérer les états, machines ORC",
     subs: [["fiche", "Fiches projet"], ["hebdo", "Point hebdo"], ["serie", "Machines ORC"]] },
   { id: "finance", g: "Gestion", l: "Finance", d: "Cash in, montants", adm: "" },
@@ -49,6 +51,7 @@ export const DEFAULT_LEVELS = {
   tests: D({ direction: "a", cdp: "r", testeur: "r", resptest: "w", atelier: "r" }),
   turbines: D({ direction: "r", turbines: "a", atelier: "r" }),
   achats: D({ direction: "r", achats: "a" }),
+  sav: D({ direction: "r", sav: "a", cdp: "r" }), // v326
   projets: D({ direction: "a", cdp: "r" }),
   finance: D({ direction: "w" }),
   pilotage: D({ direction: "r" }),

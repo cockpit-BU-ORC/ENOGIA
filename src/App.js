@@ -47,12 +47,14 @@ import { listenChangeLog } from "./changeLog";
 // v260 : documents Firestore, bandeau bêta et identité du compte sortis de ce fichier (appDocs.js, components/AppChrome.js)
 import { IS_BETA, DOC_PFX, DOC_REF, INITIAL_DOC_REF, OVERRIDES_DOC_REF, COMMENTS_DOC_REF, PJ_META_SYNC_DOC_REF, PJ_META_OVERRIDES_DOC_REF, DELAYS_DOC_REF, DELAY_TYPES_DOC_REF, MANAGER_EMAILS_DOC_REF, PROFILES_DOC_REF, DEFAULT_DELAY_TYPES } from "./appDocs";
 import { BetaBanner, UserChip } from "./components/AppChrome";
-import { useAccessDoc, useTurbineDoc, useTestsDoc, useProdTurbines, useCashinProduit, useDelays, useCashinSync, useAchats } from "./useAppData";
+import { useAccessDoc, useTurbineDoc, useTestsDoc, useProdTurbines, useCashinProduit, useSav, useDelays, useCashinSync, useAchats } from "./useAppData";
 import { useListFilters, filterOptions, filterRows } from "./listFilters";
 // v289 (lot G « rapidité ») : les grandes pages ne sont chargées qu'à leur première ouverture (paquet de départ allégé) ;
 // en attendant, un squelette s'affiche dans la zone principale (Suspense).
 const TestsTab = React.lazy(() => import("./components/TestsTab").then(m => ({ default: m.TestsTab })));
 const TurbinesHub = React.lazy(() => import("./components/TurbinesHub").then(m => ({ default: m.TurbinesHub })));
+const SavPage = React.lazy(() => import("./components/SavPage").then(m => ({ default: m.SavPage }))); // v326 : SAV / MES
+const SavPjTab = React.lazy(() => import("./components/SavPage").then(m => ({ default: m.SavPjTab })));
 const Achats = React.lazy(() => import("./components/Achats").then(m => ({ default: m.Achats })));
 const CashInTab = React.lazy(() => import("./components/CashInTab").then(m => ({ default: m.CashInTab })));
 const GanttView = React.lazy(() => import("./components/GanttView").then(m => ({ default: m.GanttView })));
@@ -64,7 +66,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-13-v325-gestion-acces";
+const APP_BUILD_VERSION = "2026-11-13-v326-sav-mes";
 
 const ReleasePopup = React.lazy(() => import("./components/ReleaseNotes").then(m => ({ default: m.ReleasePopup })));
 function Navigate0({ go }) { useEffect(() => { go(); }, []); return null; } // eslint-disable-line react-hooks/exhaustive-deps
@@ -681,6 +683,7 @@ export default function App(){
   const subOk=id=>!accMe||atLeast(accMe[id]||"n","r");
   const canProdTurb=accMe?accAt("turbines","r"):canProdTurbL;
   const {achatsDoc,achatsApi}=useAchats(currentUser,authorName);
+  const {savDoc,demDoc,savApi,demApi}=useSav(currentUser,authorName); // v326 : SAV / MES
   const canAchatsL=!!(isOwner||(achatsDoc&&Array.isArray(achatsDoc.access)&&achatsDoc.access.map(x=>String(x).toLowerCase()).includes(myMail)));
   const canAchats=accMe?accAt("achats","r"):canAchatsL,achEdit=accMe?accAt("achats","w"):canAchatsL;
   const planOk=accMe?accAt("planning","r"):true,comOk=accMe?accAt("comments","r"):true;
@@ -950,7 +953,8 @@ export default function App(){
   const planViewOk=v=>v==="planner"?isOwner:subOk("planning."+v); // v308
   // v307 : sous-pages de Tests et de Turbines choisies depuis le menu ou le sélecteur de la page
   const [testsSub,setTestsSub]=useState("semaine");
-  const [accSub,setAccSub]=useState("roles"); // v320 : sous-page de « Personnes et accès » (Rôles / Accès par page)
+  const [accSub,setAccSub]=useState("roles");
+  const [savSub,setSavSub]=useState("tickets"),[savFocus,setSavFocus]=useState(null); // v326 : sous-page SAV / MES, PJ cherché // v320 : sous-page de « Personnes et accès » (Rôles / Accès par page)
   const [testsFocus,setTestsFocus]=useState(null);
   const [pendingDeparts,setPendingDeparts]=useState({}); // v312 // v310 : PJ à ouvrir dans Tests depuis sa fiche
   const [turbTab,setTurbTab]=useState(()=>{try{const v=localStorage.getItem("enogia_turbines_tab");return v==="orc"?"orc":"prod";}catch(e){return "prod";}});
@@ -968,18 +972,41 @@ export default function App(){
   registerSerialPlan(snPlan);
   // v315 (revue, point 6 « une seule boîte de réception ») : demandes à valider de la page « À traiter » (selon les droits)
   const prodModel=useProdModel(!!(canProdTurb&&prodDoc)); // v324
+  // v317 : PJ dont je suis chef (aussi pour la page Commentaires : un CdP ne voit que ses PJ)
+  const myPjSet=useMemo(()=>{
+    if(!currentUser)return new Set();
+    const email=currentUser.email||"",pr=profileOf(profiles,email),low=s=>String(s||"").toLowerCase().trim();
+    const mine=new Set(pr?pjsOfProfile(pr,dataWithOverrides):[]),nm=low((pr&&pr.name)||authorName);
+    if(nm)dataWithOverrides.forEach(x=>{const m=getPjMeta(x.pj,x);if([...chefsOf(m),...orcChefsOf(m)].some(c=>low(c)===nm))mine.add(x.pj);});
+    return mine;
+  },[currentUser,profiles,dataWithOverrides,authorName]);
+  const myPjList=useMemo(()=>[...myPjSet],[myPjSet]);
+  const seeAllComments=pinOk||isOwner||(!!currentUser&&profileOf(profiles,currentUser.email).role==="direction");
+  // v326 : SAV / MES — niveau sur la page (avant l'activation des accès : rôle « SAV / MES » = Modifier ; direction, admins et chefs de projet = Lecture)
+  const myProfRole=currentUser?(profileOf(profiles,currentUser.email).role||""):"";
+  const savLvl=isOwner?"a":accMe?(accMe.sav||"n"):myProfRole==="sav"?"w":(pinOk||myProfRole==="direction"||myProfRole==="cdp"||myPjSet.size>0)?"r":"n";
+  const canSav=savLvl!=="n",savEdit=savLvl==="w"||savLvl==="a",savCost=savEdit||isOwner||myProfRole==="direction";
+  const savAllowed=["tickets","inters","planning","parc"].filter(s=>subOk("sav."+s));
+  const savTeam=useMemo(()=>Object.values((profiles&&profiles.byEmail)||{}).filter(p=>p&&!p.removed&&p.role==="sav").map(p=>p.name||String(p.email||"").split("@")[0]).filter(Boolean).sort(),[profiles]);
+  const openSav=(sub,pj)=>{setSavSub(sub||"tickets");setSavFocus(pj||null);setCalSel(null);setView("sav");};
   const inboxActions=useMemo(()=>{
     const out=[],todayK=new Date().toISOString().slice(0,10),fr=s=>s?String(s).slice(0,10).split("-").reverse().join("/"):"";
     if(canEditMeta&&savePjMetaOverride){const due=serialsDue(snPlan);if(due.length)out.push({id:"sn",n:due.length,primary:true,title:due.length+" machine"+(due.length>1?"s arrivées":" arrivée")+" sans S/N",detail:"S/N prévus d'après l'ordo (année d'arrivée · n° dans l'année · gamme). Une fois attribués, ils ne bougent plus.",
       items:due.map(x=>({pj:x.pj,text:x.missingCode?"gamme sans code : à saisir":x.sn,...(x.missingCode?{}:{yes:{label:"✓ Oui",title:"Garder "+x.sn+" comme S/N de "+x.pj,onClick:()=>savePjMetaOverride(x.pj,{numSerie:x.sn})}})})),cta:{label:"Attribuer les S/N",onClick:()=>assignSerialsFlow(due,savePjMetaOverride).then(n=>{if(n)notify(n+" S/N attribué"+(n>1?"s":"")+".","ok");})}});}
     const pend=Object.keys(pendingDeparts||{});
     if(isOwner&&pend.length)out.push({id:"dep",n:pend.length,tone:"warn",title:pend.length+" départ"+(pend.length>1?"s changés":" changé")+" hors planificateur",detail:"Ils seront repris dans le plan à l'ouverture du planificateur.",items:pend.map(pj=>({pj,text:fr(pendingDeparts[pj].date)+(pendingDeparts[pj].by?" · "+pendingDeparts[pj].by:"")})),cta:{label:"Ouvrir le planificateur",onClick:()=>setView("planner")}});
+    // v326 : demandes d'intervention des chefs de projet (équipe SAV) ; réponses reçues ces 7 derniers jours (demandeur)
+    {const items=Object.entries((demDoc&&demDoc.items)||{});
+      if(savEdit){const pend=items.filter(([,d])=>d&&d.st==="attente");if(pend.length)out.push({id:"savdem",n:pend.length,tone:"warn",title:pend.length+" demande"+(pend.length>1?"s":"")+" d'intervention SAV à valider",detail:"Des chefs de projet demandent un jour d'intervention.",items:pend.map(([,d])=>({pj:d.pj,text:(d.by||"")+" · "+fr(d.date)})),cta:{label:"Ouvrir le planning SAV",onClick:()=>openSav("planning")}});}
+      const me=String((currentUser&&currentUser.email)||"").toLowerCase(),since=new Date(Date.now()-7*864e5).toISOString();
+      const ans=items.filter(([,d])=>d&&d.byEmail&&d.byEmail.toLowerCase()===me&&d.st!=="attente"&&String(d.answeredAt||"")>since);
+      if(ans.length)out.push({id:"savrep",n:ans.length,tone:"warn",title:ans.length+" réponse"+(ans.length>1?"s":"")+" à vos demandes d'intervention SAV",detail:ans.map(([,d])=>d.pj+" : "+(d.st==="ok"?"acceptée":"refusée")+(d.note?" (« "+d.note+" »)":"")).join(" · "),cta:{label:"Voir mes demandes",onClick:()=>openSav("planning")}});}
     if(canAchats&&achatsDoc&&achatsDoc.po){const late=Object.values(achatsDoc.po).filter(p=>p&&!p.annule&&p.statut!=="livre"&&p.dateLivraison&&String(p.dateLivraison).slice(0,10)<todayK);
       if(late.length)out.push({id:"po",n:late.length,tone:"warn",title:late.length+" commande"+(late.length>1?"s":"")+" (PO) en retard de livraison",detail:late.slice(0,6).map(p=>(p.numero||"PO")+" · prévue le "+fr(p.dateLivraison)).join(" · "),cta:{label:"Ouvrir Achats / Appro",onClick:()=>setView("achats")}});}
     if(canProdTurb&&prodDoc&&subOk("turbines.orc")&&prodModel){try{const lateN=prodModel.buildNeeds(prodDoc,dataWithOverrides,x=>getPjMeta(x.pj,x)).needs.filter(n=>n.late);
       if(lateN.length)out.push({id:"turb",n:lateN.length,tone:"warn",title:lateN.length+" besoin"+(lateN.length>1?"s":"")+" turbine en retard",detail:"La turbine sera disponible après la date du besoin.",items:lateN.filter(n=>n.pj).map(n=>({pj:n.pj,text:"besoin le "+fr(n.date)})),cta:{label:"Ouvrir Turbines › Besoins",onClick:()=>{setTurbTab("orc");setView("turbines");}}});}catch(e){console.warn(e);}}
     return out;
-  },[snPlan,canEditMeta,pendingDeparts,isOwner,canAchats,achatsDoc,canProdTurb,prodDoc,dataWithOverrides,accMe,prodModel]); // eslint-disable-line react-hooks/exhaustive-deps
+  },[snPlan,canEditMeta,pendingDeparts,isOwner,canAchats,achatsDoc,canProdTurb,prodDoc,dataWithOverrides,accMe,prodModel,demDoc,savEdit,currentUser]); // eslint-disable-line react-hooks/exhaustive-deps
   const NAV_TREE=[
     {g:"Opérations",items:[
       {id:"home",l:"Aujourd'hui",icon:"home",on:view==="home",go:()=>setView("home")},
@@ -990,6 +1017,8 @@ export default function App(){
       ...(canProdTurb?[{id:"turbines",l:"Turbines",icon:"gauge",on:view==="turbines",go:()=>setView("turbines"),
         subs:[["prod","Production"],["orc","Besoins ORC et SAV"]].filter(([id])=>turbAllowed.includes(id)).map(([id,l])=>({id,l,on:view==="turbines"&&turbTab===id,go:()=>{setTurbTab(id);setView("turbines");}}))}]:[]),
       ...(canAchats?[{id:"achats",l:"Achats / Appro",icon:"inbox",on:view==="achats",go:()=>setView("achats")}]:[]),
+      ...(canSav&&savAllowed.length?[{id:"sav",l:"SAV / MES",icon:"wrench",on:view==="sav",go:()=>openSav(savAllowed.includes(savSub)?savSub:savAllowed[0]),
+        subs:[["tickets","Tickets"],["inters","Interventions"],["planning","Planning des équipes"],["parc","Parc"]].filter(([id])=>savAllowed.includes(id)).map(([id,l])=>({id,l,on:view==="sav"&&savSub===id,go:()=>openSav(id)}))}]:[]),
       ...(comOk?[{id:"comments",l:"Commentaires",icon:"comments",on:view==="comments",go:()=>setView("comments")}]:[])]}, // v316 : Commentaires dans Opérations
     {g:"Gestion",items:[
       ...(projOk?[{id:"projets",l:"Projets",icon:"manager",on:mgrOn(["fiche","hebdo","serie","orc"]),go:goMgr(["fiche","hebdo","serie"].find(t=>!mgrHidden.includes(t))||"fiche"),
@@ -1027,16 +1056,6 @@ export default function App(){
   const chgSeenKey="enogia_mypjchg_seen_"+String((currentUser&&currentUser.email)||"").toLowerCase();
   const [chgSeen,setChgSeen]=useState(()=>{try{return localStorage.getItem(chgSeenKey)||"";}catch(e){return "";}});
   useEffect(()=>{try{setChgSeen(localStorage.getItem(chgSeenKey)||"");}catch(e){}},[chgSeenKey]);
-  // v317 : PJ dont je suis chef (aussi pour la page Commentaires : un CdP ne voit que ses PJ)
-  const myPjSet=useMemo(()=>{
-    if(!currentUser)return new Set();
-    const email=currentUser.email||"",pr=profileOf(profiles,email),low=s=>String(s||"").toLowerCase().trim();
-    const mine=new Set(pr?pjsOfProfile(pr,dataWithOverrides):[]),nm=low((pr&&pr.name)||authorName);
-    if(nm)dataWithOverrides.forEach(x=>{const m=getPjMeta(x.pj,x);if([...chefsOf(m),...orcChefsOf(m)].some(c=>low(c)===nm))mine.add(x.pj);});
-    return mine;
-  },[currentUser,profiles,dataWithOverrides,authorName]);
-  const myPjList=useMemo(()=>[...myPjSet],[myPjSet]);
-  const seeAllComments=pinOk||isOwner||(!!currentUser&&profileOf(profiles,currentUser.email).role==="direction");
   const myPjChanges=useMemo(()=>{
     if(!currentUser||!Array.isArray(changeLog)||!changeLog.length)return [];
     const mine=myPjSet;
@@ -1049,9 +1068,9 @@ export default function App(){
   const testsView=useMemo(()=>{const plans={...((testsDoc&&testsDoc.plans)||{})};(dataWithOverrides||[]).forEach(r=>{if(!r||r.etat!=="SHIPPED")return;const p=plans[r.pj]||{};if(p.forced&&p.forced.at)return;plans[r.pj]={...p,forced:{at:String(r.depart||r.testsFin||r.tests||new Date().toISOString()).slice(0,10),by:"Machine expédiée",auto:true}};});return{...testsDoc,plans};},[testsDoc,dataWithOverrides]);
   // v312 (demandé : « changer les dates de départ directement sur Liste, Gantt ou Calendrier ; accès aux admins ») : admins du planning (pinOk)
   const onSetDepart=pinOk?(async(pj,iso)=>{try{await setDepartDate(pj,iso,authorName);notify("Départ de "+pj+" : "+iso.split("-").reverse().join("/")+". Il sera repris dans le planificateur.","ok");}catch(e){notify("Départ non enregistré : "+e.message);}}):null;
-  const pjCtxTests=canSeeTests?testsView:null,pjCtx=useMemo(()=>({setDepart:onSetDepart,testsDoc:pjCtxTests,turbineDoc,prodDoc:canProdTurb&&subOk("turbines.orc")?prodDoc:null,achatsDoc:canAchats?achatsDoc:null,rows:dataWithOverrides,
+  const pjCtxTests=canSeeTests?testsView:null,pjCtx=useMemo(()=>({setDepart:onSetDepart,testsDoc:pjCtxTests,turbineDoc,prodDoc:canProdTurb&&subOk("turbines.orc")?prodDoc:null,achatsDoc:canAchats?achatsDoc:null,rows:dataWithOverrides,savDoc:canSav?savDoc:null,demDoc:canSav?demDoc:null,SavTab:canSav?SavPjTab:null,openSav,
     testsOk:canSeeTests&&testsAllowed.includes("semaine"),
-    openPage:(v,sub)=>{if(v==="turbines"&&sub)setTurbTab(sub);if(v==="tests"){setTestsSub("semaine");if(sub)setTestsFocus({pj:sub,n:Date.now()});}setCalSel(null);setView(v);}}),[pjCtxTests,turbineDoc,canProdTurb,prodDoc,canAchats,achatsDoc,dataWithOverrides,accMe,canSeeTests,pinOk,authorName]); // eslint-disable-line react-hooks/exhaustive-deps -- v309 : turbine et achats dans la fiche d'un PJ // v203 : pastilles de la fiche d'un PJ // v196 : entrées du Manager affichées dans ce menu (fournies par ManagerPanel)
+    openPage:(v,sub)=>{if(v==="turbines"&&sub)setTurbTab(sub);if(v==="tests"){setTestsSub("semaine");if(sub)setTestsFocus({pj:sub,n:Date.now()});}setCalSel(null);setView(v);}}),[pjCtxTests,turbineDoc,canProdTurb,prodDoc,canAchats,achatsDoc,dataWithOverrides,accMe,canSeeTests,pinOk,authorName,canSav,savDoc,demDoc]); // eslint-disable-line react-hooks/exhaustive-deps -- v309 : turbine et achats dans la fiche d'un PJ // v203 : pastilles de la fiche d'un PJ // v196 : entrées du Manager affichées dans ce menu (fournies par ManagerPanel)
   const closePeek=delay=>{clearTimeout(navPeekT.current);navPeekT.current=setTimeout(()=>setNavPeek(false),delay||0);};
   // v306 (maquette v306-navigation, choix « 1 ») : menu masqué comme la barre des tâches Windows — caché, il glisse par-dessus la page
   // quand la souris touche le bord gauche (zone de 8 px), quand on clique ☰ ou avec Ctrl + B ; il se cache 0,35 s après qu'on l'a quitté.
@@ -1226,6 +1245,7 @@ export default function App(){
                 « Publier » seul modifie le planning lu par tous. Liens entre PJ, dates imposées, une production / un banc à la fois, charge par semaine. */}
             {view==="access"&&isOwner&&<AccessPage sub={accSub} onSub={setAccSub} onPeople={goMgr("personnes")} profiles={profiles} saveProfiles={saveProfiles} accessDoc={accessDoc} saveAccess={saveAccess} people={peopleAll} ownerEmails={OWNER_EMAILS}/>}
             {view==="cashin"&&canCash&&<CashInTab authorName={authorName} focus={cashFocusApp} planRows={dataWithOverrides}/>}
+            {view==="sav"&&canSav&&<PageGuard name="SAV / MES"><SavPage doc={savDoc} dem={demDoc} api={savApi} demApi={demApi} rows={dataWithOverrides} level={savLvl} canCost={savCost} me={currentUser&&currentUser.email} myName={authorName} myPjs={myPjList} team={savTeam} sub={savSub} onSub={setSavSub} allowSubs={savAllowed} onOpenPj={pj=>{setCalDay(null);setCalTab("resume");setCalSel(pj);}} focusPj={savFocus}/></PageGuard>}
             {view==="achats"&&canAchats&&<PageGuard name="Achats / Appro"><Achats doc={achatsDoc} api={achatsApi} rows={dataWithOverrides.map(r=>({pj:r.pj,nomProjet:getPjMeta(r.pj,r).nomProjet||"",gamme:r.gamme||"",etat:r.etat,arrivee:r.arrivee||null,depart:r.depart||null}))} canEdit={achEdit} owner={isOwner}/></PageGuard>}
             {/* v267 (demandé : « un seul onglet Turbines ») : production (seule saisie) + besoins des ORC (calculés) ; l'ancien pool n'est plus affiché */}
             {view==="turbines"&&canProdTurb&&<PageGuard name="Turbines"><TurbinesHub doc={prodDoc} api={prodApi} rows={dataWithOverrides} canEdit={turbEdit} owner={isOwner} tab={turbTab} onTab={setTurbTab} allowTabs={turbAllowed} savePjMeta={savePjMetaOverride}/></PageGuard>}

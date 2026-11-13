@@ -1,0 +1,398 @@
+// v326 — page SAV / MES (demandes D1 à D6, maquette maquettes-design/v325-sav-mes.html validée : « Go tout faire »).
+// Le Cockpit est l'outil du SAV (pas d'import) : Tickets · Interventions · Planning des équipes · Parc.
+// Droits : level « w » / « a » = équipe SAV (tout modifier) ; « r » = lecture (chefs de projet, direction) + demander une intervention
+// sur un jour libre, dans une vue du planning sur UNE seule ligne (demandé : « la vue chef de projet doit être une seule ligne »).
+// Coûts des interventions visibles seulement si canCost (équipe SAV, direction, propriétaire).
+import React, { useMemo, useState } from "react";
+import { T, FZ, btn } from "../theme";
+import { getPjMeta } from "../pjMeta";
+import { PlanSwitch } from "./PlanSwitch";
+import { Panel, Pill, Btn, Segmented, PjPlate, tableTh, tableTd, EmptyState } from "./SharedUI";
+import { askConfirm } from "../confirm";
+import { TICKET_TYPES, typeOf, flowOf, PRIOS, ORIGINS, INTER_TYPES, INTER_STATUS, PREP_ITEMS, CLO_ITEMS, COST_FIELDS, CONTRACTS, DEM_STATUS,
+  nextTicketId, nextInterId, isClosed, progressOf, ticketAge, interCost, interTeam, interDays, planBars, dayLoad, workDaysFrom, mondayOf,
+  acceptDemande, parcOf, savKpis } from "../savModel";
+
+const iso = d => { const x = new Date(d); return isNaN(x) ? "" : x.toISOString().slice(0, 10); };
+const todayIso = () => iso(new Date());
+const fd = s => (s ? String(s).slice(8, 10) + "/" + String(s).slice(5, 7) : "—");
+const fdd = s => { if (!s) return "—"; const d = new Date(s + "T12:00:00"); return d.toLocaleDateString("fr-FR", { weekday: "short", day: "2-digit", month: "2-digit" }); };
+const eur = v => (v ? Math.round(v).toLocaleString("fr-FR") + " €" : "—");
+const TYPE_TONE = { cur: "bad", prev: "ok", mes: "info", dev: "neutral", qtech: "violet", qcom: "violet", audit: "accent", diag: "warn", autre: "neutral" };
+const PRIO_TONE = { h: "bad", m: "warn", b: "muted" };
+const ST_TONE = { "À planifier": "warn", Planifiée: "info", "En cours": "accent", Réalisée: "ok", Validée: "ok", "Non validée": "bad", Annulée: "muted" };
+const lab = { display: "flex", flexDirection: "column", gap: 4, fontSize: 12, color: T.ink500, fontWeight: 600, minWidth: 0 };
+const inp = () => ({ minHeight: 32, padding: "0 10px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, boxSizing: "border-box", width: "100%" });
+const SUBS = [["tickets", "Tickets"], ["inters", "Interventions"], ["planning", "Planning des équipes"], ["parc", "Parc"]];
+const DESC = { tickets: "Une demande = un ticket rattaché à un PJ ; chaque type suit ses étapes", inters: "Interventions sur site : équipe, dates, préparation, clôture et coûts",
+  planning: "Qui est où, jour par jour ; les chefs de projet demandent un jour libre", parc: "Machines en service, contrats de maintenance et tickets ouverts" };
+
+function Kpi({ l, v, tone }) {
+  return <div style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "10px 12px", minWidth: 0 }}>
+    <div style={{ fontSize: 12, color: T.ink500 }}>{l}</div>
+    <div style={{ fontFamily: T.fontDisplay, fontSize: 26, fontWeight: 500, fontVariantNumeric: "tabular-nums", color: tone === "bad" ? T.red600 : tone === "warn" ? T.amber600 : T.ink900 }}>{v == null ? "—" : v}</div>
+  </div>;
+}
+function Steps({ t }) {
+  const F = flowOf(t.type), s = t.step || 0;
+  return <span aria-label={"Étape " + (s + 1) + " sur " + F.length + " : " + F[s]} style={{ display: "inline-flex", gap: 2, width: 110 }}>
+    {F.map((_, i) => <i key={i} style={{ flex: 1, height: 6, borderRadius: 2, background: i < s ? T.ink700 : i === s ? (isClosed(t) ? T.emerald600 : T.amber500) : T.surfaceAlt }} />)}</span>;
+}
+function Modal({ title, onClose, children, width = 640 }) {
+  return <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 10010, background: "rgba(10,14,22,.45)", display: "grid", placeItems: "center", padding: 16 }}>
+    <div role="dialog" aria-modal="true" aria-label={title} onClick={e => e.stopPropagation()} onKeyDown={e => { if (e.key === "Escape") onClose(); }}
+      style={{ width, maxWidth: "100%", maxHeight: "90vh", overflowY: "auto", background: T.card, borderRadius: 12, border: "1px solid " + T.line, boxShadow: T.shadowLg, padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}><h2 style={{ margin: 0, fontFamily: T.fontDisplay, fontSize: 20, fontWeight: 600, color: T.ink900, flex: 1 }}>{title}</h2>
+        <button type="button" onClick={onClose} aria-label="Fermer" style={{ ...btn("ghost", "sm") }}>✕</button></div>
+      {children}
+    </div></div>;
+}
+const Field = ({ l, children, span }) => <label style={{ ...lab, gridColumn: span ? "1 / -1" : undefined }}>{l}{children}</label>;
+const grid2 = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10 };
+function Checks({ items, value, onChange, disabled }) {
+  const on = new Set(value || []);
+  return <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>{items.map(x => { const v = on.has(x);
+    return <button key={x} type="button" disabled={disabled} aria-pressed={v} onClick={() => { const n = new Set(on); if (v) n.delete(x); else n.add(x); onChange(items.filter(y => n.has(y))); }}
+      style={{ minHeight: 28, padding: "0 10px", borderRadius: 8, border: "1px solid " + (v ? "transparent" : T.line), background: v ? T.emerald100 : T.card, color: v ? T.emerald600 : T.ink700, fontSize: 12, fontWeight: 600, cursor: disabled ? "default" : "pointer", fontFamily: T.font }}>{v ? "✓ " : ""}{x}</button>; })}</div>;
+}
+
+export function SavPage({ doc, dem, api, demApi, rows, level = "r", canCost, me, myName, myPjs, team, sub: subP, onSub, allowSubs, onOpenPj, focusPj }) {
+  const canEdit = level === "w" || level === "a", isAdmin = level === "a";
+  const D = doc || {}, tickets = D.tickets || {}, inters = D.inters || {}, demandes = (dem && dem.items) || {};
+  const techs = (Array.isArray(D.techs) && D.techs.length ? D.techs : team) || [];
+  const subs = SUBS.filter(([id]) => !allowSubs || allowSubs.includes(id));
+  const [sub0, setSub0] = useState(subs[0] ? subs[0][0] : "tickets");
+  const sub = subs.some(([id]) => id === subP) ? subP : subs.some(([id]) => id === sub0) ? sub0 : (subs[0] || ["tickets"])[0];
+  const go = id => (onSub ? onSub(id) : setSub0(id));
+  const metaOf = r => getPjMeta(r.pj, r);
+  const pjList = useMemo(() => [...new Set([...(rows || []).filter(r => r && r.pj && r.etat !== "SLOT_LIBRE").map(r => r.pj), ...Object.keys(D.parc || {})])].sort((a, b) => a.localeCompare(b, "fr", { numeric: true })), [rows, D.parc]);
+  const nomOf = pj => { const r = (rows || []).find(x => x.pj === pj); return r ? getPjMeta(pj, r).nomProjet || "" : ((D.parc || {})[pj] || {}).nom || ""; };
+  const k = savKpis(D, dem);
+  const [ticketDlg, setTicketDlg] = useState(null), [interDlg, setInterDlg] = useState(null), [parcDlg, setParcDlg] = useState(null), [demDlg, setDemDlg] = useState(null), [teamDlg, setTeamDlg] = useState(false);
+
+  const saveTicket = async (id, t) => { const nid = id || nextTicketId(tickets); if (await api.put("tickets", nid, t)) setTicketDlg(null); return nid; };
+  const saveInter = async (id, i) => {
+    const nid = id || nextInterId(inters);
+    if (!(await api.put("inters", nid, i))) return;
+    if (i.tk && tickets[i.tk] && !(tickets[i.tk].inters || []).includes(nid)) await api.put("tickets", i.tk, { ...tickets[i.tk], inters: [...(tickets[i.tk].inters || []), nid] });
+    setInterDlg(null);
+  };
+
+  return <div style={{ display: "flex", flexDirection: "column", gap: 12, fontFamily: T.font }}>
+    <header style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 10, flexWrap: "wrap" }}>
+        <div style={{ flex: "1 1 260px", minWidth: 0 }}>
+          <h1 style={{ margin: 0, fontFamily: T.fontDisplay, fontSize: "clamp(24px,2.4vw,30px)", fontWeight: 600, letterSpacing: "-.01em", color: T.ink900, lineHeight: 1.15 }}>SAV / MES</h1>
+          <div style={{ fontSize: FZ.sm, color: T.ink500, marginTop: 2 }}>{DESC[sub]}{!canEdit ? " · lecture seule" : ""}</div>
+        </div>
+        {canEdit && sub === "tickets" && <Btn v="pri" size="sm" onClick={() => setTicketDlg({ id: null, t: { type: "cur", prio: "m", step: 0, orig: "Client", date: todayIso(), resp: myName || "" } })}>＋ Nouveau ticket</Btn>}
+        {canEdit && sub === "inters" && <Btn v="pri" size="sm" onClick={() => setInterDlg({ id: null, i: { st: "À planifier", type: "Maintenance curative", resp: "", who: [], prep: [], clo: [], costs: {} } })}>＋ Intervention</Btn>}
+        {canEdit && sub === "parc" && <Btn size="sm" onClick={() => setParcDlg({ pj: "", p: {}, isNew: true })}>＋ Projet du parc</Btn>}
+      </div>
+      {subs.length > 1 && <PlanSwitch label="Sous-pages : SAV / MES" value={sub} onGo={go} tools={[]} views={subs.map(([id, l]) => ({ id, l, badge: id === "planning" && canEdit ? k.demandes : id === "inters" && canEdit ? k.toPlan : 0, badgeBad: id === "planning" }))} />}
+    </header>
+
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
+      <Kpi l="Tickets ouverts" v={k.open} /><Kpi l="Haute priorité" v={k.high} tone={k.high ? "bad" : null} />
+      <Kpi l="Interventions à planifier" v={k.toPlan} tone={k.toPlan ? "warn" : null} />
+      {canEdit ? <Kpi l="Demandes des chefs de projet" v={k.demandes} tone={k.demandes ? "warn" : null} /> : <Kpi l="Délai moyen de traitement" v={k.avgDays == null ? null : k.avgDays + " j"} />}
+      {canCost ? <Kpi l="Coût des interventions (mois)" v={eur(k.monthCost)} /> : <Kpi l="Satisfaction client" v={k.satisf == null ? null : String(k.satisf).replace(".", ",") + " / 5"} />}
+    </div>
+
+    {sub === "tickets" && <TicketsView {...{ tickets, inters, canEdit, me, myName, nomOf, onOpenPj, focusPj }} onEdit={(id, t) => setTicketDlg({ id, t })} onStep={(id, t, d) => api.put("tickets", id, { ...t, step: Math.max(0, Math.min(flowOf(t.type).length - 1, (t.step || 0) + d)), ...((t.step || 0) + d >= flowOf(t.type).length - 1 ? { closedAt: t.closedAt || todayIso() } : { closedAt: null }) })}
+      onNewInter={(id, t) => setInterDlg({ id: null, i: { tk: id, pj: t.pj, obj: t.det || "", st: "À planifier", type: t.type === "mes" ? "Mise en service" : t.type === "prev" ? "Maintenance préventive" : "Maintenance curative", resp: t.resp || "", who: [], prep: [], clo: [], costs: {} } })}
+      onOpenInter={id => setInterDlg({ id, i: inters[id] })} />}
+    {sub === "inters" && <IntersView {...{ inters, canCost, nomOf }} onOpen={id => setInterDlg({ id, i: inters[id] })} />}
+    {sub === "planning" && <PlanningView {...{ inters, demandes, techs, canEdit, nomOf, me, myName, myPjs, pjList }} onOpenInter={id => setInterDlg({ id, i: inters[id] })} onTeam={() => setTeamDlg(true)}
+      onRequest={day => setDemDlg({ date: day, days: 1, pj: focusPj && pjList.includes(focusPj) ? focusPj : (myPjs || [])[0] || "", obj: "", type: "cur" })}
+      onAnswer={async (id, d, ok, note) => {
+        if (ok) { const r = acceptDemande({ ...d, id }, D); if (!(await api.put("tickets", r.tid, r.ticket)) || !(await api.put("inters", r.iid, r.inter))) return;
+          await demApi.put("items", id, { ...d, st: "ok", answeredBy: myName || "", answeredAt: new Date().toISOString(), tid: r.tid, iid: r.iid, ...(note ? { note } : {}) }); setInterDlg({ id: r.iid, i: r.inter }); }
+        else await demApi.put("items", id, { ...d, st: "ko", answeredBy: myName || "", answeredAt: new Date().toISOString(), ...(note ? { note } : {}) });
+      }}
+      onCancel={async id => { if (await askConfirm({ title: "Retirer cette demande ?", message: "Le responsable SAV ne la verra plus.", confirmLabel: "Retirer la demande" })) demApi.del("items", id); }} />}
+    {sub === "parc" && <ParcView {...{ rows, metaOf, parc: D.parc, tickets, canEdit, onOpenPj }} onEdit={(pj, p) => setParcDlg({ pj, p })} />}
+
+    {ticketDlg && <TicketDialog {...ticketDlg} {...{ pjList, nomOf, techs, canEdit, isAdmin, inters }} onClose={() => setTicketDlg(null)} onSave={saveTicket}
+      onDelete={async id => { if (await askConfirm({ title: "Supprimer le ticket " + id + " ?", message: "Ses interventions restent ; le ticket disparaît pour tout le monde.", confirmLabel: "Supprimer", danger: true })) { await api.del("tickets", id); setTicketDlg(null); } }} />}
+    {interDlg && <InterDialog {...interDlg} {...{ pjList, nomOf, techs, canEdit, isAdmin, canCost, tickets }} onClose={() => setInterDlg(null)} onSave={saveInter}
+      onDelete={async id => { if (await askConfirm({ title: "Supprimer l'intervention " + id + " ?", message: "Elle disparaît du planning et du ticket.", confirmLabel: "Supprimer", danger: true })) { await api.del("inters", id); setInterDlg(null); } }} />}
+    {parcDlg && <ParcDialog {...parcDlg} canEdit={canEdit} onClose={() => setParcDlg(null)} onSave={async (pj, p) => { if (await api.put("parc", pj, p)) setParcDlg(null); }} />}
+    {demDlg && <DemandeDialog init={demDlg} pjs={(myPjs && myPjs.length ? myPjs : pjList)} nomOf={nomOf} onClose={() => setDemDlg(null)}
+      onSave={async d => { const id = "d" + Date.now().toString(36); if (await demApi.put("items", id, { ...d, by: myName || "", byEmail: me || "", at: new Date().toISOString(), st: "attente" })) setDemDlg(null); }} />}
+    {teamDlg && <TeamDialog techs={techs} onClose={() => setTeamDlg(false)} onSave={async L => { if (await api.setField("techs", L)) setTeamDlg(false); }} />}
+  </div>;
+}
+
+/* ── Tickets ── */
+function TicketsView({ tickets, inters, canEdit, myName, nomOf, onEdit, onStep, onNewInter, onOpenInter, onOpenPj, focusPj }) {
+  const [filt, setFilt] = useState("open"), [q, setQ] = useState(focusPj || ""), [sel, setSel] = useState(null);
+  const all = Object.entries(tickets).map(([id, t]) => ({ id, ...t }));
+  const L = all.filter(t => (filt === "all" || (filt === "open" && !isClosed(t)) || (filt === "mine" && !isClosed(t) && t.resp && t.resp === myName)))
+    .filter(t => !q || (t.id + " " + (t.pj || "") + " " + nomOf(t.pj) + " " + (t.det || "")).toLowerCase().includes(q.toLowerCase()))
+    .sort((a, b) => (isClosed(a) - isClosed(b)) || ({ h: 0, m: 1, b: 2 }[a.prio] - { h: 0, m: 1, b: 2 }[b.prio]) || String(b.date || "").localeCompare(String(a.date || "")));
+  const cur = L.find(t => t.id === sel) || L[0] || null;
+  return <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(300px, 400px)", gap: 12, alignItems: "start" }} className="enogia-sav-split">
+    <Panel title="Tickets" pad={0} right={<div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", padding: "10px 12px 0 0" }}>
+      <Segmented label="Filtrer les tickets" value={filt} onChange={setFilt} options={[["open", "Ouverts"], ["mine", "Les miens"], ["all", "Tous"]]} />
+      <input type="search" value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher un PJ, un ticket…" aria-label="Rechercher un ticket" style={{ ...inp(), width: 220 }} /></div>}>
+      {L.length === 0 ? <EmptyState icon="inbox" compact title={all.length ? "Aucun ticket avec ce filtre" : "Aucun ticket pour l'instant"} hint={canEdit && !all.length ? "« ＋ Nouveau ticket » pour enregistrer la première demande." : ""} /> :
+      <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead><tr><th style={tableTh()}>Ticket</th><th style={tableTh()}>PJ</th><th style={tableTh()}>Type</th><th style={tableTh()}>Priorité</th><th style={tableTh()}>Avancement</th><th style={tableTh()}>Responsable</th><th style={tableTh({ num: true })}>Depuis</th></tr></thead>
+        <tbody>{L.map(t => <tr key={t.id} onClick={() => setSel(t.id)} className="e-hov" data-on={cur && cur.id === t.id ? "1" : "0"} style={{ cursor: "pointer", background: cur && cur.id === t.id ? T.surfaceAlt : "transparent", "--e-hov-bg": T.surface }}>
+          <td style={tableTd()}><span style={{ fontFamily: T.fontMono, fontSize: 12, fontWeight: 600 }}>{t.id}</span>{t.orig === "Chef de projet" && <span style={{ marginLeft: 6 }}><Pill tone="warn">demande CdP</Pill></span>}</td>
+          <td style={tableTd()}><PjPlate pj={t.pj} /> <span style={{ color: T.ink700 }}>{nomOf(t.pj)}</span></td>
+          <td style={tableTd()}><Pill tone={TYPE_TONE[t.type] || "neutral"}>{typeOf(t.type)[1]}</Pill></td>
+          <td style={tableTd()}><Pill tone={PRIO_TONE[t.prio] || "muted"}>{(PRIOS.find(p => p[0] === t.prio) || PRIOS[1])[1]}</Pill></td>
+          <td style={tableTd({ wrap: true })}><Steps t={t} /><div style={{ fontSize: 12, color: T.ink500 }}>{flowOf(t.type)[t.step || 0]}</div></td>
+          <td style={tableTd()}>{t.resp || "—"}</td><td style={tableTd({ num: true })}>{ticketAge(t) == null ? "—" : ticketAge(t) + " j"}</td></tr>)}</tbody></table></div>}
+    </Panel>
+    {cur ? <Panel title={<span style={{ display: "inline-flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}><span style={{ fontFamily: T.fontMono, fontSize: 12 }}>{cur.id}</span><Pill tone={TYPE_TONE[cur.type] || "neutral"}>{typeOf(cur.type)[1]}</Pill><Pill tone={PRIO_TONE[cur.prio] || "muted"}>{(PRIOS.find(p => p[0] === cur.prio) || PRIOS[1])[1]}</Pill></span>}
+      right={canEdit && <Btn size="sm" onClick={() => onEdit(cur.id, tickets[cur.id])}>Modifier</Btn>}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}><button type="button" onClick={() => onOpenPj && onOpenPj(cur.pj)} aria-label={"Ouvrir la fiche de " + cur.pj} style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer" }}><PjPlate pj={cur.pj} /></button><b style={{ fontSize: FZ.md, color: T.ink900 }}>{nomOf(cur.pj)}</b></div>
+      {cur.det && <p data-no-i18n="1" style={{ margin: 0, fontSize: FZ.sm, color: T.ink900, whiteSpace: "pre-wrap" }}>{cur.det}</p>}
+      <dl style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: "4px 10px", margin: 0, fontSize: FZ.sm }}>
+        <dt style={{ color: T.ink500 }}>Origine</dt><dd style={{ margin: 0 }}>{cur.orig || "—"}{cur.by ? " · " + cur.by : ""}</dd>
+        <dt style={{ color: T.ink500 }}>Responsable</dt><dd style={{ margin: 0 }}>{cur.resp || "—"}</dd>
+        <dt style={{ color: T.ink500 }}>Demande du</dt><dd style={{ margin: 0 }}>{fd(cur.date)}</dd>
+        {cur.closedAt && <><dt style={{ color: T.ink500 }}>Clos le</dt><dd style={{ margin: 0 }}>{fd(cur.closedAt)}{cur.satisf ? " · satisfaction " + cur.satisf + " / 5" : ""}</dd></>}
+        <dt style={{ color: T.ink500 }}>Interventions</dt><dd style={{ margin: 0, display: "flex", gap: 6, flexWrap: "wrap" }}>{(cur.inters || []).length ? cur.inters.map(i => <button key={i} type="button" onClick={() => onOpenInter(i)} disabled={!inters[i]} style={{ ...btn("ghost", "sm"), fontFamily: T.fontMono }}>{i}{inters[i] ? " · " + (inters[i].st || "") : ""}</button>) : "—"}</dd>
+      </dl>
+      <div><div style={{ fontSize: 12, fontWeight: 700, color: T.ink700, marginBottom: 4 }}>Étapes · {typeOf(cur.type)[1]}</div>
+        <ol style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 2 }}>{flowOf(cur.type).map((s, i) => { const done = i < (cur.step || 0), now = i === (cur.step || 0);
+          return <li key={s} style={{ display: "flex", gap: 8, alignItems: "center", fontSize: FZ.sm, color: now ? T.ink900 : T.ink500, fontWeight: now ? 700 : 400 }}>
+            <span aria-hidden="true" style={{ width: 18, height: 18, borderRadius: "50%", display: "inline-grid", placeItems: "center", fontSize: 11, fontWeight: 700, background: done ? T.emerald600 : now ? T.amber500 : T.surfaceAlt, color: done ? T.card : now ? T.ink900 : T.ink500 }}>{done ? "✓" : i + 1}</span>{s}</li>; })}</ol></div>
+      {canEdit && <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        <Btn size="sm" disabled={!(cur.step > 0)} onClick={() => onStep(cur.id, tickets[cur.id], -1)}>← Étape précédente</Btn>
+        <Btn v="pri" size="sm" disabled={isClosed(cur)} onClick={() => onStep(cur.id, tickets[cur.id], 1)}>{(cur.step || 0) + 1 >= flowOf(cur.type).length - 1 ? "Clore le ticket" : "Étape suivante →"}</Btn>
+        <Btn size="sm" onClick={() => onNewInter(cur.id, tickets[cur.id])}>＋ Intervention</Btn></div>}
+      <div style={{ fontSize: 12, color: T.ink500 }}>Progression : {Math.round(progressOf(cur) * 100)} %</div>
+    </Panel> : <span />}
+  </div>;
+}
+function TicketDialog({ id, t: t0, pjList, nomOf, techs, canEdit, isAdmin, onClose, onSave, onDelete }) {
+  const [t, setT] = useState({ ...t0 }); const set = (k, v) => setT(x => ({ ...x, [k]: v }));
+  const F = flowOf(t.type), ok = t.pj && t.det && t.det.trim();
+  return <Modal title={id ? "Ticket " + id : "Nouveau ticket"} onClose={onClose}>
+    <div style={grid2}>
+      <Field l="PJ"><select value={t.pj || ""} onChange={e => set("pj", e.target.value)} disabled={!canEdit} style={inp()}><option value="">Choisir…</option>{pjList.map(p => <option key={p} value={p}>{p}{nomOf(p) ? " · " + nomOf(p) : ""}</option>)}</select></Field>
+      <Field l="Type de demande"><select value={t.type} onChange={e => setT(x => ({ ...x, type: e.target.value, step: Math.min(x.step || 0, flowOf(e.target.value).length - 1) }))} disabled={!canEdit} style={inp()}>{TICKET_TYPES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></Field>
+      <Field l="Priorité"><select value={t.prio} onChange={e => set("prio", e.target.value)} disabled={!canEdit} style={inp()}>{PRIOS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></Field>
+      <Field l="Origine de la demande"><select value={t.orig || ""} onChange={e => set("orig", e.target.value)} disabled={!canEdit} style={inp()}>{ORIGINS.map(o => <option key={o}>{o}</option>)}</select></Field>
+      <Field l="Date de la demande"><input type="date" value={t.date || ""} onChange={e => set("date", e.target.value)} disabled={!canEdit} style={inp()} /></Field>
+      <Field l="Responsable du ticket"><input list="sav-techs" value={t.resp || ""} onChange={e => set("resp", e.target.value)} disabled={!canEdit} style={inp()} /><datalist id="sav-techs">{techs.map(x => <option key={x} value={x} />)}</datalist></Field>
+      <Field l="Étape"><select value={t.step || 0} onChange={e => set("step", +e.target.value)} disabled={!canEdit} style={inp()}>{F.map((s, i) => <option key={s} value={i}>{i + 1}. {s}</option>)}</select></Field>
+      <Field l="Satisfaction client (après clôture)"><select value={t.satisf || ""} onChange={e => set("satisf", e.target.value ? +e.target.value : null)} disabled={!canEdit} style={inp()}><option value="">—</option>{[5, 4, 3, 2, 1].map(n => <option key={n} value={n}>{n} / 5</option>)}</select></Field>
+      <Field l="Détails" span><textarea value={t.det || ""} onChange={e => set("det", e.target.value)} disabled={!canEdit} rows={3} style={{ ...inp(), padding: 8, resize: "vertical" }} /></Field>
+      <Field l="Actions, commentaires, avancement" span><textarea value={t.notes || ""} onChange={e => set("notes", e.target.value)} disabled={!canEdit} rows={2} style={{ ...inp(), padding: 8, resize: "vertical" }} /></Field>
+    </div>
+    {canEdit && <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      {id && isAdmin && <Btn v="dan" size="sm" onClick={() => onDelete(id)}>Supprimer</Btn>}<span style={{ flex: 1 }} />
+      <Btn size="sm" onClick={onClose}>Annuler</Btn>
+      <Btn v="pri" size="sm" disabled={!ok} onClick={() => { const last = flowOf(t.type).length - 1; onSave(id, { ...t, closedAt: (t.step || 0) >= last ? (t.closedAt || todayIso()) : null, inters: t.inters || [] }); }}>{id ? "Enregistrer" : "Créer le ticket"}</Btn></div>}
+  </Modal>;
+}
+
+/* ── Interventions ── */
+function IntersView({ inters, canCost, nomOf, onOpen }) {
+  const [filt, setFilt] = useState("open");
+  const L = Object.entries(inters).map(([id, i]) => ({ id, ...i })).filter(i => filt === "all" || (filt === "open" ? !["Réalisée", "Validée", "Non validée", "Annulée"].includes(i.st) : ["Réalisée", "Validée", "Non validée"].includes(i.st)))
+    .sort((a, b) => String(a.a || "9").localeCompare(String(b.a || "9")) || a.id.localeCompare(b.id));
+  return <Panel title="Interventions" pad={0} right={<div style={{ padding: "10px 12px 0 0" }}><Segmented label="Filtrer les interventions" value={filt} onChange={setFilt} options={[["open", "À venir"], ["done", "Réalisées"], ["all", "Toutes"]]} /></div>}>
+    {L.length === 0 ? <EmptyState icon="calendar" compact title="Aucune intervention avec ce filtre" /> :
+    <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <thead><tr><th style={tableTh()}>N°</th><th style={tableTh()}>PJ</th><th style={tableTh()}>Objectif</th><th style={tableTh()}>Type</th><th style={tableTh()}>Équipe</th><th style={tableTh()}>Dates</th><th style={tableTh()}>Préparation</th><th style={tableTh()}>Clôture</th><th style={tableTh()}>Statut</th>{canCost && <th style={tableTh({ num: true })}>Coût</th>}</tr></thead>
+      <tbody>{L.map(i => { const done = ["Réalisée", "Validée", "Non validée"].includes(i.st);
+        return <tr key={i.id} onClick={() => onOpen(i.id)} className="e-hov" style={{ cursor: "pointer", "--e-hov-bg": T.surface }}>
+          <td style={tableTd()}><span style={{ fontFamily: T.fontMono, fontSize: 12, fontWeight: 600 }}>{i.id}</span><div style={{ fontSize: 11, color: T.ink500 }}>{i.tk || ""}</div></td>
+          <td style={tableTd()}><PjPlate pj={i.pj} /> <span style={{ color: T.ink700 }}>{nomOf(i.pj)}</span></td>
+          <td style={tableTd({ wrap: true, ink: T.ink900 })}>{i.obj || "—"}</td><td style={tableTd({ wrap: true })}>{i.type || ""}</td>
+          <td style={tableTd({ wrap: true })}>{i.resp || <Pill tone="warn">sans technicien</Pill>}{(i.who || []).length ? <div style={{ fontSize: 12, color: T.ink500 }}>+ {i.who.join(", ")}</div> : null}</td>
+          <td style={tableTd()}>{i.a ? fd(i.a) + " → " + fd(i.b) + " (" + interDays(i) + " j)" : <Pill tone="warn">à planifier</Pill>}</td>
+          <td style={tableTd()}><Pill tone={(i.prep || []).length >= PREP_ITEMS.length ? "ok" : (i.prep || []).length ? "warn" : "muted"}>{(i.prep || []).length} / {PREP_ITEMS.length}</Pill></td>
+          <td style={tableTd()}>{done ? <Pill tone={(i.clo || []).length >= CLO_ITEMS.length ? "ok" : "bad"}>{(i.clo || []).length} / {CLO_ITEMS.length}</Pill> : "—"}</td>
+          <td style={tableTd()}><Pill tone={ST_TONE[i.st] || "neutral"}>{i.st || "—"}</Pill></td>
+          {canCost && <td style={tableTd({ num: true })}>{eur(interCost(i))}</td>}</tr>; })}</tbody></table></div>}
+  </Panel>;
+}
+function InterDialog({ id, i: i0, pjList, nomOf, techs, canEdit, isAdmin, canCost, tickets, onClose, onSave, onDelete }) {
+  const [i, setI] = useState({ who: [], prep: [], clo: [], costs: {}, ...i0 }); const set = (k, v) => setI(x => ({ ...x, [k]: v }));
+  const tkList = Object.keys(tickets).filter(t => !i.pj || tickets[t].pj === i.pj);
+  const ok = i.pj && (i.obj || "").trim() && (!i.a || !i.b || i.a <= i.b);
+  return <Modal title={id ? "Intervention " + id : "Nouvelle intervention"} onClose={onClose} width={760}>
+    <div style={grid2}>
+      <Field l="PJ"><select value={i.pj || ""} onChange={e => set("pj", e.target.value)} disabled={!canEdit} style={inp()}><option value="">Choisir…</option>{pjList.map(p => <option key={p} value={p}>{p}{nomOf(p) ? " · " + nomOf(p) : ""}</option>)}</select></Field>
+      <Field l="Ticket lié"><select value={i.tk || ""} onChange={e => set("tk", e.target.value)} disabled={!canEdit} style={inp()}><option value="">—</option>{tkList.map(t => <option key={t} value={t}>{t}</option>)}</select></Field>
+      <Field l="Objectifs de l'intervention" span><input value={i.obj || ""} onChange={e => set("obj", e.target.value)} disabled={!canEdit} style={inp()} /></Field>
+      <Field l="Type d'intervention"><select value={i.type || ""} onChange={e => set("type", e.target.value)} disabled={!canEdit} style={inp()}>{INTER_TYPES.map(x => <option key={x}>{x}</option>)}</select></Field>
+      <Field l="Statut"><select value={i.st || "À planifier"} onChange={e => set("st", e.target.value)} disabled={!canEdit} style={inp()}>{INTER_STATUS.map(x => <option key={x}>{x}</option>)}</select></Field>
+      <Field l="Responsable (technicien)"><select value={i.resp || ""} onChange={e => set("resp", e.target.value)} disabled={!canEdit} style={inp()}><option value="">À affecter</option>{techs.map(x => <option key={x}>{x}</option>)}</select></Field>
+      <Field l="Date d'arrivée sur site"><input type="date" value={i.a || ""} onChange={e => set("a", e.target.value)} disabled={!canEdit} style={inp()} /></Field>
+      <Field l="Date de départ du site"><input type="date" value={i.b || ""} min={i.a || undefined} onChange={e => set("b", e.target.value)} disabled={!canEdit} style={inp()} /></Field>
+      <Field l="Réussite de l'intervention"><select value={i.reussite || ""} onChange={e => set("reussite", e.target.value)} disabled={!canEdit} style={inp()}><option value="">—</option><option>Succès</option><option>Partielle</option><option>Échec</option></select></Field>
+    </div>
+    <Field l="Intervenants (en plus du responsable)"><Checks items={techs.filter(x => x !== i.resp)} value={i.who} onChange={v => set("who", v)} disabled={!canEdit} /></Field>
+    <Field l={"Préparation (" + (i.prep || []).length + " / " + PREP_ITEMS.length + ")"}><Checks items={PREP_ITEMS} value={i.prep} onChange={v => set("prep", v)} disabled={!canEdit} /></Field>
+    <Field l={"Clôture (" + (i.clo || []).length + " / " + CLO_ITEMS.length + ")"}><Checks items={CLO_ITEMS} value={i.clo} onChange={v => set("clo", v)} disabled={!canEdit} /></Field>
+    {canCost && <Field l={"Coûts · total " + eur(interCost(i))}><div style={grid2}>{COST_FIELDS.map(([k, l]) => <label key={k} style={lab}>{l}<input type="number" min={0} step={10} value={(i.costs || {})[k] ?? ""} onChange={e => set("costs", { ...(i.costs || {}), [k]: e.target.value === "" ? null : +e.target.value })} disabled={!canEdit} style={inp()} /></label>)}</div></Field>}
+    <Field l="Notes"><textarea value={i.notes || ""} onChange={e => set("notes", e.target.value)} disabled={!canEdit} rows={2} style={{ ...inp(), padding: 8, resize: "vertical" }} /></Field>
+    {canEdit && <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      {id && isAdmin && <Btn v="dan" size="sm" onClick={() => onDelete(id)}>Supprimer</Btn>}<span style={{ flex: 1 }} />
+      <Btn size="sm" onClick={onClose}>Annuler</Btn>
+      <Btn v="pri" size="sm" disabled={!ok} onClick={() => onSave(id, { ...i, st: i.st === "À planifier" && i.a && i.b ? "Planifiée" : i.st || "À planifier" })}>{id ? "Enregistrer" : "Créer l'intervention"}</Btn></div>}
+  </Modal>;
+}
+
+/* ── Planning des équipes ── */
+function PlanningView({ inters, demandes, techs, canEdit, nomOf, me, myPjs, onOpenInter, onTeam, onRequest, onAnswer, onCancel }) {
+  const [start, setStart] = useState(() => mondayOf(todayIso())), N = 10;
+  const days = workDaysFrom(start, N), t0 = todayIso();
+  const shift = w => { const d = new Date(start + "T12:00:00"); d.setDate(d.getDate() + 7 * w); setStart(iso(d)); };
+  const bars = planBars(inters, techs), load = dayLoad(inters, techs, days);
+  const dems = Object.entries(demandes).map(([id, d]) => ({ id, ...d })).sort((a, b) => String(b.at || "").localeCompare(String(a.at || "")));
+  const pend = dems.filter(d => d.st === "attente"), mine = dems.filter(d => d.byEmail && me && d.byEmail.toLowerCase() === me.toLowerCase());
+  const toPlan = Object.entries(inters).filter(([, i]) => i && i.st !== "Annulée" && (!i.a || !i.b || !i.resp) && !["Réalisée", "Validée", "Non validée"].includes(i.st));
+  const [notes, setNotes] = useState({});
+  const head = <div style={{ display: "flex", gap: 6, alignItems: "center", padding: "10px 12px 0 0", flexWrap: "wrap" }}>
+    <Btn size="sm" aria-label="Deux semaines plus tôt" onClick={() => shift(-1)}>◀</Btn><Btn size="sm" onClick={() => setStart(mondayOf(t0))}>Aujourd'hui</Btn><Btn size="sm" aria-label="Deux semaines plus tard" onClick={() => shift(1)}>▶</Btn>
+    {canEdit && <Btn size="sm" onClick={onTeam}>Équipe ({techs.length})</Btn>}</div>;
+  const dayHead = <tr><th style={{ ...tableTh(), width: canEdit ? 150 : 120 }}>{canEdit ? "Technicien" : ""}</th>{days.map(d => <th key={d} style={{ ...tableTh({ align: "center" }), background: d === t0 ? T.amber100 : undefined }}>{fdd(d)}</th>)}</tr>;
+  const barColor = st => st === "Réalisée" || st === "Validée" ? [T.emerald100, T.emerald600] : st === "En cours" ? [T.accentSoft || T.teal100, T.accentInk || T.teal600] : [T.info100, T.info600];
+  const pendOn = d => pend.filter(p => { const L = workDaysFrom(p.date, Math.max(1, +p.days || 1)); return L.includes(d); });
+  return <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+    <Panel title={canEdit ? "Planning des équipes SAV" : "Disponibilités de l'équipe SAV"} pad={0} right={head}>
+      {!canEdit && <p style={{ margin: "0 14px", fontSize: FZ.sm, color: T.ink500 }}>Lecture seule : un jour avec au moins un technicien libre se demande d'un clic ; le responsable SAV accepte ou refuse, la réponse arrive dans votre cloche.</p>}
+      <div style={{ overflowX: "auto" }}><table style={{ width: "100%", minWidth: 900, borderCollapse: "collapse", tableLayout: "fixed" }}>
+        <thead>{dayHead}</thead>
+        <tbody>
+          {canEdit ? (techs.length ? techs.map(tc => <tr key={tc}><td style={{ ...tableTd({ ink: T.ink900 }), fontWeight: 700 }}>{tc}</td>
+            {days.map(d => { const b = (bars[tc] || []).find(x => x.from <= d && x.to >= d); if (b && days.find(x => x >= b.from && x <= b.to) !== d) return null; // première case visible de la barre
+              if (!b) return <td key={d} style={{ ...tableTd({ align: "center" }), background: d === t0 ? T.amber100 + "55" : undefined }} />;
+              const span = days.filter(x => x >= d && x <= b.to).length, [bg, ink] = barColor(b.st);
+              return <td key={d} colSpan={span} style={{ ...tableTd(), padding: 3 }}><button type="button" onClick={() => onOpenInter(b.id)} title={b.id + " · " + b.pj + " · " + (b.type || "")}
+                style={{ width: "100%", minHeight: 30, border: "none", borderRadius: 4, background: bg, color: ink, fontSize: 12, fontWeight: 700, textAlign: "left", padding: "0 8px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "pointer", fontFamily: T.font, opacity: b.lead ? 1 : 0.8 }}>{b.id} · {b.pj}{b.lead ? "" : " (appui)"}</button></td>; })}</tr>)
+            : <tr><td colSpan={N + 1} style={tableTd()}><EmptyState compact icon="manager" title="Aucun technicien" hint="« Équipe » pour ajouter les techniciens SAV." /></td></tr>)
+            : <tr><td style={{ ...tableTd({ ink: T.ink900 }), fontWeight: 700 }}>Équipe SAV</td>
+              {load.map(x => { const p = pendOn(x.d).length, free = x.free - p, past = x.d < t0;
+                return <td key={x.d} style={{ ...tableTd({ align: "center" }), padding: 3 }}>{past || free <= 0 || !x.team ? <span style={{ display: "block", minHeight: 30, lineHeight: "30px", borderRadius: 4, background: T.surfaceAlt, color: T.ink500, fontSize: 12, fontWeight: 600 }}>{past ? "—" : "Complet"}</span>
+                  : <button type="button" onClick={() => onRequest(x.d)} aria-label={"Demander une intervention le " + fdd(x.d) + " (" + free + " libre" + (free > 1 ? "s" : "") + ")"}
+                    style={{ width: "100%", minHeight: 30, borderRadius: 4, border: "1.5px dashed " + T.emerald500, background: T.emerald100, color: T.emerald600, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>＋ {free} libre{free > 1 ? "s" : ""}</button>}</td>; })}</tr>}
+          {canEdit && pend.length > 0 && <tr><td style={{ ...tableTd({ ink: T.amber600 }), fontWeight: 700 }}>Demandes</td>{days.map(d => { const L = pendOn(d);
+            return <td key={d} style={{ ...tableTd({ align: "center" }), padding: 3 }}>{L.map(p => <span key={p.id} title={p.pj + " · " + (p.obj || "") + " · " + (p.by || "")} style={{ display: "block", minHeight: 24, lineHeight: "24px", borderRadius: 4, border: "1.5px dashed " + T.amber500, background: T.amber100, color: T.amber600, fontSize: 11, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", padding: "0 4px", marginBottom: 2 }}>{p.pj}</span>)}</td>; })}</tr>}
+        </tbody></table></div>
+    </Panel>
+    {canEdit ? <>
+      <Panel title={<span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>Demandes des chefs de projet {pend.length > 0 && <Pill tone="warn">{pend.length}</Pill>}</span>}>
+        {dems.length === 0 ? <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Aucune demande pour l'instant.</div> : dems.slice(0, 12).map(d => <div key={d.id} style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", padding: "6px 0", borderTop: "1px solid " + T.line }}>
+          <PjPlate pj={d.pj} /><span style={{ flex: "1 1 260px", minWidth: 0, fontSize: FZ.sm, color: T.ink900 }}>{d.obj || "—"}<div style={{ fontSize: 12, color: T.ink500 }}>{nomOf(d.pj)} · demandé par {d.by || "—"} · à partir du {fdd(d.date)} · {d.days || 1} j</div></span>
+          {d.st === "attente" ? <>
+            <input value={notes[d.id] || ""} onChange={e => setNotes(n => ({ ...n, [d.id]: e.target.value }))} placeholder="Réponse (facultative)" aria-label={"Réponse à la demande " + d.pj} style={{ ...inp(), width: 200 }} />
+            <Btn size="sm" onClick={() => onAnswer(d.id, d, false, notes[d.id])}>Refuser</Btn><Btn v="pri" size="sm" onClick={() => onAnswer(d.id, d, true, notes[d.id])}>Accepter</Btn></>
+            : <Pill tone={d.st === "ok" ? "ok" : "bad"}>{d.st === "ok" ? "Acceptée" + (d.iid ? " · " + d.iid : "") : "Refusée"}</Pill>}</div>)}
+      </Panel>
+      <Panel title={<span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>À planifier {toPlan.length > 0 && <Pill tone="warn">{toPlan.length}</Pill>}</span>}>
+        {toPlan.length === 0 ? <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Toutes les interventions ont des dates et un technicien.</div> : toPlan.map(([id, i]) => <div key={id} style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", padding: "6px 0", borderTop: "1px solid " + T.line }}>
+          <span style={{ fontFamily: T.fontMono, fontSize: 12, fontWeight: 600 }}>{id}</span><PjPlate pj={i.pj} /><span style={{ flex: 1, minWidth: 0, fontSize: FZ.sm }}>{i.obj || "—"}</span>
+          <span style={{ fontSize: 12, color: T.ink500 }}>{!i.a ? "sans dates" : "sans technicien"}</span><Btn v="pri" size="sm" onClick={() => onOpenInter(id)}>Planifier</Btn></div>)}
+      </Panel></>
+      : <Panel title="Mes demandes">
+        {mine.length === 0 ? <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Vous n'avez pas encore fait de demande. Cliquez sur un jour libre du planning ci-dessus.</div> : mine.map(d => <div key={d.id} style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", padding: "6px 0", borderTop: "1px solid " + T.line }}>
+          <PjPlate pj={d.pj} /><span style={{ flex: "1 1 260px", minWidth: 0, fontSize: FZ.sm }}>{d.obj || "—"}<div style={{ fontSize: 12, color: T.ink500 }}>à partir du {fdd(d.date)} · {d.days || 1} j{d.note ? " · « " + d.note + " »" : ""}</div></span>
+          <Pill tone={d.st === "ok" ? "ok" : d.st === "ko" ? "bad" : "warn"}>{DEM_STATUS[d.st] || d.st}</Pill>
+          {d.st === "attente" && <Btn size="sm" onClick={() => onCancel(d.id)}>Retirer</Btn>}</div>)}
+        {!(myPjs && myPjs.length) && <div style={{ fontSize: 12, color: T.ink500 }}>Aucun PJ ne vous est associé : la demande proposera tous les PJ.</div>}
+      </Panel>}
+  </div>;
+}
+function DemandeDialog({ init, pjs, nomOf, onClose, onSave }) {
+  const [d, setD] = useState(init); const set = (k, v) => setD(x => ({ ...x, [k]: v }));
+  return <Modal title={"Demander une intervention · " + fdd(d.date)} onClose={onClose} width={560}>
+    <div style={grid2}>
+      <Field l="PJ"><select value={d.pj} onChange={e => set("pj", e.target.value)} style={inp()}><option value="">Choisir…</option>{pjs.map(p => <option key={p} value={p}>{p}{nomOf(p) ? " · " + nomOf(p) : ""}</option>)}</select></Field>
+      <Field l="Nombre de jours"><input type="number" min={1} max={20} value={d.days} onChange={e => set("days", Math.max(1, +e.target.value || 1))} style={inp()} /></Field>
+      <Field l="Type de demande"><select value={d.type} onChange={e => set("type", e.target.value)} style={inp()}>{TICKET_TYPES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></Field>
+      <Field l="Objectif de l'intervention" span><textarea value={d.obj} onChange={e => set("obj", e.target.value)} rows={3} style={{ ...inp(), padding: 8, resize: "vertical" }} /></Field>
+    </div>
+    <div style={{ fontSize: 12, color: T.ink500 }}>Le responsable SAV accepte ou refuse ; s'il accepte, un ticket et une intervention sont créés à ces dates.</div>
+    <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}><Btn size="sm" onClick={onClose}>Annuler</Btn><Btn v="pri" size="sm" disabled={!d.pj || !String(d.obj || "").trim()} onClick={() => onSave(d)}>Envoyer la demande</Btn></div>
+  </Modal>;
+}
+function TeamDialog({ techs, onClose, onSave }) {
+  const [txt, setTxt] = useState(techs.join("\n"));
+  return <Modal title="Équipe SAV" onClose={onClose} width={480}>
+    <Field l="Un technicien par ligne (nom tel qu'il apparaîtra dans le planning)"><textarea value={txt} onChange={e => setTxt(e.target.value)} rows={8} style={{ ...inp(), padding: 8, resize: "vertical" }} /></Field>
+    <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}><Btn size="sm" onClick={onClose}>Annuler</Btn><Btn v="pri" size="sm" onClick={() => onSave([...new Set(txt.split(/\r?\n/).map(s => s.trim()).filter(Boolean))])}>Enregistrer</Btn></div>
+  </Modal>;
+}
+
+/* ── Parc ── */
+function ParcView({ rows, metaOf, parc, tickets, canEdit, onEdit, onOpenPj }) {
+  const [filt, setFilt] = useState("all"), [q, setQ] = useState("");
+  const all = parcOf(rows, metaOf, parc, tickets);
+  const L = all.filter(p => filt === "all" || (filt === "ctr" ? p.info.contrat && p.info.contrat !== "Sans contrat" : !p.info.contrat || p.info.contrat === "Sans contrat"))
+    .filter(p => !q || (p.pj + " " + p.nom + " " + p.pays + " " + p.sn.join(" ")).toLowerCase().includes(q.toLowerCase()));
+  return <Panel title={"Parc ORC (" + all.length + " projets)"} pad={0} right={<div style={{ display: "flex", gap: 8, padding: "10px 12px 0 0", flexWrap: "wrap" }}>
+    <Segmented label="Filtrer le parc" value={filt} onChange={setFilt} options={[["all", "Tous"], ["ctr", "Avec contrat"], ["no", "Sans contrat"]]} />
+    <input type="search" value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher un PJ, un S/N…" aria-label="Rechercher dans le parc" style={{ ...inp(), width: 200 }} /></div>}>
+    {L.length === 0 ? <EmptyState compact icon="gauge" title="Aucun projet" hint="Le parc se remplit avec les machines expédiées du planning ; « ＋ Projet du parc » pour les machines plus anciennes." /> :
+    <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <thead><tr><th style={tableTh()}>PJ</th><th style={tableTh()}>Pays</th><th style={tableTh()}>ORC</th><th style={tableTh()}>S/N</th><th style={tableTh()}>Mise en service</th><th style={tableTh()}>Application</th><th style={tableTh()}>Contrat</th><th style={tableTh()}>Prochaine préventive</th><th style={tableTh({ num: true })}>Tickets ouverts</th></tr></thead>
+      <tbody>{L.map(p => { const c = p.info.contrat;
+        return <tr key={p.pj} onClick={() => (canEdit ? onEdit(p.pj, p.info) : onOpenPj && onOpenPj(p.pj))} className="e-hov" style={{ cursor: "pointer", "--e-hov-bg": T.surface }}>
+          <td style={tableTd()}><PjPlate pj={p.pj} /> <span style={{ color: T.ink900 }}>{p.nom}</span>{p.manuel && <span style={{ marginLeft: 6 }}><Pill tone="muted">hors planning</Pill></span>}</td>
+          <td style={tableTd()}>{p.pays || "—"}</td><td style={tableTd()}>{p.gammes.join(", ") || "—"}</td>
+          <td style={tableTd({ wrap: true })}><span style={{ fontFamily: T.fontMono, fontSize: 12 }}>{p.sn.join(", ") || "—"}</span></td>
+          <td style={tableTd()}>{p.info.mes ? fd(p.info.mes) + "/" + String(p.info.mes).slice(2, 4) : p.depart ? "partie le " + fd(p.depart) : "—"}</td>
+          <td style={tableTd()}>{p.info.application || "—"}</td>
+          <td style={tableTd()}>{c && c !== "Sans contrat" ? <><Pill tone={p.info.contratStatut === "En cours" ? "ok" : "warn"}>{c}</Pill> <span style={{ fontFamily: T.fontMono, fontSize: 11, color: T.ink500 }}>{p.info.contratNo || ""}</span></> : <Pill tone="muted">Sans contrat</Pill>}</td>
+          <td style={tableTd()}>{p.info.preventive ? fd(p.info.preventive) + "/" + String(p.info.preventive).slice(2, 4) : "—"}</td>
+          <td style={tableTd({ num: true, ink: p.ouverts ? T.ink900 : T.ink500 })}>{p.ouverts}</td></tr>; })}</tbody></table></div>}
+  </Panel>;
+}
+function ParcDialog({ pj: pj0, p: p0, isNew, canEdit, onClose, onSave }) {
+  const [pj, setPj] = useState(pj0), [p, setP] = useState({ ...p0, sn: Array.isArray(p0.sn) ? p0.sn.join(", ") : p0.sn || "" }); const set = (k, v) => setP(x => ({ ...x, [k]: v }));
+  return <Modal title={isNew ? "Projet du parc" : "Parc · " + pj} onClose={onClose}>
+    <div style={grid2}>
+      {isNew && <Field l="N° de projet (ex. PJ214)"><input value={pj} onChange={e => setPj(e.target.value.trim().toUpperCase())} style={inp()} /></Field>}
+      {isNew && <Field l="Nom du projet"><input value={p.nom || ""} onChange={e => set("nom", e.target.value)} style={inp()} /></Field>}
+      {isNew && <Field l="Pays"><input value={p.pays || ""} onChange={e => set("pays", e.target.value)} style={inp()} /></Field>}
+      {isNew && <Field l="Type d'ORC (gamme)"><input value={p.gamme || ""} onChange={e => set("gamme", e.target.value)} style={inp()} /></Field>}
+      <Field l="S/N supplémentaires (séparés par des virgules)"><input value={p.sn} onChange={e => set("sn", e.target.value)} disabled={!canEdit} style={inp()} /></Field>
+      <Field l="Date de mise en service"><input type="date" value={p.mes || ""} onChange={e => set("mes", e.target.value)} disabled={!canEdit} style={inp()} /></Field>
+      <Field l="Application"><input value={p.application || ""} onChange={e => set("application", e.target.value)} disabled={!canEdit} placeholder="Biomasse, incinérateur…" style={inp()} /></Field>
+      <Field l="Visitable"><select value={p.visitable || ""} onChange={e => set("visitable", e.target.value)} disabled={!canEdit} style={inp()}><option value="">—</option><option>Oui</option><option>Non</option></select></Field>
+      <Field l="Contrat de maintenance"><select value={p.contrat || "Sans contrat"} onChange={e => set("contrat", e.target.value)} disabled={!canEdit} style={inp()}>{CONTRACTS.map(c => <option key={c}>{c}</option>)}</select></Field>
+      <Field l="N° de contrat"><input value={p.contratNo || ""} onChange={e => set("contratNo", e.target.value)} disabled={!canEdit} style={inp()} /></Field>
+      <Field l="Statut du contrat"><select value={p.contratStatut || ""} onChange={e => set("contratStatut", e.target.value)} disabled={!canEdit} style={inp()}><option value="">—</option>{["En cours", "En attente de signature", "En attente de MES", "Suspendu", "Terminé"].map(x => <option key={x}>{x}</option>)}</select></Field>
+      <Field l="Prochaine préventive"><input type="date" value={p.preventive || ""} onChange={e => set("preventive", e.target.value)} disabled={!canEdit} style={inp()} /></Field>
+      <Field l="Adresse du site" span><input value={p.adresse || ""} onChange={e => set("adresse", e.target.value)} disabled={!canEdit} style={inp()} /></Field>
+      <Field l="Dispositions particulières" span><textarea value={p.notes || ""} onChange={e => set("notes", e.target.value)} disabled={!canEdit} rows={2} style={{ ...inp(), padding: 8, resize: "vertical" }} /></Field>
+    </div>
+    {canEdit && <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}><Btn size="sm" onClick={onClose}>Annuler</Btn>
+      <Btn v="pri" size="sm" disabled={!/^PJ\w+/i.test(pj || "")} onClick={() => onSave(pj, { ...p, sn: String(p.sn || "").split(",").map(s => s.trim()).filter(Boolean) })}>Enregistrer</Btn></div>}
+  </Modal>;
+}
+
+// Onglet SAV de la fiche d'un PJ (RowDetail) : tickets, interventions, contrat ; « Demander une intervention » / « Ouvrir dans SAV / MES »
+export function SavPjTab({ pj, doc, dem, me, onOpenSav, onRequest }) {
+  const D = doc || {}, base = String(pj).replace(/-\d+[A-Z]*$/, "");
+  const same = p => p === pj || String(p || "").replace(/-\d+[A-Z]*$/, "") === base;
+  const T0 = Object.entries(D.tickets || {}).filter(([, t]) => t && same(t.pj)).sort((a, b) => isClosed(a[1]) - isClosed(b[1]) || String(b[1].date || "").localeCompare(String(a[1].date || "")));
+  const I0 = Object.entries(D.inters || {}).filter(([, i]) => i && same(i.pj)).sort((a, b) => String(b[1].a || "9").localeCompare(String(a[1].a || "9")));
+  const P = (D.parc || {})[base] || (D.parc || {})[pj] || null;
+  const mine = Object.entries((dem && dem.items) || {}).filter(([, d]) => d && same(d.pj) && d.st === "attente");
+  return <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+    {P && <div style={{ fontSize: FZ.sm, color: T.ink700 }}>Contrat : {P.contrat && P.contrat !== "Sans contrat" ? <><Pill tone={P.contratStatut === "En cours" ? "ok" : "warn"}>{P.contrat}</Pill> {P.contratNo || ""}{P.preventive ? " · prochaine préventive " + fd(P.preventive) : ""}</> : "sans contrat"}{P.mes ? " · mise en service " + fd(P.mes) : ""}</div>}
+    <div><div style={{ fontSize: 12, fontWeight: 700, color: T.ink700, marginBottom: 4 }}>Tickets ({T0.length})</div>
+      {T0.length === 0 ? <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Aucun ticket.</div> : T0.slice(0, 6).map(([id, t]) => <div key={id} style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", padding: "4px 0", borderTop: "1px solid " + T.line }}>
+        <span style={{ fontFamily: T.fontMono, fontSize: 12, fontWeight: 600 }}>{id}</span><Pill tone={TYPE_TONE[t.type] || "neutral"}>{typeOf(t.type)[1]}</Pill>
+        <span style={{ flex: 1, minWidth: 0, fontSize: FZ.sm, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.det || ""}</span>
+        {isClosed(t) ? <Pill tone="ok">clos</Pill> : <span style={{ fontSize: 12, color: T.ink500 }}>{flowOf(t.type)[t.step || 0]}</span>}</div>)}</div>
+    <div><div style={{ fontSize: 12, fontWeight: 700, color: T.ink700, marginBottom: 4 }}>Interventions ({I0.length})</div>
+      {I0.length === 0 ? <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Aucune intervention.</div> : I0.slice(0, 6).map(([id, i]) => <div key={id} style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", padding: "4px 0", borderTop: "1px solid " + T.line }}>
+        <span style={{ fontFamily: T.fontMono, fontSize: 12, fontWeight: 600 }}>{id}</span><span style={{ flex: 1, minWidth: 0, fontSize: FZ.sm }}>{i.obj || ""}</span>
+        <span style={{ fontSize: 12, color: T.ink500 }}>{i.a ? fd(i.a) + " → " + fd(i.b) : "à planifier"}{interTeam(i).length ? " · " + interTeam(i).join(", ") : ""}</span><Pill tone={ST_TONE[i.st] || "neutral"}>{i.st || "—"}</Pill></div>)}</div>
+    {mine.length > 0 && <div style={{ fontSize: FZ.sm, color: T.amber600 }}>{mine.length} demande{mine.length > 1 ? "s" : ""} d'intervention en attente du responsable SAV.</div>}
+    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>{onRequest && <Btn v="pri" size="sm" onClick={onRequest}>Demander une intervention</Btn>}{onOpenSav && <Btn size="sm" onClick={onOpenSav}>Ouvrir dans SAV / MES →</Btn>}</div>
+  </div>;
+}

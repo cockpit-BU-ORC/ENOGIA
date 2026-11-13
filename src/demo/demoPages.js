@@ -1,7 +1,7 @@
 // v321 (revue, point 7) : les pages de la galerie ?demo et du test des pages — chaque entrée rend une page avec les données d'exemple.
 // Ajouter ici toute nouvelle page (une ligne) : elle est alors vérifiée à chaque série de tests et visible dans la galerie.
 import React, { useState } from "react";
-import { DEMO_ROWS, DEMO_COMMENTS, DEMO_PROGRESS, DEMO_TESTS, DEMO_PROD, DEMO_ME, DEMO_PEOPLE, demoApi } from "./demoData";
+import { DEMO_SAV, DEMO_SAV_DEM, DEMO_ROWS, DEMO_COMMENTS, DEMO_PROGRESS, DEMO_TESTS, DEMO_PROD, DEMO_ME, DEMO_PEOPLE, demoApi } from "./demoData";
 import { useListFilters, filterOptions, filterRows } from "../listFilters";
 import { DashboardSummary } from "../components/DashboardSummary";
 import { TableView } from "../components/TableView";
@@ -13,6 +13,7 @@ import { TestsTab } from "../components/TestsTab";
 import { TurbinesHub } from "../components/TurbinesHub";
 import { HomeView } from "../components/HomeView";
 import { MentionBell } from "../components/MentionBell";
+import { SavPage } from "../components/SavPage";
 import { userKey } from "../mentions";
 
 const no = () => {}, yes = async () => true;
@@ -57,9 +58,17 @@ const AccueilProduit = () => <HomeView produit={DEMO_PRODUIT} pinOk testsDoc={DE
 const Cloche = () => <div style={{ display: "flex", justifyContent: "flex-end", minHeight: 420 }}><MentionBell me={DEMO_ME.email} comments={DEMO_COMMENTS} data={DEMO_ROWS} onOpen={no} canSeePrivate assignments={[]} pjChanges={[]} extra={1}
   panel={<ATraiter popup />} closeKey="x" /></div>;
 
+// v326 : SAV / MES — équipe SAV (tout) et chef de projet (lecture, planning sur une ligne, demandes)
+const savApi = { put: async () => true, del: async () => true, setField: async () => true };
+function SavDemo({ level, sub0 }) { const [sub, setSub] = useState(sub0); return <SavPage doc={DEMO_SAV} dem={DEMO_SAV_DEM} api={savApi} demApi={savApi} rows={DEMO_ROWS} level={level} canCost={level !== "r"} me={DEMO_ME.email} myName={DEMO_ME.name} myPjs={["PJ901", "PJ902"]} team={[]} sub={sub} onSub={setSub} onOpenPj={no} />; }
+
 export const DEMO_PAGES = [
   { id: "home", label: "Accueil", Render: Accueil, expect: [] },
   { id: "home-produit", label: "Accueil · resp. produit", Render: AccueilProduit, expect: ["Livrables Produit", "P&ID validé", "Papeterie du Nord"] },
+  { id: "sav", label: "SAV · équipe", Render: () => <SavDemo level="w" sub0="tickets" />, expect: ["SAV / MES", "TC-26-41", "Sucrerie Centre"] },
+  { id: "sav-plan", label: "SAV · planning", Render: () => <SavDemo level="w" sub0="planning" />, expect: ["Lou Martin", "Demandes des chefs de projet", "Accepter"] },
+  { id: "sav-cdp", label: "SAV · chef de projet", Render: () => <SavDemo level="r" sub0="planning" />, expect: ["Équipe SAV", "libre", "Mes demandes"] },
+  { id: "sav-parc", label: "SAV · parc", Render: () => <SavDemo level="w" sub0="parc" />, expect: ["PJ214", "Premium"] },
   { id: "bell", label: "Cloche", Render: Cloche, expect: [] },
   { id: "inbox", label: "À traiter", Render: ATraiter, expect: ["Demandes à valider", "PJ902"] },
   { id: "table", label: "Liste", Render: Liste, expect: ["PJ901", "Papeterie du Nord"] },

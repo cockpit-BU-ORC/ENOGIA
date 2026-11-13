@@ -2346,3 +2346,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Menu et Manager : « Gestion des accès » (Personnes, Rôles, Accès par page), « Réglages » (Nouveautés, version).
 - Page Accès : même en-tête que le Manager (titre en haut à gauche, sélecteur dessous).
 - Fichiers : App.js, components/AccessPage.js, components/ManagerPanel.js, versions. Rien à republier.
+
+## v326 — SAV / MES
+
+- Page SAV / MES (Opérations) : Tickets, Interventions, Planning des équipes, Parc ; onglet SAV dans la fiche d'un PJ ; demandes des chefs de projet (vue d'une ligne) acceptées ou refusées par le SAV.
+- Nouveaux documents : `planning/sav` (tickets, inters, parc, techs) et `planning/savDemandes` (items) — préfixe `beta_` en bêta.
+- **Règles Firestore à republier** : écriture `sav` (propriétaire, rôle SAV / niveau Modifier sur SAV), `savDemandes` (tout compte ENOGIA).
+- Page Accès : nouvelle page « SAV / MES » (sous-pages Tickets, Interventions, Planning des équipes, Parc).
+- Aucune nouvelle clé `localStorage`.
+- Fichiers : savModel.js(+test), components/SavPage.js (nouveaux), appDocs.js, useAppData.js, access.js, App.js, RowDetail.js, SharedUI.js (icône), styles.css, demo/*, firestore.rules, versions.

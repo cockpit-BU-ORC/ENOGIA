@@ -901,4 +901,9 @@ export const RELEASE_CATALOG = [
   { v: "325", t: "Gestion des accès et Réglages", items: [
     ["Administration", "« Gestion des accès » (Personnes, Rôles, Accès par page) avec le même titre et le même sélecteur sur les trois sous-pages ; « Réglages » pour les Nouveautés et la version.", "admin"],
   ] },
+  { v: "326", t: "SAV / MES dans le Cockpit", items: [
+    ["SAV / MES", "Nouvelle page dans Opérations : tickets (chaque type de demande suit ses étapes), interventions (équipe, dates, préparation, clôture, coûts), planning des équipes et parc (machines, contrats de maintenance)."],
+    ["Chefs de projet", "Le planning du SAV en une ligne : cliquez un jour libre pour demander une intervention ; le responsable SAV accepte ou refuse, la réponse arrive dans votre cloche."],
+    ["Fiche d'un PJ", "Onglet SAV : tickets, interventions et contrat du PJ, « Demander une intervention »."],
+  ] },
 ];

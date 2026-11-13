@@ -2,7 +2,7 @@
 // turbines, retards, Cash in). Même code qu'avant, regroupé par document ; App.js n'appelle plus que ces crochets.
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { onSnapshot, setDoc, updateDoc, deleteField } from "firebase/firestore";
-import { TURBINES_DOC_REF, TESTS_DOC_REF, PRODTURB_DOC_REF, DELAYS_DOC_REF, ACHATS_DOC_REF, ACCESS_DOC_REF } from "./appDocs";
+import { TURBINES_DOC_REF, TESTS_DOC_REF, PRODTURB_DOC_REF, DELAYS_DOC_REF, ACHATS_DOC_REF, ACCESS_DOC_REF, SAV_DOC_REF, SAV_DEM_DOC_REF } from "./appDocs";
 import { notify } from "./components/SharedUI";
 import { setCashinDoc, setCashinLinks, getCashinDoc, getCashinLinks, getOrdoPjs, cashGroupsFor } from "./cashinLink";
 import { CASHIN_DOC_REF, CASHIN_LINKS_REF, CASHIN_SHARED_REF, CASHIN_PRODUIT_REF, buildSharedCashin } from "./cashinData";
@@ -97,6 +97,28 @@ export function useDelays(authUid) {
 }
 
 // Cash in : magasin partagé (cashinLink) alimenté en temps réel pour le propriétaire et les admins, copie réduite publiée pour les autres
+// v326 : SAV / MES — deux documents lus en temps réel par les comptes connectés ; écritures élément par élément (fusion)
+//   planning/sav : tickets, inters, parc (+ techs) — équipe SAV ; planning/savDemandes : items (demandes des chefs de projet)
+export function useSav(currentUser, authorName) {
+  const [savDoc, setSavDoc] = useState(null), [demDoc, setDemDoc] = useState(null);
+  useEffect(() => { if (!currentUser) return undefined;
+    const u1 = onSnapshot(SAV_DOC_REF(), s => setSavDoc(s.exists() ? s.data() : {}), e => { console.warn("sav (lecture) :", e && e.message); setSavDoc({}); });
+    const u2 = onSnapshot(SAV_DEM_DOC_REF(), s => setDemDoc(s.exists() ? s.data() : {}), e => { console.warn("savDemandes (lecture) :", e && e.message); setDemDoc({}); });
+    return () => { u1(); u2(); }; }, [currentUser]);
+  const mk = useCallback((R, label, docNow) => {
+    const stamp = () => ({ updatedAt: new Date().toISOString(), updatedBy: authorName || "" });
+    const fail = e => { console.error(e); notify("Erreur lors de l'enregistrement (" + label + ") : " + e.message); return false; };
+    return {
+      put: async (c, id, data) => { try { await setDoc(R(), { [c]: { [id]: data }, ...stamp() }, { merge: true }); const cur = (docNow && docNow[c] && docNow[c][id]) || {}; const gone = Object.keys(cur).filter(k => !(k in data)); if (gone.length) await updateDoc(R(), Object.fromEntries(gone.map(k => [c + "." + id + "." + k, deleteField()]))); return true; } catch (e) { return fail(e); } },
+      del: async (c, id) => { try { await updateDoc(R(), { [c + "." + id]: deleteField(), ...stamp() }); return true; } catch (e) { return fail(e); } },
+      setField: async (k, v) => { try { await setDoc(R(), { [k]: v, ...stamp() }, { merge: true }); return true; } catch (e) { return fail(e); } },
+    };
+  }, [authorName]);
+  const savApi = useMemo(() => mk(SAV_DOC_REF, "SAV", savDoc), [mk, savDoc]);
+  const demApi = useMemo(() => mk(SAV_DEM_DOC_REF, "demandes SAV", demDoc), [mk, demDoc]);
+  return { savDoc, demDoc, savApi, demApi };
+}
+
 // v323 : jalons « Produit » du Cash in (copie réduite) — lus par tout compte connecté, pour l'accueil du responsable produit
 export function useCashinProduit(currentUser) {
   const [doc, setDoc0] = useState(null);

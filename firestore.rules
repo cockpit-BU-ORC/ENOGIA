@@ -65,6 +65,11 @@ service cloud.firestore {
       // v262 : Achats / Appro, même principe (liste « access » du document planning/achats ; v305 : ou rôle sur Achats)
       allow write: if base(id) == 'achats' && (prodTurbAccess(id) || canWrite(id, 'achats'));
 
+      // v326 : SAV / MES — équipe SAV (rôle « SAV / MES » avant l'activation des accès, puis niveau Modifier / Admin sur la page SAV)
+      allow write: if base(id) == 'sav' && (isOwner() || canWrite(id, 'sav') || (signedIn() && !accOn(id) && myRole(id) == 'sav'));
+      // v326 : demandes d'intervention des chefs de projet (et réponses du SAV) : tout compte ENOGIA
+      allow write: if signedIn() && base(id) == 'savDemandes';
+
       // Planning publié, planning initial, journal, sauvegardes, types de retard, pool de turbines : admins
       // (v305 : ou rôle « Admin » sur Planning ou Projets, comme les admins du site)
       allow write: if (isAdmin(id) || lvl(id, 'planning') == 'a' || lvl(id, 'projets') == 'a')
