@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.css": "/ENOGIA/beta/static/css/main.d6a2439c.css",
-    "main.js": "/ENOGIA/beta/static/js/main.01c3e5cb.js",
+    "main.css": "/ENOGIA/beta/static/css/main.ae650f89.css",
+    "main.js": "/ENOGIA/beta/static/js/main.06e61884.js",
     "static/js/130.47d2f6aa.chunk.js": "/ENOGIA/beta/static/js/130.47d2f6aa.chunk.js",
-    "static/js/149.51108e58.chunk.js": "/ENOGIA/beta/static/js/149.51108e58.chunk.js",
-    "static/js/697.e64e3063.chunk.js": "/ENOGIA/beta/static/js/697.e64e3063.chunk.js",
+    "static/js/149.1f61ffbd.chunk.js": "/ENOGIA/beta/static/js/149.1f61ffbd.chunk.js",
+    "static/js/697.9a25e675.chunk.js": "/ENOGIA/beta/static/js/697.9a25e675.chunk.js",
     "static/js/162.bc5491e9.chunk.js": "/ENOGIA/beta/static/js/162.bc5491e9.chunk.js",
     "static/js/371.b5e7f4d0.chunk.js": "/ENOGIA/beta/static/js/371.b5e7f4d0.chunk.js",
     "static/js/574.5d89c1ee.chunk.js": "/ENOGIA/beta/static/js/574.5d89c1ee.chunk.js",
@@ -14,9 +14,9 @@
     "static/js/269.8f6a259c.chunk.js": "/ENOGIA/beta/static/js/269.8f6a259c.chunk.js",
     "static/js/557.e771f510.chunk.js": "/ENOGIA/beta/static/js/557.e771f510.chunk.js",
     "static/js/113.f958e5ed.chunk.js": "/ENOGIA/beta/static/js/113.f958e5ed.chunk.js",
-    "static/js/214.e7ff5c6b.chunk.js": "/ENOGIA/beta/static/js/214.e7ff5c6b.chunk.js",
-    "static/js/151.69429e1c.chunk.js": "/ENOGIA/beta/static/js/151.69429e1c.chunk.js",
-    "static/js/481.772ad47d.chunk.js": "/ENOGIA/beta/static/js/481.772ad47d.chunk.js",
+    "static/js/214.df574102.chunk.js": "/ENOGIA/beta/static/js/214.df574102.chunk.js",
+    "static/js/151.81a0a686.chunk.js": "/ENOGIA/beta/static/js/151.81a0a686.chunk.js",
+    "static/js/481.461c99fe.chunk.js": "/ENOGIA/beta/static/js/481.461c99fe.chunk.js",
     "static/js/649.72ec5b6a.chunk.js": "/ENOGIA/beta/static/js/649.72ec5b6a.chunk.js",
     "static/js/650.9e0b3c58.chunk.js": "/ENOGIA/beta/static/js/650.9e0b3c58.chunk.js",
     "static/js/360.ebe3d1e7.chunk.js": "/ENOGIA/beta/static/js/360.ebe3d1e7.chunk.js",
@@ -24,7 +24,7 @@
     "index.html": "/ENOGIA/beta/index.html"
   },
   "entrypoints": [
-    "static/css/main.d6a2439c.css",
-    "static/js/main.01c3e5cb.js"
+    "static/css/main.ae650f89.css",
+    "static/js/main.06e61884.js"
   ]
 }
