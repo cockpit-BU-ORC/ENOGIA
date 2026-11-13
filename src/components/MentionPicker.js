@@ -64,7 +64,7 @@ export function MentionTextarea({ value, onChange, onKeyDown, options, style, ..
       {list.map((o, i) => { const [a, b] = firstNameSpan(o.name), n = Math.min(q.query.length, b - a); return (
         <div key={o.email} role="option" aria-selected={i === sel} onMouseDown={e => { e.preventDefault(); pick(o); }} onMouseEnter={() => setSel(i)}
           style={{ display: "flex", alignItems: "center", gap: 12, padding: "6px 14px", height: 52, boxSizing: "border-box", cursor: "pointer", background: i === sel ? T.surfaceAlt : "transparent" }}>
-          <span aria-hidden="true" style={{ width: 32, height: 32, borderRadius: "50%", background: personTint(o.name)[0], color: "#fff", fontSize: FZ.sm, fontWeight: 700, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{(o.name.slice(a, a + 1) || "?").toUpperCase()}</span>
+          <span aria-hidden="true" style={{ width: 32, height: 32, borderRadius: "50%", background: personTint(o.name)[0], color: "#fff", fontSize: FZ.sm, fontWeight: 600, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{(o.name.slice(a, a + 1) || "?").toUpperCase()}</span>
           <span style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
             <span style={{ fontSize: FZ.sm, color: T.ink900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.name.slice(0, a)}<b>{o.name.slice(a, a + n)}</b>{o.name.slice(a + n)}</span>
             <span style={{ fontSize: FZ.xs, color: T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.email}</span>
@@ -89,7 +89,7 @@ export function MentionPicker({ text, options, pjs }) {
   const tagged = typedMentions(text, opts || []);
   return (<div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 6 }}>
     {tagged.length > 0 ? <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-      {tagged.map(o => <span key={o.email} title={o.email} style={{ border: "1px solid " + T.violet500, background: T.violet100, color: T.violet600, borderRadius: 999, padding: "1px 9px", fontSize: FZ.xs, fontWeight: 700 }}>@ {o.name}</span>)}
+      {tagged.map(o => <span key={o.email} title={o.email} style={{ border: "1px solid " + T.violet500, background: T.violet100, color: T.violet600, borderRadius: 999, padding: "1px 9px", fontSize: FZ.xs, fontWeight: 600 }}>@ {o.name}</span>)}
       <span style={{ fontSize: FZ.xs, color: T.violet600 }}>{tagged.length > 1 ? "verront" : "verra"} cette demande dans {tagged.length > 1 ? "leur" : "sa"} cloche et pourr{tagged.length > 1 ? "ont" : "a"} la marquer « traitée ».</span>
     </div> : <div style={{ fontSize: FZ.xs, color: T.ink300 }}>Tapez @ pour taguer un collègue.</div>}
     {chefs.map(c => <div key={c.name} style={{ fontSize: FZ.xs, color: c.account ? T.teal600 : T.ink500 }}>

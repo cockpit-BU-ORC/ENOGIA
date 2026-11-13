@@ -28,9 +28,9 @@ export function Answer({ q, a, ctx, sel, targets, onSaveTargets, plain }) {
     <div style={{ display: "flex", gap: 10, alignItems: "flex-start", flexWrap: "wrap" }}>
       <div style={{ flex: "1 1 420px", minWidth: 0 }}>
         <div style={{ fontSize: 12.5, color: T.ink500, fontWeight: 600 }}>{q}</div>
-        <div style={{ fontSize: plain ? 17 : 20, fontWeight: 700, letterSpacing: "-.015em", lineHeight: 1.3, marginTop: 2, color: T.ink900, maxWidth: 920 }}>{a}</div>
+        <div style={{ fontSize: plain ? 17 : 20, fontWeight: 600, letterSpacing: "-.015em", lineHeight: 1.3, marginTop: 2, color: T.ink900, maxWidth: 920 }}>{a}</div>
       </div>
-      {onSaveTargets && <button type="button" onClick={() => setOpen(true)} style={{ minHeight: 30, padding: "0 12px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink700, fontWeight: 700, fontSize: 12.5, cursor: "pointer", fontFamily: T.font }}>Objectifs</button>}
+      {onSaveTargets && <button type="button" onClick={() => setOpen(true)} style={{ minHeight: 30, padding: "0 12px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink700, fontWeight: 600, fontSize: 12.5, cursor: "pointer", fontFamily: T.font }}>Objectifs</button>}
     </div>
     {ctx && ctx.length > 0 && <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>{ctx.map(c => <span key={c} style={{ fontSize: 12, color: T.ink500, border: "1px solid " + T.line, borderRadius: 999, padding: "1px 9px" }}>{c}</span>)}</div>}
     {sel && <div style={{ marginTop: 8 }}><PeriodPicker sel={sel} /></div>}
@@ -50,7 +50,7 @@ export function Bullet({ k, label, v, how, targets, max }) {
       <div style={{ position: "absolute", left: "calc(" + x(t) + "% - 1px)", top: 0, width: 2, height: 18, background: T.ink900 }} />
     </div>
     <div style={{ fontSize: 12.5, color: T.ink700, fontVariantNumeric: "tabular-nums" }}>objectif {d.dir === "min" ? "≥" : "≤"} {fr(t)}{u}</div>
-    <span style={{ display: "inline-flex", marginTop: 4, fontSize: 12, fontWeight: 700, borderRadius: 999, padding: "0 8px", color: ok == null ? T.ink500 : ok ? T.emerald600 : T.red600, background: ok == null ? T.surface : ok ? T.emerald100 : T.red100 }}>{ok == null ? "pas de donnée" : ok ? "✓ tenu" : "✗ écart " + fr(Math.abs(j.gap)) + pts}</span>
+    <span style={{ display: "inline-flex", marginTop: 4, fontSize: 12, fontWeight: 600, borderRadius: 999, padding: "0 8px", color: ok == null ? T.ink500 : ok ? T.emerald600 : T.red600, background: ok == null ? T.surface : ok ? T.emerald100 : T.red100 }}>{ok == null ? "pas de donnée" : ok ? "✓ tenu" : "✗ écart " + fr(Math.abs(j.gap)) + pts}</span>
   </div>);
 }
 // Chiffre sans objectif (contexte)
@@ -59,7 +59,7 @@ const Grid = ({ min = 220, children, style }) => <div style={{ display: "grid", 
 function Card({ title, sub, table, children }) {
   const [tab, setTab] = useState(false);
   return (<section aria-label={title} style={card}>
-    <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><h3 style={{ margin: 0, fontSize: 14.5, fontWeight: 700, color: T.ink900 }}>{title}</h3><span style={{ flex: 1 }} />
+    <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><h3 style={{ margin: 0, fontSize: 14.5, fontWeight: 600, color: T.ink900 }}>{title}</h3><span style={{ flex: 1 }} />
       {table && <button type="button" onClick={() => setTab(v => !v)} style={{ border: "none", background: "transparent", color: T.ink500, fontWeight: 600, fontSize: 12, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2, fontFamily: T.font }}>{tab ? "Voir le graphique" : "Voir en tableau"}</button>}</div>
     {sub && <div style={{ fontSize: 12.5, color: T.ink500, margin: "1px 0 8px" }}>{sub}</div>}
     {tab && table ? <Table {...table} /> : children}
@@ -70,7 +70,7 @@ function Table({ head, rows, right }) {
   return <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse" }}><thead><tr>{head.map((h, i) => <th key={i} style={{ ...th, textAlign: (right || []).includes(i) ? "right" : "left" }}>{h}</th>)}</tr></thead>
     <tbody>{rows.map((r, k) => <tr key={k}>{r.map((c, i) => <td key={i} style={{ ...td, textAlign: (right || []).includes(i) ? "right" : "left" }}>{c}</td>)}</tr>)}</tbody></table></div>;
 }
-const pjCell = (pj, onOpenPj) => <button type="button" onClick={() => onOpenPj && onOpenPj(pj)} style={{ border: "none", background: "transparent", padding: 0, cursor: onOpenPj ? "pointer" : "default", fontFamily: T.fontMono, fontWeight: 700, fontSize: 12.5, color: T.ink900, textDecoration: onOpenPj ? "underline" : "none", textUnderlineOffset: 2 }}>{pj}</button>;
+const pjCell = (pj, onOpenPj) => <button type="button" onClick={() => onOpenPj && onOpenPj(pj)} style={{ border: "none", background: "transparent", padding: 0, cursor: onOpenPj ? "pointer" : "default", fontFamily: T.fontMono, fontWeight: 600, fontSize: 12.5, color: T.ink900, textDecoration: onOpenPj ? "underline" : "none", textUnderlineOffset: 2 }}>{pj}</button>;
 // Barres horizontales triées (une couleur)
 function HBars({ rows, max, fmt, color, onOpenPj }) {
   const M = max || Math.max(1, ...rows.map(r => r.v));
@@ -91,7 +91,7 @@ function LoadCols({ weeks, H = 200 }) {
       {weeks.map(w => { const over = w.cap && w.hours > w.cap; return <div key={w.lab} data-tip={w.lab + " : " + w.hours + " h pour " + w.cap + " h (" + (w.pct == null ? "—" : w.pct + " %") + ")"} style={{ flex: 1, minWidth: 0, height: "100%", position: "relative", display: "flex", justifyContent: "center" }}>
         <div style={{ position: "absolute", bottom: 0, width: "min(24px, 70%)", height: Math.max(1, y(w.hours)), background: over ? T.red500 : T.dvSeq4, borderRadius: "4px 4px 0 0" }} />
         <div style={{ position: "absolute", left: -4, right: -4, bottom: y(w.cap), borderTop: "2px solid " + T.ink900 }} />
-        {over && <div style={{ position: "absolute", bottom: y(w.hours) + 4, fontSize: 11, fontWeight: 700, color: T.ink900, fontVariantNumeric: "tabular-nums" }}>{w.pct} %</div>}
+        {over && <div style={{ position: "absolute", bottom: y(w.hours) + 4, fontSize: 11, fontWeight: 600, color: T.ink900, fontVariantNumeric: "tabular-nums" }}>{w.pct} %</div>}
       </div>; })}
     </div>
     <div style={{ display: "flex", gap: 8, marginTop: 4 }}>{weeks.map(w => <span key={w.lab} style={{ flex: 1, minWidth: 0, textAlign: "center", fontSize: 11.5, color: T.ink500 }}>{w.lab}</span>)}</div>
@@ -130,7 +130,7 @@ function Dumbbell({ rows, onOpenPj }) {
 }
 function Actions({ items, onOpenPj }) {
   return <section aria-label="À faire" style={{ ...card, marginTop: 12 }}>
-    <h3 style={{ margin: "0 0 6px", fontSize: 14.5, fontWeight: 700, color: T.ink900 }}>À faire</h3>
+    <h3 style={{ margin: "0 0 6px", fontSize: 14.5, fontWeight: 600, color: T.ink900 }}>À faire</h3>
     <ol style={{ margin: 0, paddingLeft: 20, color: T.ink700, fontSize: 13.5 }}>{items.map((a, i) => <li key={i} style={{ margin: "3px 0" }}><b style={{ color: T.ink900, fontWeight: 600 }}>{a.b}</b>{a.t ? " " + a.t : ""}{a.pjs && a.pjs.length > 0 && <span style={{ display: "inline-flex", gap: 8, marginLeft: 6, flexWrap: "wrap" }}>{a.pjs.map(p => <span key={p}>{pjCell(p, onOpenPj)}</span>)}</span>}</li>)}</ol>
   </section>;
 }
@@ -149,7 +149,7 @@ export function KpiStory({ tab, rows, driftRows, targets, metrics, saveTargets, 
       <Grid><Bullet k="tenus" v={metrics.tenus} targets={targets} max={100} label={periodLabel ? "Tenus à date · départs promis " + periodLabel : null} /><Bullet k="derive" v={metrics.derive} targets={targets} /><Bullet k="charge" v={metrics.charge} targets={targets} max={160} /><Bullet k="livraisons" v={metrics.livraisons} targets={targets} label={(metrics.months && metrics.months.length > 1 ? "Expédiées par mois · " : "Expédiées · ") + (periodLabel || "mois écoulé")} /></Grid>
       <Grid min={460} style={{ marginTop: 12 }}>
         <Card title={"Les " + s.risk.length + " PJ qui pèsent le plus"} sub="retard du départ sur le planning initial, en jours — triés" table={{ head: ["PJ", "Client", "État", "Retard"], rows: s.risk.map(r => [r.pj, r.nom, r.etat, "+" + r.v + " j"]), right: [3] }}>
-          {s.risk.length ? <HBars rows={s.risk.map(r => ({ k: r.pj, s: r.nom, flag: getPjMeta(r.pj, rows.find(x => x.pj === r.pj)).pays, v: r.v, tip: r.pj + " · " + r.nom + " — " + r.etat + " — départ +" + r.v + " j" }))} fmt={v => "+" + v + " j"} color={T.red500} onOpenPj={onOpenPj} /> : <div style={{ fontSize: 13, color: T.ink500 }}>Aucun PJ ouvert en retard sur son départ initial.</div>}
+          {s.risk.length ? <HBars rows={s.risk.map(r => ({ k: r.pj, s: r.nom, flag: getPjMeta(r.pj, rows.find(x => x.pj === r.pj)).pays, v: r.v, tip: r.pj + " · " + r.nom + " — " + r.etat + " — départ +" + r.v + " j" }))} fmt={v => "+" + v + " j"} color={T.red500} onOpenPj={onOpenPj} /> : <div style={{ fontSize: 13, color: T.ink500 }}>Aucun PJ ouvert en retard sur son départ initial</div>}
         </Card>
         <Card title={"Charge des " + w6.length + " prochaines semaines"} sub="heures planifiées par semaine" table={{ head: ["Semaine", "Heures", "Capacité", "Taux"], rows: w6.map(w => [w.lab, w.hours + " h", w.cap + " h", (w.pct == null ? "—" : w.pct + " %")]), right: [1, 2, 3] }}><LoadCols weeks={w6} /></Card>
       </Grid>
@@ -162,7 +162,7 @@ export function KpiStory({ tab, rows, driftRows, targets, metrics, saveTargets, 
       <Grid><Bullet k="realisation" v={metrics.realisation} targets={targets} max={100} label={"Jalons tenus · " + (periodLabel || "mois écoulé")} /><Bullet k="livraisons" v={metrics.livraisons} targets={targets} label={(metrics.months && metrics.months.length > 1 ? "Expédiées par mois · " : "Expédiées · ") + (periodLabel || "mois écoulé")} /></Grid>
       <Grid min={460} style={{ marginTop: 12 }}>
         <Card title="Départs, tests terminés et arrivées par mois" sub="un groupe par mois · plein = fait · pointillé = prévu" table={{ head: ["Mois", "Départs", "Tests terminés", "Arrivées", "En retard"], rows: b.months.map(m => [m.m + " (" + m.kind + ")", m.d, m.t, m.a, m.late]), right: [1, 2, 3, 4] }}><MonthCols months={b.months} /></Card>
-        <section aria-label="Le mois en une ligne" style={card}><h3 style={{ margin: 0, fontSize: 14.5, fontWeight: 700 }}>Le mois en une ligne</h3><div style={{ fontSize: 12.5, color: T.ink500, margin: "1px 0 8px" }}>notes saisies plus bas, mois par mois</div>
+        <section aria-label="Le mois en une ligne" style={card}><h3 style={{ margin: 0, fontSize: 14.5, fontWeight: 600 }}>Le mois en une ligne</h3><div style={{ fontSize: 12.5, color: T.ink500, margin: "1px 0 8px" }}>notes saisies plus bas, mois par mois</div>
           {b.months.map(m => <div key={m.key} style={{ display: "grid", gridTemplateColumns: "92px 1fr", gap: 8, padding: "6px 0", borderTop: "1px solid " + T.line, fontSize: 13 }}><b>{m.m}</b><span style={{ color: (notes[m.key] || {}).text ? T.ink700 : T.ink500, fontStyle: (notes[m.key] || {}).text ? "normal" : "italic" }}>{(notes[m.key] || {}).text || "pas encore écrite"}</span></div>)}</section>
       </Grid>
       <Actions items={b.actions} onOpenPj={onOpenPj} />
@@ -176,10 +176,10 @@ export function KpiStory({ tab, rows, driftRows, targets, metrics, saveTargets, 
       <section aria-label="Les 8 prochaines semaines" style={{ ...card, overflowX: "auto" }}>
         <div role="table" style={{ display: "grid", gridTemplateColumns: "120px repeat(" + s.cols.length + ", minmax(92px,1fr))", minWidth: 120 + s.cols.length * 92 }}>
           <div style={{ ...cell, color: T.ink500 }} />{s.cols.map((c, i) => <div key={c.lab} role="columnheader" style={{ ...cell, color: T.ink500, fontSize: 12, boxShadow: i === 0 ? "inset 0 2px 0 " + (T.navy700 || T.ink900) : "none" }}>{c.lab}{i === 0 ? " · cette sem." : ""}</div>)}
-          <div style={{ ...cell, fontWeight: 600, color: T.ink700 }}>Charge</div>{s.cols.map(c => { const p = (c.pct || 0) / 100, bg = p > 1 ? T.red500 : p > .85 ? T.dvSeq5 : p > .65 ? T.dvSeq4 : p > .45 ? T.dvSeq3 : T.dvSeq2; return <div key={c.lab} data-tip={c.lab + " : " + c.hours + " h / " + Math.round(c.cap) + " h"} style={{ ...cell, justifyContent: "center", background: bg, color: inkOn(bg), fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{c.pct == null ? "—" : c.pct + " %"}</div>; })}
+          <div style={{ ...cell, fontWeight: 600, color: T.ink700 }}>Charge</div>{s.cols.map(c => { const p = (c.pct || 0) / 100, bg = p > 1 ? T.red500 : p > .85 ? T.dvSeq5 : p > .65 ? T.dvSeq4 : p > .45 ? T.dvSeq3 : T.dvSeq2; return <div key={c.lab} data-tip={c.lab + " : " + c.hours + " h / " + Math.round(c.cap) + " h"} style={{ ...cell, justifyContent: "center", background: bg, color: inkOn(bg), fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{c.pct == null ? "—" : c.pct + " %"}</div>; })}
           <div style={{ ...cell, fontWeight: 600, color: T.ink700 }}>Départs</div>{s.cols.map(c => <div key={c.lab} style={cell}>{pjs(c.dep)}</div>)}
           <div style={{ ...cell, fontWeight: 600, color: T.ink700 }}>Au banc</div>{s.cols.map(c => <div key={c.lab} style={{ ...cell, color: c.banc.length > 2 ? T.red600 : T.ink900 }}>{pjs(c.banc)}</div>)}
-          <div style={{ ...cell, fontWeight: 600, color: T.ink700 }}>À décider</div>{s.cols.map(c => <div key={c.lab} style={{ ...cell, color: T.red600, fontWeight: 700, fontSize: 12 }}>{c.decide.join(" · ") || ""}</div>)}
+          <div style={{ ...cell, fontWeight: 600, color: T.ink700 }}>À décider</div>{s.cols.map(c => <div key={c.lab} style={{ ...cell, color: T.red600, fontWeight: 600, fontSize: 12 }}>{c.decide.join(" · ") || ""}</div>)}
         </div>
         <div style={{ fontSize: 12, color: T.ink500, marginTop: 6 }}>charge en dégradé d'une teinte (plus foncé = plus chargé, rouge = au-dessus de la capacité) · « au banc » = période de tests du planning · plus de 2 machines au banc = conflit</div>
       </section>
@@ -193,10 +193,10 @@ export function KpiStory({ tab, rows, driftRows, targets, metrics, saveTargets, 
       <Grid>{(stepSummary || []).map(x => <Bullet key={x.k} k="tenus" v={x.pct} targets={targets} max={100} label={"Tenus à date · " + x.l.toLowerCase()} how={x.ok + " PJ sur " + x.n + " ont leur « " + x.l.toLowerCase() + " » actuel au plus tard à la date promise."} />)}</Grid>
       <Grid min={460} style={{ marginTop: 12 }}>
         <Card title="Retard moyen par étape" sub="jours de retard moyen des PJ en retard" table={{ head: ["Étape", "Tenus", "Comparés", "En retard", "Retard moyen"], rows: (stepSummary || []).map(x => [x.l, x.ok, x.n, x.late, x.late ? "+" + x.avg + " j" : "—"]), right: [1, 2, 3, 4] }}>
-          {late.length ? <HBars rows={late.map(x => ({ k: x.l, v: x.avg, tip: x.l + " : +" + x.avg + " j en moyenne sur " + x.late + " PJ en retard" }))} fmt={v => "+" + v + " j"} color={T.dv1} /> : <div style={{ fontSize: 13, color: T.ink500 }}>Aucun retard sur la période.</div>}
+          {late.length ? <HBars rows={late.map(x => ({ k: x.l, v: x.avg, tip: x.l + " : +" + x.avg + " j en moyenne sur " + x.late + " PJ en retard" }))} fmt={v => "+" + v + " j"} color={T.dv1} /> : <div style={{ fontSize: 13, color: T.ink500 }}>Aucun retard sur la période</div>}
         </Card>
         <Card title={"« " + d.stepLabel + " » : de la date promise à la date actuelle"} sub="les 8 PJ les plus en retard (étape analysée dans la vue CODIR)" table={{ head: ["PJ", "Retard"], rows: d.dumb.map(r => [r.pj, "+" + r.v + " j"]), right: [1] }}>
-          {d.dumb.length ? <Dumbbell rows={d.dumb} onOpenPj={onOpenPj} /> : <div style={{ fontSize: 13, color: T.ink500 }}>Aucun PJ en retard pour cette étape.</div>}
+          {d.dumb.length ? <Dumbbell rows={d.dumb} onOpenPj={onOpenPj} /> : <div style={{ fontSize: 13, color: T.ink500 }}>Aucun PJ en retard pour cette étape</div>}
         </Card>
       </Grid>
       <Actions items={d.actions} onOpenPj={onOpenPj} />
@@ -222,7 +222,7 @@ export function KpiStory({ tab, rows, driftRows, targets, metrics, saveTargets, 
             <span style={{ position: "relative", height: 18 }}><span style={{ position: "absolute", left: 0, right: 0, top: 4, height: 10, borderRadius: 4, background: T.surfaceAlt }} /><span style={{ position: "absolute", left: 0, width: Math.max(1, x.real) + "%", top: 4, height: 10, borderRadius: 4, background: x.gap < -15 ? T.red500 : T.dvSeq4 }} /><span style={{ position: "absolute", left: "calc(" + x.exp + "% - 1px)", top: 0, width: 2, height: 18, background: T.ink900 }} /></span>
             <span style={{ fontSize: 12.5, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{x.real} % <span style={{ color: x.gap < -15 ? T.red600 : T.ink500, fontWeight: 500 }}>({x.gap >= 0 ? "+" : ""}{x.gap})</span></span>
           </div>)}
-          {!items.length && <div style={{ fontSize: 13, color: T.ink500 }}>Aucun PJ ouvert avec des dates d'arrivée et de départ.</div>}
+          {!items.length && <div style={{ fontSize: 13, color: T.ink500 }}>Aucun PJ ouvert avec des dates d'arrivée et de départ</div>}
         </div></Card></div>
       <Actions items={a.actions} onOpenPj={onOpenPj} />
     </>;
@@ -237,7 +237,7 @@ export function KpiStory({ tab, rows, driftRows, targets, metrics, saveTargets, 
         <label style={{ fontSize: 13, color: T.ink500, display: "inline-flex", gap: 6, alignItems: "center" }}>Machines<select value={ex.scope} onChange={e => setEx({ ...ex, scope: e.target.value })} style={sl}><option value="open">en cours</option><option value="shipped">expédiées</option><option value="all">toutes</option></select></label>
       </div>
       <Card title={ml + " par " + dl} sub={ex.dim === "mois" ? "dans l'ordre des mois" : "barres triées (plus lisibles qu'un camembert pour comparer des tailles)"} table={{ head: [dl.charAt(0).toUpperCase() + dl.slice(1), ml], rows: data.map(d => [d.k, d.v]), right: [1] }}>
-        {data.length ? <HBars rows={data.map(d => ({ k: d.k, flag: ex.dim === "pays" ? d.raw : null, v: d.v }))} fmt={v => String(v)} color={T.dv1} /> : <div style={{ fontSize: 13, color: T.ink500 }}>Aucune donnée pour ce choix.</div>}
+        {data.length ? <HBars rows={data.map(d => ({ k: d.k, flag: ex.dim === "pays" ? d.raw : null, v: d.v }))} fmt={v => String(v)} color={T.dv1} /> : <div style={{ fontSize: 13, color: T.ink500 }}>Aucune donnée pour ce choix</div>}
       </Card>
     </>;
   }

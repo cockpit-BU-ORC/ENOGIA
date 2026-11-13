@@ -406,8 +406,8 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
           <div style={{fontSize:FZ.sm,color:T.ink500,marginTop:2}}>{PAGE_DESC[activeEntry.id]||""}</div>
         </div>
         {!phone&&tab==="fiche"&&<button type="button" className="enogia-btn-ind" onClick={()=>setFocusFiche(v=>!v)} aria-pressed={focusFiche} title={focusFiche?"Réafficher le menu complet et la liste des projets":"Replier le menu et la liste pour laisser toute la place à la fiche"}
-        style={{display:"inline-flex",alignItems:"center",gap:6,height:30,padding:"0 10px",borderRadius:8,border:"1.5px solid "+T.teal500,background:focusFiche?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:focusFiche?(T.mode==="dark"?"#0B1130":"#FFFFFF"):T.teal600,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font,whiteSpace:"nowrap"}}><NavIcon name="sidepanel" size={15}/>{focusFiche?"Afficher les colonnes":"Fiche plein écran"}</button>}
-        {showFilters&&<button type="button" onClick={()=>setFiltersOpen(v=>!v)} aria-expanded={filtersOpen} style={{display:"inline-flex",alignItems:"center",gap:6,height:32,padding:"0 12px",borderRadius:8,border:"1px solid "+(nFilters?T.teal500:T.line),background:nFilters?T.teal100:T.card,color:nFilters?T.teal600:T.ink700,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font}}><NavIcon name="layers" size={14}/>Filtres{nFilters?" · "+nFilters:""}</button>}
+        style={{display:"inline-flex",alignItems:"center",gap:6,height:30,padding:"0 10px",borderRadius:8,border:"1.5px solid "+T.teal500,background:focusFiche?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:focusFiche?(T.mode==="dark"?"#0B1130":"#FFFFFF"):T.teal600,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font,whiteSpace:"nowrap"}}><NavIcon name="sidepanel" size={15}/>{focusFiche?"Afficher les colonnes":"Fiche plein écran"}</button>}
+        {showFilters&&<button type="button" onClick={()=>setFiltersOpen(v=>!v)} aria-expanded={filtersOpen} style={{display:"inline-flex",alignItems:"center",gap:6,height:32,padding:"0 12px",borderRadius:8,border:"1px solid "+(nFilters?T.teal500:T.line),background:nFilters?T.teal100:T.card,color:nFilters?T.teal600:T.ink700,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font}}><NavIcon name="layers" size={14}/>Filtres{nFilters?" · "+nFilters:""}</button>}
         <button type="button" onClick={()=>setPalOpen(true)} aria-label="Aller à… (Ctrl K)" style={{display:"inline-flex",alignItems:"center",gap:8,height:32,padding:"0 12px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink500,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font}}><NavIcon name="search" size={14}/>Aller à…<kbd style={{fontFamily:T.fontMono,fontSize:11,color:T.ink500,border:"1px solid "+T.line,borderRadius:4,padding:"0 4px"}}>Ctrl K</kbd></button>
       </div>
       {subItems&&<PlanSwitch label={"Sous-pages : "+((group==="fiche"||group==="orc")?"Projets":activeEntry.label)} value={subValue} onGo={onSub} views={subItems.map(([id,l])=>({id,l}))} tools={[]}/>}
@@ -427,7 +427,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
         le contenu détaillé d'avant reste dessous comme « détail » */}
     {kpi&&tab==="derives"&&<KpiStory tab={kpiTab} rows={fk} driftRows={driftRows} targets={kpiTg} metrics={{...kpiM,charge:w4h}} saveTargets={me&&saveProfiles?(o=>saveProfiles({...(profiles||{}),kpiTargets:o})):null} sel={kpiSel} periodLabel={perLab} scopeLabel={codirScope==="all"?"toutes les machines":codirScope==="shipped"?"machines expédiées":"machines en cours"}
       weeks6={kpiWeeks(6)} weeks8={kpiWeeks(8)} weeks12={kpiWeeks(12)} notes={(profiles&&profiles.monthNotes)||{}} stepSummary={stepSummary} comparable={comparable} kpiStep={kpiStep} stepLabels={STEP_LABELS} progress={progress||{}} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}}/>}
-    {kpi&&tab==="derives"&&kpiTab!=="synthese"&&<div style={{fontSize:12,fontWeight:700,color:T.ink500,margin:"4px 0 8px",display:"flex",alignItems:"center",gap:8}}>Détail<span style={{flex:1,height:1,background:T.line}}/>{(kpiTab==="derives"||kpiTab==="bilan")&&<button type="button" aria-expanded={kpiDetail} onClick={()=>setKpiDetail(v=>!v)} className="e-btn e-btn-sec" style={{...btn("sec","sm")}}>{kpiDetail?"Replier le détail":kpiTab==="derives"?"Voir le détail par PJ et par étape":"Voir les jalons de chaque mois"}</button>}</div>}
+    {kpi&&tab==="derives"&&kpiTab!=="synthese"&&<div style={{fontSize:12,fontWeight:600,color:T.ink500,margin:"4px 0 8px",display:"flex",alignItems:"center",gap:8}}>Détail<span style={{flex:1,height:1,background:T.line}}/>{(kpiTab==="derives"||kpiTab==="bilan")&&<button type="button" aria-expanded={kpiDetail} onClick={()=>setKpiDetail(v=>!v)} className="e-btn e-btn-sec" style={{...btn("sec","sm")}}>{kpiDetail?"Replier le détail":kpiTab==="derives"?"Voir le détail par PJ et par étape":"Voir les jalons de chaque mois"}</button>}</div>}
     {/* v281 : l'ancien tableau de pilotage (KpiPilotage) est remplacé par le récit de la Synthèse ci-dessus */}
 
     {/* v274 : bilan mensuel — réalisé des deux derniers mois, objectifs du mois en cours et du suivant */}
@@ -517,14 +517,14 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
 
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,380px),1fr))",gap:16}}>
             <div style={{background:T.surface,borderRadius:12,padding:12,overflow:"auto",maxHeight:380}}>
-              <div style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,marginBottom:8}}>Détail par PJ</div>
+              <div style={{fontSize:FZ.sm,fontWeight:600,color:T.ink900,marginBottom:8}}>Détail par PJ</div>
               <table style={{width:"100%",borderCollapse:"collapse",fontSize:FZ.sm}}>
                 <thead><tr style={{borderBottom:"1px solid "+T.line,position:"sticky",top:0,background:T.surface}}>
                   {["N° PJ","Gamme","Atelier","Autom"].map(h=><th key={h} style={{fontFamily:T.font,fontSize:12,fontWeight:500,color:T.ink500,padding:"6px 8px",textAlign:h==="N° PJ"||h==="Gamme"?"left":"right"}}>{h}</th>)}
                 </tr></thead>
                 <tbody>{workloadByPJ.map(r=>(
                   <tr key={r.pj} style={{borderBottom:"1px solid "+T.surfaceAlt}}>
-                    <td style={{padding:"8px 8px",fontWeight:700,color:T.teal600}}>{r.pj} <SerieTag pj={r.pj}/></td>
+                    <td style={{padding:"8px 8px",fontWeight:600,color:T.teal600}}>{r.pj} <SerieTag pj={r.pj}/></td>
                     <td style={{padding:"8px 8px",color:T.ink500}}>{r.gamme}</td>
                     <td style={{padding:"8px 8px",textAlign:"right",fontWeight:600,color:T.ink900,fontVariantNumeric:"tabular-nums"}}>{r.heuresAtelier} h</td>
                     <td style={{padding:"8px 8px",textAlign:"right",fontWeight:600,color:T.ink700,fontVariantNumeric:"tabular-nums"}}>{r.heuresAutom} h</td>
@@ -537,7 +537,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
               <div style={{background:T.surface,borderRadius:12,padding:12}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8}}>
                   <div>
-                    <div style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,marginBottom:4}}>Taux de saturation hebdomadaire</div>
+                    <div style={{fontSize:FZ.sm,fontWeight:600,color:T.ink900,marginBottom:4}}>Taux de saturation hebdomadaire</div>
                     <div style={{fontSize:FZ.xs,color:T.ink300,marginBottom:8}}>Atelier (capacité {CAPA_ATELIER_SEM}h/sem.) vs Autom (capacité {CAPA_AUTOM_SEM}h/sem.)</div>
                   </div>
                   <PeriodFilter yearsAvailable={yearsInData} year={satYear} setYear={setSatYear} month={satMonth} setMonth={setSatMonth}/>
@@ -558,7 +558,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
               <div style={{background:T.surface,borderRadius:12,padding:12}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8}}>
                   <div>
-                    <div style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,marginBottom:4}}>Heures de travail hebdomadaires</div>
+                    <div style={{fontSize:FZ.sm,fontWeight:600,color:T.ink900,marginBottom:4}}>Heures de travail hebdomadaires</div>
                     <div style={{fontSize:FZ.xs,color:T.ink300,marginBottom:8}}>Volume brut d'heures Atelier et Autom, semaine par semaine</div>
                   </div>
                   <PeriodFilter yearsAvailable={yearsInData} year={satYear} setYear={setSatYear} month={satMonth} setMonth={setSatMonth}/>
@@ -578,7 +578,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
             </>}
           </div>
         </div>}
-      {fd.length===0&&<EmptyNote>Aucune donnée pour la sélection.</EmptyNote>}
+      {fd.length===0&&<EmptyNote>Aucune donnée pour la sélection</EmptyNote>}
     </div>}
 
     {pendingAdd&&<InitialAddReview parsed={pendingAdd} initialData={initialData} busy={initialImporting} onCancel={()=>setPendingAdd(null)} onConfirm={async(rows,fixRows)=>{await onInitialAdd(rows,fixRows);setPendingAdd(null);}}/>}
@@ -628,7 +628,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
           <KpiRow items={[[totalDelayDays+"j","Retard cumulé généré ("+STEP_LABELS[kpiStep]+")",T.red500],[totalGainDays+"j","Avance cumulée gagnée",T.emerald600],[reliabilityRate==null?"—":reliabilityRate+"%","PJ exactement à la date promise (écart 0)",T.teal500],[dureeCompare.ecart==null?"—":(dureeCompare.ecart>0?"+":"")+dureeCompare.ecart+"j","Écart durée moy. production",dureeCompare.ecart>0?T.red500:T.emerald600]]} min={170}/>
 
           {promiseVsReality.length>0&&<div style={{background:T.surface,borderRadius:12,padding:12,marginBottom:14}}>
-            <div style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,marginBottom:8}}>{STEP_LABELS[kpiStep]} promis (initial) vs maintenus dans le mois (révisé)</div>
+            <div style={{fontSize:FZ.sm,fontWeight:600,color:T.ink900,marginBottom:8}}>{STEP_LABELS[kpiStep]} promis (initial) vs maintenus dans le mois (révisé)</div>
             <ResponsiveContainer width="100%" height={170}>
               <LineChart data={promiseVsReality}>
                 <CartesianGrid vertical={false} stroke={T.line} strokeOpacity={0.7}/>
@@ -643,7 +643,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
           </div>}
 
           {pjCompareChart.length>0&&<div style={{background:T.surface,borderRadius:12,padding:12,marginBottom:12,maxHeight:460,overflowY:"auto"}}>
-            <div style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,marginBottom:4}}>Date de {STEP_LABELS[kpiStep].toLowerCase()} par PJ — Initial vs Révisé</div>
+            <div style={{fontSize:FZ.sm,fontWeight:600,color:T.ink900,marginBottom:4}}>Date de {STEP_LABELS[kpiStep].toLowerCase()} par PJ — Initial vs Révisé</div>
             <div style={{fontSize:FZ.xs,color:T.ink300,marginBottom:12}}>Chaque ligne relie la date promise à la date réelle — la longueur et la couleur indiquent l'ampleur du glissement</div>
             {(()=>{
               const rowHd=20,labelW=78,leftPad=20,rightPad=20,topPad=24,bottomPad=4; // v275 : 34 → 20 px par PJ (cadran trop haut)
@@ -701,13 +701,13 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
 
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,380px),1fr))",gap:12,marginBottom:14}}>
             {driftBuckets.length>0&&<div style={{background:T.surface,borderRadius:12,padding:12}}>
-              <div style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,marginBottom:8}}>Répartition par sévérité du retard</div>
+              <div style={{fontSize:FZ.sm,fontWeight:600,color:T.ink900,marginBottom:8}}>Répartition par sévérité du retard</div>
               <PieBlock data={driftBuckets.filter(d=>d.n>0).map(d=>({name:d.label,value:d.n,color:d.c}))} unit=" PJ" size={120}/>
               <div style={{fontSize:12,color:T.ink500,marginTop:4}}>{STEP_LABELS[kpiStep]} · {codirScope==="all"?"toutes les machines":codirScope==="shipped"?"machines expédiées":"machines en cours"} ({stepDeltas.length})</div>
             </div>}
 
             {trajectory.some(t=>t.moyenne!=null)&&<div style={{background:T.surface,borderRadius:12,padding:12}}>
-              <div style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,marginBottom:8}}>Trajectoire de la dérive le long de la chaîne</div>
+              <div style={{fontSize:FZ.sm,fontWeight:600,color:T.ink900,marginBottom:8}}>Trajectoire de la dérive le long de la chaîne</div>
               <div style={{fontSize:FZ.xs,color:T.ink300,marginBottom:6}}>Le retard s'aggrave-t-il ou se résorbe-t-il entre l'arrivée et le départ ?</div>
               <ResponsiveContainer width="100%" height={150}>
                 <LineChart data={trajectory}>
@@ -721,12 +721,12 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
             </div>}
 
             {dureeCompare.rows.length>0&&<div style={{background:T.surface,borderRadius:12,padding:12}}>
-              <div style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,marginBottom:4}}>Durée de production : initial vs révisé</div>
+              <div style={{fontSize:FZ.sm,fontWeight:600,color:T.ink900,marginBottom:4}}>Durée de production : initial vs révisé</div>
               <div style={{fontSize:FZ.xs,color:T.ink300,marginBottom:8}}>Moyenne sur le portefeuille comparable (Arrivée → Départ)</div>
               <div style={{display:"flex",gap:20,alignItems:"baseline"}}>
-                <div><div style={{fontFamily:T.fontDisplay,fontSize:FZ.xl,fontWeight:700,color:T.ink500}}>{dureeCompare.avgIni}j</div><div style={{fontSize:FZ.xs,color:T.ink300}}>Initial</div></div>
+                <div><div style={{fontFamily:T.fontDisplay,fontSize:FZ.xl,fontWeight:600,color:T.ink500}}>{dureeCompare.avgIni}j</div><div style={{fontSize:FZ.xs,color:T.ink300}}>Initial</div></div>
                 <div style={{fontSize:FZ.lg,color:T.ink300}}>→</div>
-                <div><div style={{fontFamily:T.fontDisplay,fontSize:FZ.xl,fontWeight:700,color:dureeCompare.ecart>0?T.red500:T.emerald600}}>{dureeCompare.avgRev}j</div><div style={{fontSize:FZ.xs,color:T.ink300}}>Révisé</div></div>
+                <div><div style={{fontFamily:T.fontDisplay,fontSize:FZ.xl,fontWeight:600,color:dureeCompare.ecart>0?T.red500:T.emerald600}}>{dureeCompare.avgRev}j</div><div style={{fontSize:FZ.xs,color:T.ink300}}>Révisé</div></div>
               </div>
             </div>}
           </div>
@@ -736,7 +736,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
           <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap",marginBottom:8}}><b style={{fontSize:FZ.md,color:T.ink900}}>Jalons par mois</b><span style={{fontSize:12,color:T.ink500}}>12 mois (5 passés, le mois en cours, 6 à venir) · gris : planning initial · couleur : planning actuel</span></div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,300px),1fr))",gap:12}}>
             {monthsBy.map(g=><div key={g.k} style={{background:T.surface,borderRadius:12,padding:"8px 10px"}}>
-              <div style={{fontSize:12.5,fontWeight:700,color:T.ink900,marginBottom:2}}>{g.k==="arrivee"?"Arrivées":g.k==="tests"?"Débuts de tests":g.k==="finProd"?"Fins de production":"Départs"} par mois <span style={{fontWeight:400,color:T.ink500}}>· {g.data.reduce((a,b)=>a+b.revise,0)} au total</span></div>
+              <div style={{fontSize:12.5,fontWeight:600,color:T.ink900,marginBottom:2}}>{g.k==="arrivee"?"Arrivées":g.k==="tests"?"Débuts de tests":g.k==="finProd"?"Fins de production":"Départs"} par mois <span style={{fontWeight:400,color:T.ink500}}>· {g.data.reduce((a,b)=>a+b.revise,0)} au total</span></div>
               <ResponsiveContainer width="100%" height={130}>
                 <BarChart data={g.data} barGap={1} margin={{top:6,right:4,left:-26,bottom:0}}>
                   <CartesianGrid vertical={false} stroke={T.line} strokeOpacity={0.7}/>
@@ -809,10 +809,10 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
           <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:8}}>Top 5 dérives — {STEP_LABELS[kpiStep]} (vs planning initial)</div>
           {worstDrifts.map(r=>{const d=r[kpiStep].delta;const c=d>0?T.red500:d<0?T.emerald600:T.ink500;return(
             <div key={r.pj} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:"1px solid "+T.surface}}>
-              <span style={{fontWeight:700,color:T.teal600,fontSize:FZ.sm,minWidth:85}}><PjPlate pj={r.pj}/><SerieTag pj={r.pj} style={{marginLeft:7}}/></span>
+              <span style={{fontWeight:600,color:T.teal600,fontSize:FZ.sm,minWidth:85}}><PjPlate pj={r.pj}/><SerieTag pj={r.pj} style={{marginLeft:7}}/></span>
               <span style={{color:T.ink300,fontSize:FZ.xs,minWidth:50}}>{r.gamme}</span>
               <span style={{fontSize:FZ.sm,color:T.ink500}}>{fmt(r[kpiStep].ini?new Date(r[kpiStep].ini):null)} → {fmt(r[kpiStep].rev?new Date(r[kpiStep].rev):null)}</span>
-              <span style={{marginLeft:"auto",fontWeight:800,fontSize:FZ.md,color:c}}>{d>0?"+":""}{d}j</span>
+              <span style={{marginLeft:"auto",fontWeight:600,fontSize:FZ.md,color:c}}>{d>0?"+":""}{d}j</span>
             </div>
           );})}
         </div>}
@@ -821,15 +821,15 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
           <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,padding:"16px 16px 0"}}>Détail par PJ — Initial vs Révisé</div>
           <table style={{width:"100%",borderCollapse:"collapse",marginTop:10,tableLayout:"auto"}}>
             <thead><tr style={{borderBottom:"1px solid "+T.line}}>
-              {["N° PJ","Gamme","Arrivée","Δ","Tests","Δ","Fin prod","Δ","Départ","Δ"].map((h,i)=><th key={i} style={{padding:"8px 12px",textAlign:"left",fontWeight:700,color:T.ink500,fontSize:FZ.sm,whiteSpace:"nowrap",letterSpacing:".03em"}}>{h}</th>)}
+              {["N° PJ","Gamme","Arrivée","Δ","Tests","Δ","Fin prod","Δ","Départ","Δ"].map((h,i)=><th key={i} style={{padding:"8px 12px",textAlign:"left",fontWeight:600,color:T.ink500,fontSize:FZ.sm,whiteSpace:"nowrap",letterSpacing:".03em"}}>{h}</th>)}
             </tr></thead>
             <tbody>{driftRows.map((r,i)=>(
               <tr key={i} style={{borderBottom:"1px solid "+T.surface,background:r.hasInitial?T.card:T.surface}}>
-                <td style={{padding:"8px 12px",fontWeight:700,color:T.teal600,fontSize:FZ.md,whiteSpace:"nowrap"}}>{r.pj} <SerieTag pj={r.pj} size={11}/></td>
+                <td style={{padding:"8px 12px",fontWeight:600,color:T.teal600,fontSize:FZ.md,whiteSpace:"nowrap"}}>{r.pj} <SerieTag pj={r.pj} size={11}/></td>
                 <td style={{padding:"8px 12px",color:T.ink500,fontSize:FZ.md,whiteSpace:"nowrap"}}>{r.gamme}</td>
                 {["arrivee","tests","finProd","depart"].map(k=>{const c=r[k];const d=c.delta;const col=d==null?T.ink300:d>0?T.red500:d<0?T.emerald600:T.ink500;return(<React.Fragment key={k}>
                   <td style={{padding:"8px 12px",fontSize:FZ.md,color:T.ink700,whiteSpace:"nowrap"}}>{c.rev?fmt(new Date(c.rev)):"—"}</td>
-                  <td style={{padding:"8px 12px",fontSize:FZ.md,fontWeight:700,color:col,whiteSpace:"nowrap",textAlign:"right",fontVariantNumeric:"tabular-nums"}}>{d==null?"—":(d>0?"+":"")+d+" j"}</td>
+                  <td style={{padding:"8px 12px",fontSize:FZ.md,fontWeight:600,color:col,whiteSpace:"nowrap",textAlign:"right",fontVariantNumeric:"tabular-nums"}}>{d==null?"—":(d>0?"+":"")+d+" j"}</td>
                 </React.Fragment>);})}
               </tr>
             ))}</tbody>
@@ -853,7 +853,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
       <ManagerAccessManager managerEmails={managerEmails} setManagerEmails={setManagerEmails} currentUserEmail={currentUserEmail}/>
       {/* Nom du build : réservé au propriétaire (demandé : « uniquement visible par moi, dans l'onglet manager »). */}
       {buildVersion&&<div style={{...CARD,padding:"8px 12px",marginTop:14,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-        <span style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>Version du site</span>
+        <span style={{fontFamily:T.font,fontSize:12,fontWeight:600,color:T.accentInk}}>Version du site</span>
         <span style={{fontFamily:"monospace",fontSize:FZ.xs,fontWeight:600,color:T.ink700,background:T.ink100,borderRadius:8,padding:"3px 8px"}}>build {buildVersion}</span>
       </div>}
     </>}
@@ -863,7 +863,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
       <div style={{display:"inline-flex",alignItems:"center",gap:8,padding:"4px 4px 4px 12px",border:"1px solid "+(hasInitial?T.line:T.amber500),borderRadius:12,background:hasInitial?T.card:T.amber100}}>
         <span style={{color:hasInitial?T.teal600:T.amber600,display:"inline-flex"}}><NavIcon name={hasInitial?"pin":"warning"} size={13}/></span>
         <div style={{lineHeight:1.25}}>
-          <div style={{fontSize:FZ.xs,fontWeight:700,color:T.ink900}}>Planning initial</div>
+          <div style={{fontSize:FZ.xs,fontWeight:600,color:T.ink900}}>Planning initial</div>
           <div style={{fontSize:FZ.xs,color:hasInitial?T.ink500:T.amber600}}>{hasInitial?initialData.length+" unités"+(lastInitialImport?" · "+lastInitialImport:" · figé")+(lastInitialAdd?" · ajout "+lastInitialAdd:""):"absent — dérives indisponibles"}</div>
         </div>
       </div>
@@ -908,17 +908,17 @@ function ManagerAccessManager({managerEmails,setManagerEmails,currentUserEmail})
       <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
         {managerEmails.map(email=>(
           <div key={email} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:T.surface,borderRadius:8,padding:"8px 12px"}}>
-            <span style={{fontSize:FZ.sm,color:T.ink700,fontWeight:600}}>{email}{email===currentUserEmail&&<span style={{marginLeft:8,fontSize:FZ.xs,color:T.teal600,background:T.teal100,borderRadius:4,padding:"1px 8px",fontWeight:700}}>vous</span>}</span>
+            <span style={{fontSize:FZ.sm,color:T.ink700,fontWeight:600}}>{email}{email===currentUserEmail&&<span style={{marginLeft:8,fontSize:FZ.xs,color:T.teal600,background:T.teal100,borderRadius:4,padding:"1px 8px",fontWeight:600}}>vous</span>}</span>
             <button onClick={()=>removeEmail(email)} title="Retirer" style={{background:"none",border:"none",color:T.ink300,cursor:"pointer",fontSize:FZ.md,padding:0}}><NavIcon name="close" size={11}/></button>
           </div>
         ))}
-        {managerEmails.length===0&&<div style={{color:T.ink300,fontSize:FZ.sm,textAlign:"center",padding:"8px 0"}}>Aucun email pour l'instant.</div>}
+        {managerEmails.length===0&&<div style={{color:T.ink300,fontSize:FZ.sm,textAlign:"center",padding:"8px 0"}}>Aucun email pour l'instant</div>}
       </div>
 
       <div style={{display:"flex",gap:8}}>
         <input type="email" value={newEmail} onChange={e=>{setNewEmail(e.target.value);setErr("");}} onKeyDown={e=>{if(e.key==="Enter")addEmail();}}
           placeholder="prenom.nom@enogia.com" style={{flex:1,padding:"8px 12px",borderRadius:8,border:"1px solid "+(err?T.red500:T.line),fontSize:FZ.sm,fontFamily:T.font,color:T.ink700}}/>
-        <button onClick={addEmail} disabled={!newEmail.trim()} style={{padding:"8px 16px",borderRadius:8,border:"none",background:newEmail.trim()?T.teal500:T.surfaceAlt,color:newEmail.trim()?"#fff":T.ink300,fontSize:FZ.sm,fontWeight:700,cursor:newEmail.trim()?"pointer":"default",whiteSpace:"nowrap"}}>Ajouter</button>
+        <button onClick={addEmail} disabled={!newEmail.trim()} style={{padding:"8px 16px",borderRadius:8,border:"none",background:newEmail.trim()?T.teal500:T.surfaceAlt,color:newEmail.trim()?"#fff":T.ink300,fontSize:FZ.sm,fontWeight:600,cursor:newEmail.trim()?"pointer":"default",whiteSpace:"nowrap"}}>Ajouter</button>
       </div>
       {err&&<div style={{fontSize:FZ.sm,color:T.red500,marginTop:8}}>{err}</div>}
     </div>
@@ -948,7 +948,7 @@ export function ClosurePeriodsManager({closurePeriods,setClosurePeriods}){
     {closurePeriods.length>0&&<div style={{marginBottom:14}}>
       {closurePeriods.map((p,i)=>(
         <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 0",borderBottom:"1px solid "+T.surface}}>
-          <span style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,minWidth:120}}>{p.label}</span>
+          <span style={{fontSize:FZ.sm,fontWeight:600,color:T.ink900,minWidth:120}}>{p.label}</span>
           <span style={{fontSize:FZ.sm,color:T.ink500}}>{fmt(new Date(p.start))} → {fmt(new Date(p.end))}</span>
           <button onClick={()=>removePeriod(i)} style={{marginLeft:"auto",padding:"6px 12px",borderRadius:8,border:"none",background:T.surface,boxShadow:T.outline,color:T.red500,fontSize:FZ.sm,fontWeight:600,cursor:"pointer"}}><NavIcon name="close" size={11}/> Retirer</button>
         </div>
@@ -967,7 +967,7 @@ export function ClosurePeriodsManager({closurePeriods,setClosurePeriods}){
         <label style={{fontSize:FZ.xs,color:T.ink500,fontWeight:600,display:"block",marginBottom:4}}>Au</label>
         <input type="date" value={newEnd} onChange={e=>setNewEnd(e.target.value)} style={{padding:"8px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font}}/>
       </div>
-      <button onClick={addPeriod} disabled={!newStart||!newEnd} style={{padding:"8px 16px",borderRadius:8,border:"none",background:newStart&&newEnd?T.teal500:T.surfaceAlt,color:newStart&&newEnd?"#fff":T.ink300,fontSize:FZ.sm,fontWeight:700,cursor:newStart&&newEnd?"pointer":"default"}}>+ Ajouter</button>
+      <button onClick={addPeriod} disabled={!newStart||!newEnd} style={{padding:"8px 16px",borderRadius:8,border:"none",background:newStart&&newEnd?T.teal500:T.surfaceAlt,color:newStart&&newEnd?"#fff":T.ink300,fontSize:FZ.sm,fontWeight:600,cursor:newStart&&newEnd?"pointer":"default"}}>+ Ajouter</button>
     </div>
   </div>);
 }
@@ -979,12 +979,12 @@ function PlanLoadCard({weeks}){
   const wk=d=>{const x=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const n=x.getUTCDay()||7;x.setUTCDate(x.getUTCDate()+4-n);const y=new Date(Date.UTC(x.getUTCFullYear(),0,1));return Math.ceil(((x-y)/86400000+1)/7);};
   const over=weeks.filter(w=>w.hours>w.cap+0.5).length;
   return(<section aria-label="Charge d'après le planificateur" style={{background:T.card,border:"1px solid "+T.line,borderRadius:12,padding:"12px 14px"}}>
-    <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap",marginBottom:10}}><h3 style={{margin:0,fontSize:FZ.md,fontWeight:700,color:T.ink900}}>Charge atelier — 12 semaines</h3><span style={{fontSize:12,color:T.ink500}}>d'après le planificateur · trait = capacité de la semaine</span><span style={{marginLeft:"auto",fontSize:12.5,fontWeight:700,color:over?T.red500:T.emerald600}}>{over?over+" semaine"+(over>1?"s":"")+" en surcharge":"aucune surcharge"}</span></div>
+    <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap",marginBottom:10}}><h3 style={{margin:0,fontSize:FZ.md,fontWeight:600,color:T.ink900}}>Charge atelier — 12 semaines</h3><span style={{fontSize:12,color:T.ink500}}>d'après le planificateur · trait = capacité de la semaine</span><span style={{marginLeft:"auto",fontSize:12.5,fontWeight:600,color:over?T.red500:T.emerald600}}>{over?over+" semaine"+(over>1?"s":"")+" en surcharge":"aucune surcharge"}</span></div>
     <div role="img" aria-label={weeks.map(w=>"S"+wk(w.a)+" "+w.hours+" h sur "+Math.round(w.cap)).join(", ")} style={{display:"flex",alignItems:"flex-end",gap:6,height:H,borderBottom:"1px solid "+T.line}}>
       {weeks.map(w=>{const h=Math.round(w.hours/maxH*H),c=Math.round(w.cap/maxH*H),o=w.hours>w.cap+0.5;return(<div key={w.key} title={"S"+wk(w.a)+" : "+w.hours+" h / "+Math.round(w.cap)+" h"} style={{flex:1,position:"relative",height:"100%",minWidth:0}}>
         <div style={{position:"absolute",left:0,right:0,bottom:0,height:Math.max(1,h),background:o?T.red500:stageSoft().production.solid,borderRadius:"2px 2px 0 0"}}/>
         <div style={{position:"absolute",left:-2,right:-2,bottom:c,borderTop:"2px dashed "+T.ink500}}/>
-        <div style={{position:"absolute",left:0,right:0,bottom:Math.max(h,c)+4,textAlign:"center",fontSize:11,fontWeight:700,color:o?T.red500:T.ink700,fontVariantNumeric:"tabular-nums"}}>{w.hours}</div>
+        <div style={{position:"absolute",left:0,right:0,bottom:Math.max(h,c)+4,textAlign:"center",fontSize:11,fontWeight:600,color:o?T.red500:T.ink700,fontVariantNumeric:"tabular-nums"}}>{w.hours}</div>
       </div>);})}
     </div>
     <div style={{display:"flex",gap:6,marginTop:4}}>{weeks.map(w=><span key={w.key} style={{flex:1,textAlign:"center",fontSize:11,color:T.ink500}}>S{wk(w.a)}</span>)}</div>

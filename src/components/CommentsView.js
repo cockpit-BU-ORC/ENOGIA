@@ -104,7 +104,7 @@ export function CommentsView({ data, comments, addComment, addCommentMulti, dele
     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
       <span style={{ fontSize: FZ.sm, color: T.ink500 }}>{seeAll ? "Toutes les machines, et en premier les fils où l'on vous attend." : "Vos PJ et les fils où l'on vous cite."}</span>
       {pinOk && <button type="button" aria-pressed={hidePrivate} onClick={() => { const v = !hidePrivate; setHidePrivate(v); lsSet("enogia_cmtHidePrivate", v ? "1" : "0"); }} title="Pour un partage d'écran"
-        style={{ marginLeft: "auto", minHeight: 28, padding: "0 10px", borderRadius: 8, border: "1px solid " + (hidePrivate ? T.amber500 : T.line), background: hidePrivate ? T.amber100 : "transparent", color: hidePrivate ? T.amber600 : T.ink500, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>{hidePrivate ? "Privés masqués" : "Masquer les privés"}</button>}
+        style={{ marginLeft: "auto", minHeight: 28, padding: "0 10px", borderRadius: 8, border: "1px solid " + (hidePrivate ? T.amber500 : T.line), background: hidePrivate ? T.amber100 : "transparent", color: hidePrivate ? T.amber600 : T.ink500, fontSize: FZ.xs, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>{hidePrivate ? "Privés masqués" : "Masquer les privés"}</button>}
     </div>
     {narrow ? (showList || !sel ? listCol : thread) :
       <div style={{ display: "grid", gridTemplateColumns: "minmax(260px, 340px) minmax(0, 1fr)", gap: 12, height: "calc(100dvh - 210px)", minHeight: 480 }}>{listCol}{thread}</div>}
@@ -177,7 +177,7 @@ function Thread({ pj, meta, list, seePrivate, pinOk, me, data, myPjs, seeAll, au
               <CommentMarks c={c} pj={pj} idx={idx} me={me} nameOf={nameOf} resolveComment={resolveComment} />
               <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                 <Reactions c={c} pj={pj} idx={idx} />
-                <button type="button" onClick={() => reply(c)} className="e-hov-ink" style={{ marginTop: 6, minHeight: 26, padding: "0 8px", border: "none", background: "transparent", color: T.ink500, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font, "--e-hov-ink": T.ink900 }}>Répondre</button>
+                <button type="button" onClick={() => reply(c)} className="e-hov-ink" style={{ marginTop: 6, minHeight: 26, padding: "0 8px", border: "none", background: "transparent", color: T.ink500, fontSize: FZ.xs, fontWeight: 600, cursor: "pointer", fontFamily: T.font, "--e-hov-ink": T.ink900 }}>Répondre</button>
                 {pinOk && <button type="button" onClick={() => del(idx)} aria-label="Supprimer ce commentaire" title="Supprimer" className="e-hov-ink" style={{ marginTop: 6, minHeight: 26, minWidth: 26, border: "none", background: "transparent", color: T.ink300, cursor: "pointer", "--e-hov-ink": T.red600 }}><NavIcon name="close" size={12} /></button>}
               </div>
             </div>

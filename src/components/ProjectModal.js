@@ -88,7 +88,7 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
         {r.gamme&&<span style={{fontFamily:T.fontLabel,fontSize:12,fontWeight:600,color:T.ink700,border:"1px solid "+T.line,borderRadius:8,padding:"1px 7px"}}>{r.gamme}</span>}
         {!editingMeta&&meta.nomProjet&&meta.nomProjet!=="—"&&<span style={{fontFamily:T.fontDisplay,fontSize:20,fontWeight:600,letterSpacing:"-.01em",color:T.ink900,minWidth:0,lineHeight:1.15,flex:"1 1 140px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} title={meta.nomProjet}>{meta.nomProjet}</span>}
         <span style={{display:"inline-flex",gap:6,alignItems:"center",marginLeft:"auto",flexShrink:0}}>
-          {!embedded&&<button onClick={()=>setDetailMode(detailMode==="popup"?"panel":"popup")} title={detailMode==="popup"?"Afficher les fiches dans un volet à droite":"Afficher les fiches dans une fenêtre centrale"} aria-label={detailMode==="popup"?"Passer en volet latéral":"Passer en pop-up central"} style={{background:T.panel,border:"none",borderRadius:8,height:30,padding:"0 9px",fontSize:FZ.xs,fontWeight:700,cursor:"pointer",color:T.ink700,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font}}><NavIcon name={detailMode==="popup"?"sidepanel":"popup"} size={13}/>{detailMode==="popup"?"Volet":"Pop-up"}</button>}
+          {!embedded&&<button onClick={()=>setDetailMode(detailMode==="popup"?"panel":"popup")} title={detailMode==="popup"?"Afficher les fiches dans un volet à droite":"Afficher les fiches dans une fenêtre centrale"} aria-label={detailMode==="popup"?"Passer en volet latéral":"Passer en pop-up central"} style={{background:T.panel,border:"none",borderRadius:8,height:30,padding:"0 9px",fontSize:FZ.xs,fontWeight:600,cursor:"pointer",color:T.ink700,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font}}><NavIcon name={detailMode==="popup"?"sidepanel":"popup"} size={13}/>{detailMode==="popup"?"Volet":"Pop-up"}</button>}
           <button onClick={onClose} title={inline?"Désélectionner":"Fermer"} aria-label={inline?"Désélectionner":"Fermer"} style={{background:T.panel,border:"none",borderRadius:8,width:30,height:30,fontSize:FZ.md,cursor:"pointer",color:T.ink700,flexShrink:0}}><NavIcon name="close" size={11}/></button>
         </span>
       </div>
@@ -100,7 +100,7 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
           {orcSupportOf(meta)&&<span title="Chef de projet ORC en soutien du chef de projet EPC">soutien ORC : {orcSupportOf(meta)}</span>}
           <SerieTag pj={pj} size={11}/>
           {presenceKind(r.clientPresence)&&<PresenceChip kind={presenceKind(r.clientPresence)} date={presenceFirstDate(r.clientPresence)} dates={presenceDates(r.clientPresence)} compact tiny/>}
-          {canEditMeta&&savePjMetaOverride&&<button onClick={()=>setEditingMeta(true)} title="Modifier le nom, le pays, le chef de projet, la gamme" style={{background:"transparent",border:"none",padding:"2px 4px",minHeight:24,fontSize:FZ.xs,fontWeight:700,color:T.teal600,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4,fontFamily:T.font}}><NavIcon name="edit" size={12}/>Modifier</button>}
+          {canEditMeta&&savePjMetaOverride&&<button onClick={()=>setEditingMeta(true)} title="Modifier le nom, le pays, le chef de projet, la gamme" style={{background:"transparent",border:"none",padding:"2px 4px",minHeight:24,fontSize:FZ.xs,fontWeight:600,color:T.teal600,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4,fontFamily:T.font}}><NavIcon name="edit" size={12}/>Modifier</button>}
         </div>}
       {(()=>{
         const S=stageSoft(),d=k=>r[k]?new Date(r[k]):null,t0=new Date(today);t0.setHours(0,0,0,0);
@@ -118,7 +118,7 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
             {steps.map(([k,l,dt,tone],i)=>{const done=i<curI||(i===curI&&i===4),on=i===curI&&i!==4,fill=done||on;return(
               <div role="listitem" key={k} className="enogia-bar-fill" aria-current={on?"step":undefined} style={{background:fill?tone.solid:T.panel,color:fill?inkOn(tone.solid):T.ink500,borderRadius:i===0?"6px 0 0 6px":i===4?"0 6px 6px 0":0,padding:"5px 4px",textAlign:"center",minWidth:0,outline:on?"2px solid "+T.ink900:"none",outlineOffset:-2}}>
                 <div style={{fontFamily:T.fontLabel,fontSize:11,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{l}</div>
-                <div style={{fontSize:FZ.xs,fontWeight:700,fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{k==="production"?"":dt?fmtMode(dt,df):"—"}{k==="depart"&&r.drift>0?" +"+r.drift+" j":""}</div>
+                <div style={{fontSize:FZ.xs,fontWeight:600,fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{k==="production"?"":dt?fmtMode(dt,df):"—"}{k==="depart"&&r.drift>0?" +"+r.drift+" j":""}</div>
                 {on&&<div style={{fontFamily:T.fontLabel,fontSize:11,fontWeight:600}}>en cours</div>}
               </div>);})}
           </div>
@@ -138,8 +138,8 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
           {key:"apercu",label:"Aperçu",icon:"calendar"},
           {key:"commentaires",label:"Commentaires",icon:"comments",count:(comments?.[pj]||[]).filter(c=>!c.private).length},
           ...(pinOk&&delayTypes?[{key:"retards",label:"Retards",icon:"clock",count:(delays?.[pj]||[]).length}]:[]),
-        ].map(t=><button key={t.key} role="tab" aria-selected={tab===t.key} onClick={()=>setTab(t.key)} style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:4,padding:"9px 6px",marginBottom:-1,border:"none",borderBottom:"3px solid "+(tab===t.key?T.teal500:"transparent"),borderRadius:0,cursor:"pointer",background:"transparent",color:tab===t.key?T.ink900:T.ink500,fontSize:FZ.xs,fontWeight:700,transition:"border-color .18s ease,color .15s ease"}}>
-          <NavIcon name={t.icon} size={12}/>{t.label}{t.count>0&&<span style={{fontSize:FZ.xs,fontWeight:700,color:tab===t.key?"#fff":T.ink500,background:tab===t.key?T.teal500:T.ink100,borderRadius:999,padding:"1px 6px"}}>{t.count}</span>}
+        ].map(t=><button key={t.key} role="tab" aria-selected={tab===t.key} onClick={()=>setTab(t.key)} style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:4,padding:"9px 6px",marginBottom:-1,border:"none",borderBottom:"3px solid "+(tab===t.key?T.teal500:"transparent"),borderRadius:0,cursor:"pointer",background:"transparent",color:tab===t.key?T.ink900:T.ink500,fontSize:FZ.xs,fontWeight:600,transition:"border-color .18s ease,color .15s ease"}}>
+          <NavIcon name={t.icon} size={12}/>{t.label}{t.count>0&&<span style={{fontSize:FZ.xs,fontWeight:600,color:tab===t.key?"#fff":T.ink500,background:tab===t.key?T.teal500:T.ink100,borderRadius:999,padding:"1px 6px"}}>{t.count}</span>}
         </button>)}
       </div>
 
@@ -157,9 +157,9 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
             const dim=new Date(y,m+1,0).getDate();
             const cells=[...Array(adj).fill(null),...Array.from({length:dim},(_,i)=>i+1)];
             return(<div key={mi} style={{minWidth:0}}>
-              <div style={{textAlign:"center",fontWeight:700,fontSize:FZ.xs,color:T.ink900,marginBottom:8}}>{MONTHS_FULL[m]} {y}</div>
+              <div style={{textAlign:"center",fontWeight:600,fontSize:FZ.xs,color:T.ink900,marginBottom:8}}>{MONTHS_FULL[m]} {y}</div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(0,1fr))",gap:2}}>
-                {["L","M","M","J","V","S","D"].map((d,i)=><div key={i} style={{textAlign:"center",fontSize:FZ.xs,fontWeight:700,color:T.ink300}}>{d}</div>)}
+                {["L","M","M","J","V","S","D"].map((d,i)=><div key={i} style={{textAlign:"center",fontSize:FZ.xs,fontWeight:600,color:T.ink300}}>{d}</div>)}
                 {cells.map((day,ci)=>{
                   if(!day)return<div key={"e"+ci}/>;
                   const evs=de[day]||[];
@@ -183,9 +183,9 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
       {tab==="commentaires"&&<ProjectComments pj={pj} comments={comments?.[pj]||[]} addComment={addComment} deleteComment={deleteComment} pinOk={pinOk} authorName={authorName}/>}
       {tab==="retards"&&pinOk&&delayTypes&&<DelayAllocations pj={pj} delays={delays?.[pj]||[]} delayTypes={delayTypes} setDelayTypes={setDelayTypes} addDelayAllocation={addDelayAllocation} deleteDelayAllocation={deleteDelayAllocation} addDelayComment={addDelayComment} deleteDelayComment={deleteDelayComment} authorName={authorName}/>}
       <div style={embedded?{marginTop:12,display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}:{position:"sticky",bottom:-fp,margin:"16px -"+fp+"px -"+fp+"px",padding:"10px "+fp+"px",background:T.card,borderTop:"1px solid "+T.line,display:"flex",gap:6,flexWrap:"wrap",alignItems:"center",zIndex:3}}>
-        <button type="button" onClick={()=>setTab("commentaires")} className="enogia-btn-ind" style={{background:"transparent",border:"1px solid "+T.line,borderRadius:8,minHeight:30,padding:"0 10px",fontSize:FZ.xs,fontWeight:700,cursor:"pointer",color:T.ink700,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font}}><NavIcon name="comments" size={13}/>Commenter</button>
-        {pinOk&&delayTypes&&<button type="button" onClick={()=>setTab("retards")} className="enogia-btn-ind" style={{background:"transparent",border:"1px solid "+T.line,borderRadius:8,minHeight:30,padding:"0 10px",fontSize:FZ.xs,fontWeight:700,cursor:"pointer",color:T.ink700,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font}}><NavIcon name="clock" size={13}/>Déclarer un retard</button>}
-        {pinOk&&<button type="button" className="enogia-btn-ind" onClick={()=>{try{window.dispatchEvent(new CustomEvent("enogia:openSynthese",{detail:{pj}}));}catch(e){}if(onClose)onClose();}} title="Ouvrir la fiche synthèse de ce PJ (Manager)" style={{marginLeft:"auto",background:T.ink900,border:"none",borderRadius:8,minHeight:30,padding:"0 12px",fontSize:FZ.xs,fontWeight:700,cursor:"pointer",color:T.card,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font,whiteSpace:"nowrap"}}><NavIcon name="arrow" size={13}/>Fiche synthèse</button>}
+        <button type="button" onClick={()=>setTab("commentaires")} className="enogia-btn-ind" style={{background:"transparent",border:"1px solid "+T.line,borderRadius:8,minHeight:30,padding:"0 10px",fontSize:FZ.xs,fontWeight:600,cursor:"pointer",color:T.ink700,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font}}><NavIcon name="comments" size={13}/>Commenter</button>
+        {pinOk&&delayTypes&&<button type="button" onClick={()=>setTab("retards")} className="enogia-btn-ind" style={{background:"transparent",border:"1px solid "+T.line,borderRadius:8,minHeight:30,padding:"0 10px",fontSize:FZ.xs,fontWeight:600,cursor:"pointer",color:T.ink700,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font}}><NavIcon name="clock" size={13}/>Déclarer un retard</button>}
+        {pinOk&&<button type="button" className="enogia-btn-ind" onClick={()=>{try{window.dispatchEvent(new CustomEvent("enogia:openSynthese",{detail:{pj}}));}catch(e){}if(onClose)onClose();}} title="Ouvrir la fiche synthèse de ce PJ (Manager)" style={{marginLeft:"auto",background:T.ink900,border:"none",borderRadius:8,minHeight:30,padding:"0 12px",fontSize:FZ.xs,fontWeight:600,cursor:"pointer",color:T.card,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font,whiteSpace:"nowrap"}}><NavIcon name="arrow" size={13}/>Fiche synthèse</button>}
       </div>
 
   </>);
@@ -249,7 +249,7 @@ export function EditMetaForm({meta,gamme,onSave,onCancel}){
     </div>
     <ChefsEpcFields value={extra} onChange={setExtra} mainChef={chefProjet}/>
     <div style={{display:"flex",gap:8,marginTop:2}}>
-      <button onClick={submit} disabled={saving} style={{padding:"8px 16px",borderRadius:8,border:"none",background:T.ink900,color:T.card,fontSize:FZ.sm,fontWeight:700,cursor:saving?"default":"pointer",opacity:saving?.6:1}}>{saving?"Enregistrement…":"Enregistrer"}</button>
+      <button onClick={submit} disabled={saving} style={{padding:"8px 16px",borderRadius:8,border:"none",background:T.ink900,color:T.card,fontSize:FZ.sm,fontWeight:600,cursor:saving?"default":"pointer",opacity:saving?.6:1}}>{saving?"Enregistrement…":"Enregistrer"}</button>
       <button onClick={onCancel} style={{padding:"8px 12px",borderRadius:8,border:"none",background:T.panel,color:T.ink700,fontSize:FZ.sm,fontWeight:600,cursor:"pointer"}}>Annuler</button>
     </div>
   </div>);
@@ -300,13 +300,13 @@ export function ProjectComments({pj,comments,addComment,deleteComment,pinOk,auth
         style={{padding:"8px 12px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700,resize:"vertical",width:"100%",boxSizing:"border-box",background:T.card}}/>
       <MentionPicker text={text} pjs={[pj]}/>
       <div style={{display:"flex",justifyContent:"flex-end",marginTop:8}}>
-        <button onClick={submit} disabled={!text.trim()} style={{padding:"8px 16px",borderRadius:8,border:"none",background:text.trim()?T.teal500:T.panelDim,color:text.trim()?"#fff":T.ink300,fontSize:FZ.sm,fontWeight:700,cursor:text.trim()?"pointer":"default"}}>Publier</button>
+        <button onClick={submit} disabled={!text.trim()} style={{padding:"8px 16px",borderRadius:8,border:"none",background:text.trim()?T.teal500:T.panelDim,color:text.trim()?"#fff":T.ink300,fontSize:FZ.sm,fontWeight:600,cursor:text.trim()?"pointer":"default"}}>Publier</button>
       </div>
     </div>
 
     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,flexWrap:"wrap",marginBottom:8}}>
       <span style={{fontSize:FZ.xs,fontWeight:600,color:T.ink500}}>{sorted.length} commentaire{sorted.length!==1?"s":""}</span>
-      {nPriv>0&&<button onClick={()=>setShowPrivate(v=>!v)} aria-pressed={showPrivate} style={{border:"1px solid "+(showPrivate?T.amber500:T.line),background:showPrivate?T.amber100:"transparent",color:showPrivate?T.amber600:T.ink500,borderRadius:8,padding:"2px 8px",fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font}}>{showPrivate?"Masquer les privés":"Afficher les privés ("+nPriv+")"}</button>}
+      {nPriv>0&&<button onClick={()=>setShowPrivate(v=>!v)} aria-pressed={showPrivate} style={{border:"1px solid "+(showPrivate?T.amber500:T.line),background:showPrivate?T.amber100:"transparent",color:showPrivate?T.amber600:T.ink500,borderRadius:8,padding:"2px 8px",fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font}}>{showPrivate?"Masquer les privés":"Afficher les privés ("+nPriv+")"}</button>}
     </div>
     {/* Refonte "chat" (demandé explicitement : "je vois ça plus comme un chat gmail") — avatar +
         bloc aligné à gauche, même registre que la page Commentaires dédiée. */}
@@ -316,9 +316,9 @@ export function ProjectComments({pj,comments,addComment,deleteComment,pinOk,auth
           <Avatar name={c.author} tint={c.private?T.amber500:T.teal500} size={28}/>
           <div style={{flex:1,minWidth:0}}>
             <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap",marginBottom:2}}>
-              <span style={{fontWeight:700,color:T.ink700,fontSize:FZ.sm}}>{c.author}</span>
-              {c.private&&<span style={{fontSize:FZ.xs,color:T.amber600,background:T.amber100,borderRadius:4,padding:"1px 6px",fontWeight:700,letterSpacing:".01em"}}>Privé</span>}
-              {c.groupPjs&&<span title={"Commentaire groupé : "+c.groupPjs.join(", ")} style={{fontSize:FZ.xs,color:T.violet600,background:T.violet100,borderRadius:4,padding:"1px 6px",fontWeight:700}}>groupé ×{c.groupPjs.length}</span>}
+              <span style={{fontWeight:600,color:T.ink700,fontSize:FZ.sm}}>{c.author}</span>
+              {c.private&&<span style={{fontSize:FZ.xs,color:T.amber600,background:T.amber100,borderRadius:4,padding:"1px 6px",fontWeight:600,letterSpacing:".01em"}}>Privé</span>}
+              {c.groupPjs&&<span title={"Commentaire groupé : "+c.groupPjs.join(", ")} style={{fontSize:FZ.xs,color:T.violet600,background:T.violet100,borderRadius:4,padding:"1px 6px",fontWeight:600}}>groupé ×{c.groupPjs.length}</span>}
               <span style={{fontSize:FZ.xs,color:T.ink300}}>{relTime(c.date)}</span>
               <SuperOnly><button onClick={()=>{setDeleteTarget(c._idx);setPinInput("");}} title="Supprimer" style={{background:"none",border:"none",color:T.ink100,cursor:"pointer",fontSize:FZ.xs,padding:0,marginLeft:2}}><NavIcon name="close" size={11}/></button></SuperOnly>
             </div>
@@ -327,14 +327,14 @@ export function ProjectComments({pj,comments,addComment,deleteComment,pinOk,auth
             <Reactions c={c} pj={pj} idx={c._idx}/>
             {c.linkedDate&&<div style={{marginTop:5,fontSize:FZ.xs,color:T.ink500,fontWeight:600}}>Lié au {fmt(new Date(c.linkedDate))}</div>}
             {deleteTarget===c._idx&&<div style={{marginTop:8,paddingTop:8,borderTop:"1px solid "+T.line,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
-              <span style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900}}>Supprimer ce commentaire ?</span>
-              <button onClick={confirmDelete} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.redFill,color:"#fff",fontSize:FZ.sm,fontWeight:700,cursor:"pointer"}}>Confirmer la suppression</button>
+              <span style={{fontSize:FZ.sm,fontWeight:600,color:T.ink900}}>Supprimer ce commentaire ?</span>
+              <button onClick={confirmDelete} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.redFill,color:"#fff",fontSize:FZ.sm,fontWeight:600,cursor:"pointer"}}>Confirmer la suppression</button>
               <button onClick={()=>setDeleteTarget(null)} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.panel,boxShadow:T.outline,color:T.ink700,fontSize:FZ.sm,cursor:"pointer"}}>Annuler</button>
             </div>}
           </div>
         </div>
       ))}
-    </div>:<div style={{textAlign:"center",color:T.ink300,fontSize:FZ.sm,padding:"20px 0"}}>Aucun commentaire pour l'instant sur ce PJ.</div>}
+    </div>:<div style={{textAlign:"center",color:T.ink300,fontSize:FZ.sm,padding:"20px 0"}}>Aucun commentaire pour l'instant sur ce PJ</div>}
   </div>);
 }
 
@@ -365,7 +365,7 @@ export function DelayAllocations({pj,delays,delayTypes,setDelayTypes,addDelayAll
   const byType={};
   delays.forEach(d=>{byType[d.type]=(byType[d.type]||0)+(d.days||0);});
   return(<div style={{marginTop:20,paddingTop:16,borderTop:"1px solid "+T.line}}>
-    <div style={{fontFamily:T.fontDisplay,fontWeight:700,fontSize:FZ.md,color:T.ink900,marginBottom:10}}>⏱️ Causes de retard ({delays.length})</div>
+    <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:10}}>⏱️ Causes de retard ({delays.length})</div>
     {Object.keys(byType).length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:12}}>
       {Object.entries(byType).map(([t,d])=><span key={t} style={{background:T.panel,borderRadius:8,padding:"4px 8px",fontSize:FZ.sm,color:T.ink700,fontWeight:600}}>{t} · {d}j</span>)}
     </div>}
@@ -383,27 +383,27 @@ export function DelayAllocations({pj,delays,delayTypes,setDelayTypes,addDelayAll
         capricieux." tenait à peine dans l'ancien champ. */}
     <textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="Note (optionnel)" rows={2} maxLength={300} style={{width:"100%",padding:"8px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700,resize:"vertical",boxSizing:"border-box",marginBottom:8,background:T.card}}/>
     <div style={{display:"flex",justifyContent:"flex-end",marginBottom:10}}>
-      <button onClick={submit} style={{padding:"8px 16px",borderRadius:8,border:"none",background:T.ink900,color:T.card,fontSize:FZ.sm,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>Allouer</button>
+      <button onClick={submit} style={{padding:"8px 16px",borderRadius:8,border:"none",background:T.ink900,color:T.card,fontSize:FZ.sm,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>Allouer</button>
     </div>
     {err&&<div style={{fontSize:FZ.sm,color:T.red500,marginBottom:8}}>{err}</div>}
     {delays.length>0&&<div style={{display:"flex",flexDirection:"column",gap:8,maxHeight:220,overflowY:"auto"}}>
       {[...delays].sort((a,b)=>new Date(b.date)-new Date(a.date)).map(d=>(
         <div key={d.id} style={{background:T.panel,borderRadius:12,padding:"8px 12px"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8}}>
-            <span style={{fontWeight:700,color:T.ink900,fontSize:FZ.sm}}>{d.type} — {d.days}j</span>
+            <span style={{fontWeight:600,color:T.ink900,fontSize:FZ.sm}}>{d.type} — {d.days}j</span>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
               <span style={{fontSize:FZ.xs,color:T.ink300}}>{d.author} · {new Date(d.date).toLocaleDateString("fr-FR")}</span>
               <SuperOnly><button onClick={()=>{setDeleteTarget(d.id);setPinInput("");}} title="Supprimer" style={{background:"none",border:"none",color:T.ink300,cursor:"pointer",fontSize:FZ.sm,padding:0}}><NavIcon name="close" size={11}/></button></SuperOnly>
             </div>
           </div>
           {d.note&&<div style={{fontSize:FZ.sm,color:T.ink500,marginTop:3}}>{d.note}</div>}
-          {addDelayComment&&<button onClick={()=>setOpenThread(openThread===d.id?null:d.id)} style={{marginTop:6,background:"none",border:"none",padding:0,color:T.teal600,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
+          {addDelayComment&&<button onClick={()=>setOpenThread(openThread===d.id?null:d.id)} style={{marginTop:6,background:"none",border:"none",padding:0,color:T.teal600,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
             {(d.comments||[]).length>0?(d.comments.length+" réponse"+(d.comments.length>1?"s":"")):"Répondre"}
           </button>}
           {openThread===d.id&&<DelayThread d={d} pj={pj} authorName={authorName} addDelayComment={addDelayComment} deleteDelayComment={deleteDelayComment}/>}
           {deleteTarget===d.id&&<div style={{marginTop:8,paddingTop:8,borderTop:"1px solid "+T.line,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
             <input type="password" value={pinInput} onChange={e=>setPinInput(e.target.value)} placeholder="Code Manager" style={{padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,width:120}}/>
-            <button onClick={confirmDelete} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.redFill,color:"#fff",fontSize:FZ.sm,fontWeight:700,cursor:"pointer"}}>Confirmer</button>
+            <button onClick={confirmDelete} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.redFill,color:"#fff",fontSize:FZ.sm,fontWeight:600,cursor:"pointer"}}>Confirmer</button>
             <button onClick={()=>setDeleteTarget(null)} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.panel,boxShadow:T.outline,color:T.ink700,fontSize:FZ.sm,cursor:"pointer"}}>Annuler</button>
           </div>}
         </div>
@@ -432,7 +432,7 @@ function DelayThread({d,pj,authorName,addDelayComment,deleteDelayComment}){
     {(d.comments||[]).map((c,i)=>(
       <div key={i} style={{background:T.card,borderRadius:8,padding:"8px 8px"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8}}>
-          <span style={{fontWeight:700,color:T.teal600,fontSize:FZ.xs}}>{c.author}</span>
+          <span style={{fontWeight:600,color:T.teal600,fontSize:FZ.xs}}>{c.author}</span>
           <div style={{display:"flex",alignItems:"center",gap:6}}>
             <span style={{fontSize:FZ.xs,color:T.ink300}}>{new Date(c.date).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</span>
             {deleteDelayComment&&<SuperOnly><button onClick={()=>{setDelTarget(i);setPin("");}} title="Supprimer" style={{background:"none",border:"none",color:T.ink300,cursor:"pointer",fontSize:FZ.xs,padding:0}}><NavIcon name="close" size={11}/></button></SuperOnly>}
@@ -441,7 +441,7 @@ function DelayThread({d,pj,authorName,addDelayComment,deleteDelayComment}){
         <div data-no-i18n="1" style={{fontSize:FZ.sm,color:T.ink700,whiteSpace:"pre-wrap",marginTop:2}}>{c.text}</div>
         {delTarget===i&&<div style={{marginTop:6,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
           <input type="password" value={pin} onChange={e=>setPin(e.target.value)} placeholder="Code Manager" style={{padding:"4px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.xs,fontFamily:T.font,width:110}}/>
-          <button onClick={()=>confirmDelete(i)} style={{padding:"4px 8px",borderRadius:8,border:"none",background:T.redFill,color:"#fff",fontSize:FZ.xs,fontWeight:700,cursor:"pointer"}}>Confirmer</button>
+          <button onClick={()=>confirmDelete(i)} style={{padding:"4px 8px",borderRadius:8,border:"none",background:T.redFill,color:"#fff",fontSize:FZ.xs,fontWeight:600,cursor:"pointer"}}>Confirmer</button>
           <button onClick={()=>setDelTarget(null)} style={{padding:"4px 8px",borderRadius:8,border:"none",background:T.panelDim,color:T.ink700,fontSize:FZ.xs,cursor:"pointer"}}>Annuler</button>
         </div>}
       </div>
@@ -449,7 +449,7 @@ function DelayThread({d,pj,authorName,addDelayComment,deleteDelayComment}){
     <div style={{display:"flex",gap:6,alignItems:"flex-start"}}>
       {!authorName&&<input type="text" value={authorInput} onChange={e=>setAuthorInput(e.target.value)} placeholder="Nom" maxLength={40} style={{width:90,padding:"8px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.xs,fontFamily:T.font,color:T.ink700}}/>}
       <input type="text" value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();send();}}} placeholder="Répondre sur ce retard... (Entrée pour envoyer)" maxLength={500} style={{flex:1,padding:"8px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.xs,fontFamily:T.font,color:T.ink700}}/>
-      <button onClick={send} disabled={!text.trim()||!author.trim()} style={{padding:"8px 12px",borderRadius:8,border:"none",background:text.trim()&&author.trim()?T.teal500:T.panelDim,color:text.trim()&&author.trim()?"#fff":T.ink300,fontSize:FZ.xs,fontWeight:700,cursor:text.trim()&&author.trim()?"pointer":"default"}}>Envoyer</button>
+      <button onClick={send} disabled={!text.trim()||!author.trim()} style={{padding:"8px 12px",borderRadius:8,border:"none",background:text.trim()&&author.trim()?T.teal500:T.panelDim,color:text.trim()&&author.trim()?"#fff":T.ink300,fontSize:FZ.xs,fontWeight:600,cursor:text.trim()&&author.trim()?"pointer":"default"}}>Envoyer</button>
     </div>
   </div>);
 }

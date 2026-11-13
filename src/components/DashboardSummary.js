@@ -119,15 +119,15 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
             </div>
             <div style={{minWidth:0,flex:1}}>
               <div style={{display:"flex",alignItems:"baseline",marginBottom:4}}>
-                <h2 style={{margin:0,fontSize:FZ.xs,fontWeight:700,color:T.ink900}}>Par {d.label.toLowerCase()}</h2>
-                <span style={{marginLeft:8,fontSize:FZ.xs,fontWeight:700,color:T.ink900,fontVariantNumeric:"tabular-nums"}}>{total}</span>
+                <h2 style={{margin:0,fontSize:FZ.xs,fontWeight:600,color:T.ink900}}>Par {d.label.toLowerCase()}</h2>
+                <span style={{marginLeft:8,fontSize:FZ.xs,fontWeight:600,color:T.ink900,fontVariantNumeric:"tabular-nums"}}>{total}</span>
               </div>
-              {total===0?<div style={{fontSize:FZ.xs,color:T.ink500}}>Aucune machine avec ces filtres.</div>:
+              {total===0?<div style={{fontSize:FZ.xs,color:T.ink500}}>Aucune machine avec ces filtres</div>:
                 <div style={{display:"grid",gridTemplateColumns:pie.length>6?"repeat(2,minmax(0,max-content))":"minmax(0,max-content)",columnGap:12,rowGap:1,overflow:"hidden","--lw":/* v195 : noms à la largeur du plus long (max 18 car.), chiffre juste après */Math.min(18,Math.max(...pie.map(x=>String(x.name).length)))+1+"ch"}}>
                   {pie.map((x,xi)=><div key={x.name} className="enogia-pie-leg" style={{display:"grid",gridTemplateColumns:"8px minmax(0,var(--lw)) auto",justifyContent:"start",alignItems:"center",columnGap:6,fontSize:FZ.xs,color:T.ink700,lineHeight:1.35,animationDelay:Math.min(200,di*40+xi*20)+"ms"}}>
                     <span aria-hidden="true" style={{width:8,height:8,borderRadius:4,flexShrink:0,background:x.color}}/>
                     <span title={x.name} style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",minWidth:0,fontWeight:500}}>{x.name}</span>
-                    <span style={{fontWeight:700,color:T.ink900,fontVariantNumeric:"tabular-nums",textAlign:"right",minWidth:"2ch"}}>{x.value}</span>
+                    <span style={{fontWeight:600,color:T.ink900,fontVariantNumeric:"tabular-nums",textAlign:"right",minWidth:"2ch"}}>{x.value}</span>
                   </div>)}
                 </div>}
             </div>

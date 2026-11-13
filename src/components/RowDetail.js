@@ -91,7 +91,7 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
   const openPage = (v, sub) => { if (ctx.openPage) { ctx.openPage(v, sub); if (onClose) onClose(); } };
   const gapTxt = g => g == null ? "" : g > 0 ? g + " j de marge" : g < 0 ? -g + " j de retard" : "juste à temps";
   const pill = (txt, ink, bg, key) => <Pill key={key} ink={ink} bg={bg} size="md">{txt}</Pill>; // v311 : pastille commune
-  const btn = primary => ({ display: "inline-flex", alignItems: "center", gap: 6, minHeight: 36, padding: "0 14px", borderRadius: 999, border: primary ? "none" : "1px solid " + T.line, background: primary ? T.ink900 : T.card, color: primary ? T.card : T.ink700, fontFamily: T.font, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" });
+  const btn = primary => ({ display: "inline-flex", alignItems: "center", gap: 6, minHeight: 36, padding: "0 14px", borderRadius: 999, border: primary ? "none" : "1px solid " + T.line, background: primary ? T.ink900 : T.card, color: primary ? T.card : T.ink700, fontFamily: T.font, fontSize: FZ.xs, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" });
   const toggle = id => setOpen(o => (o === id ? null : id));
   const doneBg = mixHex(T.card, ETAT_META.SHIPPED.bar, T.mode === "dark" ? .3 : .28);
   const TABS = [["resume", "Résumé", ""], ...(plan ? [["tests", "Tests", nokAll ? nokAll + " NOK" : "", true]] : []), ...(turb ? [["turbine", "Turbine", turb.issues.length ? turb.issues.length + " à voir" : "", true]] : []), ...(ach ? [["achats", "Achats", ach.retards ? ach.retards + " en retard" : "", true]] : []), ...(cash ? [["cash", "Cash", cash.lateN ? cash.lateN + " en retard" : "", true]] : []), ...(ctx.savDoc && ctx.SavTab ? [["sav", "SAV", "", true]] : []), ["comments", "Commentaires", pub.length ? String(pub.length) : ""]];
@@ -129,7 +129,7 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
       </div>; })()}
     {/* Onglets */}
     <div role="tablist" aria-label="Rubriques de la fiche" style={{ display: "flex", gap: 18, borderBottom: "1px solid " + T.line, marginTop: 12 }}>
-      {TABS.map(([id, label, badge, warn]) => <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)} style={{ border: "none", background: "transparent", padding: "8px 0", minHeight: 36, cursor: "pointer", fontFamily: T.font, fontSize: FZ.sm, fontWeight: tab === id ? 700 : 500, color: tab === id ? T.ink900 : T.ink500, borderBottom: "2px solid " + (tab === id ? T.ink900 : "transparent"), marginBottom: -1, display: "inline-flex", alignItems: "center", gap: 6 }}>{label}{badge && <span style={{ fontSize: 11, fontWeight: 700, borderRadius: 999, padding: "0 7px", background: warn ? T.red100 : T.surfaceAlt, color: warn ? T.red600 : T.ink700 }}>{badge}</span>}</button>)}
+      {TABS.map(([id, label, badge, warn]) => <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)} style={{ border: "none", background: "transparent", padding: "8px 0", minHeight: 36, cursor: "pointer", fontFamily: T.font, fontSize: FZ.sm, fontWeight: tab === id ? 700 : 500, color: tab === id ? T.ink900 : T.ink500, borderBottom: "2px solid " + (tab === id ? T.ink900 : "transparent"), marginBottom: -1, display: "inline-flex", alignItems: "center", gap: 6 }}>{label}{badge && <span style={{ fontSize: 11, fontWeight: 600, borderRadius: 999, padding: "0 7px", background: warn ? T.red100 : T.surfaceAlt, color: warn ? T.red600 : T.ink700 }}>{badge}</span>}</button>)}
     </div>
 
     <div role="tabpanel" style={{ paddingTop: 12, display: "flex", flexDirection: "column", gap: 12 }}>
@@ -185,7 +185,7 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
           {testers.length > 0 && <span><span style={{ color: T.ink500 }}>Testeurs</span> {testers.join(", ")}</span>}
           {kind && <PresenceChip kind={kind} date={presenceFirstDate(r.clientPresence)} dates={presenceDates(r.clientPresence)} />}
           {meta.numSerie ? <span style={{ fontFamily: T.fontMono, fontSize: 11, color: T.ink500 }}>{meta.numSerie}</span> : plannedSnOf(r.pj) && <span title="S/N prévu d'après l'ordo, fixé à l'arrivée de la machine" style={{ fontFamily: T.fontMono, fontSize: 11, color: T.ink500, fontStyle: "italic" }}>S/N prévu {plannedSnOf(r.pj).sn}</span>}
-          {canEditMeta && savePjMetaOverride && <button type="button" onClick={() => toggle("edit")} aria-expanded={open === "edit"} style={{ border: "none", background: "transparent", color: T.teal600, fontWeight: 700, fontSize: FZ.xs, cursor: "pointer", minHeight: 24, padding: 0, fontFamily: T.font }}>Modifier</button>}
+          {canEditMeta && savePjMetaOverride && <button type="button" onClick={() => toggle("edit")} aria-expanded={open === "edit"} style={{ border: "none", background: "transparent", color: T.teal600, fontWeight: 600, fontSize: FZ.xs, cursor: "pointer", minHeight: 24, padding: 0, fontFamily: T.font }}>Modifier</button>}
         </div>
         {last && <button type="button" onClick={() => setTab("comments")} style={{ background: T.surface, borderRadius: 12, padding: "10px 12px", display: "block", width: "100%", textAlign: "left", border: "none", cursor: "pointer", fontFamily: T.font, fontSize: FZ.sm, color: T.ink900, lineHeight: 1.45 }}>« {String(last.text || "").replace(/\s+/g, " ").slice(0, 200)}{String(last.text || "").length > 200 ? "…" : ""} » <span style={{ fontSize: FZ.xs, color: T.ink500 }}>{last.author || ""}, {relTime(last.date)}</span></button>}
       </>}
@@ -193,11 +193,11 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
       {tab === "tests" && plan && <>
         {act.map(k => { const ids = selectedIds(plan, catalog, k), items = ids.map(id => ({ id, name: ((catalog[k] || []).find(t => t.id === id) || { name: id }).name, st: statusOf(plan, k, id) })); const ok = items.filter(x => x.st === "ok").length, ko = items.filter(x => x.st === "ko");
           return <div key={k} style={{ background: T.surface, borderRadius: 12, padding: "8px 12px" }}>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><b style={{ fontSize: FZ.sm }}>{(SECTIONS.find(x => x[0] === k) || [])[1] || k}</b><span style={{ fontSize: FZ.xs, color: T.ink500 }}>{ok} réussi{ok > 1 ? "s" : ""} sur {items.length}{ko.length ? " · " : ""}</span>{ko.length > 0 && <span style={{ fontSize: FZ.xs, color: T.red600, fontWeight: 700 }}>{ko.length} échec{ko.length > 1 ? "s" : ""}</span>}</div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><b style={{ fontSize: FZ.sm }}>{(SECTIONS.find(x => x[0] === k) || [])[1] || k}</b><span style={{ fontSize: FZ.xs, color: T.ink500 }}>{ok} réussi{ok > 1 ? "s" : ""} sur {items.length}{ko.length ? " · " : ""}</span>{ko.length > 0 && <span style={{ fontSize: FZ.xs, color: T.red600, fontWeight: 600 }}>{ko.length} échec{ko.length > 1 ? "s" : ""}</span>}</div>
             {ko.length > 0 && <div style={{ fontSize: FZ.xs, color: T.red600, marginTop: 4 }}>{ko.map(x => x.name).join(" · ")}</div>}
           </div>; })}
         <div style={{ background: T.surface, borderRadius: 12, padding: "8px 12px" }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><b style={{ fontSize: FZ.sm }}>Checklist de debug</b><span style={{ fontSize: FZ.xs, color: T.ink500 }}>{dbg.done} / {dbg.total} renseignés{dbg.signed ? " · signée" : " · pas encore signée"}</span>{dbg.nok > 0 && <span style={{ fontSize: FZ.xs, color: T.red600, fontWeight: 700 }}>{dbg.nok} NOK</span>}</div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><b style={{ fontSize: FZ.sm }}>Checklist de debug</b><span style={{ fontSize: FZ.xs, color: T.ink500 }}>{dbg.done} / {dbg.total} renseignés{dbg.signed ? " · signée" : " · pas encore signée"}</span>{dbg.nok > 0 && <span style={{ fontSize: FZ.xs, color: T.red600, fontWeight: 600 }}>{dbg.nok} NOK</span>}</div>
           {dbg.nok > 0 && <div style={{ fontSize: FZ.xs, color: T.red600, marginTop: 4 }}>{dbgSecs.flatMap(s => s.items).filter(i => plan.debug && plan.debug.rows && plan.debug.rows[i.id] && plan.debug.rows[i.id].r === "nok").map(i => i.label).join(" · ")}</div>}
         </div>
         <div style={{ fontSize: FZ.xs, color: T.ink500 }}>{testers.length ? "Testeurs : " + testers.join(", ") + "." : "Aucun testeur affecté."} Le détail se remplit dans la page Tests.</div>
@@ -226,7 +226,7 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
           <span style={{ fontFamily: T.fontMono, fontWeight: 600, color: T.ink900 }}>{p.numero}</span>
           <span style={{ flex: 1, color: T.ink500 }}>{p.lignes} ligne{p.lignes > 1 ? "s" : ""}{p.source === "odoo" ? " · Odoo" : ""}</span>
           <span style={{ color: p.retard ? T.red600 : T.ink700, fontWeight: p.retard ? 700 : 500 }}>{(ACHAT_ST.find(x => x[0] === p.statut) || ["", ""])[1]}{p.livraison ? " · livraison " + dmy(p.livraison) : ""}{p.retard ? " · en retard" : ""}</span>
-        </div>) : <div style={{ fontSize: FZ.xs, color: T.ink500 }}>Aucune commande (PO) pour l'instant.</div>}
+        </div>) : <div style={{ fontSize: FZ.xs, color: T.ink500 }}>Aucune commande (PO) pour l'instant</div>}
         {ctx.openPage && <OpenIn label="Ouvrir dans Achats / Appro" onClick={() => openPage("achats")} />}
       </div>}
 
@@ -234,7 +234,7 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
         {pays.map(p => <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 10px", background: T.surface, borderRadius: 8, fontSize: FZ.xs }}>
           <span style={{ flex: 1, minWidth: 0, color: T.ink900, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={p.label}>{p.label}{p.shared ? <span style={{ fontWeight: 400, color: T.ink500 }}> · paiement unique du contrat, non divisé</span> : p.split > 1 ? <span style={{ fontWeight: 400, color: T.ink500 }}> · part 1/{p.split}</span> : null}</span>
           <span style={{ color: T.ink500, whiteSpace: "nowrap" }}>{p.done ? "payé " + dmy(p.doneAt) : p.factPrevue ? "facturation " + dmy(p.factPrevue) : ""}</span>
-          <span style={{ fontWeight: 700, color: p.k === "late" ? T.red600 : T.ink900, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{fmtEur(p.montant)}</span>
+          <span style={{ fontWeight: 600, color: p.k === "late" ? T.red600 : T.ink900, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{fmtEur(p.montant)}</span>
           <span style={{ width: 92, textAlign: "right", color: p.k === "late" ? T.red600 : p.done ? T.emerald600 : T.ink500, fontWeight: 600 }}>{STATUS_TXT[p.k] || ""}</span>
         </div>)}
       </div>}

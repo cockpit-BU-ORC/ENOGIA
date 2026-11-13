@@ -39,7 +39,7 @@ export function PieBlock({data,unit="",size=150,centerLabel,sub}){
         </PieChart>
       </ResponsiveContainer>
       <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
-        {centerLabel!=null&&centerLabel!==""&&<span style={{fontFamily:T.fontDisplay,fontSize:size*.19,fontWeight:700,color:T.ink900,lineHeight:1}}>{centerLabel}</span>}
+        {centerLabel!=null&&centerLabel!==""&&<span style={{fontFamily:T.fontDisplay,fontSize:size*.19,fontWeight:600,color:T.ink900,lineHeight:1}}>{centerLabel}</span>}
         {centerLabel!=null&&centerLabel!==""&&sub&&size>=120&&<span style={{fontSize:FZ.xs,color:T.ink300,marginTop:2}}>{sub}</span>} {/* petit anneau : le trou ne peut pas porter une ligne de 12 px, le libellé reste dans la légende */}
       </div>
     </div>
@@ -47,7 +47,7 @@ export function PieBlock({data,unit="",size=150,centerLabel,sub}){
       {data.map((d,i)=>(<div key={d.name+i} style={{display:"flex",alignItems:"center",gap:8,fontSize:FZ.xs}}>
         <span style={{width:9,height:9,borderRadius:"50%",background:d.color,flexShrink:0}}/>
         <span style={{color:T.ink700,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",minWidth:0}} title={d.name}>{d.name}</span>
-        <span style={{marginLeft:"auto",fontWeight:700,color:T.ink900,whiteSpace:"nowrap"}}>{d.value}{unit}<span style={{color:T.ink300,fontWeight:500}}> · {Math.round(d.value/total*100)}%</span></span>
+        <span style={{marginLeft:"auto",fontWeight:600,color:T.ink900,whiteSpace:"nowrap"}}>{d.value}{unit}<span style={{color:T.ink300,fontWeight:500}}> · {Math.round(d.value/total*100)}%</span></span>
       </div>))}
     </div>
   </div>);
@@ -77,7 +77,7 @@ export function RankBars({items,unit="",color,max=10,onPick}){
     {list.map(x=>(<div key={x.label} {...(onPick?{role:"button",tabIndex:0,onClick:()=>onPick(x),onKeyDown:e=>{if(e.key==="Enter")onPick(x);}}:{})} style={{display:"grid",gridTemplateColumns:"minmax(90px,30%) minmax(0,1fr) 64px",alignItems:"center",gap:10,minHeight:28,cursor:onPick?"pointer":"default"}}>
       <span title={x.label} style={{fontSize:FZ.sm,color:T.ink900,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{x.label}</span>
       <span style={{height:10,background:T.surfaceAlt,borderRadius:4,overflow:"hidden"}}><span className="enogia-bar-fill" style={{display:"block",width:(x.value/top*100)+"%",height:"100%",background:color||T.navy600}}/></span>
-      <span style={{textAlign:"right",fontSize:FZ.sm,fontWeight:700,color:T.ink900,fontVariantNumeric:"tabular-nums"}}>{x.value}{unit}</span>
+      <span style={{textAlign:"right",fontSize:FZ.sm,fontWeight:600,color:T.ink900,fontVariantNumeric:"tabular-nums"}}>{x.value}{unit}</span>
     </div>))}
     {(items||[]).length>max&&<div style={{fontSize:12,color:T.ink500}}>+ {(items||[]).length-max} autres</div>}
   </div>);
@@ -101,17 +101,17 @@ export function StatutTab({rows,etatChoice,setEtatFor,clientPresence,setClientPr
       <div style={H_TITLE}>Statut & état des machines</div>
       <div style={H_SUB}>L'état choisi ici est celui affiché partout sur le site, immédiatement visible par tous. En Montage, Élec, Tests, Packaging et Expédiée, l'avancement de production s'en déduit automatiquement (voir le « i » des filtres d'état).</div>
     </div>
-    <div style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk,display:"grid",gridTemplateColumns:COLS,gap:12,padding:"8px 16px",background:T.surface,borderTop:"1px solid "+T.line,borderBottom:"1px solid "+T.line}}>
+    <div style={{fontFamily:T.font,fontSize:12,fontWeight:600,color:T.accentInk,display:"grid",gridTemplateColumns:COLS,gap:12,padding:"8px 16px",background:T.surface,borderTop:"1px solid "+T.line,borderBottom:"1px solid "+T.line}}>
       <span>PJ</span><span>S/N</span><span>Gamme</span><span>État</span><span>Présence client / NOBO aux tests</span>
     </div>
-    {rows.length===0&&<EmptyNote>Aucun PJ à afficher.</EmptyNote>}
+    {rows.length===0&&<EmptyNote>Aucun PJ à afficher</EmptyNote>}
     {rows.map(r=>{
       const current=etatChoice[r.pj]||"A_DEFINIR";
       const presence=clientPresence[r.pj]||{present:false,date:""};
       const meta=getPjMeta(r.pj,r);
       return(<div key={r.pj} className="e-hov" style={{display:"grid",gridTemplateColumns:COLS,gap:12,alignItems:"center",padding:"8px 16px",borderBottom:"1px solid "+T.surface,"--e-hov-bg":T.surface}}>
         <div style={{minWidth:0}}>
-          <div style={{fontFamily:T.fontMono,fontWeight:700,fontSize:FZ.sm,color:T.teal600,whiteSpace:"nowrap"}}><PjPlate pj={r.pj}/></div>
+          <div style={{fontFamily:T.fontMono,fontWeight:600,fontSize:FZ.sm,color:T.teal600,whiteSpace:"nowrap"}}><PjPlate pj={r.pj}/></div>
           <div title={meta.nomProjet||""} style={{fontSize:FZ.xs,color:T.ink300,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{meta.nomProjet||""}</div>
         </div>
         <div style={{minWidth:0}}><SerieTag pj={r.pj} style={{verticalAlign:"middle"}}/></div>
@@ -144,22 +144,22 @@ export function KpiAvancement({rows,progress}){
       <div style={{...CARD,padding:16,flex:"1 1 340px"}}>
         <div style={H_TITLE}>Avancement moyen par gamme</div>
         <div style={{...H_SUB,marginBottom:12}}>Moyenne des % saisis, PJ de la sélection</div>
-        {byGamme.length===0?<EmptyNote>Aucune donnée.</EmptyNote>:byGamme.map(x=>(
+        {byGamme.length===0?<EmptyNote>Aucune donnée</EmptyNote>:byGamme.map(x=>(
           <div key={x.g} style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-            <span style={{width:80,fontSize:FZ.sm,fontWeight:700,color:T.ink700,flexShrink:0}}>{x.g}</span>
+            <span style={{width:80,fontSize:FZ.sm,fontWeight:600,color:T.ink700,flexShrink:0}}>{x.g}</span>
             <div style={{flex:1,background:T.surfaceAlt,borderRadius:8,height:10,overflow:"hidden"}}><div className="enogia-bar-fill" style={{width:x.avg+"%",height:"100%",background:T.teal500,borderRadius:8}}/></div>
-            <span style={{width:70,textAlign:"right",fontSize:FZ.xs,fontWeight:700,color:T.ink900}}>{x.avg}% <span style={{color:T.ink300,fontWeight:500}}>({x.n})</span></span>
+            <span style={{width:70,textAlign:"right",fontSize:FZ.xs,fontWeight:600,color:T.ink900}}>{x.avg}% <span style={{color:T.ink300,fontWeight:500}}>({x.n})</span></span>
           </div>
         ))}
       </div>
       <div style={{...CARD,padding:16,flex:"1 1 340px"}}>
         <div style={H_TITLE}>En cours — les moins avancés</div>
         <div style={{...H_SUB,marginBottom:12}}>Les PJ démarrés mais encore loin de la fin</div>
-        {running20.length===0?<EmptyNote>Aucun PJ en cours.</EmptyNote>:running20.map(({r,pv})=>(
+        {running20.length===0?<EmptyNote>Aucun PJ en cours</EmptyNote>:running20.map(({r,pv})=>(
           <div key={r.pj} style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-            <span style={{width:92,fontFamily:T.fontMono,fontSize:FZ.xs,fontWeight:700,color:T.teal600,flexShrink:0}}><PjPlate pj={r.pj}/></span>
+            <span style={{width:92,fontFamily:T.fontMono,fontSize:FZ.xs,fontWeight:600,color:T.teal600,flexShrink:0}}><PjPlate pj={r.pj}/></span>
             <div style={{flex:1,background:T.surfaceAlt,borderRadius:8,height:10,overflow:"hidden"}}><div className="enogia-bar-fill" style={{width:pv+"%",height:"100%",background:pv>=50?T.teal500:T.amber500,borderRadius:8}}/></div>
-            <span style={{width:40,textAlign:"right",fontSize:FZ.xs,fontWeight:700,color:T.ink900}}>{pv}%</span>
+            <span style={{width:40,textAlign:"right",fontSize:FZ.xs,fontWeight:600,color:T.ink900}}>{pv}%</span>
           </div>
         ))}
       </div>
@@ -195,12 +195,12 @@ export function DelayInsights({delays,delayTypes}){
       <div style={{...CARD,padding:16,flex:"1 1 340px"}}>
         <div style={H_TITLE}>Répartition par cause</div>
         <div style={{...H_SUB,marginBottom:12}}>Qu'est-ce qui génère le plus de retard sur le portefeuille ?</div>
-        {byType.length===0?<EmptyNote>Aucun retard enregistré pour l'instant.</EmptyNote>:<PieBlock data={topSlices(byType.map(t=>({name:t.type,value:t.days})),6)} unit=" j"/>}
+        {byType.length===0?<EmptyNote>Aucun retard enregistré pour l'instant</EmptyNote>:<PieBlock data={topSlices(byType.map(t=>({name:t.type,value:t.days})),6)} unit=" j"/>}
       </div>
       <div style={{...CARD,padding:16,flex:"1 1 340px"}}>
         <div style={H_TITLE}>Retard par PJ — jours cumulés</div>
         <div style={{...H_SUB,marginBottom:12}}>Les projets qui concentrent le plus de retard, toutes causes confondues</div>
-        {byPj.length===0?<EmptyNote>Aucune donnée.</EmptyNote>:<PieBlock data={topSlices(byPj.map(p=>({name:p.pj,value:p.days})),6)} unit=" j"/>}
+        {byPj.length===0?<EmptyNote>Aucune donnée</EmptyNote>:<PieBlock data={topSlices(byPj.map(p=>({name:p.pj,value:p.days})),6)} unit=" j"/>}
       </div>
     </div>
   </div>);
@@ -273,7 +273,7 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
   };
   const removeType=t=>{if(delayTypes.length<=1)return;setDelayTypes(delayTypes.filter(x=>x!==t));if(type===t)setType("");};
 
-  const label={fontSize:FZ.xs,fontWeight:700,color:T.ink500,marginBottom:6,display:"block"};
+  const label={fontSize:FZ.xs,fontWeight:600,color:T.ink500,marginBottom:6,display:"block"};
   const pjOptions=[{value:"",label:"Choisir un PJ…"},...data.map(d=>{const m=getPjMeta(d.pj,d);return{value:d.pj,label:d.pj+(m.nomProjet?" — "+m.nomProjet:"")};})];
 
   // ── Vue Kanban (demandé : « une vue plus UX/UI comme un Kanban ») ────────────────────────────
@@ -302,14 +302,14 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
     return(<div key={e.pj+"-"+e.id} style={{background:T.card,border:"1px solid "+T.line,borderLeft:"3px solid "+c,borderRadius:12,padding:"8px 12px",boxShadow:T.shadowSm}}>
       <div style={{display:"flex",alignItems:"center",gap:8}}>
         {byPj
-          ?<span style={{display:"inline-flex",alignItems:"center",gap:4,background:T.surface,borderRadius:999,padding:"1px 8px 1px 8px",fontSize:FZ.xs,fontWeight:700,color:T.ink700}}><span style={{width:7,height:7,borderRadius:"50%",background:c}}/>{e.type}</span>
-          :<span style={{fontFamily:T.fontMono,fontWeight:800,fontSize:FZ.sm,color:T.teal600}}><PjPlate pj={e.pj}/></span>}
+          ?<span style={{display:"inline-flex",alignItems:"center",gap:4,background:T.surface,borderRadius:999,padding:"1px 8px 1px 8px",fontSize:FZ.xs,fontWeight:600,color:T.ink700}}><span style={{width:7,height:7,borderRadius:"50%",background:c}}/>{e.type}</span>
+          :<span style={{fontFamily:T.fontMono,fontWeight:600,fontSize:FZ.sm,color:T.teal600}}><PjPlate pj={e.pj}/></span>}
         {!byPj&&<SerieTag pj={e.pj}/>}
-        <span style={{fontSize:FZ.sm,fontWeight:800,color:T.red500,background:T.red100,borderRadius:8,padding:"0 8px"}}>+{e.days}j</span>
-        {e.groupPjs&&e.groupPjs.length>1&&<span title={e.groupPjs.join(", ")} style={{fontSize:FZ.xs,color:T.violet600,background:T.violet100,borderRadius:8,padding:"1px 6px",fontWeight:700}}>×{e.groupPjs.length}</span>}
+        <span style={{fontSize:FZ.sm,fontWeight:600,color:T.red500,background:T.red100,borderRadius:8,padding:"0 8px"}}>+{e.days}j</span>
+        {e.groupPjs&&e.groupPjs.length>1&&<span title={e.groupPjs.join(", ")} style={{fontSize:FZ.xs,color:T.violet600,background:T.violet100,borderRadius:8,padding:"1px 6px",fontWeight:600}}>×{e.groupPjs.length}</span>}
         <span style={{marginLeft:"auto"}}>
           {ask
-            ?<span style={{display:"inline-flex",gap:4,alignItems:"center"}}><button onClick={async()=>{await deleteDelayAllocation(e.pj,e.id);setConfirmId(null);}} style={{border:"none",background:T.redFill,color:"#fff",borderRadius:8,fontSize:FZ.xs,fontWeight:700,padding:"1px 8px",cursor:"pointer"}}>Supprimer ?</button><button onClick={()=>setConfirmId(null)} style={{border:"none",background:"none",color:T.ink300,fontSize:FZ.xs,cursor:"pointer"}}>Non</button></span>
+            ?<span style={{display:"inline-flex",gap:4,alignItems:"center"}}><button onClick={async()=>{await deleteDelayAllocation(e.pj,e.id);setConfirmId(null);}} style={{border:"none",background:T.redFill,color:"#fff",borderRadius:8,fontSize:FZ.xs,fontWeight:600,padding:"1px 8px",cursor:"pointer"}}>Supprimer ?</button><button onClick={()=>setConfirmId(null)} style={{border:"none",background:"none",color:T.ink300,fontSize:FZ.xs,cursor:"pointer"}}>Non</button></span>
             :<SuperOnly><button onClick={()=>setConfirmId(e.id)} title="Supprimer ce retard" style={{border:"none",background:"none",color:T.ink300,fontSize:FZ.xs,cursor:"pointer",padding:0}}><NavIcon name="close" size={11}/></button></SuperOnly>}
         </span>
       </div>
@@ -352,7 +352,7 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
           // v283 (audit apple-design, lot 2) : une cause sans retard devient une bande étroite (nom vertical, « + » pour en déclarer un)
           if(view!=="pj"&&col.items.length===0)return(<button className="e-btn e-btn-sec" key={col.key} type="button" onClick={()=>openForm({type:col.key})} title={col.title+" — aucun retard. Cliquer pour en déclarer un."} aria-label={col.title+" : aucun retard. Déclarer un retard dans cette cause"}
             style={{...btn("sec","md"),width:46,flexShrink:0,alignSelf:"stretch",flexDirection:"column"}}>
-            <span aria-hidden="true" style={{width:28,height:28,borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink500,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:FZ.md}}>+</span>
+            <span aria-hidden="true" style={{width:28,height:28,borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink500,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:600,fontSize:FZ.md}}>+</span>
             <span aria-hidden="true" style={{width:9,height:9,borderRadius:"50%",background:c,flexShrink:0}}/>
             <span aria-hidden="true" style={{writingMode:"vertical-rl",transform:"rotate(180deg)",fontSize:FZ.sm,fontWeight:600,color:T.ink500,whiteSpace:"nowrap"}}>{col.title} · 0</span>
           </button>);
@@ -360,16 +360,16 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
             <div style={{padding:"8px 12px 8px",borderBottom:"2px solid "+c,display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
               <div style={{minWidth:0,flex:1}}>
                 <div style={{display:"flex",alignItems:"center",gap:6,minWidth:0}}>
-                  {view==="pj"?<span style={{fontFamily:T.fontMono,fontWeight:800,fontSize:FZ.sm,color:T.teal600}}><PjPlate pj={col.pj}/><SerieTag pj={col.pj} style={{marginLeft:7}}/></span>
-                    :<><span style={{width:9,height:9,borderRadius:"50%",background:c,flexShrink:0}}/><span style={{fontWeight:700,fontSize:FZ.sm,color:T.ink900,overflowWrap:"anywhere"}}>{col.title}</span></>}
+                  {view==="pj"?<span style={{fontFamily:T.fontMono,fontWeight:600,fontSize:FZ.sm,color:T.teal600}}><PjPlate pj={col.pj}/><SerieTag pj={col.pj} style={{marginLeft:7}}/></span>
+                    :<><span style={{width:9,height:9,borderRadius:"50%",background:c,flexShrink:0}}/><span style={{fontWeight:600,fontSize:FZ.sm,color:T.ink900,overflowWrap:"anywhere"}}>{col.title}</span></>}
                 </div>
                 <div style={{fontSize:FZ.xs,color:T.ink500,marginTop:2,overflowWrap:"anywhere"}}>{view==="pj"?(mm.nomProjet||""):col.items.length+" retard"+(col.items.length>1?"s":"")}{view==="pj"?" · "+col.items.length+" retard"+(col.items.length>1?"s":""):""}</div>
               </div>
-              <span style={{fontFamily:T.fontDisplay,fontWeight:800,fontSize:FZ.md,color:col.days>0?T.red500:T.ink300,flexShrink:0}}>{col.days}j</span>
-              <button onClick={()=>openForm(view==="pj"?{pj:col.pj}:{type:col.key})} title="Ajouter un retard ici" aria-label="Ajouter un retard ici" style={{width:28,height:28,borderRadius:8,border:"none",background:T.card,color:T.ink900,fontSize:FZ.md,fontWeight:700,cursor:"pointer",flexShrink:0}}>+</button>
+              <span style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:col.days>0?T.red500:T.ink300,flexShrink:0}}>{col.days}j</span>
+              <button onClick={()=>openForm(view==="pj"?{pj:col.pj}:{type:col.key})} title="Ajouter un retard ici" aria-label="Ajouter un retard ici" style={{width:28,height:28,borderRadius:8,border:"none",background:T.card,color:T.ink900,fontSize:FZ.md,fontWeight:600,cursor:"pointer",flexShrink:0}}>+</button>
             </div>
             <div style={{padding:8,display:"flex",flexDirection:"column",gap:8,overflowY:"auto",minHeight:0}}>
-              {col.items.length===0&&<div style={{color:T.ink300,fontSize:FZ.xs,textAlign:"center",padding:"12px 6px"}}>Aucun retard.</div>}
+              {col.items.length===0&&<div style={{color:T.ink300,fontSize:FZ.xs,textAlign:"center",padding:"12px 6px"}}>Aucun retard</div>}
               {col.items.map(e=>card(e,view==="pj"))}
             </div>
           </div>);
@@ -390,7 +390,7 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
       <div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <span style={label}>{multiMode?"PJ concernés":"PJ"}</span>
-          <button onClick={()=>{setMultiMode(m=>!m);}} style={{background:"none",border:"none",color:T.teal600,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",padding:0,marginBottom:6}}>{multiMode?"← Un seul PJ":"Plusieurs PJ (décalage groupé)"}</button>
+          <button onClick={()=>{setMultiMode(m=>!m);}} style={{background:"none",border:"none",color:T.teal600,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",padding:0,marginBottom:6}}>{multiMode?"← Un seul PJ":"Plusieurs PJ (décalage groupé)"}</button>
         </div>
         {multiMode?<PjChecklist data={data} selected={selPjs} onChange={setSelPjs} maxHeight={180}/>
           :<Select value={selPj} onChange={e=>setSelPj(e.target.value)} options={pjOptions}/>}
@@ -410,7 +410,7 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
         <span style={label}>Durée du retard</span>
         <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
           {[1,2,3,5,10,15].map(v=>{const on=n===v&&String(days)===String(v);return(
-            <button key={v} onClick={()=>setDays(String(v))} style={{padding:"6px 12px",borderRadius:8,border:"1px solid "+(on?T.teal500:T.line),background:on?T.teal100:T.card,color:on?T.teal600:T.ink700,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font}}>{v} j</button>
+            <button key={v} onClick={()=>setDays(String(v))} style={{padding:"6px 12px",borderRadius:8,border:"1px solid "+(on?T.teal500:T.line),background:on?T.teal100:T.card,color:on?T.teal600:T.ink700,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font}}>{v} j</button>
           );})}
           <input type="number" min="1" value={days} onChange={e=>setDays(e.target.value)} placeholder="Autre" style={{width:70,padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700}}/>
           <span style={{fontSize:FZ.xs,color:T.ink500}}>jours</span>
@@ -430,14 +430,14 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
         {authorName
           ?<span style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:FZ.sm,color:T.ink700,fontWeight:600}}><Avatar name={authorName} size={24}/>{authorName}</span>
           :<input type="text" value={authorInput} onChange={e=>setAuthorInput(e.target.value)} placeholder="Votre nom" maxLength={40} style={{width:140,padding:"8px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700}}/>}
-        <button onClick={submit} disabled={!canSubmit} style={{marginLeft:"auto",padding:"8px 20px",borderRadius:8,border:"none",background:canSubmit?T.teal500:T.surfaceAlt,color:canSubmit?"#fff":T.ink300,fontSize:FZ.sm,fontWeight:700,cursor:canSubmit?"pointer":"default",fontFamily:T.font}}>
+        <button onClick={submit} disabled={!canSubmit} style={{marginLeft:"auto",padding:"8px 20px",borderRadius:8,border:"none",background:canSubmit?T.teal500:T.surfaceAlt,color:canSubmit?"#fff":T.ink300,fontSize:FZ.sm,fontWeight:600,cursor:canSubmit?"pointer":"default",fontFamily:T.font}}>
           {saving?"Enregistrement…":ok?"✓ Enregistré":"Enregistrer le retard"}
         </button>
       </div>
       {missing.length>0&&<div style={{fontSize:FZ.xs,color:T.ink300,marginTop:-8}}>Il manque : {missing.join(" · ")}</div>}
 
       <div style={{borderTop:"1px solid "+T.line,paddingTop:12}}>
-        <button onClick={()=>setShowTypes(v=>!v)} style={{background:"none",border:"none",padding:0,fontSize:FZ.xs,fontWeight:700,color:T.ink500,cursor:"pointer",fontFamily:T.font}}>{showTypes?"▾":"▸"} Gérer les causes proposées ({delayTypes.length})</button>
+        <button onClick={()=>setShowTypes(v=>!v)} style={{background:"none",border:"none",padding:0,fontSize:FZ.xs,fontWeight:600,color:T.ink500,cursor:"pointer",fontFamily:T.font}}>{showTypes?"▾":"▸"} Gérer les causes proposées ({delayTypes.length})</button>
         {showTypes&&<div style={{marginTop:10}}>
           <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:10}}>
             {delayTypes.map(t=>(
@@ -449,7 +449,7 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
           </div>
           <div style={{display:"flex",gap:6}}>
             <input type="text" value={newType} onChange={e=>setNewType(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")addType();}} placeholder="Nouvelle cause…" maxLength={60} style={{flex:1,padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700}}/>
-            <button onClick={addType} disabled={!newType.trim()} style={{padding:"6px 12px",borderRadius:8,border:"none",background:newType.trim()?T.teal500:T.surfaceAlt,color:newType.trim()?"#fff":T.ink300,fontSize:FZ.xs,fontWeight:700,cursor:newType.trim()?"pointer":"default"}}>Ajouter</button>
+            <button onClick={addType} disabled={!newType.trim()} style={{padding:"6px 12px",borderRadius:8,border:"none",background:newType.trim()?T.teal500:T.surfaceAlt,color:newType.trim()?"#fff":T.ink300,fontSize:FZ.xs,fontWeight:600,cursor:newType.trim()?"pointer":"default"}}>Ajouter</button>
           </div>
         </div>}
       </div>
@@ -545,8 +545,8 @@ export function ProductionCalendarManager({data,productionExclusions,setProducti
 
   const palette={
     on:{background:T.teal100,color:T.teal600,fontWeight:600,cursor:"pointer"},
-    off:{background:T.red100,color:T.red600,fontWeight:700,textDecoration:"line-through",cursor:"pointer"},
-    part:{background:T.amber100,color:T.amber600,fontWeight:700,cursor:"pointer"},
+    off:{background:T.red100,color:T.red600,fontWeight:600,textDecoration:"line-through",cursor:"pointer"},
+    part:{background:T.amber100,color:T.amber600,fontWeight:600,cursor:"pointer"},
     out:{color:T.ink100,cursor:"default"},
     we:{color:T.ink300,background:"transparent",cursor:"default",opacity:.55},
   };
@@ -587,9 +587,9 @@ export function ProductionCalendarManager({data,productionExclusions,setProducti
           for(let i=0;i<lead;i++)cells.push(null);
           for(let d=1;d<=nDays;d++)cells.push(new Date(y,mo,d));
           return(<div key={y+"-"+mo} style={{border:"1px solid "+T.line,borderRadius:12,padding:8}}>
-            <div style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,textTransform:"capitalize",marginBottom:6}}>{m.toLocaleDateString("fr-FR",{month:"long",year:"numeric"})}</div>
+            <div style={{fontSize:FZ.sm,fontWeight:600,color:T.ink900,textTransform:"capitalize",marginBottom:6}}>{m.toLocaleDateString("fr-FR",{month:"long",year:"numeric"})}</div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2}}>
-              {DOW.map((l,i)=><div key={i} style={{textAlign:"center",fontSize:FZ.xs,fontWeight:700,color:T.ink300,paddingBottom:2}}>{l}</div>)}
+              {DOW.map((l,i)=><div key={i} style={{textAlign:"center",fontSize:FZ.xs,fontWeight:600,color:T.ink300,paddingBottom:2}}>{l}</div>)}
               {cells.map((d,i)=>{
                 if(!d)return<div key={"b"+i}/>;
                 const iso=toLocalISO(d);
@@ -609,8 +609,8 @@ export function ProductionCalendarManager({data,productionExclusions,setProducti
       </div>
 
       {!allMode&&<div style={{marginTop:16}}>
-        <div style={{fontSize:FZ.xs,fontWeight:700,color:T.ink700,marginBottom:8}}>Jours désactivés ({excluded.length})</div>
-        {excluded.length===0?<div style={{fontSize:FZ.sm,color:T.ink300}}>Aucun jour exclu pour ce PJ.</div>:
+        <div style={{fontSize:FZ.xs,fontWeight:600,color:T.ink700,marginBottom:8}}>Jours désactivés ({excluded.length})</div>
+        {excluded.length===0?<div style={{fontSize:FZ.sm,color:T.ink300}}>Aucun jour exclu pour ce PJ</div>:
           <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
             {[...excluded].sort().map(iso=>(
               <span key={iso} style={{display:"inline-flex",alignItems:"center",gap:6,background:T.red100,color:T.red600,borderRadius:999,padding:"3px 8px 3px 12px",fontSize:FZ.xs,fontWeight:600}}>

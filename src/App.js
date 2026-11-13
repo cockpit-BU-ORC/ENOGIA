@@ -66,7 +66,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-13-v330-sav-carte-historique";
+const APP_BUILD_VERSION = "2026-11-13-v331-unslop";
 
 const ReleasePopup = React.lazy(() => import("./components/ReleaseNotes").then(m => ({ default: m.ReleasePopup })));
 function Navigate0({ go }) { useEffect(() => { go(); }, []); return null; } // eslint-disable-line react-hooks/exhaustive-deps
@@ -1099,7 +1099,7 @@ export default function App(){
   return(<MentionCtx.Provider value={mentionCtx}><ChangeMarksContext.Provider value={changeMarks}><div className="enogia-fade-in enogia-shell" style={{fontFamily:T.font,fontSize:FZ.md,background:T.surface,minHeight:"100vh",color:T.ink900,display:"flex"}}>
     <style>{"*{box-sizing:border-box;}"}</style>
     <Toaster/>
-    {presentation&&<button onClick={()=>setPresentation(false)} title="Quitter le mode présentation (Échap)" className="enogia-btn-tap" style={{position:"fixed",right:16,bottom:16,zIndex:10010,border:"none",borderRadius:999,padding:"8px 16px",background:T.ink900,color:T.surface,fontFamily:T.font,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",boxShadow:T.shadowFloat}}>Mode présentation · Quitter (Échap)</button>}
+    {presentation&&<button onClick={()=>setPresentation(false)} title="Quitter le mode présentation (Échap)" className="enogia-btn-tap" style={{position:"fixed",right:16,bottom:16,zIndex:10010,border:"none",borderRadius:999,padding:"8px 16px",background:T.ink900,color:T.surface,fontFamily:T.font,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",boxShadow:T.shadowFloat}}>Mode présentation · Quitter (Échap)</button>}
     {screenOpen&&<React.Suspense fallback={null}><WorkshopScreen data={dataWithOverrides} productionExclusions={productionExclusions} closurePeriods={closurePeriods} changeLog={changeLog} darkMode={darkMode} onClose={()=>setScreenOpen(false)}/></React.Suspense>}
     {loggedIn&&!justLoggedIn&&!screenOpen&&overridesLoaded&&unseenReleases.length>0&&<React.Suspense fallback={null}><ReleasePopup releases={unseenReleases} userName={authorName} onClose={markReleasesSeen}/></React.Suspense>}
     {loggedIn&&!justLoggedIn&&!screenOpen&&tutoOn&&(tutoOpen||(overridesLoaded&&unseenReleases.length===0&&currentUser&&tutoClosedId!==((tutoCfg&&tutoCfg.id)||"x")&&!tutoSeen(tutoCfg,currentUser.email)))&&<TutoVideoModal cfg={tutoCfg} onClose={closeTuto}/>}
@@ -1115,11 +1115,11 @@ export default function App(){
       <button type="button" onClick={()=>setView("home")} aria-label={SITE_TITLE+" — accueil"} title="Accueil" style={{border:"none",background:"transparent",cursor:"pointer",padding:navCompact?"2px 0 10px":"2px 10px 12px",display:"flex",justifyContent:navCompact?"center":"flex-start",alignItems:"center",minHeight:44}}>
         <span style={{display:"flex",flexDirection:"column",alignItems:navCompact?"center":"flex-start",gap:6,minWidth:0}}>
         <img src={process.env.PUBLIC_URL+"/enogia-logo-color-crop.svg"} alt="" aria-hidden="true" width="105" height="42" style={{height:navCompact?24:34,width:"auto",maxWidth:navCompact?44:170,objectFit:"contain",objectPosition:"left center",filter:NAV.industrial||darkMode?"brightness(0) invert(1)":"none"}}/>
-        {!navCompact&&<span style={{textAlign:"left",lineHeight:1.25}}><span style={{display:"block",fontFamily:T.fontDisplay,fontWeight:800,fontSize:14,letterSpacing:".02em",color:NAV.industrial?"#FFFFFF":T.ink900}}>{SITE_NAME} <Hl color={NAV.industrial?NAV.mark:T.amber500} style={{fontWeight:800,whiteSpace:"nowrap"}}>{SITE_SCOPE}</Hl></span><span style={{display:"block",fontSize:11,color:NAV.ink,marginTop:2,whiteSpace:"normal"}}>{SITE_SUB}</span></span>}
+        {!navCompact&&<span style={{textAlign:"left",lineHeight:1.25}}><span style={{display:"block",fontFamily:T.fontDisplay,fontWeight:600,fontSize:14,letterSpacing:".02em",color:NAV.industrial?"#FFFFFF":T.ink900}}>{SITE_NAME} <Hl color={NAV.industrial?NAV.mark:T.amber500} style={{fontWeight:600,whiteSpace:"nowrap"}}>{SITE_SCOPE}</Hl></span><span style={{display:"block",fontSize:11,color:NAV.ink,marginTop:2,whiteSpace:"normal"}}>{SITE_SUB}</span></span>}
         </span>
       </button>
       {NAV_TREE.map(({g,items})=><React.Fragment key={g}>
-        {!navCompact&&<div className="enogia-nav-grp" style={{fontSize:12,fontWeight:700,color:NAV.group,fontFamily:T.font,padding:"12px 10px 4px",whiteSpace:"nowrap"}}>{g}</div>}
+        {!navCompact&&<div className="enogia-nav-grp" style={{fontSize:12,fontWeight:600,color:NAV.group,fontFamily:T.font,padding:"12px 10px 4px",whiteSpace:"nowrap"}}>{g}</div>}
         {navCompact&&<div className="enogia-nav-grp" style={{width:18,height:1,background:NAV.industrial?"rgba(255,255,255,.18)":T.line,margin:"4px 0"}}/>}
         {items.map(it=>{const on=it.on,showSubs=(on||navHover===it.id)&&it.subs&&it.subs.length>1;return(<React.Fragment key={it.id}>
           <button className="enogia-nav-btn e-hov e-hov-ink" data-on={on?"1":"0"} onClick={()=>{if(coarse&&!on&&it.subs&&it.subs.length>1&&navHover!==it.id){setNavHover(it.id);return;}it.go();setNavPeek(false);}} title={it.l} aria-label={it.badge?it.l+", "+it.badge+" nouvelle"+(it.badge>1?"s":"")+" mise"+(it.badge>1?"s":"")+" à jour":it.l} aria-current={on?"page":undefined}
@@ -1167,13 +1167,13 @@ export default function App(){
         {newVsInitial&&pinOk&&<div role="status" style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",marginBottom:12,padding:"10px 14px",borderRadius:12,background:T.teal100,color:T.teal600,fontFamily:T.font,fontSize:FZ.sm,fontWeight:600}}>
           <NavIcon name="pin" size={16}/>
           <span style={{flex:"1 1 320px"}}>{newVsInitial.pjs.length} PJ de cet import {newVsInitial.pjs.length>1?"ne sont pas":"n'est pas"} dans le planning initial : {newVsInitial.pjs.slice(0,6).join(", ")}{newVsInitial.pjs.length>6?"…":""}. Sans initial, leur dérive ne se calcule pas.</span>
-          <button type="button" onClick={()=>{setInitialAddFromImport({rows:newVsInitial.rows,n:Date.now()});setNewVsInitial(null);setManagerTab(isOwner?"derives":"fiche");setView("manager");}} style={{border:"none",borderRadius:8,padding:"6px 12px",background:T.ink900,color:T.card,fontWeight:700,cursor:"pointer",fontFamily:T.font,minHeight:32}}>Les ancrer dans l'initial…</button>
-          <button type="button" onClick={()=>setNewVsInitial(null)} style={{border:"1px solid "+T.line,borderRadius:8,padding:"6px 12px",background:T.card,color:T.ink700,fontWeight:700,cursor:"pointer",fontFamily:T.font,minHeight:32}}>Plus tard</button>
+          <button type="button" onClick={()=>{setInitialAddFromImport({rows:newVsInitial.rows,n:Date.now()});setNewVsInitial(null);setManagerTab(isOwner?"derives":"fiche");setView("manager");}} style={{border:"none",borderRadius:8,padding:"6px 12px",background:T.ink900,color:T.card,fontWeight:600,cursor:"pointer",fontFamily:T.font,minHeight:32}}>Les ancrer dans l'initial…</button>
+          <button type="button" onClick={()=>setNewVsInitial(null)} style={{border:"1px solid "+T.line,borderRadius:8,padding:"6px 12px",background:T.card,color:T.ink700,fontWeight:600,cursor:"pointer",fontFamily:T.font,minHeight:32}}>Plus tard</button>
         </div>}
         {(syncLost||offline)&&<div role="alert" style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",marginBottom:12,padding:"10px 14px",borderRadius:12,background:T.amber100,borderLeft:"4px solid "+T.amber500,color:T.ink900,fontSize:FZ.sm,fontFamily:T.font}}>
           <NavIcon name="warning" size={18}/>
           <span style={{flex:1,minWidth:200}}>{offline?"Vous êtes hors ligne : les données affichées ne se mettent plus à jour.":"La connexion aux données a été interrompue : les informations affichées peuvent être anciennes."}</span>
-          <button type="button" onClick={()=>window.location.reload()} className="enogia-btn-ind" style={{border:"1.5px solid "+T.teal500,background:"transparent",color:T.teal600,borderRadius:8,padding:"5px 12px",fontWeight:700,fontSize:FZ.xs,cursor:"pointer",fontFamily:T.font}}>Recharger</button>
+          <button type="button" onClick={()=>window.location.reload()} className="enogia-btn-ind" style={{border:"1.5px solid "+T.teal500,background:"transparent",color:T.teal600,borderRadius:8,padding:"5px 12px",fontWeight:600,fontSize:FZ.xs,cursor:"pointer",fontFamily:T.font}}>Recharger</button>
         </div>}
 
 

@@ -6,7 +6,7 @@ import { STAGES } from "../prodStages";
 
 // ── v162 : contenus des bulles de la liste (survol d'État, d'écart de départ et d'Avancement) ─────────────────────────
 // Rien de nouveau n'est calculé ici : on ne fait que « déplier » ce que la ligne contient déjà.
-const kick={fontSize:FZ.xs,fontWeight:700,letterSpacing:".08em",textTransform:"uppercase",color:T.ink500,marginBottom:8};
+const kick={fontSize:FZ.xs,fontWeight:600,letterSpacing: ".01em",color:T.ink500,marginBottom:8};
 const d2=(d,df)=>d?fmtMode(new Date(d),df):"—";
 
 export function EtatPopBody({r,df}){
@@ -21,13 +21,13 @@ export function EtatPopBody({r,df}){
       const done=started&&i<cur, now=started&&i===cur;
       const c=ETAT_META[s.id]?.bar||T.teal500;
       return(<div key={s.id} style={{display:"flex",alignItems:"center",gap:10,padding:"4px 0",opacity:started&&!done&&!now?.55:1}}>
-        <span style={{width:18,height:18,borderRadius:"50%",flexShrink:0,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,background:done||now?c:"transparent",color:done||now?"#fff":T.ink500,border:"1.5px solid "+(done||now?c:T.line)}}>{done?"✓":i+1}</span>
+        <span style={{width:18,height:18,borderRadius:"50%",flexShrink:0,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:600,background:done||now?c:"transparent",color:done||now?"#fff":T.ink500,border:"1.5px solid "+(done||now?c:T.line)}}>{done?"✓":i+1}</span>
         <span style={{flex:1,fontWeight:now?700:500}}>{s.label}</span>
         <span style={{fontVariantNumeric:"tabular-nums",color:T.ink500,fontSize:FZ.xs}}>{dates[s.id]?d2(dates[s.id],df):""}</span>
       </div>);
     })}
     <div style={{display:"flex",alignItems:"center",gap:10,padding:"4px 0",opacity:r.etat==="SHIPPED"?1:.55}}>
-      <span style={{width:18,height:18,borderRadius:"50%",flexShrink:0,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,background:r.etat==="SHIPPED"?ETAT_META.SHIPPED.bar:"transparent",color:r.etat==="SHIPPED"?"#fff":T.ink500,border:"1.5px solid "+(r.etat==="SHIPPED"?ETAT_META.SHIPPED.bar:T.line)}}>{r.etat==="SHIPPED"?"✓":5}</span>
+      <span style={{width:18,height:18,borderRadius:"50%",flexShrink:0,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:600,background:r.etat==="SHIPPED"?ETAT_META.SHIPPED.bar:"transparent",color:r.etat==="SHIPPED"?"#fff":T.ink500,border:"1.5px solid "+(r.etat==="SHIPPED"?ETAT_META.SHIPPED.bar:T.line)}}>{r.etat==="SHIPPED"?"✓":5}</span>
       <span style={{flex:1,fontWeight:r.etat==="SHIPPED"?700:500}}>Expédiée</span>
       <span style={{fontVariantNumeric:"tabular-nums",color:T.ink500,fontSize:FZ.xs}}>{d2(r.depart,df)}</span>
     </div>
@@ -44,7 +44,7 @@ export function DriftPopBody({r,df}){
   return(<div>
     <div style={kick}>Départ usine</div>
     <div style={{display:"flex",alignItems:"baseline",gap:8,marginBottom:10}}>
-      <span style={{fontSize:FZ.xxl,fontWeight:700,color:col,lineHeight:1,fontVariantNumeric:"tabular-nums"}}>{dr==null||dr===0?"0":(dr>0?"+":"")+dr}</span>
+      <span style={{fontSize:FZ.xxl,fontWeight:600,color:col,lineHeight:1,fontVariantNumeric:"tabular-nums"}}>{dr==null||dr===0?"0":(dr>0?"+":"")+dr}</span>
       <span style={{color:T.ink500}}>jour{Math.abs(dr)>1?"s":""} {late?"de retard":early?"d'avance":"d'écart"}</span>
     </div>
     <div style={{display:"grid",gridTemplateColumns:"auto 1fr",gap:"4px 12px"}}>

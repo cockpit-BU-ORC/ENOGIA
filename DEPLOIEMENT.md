@@ -2382,3 +2382,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Parc : carte du monde (fond chargé depuis cdn.jsdelivr.net : topojson-client 3.1.0, world-atlas 2.0.2) ; latitude / longitude facultatives par projet.
 - Reprise unique de l'historique : bouton « Reprendre l'historique (fichier SAV) » (propriétaire) — exporter le Google Sheet en .xlsx, le choisir, vérifier l'aperçu, confirmer. Écrit dans `planning/sav` (règles V326 à republier avant).
 - Fichiers : savImport.js(+test) (nouveau), components/SavPage.js, useAppData.js, demo/demoPages.js, versions.
+
+## v331 — retouche « unslop » : graisses, majuscules, cadran vide, points finaux, croix
+
+- Graisses 700 / 800 / 900 → 600 dans le site (pages des kits, rapport CODIR et PV non touchés) ; Satoshi chargée en police variable (public/index.html, lien Fontshare séparé).
+- Plus d'étiquettes en majuscules espacées ; pop-up Nouveautés sans dégradé.
+- Accueil › Charge atelier : phrase quand aucune heure n'est prévue.
+- Points finaux retirés des messages courts ; boutons Fermer en icône.
+- Aucune clé localStorage, aucune donnée ni règle Firestore modifiée.
+- Fichiers : public/index.html, styles.css, ~90 composants (graisses), RoleHome.js, ReleaseNotes.js, versions.

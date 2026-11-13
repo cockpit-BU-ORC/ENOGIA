@@ -194,7 +194,7 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
         <div style={{ overflowX: "auto", marginTop: 4 }}><table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead><tr><th style={th}>PJ</th><th style={th}>Projet</th><th style={th}>Jalon</th><th style={{ ...th, textAlign: "right" }}>Montant</th><th style={{ ...th, textAlign: "right" }}>Facture initiale</th><th style={{ ...th, textAlign: "right" }}>Facture prévue</th></tr></thead>
           <tbody>{[...todo, ...L.filter(x => x.factReelle)].map(x => <tr key={x.id || x.pj + x.jalon} style={{ opacity: x.factReelle ? 0.6 : 1 }}>
-            <td style={td()}>{rows.some(r => r.pj === x.pj) ? <button type="button" onClick={() => onOpenPj && onOpenPj(x.pj)} style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer", fontFamily: T.fontMono, fontWeight: 700, fontSize: FZ.sm, color: T.ink900 }}>{x.pj}</button> : <span style={{ fontFamily: T.fontMono, fontWeight: 700 }}>{x.pj}</span>}</td>
+            <td style={td()}>{rows.some(r => r.pj === x.pj) ? <button type="button" onClick={() => onOpenPj && onOpenPj(x.pj)} style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer", fontFamily: T.fontMono, fontWeight: 600, fontSize: FZ.sm, color: T.ink900 }}>{x.pj}</button> : <span style={{ fontFamily: T.fontMono, fontWeight: 600 }}>{x.pj}</span>}</td>
             <td style={td(false, T.ink700)}>{x.nom || nomOf(rows.find(r => r.pj === x.pj) || { pj: x.pj }) || "—"}</td>
             <td style={td()}>{x.jalon || "—"}{x.factReelle ? <span style={{ marginLeft: 6 }}><Pill tone={{ bg: T.emerald100, ink: T.emerald600 }}>facturé</Pill></span> : null}</td>
             <td style={td(true)}>{fmtEur(x.montant)}</td>
@@ -209,8 +209,8 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
       <div style={{ display: "grid", gridTemplateColumns: "repeat(5,minmax(0,1fr))", gap: 6, marginTop: 6 }}>
         {days.map(({ l, d }) => { const list = tView ? mineT.filter(r => { const e = effOf(r); return e.from <= d && e.to >= d; }) : []; return (
           <div key={d} style={{ background: d === today ? T.teal100 : T.surface, borderRadius: 8, padding: "6px 6px 8px", minWidth: 0 }}>
-            <div style={{ fontSize: FZ.xs, fontWeight: 700, color: d === today ? T.teal600 : T.ink700 }}>{l} {d.slice(8, 10)}</div>
-            {list.length === 0 ? <div style={{ ...grey, marginTop: 4 }}>—</div> : list.map(r => <button key={r.pj} type="button" onClick={() => onOpenPj && onOpenPj(r.pj)} style={{ display: "block", width: "100%", marginTop: 4, border: "none", borderLeft: "3px solid " + S.tests.solid, background: T.card, borderRadius: "0 6px 6px 0", padding: "3px 6px", textAlign: "left", cursor: "pointer", fontFamily: T.fontMono, fontSize: 11, fontWeight: 700, color: T.ink900, minHeight: 24 }}>{r.pj}</button>)}
+            <div style={{ fontSize: FZ.xs, fontWeight: 600, color: d === today ? T.teal600 : T.ink700 }}>{l} {d.slice(8, 10)}</div>
+            {list.length === 0 ? <div style={{ ...grey, marginTop: 4 }}>—</div> : list.map(r => <button key={r.pj} type="button" onClick={() => onOpenPj && onOpenPj(r.pj)} style={{ display: "block", width: "100%", marginTop: 4, border: "none", borderLeft: "3px solid " + S.tests.solid, background: T.card, borderRadius: "0 6px 6px 0", padding: "3px 6px", textAlign: "left", cursor: "pointer", fontFamily: T.fontMono, fontSize: 11, fontWeight: 600, color: T.ink900, minHeight: 24 }}>{r.pj}</button>)}
           </div>); })}
       </div></>); } };
   W.arrivees = { label: "Prochaines arrivées au banc", span: 6, render: () => sec("arrivees", "Prochaines arrivées au banc", S.arrivee.ring, <>
@@ -222,16 +222,18 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
   // chef d'atelier
   W.charge = { label: "Charge atelier", span: 7, render: () => { const max = Math.max(1, ...charge.map(w => Math.max(w.hours, w.cap)));
     return sec("charge", "Charge atelier", S.production.ring, <><Head title="Charge atelier" sub={"4 semaines · capacité " + atelierCap(plan) + " h / semaine"} />
+      {/* v331 (unslop) : sans heures prévues, une phrase au lieu de quatre colonnes « 0 h » vides */}
+      {charge.every(w => !w.hours) ? <div style={{ ...grey, padding: "16px 0 8px" }}>Pas d'heures d'atelier prévues sur les 4 prochaines semaines</div> :
       <div style={{ display: "flex", alignItems: "flex-end", gap: 10, height: 120, marginTop: 8 }}>
         {charge.map(w => { const over = w.hours > w.cap; return (<div key={w.a} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, height: "100%", justifyContent: "flex-end", position: "relative" }}>
-          <span style={{ fontSize: FZ.xs, fontWeight: 700, color: over ? T.red500 : T.ink900, fontVariantNumeric: "tabular-nums" }}>{w.hours} h</span>
+          <span style={{ fontSize: FZ.xs, fontWeight: 600, color: over ? T.red500 : T.ink900, fontVariantNumeric: "tabular-nums" }}>{w.hours} h</span>
           <div style={{ width: "100%", maxWidth: 52, height: 84, position: "relative" }}>
             <div title={"capacité " + w.cap + " h"} style={{ position: "absolute", left: -4, right: -4, bottom: Math.round(84 * w.cap / max), borderTop: "1.5px dashed " + T.ink500 }} />
             <div className="enogia-bar-fill" style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: Math.max(3, Math.round(84 * w.hours / max)), background: over ? T.red500 : S.production.solid, borderRadius: "3px 3px 0 0" }} />
           </div>
           <span style={grey}>{fmtD(w.a)}</span>
         </div>); })}
-      </div></>); } };
+      </div>}</>); } };
   W.arrdep = { label: "Arrivées et départs", span: 5, render: () => sec("arrdep", "Arrivées et départs", S.depart.ring, <>
     <Head title="Arrivées et départs" sub="cette semaine" count={arrDep.length} />
     {arrDep.length === 0 ? empty("check", "Ni arrivée ni départ cette semaine", "") :
@@ -282,7 +284,7 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
       {L.length === 0 ? empty("check", "Rien à suivre", "") : L.slice(0, 5).map((p, i) => <div key={p.id} style={{ display: "flex", gap: 8, minHeight: 30, alignItems: "center", borderTop: i ? "1px solid " + T.line : "none", fontSize: FZ.sm }}>
         <Pill tone={p.statut === "nc" ? A.red : p.statut === "cq" ? S.tests : A.orange}>{p.statut === "nc" ? "NC" : p.statut === "cq" ? "Contrôle" : "Appro"}</Pill>
         <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.designation}{p.turbine ? " · " + p.turbine : ""}{p.statut === "nc" && p.motif ? " · " + p.motif : ""}</span>
-        {p.statut === "appro" && <span style={{ color: T.red500, fontSize: FZ.xs, fontWeight: 700 }}>livraison {fmtD(p.dateLiv)}</span>}</div>)}
+        {p.statut === "appro" && <span style={{ color: T.red500, fontSize: FZ.xs, fontWeight: 600 }}>livraison {fmtD(p.dateLiv)}</span>}</div>)}
       {ptOpen()}</>); } };
   W.ptDates = { label: "Dates prévisionnelles des turbines", span: 12, only: ptOnly, render: () => { const L = pt.upcoming.slice(0, 6); const Hd = Math.min(120, Math.ceil(Math.max(10, ...L.map(u => u.s.end ?? 0))) + 2); const pct = x => Math.max(0, Math.min(100, x / Hd * 100));
     const col = ph => ({ carter: S.production.solid, assy: S.finProd.solid, tests: S.tests.solid })[ph] || T.ink300;
@@ -322,7 +324,7 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
     return sec("depMois", "Départs par mois", S.depart.ring, <><Head title="Départs par mois" sub="6 prochains mois" count={months.reduce((a, m) => a + m.n, 0)} />
       <div style={{ display: "flex", alignItems: "flex-end", gap: 10, height: 110, marginTop: 8 }}>
         {months.map(m => <div key={m.k} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, height: "100%", justifyContent: "flex-end" }}>
-          <span style={{ fontSize: FZ.xs, fontWeight: 700, color: T.ink900, fontVariantNumeric: "tabular-nums" }}>{m.n}</span>
+          <span style={{ fontSize: FZ.xs, fontWeight: 600, color: T.ink900, fontVariantNumeric: "tabular-nums" }}>{m.n}</span>
           <div className="enogia-bar-fill" style={{ width: "100%", maxWidth: 44, height: Math.max(2, Math.round(70 * m.n / max)), background: S.depart.solid }} />
           <span style={grey}>{m.l}</span></div>)}
       </div></>); } };

@@ -74,25 +74,25 @@ function RedGateDialog({pj,meta,axis,onCancel,onConfirm}){
     <div onClick={e=>e.stopPropagation()} style={{background:T.card,borderRadius:12,boxShadow:T.shadowLg,border:"1px solid "+T.line,width:"min(480px,100%)",maxHeight:"92vh",overflowY:"auto",fontFamily:T.font}}>
       <div style={{padding:"14px 18px",borderBottom:"1px solid "+T.line,display:"flex",alignItems:"center",gap:10}}>
         <span style={{width:14,height:14,borderRadius:4,background:T.red500,flexShrink:0}}/>
-        <div style={{minWidth:0}}><div style={{fontSize:FZ.md||FZ.sm,fontWeight:800,color:T.ink900}}>{lab} : à risque</div><div style={{fontSize:FZ.xs,color:T.ink500}}>{pj}{meta&&meta.nomProjet?" · "+meta.nomProjet:""}</div></div>
+        <div style={{minWidth:0}}><div style={{fontSize:FZ.md||FZ.sm,fontWeight:600,color:T.ink900}}>{lab} : à risque</div><div style={{fontSize:FZ.xs,color:T.ink500}}>{pj}{meta&&meta.nomProjet?" · "+meta.nomProjet:""}</div></div>
       </div>
       <div style={{padding:"14px 18px",display:"flex",flexDirection:"column",gap:12}}>
-        <label style={{display:"block",fontSize:FZ.xs,fontWeight:700,color:T.ink700}}>Commentaire (obligatoire) — pourquoi ce statut ?
+        <label style={{display:"block",fontSize:FZ.xs,fontWeight:600,color:T.ink700}}>Commentaire (obligatoire) — pourquoi ce statut ?
           <textarea ref={ref} value={comment} maxLength={NOTE_MAX} rows={3} onChange={e=>setComment(e.target.value)} placeholder="Cause, impact, échéance…" style={{...box,marginTop:4,resize:"vertical"}}/>
           <span style={{display:"block",textAlign:"right",fontSize:FZ.xs,color:T.ink300,fontWeight:500}}>{comment.length}/{NOTE_MAX}</span>
         </label>
         {axis==="planning"&&(needMit
           ?<div style={{display:"flex",flexDirection:"column",gap:8,padding:"10px",border:"1px solid "+T.line,borderRadius:8}}>
-            <div style={{fontSize:FZ.xs,fontWeight:700,color:T.ink700}}>Plan de mitigation associé (obligatoire)</div>
-            <label style={{fontSize:FZ.xs,fontWeight:700,color:T.ink500}}>Risque<input value={risk} onChange={e=>setRisk(e.target.value)} placeholder="Quel risque ?" style={{...box,marginTop:3}}/></label>
-            <label style={{fontSize:FZ.xs,fontWeight:700,color:T.ink500}}>Ce qu'on fait pour l'éviter<input value={measure} onChange={e=>setMeasure(e.target.value)} placeholder="Mesure, responsable…" style={{...box,marginTop:3}}/></label>
-            <label style={{fontSize:FZ.xs,fontWeight:700,color:T.ink500}}>Date<input type="date" value={mdate} onChange={e=>setMdate(e.target.value)} style={{...box,marginTop:3,width:"auto",colorScheme:T.mode==="dark"?"dark":"light"}}/></label>
+            <div style={{fontSize:FZ.xs,fontWeight:600,color:T.ink700}}>Plan de mitigation associé (obligatoire)</div>
+            <label style={{fontSize:FZ.xs,fontWeight:600,color:T.ink500}}>Risque<input value={risk} onChange={e=>setRisk(e.target.value)} placeholder="Quel risque ?" style={{...box,marginTop:3}}/></label>
+            <label style={{fontSize:FZ.xs,fontWeight:600,color:T.ink500}}>Ce qu'on fait pour l'éviter<input value={measure} onChange={e=>setMeasure(e.target.value)} placeholder="Mesure, responsable…" style={{...box,marginTop:3}}/></label>
+            <label style={{fontSize:FZ.xs,fontWeight:600,color:T.ink500}}>Date<input type="date" value={mdate} onChange={e=>setMdate(e.target.value)} style={{...box,marginTop:3,width:"auto",colorScheme:T.mode==="dark"?"dark":"light"}}/></label>
           </div>
           :<div style={{fontSize:FZ.xs,color:T.ink500,background:T.surface,borderRadius:8,padding:"8px 10px"}}>Plan de mitigation : {open.length} ouvert{open.length>1?"s":""} sur ce projet (« {(open[0].text||"").slice(0,70)}{(open[0].text||"").length>70?"…":""} »). C'est celui qui accompagne ce statut ; vous pourrez en ajouter dans la fiche.</div>)}
       </div>
       <div style={{padding:"12px 18px",borderTop:"1px solid "+T.line,display:"flex",justifyContent:"flex-end",gap:8}}>
         <button type="button" onClick={onCancel} style={{padding:"7px 14px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink700,fontWeight:600,fontSize:FZ.sm,cursor:"pointer",fontFamily:T.font}}>Annuler</button>
-        <button type="button" disabled={!ok} onClick={()=>onConfirm({comment:comment.trim(),mitigation:needMit?{risk:risk.trim(),measure:measure.trim(),deadline:mdate}:null})} style={{padding:"7px 16px",borderRadius:8,border:"none",background:ok?T.red500:T.line,color:ok?"#fff":T.ink300,fontWeight:700,fontSize:FZ.sm,cursor:ok?"pointer":"not-allowed",fontFamily:T.font}}>Passer à risque</button>
+        <button type="button" disabled={!ok} onClick={()=>onConfirm({comment:comment.trim(),mitigation:needMit?{risk:risk.trim(),measure:measure.trim(),deadline:mdate}:null})} style={{padding:"7px 16px",borderRadius:8,border:"none",background:ok?T.red500:T.line,color:ok?"#fff":T.ink300,fontWeight:600,fontSize:FZ.sm,cursor:ok?"pointer":"not-allowed",fontFamily:T.font}}>Passer à risque</button>
       </div>
     </div>
   </div>,document.body);
@@ -136,15 +136,15 @@ export function SanteTab({rows,onSave}){
       </div>
       <div style={{display:"flex",gap:12,alignItems:"center",flexWrap:"wrap",fontSize:FZ.xs,color:T.ink500,fontWeight:600}}>
         {FEU_LEVELS.map(([lv,lab])=><span key={lv} style={{display:"inline-flex",alignItems:"center",gap:4}}><FeuDot value={lv} size={11}/>{lab}</span>)}
-        <button onClick={()=>setHideEmpty(v=>!v)} style={{border:"1px solid "+(hideEmpty?T.teal500:T.line),background:hideEmpty?T.teal100:"transparent",color:hideEmpty?T.teal600:T.ink500,borderRadius:8,padding:"4px 8px",fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font}}>Seulement les projets évalués</button>
+        <button onClick={()=>setHideEmpty(v=>!v)} style={{border:"1px solid "+(hideEmpty?T.teal500:T.line),background:hideEmpty?T.teal100:"transparent",color:hideEmpty?T.teal600:T.ink500,borderRadius:8,padding:"4px 8px",fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font}}>Seulement les projets évalués</button>
       </div>
     </div>
     <div style={{overflowX:"auto"}}>
       <div style={{minWidth:920}}>
-        <div style={{display:"grid",gridTemplateColumns:COLS,gap:12,padding:"8px 16px",background:T.surface,borderTop:"1px solid "+T.line,borderBottom:"1px solid "+T.line,fontSize:FZ.xs,fontWeight:700,color:T.ink300,textTransform:"uppercase",letterSpacing:".04em",alignItems:"end"}}>
+        <div style={{display:"grid",gridTemplateColumns:COLS,gap:12,padding:"8px 16px",background:T.surface,borderTop:"1px solid "+T.line,borderBottom:"1px solid "+T.line,fontSize:FZ.xs,fontWeight:600,color:T.ink300,letterSpacing: ".01em",alignItems:"end"}}>
           <span>PJ</span><span>S/N</span>
           {FEUX.map(([k,lab],i)=><span key={k} style={{lineHeight:1.2}}>{lab}
-            <span style={{display:"flex",gap:8,marginTop:3,textTransform:"none",letterSpacing:0,fontWeight:700}}>
+            <span style={{display:"flex",gap:8,marginTop:3,textTransform:"none",letterSpacing:0,fontWeight:600}}>
               {["red","yellow","green"].map(lv=><span key={lv} style={{color:feuText(lv)}}>{counts[i][lv]}</span>)}
               <span style={{color:T.ink300}}>· {counts[i].none} ?</span>
             </span></span>)}
@@ -156,12 +156,12 @@ export function SanteTab({rows,onSave}){
           const ec=tf&&dep?diffDays(tf,dep):null;
           return(<div key={r.pj} className="e-hov" style={{display:"grid",gridTemplateColumns:COLS,gap:12,alignItems:"center",padding:"8px 16px",borderBottom:"1px solid "+T.surface,"--e-hov-bg":T.surface}}>
             <div style={{minWidth:0}}>
-              <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontFamily:T.fontMono,fontWeight:700,fontSize:FZ.sm,color:T.teal600}}>{r.pj}</span><CountryFlag pays={m.pays} size={11}/></div>
+              <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontFamily:T.fontMono,fontWeight:600,fontSize:FZ.sm,color:T.teal600}}>{r.pj}</span><CountryFlag pays={m.pays} size={11}/></div>
               <div title={m.nomProjet||""} style={{fontSize:FZ.xs,color:T.ink300,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{m.nomProjet||""}</div>
             </div>
             <div style={{minWidth:0}}><SerieTag pj={r.pj} style={{verticalAlign:"middle"}}/></div>
             {FEUX.map(([k])=><FeuPicker key={k} value={f[k]||null} onChange={lv=>gate.ask(r.pj,m,k,lv)}/>)}
-            <span style={{fontSize:FZ.xs,fontWeight:700,color:ec==null?T.ink300:ec>0?T.red500:T.emerald600}}>{ec==null?(tf?"—":"MaD ORC non saisie"):ec===0?"dans les temps":(ec>0?"+":"")+ec+"j"}</span>
+            <span style={{fontSize:FZ.xs,fontWeight:600,color:ec==null?T.ink300:ec>0?T.red500:T.emerald600}}>{ec==null?(tf?"—":"MaD ORC non saisie"):ec===0?"dans les temps":(ec>0?"+":"")+ec+"j"}</span>
             <span style={{fontSize:FZ.xs,color:T.ink300,textAlign:"right"}}>{m.feuxAt?fmt(new Date(m.feuxAt)):"—"}</span>
           </div>);
         })}

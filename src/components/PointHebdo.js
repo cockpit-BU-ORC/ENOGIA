@@ -25,7 +25,7 @@ const ageOf = x => {
 const ageTone = a => (a == null ? T.ink500 : a >= 30 ? T.red500 : a >= 14 ? T.amber600 : T.ink500);
 
 const SORTS = [["age", "Plus ancien d'abord"], ["depart", "Départ le plus proche"], ["pj", "Ordre du planning"]];
-const BTN = on => ({ border: "1px solid " + (on ? T.teal500 : T.line), background: on ? T.teal100 : T.card, color: on ? T.teal600 : T.ink700, borderRadius: 8, padding: "4px 12px", fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font, minHeight: 28 });
+const BTN = on => ({ border: "1px solid " + (on ? T.teal500 : T.line), background: on ? T.teal100 : T.card, color: on ? T.teal600 : T.ink700, borderRadius: 8, padding: "4px 12px", fontSize: FZ.xs, fontWeight: 600, cursor: "pointer", fontFamily: T.font, minHeight: 28 });
 
 export function PointHebdo({ data, savePjMetaOverride, onOpenPj }) {
   const [kind, setKind] = useState("all");
@@ -85,7 +85,7 @@ export function PointHebdo({ data, savePjMetaOverride, onOpenPj }) {
   };
 
   const chip = (label, val, tone) => (<div style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "8px 12px", minWidth: 120 }}>
-    <div style={{ fontSize: FZ.xs, fontWeight: 700, color: T.ink500 }}>{label}</div>
+    <div style={{ fontSize: FZ.xs, fontWeight: 600, color: T.ink500 }}>{label}</div>
     <div style={{ fontSize: FZ.lg, fontWeight: 600, letterSpacing: "-.02em", color: tone || T.ink900, lineHeight: "26px" }}>{val}</div>
   </div>);
 
@@ -118,7 +118,7 @@ export function PointHebdo({ data, savePjMetaOverride, onOpenPj }) {
           return (<section key={r.pj} aria-label={r.pj} style={{ background: T.surface, border: "1px solid " + T.line, borderRadius: 12, padding: "8px 12px 12px", minWidth: 0 }}>
             <button onClick={() => onOpenPj && onOpenPj(r.pj)} title="Ouvrir la fiche de ce projet" style={{ all: "unset", cursor: onOpenPj ? "pointer" : "default", display: "flex", alignItems: "center", gap: 8, width: "100%", boxSizing: "border-box", marginBottom: 8 }}>
               <span aria-hidden="true" style={{ width: 4, alignSelf: "stretch", borderRadius: 4, background: T.accent, flexShrink: 0 }} />
-              <span style={{ fontSize: FZ.md, fontWeight: 700, color: T.ink900, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{r.pj}</span>
+              <span style={{ fontSize: FZ.md, fontWeight: 600, color: T.ink900, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{r.pj}</span>
               {meta.pays && meta.pays !== "—" && <CountryFlag pays={meta.pays} size={13} />}
               <span style={{ fontSize: FZ.xs, color: T.ink500, minWidth: 0, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : ""}</span>
               {meta.chefProjet && meta.chefProjet !== "—" && <span title={meta.chefProjet} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: FZ.xs, color: T.ink500 }}><Avatar name={meta.chefProjet} size={16} /></span>}
@@ -130,10 +130,10 @@ export function PointHebdo({ data, savePjMetaOverride, onOpenPj }) {
                 return (<div key={it.kind + it.id} style={{ display: "flex", alignItems: "flex-start", gap: 8, background: T.card, borderRadius: 8, borderLeft: "3px solid " + K.color, padding: "6px 8px" }}>
                   <input type="checkbox" checked={false} onChange={() => toggle(r, meta, it.kind, it.id)} title="Clôturer (date du jour)" aria-label={"Clôturer : " + it.text} style={{ marginTop: 2, flexShrink: 0, width: 15, height: 15, cursor: "pointer", accentColor: T.teal500 }} />
                   <span style={{ flex: 1, minWidth: 0, fontSize: FZ.sm, color: T.ink900, fontWeight: 600, lineHeight: 1.35, overflowWrap: "anywhere" }}>
-                    <span style={{ fontSize: FZ.xs, fontWeight: 700, color: K.color, marginRight: 6 }}>{K.label}</span>{it.text}
+                    <span style={{ fontSize: FZ.xs, fontWeight: 600, color: K.color, marginRight: 6 }}>{K.label}</span>{it.text}
                   </span>
                   <span style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0, lineHeight: 1.25 }}>
-                    <span style={{ fontSize: FZ.xs, fontWeight: 700, color: ageTone(it.age) }}>{it.age == null ? "—" : it.age === 0 ? "aujourd'hui" : it.age + " j"}</span>
+                    <span style={{ fontSize: FZ.xs, fontWeight: 600, color: ageTone(it.age) }}>{it.age == null ? "—" : it.age === 0 ? "aujourd'hui" : it.age + " j"}</span>
                     {e && <i title={"Saisie le " + e.full} style={{ fontSize: FZ.xs, fontStyle: "italic", fontWeight: 400, color: T.ink500, whiteSpace: "nowrap" }}>{e.short}</i>}
                   </span>
                 </div>);
@@ -144,13 +144,13 @@ export function PointHebdo({ data, savePjMetaOverride, onOpenPj }) {
       </div>}
 
     {nClosed > 0 && <details style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "8px 12px" }}>
-      <summary style={{ cursor: "pointer", fontSize: FZ.sm, fontWeight: 700, color: T.ink700 }}>Clôturés ces 7 derniers jours ({nClosed})</summary>
+      <summary style={{ cursor: "pointer", fontSize: FZ.sm, fontWeight: 600, color: T.ink700 }}>Clôturés ces 7 derniers jours ({nClosed})</summary>
       <div style={{ display: "flex", flexDirection: "column", gap: 3, marginTop: 8 }}>
         {all.flatMap(g => g.closedWeek.filter(it => kind === "all" || it.kind === kind).map(it => (
           <div key={g.r.pj + it.kind + it.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: FZ.xs, color: T.ink500, padding: "2px 4px" }}>
             <input type="checkbox" checked onChange={() => toggle(g.r, g.meta, it.kind, it.id)} title="Rouvrir" aria-label={"Rouvrir : " + it.text} style={{ width: 14, height: 14, cursor: "pointer", accentColor: T.teal500 }} />
             <b style={{ color: T.ink700, fontVariantNumeric: "tabular-nums" }}>{g.r.pj}</b>
-            <span style={{ fontWeight: 700, color: KINDS[it.kind].color }}>{KINDS[it.kind].label}</span>
+            <span style={{ fontWeight: 600, color: KINDS[it.kind].color }}>{KINDS[it.kind].label}</span>
             <span style={{ flex: 1, minWidth: 0, textDecoration: "line-through", overflowWrap: "anywhere" }}>{it.text}</span>
             <span style={{ whiteSpace: "nowrap" }}>clôturée le {it.doneAt && fmt(new Date(it.doneAt))}</span>
           </div>)))}

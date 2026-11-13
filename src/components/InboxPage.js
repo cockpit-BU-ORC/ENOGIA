@@ -23,7 +23,7 @@ export function InboxPage({ popup, me, comments, data, resolveComment, canSeePri
   const lead = nAct ? nAct + " élément" + (nAct > 1 ? "s attendent" : " attend") + " une action de votre part." : "Rien n'attend d'action de votre part.";
 
   return <div style={{ display: "flex", flexDirection: "column", gap: popup ? 10 : 14, maxWidth: 1100 }}>
-    {popup ? <div style={{ padding: "2px 4px" }}><div style={{ fontSize: FZ.md, fontWeight: 700, color: T.ink900, fontFamily: T.fontDisplay }}>À traiter</div><div style={{ fontSize: FZ.xs, color: T.ink500 }}>{lead}</div></div>
+    {popup ? <div style={{ padding: "2px 4px" }}><div style={{ fontSize: FZ.md, fontWeight: 600, color: T.ink900, fontFamily: T.fontDisplay }}>À traiter</div><div style={{ fontSize: FZ.xs, color: T.ink500 }}>{lead}</div></div>
       : <PageHead title="À traiter" sub={lead} accent={T.red500} />}
 
     <Panel title={<span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>Demandes à valider {acts.length > 0 && <Pill tone="bad">{acts.reduce((a, x) => a + (x.n || 1), 0)}</Pill>}</span>}>
@@ -32,7 +32,7 @@ export function InboxPage({ popup, me, comments, data, resolveComment, canSeePri
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
             <span aria-hidden="true" style={{ width: 4, alignSelf: "stretch", minHeight: 20, borderRadius: 2, background: a.tone === "warn" ? T.amber500 : T.red500 }} />
             <div style={{ flex: "1 1 260px", minWidth: 0 }}>
-              <div style={{ fontSize: FZ.sm, fontWeight: 700, color: T.ink900 }}>{a.title}</div>
+              <div style={{ fontSize: FZ.sm, fontWeight: 600, color: T.ink900 }}>{a.title}</div>
               {a.detail && <div style={{ fontSize: FZ.xs, color: T.ink500 }}>{a.detail}</div>}
             </div>
             {a.cta && <Btn v={a.primary ? "pri" : "sec"} size="sm" onClick={a.cta.onClick}>{a.cta.label}</Btn>}
@@ -40,7 +40,7 @@ export function InboxPage({ popup, me, comments, data, resolveComment, canSeePri
           {a.items && a.items.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", gap: 6, paddingLeft: 14 }}>
             {a.items.slice(0, 12).map(x => <span key={x.pj + (x.text || "")} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: T.surface, borderRadius: 8, padding: "3px 8px 3px 4px", fontSize: FZ.xs, color: T.ink700 }}>
               <PjBtn pj={x.pj} onClick={() => onOpen(x.pj, "resume")} />{x.text}
-              {x.yes && <button type="button" onClick={x.yes.onClick} title={x.yes.title} aria-label={x.yes.title} style={{ minHeight: 24, padding: "0 8px", borderRadius: 8, border: "1px solid " + T.emerald500, background: T.emerald100, color: T.emerald600, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>{x.yes.label}</button>}</span>)}
+              {x.yes && <button type="button" onClick={x.yes.onClick} title={x.yes.title} aria-label={x.yes.title} style={{ minHeight: 24, padding: "0 8px", borderRadius: 8, border: "1px solid " + T.emerald500, background: T.emerald100, color: T.emerald600, fontSize: FZ.xs, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>{x.yes.label}</button>}</span>)}
             {a.items.length > 12 && <span style={{ fontSize: FZ.xs, color: T.ink500, alignSelf: "center" }}>et {a.items.length - 12} autres</span>}
           </div>}
         </div>)}
@@ -65,7 +65,7 @@ export function InboxPage({ popup, me, comments, data, resolveComment, canSeePri
       {asg.map((a, k) => { const r = rowOf(a.pj), from = a.from || String(r.tests || "").slice(0, 10), to = a.to || String(r.testsFin || r.tests || "").slice(0, 10); return <Row key={a.pj + a.at} first={k === 0}>
         <PjBtn pj={a.pj} onClick={() => onOpenTests && onOpenTests(a.pj)} />
         <span style={{ flex: 1, minWidth: 0, fontSize: FZ.sm, color: T.ink700 }}>{r.gamme ? r.gamme + " · " : ""}{from ? from.slice(8, 10) + "/" + from.slice(5, 7) + (to && to !== from ? " → " + to.slice(8, 10) + "/" + to.slice(5, 7) : "") : "période à fixer"}{a.by ? " · par " + a.by : ""}</span>
-        {from && <a href={gcalUrl({ title: "Tests FAT " + a.pj + (r.gamme ? " · " + r.gamme : ""), from, to, details: "Tests FAT de la machine " + a.pj + "." })} target="_blank" rel="noopener noreferrer" style={{ fontSize: FZ.xs, fontWeight: 700, color: T.accentInk || T.teal600 }}>Ajouter à mon agenda</a>}
+        {from && <a href={gcalUrl({ title: "Tests FAT " + a.pj + (r.gamme ? " · " + r.gamme : ""), from, to, details: "Tests FAT de la machine " + a.pj + "." })} target="_blank" rel="noopener noreferrer" style={{ fontSize: FZ.xs, fontWeight: 600, color: T.accentInk || T.teal600 }}>Ajouter à mon agenda</a>}
       </Row>; })}
     </Panel>}
 
@@ -76,7 +76,7 @@ export function InboxPage({ popup, me, comments, data, resolveComment, canSeePri
         <span style={{ flex: 1, minWidth: 0, fontSize: FZ.sm, color: T.ink700 }}><b style={{ color: T.ink900 }}>{video.title || "Le tour du Cockpit en vidéo"}</b> · disponible jusqu'au {new Date(video.until + "T12:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}</span>
         <Btn size="sm" onClick={onOpenVideo}>Regarder</Btn>
       </Row>}
-      {chg.length > 0 && <div style={{ fontSize: FZ.xs, fontWeight: 700, color: T.ink500, marginTop: video ? 6 : 0 }}>Vos projets modifiés par le planning</div>}
+      {chg.length > 0 && <div style={{ fontSize: FZ.xs, fontWeight: 600, color: T.ink500, marginTop: video ? 6 : 0 }}>Vos projets modifiés par le planning</div>}
       {chg.map((c, k) => <Row key={c.pj} first={k === 0 && !video}>
         <PjBtn pj={c.pj} onClick={() => onOpen(c.pj, "resume")} />
         <span style={{ flex: 1, minWidth: 0, fontSize: FZ.sm, color: T.ink700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.nom || nameOf(c.pj)}</span>

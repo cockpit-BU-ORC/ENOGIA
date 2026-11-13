@@ -131,9 +131,9 @@ export function HomeView({ produit, data, comments, myEmail, myName, people, uns
   const empty = (icon, title, hint) => <EmptyState compact icon={icon} title={title} hint={hint} tone="ok" />;
   const Head = ({ title, sub, count }) => (
     <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
-      <h2 style={{ margin: 0, fontSize: FZ.md, fontWeight: 700, color: T.ink900 }}>{title}</h2>
+      <h2 style={{ margin: 0, fontSize: FZ.md, fontWeight: 600, color: T.ink900 }}>{title}</h2>
       {sub && <span style={grey}>{sub}</span>}
-      {count > 0 && <span style={{ ...grey, marginLeft: "auto", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{count}</span>}
+      {count > 0 && <span style={{ ...grey, marginLeft: "auto", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{count}</span>}
     </div>
   );
 
@@ -174,11 +174,11 @@ export function HomeView({ produit, data, comments, myEmail, myName, people, uns
   const parcoursEl = (
         <section key="parcours" aria-label="Où en sont les machines" style={cardS(H.brand)}>
           <Head title={"Où en sont les " + open.length + " machine" + (open.length > 1 ? "s" : "") + " ouverte" + (open.length > 1 ? "s" : "")} />
-          <div style={{ ...grey, marginBottom: 10 }}>+ {shipped} expédiée{shipped > 1 ? "s" : ""} depuis janvier{notShipped.length > 0 && <span title={notShipped.map(r => r.pj).join(", ")} style={{ color: T.amber600, fontWeight: 700 }}> · {notShipped.length} départ{notShipped.length > 1 ? "s" : ""} passé{notShipped.length > 1 ? "s" : ""} pas encore « Expédiée » ({notShipped.map(r => r.pj).join(", ")})</span>}</div>
-          {open.length === 0 ? <div style={grey}>Aucune machine ouverte pour l'instant.</div> : (<>
+          <div style={{ ...grey, marginBottom: 10 }}>+ {shipped} expédiée{shipped > 1 ? "s" : ""} depuis janvier{notShipped.length > 0 && <span title={notShipped.map(r => r.pj).join(", ")} style={{ color: T.amber600, fontWeight: 600 }}> · {notShipped.length} départ{notShipped.length > 1 ? "s" : ""} passé{notShipped.length > 1 ? "s" : ""} pas encore « Expédiée » ({notShipped.map(r => r.pj).join(", ")})</span>}</div>
+          {open.length === 0 ? <div style={grey}>Aucune machine ouverte pour l'instant</div> : (<>
             <div role="img" aria-label={journey.map(j => j.l + " " + j.n).join(", ") + ", pas encore lancées " + notStarted} className="enogia-bar-fill" style={{ display: "flex", height: 32, gap: 4 }}>
-              {journey.filter(j => j.n > 0).map(j => <div key={j.id} title={j.l + " : " + j.n} style={{ flex: j.n, minWidth: 0, background: j.c, color: inkOn(j.c), borderRadius: 4, display: "flex", alignItems: "center", padding: "0 8px", fontSize: 11, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", whiteSpace: "nowrap", overflow: "hidden" }}>{j.n}</div>)}
-              {notStarted > 0 && <div title={"Pas encore lancées : " + notStarted} style={{ flex: notStarted, minWidth: 0, background: T.ink100, color: T.ink900, borderRadius: 4, display: "flex", alignItems: "center", padding: "0 8px", fontSize: 11, fontWeight: 700, letterSpacing: ".06em", whiteSpace: "nowrap", overflow: "hidden" }}>{notStarted}</div>}
+              {journey.filter(j => j.n > 0).map(j => <div key={j.id} title={j.l + " : " + j.n} style={{ flex: j.n, minWidth: 0, background: j.c, color: inkOn(j.c), borderRadius: 4, display: "flex", alignItems: "center", padding: "0 8px", fontSize: 11, fontWeight: 600, letterSpacing: ".01em", whiteSpace: "nowrap", overflow: "hidden" }}>{j.n}</div>)}
+              {notStarted > 0 && <div title={"Pas encore lancées : " + notStarted} style={{ flex: notStarted, minWidth: 0, background: T.ink100, color: T.ink900, borderRadius: 4, display: "flex", alignItems: "center", padding: "0 8px", fontSize: 11, fontWeight: 600, letterSpacing: ".01em", whiteSpace: "nowrap", overflow: "hidden" }}>{notStarted}</div>}
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px", marginTop: 8, fontSize: FZ.xs, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>
               {journey.map(j => <span key={j.id} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: 4, background: j.c }} />{j.l} <b style={{ color: T.ink900 }}>{j.n}</b></span>)}
@@ -198,7 +198,7 @@ export function HomeView({ produit, data, comments, myEmail, myName, people, uns
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
         <div style={{ flex: 1, minWidth: 260 }}>
           {/* v183 : nom du site en titre de l'accueil, avec son sous-titre (demandé) */}
-          <h1 style={{ margin: "0 0 2px", fontFamily: T.fontDisplay, fontWeight: 800, fontSize: "clamp(28px,3vw,36px)", letterSpacing: "-.01em", color: T.ink900, lineHeight: 1.1 }}>{SITE_NAME} <Hl color={T.amber500} style={{ whiteSpace: "nowrap" }}>{SITE_SCOPE}</Hl></h1>
+          <h1 style={{ margin: "0 0 2px", fontFamily: T.fontDisplay, fontWeight: 600, fontSize: "clamp(28px,3vw,36px)", letterSpacing: "-.01em", color: T.ink900, lineHeight: 1.1 }}>{SITE_NAME} <Hl color={T.amber500} style={{ whiteSpace: "nowrap" }}>{SITE_SCOPE}</Hl></h1>
           <div style={{ fontSize: FZ.sm, color: T.ink500, marginBottom: 14 }}>{SITE_SUB}</div>
           {(!role || role === "direction") && <p className="enogia-view-in" style={{ margin: 0, fontFamily: T.fontDisplay, fontWeight: 300, fontSize: "clamp(18px,1.9vw,28px)", lineHeight: 1.25, letterSpacing: "-.015em", color: T.ink900, maxWidth: "none" }}>
             {hello()}{firstName ? " " + firstName : ""}. {num(inProd + " machine" + (inProd > 1 ? "s" : ""), S.production.ring)} avance{inProd > 1 ? "nt" : ""}, {num(late.length, T.amber500)} glisse{late.length > 1 ? "nt" : ""}, {num(next30, S.finProd.ring)} part{next30 > 1 ? "ent" : ""} d'ici un mois.
@@ -225,7 +225,7 @@ export function HomeView({ produit, data, comments, myEmail, myName, people, uns
 
       {owner && <div role="tablist" aria-label="Accueil affiché" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, margin: "0 0 14px" }}>
         <span style={{ fontSize: FZ.xs, color: T.ink500, fontWeight: 600, marginRight: 4 }}>Accueil de :</span>
-        {ROLES.map(([k, l]) => <button key={k} type="button" role="tab" aria-selected={role === k} onClick={() => setViewAs({ role: k })} style={{ border: "1px solid " + (role === k ? T.ink900 : T.line), background: role === k ? T.ink900 : T.card, color: role === k ? T.card : T.ink700, borderRadius: 999, padding: "3px 12px", minHeight: 28, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>{l}</button>)}
+        {ROLES.map(([k, l]) => <button key={k} type="button" role="tab" aria-selected={role === k} onClick={() => setViewAs({ role: k })} style={{ border: "1px solid " + (role === k ? T.ink900 : T.line), background: role === k ? T.ink900 : T.card, color: role === k ? T.card : T.ink700, borderRadius: 999, padding: "3px 12px", minHeight: 28, fontSize: FZ.xs, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>{l}</button>)}
         {role === "cdp" && chefList.length > 0 && <select aria-label="Chef de projet affiché" value={asChef} onChange={e => setViewAs({ chef: e.target.value })} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink900, borderRadius: 8, minHeight: 28, padding: "0 8px", fontSize: FZ.xs, fontFamily: T.font }}>{chefList.map(c => <option key={c} value={c}>{c}</option>)}</select>}
         {role === "testeur" && testerList.length > 0 && <select aria-label="Testeur affiché" value={asTester ? asTester.id : ""} onChange={e => setViewAs({ tester: e.target.value })} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink900, borderRadius: 8, minHeight: 28, padding: "0 8px", fontSize: FZ.xs, fontFamily: T.font }}>{testerList.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select>}
         {role !== autoRole && <span style={{ fontSize: FZ.xs, color: T.ink500 }}>— vue telle que la personne la voit ; la disposition réglée ici vaut pour tout le poste.</span>}

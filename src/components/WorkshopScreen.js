@@ -113,12 +113,12 @@ export function WorkshopScreen({ data, onClose, darkMode, productionExclusions, 
   const name = r => getPjMeta(r.pj, r).nomProjet || "";
   const Row = ({ children, style }) => <div style={{ display: "flex", alignItems: "center", gap: u(18), padding: u(10) + " " + u(18), borderRadius: u(14), background: T.card, border: "1px solid " + T.line, ...style }}>{children}</div>;
   // Gamme de la machine, en grand (demandé) : pastille pleine à la couleur de la gamme, jamais tronquée.
-  const Gamme = ({ r, size = 26 }) => r.gamme ? <span style={{ background: GAMME_COLORS[r.gamme] || T.ink500, color: "#fff", borderRadius: u(10), padding: u(2) + " " + u(12), fontSize: u(size), fontWeight: 800, whiteSpace: "nowrap", flexShrink: 0, letterSpacing: ".01em" }}>{r.gamme}</span> : null;
+  const Gamme = ({ r, size = 26 }) => r.gamme ? <span style={{ background: GAMME_COLORS[r.gamme] || T.ink500, color: "#fff", borderRadius: u(10), padding: u(2) + " " + u(12), fontSize: u(size), fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0, letterSpacing: ".01em" }}>{r.gamme}</span> : null;
   // f = facteur de réduction quand il y a beaucoup de lignes (toutes tiennent sur la page)
   const PjCell = ({ r, f = 1 }) => <Row style={{ minWidth: 0, padding: u(6 * f) + " " + u(18), height: "100%", boxSizing: "border-box" }}><b style={{ fontSize: u(28 * f), fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>{r.pj}</b><Gamme r={r} size={26 * f} /><span style={{ fontSize: u(22 * f), color: T.ink500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{name(r)}</span></Row>;
   // Plusieurs étapes dans la même case : coupée en diagonale, une bande par étape
   const tile = (c, i, f = 1) => c
-    ? (() => { const fl = stageFill(c); return <div key={i} style={{ background: fl.background, color: fl.color, borderRadius: u(14), display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", fontSize: u((c.includes("+") ? 20 : 22) * f), fontWeight: 700, padding: u(4 * f), overflow: "hidden", overflowWrap: "anywhere", minWidth: 0 }}>{c.replace(/ \+ /g, " · ")}</div>; })()
+    ? (() => { const fl = stageFill(c); return <div key={i} style={{ background: fl.background, color: fl.color, borderRadius: u(14), display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", fontSize: u((c.includes("+") ? 20 : 22) * f), fontWeight: 600, padding: u(4 * f), overflow: "hidden", overflowWrap: "anywhere", minWidth: 0 }}>{c.replace(/ \+ /g, " · ")}</div>; })()
     : <div key={i} style={{ borderRadius: u(14), border: "1px dashed " + T.line }} />;
 
   // Légende des couleurs (en bas de page) : une pastille par étape ; une case coupée en diagonale = plusieurs étapes la même semaine.
@@ -132,7 +132,7 @@ export function WorkshopScreen({ data, onClose, darkMode, productionExclusions, 
     const rows = cur.rows, n = Math.max(1, rows.length), f = Math.min(1, Math.max(.42, 9.5 / n)), COLS = "minmax(0,2.4fr) repeat(5,minmax(0,1fr))";
     body = (<div style={{ display: "flex", flexDirection: "column", gap: u(8), height: "100%" }}>
       <div style={{ display: "grid", gridTemplateColumns: COLS, gap: u(8), padding: "0 " + u(18), flexShrink: 0 }}>
-        <span />{cur.days.map((d, i) => { const isT = d.getTime() === today.getTime(); return <div key={i} style={{ textAlign: "center", fontSize: u(22), fontWeight: 800, color: isT ? T.red600 : T.ink500, textTransform: "uppercase", letterSpacing: ".06em" }}>{fmtDow(d)} {fmtD(d)}</div>; })}
+        <span />{cur.days.map((d, i) => { const isT = d.getTime() === today.getTime(); return <div key={i} style={{ textAlign: "center", fontSize: u(22), fontWeight: 600, color: isT ? T.red600 : T.ink500, letterSpacing: ".01em" }}>{fmtDow(d)} {fmtD(d)}</div>; })}
       </div>
       <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateRows: "repeat(" + n + ",minmax(0," + u(n <= 8 ? 100 : 80) + "))", gap: u(6 * Math.max(.5, f)), alignContent: "start" }}>
         {rows.map(({ r, cells }) => (<div key={r.pj} style={{ display: "grid", gridTemplateColumns: COLS, gap: u(8), minHeight: 0 }}><PjCell r={r} f={f} />{cells.map((c, i) => tile(c, i, f))}</div>))}
@@ -145,7 +145,7 @@ export function WorkshopScreen({ data, onClose, darkMode, productionExclusions, 
     const COLS = "minmax(0,2.4fr) repeat(" + cur.weeks.length + ",minmax(0,1fr))";
     body = (<div style={{ display: "flex", flexDirection: "column", gap: u(8), height: "100%" }}>
       <div style={{ display: "grid", gridTemplateColumns: COLS, gap: u(8), padding: "0 " + u(18), flexShrink: 0 }}>
-        <span />{cur.weeks.map((w, i) => { const isT = w.getTime() === cur.monday.getTime(); return <div key={i} style={{ textAlign: "center", fontSize: u(22), fontWeight: 800, color: isT ? T.red600 : T.ink500, textTransform: "uppercase", letterSpacing: ".04em", lineHeight: 1.15 }}>S{isoWeek(w)}<div style={{ fontSize: u(18), fontWeight: 600, textTransform: "none", letterSpacing: 0 }}>{fmtD(w)}</div></div>; })}
+        <span />{cur.weeks.map((w, i) => { const isT = w.getTime() === cur.monday.getTime(); return <div key={i} style={{ textAlign: "center", fontSize: u(22), fontWeight: 600, color: isT ? T.red600 : T.ink500, letterSpacing: ".01em", lineHeight: 1.15 }}>S{isoWeek(w)}<div style={{ fontSize: u(18), fontWeight: 600, textTransform: "none", letterSpacing: 0 }}>{fmtD(w)}</div></div>; })}
       </div>
       <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateRows: "repeat(" + n + ",minmax(0," + u(n <= 8 ? 100 : 80) + "))", gap: u(6 * Math.max(.5, f)), alignContent: "start" }}>
         {cur.rows.map(({ r, cells }) => (<div key={r.pj} style={{ display: "grid", gridTemplateColumns: COLS, gap: u(8), minHeight: 0 }}><PjCell r={r} f={f} />{cells.map((c, i) => tile(c, i, f))}</div>))}
@@ -160,7 +160,7 @@ export function WorkshopScreen({ data, onClose, darkMode, productionExclusions, 
     const wMax = cur.calWeeks.map(w => Math.max(1, ...w.days.map(x => x.ev.length))), tot = wMax.reduce((a, b) => a + b, 0), cf = Math.min(1, Math.max(.62, 7 / Math.max(1, tot / Math.max(1, cur.calWeeks.length) * 1.6)));
     body = (<div style={{ display: "flex", flexDirection: "column", gap: u(8), height: "100%" }}>
       <div style={{ display: "grid", gridTemplateColumns: DCOLS, gap: u(8), flexShrink: 0 }}>
-        <span />{["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"].map(x => <div key={x} style={{ textAlign: "center", fontSize: u(22), fontWeight: 800, color: T.ink500, textTransform: "uppercase", letterSpacing: ".05em" }}>{x}</div>)}
+        <span />{["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"].map(x => <div key={x} style={{ textAlign: "center", fontSize: u(22), fontWeight: 600, color: T.ink500, letterSpacing: ".01em" }}>{x}</div>)}
       </div>
       <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateRows: wMax.map(m => "minmax(0," + (m + 1.1) + "fr)").join(" "), gap: u(8) }}>
         {cur.calWeeks.map((w, wi) => (<div key={wi} style={{ display: "grid", gridTemplateColumns: DCOLS, gap: u(8), minHeight: 0 }}>
@@ -170,9 +170,9 @@ export function WorkshopScreen({ data, onClose, darkMode, productionExclusions, 
           </div>
           {w.days.map(({ d, ev }, di) => { const isT = d.getTime() === today.getTime(), we = di >= 5;
             return (<div key={di} style={{ background: we ? T.surfaceAlt : T.card, border: "1px solid " + (isT ? T.red500 : T.line), boxShadow: isT ? "inset 0 0 0 " + u(2) + " " + T.red500 : "none", borderRadius: u(14), padding: u(6) + " " + u(8), display: "flex", flexDirection: "column", gap: u(4), minWidth: 0, minHeight: 0, overflow: "hidden" }}>
-              <div style={{ fontSize: u(18), fontWeight: 800, color: isT ? T.red600 : T.ink500 }}>{d.getDate()}{d.getDate() === 1 || (wi === 0 && di === 0) ? " " + d.toLocaleDateString("fr-FR", { month: "short" }).replace(".", "") : ""}</div>
-              {ev.map((e, j) => { const pal = KIND[e.k][1]; return (<div key={j} style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", columnGap: u(6), rowGap: 0, background: pal.c, color: pal.t, borderRadius: u(8), padding: u(2) + " " + u(7), fontSize: u(19 * cf), lineHeight: 1.18, fontWeight: 700, minWidth: 0, overflowWrap: "anywhere" }}>
-                <span style={{ fontWeight: 800 }}>{e.k}</span><span style={{ fontVariantNumeric: "tabular-nums" }}>{e.r.pj}</span><span style={{ opacity: .85, fontWeight: 600 }}>{e.r.gamme}</span>
+              <div style={{ fontSize: u(18), fontWeight: 600, color: isT ? T.red600 : T.ink500 }}>{d.getDate()}{d.getDate() === 1 || (wi === 0 && di === 0) ? " " + d.toLocaleDateString("fr-FR", { month: "short" }).replace(".", "") : ""}</div>
+              {ev.map((e, j) => { const pal = KIND[e.k][1]; return (<div key={j} style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", columnGap: u(6), rowGap: 0, background: pal.c, color: pal.t, borderRadius: u(8), padding: u(2) + " " + u(7), fontSize: u(19 * cf), lineHeight: 1.18, fontWeight: 600, minWidth: 0, overflowWrap: "anywhere" }}>
+                <span style={{ fontWeight: 600 }}>{e.k}</span><span style={{ fontVariantNumeric: "tabular-nums" }}>{e.r.pj}</span><span style={{ opacity: .85, fontWeight: 600 }}>{e.r.gamme}</span>
               </div>); })}
             </div>); })}
         </div>))}
@@ -183,11 +183,11 @@ export function WorkshopScreen({ data, onClose, darkMode, productionExclusions, 
     </div>);
   } else if (cur.id === "stats") {
     const Kpi = ({ v, l }) => <div style={{ flex: 1, minWidth: 0, background: T.card, border: "1px solid " + T.line, borderRadius: u(18), padding: u(14) + " " + u(18), textAlign: "center" }}>
-      <div style={{ fontSize: u(70), fontWeight: 800, lineHeight: 1, color: T.teal600, fontVariantNumeric: "tabular-nums" }}>{v}</div>
+      <div style={{ fontSize: u(70), fontWeight: 600, lineHeight: 1, color: T.teal600, fontVariantNumeric: "tabular-nums" }}>{v}</div>
       <div style={{ fontSize: u(22), color: T.ink500, marginTop: u(6), fontWeight: 600 }}>{l}</div></div>;
     const gc = k => GAMME_COLORS[k] || T.teal500;
     const Bars = ({ title, items, flag, byGamme }) => { const max = Math.max(1, ...items.map(x => x[1])); return (<div style={{ flex: 1, minWidth: 0, minHeight: 0, background: T.card, border: "1px solid " + T.line, borderRadius: u(18), padding: u(14) + " " + u(18), display: "flex", flexDirection: "column", gap: u(12), overflow: "hidden" }}>
-      <div style={{ fontSize: u(22), fontWeight: 800, textTransform: "uppercase", letterSpacing: ".05em", color: T.ink500 }}>{title}</div>
+      <div style={{ fontSize: u(22), fontWeight: 600, letterSpacing: ".01em", color: T.ink500 }}>{title}</div>
       {items.slice(0, 6).map(([k, v]) => (<div key={k} style={{ display: "grid", gridTemplateColumns: "minmax(0," + u(190) + ") 1fr " + u(40), alignItems: "center", gap: u(12) }}>
         <span style={{ fontSize: u(25), fontWeight: 600, display: "flex", alignItems: "center", gap: u(8), minWidth: 0 }}>{flag && <CountryFlag pays={k} size={Math.round(22 * scale)} />}<span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{k}</span></span>
         <span style={{ height: u(24), background: T.surfaceAlt, borderRadius: 999, overflow: "hidden" }}><span style={{ display: "block", height: "100%", width: Math.max(6, v / max * 100) + "%", background: byGamme ? gc(k) : T.teal500, borderRadius: 999 }} /></span>
@@ -196,7 +196,7 @@ export function WorkshopScreen({ data, onClose, darkMode, productionExclusions, 
       {!items.length && <span style={{ color: T.ink300, fontSize: u(22) }}>—</span>}
     </div>); };
     const maxM = Math.max(1, ...cur.months.map(m => m.n));
-    const Head = ({ t }) => <div style={{ fontSize: u(26), fontWeight: 800, color: T.ink900, letterSpacing: ".01em" }}>{t}</div>;
+    const Head = ({ t }) => <div style={{ fontSize: u(26), fontWeight: 600, color: T.ink900, letterSpacing: ".01em" }}>{t}</div>;
     body = (<div style={{ display: "flex", gap: u(26), height: "100%" }}>
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: u(14) }}>
         <Head t={"Depuis le " + fmtD(new Date(today.getFullYear(), 4, 19)) + " · fabriqué et expédié"} />
@@ -208,7 +208,7 @@ export function WorkshopScreen({ data, onClose, darkMode, productionExclusions, 
         <div style={{ display: "flex", gap: u(14), flex: 1, minHeight: 0 }}>
           <Bars title="Par type de machine" items={cur.gammes} byGamme />
           <div style={{ flex: 1, minWidth: 0, background: T.card, border: "1px solid " + T.line, borderRadius: u(18), padding: u(14) + " " + u(18), display: "flex", flexDirection: "column" }}>
-            <div style={{ fontSize: u(22), fontWeight: 800, textTransform: "uppercase", letterSpacing: ".05em", color: T.ink500 }}>Expéditions par mois</div>
+            <div style={{ fontSize: u(22), fontWeight: 600, letterSpacing: ".01em", color: T.ink500 }}>Expéditions par mois</div>
             <div style={{ flex: 1, display: "flex", alignItems: "flex-end", gap: u(10), paddingTop: u(8) }}>
               {cur.months.map(m => (<div key={m.y + "-" + m.m} style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", height: "100%", gap: u(6) }}>
                 <b style={{ fontSize: u(22), fontVariantNumeric: "tabular-nums" }}>{m.n}</b>
@@ -242,11 +242,11 @@ export function WorkshopScreen({ data, onClose, darkMode, productionExclusions, 
     <div style={{ display: "flex", alignItems: "center", gap: u(28), marginBottom: u(22) }}>
       <img src={(process.env.PUBLIC_URL || "") + logo} alt="ENOGIA" style={{ height: u(64), width: "auto" }}/>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: u(46), fontWeight: 800, letterSpacing: "-.01em", lineHeight: 1.1 }}>{cur.title}</div>
+        <div style={{ fontSize: u(46), fontWeight: 600, letterSpacing: "-.01em", lineHeight: 1.1 }}>{cur.title}</div>
         {cur.sub && <div style={{ fontSize: u(24), color: T.ink500, marginTop: u(4) }}>{cur.sub}</div>}
       </div>
       <div style={{ textAlign: "right" }}>
-        <div style={{ fontSize: u(54), fontWeight: 800, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{now.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</div>
+        <div style={{ fontSize: u(54), fontWeight: 600, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{now.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</div>
         <div style={{ fontSize: u(22), color: T.ink500 }}>{(d => d.charAt(0).toUpperCase() + d.slice(1))(now.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }))}</div>
       </div>
     </div>

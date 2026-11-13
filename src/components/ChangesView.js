@@ -30,7 +30,7 @@ export function ChangesView({ entries, onOpenPj }) {
   const [id, setId] = useState(null); const [q, setQ] = useState("");
   const card = { background: stripeBg(T.teal500, T.card, 4), border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden" };
   const title = <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
-    <span style={{ fontFamily: T.font, fontSize: 12, fontWeight: 700, color: T.accentInk }}>Journal des publications</span>
+    <span style={{ fontFamily: T.font, fontSize: 12, fontWeight: 600, color: T.accentInk }}>Journal des publications</span>
     <span style={{ fontSize: FZ.sm, color: T.ink500 }}>Ce qui a bougé entre l'ancienne version et la nouvelle, à chaque publication du Planificateur</span>
   </div>;
   if (entries === null) return <div>{title}<div aria-label="Chargement" style={{ display: "flex", flexDirection: "column", gap: 8, padding: "6px 0" }}>{[100, 92, 96, 70].map((w, k) => <div key={k} className="enogia-skeleton" style={{ height: 38, width: w + "%" }} />)}</div></div>;
@@ -54,14 +54,14 @@ export function ChangesView({ entries, onOpenPj }) {
               <b style={{ fontSize: FZ.sm }}>{fmtDay(e.at)}</b>
               <span style={{ fontSize: FZ.xs, color: T.ink500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{srcLabel(e)}{e.by ? " · " + e.by : ""}</span>
             </span>
-            <span style={{ marginLeft: "auto", fontSize: FZ.xs, fontWeight: 700, color: T.ink700, whiteSpace: "nowrap" }}>{n} PJ</span>
+            <span style={{ marginLeft: "auto", fontSize: FZ.xs, fontWeight: 600, color: T.ink700, whiteSpace: "nowrap" }}>{n} PJ</span>
           </button>); })}
         {idx === entries.length - 1 && <div style={{ fontSize: FZ.xs, color: T.ink500, padding: "6px 14px" }}>Plus ancienne comparaison conservée (20 dernières versions).</div>}
       </nav>
       <section aria-label="Détail de la publication" style={{ flex: "999 1 620px", minWidth: 0, display: "flex", flexDirection: "column", gap: 12 }}>
         <div style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "12px 16px" }}>
           <div style={{ fontSize: FZ.xs, color: T.ink500, fontFamily: T.fontLabel }}>{srcLabel(cur)} du {fmtAt(cur.at)}{cur.by ? " · " + cur.by : ""} — nouvelle version {nowL}, comparée à la {prev}{cur.note ? " — " + cur.note : ""}</div>
-          <h2 style={{ margin: "4px 0 0", fontFamily: T.fontDisplay, fontSize: FZ.lg, fontWeight: 700, color: T.ink900 }}>{s.head}</h2>
+          <h2 style={{ margin: "4px 0 0", fontFamily: T.fontDisplay, fontSize: FZ.lg, fontWeight: 600, color: T.ink900 }}>{s.head}</h2>
           {s.sub && <p style={{ margin: "4px 0 0", fontSize: FZ.sm, color: T.ink700 }}>{s.sub}</p>}
         </div>
         <div style={{ display: "flex", justifyContent: "flex-end" }}>

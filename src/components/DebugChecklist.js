@@ -8,7 +8,7 @@ import { openDebugPdf } from "../debugPdf"; // v272 : export PDF seulement (le W
 
 const todayIso = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
 const fd = iso => (iso ? String(iso).slice(8, 10) + "/" + String(iso).slice(5, 7) + "/" + String(iso).slice(0, 4) : "—");
-const btn = (primary, ghost) => ({ padding: "6px 12px", minHeight: 32, borderRadius: 8, border: "1px solid " + (primary && !ghost ? T.ink900 : T.line), background: primary && !ghost ? T.ink900 : T.card, color: primary && !ghost ? T.card : T.ink700, fontSize: FZ.sm, fontWeight: 700, cursor: "pointer", fontFamily: T.font });
+const btn = (primary, ghost) => ({ padding: "6px 12px", minHeight: 32, borderRadius: 8, border: "1px solid " + (primary && !ghost ? T.ink900 : T.line), background: primary && !ghost ? T.ink900 : T.card, color: primary && !ghost ? T.card : T.ink700, fontSize: FZ.sm, fontWeight: 600, cursor: "pointer", fontFamily: T.font });
 const field = () => ({ padding: "4px 6px", minHeight: 28, borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.xs, fontFamily: T.font, boxSizing: "border-box", width: "100%" });
 
 // Résumé dans la fiche de tests du PJ : avancement, NOK, signature, boutons
@@ -28,7 +28,7 @@ export function DebugChecklistStep({ r, plan, saveTests, canMark, who, signApi, 
   return (<div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
     <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", padding: "8px 10px", background: T.card, border: "1px solid " + T.line, borderRadius: 12 }}>
       <div style={{ flex: "1 1 220px", minWidth: 0 }}>
-        <div style={{ fontSize: FZ.sm, fontWeight: 700, color: T.ink900 }}>{pr.done} / {pr.total} contrôles renseignés{pr.nok ? <span style={{ color: T.red600 }}> · {pr.nok} NOK</span> : ""}</div>
+        <div style={{ fontSize: FZ.sm, fontWeight: 600, color: T.ink900 }}>{pr.done} / {pr.total} contrôles renseignés{pr.nok ? <span style={{ color: T.red600 }}> · {pr.nok} NOK</span> : ""}</div>
         <div aria-hidden="true" style={{ height: 6, borderRadius: 4, background: T.surfaceAlt, marginTop: 6, overflow: "hidden" }}><div style={{ width: pct + "%", height: "100%", background: pr.nok ? T.red500 : T.emerald500 }} /></div>
       </div>
       {pr.signed ? <span style={{ fontSize: 12, fontWeight: 600, color: T.emerald600, background: T.emerald100, borderRadius: 999, padding: "2px 10px" }}>Signée le {fd((debug.signed.at || "").slice(0, 10))} · {debug.signed.name}</span>
@@ -56,11 +56,11 @@ function DebugChecklistDialog({ r, plan, saveTests, canMark, who, signApi, SignF
     setBusy(false);
   };
   const changedAfter = debug.signed && debug.at && debug.at > debug.signed.at;
-  const th = { textAlign: "left", padding: "6px 8px", fontSize: 12, fontWeight: 700, color: T.ink900, background: T.surfaceAlt, borderBottom: "1px solid " + T.line, whiteSpace: "nowrap" };
+  const th = { textAlign: "left", padding: "6px 8px", fontSize: 12, fontWeight: 600, color: T.ink900, background: T.surfaceAlt, borderBottom: "1px solid " + T.line, whiteSpace: "nowrap" };
   const td = { padding: "4px 6px", borderBottom: "1px solid " + T.line, verticalAlign: "top", fontSize: FZ.xs, color: T.ink900 };
   const Cell = ({ id, v, val, label, tone }) => { const on = (rows[id] && rows[id].r) === val;
     return <button type="button" disabled={!canMark} aria-pressed={on} aria-label={label} onClick={() => setRow(id, { r: val })}
-      style={{ width: 40, minHeight: 28, borderRadius: 8, border: "1px solid " + (on ? tone[0] : T.line), background: on ? tone[1] : T.card, color: on ? tone[0] : T.ink300, fontWeight: 800, fontSize: FZ.xs, cursor: canMark ? "pointer" : "default", fontFamily: T.font }}>{on ? (val === "na" ? "S.O." : "X") : v}</button>; };
+      style={{ width: 40, minHeight: 28, borderRadius: 8, border: "1px solid " + (on ? tone[0] : T.line), background: on ? tone[1] : T.card, color: on ? tone[0] : T.ink300, fontWeight: 600, fontSize: FZ.xs, cursor: canMark ? "pointer" : "default", fontFamily: T.font }}>{on ? (val === "na" ? "S.O." : "X") : v}</button>; };
   const OK = [T.emerald600, T.emerald100], NOK = [T.red600, T.red100], NA = [T.ink700, T.surfaceAlt];
   return (<div onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 10010, background: "rgba(10,20,30,.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 12 }}>
     <div role="dialog" aria-modal="true" aria-label={"Checklist de debug " + r.pj} style={{ width: "min(1480px,100%)", maxHeight: "94vh", display: "flex", flexDirection: "column", background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, fontFamily: T.font }}>
@@ -89,7 +89,7 @@ function DebugChecklistDialog({ r, plan, saveTests, canMark, who, signApi, SignF
         </table>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "10px 16px", borderTop: "1px solid " + T.line }}>
-        <span style={{ fontSize: FZ.sm, fontWeight: 700 }}>{pr.done} / {pr.total} renseignés{pr.nok ? <span style={{ color: T.red600 }}> · {pr.nok} NOK</span> : ""}</span>
+        <span style={{ fontSize: FZ.sm, fontWeight: 600 }}>{pr.done} / {pr.total} renseignés{pr.nok ? <span style={{ color: T.red600 }}> · {pr.nok} NOK</span> : ""}</span>
         {debug.signed ? <span style={{ fontSize: 12, fontWeight: 600, color: changedAfter ? T.amber600 : T.emerald600, background: changedAfter ? T.amber100 : T.emerald100, borderRadius: 999, padding: "2px 10px" }}>Signée le {fd(debug.signed.at.slice(0, 10))} par {debug.signed.name}{changedAfter ? " · modifiée depuis, à signer de nouveau" : ""}</span> : null}
         <span style={{ flex: 1 }} />
         {saveModel && <span style={{ fontSize: 12, color: T.ink500 }}>La liste des contrôles se modifie dans Tests › Checklists.</span>}

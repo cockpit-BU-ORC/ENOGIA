@@ -35,7 +35,7 @@ export function ManagerRail({ groups, activeId, activeSub, onGo, collapsed, setC
       style={{ position: "fixed", top: Math.max(8, fly.top - 6), left: fly.left, zIndex: 10040, minWidth: 200, background: T.card, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowFloat, padding: 6, fontFamily: T.font }}>
       {/* v185 : le nom de la page est lui-même le lien (plus de bouton « Ouvrir ») ; les sous-pages suivent dessous. */}
       <button type="button" role="menuitem" onClick={() => { onGo(fly.e.go); setFly(null); }} aria-current={fly.e.id === activeId && !fly.e.subs ? "page" : undefined}
-        style={{ display: "block", width: "100%", textAlign: "left", border: "none", background: "transparent", color: T.accentInk, fontWeight: 700, fontSize: FZ.sm, fontFamily: T.font, padding: "7px 10px", minHeight: 32, borderRadius: 8, cursor: "pointer" }}
+        style={{ display: "block", width: "100%", textAlign: "left", border: "none", background: "transparent", color: T.accentInk, fontWeight: 600, fontSize: FZ.sm, fontFamily: T.font, padding: "7px 10px", minHeight: 32, borderRadius: 8, cursor: "pointer" }}
         onMouseEnter={x => { x.currentTarget.style.background = T.surface; }} onMouseLeave={x => { x.currentTarget.style.background = "transparent"; }}>{fly.e.label}</button>
       {(fly.e.subs || []).map(s => { const sOn = fly.e.id === activeId && (!fly.e.subs || s.id === activeSub); return (
         <button key={s.id || "open"} role="menuitem" type="button" onClick={() => { onGo(s.go); setFly(null); }} aria-current={sOn ? "page" : undefined}
@@ -48,7 +48,7 @@ export function ManagerRail({ groups, activeId, activeSub, onGo, collapsed, setC
   </nav>);
   return (<>{flyout}<nav aria-label="Navigation Manager" style={{ width: w, flex: "none", position: "sticky", top: 8, alignSelf: "flex-start", background: T.surface, border: "1px solid " + T.line, borderRadius: 12, padding: "8px 8px 10px", display: "flex", flexDirection: "column", gap: 2, overflow: "hidden", fontFamily: T.font }}>
     {groups.map(g => (<div key={g.label} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-      <div style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk,padding: collapsed ? "6px 0 2px" : "10px 10px 3px",whiteSpace: "nowrap",textAlign: collapsed ? "center" : "left",overflow: "hidden",height: collapsed ? 14 : "auto",transition: "padding .2s"}}>{collapsed ? "·" : g.label}</div>
+      <div style={{fontFamily:T.font,fontSize:12,fontWeight:600,color:T.accentInk,padding: collapsed ? "6px 0 2px" : "10px 10px 3px",whiteSpace: "nowrap",textAlign: collapsed ? "center" : "left",overflow: "hidden",height: collapsed ? 14 : "auto",transition: "padding .2s"}}>{collapsed ? "·" : g.label}</div>
       {g.entries.map(e => { const on = e.id === activeId; return (<React.Fragment key={e.id}>
         <button onClick={() => onGo(e.go)} title={collapsed && !fly ? e.label : undefined} aria-current={on ? "page" : undefined} aria-haspopup={collapsed ? "menu" : undefined} aria-expanded={collapsed ? !!(fly && fly.e.id === e.id) : undefined}
           onFocus={x => openFly(e, x.currentTarget)} onBlur={closeFly}
@@ -56,8 +56,8 @@ export function ManagerRail({ groups, activeId, activeSub, onGo, collapsed, setC
           onMouseEnter={x => { openFly(e, x.currentTarget); if (!on) { x.currentTarget.style.background = T.card; x.currentTarget.style.color = T.ink900; } }} onMouseLeave={x => { closeFly(); if (!on) { x.currentTarget.style.background = "transparent"; x.currentTarget.style.color = T.ink500; } }}>
           <span style={{ display: "inline-flex", color: on ? T.teal500 : "inherit", flex: "none" }}><NavIcon name={e.icon} size={17} /></span>
           {!collapsed && <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>{e.label}</span>}
-          {!collapsed && e.badge > 0 && <span style={{ fontSize: 11, fontWeight: 700, background: T.red500, color: "#fff", borderRadius: 999, padding: "0 6px", minWidth: 18, textAlign: "center" }}>{e.badge}</span>}
-          {!collapsed && e.lock && <span style={{ fontSize:11, fontWeight: 700, color: T.amber600, background: T.amber100, padding: "1px 6px", borderRadius: 999 }}>Admin</span>}
+          {!collapsed && e.badge > 0 && <span style={{ fontSize: 11, fontWeight: 600, background: T.red500, color: "#fff", borderRadius: 999, padding: "0 6px", minWidth: 18, textAlign: "center" }}>{e.badge}</span>}
+          {!collapsed && e.lock && <span style={{ fontSize:11, fontWeight: 600, color: T.amber600, background: T.amber100, padding: "1px 6px", borderRadius: 999 }}>Admin</span>}
         </button>
         {e.subs && !collapsed && <div style={{ display: "grid", gridTemplateRows: on ? "1fr" : "0fr", opacity: on ? 1 : 0, transition: "opacity .2s ease" }}>
           <div style={{ overflow: "hidden", minHeight: 0 }}>
@@ -82,7 +82,7 @@ export function ManagerRail({ groups, activeId, activeSub, onGo, collapsed, setC
 export function ManagerCrumb({ parts, onOpenPalette }) {
   return (<div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", minWidth: 0 }}>
     <div style={{ flex: 1, minWidth: 140, fontSize: FZ.sm, color: T.ink500, display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }} aria-label="Fil d'Ariane">
-      {parts.map((p, i) => <React.Fragment key={i}>{i > 0 && <span aria-hidden="true" style={{ color: T.ink300 }}>›</span>}{i === parts.length - 1 ? <h1 style={{ margin: 0, font: "inherit", color: T.ink900, fontWeight: 700 }}>{p}</h1> : <span style={{ color: T.ink500, fontWeight: 500 }}>{p}</span>}</React.Fragment>)}
+      {parts.map((p, i) => <React.Fragment key={i}>{i > 0 && <span aria-hidden="true" style={{ color: T.ink300 }}>›</span>}{i === parts.length - 1 ? <h1 style={{ margin: 0, font: "inherit", color: T.ink900, fontWeight: 600 }}>{p}</h1> : <span style={{ color: T.ink500, fontWeight: 500 }}>{p}</span>}</React.Fragment>)}
     </div>
     <button onClick={onOpenPalette} aria-label="Aller à… (Ctrl K)" style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 210, border: "1px solid " + T.line, background: T.surface, borderRadius: 12, padding: "6px 10px 6px 12px", color: T.ink500, fontSize: FZ.sm, cursor: "pointer", fontFamily: T.font }}>
       <NavIcon name="search" size={15} /><span>Aller à…</span>
@@ -129,13 +129,13 @@ export function ManagerPalette({ groups, data, onGo, onOpenPj, onClose, activeKe
           style={{ flex: 1, border: "none", outline: "none", background: "transparent", color: T.ink900, fontSize: FZ.md, padding: "15px 0", fontFamily: T.font }} />
       </div>
       <div ref={listRef} role="listbox" style={{ maxHeight: 340, overflowY: "auto", padding: 6 }}>
-        {items.map((it, i) => { if (it.head) return <div key={"h" + i} style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk,padding: "8px 12px 3px"}}>{it.head}</div>;
+        {items.map((it, i) => { if (it.head) return <div key={"h" + i} style={{fontFamily:T.font,fontSize:12,fontWeight:600,color:T.accentInk,padding: "8px 12px 3px"}}>{it.head}</div>;
           n++; const on = n === sel, idx = n; return (
             <div key={it.key} role="option" aria-selected={on} data-sel={on ? "1" : "0"} onMouseEnter={() => setSel(idx)} onMouseDown={e => { e.preventDefault(); choose(it); }}
               style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 12px", borderRadius: 8, cursor: "pointer", background: on ? T.teal100 : "transparent", color: T.ink900, fontSize: FZ.sm }}>
               <span style={{ display: "inline-flex", color: T.teal500 }}><NavIcon name={it.icon} size={16} /></span>
               <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: on ? 700 : 500 }}>{it.label}</span>
-              {it.lock && <span style={{ fontSize:11, fontWeight: 700, color: T.amber600, background: T.amber100, padding: "1px 6px", borderRadius: 999 }}>Admin</span>}
+              {it.lock && <span style={{ fontSize:11, fontWeight: 600, color: T.amber600, background: T.amber100, padding: "1px 6px", borderRadius: 999 }}>Admin</span>}
               <span style={{ fontSize: FZ.xs, color: T.ink500, minWidth: 14, textAlign: "right" }}>{on ? "↵" : it.lock ? "" : it.group}</span>
             </div>); })}
         {real.length === 0 && <div style={{ padding: "18px 14px", fontSize: FZ.sm, color: T.ink500 }}>Aucun résultat pour « {q} ».</div>}

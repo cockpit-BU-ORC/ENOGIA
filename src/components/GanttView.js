@@ -204,12 +204,12 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
         {setSelEtats&&<EtatInfoButton/>}
         {allPJs&&<DropFilter label="PJ" options={allPJs} selected={selPJs||new Set(allPJs)} onChange={setSelPJs}/>}
         <button type="button" onClick={()=>setGrouped(!grouped)} aria-pressed={grouped} title="Regrouper les lignes par projet"
-          style={{padding:"5px 11px",borderRadius:8,border:"1px solid "+(grouped?T.teal400:T.line),background:grouped?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:grouped?(T.mode==="dark"?"#0B1130":"#FFFFFF"):T.ink700,fontSize:FZF.sm,fontWeight:700,cursor:"pointer",transition:"background-color .15s ease, color .15s ease",display:"inline-flex",alignItems:"center",gap:6}}><NavIcon name="layers" size={15}/>Par projet</button>
+          style={{padding:"5px 11px",borderRadius:8,border:"1px solid "+(grouped?T.teal400:T.line),background:grouped?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:grouped?(T.mode==="dark"?"#0B1130":"#FFFFFF"):T.ink700,fontSize:FZF.sm,fontWeight:600,cursor:"pointer",transition:"background-color .15s ease, color .15s ease",display:"inline-flex",alignItems:"center",gap:6}}><NavIcon name="layers" size={15}/>Par projet</button>
         <div style={{display:"flex",gap:4}}>
-          <button onClick={zoomOut} disabled={dayW<=ZMIN} style={{padding:"5px 9px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:dayW<=ZMIN?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:700,cursor:dayW<=ZMIN?"default":"pointer"}}>−</button>
-          <button onClick={zoomIn} disabled={dayW>=ZMAX} style={{padding:"5px 9px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:dayW>=ZMAX?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:700,cursor:dayW>=ZMAX?"default":"pointer"}}>+</button>
+          <button onClick={zoomOut} disabled={dayW<=ZMIN} style={{padding:"5px 9px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:dayW<=ZMIN?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:600,cursor:dayW<=ZMIN?"default":"pointer"}}>−</button>
+          <button onClick={zoomIn} disabled={dayW>=ZMAX} style={{padding:"5px 9px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:dayW>=ZMAX?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:600,cursor:dayW>=ZMAX?"default":"pointer"}}>+</button>
         </div>
-        <button onClick={()=>scrollToDay(dayOf(today))} className="enogia-btn-ind" style={{padding:"5px 11px",borderRadius:8,border:"1.5px solid "+T.teal500,background:"transparent",color:T.teal600,fontSize:FZF.sm,fontWeight:700,cursor:"pointer"}}>Aujourd'hui</button>
+        <button onClick={()=>scrollToDay(dayOf(today))} className="enogia-btn-ind" style={{padding:"5px 11px",borderRadius:8,border:"1.5px solid "+T.teal500,background:"transparent",color:T.teal600,fontSize:FZF.sm,fontWeight:600,cursor:"pointer"}}>Aujourd'hui</button>
       </div>
     </div>
 
@@ -228,9 +228,9 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
 
     <div ref={scrollRef} onScroll={syncFromBottom} style={{display:"flex",overflowX:"auto",overflowY:"auto",maxHeight:"calc(100dvh - 300px)",position:"relative"}}>
       <div style={{width:colW,height:ganttH,flexShrink:0,position:"sticky",left:0,zIndex:8,background:T.surface,borderRight:"1px solid "+T.line,boxShadow:"2px 0 6px rgba(15,40,60,.04)"}}>
-        <div className="enogia-lblcell" style={{height:HEADER_H,padding:"0 16px",display:"flex",alignItems:"center",fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk,borderBottom:"1px solid "+T.line,background:T.surface,position:"sticky",top:0,zIndex:9}}>Machine</div>
+        <div className="enogia-lblcell" style={{height:HEADER_H,padding:"0 16px",display:"flex",alignItems:"center",fontFamily:T.font,fontSize:12,fontWeight:600,color:T.accentInk,borderBottom:"1px solid "+T.line,background:T.surface,position:"sticky",top:0,zIndex:9}}>Machine</div>
         {items.map((it,ri)=>{
-          if(it.g)return(<div key={"g"+ri} className="enogia-lblcell" style={{height:GROUP_H,boxSizing:"border-box",padding:"0 16px",display:"flex",alignItems:"center",gap:8,background:T.surfaceAlt,borderBottom:"1px solid "+T.line,fontSize:FZF.sm,fontWeight:700,color:T.ink700,overflow:"hidden"}}>
+          if(it.g)return(<div key={"g"+ri} className="enogia-lblcell" style={{height:GROUP_H,boxSizing:"border-box",padding:"0 16px",display:"flex",alignItems:"center",gap:8,background:T.surfaceAlt,borderBottom:"1px solid "+T.line,fontSize:FZF.sm,fontWeight:600,color:T.ink700,overflow:"hidden"}}>
             <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{it.g}</span><span style={{fontWeight:600,color:T.ink500,flexShrink:0}}>{it.n}</span></div>);
           const r=it.r;
           const meta=getPjMeta(r.pj,r);
@@ -253,7 +253,7 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
         {/* en-tête mois + numéro de semaine + semaines (repère jour) */}
         <div style={{height:HEADER_H,position:"sticky",top:0,zIndex:7,borderBottom:"1px solid "+T.line,background:T.surface}}>
           {months.map((ms,mi)=>{const me=new Date(ms.getFullYear(),ms.getMonth()+1,1);const w=(xOf(me)-xOf(ms));const isCur=ms.getFullYear()===todayYear&&ms.getMonth()===today.getMonth();
-            return(<div key={mi} style={{position:"absolute",left:xOf(ms),width:w,top:0,height:MONTH_BAND_H,display:"flex",alignItems:"flex-end",justifyContent:"flex-start",padding:"0 8px 2px",boxSizing:"border-box",overflow:"hidden",whiteSpace:"nowrap",fontSize:FZF.md,fontWeight:700,color:isCur?T.ink900:T.ink700,borderLeft:"1px solid "+T.line,background:isCur?T.teal100:"transparent"}}>{MONTHS[ms.getMonth()]}{multiYear?" "+ms.getFullYear():""}</div>);
+            return(<div key={mi} style={{position:"absolute",left:xOf(ms),width:w,top:0,height:MONTH_BAND_H,display:"flex",alignItems:"flex-end",justifyContent:"flex-start",padding:"0 8px 2px",boxSizing:"border-box",overflow:"hidden",whiteSpace:"nowrap",fontSize:FZF.md,fontWeight:600,color:isCur?T.ink900:T.ink700,borderLeft:"1px solid "+T.line,background:isCur?T.teal100:"transparent"}}>{MONTHS[ms.getMonth()]}{multiYear?" "+ms.getFullYear():""}</div>);
           })}
           {/* Bande "SXX" (demandé explicitement), une fois par semaine, séparée du repère jour
               ci-dessous plutôt que de le remplacer. */}
@@ -301,7 +301,7 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
                   {w>2&&<div aria-hidden="true" style={{position:"absolute",left:a,width:w,top:"50%",marginTop:12,height:0,borderTop:"2px dotted "+col,zIndex:2}}/>}
                   <div title={"Départ prévu au planning initial : "+fmt(new Date(new Date(r.depart).getTime()-r.drift*86400000))} style={{position:"absolute",left:xi-5,top:"50%",marginTop:7,width:10,height:10,background:T.ink500,transform:"rotate(45deg)",zIndex:3,boxShadow:"0 0 0 1.5px "+T.card}}/>
                 </>;})()}
-                {(txt||prevision)&&<span style={{position:"absolute",left:mb.left+mb.width+8,top:"50%",transform:"translateY(-50%)",marginTop:-4,zIndex:4,whiteSpace:"nowrap",fontSize:FZF.xs,fontWeight:700,padding:"1px 8px",borderRadius:999,fontVariantNumeric:"tabular-nums",
+                {(txt||prevision)&&<span style={{position:"absolute",left:mb.left+mb.width+8,top:"50%",transform:"translateY(-50%)",marginTop:-4,zIndex:4,whiteSpace:"nowrap",fontSize:FZF.xs,fontWeight:600,padding:"1px 8px",borderRadius:999,fontVariantNumeric:"tabular-nums",
                   background:prevision?"transparent":pill?pill.bg:"transparent",color:prevision?T.ink500:pill?pill.fg:T.ink500}}>{prevision?"dates prévisionnelles":txt}</span>}
               </>;})()}
           </div>);
@@ -311,7 +311,7 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
             sûr qu'elle descend exactement jusqu'à la dernière ligne quel que soit le nombre de PJ. */}
         <div style={{position:"absolute",left:xOf(today)-1,top:HEADER_H,height:ganttH-HEADER_H,width:2,background:T.red500,zIndex:3,pointerEvents:"none"}}/>
         {/* v142 : repère « aujourd'hui » net : trait plein + pastille datée posée sur le bord de l'en-tête. */}
-        <div style={{position:"absolute",left:xOf(today),top:HEADER_H-10,transform:"translateX(-50%)",zIndex:9,pointerEvents:"none",background:T.redFill,color:"#fff",fontSize:FZF.xs,fontWeight:700,padding:"2px 8px",borderRadius:999,whiteSpace:"nowrap",boxShadow:T.shadowFlat}}>Aujourd'hui · {fmt(today)}</div>
+        <div style={{position:"absolute",left:xOf(today),top:HEADER_H-10,transform:"translateX(-50%)",zIndex:9,pointerEvents:"none",background:T.redFill,color:"#fff",fontSize:FZF.xs,fontWeight:600,padding:"2px 8px",borderRadius:999,whiteSpace:"nowrap",boxShadow:T.shadowFlat}}>Aujourd'hui · {fmt(today)}</div>
       </div>
       {/* Marge de fin : sans elle, « aujourd'hui » ne peut pas être centré quand il est proche de la fin de la plage. */}
       <div style={{width:endPad,height:1,flexShrink:0}}/>
@@ -323,7 +323,7 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
       const r=tip.r,meta=getPjMeta(r.pj,r),W=270,left=Math.min(tip.x+16,(typeof window!=="undefined"?window.innerWidth:1400)-W-12),top=Math.max(8,Math.min(tip.y+16,(typeof window!=="undefined"?window.innerHeight:800)-270));
       const dc=driftColor(r.drift),iniDep=r.drift!=null&&r.depart?new Date(new Date(r.depart).getTime()-r.drift*86400000):null;
       return(<div role="tooltip" style={{position:"fixed",left,top,width:W,zIndex:10030,pointerEvents:"none",background:T.card,color:T.ink900,borderRadius:12,boxShadow:T.shadowFloat,padding:"10px 12px",fontFamily:T.font}}>
-        <div style={{fontSize:FZF.md,fontWeight:700,lineHeight:1.2}}>{r.pj}<span style={{fontWeight:500,color:T.ink500,fontSize:FZF.sm}}>{meta&&meta.nomProjet?"  "+meta.nomProjet:""}</span></div>
+        <div style={{fontSize:FZF.md,fontWeight:600,lineHeight:1.2}}>{r.pj}<span style={{fontWeight:500,color:T.ink500,fontSize:FZF.sm}}>{meta&&meta.nomProjet?"  "+meta.nomProjet:""}</span></div>
         <div style={{display:"flex",alignItems:"center",gap:6,marginTop:6,flexWrap:"wrap",fontSize:FZF.xs,color:T.ink500}}>
           {ETAT_META[r.etat]&&<span style={{display:"inline-flex",alignItems:"center",gap:5,fontWeight:600,color:T.ink700}}><span aria-hidden="true" style={{width:8,height:8,borderRadius:"50%",background:ETAT_META[r.etat].bar}}/>{ETAT_META[r.etat].label}</span>}
           {meta&&meta.chefProjet&&meta.chefProjet!=="—"&&<span>· {meta.chefProjet}</span>}
@@ -337,7 +337,7 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
         </div>
         <div style={{marginTop:8,paddingTop:8,borderTop:"1px solid "+T.line,display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:FZF.sm}}>
           <span style={{color:T.ink500}}>vs planning initial</span>
-          <span style={{fontWeight:700,color:r.drift==null?T.ink500:r.drift>0?T.red600:r.drift<0?T.emerald600:T.info600}}>
+          <span style={{fontWeight:600,color:r.drift==null?T.ink500:r.drift>0?T.red600:r.drift<0?T.emerald600:T.info600}}>
             {r.drift==null?"pas d'initial":r.drift===0?"dans les temps":(r.drift>0?"+":"−")+Math.abs(r.drift)+" j"+(iniDep?" (départ initial "+fmt(iniDep)+")":"")}
           </span>
         </div>

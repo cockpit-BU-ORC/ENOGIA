@@ -99,7 +99,7 @@ function TemplatesDialog({ plan, rows, started, onClose, onApply }) {
     <div style={{ overflowX: "auto" }}><table style={{ borderCollapse: "collapse", width: "100%", fontSize: 12.5 }}>
       <thead><tr><th style={{ textAlign: "left", padding: "6px 8px", color: T.ink500, fontWeight: 600 }}>Gamme</th>{TPL_STEPS.map(([k, l]) => <th key={k} colSpan={2} style={{ textAlign: "left", padding: "6px 8px", color: T.ink500, fontWeight: 600 }}>{l} <span style={{ fontWeight: 400 }}>(j · h)</span></th>)}<th /></tr></thead>
       <tbody>{gammes.map(g => <tr key={g} style={{ borderTop: "1px solid " + T.line }}>
-        <td style={{ padding: "6px 8px", fontWeight: 700, whiteSpace: "nowrap" }}>{g} <span style={{ fontWeight: 400, color: T.ink500 }}>· {nTodo(g)} / {n(g)} PJ à venir</span></td>
+        <td style={{ padding: "6px 8px", fontWeight: 600, whiteSpace: "nowrap" }}>{g} <span style={{ fontWeight: 400, color: T.ink500 }}>· {nTodo(g)} / {n(g)} PJ à venir</span></td>
         {TPL_STEPS.map(([k]) => <React.Fragment key={k}>
           <td style={{ padding: "4px 4px" }}><input type="number" min={0} aria-label={g + " " + k + " durée"} value={(tpl[g] && tpl[g][k] && tpl[g][k].dur != null) ? tpl[g][k].dur : ""} onChange={e => set(g, k, "dur", e.target.value)} style={{ ...INP, width: 64 }} /></td>
           <td style={{ padding: "4px 4px" }}><input type="number" min={0} aria-label={g + " " + k + " travail"} value={(tpl[g] && tpl[g][k] && tpl[g][k].work != null) ? tpl[g][k].work : ""} placeholder="h" onChange={e => set(g, k, "work", e.target.value)} style={{ ...INP, width: 64 }} /></td>
@@ -133,7 +133,7 @@ function NewPjDialog({ plan, rows, cal, testers, onClose, onApply }) {
     const W = { production: f.works.production === "" ? null : Number(f.works.production), finProd: f.works.finProd === "" ? null : Number(f.works.finProd) };
     onApply(newPjPlan(plan, cal, { pj: code, nomProjet: f.nomProjet.trim() || null, gamme: f.gamme || null, start: f.start, banc: f.banc, tester: f.tester, durs: f.durs, works: { production: W.production == null ? undefined : W.production, finProd: W.finProd == null ? undefined : W.finProd }, extra }), code); onClose();
   };
-  const L = { display: "flex", flexDirection: "column", gap: 4, fontSize: 12.5, fontWeight: 700, color: T.ink700 };
+  const L = { display: "flex", flexDirection: "column", gap: 4, fontSize: 12.5, fontWeight: 600, color: T.ink700 };
   const num = (v, on, label) => <input type="number" min={0} value={v} onChange={e => on(e.target.value)} aria-label={label} className="pg-in" style={{ ...INP, width: 70 }} />;
   return (<Modal title="Nouveau PJ" onClose={onClose} width={760}>
     <div style={{ fontSize: 13, color: T.ink500, lineHeight: 1.5, marginBottom: 12 }}>Un PJ du planning reprend ses dates. Un nouveau PJ reçoit ses tâches : Arrivée → Production → Tests → Packing → Départ, enchaînées, avec leurs ressources ; les durées viennent du modèle de sa gamme.</div>
@@ -148,11 +148,11 @@ function NewPjDialog({ plan, rows, cal, testers, onClose, onApply }) {
       <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 14, fontSize: 12.5 }}>
         <thead><tr>{["Tâche", "Durée (j ouvrés)", "Heures", "Ressource"].map(h => <th key={h} style={{ textAlign: "left", padding: "6px 6px", color: T.ink500, fontWeight: 600, borderBottom: "1px solid " + T.line }}>{h}</th>)}</tr></thead>
         <tbody>
-          <tr><td style={{ padding: 6, fontWeight: 700 }}>Production</td><td>{num(f.durs.production, v => set({ durs: { ...f.durs, production: v } }), "Durée production")}</td><td>{num(f.works.production, v => set({ works: { ...f.works, production: v } }), "Heures production")}</td><td style={{ color: T.ink500 }}>Atelier</td></tr>
-          <tr><td style={{ padding: 6, fontWeight: 700 }}>Tests</td><td>{num(f.durs.tests, v => set({ durs: { ...f.durs, tests: v } }), "Durée tests")}</td><td />
+          <tr><td style={{ padding: 6, fontWeight: 600 }}>Production</td><td>{num(f.durs.production, v => set({ durs: { ...f.durs, production: v } }), "Durée production")}</td><td>{num(f.works.production, v => set({ works: { ...f.works, production: v } }), "Heures production")}</td><td style={{ color: T.ink500 }}>Atelier</td></tr>
+          <tr><td style={{ padding: 6, fontWeight: 600 }}>Tests</td><td>{num(f.durs.tests, v => set({ durs: { ...f.durs, tests: v } }), "Durée tests")}</td><td />
             <td style={{ display: "flex", gap: 6, padding: "4px 0" }}><select value={f.banc} onChange={e => set({ banc: Number(e.target.value) })} aria-label="Banc" className="pg-in" style={{ ...INP }}><option value={1}>Banc 1</option><option value={2}>Banc 2</option></select>
               <select value={f.tester} onChange={e => set({ tester: e.target.value })} aria-label="Testeur" className="pg-in" style={{ ...INP }}>{RES_OPTS(testers, "tests").map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></td></tr>
-          <tr><td style={{ padding: 6, fontWeight: 700 }}>Packing</td><td>{num(f.durs.finProd, v => set({ durs: { ...f.durs, finProd: v } }), "Durée packing")}</td><td>{num(f.works.finProd, v => set({ works: { ...f.works, finProd: v } }), "Heures packing")}</td><td style={{ color: T.ink500 }}>Atelier</td></tr>
+          <tr><td style={{ padding: 6, fontWeight: 600 }}>Packing</td><td>{num(f.durs.finProd, v => set({ durs: { ...f.durs, finProd: v } }), "Durée packing")}</td><td>{num(f.works.finProd, v => set({ works: { ...f.works, finProd: v } }), "Heures packing")}</td><td style={{ color: T.ink500 }}>Atelier</td></tr>
           {extra.map((x, i) => <tr key={i}>
             <td style={{ padding: "4px 0", display: "flex", gap: 6 }}><input value={x.name} onChange={e => setExtra(l => l.map((y, j) => j === i ? { ...y, name: e.target.value } : y))} placeholder="Nom de la tâche" aria-label="Nom de la tâche" className="pg-in" style={{ ...INP, flex: 1 }} />
               <select value={x.phase} onChange={e => setExtra(l => l.map((y, j) => j === i ? { ...y, phase: e.target.value, res: e.target.value === "tests" ? "testeur" : "atelier" } : y))} aria-label="Phase" className="pg-in" style={{ ...INP }}>{PHASES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></td>
@@ -174,7 +174,7 @@ function TaskDialog({ plan, pj, after, testers, onClose, onApply }) {
   const [f, setF] = useState({ name: "", phase: "production", dur: 2, work: "", res: "atelier", after: after && keys.includes(after) ? after : (keys.includes("production") ? "production" : keys[keys.length - 1] || "") });
   const [err, setErr] = useState(""); const set = patch => setF(x => ({ ...x, ...patch }));
   const ok = () => { if (!f.name.trim()) { setErr("Donnez un nom à la tâche."); return; } const r = addPhaseTask(plan, pj, { name: f.name.trim(), phase: f.phase, dur: f.dur, work: f.work, res: f.res, after: f.after || null }); onApply(r.plan, r.key); onClose(); };
-  const L = { display: "flex", flexDirection: "column", gap: 4, fontSize: 12.5, fontWeight: 700, color: T.ink700 };
+  const L = { display: "flex", flexDirection: "column", gap: 4, fontSize: 12.5, fontWeight: 600, color: T.ink700 };
   return (<Modal title={"Nouvelle tâche · " + pj} onClose={onClose} width={620}>
     <div style={{ fontSize: 13, color: T.ink500, lineHeight: 1.5, marginBottom: 12 }}>La tâche est rangée dans sa phase et commence après la tâche choisie (lien fin → début). Ses heures comptent dans la charge si elle est faite par l'atelier.</div>
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))", gap: 10 }}>
@@ -195,7 +195,7 @@ function BlankDialog({ rows, onClose, onApply, hasPlan }) {
   const codes = txt.split(/[,;\s]+/).filter(Boolean);
   return (<Modal title="Repartir d'un plan vierge" onClose={onClose} width={620}>
     <div style={{ fontSize: 13.5, color: T.ink500, lineHeight: 1.55 }}>Crée un plan avec seulement ces PJ : les 5 étapes de chacun, <b>sans aucune date, sans durée et sans lien</b>. Vous saisissez ensuite les dates, durées et prédécesseurs dans le tableau. Les heures de travail du planning actuel sont reprises quand le PJ existe.{hasPlan ? " Le plan en cours est remplacé (Annuler le rétablit). Le planning actuel n'est pas modifié tant que vous ne publiez pas." : ""}</div>
-    <div style={{ fontSize: 12, fontWeight: 700, color: T.ink500, margin: "12px 0 4px" }}>PJ à garder (séparés par des virgules)</div>
+    <div style={{ fontSize: 12, fontWeight: 600, color: T.ink500, margin: "12px 0 4px" }}>PJ à garder (séparés par des virgules)</div>
     <input value={txt} onChange={e => setTxt(e.target.value)} style={{ ...INP, width: "100%", fontFamily: T.fontMono }} aria-label="Codes des PJ à garder" />
     <div style={{ fontSize: 12.5, color: T.ink500, marginTop: 6 }}>{codes.map(c => { const r = (rows || []).find(x => String(x.pj).toLowerCase() === c.toLowerCase()); return c.toUpperCase() + (r ? "" : " (nouveau)"); }).join(" · ")}</div>
     <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 14 }}>
@@ -231,7 +231,7 @@ function PublishDialog({ plan, sched, rows, pubRows, changes, onClose, onPublish
   const FL = { arrivee: "Arrivée", tests: "Tests", testsFin: "Fin tests", finProd: "Fin prod.", depart: "Départ", heuresAtelier: "Heures atelier", heuresAutom: "Heures autom", new: "Nouveau PJ" };
   const go = async () => { setBusy(true); setErr(""); try { const r = await onPublish(note.trim(), new Set(changes.filter(c => ann.has(keyOf(c))).map(keyOf))); setDone(r); } catch (e) { setErr(e.message || String(e)); } setBusy(false); };
   return (<Modal title="Publier dans le planning actuel" onClose={onClose} width={760}>
-    {done ? <div style={{ fontSize: 14, color: T.emerald600, fontWeight: 700 }}>✓ Publié : {done.nChanges} changement(s) appliqués, {done.nAnnounced || 0} annoncé(s) aux utilisateurs. Tous les écrans utilisent maintenant ces dates.<div style={{ marginTop: 12, textAlign: "right" }}><button style={{ ...BTN_P }} onClick={onClose}>Fermer</button></div></div> : <>
+    {done ? <div style={{ fontSize: 14, color: T.emerald600, fontWeight: 600 }}>✓ Publié : {done.nChanges} changement(s) appliqués, {done.nAnnounced || 0} annoncé(s) aux utilisateurs. Tous les écrans utilisent maintenant ces dates.<div style={{ marginTop: 12, textAlign: "right" }}><button style={{ ...BTN_P }} onClick={onClose}>Fermer</button></div></div> : <>
       <div style={{ fontSize: 13.5, color: T.ink500, lineHeight: 1.55 }}>{changes.length === 0 ? "Le planning actuel est déjà identique au plan : rien à publier." : <>Ces changements remplaceront les dates du planning actuel (calendrier, Gantt, liste, KPI, rapport CODIR). Le planning <b>initial</b> n'est pas modifié. Une copie de l'état actuel est gardée pour pouvoir annuler. <b>Cochez ce que vous annoncez</b> aux utilisateurs (page Modifications, cloche) : le reste est publié sans être annoncé.</>}</div>
       {unscheduled > 0 && <div style={{ color: T.amber600, fontSize: 12.5, marginTop: 6 }}>⚠ {unscheduled} étape(s) du plan n'ont pas de date (ni date imposée ni prédécesseur) : les dates correspondantes seront vides — {unschedL.slice(0, 6).map(n => n.pj + " · " + stepLabel(plan.pjs.find(x => x.pj === n.pj), n.step)).join(", ")}{unscheduled > 6 ? "…" : ""}.</div>}
       {changes.length > 0 && <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginTop: 10, fontSize: 12.5, color: T.ink500 }}>
@@ -244,27 +244,27 @@ function PublishDialog({ plan, sched, rows, pubRows, changes, onClose, onPublish
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}><tbody>
           {Object.keys(byPj).map(pj => byPj[pj].map((c, i) => (<tr key={pj + i} style={{ borderTop: i === 0 ? "1px solid " + T.line : "none", opacity: ann.has(keyOf(c)) ? 1 : 0.6 }}>
             <td style={{ padding: "4px 4px 4px 10px", width: 28 }}><input type="checkbox" checked={ann.has(keyOf(c))} onChange={e => flip([keyOf(c)], e.target.checked)} aria-label={"Annoncer " + pj + " " + (FL[c.field] || c.field)} /></td>
-            <td style={{ padding: "4px 10px", fontFamily: T.fontMono, fontWeight: 700, color: T.teal600, width: 90 }}>{i === 0 ? <label style={{ display: "inline-flex", gap: 6, alignItems: "center", cursor: "pointer" }} title="Annoncer ou non tous les changements de ce PJ"><input type="checkbox" checked={byPj[pj].every(x => ann.has(keyOf(x)))} onChange={e => flip(byPj[pj].map(keyOf), e.target.checked)} aria-label={"Annoncer tout " + pj} />{pj}</label> : ""}</td>
+            <td style={{ padding: "4px 10px", fontFamily: T.fontMono, fontWeight: 600, color: T.teal600, width: 90 }}>{i === 0 ? <label style={{ display: "inline-flex", gap: 6, alignItems: "center", cursor: "pointer" }} title="Annoncer ou non tous les changements de ce PJ"><input type="checkbox" checked={byPj[pj].every(x => ann.has(keyOf(x)))} onChange={e => flip(byPj[pj].map(keyOf), e.target.checked)} aria-label={"Annoncer tout " + pj} />{pj}</label> : ""}</td>
             <td style={{ padding: "4px 10px", color: T.ink500, width: 100 }}>{FL[c.field] || c.field}</td>
             <td style={{ padding: "4px 10px", color: T.ink700 }}>{c.field === "new" ? fmtIso(c.to) : (typeof c.from === "number" ? c.from : fmtIso(c.from)) + " → " + (typeof c.to === "number" ? c.to : fmtIso(c.to))}</td>
           </tr>)))}
         </tbody></table></div>}
       {lateList.length > 0 && <div role="alert" style={{ marginTop: 10, border: "1px solid " + T.red500, borderRadius: 12, padding: "8px 12px", background: T.red100 }}>
-        <div style={{ fontWeight: 700, fontSize: 13, color: T.red600, marginBottom: 4 }}>⚠ {lateList.length} PJ dépasse{lateList.length > 1 ? "nt" : ""} sa date contractuelle avec cette publication</div>
+        <div style={{ fontWeight: 600, fontSize: 13, color: T.red600, marginBottom: 4 }}>⚠ {lateList.length} PJ dépasse{lateList.length > 1 ? "nt" : ""} sa date contractuelle avec cette publication</div>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, color: T.ink900 }}><tbody>{lateList.map(x => <tr key={x.pj}>
-          <td style={{ padding: "2px 8px 2px 0", fontFamily: T.fontMono, fontWeight: 700, width: 90 }}>{x.pj}</td>
+          <td style={{ padding: "2px 8px 2px 0", fontFamily: T.fontMono, fontWeight: 600, width: 90 }}>{x.pj}</td>
           <td style={{ padding: "2px 8px", color: T.ink700 }}>{x.a.refLabel} contractuelle {fmtIso(x.a.contract)}</td>
           <td style={{ padding: "2px 8px", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>retard {x.b ? x.b.lateDays + " → " : ""}<b>{x.a.lateDays} j</b></td>
           <td style={{ padding: "2px 0 2px 8px", textAlign: "right", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{x.a.amount != null ? <>pénalités {x.b && x.b.amount != null ? fmtEur(x.b.amount) + " → " : ""}<b>{fmtEur(x.a.amount)}</b></> : <span style={{ color: T.ink500 }}>pénalités non renseignées</span>}</td>
         </tr>)}</tbody></table>
       </div>}
       {cashLate.length > 0 && <div style={{ marginTop: 10, border: "1px solid " + T.amber600, borderRadius: 12, padding: "8px 12px" }}>
-        <div style={{ fontWeight: 700, fontSize: 13, color: T.amber600, marginBottom: 4 }}>{cashLate.length} facturation{cashLate.length > 1 ? "s" : ""} liée{cashLate.length > 1 ? "s" : ""} au planning recule{cashLate.length > 1 ? "nt" : ""} ({fmtEur(cashLate.reduce((s, x) => s + (Number(x.r.montant) || 0), 0))})</div>
+        <div style={{ fontWeight: 600, fontSize: 13, color: T.amber600, marginBottom: 4 }}>{cashLate.length} facturation{cashLate.length > 1 ? "s" : ""} liée{cashLate.length > 1 ? "s" : ""} au planning recule{cashLate.length > 1 ? "nt" : ""} ({fmtEur(cashLate.reduce((s, x) => s + (Number(x.r.montant) || 0), 0))})</div>
         {cashLate.slice(0, 8).map(x => <div key={x.r.id} style={{ fontSize: 12.5, color: T.ink700, display: "flex", gap: 8 }}><b style={{ fontFamily: T.fontMono }}>{x.r.pj}</b><span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.r.jalon}</span><span style={{ fontVariantNumeric: "tabular-nums" }}>{fmtIso(x.a)} → {fmtIso(x.b)} (+{x.d} j)</span></div>)}
         <div style={{ fontSize: 12, color: T.ink500, marginTop: 4 }}>Après la publication, le Cash in propose de mettre ces dates à jour.</div>
       </div>}
       {changes.length > 0 && <input value={note} onChange={e => setNote(e.target.value)} placeholder="Commentaire de publication (facultatif) : ex. « glissement PJ449 suite retard fournisseur »" style={{ ...INP, width: "100%", marginTop: 10 }} />}
-      {err && <div style={{ color: T.red500, fontWeight: 700, fontSize: 13, marginTop: 8 }}>{err}</div>}
+      {err && <div style={{ color: T.red500, fontWeight: 600, fontSize: 13, marginTop: 8 }}>{err}</div>}
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 14 }}>
         <button style={{ ...BTN }} onClick={onClose}>Annuler</button>
         <button style={{ ...BTN_P }} disabled={busy || changes.length === 0 || !!sched.cycle} onClick={go}>{busy ? "Publication…" : "Publier " + changes.length + " changement" + (changes.length > 1 ? "s" : "")}</button>
@@ -277,7 +277,7 @@ function LevelDialog({ plan, onClose, onGo }) {
   const iso = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
   const d0 = new Date(), d1 = new Date(d0.getFullYear(), d0.getMonth() + 3, d0.getDate()), base = Math.round(capWeek(plan));
   const [f, setF] = useState({ from: iso(d0), to: iso(d1), cap: String(base) }); const [err, setErr] = useState("");
-  const L = { display: "flex", flexDirection: "column", gap: 4, fontSize: 12.5, fontWeight: 700, color: T.ink700 };
+  const L = { display: "flex", flexDirection: "column", gap: 4, fontSize: 12.5, fontWeight: 600, color: T.ink700 };
   const go = () => { if (!f.from || !f.to || f.to < f.from) { setErr("La fin doit être après le début."); return; } const c = Number(f.cap); if (!(c > 0)) { setErr("Donnez une capacité en heures par semaine."); return; } onGo({ from: f.from, to: f.to, cap: c === base ? null : c }); };
   return (<Modal title="Niveler la charge atelier" onClose={onClose} width={560}>
     <div style={{ fontSize: 13, color: T.ink500, lineHeight: 1.5, marginBottom: 12 }}>Seules les semaines de cette période sont nivelées : les phases qui commencent avant le début ne bougent pas. Vous voyez le résultat avant de l'appliquer.</div>
@@ -296,11 +296,11 @@ function HistoryDialog({ onClose, onLoad, onRestorePlan, onRestorePub }) {
   const [items, setItems] = useState(null); const [err, setErr] = useState(""); const [msg, setMsg] = useState("");
   useEffect(() => { onLoad().then(setItems).catch(e => setErr(e.message)); }, []); // eslint-disable-line
   return (<Modal title="Historique des publications" onClose={onClose}>
-    {err && <div style={{ color: T.red500 }}>{err}</div>}{msg && <div style={{ color: T.emerald600, fontWeight: 700, margin: "6px 0" }}>{msg}</div>}
+    {err && <div style={{ color: T.red500 }}>{err}</div>}{msg && <div style={{ color: T.emerald600, fontWeight: 600, margin: "6px 0" }}>{msg}</div>}
     {items === null && !err && <div style={{ color: T.ink500 }}>Chargement…</div>}
     {items && items.length === 0 && <div style={{ color: T.ink500, fontSize: 13.5 }}>Aucune publication pour l'instant.</div>}
     {items && items.map(e => (<div key={e.at} style={{ borderTop: "1px solid " + T.line, padding: "10px 0", display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-      <div style={{ flex: 1, minWidth: 220 }}><div style={{ fontWeight: 700, fontSize: 13.5, color: T.ink900 }}>{new Date(e.at).toLocaleString("fr-FR")} · {e.by || "—"}</div>
+      <div style={{ flex: 1, minWidth: 220 }}><div style={{ fontWeight: 600, fontSize: 13.5, color: T.ink900 }}>{new Date(e.at).toLocaleString("fr-FR")} · {e.by || "—"}</div>
         <div style={{ fontSize: 12.5, color: T.ink500 }}>{e.nChanges} changement(s){e.note ? " · " + e.note : ""}</div></div>
       <button style={{ ...BTN }} title="Recharge le plan tel qu'il était à cette publication (n'est pas publié automatiquement)" onClick={() => { onRestorePlan(e.plan); setMsg("Plan rechargé dans l'éditeur (non publié)."); }}>Recharger ce plan</button>
       <button style={{ ...BTN, color: T.red500 }} title="Remet dans le planning actuel les dates d'avant cette publication" onClick={async () => { if (!(await askConfirm({ title: "Annuler cette publication ?", message: "Le planning actuel revient aux dates d'avant cette publication, pour tout le monde.", confirmLabel: "Annuler la publication", cancelLabel: "Garder", danger: true }))) return; try { await onRestorePub(e.at); setMsg("Publication annulée : le planning actuel est revenu à l'état précédent."); } catch (x) { setErr(x.message); } }}>Annuler cette publication</button>
@@ -372,7 +372,7 @@ function BenchTimeline({ items, lo, hi, cal, bad, today, readOnly, onDrop }) {
                 title={x.p.pj + (x.p.nomProjet ? " · " + x.p.nomProjet : "") + "\n" + fmtIso(x.n.start) + " → " + fmtIso(x.n.finish) + " (" + x.n.dur + " j)" + (red ? "\nChevauche une autre machine sur ce banc" : "")}
                 onPointerDown={e => down(e, x)}
                 onKeyDown={e => { if (readOnly) return; if (e.key === "ArrowUp" && b === 2) { e.preventDefault(); onDrop(x.p.pj, 1, null); } if (e.key === "ArrowDown" && b === 1) { e.preventDefault(); onDrop(x.p.pj, 2, null); } if (e.key === "ArrowLeft" || e.key === "ArrowRight") { e.preventDefault(); onDrop(x.p.pj, null, cal.dateOf(x.n.s + (e.key === "ArrowRight" ? 1 : -1))); } }}
-                style={{ position: "absolute", left: BT_LBL + (x.n.s - lo) * BT_PX + 1, width: Math.max(BT_PX - 2, (x.n.f - x.n.s + 1) * BT_PX - 2), top: 6 + x.lane * (BT_BAR + 6), height: BT_BAR, borderRadius: 4, background: red ? T.red500 : STEP_COLOR.tests, color: T.card, fontSize: 11.5, fontWeight: 700, fontFamily: T.fontMono, display: "flex", alignItems: "center", padding: "0 6px", boxSizing: "border-box", overflow: "hidden", whiteSpace: "nowrap", cursor: readOnly ? "default" : me ? "grabbing" : "grab", zIndex: me ? 6 : 2, transform: me ? "translate(" + drag.dx + "px," + drag.dy + "px)" : "none", boxShadow: me ? T.shadowLg : "none", touchAction: "none", userSelect: "none" }}>{x.p.pj}</div>); })}
+                style={{ position: "absolute", left: BT_LBL + (x.n.s - lo) * BT_PX + 1, width: Math.max(BT_PX - 2, (x.n.f - x.n.s + 1) * BT_PX - 2), top: 6 + x.lane * (BT_BAR + 6), height: BT_BAR, borderRadius: 4, background: red ? T.red500 : STEP_COLOR.tests, color: T.card, fontSize: 11.5, fontWeight: 600, fontFamily: T.fontMono, display: "flex", alignItems: "center", padding: "0 6px", boxSizing: "border-box", overflow: "hidden", whiteSpace: "nowrap", cursor: readOnly ? "default" : me ? "grabbing" : "grab", zIndex: me ? 6 : 2, transform: me ? "translate(" + drag.dx + "px," + drag.dy + "px)" : "none", boxShadow: me ? T.shadowLg : "none", touchAction: "none", userSelect: "none" }}>{x.p.pj}</div>); })}
           </div>); })}
       </div>
     </div>
@@ -388,7 +388,7 @@ function BenchDialog({ plan, sched, cal, hide, skip, readOnly, onClose, onApply 
   const shown = items.filter(x => past || x.n.finish >= t0);
   const lo = shown.length ? Math.min(...shown.map(x => x.n.s)) : 0, hi = shown.length ? Math.max(...shown.map(x => x.n.f)) : 1;
   const withRule = np => benchOrderByStart({ ...np, rules: { ...rulesOf(np), banc: true } }, cal);
-  const tb = { border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "2px 8px", fontSize: 11.5, fontWeight: 700, cursor: readOnly ? "default" : "pointer", minHeight: 24, fontFamily: T.font };
+  const tb = { border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "2px 8px", fontSize: 11.5, fontWeight: 600, cursor: readOnly ? "default" : "pointer", minHeight: 24, fontFamily: T.font };
   return (<div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,20,30,.45)", zIndex: 10010, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
     <div role="dialog" aria-modal="true" aria-label="Bancs d'essai" onClick={e => e.stopPropagation()} style={{ background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, width: "min(980px,100%)", maxHeight: "90vh", overflow: "auto", padding: "16px 18px", fontFamily: T.font }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
@@ -415,7 +415,7 @@ function BenchDialog({ plan, sched, cal, hide, skip, readOnly, onClose, onApply 
         <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 6 }}><b style={{ fontSize: 14 }}>Banc {b}</b><span style={{ fontSize: 12, color: T.ink500 }}>{L.length} machine{L.length > 1 ? "s" : ""}</span></div>
         {L.length === 0 && <div style={{ fontSize: 12.5, color: T.ink500 }}>Aucune machine sur ce banc.</div>}
         {L.map((x, i) => { const c = conf.find(k => k.pj === x.p.pj); return (<div key={x.p.pj} style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 34, borderTop: i ? "1px solid " + T.line : "none", fontSize: 13, flexWrap: "wrap" }}>
-          <span style={{ fontFamily: T.fontMono, fontWeight: 700, color: T.teal600, width: 86 }}>{x.p.pj}</span>
+          <span style={{ fontFamily: T.fontMono, fontWeight: 600, color: T.teal600, width: 86 }}>{x.p.pj}</span>
           <span style={{ flex: 1, minWidth: 120, color: T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.p.nomProjet || ""}</span>
           <span style={{ fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{fmtIso(x.n.start)} → {fmtIso(x.n.finish)}</span>
           <span style={{ width: 44, textAlign: "right", color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{x.n.dur} j</span>
@@ -616,7 +616,7 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
       <div style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: 14, color: T.ink900, marginRight: 4 }}>Planification</div>
       <span style={{ fontSize: 11, color: T.ink500 }}>{plan.pjs.length} PJ · {nLinks} lien{nLinks > 1 ? "s" : ""}</span>
       {nEst + nNoH > 0 && <span title="La charge vient des heures atelier du planning. Sans heures, un PJ reprend le modèle de sa gamme ou la moyenne des PJ de la même gamme." style={{ fontSize: 12, color: T.amber600 }}>{nEst ? nEst + " PJ aux heures estimées" : ""}{nEst && nNoH ? " · " : ""}{nNoH ? nNoH + " PJ sans heures (hors charge)" : ""}</span>}
-      <span role="button" tabIndex={0} onClick={() => { setRefId("pub"); setUi({ view: "changes" }); }} onKeyDown={e => { if (e.key === "Enter") { setRefId("pub"); setUi({ view: "changes" }); } }} title="Voir la synthèse des modifications" style={{ cursor: "pointer", borderRadius: 999, padding: "1px 8px", fontSize: 11, fontWeight: 700, background: changes.length ? T.amber100 : T.emerald100, color: changes.length ? T.amber600 : T.emerald600 }}>{changes.length ? changes.length + " modification" + (changes.length > 1 ? "s" : "") + " non publiée" + (changes.length > 1 ? "s" : "") : "À jour avec le planning actuel"}</span>
+      <span role="button" tabIndex={0} onClick={() => { setRefId("pub"); setUi({ view: "changes" }); }} onKeyDown={e => { if (e.key === "Enter") { setRefId("pub"); setUi({ view: "changes" }); } }} title="Voir la synthèse des modifications" style={{ cursor: "pointer", borderRadius: 999, padding: "1px 8px", fontSize: 11, fontWeight: 600, background: changes.length ? T.amber100 : T.emerald100, color: changes.length ? T.amber600 : T.emerald600 }}>{changes.length ? changes.length + " modification" + (changes.length > 1 ? "s" : "") + " non publiée" + (changes.length > 1 ? "s" : "") : "À jour avec le planning actuel"}</span>
       <span style={{ fontSize: 12, color: T.ink500 }} aria-live="polite">{saveSt}</span>
       <span style={{ flex: 1 }} />
       <span style={{ display: "inline-flex", gap: 8, flexWrap: "wrap", fontSize: 12, color: T.ink500, alignItems: "center" }}>

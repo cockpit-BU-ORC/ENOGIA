@@ -14,10 +14,10 @@ import { ACCESS_PAGES, LEVELS, LEVEL_LABEL, levelsOf, rolesOf, accessOn, slugRol
 
 const tone = l => l === "a" ? { bg: T.accentSoft, ink: T.accentInk } : l === "w" ? { bg: T.emerald100, ink: T.emerald600 } : l === "r" ? { bg: T.info100, ink: T.info600 } : { bg: T.surfaceAlt, ink: T.ink500 };
 const card = { background: T.card, borderRadius: 12, padding: "14px 16px", minWidth: 0 };
-const h3 = { margin: "0 0 4px", fontFamily: T.fontDisplay, fontSize: 16, fontWeight: 700, color: T.ink900 };
+const h3 = { margin: "0 0 4px", fontFamily: T.fontDisplay, fontSize: 16, fontWeight: 600, color: T.ink900 };
 const hint = { margin: "0 0 10px", fontSize: 13, color: T.ink500 };
 const initials = (name, email) => { const s = String(name || email || "?").replace(/@.*/, "").split(/[\s._-]+/).filter(Boolean); return ((s[0] || "?")[0] + ((s[1] || "")[0] || "")).toUpperCase(); };
-const Avatar = ({ p }) => <span aria-hidden="true" style={{ width: 28, height: 28, borderRadius: 999, background: T.surfaceAlt, color: T.ink700, display: "grid", placeItems: "center", fontFamily: T.fontDisplay, fontWeight: 700, fontSize: 11, flex: "0 0 28px" }}>{initials(p.name, p.email)}</span>;
+const Avatar = ({ p }) => <span aria-hidden="true" style={{ width: 28, height: 28, borderRadius: 999, background: T.surfaceAlt, color: T.ink700, display: "grid", placeItems: "center", fontFamily: T.fontDisplay, fontWeight: 600, fontSize: 11, flex: "0 0 28px" }}>{initials(p.name, p.email)}</span>;
 const field = { minHeight: 34, border: "1px solid " + T.line, borderRadius: 8, background: T.card, color: T.ink900, padding: "0 10px", fontFamily: T.font, fontSize: 13, minWidth: 0 };
 
 // Choix du niveau : 4 segments (Masqué, Lecture, Modifier, Admin)
@@ -76,7 +76,7 @@ export default function AccessPage({ profiles, saveProfiles, accessDoc, saveAcce
   const toggleOn = async () => {
     const go = on ? await askConfirm({ title: "Désactiver les nouveaux accès ?", message: "Chacun retrouve ses droits d'avant (admins du Manager, listes d'accès des Turbines et des Achats). Rôles et accès restent enregistrés.", confirmLabel: "Désactiver", danger: true })
       : await askConfirm({ title: "Activer les nouveaux accès ?", message: "Chaque personne n'aura plus que les pages et sous-pages permises par son rôle ; les anciennes listes ne comptent plus. Vous restez seul super admin. Republiez d'abord les règles de la base (SECURITE.md)." + (nChanges ? " Vos " + nChanges + " changement(s) en cours seront enregistrés." : ""), confirmLabel: "Activer" });
-    if (go && await persist(!on)) { cancel(); setMsg(on ? "Nouveaux accès désactivés : droits d'avant rétablis." : "✓ Nouveaux accès activés."); }
+    if (go && await persist(!on)) { cancel(); setMsg(on ? "Nouveaux accès désactivés : droits d'avant rétablis." : "✓ Nouveaux accès activés"); }
   };
 
   // ---------- Rôles ----------
@@ -90,7 +90,7 @@ export default function AccessPage({ profiles, saveProfiles, accessDoc, saveAcce
     </nav>
     <section aria-label={"Rôle " + roleName(curRole)} style={card}>
       <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 8 }}>
-        <input value={roleName(curRole)} onChange={e => renameRole(curRole, e.target.value)} aria-label="Nom du rôle" style={{ ...field, fontFamily: T.fontDisplay, fontSize: 18, fontWeight: 700, minHeight: 38, flex: "1 1 220px" }} />
+        <input value={roleName(curRole)} onChange={e => renameRole(curRole, e.target.value)} aria-label="Nom du rôle" style={{ ...field, fontFamily: T.fontDisplay, fontSize: 18, fontWeight: 600, minHeight: 38, flex: "1 1 220px" }} />
         <button type="button" onClick={() => { setPrevRole(curRole); setSub("acces"); }} style={{ ...btn("sec", "sm") }}>Voir ses accès</button>
         {!BUILTIN_ROLE_IDS.includes(curRole) && <button type="button" onClick={() => deleteRole(curRole)} style={{ ...btn("dan", "sm") }}>Supprimer le rôle</button>}
       </div>
@@ -98,7 +98,7 @@ export default function AccessPage({ profiles, saveProfiles, accessDoc, saveAcce
       <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
         {members(curRole).map(p => { const chg = (roleOf[p.email] || null) && roleNow(p.email) !== savedRole(p.email);
           return <li key={p.email} style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 44, borderBottom: "1px solid " + T.line }}>
-            <Avatar p={p} /><span style={{ flex: 1, minWidth: 0 }}><b style={{ display: "block", fontSize: 13, color: T.ink900 }}>{p.name || p.email.replace(/@.*/, "")}{chg && <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 700, color: T.accentInk }}>nouveau</span>}</b><span style={{ fontSize: 12, color: T.ink500 }}>{p.email}</span></span>
+            <Avatar p={p} /><span style={{ flex: 1, minWidth: 0 }}><b style={{ display: "block", fontSize: 13, color: T.ink900 }}>{p.name || p.email.replace(/@.*/, "")}{chg && <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 600, color: T.accentInk }}>nouveau</span>}</b><span style={{ fontSize: 12, color: T.ink500 }}>{p.email}</span></span>
             {curRole !== "autre" && <button type="button" onClick={() => assign([p.email], "autre")} aria-label={"Retirer " + (p.name || p.email) + " du rôle"} title="Retirer du rôle (passe dans Autres personnes)" style={{ ...btn("ghost", "sm"), minWidth: 32 }}>×</button>}
           </li>; })}
         {!members(curRole).length && <li style={{ ...hint, margin: "6px 0" }}>Personne pour l'instant.</li>}
@@ -135,7 +135,7 @@ export default function AccessPage({ profiles, saveProfiles, accessDoc, saveAcce
           <select value="" onChange={e => { if (e.target.value) setLevels(copyRole(L, e.target.value, aRole)); }} style={field}><option value="">— choisir —</option>{R.filter(r => r[0] !== aRole).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></label>
       </div>
       {groups.map(g => <div key={g}>
-        <div style={{ fontFamily: T.fontDisplay, fontWeight: 700, fontSize: 13, color: T.ink500, padding: "12px 0 4px" }}>{g}</div>
+        <div style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: 13, color: T.ink500, padding: "12px 0 4px" }}>{g}</div>
         {ACCESS_PAGES.filter(p => p.g === g).map(p => <div key={p.id} style={{ borderTop: "1px solid " + T.line }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, minHeight: 48, flexWrap: "wrap", padding: "4px 0" }}>
             <span style={{ flex: "1 1 220px", minWidth: 0 }}><b style={{ display: "block", fontSize: 14, color: T.ink900 }}>{p.l}</b><span style={{ fontSize: 12, color: T.ink500 }}>{p.d}{p.adm ? " · Admin : " + p.adm : ""}</span></span>
@@ -152,7 +152,7 @@ export default function AccessPage({ profiles, saveProfiles, accessDoc, saveAcce
       <h3 style={h3}>Menu de « {roleName(aRole)} »</h3>
       <div style={{ marginTop: 8, borderRadius: 8, background: T.mode === "dark" ? T.surface : T.ink900, color: T.mode === "dark" ? T.ink900 : T.card, padding: 8, fontSize: 13 }}>
         {groups.map(g => { const its = ACCESS_PAGES.filter(p => p.g === g && lv(p.id) !== "n"); return its.length ? <div key={g}>
-          <div style={{ fontSize: 12, fontWeight: 700, opacity: .65, padding: "6px 6px 2px" }}>{g}</div>
+          <div style={{ fontSize: 12, fontWeight: 600, opacity: .65, padding: "6px 6px 2px" }}>{g}</div>
           {its.map(p => <div key={p.id}><div style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "3px 8px" }}><span>{p.l}</span><span style={{ fontSize: 11, opacity: .8 }}>{{ r: "lecture", w: "modifier", a: "admin" }[lv(p.id)]}</span></div>
             {(p.subs || []).filter(([s]) => lv(p.id + "." + s) !== "n").map(([s, sl]) => <div key={s} style={{ padding: "1px 8px 1px 22px", fontSize: 12, opacity: .8 }}>{sl}</div>)}</div>)}</div> : null; })}
       </div>

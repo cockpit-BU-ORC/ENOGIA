@@ -19,7 +19,7 @@ export function ChefsEpcFields({ value, onChange, mainChef }) {
         <button type="button" aria-label={"Retirer " + c} onClick={() => set({ chefsExtra: v.chefsExtra.filter(x => x !== c) })} style={{ border: "none", background: "transparent", color: T.ink500, cursor: "pointer", minWidth: 24, minHeight: 24, fontSize: 14 }}>×</button></span>)}
       <input list="enogia-chefs-all" value={add} onChange={e => setAdd(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); push(); } }} placeholder="Ajouter un chef de projet" aria-label="Ajouter un chef de projet" style={{ ...field(), width: 200 }} />
       <datalist id="enogia-chefs-all">{all.map(c => <option key={c} value={c} />)}</datalist>
-      {add.trim() && <button type="button" onClick={push} style={{ ...field(), background: T.ink900, color: T.card, border: "none", fontWeight: 700, cursor: "pointer" }}>Ajouter</button>}
+      {add.trim() && <button type="button" onClick={push} style={{ ...field(), background: T.ink900, color: T.card, border: "none", fontWeight: 600, cursor: "pointer" }}>Ajouter</button>}
     </div>
     <label style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: FZ.sm, fontWeight: 600, color: T.ink900, cursor: "pointer", minHeight: 28 }}>
       <input type="checkbox" checked={v.epc} onChange={e => set({ epc: e.target.checked })} style={{ width: 16, height: 16, accentColor: T.violet500 }} />Projet EPC
@@ -38,7 +38,7 @@ export function ChefsEpcEditor({ meta, onSave, onCancel }) {
   return (<div className="enogia-view-in" style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: 12, display: "flex", flexDirection: "column", gap: 10, marginTop: 8 }}>
     <ChefsEpcFields value={v} onChange={setV} mainChef={meta && meta.chefProjet} />
     <div style={{ display: "flex", gap: 8 }}>
-      <button type="button" onClick={save} disabled={busy} style={{ padding: "6px 14px", borderRadius: 8, border: "none", background: T.ink900, color: T.card, fontSize: FZ.sm, fontWeight: 700, cursor: "pointer", minHeight: 30 }}>{busy ? "Enregistrement…" : "Enregistrer"}</button>
+      <button type="button" onClick={save} disabled={busy} style={{ padding: "6px 14px", borderRadius: 8, border: "none", background: T.ink900, color: T.card, fontSize: FZ.sm, fontWeight: 600, cursor: "pointer", minHeight: 30 }}>{busy ? "Enregistrement…" : "Enregistrer"}</button>
       <button type="button" onClick={onCancel} style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: T.panel, color: T.ink700, fontSize: FZ.sm, fontWeight: 600, cursor: "pointer", minHeight: 30 }}>Annuler</button>
     </div>
   </div>);

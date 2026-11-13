@@ -45,12 +45,12 @@ export function InitialAddReview({parsed,initialData,onConfirm,onCancel,busy}){
         </table>
       </div>}
       {changed.length>0&&<div style={{marginTop:12}}>
-        <div style={{fontSize:FZ.sm,fontWeight:700,color:T.ink900,marginBottom:6}}>Corriger l'initial de PJ déjà ancrés <span style={{fontWeight:500,color:T.ink500}}>({fixChosen.length} coché{fixChosen.length>1?"s":""} · ancien → fichier)</span></div>
+        <div style={{fontSize:FZ.sm,fontWeight:600,color:T.ink900,marginBottom:6}}>Corriger l'initial de PJ déjà ancrés <span style={{fontWeight:500,color:T.ink500}}>({fixChosen.length} coché{fixChosen.length>1?"s":""} · ancien → fichier)</span></div>
         <div style={{border:"1px solid "+T.line,borderRadius:12,overflow:"auto",maxHeight:260}}>
           <table style={{width:"100%",borderCollapse:"collapse"}}>
             <thead><tr style={{background:T.surface,position:"sticky",top:0}}><th style={th}></th><th style={th}>PJ</th><th style={th}>Arrivée</th><th style={th}>Tests</th><th style={th}>Fin prod</th><th style={th}>Départ</th></tr></thead>
             <tbody>{changed.map(r=>{const on=fix.has(r.pj);const o=known[r.pj];
-              const cell=(k,bold)=>{const a=day(o[k]),b=day(r[k]);return a===b?<span>{d(r[k])}</span>:<span style={{color:T.amber600,fontWeight:700}}>{d(o[k])} → {d(r[k])}</span>;};
+              const cell=(k,bold)=>{const a=day(o[k]),b=day(r[k]);return a===b?<span>{d(r[k])}</span>:<span style={{color:T.amber600,fontWeight:600}}>{d(o[k])} → {d(r[k])}</span>;};
               return(<tr key={r.pj} onClick={()=>toggleFix(r.pj)} style={{cursor:"pointer",borderTop:"1px solid "+T.surfaceAlt,background:on?T.teal100:"transparent"}}>
                 <td style={td}><input type="checkbox" checked={on} onChange={()=>toggleFix(r.pj)} onClick={e=>e.stopPropagation()}/></td>
                 <td style={{...td,fontFamily:T.fontMono,fontWeight:600,color:T.ink900}}>{r.pj}</td>
@@ -66,7 +66,7 @@ export function InitialAddReview({parsed,initialData,onConfirm,onCancel,busy}){
       </div>
       <div style={{display:"flex",justifyContent:"flex-end",gap:8,marginTop:16}}>
         <button onClick={onCancel} style={{padding:"8px 16px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:T.ink700,fontWeight:600,fontSize:FZ.sm,cursor:"pointer",fontFamily:T.font}}>Annuler</button>
-        <button disabled={busy||(chosen.length+fixChosen.length)===0} onClick={()=>onConfirm(chosen,fixChosen)} style={{padding:"8px 16px",borderRadius:8,border:"none",background:(chosen.length+fixChosen.length)===0?T.ink100:T.navy700,color:"#fff",fontWeight:700,fontSize:FZ.sm,cursor:(chosen.length+fixChosen.length)===0||busy?"default":"pointer",fontFamily:T.font,opacity:busy?.7:1}}>{busy?"Enregistrement…":[chosen.length?"Ancrer "+chosen.length+" nouveau"+(chosen.length>1?"x":""):"",fixChosen.length?"Corriger "+fixChosen.length+" PJ":""].filter(Boolean).join(" + ")||"Ancrer"}</button>
+        <button disabled={busy||(chosen.length+fixChosen.length)===0} onClick={()=>onConfirm(chosen,fixChosen)} style={{padding:"8px 16px",borderRadius:8,border:"none",background:(chosen.length+fixChosen.length)===0?T.ink100:T.navy700,color:"#fff",fontWeight:600,fontSize:FZ.sm,cursor:(chosen.length+fixChosen.length)===0||busy?"default":"pointer",fontFamily:T.font,opacity:busy?.7:1}}>{busy?"Enregistrement…":[chosen.length?"Ancrer "+chosen.length+" nouveau"+(chosen.length>1?"x":""):"",fixChosen.length?"Corriger "+fixChosen.length+" PJ":""].filter(Boolean).join(" + ")||"Ancrer"}</button>
       </div>
     </div>
   </div>);

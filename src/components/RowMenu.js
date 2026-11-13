@@ -43,7 +43,7 @@ export function RowMenu({ pj, x, y, canSetEtat, etat, onOpen, onComment, onSetEt
     <div ref={ref} role="menu" aria-label={"Actions " + pj} className="enogia-menu"
       onContextMenu={e => e.preventDefault()}
       style={{ position: "fixed", left: pos.left, top: pos.top, zIndex: 3000, minWidth: 220, maxWidth: 280, padding: 6, background: T.card, borderRadius: R.md, boxShadow: "0 0 0 1px " + T.line + ", 0 12px 32px -8px rgba(16,24,40,.28)", fontFamily: T.font }}>
-      <div style={{ padding: "6px 12px 8px", fontSize: FZ.xs, fontWeight: 700, color: T.ink500, letterSpacing: ".04em" }}>{pj}</div>
+      <div style={{ padding: "6px 12px 8px", fontSize: FZ.xs, fontWeight: 600, color: T.ink500, letterSpacing: ".04em" }}>{pj}</div>
       {item("sidepanel", "Ouvrir la fiche", () => { onOpen(); onClose(); })}
       {item("comments", "Commenter", () => { onComment(); onClose(); })}
       {item(copied ? "check" : "copy", copied ? "N° copié" : "Copier le n° de PJ", copy)}

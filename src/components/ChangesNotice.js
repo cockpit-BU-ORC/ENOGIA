@@ -64,7 +64,7 @@ export function NewMark({ mark }) {
   const text = mark.isNew ? "nouveau" : late ? "↻ +" + d + " j" : early ? "↻ −" + Math.abs(d) + " j" : "modifié";
   const [bg, fg] = mark.isNew ? [T.teal100, T.teal600] : [T.surfaceAlt, T.ink700];
   const title = mark.isNew ? "Nouveau PJ depuis votre dernière visite" : late ? "Départ repoussé de " + d + " j par la dernière mise à jour" : early ? "Départ avancé de " + Math.abs(d) + " j par la dernière mise à jour" : "Modifié par la dernière mise à jour";
-  return <span title={title} aria-label={title} style={{ background: bg, color: fg, borderRadius: 999, padding: "0 6px", fontSize:11, lineHeight: "16px", fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{text}</span>;
+  return <span title={title} aria-label={title} style={{ background: bg, color: fg, borderRadius: 999, padding: "0 6px", fontSize:11, lineHeight: "16px", fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{text}</span>;
 }
 
 const fmtAt = at => new Date(at).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
@@ -73,7 +73,7 @@ const plural = (n, s, p) => n + " " + (n > 1 ? (p || s + "s") : s);
 function Chip({ children, tone }) {
   const map = { red: [T.red100, T.red500], green: [T.emerald100, T.emerald600], blue: [T.teal100, T.teal600], gray: [T.surfaceAlt, T.ink700] };
   const [bg, fg] = map[tone || "gray"];
-  return <span style={{ background: bg, color: fg, borderRadius: 999, padding: "3px 8px", fontSize: FZ.xs, fontWeight: 700, whiteSpace: "nowrap" }}>{children}</span>;
+  return <span style={{ background: bg, color: fg, borderRadius: 999, padding: "3px 8px", fontSize: FZ.xs, fontWeight: 600, whiteSpace: "nowrap" }}>{children}</span>;
 }
 
 export function ChangesPopup({ entries, onOpen, onLater, onRead, userName }) {
@@ -89,7 +89,7 @@ export function ChangesPopup({ entries, onOpen, onLater, onRead, userName }) {
     <div role="dialog" aria-modal="true" aria-labelledby="chg-title" className="enogia-modal-pop" style={{ background: T.card, color: T.ink900, borderRadius: 12, border: "1px solid " + T.line, boxShadow: T.shadowLg, width: "100%", maxWidth: 520, maxHeight: "86vh", overflowY: "auto", padding: "20px 20px 16px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
         <span aria-hidden="true" style={{ width: 4, height: 22, borderRadius: 4, background: T.accent }} />
-        <h2 id="chg-title" style={{ margin: 0, fontSize: FZ.lg, fontWeight: 700, letterSpacing: "-.01em" }}>Le planning a été mis à jour</h2>
+        <h2 id="chg-title" style={{ margin: 0, fontSize: FZ.lg, fontWeight: 600, letterSpacing: "-.01em" }}>Le planning a été mis à jour</h2>
       </div>
       <div style={{ fontSize: FZ.sm, color: T.ink500, margin: "0 0 14px 14px" }}>{first ? "Bonjour " + first + ", d" : "D"}epuis votre dernière visite, {entries.length > 1 ? entries.length + " versions ont été publiées" : "une nouvelle version a été publiée"}.</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -97,7 +97,7 @@ export function ChangesPopup({ entries, onOpen, onLater, onRead, userName }) {
           const s = e.stats || {};
           const top = (e.pjs || []).filter(p => !p.isNew && p.departDelta > 0).slice(0, 3);
           return (<div key={e.at} style={{ background: T.surface, border: "1px solid " + T.line, borderRadius: 12, padding: "8px 12px" }}>
-            <div style={{ fontSize: FZ.sm, fontWeight: 700 }}>{e.source === "publication" ? "Publication" : e.source === "restauration" ? "Restauration" : "Import"} du {fmtAt(e.at)}{e.by ? <span style={{ fontWeight: 400, color: T.ink500 }}> · {e.by}</span> : null}</div>
+            <div style={{ fontSize: FZ.sm, fontWeight: 600 }}>{e.source === "publication" ? "Publication" : e.source === "restauration" ? "Restauration" : "Import"} du {fmtAt(e.at)}{e.by ? <span style={{ fontWeight: 400, color: T.ink500 }}> · {e.by}</span> : null}</div>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
               <Chip tone="blue">{plural(s.nPj || 0, "PJ modifié")}</Chip>
               {s.late > 0 && <Chip tone="red">{plural(s.late, "départ repoussé")}{s.maxLate ? " (jusqu'à +" + s.maxLate + " j)" : ""}</Chip>}
@@ -107,7 +107,7 @@ export function ChangesPopup({ entries, onOpen, onLater, onRead, userName }) {
             </div>
             {top.length > 0 && <div style={{ marginTop: 8, fontSize: FZ.xs, color: T.ink700, lineHeight: 1.5 }}>
               <span style={{ color: T.ink500 }}>Plus gros décalages : </span>
-              {top.map((p, i) => <span key={p.pj}>{i > 0 ? " · " : ""}<b style={{ fontVariantNumeric: "tabular-nums" }}>{p.pj}</b> <span style={{ color: T.red500, fontWeight: 700 }}>+{p.departDelta} j</span></span>)}
+              {top.map((p, i) => <span key={p.pj}>{i > 0 ? " · " : ""}<b style={{ fontVariantNumeric: "tabular-nums" }}>{p.pj}</b> <span style={{ color: T.red500, fontWeight: 600 }}>+{p.departDelta} j</span></span>)}
             </div>}
           </div>);
         })}
@@ -116,7 +116,7 @@ export function ChangesPopup({ entries, onOpen, onLater, onRead, userName }) {
       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap", marginTop: 16 }}>
         <button onClick={onLater} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "8px 12px", fontSize: FZ.sm, fontWeight: 600, cursor: "pointer", fontFamily: T.font, minHeight: 34 }}>Plus tard</button>
         {onRead && <button onClick={onRead} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink900, borderRadius: 8, padding: "8px 12px", fontSize: FZ.sm, fontWeight: 600, cursor: "pointer", fontFamily: T.font, minHeight: 34 }}>J'ai pris connaissance</button>}
-        <button ref={openRef} onClick={onOpen} style={{ border: "none", background: T.ink900, color: T.card, borderRadius: 8, padding: "8px 16px", fontSize: FZ.sm, fontWeight: 700, cursor: "pointer", fontFamily: T.font, minHeight: 34 }}>Voir les modifications</button>
+        <button ref={openRef} onClick={onOpen} style={{ border: "none", background: T.ink900, color: T.card, borderRadius: 8, padding: "8px 16px", fontSize: FZ.sm, fontWeight: 600, cursor: "pointer", fontFamily: T.font, minHeight: 34 }}>Voir les modifications</button>
       </div>
       <div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 10, textAlign: "right" }}>« Plus tard » : le message reviendra à la prochaine actualisation de la page, tant que vous n'avez pas cliqué sur « Voir les modifications » ou « J'ai pris connaissance ».</div>
     </div>
@@ -126,5 +126,5 @@ export function ChangesPopup({ entries, onOpen, onLater, onRead, userName }) {
 // Pastille posée sur l'icône de l'onglet
 export function ChangesBadge({ n }) {
   if (!n) return null;
-  return <><span aria-hidden="true" className="enogia-badge-pop" style={{ position: "absolute", bottom: -1, left: -2, fontSize: 12, lineHeight: 0, filter: "drop-shadow(0 1px 1px rgba(0,0,0,.25))", pointerEvents: "none" }}><NavIcon name="bell" size={13} /></span><span aria-hidden="true" className="enogia-badge-pop" style={{ position: "absolute", top: 1, right: 0, minWidth: 17, height: 17, padding: "0 4px", borderRadius: 999, background: T.redFill, color: "#fff", fontSize: 11, fontWeight: 800, lineHeight: "17px", textAlign: "center", boxShadow: "0 0 0 2px " + T.card, boxSizing: "border-box" }}>{n > 9 ? "9+" : n}</span></>;
+  return <><span aria-hidden="true" className="enogia-badge-pop" style={{ position: "absolute", bottom: -1, left: -2, fontSize: 12, lineHeight: 0, filter: "drop-shadow(0 1px 1px rgba(0,0,0,.25))", pointerEvents: "none" }}><NavIcon name="bell" size={13} /></span><span aria-hidden="true" className="enogia-badge-pop" style={{ position: "absolute", top: 1, right: 0, minWidth: 17, height: 17, padding: "0 4px", borderRadius: 999, background: T.redFill, color: "#fff", fontSize: 11, fontWeight: 600, lineHeight: "17px", textAlign: "center", boxShadow: "0 0 0 2px " + T.card, boxSizing: "border-box" }}>{n > 9 ? "9+" : n}</span></>;
 }

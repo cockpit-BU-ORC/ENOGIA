@@ -10,7 +10,7 @@ import { parseDocxXml, parseChecklistText, docxDocumentXml } from "../checklistI
 import { askConfirm } from "../confirm";
 
 const nid = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-const btn = (primary, ghost) => ({ padding: "0 12px", minHeight: 32, borderRadius: 8, border: "1px solid " + (primary && !ghost ? T.ink900 : T.line), background: primary && !ghost ? T.ink900 : T.card, color: primary && !ghost ? T.card : T.ink700, fontSize: FZ.sm, fontWeight: 700, cursor: "pointer", fontFamily: T.font });
+const btn = (primary, ghost) => ({ padding: "0 12px", minHeight: 32, borderRadius: 8, border: "1px solid " + (primary && !ghost ? T.ink900 : T.line), background: primary && !ghost ? T.ink900 : T.card, color: primary && !ghost ? T.card : T.ink700, fontSize: FZ.sm, fontWeight: 600, cursor: "pointer", fontFamily: T.font });
 const field = { padding: "4px 8px", minHeight: 30, borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, boxSizing: "border-box", width: "100%" };
 const mini = { border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, minWidth: 28, minHeight: 28, cursor: "pointer", fontFamily: T.font, fontSize: 13 };
 
@@ -25,14 +25,14 @@ function ImportDialog({ onApply, onClose }) {
   const n = (res || []).reduce((a, s) => a + s.items.length, 0);
   return (<div onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 10010, background: "rgba(10,20,30,.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
     <div role="dialog" aria-modal="true" aria-label="Importer une checklist" style={{ width: "min(720px,100%)", maxHeight: "90vh", overflow: "auto", background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, padding: "16px 18px", fontFamily: T.font, display: "flex", flexDirection: "column", gap: 10 }}>
-      <div style={{ fontSize: 18, fontWeight: 700 }}>Importer une checklist</div>
+      <div style={{ fontSize: 18, fontWeight: 600 }}>Importer une checklist</div>
       <div style={{ fontSize: 13, color: T.ink500, lineHeight: 1.5 }}>Un document Word au format du modèle ({DEBUG_DOC.ref}) : chaque ligne de tableau dont les colonnes 2 et 3 sont « OK » et « NOK » ouvre une section ; les lignes suivantes sont les contrôles (1re colonne) et leur consigne (dernière colonne).<br />Ou un tableau Excel / CSV : <b>Section ; Contrôle ; Consigne ; Option</b> (une ligne par contrôle).</div>
       <input type="file" accept=".docx,.csv,.txt" onChange={pick} aria-label="Fichier de checklist" disabled={busy} />
       <textarea value={txt} onChange={e => setTxt(e.target.value)} rows={5} placeholder={"Ou collez ici depuis Excel :\nSorties\tVentilateur circuit de cooling\tActiver le ventilateur…\t"} aria-label="Checklist collée" style={{ ...field, resize: "vertical", fontFamily: T.fontMono, fontSize: 12 }} />
       <div><button type="button" style={btn(false, true)} disabled={!txt.trim()} onClick={fromText}>Lire le texte collé</button></div>
       {err && <div role="alert" style={{ color: T.red600, fontWeight: 600, fontSize: FZ.sm }}>{err}</div>}
       {res && res.length > 0 && <div style={{ border: "1px solid " + T.line, borderRadius: 8, padding: "8px 10px", maxHeight: 260, overflow: "auto" }}>
-        <div style={{ fontWeight: 700, fontSize: FZ.sm, marginBottom: 4 }}>{res.length} section{res.length > 1 ? "s" : ""} · {n} contrôle{n > 1 ? "s" : ""}</div>
+        <div style={{ fontWeight: 600, fontSize: FZ.sm, marginBottom: 4 }}>{res.length} section{res.length > 1 ? "s" : ""} · {n} contrôle{n > 1 ? "s" : ""}</div>
         {res.map(s => <div key={s.id} style={{ fontSize: 12.5, marginBottom: 4 }}><b>{s.title}</b> <span style={{ color: T.ink500 }}>({s.items.length})</span> — <span style={{ color: T.ink700 }}>{s.items.slice(0, 4).map(i => i.label).join(", ")}{s.items.length > 4 ? "…" : ""}</span></div>)}
       </div>}
       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
@@ -56,7 +56,7 @@ export function ChecklistsView({ doc, commit }) {
   return (<div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
     <section style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
       <div style={{ flex: "1 1 320px" }}>
-        <div style={{ fontSize: 16, fontWeight: 700 }}>Checklist de debug · modèle</div>
+        <div style={{ fontSize: 16, fontWeight: 600 }}>Checklist de debug · modèle</div>
         <div style={{ fontSize: 12.5, color: T.ink500 }}>{secs.length} sections · {total} contrôles · s'applique à toutes les machines (fiche de tests et export PDF). Elle ne se modifie qu'ici, pas depuis un PJ.</div>
       </div>
       <button type="button" style={btn(false, true)} onClick={() => setImp(true)}>Importer…</button>
@@ -67,7 +67,7 @@ export function ChecklistsView({ doc, commit }) {
     {msg && <div role="status" style={{ fontSize: FZ.sm, fontWeight: 600, color: msg.bad ? T.red600 : T.emerald600 }}>{msg.t}</div>}
     {secs.map((s, si) => <section key={s.id} aria-label={"Section " + s.title} style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 10px", background: T.surfaceAlt }}>
-        <input value={s.title} onChange={e => upd(a => { a[si].title = e.target.value; return a; })} aria-label="Titre de la section" style={{ ...field, fontWeight: 700, maxWidth: 420, background: T.card }} />
+        <input value={s.title} onChange={e => upd(a => { a[si].title = e.target.value; return a; })} aria-label="Titre de la section" style={{ ...field, fontWeight: 600, maxWidth: 420, background: T.card }} />
         <span style={{ fontSize: 12, color: T.ink500, marginRight: "auto" }}>{s.items.length} contrôle{s.items.length > 1 ? "s" : ""}</span>
         <button type="button" aria-label="Monter la section" style={mini} disabled={si === 0} onClick={() => upd(a => move(a, si, -1))}>↑</button>
         <button type="button" aria-label="Descendre la section" style={mini} disabled={si === secs.length - 1} onClick={() => upd(a => move(a, si, 1))}>↓</button>
@@ -86,7 +86,7 @@ export function ChecklistsView({ doc, commit }) {
           </div>
         </React.Fragment>)}
       </div>
-      <div style={{ padding: "6px 10px" }}><button type="button" onClick={() => upd(a => { a[si].items.push({ id: nid("x"), label: "Nouveau contrôle", hint: "", opt: false }); return a; })} style={{ border: "none", background: "transparent", color: T.ink700, fontWeight: 700, fontSize: FZ.sm, cursor: "pointer", fontFamily: T.font, minHeight: 28 }}>＋ Ajouter un contrôle</button></div>
+      <div style={{ padding: "6px 10px" }}><button type="button" onClick={() => upd(a => { a[si].items.push({ id: nid("x"), label: "Nouveau contrôle", hint: "", opt: false }); return a; })} style={{ border: "none", background: "transparent", color: T.ink700, fontWeight: 600, fontSize: FZ.sm, cursor: "pointer", fontFamily: T.font, minHeight: 28 }}>＋ Ajouter un contrôle</button></div>
     </section>)}
     <div><button type="button" style={btn(false, true)} onClick={() => upd(a => [...a, { id: nid("s"), title: "Nouvelle section", items: [] }])}>＋ Ajouter une section</button></div>
     {imp && <ImportDialog onClose={() => setImp(false)} onApply={(res, mode) => { upd(a => mode === "replace" ? res : [...a, ...res]); setImp(false); setMsg({ t: "Import prêt : vérifiez puis « Enregistrer »." }); }} />}

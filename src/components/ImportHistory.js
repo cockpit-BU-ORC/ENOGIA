@@ -35,7 +35,7 @@ export function ImportHistory({ authorName }) {
 
   return (<div style={{ ...CARD, padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
     <div>
-      <div style={{ fontSize: FZ.md, fontWeight: 700, color: T.ink900 }}>Historique des imports</div>
+      <div style={{ fontSize: FZ.md, fontWeight: 600, color: T.ink900 }}>Historique des imports</div>
       <div style={{ fontSize: FZ.sm, color: T.ink500, marginTop: 2, maxWidth: 760 }}>
         Avant chaque import, l'ancien planning est copié automatiquement (les {BACKUPS_KEPT} dernières copies sont gardées). « Restaurer » remet le planning de la ligne choisie ; le planning actuel est lui aussi copié avant, donc la restauration se défait. Les saisies faites sur le site ne sont jamais touchées.
       </div>

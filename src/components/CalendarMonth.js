@@ -42,7 +42,7 @@ function Plate({ ev, onOpen, note }) {
     : vis ? { background: vis.bg, color: vis.ink, boxShadow: "inset 3px 0 0 " + vis.color } : { background: s.c, color: s.t };
   return <button type="button" onClick={() => onOpen(ev.pj)} title={ev.pj + " · " + label + (note ? " (" + note + ")" : "") + " — ouvrir la fiche"}
     style={{ display: "flex", alignItems: "baseline", gap: 6, width: "100%", minWidth: 0, minHeight: 22, padding: "2px 6px 2px 7px", border: "none", borderRadius: 4, cursor: "pointer", fontFamily: T.font, textAlign: "left", ...style }}>
-    <b style={{ fontFamily: T.fontDisplay, fontSize: FZF.xs, fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0 }}>{ev.pj}</b>
+    <b style={{ fontFamily: T.fontDisplay, fontSize: FZF.xs, fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0 }}>{ev.pj}</b>
     <span style={{ fontSize: FZF.xs, opacity: ev.quiet ? 0.9 : 0.85, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}{note ? " · " + note : ""}</span>
   </button>;
 }
@@ -77,19 +77,19 @@ export function CalendarMonth({ data, month, closurePeriods, productionExclusion
   return <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
     <div role="grid" aria-label={"Mois de " + month.toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
       style={{ display: "grid", gridTemplateColumns: "repeat(5,minmax(0,1fr))", gap: 1, background: T.line, border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden" }}>
-      {DAY_NAMES.map(n => <div key={n} role="columnheader" style={{ background: T.card, padding: "8px 10px", fontSize: FZF.xs, fontWeight: 700, color: T.ink500 }}>{n}</div>)}
+      {DAY_NAMES.map(n => <div key={n} role="columnheader" style={{ background: T.card, padding: "8px 10px", fontSize: FZF.xs, fontWeight: 600, color: T.ink500 }}>{n}</div>)}
       {cells.map(c => {
         const isToday = c.k === todayK, all = open.has(c.k), shown = all ? c.evs : c.evs.slice(0, MAX_LINES), more = c.evs.length - shown.length;
         return <div key={c.k} role="gridcell" aria-label={c.d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }) + (c.evs.length ? ", " + c.evs.length + " événement" + (c.evs.length > 1 ? "s" : "") : "")}
           style={{ background: c.closed ? T.surfaceAlt : c.out ? T.surface : isToday ? T.red500 + "12" : T.card, boxShadow: isToday ? "inset 0 3px 0 " + T.red500 : "none", minHeight: 128, padding: "6px 8px", display: "flex", flexDirection: "column", gap: 3, minWidth: 0, opacity: c.out ? 0.6 : 1 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-            <span style={{ fontFamily: T.fontDisplay, fontWeight: 700, fontSize: FZF.md, color: isToday ? T.red600 : c.out ? T.ink500 : T.ink900, fontVariantNumeric: "tabular-nums" }}>{c.d.getDate()}{c.d.getDate() === 1 || (c.out && c.i === 0) ? " " + c.d.toLocaleDateString("fr-FR", { month: "short" }) : ""}</span>
+            <span style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: FZF.md, color: isToday ? T.red600 : c.out ? T.ink500 : T.ink900, fontVariantNumeric: "tabular-nums" }}>{c.d.getDate()}{c.d.getDate() === 1 || (c.out && c.i === 0) ? " " + c.d.toLocaleDateString("fr-FR", { month: "short" }) : ""}</span>
             {c.i === 0 && <span style={{ fontSize: FZF.xs, color: T.ink500 }}>S{isoWeek(c.d)}</span>}
           </div>
           {c.closed && <span style={{ fontSize: FZF.xs, color: T.ink500 }}>{c.closedLabel || "Atelier fermé"}</span>}
           {shown.map((x, j) => <Plate key={x.ev.pj + x.ev.kind + (x.ev.who || "") + j} ev={x.ev} note={x.note} onOpen={onOpen} />)}
           {(more > 0 || (all && c.evs.length > MAX_LINES)) && <button type="button" onClick={() => toggle(c.k)} aria-expanded={all}
-            style={{ alignSelf: "flex-start", border: "none", background: "transparent", color: T.accentInk || T.ink700, fontFamily: T.font, fontSize: FZF.xs, fontWeight: 700, padding: "2px 0", cursor: "pointer" }}>{all ? "Réduire" : "+ " + more + " autre" + (more > 1 ? "s" : "")}</button>}
+            style={{ alignSelf: "flex-start", border: "none", background: "transparent", color: T.accentInk || T.ink700, fontFamily: T.font, fontSize: FZF.xs, fontWeight: 600, padding: "2px 0", cursor: "pointer" }}>{all ? "Réduire" : "+ " + more + " autre" + (more > 1 ? "s" : "")}</button>}
         </div>;
       })}
     </div>

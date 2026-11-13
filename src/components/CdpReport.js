@@ -138,7 +138,7 @@ export function CdpDialog({ data, initialData, delays, comments, progress, chang
           <div style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: FZ.md, color: T.ink900 }}>Rapport chef de projet (PowerPoint)</div>
         </div>
         <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>
-          <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: FZ.xs, fontWeight: 700, color: T.ink500 }}>Chef de projet
+          <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: FZ.xs, fontWeight: 600, color: T.ink500 }}>Chef de projet
             <select data-testid="cdp-chef" value={chef} onChange={e => setChef(e.target.value)} style={{ padding: "8px 8px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontFamily: T.font, fontSize: FZ.sm, colorScheme: T.mode === "dark" ? "dark" : "light" }}>
               <option value="__all">Tous les chefs de projet (un chapitre chacun)</option>
               {chefs.map(([c, k]) => <option key={c} value={c}>{c} — {k} PJ</option>)}
@@ -153,8 +153,8 @@ export function CdpDialog({ data, initialData, delays, comments, progress, chang
           {err && <div style={{ fontSize: FZ.xs, color: T.red500, background: T.red100, borderRadius: 8, padding: "8px 8px" }}>{err}</div>}
         </div>
         <div style={{ padding: "12px 20px", borderTop: "1px solid " + T.line, display: "flex", justifyContent: "flex-end", gap: 8 }}>
-          <button onClick={onClose} disabled={busy} style={{ border: "1px solid " + T.line, borderRadius: 8, padding: "8px 12px", fontWeight: 700, fontSize: FZ.sm, fontFamily: T.font, background: "transparent", color: T.ink700, cursor: "pointer" }}>Fermer</button>
-          <button data-testid="cdp-go" disabled={!n || busy} onClick={generate} style={{ border: "none", borderRadius: 8, padding: "8px 16px", fontWeight: 700, fontSize: FZ.sm, fontFamily: T.font, color: "#fff", cursor: n && !busy ? "pointer" : "default", background: n ? T.navy700 : T.ink100 }}>{busy ? "Génération…" : "Télécharger le PowerPoint"}</button>
+          <button onClick={onClose} disabled={busy} style={{ border: "1px solid " + T.line, borderRadius: 8, padding: "8px 12px", fontWeight: 600, fontSize: FZ.sm, fontFamily: T.font, background: "transparent", color: T.ink700, cursor: "pointer" }}>Fermer</button>
+          <button data-testid="cdp-go" disabled={!n || busy} onClick={generate} style={{ border: "none", borderRadius: 8, padding: "8px 16px", fontWeight: 600, fontSize: FZ.sm, fontFamily: T.font, color: "#fff", cursor: n && !busy ? "pointer" : "default", background: n ? T.navy700 : T.ink100 }}>{busy ? "Génération…" : "Télécharger le PowerPoint"}</button>
         </div>
       </div>
     </div>, document.body);

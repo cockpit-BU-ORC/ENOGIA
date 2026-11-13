@@ -9,7 +9,7 @@ import { usePointerDnD } from "../pointerDrag";
 import { T, FZ, btn } from "../theme";
 import { getPjMeta } from "../pjMeta";
 import { PlanSwitch } from "./PlanSwitch";
-import { Panel, Pill, Btn, Segmented, PjPlate, tableTh, tableTd, EmptyState, PageHead, useSheetJS } from "./SharedUI";
+import { NavIcon, Panel, Pill, Btn, Segmented, PjPlate, tableTh, tableTd, EmptyState, PageHead, useSheetJS } from "./SharedUI";
 import { stageSoft } from "../theme";
 import { askConfirm } from "../confirm";
 import { TICKET_TYPES, typeOf, flowOf, PRIOS, ORIGINS, INTER_TYPES, INTER_STATUS, PREP_ITEMS, CLO_ITEMS, COST_FIELDS, CONTRACTS, DEM_STATUS,
@@ -45,8 +45,8 @@ function StepFlow({ t, canEdit, onSet }) {
       {F.map((x, i) => { const done = i < cur || (closed && i === cur), now = i === cur && !closed;
         return <li key={x}><button type="button" disabled={!canEdit || i === cur} onClick={() => onSet(i)} aria-current={now ? "step" : undefined} title={canEdit && i !== cur ? "Placer le ticket à cette étape" : undefined}
           style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", minHeight: 30, padding: "0 8px", borderRadius: 8, border: "1px solid " + (now ? T.amber500 : "transparent"), background: now ? T.amber100 : "transparent", color: now ? T.ink900 : done ? T.ink700 : T.ink500, fontSize: FZ.sm, fontWeight: now ? 700 : 500, textAlign: "left", cursor: canEdit && i !== cur ? "pointer" : "default", fontFamily: T.font }}>
-          <span aria-hidden="true" style={{ width: 20, height: 20, flexShrink: 0, borderRadius: "50%", display: "inline-grid", placeItems: "center", fontSize: 11, fontWeight: 700, background: done ? T.emerald600 : now ? T.amber500 : T.surfaceAlt, color: done ? T.card : T.ink900 }}>{done ? "✓" : i + 1}</span>
-          <span style={{ flex: 1 }}>{x}</span>{now && <span style={{ fontSize: 11, fontWeight: 700, color: T.amber600 }}>en cours</span>}</button></li>; })}
+          <span aria-hidden="true" style={{ width: 20, height: 20, flexShrink: 0, borderRadius: "50%", display: "inline-grid", placeItems: "center", fontSize: 11, fontWeight: 600, background: done ? T.emerald600 : now ? T.amber500 : T.surfaceAlt, color: done ? T.card : T.ink900 }}>{done ? "✓" : i + 1}</span>
+          <span style={{ flex: 1 }}>{x}</span>{now && <span style={{ fontSize: 11, fontWeight: 600, color: T.amber600 }}>en cours</span>}</button></li>; })}
     </ol>
     {canEdit && <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
       {!closed && <Btn v="pri" size="sm" onClick={() => onSet(cur + 1)}>{cur + 1 >= F.length - 1 ? "Clore le ticket" : "Passer à « " + F[cur + 1] + " »"}</Btn>}
@@ -64,7 +64,7 @@ function Modal({ title, onClose, children, width = 640 }) {
     <div role="dialog" aria-modal="true" aria-label={title} onClick={e => e.stopPropagation()} onKeyDown={e => { if (e.key === "Escape") onClose(); }}
       style={{ width, maxWidth: "100%", maxHeight: "90vh", overflowY: "auto", background: T.card, borderRadius: 12, border: "1px solid " + T.line, boxShadow: T.shadowLg, padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}><h2 style={{ margin: 0, fontFamily: T.fontDisplay, fontSize: 20, fontWeight: 600, color: T.ink900, flex: 1 }}>{title}</h2>
-        <button type="button" onClick={onClose} aria-label="Fermer" style={{ ...btn("ghost", "sm") }}>✕</button></div>
+        <button type="button" onClick={onClose} aria-label="Fermer" style={{ ...btn("ghost", "sm") }}><NavIcon name="close" size={16} /></button></div>
       {children}
     </div></div>;
 }
@@ -72,7 +72,7 @@ function Modal({ title, onClose, children, width = 640 }) {
 function Fold({ title, info, open: open0 = false, children }) {
   const [open, setOpen] = useState(open0);
   return <div style={{ border: "1px solid " + T.line, borderRadius: 8, overflow: "hidden" }}>
-    <button type="button" aria-expanded={open} onClick={() => setOpen(v => !v)} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", minHeight: 36, padding: "0 10px", border: "none", background: T.surface, color: T.ink900, cursor: "pointer", fontFamily: T.font, fontSize: FZ.sm, fontWeight: 700, textAlign: "left" }}>
+    <button type="button" aria-expanded={open} onClick={() => setOpen(v => !v)} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", minHeight: 36, padding: "0 10px", border: "none", background: T.surface, color: T.ink900, cursor: "pointer", fontFamily: T.font, fontSize: FZ.sm, fontWeight: 600, textAlign: "left" }}>
       <span aria-hidden="true" style={{ fontSize: 10, color: T.ink500, transform: open ? "rotate(90deg)" : "none", transition: "transform 120ms" }}>▶</span><span style={{ flex: 1 }}>{title}</span>{info != null && <span style={{ fontSize: 12, fontWeight: 600, color: T.ink500 }}>{info}</span>}</button>
     {open && <div style={{ padding: 10, display: "flex", flexDirection: "column", gap: 10 }}>{children}</div>}
   </div>;
@@ -306,13 +306,13 @@ function DayHeader({ days, labW, label, t0 }) {
       {band(runs(days, d => isoWeek(d) + "-" + mondayOf(d)), it => <span style={{ fontSize: 12, fontWeight: 600, color: T.ink500 }}>S{isoWeek(it.d)}{it.n >= 3 ? " · du " + fd(mondayOf(it.d)) : ""}</span>, 22)}
       <div style={{ display: "grid", gridTemplateColumns: cols }}>{days.map(d => { const wd = new Date(d + "T12:00:00").getDay(), today = d === t0;
         return <div key={d} style={{ borderLeft: "1px solid " + T.line, textAlign: "center", padding: "3px 0", background: today ? T.amber100 : undefined, borderTop: "1px solid " + T.line }}>
-          <div style={{ fontSize: 11, color: today ? T.amber600 : T.ink500, fontWeight: 600 }}>{DOW[wd]}</div><div style={{ fontSize: 13, fontWeight: 700, color: today ? T.amber600 : T.ink900, fontVariantNumeric: "tabular-nums" }}>{d.slice(8, 10)}</div></div>; })}</div>
+          <div style={{ fontSize: 11, color: today ? T.amber600 : T.ink500, fontWeight: 600 }}>{DOW[wd]}</div><div style={{ fontSize: 13, fontWeight: 600, color: today ? T.amber600 : T.ink900, fontVariantNumeric: "tabular-nums" }}>{d.slice(8, 10)}</div></div>; })}</div>
     </div></div>;
 }
 // ligne du planning : nom à gauche, piste à droite (hors du composant : pas de remontage pendant un glisser)
 function SRow({ label, children, h = 40, ink, labW }) {
   return <div style={{ display: "grid", gridTemplateColumns: labW + "px 1fr", borderBottom: "1px solid " + T.line }}>
-    <div style={{ ...tableTd({ ink: ink || T.ink900 }), fontWeight: 700, borderBottom: "none", height: "auto", minHeight: h, display: "flex", alignItems: "center" }}>{label}</div>{children}</div>;
+    <div style={{ ...tableTd({ ink: ink || T.ink900 }), fontWeight: 600, borderBottom: "none", height: "auto", minHeight: h, display: "flex", alignItems: "center" }}>{label}</div>{children}</div>;
 }
 function PlanningView({ inters, demandes, techs, canEdit, nomOf, me, myPjs, onOpenInter, onTeam, onRequest, onAnswer, onCancel, onMove }) {
   const t0 = todayIso();
@@ -362,7 +362,7 @@ function PlanningView({ inters, demandes, techs, canEdit, nomOf, me, myPjs, onOp
                 const payload = { id: b.id, tech: tc, lead: b.lead, grab: 0 }, dp = dnd.dragProps(payload);
                 return <button key={b.id} type="button" {...dp} onPointerDown={e => { const r = e.currentTarget.getBoundingClientRect(), span = i1 - i0 + 1; payload.grab = Math.min(span - 1, Math.max(0, Math.floor((e.clientX - r.left) / r.width * span))) + (b.from < days[0] ? workCount(b.from, days[0]) - 1 : 0); dp.onPointerDown(e); }}
                   onClick={() => onOpenInter(b.id)} title={b.id + " · " + b.pj + " · " + fd(b.from) + " → " + fd(b.to) + (b.lead ? "" : " (appui)")}
-                  style={{ position: "absolute", top: 5, bottom: 5, left: "calc(" + (i0 * colW) + "% + 2px)", width: "calc(" + ((i1 - i0 + 1) * colW) + "% - 4px)", border: "none", borderLeft: "3px solid " + ink, borderRadius: 4, background: bg, color: ink, fontSize: 12, fontWeight: 700, textAlign: "left", padding: "0 8px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "grab", fontFamily: T.font, opacity: b.lead ? 1 : 0.8, pointerEvents: dnd.drag ? "none" : "auto", touchAction: "none" }}>{b.pj} · {nomOf(b.pj) || b.id}{b.lead ? "" : " (appui)"}</button>; })}
+                  style={{ position: "absolute", top: 5, bottom: 5, left: "calc(" + (i0 * colW) + "% + 2px)", width: "calc(" + ((i1 - i0 + 1) * colW) + "% - 4px)", border: "none", borderLeft: "3px solid " + ink, borderRadius: 4, background: bg, color: ink, fontSize: 12, fontWeight: 600, textAlign: "left", padding: "0 8px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "grab", fontFamily: T.font, opacity: b.lead ? 1 : 0.8, pointerEvents: dnd.drag ? "none" : "auto", touchAction: "none" }}>{b.pj} · {nomOf(b.pj) || b.id}{b.lead ? "" : " (appui)"}</button>; })}
             </div></SRow>)
             : <div style={{ padding: 12 }}><EmptyState compact icon="manager" title="Aucun technicien" hint="« Équipe » pour ajouter les techniciens SAV." /></div>}
         </div></div>
@@ -383,17 +383,17 @@ function PlanningView({ inters, demandes, techs, canEdit, nomOf, me, myPjs, onOp
             const waits = pendOn(x.d), past = x.d < t0, full = x.team > 0 && x.free - waits.length <= 0;
             return <div key={x.d} style={{ padding: 3, display: "flex", flexDirection: "column", gap: 3, minWidth: 0, ...weekLines(x.d), background: x.d === t0 ? "color-mix(in srgb, " + T.amber100 + " 45%, transparent)" : undefined }}>
               {booked.map(([id, i]) => <span key={id} title={"Réservé : " + i.pj + " · " + (nomOf(i.pj) || "") + " · " + (i.obj || "") + (interTeam(i).length ? " · " + interTeam(i).join(", ") : "")}
-                style={{ display: "block", minHeight: 22, lineHeight: "22px", borderRadius: 4, background: T.info100, color: T.info600, borderLeft: "3px solid " + T.info600, fontSize: 11, fontWeight: 700, padding: "0 4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{i.pj}</span>)}
+                style={{ display: "block", minHeight: 22, lineHeight: "22px", borderRadius: 4, background: T.info100, color: T.info600, borderLeft: "3px solid " + T.info600, fontSize: 11, fontWeight: 600, padding: "0 4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{i.pj}</span>)}
               {waits.map(p => <span key={p.id} title={"Demande en attente de confirmation : " + p.pj + " · " + (p.obj || "") + " · " + (p.by || "")}
-                style={{ display: "block", minHeight: 22, lineHeight: "22px", borderRadius: 4, border: "1px dashed " + T.amber500, background: "repeating-linear-gradient(135deg, " + T.amber100 + " 0 5px, transparent 5px 10px)", color: T.amber600, fontSize: 11, fontWeight: 700, padding: "0 4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "line-through" }}>{p.pj}</span>)}
+                style={{ display: "block", minHeight: 22, lineHeight: "22px", borderRadius: 4, border: "1px dashed " + T.amber500, background: "repeating-linear-gradient(135deg, " + T.amber100 + " 0 5px, transparent 5px 10px)", color: T.amber600, fontSize: 11, fontWeight: 600, padding: "0 4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "line-through" }}>{p.pj}</span>)}
               {!past && (full ? <span style={{ fontSize: 11, color: T.ink500, textAlign: "center" }}>complet</span>
                 : <button type="button" onClick={() => onRequest(x.d)} title={"Demander une intervention le " + fdd(x.d)} aria-label={"Demander une intervention le " + fdd(x.d)}
-                  style={{ width: "100%", minHeight: 24, borderRadius: 4, border: "1.5px dashed " + T.emerald500, background: "transparent", color: T.emerald600, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: T.font, padding: 0, lineHeight: 1 }}>+</button>)}
+                  style={{ width: "100%", minHeight: 24, borderRadius: 4, border: "1.5px dashed " + T.emerald500, background: "transparent", color: T.emerald600, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: T.font, padding: 0, lineHeight: 1 }}>+</button>)}
             </div>; })}</div></SRow>
         </div></div>
       </Panel>
       {canEdit ? <Panel title={<span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>Demandes des chefs de projet {pend.length > 0 && <Pill tone="warn">{pend.length}</Pill>}</span>}>
-        {dems.length === 0 ? <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Aucune demande pour l'instant.</div> : dems.slice(0, 12).map(d => <div key={d.id} style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", padding: "6px 0", borderTop: "1px solid " + T.line }}>
+        {dems.length === 0 ? <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Aucune demande pour l'instant</div> : dems.slice(0, 12).map(d => <div key={d.id} style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", padding: "6px 0", borderTop: "1px solid " + T.line }}>
           <PjPlate pj={d.pj} /><span style={{ flex: "1 1 260px", minWidth: 0, fontSize: FZ.sm, color: T.ink900 }}>{d.obj || "—"}<div style={{ fontSize: 12, color: T.ink500 }}>{nomOf(d.pj)} · demandé par {d.by || "—"} · à partir du {fdd(d.date)} · {d.days || 1} j</div></span>
           {d.st === "attente" ? <>
             <input value={notes[d.id] || ""} onChange={e => setNotes(n => ({ ...n, [d.id]: e.target.value }))} placeholder="Réponse (facultative)" aria-label={"Réponse à la demande " + d.pj} style={{ ...inp(), width: 200 }} />
@@ -405,7 +405,7 @@ function PlanningView({ inters, demandes, techs, canEdit, nomOf, me, myPjs, onOp
           <PjPlate pj={d.pj} /><span style={{ flex: "1 1 260px", minWidth: 0, fontSize: FZ.sm }}>{d.obj || "—"}<div style={{ fontSize: 12, color: T.ink500 }}>à partir du {fdd(d.date)} · {d.days || 1} j{d.note ? " · « " + d.note + " »" : ""}</div></span>
           <Pill tone={d.st === "ok" ? "ok" : d.st === "ko" ? "bad" : "warn"}>{DEM_STATUS[d.st] || d.st}</Pill>
           {d.st === "attente" && <Btn size="sm" onClick={() => onCancel(d.id)}>Retirer</Btn>}</div>)}
-        {!(myPjs && myPjs.length) && <div style={{ fontSize: 12, color: T.ink500 }}>Aucun PJ ne vous est associé : la demande proposera tous les PJ.</div>}
+        {!(myPjs && myPjs.length) && <div style={{ fontSize: 12, color: T.ink500 }}>Aucun PJ ne vous est associé : la demande proposera tous les PJ</div>}
       </Panel>}
     </>}
   </div>;
@@ -560,13 +560,13 @@ export function SavPjTab({ pj, doc, dem, me, onOpenSav, onRequest }) {
   const mine = Object.entries((dem && dem.items) || {}).filter(([, d]) => d && same(d.pj) && d.st === "attente");
   return <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
     {P && <div style={{ fontSize: FZ.sm, color: T.ink700 }}>Contrat : {P.contrat && P.contrat !== "Sans contrat" ? <><Pill tone={P.contratStatut === "En cours" ? "ok" : "warn"}>{P.contrat}</Pill> {P.contratNo || ""}{P.preventive ? " · prochaine préventive " + fd(P.preventive) : ""}</> : "sans contrat"}{P.mes ? " · mise en service " + fd(P.mes) : ""}</div>}
-    <div><div style={{ fontSize: 12, fontWeight: 700, color: T.ink700, marginBottom: 4 }}>Tickets ({T0.length})</div>
-      {T0.length === 0 ? <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Aucun ticket.</div> : T0.slice(0, 6).map(([id, t]) => <div key={id} style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", padding: "4px 0", borderTop: "1px solid " + T.line }}>
+    <div><div style={{ fontSize: 12, fontWeight: 600, color: T.ink700, marginBottom: 4 }}>Tickets ({T0.length})</div>
+      {T0.length === 0 ? <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Aucun ticket</div> : T0.slice(0, 6).map(([id, t]) => <div key={id} style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", padding: "4px 0", borderTop: "1px solid " + T.line }}>
         <span style={{ fontFamily: T.fontMono, fontSize: 12, fontWeight: 600 }}>{id}</span><Pill tone={TYPE_TONE[t.type] || "neutral"}>{typeOf(t.type)[1]}</Pill>
         <span style={{ flex: 1, minWidth: 0, fontSize: FZ.sm, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.det || ""}</span>
         {isClosed(t) ? <Pill tone="ok">clos</Pill> : <span style={{ fontSize: 12, color: T.ink500 }}>{flowOf(t.type)[t.step || 0]}</span>}</div>)}</div>
-    <div><div style={{ fontSize: 12, fontWeight: 700, color: T.ink700, marginBottom: 4 }}>Interventions ({I0.length})</div>
-      {I0.length === 0 ? <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Aucune intervention.</div> : I0.slice(0, 6).map(([id, i]) => <div key={id} style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", padding: "4px 0", borderTop: "1px solid " + T.line }}>
+    <div><div style={{ fontSize: 12, fontWeight: 600, color: T.ink700, marginBottom: 4 }}>Interventions ({I0.length})</div>
+      {I0.length === 0 ? <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Aucune intervention</div> : I0.slice(0, 6).map(([id, i]) => <div key={id} style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", padding: "4px 0", borderTop: "1px solid " + T.line }}>
         <span style={{ fontFamily: T.fontMono, fontSize: 12, fontWeight: 600 }}>{id}</span><span style={{ flex: 1, minWidth: 0, fontSize: FZ.sm }}>{i.obj || ""}</span>
         <span style={{ fontSize: 12, color: T.ink500 }}>{i.a ? fd(i.a) + " → " + fd(i.b) : "à planifier"}{interTeam(i).length ? " · " + interTeam(i).join(", ") : ""}</span><Pill tone={ST_TONE[i.st] || "neutral"}>{i.st || "—"}</Pill></div>)}</div>
     {mine.length > 0 && <div style={{ fontSize: FZ.sm, color: T.amber600 }}>{mine.length} demande{mine.length > 1 ? "s" : ""} d'intervention en attente du responsable SAV.</div>}

@@ -28,14 +28,14 @@ export function ReleasePopup({ releases, userName, onClose }) {
   return (<div className="enogia-modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 10001, background: "rgba(10,20,34,.58)", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
     <div role="dialog" aria-modal="true" aria-labelledby="rel-title" className="enogia-modal-pop" style={{ background: T.card, color: T.ink900, borderRadius: 22, border: "1px solid " + T.line, boxShadow: "0 30px 80px rgba(8,16,30,.38)", width: "min(600px,100%)", maxHeight: "90vh", display: "flex", flexDirection: "column", fontFamily: T.font, overflow: "hidden" }}>
       {/* bandeau */}
-      <div style={{ position: "relative", flexShrink: 0, padding: "26px 30px 24px", color: "#fff", background: "linear-gradient(135deg," + (dark ? "#16324A" : T.navy700) + " 0%," + (dark ? "#1B5E73" : T.teal600) + " 100%)", overflow: "hidden" }}>
+      <div style={{ position: "relative", flexShrink: 0, padding: "26px 30px 24px", color: "#fff", background: dark ? "#16324A" : T.navy700, overflow: "hidden" }}>
         <span aria-hidden="true" style={{ position: "absolute", right: -40, top: -50, width: 190, height: 190, borderRadius: "50%", background: "rgba(255,255,255,.09)" }} />
         <span aria-hidden="true" style={{ position: "absolute", right: 60, bottom: -70, width: 140, height: 140, borderRadius: "50%", background: "rgba(255,255,255,.06)" }} />
         <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
           <img src={(process.env.PUBLIC_URL || "") + "/enogia-logo-white.svg"} alt="ENOGIA" style={{ height: 30, width: "auto" }} />
-          <span style={{ background: "rgba(255,255,255,.18)", border: "1px solid rgba(255,255,255,.35)", borderRadius: 999, padding: "3px 12px", fontSize: 11.5, fontWeight: 800, letterSpacing: ".1em", textTransform: "uppercase" }}>{total} nouveauté{total > 1 ? "s" : ""}</span>
+          <span style={{ background: "rgba(255,255,255,.18)", border: "1px solid rgba(255,255,255,.35)", borderRadius: 999, padding: "3px 12px", fontSize: 12, fontWeight: 600, letterSpacing: ".01em" }}>{total} nouveauté{total > 1 ? "s" : ""}</span>
         </div>
-        <h2 id="rel-title" style={{ position: "relative", margin: "18px 0 0", fontSize: 27, lineHeight: 1.15, fontWeight: 800, letterSpacing: "-.015em", fontFamily: T.fontDisplay || T.font }}>{first ? "Bonjour " + first + ", le planning évolue" : "Le planning évolue"}</h2>
+        <h2 id="rel-title" style={{ position: "relative", margin: "18px 0 0", fontSize: 27, lineHeight: 1.15, fontWeight: 600, letterSpacing: "-.015em", fontFamily: T.fontDisplay || T.font }}>{first ? "Bonjour " + first + ", le planning évolue" : "Le planning évolue"}</h2>
         <div style={{ position: "relative", marginTop: 6, fontSize: FZ.sm, opacity: .85 }}>Voici ce qui change depuis votre dernière visite.</div>
       </div>
       {/* contenu */}
@@ -45,14 +45,14 @@ export function ReleasePopup({ releases, userName, onClose }) {
           {r.items.map((i, k) => (<div key={i.t + k} style={{ display: "flex", gap: 14, alignItems: "flex-start", padding: "14px 0", borderBottom: (k < r.items.length - 1 || ri < releases.length - 1) ? "1px solid " + T.line : "none" }}>
             <span aria-hidden="true" style={{ width: 38, height: 38, borderRadius: 12, flexShrink: 0, display: "inline-flex", alignItems: "center", justifyContent: "center", color: dark ? "#9BD6E4" : T.teal600, background: dark ? "rgba(99,185,210,.14)" : T.teal100, border: "1px solid " + (dark ? "rgba(99,185,210,.28)" : T.teal400 + "55") }}><NavIcon name={iconFor(i.t)} size={19} /></span>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: FZ.md, fontWeight: 700, lineHeight: 1.25, overflowWrap: "anywhere" }}>{i.t}</div>
+              <div style={{ fontSize: FZ.md, fontWeight: 600, lineHeight: 1.25, overflowWrap: "anywhere" }}>{i.t}</div>
               {i.d && <div style={{ fontSize: FZ.sm, color: T.ink700, lineHeight: 1.5, marginTop: 3, overflowWrap: "anywhere" }}>{i.d}</div>}
             </div>
           </div>))}
         </div>))}
       </div>
       <div style={{ display: "flex", flexShrink: 0, alignItems: "center", justifyContent: "flex-end", padding: "14px 30px 24px" }}>
-        <button ref={okRef} onClick={onClose} className="enogia-btn-tap" style={{ border: "none", color: "#fff", background: "linear-gradient(135deg," + (dark ? "#1E5C7A" : T.navy700) + "," + (dark ? "#2A8099" : T.teal600) + ")", borderRadius: 12, padding: "11px 28px", fontSize: FZ.sm, fontWeight: 800, letterSpacing: ".01em", cursor: "pointer", fontFamily: T.font, boxShadow: "0 8px 20px rgba(20,60,90,.28)" }}>C'est compris</button>
+        <button ref={okRef} onClick={onClose} className="enogia-btn-tap" style={{ border: "none", color: "#fff", background: dark ? "#1E5C7A" : T.navy700, borderRadius: 12, padding: "11px 28px", fontSize: FZ.sm, fontWeight: 600, letterSpacing: ".01em", cursor: "pointer", fontFamily: T.font, boxShadow: "0 8px 20px rgba(20,60,90,.28)" }}>C'est compris</button>
       </div>
     </div>
   </div>);
@@ -83,10 +83,10 @@ export function ReleaseEditor({ releases, onSave, authorName }) {
   const shownCount = d.items.filter(i => !i.hidden && (i.t || "").trim()).length;
   return (<div style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: 16, display: "flex", flexDirection: "column", gap: 12, fontFamily: T.font }}>
     <div>
-      <div style={{ fontSize: FZ.md, fontWeight: 700, color: T.ink900 }}>Pop-up « Nouveautés » à la connexion</div>
+      <div style={{ fontSize: FZ.md, fontWeight: 600, color: T.ink900 }}>Pop-up « Nouveautés » à la connexion</div>
       <div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 2 }}>Choisissez les lignes à afficher (case cochée = affichée), reformulez-les, ajoutez-en. « Publier » le réaffiche à tout le monde ; « Enregistrer » corrige le texte sans le réafficher. Ce réglage est propre à cette version du site (test ou production).</div>
     </div>
-    <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: FZ.xs, fontWeight: 700, color: T.ink500 }}>Titre
+    <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: FZ.xs, fontWeight: 600, color: T.ink500 }}>Titre
       <input value={d.title || ""} onChange={e => setD({ ...d, title: e.target.value })} style={INP} /></label>
     <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: FZ.sm, color: T.ink700, fontWeight: 600 }}>
       <input type="checkbox" checked={!d.off} onChange={e => setD({ ...d, off: !e.target.checked })} /> Afficher ce pop-up aux utilisateurs</label>
@@ -94,7 +94,7 @@ export function ReleaseEditor({ releases, onSave, authorName }) {
       {d.items.map((it, i) => (<div key={i} style={{ display: "grid", gridTemplateColumns: "auto 1fr auto", gap: 8, alignItems: "start", border: "1px solid " + T.line, borderRadius: 12, padding: 8, background: it.hidden ? T.surfaceAlt : T.surface }}>
         <input type="checkbox" title="Afficher cette ligne" checked={!it.hidden} onChange={e => setItem(i, { hidden: !e.target.checked })} style={{ marginTop: 9 }} />
         <div style={{ display: "flex", flexDirection: "column", gap: 5, minWidth: 0 }}>
-          <input value={it.t || ""} placeholder="Titre court" onChange={e => setItem(i, { t: e.target.value })} style={{ ...INP, fontWeight: 700 }} />
+          <input value={it.t || ""} placeholder="Titre court" onChange={e => setItem(i, { t: e.target.value })} style={{ ...INP, fontWeight: 600 }} />
           <textarea value={it.d || ""} placeholder="Une phrase pour expliquer" rows={2} onChange={e => setItem(i, { d: e.target.value })} style={{ ...INP, resize: "vertical" }} />
           <label style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: FZ.xs, color: T.ink500 }}><input type="checkbox" checked={!!it.admin} onChange={e => setItem(i, { admin: e.target.checked })} /> Réservé au super admin (ex. Cash in)</label>
         </div>
@@ -137,7 +137,7 @@ export function ReleaseCatalog({ isBeta, selection, onSaveSelection, onPublish, 
   const build = (off) => ({ id: "r" + Date.now().toString(36), date: new Date().toISOString().slice(0, 10), title: title.trim() || "Ce qui change dans le planning", replaceCode: true, ...(off ? { off: true } : {}),
     items: chosen.flatMap(x => x.rows.map(r => ({ t: r.it[0], d: r.it[1], ...(r.it[2] === "admin" ? { admin: true } : {}) }))) });
   const previewRel = () => [build()];
-  const saveDraft = async () => { setMsg("Enregistrement…"); try { await onSaveSelection({ keys: [...sel], title, by: authorName || "", at: new Date().toISOString() }); setMsg("✓ Sélection enregistrée sur ce site."); } catch (e) { setMsg("Échec : " + (e && e.message ? e.message : e)); } };
+  const saveDraft = async () => { setMsg("Enregistrement…"); try { await onSaveSelection({ keys: [...sel], title, by: authorName || "", at: new Date().toISOString() }); setMsg("✓ Sélection enregistrée sur ce site"); } catch (e) { setMsg("Échec : " + (e && e.message ? e.message : e)); } };
   const sel0 = () => ({ keys: [...sel], title, by: authorName || "", at: new Date().toISOString() });
   // « Préparer » : le pop-up est écrit sur la production mais désactivé ; il ne s'affiche à personne et masque les notes du code.
   // On l'active ensuite depuis la production (Réglages › Nouveautés › case « Afficher ce pop-up » puis « Publier et réafficher à tous »).
@@ -154,16 +154,16 @@ export function ReleaseCatalog({ isBeta, selection, onSaveSelection, onPublish, 
   };
   const copy = async () => {
     const txt = chosen.map(x => "V" + x.g.v + " — " + x.g.t + "\n" + x.rows.map(r => "- " + r.it[0] + " : " + r.it[1]).join("\n")).join("\n\n");
-    try { await navigator.clipboard.writeText(txt); setMsg("✓ Texte copié."); } catch (e) { setMsg("Copie impossible sur ce navigateur."); }
+    try { await navigator.clipboard.writeText(txt); setMsg("✓ Texte copié"); } catch (e) { setMsg("Copie impossible sur ce navigateur."); }
   };
   const CB = { accentColor: T.teal600 };
   return (<div style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: 16, display: "flex", flexDirection: "column", gap: 12, fontFamily: T.font, marginBottom: 14 }}>
     <div>
-      <div style={{ fontSize: FZ.md, fontWeight: 700, color: T.ink900 }}>Nouveautés à annoncer{isBeta ? " à la production" : ""}</div>
+      <div style={{ fontSize: FZ.md, fontWeight: 600, color: T.ink900 }}>Nouveautés à annoncer{isBeta ? " à la production" : ""}</div>
       <div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 2 }}>Toutes les évolutions depuis la V146.5. Cochez celles à annoncer ; « {isBeta ? "Publier vers la production" : "Publier"} » crée le pop-up « Nouveautés » affiché une fois à chaque personne{isBeta ? " du site de production" : ""}, à sa prochaine connexion. Il remplace les notes de version intégrées au code.</div>
     </div>
     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-      <input value={title} onChange={e => setTitle(e.target.value)} aria-label="Titre du pop-up" style={{ ...INP, flex: "1 1 240px", width: "auto", fontWeight: 700 }} />
+      <input value={title} onChange={e => setTitle(e.target.value)} aria-label="Titre du pop-up" style={{ ...INP, flex: "1 1 240px", width: "auto", fontWeight: 600 }} />
       <button onClick={() => setMany(RELEASE_CATALOG.flatMap(g => visible(g).map(x => x.k)), true)} style={BTN(false)}>Tout cocher</button>
       <button onClick={() => setMany(RELEASE_CATALOG.flatMap(g => g.items.map((_, i) => keyOf(g.v, i))), false)} style={BTN(false)}>Tout décocher</button>
       <label style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: FZ.xs, color: T.ink500, fontWeight: 600 }}><input type="checkbox" style={CB} checked={hideAdmin} onChange={e => setHideAdmin(e.target.checked)} /> Masquer les lignes admin</label>
@@ -174,12 +174,12 @@ export function ReleaseCatalog({ isBeta, selection, onSaveSelection, onPublish, 
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, padding: "7px 12px", background: T.surface, borderBottom: "1px solid " + T.line, flexWrap: "wrap" }}>
             <b style={{ fontSize: FZ.sm, color: T.ink900 }}>V{g.v}</b><span style={{ fontSize: FZ.xs, color: T.ink500, flex: 1, minWidth: 0 }}>{g.t}</span>
             <span style={{ fontSize: FZ.xs, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{n} / {rows.length}</span>
-            <button onClick={() => setMany(rows.map(x => x.k), !all)} style={{ border: "none", background: "transparent", color: T.teal600, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", padding: "2px 4px" }}>{all ? "Aucune" : "Toutes"}</button>
+            <button onClick={() => setMany(rows.map(x => x.k), !all)} style={{ border: "none", background: "transparent", color: T.teal600, fontSize: FZ.xs, fontWeight: 600, cursor: "pointer", padding: "2px 4px" }}>{all ? "Aucune" : "Toutes"}</button>
           </div>
           {rows.map(({ it, k }) => (<label key={k} style={{ display: "grid", gridTemplateColumns: "auto minmax(0,1fr)", gap: 10, padding: "8px 12px", borderTop: "1px solid " + T.line, cursor: "pointer", background: sel.has(k) ? T.teal100 : "transparent", alignItems: "start" }}>
             <input type="checkbox" style={{ ...CB, marginTop: 3 }} checked={sel.has(k)} onChange={() => flip(k)} />
             <span style={{ minWidth: 0 }}>
-              <span style={{ fontSize: FZ.sm, fontWeight: 700, color: T.ink900 }}>{it[0]}{it[2] === "admin" && <span style={{ marginLeft: 8, fontSize:11, fontWeight: 800, letterSpacing: ".06em", textTransform: "uppercase", color: T.ink500, border: "1px solid " + T.line, borderRadius: 999, padding: "0 6px" }}>Admin</span>}</span>
+              <span style={{ fontSize: FZ.sm, fontWeight: 600, color: T.ink900 }}>{it[0]}{it[2] === "admin" && <span style={{ marginLeft: 8, fontSize:11, fontWeight: 600, letterSpacing: ".01em", color: T.ink500, border: "1px solid " + T.line, borderRadius: 999, padding: "0 6px" }}>Admin</span>}</span>
               <span style={{ display: "block", fontSize: FZ.xs, color: T.ink500, marginTop: 1 }}>{it[1]}</span>
             </span>
           </label>))}
@@ -234,7 +234,7 @@ export function ReleaseManager({ isBeta, selection, releases, onSaveSelection, o
     try {
       await onSaveSelection(sel0());
       if (top && !isBeta && n) await onPublish(build(true), sel0()); // corrige le pop-up en ligne sans le réafficher à ceux qui l'ont vu
-      setMsg(top && !isBeta && n ? "✓ Enregistré : le pop-up en ligne est corrigé, sans être réaffiché." : "✓ Sélection enregistrée.");
+      setMsg(top && !isBeta && n ? "✓ Enregistré : le pop-up en ligne est corrigé, sans être réaffiché" : "✓ Sélection enregistrée");
     } catch (e) { setMsg(err(e)); }
   };
   const publish = async () => {
@@ -249,14 +249,14 @@ export function ReleaseManager({ isBeta, selection, releases, onSaveSelection, o
   const setX = (j, patch) => { touch(); setExtra(a => a.map((y, m) => m === j ? { ...y, ...patch } : y)); };
   return (<div style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: 16, display: "flex", flexDirection: "column", gap: 12, fontFamily: T.font, marginBottom: 14 }}>
     <div>
-      <div style={{ fontSize: FZ.md, fontWeight: 700, color: T.ink900 }}>Pop-up « Nouveautés »</div>
+      <div style={{ fontSize: FZ.md, fontWeight: 600, color: T.ink900 }}>Pop-up « Nouveautés »</div>
       <div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 2, lineHeight: 1.5 }}>Cochez ce que vous voulez annoncer ; chaque ligne cochée peut être reformulée. « Publier » l'affiche une fois à chacun, à sa prochaine connexion{isBeta ? " sur le site de production" : ""}. « Enregistrer » garde vos choix{isBeta ? "" : " et corrige le pop-up déjà publié sans le réafficher"}.</div>
     </div>
-    <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: FZ.xs, fontWeight: 700, color: T.ink500 }}>Titre du pop-up
-      <input value={title} onChange={e => { touch(); setTitle(e.target.value); }} style={{ ...INP, fontWeight: 700 }} /></label>
+    <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: FZ.xs, fontWeight: 600, color: T.ink500 }}>Titre du pop-up
+      <input value={title} onChange={e => { touch(); setTitle(e.target.value); }} style={{ ...INP, fontWeight: 600 }} /></label>
     {extra.map((x, j) => (<div key={"x" + j} style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) auto", gap: 8, border: "1px solid " + T.line, background: T.teal100, borderRadius: 12, padding: 8 }}>
       <div style={{ display: "flex", flexDirection: "column", gap: 5, minWidth: 0 }}>
-        <input value={x.t || ""} placeholder="Titre court" aria-label="Titre de la ligne" onChange={e => setX(j, { t: e.target.value })} style={{ ...INP, fontWeight: 700 }} />
+        <input value={x.t || ""} placeholder="Titre court" aria-label="Titre de la ligne" onChange={e => setX(j, { t: e.target.value })} style={{ ...INP, fontWeight: 600 }} />
         <textarea value={x.d || ""} placeholder="Une phrase pour expliquer" aria-label="Explication" rows={2} onChange={e => setX(j, { d: e.target.value })} style={{ ...INP, resize: "vertical" }} />
       </div>
       <button onClick={() => { touch(); setExtra(a => a.filter((_, m) => m !== j)); }} title="Supprimer la ligne" aria-label="Supprimer la ligne" style={{ ...BTN(false), color: T.red500, alignSelf: "start", display: "inline-flex", alignItems: "center" }}><NavIcon name="close" size={13} /></button>
@@ -268,16 +268,16 @@ export function ReleaseManager({ isBeta, selection, releases, onSaveSelection, o
     </div>
     <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: 520, overflowY: "auto", paddingRight: 4 }}>
       {groups.map(({ g, rows }) => (<div key={g.v} style={{ border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden", flexShrink: 0 }}>
-        <div style={{ padding: "7px 12px", background: T.surface, borderBottom: "1px solid " + T.line, fontSize: FZ.xs, fontWeight: 700, color: T.ink700 }}>{g.t}</div>
+        <div style={{ padding: "7px 12px", background: T.surface, borderBottom: "1px solid " + T.line, fontSize: FZ.xs, fontWeight: 600, color: T.ink700 }}>{g.t}</div>
         {rows.map(({ it, i, k }) => { const on = sel.has(k), L = lineOf(g, i);
           return (<div key={k} style={{ display: "grid", gridTemplateColumns: "auto minmax(0,1fr)", gap: 10, padding: "8px 12px", borderTop: "1px solid " + T.line, background: on ? T.teal100 : "transparent", alignItems: "start" }}>
             <input type="checkbox" style={CB} checked={on} onChange={() => flip(k)} aria-label={"Annoncer : " + it[0]} />
             {on ? <div style={{ display: "flex", flexDirection: "column", gap: 5, minWidth: 0 }}>
-              <input value={L.t} aria-label="Titre de la ligne" onChange={e => setEdit(k, { t: e.target.value })} style={{ ...INP, fontWeight: 700 }} />
+              <input value={L.t} aria-label="Titre de la ligne" onChange={e => setEdit(k, { t: e.target.value })} style={{ ...INP, fontWeight: 600 }} />
               <textarea value={L.d} aria-label="Explication" rows={2} onChange={e => setEdit(k, { d: e.target.value })} style={{ ...INP, resize: "vertical" }} />
-              {edits[k] && <button onClick={() => { touch(); setEdits(x => { const y = { ...x }; delete y[k]; return y; }); }} style={{ alignSelf: "flex-start", border: "none", background: "transparent", color: T.teal600, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", padding: 0, minHeight: 24 }}>Revenir au texte d'origine</button>}
+              {edits[k] && <button onClick={() => { touch(); setEdits(x => { const y = { ...x }; delete y[k]; return y; }); }} style={{ alignSelf: "flex-start", border: "none", background: "transparent", color: T.teal600, fontSize: FZ.xs, fontWeight: 600, cursor: "pointer", padding: 0, minHeight: 24 }}>Revenir au texte d'origine</button>}
             </div> : <div onClick={() => flip(k)} style={{ minWidth: 0, cursor: "pointer" }}>
-              <span style={{ fontSize: FZ.sm, fontWeight: 700, color: T.ink900 }}>{it[0]}{it[2] === "admin" && <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 700, color: T.ink500, border: "1px solid " + T.line, borderRadius: 999, padding: "0 6px" }}>Propriétaire</span>}</span>
+              <span style={{ fontSize: FZ.sm, fontWeight: 600, color: T.ink900 }}>{it[0]}{it[2] === "admin" && <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 600, color: T.ink500, border: "1px solid " + T.line, borderRadius: 999, padding: "0 6px" }}>Propriétaire</span>}</span>
               <span style={{ display: "block", fontSize: FZ.xs, color: T.ink500, marginTop: 1 }}>{it[1]}</span>
             </div>}
           </div>); })}

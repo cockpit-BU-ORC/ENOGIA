@@ -9,7 +9,7 @@ import { allCashGroups, getCashinDoc, getCashinLinks, setCashinLinks, anchorOf, 
 import { useCashin } from "../useCashin";
 
 const fd = iso => (iso ? String(iso).slice(8, 10) + "/" + String(iso).slice(5, 7) + "/" + String(iso).slice(2, 4) : "—");
-const btn = primary => ({ padding: "6px 12px", minHeight: 32, borderRadius: 8, border: "1px solid " + (primary ? T.ink900 : T.line), background: primary ? T.ink900 : T.card, color: primary ? T.card : T.ink700, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font });
+const btn = primary => ({ padding: "6px 12px", minHeight: 32, borderRadius: 8, border: "1px solid " + (primary ? T.ink900 : T.line), background: primary ? T.ink900 : T.card, color: primary ? T.card : T.ink700, fontSize: FZ.xs, fontWeight: 600, cursor: "pointer", fontFamily: T.font });
 const field = { padding: "4px 6px", minHeight: 30, borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, boxSizing: "border-box" };
 
 export function CashAnchorsDialog({ planRows, authorName, onClose }) {
@@ -39,9 +39,9 @@ export function CashAnchorsDialog({ planRows, authorName, onClose }) {
         <div style={{ fontSize: 12.5, color: T.ink500, marginTop: 4, lineHeight: 1.5 }}>Un jalon lié suit une date du planning de ses PJ (la plus tardive s'il y en a plusieurs), plus un décalage en jours. Quand le planning bouge, le Cash in propose de remettre sa date de facturation à jour. Les jalons déjà facturés ne bougent jamais.</div>
       </div>
       <div style={{ overflow: "auto", padding: "4px 18px", flex: 1 }}>
-        {groups.length === 0 && <div style={{ padding: 16, color: T.ink500, fontSize: 13 }}>Aucun jalon.</div>}
+        {groups.length === 0 && <div style={{ padding: 16, color: T.ink500, fontSize: 13 }}>Aucun jalon</div>}
         {groups.map(g => <section key={g.pj} aria-label={g.pj} style={{ borderTop: "1px solid " + T.line, padding: "8px 0" }}>
-          <div style={{ fontWeight: 700, fontSize: 13.5, marginBottom: 4 }}><span style={{ fontFamily: T.fontMono }}>{g.pj}</span> <span style={{ fontWeight: 400, color: T.ink500 }}>{g.label}</span></div>
+          <div style={{ fontWeight: 600, fontSize: 13.5, marginBottom: 4 }}><span style={{ fontFamily: T.fontMono }}>{g.pj}</span> <span style={{ fontWeight: 400, color: T.ink500 }}>{g.label}</span></div>
           {g.rows.map(r => { const a = cur(r), done = !!(r.factReelle || r.encReelle), want = a ? anchoredBill(r, byPj, { ...links, [anchorKey(r.id)]: a }) : null; return (
             <div key={r.id} style={{ display: "grid", gridTemplateColumns: "minmax(160px,1fr) 90px 170px 90px 110px", gap: 8, alignItems: "center", minHeight: 36, fontSize: 12.5, opacity: done ? 0.55 : 1 }}>
               <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={r.jalon}>{r.jalon || "Jalon sans nom"}</span>

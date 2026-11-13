@@ -20,7 +20,7 @@ function MetaCell({pj,field,value,onSave,width,placeholder}){
   useEffect(()=>{setV(value||"");},[value]);
   const commit=async()=>{if(v.trim()===(value||"").trim())return;const ok=await onSave(pj,{[field]:v.trim()});setSt(ok===false?"échec":"✓");setTimeout(()=>setSt(""),1400);};
   return(<td style={{padding:"4px 8px",whiteSpace:"nowrap"}}><input type="text" value={v} placeholder={placeholder} aria-label={placeholder+" de "+pj} onChange={e=>setV(e.target.value)} onBlur={commit} onKeyDown={e=>{if(e.key==="Enter")e.currentTarget.blur();else if(e.key==="Escape"){setV(value||"");e.currentTarget.blur();}}}
-    style={{width,padding:"4px 8px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink900,fontSize:FZ.xs,fontFamily:T.font}}/>{st&&<span style={{marginLeft:6,fontSize:FZ.xs,color:st==="échec"?T.red500:T.emerald600,fontWeight:700}}>{st}</span>}</td>);
+    style={{width,padding:"4px 8px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink900,fontSize:FZ.xs,fontFamily:T.font}}/>{st&&<span style={{marginLeft:6,fontSize:FZ.xs,color:st==="échec"?T.red500:T.emerald600,fontWeight:600}}>{st}</span>}</td>);
 }
 function Row({r,meta,value,onSave,onPasteMany,saveMeta,etat,setEtat,presence,setPresence,planned}){
   const [v,setV]=useState(value||"");const [st,setSt]=useState("");
@@ -28,7 +28,7 @@ function Row({r,meta,value,onSave,onPasteMany,saveMeta,etat,setEtat,presence,set
   const dirty=v.trim()!==(value||"").trim();
   const commit=async()=>{if(!dirty)return;setSt("…");const ok=await onSave(r.pj,v.trim());setSt(ok===false?"échec":"✓");setTimeout(()=>setSt(""),1400);};
   return(<tr style={{borderBottom:"1px solid "+T.line}}>
-    <td style={{padding:"6px 12px",fontWeight:700,color:T.teal600,fontFamily:T.fontMono,fontSize:FZ.sm,whiteSpace:"nowrap"}}>{r.pj}</td>
+    <td style={{padding:"6px 12px",fontWeight:600,color:T.teal600,fontFamily:T.fontMono,fontSize:FZ.sm,whiteSpace:"nowrap"}}>{r.pj}</td>
     <td style={{padding:"6px 12px",fontSize:FZ.sm,color:T.ink900,fontWeight:600}}>{meta.nomProjet}</td>
     <td style={{padding:"6px 12px",fontSize:FZ.xs,color:T.ink500,whiteSpace:"nowrap"}}>{r.gamme}</td>
     {saveMeta?<MetaCell pj={r.pj} field="chefProjet" value={meta.chefProjet} onSave={saveMeta} width={150} placeholder="Chef de projet"/>:<td style={{padding:"6px 12px",fontSize:FZ.xs}}>{meta.chefProjet}</td>}
@@ -42,8 +42,8 @@ function Row({r,meta,value,onSave,onPasteMany,saveMeta,etat,setEtat,presence,set
         style={{width:170,padding:"4px 8px",borderRadius:8,border:"1.5px solid "+(dirty?T.teal500:T.line),background:T.card,color:T.ink900,fontSize:FZ.sm,fontFamily:T.fontMono,fontWeight:600}}/>
       {/* v320 (demandé : « pouvoir cliquer sur oui si le S/N proposé me va ») : fixe le S/N prévu de cette machine */}
       {!v.trim()&&planned&&!planned.missingCode&&<button type="button" onClick={async()=>{setSt("…");const ok=await onSave(r.pj,planned.sn);setSt(ok===false?"échec":"✓");setTimeout(()=>setSt(""),1400);}} title={"Garder "+planned.sn+" comme S/N de "+r.pj} aria-label={"Oui, garder "+planned.sn+" pour "+r.pj}
-        style={{marginLeft:6,minHeight:26,padding:"0 10px",borderRadius:8,border:"1px solid "+T.emerald500,background:T.emerald100,color:T.emerald600,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",fontFamily:T.font}}>✓ Oui</button>}
-      <span style={{marginLeft:8,fontSize:FZ.xs,color:st==="échec"?T.red500:T.emerald600,fontWeight:700}}>{st}</span>
+        style={{marginLeft:6,minHeight:26,padding:"0 10px",borderRadius:8,border:"1px solid "+T.emerald500,background:T.emerald100,color:T.emerald600,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font}}>✓ Oui</button>}
+      <span style={{marginLeft:8,fontSize:FZ.xs,color:st==="échec"?T.red500:T.emerald600,fontWeight:600}}>{st}</span>
     </td>
   </tr>);
 }
@@ -115,13 +115,13 @@ function ImportPanel({rows,save,onClose,onDone}){
     for(let k=0;k<chosen.length;k++){const ok=await save(chosen[k].target,chosen[k].sn);if(ok===false)fail++;setRun({done:k+1,total:chosen.length,fail});}
     onDone(chosen.length-fail,fail);
   };
-  const chip=(label,n,col,bg)=>n>0&&<Pill ink={col} bg={bg} style={{fontWeight:700}}>{n} {label}</Pill>; // v311 : pastille commune
+  const chip=(label,n,col,bg)=>n>0&&<Pill ink={col} bg={bg} style={{fontWeight:600}}>{n} {label}</Pill>; // v311 : pastille commune
   const STX={new:["Nouveau",T.emerald600],approx:["Correspondance approchée",T.amber600],replace:["Remplace",T.amber600],same:["Déjà à jour",T.ink300],dup:["Doublon",T.red500],absent:["Absent du planning",T.ink300]};
   return(<div style={{padding:"12px 16px",borderBottom:"1px solid "+T.line,background:T.surface}}>
     <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:8}}>
-      <div style={{fontWeight:700,fontSize:FZ.sm,color:T.ink900,flex:"1 1 auto"}}>Coller une liste de N° de série</div>
-      <button onClick={()=>{setText(SERIE_SEED_TEXT);setSel({});}} style={{padding:"4px 12px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink700,fontSize:FZ.xs,fontWeight:700,cursor:"pointer"}}>Charger la liste connue (07/10/2026)</button>
-      <button onClick={onClose} style={{padding:"4px 12px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink500,fontSize:FZ.xs,fontWeight:700,cursor:"pointer"}}>Fermer</button>
+      <div style={{fontWeight:600,fontSize:FZ.sm,color:T.ink900,flex:"1 1 auto"}}>Coller une liste de N° de série</div>
+      <button onClick={()=>{setText(SERIE_SEED_TEXT);setSel({});}} style={{padding:"4px 12px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink700,fontSize:FZ.xs,fontWeight:600,cursor:"pointer"}}>Charger la liste connue (07/10/2026)</button>
+      <button onClick={onClose} style={{padding:"4px 12px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink500,fontSize:FZ.xs,fontWeight:600,cursor:"pointer"}}>Fermer</button>
     </div>
     <textarea value={text} onChange={e=>{setText(e.target.value);setSel({});}} rows={5} placeholder={"Collez ici les colonnes PJ · Client · N° de série copiées depuis Excel…\nPJ362\tNIMEX\tORC-1233-20-362"}
       style={{width:"100%",boxSizing:"border-box",padding:"8px 8px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink900,fontSize:FZ.xs,fontFamily:T.fontMono,resize:"vertical"}}/>
@@ -140,17 +140,17 @@ function ImportPanel({rows,save,onClose,onDone}){
           <tbody>{items.map(it=>{const [lab,col]=STX[it.status];const can=importable(it);const on=isOn(it);
             return(<tr key={it.idx} style={{borderBottom:"1px solid "+T.line,opacity:can?1:.55}}>
               <td style={{padding:"4px 8px",width:26}}><input type="checkbox" disabled={!can} checked={!!on} onChange={e=>setSel(s=>({...s,[it.idx]:e.target.checked}))}/></td>
-              <td style={{padding:"4px 6px",fontFamily:T.fontMono,fontWeight:700,color:T.teal600,whiteSpace:"nowrap"}}>{it.code}</td>
+              <td style={{padding:"4px 6px",fontFamily:T.fontMono,fontWeight:600,color:T.teal600,whiteSpace:"nowrap"}}>{it.code}</td>
               <td style={{padding:"4px 6px",color:T.ink500,whiteSpace:"nowrap"}}>{it.client}</td>
               <td style={{padding:"4px 6px",fontFamily:T.fontMono,fontWeight:600,color:T.ink900,whiteSpace:"nowrap"}}>{it.sn}</td>
-              <td style={{padding:"4px 8px",color:col,fontWeight:700,whiteSpace:"nowrap"}}>{lab}</td>
+              <td style={{padding:"4px 8px",color:col,fontWeight:600,whiteSpace:"nowrap"}}>{lab}</td>
               <td style={{padding:"4px 6px",color:T.ink500}}>{it.note}</td>
             </tr>);})}</tbody>
         </table>
       </div>
       <div style={{display:"flex",alignItems:"center",gap:12,marginTop:10}}>
-        <button disabled={!chosen.length||(run&&run.done<run.total)} onClick={go} style={{padding:"8px 16px",borderRadius:8,border:"none",background:chosen.length?T.teal500:T.line,color:"#fff",fontSize:FZ.sm,fontWeight:700,cursor:chosen.length?"pointer":"default"}}>Enregistrer {chosen.length} N° de série</button>
-        {run&&<span style={{fontSize:FZ.xs,fontWeight:700,color:run.fail?T.red500:T.teal600}}>{run.done} / {run.total}{run.fail?" · "+run.fail+" échec"+(run.fail>1?"s":""):""}</span>}
+        <button disabled={!chosen.length||(run&&run.done<run.total)} onClick={go} style={{padding:"8px 16px",borderRadius:8,border:"none",background:chosen.length?T.teal500:T.line,color:"#fff",fontSize:FZ.sm,fontWeight:600,cursor:chosen.length?"pointer":"default"}}>Enregistrer {chosen.length} N° de série</button>
+        {run&&<span style={{fontSize:FZ.xs,fontWeight:600,color:run.fail?T.red500:T.teal600}}>{run.done} / {run.total}{run.fail?" · "+run.fail+" échec"+(run.fail>1?"s":""):""}</span>}
       </div>
     </>}
     {text.trim()&&items.length===0&&<div style={{marginTop:8,fontSize:FZ.xs,color:T.red500}}>Aucune ligne reconnue : chaque ligne doit commencer par un code PJ (ex. PJ362) et contenir un N° de série.</div>}
@@ -180,19 +180,19 @@ export function SerieTab({data,savePjMetaOverride,etatChoice,setEtatFor,clientPr
         <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900}}>Machines ORC</div>
         <div style={{fontSize:FZ.xs,color:T.ink300,marginTop:2}}>N° de série, chef de projet, pays, état et présence client / NOBO aux tests de chaque PJ, repris partout dans l'application. Collez une colonne Excel dans une case N° de série pour remplir les lignes suivantes.</div>
       </div>
-      <span style={{fontSize:FZ.xs,fontWeight:700,color:filled===rows.length?T.emerald600:T.ink500,background:filled===rows.length?T.emerald100:T.surface,borderRadius:999,padding:"3px 12px"}}>{filled} / {rows.length} renseignés</span>
+      <span style={{fontSize:FZ.xs,fontWeight:600,color:filled===rows.length?T.emerald600:T.ink500,background:filled===rows.length?T.emerald100:T.surface,borderRadius:999,padding:"3px 12px"}}>{filled} / {rows.length} renseignés</span>
       <input type="text" value={q} onChange={e=>setQ(e.target.value)} placeholder="Rechercher un PJ, projet, N° de série…" style={{padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink900,fontSize:FZ.xs,fontFamily:T.font,width:230}}/>
-      {setCustomEtats&&<button onClick={()=>setEtatsOpen(true)} style={{padding:"6px 12px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink700,fontSize:FZ.xs,fontWeight:700,cursor:"pointer"}}>Gérer les états</button>}
+      {setCustomEtats&&<button onClick={()=>setEtatsOpen(true)} style={{padding:"6px 12px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink700,fontSize:FZ.xs,fontWeight:600,cursor:"pointer"}}>Gérer les états</button>}
       {etatsOpen&&setCustomEtats&&<EtatsDialog onClose={()=>setEtatsOpen(false)} customEtats={customEtats||[]} setCustomEtats={setCustomEtats} etatEdits={etatEdits||{}} setEtatEdits={setEtatEdits} data={data}/>}
-      {savePjMetaOverride&&due.length>0&&<button onClick={assignDue} title="Fixer les S/N prévus des machines déjà arrivées" style={{padding:"6px 12px",borderRadius:8,border:"1px solid "+T.ink900,background:T.ink900,color:T.card,fontSize:FZ.xs,fontWeight:700,cursor:"pointer"}}>Attribuer les S/N des machines arrivées ({due.length})</button>}
-      <button onClick={()=>setImp(v=>!v)} style={{padding:"6px 12px",borderRadius:8,border:"1px solid "+(imp?T.teal500:T.line),background:imp?T.teal100:T.card,color:imp?T.teal600:T.ink700,fontSize:FZ.xs,fontWeight:700,cursor:"pointer"}}>Coller une liste</button>
+      {savePjMetaOverride&&due.length>0&&<button onClick={assignDue} title="Fixer les S/N prévus des machines déjà arrivées" style={{padding:"6px 12px",borderRadius:8,border:"1px solid "+T.ink900,background:T.ink900,color:T.card,fontSize:FZ.xs,fontWeight:600,cursor:"pointer"}}>Attribuer les S/N des machines arrivées ({due.length})</button>}
+      <button onClick={()=>setImp(v=>!v)} style={{padding:"6px 12px",borderRadius:8,border:"1px solid "+(imp?T.teal500:T.line),background:imp?T.teal100:T.card,color:imp?T.teal600:T.ink700,fontSize:FZ.xs,fontWeight:600,cursor:"pointer"}}>Coller une liste</button>
       <label style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:FZ.xs,color:T.ink500,fontWeight:600,cursor:"pointer"}}><input type="checkbox" checked={onlyMissing} onChange={e=>setOnlyMissing(e.target.checked)}/>Seulement les manquants ({rows.length-filled})</label>
     </div>
     {imp&&<ImportPanel rows={rows} save={save} onClose={()=>setImp(false)} onDone={(ok,fail)=>{setMsg(ok+" N° de série enregistré"+(ok>1?"s":"")+(fail?" · "+fail+" échec"+(fail>1?"s":""):"")+".");setTimeout(()=>setMsg(""),5000);}}/>}
-    {msg&&<div style={{padding:"6px 16px",fontSize:FZ.xs,fontWeight:700,color:T.teal600,background:T.teal100}}>{msg}</div>}
+    {msg&&<div style={{padding:"6px 16px",fontSize:FZ.xs,fontWeight:600,color:T.teal600,background:T.teal100}}>{msg}</div>}
     <div style={{overflow:"auto",maxHeight:"calc(100dvh - 290px)"}}>
       <table style={{width:"100%",borderCollapse:"collapse"}}>
-        <thead><tr>{["N° PJ","Projet","Gamme","Chef de projet","Pays","État",...(setClientPresenceFor?["Présence aux tests"]:[]),"N° de série"].map(h=><th key={h} style={{position:"sticky",top:0,zIndex:2,background:T.surface,boxShadow:"0 1px 0 "+T.line,textAlign:"left",padding:"8px 12px",fontSize:FZ.xs,fontWeight:700,color:T.ink500}}>{h}</th>)}</tr></thead>
+        <thead><tr>{["N° PJ","Projet","Gamme","Chef de projet","Pays","État",...(setClientPresenceFor?["Présence aux tests"]:[]),"N° de série"].map(h=><th key={h} style={{position:"sticky",top:0,zIndex:2,background:T.surface,boxShadow:"0 1px 0 "+T.line,textAlign:"left",padding:"8px 12px",fontSize:FZ.xs,fontWeight:600,color:T.ink500}}>{h}</th>)}</tr></thead>
         <tbody>
           {shown.map(({r,meta})=><Row key={r.pj} r={r} meta={meta} planned={!meta.numSerie?snPlan.get(r.pj):null} value={meta.numSerie} onSave={save} onPasteMany={pasteMany} saveMeta={savePjMetaOverride} etat={etatChoice&&etatChoice[r.pj]} setEtat={setEtatFor} presence={clientPresence&&clientPresence[r.pj]} setPresence={setClientPresenceFor}/>)}
           {shown.length===0&&<tr><td colSpan={8}><EmptyState compact icon="search" title="Aucun PJ."/></td></tr>}

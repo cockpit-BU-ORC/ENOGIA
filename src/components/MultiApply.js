@@ -83,13 +83,13 @@ export function MultiApplyDialog({ onClose, data, currentPj, savePjMetaMulti, ad
 
   const field = { width: "100%", boxSizing: "border-box", fontFamily: T.font, fontSize: FZ.sm, color: T.ink900, background: T.surface, border: "1px solid " + T.line, borderRadius: 8, padding: "7px 10px" };
   const chip = chipStyle; // v311 : puce commune
-  const lbl = { fontSize: FZ.xs, fontWeight: 700, color: T.ink500, display: "block", marginBottom: 4 };
+  const lbl = { fontSize: FZ.xs, fontWeight: 600, color: T.ink500, display: "block", marginBottom: 4 };
 
   return createPortal(<div role="dialog" aria-modal="true" aria-label="Saisie sur plusieurs projets" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}
     style={{ position: "fixed", inset: 0, zIndex: 20010, background: "rgba(10,16,28,.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 12 }}>
     <div style={{ background: T.card, color: T.ink900, borderRadius: 12, boxShadow: T.shadowLg, border: "1px solid " + T.line, width: "min(860px,100%)", maxHeight: "92vh", overflow: "hidden", display: "flex", flexDirection: "column", fontFamily: T.font }}>
       <div style={{ padding: "14px 18px", borderBottom: "1px solid " + T.line, display: "flex", alignItems: "center", gap: 10 }}>
-        <div style={{ flex: 1 }}><div style={{ fontSize: FZ.md, fontWeight: 800 }}>Saisir sur plusieurs projets</div><div style={{ fontSize: FZ.xs, color: T.ink500 }}>Une seule saisie, ajoutée à chaque projet coché — action, mitigation, commentaire ou statut.</div></div>
+        <div style={{ flex: 1 }}><div style={{ fontSize: FZ.md, fontWeight: 600 }}>Saisir sur plusieurs projets</div><div style={{ fontSize: FZ.xs, color: T.ink500 }}>Une seule saisie, ajoutée à chaque projet coché — action, mitigation, commentaire ou statut.</div></div>
         <button onClick={onClose} style={chip(false)}>Fermer</button>
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", minHeight: 0, flex: 1, overflow: "auto" }}>
@@ -105,9 +105,9 @@ export function MultiApplyDialog({ onClose, data, currentPj, savePjMetaMulti, ad
               <input type="checkbox" checked={sel.has(r.pj)} onChange={() => flip(r.pj)} style={{ accentColor: T.teal600 }} />
               <b style={{ whiteSpace: "nowrap" }}>{r.pj}</b><span style={{ color: T.ink500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{projet(r.pj)}{r.etat === "SHIPPED" ? " · expédiée" : ""}</span>
             </label>))}
-            {!shown.length && <div style={{ padding: 10, fontSize: FZ.sm, color: T.ink500 }}>Aucun PJ ne correspond.</div>}
+            {!shown.length && <div style={{ padding: 10, fontSize: FZ.sm, color: T.ink500 }}>Aucun PJ ne correspond</div>}
           </div>
-          <div style={{ fontSize: FZ.xs, color: T.ink500, fontWeight: 700 }}>{pjs.length} projet{pjs.length > 1 ? "s" : ""} coché{pjs.length > 1 ? "s" : ""}</div>
+          <div style={{ fontSize: FZ.xs, color: T.ink500, fontWeight: 600 }}>{pjs.length} projet{pjs.length > 1 ? "s" : ""} coché{pjs.length > 1 ? "s" : ""}</div>
         </div>
         <div style={{ flex: "1.3 1 330px", minWidth: 300, padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
           <div role="tablist" style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>{TABS.map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} style={chip(tab === k)} onClick={() => { setTab(k); setMsg(null); }}>{l}</button>)}</div>
@@ -147,9 +147,9 @@ export function MultiApplyDialog({ onClose, data, currentPj, savePjMetaMulti, ad
             {tab === "comment" && <label style={{ display: "flex", gap: 7, alignItems: "center", fontSize: FZ.sm }}><input type="checkbox" checked={priv} onChange={e => setPriv(e.target.checked)} style={{ accentColor: T.teal600 }} />Commentaire privé</label>}
           </>}
           <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginTop: "auto" }}>
-            <button disabled={!!problem || busy} onClick={apply} title={problem || ""} style={{ border: "none", borderRadius: 12, padding: "8px 16px", background: problem ? T.ink100 : T.navy700, color: problem ? T.ink500 : "#fff", fontWeight: 800, fontSize: FZ.sm, fontFamily: T.font, cursor: problem ? "default" : "pointer" }}>{busy ? "Enregistrement…" : "Appliquer à " + pjs.length + " projet" + (pjs.length > 1 ? "s" : "")}</button>
+            <button disabled={!!problem || busy} onClick={apply} title={problem || ""} style={{ border: "none", borderRadius: 12, padding: "8px 16px", background: problem ? T.ink100 : T.navy700, color: problem ? T.ink500 : "#fff", fontWeight: 600, fontSize: FZ.sm, fontFamily: T.font, cursor: problem ? "default" : "pointer" }}>{busy ? "Enregistrement…" : "Appliquer à " + pjs.length + " projet" + (pjs.length > 1 ? "s" : "")}</button>
             {problem && <span style={{ fontSize: FZ.xs, color: T.ink500 }}>{problem}</span>}
-            {msg && <span role="status" style={{ fontSize: FZ.xs, fontWeight: 700, color: msg.err ? T.red600 : T.emerald600 }}>{msg.t}</span>}
+            {msg && <span role="status" style={{ fontSize: FZ.xs, fontWeight: 600, color: msg.err ? T.red600 : T.emerald600 }}>{msg.t}</span>}
           </div>
         </div>
       </div>

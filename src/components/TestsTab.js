@@ -40,7 +40,7 @@ function TesterChip({ t, warn, on, onClick, disabled, small }) {
   return (<span role={interactive ? "button" : undefined} aria-pressed={interactive ? !!on : undefined} tabIndex={interactive && !disabled ? 0 : undefined}
     onClick={interactive && !disabled ? onClick : undefined} onKeyDown={interactive && !disabled ? (e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } }) : undefined}
     title={warn ? "Déjà affecté sur un autre PJ à la même période" : t.email || t.name}
-    style={{ display: "inline-flex", alignItems: "center", gap: 6, background: on ? T.teal100 : T.card, border: "1.5px solid " + (warn ? T.amber500 : on ? T.teal500 : T.line), borderRadius: 999, padding: small ? "1px 9px 1px 3px" : "3px 12px 3px 4px", fontSize: FZ.xs, fontWeight: 700, color: warn ? T.amber600 : on ? T.teal600 : T.ink700, cursor: interactive && !disabled ? "pointer" : "default", opacity: disabled && interactive && !on ? .6 : 1, userSelect: "none" }}>
+    style={{ display: "inline-flex", alignItems: "center", gap: 6, background: on ? T.teal100 : T.card, border: "1.5px solid " + (warn ? T.amber500 : on ? T.teal500 : T.line), borderRadius: 999, padding: small ? "1px 9px 1px 3px" : "3px 12px 3px 4px", fontSize: FZ.xs, fontWeight: 600, color: warn ? T.amber600 : on ? T.teal600 : T.ink700, cursor: interactive && !disabled ? "pointer" : "default", opacity: disabled && interactive && !on ? .6 : 1, userSelect: "none" }}>
     <Avatar name={t.name} tint={personTint(t.name)[0]} size={small ? 18 : 22} />{t.name}{on && interactive ? " ✓" : ""}{warn ? " ⚠" : ""}
   </span>);
 }
@@ -169,7 +169,7 @@ function BenchStrip({ rows, doc, catalog, testers, on, onPick }) {
   const next = rows.filter(r => startOf(r) > today).sort((x, y) => startOf(x) - startOf(y))[0];
   return (<section aria-label="Au banc maintenant" style={{ minWidth: 0 }}>
     <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 6 }}>
-      <h2 style={{ margin: 0, fontSize: FZ.sm, fontWeight: 700, color: T.ink900 }}>Au banc maintenant</h2>
+      <h2 style={{ margin: 0, fontSize: FZ.sm, fontWeight: 600, color: T.ink900 }}>Au banc maintenant</h2>
       <Cap>{items.length ? items.length + " machine" + (items.length > 1 ? "s" : "") : "aucune machine aujourd'hui"}</Cap>
     </div>
     <div className="enogia-stagger" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%,240px),1fr))", gap: 10 }}>
@@ -189,7 +189,7 @@ function BenchStrip({ rows, doc, catalog, testers, on, onPick }) {
           <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
             <Ring pct={pct} />
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: FZ.md || 14, fontWeight: 700, color: T.ink900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{cur ? cur.name : q.total ? "Tous les tests sont faits" : "Aucun test retenu"}</div>
+              <div style={{ fontSize: FZ.md || 14, fontWeight: 600, color: T.ink900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{cur ? cur.name : q.total ? "Tous les tests sont faits" : "Aucun test retenu"}</div>
               <div style={{ fontSize: FZ.xs, color: names.length ? T.ink500 : T.red600, marginTop: 2 }}>{cur ? ST_LABEL[cur.v].toLowerCase() : ""}{cur ? " · " : ""}{names.length ? names.join(", ") : "sans testeur"}</div>
             </div>
           </div>
@@ -218,12 +218,12 @@ function ResultsFeed({ rows, doc, catalog, onPick }) {
   });
   ev.sort((a, b) => new Date(b.at) - new Date(a.at));
   return (<section aria-label="Derniers résultats" style={{ minWidth: 0, background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "10px 12px" }}>
-    <h2 style={{ margin: "0 0 6px", fontSize: FZ.sm, fontWeight: 700, color: T.ink900 }}>Derniers résultats</h2>
+    <h2 style={{ margin: "0 0 6px", fontSize: FZ.sm, fontWeight: 600, color: T.ink900 }}>Derniers résultats</h2>
     {ev.length === 0 && <div style={{ fontSize: FZ.xs, color: T.ink500 }}>Aucun résultat ces 14 derniers jours. Ils apparaissent ici dès qu'un test est marqué réussi ou en échec.</div>}
     <ol className="enogia-stagger" style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column" }}>
       {ev.slice(0, 7).map((e, i) => <li key={e.pj + e.name + e.at} style={{ borderTop: i ? "1px solid " + T.line : "none" }}>
         <button type="button" onClick={() => onPick(e.pj)} style={{ all: "unset", boxSizing: "border-box", width: "100%", cursor: "pointer", padding: "6px 0", display: "grid", gridTemplateColumns: "auto minmax(0,1fr)", columnGap: 8, rowGap: 1, alignItems: "baseline", minHeight: 36 }}>
-          <span style={{ fontSize: FZ.xs, fontWeight: 700, color: e.v === "ok" ? T.emerald600 : T.red600 }}>{e.v === "ok" ? "Réussi" : "Échec"}</span>
+          <span style={{ fontSize: FZ.xs, fontWeight: 600, color: e.v === "ok" ? T.emerald600 : T.red600 }}>{e.v === "ok" ? "Réussi" : "Échec"}</span>
           <span style={{ fontSize: FZ.xs, color: T.ink900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.name}</span>
           <span />
           <span style={{ fontSize: 12, color: T.ink500, fontVariantNumeric: "tabular-nums" }}><span style={{ fontFamily: T.fontMono || "monospace" }}>{e.pj}</span>{e.by ? " · " + e.by : ""} · {whenTxt(e.at)}</span>
@@ -268,7 +268,7 @@ function GridHead({ days, todayIso, labelStyle, label }) {
   return (<div style={{ display: "flex", background: T.surface, borderBottom: "1px solid " + T.line, position: "sticky", top: 0, zIndex: 3 }}>
     <div style={{ ...labelStyle, fontFamily: T.fontLabel, fontSize: 12, fontWeight: 600, color: T.ink500, display: "flex", alignItems: "flex-end", paddingBottom: 6 }}>{label}</div>
     <div style={{ flex: 1, minWidth: 0, display: "grid", gridTemplateColumns: "repeat(" + days.length + ",minmax(0,1fr))" }}>
-      {days.filter((d, i) => i % 5 === 0).map((d, i) => <div key={"w" + d} style={{ gridColumn: "span 5", padding: "7px 8px 2px", fontSize: 12, fontWeight: 700, color: T.ink900, borderLeft: i ? "2px solid " + T.line : "none", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{wk(d)}</div>)}
+      {days.filter((d, i) => i % 5 === 0).map((d, i) => <div key={"w" + d} style={{ gridColumn: "span 5", padding: "7px 8px 2px", fontSize: 12, fontWeight: 600, color: T.ink900, borderLeft: i ? "2px solid " + T.line : "none", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{wk(d)}</div>)}
       {days.map((d, i) => { const td = d === todayIso, off = !HOLI.isWork(d); return <div key={d} title={off ? "Jour férié" : td ? "Aujourd'hui" : undefined} style={{ padding: "3px 0 6px", textAlign: "center", fontSize: 12, fontWeight: td ? 700 : 500, color: td ? S.tests.ink : off ? T.ink300 : T.ink500, background: td ? S.tests.bg : "transparent", borderRadius: td ? "6px 6px 0 0" : 0, borderLeft: i % 5 === 0 && i ? "2px solid " + T.line : "none", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", overflow: "hidden" }}>{off ? "férié" : DOW1[i % 5] + " " + Number(d.slice(8, 10))}</div>; })}
     </div>
   </div>);
@@ -318,7 +318,7 @@ function BenchGrid({ rows, allRows, doc, catalog, testers, conflicts, on, onPick
   const pres = (k, d) => d ? <><i aria-hidden="true" style={{ width: 8, height: 8, borderRadius: "50%", background: PRESENCE_META[k].color, flexShrink: 0 }} /><span style={{ fontVariantNumeric: "tabular-nums", color: T.ink900 }}>{fdm(dIso(d))}</span></> : d === "" ? <span style={{ color: T.ink500 }}>à fixer</span> : <span style={{ color: T.ink300 }}>—</span>;
   return (<section aria-label="Planning des bancs" className="enogia-bg" style={{ ...CARD, padding: 0, overflow: "hidden" }}>
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "10px 14px", flexWrap: "wrap", borderBottom: "1px solid " + T.line }}>
-      <div><h2 style={{ margin: 0, fontSize: FZ.md, fontWeight: 700, color: T.ink900 }}>Planning des bancs</h2><div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 2 }}>Du {fd(days[0])} au {fd(end)} · {list.length} PJ, dont {inWin} sur ces 3 semaines</div></div>
+      <div><h2 style={{ margin: 0, fontSize: FZ.md, fontWeight: 600, color: T.ink900 }}>Planning des bancs</h2><div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 2 }}>Du {fd(days[0])} au {fd(end)} · {list.length} PJ, dont {inWin} sur ces 3 semaines</div></div>
       <span style={{ display: "inline-flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
         <GridLegend />
         {without.length > 0 && <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: FZ.xs, color: T.ink700, fontWeight: 600, minHeight: 28, cursor: "pointer" }}><input type="checkbox" checked={noPer} onChange={e => setNoPer(e.target.checked)} />PJ sans période ({without.length})</label>}
@@ -328,7 +328,7 @@ function BenchGrid({ rows, allRows, doc, catalog, testers, conflicts, on, onPick
     <div style={{ overflow: "auto", maxHeight: "calc(100dvh - 220px)" }}>
       <div className="enogia-bg-inner">
         <GridHead days={days} todayIso={todayIso} labelStyle={lab} label={head} />
-        {list.length === 0 && <div style={{ padding: "16px 14px", fontSize: FZ.sm, color: T.ink500 }}>Aucun PJ en cours avec une période de tests.</div>}
+        {list.length === 0 && <div style={{ padding: "16px 14px", fontSize: FZ.sm, color: T.ink500 }}>Aucun PJ en cours avec une période de tests</div>}
         {list.map(({ r, ms, c0, c1, names, pd, pres: dots, out, conf }) => {
           const tn = toneOfSt(ms.st === "none" ? "next" : ms.st), sel = on === r.pj, segs = segsOf(ms.plan, catalog, ms.act);
           const info = ms.st === "late" ? "en retard de " + ms.lateD + " j" : ms.st === "wip" ? "jour " + ms.n + " / " + ms.m : ms.st === "done" ? (isForced(ms.plan) ? "validé" : "terminé") : ms.st === "none" ? "période à définir" : "prévu";
@@ -341,13 +341,13 @@ function BenchGrid({ rows, allRows, doc, catalog, testers, conflicts, on, onPick
                 <span style={{ ...cellS, color: names.length ? T.ink900 : T.red600, fontWeight: names.length ? 500 : 700 }} title={names.join(", ")}>{names.length ? names.join(", ") : "sans testeur"}</span>
                 <span className="c-opt" style={cellS}>{pres("client", pd.client)}</span>
                 <span className="c-opt" style={cellS}>{pres("nobo", pd.nobo)}</span>
-                <span style={{ ...cellS, justifyContent: "flex-end", gap: 6 }}><SegBar still segs={segs} h={7} gap={1} width={Math.max(18, Math.min(40, segs.length * 4))} /><span style={{ fontWeight: 700, color: T.ink700, fontVariantNumeric: "tabular-nums" }}>{ms.q.done}/{ms.q.total}</span></span>
+                <span style={{ ...cellS, justifyContent: "flex-end", gap: 6 }}><SegBar still segs={segs} h={7} gap={1} width={Math.max(18, Math.min(40, segs.length * 4))} /><span style={{ fontWeight: 600, color: T.ink700, fontVariantNumeric: "tabular-nums" }}>{ms.q.done}/{ms.q.total}</span></span>
               </span>
             </button>
             <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
               <TrackBg days={days} todayIso={todayIso} />
               {c0 >= 0 && <button type="button" className="enogia-bg-bar" onClick={() => onPick(r.pj)} aria-label={aria} title={r.pj + " · " + fd(ms.a) + " → " + fd(ms.b) + " · " + info + (conf ? " · testeur en conflit" : "")}
-                style={{ position: "absolute", left: "calc(" + pctOf(c0, days.length) + " + 3px)", width: "calc(" + pctOf(c1 - c0 + 1, days.length) + " - 6px)", top: 10, bottom: 10, border: tn.bd, boxShadow: conf ? "0 0 0 2px " + T.amber600 : sel ? "0 0 0 2px " + T.ink900 : "none", borderRadius: 4, background: tn.bg, color: tn.ink, cursor: "pointer", padding: "0 6px", fontSize: 12, fontWeight: 700, fontFamily: T.font, textAlign: "left", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", boxSizing: "border-box" }}>
+                style={{ position: "absolute", left: "calc(" + pctOf(c0, days.length) + " + 3px)", width: "calc(" + pctOf(c1 - c0 + 1, days.length) + " - 6px)", top: 10, bottom: 10, border: tn.bd, boxShadow: conf ? "0 0 0 2px " + T.amber600 : sel ? "0 0 0 2px " + T.ink900 : "none", borderRadius: 4, background: tn.bg, color: tn.ink, cursor: "pointer", padding: "0 6px", fontSize: 12, fontWeight: 600, fontFamily: T.font, textAlign: "left", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", boxSizing: "border-box" }}>
                 <span className="bg-bar-txt">{info}</span>
               </button>}
               {out && <span style={{ position: "absolute", top: 0, bottom: 0, display: "flex", alignItems: "center", fontSize: 12, color: ms.st === "late" ? T.red600 : T.ink500, fontWeight: 600, whiteSpace: "nowrap", ...(out === "after" ? { right: 10 } : { left: 10 }) }}>
@@ -380,7 +380,7 @@ export function TestDialog({ r, onClose, doc, testers, catalog, conflicts, commi
         {r.gamme && <span style={{ fontFamily: T.fontLabel, fontSize: FZ.sm, fontWeight: 600, color: T.ink700, border: "1px solid " + T.line, borderRadius: 8, padding: "1px 8px" }}>{r.gamme}</span>}
         <span style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: FZ.lg, color: T.ink900, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: "1 1 160px" }}>{meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : ""}</span>
         <span style={{ fontSize: FZ.xs, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{period(r)}</span>
-        <button type="button" onClick={onClose} aria-label="Fermer" style={{ border: "none", background: T.surface, color: T.ink700, borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
+        <button type="button" onClick={onClose} aria-label="Fermer" style={{ border: "none", background: T.surface, color: T.ink700, borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 16, lineHeight: 1 }}><NavIcon name="close" size={14} /></button>
       </div>
       <div style={{ padding: "12px 18px 0", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(130px,1fr))", gap: 8 }}>
         <Num l="Avancement" v={q.done + " / " + q.total} /><Num l="Réussis" v={q.ok} c={T.emerald600} /><Num l="Échecs" v={q.ko} c={q.ko ? T.red600 : undefined} /><Num l="En cours" v={q.wip} c={q.wip ? T.amber600 : undefined} />
@@ -427,20 +427,20 @@ function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdi
       <span style={{ width: "100%", fontSize: FZ.xs, color: T.ink500 }}>Tests {period(r)}{mine ? " · vous êtes testeur" : ""}</span></>}
       {canEdit && (ended || forced) && <div style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", background: forced ? T.emerald100 : T.surface, borderRadius: 8, padding: "6px 10px", marginTop: 2 }}>
         <span style={{ fontSize: FZ.xs, color: forced ? T.emerald600 : T.ink700, fontWeight: 600, flex: "1 1 180px" }}>{forced ? (plan.forced.auto ? "Tests faits : machine expédiée" : "Validée manuellement" + (plan.forced.by ? " par " + plan.forced.by : "")) + " le " + fd(dIso(plan.forced.at)) + "." : "Période terminée : vous pouvez valider ces tests sans testeur ni test coché (anciennes machines)."}</span>
-        {!(forced && plan.forced.auto) && <button type="button" onClick={() => saveTests(setForced(plan, !forced, who))} className="enogia-btn-ind" style={{ border: "1.5px solid " + (forced ? T.ink300 : T.emerald600), background: forced ? "transparent" : T.emerald600, color: forced ? T.ink700 : T.card, borderRadius: 8, padding: "4px 10px", minHeight: 28, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>{forced ? "Annuler la validation" : "Forcer la validation"}</button>}
+        {!(forced && plan.forced.auto) && <button type="button" onClick={() => saveTests(setForced(plan, !forced, who))} className="enogia-btn-ind" style={{ border: "1.5px solid " + (forced ? T.ink300 : T.emerald600), background: forced ? "transparent" : T.emerald600, color: forced ? T.ink700 : T.card, borderRadius: 8, padding: "4px 10px", minHeight: 28, fontSize: FZ.xs, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>{forced ? "Annuler la validation" : "Forcer la validation"}</button>}
       </div>}
     </div>}
     {!panel && <div onClick={onToggle} role="button" aria-expanded={open} tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(); } }}
       style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 14px", cursor: "pointer", flexWrap: "wrap" }}>
       <div style={{ minWidth: 150, flex: "0 1 190px" }}>
-        <div style={{ fontFamily: T.fontMono, fontWeight: 700, fontSize: FZ.sm, color: T.teal600 }}>{r.pj}{mine && <span style={{ marginLeft: 6, fontFamily: T.font, fontSize: 12, background: T.teal100, color: T.teal600, borderRadius: 999, padding: "1px 7px" }}>Mon test</span>}</div>
+        <div style={{ fontFamily: T.fontMono, fontWeight: 600, fontSize: FZ.sm, color: T.teal600 }}>{r.pj}{mine && <span style={{ marginLeft: 6, fontFamily: T.font, fontSize: 12, background: T.teal100, color: T.teal600, borderRadius: 999, padding: "1px 7px" }}>Mon test</span>}</div>
         <div title={meta.nomProjet || ""} style={{ fontSize: FZ.xs, color: T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{meta.nomProjet || ""} {r.gamme ? "· " + r.gamme : ""}</div>
       </div>
       <div style={{ fontSize: FZ.sm, color: T.ink700, fontWeight: 600, minWidth: 170 }}>{period(r)}</div>
       <div style={{ display: "flex", gap: 6, alignItems: "center", minWidth: 90 }}>{kind ? <PresenceChip kind={kind} date={presenceFirstDate(presence)} dates={pd} compact tiny fontSize={10.5} /> : <span style={{ fontSize: FZ.xs, color: T.ink300 }}>Interne seul</span>}</div>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", flex: 1, minWidth: 140 }}>
         {assigned.length === 0
-          ? <span style={{ fontSize: FZ.xs, fontWeight: 700, color: T.amber600, background: T.amber100, borderRadius: 999, padding: "2px 10px" }}>À affecter</span>
+          ? <span style={{ fontSize: FZ.xs, fontWeight: 600, color: T.amber600, background: T.amber100, borderRadius: 999, padding: "2px 10px" }}>À affecter</span>
           : assigned.map(t => <TesterChip key={t.id} t={t} small warn={myConf.has(t.id)} />)}
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 8, color: T.ink500, fontSize: FZ.xs, fontWeight: 600 }}>{nTests} test{nTests > 1 ? "s" : ""}<span style={{ transform: open ? "rotate(180deg)" : "none", display: "inline-flex" }}><NavIcon name="chevronDown" size={12} /></span></div>
@@ -450,7 +450,7 @@ function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdi
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 8 }}>
         {[["PJ", r.pj], ["ORC", r.gamme || "—"], ["Certification", myCerts.length ? myCerts.map(c => <span key={c.id} style={{ marginRight: 4 }}><CertifChip c={c} small /></span>) : "N/A"],
           ["FAT client", pd.client ? fd(pd.client) : kind === "client" || kind === "both" ? "Date à fixer" : "Pas de FAT client"], ["FAT NOBO", pd.nobo ? fd(pd.nobo) : kind === "nobo" || kind === "both" ? "Date à fixer" : "Pas de FAT NOBO"]].map(([l, v]) => (
-          <div key={l} style={{ background: T.card, borderRadius: 8, padding: "6px 10px", minWidth: 0 }}><Cap>{l}</Cap><div style={{ fontSize: FZ.sm, fontWeight: 700, color: T.ink900, marginTop: 2 }}>{v}</div></div>))}
+          <div key={l} style={{ background: T.card, borderRadius: 8, padding: "6px 10px", minWidth: 0 }}><Cap>{l}</Cap><div style={{ fontSize: FZ.sm, fontWeight: 600, color: T.ink900, marginTop: 2 }}>{v}</div></div>))}
       </div>
       {/* ① Qui teste ? */}
       <Step n="1" title="Qui teste cette machine ?" hint={canEdit ? "Cliquez sur un nom pour l'affecter à toute la période de tests, recliquez pour le retirer." : ""}>
@@ -461,13 +461,13 @@ function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdi
             <datalist id={"acc-" + r.pj}>{ctx.options.map(o => <option key={o.email} value={o.name} />)}</datalist>
             {newName.trim() && <button onClick={addNew} style={btn(true)}>Ajouter</button>}
           </span>}
-          {!canEdit && testers.length === 0 && <span style={{ fontSize: FZ.xs, color: T.ink300 }}>Aucun testeur dans la liste.</span>}
+          {!canEdit && testers.length === 0 && <span style={{ fontSize: FZ.xs, color: T.ink300 }}>Aucun testeur dans la liste</span>}
         </div>
         {/* v188 : invitation Google Agenda préremplie (période de tests, testeurs invités) */}
         {canEdit && assigned.length > 0 && r.tests && <a href={gcalUrl({ title: "Tests FAT " + r.pj + (r.gamme ? " · " + r.gamme : "") + (meta.nomProjet && meta.nomProjet !== "—" ? " · " + meta.nomProjet : ""), from: minD, to: maxD,
             details: "Tests FAT de la machine " + r.pj + (r.gamme ? " (" + r.gamme + ")" : "") + ".\nTesteurs : " + assigned.map(t => t.name).join(", ") + (kind ? "\nPrésence : " + (kind === "both" ? "client et NOBO" : kind === "nobo" ? "NOBO" : "client") : "") + "\nTests à réaliser : " + nTests + ".",
             location: "ENOGIA, 43 avenue de Boisbaudran, 13015 Marseille", guests: assigned.map(t => t.email) })}
-          target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 8, fontSize: FZ.xs, fontWeight: 700, color: T.teal600, textDecoration: "none", border: "1.5px solid " + T.teal500, borderRadius: 8, padding: "4px 10px", minHeight: 28, boxSizing: "border-box" }}>
+          target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 8, fontSize: FZ.xs, fontWeight: 600, color: T.teal600, textDecoration: "none", border: "1.5px solid " + T.teal500, borderRadius: 8, padding: "4px 10px", minHeight: 28, boxSizing: "border-box" }}>
           <NavIcon name="calendar" size={14} />Inviter les testeurs (Google Agenda)</a>}
         {plan.assign.length > 0 && <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 8 }}>
           {plan.assign.map(a => { const t = testers.find(x => x.id === a.tid); if (!t) return null; const eff = effRange(a, r), custom = !!(a.from || a.to), showDates = custom || limit[a.tid]; return (
@@ -485,7 +485,7 @@ function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdi
       <Step n="2" title="Présence aux tests" hint="Se règle dans la Liste (colonne Tests) : ici en lecture seule.">
         {kind
           ? <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}><PresenceChip kind={kind} date={presenceFirstDate(presence)} dates={pd} tiny fontSize={11} />
-            {pd.client && <span style={{ fontSize: FZ.xs, color: PRESENCE_META.client.ink, fontWeight: 700 }}>Client le {fd(pd.client)}</span>}{pd.nobo && <span style={{ fontSize: FZ.xs, color: PRESENCE_META.nobo.ink, fontWeight: 700 }}>NOBO le {fd(pd.nobo)}</span>}</div>
+            {pd.client && <span style={{ fontSize: FZ.xs, color: PRESENCE_META.client.ink, fontWeight: 600 }}>Client le {fd(pd.client)}</span>}{pd.nobo && <span style={{ fontSize: FZ.xs, color: PRESENCE_META.nobo.ink, fontWeight: 600 }}>NOBO le {fd(pd.nobo)}</span>}</div>
           : <span style={{ fontSize: FZ.xs, color: T.ink500 }}>Ni client ni NOBO : seuls les tests internes sont à réaliser.</span>}
       </Step>
       {/* ③ Tests : dans le volet, checklist « fait » (et choix des tests à réaliser via « Modifier la liste ») */}
@@ -509,18 +509,18 @@ function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdi
                 {on && <span style={{ fontSize: FZ.xs, color: T.ink500, fontWeight: 600 }}>{ids.length}/{catalog[k].length} test{catalog[k].length > 1 ? "s" : ""}</span>}
               </div>
               {on && <>
-                {catalog[k].length > 0 && <div style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk,display: "grid",gridTemplateColumns: "26px minmax(150px,1fr) minmax(200px,2fr) minmax(150px,1fr)",gap: "0 10px",padding: "4px 12px"}}><span /><span>Test</span><span>Objectifs</span><span>Commentaires</span></div>}
+                {catalog[k].length > 0 && <div style={{fontFamily:T.font,fontSize:12,fontWeight:600,color:T.accentInk,display: "grid",gridTemplateColumns: "26px minmax(150px,1fr) minmax(200px,2fr) minmax(150px,1fr)",gap: "0 10px",padding: "4px 12px"}}><span /><span>Test</span><span>Objectifs</span><span>Commentaires</span></div>}
                 {catalog[k].map(tst => { const chk = ids.includes(tst.id); return (
                   <div key={tst.id} style={{ display: "grid", gridTemplateColumns: "26px minmax(150px,1fr) minmax(200px,2fr) minmax(150px,1fr)", gap: "0 10px", padding: "6px 12px", borderTop: "1px solid " + T.surface, alignItems: "start", opacity: chk ? 1 : .55 }}>
                     <input type="checkbox" checked={chk} disabled={!canTest} onChange={() => saveTests(toggleTest(plan, catalog, k, tst.id))} aria-label={tst.name} style={{ marginTop: 3 }} />
-                    <span style={{ fontSize: FZ.sm, fontWeight: 700, color: T.ink900, textDecoration: chk ? "none" : "line-through" }}>{tst.name}</span>
+                    <span style={{ fontSize: FZ.sm, fontWeight: 600, color: T.ink900, textDecoration: chk ? "none" : "line-through" }}>{tst.name}</span>
                     <span style={{ fontSize: FZ.xs, color: T.ink500, whiteSpace: "pre-line", lineHeight: 1.45 }}>{tst.obj}</span>
                     {canTest
                       ? <input defaultValue={plan.notes[tst.id] || ""} key={r.pj + tst.id + (plan.notes[tst.id] || "")} disabled={!chk} onBlur={e => { if (e.target.value !== (plan.notes[tst.id] || "")) saveTests(setNote(plan, tst.id, e.target.value)); }} placeholder="Commentaire" maxLength={300} style={{ ...field(), fontSize: FZ.xs, width: "100%", boxSizing: "border-box" }} />
                       : <span style={{ fontSize: FZ.xs, color: T.ink700 }}>{plan.notes[tst.id] || ""}</span>}
                   </div>); })}
                 <div style={{ display: "grid", gridTemplateColumns: "26px minmax(150px,1fr) 3fr", gap: "0 10px", padding: "6px 12px", borderTop: "1px solid " + T.surface, alignItems: "center" }}>
-                  <span /><span style={{ fontSize: FZ.sm, fontWeight: 700, color: T.ink500 }}>Autre</span>
+                  <span /><span style={{ fontSize: FZ.sm, fontWeight: 600, color: T.ink500 }}>Autre</span>
                   {canTest ? <input defaultValue={plan.extra[k] || ""} key={r.pj + k + (plan.extra[k] || "")} onBlur={e => { if (e.target.value !== (plan.extra[k] || "")) saveTests(setExtra(plan, k, e.target.value)); }} placeholder="Test supplémentaire (texte libre)" maxLength={300} style={{ ...field(), fontSize: FZ.xs, width: "100%", boxSizing: "border-box" }} />
                     : <span style={{ fontSize: FZ.xs, color: T.ink700 }}>{plan.extra[k] || ""}</span>}
                 </div>
@@ -538,22 +538,22 @@ function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdi
 function Checklist({ r, plan, catalog, act, canEdit, canMark, saveTests, who }) {
   const [edit, setEdit] = useState(false);
   return (<div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-    {canEdit && <button type="button" onClick={() => setEdit(v => !v)} aria-pressed={edit} className="enogia-btn-ind" style={{ alignSelf: "flex-start", border: "1.5px solid " + T.teal500, background: "transparent", color: T.teal600, borderRadius: 8, padding: "4px 10px", minHeight: 28, fontSize: FZ.xs, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>{edit ? "Terminer" : "Modifier la liste des tests"}</button>}
+    {canEdit && <button type="button" onClick={() => setEdit(v => !v)} aria-pressed={edit} className="enogia-btn-ind" style={{ alignSelf: "flex-start", border: "1.5px solid " + T.teal500, background: "transparent", color: T.teal600, borderRadius: 8, padding: "4px 10px", minHeight: 28, fontSize: FZ.xs, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>{edit ? "Terminer" : "Modifier la liste des tests"}</button>}
     {act.map(k => {
       const label = (SECTIONS.find(x => x[0] === k) || [])[1], sel = selectedIds(plan, catalog, k), done = doneIds(plan, k), items = edit ? catalog[k] : catalog[k].filter(t => sel.includes(t.id));
       const nDone = sel.filter(id => done.includes(id)).length;
       return (<div key={k} style={{ background: T.card, border: "1px solid " + SEC_BORDER[k](), borderRadius: 12, overflow: "hidden" }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 8, padding: "7px 12px", borderBottom: "1px solid " + T.line }}>
           <b style={{ color: SEC_COLOR[k](), fontSize: FZ.sm }}>{label}</b>
-          <span style={{ marginLeft: "auto", fontSize: FZ.xs, fontWeight: 700, color: nDone === sel.length && sel.length ? T.emerald600 : T.ink700, fontVariantNumeric: "tabular-nums" }}>{edit ? sel.length + " retenu" + (sel.length > 1 ? "s" : "") : nDone + " / " + sel.length}</span>
+          <span style={{ marginLeft: "auto", fontSize: FZ.xs, fontWeight: 600, color: nDone === sel.length && sel.length ? T.emerald600 : T.ink700, fontVariantNumeric: "tabular-nums" }}>{edit ? sel.length + " retenu" + (sel.length > 1 ? "s" : "") : nDone + " / " + sel.length}</span>
         </div>
-        {items.length === 0 && <div style={{ padding: "8px 12px", fontSize: FZ.xs, color: T.ink500 }}>Aucun test retenu.</div>}
+        {items.length === 0 && <div style={{ padding: "8px 12px", fontSize: FZ.xs, color: T.ink500 }}>Aucun test retenu</div>}
         {items.map(tst => { const stv = statusOf(plan, k, tst.id), by = statusByOf(plan, k, tst.id), chk = edit ? sel.includes(tst.id) : stv === "ok"; return (
           <div key={tst.id} style={{ display: "flex", gap: 10, padding: "8px 12px", borderTop: "1px solid " + T.surface, alignItems: "flex-start", flexWrap: "wrap" }}>
             {edit && <input type="checkbox" checked={chk} disabled={!canEdit} aria-label={"À réaliser : " + tst.name}
               onChange={() => saveTests(toggleTest(plan, catalog, k, tst.id))} style={{ marginTop: 3, width: 16, height: 16, accentColor: stageSoft().finProd.solid }} />}
             <div style={{ flex: "1 1 180px", minWidth: 0 }}>
-              <div style={{ fontSize: FZ.sm, fontWeight: 700, color: T.ink900, textDecoration: !edit && chk ? "line-through" : "none", textDecorationColor: T.ink300 }}>{tst.name}</div>
+              <div style={{ fontSize: FZ.sm, fontWeight: 600, color: T.ink900, textDecoration: !edit && chk ? "line-through" : "none", textDecorationColor: T.ink300 }}>{tst.name}</div>
               {!edit && by && stv !== "todo" && <div style={{ fontSize: 12, color: T.ink500, marginTop: 2 }}>{(TEST_STATUS.find(x => x[0] === stv) || [])[1]}{by.by ? " · " + by.by : ""}{by.at ? " · " + stamp(by.at) : ""}</div>}
               {(edit || !chk) && tst.obj && <div style={{ fontSize: FZ.xs, color: T.ink500, whiteSpace: "pre-line", lineHeight: 1.45, marginTop: 2 }}>{tst.obj}</div>}
               {!edit && (canMark
@@ -595,11 +595,11 @@ function Signatures({ r, plan, assigned, mine, myTester, canEdit, who, signApi, 
     setBusy(false);
   };
   return (<div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-    {assigned.length === 0 && <span style={{ fontSize: FZ.xs, color: T.ink500 }}>Aucun testeur affecté.</span>}
+    {assigned.length === 0 && <span style={{ fontSize: FZ.xs, color: T.ink500 }}>Aucun testeur affecté</span>}
     {assigned.map(t => { const key = "t:" + t.id, sg = signs[key], canSign = (!!myTester && myTester.id === t.id) || canEdit; return (
       <div key={key} style={{ display: "flex", flexDirection: "column", gap: 8, padding: "8px 10px", background: T.card, border: "1px solid " + T.line, borderRadius: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-          <div style={{ flex: "1 1 180px", minWidth: 0 }}><div style={{ fontFamily: T.fontLabel, fontSize: 12, color: T.ink500 }}>Réalisé par</div><div style={{ fontSize: FZ.sm, fontWeight: 700, color: T.ink900 }}>{(sg && sg.name) || t.name}{sg && sg.fn ? <span style={{ fontWeight: 500, color: T.ink500 }}> · {sg.fn}</span> : null}</div></div>
+          <div style={{ flex: "1 1 180px", minWidth: 0 }}><div style={{ fontFamily: T.fontLabel, fontSize: 12, color: T.ink500 }}>Réalisé par</div><div style={{ fontSize: FZ.sm, fontWeight: 600, color: T.ink900 }}>{(sg && sg.name) || t.name}{sg && sg.fn ? <span style={{ fontWeight: 500, color: T.ink500 }}> · {sg.fn}</span> : null}</div></div>
           {sg && <span style={{ fontFamily: T.fontLabel, fontSize: 12, fontWeight: 600, color: T.emerald600, background: T.emerald100, borderRadius: 999, padding: "2px 10px" }}>Signé le {fd(dIso(sg.at))}</span>}
           {canSign && (!form || form.key !== key) && <button type="button" disabled={busy} onClick={() => setForm({ key, name: (sg && sg.name) || t.name, fn: (sg && sg.fn) || "" })} style={btn(true, sg ? "ghost" : undefined)}>{sg ? "Remplacer la signature" : "Signer"}</button>}
           {!canSign && !sg && <span style={{ fontSize: FZ.xs, color: T.ink500 }}>Pas encore signé</span>}
@@ -634,7 +634,7 @@ function SignForm({ init, onSave, onCancel, busy }) {
       <label style={{ display: "flex", flexDirection: "column", gap: 3, fontFamily: T.fontLabel, fontSize: 12, color: T.ink500 }}>Nom<input value={name} onChange={e => setName(e.target.value)} style={field()} /></label>
       <label style={{ display: "flex", flexDirection: "column", gap: 3, fontFamily: T.fontLabel, fontSize: 12, color: T.ink500 }}>Fonction<input value={fn} onChange={e => setFn(e.target.value)} placeholder="Technicien d'essais" style={field()} /></label>
     </div>
-    <label style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: FZ.xs, fontWeight: 700, color: T.teal600, cursor: "pointer", minHeight: 28 }}>
+    <label style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: FZ.xs, fontWeight: 600, color: T.teal600, cursor: "pointer", minHeight: 28 }}>
       <input type="file" accept="image/png,image/jpeg,image/webp" onChange={pick} style={{ fontSize: FZ.xs }} aria-label="Image de la signature" />
     </label>
     {img && <img src={img} alt="Aperçu de la signature" style={{ maxWidth: 240, maxHeight: 80, background: "#fff", border: "1px solid " + T.line, borderRadius: 8, padding: 4, alignSelf: "flex-start" }} />}
@@ -659,9 +659,9 @@ function StatusPick({ value, onPick, disabled, label }) {
 
 function Step({ n, title, hint, children }) {
   return (<div style={{ display: "flex", gap: 12 }}>
-    <span aria-hidden="true" style={{ width: 24, height: 24, borderRadius: "50%", background: T.teal600, color: "#fff", fontSize: FZ.xs, fontWeight: 800, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>{n}</span>
+    <span aria-hidden="true" style={{ width: 24, height: 24, borderRadius: "50%", background: T.teal600, color: "#fff", fontSize: FZ.xs, fontWeight: 600, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>{n}</span>
     <div style={{ flex: 1, minWidth: 0 }}>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap", marginBottom: 6 }}><span style={{ fontSize: FZ.sm, fontWeight: 800, color: T.ink900 }}>{title}</span>{hint && <span style={{ fontSize: FZ.xs, color: T.ink300 }}>{hint}</span>}</div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap", marginBottom: 6 }}><span style={{ fontSize: FZ.sm, fontWeight: 600, color: T.ink900 }}>{title}</span>{hint && <span style={{ fontSize: FZ.xs, color: T.ink300 }}>{hint}</span>}</div>
       {children}
     </div>
   </div>);
@@ -725,7 +725,7 @@ export function TesterTimeline({ doc, rows, testers, catalog, conflicts, commit,
   const rowStyle = { display: "flex", borderBottom: "1px solid " + T.line, alignItems: "stretch", minHeight: LANE_H };
   return (<div style={{ ...CARD, overflow: "hidden" }}>
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "10px 14px", flexWrap: "wrap" }}>
-      <div><h2 style={{ margin: 0, fontSize: FZ.md, fontWeight: 700, color: T.ink900 }}>Testeurs</h2><div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 2 }}>Du {fd(days[0])} au {fd(end)} · une ligne par testeur : qui est pris, qui est libre{canEdit ? " · glissez une barre sur un testeur pour l'affecter" : ""}</div></div>
+      <div><h2 style={{ margin: 0, fontSize: FZ.md, fontWeight: 600, color: T.ink900 }}>Testeurs</h2><div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 2 }}>Du {fd(days[0])} au {fd(end)} · une ligne par testeur : qui est pris, qui est libre{canEdit ? " · glissez une barre sur un testeur pour l'affecter" : ""}</div></div>
       <div style={{ display: "inline-flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
         <GridLegend />
         {myTester && <button className="e-btn e-btn-sec" type="button" onClick={() => testerIcs(doc, myTester, rows)} title="Télécharger mes périodes de banc pour Outlook / Google Agenda. Réimportez le fichier après une mise à jour du planning : les événements sont mis à jour, pas dupliqués." style={{...themeBtn("sec","sm")}}><NavIcon name="calendar" size={14} />Mon agenda (.ics)</button>}
@@ -751,7 +751,7 @@ export function TesterTimeline({ doc, rows, testers, catalog, conflicts, commit,
                 : <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <Avatar name={t.name} tint={personTint(t.name)[0]} size={24} />
                   <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontSize: FZ.sm, fontWeight: 700, color: myTester && myTester.id === t.id ? T.teal600 : T.ink900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</div>
+                    <div style={{ fontSize: FZ.sm, fontWeight: 600, color: myTester && myTester.id === t.id ? T.teal600 : T.ink900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</div>
                     {conflict ? <div style={{ fontFamily: T.fontLabel, fontSize: 12, fontWeight: 600, color: T.amber600 }}>Chevauchement</div> : <div style={{ fontSize: 12, color: T.ink500 }}>{items.length ? items.length + " machine" + (items.length > 1 ? "s" : "") : "libre"}{!t.email ? " · sans e-mail" : ""}</div>}
                   </div>
                   <button onClick={() => testerIcs(doc, t, rows)} aria-label={"Agenda de " + t.name + " (.ics)"} title={"Agenda de " + t.name + " (.ics) pour Outlook / Google Agenda"} style={{ border: "none", background: "transparent", color: T.ink500, cursor: "pointer", minWidth: 24, minHeight: 24, padding: 2, lineHeight: 0 }}><NavIcon name="calendar" size={15} /></button>
@@ -767,7 +767,7 @@ export function TesterTimeline({ doc, rows, testers, catalog, conflicts, commit,
       </div>
     </div>
     {canEdit && <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", padding: "10px 14px", borderTop: "1px solid " + T.line, background: T.surface }}>
-      <span style={{ fontSize: FZ.xs, fontWeight: 700, color: T.ink500 }}>Équipe de test :</span>
+      <span style={{ fontSize: FZ.xs, fontWeight: 600, color: T.ink500 }}>Équipe de test :</span>
       <input list="tl-accounts" value={newName} onChange={e => setNewName(e.target.value)} onKeyDown={e => { if (e.key === "Enter") addTester(); }} placeholder="＋ Ajouter un testeur (nom ou compte connecté)" style={{ ...field(), width: 300 }} />
       <datalist id="tl-accounts">{ctx.options.map(o => <option key={o.email} value={o.name}>{o.email}</option>)}</datalist>
       <button onClick={addTester} disabled={!newName.trim()} style={btn(!!newName.trim())}>Ajouter</button>
@@ -794,7 +794,7 @@ function CatalogView({ doc, catalog, commit }) {
     </div>
     {SECTIONS.map(([k, label, hint]) => (<section key={k} aria-label={label} style={{ ...CARD, padding: 0, overflow: "hidden", borderTop: "3px solid " + SEC_BORDER[k]() }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8, padding: "10px 14px", flexWrap: "wrap" }}>
-        <h2 style={{ margin: 0, fontSize: FZ.md, fontWeight: 700, color: T.ink900 }}>{label}</h2>
+        <h2 style={{ margin: 0, fontSize: FZ.md, fontWeight: 600, color: T.ink900 }}>{label}</h2>
         <span style={{ fontSize: FZ.xs, color: T.ink500 }}>{hint} · {catalog[k].length} test{catalog[k].length > 1 ? "s" : ""}</span>
       </div>
       <div style={{ overflowX: "auto" }}>
@@ -802,7 +802,7 @@ function CatalogView({ doc, catalog, commit }) {
           <thead><tr><th style={{ ...TH, width: 44, textAlign: "right" }}>N°</th><th style={{ ...TH, width: "30%" }}>Test</th><th style={TH}>Objectifs</th><th style={{ ...TH, width: 190 }} aria-label="Actions" /></tr></thead>
           <tbody>{catalog[k].map((t, i) => (<tr key={t.id}>
             <td style={{ ...TD, textAlign: "right", color: T.ink500, fontVariantNumeric: "tabular-nums", paddingTop: 11, fontSize: FZ.sm }}>{i + 1}</td>
-            <td style={TD}><input className="enogia-cat-in" defaultValue={t.name} key={t.id + t.name} onBlur={e => { const v = e.target.value.trim(); if (v && v !== t.name) setSec(k, catalog[k].map(x => x.id === t.id ? { ...x, name: v } : x)); }} style={{ ...cell, fontWeight: 700 }} aria-label={"Nom du test " + (i + 1)} /></td>
+            <td style={TD}><input className="enogia-cat-in" defaultValue={t.name} key={t.id + t.name} onBlur={e => { const v = e.target.value.trim(); if (v && v !== t.name) setSec(k, catalog[k].map(x => x.id === t.id ? { ...x, name: v } : x)); }} style={{ ...cell, fontWeight: 600 }} aria-label={"Nom du test " + (i + 1)} /></td>
             <td style={TD}><textarea className="enogia-cat-in" defaultValue={t.obj || ""} key={t.id + "o" + (t.obj || "")} rows={Math.max(1, Math.min(5, (t.obj || "").split("\n").length))} onBlur={e => { if (e.target.value !== (t.obj || "")) setSec(k, catalog[k].map(x => x.id === t.id ? { ...x, obj: e.target.value } : x)); }} placeholder="Objectifs du test" style={{ ...cell, resize: "vertical", lineHeight: 1.45, color: T.ink700 }} aria-label={"Objectifs du test " + (i + 1)} /></td>
             <td style={{ ...TD, whiteSpace: "nowrap", textAlign: "right" }}>
               <button onClick={() => move(k, i, -1)} disabled={i === 0} style={{ ...btn(i > 0, "ghost"), minWidth: 30, minHeight: 30 }} aria-label={"Monter le test " + (i + 1)}>↑</button>{" "}

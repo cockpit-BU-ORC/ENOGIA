@@ -87,7 +87,7 @@ function QuickEdit({ at, title, ms, vals, canWork, onStart, onDur, onWork, onPre
     <input className="pg-in" type={type} value={v[key]} onChange={e => setV({ ...v, [key]: e.target.value })} onBlur={() => { if (v[key] !== vals[key]) fn(v[key]); }} onKeyDown={e => { if (e.key === "Enter") e.currentTarget.blur(); }}
       style={{ flex: 1, minWidth: 0, height: 30, padding: "0 8px", border: "1px solid " + T.line, borderRadius: 8, background: T.card, color: T.ink900, fontFamily: T.fontMono, fontSize: 12.5, boxSizing: "border-box" }} /></label>) : null;
   return (<div ref={box} role="dialog" aria-label={"Modifier " + title} style={{ position: "fixed", left: Math.min(at.x, window.innerWidth - 330), top: Math.min(at.y + 8, window.innerHeight - 270), width: 310, zIndex: 10003, background: T.card, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, padding: 12 }}>
-    <div style={{ fontWeight: 800, fontSize: 13.5, color: T.ink900, marginBottom: 8 }}>{title}</div>
+    <div style={{ fontWeight: 600, fontSize: 13.5, color: T.ink900, marginBottom: 8 }}>{title}</div>
     {F("Début", "start", "date", onStart)}{F("Durée (j)", "dur", "number", onDur, !ms)}{F("Travail (h)", "work", "number", onWork, canWork)}{F("Prédécesseurs", "pred", "text", onPred)}
     <div style={{ fontSize: 11, color: T.ink300 }}>Entrée ou clic ailleurs pour valider · Échap pour fermer</div>
   </div>);
@@ -102,13 +102,13 @@ function LinkEdit({ at, link, from, to, onType, onLag, onDelete, onClose }) {
   }, [onClose]);
   const names = { FS: "Fin → Début (FS)", SS: "Début → Début (SS)", FF: "Fin → Fin (FF)", SF: "Début → Fin (SF)" };
   return (<div ref={box} role="dialog" aria-label="Modifier le lien" style={{ position: "fixed", left: Math.min(at.x, window.innerWidth - 320), top: Math.min(at.y + 8, window.innerHeight - 220), width: 300, zIndex: 10003, background: T.card, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, padding: 12 }}>
-    <div style={{ fontWeight: 800, fontSize: 13, color: T.ink900 }}>Lien</div>
+    <div style={{ fontWeight: 600, fontSize: 13, color: T.ink900 }}>Lien</div>
     <div style={{ fontSize: 12, color: T.ink500, margin: "2px 0 8px" }}>{from} → {to}</div>
     <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: T.ink500, marginBottom: 6 }}><span style={{ width: 70 }}>Type</span>
       <select value={link.type} onChange={e => onType(e.target.value)} style={{ flex: 1, height: 30, border: "1px solid " + T.line, borderRadius: 8, background: T.card, color: T.ink900, fontSize: 12.5 }}>{Object.keys(names).map(k => <option key={k} value={k}>{names[k]}</option>)}</select></label>
     <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: T.ink500, marginBottom: 10 }}><span style={{ width: 70 }}>Décalage</span>
       <input className="pg-in" type="number" value={lag} onChange={e => setLag(e.target.value)} onBlur={() => { if (lag !== String(link.lag || 0)) onLag(lag); }} onKeyDown={e => { if (e.key === "Enter") e.currentTarget.blur(); }} style={{ width: 70, height: 30, padding: "0 8px", border: "1px solid " + T.line, borderRadius: 8, background: T.card, color: T.ink900, fontFamily: T.fontMono, fontSize: 12.5, boxSizing: "border-box" }} /> <span style={{ fontSize: 11.5 }}>jours ouvrés (négatif = chevauchement)</span></label>
-    <button onClick={onDelete} style={{ border: "1px solid " + T.red500, color: T.red500, background: "transparent", borderRadius: 8, padding: "5px 12px", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>Supprimer le lien</button>
+    <button onClick={onDelete} style={{ border: "1px solid " + T.red500, color: T.red500, background: "transparent", borderRadius: 8, padding: "5px 12px", fontWeight: 600, fontSize: 12.5, cursor: "pointer" }}>Supprimer le lien</button>
   </div>);
 }
 
@@ -276,13 +276,13 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
       const a = ns.length ? Math.min(...ns.map(n => dayNum(n.start))) : null, b = ns.length ? Math.max(...ns.map(n => dayNum(n.finish))) : null;
       const missing = STEP_KEYS.filter(k => !p.steps[k]); const idx = plan.pjs.indexOf(p);
       return (<div key={"p" + p.pj} className="pg-row" onClick={() => setSel({ pj: p.pj, step: null })} {...dnd.dropProps(p.pj, d => d.t === "pj" && d.pj !== p.pj, d => onReorder(d.pj, p.pj))}
-        style={{ display: "flex", height: ROW_H, background: on ? T.teal100 : T.surface, borderBottom: "1px solid " + T.line, boxShadow: dropOn === p.pj && dragPj !== p.pj ? "inset 0 2px 0 " + T.teal500 : "none", fontWeight: 700 }}>
+        style={{ display: "flex", height: ROW_H, background: on ? T.teal100 : T.surface, borderBottom: "1px solid " + T.line, boxShadow: dropOn === p.pj && dragPj !== p.pj ? "inset 0 2px 0 " + T.teal500 : "none", fontWeight: 600 }}>
         {cols.map(([c, w]) => {
           if (c === "id") return cell(c, w, <span style={{ fontSize: 11, color: T.ink300, fontFamily: T.fontMono, width: "100%", textAlign: "center" }}>{nums.pjId[p.pj]}</span>);
           if (c === "name") return cell(c, w, <>
             {!readOnly && <span role="button" tabIndex={0} {...dnd.dragProps({ t: "pj", pj: p.pj }, { ghost: el => el.closest(".pg-row") })} onClick={e => e.stopPropagation()} onKeyDown={e => { if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return; const q = plan.pjs[idx + (e.key === "ArrowDown" ? 1 : -1)]; if (q) { e.preventDefault(); onReorder(p.pj, q.pj); } }} aria-label={"Déplacer " + p.pj + " pour changer sa priorité (flèches haut / bas)"} title="Glisser pour changer la priorité (ou flèches haut / bas)" style={{ cursor: "grab", color: T.ink300, padding: "0 4px", fontSize: 13, letterSpacing: -2 }}>⋮⋮</span>}
             {/* v230 (demandé : « la priorité à gauche, et masquable comme le S/N ») */}
-            {showPrio && <span onClick={e => e.stopPropagation()} style={{ display: "inline-flex", width: 34, flex: "none" }}><EditCell disabled={readOnly} type="number" align="center" value={p.prio != null ? p.prio : ""} onCommit={v => go(setPrio(base, p.pj, v), { pj: p.pj, key: null, want: null })} display={p.prio != null ? "P" + p.prio : "P–"} title={"Priorité des tâches de " + p.pj + " : plus le numéro est grand, plus elles passent en premier (vide = sans priorité)"} style={{ fontSize: 10.5, fontWeight: 700, color: p.prio != null ? T.teal600 : T.ink300, width: "100%" }} /></span>}
+            {showPrio && <span onClick={e => e.stopPropagation()} style={{ display: "inline-flex", width: 34, flex: "none" }}><EditCell disabled={readOnly} type="number" align="center" value={p.prio != null ? p.prio : ""} onCommit={v => go(setPrio(base, p.pj, v), { pj: p.pj, key: null, want: null })} display={p.prio != null ? "P" + p.prio : "P–"} title={"Priorité des tâches de " + p.pj + " : plus le numéro est grand, plus elles passent en premier (vide = sans priorité)"} style={{ fontSize: 10.5, fontWeight: 600, color: p.prio != null ? T.teal600 : T.ink300, width: "100%" }} /></span>}
             <button aria-label={open ? "Replier " + p.pj : "Déplier " + p.pj} aria-expanded={open} onClick={e => { e.stopPropagation(); toggleExp(p.pj); }} className="pg-btn" style={{ width: 20, border: 0, background: "none", color: T.ink500, fontSize: 11, cursor: "pointer", padding: 0 }}>{open ? "▾" : "▸"}</button>
             <span style={{ fontFamily: T.fontMono, color: T.teal600, fontSize: 13 }}>{p.pj}</span>{showSn && <SerieTag pj={p.pj} size={9.5} />}
             <span style={{ fontSize: 12, color: T.ink500, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0, flex: 1 }}>{p.nomProjet || ""}</span>
@@ -322,19 +322,19 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
           {STEP_KIND[k] === "jalon" ? <span style={{ fontSize: 10.5, color: T.ink500, whiteSpace: "nowrap" }}>jalon</span>
             : <span style={{ fontSize: 10.5, color: T.ink500, whiteSpace: "nowrap", display: "inline-flex", gap: 4, alignItems: "center" }}>
               {/* v292 : la phase d'une tâche ajoutée se lit à la couleur de sa pastille (plus de « Production · » qui écrasait le nom) */}
-              {k === "tests" ? <button type="button" className="pg-btn" disabled={readOnly} title="Banc d'essai (cliquer pour changer)" onClick={e => { e.stopPropagation(); go(setBench(base, cal, p.pj, benchOf(p) === 2 ? 1 : 2), { pj: p.pj, key: null, want: null }); }} style={{ border: "1px solid " + T.line, background: T.surface, color: T.ink700, borderRadius: 8, fontSize: 10.5, fontWeight: 700, padding: "0 5px", cursor: readOnly ? "default" : "pointer", lineHeight: "16px" }}>Banc {benchOf(p)}</button> : null}
+              {k === "tests" ? <button type="button" className="pg-btn" disabled={readOnly} title="Banc d'essai (cliquer pour changer)" onClick={e => { e.stopPropagation(); go(setBench(base, cal, p.pj, benchOf(p) === 2 ? 1 : 2), { pj: p.pj, key: null, want: null }); }} style={{ border: "1px solid " + T.line, background: T.surface, color: T.ink700, borderRadius: 8, fontSize: 10.5, fontWeight: 600, padding: "0 5px", cursor: readOnly ? "default" : "pointer", lineHeight: "16px" }}>Banc {benchOf(p)}</button> : null}
               {readOnly ? <span>{resName(p, k)}</span> : <Pop width={240} align="left" trigger={(o, t) => <button type="button" className="pg-btn" aria-haspopup="menu" aria-expanded={o} onClick={e => { e.stopPropagation(); t(); }} title="Phase et ressource de la tâche" style={{ border: "1px dashed " + T.ink300, background: "transparent", color: T.ink700, borderRadius: 8, fontSize: 10.5, padding: "0 5px", cursor: "pointer", lineHeight: "16px", fontWeight: 600 }}>{resName(p, k)} ▾</button>}>
                 {close => { const st = p.steps[k] || {}, defRes = k === "tests" || st.phase === "tests" ? "testeur" : "atelier", curRes = st.res || defRes; const info = { pj: p.pj, key: null, want: null };
                   const opts = [...(k === "tests" ? [] : [["atelier", "Atelier"]]), ["testeur", "Testeur (à désigner)"], ...(testers || []).map(t => [t.id, t.name])];
                   return (<>
-                    {isCustomKey(k) && <><div style={{ fontSize: 11.5, fontWeight: 700, color: T.ink500, padding: "2px 12px 4px" }}>Phase</div>
+                    {isCustomKey(k) && <><div style={{ fontSize: 11.5, fontWeight: 600, color: T.ink500, padding: "2px 12px 4px" }}>Phase</div>
                       {PHASES.map(([v, l]) => <MenuItem key={v} onClick={() => { close(); go(setStepMeta(base, p.pj, k, { phase: v, ...(v === "tests" && curRes === "atelier" ? { res: "testeur" } : {}) }), info); }}>{(st.phase === v ? "✓ " : "") + l}</MenuItem>)}</>}
-                    <div style={{ fontSize: 11.5, fontWeight: 700, color: T.ink500, padding: "6px 12px 4px" }}>Ressource</div>
+                    <div style={{ fontSize: 11.5, fontWeight: 600, color: T.ink500, padding: "6px 12px 4px" }}>Ressource</div>
                     {opts.map(([v, l]) => <MenuItem key={v} onClick={() => { close(); go(setStepMeta(base, p.pj, k, { res: v }), info); }}>{(curRes === v ? "✓ " : "") + l}</MenuItem>)}
                   </>); }}
               </Pop>}
             </span>}
-          {rank ? <span title={"Ordre de passage : " + rank} style={{ fontSize: 10.5, fontWeight: 700, color: T.teal600, background: "rgba(46,125,154,.14)", borderRadius: 8, padding: "0 5px" }}>#{rank}</span> : null}
+          {rank ? <span title={"Ordre de passage : " + rank} style={{ fontSize: 10.5, fontWeight: 600, color: T.teal600, background: "rgba(46,125,154,.14)", borderRadius: 8, padding: "0 5px" }}>#{rank}</span> : null}
           <span style={{ flex: 1 }} />
           {!readOnly && <button className="pg-btn pg-more" aria-label={"Lier " + stepLabel(p, k) + " de " + p.pj + " à une autre tâche"} title="Lier à une autre tâche : cliquez ensuite la tâche qui doit suivre" onClick={e => { e.stopPropagation(); setLinkDlg(key); }} style={{...btn("sec","sm"),marginRight: 4}}>Lier</button>}
           {!readOnly && <button className="pg-btn pg-more" aria-label={"Supprimer l'étape " + stepLabel(p, k) + " de " + p.pj} title="Supprimer cette étape" onClick={async e => { e.stopPropagation(); if (await askConfirm({ title: "Supprimer l'étape « " + stepLabel(p, k) + " » de " + p.pj + " ?", message: "Ses liens sont supprimés aussi. Annuler (Ctrl + Z) reste possible.", confirmLabel: "Supprimer l'étape", danger: true })) go(removeStep(base, p.pj, k), { pj: p.pj, key: null, want: null }); }} style={{ border: 0, background: "none", color: T.red500, cursor: "pointer", fontSize: 13, padding: "0 6px" }}>✕</button>}
@@ -358,7 +358,7 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
       {/* tableau */}
       <div style={{ width: listOnly ? "100%" : LEFT_W, minWidth: LEFT_W, flexShrink: 0, position: "sticky", left: 0, zIndex: 6, background: T.card, borderRight: "2px solid " + T.line }}>
         <div style={{ height: HEAD_H, position: "sticky", top: 0, zIndex: 7, background: T.surface, borderBottom: "1px solid " + T.line, display: "flex", alignItems: "flex-end" }}>
-          {cols.map(([c, w]) => <div key={c} style={{ width: w, flex: "none", padding: "0 8px 8px", fontSize: 11.5, fontWeight: 700, color: T.ink500, textAlign: c === "dur" || c === "work" ? "right" : "left", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", boxSizing: "border-box" }}>{HEAD_LABEL[c]}</div>)}
+          {cols.map(([c, w]) => <div key={c} style={{ width: w, flex: "none", padding: "0 8px 8px", fontSize: 11.5, fontWeight: 600, color: T.ink500, textAlign: c === "dur" || c === "work" ? "right" : "left", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", boxSizing: "border-box" }}>{HEAD_LABEL[c]}</div>)}
         </div>
         {rows.list.map(leftRow)}
         {view === "both" && onListW && <div role="separator" aria-orientation="vertical" aria-label="Largeur de la liste : glisser, ou flèches gauche / droite" aria-valuenow={LEFT_W} aria-valuemin={LIST_W_MIN} aria-valuemax={LIST_W_MAX} tabIndex={0} className="pg-split" title="Glisser pour élargir ou réduire la liste (double-clic : largeur normale)"
@@ -369,7 +369,7 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
       {/* frise */}
       {!listOnly && <div style={{ width: W, flexShrink: 0, position: "relative" }}>
         <div style={{ height: HEAD_H, position: "sticky", top: 0, zIndex: 5, background: T.surface, borderBottom: "1px solid " + T.line }}>
-          {head.top.map((m, i) => <div key={i} style={{ position: "absolute", left: m.x, width: m.w, top: 0, height: HEAD_H / 2, borderLeft: "1px solid " + T.line, padding: "6px 8px", fontSize: 12, fontWeight: 700, color: T.ink700, whiteSpace: "nowrap", overflow: "hidden", boxSizing: "border-box" }}>{m.w > 70 ? m.label : ""}</div>)}
+          {head.top.map((m, i) => <div key={i} style={{ position: "absolute", left: m.x, width: m.w, top: 0, height: HEAD_H / 2, borderLeft: "1px solid " + T.line, padding: "6px 8px", fontSize: 12, fontWeight: 600, color: T.ink700, whiteSpace: "nowrap", overflow: "hidden", boxSizing: "border-box" }}>{m.w > 70 ? m.label : ""}</div>)}
           {head.bottom.map((m, i) => <div key={i} style={{ position: "absolute", left: m.x, width: m.w, top: HEAD_H / 2, height: HEAD_H / 2, borderLeft: "1px solid " + T.line, display: "flex", flexDirection: tl.zoom === "day" ? "column" : "row", alignItems: "center", justifyContent: tl.zoom === "day" ? "center" : "flex-start", paddingLeft: tl.zoom === "day" ? 0 : 6, fontSize: 11, color: m.we ? T.ink300 : T.ink500, fontWeight: m.cur || m.today ? 800 : 500, background: m.cur ? T.teal100 : "transparent", boxSizing: "border-box", overflow: "hidden", lineHeight: 1.1 }}>
             {tl.zoom === "day" && <span style={{ fontSize: 9, color: T.ink300 }}>{m.sub}</span>}<span style={m.today ? { background: T.teal500, color: "#fff", borderRadius: 999, padding: "0 5px" } : undefined}>{m.label}</span></div>)}
         </div>
@@ -388,7 +388,7 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
               return (<div key={"p" + r.p.pj} style={rowStyle}>
                 <div title={r.p.pj + " : " + fmtIso(startIso) + " → " + fmtIso(isoOfDay(b)) + (readOnly ? "" : "\nGlisser pour décaler tout le PJ")} onMouseDown={e => startDrag(e, { kind: "pj", pj: r.p.pj, startIso })} onClick={() => setSel({ pj: r.p.pj, step: null })}
                   style={{ position: "absolute", left: X(startIso), width: Math.max(px, (b - a + 1) * px), top: MID - 3, height: 6, borderRadius: 4, background: on ? T.ink700 : "#7D88AA", cursor: readOnly ? "default" : "grab" }} />
-                <span aria-hidden="true" style={{ position: "absolute", left: X(isoOfDay(b)) + px + 16, top: MID - 9, fontSize: 12, fontWeight: 700, color: T.ink900, whiteSpace: "nowrap", pointerEvents: "none" }}>{r.p.pj}{r.p.nomProjet ? <span style={{ fontWeight: 500, color: T.ink500 }}> · {r.p.nomProjet}</span> : null}</span>
+                <span aria-hidden="true" style={{ position: "absolute", left: X(isoOfDay(b)) + px + 16, top: MID - 9, fontSize: 12, fontWeight: 600, color: T.ink900, whiteSpace: "nowrap", pointerEvents: "none" }}>{r.p.pj}{r.p.nomProjet ? <span style={{ fontWeight: 500, color: T.ink500 }}> · {r.p.nomProjet}</span> : null}</span>
                 {ns.filter(n => n.ms).map(n => <span key={n.step} style={{ position: "absolute", left: X(n.start) + px / 2 - 6, top: MID - 6, width: 12, height: 12, transform: "rotate(45deg)", background: STEP_COLOR[n.step], border: "1px solid #fff", pointerEvents: "none" }} />)}
               </div>);
             }
@@ -402,7 +402,7 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
                 ? <div title={tipTxt} onMouseDown={e => startDrag(e, { kind: "move", pj: r.p.pj, step: r.k, node: n })} onClick={() => pick(r.p.pj, r.k)} onDoubleClick={e => { if (!readOnly) setQe({ pj: r.p.pj, step: r.k, x: e.clientX, y: e.clientY }); }} data-key={key} className="pg-bar"
                     style={{ position: "absolute", left: X(n.start) + px / 2 - 8, top: MID - Math.min(8, BAR_H / 2), width: Math.min(16, BAR_H), height: Math.min(16, BAR_H), transform: "rotate(45deg)", background: col, border: on ? "2px solid " + T.ink900 : "1px solid #fff", outline: ch ? "2px dashed #E08A00" : "none", outlineOffset: 2, boxSizing: "border-box", cursor: readOnly ? "default" : "grab", borderRadius: 4 }} />
                 : <div title={tipTxt} onMouseDown={e => startDrag(e, { kind: "move", pj: r.p.pj, step: r.k, node: n })} onClick={() => pick(r.p.pj, r.k)} onDoubleClick={e => { if (!readOnly) setQe({ pj: r.p.pj, step: r.k, x: e.clientX, y: e.clientY }); }} data-key={key} className="pg-bar"
-                    style={{ position: "absolute", left: X(n.start), width: Math.max(px, (dayNum(n.finish) - dayNum(n.start) + 1) * px), top: BAR_T, height: BAR_H, borderRadius: 4, background: col, outline: on ? "2px solid " + T.ink900 : ch ? "2px dashed #E08A00" : "none", outlineOffset: 1, cursor: readOnly ? "default" : "grab", display: "flex", alignItems: "center", justifyContent: "center", color: inkOn(col), fontSize: 11, fontWeight: 700, overflow: "hidden", boxSizing: "border-box" }}>
+                    style={{ position: "absolute", left: X(n.start), width: Math.max(px, (dayNum(n.finish) - dayNum(n.start) + 1) * px), top: BAR_T, height: BAR_H, borderRadius: 4, background: col, outline: on ? "2px solid " + T.ink900 : ch ? "2px dashed #E08A00" : "none", outlineOffset: 1, cursor: readOnly ? "default" : "grab", display: "flex", alignItems: "center", justifyContent: "center", color: inkOn(col), fontSize: 11, fontWeight: 600, overflow: "hidden", boxSizing: "border-box" }}>
                     {fits ? <span style={{ pointerEvents: "none", padding: "0 8px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{lab}</span> : bw >= 40 ? <span style={{ pointerEvents: "none", fontFamily: T.fontMono }}>{n.noDur ? "?" : n.dur + " j"}</span> : null}
                     {!readOnly && <div onMouseDown={e => startDrag(e, { kind: "resize", pj: r.p.pj, step: r.k, node: n })} style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 7, cursor: "ew-resize", background: "rgba(0,0,0,.25)" }} />}
                   </div>}
@@ -433,9 +433,9 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
       onRemove={id => go(removeLink(base, id), null)} labOf={labOf} />}
     {linkFrom && <div role="status" style={{ position: "fixed", left: "50%", top: 84, transform: "translateX(-50%)", zIndex: 10005, background: T.ink900, color: T.card, borderRadius: 12, padding: "8px 14px", fontSize: 13, fontWeight: 600, boxShadow: T.shadowLg, display: "flex", gap: 10, alignItems: "center" }}>
       Cliquez la tâche (ligne ou barre) qui doit suivre « {labOf(linkFrom)} »
-      <button type="button" onClick={() => setLinkFrom(null)} style={{ border: "1px solid " + T.card, background: "transparent", color: T.card, borderRadius: 8, padding: "2px 8px", cursor: "pointer", fontWeight: 700 }}>Annuler</button>
+      <button type="button" onClick={() => setLinkFrom(null)} style={{ border: "1px solid " + T.card, background: "transparent", color: T.card, borderRadius: 8, padding: "2px 8px", cursor: "pointer", fontWeight: 600 }}>Annuler</button>
     </div>}
-    {dragging && tip && <div ref={tipRef} style={{ position: "fixed", left: 0, top: 0, zIndex: 10001, background: T.ink900, color: T.card, borderRadius: 8, padding: "3px 8px", fontSize: 12, fontWeight: 700, pointerEvents: "none" }}>{tip}</div>}
+    {dragging && tip && <div ref={tipRef} style={{ position: "fixed", left: 0, top: 0, zIndex: 10001, background: T.ink900, color: T.card, borderRadius: 8, padding: "3px 8px", fontSize: 12, fontWeight: 600, pointerEvents: "none" }}>{tip}</div>}
   </div>);
 }
 
@@ -448,7 +448,7 @@ function LinkDialog({ nodeKey_, plan, base, pjs, onClose, onAdd, onRemove, onPic
   const list = (pjs && pjs.length ? pjs : plan.pjs);
   const opts = <>{list.map(p => <optgroup key={p.pj} label={p.pj + (p.nomProjet ? " · " + p.nomProjet : "")}>{stepKeysOf(p).map(k => { const key = nodeKey(p.pj, k); return key === nodeKey_ ? null : <option key={key} value={key}>{p.pj + " · " + stepLabel(p, k)}</option>; })}</optgroup>)}</>;
   const mine = allLinks(base).filter(l => !l.seq && (l.from === nodeKey_ || l.to === nodeKey_));
-  const L = { display: "flex", flexDirection: "column", gap: 4, fontSize: 12.5, fontWeight: 700, color: T.ink700 };
+  const L = { display: "flex", flexDirection: "column", gap: 4, fontSize: 12.5, fontWeight: 600, color: T.ink700 };
   const sel = { height: 34, border: "1px solid " + T.line, borderRadius: 8, background: T.card, color: T.ink900, fontSize: 13, padding: "0 8px", fontFamily: T.font };
   const ok = () => { if (pred) onAdd(pred, nodeKey_, type, lag); if (succ) onAdd(nodeKey_, succ, type, lag); setPred(""); setSucc(""); };
   return (<div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,20,30,.45)", zIndex: 10010, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
@@ -464,12 +464,12 @@ function LinkDialog({ nodeKey_, plan, base, pjs, onClose, onAdd, onRemove, onPic
         </div>
       </div>
       <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-        <button type="button" disabled={!pred && !succ} onClick={ok} style={{ border: "none", borderRadius: 8, padding: "8px 14px", background: pred || succ ? T.ink900 : T.surfaceAlt, color: pred || succ ? T.card : T.ink500, fontWeight: 700, cursor: pred || succ ? "pointer" : "default", minHeight: 34 }}>Créer le lien</button>
+        <button type="button" disabled={!pred && !succ} onClick={ok} style={{ border: "none", borderRadius: 8, padding: "8px 14px", background: pred || succ ? T.ink900 : T.surfaceAlt, color: pred || succ ? T.card : T.ink500, fontWeight: 600, cursor: pred || succ ? "pointer" : "default", minHeight: 34 }}>Créer le lien</button>
         <button className="e-btn e-btn-sec" type="button" onClick={onPick} style={{...btn("sec","md")}}>Ou cliquer la tâche suivante dans le Gantt</button>
         <button type="button" onClick={onClose} style={{ marginLeft: "auto", border: "none", background: "transparent", color: T.ink500, cursor: "pointer", minHeight: 34 }}>Fermer</button>
       </div>
       <div style={{ borderTop: "1px solid " + T.line, marginTop: 14, paddingTop: 10 }}>
-        <div style={{ fontSize: 12.5, fontWeight: 700, color: T.ink700, marginBottom: 6 }}>Liens de cette tâche ({mine.length})</div>
+        <div style={{ fontSize: 12.5, fontWeight: 600, color: T.ink700, marginBottom: 6 }}>Liens de cette tâche ({mine.length})</div>
         {mine.length === 0 && <div style={{ fontSize: 12.5, color: T.ink500 }}>Aucun lien pour l'instant.</div>}
         {mine.map(l => <div key={l.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, padding: "4px 0", minHeight: 30 }}>
           <span style={{ flex: 1, minWidth: 0 }}>{labOf(l.from)} <span style={{ color: T.ink500 }}>→</span> {labOf(l.to)} <span style={{ color: T.ink500, fontSize: 12 }}>({(LTYPES.find(t => t[0] === l.type) || LTYPES[0])[1]}{l.lag ? ", " + (l.lag > 0 ? "+" : "") + l.lag + " j" : ""})</span></span>

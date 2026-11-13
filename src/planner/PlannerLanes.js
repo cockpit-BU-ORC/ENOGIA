@@ -40,14 +40,14 @@ function StepDialog({ it, step, plan, cal, onApply, onClose }) {
   };
   const fld = { padding: "6px 8px", minHeight: 32, border: "1px solid " + C.line, borderRadius: 8, background: C.bg, color: C.ink, fontFamily: FONT, fontSize: 13, boxSizing: "border-box", width: "100%" };
   const lab = { display: "flex", flexDirection: "column", gap: 4, fontSize: 12, fontWeight: 600, color: C.ink3 };
-  const btn = primary => ({ minHeight: 34, padding: "0 14px", borderRadius: 8, border: primary ? "none" : "1px solid " + C.line, background: primary ? C.ink : C.bg, color: primary ? C.bg : C.ink2, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: FONT });
+  const btn = primary => ({ minHeight: 34, padding: "0 14px", borderRadius: 8, border: primary ? "none" : "1px solid " + C.line, background: primary ? C.ink : C.bg, color: primary ? C.bg : C.ink2, fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: FONT });
   const unit = step === "tests" ? "heures d'essai" : "heures atelier";
   // rendu dans <body> : à l’intérieur de la zone qui défile du planificateur, la fenêtre se plaçait hors de l’écran
   return createPortal(<div onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 10005, background: "rgba(8,12,28,.4)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
     <div role="dialog" aria-modal="true" aria-label={"Modifier " + it.pj + " · " + STEP_LABEL[step]} style={{ width: "min(420px,100%)", background: C.bg, color: C.ink, border: "1px solid " + C.line, borderRadius: 12, boxShadow: T.shadowLg, fontFamily: FONT }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderBottom: "1px solid " + C.line }}>
         <span style={{ width: 12, height: 12, borderRadius: 4, background: STEP_COLOR[step], flex: "none" }} />
-        <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontWeight: 700, fontSize: 15 }}><span style={{ fontFamily: MONO }}>{it.pj}</span> · {STEP_LABEL[step]}</div>
+        <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontWeight: 600, fontSize: 15 }}><span style={{ fontFamily: MONO }}>{it.pj}</span> · {STEP_LABEL[step]}</div>
           <div style={{ fontSize: 12, color: C.ink3 }}>Actuellement : {fmtIso(n.start)}{ms ? "" : " → " + fmtIso(n.finish) + " · " + n.dur + " j ouvrés"}{w0 != null ? " · " + w0 + " h" : ""}</div>
           <div style={{ fontSize: 12, color: n.snet ? C.ink : C.ink3, marginTop: 2 }}>{n.snet ? "📌 " : ""}{startReason(plan, n)}</div></div>
         <button type="button" onClick={onClose} aria-label="Fermer" style={{ ...btn(false), padding: "0 10px" }}>×</button>

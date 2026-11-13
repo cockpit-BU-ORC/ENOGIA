@@ -62,7 +62,7 @@ export function PlannerLoad({ plan, load, cal, tl, scrollX, leftW, standalone, m
         <span role="img" aria-label={"Charge des " + next.length + " prochaines périodes : " + next.map(b => b.label + " " + (b.cap > 0 ? Math.round(b.hours / b.cap * 100) : 0) + " %").join(", ")} style={{ display: "inline-flex", gap: 2 }}>
           {next.map(b => { const r = b.cap > 0 ? b.hours / b.cap : 0; return <span key={b.key} title={b.label + " · " + Math.round(b.hours) + " h / " + Math.round(b.cap) + " h (" + Math.round(r * 100) + " %)"} style={{ width: 16, height: 16, borderRadius: 4, background: r > 1 ? T.red500 : r >= 0.9 ? T.amber500 : T.line }} />; })}
         </span>
-        <span style={{ fontSize: 12.5, fontWeight: 700, color: over.length ? T.red500 : T.emerald600 }}>{over.length ? over.length + " " + (mode === "month" ? "mois" : "semaine" + (over.length > 1 ? "s" : "")) + " en surcharge · pic " + Math.round(peak * 100) + " %" + (pk ? " (" + pk.label + ")" : "") : "Aucune surcharge"}</span>
+        <span style={{ fontSize: 12.5, fontWeight: 600, color: over.length ? T.red500 : T.emerald600 }}>{over.length ? over.length + " " + (mode === "month" ? "mois" : "semaine" + (over.length > 1 ? "s" : "")) + " en surcharge · pic " + Math.round(peak * 100) + " %" + (pk ? " (" + pk.label + ")" : "") : "Aucune surcharge"}</span>
         <span style={{ flex: 1 }} />
         {!readOnly && <button className="pg-btn" onClick={() => onPropose("level")} style={{...btn("sec","sm")}}>Niveler…</button>}
         <button className="pg-btn" onClick={() => setFolded(false)} aria-expanded="false" style={{...btn("sec","sm")}}>Déplier ▴</button>
@@ -79,9 +79,9 @@ export function PlannerLoad({ plan, load, cal, tl, scrollX, leftW, standalone, m
         <NumField label="Heures par personne et par semaine" value={cap.hours} width={58} onCommit={v => onCap({ hours: Math.max(0, Number(v) || 0) })} /> h =
         <b style={{ fontFamily: T.fontMono, color: T.ink900 }}>{Math.round(capW)} h / sem.</b></span>
       <div role="group" aria-label="Période" style={{ display: "inline-flex", border: "1px solid " + T.line, borderRadius: 8, overflow: "hidden" }}>
-        {[["week", "Semaine"], ["month", "Mois"]].map(([k, l]) => <button key={k} aria-pressed={mode === k} onClick={() => setMode(k)} className="pg-btn" style={{ border: 0, padding: "5px 12px", fontSize: 12.5, fontWeight: 700, cursor: "pointer", background: mode === k ? T.ink900 : T.card, color: mode === k ? T.card : T.ink700 }}>{l}</button>)}
+        {[["week", "Semaine"], ["month", "Mois"]].map(([k, l]) => <button key={k} aria-pressed={mode === k} onClick={() => setMode(k)} className="pg-btn" style={{ border: 0, padding: "5px 12px", fontSize: 12.5, fontWeight: 600, cursor: "pointer", background: mode === k ? T.ink900 : T.card, color: mode === k ? T.card : T.ink700 }}>{l}</button>)}
       </div>
-      <span style={{ fontSize: 12.5, fontWeight: 700, color: over.length ? T.red500 : T.emerald600 }}>
+      <span style={{ fontSize: 12.5, fontWeight: 600, color: over.length ? T.red500 : T.emerald600 }}>
         {over.length ? "▲ " + over.length + " " + (mode === "month" ? "mois" : "semaine" + (over.length > 1 ? "s" : "")) + " en surcharge (pic " + Math.round(peak * 100) + " %)" : "✓ Aucune surcharge"}</span>
       <span style={{ fontSize: 12, color: T.ink500 }}>{Math.round(free)} h libres sur la période</span>
       {!readOnly && mode === "week" && <span style={{ fontSize: 12, color: T.ink500 }}>{nSpecial ? nSpecial + " semaine" + (nSpecial > 1 ? "s" : "") + " à capacité spéciale · " : ""}cliquez une semaine pour changer sa capacité</span>}
@@ -121,7 +121,7 @@ export function PlannerLoad({ plan, load, cal, tl, scrollX, leftW, standalone, m
               <div style={{ position: "absolute", left: 0, right: 0, bottom: PAD_B, height: hCap, border: "1.5px " + (b.special ? "dashed " + T.amber600 : "solid " + T.ink500), borderRadius: 4, background: "rgba(23,115,79,.07)", boxSizing: "border-box" }} />
               <div style={{ position: "absolute", left: 3, right: 3, bottom: PAD_B, height: inCap, background: b.over ? "#B3261E" : "#17734F", borderRadius: "2px 2px 0 0", opacity: 0.92 }} />
               {ex > 0 && <div style={{ position: "absolute", left: 3, right: 3, bottom: PAD_B + inCap, height: ex, background: "#B3261E", borderRadius: "3px 3px 0 0", backgroundImage: "repeating-linear-gradient(45deg,rgba(255,255,255,.35) 0 3px,transparent 3px 6px)" }} />}
-              {bw >= 34 && b.hours > 0 && <div style={{ position: "absolute", left: 0, right: 0, bottom: PAD_B + Math.max(hBar, hCap) + 2, textAlign: "center", fontSize: 11, fontWeight: 700, fontFamily: T.fontMono, color: b.over ? T.red500 : T.ink700, whiteSpace: "nowrap" }}>{b.over ? "▲ " : ""}{Math.round(b.hours)}{bw >= 60 ? " / " + Math.round(b.cap) : ""}</div>}
+              {bw >= 34 && b.hours > 0 && <div style={{ position: "absolute", left: 0, right: 0, bottom: PAD_B + Math.max(hBar, hCap) + 2, textAlign: "center", fontSize: 11, fontWeight: 600, fontFamily: T.fontMono, color: b.over ? T.red500 : T.ink700, whiteSpace: "nowrap" }}>{b.over ? "▲ " : ""}{Math.round(b.hours)}{bw >= 60 ? " / " + Math.round(b.cap) : ""}</div>}
             </div>);
           })}
           <div title="Aujourd'hui" style={{ position: "absolute", left: (tl.today - tl.lo) * tl.px + tl.px / 2 - 1, top: 0, bottom: 0, width: 2, background: "#CB4848", opacity: 0.6, pointerEvents: "none" }} />
@@ -130,10 +130,10 @@ export function PlannerLoad({ plan, load, cal, tl, scrollX, leftW, standalone, m
       </div>
     </div>
     {hb && <div style={{ position: "fixed", left: Math.min(hov.x + 14, window.innerWidth - 270), top: Math.max(8, hov.y - 150), width: 252, zIndex: 10002, pointerEvents: "none", background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, padding: "10px 12px", fontSize: 12.5, boxShadow: T.shadowLg }}>
-      <div style={{ fontWeight: 800, marginBottom: 4 }}>{hb.label}</div>
+      <div style={{ fontWeight: 600, marginBottom: 4 }}>{hb.label}</div>
       <div style={{ fontFamily: T.fontMono }}>{Math.round(hb.hours)} h planifiées / {Math.round(hb.cap)} h ({hb.days} j ouvrés)</div>
-      {hb.special && <div style={{ color: T.amber600, fontWeight: 700 }}>Capacité spéciale pour cette semaine</div>}
-      <div style={{ fontWeight: 700, color: hb.over ? T.red500 : T.emerald600, margin: "2px 0 6px" }}>{hb.over ? "Dépassement de " + Math.round(hb.hours - hb.cap) + " h" : "Il reste " + Math.round(hb.cap - hb.hours) + " h"}</div>
+      {hb.special && <div style={{ color: T.amber600, fontWeight: 600 }}>Capacité spéciale pour cette semaine</div>}
+      <div style={{ fontWeight: 600, color: hb.over ? T.red500 : T.emerald600, margin: "2px 0 6px" }}>{hb.over ? "Dépassement de " + Math.round(hb.hours - hb.cap) + " h" : "Il reste " + Math.round(hb.cap - hb.hours) + " h"}</div>
       {Object.entries(hb.pjs).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([pj, h]) => <div key={pj} style={{ display: "flex", justifyContent: "space-between", fontFamily: T.fontMono, fontSize: 12 }}><span>{pj}</span><span>{Math.round(h)} h</span></div>)}
     </div>}
     {ed && <WeekCapEditor ed={ed} normal={Math.round(load.capDay * 5)} onClose={() => setEd(null)} onSave={h => { onCapWeek(ed.week, h); setEd(null); }} />}
@@ -146,7 +146,7 @@ function WeekCapEditor({ ed, normal, onClose, onSave }) {
   useEffect(() => { const k = e => { if (e.key === "Escape") onClose(); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose]);
   const ok = () => { const n = Number(String(v).replace(",", ".")); if (!(n >= 0)) return; onSave(n); };
   return (<div role="dialog" aria-label={"Capacité de la " + ed.label.toLowerCase()} style={{ position: "fixed", left: Math.max(8, Math.min(ed.x - 140, window.innerWidth - 300)), top: Math.max(8, ed.y - 196), width: 288, zIndex: 10003, background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, padding: "12px 14px", fontSize: 13 }}>
-    <div style={{ fontWeight: 700, marginBottom: 4 }}>{ed.label}</div>
+    <div style={{ fontWeight: 600, marginBottom: 4 }}>{ed.label}</div>
     <div style={{ color: T.ink500, fontSize: 12, marginBottom: 10 }}>Capacité normale : {normal} h. Saisissez les heures disponibles cette semaine (absences, renfort, fermeture…).</div>
     <label style={{ display: "flex", alignItems: "center", gap: 8 }}>Capacité
       <input autoFocus type="number" min={0} value={v} onChange={e => setV(e.target.value)} onKeyDown={e => { if (e.key === "Enter") ok(); }} className="pg-in" style={{ width: 90, height: 32, padding: "0 8px", border: "1px solid " + T.line, borderRadius: 8, background: T.card, color: T.ink900, fontFamily: T.fontMono, fontSize: 13, textAlign: "right" }} /> h</label>

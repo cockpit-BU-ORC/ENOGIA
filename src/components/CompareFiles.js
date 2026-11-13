@@ -14,7 +14,7 @@ function Drop({ label, file, onFile }) {
   return (<div onDragOver={e => { e.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)} onDrop={e => { e.preventDefault(); setOver(false); const f = e.dataTransfer.files[0]; if (f) onFile(f); }}
     onClick={() => document.getElementById(id).click()}
     style={{ flex: "1 1 240px", minWidth: 220, border: "2px dashed " + (over ? T.teal500 : file ? T.emerald500 : T.ink100), borderRadius: 12, padding: "12px 16px", background: over ? T.teal100 : T.surface, cursor: "pointer", textAlign: "center" }}>
-    <div style={{fontFamily:T.font,fontSize:12,fontWeight:700,color:T.accentInk}}>{label}</div>
+    <div style={{fontFamily:T.font,fontSize:12,fontWeight:600,color:T.accentInk}}>{label}</div>
     <div style={{ fontSize: FZ.sm, color: file ? T.ink900 : T.ink300, fontWeight: file ? 600 : 400, marginTop: 5, wordBreak: "break-all" }}>{file ? file.name : "Glisser un fichier ou cliquer"}</div>
     <input id={id} type="file" accept=".xlsx,.xls,.txt,.tsv" style={{ display: "none" }} onChange={e => { const f = e.target.files[0]; if (f) onFile(f); e.target.value = ""; }} />
   </div>);
@@ -47,7 +47,7 @@ export function CompareFiles({ onOpenPj, defaultOpen }) {
         <Drop label="Nouveau fichier" file={newF} onFile={f => { setNewF(f); setRes(null); }} />
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <button disabled={!ok} onClick={run} style={{ border: "none", borderRadius: 8, padding: "8px 16px", fontWeight: 700, fontSize: FZ.sm, fontFamily: T.font, color: "#fff", cursor: ok ? "pointer" : "default", background: ok ? T.navy700 : T.ink100 }}>{busy ? "Comparaison…" : "Comparer"}</button>
+        <button disabled={!ok} onClick={run} style={{ border: "none", borderRadius: 8, padding: "8px 16px", fontWeight: 600, fontSize: FZ.sm, fontFamily: T.font, color: "#fff", cursor: ok ? "pointer" : "default", background: ok ? T.navy700 : T.ink100 }}>{busy ? "Comparaison…" : "Comparer"}</button>
         <span style={{ fontSize: FZ.xs, color: T.ink500 }}>Les fichiers restent dans votre navigateur : aucune donnée du site n'est modifiée.</span>
       </div>
       {err && <div style={{ marginTop: 10, color: T.red500, background: T.red100, borderRadius: 8, padding: "8px 12px", fontSize: FZ.sm }}>{err}</div>}

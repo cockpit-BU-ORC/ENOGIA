@@ -52,12 +52,12 @@ export function PeopleRoles({ profiles, saveProfiles, data }) {
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
         <input value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher une personne" aria-label="Rechercher une personne" style={{ ...field(), flex: "1 1 200px" }} />
         <input value={newEmail} onChange={e => { setNewEmail(e.target.value); setErr(""); }} onKeyDown={e => { if (e.key === "Enter") add(); }} placeholder="prenom.nom@enogia.com" aria-label="Ajouter une personne par e-mail" style={{ ...field(), flex: "1 1 220px" }} />
-        <button type="button" onClick={add} style={{ ...field(), background: T.ink900, color: T.card, border: "none", fontWeight: 700, cursor: "pointer" }}>Ajouter</button>
-        <button type="button" onClick={() => { setBulk(bulk === null ? "" : null); setBulkMsg(""); }} aria-expanded={bulk !== null} style={{ ...field(), cursor: "pointer", fontWeight: 700, color: T.ink700 }}>Coller une liste</button>
+        <button type="button" onClick={add} style={{ ...field(), background: T.ink900, color: T.card, border: "none", fontWeight: 600, cursor: "pointer" }}>Ajouter</button>
+        <button type="button" onClick={() => { setBulk(bulk === null ? "" : null); setBulkMsg(""); }} aria-expanded={bulk !== null} style={{ ...field(), cursor: "pointer", fontWeight: 600, color: T.ink700 }}>Coller une liste</button>
         {bulk !== null && <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 6 }}>
           <textarea value={bulk} onChange={e => { setBulk(e.target.value); setBulkMsg(""); }} rows={6} aria-label="Liste de personnes à ajouter" placeholder={"Une personne par ligne :\nPrénom NOM <prenom.nom@enogia.com>\nou simplement prenom.nom@enogia.com"} style={{ ...field(), width: "100%", fontFamily: T.fontMono, fontSize: FZ.xs, resize: "vertical" }} />
           <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-            <button type="button" onClick={addBulk} style={{ ...field(), background: T.ink900, color: T.card, border: "none", fontWeight: 700, cursor: "pointer" }}>Ajouter {parsePeopleList(bulk).length || ""} personne{parsePeopleList(bulk).length > 1 ? "s" : ""}</button>
+            <button type="button" onClick={addBulk} style={{ ...field(), background: T.ink900, color: T.card, border: "none", fontWeight: 600, cursor: "pointer" }}>Ajouter {parsePeopleList(bulk).length || ""} personne{parsePeopleList(bulk).length > 1 ? "s" : ""}</button>
             <span style={{ fontSize: FZ.xs, color: T.ink500 }}>Seules les adresses @enogia.com sont gardées. Les personnes ajoutées peuvent être taguées avant leur première connexion.</span>
           </div>
         </div>}
@@ -69,7 +69,7 @@ export function PeopleRoles({ profiles, saveProfiles, data }) {
       </div>
     </div>
     <div style={{ background: T.card, borderRadius: 12, border: "1px solid " + T.line, overflow: "hidden" }}>
-      {shown.length === 0 && rf !== "*" && <div style={{ padding: 16, fontSize: FZ.sm, color: T.ink500 }}>Aucune personne avec ce rôle.</div>}
+      {shown.length === 0 && rf !== "*" && <div style={{ padding: 16, fontSize: FZ.sm, color: T.ink500 }}>Aucune personne avec ce rôle</div>}
       {shown.length === 0 && rf === "*" && <div style={{ padding: 16, fontSize: FZ.sm, color: T.ink500 }}>Aucune personne. Les comptes apparaissent ici après leur première connexion, ou ajoutez-les par e-mail.</div>}
       {shown.map((p, i) => {
         const pr = profileOf(profiles, p.email), mine = pjsOfProfile(pr, rows), isOpen = open === p.email;
@@ -77,34 +77,34 @@ export function PeopleRoles({ profiles, saveProfiles, data }) {
           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "4px 14px", minHeight: 40, flexWrap: "wrap" }}>
             {/* v283 (audit apple-design, lot 2) : une ligne par personne — nom puis adresse en gris */}
             <div style={{ flex: "1 1 260px", minWidth: 0, display: "flex", alignItems: "baseline", gap: 8, overflow: "hidden" }}>
-              <span style={{ fontSize: FZ.sm, fontWeight: 700, color: T.ink900, whiteSpace: "nowrap" }}>{p.name}</span>
+              <span style={{ fontSize: FZ.sm, fontWeight: 600, color: T.ink900, whiteSpace: "nowrap" }}>{p.name}</span>
               <span title={p.email} style={{ fontSize: FZ.xs, color: T.ink500, fontFamily: T.fontMono, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{p.email}</span>
             </div>
             <select value={pr.role} onChange={e => save(p.email, { role: e.target.value, name: pr.name || p.name })} aria-label={"Rôle de " + p.name} style={{ ...field(), minWidth: 170 }}>
               <option value="">Automatique</option>
               {ROLES.map(([id, l]) => <option key={id} value={id}>{l}</option>)}
             </select>
-            <button type="button" onClick={() => setOpen(isOpen ? null : p.email)} aria-expanded={isOpen} style={{ ...field(), cursor: "pointer", fontWeight: 700, color: T.ink700, minWidth: 120 }}>Accueil · {mine.length} PJ {isOpen ? "▴" : "▾"}</button>
-            {lc(p.email) !== lc(ctx.me) && <button type="button" onClick={() => remove(p)} aria-label={"Retirer " + p.name} title="Retirer de la liste" style={{ ...field(), cursor: "pointer", color: T.red500, fontWeight: 700, minWidth: 32, padding: "6px 8px" }}>Retirer</button>}
+            <button type="button" onClick={() => setOpen(isOpen ? null : p.email)} aria-expanded={isOpen} style={{ ...field(), cursor: "pointer", fontWeight: 600, color: T.ink700, minWidth: 120 }}>Accueil · {mine.length} PJ {isOpen ? "▴" : "▾"}</button>
+            {lc(p.email) !== lc(ctx.me) && <button type="button" onClick={() => remove(p)} aria-label={"Retirer " + p.name} title="Retirer de la liste" style={{ ...field(), cursor: "pointer", color: T.red500, fontWeight: 600, minWidth: 32, padding: "6px 8px" }}>Retirer</button>}
           </div>
           {isOpen && <div style={{ padding: "4px 14px 14px", display: "flex", flexDirection: "column", gap: 10, background: T.surface }}>
             {/* v191 : le super admin choisit les blocs de l'accueil de chaque personne (plus de sélecteur sur l'accueil lui-même) */}
             <div>
-              <div style={{ fontSize: FZ.xs, fontWeight: 700, color: T.ink700, margin: "8px 0 6px" }}>Blocs de son accueil</div>
+              <div style={{ fontSize: FZ.xs, fontWeight: 600, color: T.ink700, margin: "8px 0 6px" }}>Blocs de son accueil</div>
               {!pr.role ? <span style={{ fontSize: FZ.xs, color: T.ink500 }}>Choisissez d'abord un rôle : « Automatique » garde l'accueil général.</span>
                 : <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>{(ROLE_BLOCKS[pr.role] || []).map(([id, l]) => { const all = (ROLE_BLOCKS[pr.role] || []).map(x => x[0]), cur = pr.blocks || all, on = cur.includes(id); return (
                   <button key={id} type="button" aria-pressed={on} onClick={() => save(p.email, { name: pr.name || p.name, blocks: on ? cur.filter(x => x !== id) : [...cur, id] })} style={chip(on)}>{on ? "✓ " : ""}{l}</button>); })}</div>}
             </div>
             <div>
-              <div style={{ fontSize: FZ.xs, fontWeight: 700, color: T.ink700, margin: "8px 0 6px" }}>Tous les PJ d'un chef de projet</div>
+              <div style={{ fontSize: FZ.xs, fontWeight: 600, color: T.ink700, margin: "8px 0 6px" }}>Tous les PJ d'un chef de projet</div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {chefs.length === 0 && <span style={{ fontSize: FZ.xs, color: T.ink500 }}>Aucun chef de projet renseigné dans les fiches.</span>}
+                {chefs.length === 0 && <span style={{ fontSize: FZ.xs, color: T.ink500 }}>Aucun chef de projet renseigné dans les fiches</span>}
                 {chefs.map(c => { const on = pr.chefs.map(lc).includes(lc(c.name)); return (
                   <button key={c.name} type="button" aria-pressed={on} onClick={() => save(p.email, { name: pr.name || p.name, chefs: on ? pr.chefs.filter(x => lc(x) !== lc(c.name)) : [...pr.chefs, c.name] })} style={chip(on)}>{c.name} <span style={{ fontWeight: 500, color: on ? T.teal600 : T.ink500 }}>{c.n}</span></button>); })}
               </div>
             </div>
             <div>
-              <div style={{ fontSize: FZ.xs, fontWeight: 700, color: T.ink700, margin: "0 0 6px" }}>PJ ajoutés un par un</div>
+              <div style={{ fontSize: FZ.xs, fontWeight: 600, color: T.ink700, margin: "0 0 6px" }}>PJ ajoutés un par un</div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
                 {pr.pjs.map(pj => <span key={pj} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><PjPlate pj={pj} /><button type="button" aria-label={"Retirer " + pj} onClick={() => save(p.email, { pjs: pr.pjs.filter(x => x !== pj) })} style={{ border: "none", background: "transparent", color: T.ink500, cursor: "pointer", minWidth: 24, minHeight: 24, fontSize: 14 }}>×</button></span>)}
                 <input list={"pjs-" + i} placeholder="Ajouter un PJ" aria-label={"Ajouter un PJ à " + p.name} style={{ ...field(), width: 150 }}
@@ -118,10 +118,10 @@ export function PeopleRoles({ profiles, saveProfiles, data }) {
       })}
     </div>
     {removed.length > 0 && <div style={{ background: T.card, borderRadius: 12, border: "1px solid " + T.line, overflow: "hidden" }}>
-      <button type="button" onClick={() => setShowRemoved(v => !v)} aria-expanded={showRemoved} style={{ width: "100%", textAlign: "left", border: "none", background: "transparent", padding: "10px 14px", cursor: "pointer", fontFamily: T.font, fontSize: FZ.sm, fontWeight: 700, color: T.ink700, minHeight: 36 }}>Personnes retirées ({removed.length}) {showRemoved ? "▴" : "▾"}</button>
+      <button type="button" onClick={() => setShowRemoved(v => !v)} aria-expanded={showRemoved} style={{ width: "100%", textAlign: "left", border: "none", background: "transparent", padding: "10px 14px", cursor: "pointer", fontFamily: T.font, fontSize: FZ.sm, fontWeight: 600, color: T.ink700, minHeight: 36 }}>Personnes retirées ({removed.length}) {showRemoved ? "▴" : "▾"}</button>
       {showRemoved && removed.map(p => <div key={p.email} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 14px", borderTop: "1px solid " + T.line }}>
         <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: FZ.sm, color: T.ink700 }}>{p.name || nameFromEmail(p.email)}</div><div style={{ fontSize: FZ.xs, color: T.ink500, fontFamily: T.fontMono }}>{p.email}</div></div>
-        <button type="button" onClick={() => saveProfiles(removePerson(profiles, p.email, false))} style={{ ...field(), cursor: "pointer", fontWeight: 700, color: T.teal600 }}>Rétablir</button>
+        <button type="button" onClick={() => saveProfiles(removePerson(profiles, p.email, false))} style={{ ...field(), cursor: "pointer", fontWeight: 600, color: T.teal600 }}>Rétablir</button>
       </div>)}
     </div>}
   </div>);

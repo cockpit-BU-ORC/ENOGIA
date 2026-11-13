@@ -10,10 +10,10 @@ export class PageGuard extends React.Component {
   render() {
     if (!this.state.err) return this.props.children;
     return (<div role="alert" style={{ border: "1px solid " + T.line, borderLeft: "4px solid " + T.red500, borderRadius: 12, background: T.card, padding: "14px 16px", fontFamily: T.font, color: T.ink900, maxWidth: 720 }}>
-      <div style={{ fontWeight: 700, fontSize: FZF.md, marginBottom: 4 }}>La page « {this.props.name} » a rencontré une erreur</div>
+      <div style={{ fontWeight: 600, fontSize: FZF.md, marginBottom: 4 }}>La page « {this.props.name} » a rencontré une erreur</div>
       <div style={{ fontSize: FZF.sm, color: T.ink700, marginBottom: 10 }}>Les autres pages du site ne sont pas touchées. Signalez-le à Gabriel avec le message ci-dessous.</div>
       <code style={{ display: "block", fontSize: 12, color: T.ink500, whiteSpace: "pre-wrap", marginBottom: 10 }}>{String((this.state.err && this.state.err.message) || this.state.err)}</code>
-      <button type="button" onClick={() => this.setState({ err: null })} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "4px 12px", minHeight: 28, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>Réessayer</button>
+      <button type="button" onClick={() => this.setState({ err: null })} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "4px 12px", minHeight: 28, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>Réessayer</button>
     </div>);
   }
 }

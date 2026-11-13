@@ -22,7 +22,7 @@ export default function DemoGallery() {
   const P = DEMO_PAGES.find(p => p.id === page) || DEMO_PAGES[0];
   const ctx = { options: DEMO_PEOPLE, me: DEMO_ME.email, chefOf: () => ({ name: "", account: null }), react: () => {} };
   const width = (WIDTHS.find(x => x[0] === w) || WIDTHS[2])[2];
-  const btn = on => ({ minHeight: 28, padding: "0 10px", borderRadius: 8, border: "1px solid " + (on ? T.ink900 : T.line), background: on ? T.ink900 : T.card, color: on ? T.card : T.ink700, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: T.font });
+  const btn = on => ({ minHeight: 28, padding: "0 10px", borderRadius: 8, border: "1px solid " + (on ? T.ink900 : T.line), background: on ? T.ink900 : T.card, color: on ? T.card : T.ink700, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: T.font });
   return (<MentionCtx.Provider value={ctx}>
     <div data-demo-page={P.id} style={{ minHeight: "100vh", background: T.surface, color: T.ink900, fontFamily: T.font }}>
       <div role="toolbar" aria-label="Galerie de démonstration" style={{ position: "sticky", top: 0, zIndex: 50, display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", padding: "8px 12px", background: T.card, borderBottom: "1px solid " + T.line }}>

@@ -922,4 +922,8 @@ export const RELEASE_CATALOG = [
     ["SAV / MES", "Parc : carte du monde des sites (coordonnées GPS facultatives, sinon centre du pays)."],
     ["SAV / MES", "Reprise de l'historique du fichier SAV (tickets, interventions, parc, contrats) en une fois.", "admin"],
   ] },
+  { v: "331", t: "Textes plus légers et plus nets", items: [
+    ["Affichage", "Textes en gras allégés partout (titres et étiquettes) ; plus d'étiquettes en majuscules espacées."],
+    ["Accueil", "Charge atelier : une phrase quand aucune heure n'est prévue, au lieu de colonnes vides."],
+  ] },
 ];

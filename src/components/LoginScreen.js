@@ -45,7 +45,7 @@ export function LoginScreen(){
         <img src={process.env.PUBLIC_URL+"/world-map-bg.svg"} alt="" aria-hidden="true" style={{position:"absolute",right:"-18%",bottom:"-8%",width:"min(1100px,140%)",maxWidth:"none",opacity:.12,filter:"brightness(0) invert(1)",pointerEvents:"none",zIndex:0}}/>
         <img src={process.env.PUBLIC_URL+"/enogia-logo-color-crop.svg"} alt="ENOGIA" width="105" height="42" style={{position:"relative",height:40,width:"auto",alignSelf:"flex-start",filter:"brightness(0) invert(1)"}}/>
         <div style={{marginTop:"auto",position:"relative"}}>
-          <div style={{fontFamily:T.fontDisplay,fontWeight:800,fontSize:16,letterSpacing:".02em",marginBottom:2}}>{SITE_NAME} <Hl color="#F4D35E" style={{whiteSpace:"nowrap"}}>{SITE_SCOPE}</Hl></div>
+          <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:16,letterSpacing:".02em",marginBottom:2}}>{SITE_NAME} <Hl color="#F4D35E" style={{whiteSpace:"nowrap"}}>{SITE_SCOPE}</Hl></div>
           <div style={{fontSize:FZ.xs,color:"#C9D4E2",marginBottom:16}}>{SITE_SUB}</div>
           <h1 className="enogia-float-in" style={{margin:0,fontFamily:T.fontDisplay,fontWeight:500,fontSize:"clamp(30px,4vw,46px)",lineHeight:1.08,letterSpacing:"-.02em",maxWidth:560}}>
             Toutes les machines ORC, de l'<Hl color="#F4D35E">atelier</Hl> à la livraison.
@@ -55,7 +55,7 @@ export function LoginScreen(){
           {USES.map(([ic,t,d])=>(
             <li key={t} style={{display:"flex",gap:12,alignItems:"flex-start"}}>
               <span aria-hidden="true" style={{width:34,height:34,borderRadius:8,background:"rgba(255,255,255,.1)",color:"#F4D35E",display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><NavIcon name={ic} size={19}/></span>
-              <span><span style={{display:"block",fontWeight:700,fontSize:FZ.sm}}>{t}</span><span style={{display:"block",fontSize:FZ.sm,color:"#D6E2EE",lineHeight:1.45}}>{d}</span></span>
+              <span><span style={{display:"block",fontWeight:600,fontSize:FZ.sm}}>{t}</span><span style={{display:"block",fontSize:FZ.sm,color:"#D6E2EE",lineHeight:1.45}}>{d}</span></span>
             </li>))}
         </ul>
         <div style={{position:"relative",fontSize:FZ.xs,color:"#B9C8D8",marginTop:"auto"}}>ENOGIA · 43, avenue de Boisbaudran, Marseille</div>
@@ -67,7 +67,7 @@ export function LoginScreen(){
           <h2 style={{margin:"0 0 6px",fontFamily:T.fontDisplay,fontWeight:500,fontSize:28,letterSpacing:"-.02em",color:T.ink900}}>Connexion</h2>
           <p style={{margin:"0 0 26px",fontSize:FZ.sm,color:T.ink500,lineHeight:1.5}}>Utilisez votre compte Google ENOGIA. La session se ferme chaque soir à minuit.</p>
           <button type="button" onClick={handleGoogleSignIn} disabled={busy} aria-busy={busy} className="enogia-btn-tap enogia-login-btn"
-            style={{width:"100%",minHeight:48,display:"flex",alignItems:"center",justifyContent:"center",gap:10,background:T.card,color:T.ink900,border:"1.5px solid "+T.teal500,borderRadius:12,padding:"12px 16px",fontFamily:T.font,fontSize:FZ.md,fontWeight:700,cursor:busy?"progress":"pointer",opacity:busy?.75:1,transition:"background-color .15s ease, color .15s ease, transform .15s ease"}}>
+            style={{width:"100%",minHeight:48,display:"flex",alignItems:"center",justifyContent:"center",gap:10,background:T.card,color:T.ink900,border:"1.5px solid "+T.teal500,borderRadius:12,padding:"12px 16px",fontFamily:T.font,fontSize:FZ.md,fontWeight:600,cursor:busy?"progress":"pointer",opacity:busy?.75:1,transition:"background-color .15s ease, color .15s ease, transform .15s ease"}}>
             {busy?
               <span aria-hidden="true" style={{width:16,height:16,borderRadius:"50%",border:"2px solid "+T.line,borderTopColor:T.teal500,display:"inline-block",animation:"enogiaSpin .8s linear infinite"}}/>
               :<svg aria-hidden="true" viewBox="0 0 20 20" style={{width:19,height:19,flexShrink:0}}><path fill="#4285F4" d="M19.6 10.23c0-.68-.06-1.36-.18-2H10v3.79h5.38a4.6 4.6 0 0 1-2 3.02v2.5h3.23c1.9-1.75 2.99-4.33 2.99-7.31z"/><path fill="#34A853" d="M10 20c2.7 0 4.96-.89 6.62-2.42l-3.23-2.5c-.9.6-2.05.95-3.39.95-2.6 0-4.8-1.76-5.59-4.12H1.07v2.59A10 10 0 0 0 10 20z"/><path fill="#FBBC05" d="M4.41 11.9a6 6 0 0 1 0-3.8V5.51H1.07a10 10 0 0 0 0 8.98l3.34-2.59z"/><path fill="#EA4335" d="M10 3.98c1.47 0 2.79.5 3.83 1.5l2.87-2.87A9.6 9.6 0 0 0 10 0 10 10 0 0 0 1.07 5.51L4.41 8.1C5.2 5.74 7.4 3.98 10 3.98z"/></svg>}
@@ -97,7 +97,7 @@ export function LoginTransition({name}){
       <div className="enogia-tr" style={{position:"relative",display:"flex",flexDirection:"column",alignItems:"flex-start",gap:14,width:"min(440px,calc(100vw - 48px))"}}>
         <img src={process.env.PUBLIC_URL+"/enogia-logo-color-crop.svg"} alt="ENOGIA" width="105" height="42" style={{height:44,width:"auto",filter:"brightness(0) invert(1)"}}/>
         <div>
-          <div style={{fontFamily:T.fontDisplay,fontWeight:800,fontSize:"clamp(30px,5vw,40px)",letterSpacing:"-.01em",lineHeight:1.05}}>{SITE_NAME} <Hl color="#F4D35E" style={{whiteSpace:"nowrap"}}>{SITE_SCOPE}</Hl></div>
+          <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:"clamp(30px,5vw,40px)",letterSpacing:"-.01em",lineHeight:1.05}}>{SITE_NAME} <Hl color="#F4D35E" style={{whiteSpace:"nowrap"}}>{SITE_SCOPE}</Hl></div>
           <div style={{fontSize:FZ.sm,color:"#C9D4E2",marginTop:6}}>{SITE_SUB}</div>
         </div>
         <div style={{fontSize:FZ.md,fontWeight:600}}>{firstName?"Bienvenue, "+firstName+".":"Bienvenue."} <span style={{fontWeight:400,color:"#C9D4E2"}}>Chargement du planning…</span></div>
