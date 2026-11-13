@@ -2355,3 +2355,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Page Accès : nouvelle page « SAV / MES » (sous-pages Tickets, Interventions, Planning des équipes, Parc).
 - Aucune nouvelle clé `localStorage`.
 - Fichiers : savModel.js(+test), components/SavPage.js (nouveaux), appDocs.js, useAppData.js, access.js, App.js, RowDetail.js, SharedUI.js (icône), styles.css, demo/*, firestore.rules, versions.
+
+## v327 — SAV : planning à la semaine / au mois, glisser-déposer, fiches plus courtes
+
+- Planning des équipes : Semaine / Mois, glisser une barre (dates, technicien).
+- Ticket et intervention : formulaires courts, détails en sections repliées après création.
+- Clé `localStorage` : `enogia_sav_plan` (week / month). Règles inchangées depuis la V326 (à republier si ce n'est pas fait).
+- Fichiers : components/SavPage.js, demo/demoPages.js, versions.

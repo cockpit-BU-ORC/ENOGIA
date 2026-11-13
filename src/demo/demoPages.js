@@ -59,7 +59,8 @@ const Cloche = () => <div style={{ display: "flex", justifyContent: "flex-end", 
   panel={<ATraiter popup />} closeKey="x" /></div>;
 
 // v326 : SAV / MES — équipe SAV (tout) et chef de projet (lecture, planning sur une ligne, demandes)
-const savApi = { put: async () => true, del: async () => true, setField: async () => true };
+// window.__savLast : dernier enregistrement simulé (pour vérifier le glisser à l'écran)
+const savApi = { put: async (c, id, d) => { if (typeof window !== "undefined") window.__savLast = { c, id, d }; return true; }, del: async () => true, setField: async () => true };
 function SavDemo({ level, sub0 }) { const [sub, setSub] = useState(sub0); return <SavPage doc={DEMO_SAV} dem={DEMO_SAV_DEM} api={savApi} demApi={savApi} rows={DEMO_ROWS} level={level} canCost={level !== "r"} me={DEMO_ME.email} myName={DEMO_ME.name} myPjs={["PJ901", "PJ902"]} team={[]} sub={sub} onSub={setSub} onOpenPj={no} />; }
 
 export const DEMO_PAGES = [

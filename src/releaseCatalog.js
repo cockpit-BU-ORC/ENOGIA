@@ -906,4 +906,8 @@ export const RELEASE_CATALOG = [
     ["Chefs de projet", "Le planning du SAV en une ligne : cliquez un jour libre pour demander une intervention ; le responsable SAV accepte ou refuse, la réponse arrive dans votre cloche."],
     ["Fiche d'un PJ", "Onglet SAV : tickets, interventions et contrat du PJ, « Demander une intervention »."],
   ] },
+  { v: "327", t: "SAV : planning à la semaine ou au mois, fiches plus courtes", items: [
+    ["SAV / MES", "Planning des équipes à la semaine ou au mois ; glisser une barre sur un autre jour ou une autre ligne change ses dates ou son technicien."],
+    ["SAV / MES", "Ticket et intervention plus courts : la préparation, la clôture, les pièces et les coûts se déplient après la création."],
+  ] },
 ];

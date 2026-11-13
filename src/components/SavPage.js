@@ -4,6 +4,7 @@
 // sur un jour libre, dans une vue du planning sur UNE seule ligne (demandé : « la vue chef de projet doit être une seule ligne »).
 // Coûts des interventions visibles seulement si canCost (équipe SAV, direction, propriétaire).
 import React, { useMemo, useState } from "react";
+import { usePointerDnD } from "../pointerDrag";
 import { T, FZ, btn } from "../theme";
 import { getPjMeta } from "../pjMeta";
 import { PlanSwitch } from "./PlanSwitch";
@@ -24,8 +25,8 @@ const ST_TONE = { "À planifier": "warn", Planifiée: "info", "En cours": "accen
 const lab = { display: "flex", flexDirection: "column", gap: 4, fontSize: 12, color: T.ink500, fontWeight: 600, minWidth: 0 };
 const inp = () => ({ minHeight: 32, padding: "0 10px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, boxSizing: "border-box", width: "100%" });
 const SUBS = [["tickets", "Tickets"], ["inters", "Interventions"], ["planning", "Planning des équipes"], ["parc", "Parc"]];
-const DESC = { tickets: "Une demande = un ticket rattaché à un PJ ; chaque type suit ses étapes", inters: "Interventions sur site : équipe, dates, préparation, clôture et coûts",
-  planning: "Qui est où, jour par jour ; les chefs de projet demandent un jour libre", parc: "Machines en service, contrats de maintenance et tickets ouverts" };
+const DESC = { tickets: "Le ticket est la demande (le problème à régler) ; une intervention est un déplacement sur site pour le traiter", inters: "Interventions sur site : équipe, dates, préparation, clôture et coûts",
+  planning: "Qui est où, à la semaine ou au mois ; glisser une barre change ses dates ou son technicien", parc: "Machines en service, contrats de maintenance et tickets ouverts" };
 
 function Kpi({ l, v, tone }) {
   return <div style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "10px 12px", minWidth: 0 }}>
@@ -46,6 +47,15 @@ function Modal({ title, onClose, children, width = 640 }) {
         <button type="button" onClick={onClose} aria-label="Fermer" style={{ ...btn("ghost", "sm") }}>✕</button></div>
       {children}
     </div></div>;
+}
+// v327 (demandé : « préparation, clôture, pièces de rechange… pas dans le ticket mais en listes déroulantes après la création ») : section repliée
+function Fold({ title, info, open: open0 = false, children }) {
+  const [open, setOpen] = useState(open0);
+  return <div style={{ border: "1px solid " + T.line, borderRadius: 8, overflow: "hidden" }}>
+    <button type="button" aria-expanded={open} onClick={() => setOpen(v => !v)} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", minHeight: 36, padding: "0 10px", border: "none", background: T.surface, color: T.ink900, cursor: "pointer", fontFamily: T.font, fontSize: FZ.sm, fontWeight: 700, textAlign: "left" }}>
+      <span aria-hidden="true" style={{ fontSize: 10, color: T.ink500, transform: open ? "rotate(90deg)" : "none", transition: "transform 120ms" }}>▶</span><span style={{ flex: 1 }}>{title}</span>{info != null && <span style={{ fontSize: 12, fontWeight: 600, color: T.ink500 }}>{info}</span>}</button>
+    {open && <div style={{ padding: 10, display: "flex", flexDirection: "column", gap: 10 }}>{children}</div>}
+  </div>;
 }
 const Field = ({ l, children, span }) => <label style={{ ...lab, gridColumn: span ? "1 / -1" : undefined }}>{l}{children}</label>;
 const grid2 = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10 };
@@ -104,6 +114,7 @@ export function SavPage({ doc, dem, api, demApi, rows, level = "r", canCost, me,
       onOpenInter={id => setInterDlg({ id, i: inters[id] })} />}
     {sub === "inters" && <IntersView {...{ inters, canCost, nomOf }} onOpen={id => setInterDlg({ id, i: inters[id] })} />}
     {sub === "planning" && <PlanningView {...{ inters, demandes, techs, canEdit, nomOf, me, myName, myPjs, pjList }} onOpenInter={id => setInterDlg({ id, i: inters[id] })} onTeam={() => setTeamDlg(true)}
+      onMove={(id, patch) => api.put("inters", id, { ...inters[id], ...patch })}
       onRequest={day => setDemDlg({ date: day, days: 1, pj: focusPj && pjList.includes(focusPj) ? focusPj : (myPjs || [])[0] || "", obj: "", type: "cur" })}
       onAnswer={async (id, d, ok, note) => {
         if (ok) { const r = acceptDemande({ ...d, id }, D); if (!(await api.put("tickets", r.tid, r.ticket)) || !(await api.put("inters", r.iid, r.inter))) return;
@@ -151,41 +162,54 @@ function TicketsView({ tickets, inters, canEdit, myName, nomOf, onEdit, onStep, 
       right={canEdit && <Btn size="sm" onClick={() => onEdit(cur.id, tickets[cur.id])}>Modifier</Btn>}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}><button type="button" onClick={() => onOpenPj && onOpenPj(cur.pj)} aria-label={"Ouvrir la fiche de " + cur.pj} style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer" }}><PjPlate pj={cur.pj} /></button><b style={{ fontSize: FZ.md, color: T.ink900 }}>{nomOf(cur.pj)}</b></div>
       {cur.det && <p data-no-i18n="1" style={{ margin: 0, fontSize: FZ.sm, color: T.ink900, whiteSpace: "pre-wrap" }}>{cur.det}</p>}
-      <dl style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: "4px 10px", margin: 0, fontSize: FZ.sm }}>
-        <dt style={{ color: T.ink500 }}>Origine</dt><dd style={{ margin: 0 }}>{cur.orig || "—"}{cur.by ? " · " + cur.by : ""}</dd>
-        <dt style={{ color: T.ink500 }}>Responsable</dt><dd style={{ margin: 0 }}>{cur.resp || "—"}</dd>
-        <dt style={{ color: T.ink500 }}>Demande du</dt><dd style={{ margin: 0 }}>{fd(cur.date)}</dd>
-        {cur.closedAt && <><dt style={{ color: T.ink500 }}>Clos le</dt><dd style={{ margin: 0 }}>{fd(cur.closedAt)}{cur.satisf ? " · satisfaction " + cur.satisf + " / 5" : ""}</dd></>}
-        <dt style={{ color: T.ink500 }}>Interventions</dt><dd style={{ margin: 0, display: "flex", gap: 6, flexWrap: "wrap" }}>{(cur.inters || []).length ? cur.inters.map(i => <button key={i} type="button" onClick={() => onOpenInter(i)} disabled={!inters[i]} style={{ ...btn("ghost", "sm"), fontFamily: T.fontMono }}>{i}{inters[i] ? " · " + (inters[i].st || "") : ""}</button>) : "—"}</dd>
-      </dl>
-      <div><div style={{ fontSize: 12, fontWeight: 700, color: T.ink700, marginBottom: 4 }}>Étapes · {typeOf(cur.type)[1]}</div>
-        <ol style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 2 }}>{flowOf(cur.type).map((s, i) => { const done = i < (cur.step || 0), now = i === (cur.step || 0);
-          return <li key={s} style={{ display: "flex", gap: 8, alignItems: "center", fontSize: FZ.sm, color: now ? T.ink900 : T.ink500, fontWeight: now ? 700 : 400 }}>
-            <span aria-hidden="true" style={{ width: 18, height: 18, borderRadius: "50%", display: "inline-grid", placeItems: "center", fontSize: 11, fontWeight: 700, background: done ? T.emerald600 : now ? T.amber500 : T.surfaceAlt, color: done ? T.card : now ? T.ink900 : T.ink500 }}>{done ? "✓" : i + 1}</span>{s}</li>; })}</ol></div>
+      <div style={{ fontSize: FZ.sm, color: T.ink700 }}>Étape {(cur.step || 0) + 1} / {flowOf(cur.type).length} : <b style={{ color: T.ink900 }}>{flowOf(cur.type)[cur.step || 0]}</b></div>
       {canEdit && <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         <Btn size="sm" disabled={!(cur.step > 0)} onClick={() => onStep(cur.id, tickets[cur.id], -1)}>← Étape précédente</Btn>
-        <Btn v="pri" size="sm" disabled={isClosed(cur)} onClick={() => onStep(cur.id, tickets[cur.id], 1)}>{(cur.step || 0) + 1 >= flowOf(cur.type).length - 1 ? "Clore le ticket" : "Étape suivante →"}</Btn>
-        <Btn size="sm" onClick={() => onNewInter(cur.id, tickets[cur.id])}>＋ Intervention</Btn></div>}
-      <div style={{ fontSize: 12, color: T.ink500 }}>Progression : {Math.round(progressOf(cur) * 100)} %</div>
-    </Panel> : <span />}
+        <Btn v="pri" size="sm" disabled={isClosed(cur)} onClick={() => onStep(cur.id, tickets[cur.id], 1)}>{(cur.step || 0) + 1 >= flowOf(cur.type).length - 1 ? "Clore le ticket" : "Étape suivante →"}</Btn></div>}
+      <Fold title={"Interventions sur site"} info={(cur.inters || []).length} open={(cur.inters || []).length > 0}>
+        {(cur.inters || []).length ? cur.inters.map(i => <button key={i} type="button" onClick={() => onOpenInter(i)} disabled={!inters[i]} style={{ display: "flex", gap: 8, alignItems: "center", width: "100%", minHeight: 32, border: "1px solid " + T.line, borderRadius: 8, background: T.card, padding: "0 8px", cursor: "pointer", fontFamily: T.font, textAlign: "left" }}>
+          <span style={{ fontFamily: T.fontMono, fontSize: 12, fontWeight: 600 }}>{i}</span><span style={{ flex: 1, minWidth: 0, fontSize: 12, color: T.ink700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{inters[i] ? (inters[i].a ? fd(inters[i].a) + " → " + fd(inters[i].b) : "à planifier") : "supprimée"}</span>{inters[i] && <Pill tone={ST_TONE[inters[i].st] || "neutral"}>{inters[i].st}</Pill>}</button>)
+          : <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Aucune : le ticket se traite à distance tant qu'on n'ajoute pas d'intervention.</div>}
+        {canEdit && <Btn size="sm" onClick={() => onNewInter(cur.id, tickets[cur.id])}>＋ Intervention sur site</Btn>}
+      </Fold>
+      <Fold title="Toutes les étapes" info={Math.round(progressOf(cur) * 100) + " %"}>
+        <ol style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 2 }}>{flowOf(cur.type).map((s, i) => { const done = i < (cur.step || 0), now = i === (cur.step || 0);
+          return <li key={s} style={{ display: "flex", gap: 8, alignItems: "center", fontSize: FZ.sm, color: now ? T.ink900 : T.ink500, fontWeight: now ? 700 : 400 }}>
+            <span aria-hidden="true" style={{ width: 18, height: 18, borderRadius: "50%", display: "inline-grid", placeItems: "center", fontSize: 11, fontWeight: 700, background: done ? T.emerald600 : now ? T.amber500 : T.surfaceAlt, color: done ? T.card : now ? T.ink900 : T.ink500 }}>{done ? "✓" : i + 1}</span>{s}</li>; })}</ol>
+      </Fold>
+      <Fold title="Informations">
+        <dl style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: "4px 10px", margin: 0, fontSize: FZ.sm }}>
+          <dt style={{ color: T.ink500 }}>Origine</dt><dd style={{ margin: 0 }}>{cur.orig || "—"}{cur.by ? " · " + cur.by : ""}</dd>
+          <dt style={{ color: T.ink500 }}>Responsable</dt><dd style={{ margin: 0 }}>{cur.resp || "—"}</dd>
+          <dt style={{ color: T.ink500 }}>Demande du</dt><dd style={{ margin: 0 }}>{fd(cur.date)}</dd>
+          {cur.closedAt && <><dt style={{ color: T.ink500 }}>Clos le</dt><dd style={{ margin: 0 }}>{fd(cur.closedAt)}{cur.satisf ? " · satisfaction " + cur.satisf + " / 5" : ""}</dd></>}
+          {cur.notes && <><dt style={{ color: T.ink500 }}>Suivi</dt><dd data-no-i18n="1" style={{ margin: 0, whiteSpace: "pre-wrap" }}>{cur.notes}</dd></>}
+        </dl>
+      </Fold>
+          </Panel> : <span />}
   </div>;
 }
 function TicketDialog({ id, t: t0, pjList, nomOf, techs, canEdit, isAdmin, onClose, onSave, onDelete }) {
   const [t, setT] = useState({ ...t0 }); const set = (k, v) => setT(x => ({ ...x, [k]: v }));
   const F = flowOf(t.type), ok = t.pj && t.det && t.det.trim();
-  return <Modal title={id ? "Ticket " + id : "Nouveau ticket"} onClose={onClose}>
+  return <Modal title={id ? "Ticket " + id : "Nouveau ticket"} onClose={onClose} width={560}>
+    {!id && <div style={{ fontSize: 12, color: T.ink500 }}>Le ticket décrit la demande. Les interventions sur site, leur préparation, leur clôture et leurs coûts s'ajoutent ensuite depuis le ticket.</div>}
     <div style={grid2}>
       <Field l="PJ"><select value={t.pj || ""} onChange={e => set("pj", e.target.value)} disabled={!canEdit} style={inp()}><option value="">Choisir…</option>{pjList.map(p => <option key={p} value={p}>{p}{nomOf(p) ? " · " + nomOf(p) : ""}</option>)}</select></Field>
       <Field l="Type de demande"><select value={t.type} onChange={e => setT(x => ({ ...x, type: e.target.value, step: Math.min(x.step || 0, flowOf(e.target.value).length - 1) }))} disabled={!canEdit} style={inp()}>{TICKET_TYPES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></Field>
       <Field l="Priorité"><select value={t.prio} onChange={e => set("prio", e.target.value)} disabled={!canEdit} style={inp()}>{PRIOS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></Field>
-      <Field l="Origine de la demande"><select value={t.orig || ""} onChange={e => set("orig", e.target.value)} disabled={!canEdit} style={inp()}>{ORIGINS.map(o => <option key={o}>{o}</option>)}</select></Field>
-      <Field l="Date de la demande"><input type="date" value={t.date || ""} onChange={e => set("date", e.target.value)} disabled={!canEdit} style={inp()} /></Field>
-      <Field l="Responsable du ticket"><input list="sav-techs" value={t.resp || ""} onChange={e => set("resp", e.target.value)} disabled={!canEdit} style={inp()} /><datalist id="sav-techs">{techs.map(x => <option key={x} value={x} />)}</datalist></Field>
-      <Field l="Étape"><select value={t.step || 0} onChange={e => set("step", +e.target.value)} disabled={!canEdit} style={inp()}>{F.map((s, i) => <option key={s} value={i}>{i + 1}. {s}</option>)}</select></Field>
-      <Field l="Satisfaction client (après clôture)"><select value={t.satisf || ""} onChange={e => set("satisf", e.target.value ? +e.target.value : null)} disabled={!canEdit} style={inp()}><option value="">—</option>{[5, 4, 3, 2, 1].map(n => <option key={n} value={n}>{n} / 5</option>)}</select></Field>
-      <Field l="Détails" span><textarea value={t.det || ""} onChange={e => set("det", e.target.value)} disabled={!canEdit} rows={3} style={{ ...inp(), padding: 8, resize: "vertical" }} /></Field>
-      <Field l="Actions, commentaires, avancement" span><textarea value={t.notes || ""} onChange={e => set("notes", e.target.value)} disabled={!canEdit} rows={2} style={{ ...inp(), padding: 8, resize: "vertical" }} /></Field>
+      <Field l="Origine"><select value={t.orig || ""} onChange={e => set("orig", e.target.value)} disabled={!canEdit} style={inp()}>{ORIGINS.map(o => <option key={o}>{o}</option>)}</select></Field>
+      <Field l="Détails de la demande" span><textarea value={t.det || ""} onChange={e => set("det", e.target.value)} disabled={!canEdit} rows={3} style={{ ...inp(), padding: 8, resize: "vertical" }} /></Field>
     </div>
+    {id && <Fold title="Suivi du ticket" info={"étape " + ((t.step || 0) + 1) + " / " + F.length}>
+      <div style={grid2}>
+        <Field l="Responsable du ticket"><input list="sav-techs" value={t.resp || ""} onChange={e => set("resp", e.target.value)} disabled={!canEdit} style={inp()} /><datalist id="sav-techs">{techs.map(x => <option key={x} value={x} />)}</datalist></Field>
+        <Field l="Date de la demande"><input type="date" value={t.date || ""} onChange={e => set("date", e.target.value)} disabled={!canEdit} style={inp()} /></Field>
+        <Field l="Étape"><select value={t.step || 0} onChange={e => set("step", +e.target.value)} disabled={!canEdit} style={inp()}>{F.map((x, i) => <option key={x} value={i}>{i + 1}. {x}</option>)}</select></Field>
+        <Field l="Satisfaction client (après clôture)"><select value={t.satisf || ""} onChange={e => set("satisf", e.target.value ? +e.target.value : null)} disabled={!canEdit} style={inp()}><option value="">—</option>{[5, 4, 3, 2, 1].map(n => <option key={n} value={n}>{n} / 5</option>)}</select></Field>
+        <Field l="Actions, commentaires, avancement" span><textarea value={t.notes || ""} onChange={e => set("notes", e.target.value)} disabled={!canEdit} rows={2} style={{ ...inp(), padding: 8, resize: "vertical" }} /></Field>
+      </div>
+    </Fold>}
     {canEdit && <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
       {id && isAdmin && <Btn v="dan" size="sm" onClick={() => onDelete(id)}>Supprimer</Btn>}<span style={{ flex: 1 }} />
       <Btn size="sm" onClick={onClose}>Annuler</Btn>
@@ -219,23 +243,29 @@ function InterDialog({ id, i: i0, pjList, nomOf, techs, canEdit, isAdmin, canCos
   const [i, setI] = useState({ who: [], prep: [], clo: [], costs: {}, ...i0 }); const set = (k, v) => setI(x => ({ ...x, [k]: v }));
   const tkList = Object.keys(tickets).filter(t => !i.pj || tickets[t].pj === i.pj);
   const ok = i.pj && (i.obj || "").trim() && (!i.a || !i.b || i.a <= i.b);
-  return <Modal title={id ? "Intervention " + id : "Nouvelle intervention"} onClose={onClose} width={760}>
+  return <Modal title={id ? "Intervention " + id : "Nouvelle intervention sur site"} onClose={onClose} width={620}>
     <div style={grid2}>
-      <Field l="PJ"><select value={i.pj || ""} onChange={e => set("pj", e.target.value)} disabled={!canEdit} style={inp()}><option value="">Choisir…</option>{pjList.map(p => <option key={p} value={p}>{p}{nomOf(p) ? " · " + nomOf(p) : ""}</option>)}</select></Field>
-      <Field l="Ticket lié"><select value={i.tk || ""} onChange={e => set("tk", e.target.value)} disabled={!canEdit} style={inp()}><option value="">—</option>{tkList.map(t => <option key={t} value={t}>{t}</option>)}</select></Field>
-      <Field l="Objectifs de l'intervention" span><input value={i.obj || ""} onChange={e => set("obj", e.target.value)} disabled={!canEdit} style={inp()} /></Field>
-      <Field l="Type d'intervention"><select value={i.type || ""} onChange={e => set("type", e.target.value)} disabled={!canEdit} style={inp()}>{INTER_TYPES.map(x => <option key={x}>{x}</option>)}</select></Field>
+      {!i0.tk && <Field l="PJ"><select value={i.pj || ""} onChange={e => set("pj", e.target.value)} disabled={!canEdit} style={inp()}><option value="">Choisir…</option>{pjList.map(p => <option key={p} value={p}>{p}{nomOf(p) ? " · " + nomOf(p) : ""}</option>)}</select></Field>}
+      <Field l="Objectif" span><input value={i.obj || ""} onChange={e => set("obj", e.target.value)} disabled={!canEdit} style={inp()} /></Field>
+      <Field l="Arrivée sur site"><input type="date" value={i.a || ""} onChange={e => set("a", e.target.value)} disabled={!canEdit} style={inp()} /></Field>
+      <Field l="Départ du site"><input type="date" value={i.b || ""} min={i.a || undefined} onChange={e => set("b", e.target.value)} disabled={!canEdit} style={inp()} /></Field>
+      <Field l="Technicien responsable"><select value={i.resp || ""} onChange={e => set("resp", e.target.value)} disabled={!canEdit} style={inp()}><option value="">À affecter</option>{techs.map(x => <option key={x}>{x}</option>)}</select></Field>
       <Field l="Statut"><select value={i.st || "À planifier"} onChange={e => set("st", e.target.value)} disabled={!canEdit} style={inp()}>{INTER_STATUS.map(x => <option key={x}>{x}</option>)}</select></Field>
-      <Field l="Responsable (technicien)"><select value={i.resp || ""} onChange={e => set("resp", e.target.value)} disabled={!canEdit} style={inp()}><option value="">À affecter</option>{techs.map(x => <option key={x}>{x}</option>)}</select></Field>
-      <Field l="Date d'arrivée sur site"><input type="date" value={i.a || ""} onChange={e => set("a", e.target.value)} disabled={!canEdit} style={inp()} /></Field>
-      <Field l="Date de départ du site"><input type="date" value={i.b || ""} min={i.a || undefined} onChange={e => set("b", e.target.value)} disabled={!canEdit} style={inp()} /></Field>
-      <Field l="Réussite de l'intervention"><select value={i.reussite || ""} onChange={e => set("reussite", e.target.value)} disabled={!canEdit} style={inp()}><option value="">—</option><option>Succès</option><option>Partielle</option><option>Échec</option></select></Field>
     </div>
-    <Field l="Intervenants (en plus du responsable)"><Checks items={techs.filter(x => x !== i.resp)} value={i.who} onChange={v => set("who", v)} disabled={!canEdit} /></Field>
-    <Field l={"Préparation (" + (i.prep || []).length + " / " + PREP_ITEMS.length + ")"}><Checks items={PREP_ITEMS} value={i.prep} onChange={v => set("prep", v)} disabled={!canEdit} /></Field>
-    <Field l={"Clôture (" + (i.clo || []).length + " / " + CLO_ITEMS.length + ")"}><Checks items={CLO_ITEMS} value={i.clo} onChange={v => set("clo", v)} disabled={!canEdit} /></Field>
-    {canCost && <Field l={"Coûts · total " + eur(interCost(i))}><div style={grid2}>{COST_FIELDS.map(([k, l]) => <label key={k} style={lab}>{l}<input type="number" min={0} step={10} value={(i.costs || {})[k] ?? ""} onChange={e => set("costs", { ...(i.costs || {}), [k]: e.target.value === "" ? null : +e.target.value })} disabled={!canEdit} style={inp()} /></label>)}</div></Field>}
-    <Field l="Notes"><textarea value={i.notes || ""} onChange={e => set("notes", e.target.value)} disabled={!canEdit} rows={2} style={{ ...inp(), padding: 8, resize: "vertical" }} /></Field>
+    {techs.filter(x => x !== i.resp).length > 0 && <Field l="Intervenants en appui"><Checks items={techs.filter(x => x !== i.resp)} value={i.who} onChange={v => set("who", v)} disabled={!canEdit} /></Field>}
+    {id && <>
+      <Fold title="Préparation" info={(i.prep || []).length + " / " + PREP_ITEMS.length}><Checks items={PREP_ITEMS} value={i.prep} onChange={v => set("prep", v)} disabled={!canEdit} /></Fold>
+      <Fold title="Clôture" info={(i.clo || []).length + " / " + CLO_ITEMS.length}>
+        <Checks items={CLO_ITEMS} value={i.clo} onChange={v => set("clo", v)} disabled={!canEdit} />
+        <Field l="Réussite de l'intervention"><select value={i.reussite || ""} onChange={e => set("reussite", e.target.value)} disabled={!canEdit} style={{ ...inp(), maxWidth: 240 }}><option value="">—</option><option>Succès</option><option>Partielle</option><option>Échec</option></select></Field></Fold>
+      {canCost && <Fold title="Pièces de rechange et coûts" info={eur(interCost(i))}><div style={grid2}>{COST_FIELDS.map(([k, l]) => <label key={k} style={lab}>{l}<input type="number" min={0} step={10} value={(i.costs || {})[k] ?? ""} onChange={e => set("costs", { ...(i.costs || {}), [k]: e.target.value === "" ? null : +e.target.value })} disabled={!canEdit} style={inp()} /></label>)}</div></Fold>}
+      <Fold title="Autres informations">
+        <div style={grid2}>
+          <Field l="Type d'intervention"><select value={i.type || ""} onChange={e => set("type", e.target.value)} disabled={!canEdit} style={inp()}>{INTER_TYPES.map(x => <option key={x}>{x}</option>)}</select></Field>
+          <Field l="Ticket lié"><select value={i.tk || ""} onChange={e => set("tk", e.target.value)} disabled={!canEdit} style={inp()}><option value="">—</option>{tkList.map(t => <option key={t} value={t}>{t}</option>)}</select></Field>
+          <Field l="Notes" span><textarea value={i.notes || ""} onChange={e => set("notes", e.target.value)} disabled={!canEdit} rows={2} style={{ ...inp(), padding: 8, resize: "vertical" }} /></Field>
+        </div></Fold>
+    </>}
     {canEdit && <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
       {id && isAdmin && <Btn v="dan" size="sm" onClick={() => onDelete(id)}>Supprimer</Btn>}<span style={{ flex: 1 }} />
       <Btn size="sm" onClick={onClose}>Annuler</Btn>
@@ -244,42 +274,76 @@ function InterDialog({ id, i: i0, pjList, nomOf, techs, canEdit, isAdmin, canCos
 }
 
 /* ── Planning des équipes ── */
-function PlanningView({ inters, demandes, techs, canEdit, nomOf, me, myPjs, onOpenInter, onTeam, onRequest, onAnswer, onCancel }) {
-  const [start, setStart] = useState(() => mondayOf(todayIso())), N = 10;
-  const days = workDaysFrom(start, N), t0 = todayIso();
-  const shift = w => { const d = new Date(start + "T12:00:00"); d.setDate(d.getDate() + 7 * w); setStart(iso(d)); };
+// v327 (demandé : « glisser-déposer des barres » + « vision à la semaine et au mois ») : une colonne par jour ouvré ;
+// glisser une barre sur un autre jour décale ses dates (même durée en jours ouvrés), sur une autre ligne change le technicien.
+const shiftWork = (isoD, n) => { const d = new Date(isoD + "T12:00:00"); let k = Math.abs(n); const st = n < 0 ? -1 : 1; while (k > 0) { d.setDate(d.getDate() + st); if (d.getDay() % 6) k--; } return iso(d); };
+const workCount = (a, b) => { let n = 0; const d = new Date(a + "T12:00:00"), e = new Date(b + "T12:00:00"); while (d <= e) { if (d.getDay() % 6) n++; d.setDate(d.getDate() + 1); } return Math.max(1, n); };
+const firstWork = isoD => { const d = new Date(isoD + "T12:00:00"); while (!(d.getDay() % 6)) d.setDate(d.getDate() + 1); return iso(d); };
+function PlanningView({ inters, demandes, techs, canEdit, nomOf, me, myPjs, onOpenInter, onTeam, onRequest, onAnswer, onCancel, onMove }) {
+  const t0 = todayIso();
+  const [mode, setMode0] = useState(() => { try { return localStorage.getItem("enogia_sav_plan") === "month" ? "month" : "week"; } catch (e) { return "week"; } });
+  const setMode = m => { setMode0(m); try { localStorage.setItem("enogia_sav_plan", m); } catch (e) { /* stockage indisponible */ } };
+  const [anchor, setAnchor] = useState(t0);
+  const days = useMemo(() => { if (mode === "week") return workDaysFrom(mondayOf(anchor), 5);
+    const m = anchor.slice(0, 7), out = []; const d = new Date(m + "-01T12:00:00"); while (iso(d).slice(0, 7) === m) { if (d.getDay() % 6) out.push(iso(d)); d.setDate(d.getDate() + 1); } return out; }, [mode, anchor]);
+  const N = days.length;
+  const shift = dir => { const d = new Date(anchor + "T12:00:00"); if (mode === "week") d.setDate(d.getDate() + 7 * dir); else { d.setDate(1); d.setMonth(d.getMonth() + dir); } setAnchor(iso(d)); };
+  const title = mode === "week" ? "Semaine du " + fdd(days[0]) : (() => { const t = new Date(days[0] + "T12:00:00").toLocaleDateString("fr-FR", { month: "long", year: "numeric" }); return t.charAt(0).toUpperCase() + t.slice(1); })();
   const bars = planBars(inters, techs), load = dayLoad(inters, techs, days);
   const dems = Object.entries(demandes).map(([id, d]) => ({ id, ...d })).sort((a, b) => String(b.at || "").localeCompare(String(a.at || "")));
   const pend = dems.filter(d => d.st === "attente"), mine = dems.filter(d => d.byEmail && me && d.byEmail.toLowerCase() === me.toLowerCase());
   const toPlan = Object.entries(inters).filter(([, i]) => i && i.st !== "Annulée" && (!i.a || !i.b || !i.resp) && !["Réalisée", "Validée", "Non validée"].includes(i.st));
   const [notes, setNotes] = useState({});
-  const head = <div style={{ display: "flex", gap: 6, alignItems: "center", padding: "10px 12px 0 0", flexWrap: "wrap" }}>
-    <Btn size="sm" aria-label="Deux semaines plus tôt" onClick={() => shift(-1)}>◀</Btn><Btn size="sm" onClick={() => setStart(mondayOf(t0))}>Aujourd'hui</Btn><Btn size="sm" aria-label="Deux semaines plus tard" onClick={() => shift(1)}>▶</Btn>
-    {canEdit && <Btn size="sm" onClick={onTeam}>Équipe ({techs.length})</Btn>}</div>;
-  const dayHead = <tr><th style={{ ...tableTh(), width: canEdit ? 150 : 120 }}>{canEdit ? "Technicien" : ""}</th>{days.map(d => <th key={d} style={{ ...tableTh({ align: "center" }), background: d === t0 ? T.amber100 : undefined }}>{fdd(d)}</th>)}</tr>;
+  const dnd = usePointerDnD();
+  const pendOn = d => pend.filter(p => workDaysFrom(p.date, Math.max(1, +p.days || 1)).includes(d));
   const barColor = st => st === "Réalisée" || st === "Validée" ? [T.emerald100, T.emerald600] : st === "En cours" ? [T.accentSoft || T.teal100, T.accentInk || T.teal600] : [T.info100, T.info600];
-  const pendOn = d => pend.filter(p => { const L = workDaysFrom(p.date, Math.max(1, +p.days || 1)); return L.includes(d); });
+  const moveTo = (p, tech, day) => {
+    const i = inters[p.id]; if (!i || !i.a || !i.b) return;
+    const len = workCount(i.a, i.b), a = shiftWork(day, -(p.grab || 0)), b = workDaysFrom(firstWork(a), len)[len - 1], patch = { a: firstWork(a), b };
+    if (tech !== p.tech) { if (p.lead) { patch.resp = tech; patch.who = (i.who || []).filter(x => x !== tech); } else patch.who = [...new Set((i.who || []).map(x => (x === p.tech ? tech : x)))].filter(x => x !== i.resp); }
+    if (patch.a === i.a && patch.b === i.b && tech === p.tech) return;
+    onMove(p.id, patch);
+  };
+  const colW = 100 / N, compact = N > 6;
+  const head = <div style={{ display: "flex", gap: 6, alignItems: "center", padding: "10px 12px 0 0", flexWrap: "wrap" }}>
+    <Segmented label="Échelle du planning" value={mode} onChange={setMode} options={[["week", "Semaine"], ["month", "Mois"]]} />
+    <Btn size="sm" aria-label={mode === "week" ? "Semaine précédente" : "Mois précédent"} onClick={() => shift(-1)}>◀</Btn><Btn size="sm" onClick={() => setAnchor(t0)}>Aujourd'hui</Btn><Btn size="sm" aria-label={mode === "week" ? "Semaine suivante" : "Mois suivant"} onClick={() => shift(1)}>▶</Btn>
+    {canEdit && <Btn size="sm" onClick={onTeam}>Équipe ({techs.length})</Btn>}</div>;
+  const dayLab = d => compact ? d.slice(8, 10) : fdd(d);
+  const labW = canEdit ? 150 : 120;
+  // une ligne = colonne du nom + piste en grille (cases de jours = cibles du glisser, barres posées par-dessus)
+  const Track = ({ tech, children, h = 36 }) => <div style={{ position: "relative", display: "grid", gridTemplateColumns: "repeat(" + N + ", minmax(0,1fr))", minHeight: h }}>
+    {days.map(d => <div key={d} {...(tech && canEdit ? dnd.dropProps(tech + "|" + d, p => !!p, p => moveTo(p, tech, d)) : {})}
+      style={{ borderLeft: "1px solid " + T.line, background: dnd.over === tech + "|" + d ? T.amber100 : d === t0 ? "color-mix(in srgb, " + T.amber100 + " 45%, transparent)" : "transparent" }} />)}
+    {children}</div>;
   return <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-    <Panel title={canEdit ? "Planning des équipes SAV" : "Disponibilités de l'équipe SAV"} pad={0} right={head}>
-      {!canEdit && <p style={{ margin: "0 14px", fontSize: FZ.sm, color: T.ink500 }}>Lecture seule : un jour avec au moins un technicien libre se demande d'un clic ; le responsable SAV accepte ou refuse, la réponse arrive dans votre cloche.</p>}
-      <div style={{ overflowX: "auto" }}><table style={{ width: "100%", minWidth: 900, borderCollapse: "collapse", tableLayout: "fixed" }}>
-        <thead>{dayHead}</thead>
-        <tbody>
-          {canEdit ? (techs.length ? techs.map(tc => <tr key={tc}><td style={{ ...tableTd({ ink: T.ink900 }), fontWeight: 700 }}>{tc}</td>
-            {days.map(d => { const b = (bars[tc] || []).find(x => x.from <= d && x.to >= d); if (b && days.find(x => x >= b.from && x <= b.to) !== d) return null; // première case visible de la barre
-              if (!b) return <td key={d} style={{ ...tableTd({ align: "center" }), background: d === t0 ? T.amber100 + "55" : undefined }} />;
-              const span = days.filter(x => x >= d && x <= b.to).length, [bg, ink] = barColor(b.st);
-              return <td key={d} colSpan={span} style={{ ...tableTd(), padding: 3 }}><button type="button" onClick={() => onOpenInter(b.id)} title={b.id + " · " + b.pj + " · " + (b.type || "")}
-                style={{ width: "100%", minHeight: 30, border: "none", borderRadius: 4, background: bg, color: ink, fontSize: 12, fontWeight: 700, textAlign: "left", padding: "0 8px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "pointer", fontFamily: T.font, opacity: b.lead ? 1 : 0.8 }}>{b.id} · {b.pj}{b.lead ? "" : " (appui)"}</button></td>; })}</tr>)
-            : <tr><td colSpan={N + 1} style={tableTd()}><EmptyState compact icon="manager" title="Aucun technicien" hint="« Équipe » pour ajouter les techniciens SAV." /></td></tr>)
-            : <tr><td style={{ ...tableTd({ ink: T.ink900 }), fontWeight: 700 }}>Équipe SAV</td>
-              {load.map(x => { const p = pendOn(x.d).length, free = x.free - p, past = x.d < t0;
-                return <td key={x.d} style={{ ...tableTd({ align: "center" }), padding: 3 }}>{past || free <= 0 || !x.team ? <span style={{ display: "block", minHeight: 30, lineHeight: "30px", borderRadius: 4, background: T.surfaceAlt, color: T.ink500, fontSize: 12, fontWeight: 600 }}>{past ? "—" : "Complet"}</span>
-                  : <button type="button" onClick={() => onRequest(x.d)} aria-label={"Demander une intervention le " + fdd(x.d) + " (" + free + " libre" + (free > 1 ? "s" : "") + ")"}
-                    style={{ width: "100%", minHeight: 30, borderRadius: 4, border: "1.5px dashed " + T.emerald500, background: T.emerald100, color: T.emerald600, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>＋ {free} libre{free > 1 ? "s" : ""}</button>}</td>; })}</tr>}
-          {canEdit && pend.length > 0 && <tr><td style={{ ...tableTd({ ink: T.amber600 }), fontWeight: 700 }}>Demandes</td>{days.map(d => { const L = pendOn(d);
-            return <td key={d} style={{ ...tableTd({ align: "center" }), padding: 3 }}>{L.map(p => <span key={p.id} title={p.pj + " · " + (p.obj || "") + " · " + (p.by || "")} style={{ display: "block", minHeight: 24, lineHeight: "24px", borderRadius: 4, border: "1.5px dashed " + T.amber500, background: T.amber100, color: T.amber600, fontSize: 11, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", padding: "0 4px", marginBottom: 2 }}>{p.pj}</span>)}</td>; })}</tr>}
-        </tbody></table></div>
+    <Panel title={(canEdit ? "Planning des équipes SAV · " : "Disponibilités de l'équipe SAV · ") + title} pad={0} right={head}>
+      {canEdit ? <p style={{ margin: "0 14px", fontSize: 12, color: T.ink500 }}>Glisser une barre sur un autre jour ou une autre ligne change ses dates ou son technicien ; un clic l'ouvre.</p>
+        : <p style={{ margin: "0 14px", fontSize: FZ.sm, color: T.ink500 }}>Lecture seule : un jour avec au moins un technicien libre se demande d'un clic ; le responsable SAV accepte ou refuse, la réponse arrive dans votre cloche.</p>}
+      <div style={{ overflowX: "auto" }}><div style={{ minWidth: compact ? 1100 : 760 }}>
+        <div style={{ display: "grid", gridTemplateColumns: labW + "px 1fr", borderBottom: "1px solid " + T.line }}>
+          <div style={{ ...tableTh(), borderBottom: "none" }}>{canEdit ? "Technicien" : ""}</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(" + N + ", minmax(0,1fr))" }}>{days.map(d => <div key={d} style={{ ...tableTh({ align: "center" }), borderBottom: "none", background: d === t0 ? T.amber100 : undefined, padding: compact ? "6px 0" : "6px 8px" }} title={fdd(d)}>{dayLab(d)}</div>)}</div>
+        </div>
+        {canEdit ? (techs.length ? techs.map(tc => <div key={tc} style={{ display: "grid", gridTemplateColumns: labW + "px 1fr", borderBottom: "1px solid " + T.line }}>
+          <div style={{ ...tableTd({ ink: T.ink900 }), fontWeight: 700, borderBottom: "none" }}>{tc}</div>
+          <Track tech={tc}>{(bars[tc] || []).filter(b => b.to >= days[0] && b.from <= days[N - 1]).map(b => {
+            const i0 = Math.max(0, days.findIndex(x => x >= b.from)), i1 = (() => { let k = N - 1; while (k > 0 && days[k] > b.to) k--; return k; })(), [bg, ink] = barColor(b.st);
+            const payload = { id: b.id, tech: tc, lead: b.lead, grab: 0 }, dp = dnd.dragProps(payload);
+            return <button key={b.id} type="button" {...dp} onPointerDown={e => { const r = e.currentTarget.getBoundingClientRect(), span = i1 - i0 + 1; payload.grab = Math.min(span - 1, Math.max(0, Math.floor((e.clientX - r.left) / r.width * span))) + Math.max(0, days.findIndex(x => x >= b.from) === 0 && b.from < days[0] ? workCount(b.from, days[0]) - 1 : 0); dp.onPointerDown(e); }}
+              onClick={() => onOpenInter(b.id)} title={b.id + " · " + b.pj + " · " + fd(b.from) + " → " + fd(b.to) + (b.lead ? "" : " (appui)") + " — glisser pour déplacer"}
+              style={{ position: "absolute", top: 3, bottom: 3, left: "calc(" + (i0 * colW) + "% + 2px)", width: "calc(" + ((i1 - i0 + 1) * colW) + "% - 4px)", border: "none", borderRadius: 4, background: bg, color: ink, fontSize: 12, fontWeight: 700, textAlign: "left", padding: "0 8px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "grab", fontFamily: T.font, opacity: b.lead ? 1 : 0.8, pointerEvents: dnd.drag ? "none" : "auto", touchAction: "none" }}>{b.id} · {b.pj}{b.lead ? "" : " (appui)"}</button>; })}</Track></div>)
+          : <div style={{ padding: 12 }}><EmptyState compact icon="manager" title="Aucun technicien" hint="« Équipe » pour ajouter les techniciens SAV." /></div>)
+          : <div style={{ display: "grid", gridTemplateColumns: labW + "px 1fr", borderBottom: "1px solid " + T.line }}>
+            <div style={{ ...tableTd({ ink: T.ink900 }), fontWeight: 700, borderBottom: "none" }}>Équipe SAV</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(" + N + ", minmax(0,1fr))" }}>{load.map(x => { const free = x.free - pendOn(x.d).length, past = x.d < t0;
+              return <div key={x.d} style={{ padding: 3, borderLeft: "1px solid " + T.line }}>{past || free <= 0 || !x.team ? <span style={{ display: "block", minHeight: 30, lineHeight: "30px", textAlign: "center", borderRadius: 4, background: T.surfaceAlt, color: T.ink500, fontSize: 12, fontWeight: 600 }}>{past ? "—" : compact ? "0" : "Complet"}</span>
+                : <button type="button" onClick={() => onRequest(x.d)} title={"Demander une intervention le " + fdd(x.d)} aria-label={"Demander une intervention le " + fdd(x.d) + " (" + free + " libre" + (free > 1 ? "s" : "") + ")"}
+                  style={{ width: "100%", minHeight: 30, borderRadius: 4, border: "1.5px dashed " + T.emerald500, background: T.emerald100, color: T.emerald600, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: T.font, padding: 0 }}>{compact ? "＋" + free : "＋ " + free + " libre" + (free > 1 ? "s" : "")}</button>}</div>; })}</div></div>}
+        {canEdit && pend.length > 0 && <div style={{ display: "grid", gridTemplateColumns: labW + "px 1fr" }}>
+          <div style={{ ...tableTd({ ink: T.amber600 }), fontWeight: 700, borderBottom: "none" }}>Demandes</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(" + N + ", minmax(0,1fr))" }}>{days.map(d => <div key={d} style={{ padding: 3, borderLeft: "1px solid " + T.line }}>{pendOn(d).map(p => <span key={p.id} title={p.pj + " · " + (p.obj || "") + " · " + (p.by || "")} style={{ display: "block", minHeight: 24, lineHeight: "24px", borderRadius: 4, border: "1.5px dashed " + T.amber500, background: T.amber100, color: T.amber600, fontSize: 11, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", padding: "0 4px", marginBottom: 2 }}>{p.pj}</span>)}</div>)}</div></div>}
+      </div></div>
     </Panel>
     {canEdit ? <>
       <Panel title={<span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>Demandes des chefs de projet {pend.length > 0 && <Pill tone="warn">{pend.length}</Pill>}</span>}>
