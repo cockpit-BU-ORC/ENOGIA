@@ -66,7 +66,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-13-v333-tablette";
+const APP_BUILD_VERSION = "2026-11-13-v334-besoins-clos";
 
 const ReleasePopup = React.lazy(() => import("./components/ReleaseNotes").then(m => ({ default: m.ReleasePopup })));
 function Navigate0({ go }) { useEffect(() => { go(); }, []); return null; } // eslint-disable-line react-hooks/exhaustive-deps
@@ -1250,7 +1250,7 @@ export default function App(){
             {view==="sav"&&canSav&&<PageGuard name="SAV / MES"><SavPage doc={savDoc} dem={demDoc} api={savApi} demApi={demApi} rows={dataWithOverrides} level={savLvl} canCost={savCost} me={currentUser&&currentUser.email} myName={authorName} myPjs={myPjList} team={savTeam} sub={savSub} onSub={setSavSub} allowSubs={savAllowed} onOpenPj={pj=>{setCalDay(null);setCalTab("resume");setCalSel(pj);}} focusPj={savFocus}/></PageGuard>}
             {view==="achats"&&canAchats&&<PageGuard name="Achats / Appro"><Achats doc={achatsDoc} api={achatsApi} rows={dataWithOverrides.map(r=>({pj:r.pj,nomProjet:getPjMeta(r.pj,r).nomProjet||"",gamme:r.gamme||"",etat:r.etat,arrivee:r.arrivee||null,depart:r.depart||null}))} canEdit={achEdit} owner={isOwner}/></PageGuard>}
             {/* v267 (demandé : « un seul onglet Turbines ») : production (seule saisie) + besoins des ORC (calculés) ; l'ancien pool n'est plus affiché */}
-            {view==="turbines"&&canProdTurb&&<PageGuard name="Turbines"><TurbinesHub doc={prodDoc} api={prodApi} rows={dataWithOverrides} canEdit={turbEdit} owner={isOwner} tab={turbTab} onTab={setTurbTab} allowTabs={turbAllowed} savePjMeta={savePjMetaOverride}/></PageGuard>}
+            {view==="turbines"&&canProdTurb&&<PageGuard name="Turbines"><TurbinesHub doc={prodDoc} api={prodApi} authorName={authorName} rows={dataWithOverrides} canEdit={turbEdit} owner={isOwner} tab={turbTab} onTab={setTurbTab} allowTabs={turbAllowed} savePjMeta={savePjMetaOverride}/></PageGuard>}
             {view==="planner"&&isOwner&&<PlannerView productionExclusions={productionExclusions} testers={testsDoc&&Array.isArray(testsDoc.testers)?testsDoc.testers:[]} planLoaded={planLoaded} planDoc={planDoc} rows={dataWithOverrides} closurePeriods={closurePeriods} authorName={authorName} pendingDeparts={pendingDeparts} onPendingApplied={clearPendingDeparts}
               onSavePlan={p=>savePlan(p,authorName)} onPublish={async(plan,note,announce)=>{const r=await publishPlan({plan,closurePeriods,productionExclusions,by:authorName,note,announce});/* v224 : un PJ publié depuis le planificateur et absent du planning initial → même bandeau qu’après un import (« Les ancrer dans l’initial ») */if(r&&r.rows&&initialPjsRef.current.size){const fresh=r.rows.filter(x=>x&&x.pj&&x.etat!=="SLOT_LIBRE"&&!isEstimatePj(x.pj)&&!initialPjsRef.current.has(x.pj));setNewVsInitial(fresh.length?{rows:r.rows,pjs:fresh.map(x=>x.pj)}:null);}return r;}} onLoadHistory={loadHistory} onRestorePublication={restorePublication}/>}
             {view==="tests"&&canSeeTests&&<TestsTab doc={testsView} save={saveTests} data={dataWithOverrides} certifs={certifs} canEdit={testsAdmin} lead={isTestLead} sub={testsSub} onSub={setTestsSub} allowSubs={testsAllowed} focusPj={testsFocus} me={currentUser&&currentUser.email} signApi={signApi}/>}

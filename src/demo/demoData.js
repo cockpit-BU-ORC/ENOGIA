@@ -41,7 +41,7 @@ export const DEMO_PROD = {
   roues: { r1: { ref: "R1", qte: 2 }, r2: { ref: "R2", qte: 1 } },
   injecteurs: { i1: { ref: "MT11", qte: 3, ouvertures: 12, variantes: [{ bouches: 3, qte: 1 }] } },
   arbres: {}, pieces: {}, params: { d: {}, l: {} },
-  besoins: { s1: { label: "SAV-12", cfg: "100", date: day(25) } },
+  besoins: { s1: { label: "SAV-12", cfg: "100", date: day(25) }, s0: { label: "SAV-07", cfg: "100", date: day(-20), done: true, doneAt: "2026-10-20T09:00:00Z", doneBy: "Lou Martin" } }, // v334 : un besoin clos
 };
 export const demoApi = { put: async () => true, del: async () => true, setParams: async () => true, setAccess: async () => true };
 

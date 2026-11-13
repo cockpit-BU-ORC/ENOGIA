@@ -103,7 +103,10 @@ export function buildNeeds(doc, rows, metaOf, today = new Date()) {
   const open = (rows || []).filter(r => r && r.pj && r.etat !== "SHIPPED" && r.etat !== "SLOT_LIBRE");
   const ids = (rows || []).map(r => r.pj);
   const needs = [];
-  open.forEach(r => { const m = (metaOf && metaOf(r)) || {}, cfg = pjCfg(m, r.gamme); if (!cfg) return;
+  // v334 (demandé : « pouvoir fermer des PJ car les turbines sont déjà installées ») : besoin d'un PJ clos = retiré de la liste
+  // (ses turbines, rattachées par « besoin » ou « Affaire », ne redeviennent pas libres : voir `if (k)` plus bas)
+  const clos = (doc && doc.clos) || {};
+  open.forEach(r => { if (clos[r.pj]) return; const m = (metaOf && metaOf(r)) || {}, cfg = pjCfg(m, r.gamme); if (!cfg) return;
     needs.push({ key: "pj:" + r.pj, kind: "pj", pj: r.pj, label: r.pj, sub: m.nomProjet && m.nomProjet !== "—" ? m.nomProjet : "", r, cfg, cfgSet: !!m.turbCfg, roue: m.turbRoue || "", inj: m.turbInj || "", injB: m.turbInjB == null ? null : +m.turbInjB, date: isoOf(r.arrivee) }); });
   Object.entries((doc && doc.besoins) || {}).forEach(([id, b]) => { if (!b || b.done) return;
     needs.push({ key: "sav:" + id, kind: "sav", id, label: b.label || "SAV", sub: b.note || "", raw: b, cfg: cfgById(b.cfg) || TURB_CFGS[1], cfgSet: true, roue: b.roue || "", inj: b.inj || "", injB: b.injB == null || b.injB === "" ? null : +b.injB, date: isoOf(b.date) }); });
@@ -271,4 +274,11 @@ export function autoFill(doc, needs, free, today = new Date(), newId) {
     });
   });
   return { writes: [...writes.values()], turbs, allocs, count: turbs.length + allocs.length };
+}
+
+// v334 : besoins clos — PJ (clos[PJ] = { at, by }) et besoins SAV terminés (besoins[id].done) — pour la liste « Besoins clos »
+export function closedNeeds(doc) {
+  const out = Object.entries((doc && doc.clos) || {}).filter(([, v]) => v).map(([pj, v]) => ({ key: "pj:" + pj, kind: "pj", pj, label: pj, at: v.at || "", by: v.by || "" }));
+  Object.entries((doc && doc.besoins) || {}).forEach(([id, b]) => { if (b && b.done) out.push({ key: "sav:" + id, kind: "sav", id, label: b.label || "SAV", at: b.doneAt || "", by: b.doneBy || "", raw: b }); });
+  return out.sort((a, b) => String(b.at).localeCompare(String(a.at)));
 }

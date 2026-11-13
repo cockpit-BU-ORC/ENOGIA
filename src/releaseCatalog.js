@@ -939,4 +939,7 @@ export const RELEASE_CATALOG = [
     ["Tablette", "Glisser au doigt dans Tests et le Planificateur."],
     ["Tablette", "Liste : état en pastille compacte ; Turbines › Besoins : stock dans un tiroir en bas de l'écran ; planning des bancs plus large en portrait."],
   ] },
+  { v: "334", t: "Turbines : clore un besoin", items: [
+    ["Turbines", "Besoins ORC et SAV : « Clore » retire un PJ dont les turbines sont installées ; « Besoins clos » pour le rouvrir."],
+  ] },
 ];

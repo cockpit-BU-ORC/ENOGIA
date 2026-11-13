@@ -2410,3 +2410,9 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - SAV : fiche du ticket à côté de la liste jusqu'à 980 px. Menu : toucher à côté le referme. Fenêtres en `dvh`.
 - Aucune clé localStorage, aucune donnée ni règle Firestore.
 - Fichiers : styles.css, a11yFallback.js, pointerDrag.js, App.js, components/EtatControls.js, TableView.js, GanttView.js, CalendarView.js, TestsTab.js, TurbinesHub.js, SavPage.js, ~20 fenêtres (vh → dvh), versions.
+
+## v334 — Turbines › Besoins : clore un besoin
+
+- Bouton « Clore » sur chaque carte ; « Besoins clos (N) » pour rouvrir.
+- Données : `planning/prodTurbines.clos[PJ]` (PJ), `besoins[id].done` (SAV) ; règles Firestore inchangées.
+- Fichiers : turbineNeeds.js(+test), components/TurbinesHub.js, App.js, demo/demoData.js, versions.

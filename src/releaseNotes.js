@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v334",
+    date: "2026-11-13",
+    title: "V334 : clore un besoin turbine",
+    items: [
+      { t: "Turbines", d: "« Clore » retire de Besoins ORC et SAV un PJ dont les turbines sont installées ; « Besoins clos » pour le rouvrir." },
+    ],
+  },
+  {
     id: "2026-11-v333",
     date: "2026-11-13",
     title: "V333 : le Cockpit sur tablette",

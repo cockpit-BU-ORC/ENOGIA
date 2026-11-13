@@ -12,7 +12,7 @@ import { ProdTurbines } from "./ProdTurbines";
 import { usePointerDnD } from "../pointerDrag";
 import { NavIcon } from "./SharedUI";
 import { createPortal } from "react-dom";
-import { allTurbines, monthOf, swapNeedKeys, TURB_CFGS, cfgById, refsOf, buildNeeds, assignOps, unassignOps, installOps, allocOps, unallocOps, stockTiles, injInfo, maxBouches, autoFill, roueConflict, prodState, workDate, pjOfAffaire } from "../turbineNeeds";
+import { allTurbines, monthOf, swapNeedKeys, TURB_CFGS, cfgById, refsOf, buildNeeds, assignOps, unassignOps, installOps, allocOps, unallocOps, stockTiles, injInfo, maxBouches, autoFill, roueConflict, prodState, workDate, pjOfAffaire, closedNeeds } from "../turbineNeeds";
 import { getPjMeta, CountryFlag } from "../pjMeta";
 import { askConfirm } from "../confirm";
 
@@ -142,12 +142,24 @@ function Piece({ tone, icon, label, val, mono, detail, x }) {
     <span title={val} style={{ ...REF_ST, fontFamily: mono ? T.fontMono : T.fontDisplay, fontSize: mono ? 12 : 14, fontWeight: 600, color: tone.ink, paddingRight: x ? 14 : 0 }}>{val}</span>
     {detail && <span style={{ fontSize: 11, lineHeight: 1.15, color: tone.ink, opacity: 0.85 }}>{detail}</span>}{x}</>;
 }
-function NeedsView({ doc, api, rows, canEdit, savePjMeta }) {
+function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
   const [tick, setTick] = useState(0); // la fiche PJ (pjMetaOverrides) change sans changer rows : recalcul après une modification ici
   const { needs, free } = useMemo(() => buildNeeds(doc, rows, r => getPjMeta(r.pj, r)), [doc, rows, tick]); // eslint-disable-line react-hooks/exhaustive-deps
   const dnd = usePointerDnD();
   const docRef = useRef(doc); docRef.current = doc;
-  const [gam, setGam] = useState("100"), [msg, setMsg] = useState(null), [sav, setSav] = useState(null), [busy, setBusy] = useState(false), [onlyOpen, setOnlyOpen] = useState(true), [pop, setPop] = useState(null), [picked, setPicked] = useState(null), [landed, setLanded] = useState(null), [drawer, setDrawer] = useState(false);
+  const [gam, setGam] = useState("100"), [msg, setMsg] = useState(null), [sav, setSav] = useState(null), [busy, setBusy] = useState(false), [onlyOpen, setOnlyOpen] = useState(true), [pop, setPop] = useState(null), [picked, setPicked] = useState(null), [landed, setLanded] = useState(null), [drawer, setDrawer] = useState(false), [closedDlg, setClosedDlg] = useState(false);
+  // v334 (demandé : « pouvoir fermer des PJ car les turbines sont déjà installées et donc plus dans la liste ») : clore / rouvrir un besoin
+  const closeNeed = async n => {
+    if (!(await askConfirm({ title: "Clore le besoin " + n.label + " ?", message: "Il sort de la liste des besoins (et du remplissage automatique). Les turbines et pièces déjà attribuées ne bougent pas. On le rouvre depuis « Besoins clos ».", confirmLabel: "Clore le besoin" }))) return;
+    const at = new Date().toISOString(), by = authorName || "";
+    const ok = n.kind === "sav" ? await api.put("besoins", n.id, { ...n.raw, done: true, doneAt: at, doneBy: by }) : await api.put("clos", n.pj, { at, by });
+    setMsg({ t: ok ? "Besoin " + n.label + " clos." : "La fermeture n'a pas été enregistrée." });
+  };
+  const reopenNeed = async c => {
+    const ok = c.kind === "sav" ? await api.put("besoins", c.id, { ...c.raw, done: false, doneAt: null, doneBy: null }) : await api.del("clos", c.pj);
+    setMsg({ t: ok ? "Besoin " + c.label + " rouvert." : "La réouverture n'a pas été enregistrée." });
+  };
+  const closedL = closedNeeds(doc);
   useEffect(() => { if (picked) setDrawer(false); }, [picked]);
   useEffect(() => { if (!msg) return undefined; const t = setTimeout(() => setMsg(null), 5000); return () => clearTimeout(t); }, [msg]);
   useEffect(() => { if (!picked) return undefined; const k = e => { if (e.key === "Escape") setPicked(null); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [picked]);
@@ -277,6 +289,7 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta }) {
           <span style={{ fontSize: 12, color: T.ink500 }}>Par mois de besoin ; n° = priorité (cliquer dessus pour l'échanger avec un autre besoin, ▲ ▼ dans le mois).</span>
           <span style={{ flex: 1 }} />
           {canEdit && <button type="button" disabled={busy} onClick={auto} title="Propose une affectation du stock (par date de besoin, pièces prévues), annulable" style={{ ...themeBtn("sec", "sm") }}>Remplir automatiquement</button>}
+          {closedL.length > 0 && <button type="button" onClick={() => setClosedDlg(true)} style={{ ...themeBtn("ghost", "sm") }}>Besoins clos ({closedL.length})</button>}
           {canEdit && <button type="button" onClick={() => setSav({})} style={{ ...themeBtn("pri", "sm") }}>＋ Besoin SAV</button>}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 420px), 1fr))", gap: 8, padding: "8px 12px 16px", alignItems: "start" }}>
@@ -305,6 +318,7 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta }) {
                 <span title={n.sub} style={{ flex: "1 1 80px", minWidth: 0, fontSize: 12, color: T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{n.sub}{meta && meta.pays && meta.pays !== "—" ? " · " + meta.pays : ""}</span>
                 {n.kind === "sav" && canEdit && <button type="button" onClick={() => setSav({ id: n.id, ...n.raw, injB: n.raw.injB == null ? "" : String(n.raw.injB) })} style={{ ...linkB, color: T.ink500, fontWeight: 500 }}>modifier</button>}
                 <span style={{ fontSize: 12, color: T.ink700, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>pour le <b>{fdS(n.date)}</b></span>
+                {canEdit && <button type="button" onClick={() => closeNeed(n)} title="Turbines installées : retirer ce besoin de la liste" aria-label={"Clore le besoin " + n.label} style={{ ...themeBtn(allDone(n) ? "sec" : "ghost", "sm"), minHeight: 26, padding: "0 8px", fontSize: 12 }}>Clore</button>}
                 {canEdit && <button type="button" aria-label={"Configuration des turbines de " + n.label + " (" + n.cfg.l + ")"} title={"Configuration : " + n.cfg.l} onClick={e => setPop({ n, kind: "cfg", el: e.currentTarget })} style={{ ...arrowB, fontSize: 14, border: "none", background: "transparent" }}>⋯</button>}
               </div>
               {badI.length > 0 && <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>{badI.map((i, q) => <span key={q} style={{ fontSize: 12, fontWeight: 600, color: T.red600 }}>{i.t}</span>)}</div>}
@@ -357,6 +371,16 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta }) {
             <button type="button" aria-label="Un bouchage de plus" disabled={(n.injB || 0) >= mx} onClick={() => setNeed(n, { turbInjB: Math.min(mx, (n.injB || 0) + 1) })} style={{ width: 32, height: 32, borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, cursor: "pointer" }}>+</button>
           </div></div>} />; })()}
     {sav && <SavDialog doc={doc} init={sav.id ? sav : null} onSave={saveSav} onDelete={sav.id ? delSav : null} onClose={() => setSav(null)} />}
+    {closedDlg && <div onMouseDown={e => { if (e.target === e.currentTarget) setClosedDlg(false); }} style={{ position: "fixed", inset: 0, zIndex: 10010, background: "rgba(10,20,30,.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <div role="dialog" aria-modal="true" aria-label="Besoins clos" onKeyDown={e => { if (e.key === "Escape") setClosedDlg(false); }} style={{ background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, width: "min(520px,100%)", maxHeight: "80dvh", overflowY: "auto", padding: "16px 18px", fontFamily: T.font, display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={{ fontFamily: T.fontDisplay, fontSize: FZ.lg, fontWeight: 600 }}>Besoins clos ({closedL.length})</div>
+        <div style={{ fontSize: 12, color: T.ink500 }}>Retirés de la liste (turbines installées). « Rouvrir » les remet dans la liste, avec leurs turbines et pièces.</div>
+        {closedL.length === 0 ? <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Aucun besoin clos</div> : closedL.map(c => <div key={c.key} style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 44, borderTop: "1px solid " + T.line }}>
+          <b style={{ fontFamily: T.fontMono, fontSize: 13 }}>{c.label}</b><span style={{ fontSize: 12, color: c.kind === "sav" ? T.violet600 : T.ink700 }}>{c.kind === "sav" ? "SAV" : "ORC"}</span>
+          <span style={{ flex: 1, fontSize: 12, color: T.ink500 }}>{c.at ? "clos le " + new Date(c.at).toLocaleDateString("fr-FR") : ""}{c.by ? " par " + c.by : ""}</span>
+          {canEdit && <button type="button" onClick={() => reopenNeed(c)} style={{ ...themeBtn("sec", "sm") }}>Rouvrir</button>}</div>)}
+        <div style={{ display: "flex", justifyContent: "flex-end" }}><button type="button" onClick={() => setClosedDlg(false)} style={{ ...themeBtn("sec", "md") }}>Fermer</button></div>
+      </div></div>}
   </div>);
 }
 
@@ -425,7 +449,7 @@ function ImportDialog({ doc, api, onClose }) {
 }
 
 const TABS = [["prod", "Production"], ["orc", "Besoins ORC et SAV"]]; // identifiants gardés (clé enogia_turbines_tab)
-export function TurbinesHub({ doc, api, rows, canEdit, owner, savePjMeta, tab: tabP, onTab, allowTabs }) {
+export function TurbinesHub({ doc, api, rows, canEdit, owner, savePjMeta, tab: tabP, onTab, allowTabs, authorName }) {
   const [tab0, setTab0] = useState(() => { try { const v = localStorage.getItem("enogia_turbines_tab"); return TABS.some(t => t[0] === v) ? v : "prod"; } catch (e) { return "prod"; } });
   const tab = tabP || tab0, setTab = onTab || setTab0; // v307 : sous-page choisie aussi depuis le menu (App)
   useEffect(() => { try { localStorage.setItem("enogia_turbines_tab", tab); } catch (e) { /* stockage indisponible */ } }, [tab]);
@@ -446,7 +470,7 @@ export function TurbinesHub({ doc, api, rows, canEdit, owner, savePjMeta, tab: t
       {/* v268 (demandé : « mettre à disposition le bouton importer à Jérémie ») : toute personne qui peut modifier la production (propriétaire + liste d’accès) */}
       {canEdit && tab === "prod" && <button type="button" onClick={() => setImp(true)} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "4px 12px", minHeight: 30, fontSize: FZ.xs, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>Importer des données (JSON)</button>}
     </div>
-    {tab === "prod" ? <ProdTurbines doc={doc} api={api} canEdit={canEdit} owner={owner} pjs={pjs} /> : <NeedsView doc={doc} api={api} rows={rows} canEdit={canEdit} savePjMeta={savePjMeta} />}
+    {tab === "prod" ? <ProdTurbines doc={doc} api={api} canEdit={canEdit} owner={owner} pjs={pjs} /> : <NeedsView doc={doc} api={api} rows={rows} canEdit={canEdit} savePjMeta={savePjMeta} authorName={authorName} />}
     {imp && <ImportDialog doc={doc} api={api} onClose={() => setImp(false)} />}
   </div>);
 }

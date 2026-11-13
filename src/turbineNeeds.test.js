@@ -135,3 +135,13 @@ test("v320 : priorité globale, échange entre deux mois", () => {
   expect(keys.indexOf("sav:s1")).toBe(0);
   expect(swapNeedKeys(needs, "pj:PJ1", "pj:PJ1")).toBeNull();
 });
+
+// v334 : besoins clos
+import { closedNeeds } from "./turbineNeeds";
+test("v334 : un PJ clos sort des besoins, ses turbines ne redeviennent pas libres ; SAV terminé listé", () => {
+  const d = { ...doc, clos: { PJ1: { at: "2026-11-10T09:00:00Z", by: "Gabriel" } }, besoins: { ...doc.besoins, s2: { label: "SAV9", cfg: "100", done: true, doneAt: "2026-11-11T09:00:00Z" } } };
+  const { needs, free } = buildNeeds(d, rows, metaOf, today);
+  expect(needs.map(n => n.key)).toEqual(["sav:s1", "pj:PJ2"]);
+  expect(free.map(x => x.num).sort()).toEqual(["100N1", "20N1"]); // 100N2 (Affaire PJ1) n'est pas remise dans le stock
+  expect(closedNeeds(d).map(c => c.key)).toEqual(["sav:s2", "pj:PJ1"]);
+});
