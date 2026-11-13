@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v337",
+    date: "2026-11-13",
+    title: "V337 : la fiche de tests, étape par étape",
+    items: [
+      { t: "Tests", d: "La fiche de tests se suit en six étapes, avec le livret de configuration qui s'ouvre comme un livre." },
+      { t: "Tests", d: "Checklist de tests au format de la checklist de debug ; signature au doigt." },
+    ],
+  },
+  {
     id: "2026-11-v336",
     date: "2026-11-13",
     title: "V336 : carte routière, tests sur 4 semaines",

@@ -9,7 +9,7 @@ import { db } from "./firebase";
 export const IS_BETA=process.env.REACT_APP_BETA==="1";
 export const DOC_PFX=IS_BETA?"beta_":"";
 if(IS_BETA&&typeof document!=="undefined")document.title="[BÊTA] Cockpit BU ORC";
-export const BETA_DOCS=["access","current","initial","overrides","comments","pjMetaSync","pjMetaOverrides","delays","delayTypes","managerEmails","changeLog","cashin","cashinLinks","turbines","tests","profiles","prodTurbines","achats","sav","savDemandes"];
+export const BETA_DOCS=["access","testbook","current","initial","overrides","comments","pjMetaSync","pjMetaOverrides","delays","delayTypes","managerEmails","changeLog","cashin","cashinLinks","turbines","tests","profiles","prodTurbines","achats","sav","savDemandes"];
 export const DOC_REF=()=>doc(db,"planning",DOC_PFX+"current");
 export const INITIAL_DOC_REF=()=>doc(db,"planning",DOC_PFX+"initial");
 export const OVERRIDES_DOC_REF=()=>doc(db,"planning",DOC_PFX+"overrides");
@@ -20,7 +20,9 @@ export const DELAYS_DOC_REF=()=>doc(db,"planning",DOC_PFX+"delays");
 export const DELAY_TYPES_DOC_REF=()=>doc(db,"planning",DOC_PFX+"delayTypes");
 export const TURBINES_DOC_REF=()=>doc(db,"planning",DOC_PFX+"turbines"); // v146.22 : pool de turbines
 export const PRODTURB_DOC_REF=()=>doc(db,"planning",DOC_PFX+"prodTurbines"); // v226 : Production turbines (directeur de production turbines + propriétaire)
-export const TESTS_DOC_REF=()=>doc(db,"planning",DOC_PFX+"tests"); // v154 : testeurs, affectations aux périodes de tests, catalogue FAT
+export const TESTS_DOC_REF=()=>doc(db,"planning",DOC_PFX+"tests");
+export const TESTBOOK_DOC_REF=()=>doc(db,"planning",DOC_PFX+"testbook"); // v337 (D13) : livret de configuration (manuel Word découpé) — texte
+export const TESTBOOK_IMG_REF=k=>doc(db,"planning",DOC_PFX+"testbook_img_"+k); // v337 : une image du livret par document (compressée) // v154 : testeurs, affectations aux périodes de tests, catalogue FAT
 export const MANAGER_EMAILS_DOC_REF=()=>doc(db,"planning",DOC_PFX+"managerEmails");
 export const ACHATS_DOC_REF=()=>doc(db,"planning",DOC_PFX+"achats");
 export const SAV_DOC_REF=()=>doc(db,"planning",DOC_PFX+"sav"); // v326 : SAV / MES (tickets, interventions, parc, techniciens) — équipe SAV

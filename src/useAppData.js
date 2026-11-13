@@ -1,8 +1,8 @@
 // v261 : sorti de App.js — lectures Firestore temps réel et enregistrements de quelques documents (turbines, tests, Production
 // turbines, retards, Cash in). Même code qu'avant, regroupé par document ; App.js n'appelle plus que ces crochets.
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { onSnapshot, setDoc, updateDoc, deleteField } from "firebase/firestore";
-import { TURBINES_DOC_REF, TESTS_DOC_REF, PRODTURB_DOC_REF, DELAYS_DOC_REF, ACHATS_DOC_REF, ACCESS_DOC_REF, SAV_DOC_REF, SAV_DEM_DOC_REF } from "./appDocs";
+import { onSnapshot, setDoc, updateDoc, deleteField, getDoc } from "firebase/firestore";
+import { TESTBOOK_DOC_REF, TESTBOOK_IMG_REF, TURBINES_DOC_REF, TESTS_DOC_REF, PRODTURB_DOC_REF, DELAYS_DOC_REF, ACHATS_DOC_REF, ACCESS_DOC_REF, SAV_DOC_REF, SAV_DEM_DOC_REF } from "./appDocs";
 import { notify } from "./components/SharedUI";
 import { setCashinDoc, setCashinLinks, getCashinDoc, getCashinLinks, getOrdoPjs, cashGroupsFor } from "./cashinLink";
 import { CASHIN_DOC_REF, CASHIN_LINKS_REF, CASHIN_SHARED_REF, CASHIN_PRODUIT_REF, buildSharedCashin } from "./cashinData";
@@ -121,6 +121,23 @@ export function useSav(currentUser, authorName) {
 }
 
 // v323 : jalons « Produit » du Cash in (copie réduite) — lus par tout compte connecté, pour l'accueil du responsable produit
+// v337 (D13) : livret de configuration — planning/testbook = { title, ref, chapters, images: { "media/image3.png": clé }, at, by } ;
+// images dans planning/testbook_img_<clé> = { data: "data:image/jpeg;base64,…" } (lues à la demande, gardées en mémoire)
+const bookImgCache = {};
+export function useTestBook(currentUser, authorName) {
+  const [book, setBook] = useState(null);
+  useEffect(() => { if (!currentUser) return undefined;
+    return onSnapshot(TESTBOOK_DOC_REF(), s => setBook(s.exists() ? s.data() : { chapters: [] }), e => { console.warn("testbook (lecture) :", e && e.message); setBook({ chapters: [] }); }); }, [currentUser]);
+  const api = useMemo(() => ({
+    loadImg: async k => { if (!k) return null; if (bookImgCache[k] !== undefined) return bookImgCache[k]; try { const s = await getDoc(TESTBOOK_IMG_REF(k)); bookImgCache[k] = s.exists() ? s.data().data || null : null; } catch (e) { bookImgCache[k] = null; } return bookImgCache[k]; },
+    // images d'abord (une par document), puis le texte : un livret à moitié importé ne s'affiche jamais
+    save: async (b, imgs, onStep) => {
+      try { let i = 0; for (const [k, data] of Object.entries(imgs || {})) { await setDoc(TESTBOOK_IMG_REF(k), { data, at: new Date().toISOString() }); bookImgCache[k] = data; i++; if (onStep) onStep(i); }
+        await setDoc(TESTBOOK_DOC_REF(), { ...b, at: new Date().toISOString(), by: authorName || "" }); notify("Livret enregistré", "ok"); return true; }
+      catch (e) { console.error(e); notify("Enregistrement du livret impossible : " + (e && e.message), "warn"); return false; } },
+  }), [authorName]);
+  return { book, bookApi: api };
+}
 export function useCashinProduit(currentUser) {
   const [doc, setDoc0] = useState(null);
   useEffect(() => { if (!currentUser) return undefined;

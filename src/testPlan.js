@@ -40,7 +40,9 @@ export function catalogOf(doc) {
 export const testersOf = doc => (doc && Array.isArray(doc.testers) ? doc.testers : []);
 export const planOf = (doc, pj) => {
   const p = doc && doc.plans && doc.plans[pj];
-  return { assign: Array.isArray(p && p.assign) ? p.assign : [], sel: (p && p.sel) || {}, extra: (p && p.extra) || {}, notes: (p && p.notes) || {}, done: (p && p.done) || {}, st: (p && p.st) || {}, stBy: (p && p.stBy) || {}, forced: (p && p.forced) || null, signs: (p && p.signs) || {}, debug: (p && p.debug) || null }; // v270 : debug (checklist de debug) gardé — sans lui, chaque case cochée écrasait la précédente
+  return { assign: Array.isArray(p && p.assign) ? p.assign : [], sel: (p && p.sel) || {}, extra: (p && p.extra) || {}, notes: (p && p.notes) || {}, done: (p && p.done) || {}, st: (p && p.st) || {}, stBy: (p && p.stBy) || {}, forced: (p && p.forced) || null, signs: (p && p.signs) || {}, debug: (p && p.debug) || null,
+    // v337 : détail des tests au format de la checklist de debug (tres), demandes spécifiques du client (asks, D12), livret de configuration (book, D13)
+    tres: (p && p.tres) || {}, asks: Array.isArray(p && p.asks) ? p.asks : [], book: (p && p.book) || null }; // v270 : debug (checklist de debug) gardé — sans lui, chaque case cochée écrasait la précédente
 };
 
 // Parties présentes selon la présence aux tests (null | "client" | "nobo" | "both") : l'interne est toujours fait.
@@ -82,7 +84,8 @@ export const toggleDone = (plan, section, id, by, at) => setStatus(plan, section
 // Avancement d'une machine sur les parties actives (interne, + client / NOBO si présents) : faits (réussis + échecs) / à réaliser.
 export function progressOf(plan, catalog, sections) {
   let done = 0, total = 0, ok = 0, ko = 0, wip = 0;
-  sections.forEach(k => selectedIds(plan, catalog, k).forEach(id => {
+  // v337 (D12) : les demandes spécifiques du client comptent dans le FAT interne
+  sections.forEach(k => [...selectedIds(plan, catalog, k), ...(k === "interne" ? (plan.asks || []).map(a => a.id) : [])].forEach(id => {
     const v = statusOf(plan, k, id); total++;
     if (v === "ok") { ok++; done++; } else if (v === "ko") { ko++; done++; } else if (v === "wip") wip++;
   }));

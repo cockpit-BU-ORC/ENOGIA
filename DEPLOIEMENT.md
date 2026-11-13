@@ -2431,3 +2431,13 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Maquette de la fiche de tests (D12 à D14, D10) : maquettes-design/v336-fiche-tests.html, en attente du go.
 - Aucune clé localStorage ; règles Firestore inchangées.
 - Fichiers : components/SavPage.js, components/TestsTab.js, versions.
+
+## v337 — fiche de tests refaite, livret de configuration (D13), D10, D12, D14
+
+- Fiche de tests : fil des 6 étapes (qui teste, présence, configuration ORC, checklist de debug + fréquences et vibrations, checklist de tests + demandes du client, signature au doigt).
+- Livret de configuration : import du manuel Word dans Tests › Checklists › Livret de configuration (administrateurs) ; validation, statut, commentaire par étape ; filtres, synthèse des problèmes ; exports CSV / JSON / PDF ; reprise d'une session.
+- **À faire par Gabriel avant l'import du manuel : republier firestore.rules** (documents `testbook` et `testbook_img_*`).
+- D14 : régler les fréquences figées et les limites dans Tests › Checklists › Fréquences et vibrations.
+- Données : `planning/testbook`, `planning/testbook_img_<clé>` (nouveaux) ; dans `planning/tests` : `vibModel`, `plans[PJ].book / tres / asks / debug.vib`.
+- Aucune clé localStorage.
+- Fichiers : components/TestsTab.js, components/TestFiche.js (nouveau), components/ChecklistsView.js, manualImport.js(+test) (nouveau), testFiche.js (nouveau), testPlan.js, checklistImport.js, useAppData.js, appDocs.js, App.js, firestore.rules, demo, versions.

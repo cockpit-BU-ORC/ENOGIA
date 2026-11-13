@@ -44,6 +44,26 @@ export function parseChecklistText(text) {
   return sections.filter(s => s.items.length);
 }
 // Fichier .docx (ZIP) → texte de word/document.xml (décompression par le navigateur, sans bibliothèque)
+// v337 : lecture de plusieurs fichiers d'un .docx (document, styles, liens, images) — filtre(nom) → true pour garder
+export async function zipFiles(buffer, keep) {
+  const u = new Uint8Array(buffer), dv = new DataView(u.buffer, u.byteOffset, u.byteLength), out = {};
+  let eocd = -1; for (let i = u.length - 22; i >= Math.max(0, u.length - 66000); i--) if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  if (eocd < 0) throw new Error("ce fichier n'est pas un document Word (.docx)");
+  const n = dv.getUint16(eocd + 10, true); let p = dv.getUint32(eocd + 16, true);
+  for (let k = 0; k < n; k++) {
+    if (dv.getUint32(p, true) !== 0x02014b50) break;
+    const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true), nl = dv.getUint16(p + 28, true), el = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true), off = dv.getUint32(p + 42, true);
+    const name = new TextDecoder().decode(u.subarray(p + 46, p + 46 + nl));
+    if (keep(name)) {
+      const lnl = dv.getUint16(off + 26, true), lel = dv.getUint16(off + 28, true), data = u.subarray(off + 30 + lnl + lel, off + 30 + lnl + lel + csize);
+      if (method === 0) out[name] = data.slice();
+      else if (method === 8 && typeof DecompressionStream !== "undefined") out[name] = new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).arrayBuffer());
+      else throw new Error("décompression impossible dans ce navigateur");
+    }
+    p += 46 + nl + el + cl;
+  }
+  return out;
+}
 export async function docxDocumentXml(buffer) {
   const u = new Uint8Array(buffer), dv = new DataView(u.buffer, u.byteOffset, u.byteLength);
   let eocd = -1; for (let i = u.length - 22; i >= Math.max(0, u.length - 66000); i--) if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }

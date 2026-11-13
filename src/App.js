@@ -47,7 +47,7 @@ import { listenChangeLog } from "./changeLog";
 // v260 : documents Firestore, bandeau bêta et identité du compte sortis de ce fichier (appDocs.js, components/AppChrome.js)
 import { IS_BETA, DOC_PFX, DOC_REF, INITIAL_DOC_REF, OVERRIDES_DOC_REF, COMMENTS_DOC_REF, PJ_META_SYNC_DOC_REF, PJ_META_OVERRIDES_DOC_REF, DELAYS_DOC_REF, DELAY_TYPES_DOC_REF, MANAGER_EMAILS_DOC_REF, PROFILES_DOC_REF, DEFAULT_DELAY_TYPES } from "./appDocs";
 import { BetaBanner, UserChip } from "./components/AppChrome";
-import { useAccessDoc, useTurbineDoc, useTestsDoc, useProdTurbines, useCashinProduit, useSav, useDelays, useCashinSync, useAchats } from "./useAppData";
+import { useTestBook, useAccessDoc, useTurbineDoc, useTestsDoc, useProdTurbines, useCashinProduit, useSav, useDelays, useCashinSync, useAchats } from "./useAppData";
 import { useListFilters, filterOptions, filterRows } from "./listFilters";
 // v289 (lot G « rapidité ») : les grandes pages ne sont chargées qu'à leur première ouverture (paquet de départ allégé) ;
 // en attendant, un squelette s'affiche dans la zone principale (Suspense).
@@ -66,7 +66,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-13-v336-carte-osm-tests-4sem";
+const APP_BUILD_VERSION = "2026-11-13-v337-fiche-tests-livret";
 
 const ReleasePopup = React.lazy(() => import("./components/ReleaseNotes").then(m => ({ default: m.ReleasePopup })));
 function Navigate0({ go }) { useEffect(() => { go(); }, []); return null; } // eslint-disable-line react-hooks/exhaustive-deps
@@ -635,6 +635,7 @@ export default function App(){
   const {turbineDoc,saveTurbines}=useTurbineDoc(pinOk,authorName); // v261 : useAppData.js
   // v154 : Manager › Tests (testeurs, affectations, tests FAT) — v261 : useAppData.js
   const {testsDoc,testsLoaded,saveTests}=useTestsDoc(currentUser,authorName);
+  const {book:testBook,bookApi:testBookApi}=useTestBook(currentUser,authorName); // v337 (D13) : livret de configuration des tests
   // v188 : profils (rôle → accueil, PJ associés), lus par tous les comptes connectés, modifiés depuis le Manager
   useEffect(()=>{
     if(!currentUser)return undefined;
@@ -670,7 +671,8 @@ export default function App(){
   // Page « Tests » (rail de gauche) : administrateurs + testeurs de la liste (adresse renseignée) ; les testeurs consultent seulement
   // v238 : le responsable des testeurs (rôle « resptest » dans Personnes et rôles) voit et renseigne les tests de tous les testeurs
   const isTestLead=accMe?accAt("tests","w"):(!!currentUser&&profileOf(profiles,currentUser.email).role==="resptest");
-  const canSeeTests=!!((accMe?accAt("tests","r"):pinOk)||isTestLead||testerOfEmail(testsDoc,currentUser&&currentUser.email));
+  // v337 (D12) : avant l'activation des accès, les chefs de projet ouvrent aussi Tests (demandes spécifiques du client de leurs PJ)
+  const canSeeTests=!!((accMe?accAt("tests","r"):(pinOk||(!!currentUser&&profileOf(profiles,currentUser.email).role==="cdp")))||isTestLead||testerOfEmail(testsDoc,currentUser&&currentUser.email));
   const testsAdmin=accMe?accAt("tests","a"):pinOk;
   useEffect(()=>{if(view==="tests"&&testsLoaded&&!canSeeTests)setView("table");},[view,testsLoaded,canSeeTests]); // accès retiré ou ancien choix mémorisé
   // v226 : Production turbines — v261 : useAppData.js
@@ -1260,7 +1262,7 @@ export default function App(){
             {view==="turbines"&&canProdTurb&&<PageGuard name="Turbines"><TurbinesHub doc={prodDoc} api={prodApi} authorName={authorName} rows={dataWithOverrides} canEdit={turbEdit} owner={isOwner} tab={turbTab} onTab={setTurbTab} allowTabs={turbAllowed} savePjMeta={savePjMetaOverride}/></PageGuard>}
             {view==="planner"&&isOwner&&<PlannerView productionExclusions={productionExclusions} testers={testsDoc&&Array.isArray(testsDoc.testers)?testsDoc.testers:[]} planLoaded={planLoaded} planDoc={planDoc} rows={dataWithOverrides} closurePeriods={closurePeriods} authorName={authorName} pendingDeparts={pendingDeparts} onPendingApplied={clearPendingDeparts}
               onSavePlan={p=>savePlan(p,authorName)} onPublish={async(plan,note,announce)=>{const r=await publishPlan({plan,closurePeriods,productionExclusions,by:authorName,note,announce});/* v224 : un PJ publié depuis le planificateur et absent du planning initial → même bandeau qu’après un import (« Les ancrer dans l’initial ») */if(r&&r.rows&&initialPjsRef.current.size){const fresh=r.rows.filter(x=>x&&x.pj&&x.etat!=="SLOT_LIBRE"&&!isEstimatePj(x.pj)&&!initialPjsRef.current.has(x.pj));setNewVsInitial(fresh.length?{rows:r.rows,pjs:fresh.map(x=>x.pj)}:null);}return r;}} onLoadHistory={loadHistory} onRestorePublication={restorePublication}/>}
-            {view==="tests"&&canSeeTests&&<TestsTab doc={testsView} save={saveTests} data={dataWithOverrides} certifs={certifs} canEdit={testsAdmin} lead={isTestLead} sub={testsSub} onSub={setTestsSub} allowSubs={testsAllowed} focusPj={testsFocus} me={currentUser&&currentUser.email} signApi={signApi}/>}
+            {view==="tests"&&canSeeTests&&<TestsTab doc={testsView} save={saveTests} data={dataWithOverrides} certifs={certifs} canEdit={testsAdmin} lead={isTestLead} sub={testsSub} onSub={setTestsSub} allowSubs={testsAllowed} focusPj={testsFocus} me={currentUser&&currentUser.email} signApi={signApi} book={testBook} bookApi={testBookApi} askPjs={myPjSet} myName={authorName}/>}
             {view==="changes"&&<ChangesView entries={changeLog} onOpenPj={jumpToPj}/>}
             {view==="comments"&&<CommentsView data={dataWithOverrides} comments={comments} addComment={addComment} deleteComment={deleteComment}
               pinOk={pinOk} seeAll={seeAllComments} myPjs={myPjList} addCommentMulti={addCommentMulti} openPj={pj=>{setCalDay(null);setCalTab("resume");setCalSel(pj);}} authorName={authorName} resolveComment={resolveComment}/>}

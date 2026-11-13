@@ -953,4 +953,11 @@ export const RELEASE_CATALOG = [
     ["SAV / MES", "Planning : le nom du PJ d'une demande n'est plus barré."],
     ["Tests", "Le planning des bancs couvre les 4 prochaines semaines."],
   ] },
+  { v: "337", t: "Fiche de tests refaite, livret de configuration", items: [
+    ["Tests", "La fiche de tests d'une machine se suit étape par étape : qui teste, présence, configuration ORC, checklist de debug, checklist de tests, signature."],
+    ["Tests", "Livret de configuration (manuel découpé en chapitres et étapes) : validation, statut OK ou Problème, commentaire, filtres, synthèse des problèmes, exports CSV, JSON et PDF, reprise d'une session."],
+    ["Tests", "Checklist de tests au même format que la checklist de debug ; les chefs de projet y ajoutent les demandes spécifiques du client."],
+    ["Tests", "Fréquences turbines et vibrations dans la checklist de debug ; signature au doigt ; créneaux des bancs mieux séparés."],
+    ["Tests", "Import du manuel Word et réglage des fréquences dans Tests › Checklists.", "admin"],
+  ] },
 ];

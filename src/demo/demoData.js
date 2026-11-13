@@ -35,7 +35,19 @@ export const DEMO_COMMENTS = {
   PJ906: [{ author: "Sam Petit", text: "Machine livrée, réception signée.", date: at(-20, 11), private: true }],
 };
 export const DEMO_PROGRESS = { PJ901: 40, PJ902: 65, "PJ903-1": 85, "PJ903-2": 95, PJ906: 100 };
-export const DEMO_TESTS = { testers: ["Lou Martin", "Sam Petit"], plans: {}, catalog: [] };
+export const DEMO_TESTS = { testers: [{ id: "t1", name: "Lou Martin" }, { id: "t2", name: "Sam Petit" }], catalog: [],
+  plans: { "PJ903-2": { assign: [{ tid: "t1" }], st: { interne: { i1: "ok", i2: "ko" } }, tres: { interne: { i2: { pb: "TT-31 lit 0 °C débranché", cause: "Câblage inversé" } } },
+    asks: [{ id: "q1", label: "Affichage des pressions en psi sur l'IHM", hint: "Demande du client", by: "Camille Durand", at: "2026-10-28T09:00:00Z" }],
+    book: { rows: { "prerequis": { v: true, s: "ok" }, "configuration-hardware/afe/md050n": { s: "pb", c: "Tension lue 380 V" } } },
+    debug: { rows: { "s-vent": { r: "ok" } }, vib: { ta: "2,1" } } } },
+  vibModel: { rows: [{ id: "ta", label: "Turbine A", freq: "500 Hz", limit: "4,5 mm/s" }, { id: "tb", label: "Turbine B (option)", freq: "500 Hz", limit: "4,5 mm/s" }] } };
+// v337 : livret de démonstration (contenu fictif, sans image)
+export const DEMO_BOOK = { title: "Manuel de configuration ORC", ref: "DEMO-001", images: {}, chapters: [
+  { id: "prerequis", title: "Prérequis", steps: [{ id: "prerequis", title: "Prérequis", path: [], level: 1, blocks: [{ t: "p", text: "Avoir le PC de mise en service et les fichiers de paramètres de la gamme." }] }] },
+  { id: "configuration-hardware", title: "Configuration hardware", steps: [
+    { id: "configuration-hardware/afe/md050n", title: "MD050N", path: ["Configuration hardware", "AFE"], level: 3, blocks: [{ t: "p", text: "Régler la tension de travail." }, { t: "p", text: "Mettre 400 V.", list: true }] },
+    { id: "configuration-hardware/afe/emotron", title: "Emotron", path: ["Configuration hardware", "AFE"], level: 3, blocks: [{ t: "table", rows: [["Paramètre", "Valeur"], ["P01", "50 Hz"]] }] }] },
+] };
 export const DEMO_PROD = {
   turbines: { a: { num: "100N1", step: "ok", roue: "R1" }, b: { num: "100N2", step: "s1" }, c: { num: "100N3", step: "att" }, d: { num: "20N1", step: "ok", roue: "R7", gamme: "20" } },
   roues: { r1: { ref: "R1", qte: 2 }, r2: { ref: "R2", qte: 1 } },

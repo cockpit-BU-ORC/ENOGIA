@@ -76,6 +76,8 @@ service cloud.firestore {
         && (base(id) in ['current', 'initial', 'initialBackup', 'changeLog', 'importIndex', 'delayTypes', 'turbines']
         || base(id).matches('^backup_.*'));
 
+      // v337 (D13) : livret de configuration des tests (manuel découpé) et ses images — importé par un administrateur
+      allow write: if (base(id) == 'testbook' || base(id).matches('^testbook_img_.*')) && (isOwner() || isAdmin(id) || lvl(id, 'tests') == 'a');
       // Travail de tous les jours (commentaires, tests, signatures, retards, états, fiches PJ, comptes connus) : tout compte ENOGIA
       allow write: if signedIn() && (base(id) in ['comments', 'tests', 'delays', 'overrides', 'pjMetaOverrides', 'pjMetaSync', 'knownUsers']
         || base(id).matches('^testsign_.*'));
