@@ -8,6 +8,7 @@
 import React, { useMemo, useState } from "react";
 import { T, FZ, btn } from "../theme";
 import { PlanSwitch } from "./PlanSwitch";
+import { Hl } from "./SharedUI";
 import { askConfirm } from "../confirm";
 import { profileOf, setProfile, isRemoved } from "../profiles";
 import { ACCESS_PAGES, LEVELS, LEVEL_LABEL, levelsOf, rolesOf, accessOn, slugRole, setLevel, copyRole, BUILTIN_ROLE_IDS } from "../access";
@@ -163,9 +164,10 @@ export default function AccessPage({ profiles, saveProfiles, accessDoc, saveAcce
     {/* v325 (demandé : « pas de titre en haut à gauche ; nom Gestion des accès ; boutons aux mêmes endroits ») : même en-tête que le Manager
         (titre, phrase, sélecteur dessous) sur Personnes, Rôles et Accès par page */}
     <header style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      <div style={{ minWidth: 0 }}>
-        <h1 style={{ margin: 0, fontFamily: T.fontDisplay, fontSize: "clamp(24px,2.4vw,30px)", fontWeight: 600, letterSpacing: "-.01em", color: T.ink900, lineHeight: 1.15 }}>Gestion des accès</h1>
-        <div style={{ fontSize: FZ.sm, color: T.ink500, marginTop: 2 }}>Personnes, rôles et accès par page</div>
+      {/* v339 : titre au format PageHead (surligné, phrase sur la même ligne, trait dessous) */}
+      <div style={{ minWidth: 0, display: "flex", alignItems: "baseline", gap: "4px 14px", flexWrap: "wrap", paddingBottom: 6, borderBottom: "3px solid " + T.teal500 }}>
+        <h1 style={{margin:0,fontFamily:T.fontDisplay,fontSize:"clamp(32px,3.6vw,44px)",fontWeight:600,letterSpacing:"-.02em",color:T.ink900,lineHeight:1.1}}><Hl color={T.amber500}>Gestion des accès</Hl></h1>
+        <span style={{ fontSize: FZ.sm, color: T.ink500 }}>Personnes, rôles et accès par page</span>
       </div>
       <PlanSwitch label="Sous-pages : Gestion des accès" value={sub} onGo={setSub} tools={[]} views={[...(onPeople ? [{ id: "personnes", l: "Personnes" }] : []), { id: "roles", l: "Rôles" }, { id: "acces", l: "Accès par page" }]} />
     </header>

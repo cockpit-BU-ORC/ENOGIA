@@ -45,7 +45,7 @@ export function delAsk(plan, id) { const st = { ...(plan.st || {}) }; if (st.int
 export function testRows(plan, catalog, sections) {
   return sections.map(k => {
     const base = selectedIds(plan, catalog, k).map(id => { const t = (catalog[k] || []).find(x => x.id === id) || { id, name: id, obj: "" }; return { id, label: t.name, hint: t.obj || "" }; });
-    const asks = k === "interne" ? (plan.asks || []).map(a => ({ id: a.id, label: a.label, hint: a.hint, ask: true, by: a.by, at: a.at })) : [];
+    const asks = k === "interne" ? (plan.asks || []).map(a => ({ id: a.id, label: a.label, hint: a.hint, ask: true, by: a.by, at: a.at, fiche: !!a.fiche })) : [];
     return { k, rows: base, asks };
   });
 }

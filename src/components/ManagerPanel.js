@@ -5,8 +5,8 @@ import { T, FZ, stageSoft, btn } from "../theme";
 import { SerieTag, getPjMeta, initials, GAMME_COLORS, ETAT_META, ALL_ETATS, ALL_GAMMES, MONTHS, today, PjPlate } from "../pjMeta";
 import { fmt, toLocalISO, diffDays, weekStartOf } from "../parsers";
 import { workDaysBetween } from "../workDays";
-import { DropFilter, NavIcon, Select, notify, Segmented } from "./SharedUI";
-import { CARD, KpiRow, PieBlock, topSlices, EmptyNote, StatutTab, KpiAvancement, DelayInsights, DelaysTab, ProductionCalendarManager } from "./ManagerParts";
+import { DropFilter, NavIcon, Select, notify, Segmented, Hl } from "./SharedUI";
+import { CARD, KpiRow, PieBlock, topSlices, EmptyNote, StatutTab, KpiAvancement, DelayInsights, DelaysTab } from "./ManagerParts";
 import { ProjectFileManager } from "./ManagerFiche";
 import { EtatInfoButton } from "./ProdStagesUI";
 import { ManagerRail, ManagerPalette, useRailCollapsed } from "./ManagerNav";
@@ -344,12 +344,12 @@ export function ManagerPanel({onAccess,hideTabs,kpiOk,calOk,planDoc,initialAddFr
   // ── Navigation Manager : onglets horizontaux + sous-onglets par famille ──
   // « Il y a bcp de KPI… plusieurs petits onglets par famille de KPI ? » → un sous-onglet par famille.
   // v196 : une phrase sous le titre de chaque page du Manager
-const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avancement de l'atelier",orc:"N° de série, chef de projet, pays, état et présence client / NOBO de chaque machine",calendrier:"Jours sans production par PJ et fermetures de l'atelier (aussi réglables depuis le Calendrier)",suivi:"Statut, état et santé des projets",retards:"Déclarer un retard et analyser ses causes",fiche:"Tout un projet sur une page, et le point de la semaine",hebdo:"Ce qui a changé cette semaine",turbines:"Pool de turbines et attributions",cash:"Encaissements et facturation (réservé)",reglages:"Personnes, rôles et accès par page",site:"Nouveautés, vidéo de présentation et version du site"};
+const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avancement de l'atelier",orc:"N° de série, chef de projet, pays, état et présence client / NOBO de chaque machine",calendrier:"Jours sans production par PJ et fermetures de l'atelier (aussi réglables depuis le Calendrier)",suivi:"Statut, état et santé des projets",retards:"Déclarer un retard et analyser ses causes",fiche:"Tout un projet sur une page, et le point de la semaine",hebdo:"Ce qui a changé cette semaine",turbines:"Pool de turbines et attributions",cash:"Encaissements et facturation (réservé)",reglages:"Personnes, rôles et accès par page",site:"Fermetures de l'atelier, nouveautés, vidéo de présentation et version du site"};
   // v212 (demandé : « regrouper le S/N sous l'onglet ORC avec statuts, état, chefs de projet et pays ; supprimer Suivi ; Point hebdo dans les fiches ;
   // supprimer Imports ; fusionner Accès Manager et Personnes et rôles ») :
   // v217 (demandé : « bien regrouper les pages entre elles si elles ont un rapport ») : Pilotage (KPI, Retards), Projets (Fiches projet,
   // Machines ORC), Réglages (Personnes et accès, Calendrier de production, Nouveautés). Cash in et Turbines sont des pages du site.
-  const GROUP_OF={fiche:"fiche",hebdo:"fiche",derives:"derives",serie:"orc",orc:"orc",retards:"retards",retardsKpi:"retards",personnes:"reglages",acces:"site",vacances:"calendrier",production:"calendrier",nouveautes:"site"}; // v320 : Nouveautés et version dans « Réglages du site »
+  const GROUP_OF={fiche:"fiche",hebdo:"fiche",derives:"derives",serie:"orc",orc:"orc",retards:"retards",retardsKpi:"retards",personnes:"reglages",acces:"site",vacances:"site",production:"site",nouveautes:"site"}; // v320 : Nouveautés et version dans « Réglages du site »
   const superAdmin=isSuperAdmin(),owner=canCash(),me=isOwner(),kpi=me||!!kpiOk,cal=superAdmin||!!calOk; // v305 : KPI (Pilotage) et calendrier de production ouverts par la page Accès // v224 (demandé : « garder l'accès KPI uniquement pour moi comme Personnes et site ») : me = propriétaire seul → KPI, Personnes et site // v210 : « owner » = accès au Cash in (propriétaire ou admin) // v185 : superAdmin = propriétaire ou admin ; owner = propriétaire (Cash in) // v143 : seul le super admin voit l'onglet « Réglages » (changer le site) ; un admin n'a que les onglets d'usage
   // v158 : menu groupé (rail latéral) ; chaque entrée sait où aller. Cash in et Réglages : super admin seulement.
   const [railMin,setRailMin]=useRailCollapsed(),[palOpen,setPalOpen]=useState(false),phone=useIsPhone();
@@ -360,10 +360,11 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
     derives:[["synthese","Synthèse"],["bilan","Bilan mensuel"],["semaines","Semaines"],["derives","Dérives"],["charge","Charge"],["avancement","Avancement"],["explorer","Explorer"]],
     fiche:[["fiche","Fiches projet"],["hebdo","Point hebdo"]],
     retards:[["retards","Déclarer"],["retardsKpi","Analyse"]],
-    calendrier:[["production","Jours sans production"],["vacances","Fermetures de l'atelier"]],
     // v320 : Personnes et accès (Rôles, Accès par page = page Accès) ; Réglages du site = Nouveautés, vidéo, version, ancienne liste admin
     reglages:[["personnes","Personnes"],...(onAccess?[["acc:roles","Rôles"],["acc:acces","Accès par page"]]:[])],
-    site:[["nouveautes","Nouveautés"],["acces","Version et ancienne liste admin"]],
+    // v339 (demandé : « supprimer l'onglet Calendrier de production ; la fermeture de l'atelier doit être dans les Réglages ») : les jours sans
+    // production se règlent depuis le Calendrier (clic sur un jour) ; les fermetures passent dans Réglages (admins = cet onglet seulement)
+    site:[...(me?[["nouveautes","Nouveautés"]]:[]),...(cal?[["vacances","Fermetures de l'atelier"]]:[]),...(me?[["acces","Version et ancienne liste admin"]]:[])],
   };
   const group=GROUP_OF[tab]||"derives";
   useEffect(()=>{const old={orc:"serie",imports:"derives",sante:"fiche",suivi:"serie",statut:"serie",cash:"derives",turbines:"derives"}[tab];if(old){setTab(old);return;}if(!kpi&&(GROUP_OF[tab]||"derives")==="derives"){setTab("fiche");return;}if((!me&&(GROUP_OF[tab]==="reglages"||GROUP_OF[tab]==="site"))||(!cal&&GROUP_OF[tab]==="calendrier")||(!owner&&GROUP_OF[tab]==="cash"))setTab(me?"derives":"fiche");},[superAdmin,owner,me,tab]); // eslint-disable-line react-hooks/exhaustive-deps -- GROUP_OF est fixe, setTab vient du parent ; v212 : anciens onglets mémorisés → leur nouvelle place // un admin qui arrive sur un onglet Réglages (ancien état mémorisé) est ramené aux KPI
@@ -377,7 +378,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
   const navGroups=[
     {label:"Pilotage",entries:[...(kpi?[entry("derives","KPI","chart","synthèse dérives charge avancement",{lock:true})]:[]),entry("retards","Retards","warning","délais allocation")]},
     {label:"Projets",entries:[entry("fiche","Fiches projet","list","pj commentaires dates point hebdo semaine"),entry("orc","Machines ORC","gauge","n° de série statut état chef pays présence client nobo",{go:()=>setTab("serie")})]},
-    ...(cal||me?[{label:"Réglages",entries:[...(cal?[entry("calendrier","Calendrier de production","calendar","jours sans production fermetures vacances",{lock:true})]:[]),...(me?[entry("reglages","Gestion des accès","lock","personnes rôles accès",{lock:true}),entry("site","Réglages","settings","nouveautés vidéo version",{lock:true})]:[])]}]:[]),
+    ...(cal||me?[{label:"Réglages",entries:[...(me?[entry("reglages","Gestion des accès","lock","personnes rôles accès",{lock:true})]:[]),entry("site","Réglages","settings","fermetures de l'atelier vacances nouveautés vidéo version",{lock:true,...(me?{}:{go:()=>setTab("vacances")})})]}]:[]),
   ];
   const activeEntry=navGroups.flatMap(g=>g.entries).find(e=>e.id===group)||navGroups[0].entries[0];
   // v196 : publie les entrées du Manager vers le menu du site (une seule barre de navigation) ; retirées en quittant le Manager.
@@ -400,10 +401,11 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
     {/* ── v196 (maquette validée) : en-tête commun à toutes les sous-pages — titre, une phrase, actions à droite ; sous-pages en onglets ;
          filtres repliés dans un bouton (nombre de filtres actifs). « Planning initial » est passé dans Réglages › Imports. ── */}
     <header className="enogia-mgr-head" style={{display:"flex",flexDirection:"column",gap:8}}>
-      <div style={{display:"flex",alignItems:"flex-end",gap:10,flexWrap:"wrap"}}>
-        <div style={{flex:"1 1 260px",minWidth:0}}>
-          <h1 style={{margin:0,fontFamily:T.fontDisplay,fontSize:"clamp(24px,2.4vw,30px)",fontWeight:600,letterSpacing:"-.01em",color:T.ink900,lineHeight:1.15}}>{(group==="fiche"||group==="orc")?"Projets":activeEntry.label}</h1>
-          <div style={{fontSize:FZ.sm,color:T.ink500,marginTop:2}}>{PAGE_DESC[activeEntry.id]||""}</div>
+      {/* v339 (demandé : « mettre les titres sous le bon format ») : même titre que PageHead (surligné, phrase sur la même ligne, trait dessous) */}
+      <div style={{display:"flex",alignItems:"flex-end",gap:10,flexWrap:"wrap",paddingBottom:6,borderBottom:"3px solid "+T.teal500}}>
+        <div style={{flex:"1 1 260px",minWidth:0,display:"flex",alignItems:"baseline",gap:"4px 14px",flexWrap:"wrap"}}>
+          <h1 style={{margin:0,fontFamily:T.fontDisplay,fontSize:"clamp(32px,3.6vw,44px)",fontWeight:600,letterSpacing:"-.02em",color:T.ink900,lineHeight:1.1}}><Hl color={(group==="fiche"||group==="orc")?stageSoft().production.solid:group==="calendrier"?stageSoft().finProd.solid:group==="reglages"||group==="site"?T.amber500:T.dv1}>{(group==="fiche"||group==="orc")?"Projets":activeEntry.label}</Hl></h1>
+          <span style={{fontSize:FZ.sm,color:T.ink500}}>{PAGE_DESC[activeEntry.id]||""}</span>
         </div>
         {!phone&&tab==="fiche"&&<button type="button" className="enogia-btn-ind" onClick={()=>setFocusFiche(v=>!v)} aria-pressed={focusFiche} title={focusFiche?"Réafficher le menu complet et la liste des projets":"Replier le menu et la liste pour laisser toute la place à la fiche"}
         style={{display:"inline-flex",alignItems:"center",gap:6,height:30,padding:"0 10px",borderRadius:8,border:"1.5px solid "+T.teal500,background:focusFiche?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:focusFiche?(T.mode==="dark"?"#0B1130":"#FFFFFF"):T.teal600,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font,whiteSpace:"nowrap"}}><NavIcon name="sidepanel" size={15}/>{focusFiche?"Afficher les colonnes":"Fiche plein écran"}</button>}
@@ -869,8 +871,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
       </div>
       </div>}
     {tab==="serie"&&<SerieTab data={data} savePjMetaOverride={savePjMetaOverride} etatChoice={etatChoice} setEtatFor={setEtatFor} clientPresence={clientPresence} setClientPresenceFor={setClientPresenceFor} customEtats={customEtats||[]} setCustomEtats={superAdmin?setCustomEtats:null} etatEdits={etatEdits||{}} setEtatEdits={superAdmin?setEtatEdits:null}/>}
-    {superAdmin&&tab==="vacances"&&<ClosurePeriodsManager closurePeriods={closurePeriods} setClosurePeriods={setClosurePeriods}/>}
-    {superAdmin&&tab==="production"&&<ProductionCalendarManager data={data} productionExclusions={productionExclusions} setProductionExclusionDays={setProductionExclusionDays}/>}
+    {cal&&(tab==="vacances"||tab==="production")&&<ClosurePeriodsManager closurePeriods={closurePeriods} setClosurePeriods={setClosurePeriods}/>}
     </div>
     </div>
   </div>);

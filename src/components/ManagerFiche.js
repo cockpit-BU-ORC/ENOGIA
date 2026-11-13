@@ -325,6 +325,27 @@ function NumField({label,value,onSave,suffix,hint,width=60}){
 // v272 (demandé : « la place pour les turbines est trop importante ») : une seule bande compacte — choix segmenté (mini dessin + libellé),
 // pastilles roue / injecteur (stock de la production turbines en gris, rouge à 0), bouchages en − / +, une ligne d’état.
 function TurbGlyph({cfg}){const s=cfg.g==="100"?11:8;return <span aria-hidden="true" style={{display:"inline-flex",gap:2,alignItems:"center"}}>{Array.from({length:cfg.n},(_,i)=><span key={i} style={{width:s,height:s,borderRadius:"50%",border:"2px solid currentColor",boxSizing:"border-box"}}/>)}</span>;}
+// v339 (D12) : demandes spécifiques du client pour le FAT interne, saisies par le chef de projet dans la fiche projet ; cochée et remplie,
+// la liste s'ajoute à la checklist de tests de la machine (planOf de testPlan.js lit meta.fatAsks).
+function FatAsksSection({meta,onSave}){
+  const fa=meta.fatAsks||{on:false,items:[]},items=Array.isArray(fa.items)?fa.items:[];
+  const [draft,setDraft]=React.useState({label:"",hint:""});
+  const save=p=>onSave({fatAsks:{on:!!fa.on,items,...p}});
+  const nid=()=>"f"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+  const fld={padding:"4px 8px",minHeight:30,borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink900,fontSize:FZ.xs,fontFamily:T.font,boxSizing:"border-box",width:"100%"};
+  return(<div style={{display:"flex",flexDirection:"column",gap:6,borderTop:"1px solid "+T.line,paddingTop:8}}>
+    <label style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:FZ.sm,fontWeight:600,color:T.ink900,cursor:"pointer",minHeight:28}}><input type="checkbox" checked={!!fa.on} onChange={e=>save({on:e.target.checked})} style={{width:18,height:18}}/>Demandes spécifiques du client pour le FAT interne</label>
+    <div style={{fontSize:12,color:T.ink500}}>{fa.on?(items.length?items.length+" demande"+(items.length>1?"s":"")+" ajoutée"+(items.length>1?"s":"")+" à la checklist de tests de la machine":"Ajoutez les tests demandés par le client : ils apparaîtront dans la checklist de tests"):"Cochez si le client demande des tests en plus pendant le FAT interne"}</div>
+    {fa.on&&<>{items.map((x,i)=><div key={x.id} style={{display:"grid",gridTemplateColumns:"minmax(160px,1fr) minmax(160px,1.4fr) 32px",gap:6,alignItems:"center"}}>
+        <input defaultValue={x.label} key={x.id+x.label} aria-label="Test demandé par le client" onBlur={e=>{const v=e.target.value.trim();if(v&&v!==x.label)save({items:items.map((y,j)=>j===i?{...y,label:v}:y)});}} style={fld}/>
+        <input defaultValue={x.hint||""} key={x.id+"h"+(x.hint||"")} placeholder="Précision (facultatif)" aria-label="Précision de la demande" onBlur={e=>{const v=e.target.value.trim();if(v!==(x.hint||""))save({items:items.map((y,j)=>j===i?{...y,hint:v}:y)});}} style={fld}/>
+        <button type="button" aria-label={"Retirer « "+x.label+" »"} onClick={async()=>{if(await askConfirm({title:"Retirer cette demande ?",message:"« "+x.label+" » disparaît de la checklist de tests.",confirmLabel:"Retirer",danger:true}))save({items:items.filter((_,j)=>j!==i)});}} style={{border:"1px solid "+T.line,background:T.card,color:T.red600,borderRadius:8,minWidth:30,minHeight:30,cursor:"pointer"}}>×</button></div>)}
+      <div style={{display:"grid",gridTemplateColumns:"minmax(160px,1fr) minmax(160px,1.4fr) auto",gap:6,alignItems:"center"}}>
+        <input value={draft.label} onChange={e=>setDraft(d=>({...d,label:e.target.value}))} placeholder="Test demandé par le client" aria-label="Nouvelle demande du client" style={fld}/>
+        <input value={draft.hint} onChange={e=>setDraft(d=>({...d,hint:e.target.value}))} placeholder="Précision (facultatif)" aria-label="Précision de la nouvelle demande" style={fld}/>
+        <button type="button" disabled={!draft.label.trim()} onClick={()=>{save({items:[...items,{id:nid(),label:draft.label.trim(),hint:draft.hint.trim()}]});setDraft({label:"",hint:""});}} style={{...btn("sec","sm")}}>Ajouter</button></div></>}
+  </div>);
+}
 function TurbineSection({r,meta,onSave}){
   const prod=React.useContext(ProdDocCtx),cfg=pjCfg(meta,r.gamme),g=cfg?cfg.g:null;
   const tiles=prod&&g?stockTiles(prod,g):{roues:[],injs:[]};
@@ -1157,6 +1178,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
             {kind?<PresenceChip kind={kind} date={presenceFirstDate(r.clientPresence)} dates={presenceDates(r.clientPresence)} fontSize={11.5}/>:<span style={{color:T.ink500}}>Pas de présence client / NOBO aux tests</span>}
           </div>
           {savePjMetaOverride&&<TurbineSection r={r} meta={meta} onSave={f=>savePjMetaOverride(r.pj,f)}/>}
+          {savePjMetaOverride&&<FatAsksSection meta={meta} onSave={f=>savePjMetaOverride(r.pj,f)}/>}
         </Frame>
         {savePjMetaOverride&&<Frame id="suivi" title="Suivi" sub="Actions, mitigation, retards et commentaires">
         <Cols min={260}>

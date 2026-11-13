@@ -1,6 +1,7 @@
 // v154 — Manager › Tests : testeurs, affectation aux périodes de tests des PJ, tests FAT à réaliser (interne / client / NOBO).
 // Modèle : OP022-DP001-A « ORC Internal FAT – Test Checklist ». Logique pure (sans React ni Firestore).
 // Document planning/tests : { testers:[{id,name,email}], catalog:{interne,client,nobo}, plans:{ [pj]: { assign:[{tid,from,to}], sel:{interne,client,nobo}, extra:{interne,client,nobo} } } }
+import { getPjMeta } from "./pjMeta";
 
 export const SECTIONS = [
   ["interne", "FAT interne", "Toujours réalisé en atelier avant la présentation"],
@@ -38,11 +39,15 @@ export function catalogOf(doc) {
   return out;
 }
 export const testersOf = doc => (doc && Array.isArray(doc.testers) ? doc.testers : []);
+// v339 (D12, demandé : « la sous-section doit être disponible dans la fiche projet du PJ ; cochée et remplie, elle s'ajoute automatiquement
+// à la fiche de tests ») : meta.fatAsks = { on, items: [{ id, label, hint }] } (fiche projet) — fusionnées ici, marquées fiche: true ; elles
+// ne s'écrivent jamais dans planning/tests (les copies éventuelles y sont ignorées).
+export const ficheAsks = pj => { const m = getPjMeta(pj) || {}, f = m.fatAsks; return f && f.on && Array.isArray(f.items) ? f.items.filter(x => x && x.id && String(x.label || "").trim()).map(x => ({ id: x.id, label: String(x.label).trim(), hint: x.hint || "", by: m.chefProjet || "", fiche: true })) : []; };
 export const planOf = (doc, pj) => {
   const p = doc && doc.plans && doc.plans[pj];
   return { assign: Array.isArray(p && p.assign) ? p.assign : [], sel: (p && p.sel) || {}, extra: (p && p.extra) || {}, notes: (p && p.notes) || {}, done: (p && p.done) || {}, st: (p && p.st) || {}, stBy: (p && p.stBy) || {}, forced: (p && p.forced) || null, signs: (p && p.signs) || {}, debug: (p && p.debug) || null,
     // v337 : détail des tests au format de la checklist de debug (tres), demandes spécifiques du client (asks, D12), livret de configuration (book, D13)
-    tres: (p && p.tres) || {}, asks: Array.isArray(p && p.asks) ? p.asks : [], book: (p && p.book) || null }; // v270 : debug (checklist de debug) gardé — sans lui, chaque case cochée écrasait la précédente
+    tres: (p && p.tres) || {}, asks: [...ficheAsks(pj), ...(Array.isArray(p && p.asks) ? p.asks.filter(a => a && !a.fiche) : [])], book: (p && p.book) || null }; // v270 : debug (checklist de debug) gardé — sans lui, chaque case cochée écrasait la précédente
 };
 
 // Parties présentes selon la présence aux tests (null | "client" | "nobo" | "both") : l'interne est toujours fait.

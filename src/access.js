@@ -32,7 +32,7 @@ export const ACCESS_PAGES = [
   { id: "finance", g: "Gestion", l: "Finance", d: "Cash in, montants", adm: "" },
   { id: "pilotage", g: "Gestion", l: "Pilotage", d: "KPI, retards", adm: "", subs: [["kpi", "KPI"], ["retards", "Retards"]] },
   { id: "comments", g: "Opérations", l: "Commentaires", d: "fils par PJ", adm: "supprimer un commentaire" },
-  { id: "calprod", g: "Administration", l: "Calendrier de production", d: "fermetures, jours sans production", adm: "" },
+  { id: "calprod", g: "Administration", l: "Fermetures de l'atelier", d: "fermetures de l'atelier (Réglages) ; les jours sans production se règlent dans le Calendrier", adm: "" },
 ];
 export const ACCESS_IDS = ACCESS_PAGES.flatMap(p => [p.id, ...(p.subs || []).map(([s]) => p.id + "." + s)]);
 const pageOf = id => ACCESS_PAGES.find(p => p.id === String(id).split(".")[0]);

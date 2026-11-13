@@ -2450,3 +2450,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Pages lourdes préchargées après la connexion (plus de latence au premier clic).
 - Aucune clé localStorage ; règles Firestore inchangées depuis la V337 (à republier si ce n'est pas fait).
 - Fichiers : manualImport.js(+test), components/TestFiche.js, DebugChecklist.js, debugPdf.js, TestsTab.js, SavPage.js, planner/engine.js, App.js, demo, versions.
+
+## v339 — écran atelier réparé, objectifs, D12 dans la fiche projet, Réglages
+
+- Écran atelier : ne se ferme plus tout seul ; page « Objectifs de la semaine et du mois ».
+- Fiche projet (zone Machine) : demandes spécifiques du client pour le FAT interne (`meta.fatAsks`), ajoutées à la checklist de tests.
+- Réglages : fermetures de l'atelier (ex-Calendrier de production, entrée retirée) ; titres au format commun.
+- Aucune clé localStorage ; règles Firestore inchangées.
+- Fichiers : components/WorkshopScreen.js, ManagerFiche.js, ManagerPanel.js, AccessPage.js, TestFiche.js, TestsTab.js, testPlan.js, testFiche.js, access.js, App.js, demo, versions.

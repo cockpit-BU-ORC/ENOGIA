@@ -15,6 +15,7 @@ import { TurbinesHub } from "../components/TurbinesHub";
 import { HomeView } from "../components/HomeView";
 import { MentionBell } from "../components/MentionBell";
 import { SavPage } from "../components/SavPage";
+import { WorkshopScreen } from "../components/WorkshopScreen";
 import { userKey } from "../mentions";
 
 const no = () => {}, yes = async () => true;
@@ -76,6 +77,7 @@ export const DEMO_PAGES = [
   { id: "sav-kpi", label: "SAV · KPI", Render: () => <SavDemo level="w" sub0="kpi" />, expect: ["Affectation de l'équipe", "Interventions", "Finance"] },
   { id: "sav-parc", label: "SAV · parc", Render: () => <SavDemo level="w" sub0="parc" />, expect: ["PJ214", "Premium"] },
   { id: "bell", label: "Cloche", Render: Cloche, expect: [] },
+  { id: "workshop", label: "Écran atelier", Render: () => <WorkshopScreen data={DEMO_ROWS} productionExclusions={{}} closurePeriods={[]} changeLog={[]} darkMode={false} onClose={no} />, expect: ["Cette semaine"] },
   { id: "inbox", label: "À traiter", Render: ATraiter, expect: ["Demandes à valider", "PJ902"] },
   { id: "table", label: "Liste", Render: Liste, expect: ["PJ901", "Papeterie du Nord"] },
   { id: "gantt", label: "Gantt", Render: Gantt, expect: ["PJ901"] },

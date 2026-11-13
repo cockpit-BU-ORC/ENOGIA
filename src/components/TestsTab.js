@@ -400,7 +400,7 @@ export function TestDialog({ r, onClose, doc, testers, catalog, conflicts, commi
   const assigned = plan.assign.map(x => testers.find(t => t.id === x.tid)).filter(Boolean), signsDone = assigned.filter(t => (plan.signs || {})["t:" + t.id]).length;
   const mine = !!myTester && plan.assign.some(x => x.tid === myTester.id), canMark = canEdit || mine || !!lead;
   const canAsk = canEdit || !!lead || !!(askPjs && (askPjs.has(r.pj) || [...askPjs].some(p => String(p).replace(/-\d+[A-Z]*$/, "") === String(r.pj).replace(/-\d+[A-Z]*$/, ""))));
-  const saveTests = p => commit({ plans: { ...(doc.plans || {}), [r.pj]: p } });
+  const saveTests = p => commit({ plans: { ...(doc.plans || {}), [r.pj]: { ...p, asks: (p.asks || []).filter(a => !a.fiche) } } });
   const dsec = debugSections(doc.debugModel), dpr = debugProgress(plan.debug, dsec), vRows = vibRows(doc.vibModel), vpr = vibProgress(plan.debug, vRows);
   const bpr = manualProgress(book, plan.book && plan.book.rows), hasBook = bookStepsOf(book).length > 0;
   const steps = [
@@ -462,8 +462,9 @@ function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdi
   const kind = presenceKind(presence), pd = presenceDates(presence);
   const act = activeSections(kind);
   const meta = getPjMeta(r.pj, r);
-  const savePlan = p => commit({ plans: { ...(doc.plans || {}), [r.pj]: p } });
-  const saveTests = p => commit({ plans: { ...(doc.plans || {}), [r.pj]: p } });
+  const strip = p => ({ ...p, asks: (p.asks || []).filter(a => !a.fiche) }); // v339 : demandes de la fiche projet jamais recopiées
+  const savePlan = p => commit({ plans: { ...(doc.plans || {}), [r.pj]: strip(p) } });
+  const saveTests = p => commit({ plans: { ...(doc.plans || {}), [r.pj]: strip(p) } });
   const myConf = new Set(conflicts.filter(c => c.a.pj === r.pj || c.b.pj === r.pj).map(c => c.tid));
   const assigned = plan.assign.map(a => testers.find(t => t.id === a.tid)).filter(Boolean);
   const nTests = act.reduce((n, s) => n + selectedIds(plan, catalog, s).length, 0);

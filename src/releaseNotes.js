@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v339",
+    date: "2026-11-13",
+    title: "V339 : écran atelier et objectifs",
+    items: [
+      { t: "Écran atelier", d: "L'écran atelier fonctionne de nouveau et montre les objectifs de la semaine et du mois." },
+      { t: "Projets", d: "Les demandes spécifiques du client se saisissent dans la fiche projet et passent dans la checklist de tests." },
+    ],
+  },
+  {
     id: "2026-11-v338",
     date: "2026-11-13",
     title: "V338 : bancs et planning des tests",

@@ -40,6 +40,9 @@ export function WorkshopScreen({ data, onClose, darkMode, productionExclusions, 
   const [paused, setPaused] = useState(false);
   const [scale, setScale] = useState(() => Math.max(.7, Math.min(2, window.innerWidth / 1920)));
   const rootRef = useRef(null);
+  // v339 (« l'écran atelier ne marche plus ») : onClose change à chaque rendu d'App ; l'effet du plein écran se relançait alors, sortait du
+  // plein écran… et la sortie fermait l'écran aussitôt. On garde la dernière fonction dans une référence : le plein écran n'est demandé qu'une fois.
+  const closeRef = useRef(onClose); closeRef.current = onClose;
 
   useEffect(() => { const t = setInterval(() => setNow(new Date()), 15000); return () => clearInterval(t); }, []);
   useEffect(() => { const f = () => setScale(Math.max(.7, Math.min(2, window.innerWidth / 1920))); window.addEventListener("resize", f); return () => window.removeEventListener("resize", f); }, []);
@@ -47,10 +50,10 @@ export function WorkshopScreen({ data, onClose, darkMode, productionExclusions, 
   useEffect(() => {
     const el = document.documentElement;
     try { if (el.requestFullscreen && !document.fullscreenElement) el.requestFullscreen().catch(() => {}); } catch (e) { /* refusé : on reste en plein cadre */ }
-    const out = () => { if (!document.fullscreenElement) onClose(); };
+    const out = () => { if (!document.fullscreenElement) closeRef.current(); };
     document.addEventListener("fullscreenchange", out);
     return () => { document.removeEventListener("fullscreenchange", out); try { if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {}); } catch (e) { /* déjà quitté */ } };
-  }, [onClose]);
+  }, []);
 
   const today = startOfDay(now);
   const live = useMemo(() => (data || []).filter(r => r && r.etat !== "SLOT_LIBRE"), [data]);
@@ -62,6 +65,16 @@ export function WorkshopScreen({ data, onClose, darkMode, productionExclusions, 
     const out = [];
     const monday = mondayOf(today);
     const byDepart = (a, b) => String(a.r.depart || "9").localeCompare(String(b.r.depart || "9"));
+    // 0 · v339 (demandé : « rajouter une slide objectifs de la semaine et du mois ») : jalons du planning publié dans la semaine et le mois
+    // (départs, fins de production, débuts et fins de tests) avec ce qui est déjà fait d'après l'état de la machine.
+    const realG = live.filter(r => !isEstimatePj(r.pj));
+    const AFTER = { depart: ["SHIPPED"], finProd: ["TESTS", "PACKAGING", "SHIPPED"], tests: ["TESTS", "PACKAGING", "SHIPPED"], testsFin: ["PACKAGING", "SHIPPED"] };
+    const goals = (from, to) => [["depart", "Départs"], ["finProd", "Fins de production"], ["tests", "Débuts de tests"], ["testsFin", "Fins de tests"]].map(([k, lab]) => {
+      const list = realG.filter(r => { if (!r[k]) return false; const d = startOfDay(r[k]); return d >= from && d < to; }).map(r => ({ r, ok: AFTER[k].includes(r.etat) })).sort((a, b) => (a.ok - b.ok) || String(a.r[k]).localeCompare(String(b.r[k])));
+      return { k, lab, list, done: list.filter(x => x.ok).length };
+    });
+    const m0 = new Date(today.getFullYear(), today.getMonth(), 1), m1 = new Date(today.getFullYear(), today.getMonth() + 1, 1), monthName = m0.toLocaleDateString("fr-FR", { month: "long" });
+    out.push({ id: "goals", title: "Objectifs de la semaine et du mois", sub: "S" + isoWeek(monday) + " · du " + fmtD(monday) + " au " + fmtD(addDays(monday, 4)) + " · et " + monthName + " " + m0.getFullYear(), week: goals(monday, addDays(monday, 7)), month: goals(m0, m1), wkLabel: "Cette semaine · S" + isoWeek(monday), moLabel: monthName.charAt(0).toUpperCase() + monthName.slice(1) });
     // 1 · Cette semaine (jours)
     const days = [0, 1, 2, 3, 4].map(i => addDays(monday, i));
     const wk = live.map(r => ({ r, cells: days.map(d => (offDay(r.pj, d) ? null : getDayStatus(r, d, []))) })).filter(x => x.cells.some(Boolean)).sort(byDepart);
@@ -102,13 +115,13 @@ export function WorkshopScreen({ data, onClose, darkMode, productionExclusions, 
   useEffect(() => { if (paused) return; const t = setTimeout(() => setIdx(i => (i + 1) % n), SLIDE_MS); return () => clearTimeout(t); }, [idx, paused, n]);
   useEffect(() => {
     const k = e => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") closeRef.current();
       else if (e.key === "ArrowRight") setIdx(i => (i + 1) % n);
       else if (e.key === "ArrowLeft") setIdx(i => (i - 1 + n) % n);
       else if (e.key === " ") { e.preventDefault(); setPaused(p => !p); }
     };
     window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k);
-  }, [n, onClose]);
+  }, [n]);
 
   const name = r => getPjMeta(r.pj, r).nomProjet || "";
   const Row = ({ children, style }) => <div style={{ display: "flex", alignItems: "center", gap: u(18), padding: u(10) + " " + u(18), borderRadius: u(14), background: T.card, border: "1px solid " + T.line, ...style }}>{children}</div>;
@@ -128,7 +141,21 @@ export function WorkshopScreen({ data, onClose, darkMode, productionExclusions, 
   </div>); };
 
   let body = null;
-  if (cur.id === "week") {
+  if (cur.id === "goals") {
+    const Col = ({ title, items }) => <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: u(14) }}>
+      <div style={{ fontSize: u(30), fontWeight: 600, color: T.ink900 }}>{title}</div>
+      {items.map(g => { const tot = g.list.length, pct = tot ? Math.round(g.done / tot * 100) : 0;
+        return <div key={g.k} style={{ background: T.card, border: "1px solid " + T.line, borderRadius: u(16), padding: u(14) + " " + u(20), display: "flex", flexDirection: "column", gap: u(8) }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: u(14) }}><span style={{ fontSize: u(24), color: T.ink700, fontWeight: 600, flex: 1 }}>{g.lab}</span>
+            <span style={{ fontSize: u(44), fontWeight: 600, fontVariantNumeric: "tabular-nums", color: tot && g.done === tot ? T.emerald600 : T.ink900, lineHeight: 1 }}>{tot ? g.done + " / " + tot : "—"}</span></div>
+          <div style={{ height: u(12), borderRadius: 999, background: T.surfaceAlt, overflow: "hidden" }}><div style={{ width: pct + "%", height: "100%", background: T.emerald500 }} /></div>
+          <div style={{ display: "flex", gap: u(8), flexWrap: "wrap", minHeight: u(30) }}>{tot === 0 ? <span style={{ fontSize: u(20), color: T.ink500 }}>Rien de prévu</span>
+            : g.list.slice(0, 8).map(x => <span key={x.r.pj} style={{ fontSize: u(20), fontWeight: 600, borderRadius: u(8), padding: u(2) + " " + u(10), background: x.ok ? T.emerald100 : T.surfaceAlt, color: x.ok ? T.emerald600 : T.ink900, fontVariantNumeric: "tabular-nums" }}>{x.ok ? "✓ " : ""}{x.r.pj}</span>)}
+            {g.list.length > 8 && <span style={{ fontSize: u(20), color: T.ink500 }}>+ {g.list.length - 8}</span>}</div>
+        </div>; })}
+    </div>;
+    body = (<div style={{ display: "flex", gap: u(28), height: "100%" }}><Col title={cur.wkLabel} items={cur.week} /><div style={{ width: 1, background: T.line, flexShrink: 0 }} /><Col title={cur.moLabel} items={cur.month} /></div>);
+  } else if (cur.id === "week") {
     const rows = cur.rows, n = Math.max(1, rows.length), f = Math.min(1, Math.max(.42, 9.5 / n)), COLS = "minmax(0,2.4fr) repeat(5,minmax(0,1fr))";
     body = (<div style={{ display: "flex", flexDirection: "column", gap: u(8), height: "100%" }}>
       <div style={{ display: "grid", gridTemplateColumns: COLS, gap: u(8), padding: "0 " + u(18), flexShrink: 0 }}>

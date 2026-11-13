@@ -966,4 +966,10 @@ export const RELEASE_CATALOG = [
     ["SAV / MES", "Carte du parc : noms en français, elle ne passe plus par-dessus le menu."],
     ["Général", "Les pages Turbines, Tests et SAV s'ouvrent plus vite (préchargées en arrière-plan)."],
   ] },
+  { v: "339", t: "Écran atelier réparé, objectifs, demandes client dans la fiche projet", items: [
+    ["Écran atelier", "L'écran atelier ne se referme plus tout seul ; nouvelle page « Objectifs de la semaine et du mois »."],
+    ["Projets", "Fiche projet : demandes spécifiques du client pour le FAT interne ; cochées, elles s'ajoutent à la checklist de tests."],
+    ["Réglages", "Les fermetures de l'atelier passent dans Réglages ; l'entrée Calendrier de production est retirée (jours sans production : depuis le Calendrier)."],
+    ["Général", "Titres des pages du Manager et de la gestion des accès au même format que les autres pages."],
+  ] },
 ];

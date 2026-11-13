@@ -66,7 +66,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-13-v338-livret-bancs-carte";
+const APP_BUILD_VERSION = "2026-11-13-v339-atelier-objectifs-d12";
 
 const ReleasePopup = React.lazy(() => import("./components/ReleaseNotes").then(m => ({ default: m.ReleasePopup })));
 function Navigate0({ go }) { useEffect(() => { go(); }, []); return null; } // eslint-disable-line react-hooks/exhaustive-deps
@@ -1036,11 +1036,13 @@ export default function App(){
       ...(pilOk?[{id:"pilotage",l:"Pilotage",icon:"chart",on:mgrOn(["derives","retards","retardsKpi"]),go:goMgr((isOwner||accMe)&&!mgrHidden.includes("derives")?"derives":"retards"),
         subs:[...(isOwner||accMe?[["derives","KPI"]]:[]),["retards","Retards"]].filter(([id])=>!mgrHidden.includes(id)).map(([id,l])=>({id,l,on:mgrOn(id==="retards"?["retards","retardsKpi"]:[id]),go:goMgr(id)}))}]:[])]},
     {g:"Administration",items:[
-      ...(calOk?[{id:"calprod",l:"Calendrier de production",icon:"calendar",on:mgrOn(["production","vacances"]),go:goMgr("production")}]:[]),
       // v320 (demandé : « lier Accès et Personnes et site, Nouveautés seulement dans les réglages ») : Personnes et accès + Réglages du site
       ...(isOwner?[{id:"people",l:"Gestion des accès",icon:"lock",on:mgrOn(["personnes"])||view==="access",go:goMgr("personnes"),
         subs:[{id:"personnes",l:"Personnes",on:mgrOn(["personnes"]),go:goMgr("personnes")},{id:"roles",l:"Rôles",on:view==="access"&&accSub==="roles",go:()=>{setAccSub("roles");setView("access");}},{id:"acces",l:"Accès par page",on:view==="access"&&accSub==="acces",go:()=>{setAccSub("acces");setView("access");}}]},
-        {id:"site",l:"Réglages",icon:"settings",on:mgrOn(["nouveautes","acces"]),go:goMgr("nouveautes")}]:[])]},
+        ]:[]),
+      // v339 : Réglages = Nouveautés, Fermetures de l'atelier (ex-Calendrier de production), Version ; les admins n'y voient que les fermetures
+      ...(isOwner||calOk?[{id:"site",l:"Réglages",icon:"settings",on:mgrOn(["nouveautes","acces","vacances","production"]),go:goMgr(isOwner?"nouveautes":"vacances"),
+        subs:[...(isOwner?[{id:"nouveautes",l:"Nouveautés",on:mgrOn(["nouveautes"]),go:goMgr("nouveautes")}]:[]),{id:"vacances",l:"Fermetures de l'atelier",on:mgrOn(["vacances","production"]),go:goMgr("vacances")},...(isOwner?[{id:"acces",l:"Version",on:mgrOn(["acces"]),go:goMgr("acces")}]:[])]}]:[])]},
   ].filter(g=>g.items.length);
 
   // v159 : menu principal libellé (réductible, mémorisé) + recherche « Aller à… » (Ctrl K) sur toutes les pages
