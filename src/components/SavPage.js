@@ -103,6 +103,14 @@ function Fold({ title, info, open: open0 = false, children }) {
     {open && <div style={{ padding: 10, display: "flex", flexDirection: "column", gap: 10 }}>{children}</div>}
   </div>;
 }
+// v335 (demandé : « pouvoir rajouter un PJ qui n'est pas encore créé ; en réalité les PJ seront déjà dans l'ordo ») : choisir dans la liste
+// ou taper un numéro (mis en majuscules) ; un PJ inconnu est signalé, il rejoindra le planning quand il sera créé dans l'ordo.
+function PjInput({ value, onChange, pjList, nomOf, disabled, id }) {
+  const v = value || "", known = !v || pjList.includes(v);
+  return <><input list={id} value={v} onChange={e => onChange(e.target.value.toUpperCase().replace(/\s+/g, ""))} disabled={disabled} placeholder="PJ… (liste ou nouveau n°)" aria-label="PJ" style={inp()} />
+    <datalist id={id}>{pjList.map(p => <option key={p} value={p}>{nomOf(p) || ""}</option>)}</datalist>
+    {v && <span style={{ fontSize: 11, fontWeight: 500, color: known ? T.ink500 : T.amber600 }}>{known ? nomOf(v) || "" : "PJ pas encore dans l'ordo : gardé tel quel"}</span>}</>;
+}
 const Field = ({ l, children, span }) => <label style={{ ...lab, gridColumn: span ? "1 / -1" : undefined }}>{l}{children}</label>;
 const grid2 = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10 };
 function Checks({ items, value, onChange, disabled }) {
@@ -235,7 +243,7 @@ function TicketDialog({ id, t: t0, pjList, nomOf, techs, canEdit, isAdmin, onClo
   return <Modal title={id ? "Ticket " + id : "Nouveau ticket"} onClose={onClose} width={560}>
     {!id && <div style={{ fontSize: 12, color: T.ink500 }}>Le ticket décrit la demande. Les interventions sur site, leur préparation, leur clôture et leurs coûts s'ajoutent ensuite depuis le ticket.</div>}
     <div style={grid2}>
-      <Field l="PJ"><select value={t.pj || ""} onChange={e => set("pj", e.target.value)} disabled={!canEdit} style={inp()}><option value="">Choisir…</option>{pjList.map(p => <option key={p} value={p}>{p}{nomOf(p) ? " · " + nomOf(p) : ""}</option>)}</select></Field>
+      <Field l="PJ"><PjInput id="sav-pj-t" value={t.pj} onChange={v => set("pj", v)} pjList={pjList} nomOf={nomOf} disabled={!canEdit} /></Field>
       <Field l="Type de demande"><select value={t.type} onChange={e => setT(x => ({ ...x, type: e.target.value, step: Math.min(x.step || 0, flowOf(e.target.value).length - 1) }))} disabled={!canEdit} style={inp()}>{TICKET_TYPES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></Field>
       <Field l="Priorité"><select value={t.prio} onChange={e => set("prio", e.target.value)} disabled={!canEdit} style={inp()}>{PRIOS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></Field>
       <Field l="Origine"><select value={t.orig || ""} onChange={e => set("orig", e.target.value)} disabled={!canEdit} style={inp()}>{ORIGINS.map(o => <option key={o}>{o}</option>)}</select></Field>
@@ -286,11 +294,15 @@ function InterDialog({ id, i: i0, pjList, nomOf, techs, canEdit, isAdmin, canCos
   const ok = i.pj && (i.obj || "").trim() && (!i.a || !i.b || i.a <= i.b);
   return <Modal title={id ? "Intervention " + id : "Nouvelle intervention sur site"} onClose={onClose} width={620}>
     <div style={grid2}>
-      {!i0.tk && <Field l="PJ"><select value={i.pj || ""} onChange={e => set("pj", e.target.value)} disabled={!canEdit} style={inp()}><option value="">Choisir…</option>{pjList.map(p => <option key={p} value={p}>{p}{nomOf(p) ? " · " + nomOf(p) : ""}</option>)}</select></Field>}
+      {!i0.tk && <Field l="PJ"><PjInput id="sav-pj-i" value={i.pj} onChange={v => set("pj", v)} pjList={pjList} nomOf={nomOf} disabled={!canEdit} /></Field>}
       <Field l="Objectif" span><input value={i.obj || ""} onChange={e => set("obj", e.target.value)} disabled={!canEdit} style={inp()} /></Field>
       <Field l="Arrivée sur site"><input type="date" value={i.a || ""} onChange={e => set("a", e.target.value)} disabled={!canEdit} style={inp()} /></Field>
       <Field l="Départ du site"><input type="date" value={i.b || ""} min={i.a || undefined} onChange={e => set("b", e.target.value)} disabled={!canEdit} style={inp()} /></Field>
       <Field l="Technicien responsable"><select value={i.resp || ""} onChange={e => set("resp", e.target.value)} disabled={!canEdit} style={inp()}><option value="">À affecter</option>{techs.map(x => <option key={x}>{x}</option>)}</select></Field>
+      {/* v335 (demandé : « différencier les interventions planifiées et à planifier, pas encore 100 % validées avec le client ») */}
+      {(i.st || "À planifier") === "À planifier" || i.st === "Planifiée" ? <label style={{ ...lab, flexDirection: "row", alignItems: "center", gap: 8, gridColumn: "1 / -1", color: T.ink900, fontSize: FZ.sm }}>
+        <input type="checkbox" checked={i.st === "Planifiée"} disabled={!canEdit || !i.a || !i.b} onChange={e => set("st", e.target.checked ? "Planifiée" : "À planifier")} />
+        Dates validées avec le client <span style={{ color: T.ink500, fontWeight: 500 }}>{i.st === "Planifiée" ? "(planifiée)" : "(à planifier : barre en pointillés sur le planning)"}</span></label> : null}
       <Field l="Statut"><select value={i.st || "À planifier"} onChange={e => set("st", e.target.value)} disabled={!canEdit} style={inp()}>{INTER_STATUS.map(x => <option key={x}>{x}</option>)}</select></Field>
     </div>
     {techs.filter(x => x !== i.resp).length > 0 && <Field l="Intervenants en appui"><Checks items={techs.filter(x => x !== i.resp)} value={i.who} onChange={v => set("who", v)} disabled={!canEdit} /></Field>}
@@ -310,7 +322,7 @@ function InterDialog({ id, i: i0, pjList, nomOf, techs, canEdit, isAdmin, canCos
     {canEdit && <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
       {id && isAdmin && <Btn v="dan" size="sm" onClick={() => onDelete(id)}>Supprimer</Btn>}<span style={{ flex: 1 }} />
       <Btn size="sm" onClick={onClose}>Annuler</Btn>
-      <Btn v="pri" size="sm" disabled={!ok} onClick={() => onSave(id, { ...i, st: i.st === "À planifier" && i.a && i.b ? "Planifiée" : i.st || "À planifier" })}>{id ? "Enregistrer" : "Créer l'intervention"}</Btn></div>}
+      <Btn v="pri" size="sm" disabled={!ok} onClick={() => onSave(id, { ...i, st: i.st || "À planifier" })}>{id ? "Enregistrer" : "Créer l'intervention"}</Btn></div>}
   </Modal>;
 }
 
@@ -336,17 +348,21 @@ const DOW = ["di", "lu", "ma", "me", "je", "ve", "sa"];
 const ZOOMS = [16, 24, 34, 48, 64];
 const addDaysIso = (isoD, n) => { const d = new Date(isoD + "T12:00:00"); d.setDate(d.getDate() + n); return iso(d); };
 const hatch = (c, bg) => "repeating-linear-gradient(135deg, " + c + " 0 4px, " + (bg || "transparent") + " 4px 8px)";
-function DayHeader({ days, labW, colPx, t0 }) {
-  const band = (items, render, h, sticky) => <div style={{ display: "flex", height: h }}>{items.map(it => <div key={it.k + "-" + it.i} style={{ width: it.n * colPx, flexShrink: 0, boxSizing: "border-box", borderLeft: "1px solid " + T.line, padding: "0 6px", display: "flex", alignItems: "center", overflow: sticky ? "visible" : "hidden", whiteSpace: "nowrap" }}>{render(it)}</div>)}</div>;
-  return <div style={{ display: "flex", borderBottom: "1px solid " + T.line, background: T.surface, position: "sticky", top: 0, zIndex: 3, width: labW + days.length * colPx }}>
+const isWE = d => { const w = new Date(d + "T12:00:00").getDay(); return w === 0 || w === 6; };
+// v335 (demandé : « voir le samedi et le dimanche dans le calendrier SAV ») : tous les jours, week-ends plus étroits (55 %) et grisés.
+// Positions en pixels : X[i] = bord gauche du jour i, WD[i] = sa largeur.
+function DayHeader({ days, X, WD, labW, W, t0 }) {
+  const band = (items, render, h, sticky) => <div style={{ display: "flex", height: h }}>{items.map(it => { const w = X[it.i + it.n - 1] + WD[it.i + it.n - 1] - X[it.i];
+    return <div key={it.k + "-" + it.i} style={{ width: w, flexShrink: 0, boxSizing: "border-box", borderLeft: "1px solid " + T.line, padding: "0 6px", display: "flex", alignItems: "center", overflow: sticky ? "visible" : "hidden", whiteSpace: "nowrap" }}>{render(it, w)}</div>; })}</div>;
+  return <div style={{ display: "flex", borderBottom: "1px solid " + T.line, background: T.surface, position: "sticky", top: 0, zIndex: 3, width: W }}>
     <div style={{ width: labW, flexShrink: 0, position: "sticky", left: 0, zIndex: 4, background: T.surface, borderRight: "1px solid " + T.line }} />
     <div>
       {band(runs(days, d => d.slice(0, 7)), it => <b style={{ fontSize: 13, fontWeight: 600, color: T.ink900, position: "sticky", left: labW + 6 }}>{monthName(it.d)}</b>, 26, true)}
-      {band(runs(days, d => mondayOf(d)), it => <span style={{ fontSize: 12, fontWeight: 600, color: T.ink500 }}>S{isoWeek(it.d)}{it.n * colPx >= 110 ? " · du " + fd(mondayOf(it.d)) : ""}</span>, 22)}
-      <div style={{ display: "flex", borderTop: "1px solid " + T.line }}>{days.map(d => { const wd = new Date(d + "T12:00:00").getDay(), today = d === t0;
-        return <div key={d} style={{ width: colPx, flexShrink: 0, boxSizing: "border-box", borderLeft: (wd === 1 ? "2px solid " : "1px solid ") + T.line, textAlign: "center", padding: "3px 0", background: today ? T.amber100 : undefined }}>
-          {colPx >= 34 && <div style={{ fontSize: 11, color: today ? T.amber600 : T.ink500, fontWeight: 600 }}>{DOW[wd]}</div>}
-          <div style={{ fontSize: colPx >= 24 ? 13 : 11, fontWeight: 600, color: today ? T.amber600 : T.ink900, fontVariantNumeric: "tabular-nums" }}>{colPx >= 20 ? d.slice(8, 10) : ""}</div></div>; })}</div>
+      {band(runs(days, d => mondayOf(d)), (it, w) => <span style={{ fontSize: 12, fontWeight: 600, color: T.ink500 }}>S{isoWeek(it.d)}{w >= 120 ? " · du " + fd(mondayOf(it.d)) : ""}</span>, 22)}
+      <div style={{ display: "flex", borderTop: "1px solid " + T.line }}>{days.map((d, i) => { const wd = new Date(d + "T12:00:00").getDay(), today = d === t0, we = wd === 0 || wd === 6;
+        return <div key={d} style={{ width: WD[i], flexShrink: 0, boxSizing: "border-box", borderLeft: (wd === 1 ? "2px solid " : "1px solid ") + T.line, textAlign: "center", padding: "3px 0", background: today ? T.amber100 : we ? T.surfaceAlt : undefined }}>
+          {WD[i] >= 30 && <div style={{ fontSize: 11, color: today ? T.amber600 : T.ink500, fontWeight: 600 }}>{DOW[wd]}</div>}
+          <div style={{ fontSize: WD[i] >= 24 ? 13 : 11, fontWeight: 600, color: today ? T.amber600 : we ? T.ink500 : T.ink900, fontVariantNumeric: "tabular-nums" }}>{WD[i] >= 16 ? d.slice(8, 10) : ""}</div></div>; })}</div>
     </div></div>;
 }
 // ligne du planning : nom collé à gauche, piste à droite (hors du composant : pas de remontage pendant un glisser)
@@ -354,42 +370,52 @@ function SRow({ label, sub, children, h = 40, ink, labW, width, grey }) {
   return <div style={{ display: "flex", borderBottom: "1px solid " + T.line, width, minHeight: h, background: grey ? T.surface : undefined }}>
     <div style={{ width: labW, flexShrink: 0, position: "sticky", left: 0, zIndex: 2, background: grey ? T.surface : T.card, borderRight: "1px solid " + T.line, padding: "0 12px", display: "flex", flexDirection: "column", justifyContent: "center", boxSizing: "border-box" }}>
       <span style={{ fontSize: FZ.sm, fontWeight: 600, color: ink || T.ink900, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>{sub && <span style={{ fontSize: 11, color: T.ink500 }}>{sub}</span>}</div>
-    <div style={{ position: "relative", flex: 1 }}>{children}</div></div>;
+    <div style={{ position: "relative", flex: 1, minHeight: h }}>{children}</div></div>;
 }
+// v335 (demandé : « les demandes des CdP ne sont pas assez claires : au lieu de répéter la case chaque jour, un long trait sur le nombre de jours ») :
+// une barre par demande en attente, rangée sur des pistes sans chevauchement (première piste libre).
+const laneUp = items => { const ends = []; return items.map(it => { let k = ends.findIndex(e => e < it.from); if (k < 0) { k = ends.length; ends.push(it.to); } else ends[k] = it.to; return { ...it, lane: k }; }); };
 function PlanningView({ inters, demandes, techs, canEdit, nomOf, me, myPjs, onOpenInter, onTeam, onRequest, onAnswer, onCancel, onMove }) {
   const t0 = todayIso();
   const [z, setZ0] = useState(() => { try { const v = localStorage.getItem("enogia_sav_zoom"); return v != null && ZOOMS[+v] ? +v : 3; } catch (e) { return 3; } });
   const setZ = n => { const v = Math.max(0, Math.min(ZOOMS.length - 1, n)); setZ0(v); try { localStorage.setItem("enogia_sav_zoom", String(v)); } catch (e) { /* stockage indisponible */ } };
   const colPx = ZOOMS[z], labW = 170;
-  const days = useMemo(() => workDaysFrom(mondayOf(addDaysIso(t0, -56)), 5 * 36), [t0]);
-  const N = days.length, W = labW + N * colPx, idxOf = {}; days.forEach((d, i) => { idxOf[d] = i; });
+  const days = useMemo(() => { const out = []; let d = mondayOf(addDaysIso(t0, -56)); for (let k = 0; k < 7 * 36; k++) { out.push(d); d = addDaysIso(d, 1); } return out; }, [t0]);
+  const N = days.length;
+  const { X, WD, idxOf, W } = useMemo(() => { const X = [], WD = [], idxOf = {}; let x = 0; days.forEach((d, i) => { const w = isWE(d) ? Math.round(colPx * 0.55) : colPx; X.push(x); WD.push(w); idxOf[d] = i; x += w; }); return { X, WD, idxOf, W: labW + x }; }, [days, colPx]);
+  const idxAt = px => { let lo = 0, hi = N - 1; while (lo < hi) { const m = (lo + hi + 1) >> 1; if (X[m] <= px) lo = m; else hi = m - 1; } return lo; };
   const scRef = useRef(null), [vis, setVis] = useState([0, 0]), first = useRef(null);
-  const onScroll = () => { const el = scRef.current; if (!el) return; const a = Math.max(0, Math.floor(el.scrollLeft / colPx)), b = Math.min(N - 1, Math.max(a, Math.floor((el.scrollLeft + el.clientWidth - labW) / colPx) - 0));
-    first.current = a; setVis(v => (v[0] === a && v[1] === b ? v : [a, b])); };
-  const goToday = () => { const el = scRef.current; if (!el) return; const i = days.findIndex(d => d >= t0); el.scrollLeft = Math.max(0, (i - 5) * colPx); onScroll(); };
+  const onScroll = () => { const el = scRef.current; if (!el) return; const a = idxAt(el.scrollLeft), b = Math.max(a, idxAt(el.scrollLeft + el.clientWidth - labW - 1));
+    first.current = days[a]; setVis(v => (v[0] === a && v[1] === b ? v : [a, b])); };
+  const goToday = () => { const el = scRef.current; if (!el) return; const i = idxOf[t0] ?? days.findIndex(d => d >= t0); el.scrollLeft = Math.max(0, X[Math.max(0, i - 7)]); onScroll(); };
   const page = dir => { const el = scRef.current; if (el) el.scrollBy({ left: dir * Math.round((el.clientWidth - labW) * 0.85), behavior: "smooth" }); };
   // à l'ouverture : la semaine passée à gauche ; au zoom : garder le premier jour visible
-  useEffect(() => { const el = scRef.current; if (!el) return; if (first.current == null) goToday(); else { el.scrollLeft = first.current * colPx; onScroll(); } }, [colPx]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { const el = scRef.current; if (!el) return; if (first.current == null) goToday(); else { el.scrollLeft = X[idxOf[first.current] || 0]; onScroll(); } }, [colPx]); // eslint-disable-line react-hooks/exhaustive-deps
   const bars = planBars(inters, techs), load = dayLoad(inters, techs, days), loadOf = {}; load.forEach(x => { loadOf[x.d] = x; });
   const dems = Object.entries(demandes).map(([id, d]) => ({ id, ...d })).sort((a, b) => String(b.at || "").localeCompare(String(a.at || "")));
   const isMine = d => d.byEmail && me && d.byEmail.toLowerCase() === me.toLowerCase();
   const pend = dems.filter(d => d.st === "attente"), mine = dems.filter(isMine);
-  const toPlan = Object.entries(inters).filter(([, i]) => i && i.st !== "Annulée" && (!i.a || !i.b || !i.resp) && !["Réalisée", "Validée", "Non validée"].includes(i.st));
+  const toPlan = Object.entries(inters).filter(([, i]) => i && i.st !== "Annulée" && (!i.a || !i.b || !i.resp || i.st === "À planifier") && !["Réalisée", "Validée", "Non validée"].includes(i.st));
   const [notes, setNotes] = useState({});
   const dnd = usePointerDnD();
-  const pendOn = d => pend.filter(p => workDaysFrom(p.date, Math.max(1, +p.days || 1)).includes(d));
+  const pendBars = laneUp(pend.map(p => { const L = workDaysFrom(p.date, Math.max(1, +p.days || 1)); return { ...p, from: L[0], to: L[L.length - 1], n: L.length }; }).sort((a, b) => a.from.localeCompare(b.from)));
+  const lanes = pendBars.reduce((m, b) => Math.max(m, b.lane + 1), 0), LANE = 24, demH = 8 + lanes * LANE + 30;
+  const pendOn = d => pendBars.filter(p => p.from <= d && p.to >= d);
+  // v335 : « Planifiée » = dates validées avec le client (barre pleine) ; « À planifier » avec dates = pas encore validée (barre en pointillés hachurée)
+  const tentative = st => st === "À planifier";
   const barColor = st => st === "Réalisée" || st === "Validée" ? [T.emerald100, T.emerald600] : st === "En cours" ? [T.accentSoft || T.teal100, T.accentInk || T.teal600] : [T.info100, T.info600];
   const moveTo = (p, tech, day) => {
     const i = inters[p.id]; if (!i || !i.a || !i.b) return;
-    const len = workCount(i.a, i.b), a = shiftWork(day, -(p.grab || 0)), b = workDaysFrom(firstWork(a), len)[len - 1], patch = { a: firstWork(a), b };
+    const len = workCount(i.a, i.b), a = shiftWork(firstWork(day), -(p.grab || 0)), b = workDaysFrom(firstWork(a), len)[len - 1], patch = { a: firstWork(a), b };
     if (tech !== p.tech) { if (p.lead) { patch.resp = tech; patch.who = (i.who || []).filter(x => x !== tech); } else patch.who = [...new Set((i.who || []).map(x => (x === p.tech ? tech : x)))].filter(x => x !== i.resp); }
     if (patch.a === i.a && patch.b === i.b && tech === p.tech) return;
     onMove(p.id, patch);
   };
-  const span = (from, to) => { if (to < days[0] || from > days[N - 1]) return null; let i0 = idxOf[from]; if (i0 == null) { i0 = days.findIndex(x => x >= from); if (i0 < 0) return null; }
-    let i1 = idxOf[to]; if (i1 == null) { i1 = N - 1; while (i1 > 0 && days[i1] > to) i1--; } return i1 < i0 ? null : [i0, i1]; };
-  const cellLine = d => ({ position: "absolute", top: 0, bottom: 0, left: idxOf[d] * colPx, width: colPx, boxSizing: "border-box", borderLeft: (new Date(d + "T12:00:00").getDay() === 1 ? "2px solid " : "1px solid ") + T.line });
+  const span = (from, to) => { if (to < days[0] || from > days[N - 1]) return null; const i0 = idxOf[from] ?? (from < days[0] ? 0 : null), i1 = idxOf[to] ?? (to > days[N - 1] ? N - 1 : null); return i0 == null || i1 == null || i1 < i0 ? null : [i0, i1]; };
+  const pxOf = (i0, i1) => ({ left: X[i0] + 2, width: X[i1] + WD[i1] - X[i0] - 4 });
+  const cellLine = d => { const i = idxOf[d]; return { position: "absolute", top: 0, bottom: 0, left: X[i], width: WD[i], boxSizing: "border-box", borderLeft: (new Date(d + "T12:00:00").getDay() === 1 ? "2px solid " : "1px solid ") + T.line }; };
   const todayBg = "color-mix(in srgb, " + T.amber100 + " 45%, transparent)";
+  const dayBg = d => (d === t0 ? todayBg : isWE(d) ? hatch("color-mix(in srgb, " + T.ink300 + " 18%, transparent)", "transparent") : undefined);
   const fmtT = d => new Date(d + "T12:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
   const title = days[vis[0]] ? fmtT(days[vis[0]]) + " → " + fmtT(days[vis[1]]) + " " + days[vis[1]].slice(0, 4) : "";
   const navBtn = { minWidth: 32, minHeight: 32, borderRadius: 8, border: "1px solid " + T.line, background: "transparent", color: T.ink700, fontSize: FZ.md, fontWeight: 600, cursor: "pointer", fontFamily: T.font };
@@ -402,41 +428,52 @@ function PlanningView({ inters, demandes, techs, canEdit, nomOf, me, myPjs, onOp
       <button type="button" onClick={() => setZ(z + 1)} disabled={z >= ZOOMS.length - 1} aria-label="Zoomer" title="Agrandir les jours" style={{ ...navBtn, color: z >= ZOOMS.length - 1 ? T.ink300 : T.ink700, cursor: z >= ZOOMS.length - 1 ? "default" : "pointer" }}>+</button></div>
     <button type="button" onClick={goToday} className="enogia-btn-ind" style={{ minHeight: 32, padding: "0 12px", borderRadius: 8, border: "1.5px solid " + T.teal500, background: "transparent", color: T.teal600, fontSize: FZ.sm, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>Aujourd'hui</button>
   </div>;
-  const legend = canEdit ? "Glisser une barre : autre jour = autres dates, autre ligne = autre technicien ; un clic l'ouvre. Ligne Demandes : rayé = en attente de votre réponse."
-    : "Planning de l'équipe SAV en lecture : jours occupés rayés. « + » sur la ligne Demandes pour demander un jour libre ; votre demande reste rayée jusqu'à la réponse du responsable SAV.";
-  const chip = (txt, title, st) => <span title={title} style={{ display: "block", minHeight: 20, lineHeight: "20px", borderRadius: 4, fontSize: 11, fontWeight: 600, padding: "0 4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", ...st }}>{txt}</span>;
+  const sw = (bg, extra) => <i aria-hidden="true" style={{ display: "inline-block", width: 22, height: 12, borderRadius: 3, background: bg, ...extra }} />;
+  const legend = <div style={{ padding: "8px 14px", fontSize: 12, color: T.ink500, borderTop: "1px solid " + T.line, display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center" }}>
+    {canEdit ? <>
+      <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw(T.info100, { borderLeft: "3px solid " + T.info600 })}Planifiée (validée avec le client)</span>
+      <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw(hatch(T.info100, T.card), { border: "1.5px dashed " + T.info600 })}À planifier (dates à confirmer)</span>
+      <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw(hatch(T.amber100, T.card), { border: "1px dashed " + T.amber500 })}Demande d'un chef de projet en attente</span>
+      <span>Glisser une barre : autre jour = autres dates, autre ligne = autre technicien ; un clic l'ouvre</span></>
+    : <>
+      <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw(hatch(T.ink300, T.surfaceAlt))}Équipe occupée</span>
+      <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw(hatch(T.amber100, T.card), { border: "1px dashed " + T.amber500 })}Demande en attente</span>
+      <span>« + » sur la ligne Demandes pour demander un jour ouvré libre</span></>}
+    <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw(hatch("color-mix(in srgb, " + T.ink300 + " 18%, transparent)", T.card), { border: "1px solid " + T.line })}Samedi, dimanche</span>
+  </div>;
   return <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
     <div style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden" }}>
       {tools}
       <div ref={scRef} onScroll={onScroll} style={{ overflowX: "auto", overflowY: "hidden" }}>
         <div style={{ width: W }}>
-          <DayHeader days={days} labW={labW} colPx={colPx} t0={t0} />
-          {/* ligne Demandes : ouverte à tous ; « + » sur un jour non passé où un technicien est libre */}
-          <SRow labW={labW} width={W} label="Demandes" sub={pend.length ? pend.length + " en attente" : "« + » = demander"} h={52}>
-            {days.map(d => { const L = loadOf[d] || { free: 1, team: 0 }, waits = pendOn(d), past = d < t0, full = L.team > 0 && L.free - waits.length <= 0;
-              return <div key={d} style={{ ...cellLine(d), background: d === t0 ? todayBg : undefined, padding: 2, display: "flex", flexDirection: "column", gap: 2 }}>
-                {waits.map(p => { const named = canEdit || isMine(p);
-                  return <React.Fragment key={p.id}>{chip(named && colPx >= 34 ? p.pj : "", named ? "Demande en attente : " + p.pj + " · " + (p.obj || "") + (p.by ? " · " + p.by : "") : "Demande en attente d'un autre chef de projet",
-                    { border: "1px dashed " + T.amber500, background: hatch(T.amber100), color: T.amber600, textDecoration: "line-through" })}</React.Fragment>; })}
-                {!past && !full && <button type="button" onClick={() => onRequest(d)} title={"Demander une intervention le " + fdd(d)} aria-label={"Demander une intervention le " + fdd(d)}
-                  style={{ width: "100%", minHeight: 20, flex: waits.length ? "0 0 auto" : 1, borderRadius: 4, border: "1px dashed " + T.emerald500, background: "transparent", color: T.emerald600, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: T.font, padding: 0, lineHeight: 1 }}>+</button>}
-                {!past && full && colPx >= 34 && <span style={{ fontSize: 11, color: T.ink500, textAlign: "center" }}>complet</span>}
+          <DayHeader days={days} X={X} WD={WD} labW={labW} W={W} t0={t0} />
+          {/* ligne Demandes : une barre par demande en attente ; « + » sur un jour ouvré non passé où un technicien est libre (jamais le week-end) */}
+          <SRow labW={labW} width={W} label="Demandes" sub={pend.length ? pend.length + " en attente" : "« + » = demander"} h={demH}>
+            {days.map(d => { const L = loadOf[d] || { free: 1, team: 0 }, waits = pendOn(d).length, past = d < t0, we = isWE(d), full = L.team > 0 && L.free - waits <= 0;
+              return <div key={d} style={{ ...cellLine(d), background: dayBg(d), padding: "0 2px 3px", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+                {!past && !we && !full && <button type="button" onClick={() => onRequest(d)} title={"Demander une intervention le " + fdd(d)} aria-label={"Demander une intervention le " + fdd(d)}
+                  style={{ width: "100%", minHeight: 22, borderRadius: 4, border: "1px dashed " + T.emerald500, background: "transparent", color: T.emerald600, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: T.font, padding: 0, lineHeight: 1 }}>+</button>}
+                {!past && !we && full && WD[idxOf[d]] >= 34 && <span style={{ fontSize: 11, color: T.ink500, textAlign: "center", lineHeight: "22px" }}>complet</span>}
               </div>; })}
+            {pendBars.map(p => { const sp = span(p.from, p.to); if (!sp) return null; const named = canEdit || isMine(p), pos = pxOf(sp[0], sp[1]);
+              const txt = named ? p.pj + " · " + (p.obj || "") : "Demande en attente";
+              return <span key={p.id} title={(named ? "Demande en attente : " + p.pj + " · " + (p.obj || "") + (p.by ? " · " + p.by : "") : "Demande en attente d'un autre chef de projet") + " · " + fd(p.from) + " → " + fd(p.to) + " (" + p.n + " j)"}
+                style={{ position: "absolute", top: 6 + p.lane * LANE, height: LANE - 4, ...pos, boxSizing: "border-box", borderRadius: 4, border: "1px dashed " + T.amber500, background: hatch(T.amber100, T.card), color: T.amber600, fontSize: 11, fontWeight: 600, lineHeight: (LANE - 6) + "px", padding: "0 6px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: named ? "line-through" : "none", pointerEvents: "auto" }}>{pos.width >= 60 ? txt : ""}</span>; })}
           </SRow>
           {techs.length ? techs.map(tc => <SRow labW={labW} width={W} key={tc} label={tc} ink={canEdit ? T.ink900 : T.ink500} grey={!canEdit} h={canEdit ? 40 : 32}>
-            {days.map(d => <div key={d} {...(canEdit ? dnd.dropProps(tc + "|" + d, p => !!p, p => moveTo(p, tc, d)) : {})} style={{ ...cellLine(d), background: dnd.over === tc + "|" + d ? T.amber100 : d === t0 ? todayBg : undefined }} />)}
-            {(bars[tc] || []).map(b => { const sp = span(b.from, b.to); if (!sp) return null; const [i0, i1] = sp;
-              const pos = { position: "absolute", top: canEdit ? 5 : 6, bottom: canEdit ? 5 : 6, left: i0 * colPx + 2, width: (i1 - i0 + 1) * colPx - 4, borderRadius: 4 };
-              if (!canEdit) return <span key={b.id} title="Occupé" aria-label={"Occupé du " + fd(b.from) + " au " + fd(b.to)} style={{ ...pos, background: hatch(T.ink300, T.surfaceAlt), opacity: 0.7 }} />;
-              const [bg, ink] = barColor(b.st), payload = { id: b.id, tech: tc, lead: b.lead, grab: 0 }, dp = dnd.dragProps(payload);
-              return <button key={b.id} type="button" {...dp} onPointerDown={e => { const r = e.currentTarget.getBoundingClientRect(), n = i1 - i0 + 1; payload.grab = Math.min(n - 1, Math.max(0, Math.floor((e.clientX - r.left) / r.width * n))) + (b.from < days[0] ? workCount(b.from, days[0]) - 1 : 0); dp.onPointerDown(e); }}
-                onClick={() => onOpenInter(b.id)} title={b.id + " · " + b.pj + " · " + (nomOf(b.pj) || "") + " · " + fd(b.from) + " → " + fd(b.to) + (b.lead ? "" : " (appui)")}
-                style={{ ...pos, border: "none", borderLeft: "3px solid " + ink, background: bg, color: ink, fontSize: 12, fontWeight: 600, textAlign: "left", padding: "0 6px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "grab", fontFamily: T.font, opacity: b.lead ? 1 : 0.8, pointerEvents: dnd.drag ? "none" : "auto", touchAction: "none" }}>{b.pj}{colPx * (i1 - i0 + 1) > 120 ? " · " + (nomOf(b.pj) || b.id) : ""}{b.lead ? "" : " (appui)"}</button>; })}
+            {days.map(d => <div key={d} {...(canEdit ? dnd.dropProps(tc + "|" + d, p => !!p, p => moveTo(p, tc, d)) : {})} style={{ ...cellLine(d), background: dnd.over === tc + "|" + d ? T.amber100 : dayBg(d) }} />)}
+            {(bars[tc] || []).map(b => { const sp = span(b.from, b.to); if (!sp) return null; const [i0, i1] = sp, pos = pxOf(i0, i1);
+              const base = { position: "absolute", top: canEdit ? 5 : 6, bottom: canEdit ? 5 : 6, ...pos, borderRadius: 4, boxSizing: "border-box" };
+              if (!canEdit) return <span key={b.id} title="Occupé" aria-label={"Occupé du " + fd(b.from) + " au " + fd(b.to)} style={{ ...base, background: hatch(T.ink300, T.surfaceAlt), opacity: tentative(b.st) ? 0.45 : 0.7 }} />;
+              const [bg, ink] = barColor(b.st), tent = tentative(b.st), payload = { id: b.id, tech: tc, lead: b.lead, grab: 0 }, dp = dnd.dragProps(payload);
+              return <button key={b.id} type="button" {...dp} onPointerDown={e => { const r = e.currentTarget.getBoundingClientRect(), n = workCount(days[i0], days[i1]); payload.grab = Math.min(n - 1, Math.max(0, Math.floor((e.clientX - r.left) / r.width * n))) + (b.from < days[0] ? workCount(b.from, days[0]) - 1 : 0); dp.onPointerDown(e); }}
+                onClick={() => onOpenInter(b.id)} title={b.id + " · " + b.pj + " · " + (nomOf(b.pj) || "") + " · " + fd(b.from) + " → " + fd(b.to) + (b.lead ? "" : " (appui)") + (tent ? " · à planifier : dates à confirmer avec le client" : " · planifiée")}
+                style={{ ...base, border: tent ? "1.5px dashed " + ink : "none", borderLeft: tent ? "1.5px dashed " + ink : "3px solid " + ink, background: tent ? hatch(bg, T.card) : bg, color: ink, fontSize: 12, fontWeight: 600, textAlign: "left", padding: "0 6px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "grab", fontFamily: T.font, opacity: b.lead ? 1 : 0.8, pointerEvents: dnd.drag ? "none" : "auto" }}>{b.pj}{pos.width > 120 ? " · " + (nomOf(b.pj) || b.id) : ""}{tent && pos.width > 200 ? " · à confirmer" : ""}{b.lead ? "" : " (appui)"}</button>; })}
           </SRow>)
           : <div style={{ padding: 12, position: "sticky", left: 0, width: "min(100%, 600px)" }}><EmptyState compact icon="manager" title="Aucun technicien enregistré" hint={canEdit ? "« Équipe » pour ajouter les techniciens SAV." : "Les demandes restent possibles : le responsable SAV répond."} /></div>}
         </div>
       </div>
-      <div style={{ padding: "8px 14px", fontSize: 12, color: T.ink500, borderTop: "1px solid " + T.line }}>{legend}</div>
+      {legend}
     </div>
     {canEdit ? <>
       <Panel title={<span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>Demandes des chefs de projet {pend.length > 0 && <Pill tone="warn">{pend.length}</Pill>}</span>}>
@@ -446,11 +483,12 @@ function PlanningView({ inters, demandes, techs, canEdit, nomOf, me, myPjs, onOp
             <input value={notes[d.id] || ""} onChange={e => setNotes(n => ({ ...n, [d.id]: e.target.value }))} placeholder="Réponse (facultative)" aria-label={"Réponse à la demande " + d.pj} style={{ ...inp(), width: 200 }} />
             <Btn size="sm" onClick={() => onAnswer(d.id, d, false, notes[d.id])}>Refuser</Btn><Btn v="pri" size="sm" onClick={() => onAnswer(d.id, d, true, notes[d.id])}>Accepter</Btn></>
             : <Pill tone={d.st === "ok" ? "ok" : "bad"}>{d.st === "ok" ? "Acceptée" + (d.iid ? " · " + d.iid : "") : "Refusée"}</Pill>}</div>)}
+        {pend.length > 0 && <div style={{ fontSize: 12, color: T.ink500 }}>Accepter crée le ticket et une intervention « à planifier » aux dates demandées ; cochez « Dates validées avec le client » dans l'intervention quand c'est confirmé</div>}
       </Panel>
       <Panel title={<span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>À planifier {toPlan.length > 0 && <Pill tone="warn">{toPlan.length}</Pill>}</span>}>
-        {toPlan.length === 0 ? <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Toutes les interventions ont des dates et un technicien</div> : toPlan.map(([id, i]) => <div key={id} style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", padding: "6px 0", borderTop: "1px solid " + T.line }}>
+        {toPlan.length === 0 ? <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Toutes les interventions sont planifiées et validées avec le client</div> : toPlan.map(([id, i]) => <div key={id} style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", padding: "6px 0", borderTop: "1px solid " + T.line }}>
           <span style={{ fontFamily: T.fontMono, fontSize: 12, fontWeight: 600 }}>{id}</span><PjPlate pj={i.pj} /><span style={{ flex: 1, minWidth: 0, fontSize: FZ.sm }}>{i.obj || "—"}</span>
-          <span style={{ fontSize: 12, color: T.ink500 }}>{!i.a ? "sans dates" : "sans technicien"}</span><Btn v="pri" size="sm" onClick={() => onOpenInter(id)}>Planifier</Btn></div>)}
+          <span style={{ fontSize: 12, color: T.ink500 }}>{!i.a || !i.b ? "sans dates" : !i.resp ? "sans technicien" : fd(i.a) + " → " + fd(i.b) + " · à confirmer avec le client"}</span><Btn v="pri" size="sm" onClick={() => onOpenInter(id)}>{!i.a || !i.b || !i.resp ? "Planifier" : "Ouvrir"}</Btn></div>)}
       </Panel></>
     : <Panel title="Mes demandes">
       {mine.length === 0 ? <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Vous n'avez pas encore fait de demande. Cliquez sur « + » dans la ligne Demandes du planning.</div> : mine.map(d => <div key={d.id} style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", padding: "6px 0", borderTop: "1px solid " + T.line }}>
@@ -601,13 +639,20 @@ const REGIONS = [["monde", "Monde", [-180, 180, LAT1, LAT0]], ["europe", "Europe
 const inReg = (p, b) => p.lon >= b[0] && p.lon <= b[1] && p.lat >= b[2] && p.lat <= b[3];
 const clampView = v => { const w = Math.max(MW / 40, Math.min(MW, v.w)), h = w * MH / MW; return { w, x: Math.max(0, Math.min(MW - w, v.x)), y: Math.max(0, Math.min(MH - h, v.y)) }; };
 const fitView = b => { const [x0, y0] = px(b[3], b[0]), [x1, y1] = px(b[2], b[1]); let w = x1 - x0, h = y1 - y0; if (w / h < MW / MH) w = h * MW / MH; const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2; return clampView({ w: w * 1.04, x: cx - w * 0.52, y: cy - w * 0.52 * MH / MW }); };
+// v335 (demandé : « la carte est trop brouillon : un système plus joli à voir et à cliquer ») : vue large = une bulle par pays (nombre de sites,
+// liseré rouge s'il y a un ticket ouvert) ; clic sur une bulle = zoom sur le pays ; de près (zoom × 2,5) = un point par site avec son n° ;
+// survol = fiche (PJ, nom, ville, contrat, fournitures, tickets) ; liste des sites visibles à droite, clic = centrer + filtrer le tableau.
+const fitPts = pts => { const la = pts.map(p => p.lat), lo = pts.map(p => p.lon), pad = 2.5;
+  return fitView([Math.min(...lo) - pad * 2, Math.max(...lo) + pad * 2, Math.min(...la) - pad, Math.max(...la) + pad]); };
 function WorldMap({ points, onPick }) {
-  const [land, setLand] = useState(null), [err, setErr] = useState(false), [hover, setHover] = useState(null);
+  const [land, setLand] = useState(null), [err, setErr] = useState(false), [hover, setHover] = useState(null), [selPj, setSelPj] = useState(null);
   const [reg, setReg] = useState("monde"), [view, setView] = useState({ x: 0, y: 0, w: MW });
-  const box = useRef(null), drag = useRef(null), moved = useRef(false);
+  const box = useRef(null), svgRef = useRef(null), drag = useRef(null), moved = useRef(false), [tip, setTip] = useState(null);
   useEffect(() => { let on = true; loadAtlas().then(f => { if (on) setLand(f); }).catch(() => { if (on) setErr(true); }); return () => { on = false; }; }, []);
   const paths = useMemo(() => (land ? land.features.map(f => geoPath(f.geometry)) : []), [land]);
-  const k = MW / view.w, vh = view.w * MH / MW;
+  const [boxW, setBoxW] = useState(700);
+  useEffect(() => { const el = box.current; if (!el || typeof ResizeObserver === "undefined") return undefined; const ro = new ResizeObserver(() => setBoxW(el.clientWidth || 700)); ro.observe(el); setBoxW(el.clientWidth || 700); return () => ro.disconnect(); }, []);
+  const k = MW / view.w, vh = view.w * MH / MW, near = k >= 2.5, u = view.w / Math.max(200, boxW);
   const zoomAt = (f, fx = 0.5, fy = 0.5) => { setReg(""); setView(v => { const w = v.w / f, h0 = v.w * MH / MW; return clampView({ w, x: v.x + (v.w - w) * fx, y: v.y + (h0 - w * MH / MW) * fy }); }); };
   // Ctrl + molette = zoom (la molette seule fait défiler la page) ; écouteur non passif pour bloquer le zoom du navigateur
   useEffect(() => { const el = box.current; if (!el) return undefined;
@@ -615,35 +660,75 @@ function WorldMap({ points, onPick }) {
     el.addEventListener("wheel", h, { passive: false }); return () => el.removeEventListener("wheel", h); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const down = e => { if (e.button !== 0) return; drag.current = { x: e.clientX, y: e.clientY, v: view }; moved.current = false; };
   const move = e => { const d = drag.current; if (!d || !box.current) return; const r = box.current.getBoundingClientRect(), dx = (e.clientX - d.x) / r.width * d.v.w, dy = (e.clientY - d.y) / r.height * d.v.w * MH / MW;
-    if (Math.abs(e.clientX - d.x) + Math.abs(e.clientY - d.y) > 4) { moved.current = true; setReg(""); } if (moved.current) setView(clampView({ w: d.v.w, x: d.v.x - dx, y: d.v.y - dy })); };
+    if (Math.abs(e.clientX - d.x) + Math.abs(e.clientY - d.y) > 4) { moved.current = true; setReg(""); setTip(null); } if (moved.current) setView(clampView({ w: d.v.w, x: d.v.x - dx, y: d.v.y - dy })); };
   const up = () => { drag.current = null; };
-  const goReg = id => { const R = REGIONS.find(x => x[0] === id); setReg(id); setView(fitView(R[2])); };
-  const byCountry = points.reduce((m, p) => { m[p.pays || "—"] = (m[p.pays || "—"] || 0) + 1; return m; }, {});
-  const zb = { minWidth: 32, minHeight: 32, borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: 16, fontWeight: 600, cursor: "pointer", fontFamily: T.font, boxShadow: T.shadowSm };
-  return <Panel title={"Carte du parc (" + points.length + " sites)"} right={<span style={{ fontSize: 12, color: T.ink500 }}>{Object.entries(byCountry).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([c, n]) => c + " " + n).join(" · ")}</span>}>
+  const goReg = id => { const R = REGIONS.find(x => x[0] === id); setReg(id); setSelPj(null); setView(fitView(R[2])); };
+  // bulles par pays (vue large)
+  const groups = useMemo(() => { const g = {}; points.forEach(p => { const c = p.pays || "—"; (g[c] = g[c] || []).push(p); });
+    return Object.entries(g).map(([pays, L]) => ({ pays, L, lat: L.reduce((s, p) => s + p.lat, 0) / L.length, lon: L.reduce((s, p) => s + p.lon, 0) / L.length, open: L.reduce((s, p) => s + (p.ouverts || 0), 0) })).sort((a, b) => b.L.length - a.L.length); }, [points]);
+  const inView = p => { const [x, y] = px(p.lat, p.lon); return x >= view.x && x <= view.x + view.w && y >= view.y && y <= view.y + vh; };
+  const listed = points.filter(inView).sort((a, b) => (a.pays || "").localeCompare(b.pays || "") || a.pj.localeCompare(b.pj, "fr", { numeric: true }));
+  const showTip = (p, x, y) => { const svg = svgRef.current, bx = box.current; if (!svg || !bx || !svg.getScreenCTM()) return; const pt = svg.createSVGPoint(); pt.x = x; pt.y = y; const q = pt.matrixTransform(svg.getScreenCTM()), r = bx.getBoundingClientRect(); setTip({ p, x: q.x - r.left, y: q.y - r.top, w: r.width }); };
+  const pick = p => { setSelPj(p.pj); onPick(p.pj); setView(v => { const [x, y] = px(p.lat, p.lon), w = Math.min(v.w, MW / 4); return clampView({ w, x: x - w / 2, y: y - w * MH / MW / 2 }); }); setReg(""); };
+  const ctrOk = p => p.info && p.info.contrat && p.info.contrat !== "Sans contrat";
+  const dotCol = p => (p.ouverts ? T.red600 : ctrOk(p) ? T.emerald600 : T.info600);
+  const zb = { minWidth: 36, minHeight: 36, borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: 16, fontWeight: 600, cursor: "pointer", fontFamily: T.font, boxShadow: T.shadowSm };
+  return <Panel title={"Carte du parc (" + points.length + " sites)"} right={<span style={{ fontSize: 12, color: T.ink500 }}>{groups.length} pays</span>}>
     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }} role="group" aria-label="Régions">
       {REGIONS.map(([id, l, b]) => { const n = id === "monde" ? points.length : points.filter(p => inReg(p, b)).length, on = reg === id;
         return <button key={id} type="button" aria-pressed={on} onClick={() => goReg(id)} disabled={!n && id !== "monde"}
-          style={{ minHeight: 30, padding: "0 12px", borderRadius: 999, border: "1px solid " + (on ? T.ink900 : T.line), background: on ? T.ink900 : T.card, color: on ? T.card : n ? T.ink700 : T.ink300, fontSize: 12, fontWeight: 600, cursor: n || id === "monde" ? "pointer" : "default", fontFamily: T.font }}>{l} <span style={{ opacity: 0.7, fontVariantNumeric: "tabular-nums" }}>{n}</span></button>; })}</div>
-    <div ref={box} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerLeave={up}
-      style={{ position: "relative", width: "100%", aspectRatio: MW + " / " + MH, maxHeight: "52dvh", background: T.surface, borderRadius: 8, overflow: "hidden", cursor: drag.current ? "grabbing" : "grab", touchAction: "none" }}>
-      {err && <div role="status" style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontSize: FZ.sm, color: T.ink500 }}>Fond de carte indisponible (connexion) : les points restent placés.</div>}
-      <svg viewBox={view.x + " " + view.y + " " + view.w + " " + vh} preserveAspectRatio="xMidYMid meet" role="img" aria-label={"Carte : " + points.length + " sites du parc"} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
-        {paths.map((d, i) => <path key={i} d={d} fill={T.surfaceAlt} stroke={T.line} strokeWidth={0.6 / k} />)}
-        {points.map(p => { const [x, y] = px(p.lat, p.lon), ok = p.info && p.info.contrat && p.info.contrat !== "Sans contrat", on = hover === p.pj, showL = on || k >= 3;
-          return <g key={p.pj} onMouseEnter={() => setHover(p.pj)} onMouseLeave={() => setHover(null)} onClick={() => { if (!moved.current) onPick(p.pj); }} style={{ cursor: "pointer" }}>
-            <title>{p.pj + (p.nom ? " · " + p.nom : "") + " · " + ([p.info && p.info.ville, p.pays].filter(Boolean).join(", ") || "lieu inconnu") + (p.exact ? "" : " (centre du pays)")}</title>
-            <circle cx={x} cy={y} r={(on ? 8 : 5.5) / k} fill={p.ouverts ? T.red600 : ok ? T.emerald600 : T.info600} stroke={T.card} strokeWidth={1.5 / k} />
-            {showL && <text x={x + 9 / k} y={y + 4 / k} fontSize={12 / k} fontWeight={600} fill={T.ink900} stroke={T.card} strokeWidth={3 / k} paintOrder="stroke" style={{ fontFamily: T.font, pointerEvents: "none" }}>{p.pj}{on && p.nom ? " · " + p.nom : ""}</text>}</g>; })}
-      </svg>
-      <div style={{ position: "absolute", right: 8, top: 8, display: "flex", flexDirection: "column", gap: 4 }} onPointerDown={e => e.stopPropagation()}>
-        <button type="button" onClick={() => zoomAt(1.5)} aria-label="Zoomer sur la carte" style={zb}>+</button>
-        <button type="button" onClick={() => zoomAt(1 / 1.5)} aria-label="Dézoomer la carte" style={zb}>−</button>
-        <button type="button" onClick={() => goReg("monde")} aria-label="Toute la carte" title="Toute la carte" style={{ ...zb, fontSize: 11 }}>⤢</button></div>
+          style={{ minHeight: 32, padding: "0 12px", borderRadius: 999, border: "1px solid " + (on ? T.ink900 : T.line), background: on ? T.ink900 : T.card, color: on ? T.card : n ? T.ink700 : T.ink300, fontSize: 12, fontWeight: 600, cursor: n || id === "monde" ? "pointer" : "default", fontFamily: T.font }}>{l} <span style={{ opacity: 0.7, fontVariantNumeric: "tabular-nums" }}>{n}</span></button>; })}</div>
+    <div className="enogia-map-split" style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 280px", gap: 12, alignItems: "stretch" }}>
+      <div ref={box} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerLeave={() => { up(); setTip(null); }}
+        style={{ position: "relative", width: "100%", aspectRatio: MW + " / " + MH, maxHeight: "56dvh", background: "color-mix(in srgb, " + T.info100 + " 35%, " + T.card + ")", borderRadius: 12, overflow: "hidden", cursor: "grab", touchAction: "none", border: "1px solid " + T.line }}>
+        {err && <div role="status" style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontSize: FZ.sm, color: T.ink500 }}>Fond de carte indisponible (connexion) : les sites restent placés.</div>}
+        <svg ref={svgRef} viewBox={view.x + " " + view.y + " " + view.w + " " + vh} preserveAspectRatio="xMidYMid meet" role="img" aria-label={"Carte : " + points.length + " sites du parc"} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
+          {paths.map((d, i) => <path key={i} d={d} fill={T.surfaceAlt} stroke={T.card} strokeWidth={0.8 * u} />)}
+          {!near ? groups.map(g => { const [x, y] = px(g.lat, g.lon), n = g.L.length, r = (9 + Math.min(14, Math.sqrt(n) * 4)) * u, on = hover === "g:" + g.pays;
+            return <g key={g.pays} role="button" tabIndex={0} aria-label={g.pays + " : " + n + " site" + (n > 1 ? "s" : "") + (g.open ? ", " + g.open + " ticket ouvert" : "")}
+              onMouseEnter={() => setHover("g:" + g.pays)} onMouseLeave={() => setHover(null)} onKeyDown={e => { if (e.key === "Enter") { setReg(""); setView(fitPts(g.L)); } }}
+              onClick={() => { if (moved.current) return; setReg(""); setSelPj(null); setView(fitPts(g.L)); }} style={{ cursor: "pointer" }}>
+              <title>{g.pays + " · " + n + " site" + (n > 1 ? "s" : "") + " · clic = zoomer"}</title>
+              <circle cx={x} cy={y} r={r + 3 * u} fill={g.open ? T.red600 : T.ink900} opacity={on ? 0.25 : 0.12} />
+              <circle cx={x} cy={y} r={r} fill={on ? T.ink700 : T.ink900} stroke={g.open ? T.red600 : T.card} strokeWidth={(g.open ? 2.5 : 1.5) * u} />
+              <text x={x} y={y + 4.5 * u} textAnchor="middle" fontSize={13 * u} fontWeight={600} fill={T.card} style={{ fontFamily: T.fontDisplay, pointerEvents: "none" }}>{n}</text>
+              {on && <text x={x} y={y - r - 6 * u} textAnchor="middle" fontSize={12 * u} fontWeight={600} fill={T.ink900} stroke={T.card} strokeWidth={3 * u} paintOrder="stroke" style={{ fontFamily: T.font, pointerEvents: "none" }}>{g.pays}</text>}</g>; })
+          : points.map(p => { const [x, y] = px(p.lat, p.lon), on = hover === p.pj || selPj === p.pj;
+            return <g key={p.pj} role="button" tabIndex={0} aria-label={p.pj + (p.nom ? " · " + p.nom : "")}
+              onMouseEnter={() => { setHover(p.pj); showTip(p, x, y); }} onMouseLeave={() => { setHover(null); setTip(null); }} onKeyDown={e => { if (e.key === "Enter") pick(p); }}
+              onClick={() => { if (!moved.current) pick(p); }} style={{ cursor: "pointer" }}>
+              <circle cx={x} cy={y} r={(on ? 12 : 9) * u} fill={dotCol(p)} opacity={0.18} />
+              <circle cx={x} cy={y} r={(on ? 7 : 5.5) * u} fill={dotCol(p)} stroke={T.card} strokeWidth={2 * u} />
+              <text x={x + 10 * u} y={y + 4 * u} fontSize={12 * u} fontWeight={600} fill={T.ink900} stroke={T.card} strokeWidth={3 * u} paintOrder="stroke" style={{ fontFamily: T.font, pointerEvents: "none" }}>{p.pj}</text></g>; })}
+        </svg>
+        {tip && <div role="tooltip" style={{ position: "absolute", left: Math.min(tip.x + 14, tip.w - 250), top: Math.max(8, tip.y - 20), width: 236, background: T.card, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, padding: "10px 12px", pointerEvents: "none", display: "flex", flexDirection: "column", gap: 4, zIndex: 3 }}>
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}><PjPlate pj={tip.p.pj} /><b style={{ fontSize: FZ.sm, color: T.ink900, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tip.p.nom || ""}</b></div>
+          <div style={{ fontSize: 12, color: T.ink500 }}>{[tip.p.info && tip.p.info.ville, tip.p.pays].filter(Boolean).join(", ") || "lieu inconnu"}{tip.p.exact ? "" : " (centre du pays)"}</div>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>{ctrOk(tip.p) ? <Pill tone="ok">{tip.p.info.contrat}</Pill> : <Pill tone="muted">Sans contrat</Pill>}{tip.p.ouverts ? <Pill tone="bad">{tip.p.ouverts} ticket{tip.p.ouverts > 1 ? "s" : ""} ouvert{tip.p.ouverts > 1 ? "s" : ""}</Pill> : null}</div>
+          {fournLabel(tip.p.info && tip.p.info.fourn) && <div style={{ fontSize: 12, color: T.ink700 }}>{fournLabel(tip.p.info.fourn)}</div>}
+        </div>}
+        <div style={{ position: "absolute", right: 10, top: 10, display: "flex", flexDirection: "column", gap: 6 }} onPointerDown={e => e.stopPropagation()}>
+          <button type="button" onClick={() => zoomAt(1.6)} aria-label="Zoomer sur la carte" style={zb}>+</button>
+          <button type="button" onClick={() => zoomAt(1 / 1.6)} aria-label="Dézoomer la carte" style={zb}>−</button>
+          <button type="button" onClick={() => goReg("monde")} aria-label="Toute la carte" title="Toute la carte" style={{ ...zb, fontSize: 12 }}>⤢</button></div>
+        <div style={{ position: "absolute", left: 10, bottom: 10, display: "flex", gap: 10, flexWrap: "wrap", fontSize: 11, color: T.ink700, background: "color-mix(in srgb, " + T.card + " 88%, transparent)", borderRadius: 8, padding: "4px 8px" }}>
+          {[[T.emerald600, "Sous contrat"], [T.info600, "Sans contrat"], [T.red600, "Ticket ouvert"]].map(([c, l]) => <span key={l} style={{ display: "inline-flex", gap: 5, alignItems: "center" }}><i aria-hidden="true" style={{ width: 9, height: 9, borderRadius: "50%", background: c, display: "inline-block" }} />{l}</span>)}</div>
+      </div>
+      <div style={{ border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden", display: "flex", flexDirection: "column", maxHeight: "56dvh", minHeight: 0 }}>
+        <div style={{ padding: "8px 12px", borderBottom: "1px solid " + T.line, background: T.surface, fontSize: 12, fontWeight: 600, color: T.ink700 }}>{listed.length} site{listed.length > 1 ? "s" : ""} dans la zone affichée</div>
+        <div style={{ overflowY: "auto", flex: 1 }}>
+          {listed.length === 0 ? <div style={{ padding: 12, fontSize: FZ.sm, color: T.ink500 }}>Aucun site ici : dézoomez ou choisissez une région</div> : listed.map((p, i) => { const on = selPj === p.pj || hover === p.pj, head = i === 0 || listed[i - 1].pays !== p.pays;
+            return <React.Fragment key={p.pj}>{head && <div style={{ padding: "6px 12px 2px", fontSize: 11, fontWeight: 600, color: T.ink500 }}>{p.pays || "Pays inconnu"}</div>}
+              <button type="button" onClick={() => pick(p)} onMouseEnter={() => setHover(p.pj)} onMouseLeave={() => setHover(null)}
+                style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", minHeight: 44, padding: "4px 12px", border: "none", borderLeft: "3px solid " + (on ? dotCol(p) : "transparent"), background: on ? T.surface : "transparent", cursor: "pointer", textAlign: "left", fontFamily: T.font }}>
+                <i aria-hidden="true" style={{ width: 9, height: 9, borderRadius: "50%", background: dotCol(p), flexShrink: 0 }} />
+                <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", fontSize: FZ.sm, fontWeight: 600, color: T.ink900, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.pj}{p.nom ? " · " + p.nom : ""}</span>
+                  <span style={{ display: "block", fontSize: 11, color: T.ink500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{(p.info && p.info.ville) || "ville non saisie"}{ctrOk(p) ? " · " + p.info.contrat : ""}{p.ouverts ? " · " + p.ouverts + " ticket" + (p.ouverts > 1 ? "s" : "") : ""}</span></span>
+              </button></React.Fragment>; })}
+        </div>
+      </div>
     </div>
-    <div style={{ display: "flex", gap: 14, flexWrap: "wrap", fontSize: 12, color: T.ink500 }}>
-      {[[T.emerald600, "Sous contrat"], [T.info600, "Sans contrat"], [T.red600, "Ticket ouvert"]].map(([c, l]) => <span key={l} style={{ display: "inline-flex", gap: 6, alignItems: "center" }}><i aria-hidden="true" style={{ width: 10, height: 10, borderRadius: "50%", background: c, display: "inline-block" }} />{l}</span>)}
-      <span>Ctrl + molette ou + / − = zoom, glisser = déplacer, clic sur un point = filtrer le tableau ; sans ville saisie, le point est au centre du pays</span></div>
+    <div style={{ fontSize: 12, color: T.ink500 }}>Clic sur une bulle = zoomer sur le pays ; clic sur un site (carte ou liste) = le centrer et filtrer le tableau ; glisser = déplacer, Ctrl + molette ou + / − = zoom ; sans ville saisie, le site est au centre du pays</div>
   </Panel>;
 }
 

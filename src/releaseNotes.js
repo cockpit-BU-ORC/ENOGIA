@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v335",
+    date: "2026-11-13",
+    title: "V335 : menu, planning SAV et carte",
+    items: [
+      { t: "Menu", d: "Plus de sous-menus qui s'ouvrent au survol : la petite flèche les déplie." },
+      { t: "SAV / MES", d: "Week-ends visibles, demandes en une barre, interventions à confirmer en pointillés, carte par pays." },
+    ],
+  },
+  {
     id: "2026-11-v334",
     date: "2026-11-13",
     title: "V334 : clore un besoin turbine",

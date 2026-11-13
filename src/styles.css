@@ -628,3 +628,6 @@ button, input, select, textarea { font-family: inherit; }
 /* v326 : SAV / MES — liste des tickets et fiche côte à côte, empilées sous 1100 px */
 /* v333 (audit tablette) : la fiche du ticket reste à côté de la liste en paysage 1024 px */
 @media (max-width: 980px) { .enogia-sav-split { grid-template-columns: 1fr !important; } }
+
+/* v335 : carte du parc et liste des sites empilées sur écran étroit */
+@media (max-width: 900px) { .enogia-map-split { grid-template-columns: 1fr !important; } }

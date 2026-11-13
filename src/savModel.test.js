@@ -30,7 +30,7 @@ test("demande d'un chef de projet acceptée : ticket et intervention créés sur
   const r = acceptDemande({ id: "d1", pj: "PJ9", obj: "Paramétrage Modbus", date: "2026-11-20", days: 2, by: "Camille" }, { tickets: { "TC-26-41": {} }, inters: { "INT-083": {} } }, today);
   expect(r.tid).toBe("TC-26-42");
   expect(r.iid).toBe("INT-084");
-  expect(r.inter).toMatchObject({ pj: "PJ9", a: "2026-11-20", b: "2026-11-23", st: "Planifiée", tk: "TC-26-42" });
+  expect(r.inter).toMatchObject({ pj: "PJ9", a: "2026-11-20", b: "2026-11-23", st: "À planifier", tk: "TC-26-42" });
   expect(r.ticket).toMatchObject({ orig: "Chef de projet", inters: ["INT-084"], demande: "d1" });
 });
 

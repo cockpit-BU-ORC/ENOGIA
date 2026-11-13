@@ -66,7 +66,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-13-v334-besoins-clos";
+const APP_BUILD_VERSION = "2026-11-13-v335-menu-sav-carte";
 
 const ReleasePopup = React.lazy(() => import("./components/ReleaseNotes").then(m => ({ default: m.ReleasePopup })));
 function Navigate0({ go }) { useEffect(() => { go(); }, []); return null; } // eslint-disable-line react-hooks/exhaustive-deps
@@ -1081,7 +1081,10 @@ export default function App(){
   useEffect(()=>{const f=e=>{if((e.ctrlKey||e.metaKey)&&!e.altKey&&String(e.key).toLowerCase()==="b"&&loggedIn&&!navPin){e.preventDefault();clearTimeout(navPeekT.current);setNavPeek(v=>!v);}};window.addEventListener("keydown",f);return()=>window.removeEventListener("keydown",f);},[loggedIn,navPin]);
   useEffect(()=>{const f=e=>{if(e.ctrlKey||e.metaKey||e.altKey||!["table","gantt","calendar","changes"].includes(view))return;const t=e.target,tag=t&&t.tagName;if(t&&(t.isContentEditable||/^(INPUT|SELECT|TEXTAREA)$/.test(tag)))return;if(document.querySelector('[aria-modal="true"]'))return;const v={"1":"table","2":"gantt","3":"calendar"}[e.key];if(v&&v!==view){e.preventDefault();setView(v);}};window.addEventListener("keydown",f);return()=>window.removeEventListener("keydown",f);},[view]); // v306 : touches 1, 2, 3 = Liste, Gantt, Calendrier
   // v306 : sous-pages d'une entrée dépliées au survol (en plus de celles de la page active)
-  const [navHover,setNavHover]=useState(null),navHoverT=useRef(0);
+  // v335 (demandé : « au survol, le menu s'ouvre et se ferme très vite, j'ai du mal à cliquer ») : plus de dépliage au survol (il poussait les
+  // entrées sous la souris) ; les sous-pages s'ouvrent au clic sur le chevron (subsOpen), l'entrée active reste dépliée.
+  const [subsOpen,setSubsOpen]=useState(()=>new Set()),navHoverT=useRef(0);
+  const togSubs=id=>setSubsOpen(s0=>{const n=new Set(s0);if(n.has(id))n.delete(id);else n.add(id);return n;});
   const navOverlay=!navPin;
   const navCompact=false; // dans l'espace Manager, un seul menu large : celui du Manager
   const [navPal,setNavPal]=useState(false);
@@ -1107,12 +1110,12 @@ export default function App(){
 
     {/* ── Rail de navigation : icônes de vue + accès Manager + mode sombre ── */}
     <a href="#enogia-main" className="enogia-skip" onClick={e=>{e.preventDefault();const m=document.getElementById("enogia-main");if(m){m.focus();m.scrollIntoView&&m.scrollIntoView({block:"start"});}}}>Aller au contenu</a>
-    {!navPin&&<div aria-hidden="true" onMouseEnter={()=>{clearTimeout(navPeekT.current);setNavPeek(true);}} style={{position:"fixed",left:0,top:0,bottom:0,width:8,zIndex:29}}/>}
+    {!navPin&&<div aria-hidden="true" onMouseEnter={()=>{clearTimeout(navPeekT.current);navPeekT.current=setTimeout(()=>setNavPeek(true),150);}} onMouseLeave={()=>{if(!navPeek)clearTimeout(navPeekT.current);}} style={{position:"fixed",left:0,top:0,bottom:0,width:8,zIndex:29}}/>}
     {/* v333 (audit tablette) : au doigt, toucher à côté du menu ouvert le referme */}
     {coarse&&navPeek&&!navPin&&<div aria-hidden="true" onClick={()=>setNavPeek(false)} style={{position:"fixed",inset:0,zIndex:29}}/>}
     {!navPin&&!navPeek&&<span aria-hidden="true" style={{position:"fixed",left:0,top:"50%",transform:"translateY(-50%)",width:4,height:56,borderRadius:"0 4px 4px 0",background:NAV.mark==="currentColor"?T.accent:NAV.mark,opacity:.55,zIndex:29,pointerEvents:"none"}}/>}
     <div style={{width:navPin?216:0,flexShrink:0,position:"relative",zIndex:30}}>
-    <nav className={"enogia-nav"+(NAV.industrial?" enogia-nav-ind":"")} aria-label="Pages" onMouseEnter={()=>clearTimeout(navPeekT.current)} onMouseLeave={()=>{clearTimeout(navHoverT.current);setNavHover(null);if(navPeek)closePeek(350);}} onKeyDown={e=>{if(e.key==="Escape"&&navPeek)setNavPeek(false);}} style={{width:216,boxShadow:navOverlay&&navPeek?"12px 0 40px rgba(0,0,0,.35)":"none",transform:navOpen?"none":"translateX(-100%)",visibility:navOpen?"visible":"hidden",transition:"transform .22s var(--e-ease), box-shadow .22s ease, visibility 0s linear "+(navOpen?"0s":".22s"),flexShrink:0,background:NAV.bg,borderRight:"1px solid "+NAV.border,display:"flex",flexDirection:"column",alignItems:navCompact?"center":"stretch",padding:navCompact?"16px 0":"16px 10px",gap:4,position:navPin?"sticky":"fixed",top:0,left:0,zIndex:30,height:"100dvh",overflowY:"auto",overflowX:"hidden",scrollbarWidth:"none"}}>
+    <nav className={"enogia-nav"+(NAV.industrial?" enogia-nav-ind":"")} aria-label="Pages" onMouseEnter={()=>clearTimeout(navPeekT.current)} onMouseLeave={()=>{clearTimeout(navHoverT.current);if(navPeek)closePeek(700);}} onKeyDown={e=>{if(e.key==="Escape"&&navPeek)setNavPeek(false);}} style={{width:216,boxShadow:navOverlay&&navPeek?"12px 0 40px rgba(0,0,0,.35)":"none",transform:navOpen?"none":"translateX(-100%)",visibility:navOpen?"visible":"hidden",transition:"transform .22s var(--e-ease), box-shadow .22s ease, visibility 0s linear "+(navOpen?"0s":".22s"),flexShrink:0,background:NAV.bg,borderRight:"1px solid "+NAV.border,display:"flex",flexDirection:"column",alignItems:navCompact?"center":"stretch",padding:navCompact?"16px 0":"16px 10px",gap:4,position:navPin?"sticky":"fixed",top:0,left:0,zIndex:30,height:"100dvh",overflowY:"auto",overflowX:"hidden",scrollbarWidth:"none"}}>
       {/* v179 (demandé : « le logo en haut à gauche pour avoir le début de la page au même niveau ») : le logo ouvre le menu, en blanc sur le marine. */}
       <button type="button" onClick={()=>setView("home")} aria-label={SITE_TITLE+" — accueil"} title="Accueil" style={{border:"none",background:"transparent",cursor:"pointer",padding:navCompact?"2px 0 10px":"2px 10px 12px",display:"flex",justifyContent:navCompact?"center":"flex-start",alignItems:"center",minHeight:44}}>
         <span style={{display:"flex",flexDirection:"column",alignItems:navCompact?"center":"flex-start",gap:6,minWidth:0}}>
@@ -1123,13 +1126,17 @@ export default function App(){
       {NAV_TREE.map(({g,items})=><React.Fragment key={g}>
         {!navCompact&&<div className="enogia-nav-grp" style={{fontSize:12,fontWeight:600,color:NAV.group,fontFamily:T.font,padding:"12px 10px 4px",whiteSpace:"nowrap"}}>{g}</div>}
         {navCompact&&<div className="enogia-nav-grp" style={{width:18,height:1,background:NAV.industrial?"rgba(255,255,255,.18)":T.line,margin:"4px 0"}}/>}
-        {items.map(it=>{const on=it.on,showSubs=(on||navHover===it.id)&&it.subs&&it.subs.length>1;return(<React.Fragment key={it.id}>
-          <button className="enogia-nav-btn e-hov e-hov-ink" data-on={on?"1":"0"} onClick={()=>{if(coarse&&!on&&it.subs&&it.subs.length>1&&navHover!==it.id){setNavHover(it.id);return;}it.go();setNavPeek(false);}} title={it.l} aria-label={it.badge?it.l+", "+it.badge+" nouvelle"+(it.badge>1?"s":"")+" mise"+(it.badge>1?"s":"")+" à jour":it.l} aria-current={on?"page":undefined}
+        {items.map(it=>{const on=it.on,hasSubs=it.subs&&it.subs.length>1,showSubs=(on||subsOpen.has(it.id))&&hasSubs;return(<React.Fragment key={it.id}>
+          <div style={{position:"relative"}}>
+          <button className="enogia-nav-btn e-hov e-hov-ink" data-on={on?"1":"0"} onClick={()=>{if(coarse&&!on&&hasSubs&&!subsOpen.has(it.id)){togSubs(it.id);return;}it.go();setNavPeek(false);}} title={it.l} aria-label={it.badge?it.l+", "+it.badge+" nouvelle"+(it.badge>1?"s":"")+" mise"+(it.badge>1?"s":"")+" à jour":it.l} aria-current={on?"page":undefined}
             style={{position:"relative",width:navCompact?40:"100%",height:40,borderRadius:navCompact?12:10,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:navCompact?"center":"flex-start",gap:12,padding:navCompact?0:"0 12px",background:on?NAV.bgOn:"transparent",color:on?NAV.inkOn:NAV.ink,fontFamily:T.font,fontSize:FZ.sm,fontWeight:on?700:500,whiteSpace:"nowrap",transition:"background .15s ease, color .15s ease","--nav-mark":NAV.mark,"--e-hov-bg":NAV.hover,"--e-hov-ink":NAV.hoverInk}}
-            onMouseEnter={e=>{clearTimeout(navHoverT.current);if(it.subs&&it.subs.length>1){const id=it.id;navHoverT.current=setTimeout(()=>setNavHover(id),220);}}}
-            onMouseLeave={()=>clearTimeout(navHoverT.current)}
-            aria-expanded={it.subs&&it.subs.length>1?!!showSubs:undefined}>
-            <NavIcon name={it.icon} size={19}/>{!navCompact&&<span className="enogia-nav-lab" style={{flex:1,textAlign:"left"}}>{it.l}</span>}{it.subs&&it.subs.length>1&&<span aria-hidden="true" style={{display:"inline-flex",opacity:.6,transform:showSubs?"rotate(0deg)":"rotate(-90deg)",transition:"transform .18s var(--e-ease)"}}><NavIcon name="chevronDown" size={13}/></span>}{it.id==="planning"&&<ChangesBadge n={unseenChanges.length}/>}</button>
+            aria-expanded={hasSubs?!!showSubs:undefined}>
+            <NavIcon name={it.icon} size={19}/>{!navCompact&&<span className="enogia-nav-lab" style={{flex:1,textAlign:"left"}}>{it.l}</span>}{hasSubs&&!navCompact&&<span aria-hidden="true" style={{width:28,flexShrink:0}}/>}{it.id==="planning"&&<ChangesBadge n={unseenChanges.length}/>}</button>
+          {hasSubs&&!navCompact&&!on&&<button type="button" onClick={e=>{e.stopPropagation();togSubs(it.id);}} aria-label={(showSubs?"Replier":"Déplier")+" les pages de "+it.l} aria-expanded={!!showSubs} title={(showSubs?"Replier":"Déplier")+" les sous-pages"}
+            style={{position:"absolute",right:4,top:6,width:28,height:28,borderRadius:8,border:"none",background:"transparent",color:on?NAV.inkOn:NAV.ink,display:"inline-grid",placeItems:"center",cursor:"pointer",opacity:.75}}>
+            <span style={{display:"inline-flex",transform:showSubs?"rotate(0deg)":"rotate(-90deg)",transition:"transform .18s var(--e-ease)"}}><NavIcon name="chevronDown" size={13}/></span></button>}
+          {hasSubs&&!navCompact&&on&&<span aria-hidden="true" style={{position:"absolute",right:12,top:13,display:"inline-flex",opacity:.6,color:NAV.inkOn,pointerEvents:"none"}}><NavIcon name="chevronDown" size={13}/></span>}
+          </div>
           {showSubs&&<div role="group" aria-label={"Pages de "+it.l} className="enogia-nav-subs" style={{display:"flex",flexDirection:"column",margin:"0 0 4px 30px",paddingLeft:8,borderLeft:"1px solid "+(NAV.industrial?"rgba(255,255,255,.16)":T.line)}}>
             {it.subs.map(sb=><button key={sb.id} type="button" className="enogia-nav-sub" onClick={()=>{sb.go();setNavPeek(false);}} aria-current={sb.on?"page":undefined}
               style={{border:"none",background:"transparent",textAlign:"left",cursor:"pointer",padding:"6px 8px",minHeight:30,borderRadius:8,fontFamily:T.font,fontSize:FZ.sm,fontWeight:sb.on?700:500,color:sb.on?NAV.inkOn:NAV.ink,whiteSpace:"nowrap"}}>{sb.l}</button>)}

@@ -81,7 +81,7 @@ export function acceptDemande(dem, doc, today = new Date()) {
   const tickets = (doc && doc.tickets) || {}, inters = (doc && doc.inters) || {};
   const tid = nextTicketId(tickets, today), iid = nextInterId(inters), days = demandeDays(dem);
   const ticket = { pj: dem.pj, type: dem.type || "cur", prio: "m", step: 3, resp: "", orig: "Chef de projet", date: isoD(today), det: dem.obj || "", inters: [iid], by: dem.by || "", demande: dem.id || "" };
-  const inter = { tk: tid, pj: dem.pj, obj: dem.obj || "", type: dem.interType || "Maintenance curative", resp: "", who: [], a: days[0], b: days[days.length - 1], st: "Planifiée", prep: [], clo: [], costs: {} };
+  const inter = { tk: tid, pj: dem.pj, obj: dem.obj || "", type: dem.interType || "Maintenance curative", resp: "", who: [], a: days[0], b: days[days.length - 1], st: "À planifier", prep: [], clo: [], costs: {} }; // v335 : dates à confirmer avec le client
   return { tid, ticket, iid, inter };
 }
 

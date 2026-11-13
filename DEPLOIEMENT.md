@@ -2416,3 +2416,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Bouton « Clore » sur chaque carte ; « Besoins clos (N) » pour rouvrir.
 - Données : `planning/prodTurbines.clos[PJ]` (PJ), `besoins[id].done` (SAV) ; règles Firestore inchangées.
 - Fichiers : turbineNeeds.js(+test), components/TurbinesHub.js, App.js, demo/demoData.js, versions.
+
+## v335 — menu stable, SAV : PJ libre, week-ends, demandes en barre, planifiée / à planifier, carte
+
+- Menu : sous-pages dépliées au clic sur le chevron (plus au survol), fermeture après 0,7 s.
+- SAV : PJ saisi librement dans le ticket et l'intervention ; planning avec samedi et dimanche (pas de demande possible) ; demandes en barres continues ; « Dates validées avec le client » dans l'intervention (Planifiée / À planifier) ; une demande acceptée = intervention À planifier ; carte avec bulles par pays et liste des sites.
+- Aucune clé localStorage nouvelle ; règles Firestore inchangées.
+- Fichiers : App.js, components/SavPage.js, savModel.js(+test), styles.css, versions.

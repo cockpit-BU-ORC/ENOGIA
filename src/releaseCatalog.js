@@ -942,4 +942,10 @@ export const RELEASE_CATALOG = [
   { v: "334", t: "Turbines : clore un besoin", items: [
     ["Turbines", "Besoins ORC et SAV : « Clore » retire un PJ dont les turbines sont installées ; « Besoins clos » pour le rouvrir."],
   ] },
+  { v: "335", t: "Menu plus stable, planning SAV et carte", items: [
+    ["Menu", "Les sous-pages ne s'ouvrent plus au survol : un clic sur la petite flèche les déplie ; le menu reste ouvert plus longtemps."],
+    ["SAV / MES", "Ticket : un PJ pas encore dans l'ordo peut être saisi."],
+    ["SAV / MES", "Planning : samedi et dimanche visibles (sans demande possible), demandes en une seule barre, interventions à planifier en pointillés."],
+    ["SAV / MES", "Carte : bulles par pays, liste des sites à côté, fiche au survol."],
+  ] },
 ];
