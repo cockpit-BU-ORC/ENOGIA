@@ -657,6 +657,7 @@ var COLS=[
   {k:'montant',label:'Montant',iw:96,grp:'base',cls:'r'},
   {k:'pct',label:'%',grp:'base',cls:'r'},
   {k:'epc',label:'EPC',grp:'base'},
+  {k:'produit',label:'Produit',grp:'base'},
   {k:'factInit',label:'Facture initiale',iw:118,grp:'init',date:1},
   {k:'delai',label:'Délai (j)',iw:56,grp:'init',cls:'r'},
   {k:'encInit',label:'Enc. initial',iw:118,grp:'init',date:1},
@@ -725,12 +726,13 @@ function selHTML(r){
 }
 function cellHTML(c,r,sticky,gs){
   var cls=(sticky?'sticky ':'')+(gs?'gs '+(GB[c.grp]?'gb ':''):'')+(c.cls||''),inner='',attr='';
-  if(r.epc&&['jalon','montant','pct','epc','statut','del'].indexOf(c.k)<0)return '<td class="'+cls+' fit"></td>';
+  if(r.epc&&['jalon','montant','pct','epc','produit','statut','del'].indexOf(c.k)<0)return '<td class="'+cls+' fit"></td>';
   switch(c.k){
     case 'jalon':inner='<div class="jw"><span class="dh" draggable="true" title="Glisser ce jalon vers un autre PJ" aria-hidden="true">⠿</span><input class="in" data-f="jalon" value="'+esc(r.jalon)+'" aria-label="Jalon" placeholder="Nom du jalon"></div>';break;
     case 'montant':inner='<input class="in n" type="text" inputmode="decimal" data-f="montant" data-money="1" value="'+(r.montant==null?'':eur(r.montant))+'" aria-label="Montant en euros" placeholder="0 €">';break;
     case 'pct':cls+=' ro';attr=' data-d="pct"';inner=pctText(r);break;
     case 'epc':cls+=' ctr';inner='<input type="checkbox" data-f="epc" '+(r.epc?'checked ':'')+'title="Jalon géré par la BU EPC : grisé, hors suivi des factures et encaissements" aria-label="Jalon géré par la BU EPC">';break;
+    case 'produit':cls+=' ctr';inner='<input type="checkbox" data-f="produit" '+(r.produit?'checked ':'')+'title="Livrable à fournir par le Produit (ex. P&amp;ID) : le jalon, son montant et ses dates remontent sur l\'accueil du responsable produit" aria-label="Jalon lié à un livrable du Produit">';break;
     case 'cm':attr=' data-d="cm"';inner=cmHTML(r);break;
     case 'statut':cls+=' ro';attr=' data-d="stat"';inner=pillHTML(r);break;
     case 'delai':inner='<input class="in n" type="number" step="1" data-f="delai" value="'+(r.delai==null?'':r.delai)+'" aria-label="Délai de paiement en jours" placeholder="j">';break;
@@ -1130,6 +1132,7 @@ function afterInline(id,f){
 var autoDelai=false;
 function applyEdit(r,f,v){
   if(f==='epc'){r.epc=!!v;return}
+  if(f==='produit'){if(v)r.produit=true;else delete r.produit;return}
   var prevInit=r.encInit,prevFI=r.factInit;
   if(f==='montant'||f==='delai'){
     var n=v===''?null:Number(v);r[f]=(n==null||isNaN(n))?null:n;
@@ -1156,6 +1159,7 @@ function onEdit(id,f,val){
   autoDelai=false;
   applyEdit(r,f,val);
   if(JSON.stringify(r)===before)return;
+  if(f==='produit'){scheduleSave();render();toast(r.produit?'Jalon Produit : il remonte sur l\'accueil du responsable produit':'Jalon retiré de l\'accueil du responsable produit');return}
   if(f==='epc'){scheduleSave();render();toast(r.epc?'Jalon EPC : grisé, hors suivi des factures et encaissements':'Jalon réintégré dans le suivi');return}
   if(autoDelai&&f!=='delai') toast('Délai de paiement de 30 j appliqué, modifiable dans la colonne Délai. Encaissements calculés.');
   else if(f==='encReelle'&&val) toast('Jalon payé le '+fdate(val));
