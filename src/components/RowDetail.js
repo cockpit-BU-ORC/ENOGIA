@@ -18,6 +18,7 @@ import { linkedPayments, cashSummary } from "../cashinLink";
 import { canCash } from "../roles";
 import { fmtEur } from "../pjProgress";
 import { turbineOf, achatsOf, ACHAT_ST } from "../pjDossier";
+import { useProdModel } from "../prodModel";
 
 // Données de contexte fournies par App (tests, turbines) pour les pastilles, sans les faire passer par chaque vue.
 export const PjDialogCtx = createContext({ testsDoc: null, turbineDoc: null });
@@ -81,7 +82,8 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
   const livr = livrPrevueOf(meta, r.depart);
   // v309 (revue, point 3 : « le PJ, centre de tout ») : turbine (Turbines › Besoins) et achats (Achats / Appro) du PJ, en lecture,
   // pour qui a accès à ces pages (ctx.prodDoc / ctx.achatsDoc fournis par App) ; « Ouvrir » mène à la page d'origine.
-  const turb = useMemo(() => (ctx.prodDoc ? turbineOf(ctx.prodDoc, ctx.rows || [r], r.pj, x => getPjMeta(x.pj, x)) : null), [ctx.prodDoc, ctx.rows, r]);
+  const prodM = useProdModel(!!ctx.prodDoc); // v324 : calcul des turbines chargé à la demande
+  const turb = useMemo(() => (ctx.prodDoc && prodM ? turbineOf(ctx.prodDoc, ctx.rows || [r], r.pj, x => getPjMeta(x.pj, x), prodM.buildNeeds) : null), [ctx.prodDoc, ctx.rows, r, prodM]);
   const ach = useMemo(() => (ctx.achatsDoc ? achatsOf(ctx.achatsDoc, r.pj) : null), [ctx.achatsDoc, r.pj]);
   // v312 : départ modifiable (admins, ctx.setDepart) 
   const [depEd, setDepEd] = useState(false), [depV, setDepV] = useState("");

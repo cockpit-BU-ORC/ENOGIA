@@ -12,6 +12,7 @@ import { InboxPage } from "../components/InboxPage";
 import { TestsTab } from "../components/TestsTab";
 import { TurbinesHub } from "../components/TurbinesHub";
 import { HomeView } from "../components/HomeView";
+import { MentionBell } from "../components/MentionBell";
 import { userKey } from "../mentions";
 
 const no = () => {}, yes = async () => true;
@@ -36,7 +37,7 @@ function Calendrier({ mode0 = "week" }) {
     dayAnchor={dayAnchor} setDayAnchor={setDayAnchor} closurePeriods={[]} productionExclusions={{}} zoomLevel={zoom} setZoomLevel={setZoom} selEtats={f.selEtats} setSelEtats={f.setSelEtats} allPJs={o.allPJs} selPJs={f.selPJs} setSelPJs={f.setSelPJs} />;
 }
 const Commentaires = () => <CommentsView data={DEMO_ROWS} comments={DEMO_COMMENTS} addComment={yes} addCommentMulti={yes} deleteComment={yes} pinOk seeAll myPjs={["PJ901", "PJ902", "PJ905"]} openPj={no} authorName={DEMO_ME.name} resolveComment={yes} />;
-const ATraiter = () => <InboxPage me={DEMO_ME.email} comments={DEMO_COMMENTS} data={DEMO_ROWS} resolveComment={yes} canSeePrivate onOpen={no} assignments={[]} onSeenAssign={no} onOpenTests={no}
+const ATraiter = ({ popup }) => <InboxPage popup={popup} me={DEMO_ME.email} comments={DEMO_COMMENTS} data={DEMO_ROWS} resolveComment={yes} canSeePrivate onOpen={no} assignments={[]} onSeenAssign={no} onOpenTests={no}
   actions={[{ id: "sn", n: 1, primary: true, title: "1 machine arrivée sans S/N", detail: "S/N prévus d'après l'ordo.", items: [{ pj: "PJ902", text: "2026-041-180", yes: { label: "✓ Oui", title: "Garder", onClick: no } }], cta: { label: "Attribuer les S/N", onClick: no } }]}
   pjChanges={[{ pj: "PJ901", at: new Date().toISOString(), delta: 4, nom: "Papeterie du Nord" }]} onSeenPjChanges={no} onOpenChanges={no} />;
 function Tests() { const [sub, setSub] = useState("semaine"); return <TestsTab doc={DEMO_TESTS} save={yes} data={DEMO_ROWS} certifs={{}} canEdit lead sub={sub} onSub={setSub} me={DEMO_ME.email} signApi={null} />; }
@@ -52,9 +53,14 @@ const DEMO_PRODUIT = { items: [
 const AccueilProduit = () => <HomeView produit={DEMO_PRODUIT} pinOk testsDoc={DEMO_TESTS} data={DEMO_ROWS} comments={DEMO_COMMENTS} myEmail={DEMO_ME.email} myName={DEMO_ME.name} people={DEMO_PEOPLE} unseenChanges={[]} lastImport={null} onOpenPj={no} onGo={no}
   profiles={{ byEmail: { [userKey(DEMO_ME.email)]: { email: DEMO_ME.email, name: DEMO_ME.name, role: "resptest", pjs: [], chefs: [] } } }} owner={false} cash={false} turbineDoc={null} onOpenCash={null} prodDoc={null} canProdTurb={false} productionExclusions={{}} plan={null} closurePeriods={[]} saveHomeLayout={null} />;
 
+// v324 : la cloche ouvre le pop-up « À traiter » (plus de page dédiée)
+const Cloche = () => <div style={{ display: "flex", justifyContent: "flex-end", minHeight: 420 }}><MentionBell me={DEMO_ME.email} comments={DEMO_COMMENTS} data={DEMO_ROWS} onOpen={no} canSeePrivate assignments={[]} pjChanges={[]} extra={1}
+  panel={<ATraiter popup />} closeKey="x" /></div>;
+
 export const DEMO_PAGES = [
   { id: "home", label: "Accueil", Render: Accueil, expect: [] },
   { id: "home-produit", label: "Accueil · resp. produit", Render: AccueilProduit, expect: ["Livrables Produit", "P&ID validé", "Papeterie du Nord"] },
+  { id: "bell", label: "Cloche", Render: Cloche, expect: [] },
   { id: "inbox", label: "À traiter", Render: ATraiter, expect: ["Demandes à valider", "PJ902"] },
   { id: "table", label: "Liste", Render: Liste, expect: ["PJ901", "Papeterie du Nord"] },
   { id: "gantt", label: "Gantt", Render: Gantt, expect: ["PJ901"] },

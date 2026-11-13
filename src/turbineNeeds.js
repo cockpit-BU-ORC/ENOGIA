@@ -10,7 +10,6 @@
 //    la quantité du stock (roues.qte, injecteurs.qte vierges ou variantes[bouches].qte) baisse de 1, et revient si on retire l'élément ;
 //  · une turbine qui a déjà sa roue montée couvre la roue de son emplacement.
 // Calculs purs, testés dans turbineNeeds.test.js.
-import { createContext } from "react";
 import { makeModel, EMPTY_PROD } from "./components/ProdTurbines";
 import { turbinesNeeded } from "./turbines";
 
@@ -244,7 +243,8 @@ export function unallocOps(doc, alloc) {
 }
 
 // Document de la production turbines, fourni par App (fiche projet : listes de roues et d’injecteurs)
-export const ProdDocCtx = createContext(null);
+export { ProdDocCtx } from "./prodDocCtx"; // v324 : contexte dans un module léger
+export { makeModel, EMPTY_PROD }; // v324 : pour l'accueil (chargé à la demande)
 
 // v272 (maquette « Besoins v2 » validée) : « Remplir automatiquement » — par date de besoin, pour chaque emplacement vide :
 // turbine disponible de la gamme (prête avec la roue prévue, puis prête, puis sans roue, puis en fabrication la plus tôt finie),

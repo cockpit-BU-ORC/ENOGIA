@@ -9,7 +9,7 @@ import { blockOn } from "../profiles";
 import { getCashinDoc, cashOverview } from "../cashinLink";
 import { useCashin } from "../useCashin";
 import { fmtEur } from "../pjProgress";
-import { makeModel, EMPTY_PROD } from "./ProdTurbines";
+import { useProdModel } from "../prodModel"; // v324 : makeModel chargé à la demande
 import { planWeeks, atelierCap, CAPA_DEFAUT } from "../loadWeeks"; // v289 : sans les graphiques du Manager
 
 // v188 — Accueils par rôle. v229 (maquettes validées par Gabriel : « Go les 5 accueils ») : un catalogue de cadrans commun et une
@@ -119,8 +119,10 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
       return { a, hours: Math.round(h), cap: CAPA_SEMAINE }; });
   }, [plan, closurePeriods, productionExclusions, rows, w0]);
   // Production turbines
+  const prodM = useProdModel(!!prodDoc);
   const pt = useMemo(() => {
-    if (!prodDoc) return null;
+    if (!prodDoc || !prodM) return null;
+    const { makeModel, EMPTY_PROD } = prodM;
     const S2 = { ...EMPTY_PROD, ...prodDoc, params: { d: {}, l: {}, ...(prodDoc.params || {}) } };
     ["turbines", "arbres", "pieces", "roues", "injecteurs"].forEach(c => { S2[c] = Object.fromEntries(Object.entries(prodDoc[c] || {}).map(([k, v]) => [k, { ...v, id: k }])); });
     const M = makeModel(S2); const T0 = new Date(); T0.setHours(0, 0, 0, 0);
@@ -129,7 +131,7 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
     const nx = upcoming.find(u => u.s.end != null && !u.s.noRoue);
     return { S: S2, M, upcoming, offDate, ready: M.live.filter(t => t.step === "ok"), noWheel: M.live.filter(t => t.step === "s1"), missing: upcoming.filter(u => u.s.missing).map(u => u.t),
       next: nx ? offDate(nx.s.end).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "numeric" }) : null };
-  }, [prodDoc]);
+  }, [prodDoc, prodM]);
 
   // phrase d'ouverture (remontée à l'accueil)
   const next30 = open.filter(r => { const d = dIso(r.depart); return d && d >= today && d <= addD(today, 30); }).length;

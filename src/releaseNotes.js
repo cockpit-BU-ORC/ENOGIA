@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v324",
+    date: "2026-11-13",
+    title: "V324 : cloche en pop-up",
+    items: [
+      { t: "Cloche", d: "Cliquez sur la cloche : tout ce qui vous attend s'ouvre dans un pop-up." },
+      { t: "Rapidité", d: "Le site s'ouvre plus vite." },
+    ],
+  },
+  {
     id: "2026-11-v323",
     date: "2026-11-13",
     title: "V323 : jalons Produit",

@@ -2332,3 +2332,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - **Règles Firestore à republier** : `allow write` sur `cashinProduit` pour les admins et la Finance (Modifier) ; lecture ouverte aux comptes ENOGIA.
 - Accueil du rôle « Responsable des testeurs » : cadran « Livrables Produit » (ajoutable aussi aux autres postes par « Ajouter un cadran »).
 - Fichiers : public/cashin.html, cashinData.js(+test), components/CashInTab.js, useAppData.js, App.js, HomeView.js, RoleHome.js, demo/demoPages.js, firestore.rules, versions.
+
+## v324 — Cloche en pop-up, anglais retiré, paquet de départ allégé (audit Vercel)
+
+- Cloche : pop-up « À traiter » ; page et entrée de menu « À traiter » retirées ; plus d'étiquette « N à traiter ».
+- Anglais et choix de langue retirés (clé `enogia_lang` plus lue).
+- Paquet de départ 430 → 340 Ko compressés : Nouveautés et calculs turbines chargés à la demande (`releaseSeen.js`, `prodModel.js`, `prodDocCtx.js`).
+- Règles Firestore inchangées par cette version (celles de la V323 restent à republier).
+- Fichiers : App.js, index.js, components/MentionBell.js, InboxPage.js, AppChrome.js, ReleaseNotes.js, RoleHome.js, RowDetail.js, pjDossier.js(+test), turbineNeeds.js, releaseSeen.js, prodModel.js, prodDocCtx.js (nouveaux), demo/demoPages.js ; supprimés : i18n.js, i18n/*.

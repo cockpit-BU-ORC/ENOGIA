@@ -13,7 +13,7 @@ import { Reactions } from "./Reactions";
 const Row = ({ children, first }) => <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "8px 0", borderTop: first ? "none" : "1px solid " + T.line, minHeight: 40 }}>{children}</div>;
 const PjBtn = ({ pj, onClick }) => <button type="button" onClick={onClick} aria-label={"Ouvrir la fiche de " + pj} style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer" }}><PjPlate pj={pj} /></button>;
 
-export function InboxPage({ me, comments, data, resolveComment, canSeePrivate, onOpen, actions, assignments, onSeenAssign, onOpenTests, video, onOpenVideo, pjChanges, onSeenPjChanges, onOpenChanges }) {
+export function InboxPage({ popup, me, comments, data, resolveComment, canSeePrivate, onOpen, actions, assignments, onSeenAssign, onOpenTests, video, onOpenVideo, pjChanges, onSeenPjChanges, onOpenChanges }) {
   const ments = openMentionsFor(comments, me).filter(x => canSeePrivate || !x.c.private);
   const unseen = ments.filter(x => !isSeenFor(x.c, me)), seenL = ments.filter(x => isSeenFor(x.c, me));
   const acts = actions || [], asg = assignments || [], chg = pjChanges || [];
@@ -22,8 +22,9 @@ export function InboxPage({ me, comments, data, resolveComment, canSeePrivate, o
   const nAct = acts.reduce((a, x) => a + (x.n || 1), 0) + unseen.length + asg.length;
   const lead = nAct ? nAct + " élément" + (nAct > 1 ? "s attendent" : " attend") + " une action de votre part." : "Rien n'attend d'action de votre part.";
 
-  return <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 1100 }}>
-    <PageHead title="À traiter" sub={lead} accent={T.red500} />
+  return <div style={{ display: "flex", flexDirection: "column", gap: popup ? 10 : 14, maxWidth: 1100 }}>
+    {popup ? <div style={{ padding: "2px 4px" }}><div style={{ fontSize: FZ.md, fontWeight: 700, color: T.ink900, fontFamily: T.fontDisplay }}>À traiter</div><div style={{ fontSize: FZ.xs, color: T.ink500 }}>{lead}</div></div>
+      : <PageHead title="À traiter" sub={lead} accent={T.red500} />}
 
     <Panel title={<span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>Demandes à valider {acts.length > 0 && <Pill tone="bad">{acts.reduce((a, x) => a + (x.n || 1), 0)}</Pill>}</span>}>
       {acts.length === 0 ? <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Aucune demande en attente. Les demandes d'intervention SAV arriveront ici.</div>

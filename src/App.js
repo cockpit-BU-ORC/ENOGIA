@@ -21,11 +21,12 @@ import { setOrdoPjs } from "./cashinLink";
 import { getPjMeta, chefsOf, orcChefsOf, ALL_ETATS, ETAT_META, registerCustomEtats, registerEtatEdits, today, setSyncedPjMeta, setPjMetaOverrides, GAMME_OVERRIDE } from "./pjMeta";
 import { weekStartOf } from "./parsers";
 import { HomeView } from "./components/HomeView";
-import { ProdDocCtx, buildNeeds } from "./turbineNeeds";
+import { ProdDocCtx } from "./prodDocCtx";
+import { useProdModel } from "./prodModel"; // v324 : turbineNeeds chargé à la demande
 import { planSerials, registerSerialPlan, serialsDue } from "./serialNumbers";
 import { assignSerialsFlow } from "./assignSerials"; // v317 : pas Series.js (tirerait recharts dans le paquet de départ)
 import { InboxPage } from "./components/InboxPage";
-import { openMentionsFor, isSeenFor, toggleReaction } from "./mentions";
+import { toggleReaction } from "./mentions";
 import { PageGuard } from "./components/PageGuard";
 import { ArrangeCtx } from "./components/Arrange"; // v235 : cadrans partagés, réglés par le propriétaire
 import { backdropStyle } from "./pageBackdrop"; // v225 : un fond léger par page
@@ -39,13 +40,13 @@ import { LoginScreen, LoginTransition } from "./components/LoginScreen";
 import { SITE_NAME, SITE_SCOPE, SITE_SUB, SITE_TITLE } from "./siteName";
 import { DashboardSummary } from "./components/DashboardSummary";
 import { normalizeEtat, buildProgress } from "./prodStages";
-import { ReleasePopup, useUnseenReleases, mergeReleases } from "./components/ReleaseNotes";
+import { useUnseenReleases, mergeReleases } from "./releaseSeen"; // v324 : textes des Nouveautés chargés à la demande
 import { ChangesPopup, ChangesBadge, useUnseenChanges, useChangeMarks, ChangeMarksContext } from "./components/ChangesNotice";
 import { listenChangeLog } from "./changeLog";
 
 // v260 : documents Firestore, bandeau bêta et identité du compte sortis de ce fichier (appDocs.js, components/AppChrome.js)
 import { IS_BETA, DOC_PFX, DOC_REF, INITIAL_DOC_REF, OVERRIDES_DOC_REF, COMMENTS_DOC_REF, PJ_META_SYNC_DOC_REF, PJ_META_OVERRIDES_DOC_REF, DELAYS_DOC_REF, DELAY_TYPES_DOC_REF, MANAGER_EMAILS_DOC_REF, PROFILES_DOC_REF, DEFAULT_DELAY_TYPES } from "./appDocs";
-import { BetaBanner, UserChip, LangSwitch } from "./components/AppChrome";
+import { BetaBanner, UserChip } from "./components/AppChrome";
 import { useAccessDoc, useTurbineDoc, useTestsDoc, useProdTurbines, useCashinProduit, useDelays, useCashinSync, useAchats } from "./useAppData";
 import { useListFilters, filterOptions, filterRows } from "./listFilters";
 // v289 (lot G « rapidité ») : les grandes pages ne sont chargées qu'à leur première ouverture (paquet de départ allégé) ;
@@ -63,8 +64,10 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-13-v323-jalons-produit";
+const APP_BUILD_VERSION = "2026-11-13-v324-cloche-rapide";
 
+const ReleasePopup = React.lazy(() => import("./components/ReleaseNotes").then(m => ({ default: m.ReleasePopup })));
+function Navigate0({ go }) { useEffect(() => { go(); }, []); return null; } // eslint-disable-line react-hooks/exhaustive-deps
 export default function App(){
   // Utilisateur connecté via Google, restreint aux comptes @enogia.com (null tant que non connecté).
   const [currentUser,setCurrentUser]=useState(null);
@@ -309,7 +312,9 @@ export default function App(){
   const changeMarks=useChangeMarks(changeLog,currentUser&&currentUser.email); // v146.8 : repères « modifié » dans la Liste et le Calendrier
   const [onlyChanged,setOnlyChanged]=useState(false);
   // v146.9 : nouveautés de la version déployée, affichées une fois par personne et par poste (texte dans src/releaseNotes.js)
-  const releasesAll=useMemo(()=>mergeReleases(releaseNotes),[releaseNotes]);
+  const [codeReleases,setCodeReleases]=useState(null); // v324 : notes du code (releaseNotes.js) chargées après l'ouverture
+  useEffect(()=>{let on=true;import("./releaseNotes").then(m=>{if(on)setCodeReleases(m.RELEASES);}).catch(()=>{});return()=>{on=false;};},[]);
+  const releasesAll=useMemo(()=>codeReleases?mergeReleases(releaseNotes,codeReleases):[],[releaseNotes,codeReleases]);
   const {unseen:unseenReleases,markSeen:markReleasesSeen}=useUnseenReleases(currentUser&&currentUser.email,!!isOwner,releasesAll); // lignes « réservées » = Cash in → propriétaire
   const [screenOpen,setScreenOpen]=useState(false); // v146.8 : écran atelier (diaporama plein écran)
   useEffect(()=>{try{if(loggedIn&&!justLoggedIn&&new URLSearchParams(window.location.search).get("ecran")==="1")setScreenOpen(true);}catch(e){}},[loggedIn,justLoggedIn]);
@@ -668,7 +673,7 @@ export default function App(){
   useEffect(()=>{if(view==="tests"&&testsLoaded&&!canSeeTests)setView("table");},[view,testsLoaded,canSeeTests]); // accès retiré ou ancien choix mémorisé
   // v226 : Production turbines — v261 : useAppData.js
   const {prodDoc,prodApi}=useProdTurbines(currentUser,authorName);
-  const produitDoc=useCashinProduit(currentUser); // v323 : jalons « Produit » du Cash in (accueil du responsable produit)
+  const produitDoc=useCashinProduit(currentUser);
   const myMail=String((currentUser&&currentUser.email)||"").toLowerCase();
   const canProdTurbL=!!(isOwner||(prodDoc&&Array.isArray(prodDoc.access)&&prodDoc.access.map(x=>String(x).toLowerCase()).includes(myMail)));
   // v262 : Achats / Appro — propriétaire et adresses de sa liste « access » (Achats › Réglages)
@@ -962,6 +967,7 @@ export default function App(){
   const snPlan=useMemo(()=>planSerials(dataWithOverrides,r=>getPjMeta(r.pj,r)),[dataWithOverrides,pjOverridesState]); // eslint-disable-line react-hooks/exhaustive-deps -- relu quand les fiches changent
   registerSerialPlan(snPlan);
   // v315 (revue, point 6 « une seule boîte de réception ») : demandes à valider de la page « À traiter » (selon les droits)
+  const prodModel=useProdModel(!!(canProdTurb&&prodDoc)); // v324
   const inboxActions=useMemo(()=>{
     const out=[],todayK=new Date().toISOString().slice(0,10),fr=s=>s?String(s).slice(0,10).split("-").reverse().join("/"):"";
     if(canEditMeta&&savePjMetaOverride){const due=serialsDue(snPlan);if(due.length)out.push({id:"sn",n:due.length,primary:true,title:due.length+" machine"+(due.length>1?"s arrivées":" arrivée")+" sans S/N",detail:"S/N prévus d'après l'ordo (année d'arrivée · n° dans l'année · gamme). Une fois attribués, ils ne bougent plus.",
@@ -970,15 +976,13 @@ export default function App(){
     if(isOwner&&pend.length)out.push({id:"dep",n:pend.length,tone:"warn",title:pend.length+" départ"+(pend.length>1?"s changés":" changé")+" hors planificateur",detail:"Ils seront repris dans le plan à l'ouverture du planificateur.",items:pend.map(pj=>({pj,text:fr(pendingDeparts[pj].date)+(pendingDeparts[pj].by?" · "+pendingDeparts[pj].by:"")})),cta:{label:"Ouvrir le planificateur",onClick:()=>setView("planner")}});
     if(canAchats&&achatsDoc&&achatsDoc.po){const late=Object.values(achatsDoc.po).filter(p=>p&&!p.annule&&p.statut!=="livre"&&p.dateLivraison&&String(p.dateLivraison).slice(0,10)<todayK);
       if(late.length)out.push({id:"po",n:late.length,tone:"warn",title:late.length+" commande"+(late.length>1?"s":"")+" (PO) en retard de livraison",detail:late.slice(0,6).map(p=>(p.numero||"PO")+" · prévue le "+fr(p.dateLivraison)).join(" · "),cta:{label:"Ouvrir Achats / Appro",onClick:()=>setView("achats")}});}
-    if(canProdTurb&&prodDoc&&subOk("turbines.orc")){try{const lateN=buildNeeds(prodDoc,dataWithOverrides,x=>getPjMeta(x.pj,x)).needs.filter(n=>n.late);
+    if(canProdTurb&&prodDoc&&subOk("turbines.orc")&&prodModel){try{const lateN=prodModel.buildNeeds(prodDoc,dataWithOverrides,x=>getPjMeta(x.pj,x)).needs.filter(n=>n.late);
       if(lateN.length)out.push({id:"turb",n:lateN.length,tone:"warn",title:lateN.length+" besoin"+(lateN.length>1?"s":"")+" turbine en retard",detail:"La turbine sera disponible après la date du besoin.",items:lateN.filter(n=>n.pj).map(n=>({pj:n.pj,text:"besoin le "+fr(n.date)})),cta:{label:"Ouvrir Turbines › Besoins",onClick:()=>{setTurbTab("orc");setView("turbines");}}});}catch(e){console.warn(e);}}
     return out;
-  },[snPlan,canEditMeta,pendingDeparts,isOwner,canAchats,achatsDoc,canProdTurb,prodDoc,dataWithOverrides,accMe]); // eslint-disable-line react-hooks/exhaustive-deps
-  const inboxN=useMemo(()=>{const me=mentionCtx.me;const m=me?openMentionsFor(comments,me).filter(x=>(pinOk||!x.c.private)&&!isSeenFor(x.c,me)).length:0;return m+(myNewAssign||[]).length+inboxActions.reduce((a,x)=>a+(x.n||1),0);},[comments,mentionCtx,pinOk,myNewAssign,inboxActions]);
+  },[snPlan,canEditMeta,pendingDeparts,isOwner,canAchats,achatsDoc,canProdTurb,prodDoc,dataWithOverrides,accMe,prodModel]); // eslint-disable-line react-hooks/exhaustive-deps
   const NAV_TREE=[
     {g:"Opérations",items:[
       {id:"home",l:"Aujourd'hui",icon:"home",on:view==="home",go:()=>setView("home")},
-      {id:"inbox",l:"À traiter",icon:"bell",on:view==="inbox",go:()=>setView("inbox")},
       ...(planOk?[{id:"planning",l:"Planning",icon:"gantt",on:PLANNING_VIEWS.includes(view),go:()=>setView(planViewOk(lastPlanRef.current)?lastPlanRef.current:firstPlanView()),badge:unseenChanges.length,
         subs:[["table","Liste"],["gantt","Gantt"],["calendar","Calendrier"],...(isOwner?[["planner","Planificateur"]]:[]),["changes","Modifications"]].filter(([id])=>planViewOk(id)).map(([id,l])=>({id,l,on:view===id,go:()=>setView(id)}))}]:[]),
       ...(canSeeTests?[{id:"tests",l:"Tests",icon:"check",on:view==="tests",go:()=>setView("tests"),
@@ -1078,7 +1082,7 @@ export default function App(){
     <Toaster/>
     {presentation&&<button onClick={()=>setPresentation(false)} title="Quitter le mode présentation (Échap)" className="enogia-btn-tap" style={{position:"fixed",right:16,bottom:16,zIndex:10010,border:"none",borderRadius:999,padding:"8px 16px",background:T.ink900,color:T.surface,fontFamily:T.font,fontSize:FZ.xs,fontWeight:700,cursor:"pointer",boxShadow:T.shadowFloat}}>Mode présentation · Quitter (Échap)</button>}
     {screenOpen&&<React.Suspense fallback={null}><WorkshopScreen data={dataWithOverrides} productionExclusions={productionExclusions} closurePeriods={closurePeriods} changeLog={changeLog} darkMode={darkMode} onClose={()=>setScreenOpen(false)}/></React.Suspense>}
-    {loggedIn&&!justLoggedIn&&!screenOpen&&overridesLoaded&&unseenReleases.length>0&&<ReleasePopup releases={unseenReleases} userName={authorName} onClose={markReleasesSeen}/>}
+    {loggedIn&&!justLoggedIn&&!screenOpen&&overridesLoaded&&unseenReleases.length>0&&<React.Suspense fallback={null}><ReleasePopup releases={unseenReleases} userName={authorName} onClose={markReleasesSeen}/></React.Suspense>}
     {loggedIn&&!justLoggedIn&&!screenOpen&&tutoOn&&(tutoOpen||(overridesLoaded&&unseenReleases.length===0&&currentUser&&tutoClosedId!==((tutoCfg&&tutoCfg.id)||"x")&&!tutoSeen(tutoCfg,currentUser.email)))&&<TutoVideoModal cfg={tutoCfg} onClose={closeTuto}/>}
     {noticeOpen&&!screenOpen&&overridesLoaded&&!unseenReleases.length&&unseenChanges.length>0&&<ChangesPopup entries={unseenChanges} userName={authorName} onLater={closeNoticeLater} onRead={()=>{markChangesSeen();setNoticeOpen(false);}} onOpen={()=>{setNoticeOpen(false);setView("changes");}}/>}
 
@@ -1104,7 +1108,7 @@ export default function App(){
             onMouseEnter={e=>{clearTimeout(navHoverT.current);if(it.subs&&it.subs.length>1){const id=it.id;navHoverT.current=setTimeout(()=>setNavHover(id),220);}}}
             onMouseLeave={()=>clearTimeout(navHoverT.current)}
             aria-expanded={it.subs&&it.subs.length>1?!!showSubs:undefined}>
-            <NavIcon name={it.icon} size={19}/>{!navCompact&&<span className="enogia-nav-lab" style={{flex:1,textAlign:"left"}}>{it.l}</span>}{it.subs&&it.subs.length>1&&<span aria-hidden="true" style={{display:"inline-flex",opacity:.6,transform:showSubs?"rotate(0deg)":"rotate(-90deg)",transition:"transform .18s var(--e-ease)"}}><NavIcon name="chevronDown" size={13}/></span>}{it.id==="planning"&&<ChangesBadge n={unseenChanges.length}/>}{it.id==="inbox"&&inboxN>0&&<span aria-hidden="true" style={{minWidth:18,height:18,borderRadius:999,background:T.red600,color:T.card,fontSize:11,fontWeight:800,display:"inline-flex",alignItems:"center",justifyContent:"center",padding:"0 5px",fontFamily:T.font}}>{inboxN>99?"99+":inboxN}</span>}</button>
+            <NavIcon name={it.icon} size={19}/>{!navCompact&&<span className="enogia-nav-lab" style={{flex:1,textAlign:"left"}}>{it.l}</span>}{it.subs&&it.subs.length>1&&<span aria-hidden="true" style={{display:"inline-flex",opacity:.6,transform:showSubs?"rotate(0deg)":"rotate(-90deg)",transition:"transform .18s var(--e-ease)"}}><NavIcon name="chevronDown" size={13}/></span>}{it.id==="planning"&&<ChangesBadge n={unseenChanges.length}/>}</button>
           {showSubs&&<div role="group" aria-label={"Pages de "+it.l} className="enogia-nav-subs" style={{display:"flex",flexDirection:"column",margin:"0 0 4px 30px",paddingLeft:8,borderLeft:"1px solid "+(NAV.industrial?"rgba(255,255,255,.16)":T.line)}}>
             {it.subs.map(sb=><button key={sb.id} type="button" className="enogia-nav-sub" onClick={()=>{sb.go();setNavPeek(false);}} aria-current={sb.on?"page":undefined}
               style={{border:"none",background:"transparent",textAlign:"left",cursor:"pointer",padding:"6px 8px",minHeight:30,borderRadius:8,fontFamily:T.font,fontSize:FZ.sm,fontWeight:sb.on?700:500,color:sb.on?NAV.inkOn:NAV.ink,whiteSpace:"nowrap"}}>{sb.l}</button>)}
@@ -1134,8 +1138,7 @@ export default function App(){
           </div>}
           {currentUser&&<div className="enogia-hide-phone" style={{width:1,height:22,background:T.line}}/>}
           {currentUser&&<button onClick={()=>setNavPal(true)} title="Aller à… (Ctrl K)" aria-label="Aller à… (Ctrl K)" style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:32,height:32,padding:0,border:"1px solid transparent",borderRadius:8,cursor:"pointer",background:"transparent",color:T.ink500}} onMouseEnter={e=>{e.currentTarget.style.background=T.surfaceAlt;e.currentTarget.style.color=T.ink900;}} onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=T.ink500;}}><NavIcon name="search" size={18}/></button>}
-          <LangSwitch/>
-          {currentUser&&<MentionBell onGoInbox={()=>setView("inbox")} extra={inboxActions.reduce((a,x)=>a+(x.n||1),0)} pjChanges={myPjChanges} onSeenPjChanges={seePjChanges} onOpenChanges={()=>setView("changes")} video={tutoOn?tutoCfg:null} onOpenVideo={()=>setTutoOpen(true)} assignments={myNewAssign} onSeenAssign={seeAssign} onOpenTests={()=>setView("tests")} comments={comments} me={mentionCtx.me} data={dataWithOverrides} resolveComment={resolveComment} canSeePrivate={pinOk} onOpen={(pj,tab)=>{setCalDay(null);setCalTab(tab||"resume");setCalSel(pj);}}/>} {/* v270 (demandé : « quand on clique sur une notification de commentaire, ouvrir la fiche pop-up à l’endroit des commentaires ») */}
+          {currentUser&&<MentionBell closeKey={view+"|"+(calSel||"")} panel={<InboxPage popup me={mentionCtx.me} comments={comments} data={dataWithOverrides} resolveComment={resolveComment} canSeePrivate={pinOk} onOpen={(pj,tab)=>{setCalDay(null);setCalTab(tab||"resume");setCalSel(pj);}} actions={inboxActions} assignments={myNewAssign} onSeenAssign={seeAssign} onOpenTests={pj=>{setTestsSub("semaine");if(pj)setTestsFocus({pj,n:Date.now()});setView("tests");}} video={tutoOn?tutoCfg:null} onOpenVideo={()=>setTutoOpen(true)} pjChanges={myPjChanges} onSeenPjChanges={seePjChanges} onOpenChanges={()=>setView("changes")}/>} extra={inboxActions.reduce((a,x)=>a+(x.n||1),0)} pjChanges={myPjChanges} onSeenPjChanges={seePjChanges} onOpenChanges={()=>setView("changes")} video={tutoOn?tutoCfg:null} onOpenVideo={()=>setTutoOpen(true)} assignments={myNewAssign} onSeenAssign={seeAssign} onOpenTests={()=>setView("tests")} comments={comments} me={mentionCtx.me} data={dataWithOverrides} resolveComment={resolveComment} canSeePrivate={pinOk} onOpen={(pj,tab)=>{setCalDay(null);setCalTab(tab||"resume");setCalSel(pj);}}/>} {/* v270 (demandé : « quand on clique sur une notification de commentaire, ouvrir la fiche pop-up à l’endroit des commentaires ») */}
           {currentUser&&<UserChip user={currentUser} onSignOut={()=>signOut(auth)} role={isOwner?"Super admin":accMe?null:pinOk?"Admin":null}/>}
         </div>
       </div>
@@ -1184,7 +1187,7 @@ export default function App(){
               return <PageHead title={PV?"Planning":v.l} sub={subs[view]} accent={acc} right={inPlan?<PlanSwitch label="Vue du planning" value={view} onGo={setView}
                 views={[{id:"table",l:"Liste",icon:"list",key:"1"},{id:"gantt",l:"Gantt",icon:"gantt",key:"2"},{id:"calendar",l:"Calendrier",icon:"calendar",key:"3"}].filter(x=>planViewOk(x.id))}
                 tools={[...(isOwner?[{id:"planner",l:"Planificateur",icon:"edit",hint:"Brouillon, puis « Publier »"}]:[]),...(planViewOk("changes")?[{id:"changes",l:"Modifications",icon:"changes",badge:unseenChanges.length,hint:"Ce qui a changé à chaque publication"}]:[])]}/>:undefined}/>;})()}
-            {view==="inbox"&&currentUser&&<InboxPage me={mentionCtx.me} comments={comments} data={dataWithOverrides} resolveComment={resolveComment} canSeePrivate={pinOk} onOpen={(pj,tab)=>{setCalDay(null);setCalTab(tab||"resume");setCalSel(pj);}} actions={inboxActions} assignments={myNewAssign} onSeenAssign={seeAssign} onOpenTests={pj=>{setTestsSub("semaine");if(pj)setTestsFocus({pj,n:Date.now()});setView("tests");}} video={tutoOn?tutoCfg:null} onOpenVideo={()=>setTutoOpen(true)} pjChanges={myPjChanges} onSeenPjChanges={seePjChanges} onOpenChanges={()=>setView("changes")}/>}
+            {view==="inbox"&&<Navigate0 go={()=>setView("home")}/>}{/* v324 : plus de page « À traiter » (la cloche ouvre le pop-up) */}
             {view==="home"&&<HomeView produit={produitDoc} pinOk={pinOk} testsDoc={canSeeTests?testsView:null} data={dataWithOverrides} comments={comments} myEmail={currentUser&&currentUser.email} myName={authorName} people={peopleAll} unseenChanges={unseenChanges} lastImport={lastImport} onOpenPj={setCalSel} onGo={setView} profiles={profiles} owner={isOwner} cash={canCash} turbineDoc={turbineDoc} onOpenCash={canCash?()=>setView("cashin"):null} prodDoc={prodDoc} canProdTurb={canProdTurb} productionExclusions={productionExclusions} plan={planDoc&&planDoc.plan} closurePeriods={closurePeriods} saveHomeLayout={isOwner?saveHomeLayout:null}/>}
             {view==="table"&&<DashboardSummary data={filtered} allData={dataWithOverrides} progress={progressEff} changeLog={changeLog} onOpenChanges={()=>setView("changes")}/>}
             {view==="table"&&<TableView data={filtered} progress={progressEff} df={df} setDf={setDf} onSetDepart={onSetDepart} setEtatFor={setEtatFor} setClientPresenceFor={setClientPresenceFor}

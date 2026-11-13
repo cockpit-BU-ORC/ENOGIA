@@ -6,8 +6,6 @@ import { T, FZ } from "../theme";
 import { BETA_DOCS } from "../appDocs";
 import { NavIcon } from "./SharedUI";
 import { askConfirm } from "../confirm";
-import { CountryFlag } from "../pjMeta";
-import { LANG, setLang } from "../i18n";
 
 // Bandeau de la version bêta + copie « production → bêta » (écrase les données de la bêta, jamais celles de la production).
 export function BetaBanner({canCopy}){
@@ -58,11 +56,3 @@ export function UserChip({user,onSignOut,role}){
   </div>);
 }
 
-// v319 (demandé : « version full en anglais, drapeaux FR et EN en haut à droite ») : choix de la langue, mémorisé sur ce poste (enogia_lang).
-export function LangSwitch(){
-  const b=on=>({display:"inline-flex",alignItems:"center",gap:4,minHeight:28,padding:"0 8px",borderRadius:8,border:"1px solid "+(on?T.ink900:"transparent"),background:on?T.card:"transparent",color:on?T.ink900:T.ink500,fontSize:FZ.xs,fontWeight:700,cursor:on?"default":"pointer",fontFamily:T.font});
-  return(<div role="group" aria-label="Langue / Language" data-no-i18n="1" style={{display:"inline-flex",gap:2,padding:2,borderRadius:8,background:T.surfaceAlt}}>
-    {[["fr","France","FR","Français"],["en","UK","EN","English"]].map(([l,pays,code,name])=><button key={l} type="button" lang={l} aria-pressed={LANG===l} aria-label={name} title={name} onClick={()=>setLang(l)} style={b(LANG===l)}>
-      <CountryFlag pays={pays} size={12}/>{code}</button>)}
-  </div>);
-}

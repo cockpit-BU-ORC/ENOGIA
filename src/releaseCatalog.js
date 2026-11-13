@@ -894,4 +894,8 @@ export const RELEASE_CATALOG = [
     ["Cash in", "Nouvelle case « Produit » sur chaque jalon : cochez-la quand le jalon dépend d'un livrable du Produit (ex. P&ID).", "admin"],
     ["Accueil", "Le responsable produit voit ces jalons sur son accueil : PJ, projet, jalon, montant, facture initiale et prévue."],
   ] },
+  { v: "324", t: "Cloche en pop-up, site plus rapide", items: [
+    ["Cloche", "Un clic sur la cloche ouvre ce qui est à traiter (demandes, mentions, affectations, informations) dans un pop-up ; plus de page « À traiter » ni de message à côté de la cloche."],
+    ["Rapidité", "Le site s'ouvre plus vite : moins de choses à charger au démarrage."],
+  ] },
 ];

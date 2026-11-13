@@ -10,7 +10,9 @@ import { useMentions } from "../mentionContext";
 // v152 — Cloche de l'en-tête : les demandes où l'on est cité (@) et qu'on n'a pas encore marquées « traitées », tous PJ confondus.
 // v188 : + les nouvelles affectations aux tests (assignments = [{ pj, at, by, from, to }]), « Vu » les retire, lien Google Agenda.
 // v315 (revue, point 6) : avec onGoInbox, la cloche mène à la page « À traiter » (plus de liste déroulante) et compte aussi les demandes à valider (extra).
-export function MentionBell({ comments, me, data, onOpen, canSeePrivate, assignments, onSeenAssign, onOpenTests, video, onOpenVideo, pjChanges, onSeenPjChanges, onOpenChanges, onGoInbox, extra = 0 }) {
+// v324 (demandé : « quand je clique sur la cloche, le pop-up s'ouvre avec les informations à traiter ; pas de page spécifique ni de message
+// « 245 à traiter » à côté de la cloche ») : panel = contenu de « À traiter » (InboxPage popup), fermé quand closeKey change (navigation).
+export function MentionBell({ comments, me, data, onOpen, canSeePrivate, assignments, onSeenAssign, onOpenTests, video, onOpenVideo, pjChanges, onSeenPjChanges, onOpenChanges, panel, closeKey, extra = 0 }) {
   const mctx = useMentions();
   const [open, setOpen] = useState(false);
   const items = useMemo(() => openMentionsFor(comments, me).filter(x => canSeePrivate || !x.c.private), [comments, me, canSeePrivate]); // un compte sans accès Manager ne voit jamais un message privé
@@ -39,15 +41,14 @@ export function MentionBell({ comments, me, data, onOpen, canSeePrivate, assignm
     if (!fresh || open) return undefined;
     setPeek(fresh); const t = setTimeout(() => setPeek(null), 6000); return () => clearTimeout(t);
   }, [unseen.map(x => x.pj + x.idx + x.c.date).join("|")]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setOpen(false); }, [closeKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!open) return undefined; const k = e => { if (e.key === "Escape") setOpen(false); }; document.addEventListener("keydown", k); return () => document.removeEventListener("keydown", k); }, [open]);
   if (!me) return null;
   const asg = asg0, chg = chg0, n = red;
   const rowOf = pj => (data || []).find(x => x.pj === pj);
   const nameOf = pj => { const r = (data || []).find(x => x.pj === pj); return r ? getPjMeta(pj, r).nomProjet || "" : ""; };
   return (<div style={{ position: "relative", display: "flex", alignItems: "center", gap: 6 }}>
-    {n > 0 && <button type="button" onClick={() => { setPeek(null); if (onGoInbox) onGoInbox(); else setOpen(v => !v); }} aria-hidden="true" tabIndex={-1} className="enogia-bell-ask"
-      style={{ display: "inline-flex", alignItems: "center", gap: 6, minHeight: 28, padding: "0 11px 0 9px", borderRadius: 999, border: "none", background: T.red100, color: T.red600, fontWeight: 700, fontSize: FZ.xs, cursor: "pointer", fontFamily: T.font, whiteSpace: "nowrap" }}>
-      <span style={{ width: 7, height: 7, borderRadius: "50%", background: T.red600 }} />{n} à traiter</button>}
-    <button key={"b" + ring} className={ring ? "enogia-bell-ring" : undefined} onClick={() => { setPeek(null); if (onGoInbox) onGoInbox(); else setOpen(v => !v); }} title={n ? n + " à traiter" + (info ? " · " + info + " mise" + (info > 1 ? "s" : "") + " à jour" : "") : info ? info + " projet" + (info > 1 ? "s" : "") + " modifié" + (info > 1 ? "s" : "") + " par le planning" : "Aucune notification"} aria-label={"Notifications : " + n + " à traiter" + (info ? ", " + info + " mise" + (info > 1 ? "s" : "") + " à jour" : "")} aria-expanded={open}
+    <button key={"b" + ring} className={ring ? "enogia-bell-ring" : undefined} onClick={() => { setPeek(null); setOpen(v => !v); }} aria-haspopup="dialog" title={n ? n + " à traiter" + (info ? " · " + info + " mise" + (info > 1 ? "s" : "") + " à jour" : "") : info ? info + " projet" + (info > 1 ? "s" : "") + " modifié" + (info > 1 ? "s" : "") + " par le planning" : "Aucune notification"} aria-label={"Notifications : " + n + " à traiter" + (info ? ", " + info + " mise" + (info > 1 ? "s" : "") + " à jour" : "")} aria-expanded={open}
       style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, padding: 0, border: "1px solid " + (open ? T.violet500 + "66" : "transparent"), borderRadius: 8, cursor: "pointer", background: open ? T.violet100 : "transparent", color: n ? T.red600 : T.ink500 }}>
       {/* v240 (demandé : « mettre la notification de la cloche en rouge ») : cloche, pastille et compteur en rouge ; texte de la pastille = couleur de carte (lisible en clair et en sombre) */}
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.7 21a2 2 0 0 1-3.4 0" /></svg>
@@ -63,7 +64,13 @@ export function MentionBell({ comments, me, data, onOpen, canSeePrivate, assignm
         <button type="button" aria-label="Fermer l'aperçu" onClick={() => setPeek(null)} style={{ marginLeft: "auto", border: "none", background: "transparent", color: T.ink500, cursor: "pointer", minWidth: 24, minHeight: 24 }}>×</button>
       </div>
     </div>}
-    {open && <>
+    {open && panel && <>
+      <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 9998 }} />
+      <div role="dialog" aria-label="À traiter" style={{ position: "absolute", right: 0, top: 38, width: 560, maxWidth: "calc(100vw - 24px)", maxHeight: "min(72vh, 680px)", overflowY: "auto", zIndex: 9999, background: T.surface, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, padding: 10 }}>
+        {panel}
+      </div>
+    </>}
+    {open && !panel && <>
       <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 9998 }} />
       <div role="dialog" aria-label="Notifications" style={{ position: "absolute", right: 0, top: 38, width: 380, maxWidth: "calc(100vw - 24px)", maxHeight: 440, overflowY: "auto", zIndex: 9999, background: T.card, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, padding: 8 }}>
         <div style={{ padding: "4px 8px 8px", fontSize: FZ.sm, fontWeight: 800, color: T.ink900 }}>{n > 0 ? <>À traiter <span style={{ color: T.red600 }}>({n})</span></> : "Rien à traiter"}{info > 0 && <span style={{ fontWeight: 600, color: T.ink500 }}> · {info} mise{info > 1 ? "s" : ""} à jour</span>}</div>

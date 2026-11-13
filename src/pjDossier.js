@@ -2,10 +2,9 @@
 //  · turbineOf : le besoin turbine du PJ (Turbines › Besoins) — turbines attribuées, roue, injecteur, installée, disponibilité.
 //  · achatsOf : les lignes d'achat de ses fiches machine (Achats / Appro) — par statut, et les commandes (PO) avec leur livraison.
 // Lecture seule : on modifie dans la page d'origine.
-import { buildNeeds } from "./turbineNeeds";
 
-export function turbineOf(prodDoc, rows, pj, metaOf, today = new Date()) {
-  if (!prodDoc || !pj) return null;
+export function turbineOf(prodDoc, rows, pj, metaOf, buildNeeds, today = new Date()) {
+  if (!prodDoc || !pj || !buildNeeds) return null; // v324 : calcul fourni par l'appelant (turbineNeeds chargé à la demande)
   const { needs } = buildNeeds(prodDoc, rows, metaOf, today);
   const n = needs.find(x => x.key === "pj:" + pj);
   if (!n) return null;

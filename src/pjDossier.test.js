@@ -1,11 +1,12 @@
 import { turbineOf, achatsOf } from "./pjDossier";
+import { buildNeeds } from "./turbineNeeds";
 
 test("v309 : turbine du PJ dans sa fiche", () => {
   const doc = { turbines: { a: { num: "100N1", step: "ok", roue: "R1", besoin: "pj:PJ1" } }, roues: {}, injecteurs: {}, allocs: {} };
   const rows = [{ pj: "PJ1", gamme: "180LTV3", etat: "MONTAGE", arrivee: "2026-12-01" }];
-  const t = turbineOf(doc, rows, "PJ1", () => ({}));
+  const t = turbineOf(doc, rows, "PJ1", () => ({}), buildNeeds);
   expect(t).toBeTruthy(); expect(t.slots[0].num).toBe("100N1"); expect(t.slots[0].roue).toBe("R1");
-  expect(turbineOf(doc, rows, "PJ9", () => ({}))).toBeNull();
+  expect(turbineOf(doc, rows, "PJ9", () => ({}), buildNeeds)).toBeNull();
 });
 
 test("v309 : achats du PJ — lignes par statut, commandes et retards", () => {
