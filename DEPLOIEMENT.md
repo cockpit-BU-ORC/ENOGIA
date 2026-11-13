@@ -2362,3 +2362,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Ticket et intervention : formulaires courts, détails en sections repliées après création.
 - Clé `localStorage` : `enogia_sav_plan` (week / month). Règles inchangées depuis la V326 (à republier si ce n'est pas fait).
 - Fichiers : components/SavPage.js, demo/demoPages.js, versions.
+
+## v328 — SAV : deux plannings, en-tête commun, étapes du ticket
+
+- Planning : en-tête mois · semaine · jour ; deux plannings (Techniciens / Demandes d'intervention) ; échelle 2 semaines / Mois.
+- En-tête de page commun (PageHead), boutons d'ajout à gauche ; étapes du ticket en liste cliquable.
+- Clé `localStorage` `enogia_sav_plan` inchangée. Règles inchangées depuis la V326 (à republier si ce n'est pas fait).
+- Fichiers : components/SavPage.js, demo/demoPages.js, versions.

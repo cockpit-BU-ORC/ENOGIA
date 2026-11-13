@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v328",
+    date: "2026-11-13",
+    title: "V328 : SAV, deux plannings",
+    items: [
+      { t: "SAV / MES", d: "Un planning des techniciens et un planning des demandes d'intervention, avec les mois et les semaines en tête." },
+      { t: "SAV / MES", d: "Les étapes du ticket sont toutes visibles : cliquez celle où il en est." },
+    ],
+  },
+  {
     id: "2026-11-v327",
     date: "2026-11-13",
     title: "V327 : planning SAV",

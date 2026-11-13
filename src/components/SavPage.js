@@ -8,10 +8,11 @@ import { usePointerDnD } from "../pointerDrag";
 import { T, FZ, btn } from "../theme";
 import { getPjMeta } from "../pjMeta";
 import { PlanSwitch } from "./PlanSwitch";
-import { Panel, Pill, Btn, Segmented, PjPlate, tableTh, tableTd, EmptyState } from "./SharedUI";
+import { Panel, Pill, Btn, Segmented, PjPlate, tableTh, tableTd, EmptyState, PageHead } from "./SharedUI";
+import { stageSoft } from "../theme";
 import { askConfirm } from "../confirm";
 import { TICKET_TYPES, typeOf, flowOf, PRIOS, ORIGINS, INTER_TYPES, INTER_STATUS, PREP_ITEMS, CLO_ITEMS, COST_FIELDS, CONTRACTS, DEM_STATUS,
-  nextTicketId, nextInterId, isClosed, progressOf, ticketAge, interCost, interTeam, interDays, planBars, dayLoad, workDaysFrom, mondayOf,
+  nextTicketId, nextInterId, isClosed, ticketAge, interCost, interTeam, interDays, planBars, dayLoad, workDaysFrom, mondayOf,
   acceptDemande, parcOf, savKpis } from "../savModel";
 
 const iso = d => { const x = new Date(d); return isNaN(x) ? "" : x.toISOString().slice(0, 10); };
@@ -32,6 +33,24 @@ function Kpi({ l, v, tone }) {
   return <div style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "10px 12px", minWidth: 0 }}>
     <div style={{ fontSize: 12, color: T.ink500 }}>{l}</div>
     <div style={{ fontFamily: T.fontDisplay, fontSize: 26, fontWeight: 500, fontVariantNumeric: "tabular-nums", color: tone === "bad" ? T.red600 : tone === "warn" ? T.amber600 : T.ink900 }}>{v == null ? "—" : v}</div>
+  </div>;
+}
+// v328 (demandé : « la gestion des étapes n'est pas claire sur le ticket ») : frise des étapes toujours visible ; l'équipe SAV clique une étape
+// pour y placer le ticket ; « Passer à … » nomme l'étape suivante.
+function StepFlow({ t, canEdit, onSet }) {
+  const F = flowOf(t.type), cur = Math.min(t.step || 0, F.length - 1), closed = isClosed(t);
+  return <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+    <ol aria-label={"Étapes du ticket (" + typeOf(t.type)[1] + ")"} style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 4 }}>
+      {F.map((x, i) => { const done = i < cur || (closed && i === cur), now = i === cur && !closed;
+        return <li key={x}><button type="button" disabled={!canEdit || i === cur} onClick={() => onSet(i)} aria-current={now ? "step" : undefined} title={canEdit && i !== cur ? "Placer le ticket à cette étape" : undefined}
+          style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", minHeight: 30, padding: "0 8px", borderRadius: 8, border: "1px solid " + (now ? T.amber500 : "transparent"), background: now ? T.amber100 : "transparent", color: now ? T.ink900 : done ? T.ink700 : T.ink500, fontSize: FZ.sm, fontWeight: now ? 700 : 500, textAlign: "left", cursor: canEdit && i !== cur ? "pointer" : "default", fontFamily: T.font }}>
+          <span aria-hidden="true" style={{ width: 20, height: 20, flexShrink: 0, borderRadius: "50%", display: "inline-grid", placeItems: "center", fontSize: 11, fontWeight: 700, background: done ? T.emerald600 : now ? T.amber500 : T.surfaceAlt, color: done ? T.card : T.ink900 }}>{done ? "✓" : i + 1}</span>
+          <span style={{ flex: 1 }}>{x}</span>{now && <span style={{ fontSize: 11, fontWeight: 700, color: T.amber600 }}>en cours</span>}</button></li>; })}
+    </ol>
+    {canEdit && <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+      {!closed && <Btn v="pri" size="sm" onClick={() => onSet(cur + 1)}>{cur + 1 >= F.length - 1 ? "Clore le ticket" : "Passer à « " + F[cur + 1] + " »"}</Btn>}
+      {cur > 0 && <Btn v="ghost" size="sm" onClick={() => onSet(cur - 1)}>← Revenir à l'étape {cur}</Btn>}
+      {closed && <Btn size="sm" onClick={() => onSet(F.length - 2)}>Rouvrir le ticket</Btn>}</div>}
   </div>;
 }
 function Steps({ t }) {
@@ -89,18 +108,15 @@ export function SavPage({ doc, dem, api, demApi, rows, level = "r", canCost, me,
   };
 
   return <div style={{ display: "flex", flexDirection: "column", gap: 12, fontFamily: T.font }}>
-    <header style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      <div style={{ display: "flex", alignItems: "flex-end", gap: 10, flexWrap: "wrap" }}>
-        <div style={{ flex: "1 1 260px", minWidth: 0 }}>
-          <h1 style={{ margin: 0, fontFamily: T.fontDisplay, fontSize: "clamp(24px,2.4vw,30px)", fontWeight: 600, letterSpacing: "-.01em", color: T.ink900, lineHeight: 1.15 }}>SAV / MES</h1>
-          <div style={{ fontSize: FZ.sm, color: T.ink500, marginTop: 2 }}>{DESC[sub]}{!canEdit ? " · lecture seule" : ""}</div>
-        </div>
-        {canEdit && sub === "tickets" && <Btn v="pri" size="sm" onClick={() => setTicketDlg({ id: null, t: { type: "cur", prio: "m", step: 0, orig: "Client", date: todayIso(), resp: myName || "" } })}>＋ Nouveau ticket</Btn>}
-        {canEdit && sub === "inters" && <Btn v="pri" size="sm" onClick={() => setInterDlg({ id: null, i: { st: "À planifier", type: "Maintenance curative", resp: "", who: [], prep: [], clo: [], costs: {} } })}>＋ Intervention</Btn>}
-        {canEdit && sub === "parc" && <Btn size="sm" onClick={() => setParcDlg({ pj: "", p: {}, isNew: true })}>＋ Projet du parc</Btn>}
-      </div>
-      {subs.length > 1 && <PlanSwitch label="Sous-pages : SAV / MES" value={sub} onGo={go} tools={[]} views={subs.map(([id, l]) => ({ id, l, badge: id === "planning" && canEdit ? k.demandes : id === "inters" && canEdit ? k.toPlan : 0, badgeBad: id === "planning" }))} />}
-    </header>
+    {/* v328 (demandé : « le nom SAV / MES doit être pareil que sur les autres pages ») : même en-tête que Tests, Planning… */}
+    <PageHead title="SAV / MES" sub={DESC[sub] + (!canEdit ? " · lecture seule" : "")} accent={stageSoft().depart.solid} style={{ marginBottom: 0 }}
+      right={subs.length > 1 ? <PlanSwitch label="Sous-pages : SAV / MES" value={sub} onGo={go} tools={[]} views={subs.map(([id, l]) => ({ id, l, badge: id === "planning" && canEdit ? k.demandes : id === "inters" && canEdit ? k.toPlan : 0, badgeBad: id === "planning" }))} /> : undefined} />
+    {/* v328 (demandé : « les demandes de ticket / intervention vers la gauche ») */}
+    {canEdit && (sub === "tickets" || sub === "inters" || sub === "parc") && <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      {sub === "tickets" && <Btn v="pri" size="sm" onClick={() => setTicketDlg({ id: null, t: { type: "cur", prio: "m", step: 0, orig: "Client", date: todayIso(), resp: myName || "" } })}>＋ Nouveau ticket</Btn>}
+      {sub === "inters" && <Btn v="pri" size="sm" onClick={() => setInterDlg({ id: null, i: { st: "À planifier", type: "Maintenance curative", resp: "", who: [], prep: [], clo: [], costs: {} } })}>＋ Intervention sur site</Btn>}
+      {sub === "parc" && <Btn size="sm" onClick={() => setParcDlg({ pj: "", p: {}, isNew: true })}>＋ Projet du parc</Btn>}
+    </div>}
 
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
       <Kpi l="Tickets ouverts" v={k.open} /><Kpi l="Haute priorité" v={k.high} tone={k.high ? "bad" : null} />
@@ -162,20 +178,12 @@ function TicketsView({ tickets, inters, canEdit, myName, nomOf, onEdit, onStep, 
       right={canEdit && <Btn size="sm" onClick={() => onEdit(cur.id, tickets[cur.id])}>Modifier</Btn>}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}><button type="button" onClick={() => onOpenPj && onOpenPj(cur.pj)} aria-label={"Ouvrir la fiche de " + cur.pj} style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer" }}><PjPlate pj={cur.pj} /></button><b style={{ fontSize: FZ.md, color: T.ink900 }}>{nomOf(cur.pj)}</b></div>
       {cur.det && <p data-no-i18n="1" style={{ margin: 0, fontSize: FZ.sm, color: T.ink900, whiteSpace: "pre-wrap" }}>{cur.det}</p>}
-      <div style={{ fontSize: FZ.sm, color: T.ink700 }}>Étape {(cur.step || 0) + 1} / {flowOf(cur.type).length} : <b style={{ color: T.ink900 }}>{flowOf(cur.type)[cur.step || 0]}</b></div>
-      {canEdit && <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        <Btn size="sm" disabled={!(cur.step > 0)} onClick={() => onStep(cur.id, tickets[cur.id], -1)}>← Étape précédente</Btn>
-        <Btn v="pri" size="sm" disabled={isClosed(cur)} onClick={() => onStep(cur.id, tickets[cur.id], 1)}>{(cur.step || 0) + 1 >= flowOf(cur.type).length - 1 ? "Clore le ticket" : "Étape suivante →"}</Btn></div>}
+      <StepFlow t={cur} canEdit={canEdit} onSet={n => onStep(cur.id, tickets[cur.id], n - (cur.step || 0))} />
       <Fold title={"Interventions sur site"} info={(cur.inters || []).length} open={(cur.inters || []).length > 0}>
         {(cur.inters || []).length ? cur.inters.map(i => <button key={i} type="button" onClick={() => onOpenInter(i)} disabled={!inters[i]} style={{ display: "flex", gap: 8, alignItems: "center", width: "100%", minHeight: 32, border: "1px solid " + T.line, borderRadius: 8, background: T.card, padding: "0 8px", cursor: "pointer", fontFamily: T.font, textAlign: "left" }}>
           <span style={{ fontFamily: T.fontMono, fontSize: 12, fontWeight: 600 }}>{i}</span><span style={{ flex: 1, minWidth: 0, fontSize: 12, color: T.ink700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{inters[i] ? (inters[i].a ? fd(inters[i].a) + " → " + fd(inters[i].b) : "à planifier") : "supprimée"}</span>{inters[i] && <Pill tone={ST_TONE[inters[i].st] || "neutral"}>{inters[i].st}</Pill>}</button>)
           : <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Aucune : le ticket se traite à distance tant qu'on n'ajoute pas d'intervention.</div>}
         {canEdit && <Btn size="sm" onClick={() => onNewInter(cur.id, tickets[cur.id])}>＋ Intervention sur site</Btn>}
-      </Fold>
-      <Fold title="Toutes les étapes" info={Math.round(progressOf(cur) * 100) + " %"}>
-        <ol style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 2 }}>{flowOf(cur.type).map((s, i) => { const done = i < (cur.step || 0), now = i === (cur.step || 0);
-          return <li key={s} style={{ display: "flex", gap: 8, alignItems: "center", fontSize: FZ.sm, color: now ? T.ink900 : T.ink500, fontWeight: now ? 700 : 400 }}>
-            <span aria-hidden="true" style={{ width: 18, height: 18, borderRadius: "50%", display: "inline-grid", placeItems: "center", fontSize: 11, fontWeight: 700, background: done ? T.emerald600 : now ? T.amber500 : T.surfaceAlt, color: done ? T.card : now ? T.ink900 : T.ink500 }}>{done ? "✓" : i + 1}</span>{s}</li>; })}</ol>
       </Fold>
       <Fold title="Informations">
         <dl style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: "4px 10px", margin: 0, fontSize: FZ.sm }}>
@@ -279,16 +287,41 @@ function InterDialog({ id, i: i0, pjList, nomOf, techs, canEdit, isAdmin, canCos
 const shiftWork = (isoD, n) => { const d = new Date(isoD + "T12:00:00"); let k = Math.abs(n); const st = n < 0 ? -1 : 1; while (k > 0) { d.setDate(d.getDate() + st); if (d.getDay() % 6) k--; } return iso(d); };
 const workCount = (a, b) => { let n = 0; const d = new Date(a + "T12:00:00"), e = new Date(b + "T12:00:00"); while (d <= e) { if (d.getDay() % 6) n++; d.setDate(d.getDate() + 1); } return Math.max(1, n); };
 const firstWork = isoD => { const d = new Date(isoD + "T12:00:00"); while (!(d.getDay() % 6)) d.setDate(d.getDate() + 1); return iso(d); };
+// v328 (demandé : « on ne voit pas les noms des mois et des semaines » + « deux plannings : un pour le responsable SAV avec les techniciens,
+// un où les chefs de projet demandent des interventions ») : en-tête sur trois bandes (mois · semaine S46 · jour) ; sous-vues
+// « Techniciens » (équipe SAV) et « Demandes d'intervention » (une seule ligne : jours libres, demandes ; CdP = seulement celle-ci).
+const isoWeek = isoD => { const d = new Date(isoD + "T12:00:00"); d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7)); const w1 = new Date(d.getFullYear(), 0, 4, 12); return 1 + Math.round(((d - w1) / 864e5 - 3 + ((w1.getDay() + 6) % 7)) / 7); };
+const runs = (days, keyOf) => { const out = []; days.forEach((d, i) => { const k = keyOf(d); if (out.length && out[out.length - 1].k === k) out[out.length - 1].n++; else out.push({ k, d, i, n: 1 }); }); return out; };
+const monthName = isoD => { const t = new Date(isoD + "T12:00:00").toLocaleDateString("fr-FR", { month: "long", year: "numeric" }); return t.charAt(0).toUpperCase() + t.slice(1); };
+const DOW = ["di", "lu", "ma", "me", "je", "ve", "sa"];
+function DayHeader({ days, labW, label, t0 }) {
+  const N = days.length, cols = "repeat(" + N + ", minmax(0,1fr))";
+  const band = (items, render, h) => <div style={{ display: "grid", gridTemplateColumns: cols, minHeight: h }}>{items.map(it => <div key={it.k} style={{ gridColumn: "span " + it.n, borderLeft: "1px solid " + T.line, padding: "0 6px", display: "flex", alignItems: "center", overflow: "hidden", whiteSpace: "nowrap" }}>{render(it)}</div>)}</div>;
+  return <div style={{ display: "grid", gridTemplateColumns: labW + "px 1fr", borderBottom: "1px solid " + T.line, background: T.surface, position: "sticky", top: 0, zIndex: 2 }}>
+    <div style={{ ...tableTh(), borderBottom: "none", display: "flex", alignItems: "flex-end" }}>{label}</div>
+    <div>
+      {band(runs(days, d => d.slice(0, 7)), it => <b style={{ fontSize: 13, color: T.ink900 }}>{monthName(it.d)}</b>, 26)}
+      {band(runs(days, d => isoWeek(d) + "-" + mondayOf(d)), it => <span style={{ fontSize: 12, fontWeight: 600, color: T.ink500 }}>S{isoWeek(it.d)}{it.n >= 3 ? " · du " + fd(mondayOf(it.d)) : ""}</span>, 22)}
+      <div style={{ display: "grid", gridTemplateColumns: cols }}>{days.map(d => { const wd = new Date(d + "T12:00:00").getDay(), today = d === t0;
+        return <div key={d} style={{ borderLeft: "1px solid " + T.line, textAlign: "center", padding: "3px 0", background: today ? T.amber100 : undefined, borderTop: "1px solid " + T.line }}>
+          <div style={{ fontSize: 11, color: today ? T.amber600 : T.ink500, fontWeight: 600 }}>{DOW[wd]}</div><div style={{ fontSize: 13, fontWeight: 700, color: today ? T.amber600 : T.ink900, fontVariantNumeric: "tabular-nums" }}>{d.slice(8, 10)}</div></div>; })}</div>
+    </div></div>;
+}
+// ligne du planning : nom à gauche, piste à droite (hors du composant : pas de remontage pendant un glisser)
+function SRow({ label, children, h = 40, ink, labW }) {
+  return <div style={{ display: "grid", gridTemplateColumns: labW + "px 1fr", borderBottom: "1px solid " + T.line }}>
+    <div style={{ ...tableTd({ ink: ink || T.ink900 }), fontWeight: 700, borderBottom: "none", height: "auto", minHeight: h, display: "flex", alignItems: "center" }}>{label}</div>{children}</div>;
+}
 function PlanningView({ inters, demandes, techs, canEdit, nomOf, me, myPjs, onOpenInter, onTeam, onRequest, onAnswer, onCancel, onMove }) {
   const t0 = todayIso();
   const [mode, setMode0] = useState(() => { try { return localStorage.getItem("enogia_sav_plan") === "month" ? "month" : "week"; } catch (e) { return "week"; } });
   const setMode = m => { setMode0(m); try { localStorage.setItem("enogia_sav_plan", m); } catch (e) { /* stockage indisponible */ } };
+  const [pv, setPv] = useState("tech"), view = canEdit ? pv : "dem";
   const [anchor, setAnchor] = useState(t0);
-  const days = useMemo(() => { if (mode === "week") return workDaysFrom(mondayOf(anchor), 5);
+  const days = useMemo(() => { if (mode === "week") return workDaysFrom(mondayOf(anchor), 10);
     const m = anchor.slice(0, 7), out = []; const d = new Date(m + "-01T12:00:00"); while (iso(d).slice(0, 7) === m) { if (d.getDay() % 6) out.push(iso(d)); d.setDate(d.getDate() + 1); } return out; }, [mode, anchor]);
   const N = days.length;
   const shift = dir => { const d = new Date(anchor + "T12:00:00"); if (mode === "week") d.setDate(d.getDate() + 7 * dir); else { d.setDate(1); d.setMonth(d.getMonth() + dir); } setAnchor(iso(d)); };
-  const title = mode === "week" ? "Semaine du " + fdd(days[0]) : (() => { const t = new Date(days[0] + "T12:00:00").toLocaleDateString("fr-FR", { month: "long", year: "numeric" }); return t.charAt(0).toUpperCase() + t.slice(1); })();
   const bars = planBars(inters, techs), load = dayLoad(inters, techs, days);
   const dems = Object.entries(demandes).map(([id, d]) => ({ id, ...d })).sort((a, b) => String(b.at || "").localeCompare(String(a.at || "")));
   const pend = dems.filter(d => d.st === "attente"), mine = dems.filter(d => d.byEmail && me && d.byEmail.toLowerCase() === me.toLowerCase());
@@ -304,49 +337,52 @@ function PlanningView({ inters, demandes, techs, canEdit, nomOf, me, myPjs, onOp
     if (patch.a === i.a && patch.b === i.b && tech === p.tech) return;
     onMove(p.id, patch);
   };
-  const colW = 100 / N, compact = N > 6;
-  const head = <div style={{ display: "flex", gap: 6, alignItems: "center", padding: "10px 12px 0 0", flexWrap: "wrap" }}>
-    <Segmented label="Échelle du planning" value={mode} onChange={setMode} options={[["week", "Semaine"], ["month", "Mois"]]} />
+  const colW = 100 / N, labW = 160, cols = "repeat(" + N + ", minmax(0,1fr))";
+  const weekLines = d => ({ borderLeft: (new Date(d + "T12:00:00").getDay() === 1 ? "2px solid " : "1px solid ") + T.line });
+  const cellBg = (d, hot) => hot ? T.amber100 : d === t0 ? "color-mix(in srgb, " + T.amber100 + " 45%, transparent)" : "transparent";
+  const tools = <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+    {canEdit && <Segmented label="Planning affiché" value={view} onChange={setPv} options={[["tech", "Techniciens"], ["dem", "Demandes d'intervention" + (pend.length ? " (" + pend.length + ")" : "")]]} />}
+    <span style={{ flex: 1 }} />
+    <Segmented label="Échelle du planning" value={mode} onChange={setMode} options={[["week", "2 semaines"], ["month", "Mois"]]} />
     <Btn size="sm" aria-label={mode === "week" ? "Semaine précédente" : "Mois précédent"} onClick={() => shift(-1)}>◀</Btn><Btn size="sm" onClick={() => setAnchor(t0)}>Aujourd'hui</Btn><Btn size="sm" aria-label={mode === "week" ? "Semaine suivante" : "Mois suivant"} onClick={() => shift(1)}>▶</Btn>
-    {canEdit && <Btn size="sm" onClick={onTeam}>Équipe ({techs.length})</Btn>}</div>;
-  const dayLab = d => compact ? d.slice(8, 10) : fdd(d);
-  const labW = canEdit ? 150 : 120;
-  // une ligne = colonne du nom + piste en grille (cases de jours = cibles du glisser, barres posées par-dessus)
-  const Track = ({ tech, children, h = 36 }) => <div style={{ position: "relative", display: "grid", gridTemplateColumns: "repeat(" + N + ", minmax(0,1fr))", minHeight: h }}>
-    {days.map(d => <div key={d} {...(tech && canEdit ? dnd.dropProps(tech + "|" + d, p => !!p, p => moveTo(p, tech, d)) : {})}
-      style={{ borderLeft: "1px solid " + T.line, background: dnd.over === tech + "|" + d ? T.amber100 : d === t0 ? "color-mix(in srgb, " + T.amber100 + " 45%, transparent)" : "transparent" }} />)}
-    {children}</div>;
+    {canEdit && view === "tech" && <Btn size="sm" onClick={onTeam}>Équipe ({techs.length})</Btn>}</div>;
   return <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-    <Panel title={(canEdit ? "Planning des équipes SAV · " : "Disponibilités de l'équipe SAV · ") + title} pad={0} right={head}>
-      {canEdit ? <p style={{ margin: "0 14px", fontSize: 12, color: T.ink500 }}>Glisser une barre sur un autre jour ou une autre ligne change ses dates ou son technicien ; un clic l'ouvre.</p>
-        : <p style={{ margin: "0 14px", fontSize: FZ.sm, color: T.ink500 }}>Lecture seule : un jour avec au moins un technicien libre se demande d'un clic ; le responsable SAV accepte ou refuse, la réponse arrive dans votre cloche.</p>}
-      <div style={{ overflowX: "auto" }}><div style={{ minWidth: compact ? 1100 : 760 }}>
-        <div style={{ display: "grid", gridTemplateColumns: labW + "px 1fr", borderBottom: "1px solid " + T.line }}>
-          <div style={{ ...tableTh(), borderBottom: "none" }}>{canEdit ? "Technicien" : ""}</div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(" + N + ", minmax(0,1fr))" }}>{days.map(d => <div key={d} style={{ ...tableTh({ align: "center" }), borderBottom: "none", background: d === t0 ? T.amber100 : undefined, padding: compact ? "6px 0" : "6px 8px" }} title={fdd(d)}>{dayLab(d)}</div>)}</div>
-        </div>
-        {canEdit ? (techs.length ? techs.map(tc => <div key={tc} style={{ display: "grid", gridTemplateColumns: labW + "px 1fr", borderBottom: "1px solid " + T.line }}>
-          <div style={{ ...tableTd({ ink: T.ink900 }), fontWeight: 700, borderBottom: "none" }}>{tc}</div>
-          <Track tech={tc}>{(bars[tc] || []).filter(b => b.to >= days[0] && b.from <= days[N - 1]).map(b => {
-            const i0 = Math.max(0, days.findIndex(x => x >= b.from)), i1 = (() => { let k = N - 1; while (k > 0 && days[k] > b.to) k--; return k; })(), [bg, ink] = barColor(b.st);
-            const payload = { id: b.id, tech: tc, lead: b.lead, grab: 0 }, dp = dnd.dragProps(payload);
-            return <button key={b.id} type="button" {...dp} onPointerDown={e => { const r = e.currentTarget.getBoundingClientRect(), span = i1 - i0 + 1; payload.grab = Math.min(span - 1, Math.max(0, Math.floor((e.clientX - r.left) / r.width * span))) + Math.max(0, days.findIndex(x => x >= b.from) === 0 && b.from < days[0] ? workCount(b.from, days[0]) - 1 : 0); dp.onPointerDown(e); }}
-              onClick={() => onOpenInter(b.id)} title={b.id + " · " + b.pj + " · " + fd(b.from) + " → " + fd(b.to) + (b.lead ? "" : " (appui)") + " — glisser pour déplacer"}
-              style={{ position: "absolute", top: 3, bottom: 3, left: "calc(" + (i0 * colW) + "% + 2px)", width: "calc(" + ((i1 - i0 + 1) * colW) + "% - 4px)", border: "none", borderRadius: 4, background: bg, color: ink, fontSize: 12, fontWeight: 700, textAlign: "left", padding: "0 8px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "grab", fontFamily: T.font, opacity: b.lead ? 1 : 0.8, pointerEvents: dnd.drag ? "none" : "auto", touchAction: "none" }}>{b.id} · {b.pj}{b.lead ? "" : " (appui)"}</button>; })}</Track></div>)
-          : <div style={{ padding: 12 }}><EmptyState compact icon="manager" title="Aucun technicien" hint="« Équipe » pour ajouter les techniciens SAV." /></div>)
-          : <div style={{ display: "grid", gridTemplateColumns: labW + "px 1fr", borderBottom: "1px solid " + T.line }}>
-            <div style={{ ...tableTd({ ink: T.ink900 }), fontWeight: 700, borderBottom: "none" }}>Équipe SAV</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(" + N + ", minmax(0,1fr))" }}>{load.map(x => { const free = x.free - pendOn(x.d).length, past = x.d < t0;
-              return <div key={x.d} style={{ padding: 3, borderLeft: "1px solid " + T.line }}>{past || free <= 0 || !x.team ? <span style={{ display: "block", minHeight: 30, lineHeight: "30px", textAlign: "center", borderRadius: 4, background: T.surfaceAlt, color: T.ink500, fontSize: 12, fontWeight: 600 }}>{past ? "—" : compact ? "0" : "Complet"}</span>
-                : <button type="button" onClick={() => onRequest(x.d)} title={"Demander une intervention le " + fdd(x.d)} aria-label={"Demander une intervention le " + fdd(x.d) + " (" + free + " libre" + (free > 1 ? "s" : "") + ")"}
-                  style={{ width: "100%", minHeight: 30, borderRadius: 4, border: "1.5px dashed " + T.emerald500, background: T.emerald100, color: T.emerald600, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: T.font, padding: 0 }}>{compact ? "＋" + free : "＋ " + free + " libre" + (free > 1 ? "s" : "")}</button>}</div>; })}</div></div>}
-        {canEdit && pend.length > 0 && <div style={{ display: "grid", gridTemplateColumns: labW + "px 1fr" }}>
-          <div style={{ ...tableTd({ ink: T.amber600 }), fontWeight: 700, borderBottom: "none" }}>Demandes</div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(" + N + ", minmax(0,1fr))" }}>{days.map(d => <div key={d} style={{ padding: 3, borderLeft: "1px solid " + T.line }}>{pendOn(d).map(p => <span key={p.id} title={p.pj + " · " + (p.obj || "") + " · " + (p.by || "")} style={{ display: "block", minHeight: 24, lineHeight: "24px", borderRadius: 4, border: "1.5px dashed " + T.amber500, background: T.amber100, color: T.amber600, fontSize: 11, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", padding: "0 4px", marginBottom: 2 }}>{p.pj}</span>)}</div>)}</div></div>}
-      </div></div>
-    </Panel>
-    {canEdit ? <>
-      <Panel title={<span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>Demandes des chefs de projet {pend.length > 0 && <Pill tone="warn">{pend.length}</Pill>}</span>}>
+    {tools}
+    {view === "tech" ? <>
+      <Panel title="Planning des techniciens" pad={0} right={<span style={{ fontSize: 12, color: T.ink500, padding: "12px 14px 0 0" }}>Glisser une barre : autre jour = autres dates, autre ligne = autre technicien ; un clic l'ouvre.</span>}>
+        <div style={{ overflowX: "auto" }}><div style={{ minWidth: N > 12 ? 1200 : 900 }}>
+          <DayHeader days={days} labW={labW} label="Technicien" t0={t0} />
+          {techs.length ? techs.map(tc => <SRow labW={labW} key={tc} label={tc}>
+            <div style={{ position: "relative", display: "grid", gridTemplateColumns: cols, minHeight: 40 }}>
+              {days.map(d => <div key={d} {...dnd.dropProps(tc + "|" + d, p => !!p, p => moveTo(p, tc, d))} style={{ ...weekLines(d), background: cellBg(d, dnd.over === tc + "|" + d) }} />)}
+              {(bars[tc] || []).filter(b => b.to >= days[0] && b.from <= days[N - 1]).map(b => {
+                const i0 = Math.max(0, days.findIndex(x => x >= b.from)), i1 = (() => { let k = N - 1; while (k > 0 && days[k] > b.to) k--; return k; })(), [bg, ink] = barColor(b.st);
+                const payload = { id: b.id, tech: tc, lead: b.lead, grab: 0 }, dp = dnd.dragProps(payload);
+                return <button key={b.id} type="button" {...dp} onPointerDown={e => { const r = e.currentTarget.getBoundingClientRect(), span = i1 - i0 + 1; payload.grab = Math.min(span - 1, Math.max(0, Math.floor((e.clientX - r.left) / r.width * span))) + (b.from < days[0] ? workCount(b.from, days[0]) - 1 : 0); dp.onPointerDown(e); }}
+                  onClick={() => onOpenInter(b.id)} title={b.id + " · " + b.pj + " · " + fd(b.from) + " → " + fd(b.to) + (b.lead ? "" : " (appui)")}
+                  style={{ position: "absolute", top: 5, bottom: 5, left: "calc(" + (i0 * colW) + "% + 2px)", width: "calc(" + ((i1 - i0 + 1) * colW) + "% - 4px)", border: "none", borderLeft: "3px solid " + ink, borderRadius: 4, background: bg, color: ink, fontSize: 12, fontWeight: 700, textAlign: "left", padding: "0 8px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "grab", fontFamily: T.font, opacity: b.lead ? 1 : 0.8, pointerEvents: dnd.drag ? "none" : "auto", touchAction: "none" }}>{b.pj} · {nomOf(b.pj) || b.id}{b.lead ? "" : " (appui)"}</button>; })}
+            </div></SRow>)
+            : <div style={{ padding: 12 }}><EmptyState compact icon="manager" title="Aucun technicien" hint="« Équipe » pour ajouter les techniciens SAV." /></div>}
+        </div></div>
+      </Panel>
+      <Panel title={<span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>À planifier {toPlan.length > 0 && <Pill tone="warn">{toPlan.length}</Pill>}</span>}>
+        {toPlan.length === 0 ? <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Toutes les interventions ont des dates et un technicien.</div> : toPlan.map(([id, i]) => <div key={id} style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", padding: "6px 0", borderTop: "1px solid " + T.line }}>
+          <span style={{ fontFamily: T.fontMono, fontSize: 12, fontWeight: 600 }}>{id}</span><PjPlate pj={i.pj} /><span style={{ flex: 1, minWidth: 0, fontSize: FZ.sm }}>{i.obj || "—"}</span>
+          <span style={{ fontSize: 12, color: T.ink500 }}>{!i.a ? "sans dates" : "sans technicien"}</span><Btn v="pri" size="sm" onClick={() => onOpenInter(id)}>Planifier</Btn></div>)}
+      </Panel></>
+    : <>
+      <Panel title="Planning des demandes d'intervention" pad={0} right={<span style={{ fontSize: 12, color: T.ink500, padding: "12px 14px 0 0" }}>{canEdit ? "Chiffre = techniciens libres ce jour-là ; en orange, les demandes en attente." : "Chiffre = techniciens libres : cliquez un jour pour demander une intervention ; le responsable SAV accepte ou refuse."}</span>}>
+        <div style={{ overflowX: "auto" }}><div style={{ minWidth: N > 12 ? 1200 : 900 }}>
+          <DayHeader days={days} labW={labW} label="" t0={t0} />
+          <SRow labW={labW} label="Équipe SAV" h={44}><div style={{ display: "grid", gridTemplateColumns: cols }}>{load.map(x => { const free = x.free - pendOn(x.d).length, past = x.d < t0;
+            return <div key={x.d} style={{ padding: 4, ...weekLines(x.d) }}>{past || free <= 0 || !x.team ? <span style={{ display: "block", minHeight: 32, lineHeight: "32px", textAlign: "center", borderRadius: 4, background: T.surfaceAlt, color: T.ink500, fontSize: 12, fontWeight: 600 }}>{past ? "—" : N > 12 ? "0" : "Complet"}</span>
+              : canEdit ? <span style={{ display: "block", minHeight: 32, lineHeight: "32px", textAlign: "center", borderRadius: 4, background: T.emerald100, color: T.emerald600, fontSize: 12, fontWeight: 700 }}>{free}{N > 12 ? "" : " libre" + (free > 1 ? "s" : "")}</span>
+              : <button type="button" onClick={() => onRequest(x.d)} title={"Demander une intervention le " + fdd(x.d)} aria-label={"Demander une intervention le " + fdd(x.d) + " (" + free + " libre" + (free > 1 ? "s" : "") + ")"}
+                style={{ width: "100%", minHeight: 32, borderRadius: 4, border: "1.5px dashed " + T.emerald500, background: T.emerald100, color: T.emerald600, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: T.font, padding: 0 }}>{N > 12 ? "＋" + free : "＋ " + free + " libre" + (free > 1 ? "s" : "")}</button>}</div>; })}</div></SRow>
+          <SRow labW={labW} label="Demandes" ink={T.amber600} h={44}><div style={{ display: "grid", gridTemplateColumns: cols }}>{days.map(d => <div key={d} style={{ padding: 4, ...weekLines(d) }}>{pendOn(d).map(p => <span key={p.id} title={p.pj + " · " + (p.obj || "") + " · " + (p.by || "")} style={{ display: "block", minHeight: 24, lineHeight: "24px", borderRadius: 4, border: "1.5px dashed " + T.amber500, background: T.amber100, color: T.amber600, fontSize: 11, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", padding: "0 4px", marginBottom: 2 }}>{p.pj}</span>)}</div>)}</div></SRow>
+        </div></div>
+      </Panel>
+      {canEdit ? <Panel title={<span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>Demandes des chefs de projet {pend.length > 0 && <Pill tone="warn">{pend.length}</Pill>}</span>}>
         {dems.length === 0 ? <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Aucune demande pour l'instant.</div> : dems.slice(0, 12).map(d => <div key={d.id} style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", padding: "6px 0", borderTop: "1px solid " + T.line }}>
           <PjPlate pj={d.pj} /><span style={{ flex: "1 1 260px", minWidth: 0, fontSize: FZ.sm, color: T.ink900 }}>{d.obj || "—"}<div style={{ fontSize: 12, color: T.ink500 }}>{nomOf(d.pj)} · demandé par {d.by || "—"} · à partir du {fdd(d.date)} · {d.days || 1} j</div></span>
           {d.st === "attente" ? <>
@@ -354,11 +390,6 @@ function PlanningView({ inters, demandes, techs, canEdit, nomOf, me, myPjs, onOp
             <Btn size="sm" onClick={() => onAnswer(d.id, d, false, notes[d.id])}>Refuser</Btn><Btn v="pri" size="sm" onClick={() => onAnswer(d.id, d, true, notes[d.id])}>Accepter</Btn></>
             : <Pill tone={d.st === "ok" ? "ok" : "bad"}>{d.st === "ok" ? "Acceptée" + (d.iid ? " · " + d.iid : "") : "Refusée"}</Pill>}</div>)}
       </Panel>
-      <Panel title={<span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>À planifier {toPlan.length > 0 && <Pill tone="warn">{toPlan.length}</Pill>}</span>}>
-        {toPlan.length === 0 ? <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Toutes les interventions ont des dates et un technicien.</div> : toPlan.map(([id, i]) => <div key={id} style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", padding: "6px 0", borderTop: "1px solid " + T.line }}>
-          <span style={{ fontFamily: T.fontMono, fontSize: 12, fontWeight: 600 }}>{id}</span><PjPlate pj={i.pj} /><span style={{ flex: 1, minWidth: 0, fontSize: FZ.sm }}>{i.obj || "—"}</span>
-          <span style={{ fontSize: 12, color: T.ink500 }}>{!i.a ? "sans dates" : "sans technicien"}</span><Btn v="pri" size="sm" onClick={() => onOpenInter(id)}>Planifier</Btn></div>)}
-      </Panel></>
       : <Panel title="Mes demandes">
         {mine.length === 0 ? <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Vous n'avez pas encore fait de demande. Cliquez sur un jour libre du planning ci-dessus.</div> : mine.map(d => <div key={d.id} style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", padding: "6px 0", borderTop: "1px solid " + T.line }}>
           <PjPlate pj={d.pj} /><span style={{ flex: "1 1 260px", minWidth: 0, fontSize: FZ.sm }}>{d.obj || "—"}<div style={{ fontSize: 12, color: T.ink500 }}>à partir du {fdd(d.date)} · {d.days || 1} j{d.note ? " · « " + d.note + " »" : ""}</div></span>
@@ -366,6 +397,7 @@ function PlanningView({ inters, demandes, techs, canEdit, nomOf, me, myPjs, onOp
           {d.st === "attente" && <Btn size="sm" onClick={() => onCancel(d.id)}>Retirer</Btn>}</div>)}
         {!(myPjs && myPjs.length) && <div style={{ fontSize: 12, color: T.ink500 }}>Aucun PJ ne vous est associé : la demande proposera tous les PJ.</div>}
       </Panel>}
+    </>}
   </div>;
 }
 function DemandeDialog({ init, pjs, nomOf, onClose, onSave }) {

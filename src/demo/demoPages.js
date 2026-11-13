@@ -67,7 +67,7 @@ export const DEMO_PAGES = [
   { id: "home", label: "Accueil", Render: Accueil, expect: [] },
   { id: "home-produit", label: "Accueil · resp. produit", Render: AccueilProduit, expect: ["Livrables Produit", "P&ID validé", "Papeterie du Nord"] },
   { id: "sav", label: "SAV · équipe", Render: () => <SavDemo level="w" sub0="tickets" />, expect: ["SAV / MES", "TC-26-41", "Sucrerie Centre"] },
-  { id: "sav-plan", label: "SAV · planning", Render: () => <SavDemo level="w" sub0="planning" />, expect: ["Lou Martin", "Demandes des chefs de projet", "Accepter"] },
+  { id: "sav-plan", label: "SAV · planning", Render: () => <SavDemo level="w" sub0="planning" />, expect: ["Lou Martin", "Planning des techniciens", "Demandes d'intervention"] },
   { id: "sav-cdp", label: "SAV · chef de projet", Render: () => <SavDemo level="r" sub0="planning" />, expect: ["Équipe SAV", "libre", "Mes demandes"] },
   { id: "sav-parc", label: "SAV · parc", Render: () => <SavDemo level="w" sub0="parc" />, expect: ["PJ214", "Premium"] },
   { id: "bell", label: "Cloche", Render: Cloche, expect: [] },

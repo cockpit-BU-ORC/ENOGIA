@@ -910,4 +910,8 @@ export const RELEASE_CATALOG = [
     ["SAV / MES", "Planning des équipes à la semaine ou au mois ; glisser une barre sur un autre jour ou une autre ligne change ses dates ou son technicien."],
     ["SAV / MES", "Ticket et intervention plus courts : la préparation, la clôture, les pièces et les coûts se déplient après la création."],
   ] },
+  { v: "328", t: "SAV : deux plannings, étapes du ticket", items: [
+    ["SAV / MES", "Deux plannings : « Techniciens » (équipe SAV, barres à glisser) et « Demandes d'intervention » (jours libres, demandes des chefs de projet) ; mois et semaines (S46) en tête de chaque planning."],
+    ["SAV / MES", "Ticket : toutes les étapes visibles, l'étape en cours surlignée ; cliquer une étape y place le ticket, « Passer à … » nomme l'étape suivante."],
+  ] },
 ];
