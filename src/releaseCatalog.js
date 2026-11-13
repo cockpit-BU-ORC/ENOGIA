@@ -960,4 +960,10 @@ export const RELEASE_CATALOG = [
     ["Tests", "Fréquences turbines et vibrations dans la checklist de debug ; signature au doigt ; créneaux des bancs mieux séparés."],
     ["Tests", "Import du manuel Word et réglage des fréquences dans Tests › Checklists.", "admin"],
   ] },
+  { v: "338", t: "Bancs séparés, planning des tests qui défile", items: [
+    ["Tests", "Planning des bancs : machines regroupées par banc (Banc 1, Banc 2) et défilement sur plusieurs mois, comme les autres calendriers."],
+    ["Tests", "Fréquences turbines et vibrations dans la checklist de debug et son PDF."],
+    ["SAV / MES", "Carte du parc : noms en français, elle ne passe plus par-dessus le menu."],
+    ["Général", "Les pages Turbines, Tests et SAV s'ouvrent plus vite (préchargées en arrière-plan)."],
+  ] },
 ];

@@ -16,7 +16,7 @@ test("v337 : manuel Word découpé en chapitres et étapes", () => {
   const steps = bookStepsOf(book);
   expect(steps.map(s => s.id)).toEqual(["prerequis", "configuration-hardware/afe/md050n", "configuration-hardware/afe/md050n/tension-de-travail"]);
   expect(steps[2]).toMatchObject({ title: "Tension de travail.", path: ["Configuration hardware", "AFE", "MD050N"] });
-  expect(steps[2].blocks).toEqual([{ t: "p", text: "Mettre 400 V.", list: true }, { t: "img", src: "media/image3.png" }, { t: "table", rows: [["Param", "Valeur"], ["P01", "50 Hz"]] }]);
+  expect(steps[2].blocks).toEqual([{ t: "p", text: "Mettre 400 V.", list: true }, { t: "img", src: "media/image3.png" }, { t: "table", rows: [{ c: ["Param", "Valeur"] }, { c: ["P01", "50 Hz"] }] }]);
   expect(bookImages(book)).toEqual(["media/image3.png"]);
 });
 
@@ -39,4 +39,11 @@ test("v337 : statuts, progression, filtres, exports et réimport", () => {
   expect(csv.rows.prerequis.v).toBe(true);
   expect(() => parseExport('{"a":1}', book)).toThrow();
   expect(printHtml(book, rows, { pj: "PJ9", title: "Manuel" })).toMatch(/Synthèse des problèmes \(1\)/);
+});
+
+// v338 : Firestore refuse les tableaux de tableaux (« Nested arrays are not supported ») — le livret n'en contient aucun
+test("v338 : livret enregistrable dans Firestore (pas de tableau imbriqué)", () => {
+  const book = parseManual({ documentXml: doc, stylesXml: styles, relsXml: rels });
+  const nested = v => Array.isArray(v) ? v.some(x => Array.isArray(x) || nested(x)) : v && typeof v === "object" ? Object.values(v).some(nested) : false;
+  expect(nested(book)).toBe(false);
 });

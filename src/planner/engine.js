@@ -301,6 +301,7 @@ export function planToRows(plan, sched, currentRows, guessGamme, cal) {
       if (cal && v && old && old !== v && !cal.isWork(old) && (cal.dateOf(cal.idxOnOrAfter(old)) === v || cal.dateOf(cal.idxOnOrBefore(old)) === v)) v = old;
       base[f] = v;
     });
+    base.banc = benchOf(p); // v338 (D10) : banc d'essai publié (1 ou 2), lu par le planning des bancs de la page Tests
     base.debutProd = d.debutProd || null; // v312 : début de production publié (affiché dans la Liste, le Gantt, le Calendrier ; pas annoncé comme un changement)
     if (p.hAt != null && !p.hEst) base.heuresAtelier = p.hAt; // v206 : des heures estimées (hEst) servent à la charge, pas au planning publié
     if (p.hAu != null) base.heuresAutom = p.hAu;

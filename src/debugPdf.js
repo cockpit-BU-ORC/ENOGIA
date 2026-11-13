@@ -10,7 +10,7 @@ const br = s => x(s).replace(/\n/g, "<br>");
 const frD = iso => { if (!iso) return ""; const d = new Date(String(iso).length <= 10 ? iso + "T12:00:00" : iso); return isNaN(d) ? "" : d.toLocaleDateString("fr-FR"); };
 export const debugPdfName = pj => DEBUG_DOC.ref + "-" + DEBUG_DOC.version + "-Check list debug - " + (pj || "PJ");
 
-export function debugHtml({ pj, date, name, debug, sign, sections = DEBUG_SECTIONS }) {
+export function debugHtml({ pj, date, name, debug, sign, sections = DEBUG_SECTIONS, vib = [] }) {
   const rows = (debug && debug.rows) || {};
   const mark = (r, v) => (r === v ? "X" : r === "na" && v === "ok" ? "S.O." : "");
   const body = sections.map((s, si) => {
@@ -37,7 +37,7 @@ tr{page-break-inside:avoid}thead{display:table-header-group}.gap{height:8px}
 <table class="info"><tr><td>N° Projet : ${x(pj || "PJ")}</td><td>Date : ${x(frD(date))}</td></tr><tr><td colspan="2">Nom et prénom : ${x(name || "")}</td></tr></table>
 <div class="gap"></div>
 <table><colgroup>${[1795, 574, 555, 1720, 1843, 2410, 992, 4333].map(w => '<col style="width:' + (w / 142.22).toFixed(2) + '%">').join("")}</colgroup>${body}</table>
-<div class="gap"></div>
+<div class="gap"></div>${vib.length ? '<table><colgroup><col style="width:28%"><col style="width:18%"><col style="width:18%"><col style="width:18%"><col style="width:18%"></colgroup><tr class="sec"><th>Fréquences turbines et vibrations</th><th class="c">Fréquence (figée)</th><th class="c">Vibrations relevées</th><th class="c">Limite</th><th class="c">Résultat</th></tr>' + vib.map(v => "<tr><td>" + x(v.label) + '</td><td class="c">' + x(v.freq || "") + '</td><td class="c b">' + x(v.val || "") + '</td><td class="c">' + x(v.limit || "") + '</td><td class="c b">' + x(v.res || "") + "</td></tr>").join("") + '</table><div class="gap"></div>' : ""}
 <table><colgroup><col style="width:28.7%"><col style="width:23%"><col style="width:15.8%"><col style="width:32.5%"></colgroup>
 <tr class="sec"><th>Validation · Nom et prénom</th><th>Fonction</th><th>Date</th><th>Signature</th></tr>
 <tr style="height:70px"><td>${x(sign ? sign.name : name)}</td><td>${x(sign ? sign.fn : "")}</td><td>${x(sign ? frD(sign.at) : "")}</td><td style="text-align:center;vertical-align:middle">${sigImg}</td></tr></table>

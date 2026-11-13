@@ -26,7 +26,8 @@ export function parseManual({ documentXml, stylesXml = "", relsXml = "" }) {
     if (b.startsWith("<w:tbl")) {
       if (!step) continue;
       const rows = [...b.matchAll(/<w:tr[ >][\s\S]*?<\/w:tr>/g)].map(r => [...r[0].matchAll(/<w:tc>[\s\S]*?<\/w:tc>/g)].map(c => runText(c[0]).replace(/\s+/g, " ").trim()));
-      if (rows.some(r => r.some(Boolean))) step.blocks.push({ t: "table", rows });
+      // Firestore refuse les tableaux de tableaux : une ligne = { c: [cellules] }
+      if (rows.some(r => r.some(Boolean))) step.blocks.push({ t: "table", rows: rows.map(c => ({ c })) });
       continue;
     }
     const st = (b.match(/<w:pStyle w:val="([^"]+)"/) || [])[1] || "", lvl = levelOf(st), text = runText(b).replace(/[ \t]+/g, " ").trim();

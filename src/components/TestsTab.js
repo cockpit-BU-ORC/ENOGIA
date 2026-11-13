@@ -15,7 +15,7 @@ import { SECTIONS, DEFAULT_TEST_CATALOG, catalogOf, testersOf, planOf, activeSec
 import { buildIcs, downloadIcs } from "../ics";
 import { usePointerDnD } from "../pointerDrag";
 import { DebugChecklistStep } from "./DebugChecklist";
-import { StepRail, StepHead, BookStep, VibBlock, TestsChecklistStep, SignPad } from "./TestFiche";
+import { StepRail, StepHead, BookStep, TestsChecklistStep, SignPad } from "./TestFiche";
 import { vibRows, vibProgress } from "../testFiche";
 import { manualProgress, bookStepsOf } from "../manualImport";
 import { debugSections, debugProgress } from "../debugChecklist";
@@ -49,7 +49,7 @@ function TesterChip({ t, warn, on, onClick, disabled, small }) {
   </span>);
 }
 
-export function TestsTab({ doc, save, data, certifs, canEdit, lead, me, signApi, sub: subP, onSub, allowSubs, focusPj, book, bookApi, askPjs, myName }) {
+export function TestsTab({ doc, save, data, certifs, canEdit, lead, me, signApi, sub: subP, onSub, allowSubs, focusPj, book, bookApi, askPjs, myName, benches }) {
   const [sub0, setSub0] = useState("semaine"); // v186 : vue par semaine par défaut (maquette validée)
   const sub = subP || sub0, setSub = onSub || setSub0; // v307 : sous-page choisie aussi depuis le menu (App)
   const [focus, setFocus] = useState(null);
@@ -75,7 +75,7 @@ export function TestsTab({ doc, save, data, certifs, canEdit, lead, me, signApi,
     {conflicts.length > 0 && sub !== "catalog" && <div role="status" style={{ background: T.amber100, color: T.amber600, borderRadius: 12, padding: "8px 12px", fontSize: FZ.sm, fontWeight: 600 }}>
       <span style={{ display: "inline-flex", verticalAlign: "-3px", marginRight: 6 }}><NavIcon name="warning" size={16} /></span>{conflicts.length} chevauchement{conflicts.length > 1 ? "s" : ""} : {conflicts.slice(0, 4).map(c => { const t = testers.find(x => x.id === c.tid); return (t ? t.name : "Testeur") + " sur " + c.a.pj + " et " + c.b.pj; }).join(" · ")}{conflicts.length > 4 ? " …" : ""}
     </div>}
-    {sub === "semaine" && <WeekBoard {...{ doc, rows, testers, catalog, conflicts, commit, certifs, canEdit, lead, myTester, focus, who, signApi, book, bookApi, askPjs }} />}
+    {sub === "semaine" && <WeekBoard {...{ doc, rows, testers, catalog, conflicts, commit, certifs, canEdit, lead, myTester, focus, who, signApi, book, bookApi, askPjs, benches }} />}
     {sub === "testers" && <TesterTimeline {...{ doc, rows, testers, catalog, conflicts, commit, canEdit, myTester, openPj, who }} />}
     {sub === "catalog" && canEdit && <CatalogView {...{ doc, catalog, commit }} />}
     {sub === "checklists" && canEdit && <ChecklistsView doc={doc} commit={commit} book={book} bookApi={bookApi} />}
@@ -89,7 +89,7 @@ export function TestsTab({ doc, save, data, certifs, canEdit, lead, me, signApi,
 // première colonne, signalées « En retard ».
 const mondayD = d => { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; };
 const isoWeek = d => { const x = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const n = x.getUTCDay() || 7; x.setUTCDate(x.getUTCDate() + 4 - n); const y = new Date(Date.UTC(x.getUTCFullYear(), 0, 1)); return Math.ceil(((x - y) / 86400000 + 1) / 7); };
-function WeekBoard({ doc, rows, testers, catalog, conflicts, commit, certifs, canEdit, lead, myTester, focus, who, signApi, book, bookApi, askPjs }) {
+function WeekBoard({ doc, rows, testers, catalog, conflicts, commit, certifs, canEdit, lead, myTester, focus, who, signApi, book, bookApi, askPjs, benches }) {
   const [sel, setSel] = useState(null);
   const [onlyMine, setOnlyMine] = useState(!!myTester && !canEdit && !lead); // v238 : le responsable des testeurs voit tout
   useEffect(() => { if (focus && focus.pj) setSel(focus.pj); }, [focus]);
@@ -125,7 +125,7 @@ function WeekBoard({ doc, rows, testers, catalog, conflicts, commit, certifs, ca
       <Arrange id="tests-semaine" spans={{ banc: 8, resultats: 4, grille: 12 }} labels={{ banc: "Au banc maintenant", resultats: "Derniers résultats", grille: "Planning des bancs" }}>
         <BenchStrip key="banc" rows={withP} {...{ doc, catalog, testers }} on={cur && cur.pj} onPick={setSel} />
         <ResultsFeed key="resultats" rows={withP} {...{ doc, catalog }} onPick={setSel} />
-        <BenchGrid key="grille" rows={withP} allRows={rows} {...{ doc, catalog, testers, conflicts }} on={cur && cur.pj} onPick={setSel} />
+        <BenchGrid key="grille" rows={withP} allRows={rows} {...{ doc, catalog, testers, conflicts, benches }} on={cur && cur.pj} onPick={setSel} />
       </Arrange>
     </div>
     {cur && <TestDialog r={cur} onClose={() => setSel(null)} {...{ doc, testers, catalog, conflicts, commit, certifs, canEdit, lead, myTester, who, signApi, book, bookApi, askPjs }} />}
@@ -245,7 +245,7 @@ function ResultsFeed({ rows, doc, catalog, onPick }) {
 const HOLI = makeCalendar({ closurePeriods: [] });
 const DOW1 = ["L", "M", "M", "J", "V"];
 const GRID_DAYS = 20; // v336 (D11, demandé : « allonger le planning des tests à venir : 4 prochaines semaines ») : 4 semaines au lieu de 3
-const workDaysFrom = (mondayIso, n) => { const out = []; for (let i = 0; out.length < n && i < 40; i++) { const d = addDaysIso(mondayIso, i); const wd = (new Date(d + "T12:00:00").getDay() + 6) % 7; if (wd < 5) out.push(d); } return out; };
+const workDaysFrom = (mondayIso, n) => { const out = []; for (let i = 0; out.length < n && i < n * 2 + 14; i++) { const d = addDaysIso(mondayIso, i); const wd = (new Date(d + "T12:00:00").getDay() + 6) % 7; if (wd < 5) out.push(d); } return out; };
 function machineState(r, doc, catalog, todayIso) {
   const a = dIso(r && r.tests), b = dIso(r && r.testsFin) || a; if (!a) return null;
   const plan = planOf(doc, r.pj), act = activeSections(presenceKind(r.clientPresence || null)), q = progressOf(plan, catalog, act);
@@ -294,9 +294,19 @@ function GridNav({ off, setOff, step = 1 }) {
 // une ligne par PJ en cours (non expédié) ayant une période de tests, même hors des 3 semaines affichées (une flèche dit
 // alors quand), + en option ceux sans période ; à gauche, de vraies colonnes séparées : PJ · Gamme · Testeur · Client ·
 // NOBO · Tests, avec leur en-tête.
-function BenchGrid({ rows, allRows, doc, catalog, testers, conflicts, on, onPick }) {
-  const [off, setOff] = useState(0), [noPer, setNoPer] = useState(false); const todayIso = toLocalISO(new Date());
-  const days = workDaysFrom(addDaysIso(mondayOf(todayIso), off * 7), GRID_DAYS), end = days[days.length - 1], ix = gridIdx(days);
+// v338 (demandé : « pouvoir défiler dans le calendrier des tests comme dans les autres calendriers » + D10 « mieux séparer les slots 1 et 2
+// du banc ») : bande continue de 4 semaines avant à 16 semaines après, défilement horizontal (‹ › = un écran, Aujourd'hui, clic droit maintenu),
+// colonnes de 38 px, colonne des machines collée ; machines regroupées par banc (bandeau « Banc 1 » / « Banc 2 », d'après le planificateur).
+const BG_COL = 38, BG_WEEKS_BEFORE = 4, BG_DAYS = 100;
+function BenchGrid({ rows, allRows, doc, catalog, testers, conflicts, on, onPick, benches }) {
+  const [noPer, setNoPer] = useState(false); const todayIso = toLocalISO(new Date());
+  const days = useMemo(() => workDaysFrom(addDaysIso(mondayOf(todayIso), -7 * BG_WEEKS_BEFORE), BG_DAYS), [todayIso]), end = days[days.length - 1], ix = gridIdx(days);
+  const scRef = useRef(null), [vis, setVis] = useState([0, 0]);
+  const onScroll = () => { const el = scRef.current; if (!el) return; const lw = (el.querySelector(".enogia-bg-row > button, .enogia-bg-lab") || {}).offsetWidth || 0; const a = Math.max(0, Math.floor(el.scrollLeft / BG_COL)), b = Math.min(days.length - 1, Math.floor((el.scrollLeft + el.clientWidth - lw) / BG_COL)); setVis(v => (v[0] === a && v[1] === b ? v : [a, b])); };
+  const goToday = () => { const el = scRef.current; if (!el) return; const i = Math.max(0, days.findIndex(d => d >= todayIso)); el.scrollLeft = Math.max(0, (i - 5) * BG_COL); onScroll(); };
+  const page = dir => { const el = scRef.current; if (el) el.scrollBy({ left: dir * Math.round(el.clientWidth * 0.7), behavior: "smooth" }); };
+  useEffect(() => { goToday(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const bench = r => { const b = benches && benches[r.pj]; return b === 2 || r.banc === 2 || r.banc === "2" ? 2 : b === 1 || r.banc ? 1 : 1; };
   const ORDER = { late: 0, wip: 1, next: 2, done: 3, none: 4 };
   const list = [];
   rows.forEach(r => {
@@ -310,9 +320,10 @@ function BenchGrid({ rows, allRows, doc, catalog, testers, conflicts, on, onPick
   });
   const without = (allRows || []).filter(r => r && r.pj && r.etat !== "SHIPPED" && r.etat !== "SLOT_LIBRE" && !r.tests);
   if (noPer) without.forEach(r => { const plan = planOf(doc, r.pj); list.push({ r, ms: { st: "none", plan, act: activeSections(presenceKind(r.clientPresence || null)), q: progressOf(plan, catalog, activeSections(presenceKind(r.clientPresence || null))), a: "9999" }, c0: -1, c1: -1, names: plan.assign.map(x => testers.find(t => t.id === x.tid)).filter(Boolean).map(t => t.name.split(" ")[0]), pd: presenceDates(r.clientPresence || null), pres: [], out: "none", conf: false }); });
-  list.sort((x, y) => ORDER[x.ms.st] - ORDER[y.ms.st] || (x.ms.a < y.ms.a ? -1 : x.ms.a > y.ms.a ? 1 : 0) || (x.r.pj < y.r.pj ? -1 : 1));
+  list.sort((x, y) => bench(x.r) - bench(y.r) || ORDER[x.ms.st] - ORDER[y.ms.st] || (x.ms.a < y.ms.a ? -1 : x.ms.a > y.ms.a ? 1 : 0) || (x.r.pj < y.r.pj ? -1 : 1));
+  const nBench = b => list.filter(x => bench(x.r) === b).length;
   const inWin = list.filter(x => x.c0 >= 0).length;
-  const lab = { width: "var(--bg-lw)", flexShrink: 0, padding: 0, borderRight: "2px solid " + T.line, boxSizing: "border-box" };
+  const lab = { width: "var(--bg-lw)", flexShrink: 0, padding: 0, borderRight: "2px solid " + T.line, boxSizing: "border-box", position: "sticky", left: 0, zIndex: 2, background: T.card };
   const COLS = { display: "grid", gridTemplateColumns: "var(--bg-cols)", alignItems: "stretch", width: "100%", height: "100%" };
   const hc = (txt, cls, right) => <span className={cls} style={{ padding: "0 8px", borderLeft: "1px solid " + T.line, display: "flex", alignItems: "flex-end", justifyContent: right ? "flex-end" : "flex-start", whiteSpace: "nowrap", overflow: "hidden" }}>{txt}</span>;
   const head = (<div style={{ ...COLS, height: "auto", alignSelf: "stretch" }}>
@@ -322,23 +333,29 @@ function BenchGrid({ rows, allRows, doc, catalog, testers, conflicts, on, onPick
   const pres = (k, d) => d ? <><i aria-hidden="true" style={{ width: 8, height: 8, borderRadius: "50%", background: PRESENCE_META[k].color, flexShrink: 0 }} /><span style={{ fontVariantNumeric: "tabular-nums", color: T.ink900 }}>{fdm(dIso(d))}</span></> : d === "" ? <span style={{ color: T.ink500 }}>à fixer</span> : <span style={{ color: T.ink300 }}>—</span>;
   return (<section aria-label="Planning des bancs" className="enogia-bg" style={{ ...CARD, padding: 0, overflow: "hidden" }}>
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "10px 14px", flexWrap: "wrap", borderBottom: "1px solid " + T.line }}>
-      <div><h2 style={{ margin: 0, fontSize: FZ.md, fontWeight: 600, color: T.ink900 }}>Planning des bancs</h2><div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 2 }}>Du {fd(days[0])} au {fd(end)} · {list.length} PJ, dont {inWin} sur ces 4 semaines</div></div>
+      <div><h2 style={{ margin: 0, fontSize: FZ.md, fontWeight: 600, color: T.ink900 }}>Planning des bancs</h2><div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 2 }}>{days[vis[0]] ? "Du " + fd(days[vis[0]]) + " au " + fd(days[vis[1]]) : ""} · {list.length} PJ ({inWin} entre le {fd(days[0])} et le {fd(end)})</div></div>
       <span style={{ display: "inline-flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
         <GridLegend />
         {without.length > 0 && <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: FZ.xs, color: T.ink700, fontWeight: 600, minHeight: 28, cursor: "pointer" }}><input type="checkbox" checked={noPer} onChange={e => setNoPer(e.target.checked)} />PJ sans période ({without.length})</label>}
-        <GridNav off={off} setOff={setOff} />
+        <span className="e-tb" style={{ display: "inline-flex", gap: 6 }}>
+          <button type="button" onClick={() => page(-1)} style={{ ...btn(true, "ghost"), minHeight: 30 }} aria-label="Période précédente">‹</button>
+          <button type="button" onClick={goToday} style={{ ...btn(true, "ghost"), minHeight: 30 }}>Aujourd'hui</button>
+          <button type="button" onClick={() => page(1)} style={{ ...btn(true, "ghost"), minHeight: 30 }} aria-label="Période suivante">›</button></span>
       </span>
     </div>
-    <div style={{ overflow: "auto", maxHeight: "calc(100dvh - 220px)" }}>
-      <div className="enogia-bg-inner">
-        <GridHead days={days} todayIso={todayIso} labelStyle={lab} label={head} />
+    <div ref={scRef} onScroll={onScroll} style={{ overflow: "auto", maxHeight: "calc(100dvh - 220px)" }}>
+      <div className="enogia-bg-inner" style={{ width: "calc(var(--bg-lw) + " + days.length * BG_COL + "px)", minWidth: 0 }}>
+        <GridHead days={days} todayIso={todayIso} labelStyle={{ ...lab, background: T.surface }} label={head} />
         {list.length === 0 && <div style={{ padding: "16px 14px", fontSize: FZ.sm, color: T.ink500 }}>Aucun PJ en cours avec une période de tests</div>}
         {list.map(({ r, ms, c0, c1, names, pd, pres: dots, out, conf }, ri) => {
+          const bk = bench(r), first = ri === 0 || bench(list[ri - 1].r) !== bk;
           const tn = toneOfSt(ms.st === "none" ? "next" : ms.st), sel = on === r.pj, segs = segsOf(ms.plan, catalog, ms.act);
           const info = ms.st === "late" ? "en retard de " + ms.lateD + " j" : ms.st === "wip" ? "jour " + ms.n + " / " + ms.m : ms.st === "done" ? (isForced(ms.plan) ? "validé" : "terminé") : ms.st === "none" ? "période à définir" : "prévu";
           const aria = r.pj + (r.gamme ? ", " + r.gamme : "") + (ms.st === "none" ? ", période de tests à définir" : ", tests du " + fd(ms.a) + " au " + fd(ms.b)) + ", " + info + ", " + ms.q.done + " tests faits sur " + ms.q.total + (names.length ? ", " + names.join(" et ") : ", sans testeur");
-          return (<div key={r.pj} className="enogia-bg-row" style={{ display: "flex", minHeight: 46, borderBottom: "1px solid " + T.line, background: sel ? T.teal100 : ri % 2 ? "color-mix(in srgb, " + T.surface + " 70%, transparent)" : "transparent" }}>{/* v337 (D10) : lignes alternées, créneaux en plaques détachées */}
-            <button type="button" onClick={() => onPick(r.pj)} aria-label={"Ouvrir la fiche de tests : " + aria} style={{ ...lab, border: "none", borderRight: "2px solid " + T.line, background: "transparent", color: T.ink900, cursor: "pointer", textAlign: "left", fontFamily: T.font }}>
+          return (<React.Fragment key={r.pj}>{first && <div className="enogia-bg-bench" style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 34, background: T.surfaceAlt, borderTop: ri ? "6px solid " + T.card : "none", borderBottom: "2px solid " + (bk === 2 ? T.info600 : T.ink900) }}>
+            <span style={{ position: "sticky", left: 0, padding: "0 14px", display: "inline-flex", gap: 8, alignItems: "baseline" }}><b style={{ fontFamily: T.fontDisplay, fontSize: 15, fontWeight: 600, color: T.ink900 }}>Banc {bk}</b><span style={{ fontSize: 12, color: T.ink500 }}>{nBench(bk)} machine{nBench(bk) > 1 ? "s" : ""}</span></span></div>}
+          <div className="enogia-bg-row" style={{ display: "flex", minHeight: 46, borderBottom: "1px solid " + T.line, background: sel ? T.teal100 : ri % 2 ? "color-mix(in srgb, " + T.surface + " 70%, transparent)" : "transparent" }}>{/* v337 (D10) : lignes alternées, créneaux en plaques détachées */}
+            <button type="button" onClick={() => onPick(r.pj)} aria-label={"Ouvrir la fiche de tests : " + aria} style={{ ...lab, border: "none", borderRight: "2px solid " + T.line, background: sel ? T.teal100 : T.card, color: T.ink900, cursor: "pointer", textAlign: "left", fontFamily: T.font }}>
               <span style={COLS}>
                 <span style={{ ...cellS, borderLeft: "none" }}><PjPlate pj={r.pj} /></span>
                 <span className="c-opt" style={{ ...cellS, fontFamily: T.fontLabel, fontWeight: 600, color: T.ink700 }}>{r.gamme || "—"}</span>
@@ -359,7 +376,7 @@ function BenchGrid({ rows, allRows, doc, catalog, testers, conflicts, on, onPick
               </span>}
               {dots.map(x => <span key={x.k} title={(x.k === "client" ? "Client" : "NOBO") + " présent le " + fd(x.d)} aria-label={(x.k === "client" ? "Client" : "NOBO") + " présent le " + fd(x.d)} role="img" style={{ position: "absolute", left: "calc(" + pctOf(x.i + 1, days.length) + " - 12px)", top: 3, width: 8, height: 8, borderRadius: "50%", background: PRESENCE_META[x.k].color, boxShadow: "0 0 0 2px " + T.card, zIndex: 2 }} />)}
             </div>
-          </div>);
+          </div></React.Fragment>);
         })}
       </div>
     </div>
@@ -417,7 +434,6 @@ export function TestDialog({ r, onClose, doc, testers, catalog, conflicts, commi
         <main style={{ overflowY: "auto", padding: "20px 24px 28px", minWidth: 0 }}>
           <StepBigCtx.Provider value={true}>
             {(id === "who" || id === "pres" || id === "debug" || id === "sign") && <FatSheet panel bare only={id} r={r} {...{ doc, testers, catalog, conflicts, commit, certifs, canEdit, lead, myTester, who, signApi }} open onToggle={() => {}} />}
-            {id === "debug" && <VibBlock plan={plan} rows={vRows} canMark={canMark} saveTests={saveTests} who={who} canAdmin={canEdit} />}
             {id === "book" && <><StepHead title="Configuration de l'ORC" lead="Le livret de configuration de cette machine, étape par étape : validez chaque étape, donnez son statut (OK ou Problème) et commentez si besoin. Il s'ouvre comme un livre." />
               <BookStep r={r} plan={plan} book={book || { chapters: [] }} bookApi={bookApi} canMark={canMark} saveTests={saveTests} who={who} canAdmin={canEdit} meta={meta} /></>}
             {id === "tests" && <><StepHead title="Checklist de tests" lead="Les tests FAT de la machine, dans le même tableau que la checklist de debug : OK ou NOK, problème, causalité, correctif et temps passé. Le chef de projet ajoute les demandes spécifiques du client dans le FAT interne." />
@@ -537,7 +553,7 @@ function FatSheet({ r, doc, testers, catalog, conflicts, commit, certifs, canEdi
       {/* ③ Tests : dans le volet, checklist « fait » (et choix des tests à réaliser via « Modifier la liste ») */}
       {/* v264 : checklist de debug, au début des tests (modèle Word PI105-047-XX0003) */}
       {panel && (!only || only === "debug") && <Step n="3" title="Checklist de debug (début des tests)" hint={canMark ? "À remplir au début des tests : une ligne par contrôle (OK / NOK), puis à signer ; le PDF reprend le modèle de la procédure." : "Consultation : seuls le testeur affecté et les administrateurs remplissent la checklist."}>
-        <DebugChecklistStep {...{ r, plan, saveTests, canMark, who, signApi, SignForm, model: doc.debugModel, saveModel: canEdit ? (m => commit({ debugModel: m })) : null }} />
+        <DebugChecklistStep {...{ r, plan, saveTests, canMark, who, signApi, SignForm, model: doc.debugModel, vibModel: doc.vibModel, saveModel: canEdit ? (m => commit({ debugModel: m })) : null }} />
       </Step>}
       {panel && !only && <Step n="4" title="Tests" hint={canMark ? "Indiquez pour chaque test : en cours, réussi ou en échec." : "Consultation : seuls le testeur affecté et les administrateurs renseignent les tests."}>
         <Checklist {...{ r, plan, catalog, act, canEdit: canTest, canMark, saveTests, who }} />

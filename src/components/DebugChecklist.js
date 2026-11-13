@@ -5,6 +5,8 @@ import React, { useEffect, useState } from "react";
 import { T, FZF as FZ } from "../theme";
 import { DEBUG_FIELDS, DEBUG_DOC, debugProgress, setDebugRow, debugSections } from "../debugChecklist";
 import { openDebugPdf } from "../debugPdf"; // v272 : export PDF seulement (le Word de la V264 est retiré)
+import { vibRows, vibOver, vibProgress } from "../testFiche";
+import { VibBlock } from "./TestFiche";
 
 const todayIso = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
 const fd = iso => (iso ? String(iso).slice(8, 10) + "/" + String(iso).slice(5, 7) + "/" + String(iso).slice(0, 4) : "—");
@@ -12,7 +14,9 @@ const btn = (primary, ghost) => ({ padding: "6px 12px", minHeight: 32, borderRad
 const field = () => ({ padding: "4px 6px", minHeight: 28, borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.xs, fontFamily: T.font, boxSizing: "border-box", width: "100%" });
 
 // Résumé dans la fiche de tests du PJ : avancement, NOK, signature, boutons
-export function DebugChecklistStep({ r, plan, saveTests, canMark, who, signApi, SignForm, model, saveModel }) {
+// v338 (demandé : « mettre les fréquences turbines dans la checklist de debug ») : bloc « Fréquences turbines et vibrations » dans la fenêtre
+// de la checklist (après les contrôles) et dans le PDF ; vibModel = planning/tests.vibModel (Tests › Checklists).
+export function DebugChecklistStep({ r, plan, saveTests, canMark, who, signApi, SignForm, model, saveModel, vibModel }) {
   const [open, setOpen] = useState(false), [busy] = useState(false), [err, setErr] = useState("");
   const debug = (plan && plan.debug) || {}, sections = debugSections(model), pr = debugProgress(debug, sections);
   const exportWord = () => {
@@ -20,15 +24,16 @@ export function DebugChecklistStep({ r, plan, saveTests, canMark, who, signApi, 
     const ok = openDebugPdf(async () => {
       let sign = null;
       if (debug.signed && signApi) { const imgs = (await signApi.load(r.pj)) || {}; sign = imgs.debug ? { ...debug.signed, img: imgs.debug.img } : debug.signed; }
-      return { pj: r.pj, date: debug.date || todayIso(), name: debug.name || who, debug, sign, sections };
+      const vv = debug.vib || {}, vib = vibRows(vibModel).map(x => { const o = vibOver(vv[x.id], x.limit); return { ...x, val: vv[x.id] || "", res: o == null ? "" : o ? "NOK" : "OK" }; });
+      return { pj: r.pj, date: debug.date || todayIso(), name: debug.name || who, debug, sign, sections, vib };
     });
     if (!ok) setErr("Le navigateur a bloqué la fenêtre du PDF : autorisez les fenêtres pour ce site.");
   };
-  const pct = Math.round(pr.done / pr.total * 100);
+  const pct = Math.round(pr.done / pr.total * 100), vpr = vibProgress(debug, vibRows(vibModel));
   return (<div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
     <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", padding: "8px 10px", background: T.card, border: "1px solid " + T.line, borderRadius: 12 }}>
       <div style={{ flex: "1 1 220px", minWidth: 0 }}>
-        <div style={{ fontSize: FZ.sm, fontWeight: 600, color: T.ink900 }}>{pr.done} / {pr.total} contrôles renseignés{pr.nok ? <span style={{ color: T.red600 }}> · {pr.nok} NOK</span> : ""}</div>
+        <div style={{ fontSize: FZ.sm, fontWeight: 600, color: T.ink900 }}>{pr.done} / {pr.total} contrôles renseignés{pr.nok ? <span style={{ color: T.red600 }}> · {pr.nok} NOK</span> : ""}<span style={{ fontWeight: 500, color: vpr.over ? T.red600 : T.ink500 }}> · vibrations {vpr.done} / {vpr.total}{vpr.over ? " (" + vpr.over + " au-dessus de la limite)" : ""}</span></div>
         <div aria-hidden="true" style={{ height: 6, borderRadius: 4, background: T.surfaceAlt, marginTop: 6, overflow: "hidden" }}><div style={{ width: pct + "%", height: "100%", background: pr.nok ? T.red500 : T.emerald500 }} /></div>
       </div>
       {pr.signed ? <span style={{ fontSize: 12, fontWeight: 600, color: T.emerald600, background: T.emerald100, borderRadius: 999, padding: "2px 10px" }}>Signée le {fd((debug.signed.at || "").slice(0, 10))} · {debug.signed.name}</span>
@@ -37,11 +42,11 @@ export function DebugChecklistStep({ r, plan, saveTests, canMark, who, signApi, 
       <button type="button" onClick={exportWord} disabled={busy} style={btn(true, true)}>Exporter en PDF</button>
     </div>
     {err && <div role="alert" style={{ fontSize: FZ.xs, color: T.red600, fontWeight: 600 }}>{err}</div>}
-    {open && <DebugChecklistDialog {...{ r, plan, saveTests, canMark, who, signApi, SignForm, model, saveModel, onExport: exportWord, onClose: () => setOpen(false) }} />}
+    {open && <DebugChecklistDialog {...{ r, plan, saveTests, canMark, who, signApi, SignForm, model, saveModel, vibModel, onExport: exportWord, onClose: () => setOpen(false) }} />}
   </div>);
 }
 
-function DebugChecklistDialog({ r, plan, saveTests, canMark, who, signApi, SignForm, model, saveModel, onExport, onClose }) {
+function DebugChecklistDialog({ r, plan, saveTests, canMark, who, signApi, SignForm, model, saveModel, vibModel, onExport, onClose }) {
   const debug = (plan && plan.debug) || {}, rows = debug.rows || {}, sections = debugSections(model), pr = debugProgress(debug, sections);
   const [sigOpen, setSigOpen] = useState(false), [busy, setBusy] = useState(false), [err, setErr] = useState("");
   useEffect(() => { const k = e => { if (e.key === "Escape" && !sigOpen) onClose(); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose, sigOpen]);
@@ -87,6 +92,7 @@ function DebugChecklistDialog({ r, plan, saveTests, canMark, who, signApi, SignF
             </tr>); })}
           </tbody>)}
         </table>
+        <div style={{ padding: "0 12px 14px" }}><VibBlock plan={plan} rows={vibRows(vibModel)} canMark={canMark} saveTests={saveTests} who={who} canAdmin={!!saveModel} /></div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "10px 16px", borderTop: "1px solid " + T.line }}>
         <span style={{ fontSize: FZ.sm, fontWeight: 600 }}>{pr.done} / {pr.total} renseignés{pr.nok ? <span style={{ color: T.red600 }}> · {pr.nok} NOK</span> : ""}</span>

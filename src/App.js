@@ -66,7 +66,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-13-v337-fiche-tests-livret";
+const APP_BUILD_VERSION = "2026-11-13-v338-livret-bancs-carte";
 
 const ReleasePopup = React.lazy(() => import("./components/ReleaseNotes").then(m => ({ default: m.ReleasePopup })));
 function Navigate0({ go }) { useEffect(() => { go(); }, []); return null; } // eslint-disable-line react-hooks/exhaustive-deps
@@ -988,6 +988,13 @@ export default function App(){
   const myProfRole=currentUser?(profileOf(profiles,currentUser.email).role||""):"";
   const savLvl=isOwner?"a":accMe?(accMe.sav||"n"):myProfRole==="sav"?"w":(pinOk||myProfRole==="direction"||myProfRole==="cdp"||myPjSet.size>0)?"r":"n";
   const canSav=savLvl!=="n",savEdit=savLvl==="w"||savLvl==="a",savCost=savEdit||isOwner||myProfRole==="direction";
+  // v338 (demandé : « pourquoi de la latence quand je clique sur Turbines ? ») : le code des pages lourdes (Turbines, Tests, SAV, Gantt,
+  // Calendrier) n'est téléchargé qu'au premier clic ; on le précharge 2 s après la connexion, quand le navigateur est inactif.
+  useEffect(()=>{if(!loggedIn)return undefined;let id=0;const t=setTimeout(()=>{const run=()=>{try{
+    if(canProdTurb)import("./components/TurbinesHub");if(canSeeTests)import("./components/TestsTab");if(canSav)import("./components/SavPage");
+    import("./components/GanttView");import("./components/CalendarView");}catch(e){}};
+    id=window.requestIdleCallback?window.requestIdleCallback(run,{timeout:4000}):setTimeout(run,0);},2000);
+    return()=>{clearTimeout(t);if(window.cancelIdleCallback&&id)window.cancelIdleCallback(id);};},[loggedIn,canProdTurb,canSeeTests,canSav]);
   const savAllowed=["tickets","inters","planning","parc","kpi"].filter(s=>subOk("sav."+s));
   const savTeam=useMemo(()=>Object.values((profiles&&profiles.byEmail)||{}).filter(p=>p&&!p.removed&&p.role==="sav").map(p=>p.name||String(p.email||"").split("@")[0]).filter(Boolean).sort(),[profiles]);
   const openSav=(sub,pj)=>{setSavSub(sub||"tickets");setSavFocus(pj||null);setCalSel(null);setView("sav");};
@@ -1045,9 +1052,10 @@ export default function App(){
   // v204 : plan de l'onglet Planificateur (planning/plan, préfixe beta_ en bêta), lu seulement quand l'onglet est ouvert par le propriétaire
   const [planDoc,setPlanDoc]=useState(null),[planLoaded,setPlanLoaded]=useState(false);
   // v219 : le plan est aussi lu dans le Manager (charge des KPI d'après le planificateur)
-  useEffect(()=>{if(!currentUser||!((isOwner&&view==="planner")||(pinOk&&(view==="manager"||view==="home"))))return undefined; // v229 : aussi l'accueil (charge atelier d'après le planificateur)
+  useEffect(()=>{if(!currentUser||!((isOwner&&view==="planner")||(pinOk&&(view==="manager"||view==="home"))||view==="tests"))return undefined; // v338 : aussi Tests (banc 1 / 2 de chaque machine) // v229 : aussi l'accueil (charge atelier d'après le planificateur)
   return listenPlan(d=>{setPlanDoc(d);setPlanLoaded(true);});},[currentUser,isOwner,pinOk,view]);
   useEffect(()=>{if(view==="planner"&&currentUser&&!isOwner)setView("table");},[view,currentUser,isOwner]);
+  const testBenches=useMemo(()=>{const m={};((planDoc&&planDoc.pjs)||[]).forEach(p=>{if(p&&p.pj)m[p.pj]=p.steps&&p.steps.tests&&Number(p.steps.tests.banc)===2?2:1;});return m;},[planDoc]); // v338 (D10) : banc de chaque machine
   useEffect(()=>{if(!currentUser)return;if(PLANNING_VIEWS.includes(view)&&planOk&&!planViewOk(view)){setView(firstPlanView());return;}if(view==="manager"&&mgrHidden.includes(managerTab)){const t=["fiche","hebdo","serie","derives","retards"].find(x=>!mgrHidden.includes(x));if(t&&mgrOk){setManagerTab(t);return;}}if(view==="tests"&&testsAllowed.length&&!testsAllowed.includes(testsSub))setTestsSub(testsAllowed[0]);if(view==="turbines"&&turbAllowed.length&&!turbAllowed.includes(turbTab))setTurbTab(turbAllowed[0]);if((view==="access"&&!isOwner)||(PLANNING_VIEWS.includes(view)&&!planOk)||(view==="comments"&&!comOk)||(view==="manager"&&!mgrOk)||(view==="cashin"&&!canCash)||(view==="turbines"&&prodDoc!==null&&!canProdTurb)||(view==="achats"&&achatsDoc!==null&&!canAchats))setView("home");},[view,currentUser,canCash,isOwner,prodDoc,canProdTurb,achatsDoc,canAchats,planOk,comOk,mgrOk]); // eslint-disable-line react-hooks/exhaustive-deps -- PLANNING_VIEWS est fixe
   const [cashFocusApp,setCashFocusApp]=useState(null); // v217 : PJ à afficher dans la page Cash in (depuis une fiche projet)
   // v231 (demandé : « toute machine déjà expédiée a déjà effectué ses tests ») : à l'affichage, une machine expédiée a ses tests
@@ -1262,7 +1270,7 @@ export default function App(){
             {view==="turbines"&&canProdTurb&&<PageGuard name="Turbines"><TurbinesHub doc={prodDoc} api={prodApi} authorName={authorName} rows={dataWithOverrides} canEdit={turbEdit} owner={isOwner} tab={turbTab} onTab={setTurbTab} allowTabs={turbAllowed} savePjMeta={savePjMetaOverride}/></PageGuard>}
             {view==="planner"&&isOwner&&<PlannerView productionExclusions={productionExclusions} testers={testsDoc&&Array.isArray(testsDoc.testers)?testsDoc.testers:[]} planLoaded={planLoaded} planDoc={planDoc} rows={dataWithOverrides} closurePeriods={closurePeriods} authorName={authorName} pendingDeparts={pendingDeparts} onPendingApplied={clearPendingDeparts}
               onSavePlan={p=>savePlan(p,authorName)} onPublish={async(plan,note,announce)=>{const r=await publishPlan({plan,closurePeriods,productionExclusions,by:authorName,note,announce});/* v224 : un PJ publié depuis le planificateur et absent du planning initial → même bandeau qu’après un import (« Les ancrer dans l’initial ») */if(r&&r.rows&&initialPjsRef.current.size){const fresh=r.rows.filter(x=>x&&x.pj&&x.etat!=="SLOT_LIBRE"&&!isEstimatePj(x.pj)&&!initialPjsRef.current.has(x.pj));setNewVsInitial(fresh.length?{rows:r.rows,pjs:fresh.map(x=>x.pj)}:null);}return r;}} onLoadHistory={loadHistory} onRestorePublication={restorePublication}/>}
-            {view==="tests"&&canSeeTests&&<TestsTab doc={testsView} save={saveTests} data={dataWithOverrides} certifs={certifs} canEdit={testsAdmin} lead={isTestLead} sub={testsSub} onSub={setTestsSub} allowSubs={testsAllowed} focusPj={testsFocus} me={currentUser&&currentUser.email} signApi={signApi} book={testBook} bookApi={testBookApi} askPjs={myPjSet} myName={authorName}/>}
+            {view==="tests"&&canSeeTests&&<TestsTab doc={testsView} save={saveTests} data={dataWithOverrides} certifs={certifs} canEdit={testsAdmin} lead={isTestLead} sub={testsSub} onSub={setTestsSub} allowSubs={testsAllowed} focusPj={testsFocus} me={currentUser&&currentUser.email} signApi={signApi} book={testBook} bookApi={testBookApi} askPjs={myPjSet} myName={authorName} benches={testBenches}/>}
             {view==="changes"&&<ChangesView entries={changeLog} onOpenPj={jumpToPj}/>}
             {view==="comments"&&<CommentsView data={dataWithOverrides} comments={comments} addComment={addComment} deleteComment={deleteComment}
               pinOk={pinOk} seeAll={seeAllComments} myPjs={myPjList} addCommentMulti={addCommentMulti} openPj={pj=>{setCalDay(null);setCalTab("resume");setCalSel(pj);}} authorName={authorName} resolveComment={resolveComment}/>}

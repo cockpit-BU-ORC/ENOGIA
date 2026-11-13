@@ -46,7 +46,7 @@ export const DEMO_BOOK = { title: "Manuel de configuration ORC", ref: "DEMO-001"
   { id: "prerequis", title: "Prérequis", steps: [{ id: "prerequis", title: "Prérequis", path: [], level: 1, blocks: [{ t: "p", text: "Avoir le PC de mise en service et les fichiers de paramètres de la gamme." }] }] },
   { id: "configuration-hardware", title: "Configuration hardware", steps: [
     { id: "configuration-hardware/afe/md050n", title: "MD050N", path: ["Configuration hardware", "AFE"], level: 3, blocks: [{ t: "p", text: "Régler la tension de travail." }, { t: "p", text: "Mettre 400 V.", list: true }] },
-    { id: "configuration-hardware/afe/emotron", title: "Emotron", path: ["Configuration hardware", "AFE"], level: 3, blocks: [{ t: "table", rows: [["Paramètre", "Valeur"], ["P01", "50 Hz"]] }] }] },
+    { id: "configuration-hardware/afe/emotron", title: "Emotron", path: ["Configuration hardware", "AFE"], level: 3, blocks: [{ t: "table", rows: [{ c: ["Paramètre", "Valeur"] }, { c: ["P01", "50 Hz"] }] }] }] },
 ] };
 export const DEMO_PROD = {
   turbines: { a: { num: "100N1", step: "ok", roue: "R1" }, b: { num: "100N2", step: "s1" }, c: { num: "100N3", step: "att" }, d: { num: "20N1", step: "ok", roue: "R7", gamme: "20" } },

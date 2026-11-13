@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v338",
+    date: "2026-11-13",
+    title: "V338 : bancs et planning des tests",
+    items: [
+      { t: "Tests", d: "Le planning des bancs sépare le Banc 1 et le Banc 2 et défile sur plusieurs mois." },
+      { t: "Tests", d: "Les fréquences turbines et les vibrations sont dans la checklist de debug." },
+    ],
+  },
+  {
     id: "2026-11-v337",
     date: "2026-11-13",
     title: "V337 : la fiche de tests, étape par étape",

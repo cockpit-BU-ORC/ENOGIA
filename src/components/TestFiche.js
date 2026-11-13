@@ -117,7 +117,7 @@ function BookImg({ k, src, bookApi }) {
 }
 function Blocks({ blocks, book, bookApi }) {
   return blocks.map((b, i) => b.t === "img" ? <BookImg key={i} src={b.src} k={(book.images || {})[b.src]} bookApi={bookApi} />
-    : b.t === "table" ? <div key={i} style={{ overflowX: "auto", margin: "8px 0" }}><table style={{ borderCollapse: "collapse", fontSize: 12, width: "100%" }}><tbody>{b.rows.map((rw, j) => <tr key={j}>{rw.map((c, k) => <td key={k} style={{ border: "1px solid " + T.line, padding: "4px 6px", fontWeight: j === 0 ? 600 : 400, background: j === 0 ? T.surfaceAlt : "transparent", verticalAlign: "top" }}>{c}</td>)}</tr>)}</tbody></table></div>
+    : b.t === "table" ? <div key={i} style={{ overflowX: "auto", margin: "8px 0" }}><table style={{ borderCollapse: "collapse", fontSize: 12, width: "100%" }}><tbody>{b.rows.map((rw, j) => <tr key={j}>{(Array.isArray(rw) ? rw : rw.c || []).map((c, k) => <td key={k} style={{ border: "1px solid " + T.line, padding: "4px 6px", fontWeight: j === 0 ? 600 : 400, background: j === 0 ? T.surfaceAlt : "transparent", verticalAlign: "top" }}>{c}</td>)}</tr>)}</tbody></table></div>
     : <p key={i} style={{ margin: "0 0 7px", fontSize: FZ.sm, lineHeight: 1.5, color: b.cap ? T.ink500 : T.ink900, fontStyle: "normal", paddingLeft: b.list ? 16 : 0, position: "relative", whiteSpace: "pre-line" }}>{b.list && <span aria-hidden="true" style={{ position: "absolute", left: 2 }}>•</span>}{b.text}</p>);
 }
 function StepCtl({ s, row, canMark, io }) {

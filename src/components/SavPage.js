@@ -649,7 +649,8 @@ function WorldMap({ points, onPick }) {
   useEffect(() => { let on = true;
     loadLeaflet().then(L => { if (!on || !el.current || mapR.current) return;
       const m = L.map(el.current, { center: [30, 10], zoom: 2, minZoom: 2, maxZoom: 17, worldCopyJump: true, scrollWheelZoom: false, zoomSnap: 0.5 });
-      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© contributeurs OpenStreetMap" }).addTo(m);
+      // v338 (demandé : « tous les noms des villes en français ») : fond OpenStreetMap France (noms en français quand ils existent)
+      L.tileLayer("https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png", { subdomains: "abc", maxZoom: 19, attribution: "© OpenStreetMap France · © contributeurs OpenStreetMap" }).addTo(m);
       const upd = () => { setZoom(m.getZoom()); const b = m.getBounds(); setBounds([[b.getSouth(), b.getWest()], [b.getNorth(), b.getEast()]]); };
       m.on("moveend zoomend", upd); upd();
       const wh = e => { if (!e.ctrlKey && !e.metaKey) return; e.preventDefault(); m.setZoom(m.getZoom() + (e.deltaY < 0 ? 1 : -1)); };
@@ -689,7 +690,8 @@ function WorldMap({ points, onPick }) {
         return <button key={id} type="button" aria-pressed={on} onClick={() => goReg(id)} disabled={!n && id !== "monde"}
           style={{ minHeight: 32, padding: "0 12px", borderRadius: 999, border: "1px solid " + (on ? T.ink900 : T.line), background: on ? T.ink900 : T.card, color: on ? T.card : n ? T.ink700 : T.ink300, fontSize: 12, fontWeight: 600, cursor: n || id === "monde" ? "pointer" : "default", fontFamily: T.font }}>{l} <span style={{ opacity: 0.7, fontVariantNumeric: "tabular-nums" }}>{n}</span></button>; })}</div>
     <div className="enogia-map-split" style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 280px", gap: 12, alignItems: "stretch" }}>
-      <div style={{ position: "relative", borderRadius: 12, overflow: "hidden", border: "1px solid " + T.line, background: LP.surfaceAlt }}>
+      {/* v338 : isolation = les couches de Leaflet (z-index 400 à 1000) restent sous le menu et les fenêtres du site */}
+      <div style={{ position: "relative", zIndex: 0, isolation: "isolate", borderRadius: 12, overflow: "hidden", border: "1px solid " + T.line, background: LP.surfaceAlt }}>
         <div ref={el} role="region" aria-label={"Carte : " + points.length + " sites du parc"} style={{ width: "100%", height: "min(56dvh, 520px)", minHeight: 340, background: LP.surfaceAlt, colorScheme: "light" }} />
         {err && <div role="status" style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontSize: FZ.sm, color: LP.ink500, background: LP.surfaceAlt }}>Carte indisponible (connexion) : la liste des sites reste à droite.</div>}
         <div style={{ position: "absolute", left: 10, bottom: 22, zIndex: 500, display: "flex", gap: 10, flexWrap: "wrap", fontSize: 11, color: LP.ink700, background: LP.card, borderRadius: 8, padding: "4px 8px", boxShadow: LP.shadowSm, pointerEvents: "none" }}>

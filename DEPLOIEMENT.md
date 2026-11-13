@@ -2441,3 +2441,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Données : `planning/testbook`, `planning/testbook_img_<clé>` (nouveaux) ; dans `planning/tests` : `vibModel`, `plans[PJ].book / tres / asks / debug.vib`.
 - Aucune clé localStorage.
 - Fichiers : components/TestsTab.js, components/TestFiche.js (nouveau), components/ChecklistsView.js, manualImport.js(+test) (nouveau), testFiche.js (nouveau), testPlan.js, checklistImport.js, useAppData.js, appDocs.js, App.js, firestore.rules, demo, versions.
+
+## v338 — livret enregistrable, carte en français, fréquences dans la checklist de debug, bancs 1 / 2, planning des tests qui défile
+
+- Livret : correction de l'enregistrement (« Nested arrays are not supported ») ; réimporter le manuel dans Tests › Checklists.
+- Carte du parc : fond OpenStreetMap France (tile.openstreetmap.fr), ne passe plus sur le menu.
+- Tests : planning des bancs regroupé par banc (lu dans planning/plan, publié dans rows[].banc à la prochaine publication) et défilant sur 100 jours ouvrés ; fréquences et vibrations dans la checklist de debug et son PDF.
+- Pages lourdes préchargées après la connexion (plus de latence au premier clic).
+- Aucune clé localStorage ; règles Firestore inchangées depuis la V337 (à republier si ce n'est pas fait).
+- Fichiers : manualImport.js(+test), components/TestFiche.js, DebugChecklist.js, debugPdf.js, TestsTab.js, SavPage.js, planner/engine.js, App.js, demo, versions.
