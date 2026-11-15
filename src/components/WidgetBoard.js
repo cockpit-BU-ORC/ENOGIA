@@ -7,14 +7,15 @@
 // apple-design : retour à l'appui (0,97), le widget suit le pointeur depuis l'endroit saisi (capture), atterrit depuis le lâcher,
 // animations depuis la position affichée (interruptibles), 150–300 ms, frémissement coupé si « réduire les animations ».
 // Disposition = [{ t, z } | { stack: [t…], z }] ; enregistrée par onLayout (propriétaire) ; sans onLayout, lecture seule.
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { T, FZ, btn } from "../theme";
+import { ArrangeCtx } from "./Arrange";
 
-export const WG_SIZES = { s: "Petit", m: "Moyen", l: "Grand", xl: "Bandeau", xxl: "Grand bandeau" };
+export const WG_SIZES = { s: "Petit", m: "Moyen", l: "Grand", xl: "Bandeau", xxl: "Grand bandeau", auto: "Pleine hauteur" }; // v357 : auto = toute la largeur, hauteur du contenu
 const calm = () => { try { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { return false; } };
 const keyOf = it => (it.stack ? "p:" + it.stack[0] : "w:" + it.t); // stable : un widget n'est jamais deux fois sur l'accueil
 
-export function WidgetBoard({ items, widgets, onChange, canEdit, catalog = [], label = "Widgets de l'accueil" }) {
+export function WidgetBoard({ items, widgets, onChange, canEdit, catalog = [], label = "Widgets de l'accueil", editLabel = "Modifier l'accueil" }) {
   // items : disposition ; widgets : { id: { label, sizes, render(size) } } ; catalog : [[groupe, [[id, description]…]]]
   const [draft, setDraft] = useState(null); // ordre provisoire pendant un glisser : une seule écriture, au lâcher
   // widgets connus seulement, taille ramenée à une taille permise
@@ -36,6 +37,11 @@ export function WidgetBoard({ items, widgets, onChange, canEdit, catalog = [], l
       el.style.transition = "transform var(--e-dur-long) var(--e-ease)"; el.style.transform = ""; });
     landing.current = null; });
   useEffect(() => () => clearTimeout(msgT.current), []);
+  useEffect(() => { const g = grid.current; if (!g || typeof ResizeObserver === "undefined") return;
+    const fit = el => { const cell = el.closest(".e-wg-auto"); if (cell) cell.style.gridRow = "span " + Math.max(2, Math.ceil((el.offsetHeight + 14) / (112 + 14))); };
+    const ro = new ResizeObserver(es => es.forEach(e => fit(e.target)));
+    g.querySelectorAll(".e-wg-auto > .e-wg-body > *").forEach(el => { ro.observe(el); fit(el); });
+    return () => ro.disconnect(); });
   useEffect(() => { if (!canEdit) setEdit(false); }, [canEdit]);
 
   const kOf = it => keyOf(it);
@@ -95,7 +101,7 @@ export function WidgetBoard({ items, widgets, onChange, canEdit, catalog = [], l
   return (<div className="e-wg-root" style={{ "--wg-card": T.card, "--wg-surface": T.surface, "--wg-line": T.line, "--wg-ink": T.ink900, "--wg-accent": T.accentInk || T.ink900, "--wg-veil": "rgba(10,14,20,.45)", "--wg-shadow": T.shadowLg }}>
     {canEdit && <div className="e-tb" style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginBottom: 10 }}>
       {edit && <button type="button" onClick={() => setGallery(true)} style={{ ...btn("sec", "md") }}>＋ Ajouter un widget</button>}
-      <button type="button" onClick={() => { setEdit(v => !v); setHeld(null); }} aria-pressed={edit} style={{ ...btn(edit ? "pri" : "sec", "md") }}>{edit ? "Terminé" : "Modifier l'accueil"}</button>
+      <button type="button" onClick={() => { setEdit(v => !v); setHeld(null); }} aria-pressed={edit} style={{ ...btn(edit ? "pri" : "sec", "md") }}>{edit ? "Terminé" : editLabel}</button>
     </div>}
     <div ref={grid} className={"e-wg" + (edit ? " e-wg-edit" : "")} role="list" aria-label={label} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
       {list.map((it, i) => { const k = kOf(it), kids = it.stack || [it.t], name = kids.map(t => widgets[t] ? widgets[t].label : t).join(", ");
@@ -165,4 +171,17 @@ function Gallery({ catalog, widgets, used, onAdd, onClose }) {
 export function widgetsFromSpans(ids, spanOf, sizesOf) {
   const want = sp => (sp <= 3 ? "s" : sp <= 6 ? "m" : sp <= 8 ? "l" : "xl");
   return ids.map(t => { const ok = sizesOf(t), z = want(spanOf(t)); return { t, z: ok.includes(z) ? z : ok[0] }; });
+}
+
+// v357 (demandé : « fais-le aussi » — les cadrans des pages KPI et Tests en widgets) : remplace Arrange sur une page.
+// Chaque enfant est un widget (identité = clé React, sinon aria-label) ; disposition = planning/profiles.pageLayouts[id].widgets
+// (ArrangeCtx, réglée par le propriétaire) ; sans elle, tailles déduites des largeurs d'avant (spans) ou de defaults.
+const idOfChild = c => { const k = c.key != null ? String(c.key).replace(/^\.\$/, "") : ""; return k && !/^\.\d+$/.test(k) ? k : (c.props && c.props["aria-label"]) || k; };
+export function WidgetArrange({ id, children, spans = {}, labels = {}, sizes = {}, defaults = {}, label = "Cadrans de la page" }) {
+  const ctx = useContext(ArrangeCtx), lay = (ctx && ctx.layouts && ctx.layouts[id]) || {}, save = ctx && ctx.save ? v => ctx.save(id, v) : null;
+  const kids = React.Children.toArray(children).filter(c => c && c.props), widgets = {}, ids = [];
+  kids.forEach(c => { const k = idOfChild(c), sp = spans[k] || 6; ids.push(k);
+    widgets[k] = { label: labels[k] || c.props["aria-label"] || k, sizes: sizes[k] || (sp >= 9 ? ["xl", "xxl", "auto"] : sp >= 7 ? ["l", "m", "xl"] : ["m", "l", "xl"]), render: () => c }; });
+  const items = Array.isArray(lay.widgets) ? lay.widgets : ids.map(t => ({ t, z: defaults[t] || widgets[t].sizes[0] }));
+  return <WidgetBoard items={items} widgets={widgets} catalog={[["Cadrans de la page", ids.map(t => [t, ""])]]} canEdit={!!save} onChange={save ? w => save({ ...lay, widgets: w }) : undefined} label={label} editLabel="Modifier la page" />;
 }

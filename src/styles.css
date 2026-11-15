@@ -725,3 +725,9 @@ tr[data-kbd]:active > td, tr[role="button"]:active > td, li[data-kbd]:active, li
 @media (prefers-reduced-motion: reduce) {
   [role="button"]:active, [data-kbd]:active { transform: none !important; opacity: .8; }
 }
+
+/* v357 : taille « Pleine hauteur » des widgets (planning des bancs…) — toute la largeur, autant de lignes que le contenu */
+.e-wg-auto { grid-column: 1 / -1; grid-row: span 4; }
+.e-wg-auto > .e-wg-body { height: auto; }
+.e-wg-auto > .e-wg-body > * { height: auto; overflow: visible; }
+.e-wg-preview.e-wg-pv-auto { width: 100%; height: 220px; }

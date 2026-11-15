@@ -2587,3 +2587,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Finitions : src/scrollMode.js `smooth()` (défilement doux coupé si réduire les animations) ; grands chiffres (≥ 28 px) resserrés à -0,02 em, police d'affichage pour les chiffres des KPI.
 - Aucune clé localStorage ; données et règles Firestore inchangées.
 - Fichiers : planner/PlannerGantt.js, planner/PlannerLoad.js, planner/PlannerLanes.js, components/RowDetail.js, TableView.js, CalendarView.js, GanttView.js, SavPage.js, TestsTab.js, KpiStory.js, KpiViews.js, ManagerPanel.js, WorkshopScreen.js, RoleHome.js, motion.js, scrollMode.js, styles.css, demo/demoPages.js, versions.
+
+## v357 — la page Tests en widgets
+
+- `WidgetArrange` (components/WidgetBoard.js) remplace `Arrange` : chaque enfant devient un widget ; disposition `planning/profiles.pageLayouts[id].widgets` (même ArrangeCtx qu'avant, propriétaire seul, bouton « Modifier la page »). Les anciennes dispositions Arrange (pos / order) ne sont plus lues : tailles par défaut au premier affichage.
+- Tests › Par semaine : Au banc maintenant et Derniers résultats en Moyen côte à côte, Planning des bancs en « Pleine hauteur » (nouvelle taille `auto` : toute la largeur, lignes calculées d'après le contenu).
+- KPI : la Synthèse n'a plus de cadrans disposables depuis la V281 (récit validé) ; KpiPilotage (inutilisé) passé lui aussi sur WidgetArrange.
+- Aucune clé localStorage ; règles Firestore inchangées.
+- Fichiers : components/WidgetBoard.js, TestsTab.js, KpiPilotage.js, styles.css, demo/demoPages.js, versions.

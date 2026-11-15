@@ -12,7 +12,7 @@ import { PieBlock, topSlices } from "./ManagerParts";
 import { T, FZF as FZ, stageSoft } from "../theme";
 import { getPjMeta, ETAT_META, countShippedYTD, chefsOf, departedNotShipped } from "../pjMeta";
 import { PjPlate, tableTh, tableTd, Segmented } from "./SharedUI";
-import { Arrange } from "./Arrange";
+import { WidgetArrange } from "./WidgetBoard"; // v357 : cadrans en widgets
 import { CAPA_DEFAUT, atelierCap, isoWeek, planWeeks, loadWeeks, weekLabel } from "../loadWeeks";
 export { CAPA_DEFAUT, atelierCap, isoWeek, planWeeks, loadWeeks, weekLabel }; // v289 : définis dans loadWeeks.js
 
@@ -82,7 +82,8 @@ export function KpiPilotage({ rows, driftRows, closurePeriods, productionExclusi
     notShipped.length ? { bad: false, t: notShipped.length + " départ" + (notShipped.length > 1 ? "s" : "") + " passé" + (notShipped.length > 1 ? "s" : "") + " sans état « Expédiée » : à mettre à jour" } : null,
   ].filter(Boolean);
 
-  return (<Arrange id="kpi-synthese" spans={{ "Chiffres clés": 12, "À surveiller": 12, "PJ à risque": 7, "Charge atelier": 5, "Portefeuille par état": 5, "Répartition des machines": 12 }}>
+  return (<WidgetArrange id="kpi-synthese" label="Cadrans de KPI › Synthèse" spans={{ "Chiffres clés": 12, "À surveiller": 12, "PJ à risque": 7, "Charge atelier": 5, "Portefeuille par état": 5, "Répartition des machines": 12 }}
+    sizes={{ "Chiffres clés": ["xl", "auto"], "À surveiller": ["auto", "xl", "xxl"], "PJ à risque": ["l", "m", "xl", "xxl"], "Charge atelier": ["l", "m", "xl"], "Portefeuille par état": ["m", "l", "xl"], "Répartition des machines": ["auto", "xxl", "xl"] }}>
     <div aria-label="Chiffres clés" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,170px),1fr))", gap: 10 }}>
       <Kpi how="PJ ouverts dont l'état est Montage méca, Montage élec, Tests, Packaging ou En fabrication (filtres du Manager appliqués)." label="En production" value={inProd.length} sub={"sur " + open.length + " projet" + (open.length > 1 ? "s" : "") + " ouvert" + (open.length > 1 ? "s" : "")} />
       <Kpi how="PJ non expédiés dont le départ du planning actuel tombe entre aujourd'hui et J+30 ; « en dérive » = départ plus tard que dans le planning initial." label="Départs d'ici 30 jours" value={dep30.length} sub={dep30.length ? (dep30Late === dep30.length ? (dep30.length > 1 ? "tous en dérive" : "en dérive") : dep30Late ? "dont " + dep30Late + " en dérive" : "aucun en dérive") : "aucun départ prévu"} subBad={dep30Late > 0} />
@@ -149,5 +150,5 @@ export function KpiPilotage({ rows, driftRows, closurePeriods, productionExclusi
             {pies.map(([t, data]) => <div key={t} style={{ background: T.surface, borderRadius: 12, padding: "8px 10px", minWidth: 0 }}><div style={{ fontSize: 13, fontWeight: 500, color: T.ink900, marginBottom: 4 }}>{t}</div><PieBlock data={data} unit=" machines" size={110} /></div>)}
           </div> : <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Aucune machine avec ce choix</div>}
         </section>
-  </Arrange>);
+  </WidgetArrange>);
 }

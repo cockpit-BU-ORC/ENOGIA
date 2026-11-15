@@ -24,6 +24,7 @@ import { ChangesView } from "../components/ChangesView";
 import { summarizeChanges } from "../changeDiff";
 import AccessPage from "../components/AccessPage";
 import { Achats } from "../components/Achats";
+import { ArrangeCtx } from "../components/Arrange";
 import { PjDialog, PjDialogCtx } from "../components/RowDetail";
 
 const no = () => {}, yes = async () => true;
@@ -52,7 +53,8 @@ const ATraiter = ({ popup }) => <InboxPage popup={popup} me={DEMO_ME.email} comm
   actions={[{ id: "sn", n: 1, primary: true, title: "1 machine arrivée sans S/N", detail: "S/N prévus d'après l'ordo.", items: [{ pj: "PJ902", text: "2026-041-180", yes: { label: "✓ Oui", title: "Garder", onClick: no } }], cta: { label: "Attribuer les S/N", onClick: no } }]}
   pjChanges={[{ pj: "PJ901", at: new Date().toISOString(), delta: 4, nom: "Papeterie du Nord" }]} onSeenPjChanges={no} onOpenChanges={no} />;
 const bookApi = { loadImg: async () => null, save: async () => true };
-function Tests() { const [sub, setSub] = useState("semaine"); return <TestsTab doc={DEMO_TESTS} save={yes} data={DEMO_ROWS} certifs={{}} canEdit lead sub={sub} onSub={setSub} me={DEMO_ME.email} signApi={null} book={DEMO_BOOK} bookApi={bookApi} askPjs={new Set(["PJ901"])} myName={DEMO_ME.name} />; }
+// v357 : cadrans en widgets — disposition gardée en mémoire (comme ArrangeCtx d'App pour le propriétaire)
+function Tests() { const [sub, setSub] = useState("semaine"), [lays, setLays] = useState({}); return <ArrangeCtx.Provider value={{ layouts: lays, save: (id, v) => setLays(l => ({ ...l, [id]: v })) }}><TestsTab doc={DEMO_TESTS} save={yes} data={DEMO_ROWS} certifs={{}} canEdit lead sub={sub} onSub={setSub} me={DEMO_ME.email} signApi={null} book={DEMO_BOOK} bookApi={bookApi} askPjs={new Set(["PJ901"])} myName={DEMO_ME.name} /></ArrangeCtx.Provider>; }
 // v337 : la fiche de tests d'un PJ (6 étapes), ouverte directement
 const TestsFiche = () => <TestDialog r={DEMO_ROWS.find(x => x.pj === "PJ903-2")} onClose={no} doc={DEMO_TESTS} testers={testersOf(DEMO_TESTS)} catalog={catalogOf(DEMO_TESTS)} conflicts={[]} commit={yes} certifs={[]} canEdit lead myTester={null} who={DEMO_ME.name} signApi={null} book={DEMO_BOOK} bookApi={bookApi} askPjs={new Set()} />;
 function Turbines({ tab0 = "orc" }) { const [tab, setTab] = useState(tab0); return <TurbinesHub doc={DEMO_PROD} api={demoApi} rows={DEMO_ROWS} canEdit owner tab={tab} onTab={setTab} allowTabs={["prod", "orc"]} savePjMeta={yes} />; }

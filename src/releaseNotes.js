@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v357",
+    date: "2026-11-15",
+    title: "V357 : la page Tests en widgets",
+    items: [
+      { t: "Tests", d: "Les cadrans de Tests › Par semaine deviennent des widgets, comme l'accueil ; le planning des bancs prend toute la hauteur de son contenu." },
+    ],
+  },
+  {
     id: "2026-11-v356",
     date: "2026-11-15",
     title: "V356 : gestes et retours plus fluides",

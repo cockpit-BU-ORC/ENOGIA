@@ -24,7 +24,7 @@ import { nameFromEmail } from "../mentions";
 import { gcalUrl } from "../gcal";
 import { openTestReport } from "../testReport";
 import { makeCalendar } from "../planner/engine";
-import { Arrange } from "./Arrange";
+import { WidgetArrange } from "./WidgetBoard"; // v357 : cadrans en widgets
 import { smooth } from "../scrollMode";
 
 const field = () => ({ padding: "5px 9px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, minWidth: 0 });
@@ -123,11 +123,12 @@ function WeekBoard({ doc, rows, testers, catalog, conflicts, commit, certifs, ca
         <span>S{isoWeek(weeks[0].a)} → S{isoWeek(weeks[3].a)} · {all.length} machine{all.length > 1 ? "s" : ""}{later ? " · " + later + " plus tard" : ""}{noPeriod ? " · " + noPeriod + " sans période de tests" : ""}</span>
         {myTester && <label style={{ display: "inline-flex", alignItems: "center", gap: 6, marginLeft: "auto", minHeight: 24, cursor: "pointer", color: T.ink700, fontWeight: 600 }}><input type="checkbox" checked={onlyMine} onChange={e => setOnlyMine(e.target.checked)} />Seulement mes tests</label>}
       </div>
-      <Arrange id="tests-semaine" spans={{ banc: 8, resultats: 4, grille: 12 }} labels={{ banc: "Au banc maintenant", resultats: "Derniers résultats", grille: "Planning des bancs" }}>
+      <WidgetArrange id="tests-semaine" label="Cadrans de Tests › Par semaine" spans={{ banc: 8, resultats: 4, grille: 12 }} labels={{ banc: "Au banc maintenant", resultats: "Derniers résultats", grille: "Planning des bancs" }}
+        sizes={{ banc: ["m", "l", "xl", "auto"], resultats: ["m", "l", "xl", "auto"], grille: ["auto", "xxl"] }}>
         <BenchStrip key="banc" rows={withP} {...{ doc, catalog, testers }} on={cur && cur.pj} onPick={setSel} />
         <ResultsFeed key="resultats" rows={withP} {...{ doc, catalog }} onPick={setSel} />
         <BenchGrid key="grille" rows={withP} allRows={rows} {...{ doc, catalog, testers, conflicts, benches }} on={cur && cur.pj} onPick={setSel} />
-      </Arrange>
+      </WidgetArrange>
     </div>
     {cur && <TestDialog r={cur} onClose={() => setSel(null)} {...{ doc, testers, catalog, conflicts, commit, certifs, canEdit, lead, myTester, who, signApi, book, bookApi, askPjs }} />}
   </div>);

@@ -1045,4 +1045,8 @@ export const RELEASE_CATALOG = [
     ["Planificateur", "Barres du Gantt glissées au doigt ou à la souris, collées au pointeur entre deux jours ; détail de la charge au toucher."],
     ["Téléphone", "Fiche d'un PJ : on la tire vers le bas par son en-tête pour la fermer."],
   ] },
+  { v: "357", t: "La page Tests en widgets", items: [
+    ["Tests", "Au banc maintenant, Derniers résultats et Planning des bancs : widgets à tailles fixes, à déplacer, empiler, agrandir ou retirer (« Modifier la page »)."],
+    ["Tests", "Nouvelle taille « Pleine hauteur » : toute la largeur, hauteur du contenu (planning des bancs)."],
+  ] },
 ];
