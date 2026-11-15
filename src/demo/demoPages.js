@@ -20,6 +20,11 @@ import { userKey } from "../mentions";
 import { ManagerPanel } from "../components/ManagerPanel";
 import { PlannerView } from "../planner/Planner";
 import { setOwner, setSuperAdmin } from "../roles";
+import { ChangesView } from "../components/ChangesView";
+import { summarizeChanges } from "../changeDiff";
+import AccessPage from "../components/AccessPage";
+import { Achats } from "../components/Achats";
+import { PjDialog, PjDialogCtx } from "../components/RowDetail";
 
 const no = () => {}, yes = async () => true;
 const common = { comments: DEMO_COMMENTS, addComment: yes, deleteComment: yes, pinOk: true, delays: [], delayTypes: [], setDelayTypes: no, addDelayAllocation: yes, deleteDelayAllocation: yes, addDelayComment: yes, deleteDelayComment: yes, authorName: DEMO_ME.name, savePjMetaOverride: yes, canEditMeta: true };
@@ -61,6 +66,17 @@ const AccueilAtelier = () => <HomeView pinOk testsDoc={DEMO_TESTS} data={DEMO_RO
 const WG_DEMO = { widgets: [{ t: "jour", z: "s" }, { t: "nextDep", z: "s" }, { t: "nLate", z: "m" }, { t: "kpis", z: "xl" }, { stack: ["nProd", "nDep30", "nShipped"], z: "m" }, { t: "nBanc", z: "s" }, { t: "ecarts", z: "s" }, { t: "depBoard", z: "l" }, { t: "parcours", z: "l" }, { t: "ligne", z: "xl" }] };
 function AccueilWidgets() { const [lay, setLay] = useState(WG_DEMO); return <HomeView pinOk testsDoc={DEMO_TESTS} data={DEMO_ROWS} comments={DEMO_COMMENTS} myEmail={DEMO_ME.email} myName={DEMO_ME.name} people={DEMO_PEOPLE} unseenChanges={[]} lastImport={null} onOpenPj={no} onGo={no}
   profiles={{ byEmail: {}, homeLayouts: { direction: lay } }} owner cash={false} turbineDoc={null} onOpenCash={null} prodDoc={DEMO_PROD} canProdTurb productionExclusions={{}} plan={null} closurePeriods={[]} saveHomeLayout={(r, l) => setLay(l)} />; }
+
+// v356 (audit apple-design « ne manque aucune page ») : pages absentes de la galerie jusque-là
+const shift = (d, n) => { if (!d) return d; const x = new Date(d); x.setDate(x.getDate() + n); return x.toISOString().slice(0, 10); };
+const DEMO_CHANGES = (() => { const after = DEMO_ROWS.map((r, i) => (i < 3 ? { ...r, depart: shift(r.depart, i === 1 ? -3 : 5), tests: shift(r.tests, 4) } : r)); const sm = summarizeChanges(DEMO_ROWS, after);
+  return [{ at: new Date().toISOString(), by: DEMO_ME.name, source: "planificateur", stats: sm.stats, pjs: sm.pjs.map(x => ({ ...x, row: { depart: (x.row && x.row.depart) || null } })), removed: [] }]; })();
+const Modifs = () => <ChangesView entries={DEMO_CHANGES} onOpenPj={no} />;
+function Acces() { const [sub, setSub] = useState("people"); return <AccessPage profiles={{ byEmail: {} }} saveProfiles={yes} accessDoc={{ on: false, roles: [], levels: {} }} saveAccess={yes} people={DEMO_PEOPLE} ownerEmails={[DEMO_ME.email]} sub={sub} onSub={setSub} onPeople={no} />; }
+// la fiche d'un PJ (pop-up commun à la Liste, au Gantt, au Calendrier et à l'accueil)
+function FichePj() { const [pj, setPj] = useState("PJ903-2"); return <PjDialogCtx.Provider value={{ testsDoc: DEMO_TESTS, turbineDoc: null, prodDoc: DEMO_PROD, rows: DEMO_ROWS, setDepart: yes, savDoc: DEMO_SAV, demDoc: DEMO_SAV_DEM, openPage: no, testsOk: true }}>
+  {pj ? <PjDialog pj={pj} data={DEMO_ROWS} df="date" onClose={() => setPj(null)} {...common} resolveComment={yes} /> : <button type="button" onClick={() => setPj("PJ903-2")}>Rouvrir la fiche</button>}</PjDialogCtx.Provider>; }
+const AchatsDemo = () => <Achats doc={{}} api={demoApi} rows={DEMO_ROWS.map(r => ({ pj: r.pj, nomProjet: "", gamme: r.gamme || "", etat: r.etat, arrivee: r.arrivee || null, depart: r.depart || null }))} canEdit owner />;
 
 // v323 : accueil du responsable produit (responsable des testeurs) avec les jalons cash « Produit »
 const DEMO_PRODUIT = { items: [
@@ -111,6 +127,15 @@ export const DEMO_PAGES = [
   { id: "turb-prod", label: "Turbines · production", Render: () => <Turbines tab0="prod" />, expect: ["Production turbines"] },
   { id: "kpi", label: "Manager · KPI", Render: () => <Manager tab0="derives" />, expect: [] },
   { id: "fiche", label: "Manager · fiche projet", Render: () => <Manager tab0="fiche" />, expect: ["Cette semaine", "Contrat et dates", "Actions de la semaine", "Statut global"] },
+  { id: "retards", label: "Manager · retards", Render: () => <Manager tab0="retards" />, expect: [] },
+  { id: "serie", label: "Machines ORC", Render: () => <Manager tab0="serie" />, expect: [] },
+  { id: "fermetures", label: "Réglages · fermetures", Render: () => <Manager tab0="production" />, expect: [] },
+  { id: "personnes", label: "Personnes", Render: () => <Manager tab0="personnes" />, expect: [] },
+  { id: "nouveautes", label: "Réglages · nouveautés", Render: () => <Manager tab0="nouveautes" />, expect: [] },
+  { id: "fiche-pj", label: "Fiche d'un PJ", Render: FichePj, expect: [] },
+  { id: "changes", label: "Modifications", Render: Modifs, expect: [] },
+  { id: "access", label: "Gestion des accès", Render: Acces, expect: [] },
+  { id: "achats", label: "Achats / Appro", Render: AchatsDemo, expect: [] },
   { id: "hebdo", label: "Manager · point hebdo", Render: () => <Manager tab0="hebdo" />, expect: [] },
   { id: "planner", label: "Planificateur", Render: Planificateur, expect: [] },
 ];
