@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import { PHASES } from "../ganttPhases";
 import { isPhone } from "../useIsPhone";
 import { EtatInfoButton } from "./ProdStagesUI";
-import { T, FZF, mixHex, ganttSoft, stageSoft, stripeBg } from "../theme";
+import { T, FZF, mixHex, stageSoft, stripeBg } from "../theme";
 import { fmt } from "../parsers";
 import { getPjMeta, ETAT_META, ALL_ETATS, MONTHS, today, ProjectLabelCell } from "../pjMeta";
 import { DropFilter, NavIcon, pressable } from "./SharedUI";
@@ -9,13 +10,7 @@ import { PjDialog } from "./RowDetail";
 import { gapRanges } from "../workDays";
 
 // Couleurs lues à chaque rendu (accesseurs) : un tableau figé à l'import garderait le thème clair.
-export const PHASES=[
-  // v144 : pastel. c = trait doux (anneau, liseré), bg = aplat clair, ink = texte foncé. Pas de rouge : réservé au retard.
-  {k:"arrivee",l:"A",get c(){return ganttSoft().arrivee.ring;},get bg(){return ganttSoft().arrivee.bg;},get ink(){return ganttSoft().arrivee.ink;},get tbg(){return stageSoft().arrivee.bg;},get tink(){return stageSoft().arrivee.ink;},t:"Arrivée"},
-  {k:"tests",l:"T",get c(){return ganttSoft().tests.ring;},get bg(){return ganttSoft().tests.bg;},get ink(){return ganttSoft().tests.ink;},get tbg(){return stageSoft().tests.bg;},get tink(){return stageSoft().tests.ink;},t:"Tests"},
-  {k:"finProd",l:"F",get c(){return ganttSoft().finProd.ring;},get bg(){return ganttSoft().finProd.bg;},get ink(){return ganttSoft().finProd.ink;},get tbg(){return stageSoft().finProd.bg;},get tink(){return stageSoft().finProd.ink;},t:"Fin prod"},
-  {k:"depart",l:"D",get c(){return ganttSoft().depart.ring;},get bg(){return ganttSoft().depart.bg;},get ink(){return ganttSoft().depart.ink;},get tbg(){return stageSoft().depart.bg;},get tink(){return stageSoft().depart.ink;},t:"Départ"},
-];
+export { PHASES } from "../ganttPhases";
 
 // v171 (maquette validée) : une teinte unie par palier d'écart vs planning initial, au lieu du dégradé continu.
 //   ≤ 3 j (ou en avance) = vert · 4 à 10 j = orange · > 10 j = rouge · pas de planning initial = gris.

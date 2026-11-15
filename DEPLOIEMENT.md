@@ -2534,3 +2534,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Bord des pastilles d'état en encre de l'état (≥ 3:1, WCAG 1.4.11).
 - Aucune clé localStorage ; règles Firestore inchangées.
 - Fichiers : components/EtatControls.js, versions.
+
+## v350 — audit de performance (impeccable + Vercel React Best Practices)
+
+- Paquet de départ 337 → 306 Ko compressés : icônes en une seule graisse (src/iconPaths.js, scripts/gen-icons.js), Gantt chargé à la demande (src/ganttPhases.js), moteur chargé à la publication.
+- Composants internes remontés hors des composants (accueil, KPI, Turbines, écran atelier, fenêtre projet) ; polices réduites ; copie bêta en parallèle.
+- Aucune clé localStorage ; règles Firestore inchangées.
+- Fichiers : scripts/gen-icons.js, src/iconPaths.js, src/ganttPhases.js, components/SharedUI.js, GanttView.js, ProjectModal.js, HomeView.js, RoleHome.js, KpiPilotage.js, TurbinesHub.js, WorkshopScreen.js, AppChrome.js, planner/store.js, public/index.html, versions.

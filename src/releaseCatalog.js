@@ -1014,4 +1014,8 @@ export const RELEASE_CATALOG = [
   { v: "349", t: "Pastilles d'état mieux détourées", items: [
     ["Planning", "Liste : les pastilles d'état ont un contour de la couleur du texte, visible en clair comme en sombre."],
   ] },
+  { v: "350", t: "Site plus léger à l'ouverture", items: [
+    ["Général", "Le site télécharge moins au démarrage (icônes allégées, Gantt chargé seulement quand on l'ouvre, polices réduites)."],
+    ["Général", "L'accueil se met à jour plus légèrement à chaque changement dans la base."],
+  ] },
 ];

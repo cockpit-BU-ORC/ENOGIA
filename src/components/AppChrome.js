@@ -14,7 +14,8 @@ export function BetaBanner({canCopy}){
     if(!(await askConfirm({title:"Copier la production vers la bêta ?",message:"Les données actuelles de la bêta seront remplacées. La production n'est pas modifiée.",confirmLabel:"Remplacer la bêta",danger:true})))return;
     setSt("Copie en cours…");let n=0;
     try{
-      for(const name of BETA_DOCS){const snap=await getDoc(doc(db,"planning",name));if(snap.exists()){await setDoc(doc(db,"planning","beta_"+name),snap.data());n++;}}
+      // v350 (Vercel async-parallel) : les documents sont copiés en même temps, pas l'un après l'autre
+      const done=await Promise.all(BETA_DOCS.map(async name=>{const snap=await getDoc(doc(db,"planning",name));if(!snap.exists())return 0;await setDoc(doc(db,"planning","beta_"+name),snap.data());return 1;}));n=done.reduce((a,b)=>a+b,0);
       setSt("✓ "+n+" documents copiés depuis la production");
     }catch(e){console.error(e);setSt("Échec de la copie : "+e.message);}
     setTimeout(()=>setSt(""),8000);

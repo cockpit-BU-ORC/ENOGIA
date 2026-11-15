@@ -9,7 +9,7 @@ import { typedMentions } from "../mentions";
 import { CommentMarks } from "./CommentMarks";
 import { Reactions } from "./Reactions";
 import { Badge, NavIcon, Select, DelayScopeNote, EmptyState, SuperOnly, NewDelayType, PjPlate } from "./SharedUI";
-import { PHASES } from "./GanttView";
+import { PHASES } from "../ganttPhases";
 import { useDetailMode } from "../detailMode";
 
 // La fiche projet (panneau de droite) doit rester "blanche mate entièrement" (demandé
@@ -27,6 +27,8 @@ function InlinePanelPlaceholder(){
   </div>);
 }
 
+// v350 (audit de performance) : défini hors du composant (sinon recréé et remonté à chaque rendu)
+const Num=({l,v,c})=><div style={{background:T.panel,borderRadius:12,padding:"7px 10px",minWidth:0}}><div style={{fontFamily:T.fontLabel,fontSize:12,color:T.ink500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{l}</div><div style={{fontFamily:T.fontDisplay,fontSize:17,fontWeight:600,color:c||T.ink900,fontVariantNumeric:"tabular-nums",lineHeight:1.2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{v}</div></div>;
 export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComment,pinOk,delays,delayTypes,setDelayTypes,addDelayAllocation,deleteDelayAllocation,addDelayComment,deleteDelayComment,authorName,savePjMetaOverride,inline,canEditMeta,embedded}){
   const [editingMeta,setEditingMeta]=useState(false);
   const [detailMode,setDetailMode]=useDetailMode();
@@ -112,7 +114,6 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
         const nDays=next?Math.round((next[2]-t0)/86400000):null;
         const pd=presenceDates(r.clientPresence),pres=pd.client||pd.nobo;
         const nCom=(comments?.[pj]||[]).filter(c=>!c.private).length;
-        const Num=({l,v,c})=><div style={{background:T.panel,borderRadius:12,padding:"7px 10px",minWidth:0}}><div style={{fontFamily:T.fontLabel,fontSize:12,color:T.ink500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{l}</div><div style={{fontFamily:T.fontDisplay,fontSize:17,fontWeight:600,color:c||T.ink900,fontVariantNumeric:"tabular-nums",lineHeight:1.2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{v}</div></div>;
         return(<>
           <div role="list" aria-label="Parcours de la machine" style={{display:"grid",gridTemplateColumns:"repeat(5,minmax(0,1fr))",gap:3,marginBottom:10}}>
             {steps.map(([k,l,dt,tone],i)=>{const done=i<curI||(i===curI&&i===4),on=i===curI&&i!==4,fill=done||on;return(

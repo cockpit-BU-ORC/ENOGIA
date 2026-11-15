@@ -72,6 +72,15 @@ export function roleLead(role, d) {
   return ["Bonjour. ", { t: s(d.inProd, "machine", "machines"), c: "production" }, " " + (d.inProd > 1 ? "sont" : "est") + " en production et ", { t: d.next30 + " " + (d.next30 > 1 ? "partent" : "part"), c: "ok" }, " d'ici un mois."];
 }
 
+// v350 (audit de performance) : défini hors du composant (sinon recréé et remonté à chaque rendu)
+const Stat = ({ label, value, tone, onClick }) => <button type="button" onClick={onClick} disabled={!onClick} style={{ border: "none", background: T.surface, borderRadius: 8, padding: "8px 10px", textAlign: "left", cursor: onClick ? "pointer" : "default", fontFamily: T.font, minWidth: 0 }}><div style={{ fontFamily: T.fontDisplay, fontSize: "clamp(18px,1.5vw,24px)", fontWeight: 600, lineHeight: 1.1, color: tone || T.ink900, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{value}</div><div style={{ fontSize: FZ.xs, color: T.ink500, fontFamily: T.fontLabel }}>{label}</div></button>;
+// v350 (audit de performance) : défini hors du composant (sinon recréé et remonté à chaque rendu)
+const StatLine = ({ items }) => <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "6px 0", marginTop: 8 }}>
+    {items.map(({ label, value, tone, onClick }, i) => { const C = onClick ? "button" : "span"; return <C key={label} type={onClick ? "button" : undefined} onClick={onClick}
+      style={{ display: "inline-flex", alignItems: "baseline", gap: 5, border: "none", background: "transparent", padding: "2px 12px", minHeight: 28, borderLeft: i ? "1px solid " + T.line : "none", paddingLeft: i ? 12 : 0, cursor: onClick ? "pointer" : "default", fontFamily: T.font }}>
+      <b style={{ fontFamily: T.fontDisplay, fontSize: "clamp(18px,1.5vw,22px)", fontWeight: 600, color: tone || T.ink900, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{value}</b>
+      <span style={{ fontSize: FZ.sm, color: T.ink500, whiteSpace: "nowrap" }}>{label}</span></C>; })}
+  </div>;
 export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl, rows, open, late, mentions, myPjs, testsDoc, myTester, turbineDoc, prodDoc, plan, closurePeriods, productionExclusions, owner, cash, onOpenPj, onGo, onOpenCash, layout, onLayout, hello, renderLead }) {
   const { Row, Head, cardS, Pill, presenceOf, nomOf, empty, grey, link, S, H, A } = ui;
   const today = iso(new Date());
@@ -83,15 +92,8 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
   const inTest = (r, day) => !!r.tests && tStart(r) <= day && tEnd(r) >= day;
   const more = (label, go) => <button type="button" onClick={go} className="enogia-homelink" style={{ ...link, marginTop: 2 }}>{label} <NavIcon name="arrow" size={15} /></button>;
   const progPill = q => <span style={{ fontVariantNumeric: "tabular-nums" }}>{q.done} / {q.total}{q.ko ? " · " + q.ko + " échec" + (q.ko > 1 ? "s" : "") : ""}</span>;
-  const Stat = ({ label, value, tone, onClick }) => <button type="button" onClick={onClick} disabled={!onClick} style={{ border: "none", background: T.surface, borderRadius: 8, padding: "8px 10px", textAlign: "left", cursor: onClick ? "pointer" : "default", fontFamily: T.font, minWidth: 0 }}><div style={{ fontFamily: T.fontDisplay, fontSize: "clamp(18px,1.5vw,24px)", fontWeight: 600, lineHeight: 1.1, color: tone || T.ink900, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{value}</div><div style={{ ...grey, fontFamily: T.fontLabel }}>{label}</div></button>;
   const grid = { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(110px,1fr))", gap: 6, marginTop: 6 };
   // v284 (audit apple-design, lot 3) : une ligne de chiffres sans boîtes (le cadran Tests empilait 5 mini-boîtes)
-  const StatLine = ({ items }) => <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "6px 0", marginTop: 8 }}>
-    {items.map(({ label, value, tone, onClick }, i) => { const C = onClick ? "button" : "span"; return <C key={label} type={onClick ? "button" : undefined} onClick={onClick}
-      style={{ display: "inline-flex", alignItems: "baseline", gap: 5, border: "none", background: "transparent", padding: "2px 12px", minHeight: 28, borderLeft: i ? "1px solid " + T.line : "none", paddingLeft: i ? 12 : 0, cursor: onClick ? "pointer" : "default", fontFamily: T.font }}>
-      <b style={{ fontFamily: T.fontDisplay, fontSize: "clamp(18px,1.5vw,22px)", fontWeight: 600, color: tone || T.ink900, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{value}</b>
-      <span style={{ fontSize: FZ.sm, color: T.ink500, whiteSpace: "nowrap" }}>{label}</span></C>; })}
-  </div>;
   const bar = (pct, color) => <div style={{ height: 6, borderRadius: 4, background: T.surfaceAlt, overflow: "hidden" }}><div className="enogia-bar-fill" style={{ width: Math.max(0, Math.min(100, pct)) + "%", height: 6, background: color }} /></div>;
 
   /* ── données communes ── */

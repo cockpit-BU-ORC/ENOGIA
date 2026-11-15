@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useRef } from "react";
 import { T, FZ, R, stageSoft, stripeBg, stripeHues, alertSoft, inkOn } from "../theme";
 import { getPjMeta, chefsOf, ETAT_META, PresenceChip, presenceKind, presenceFirstDate, presenceDates, countShippedYTD, departedNotShipped } from "../pjMeta";
 import { NavIcon, AnimatedNumber, EmptyState, PjPlate, Hl, Pill as SPill } from "./SharedUI";
@@ -104,38 +104,46 @@ export function HomeView({ produit, data, comments, myEmail, myName, people, uns
   const link = { border: "none", background: "transparent", color: T.accentInk /* v285 : 3,2:1 → ≥ 4,5:1 */, fontWeight: 600, fontSize: FZ.sm, cursor: "pointer", padding: "4px 0", minHeight: 24, display: "inline-flex", alignItems: "center", gap: 6, fontFamily: T.font };
   const etatOf = useMemo(() => { const m = new Map(); rows.forEach(r => m.set(r.pj, r.etat)); return m; }, [rows]);
 
-  const Kpi = ({ label, value, tone, onClick, hint, sub, answer }) => (
+
+  // v350 (audit de performance, Vercel rerender-no-inline-components) : ces petits composants sont créés une seule fois (sinon recréés à
+  // chaque rendu, ce qui remontait tout leur contenu, dans l'accueil et dans RoleHome) ; ce qu'ils lisent du composant passe par live.
+  const live = useRef(null); live.current = { onOpenPj, etatOf };
+  const { Kpi, Pill, Row, Head } = useMemo(() => {
+    const greyS = () => ({ fontSize: FZ.xs, color: T.ink500 });
+    const Kpi = ({ label, value, tone, onClick, hint, sub, answer }) => (
     <button type="button" onClick={onClick} disabled={!onClick} className="enogia-kpi enogia-kpi-ed" title={hint}
       style={{ border: "none", borderRight: "1px solid " + T.line, background: "transparent", textAlign: "left", cursor: onClick ? "pointer" : "default", fontFamily: T.font, display: "flex", flexDirection: "column", gap: 4, padding: "12px 16px 6px 0", minWidth: 0 }}>
       <span style={{ fontSize: answer ? "clamp(36px,3.6vw,46px)" /* v343 (audit taste) : chiffre « réponse » 1,3 × */ : "clamp(28px,2.8vw,36px)" /* v343 : 56 → 36 px (taste : 24–40 px) */, fontWeight: 500 /* v284 : 300 → 500, plus lisible (audit apple-design, lot 3) */, lineHeight: .95, letterSpacing: "-.03em", fontFamily: T.fontDisplay, color: tone || T.ink900, fontVariantNumeric: "tabular-nums" }}><AnimatedNumber value={value} /></span>
       <span style={{ fontSize: FZ.sm, fontWeight: 500, color: T.ink700 }}>{label}</span>
-      {sub && <span style={{ ...grey, minHeight: 16 }}>{sub}</span>}
+      {sub && <span style={{ ...greyS(), minHeight: 16 }}>{sub}</span>}
     </button>
   );
-
-  // Pastille d'une ligne « À traiter » : teinte pâle + texte foncé de la même teinte.
-  const Pill = ({ tone, children }) => <SPill bg={tone.bg} ink={tone.ink}>{children}</SPill>; // v311 : pastille commune
-  // Ligne de liste : n° de PJ (couleur d'état), texte principal, valeur à droite en chiffres tabulaires.
-  const Row = ({ pj, pill, main, right, rightColor, presence, first }) => (
-    <button type="button" className="enogia-homeline" onClick={() => onOpenPj && onOpenPj(pj)}
+    const Pill = ({ tone, children }) => <SPill bg={tone.bg} ink={tone.ink}>{children}</SPill>;
+    const Row = ({ pj, pill, main, right, rightColor, presence, first }) => (
+    <button type="button" className="enogia-homeline" onClick={() => live.current.onOpenPj && live.current.onOpenPj(pj)}
       style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", minHeight: 40, border: "none", borderTop: first ? "none" : "1px solid " + T.line, background: "transparent", padding: "8px 6px", borderRadius: 0, cursor: "pointer", textAlign: "left", fontFamily: T.font, color: T.ink900 }}>
       {pill}
-      <PjPlate pj={pj} style={{ minWidth: 58, textAlign: "center", boxShadow: "inset 3px 0 0 " + ((ETAT_META[etatOf.get(pj)] || {}).bar || T.ink300) }} />
+      <PjPlate pj={pj} style={{ minWidth: 58, textAlign: "center", boxShadow: "inset 3px 0 0 " + ((ETAT_META[live.current.etatOf.get(pj)] || {}).bar || T.ink300) }} />
       <span style={{ fontSize: FZ.sm, color: T.ink700, minWidth: 0, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{main}</span>
       {presence}
       <span style={{ fontSize: FZ.xs, fontWeight: 600, color: rightColor || T.ink500, flexShrink: 0, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{right}</span>
     </button>
   );
+    const Head = ({ title, sub, count }) => (
+    <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+      <h2 style={{ margin: 0, fontSize: FZ.md, fontWeight: 600, color: T.ink900 }}>{title}</h2>
+      {sub && <span style={greyS()}>{sub}</span>}
+      {count > 0 && <span style={{ ...greyS(), marginLeft: "auto", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{count}</span>}
+    </div>
+  );
+    return { Kpi, Pill, Row, Head };
+  }, []);
+  // Pastille d'une ligne « À traiter » : teinte pâle + texte foncé de la même teinte.
+ // v311 : pastille commune
+  // Ligne de liste : n° de PJ (couleur d'état), texte principal, valeur à droite en chiffres tabulaires.
   const presenceOf = r => r.clientPresence && presenceKind(r.clientPresence) ? <PresenceChip kind={presenceKind(r.clientPresence)} date={presenceFirstDate(r.clientPresence)} dates={presenceDates(r.clientPresence)} compact tiny short /> : null;
   const nomOf = r => { const m = getPjMeta(r.pj, r); return m.nomProjet && m.nomProjet !== "—" ? m.nomProjet : ""; };
   const empty = (icon, title, hint) => <EmptyState compact icon={icon} title={title} hint={hint} tone="ok" />;
-  const Head = ({ title, sub, count }) => (
-    <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
-      <h2 style={{ margin: 0, fontSize: FZ.md, fontWeight: 600, color: T.ink900 }}>{title}</h2>
-      {sub && <span style={grey}>{sub}</span>}
-      {count > 0 && <span style={{ ...grey, marginLeft: "auto", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{count}</span>}
-    </div>
-  );
 
   // v178 : surligneur décalé (trait de couleur sous le bas des lettres) au lieu de la seule couleur du chiffre.
   const num = (v, c) => <Hl color={c + "88"} style={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{v}</Hl>;

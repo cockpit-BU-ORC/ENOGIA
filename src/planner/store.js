@@ -6,7 +6,6 @@
 import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase";
 import { guessGamme } from "../parsers";
-import { makeCalendar, schedule, planToRows, diffRows, ROW_FIELDS, applyPendingDeparts } from "./engine";
 import { buildEntry, appendChangeLog } from "../changeLog";
 
 const PFX = process.env.REACT_APP_BETA === "1" ? "beta_" : "";
@@ -33,6 +32,8 @@ export async function loadHistory() {
 // announce = ensemble « PJ|champ » des changements annoncés aux utilisateurs (journal des modifications, cloche, repères) ;
 // tout est publié dans le planning, seuls les changements cochés sont annoncés. null = tout annoncer.
 export async function publishPlan({ plan: plan0, closurePeriods, productionExclusions, by, note, announce }) {
+  // v350 (audit de performance) : le moteur n'est chargé qu'à la publication (il n'est plus dans le paquet de départ)
+  const { makeCalendar, schedule, planToRows, diffRows, applyPendingDeparts, ROW_FIELDS } = await import("./engine");
   const snap = await getDoc(CURRENT_REF());
   const cur = snap.exists() ? snap.data() : {};
   const curRows = cur.rows || [];
@@ -53,13 +54,13 @@ export async function publishPlan({ plan: plan0, closurePeriods, productionExclu
   await setDoc(HIST_REF(), { entries });
   const { pendingDeparts: _pd, ...curRest } = cur; // eslint-disable-line no-unused-vars -- v312 : reportés dans le plan
   await setDoc(CURRENT_REF(), { ...curRest, rows: plain(rows), lastImport: new Date(at).toLocaleString("fr-FR"), lastPublish: { at, by: by || "" } });
-  const shown = announcedRows(curRows, rows, announce);
+  const shown = announcedRows(curRows, rows, announce, { diffRows, ROW_FIELDS });
   if (shown) try { await appendChangeLog(buildEntry(curRows, shown, { source: "publication", by: by || "", note: note || "", label: new Date(at).toLocaleString("fr-FR"), prevLabel: cur.lastImport || "", prevIndice: cur.indice || "", indice: cur.indice || "" })); }
   catch (e) { console.warn("Journal des modifications non enregistré (la publication est bien faite) :", e); }
   return { nChanges: changes.length, rows, nAnnounced: shown ? diffRows(curRows, shown).length : 0 };
 }
 // Lignes « telles qu'annoncées » : l'état d'avant, avec seulement les changements cochés. null si rien n'est annoncé.
-export function announcedRows(curRows, rows, announce) {
+export function announcedRows(curRows, rows, announce, { diffRows, ROW_FIELDS }) {
   if (!announce) return rows;
   if (!announce.size) return null;
   const old = {}; (curRows || []).forEach(r => { old[r.pj] = r; });

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { AppWindow, CircleHalf, ArrowRight, At, Bell, Briefcase, CalendarDots, CaretDown, ChartBarHorizontal, ChartLine, ChatsCircle, Check, Clock, Copy, CurrencyEur, DotsThree, DownloadSimple, Factory, Flag, FloppyDisk, Gauge, GearSix, GitDiff, House, ListBullets, LockSimple, MagnifyingGlass, Moon, Palette, PencilSimple, Play, PushPin, SidebarSimple, SignOut, Stack, Sun, Tag, Television, Trash, Tray, UploadSimple, Warning, Wrench, X } from "@phosphor-icons/react";
+import { ICON_PATHS } from "../iconPaths"; // v350 : icônes Phosphor (graisse regular) extraites par scripts/gen-icons.js
 import { createPortal } from "react-dom";
 import { T, FZ, R, btn } from "../theme";
 import { isSuperAdmin } from "../roles";
@@ -299,10 +299,9 @@ export function ImportButton({onImport, busy, label, accent, helpText, warnText,
 
 // ── Icônes de navigation vectorielles (identité "instrument technique", pas d'emoji) ──
 // v177 : icônes Phosphor (phosphoricons.com, demandé par Gabriel) — mêmes noms qu'avant, donc aucun appel à modifier.
-const PH_ICONS={wrench:Wrench,edit:PencilSimple,trash:Trash,bell:Bell,home:House,more:DotsThree,copy:Copy,arrow:ArrowRight,at:At,flag:Flag,palette:Palette,changes:GitDiff,list:ListBullets,gantt:ChartBarHorizontal,calendar:CalendarDots,comments:ChatsCircle,screen:Television,euro:CurrencyEur,sidepanel:SidebarSimple,popup:AppWindow,manager:Briefcase,lock:LockSimple,layers:Stack,gauge:Gauge,check:Check,chart:ChartLine,tag:Tag,warning:Warning,upload:UploadSimple,pin:PushPin,sun:Sun,factory:Factory,sunSm:Sun,moon:Moon,auto:CircleHalf,download:DownloadSimple,inbox:Tray,logout:SignOut,clock:Clock,settings:GearSix,save:FloppyDisk,search:MagnifyingGlass,close:X,chevronDown:CaretDown,play:Play};
-export function NavIcon({name,size=18,weight="regular"}){
-  const I=PH_ICONS[name];
-  return I?<I size={size} weight={weight} aria-hidden="true" style={{flexShrink:0}}/>:null;
+export function NavIcon({name,size=18}){
+  const d=ICON_PATHS[name];
+  return d?<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} fill="currentColor" viewBox="0 0 256 256" aria-hidden="true" style={{flexShrink:0}}><path d={d}/></svg>:null;
 }
 
 

@@ -34,6 +34,27 @@ export function closedDaysOf(closurePeriods) {
   return out;
 }
 
+// v350 (audit de performance) : défini hors du composant (sinon recréé et remonté à chaque rendu)
+const Row = ({ children, style }) => <div style={{ display: "flex", alignItems: "center", gap: u(18), padding: u(10) + " " + u(18), borderRadius: u(12), background: T.card, border: "1px solid " + T.line, ...style }}>{children}</div>;
+// v350 (audit de performance) : défini hors du composant (sinon recréé et remonté à chaque rendu)
+const Col = ({ title, items }) => <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: u(14) }}>
+      <div style={{ fontSize: u(30), fontWeight: 600, color: T.ink900 }}>{title}</div>
+      {items.map(g => { const tot = g.list.length, pct = tot ? Math.round(g.done / tot * 100) : 0;
+        return <div key={g.k} style={{ background: T.card, border: "1px solid " + T.line, borderRadius: u(12), padding: u(14) + " " + u(20), display: "flex", flexDirection: "column", gap: u(8) }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: u(14) }}><span style={{ fontSize: u(24), color: T.ink700, fontWeight: 600, flex: 1 }}>{g.lab}</span>
+            <span style={{ fontSize: u(44), fontWeight: 600, fontVariantNumeric: "tabular-nums", color: tot && g.done === tot ? T.emerald600 : T.ink900, lineHeight: 1 }}>{tot ? g.done + " / " + tot : "—"}</span></div>
+          <div style={{ height: u(12), borderRadius: 999, background: T.surfaceAlt, overflow: "hidden" }}><div style={{ width: pct + "%", height: "100%", background: T.emerald500 }} /></div>
+          <div style={{ display: "flex", gap: u(8), flexWrap: "wrap", minHeight: u(30) }}>{tot === 0 ? <span style={{ fontSize: u(20), color: T.ink500 }}>Rien de prévu</span>
+            : g.list.slice(0, 8).map(x => <span key={x.r.pj} style={{ fontSize: u(20), fontWeight: 600, borderRadius: u(8), padding: u(2) + " " + u(10), background: x.ok ? T.emerald100 : T.surfaceAlt, color: x.ok ? T.emerald600 : T.ink900, fontVariantNumeric: "tabular-nums" }}>{x.ok ? "✓ " : ""}{x.r.pj}</span>)}
+            {g.list.length > 8 && <span style={{ fontSize: u(20), color: T.ink500 }}>+ {g.list.length - 8}</span>}</div>
+        </div>; })}
+    </div>;
+// v350 (audit de performance) : défini hors du composant (sinon recréé et remonté à chaque rendu)
+const Kpi = ({ v, l }) => <div style={{ flex: 1, minWidth: 0, background: T.card, border: "1px solid " + T.line, borderRadius: u(18), padding: u(14) + " " + u(18), textAlign: "center" }}>
+      <div style={{ fontSize: u(70), fontWeight: 600, lineHeight: 1, color: T.teal600, fontVariantNumeric: "tabular-nums" }}>{v}</div>
+      <div style={{ fontSize: u(22), color: T.ink500, marginTop: u(6), fontWeight: 600 }}>{l}</div></div>;
+// v350 (audit de performance) : défini hors du composant (sinon recréé et remonté à chaque rendu)
+const Head = ({ t }) => <div style={{ fontSize: u(26), fontWeight: 600, color: T.ink900, letterSpacing: ".01em" }}>{t}</div>;
 export function WorkshopScreen({ data, onClose, darkMode, productionExclusions, closurePeriods }) {
   const [now, setNow] = useState(() => new Date());
   const [idx, setIdx] = useState(0);
@@ -124,7 +145,6 @@ export function WorkshopScreen({ data, onClose, darkMode, productionExclusions, 
   }, [n]);
 
   const name = r => getPjMeta(r.pj, r).nomProjet || "";
-  const Row = ({ children, style }) => <div style={{ display: "flex", alignItems: "center", gap: u(18), padding: u(10) + " " + u(18), borderRadius: u(12), background: T.card, border: "1px solid " + T.line, ...style }}>{children}</div>;
   // Gamme de la machine, en grand (demandé) : pastille pleine à la couleur de la gamme, jamais tronquée.
   const Gamme = ({ r, size = 26 }) => r.gamme ? <span style={{ background: GAMME_COLORS[r.gamme] || T.ink500, color: T.onFill, borderRadius: u(12), padding: u(2) + " " + u(12), fontSize: u(size), fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0, letterSpacing: ".01em" }}>{r.gamme}</span> : null;
   // f = facteur de réduction quand il y a beaucoup de lignes (toutes tiennent sur la page)
@@ -142,18 +162,6 @@ export function WorkshopScreen({ data, onClose, darkMode, productionExclusions, 
 
   let body = null;
   if (cur.id === "goals") {
-    const Col = ({ title, items }) => <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: u(14) }}>
-      <div style={{ fontSize: u(30), fontWeight: 600, color: T.ink900 }}>{title}</div>
-      {items.map(g => { const tot = g.list.length, pct = tot ? Math.round(g.done / tot * 100) : 0;
-        return <div key={g.k} style={{ background: T.card, border: "1px solid " + T.line, borderRadius: u(12), padding: u(14) + " " + u(20), display: "flex", flexDirection: "column", gap: u(8) }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: u(14) }}><span style={{ fontSize: u(24), color: T.ink700, fontWeight: 600, flex: 1 }}>{g.lab}</span>
-            <span style={{ fontSize: u(44), fontWeight: 600, fontVariantNumeric: "tabular-nums", color: tot && g.done === tot ? T.emerald600 : T.ink900, lineHeight: 1 }}>{tot ? g.done + " / " + tot : "—"}</span></div>
-          <div style={{ height: u(12), borderRadius: 999, background: T.surfaceAlt, overflow: "hidden" }}><div style={{ width: pct + "%", height: "100%", background: T.emerald500 }} /></div>
-          <div style={{ display: "flex", gap: u(8), flexWrap: "wrap", minHeight: u(30) }}>{tot === 0 ? <span style={{ fontSize: u(20), color: T.ink500 }}>Rien de prévu</span>
-            : g.list.slice(0, 8).map(x => <span key={x.r.pj} style={{ fontSize: u(20), fontWeight: 600, borderRadius: u(8), padding: u(2) + " " + u(10), background: x.ok ? T.emerald100 : T.surfaceAlt, color: x.ok ? T.emerald600 : T.ink900, fontVariantNumeric: "tabular-nums" }}>{x.ok ? "✓ " : ""}{x.r.pj}</span>)}
-            {g.list.length > 8 && <span style={{ fontSize: u(20), color: T.ink500 }}>+ {g.list.length - 8}</span>}</div>
-        </div>; })}
-    </div>;
     body = (<div style={{ display: "flex", gap: u(28), height: "100%" }}><Col title={cur.wkLabel} items={cur.week} /><div style={{ width: 1, background: T.line, flexShrink: 0 }} /><Col title={cur.moLabel} items={cur.month} /></div>);
   } else if (cur.id === "week") {
     const rows = cur.rows, n = Math.max(1, rows.length), f = Math.min(1, Math.max(.42, 9.5 / n)), COLS = "minmax(0,2.4fr) repeat(5,minmax(0,1fr))";
@@ -209,9 +217,6 @@ export function WorkshopScreen({ data, onClose, darkMode, productionExclusions, 
       </div>
     </div>);
   } else if (cur.id === "stats") {
-    const Kpi = ({ v, l }) => <div style={{ flex: 1, minWidth: 0, background: T.card, border: "1px solid " + T.line, borderRadius: u(18), padding: u(14) + " " + u(18), textAlign: "center" }}>
-      <div style={{ fontSize: u(70), fontWeight: 600, lineHeight: 1, color: T.teal600, fontVariantNumeric: "tabular-nums" }}>{v}</div>
-      <div style={{ fontSize: u(22), color: T.ink500, marginTop: u(6), fontWeight: 600 }}>{l}</div></div>;
     const gc = k => GAMME_COLORS[k] || T.teal500;
     const Bars = ({ title, items, flag, byGamme }) => { const max = Math.max(1, ...items.map(x => x[1])); return (<div style={{ flex: 1, minWidth: 0, minHeight: 0, background: T.card, border: "1px solid " + T.line, borderRadius: u(18), padding: u(14) + " " + u(18), display: "flex", flexDirection: "column", gap: u(12), overflow: "hidden" }}>
       <div style={{ fontSize: u(22), fontWeight: 600, letterSpacing: ".01em", color: T.ink500 }}>{title}</div>
@@ -223,7 +228,6 @@ export function WorkshopScreen({ data, onClose, darkMode, productionExclusions, 
       {!items.length && <span style={{ color: T.ink300, fontSize: u(22) }}>—</span>}
     </div>); };
     const maxM = Math.max(1, ...cur.months.map(m => m.n));
-    const Head = ({ t }) => <div style={{ fontSize: u(26), fontWeight: 600, color: T.ink900, letterSpacing: ".01em" }}>{t}</div>;
     body = (<div style={{ display: "flex", gap: u(26), height: "100%" }}>
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: u(14) }}>
         <Head t={"Depuis le " + fmtD(new Date(today.getFullYear(), 4, 19)) + " · fabriqué et expédié"} />

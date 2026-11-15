@@ -23,6 +23,12 @@ const fdm = v => { if (!v) return "—"; const d = new Date(v); return isNaN(d) 
 // v246 (maquette A de Claude Design, choisie par Gabriel) : 5 chiffres (production, départs du mois, PJ en retard sur l'initial,
 // charge 4 semaines, livrées cette année), PJ à risque avec la pastille d'état, charge plus haute avec heures et dates, portefeuille
 // en barre à 100 % + légende chiffrée. La dérive moyenne et les retards déclarés passent en tête de la sous-page Dérives.
+// v350 (audit de performance) : défini hors du composant (sinon recréé et remonté à chaque rendu)
+const Kpi = ({ label, value, sub, bad, good, subBad, how }) => (<div style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "12px 14px", minWidth: 0 }}>
+    <div style={{ fontSize: 12.5, color: T.ink500, fontFamily: T.fontLabel, display: "flex", alignItems: "center", gap: 6 }}>{label}{how && <span tabIndex={0} role="note" aria-label={"Méthode : " + how} title={"Méthode : " + how} style={{ cursor: "help", fontSize: 11, fontWeight: 600, color: T.ink500, border: "1px solid " + T.line, borderRadius: 999, width: 16, height: 16, display: "inline-grid", placeItems: "center", flexShrink: 0 }}>i</span>}</div>
+    <div style={{ fontFamily: T.fontDisplay, fontSize: 32, fontWeight: 600, color: bad ? T.red500 : good ? T.emerald600 : T.ink900, fontVariantNumeric: "tabular-nums", lineHeight: 1.1, marginTop: 4 }}>{value}</div>
+    <div style={{ fontSize: 12.5, color: subBad ? T.red500 : T.ink500, fontWeight: subBad ? 600 : 400, marginTop: 4 }}>{sub}</div>
+  </div>);
 export function KpiPilotage({ rows, driftRows, closurePeriods, productionExclusions, capaWeek, hasInitial, onOpenPj, onSeeDerives, plan }) {
   const today = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }, []);
   const open = rows.filter(r => r.etat !== "SHIPPED");
@@ -43,11 +49,6 @@ export function KpiPilotage({ rows, driftRows, closurePeriods, productionExclusi
   const risky = open.filter(r => (driftOf[r.pj] || 0) > 0).sort((a, b) => (driftOf[b.pj] || 0) - (driftOf[a.pj] || 0));
   const S = stageSoft();
   const card = { background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "12px 14px", minWidth: 0 };
-  const Kpi = ({ label, value, sub, bad, good, subBad, how }) => (<div style={card}>
-    <div style={{ fontSize: 12.5, color: T.ink500, fontFamily: T.fontLabel, display: "flex", alignItems: "center", gap: 6 }}>{label}{how && <span tabIndex={0} role="note" aria-label={"Méthode : " + how} title={"Méthode : " + how} style={{ cursor: "help", fontSize: 11, fontWeight: 600, color: T.ink500, border: "1px solid " + T.line, borderRadius: 999, width: 16, height: 16, display: "inline-grid", placeItems: "center", flexShrink: 0 }}>i</span>}</div>
-    <div style={{ fontFamily: T.fontDisplay, fontSize: 32, fontWeight: 600, color: bad ? T.red500 : good ? T.emerald600 : T.ink900, fontVariantNumeric: "tabular-nums", lineHeight: 1.1, marginTop: 4 }}>{value}</div>
-    <div style={{ fontSize: 12.5, color: subBad ? T.red500 : T.ink500, fontWeight: subBad ? 600 : 400, marginTop: 4 }}>{sub}</div>
-  </div>);
   const etatChip = e => { const m = ETAT_META[e]; return m ? <span style={{ background: m.bg, color: m.text, borderRadius: 999, padding: "0 9px", fontSize: 12, fontWeight: 600, lineHeight: "20px", display: "inline-block", maxWidth: 190, overflow: "hidden", textOverflow: "ellipsis", verticalAlign: "middle" }}>{m.label}</span> : (e || "—"); };
   const th = tableTh(), td = { ...tableTd({ h: 40 }), padding: "0 8px", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 220 }; // v313 : tableau commun
 
