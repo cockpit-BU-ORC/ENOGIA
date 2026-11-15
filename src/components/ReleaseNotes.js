@@ -60,7 +60,7 @@ export function ReleasePopup({ releases, userName, onClose }) {
 
 // ── Éditeur (super admin) : choisir ce qui s'affiche dans le pop-up « Nouveautés » ───────────────────────────────
 // Enregistrer = modifie le texte sans le réafficher à ceux qui l'ont déjà vu. Publier = nouvelle publication, réaffichée à tout le monde.
-const INP = { width: "100%", boxSizing: "border-box", border: "1px solid " + T.line, borderRadius: 8, padding: "6px 9px", fontSize: FZ.sm, fontFamily: T.font, color: T.ink900, background: T.card };
+const INP = { width: "100%", boxSizing: "border-box", get border() { return "1px solid " + T.line; }, borderRadius: 8, padding: "6px 9px", fontSize: FZ.sm, get fontFamily() { return T.font; }, get color() { return T.ink900; }, get background() { return T.card; } }; // v346 : accesseurs (suivent le clair / sombre)
 const BTN = (primary, dis) => ({ ...btn(primary ? "pri" : "sec", "md"), ...(dis ? { opacity: .45, cursor: "not-allowed" } : {}) }); // v286 : bouton commun
 export function ReleaseEditor({ releases, onSave, authorName }) {
   const latest = releases[0] || { id: "", date: new Date().toISOString().slice(0, 10), title: "Ce qui change dans le planning", items: [] };

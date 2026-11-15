@@ -2505,3 +2505,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Gardés : liseré des cartes, lignes alternées des bancs, camemberts, « Bonsoir Prénom ».
 - Aucune clé localStorage ; règles Firestore inchangées.
 - Fichiers : styles.css, components/TurbinesHub.js, TestsTab.js, RowDetail.js, ManagerNav.js, ProjectModal.js, ReleaseNotes.js, versions.
+
+## v346 — rapports, pages du Manager dans la galerie, sombre
+
+- Rapports imprimés : graisses 600, PowerPoint sans lignes zébrées.
+- Galerie ?demo : Manager (KPI, fiche projet, point hebdo) et Planificateur ; test des pages sans base réelle.
+- Sombre : styles de module en accesseurs (KPI, accès, checklists, SAV…) ; fiche projet : pénalités et pourcentages lisibles, titres h2 / h3.
+- Aucune clé localStorage ; règles Firestore inchangées.
+- Fichiers : CodirReport.js, testReport.js, debugPdf.js, reports/cdpPptx.js, demo/demoPages.js, demo/pages.test.js, KpiStory.js, AccessPage.js, CashAnchors.js, CashLinks.js, ChecklistsView.js, CompCatalog.js, ManagerFiche.js, FicheContrat.js, ReleaseNotes.js, RowPops.js, SavedViews.js, SavPage.js, versions.

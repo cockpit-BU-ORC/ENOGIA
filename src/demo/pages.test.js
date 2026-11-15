@@ -9,6 +9,10 @@ import { setPjMetaOverrides } from "../pjMeta";
 import { DEMO_PAGES } from "./demoPages";
 import { DEMO_META, DEMO_ME, DEMO_PEOPLE } from "./demoData";
 
+// v346 : la fiche projet atteint la base par CashLinks ; dans le test, aucune base réelle (ni lecture ni écriture)
+jest.mock("../firebase", () => ({ db: {}, auth: {}, provider: {} }));
+jest.mock("firebase/firestore", () => new Proxy({ __esModule: true }, { get: (t, k) => (k in t ? t[k] : () => () => {}) }));
+
 beforeAll(() => {
   global.IS_REACT_ACT_ENVIRONMENT = true;
   setPjMetaOverrides(DEMO_META);

@@ -46,7 +46,7 @@ function Section({title,right,children,style}){
   // v129 : sous-titre de bloc (niveau 2) — la phrase en gras, sans majuscules ; le cadre thématique (Frame) porte le niveau 1.
   return(<div style={{minWidth:0,...style}}>
     {(title||right)&&<div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-      {title&&<span style={{fontSize:FZ.sm,fontWeight:600,color:T.ink900,whiteSpace:"nowrap",flexShrink:0}}>{title}</span>}
+      {title&&<h3 style={{margin:0,fontFamily:"inherit",fontSize:FZ.sm,fontWeight:600,color:T.ink900,whiteSpace:"nowrap",flexShrink:0}}>{title}</h3>}
       <span style={{flex:1,height:1,background:T.line,minWidth:8}}/>
       {right&&<span style={{minWidth:0,maxWidth:"88%",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",display:"inline-block"}}>{right}</span>}
     </div>}
@@ -59,7 +59,7 @@ function Frame({title,sub,right,children,style,id}){
   return(<section id={id} data-fiche-zone={id} aria-label={title} style={{scrollMarginTop:56,background:T.surface,border:"none",borderRadius:12,padding:D.mode==="compact"?"6px 10px 8px":"8px 12px 12px",display:"flex",flexDirection:"column",gap:D.mode==="compact"?4:8,minWidth:0,...style}}>
     <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
       <span aria-hidden="true" style={{width:4,alignSelf:"stretch",minHeight:18,borderRadius:4,background:T.accent,flexShrink:0}}/>
-      <span style={{fontSize:FZ.md,fontWeight:600,letterSpacing:"-.01em",color:T.ink900}}>{title}</span>
+      <h2 style={{margin:0,fontFamily:"inherit",fontSize:FZ.md,fontWeight:600,letterSpacing:"-.01em",color:T.ink900}}>{title}</h2>
       {sub&&<span style={{fontSize:FZ.xs,color:T.ink500}}>{sub}</span>}
       {right&&<span style={{marginLeft:"auto",display:"inline-flex",alignItems:"center"}}>{right}</span>}
     </div>
@@ -536,7 +536,7 @@ function LastChange({entry,pj}){
 // ── Gros composants : une ligne par composant, une colonne par étape (désigné / commandé / réceptionné (reçu à ENOGIA ou installé)) ──
 // Terme de jargon avec définition au survol et au focus clavier (v123).
 const Gloss=({t,children})=><abbr title={t} tabIndex={0} style={{textDecoration:"underline dotted",textUnderlineOffset:2,cursor:"help"}}>{children}</abbr>;
-const CHK={width:20,height:20,accentColor:T.teal500,cursor:"pointer",margin:2};
+const CHK = {width:20,height:20, get accentColor() { return T.teal500; },cursor:"pointer",margin:2 }; // v346 : accesseurs (suivent le clair / sombre)
 // Une couleur par étape : désigné (ambre) → commandé (bleu) → installé (vert). Cases personnalisées : contour dans la couleur de l'étape, plein une fois cochées.
 const STEP_COLOR={get des(){return T.amber500;},get cmd(){return T.info500;},get inst(){return T.emerald500;}};
 const stepColor=f=>STEP_COLOR[f]||T.teal500;
@@ -1009,7 +1009,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
             <div style={{display:"flex",alignItems:"center",gap:6,marginTop:2,minWidth:0}}><SerieTag pj={row.pj} size={12}/><EpcTag meta={m} short/><span style={{fontSize:FZ.xs,color:T.ink500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",minWidth:0,flex:1}}>{m.nomProjet}</span></div>
             <div style={{display:"flex",alignItems:"center",gap:8,marginTop:3}}>
               <div style={{flex:1}}><ProgressBar value={pv} height={3} color={ec.bar}/></div>
-              <span style={{fontSize:FZ.xs,fontWeight:600,color:etatInk(row.etat),width:30,textAlign:"right"}}>{pv}%</span>
+              <span style={{fontSize:FZ.xs,fontWeight:600,color:T.ink700,width:30,textAlign:"right"}}>{pv}%</span>
               <span style={{fontSize:FZ.xs,color:T.ink300}}>{row.depart?fmt(new Date(row.depart)):"—"}</span>
             </div>
           </div>);

@@ -19,7 +19,7 @@ function Tip() {
   if (!t) return null;
   return <div role="tooltip" style={{ position: "fixed", left: Math.min(t.x + 14, window.innerWidth - 280), top: t.y + 14, zIndex: 10030, pointerEvents: "none", background: T.ink900, color: T.card, fontSize: 12.5, borderRadius: 8, padding: "6px 9px", maxWidth: 270, boxShadow: T.shadowLg, fontFamily: T.font }}>{t.s}</div>;
 }
-const card = { background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "12px 14px", minWidth: 0 };
+const card = { get background() { return T.card; }, get border() { return "1px solid " + T.line; }, borderRadius: 12, padding: "12px 14px", minWidth: 0  }; // v346 : accesseurs (suivent le clair / sombre)
 const unitOf = k => { const u = (targetDef(k) || {}).unit; return u === "%" ? " %" : u ? " " + u : ""; };
 
 export function Answer({ q, a, ctx, sel, targets, onSaveTargets, plain }) {
@@ -42,7 +42,7 @@ export function Bullet({ k, label, v, how, targets, max }) {
   const d = targetDef(k), j = judge(k, v, targets), t = j.target, ok = j.ok, M = max || Math.max(v || 0, t || 0) * 1.25 || 1, x = n => Math.max(0, Math.min(100, (n || 0) / M * 100));
   const u = unitOf(k), pts = d.unit === "%" ? " pts" : u;
   return (<div style={card}>
-    <div style={{ fontSize: 12.5, color: T.ink500, fontWeight: 600, display: "flex", gap: 6, alignItems: "center" }}>{label || d.l}<span tabIndex={0} role="note" data-tip={"Méthode : " + (how || d.how)} aria-label={"Méthode : " + (how || d.how)} style={{ width: 16, height: 16, borderRadius: "50%", border: "1px solid " + T.line, display: "inline-grid", placeItems: "center", fontSize: 10.5, cursor: "help", flexShrink: 0 }}>i</span></div>
+    <div style={{ fontSize: 12.5, color: T.ink500, fontWeight: 600, display: "flex", gap: 6, alignItems: "center" }}>{label || d.l}<span tabIndex={0} role="note" data-tip={"Méthode : " + (how || d.how)} aria-label={"Méthode : " + (how || d.how)} style={{ width: 16, height: 16, borderRadius: "50%", border: "1px solid " + T.line, display: "inline-grid", placeItems: "center", fontSize: 11.5, cursor: "help", flexShrink: 0 }}>i</span></div>
     <div style={{ fontSize: 30, fontWeight: 600, fontVariantNumeric: "tabular-nums", lineHeight: 1.1, marginTop: 2, color: ok === false ? T.red600 : T.ink900 }}>{v == null ? "—" : (k === "derive" && v > 0 ? "+" : "") + fr(v) + u}</div>
     <div role="img" aria-label={(label || d.l) + " : " + (v == null ? "pas de donnée" : v) + ", objectif " + t} style={{ position: "relative", height: 18, margin: "6px 0 2px" }}>
       <div style={{ position: "absolute", left: 0, right: 0, top: 5, height: 8, borderRadius: 4, background: T.surfaceAlt }} />

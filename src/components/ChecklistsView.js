@@ -14,8 +14,8 @@ import { useUnsavedGuard } from "../unsavedGuard";
 
 const nid = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const btn = (primary, ghost) => ({ padding: "0 12px", minHeight: 32, borderRadius: 8, border: "1px solid " + (primary && !ghost ? T.ink900 : T.line), background: primary && !ghost ? T.ink900 : T.card, color: primary && !ghost ? T.card : T.ink700, fontSize: FZ.sm, fontWeight: 600, cursor: "pointer", fontFamily: T.font });
-const field = { padding: "4px 8px", minHeight: 30, borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, boxSizing: "border-box", width: "100%" };
-const mini = { border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, minWidth: 28, minHeight: 28, cursor: "pointer", fontFamily: T.font, fontSize: 13 };
+const field = { padding: "4px 8px", minHeight: 30, borderRadius: 8, get border() { return "1px solid " + T.line; }, get background() { return T.card; }, get color() { return T.ink900; }, fontSize: FZ.sm, get fontFamily() { return T.font; }, boxSizing: "border-box", width: "100%"  }; // v346 : accesseurs (suivent le clair / sombre)
+const mini = { get border() { return "1px solid " + T.line; }, get background() { return T.card; }, get color() { return T.ink700; }, borderRadius: 8, minWidth: 28, minHeight: 28, cursor: "pointer", get fontFamily() { return T.font; }, fontSize: 13  }; // v346 : accesseurs (suivent le clair / sombre)
 
 function ImportDialog({ onApply, onClose }) {
   const [txt, setTxt] = useState(""), [res, setRes] = useState(null), [err, setErr] = useState(""), [busy, setBusy] = useState(false);

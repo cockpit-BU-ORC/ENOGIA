@@ -74,7 +74,7 @@ function Masthead({eyebrow,title,sub,right}){
   return(<>
     <div style={{height:"13mm",flexShrink:0,display:"flex",alignItems:"center",gap:"4mm",padding:"0 12mm",background:C.navy+" url("+RPT("banner.jpg")+") center/cover no-repeat",color:"#fff"}}>
       <img src={RPT("feather.png")} alt="" style={{height:"7mm",width:"auto"}}/>
-      <div style={{flex:1,minWidth:0,fontFamily:F_DISPLAY,fontSize:14,fontWeight:700,letterSpacing:".04em",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{eyebrow}</div>
+      <div style={{flex:1,minWidth:0,fontFamily:F_DISPLAY,fontSize:14,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{eyebrow}</div>
       {right}
       <img src={RPT("logo.png")} alt="ENOGIA" style={{height:"6.5mm",width:"auto",marginLeft:"3mm"}}/>
     </div>
@@ -87,22 +87,22 @@ function Masthead({eyebrow,title,sub,right}){
 function Footer({label,page,total,dark}){
   const c=dark?"rgba(255,255,255,.55)":C.faint;
   return(<div style={{height:"9mm",padding:"0 12mm",display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:9.5,color:c,flexShrink:0}}>
-    <span style={{fontWeight:700}}>ENOGIA · {label}</span><span>Confidentiel · <b style={{color:dark?"#fff":C.navy}}>{String(page).padStart(2,"0")}</b> / {String(total).padStart(2,"0")}</span>
+    <span style={{fontWeight:600}}>ENOGIA · {label}</span><span>Confidentiel · <b style={{color:dark?"#fff":C.navy}}>{String(page).padStart(2,"0")}</b> / {String(total).padStart(2,"0")}</span>
   </div>);
 }
 
 // ── Page de garde ────────────────────────────────────────────────────────────────────────────────────────────
 function CoverPage({label,all,page,total}){
   const risk=all.filter(i=>i.worst==="red").length,watch=all.filter(i=>i.worst==="yellow").length,soon=all.filter(i=>i.dep&&diffDays(today,i.dep)>=0&&diffDays(today,i.dep)<=30).length;
-  const st=(v,l)=><div><div style={{fontFamily:F_DISPLAY,fontSize:36,fontWeight:500,color:"#fff",lineHeight:1}}>{v}</div><div style={{fontSize:9.5,fontWeight:700,color:"rgba(255,255,255,.6)",marginTop:8}}>{l}</div></div>;
+  const st=(v,l)=><div><div style={{fontFamily:F_DISPLAY,fontSize:36,fontWeight:500,color:"#fff",lineHeight:1}}>{v}</div><div style={{fontSize:9.5,fontWeight:600,color:"rgba(255,255,255,.6)",marginTop:8}}>{l}</div></div>;
   const Badges=()=><div style={{position:"absolute",right:"14mm",bottom:"9mm",display:"flex",alignItems:"center",gap:"3mm"}}><img src={RPT("badge-coq.png")} alt="" style={{height:"11mm"}}/><img src={RPT("badge-bpi.png")} alt="" style={{height:"12mm"}}/><img src={RPT("badge-aleno.png")} alt="" style={{height:"11mm"}}/></div>;
   return(<Page bg="#05323F">
     <div style={{position:"absolute",inset:0,background:"#05323F url("+RPT("cover-bg.jpg")+") center/cover no-repeat"}}/>
     <img src={RPT("wave.png")} alt="" style={{position:"absolute",left:0,top:"68mm",width:"100%",height:"92mm"}}/>
     <div style={{position:"relative",flex:1,display:"flex",flexDirection:"column",alignItems:"center",textAlign:"center",color:"#fff"}}>
-      <div style={{marginTop:"28mm",fontSize:11,fontWeight:700,color:"#BFE6E2"}}>Revue de portefeuille · BU ORC</div>
-      <div style={{fontFamily:F_DISPLAY,fontSize:60,fontWeight:700,lineHeight:1.05,marginTop:10,letterSpacing:"-.01em"}}>Comité de Direction</div>
-      <div style={{fontSize:24,fontWeight:700,marginTop:12}}>{label.replace(/^CODIR du /,"")}</div>
+      <div style={{marginTop:"28mm",fontSize:11,fontWeight:600,color:"#BFE6E2"}}>Revue de portefeuille · BU ORC</div>
+      <div style={{fontFamily:F_DISPLAY,fontSize:60,fontWeight:600,lineHeight:1.05,marginTop:10,letterSpacing:"-.01em"}}>Comité de Direction</div>
+      <div style={{fontSize:24,fontWeight:600,marginTop:12}}>{label.replace(/^CODIR du /,"")}</div>
       <div style={{display:"flex",gap:"14mm",marginTop:"11mm",padding:"4mm 10mm",borderRadius:12,background:"rgba(0,40,52,.55)"}}>
         {st(all.length,plural(all.length,"Projet suivi","Projets suivis"))}{st(risk,"À risque")}{st(watch,"En vigilance")}{st(soon,"Départs sous 30 j")}
       </div>
@@ -120,7 +120,7 @@ function ContactPage(){
     <div style={{position:"absolute",inset:0,background:"#05323F url("+RPT("cover-bg.jpg")+") center/cover no-repeat"}}/>
     <div style={{position:"relative",flex:1,display:"flex",flexDirection:"column",alignItems:"center",textAlign:"center",color:"#fff",paddingTop:"42mm"}}>
       <img src={RPT("logo.png")} alt="ENOGIA" style={{height:"26mm",width:"auto",marginBottom:"12mm"}}/>
-      {L("Gabriel VINCENT / Head of Operations & Projects",{fontWeight:700})}
+      {L("Gabriel VINCENT / Head of Operations & Projects",{fontWeight:600})}
       {L("gabriel.vincent@enogia.com",{fontStyle:"italic"})}
       {L("+33 7 67 84 14 90")}
       <div style={{height:"6mm"}}/>
@@ -139,8 +139,8 @@ function summarySentence(all){
   const risk=all.filter(i=>i.worst==="red").length,late=all.filter(i=>i.ecart>0).length;
   const soon=all.filter(i=>i.dep&&diffDays(today,i.dep)>=0&&diffDays(today,i.dep)<=30),soonLate=soon.filter(i=>(i.drift||0)>0||(i.ecart||0)>0).length;
   const n=all.length;
-  return(<>Sur {n} {plural(n,"projet","projets")}, {risk?<span style={{color:TX.red,fontWeight:700}}>{risk} {plural(risk,"est à risque","sont à risque")}</span>:<span style={{color:TX.green,fontWeight:700}}>aucun n'est à risque</span>}
-    {late?<> et <span style={{color:TX.red,fontWeight:700}}>{late} {plural(late,"part","partent")} après la date contractuelle</span></>:<> et aucun ne part après la date contractuelle</>}.
+  return(<>Sur {n} {plural(n,"projet","projets")}, {risk?<span style={{color:TX.red,fontWeight:600}}>{risk} {plural(risk,"est à risque","sont à risque")}</span>:<span style={{color:TX.green,fontWeight:600}}>aucun n'est à risque</span>}
+    {late?<> et <span style={{color:TX.red,fontWeight:600}}>{late} {plural(late,"part","partent")} après la date contractuelle</span></>:<> et aucun ne part après la date contractuelle</>}.
     {soon.length>0&&<> <b style={{color:C.navy}}>{soon.length} {plural(soon.length,"machine doit","machines doivent")} partir d'ici 30 jours</b>{soonLate?", dont "+soonLate+" avec retard":""}.</>}</>);
 }
 // « À décider aujourd'hui » : au plus 3 sujets — projets à risque au plus gros écart, puis la première cause de retard du portefeuille
@@ -192,12 +192,12 @@ function SummaryPage({chunk,idx,label,page,total,all,decEdits,onDecEdit}){
         </div>
         {chunk.map(i=>{const em=ETAT_META[i.r.etat]||ETAT_META["NOT ORDERED"];return(
           <div key={i.r.pj} style={{display:"grid",gridTemplateColumns:COLS,gap:8,alignItems:"center",padding:"5px 6px",fontSize:11,borderBottom:"1px solid #E1ECEB"}}>
-            <span style={{fontWeight:700,color:C.navy}}>{i.r.pj}{i.meta.numSerie&&<div style={{fontSize:9.5,fontWeight:400,color:C.mute,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>S/N {i.meta.numSerie}</div>}</span>
+            <span style={{fontWeight:600,color:C.navy}}>{i.r.pj}{i.meta.numSerie&&<div style={{fontSize:9.5,fontWeight:400,color:C.mute,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>S/N {i.meta.numSerie}</div>}</span>
             <span style={{minWidth:0}}><div style={{fontWeight:500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{i.meta.nomProjet}</div><div style={{fontSize:9.5,color:C.mute,display:"flex",alignItems:"center",gap:5}}><span style={{width:7,height:7,borderRadius:"50%",background:em.text}}/>{em.label}{i.meta.pays&&i.meta.pays!=="—"?" · "+i.meta.pays:""}</div></span>
             <span style={{textAlign:"right",fontVariantNumeric:"tabular-nums",color:C.ink2}}>{i.dep?fdm(i.dep)+" "+String(i.dep.getFullYear()).slice(2):"—"}</span>
-            <span style={{textAlign:"right",fontWeight:700,fontVariantNumeric:"tabular-nums",color:i.ecart==null?C.mute:i.ecart>0?TX.red:TX.green}}>{i.ecart==null?"—":i.ecart===0?"=":sg(i.ecart)}</span>
+            <span style={{textAlign:"right",fontWeight:600,fontVariantNumeric:"tabular-nums",color:i.ecart==null?C.mute:i.ecart>0?TX.red:TX.green}}>{i.ecart==null?"—":i.ecart===0?"=":sg(i.ecart)}</span>
             <span style={{textAlign:"right",fontVariantNumeric:"tabular-nums"}}>{i.pv} %</span>
-            <span style={{textAlign:"right",fontVariantNumeric:"tabular-nums",fontWeight:i.pen.amount>0?700:400,color:i.pen.amount>0?TX.red:C.mute,whiteSpace:"nowrap"}}>{i.pen.txt}</span>
+            <span style={{textAlign:"right",fontVariantNumeric:"tabular-nums",fontWeight:i.pen.amount>0?600:400,color:i.pen.amount>0?TX.red:C.mute,whiteSpace:"nowrap"}}>{i.pen.txt}</span>
             <span style={{display:"flex",gap:2}}>{FEUX.map(([k])=><Orb key={k} lv={i.feux[k]||null} size={10}/>)}</span>
           </div>);})}
         <div style={{display:"flex",gap:14,fontSize:9.5,color:C.mute,alignItems:"center",marginTop:8,flexWrap:"wrap"}}>
@@ -214,9 +214,9 @@ function SummaryPage({chunk,idx,label,page,total,all,decEdits,onDecEdit}){
 // ── Page d'un PJ : une phrase, puis où en est-on · ce qui coince · ce qu'on fait, et le contrat sur une ligne ──
 function pjSentence(i){
   const r=i.r,em=ETAT_META[r.etat]||ETAT_META["NOT ORDERED"];
-  if(r.etat==="SHIPPED")return <>Expédiée{i.dep?<> le <b style={{color:C.navy}}>{fd(i.dep)}</b></>:null}{i.ecart>0?<>, <span style={{color:TX.red,fontWeight:700}}>{i.ecart} j après la MaD ORC contractuelle</span></>:null}.</>;
+  if(r.etat==="SHIPPED")return <>Expédiée{i.dep?<> le <b style={{color:C.navy}}>{fd(i.dep)}</b></>:null}{i.ecart>0?<>, <span style={{color:TX.red,fontWeight:600}}>{i.ecart} j après la MaD ORC contractuelle</span></>:null}.</>;
   return(<>{em.label}{i.dep?<>, départ le <b style={{color:C.navy}}>{fd(i.dep)}</b></>:null}
-    {i.drift>0?<>, <span style={{color:TX.red,fontWeight:700}}>{i.drift} jours après le planning initial</span></>:i.drift<0?<>, <span style={{color:TX.green,fontWeight:700}}>{-i.drift} jours d'avance sur le planning initial</span></>:null}
+    {i.drift>0?<>, <span style={{color:TX.red,fontWeight:600}}>{i.drift} jours après le planning initial</span></>:i.drift<0?<>, <span style={{color:TX.green,fontWeight:600}}>{-i.drift} jours d'avance sur le planning initial</span></>:null}
     {i.ecart>0?<> et après la MaD ORC contractuelle (+{i.ecart} j)</>:null}.
     {i.types[0]?<> Cause principale : {i.types[0][0].toLowerCase()} ({i.types[0][1]} j).</>:null}
     {i.types[1]?<> Puis : {i.types[1][0].toLowerCase()} ({i.types[1][1]} j).</>:null}</>);
@@ -231,14 +231,14 @@ function PjPage({i,label,page,total}){
   const acts=sortedItems(itemsOf(m,"actions")),mits=sortedItems(itemsOf(m,"mitigations"));
   const todo=[...mits.filter(x=>!x.done).map(x=>({...x,mit:true})),...acts.filter(x=>!x.done)].slice(0,5),doneL=[...mits,...acts].filter(x=>x.done).slice(0,1);
   const colH=t=><div style={{fontSize:14,fontWeight:500,color:C.navy,margin:"0 0 6px",paddingBottom:4,borderBottom:"1px solid "+C.hair}}>{t}</div>;
-  const line=(k,kc,children)=><div style={{display:"flex",gap:6,fontSize:11,lineHeight:1.45,margin:"3px 0"}}><span style={{flexShrink:0,width:10,fontWeight:700,color:kc}}>{k}</span><span style={{minWidth:0}}>{children}</span></div>;
+  const line=(k,kc,children)=><div style={{display:"flex",gap:6,fontSize:11,lineHeight:1.45,margin:"3px 0"}}><span style={{flexShrink:0,width:10,fontWeight:600,color:kc}}>{k}</span><span style={{minWidth:0}}>{children}</span></div>;
   const reds=FEUX.filter(([k])=>i.feux[k]==="red").map(([,l])=>l.toLowerCase()),yel=FEUX.filter(([k])=>i.feux[k]==="yellow").map(([,l])=>l.toLowerCase());
   const cp=compPct(m),pp=payPct(m,r.pj),mt=montantOf(m);
   const strip=[["Contrat",mt?fmtEur(mt):"—",mt?C.navy:C.mute],["Encaissé",pp==null?"—":pp+" %",pp==null?C.mute:C.navy],["MaD ORC contractuelle",i.tf?fd(i.tf):"—",i.tf?C.navy:C.mute],[r.etat==="SHIPPED"?"Départ":"Fin projetée",i.dep?fd(i.dep):"—",i.ecart>0?TX.red:C.navy],["Pénalités",i.pen.txt,i.pen.amount>0?TX.red:C.mute]];
   return(<Page>
-    <Masthead eyebrow={label} title={<span style={{display:"inline-flex",alignItems:"baseline",gap:14}}><span style={{fontSize:36,fontWeight:700,letterSpacing:"-.02em",whiteSpace:"nowrap"}}>{r.pj}</span><span style={{fontSize:14,fontWeight:500,color:C.ink2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{[m.nomProjet,r.gamme,m.numSerie?"S/N "+m.numSerie:null,m.chefProjet&&m.chefProjet!=="—"?"chef de projet : "+m.chefProjet:null].filter(Boolean).join(" · ")}</span></span>}
+    <Masthead eyebrow={label} title={<span style={{display:"inline-flex",alignItems:"baseline",gap:14}}><span style={{fontSize:36,fontWeight:600,letterSpacing:"-.02em",whiteSpace:"nowrap"}}>{r.pj}</span><span style={{fontSize:14,fontWeight:500,color:C.ink2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{[m.nomProjet,r.gamme,m.numSerie?"S/N "+m.numSerie:null,m.chefProjet&&m.chefProjet!=="—"?"chef de projet : "+m.chefProjet:null].filter(Boolean).join(" · ")}</span></span>}
       sub={<><span style={{display:"inline-flex",alignItems:"center",gap:6,color:C.ink2}}><span style={{width:7,height:7,borderRadius:"50%",background:em.text}}/>{em.label}</span>{m.pays&&m.pays!=="—"&&<span style={{display:"inline-flex",alignItems:"center",gap:6}}><CountryFlag pays={m.pays} size={12}/>{m.pays}</span>}</>}
-      right={wl?<span style={{display:"inline-flex",alignItems:"center",gap:4,background:TINT[wl],color:TX[wl==="yellow"?"amber":wl],borderRadius:999,padding:"3px 12px 3px 5px",fontSize:11,fontWeight:700}}><Orb lv={wl} size={7}/>&nbsp;{LEV[wl]}</span>:null}/>
+      right={wl?<span style={{display:"inline-flex",alignItems:"center",gap:4,background:TINT[wl],color:TX[wl==="yellow"?"amber":wl],borderRadius:999,padding:"3px 12px 3px 5px",fontSize:11,fontWeight:600}}><Orb lv={wl} size={7}/>&nbsp;{LEV[wl]}</span>:null}/>
     <div style={{flex:1,minHeight:0,padding:"4mm 12mm 0",display:"flex",flexDirection:"column",gap:"4.5mm"}}>
       <div style={{fontFamily:F_DISPLAY,fontSize:24,fontWeight:500,lineHeight:1.25,color:C.ink,letterSpacing:"-.01em"}}>{pjSentence(i)}</div>
       <div style={{flex:1,minHeight:0,overflow:"hidden",display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"9mm"}}>
@@ -251,7 +251,7 @@ function PjPage({i,label,page,total}){
                 <div style={{width:14,height:14,borderRadius:"50%",boxSizing:"border-box",margin:"0 auto 4px",...mk}}/>
                 <div style={{fontSize:9.5,color:C.mute}}>{lab}</div>
                 <div style={{fontSize:11,color:C.ink,whiteSpace:"nowrap"}}>{fdm(d)}{k==="tests"&&r.testsFin?" → "+fdm(dOf(r.testsFin)):""}</div>
-                {dl!=null&&dl!==0&&<div style={{fontSize:9.5,fontWeight:700,color:dl>0?TX.red:TX.green}}>{sg(dl)}</div>}
+                {dl!=null&&dl!==0&&<div style={{fontSize:9.5,fontWeight:600,color:dl>0?TX.red:TX.green}}>{sg(dl)}</div>}
               </div>);})}
           </div>
           <div style={{marginTop:10}}>
@@ -277,7 +277,7 @@ function PjPage({i,label,page,total}){
         <div style={{minWidth:0}}>
           {colH("Ce qu'on fait")}
           {todo.length===0&&doneL.length===0&&!gen&&<div style={{fontSize:11,color:C.mute}}>Aucune action ni mitigation saisie.</div>}
-          {todo.map(x=>line("•",x.mit?TX.red:TX.brass,<><span style={{display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{x.mit?"Mitigation : ":""}{x.text}</span>{x.deadline&&<span style={{color:x.deadline<new Date().toISOString().slice(0,10)?TX.red:C.mute,fontWeight:x.deadline<new Date().toISOString().slice(0,10)?700:400}}> — avant le {fdm(dOf(x.deadline))}</span>}</>))}
+          {todo.map(x=>line("•",x.mit?TX.red:TX.brass,<><span style={{display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{x.mit?"Mitigation : ":""}{x.text}</span>{x.deadline&&<span style={{color:x.deadline<new Date().toISOString().slice(0,10)?TX.red:C.mute,fontWeight:x.deadline<new Date().toISOString().slice(0,10)?600:400}}> — avant le {fdm(dOf(x.deadline))}</span>}</>))}
           {doneL.map(x=>line("✓",TX.green,<><span style={{color:C.mute,textDecoration:"line-through"}}>{x.text}</span>{x.doneAt&&<span style={{color:TX.green}}> clôturé le {fdm(dOf(x.doneAt))}</span>}</>))}
           {gen&&<div style={{marginTop:10,borderLeft:"3px solid "+C.brass,paddingLeft:10,fontSize:11,lineHeight:1.45,color:C.ink,whiteSpace:"pre-wrap",display:"-webkit-box",WebkitLineClamp:4,WebkitBoxOrient:"vertical",overflow:"hidden"}}>« {gen} » <span style={{color:C.mute}}>— commentaire général</span></div>}
         </div>
@@ -332,7 +332,7 @@ export function CodirDialog({data,initialData,comments,delays,progress,initialPj
   const label="CODIR du "+new Date(meeting+"T12:00:00").toLocaleDateString("fr-FR",{day:"2-digit",month:"long",year:"numeric"});
   const chunks=[];if(chosen.length){chunks.push(chosen.slice(0,FIRST_ROWS));for(let k=FIRST_ROWS;k<chosen.length;k+=NEXT_ROWS)chunks.push(chosen.slice(k,k+NEXT_ROWS));}
   const nCov=withCover&&chosen.length?1:0;const nSum=withSummary?chunks.length:0;const total=nCov+nSum+chosen.length+nCov;
-  const chip=(on)=>({border:"1px solid "+(on?T.teal500:T.line),background:on?T.teal100:"transparent",color:on?T.teal600:T.ink500,borderRadius:8,padding:"3px 9px",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:T.font});
+  const chip=(on)=>({border:"1px solid "+(on?T.teal500:T.line),background:on?T.teal100:"transparent",color:on?T.teal600:T.ink500,borderRadius:8,padding:"3px 9px",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:T.font});
   return createPortal(
     <div id="codir-root" role="dialog" aria-modal="true" aria-label="Rapport CODIR" style={{position:"fixed",inset:0,zIndex:10050,background:T.surface,display:"flex",flexDirection:"column",fontFamily:T.font}}>
       <div className="codir-noprint" style={{display:"flex",alignItems:"center",gap:14,padding:"10px 18px",background:T.card,borderBottom:"1px solid "+T.line,flexWrap:"wrap"}}>
@@ -341,8 +341,8 @@ export function CodirDialog({data,initialData,comments,delays,progress,initialPj
         <label style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:11,color:T.ink500,fontWeight:600,cursor:"pointer"}}><input type="checkbox" checked={withCover} onChange={e=>setWithCover(e.target.checked)}/>Page de garde</label>
         <label style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:11,color:T.ink500,fontWeight:600,cursor:"pointer"}}><input type="checkbox" checked={withSummary} onChange={e=>setWithSummary(e.target.checked)}/>Page de synthèse</label>
         <span style={{marginLeft:"auto",fontSize:11,color:T.ink500}}>{chosen.length} projet{chosen.length>1?"s":""} · {total} page{total>1?"s":""}</span>
-        <button disabled={total===0} onClick={()=>window.print()} style={{border:"none",borderRadius:8,padding:"8px 16px",fontWeight:700,fontSize:14,fontFamily:T.font,color:"#fff",cursor:total?"pointer":"default",background:total?T.navy700:T.ink100}}>Exporter en PDF</button>
-        <button onClick={onClose} style={{border:"1px solid "+T.line,borderRadius:8,padding:"7px 14px",fontWeight:700,fontSize:14,fontFamily:T.font,background:"transparent",color:T.ink700,cursor:"pointer"}}>Fermer</button>
+        <button disabled={total===0} onClick={()=>window.print()} style={{border:"none",borderRadius:8,padding:"8px 16px",fontWeight:600,fontSize:14,fontFamily:T.font,color:"#fff",cursor:total?"pointer":"default",background:total?T.navy700:T.ink100}}>Exporter en PDF</button>
+        <button onClick={onClose} style={{border:"1px solid "+T.line,borderRadius:8,padding:"7px 14px",fontWeight:600,fontSize:14,fontFamily:T.font,background:"transparent",color:T.ink700,cursor:"pointer"}}>Fermer</button>
       </div>
       <div style={{flex:1,minHeight:0,display:"flex"}}>
         <div className="codir-noprint" style={{width:290,flexShrink:0,borderRight:"1px solid "+T.line,background:T.card,display:"flex",flexDirection:"column",minHeight:0}}>
@@ -362,7 +362,7 @@ export function CodirDialog({data,initialData,comments,delays,progress,initialPj
               <label key={i.r.pj} style={{display:"flex",alignItems:"center",gap:9,padding:"6px 12px",borderBottom:"1px solid "+T.surface,cursor:"pointer",background:on?T.teal100:"transparent"}}>
                 <input type="checkbox" checked={on} onChange={()=>toggle(i.r.pj)}/>
                 <div style={{minWidth:0,flex:1}}>
-                  <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontFamily:T.fontMono,fontWeight:700,fontSize:11,color:T.teal600,whiteSpace:"nowrap"}}>{i.r.pj}</span><SerieTag pj={i.r.pj} size={10}/><CountryFlag pays={i.meta.pays} size={11}/></div>
+                  <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontFamily:T.fontMono,fontWeight:600,fontSize:11,color:T.teal600,whiteSpace:"nowrap"}}>{i.r.pj}</span><SerieTag pj={i.r.pj} size={10}/><CountryFlag pays={i.meta.pays} size={11}/></div>
                   <div style={{fontSize:11,color:T.ink500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{i.meta.nomProjet}</div>
                 </div>
                 <span style={{display:"inline-flex",gap:3}}>{FEUX.map(([k])=><span key={k} style={{width:7,height:7,borderRadius:"50%",background:i.feux[k]?FC[i.feux[k]]:T.ink100}}/>)}</span>

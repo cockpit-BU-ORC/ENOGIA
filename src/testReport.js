@@ -23,7 +23,7 @@ export function testReportHtml({ r, meta, plan, catalog, act, testers, signs, ce
       const t = (catalog[k] || []).find(x => x.id === id) || { name: id };
       const st = statusOf(plan, k, id), by = statusByOf(plan, k, id);
       if (by && by.at && st !== "todo") stamps.push(by.at);
-      return `<tr><td><b>${esc(t.name)}</b>${t.obj ? `<div class="obj">${esc(t.obj)}</div>` : ""}</td><td style="color:${tone(st)};font-weight:700">${esc(label(st))}</td><td>${esc(by && st !== "todo" ? by.by : "")}</td><td>${esc(by && st !== "todo" ? frDT(by.at) : "")}</td><td>${esc(plan.notes[id] || "")}</td></tr>`;
+      return `<tr><td><b>${esc(t.name)}</b>${t.obj ? `<div class="obj">${esc(t.obj)}</div>` : ""}</td><td style="color:${tone(st)};font-weight:600">${esc(label(st))}</td><td>${esc(by && st !== "todo" ? by.by : "")}</td><td>${esc(by && st !== "todo" ? frDT(by.at) : "")}</td><td>${esc(plan.notes[id] || "")}</td></tr>`;
     }).join("");
     const extra = plan.extra[k] ? `<tr><td colspan="5"><i>Test supplémentaire :</i> ${esc(plan.extra[k])}</td></tr>` : "";
     return `<h3>${esc(name)}</h3><table class="grid"><thead><tr><th style="width:38%">Test</th><th>Résultat</th><th>Par</th><th>Date · heure</th><th>Commentaire</th></tr></thead><tbody>${lines || `<tr><td colspan="5">Aucun test retenu.</td></tr>`}${extra}</tbody></table>`;
@@ -46,7 +46,7 @@ export function testReportHtml({ r, meta, plan, catalog, act, testers, signs, ce
   const foot = `<footer class="pfoot"><table><tr><td><b>Document :</b> ${esc(docName)}</td><td><b>Projet :</b> ${esc(r.pj)}${nom ? " · " + esc(nom) : ""}</td><td><b>Version :</b> A</td></tr></table></footer>`;
   const head = `<header class="phead"><img src="${esc(base)}cdc-logo.png" alt="ENOGIA"><span>${esc(title)} · ${esc(r.pj)}</span></header>`;
   return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="color-scheme" content="light"><title>${esc(docName)}${nom ? " – " + esc(nom) : ""}</title>
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 @page{size:A4;margin:10mm 12mm}
 html{background:#fff}body{font-family:Roboto,Arial,sans-serif;color:#003366;background:#fff;font-size:10pt;margin:0 auto;max-width:186mm}
@@ -60,14 +60,14 @@ html{background:#fff}body{font-family:Roboto,Arial,sans-serif;color:#003366;back
 .pfoot{margin-top:8mm;font-size:8pt;color:#003366}
 .pfoot table{width:100%;border-collapse:collapse}.pfoot td{border:1px solid #003366;padding:3px 6px}
 .cfoot{margin-top:8mm;border-top:1px solid #9FB3C8;padding-top:4px;font-size:7.5pt;color:#5F5E5A;text-align:center;line-height:1.5}
-.ctitle{font-size:24pt;font-weight:700;margin:22mm 0 3mm;line-height:1.15}
+.ctitle{font-size:24pt;font-weight:600;margin:22mm 0 3mm;line-height:1.15}
 .csub{font-size:12pt;color:#003366;margin:0 0 16mm}
-h2{font-size:13pt;margin:0 0 8px;color:#003366;font-weight:700}
+h2{font-size:13pt;margin:0 0 8px;color:#003366;font-weight:600}
 h2 .n{display:inline-block;min-width:9mm}
-h3{font-size:10.5pt;margin:12px 0 5px;font-weight:700}
+h3{font-size:10.5pt;margin:12px 0 5px;font-weight:600}
 table{border-collapse:collapse;width:100%}
 .id td{border:1px solid #003366;padding:5px 7px;vertical-align:top}
-.id td.k{background:#E6EEF5;font-weight:700;width:24%}
+.id td.k{background:#E6EEF5;font-weight:600;width:24%}
 .doc th,.doc td{border:1px solid #003366;padding:5px 7px;text-align:left}
 .doc th{background:#003366;color:#fff;font-weight:500}
 .toc{margin-top:12mm}.toc div{display:flex;gap:6px;padding:3px 0;border-bottom:1px dotted #9FB3C8}.toc b{min-width:9mm}
@@ -75,7 +75,7 @@ table{border-collapse:collapse;width:100%}
 .grid td{border:1px solid #9FB3C8;padding:5px 6px;vertical-align:top}
 .grid tr{page-break-inside:avoid}
 .obj{color:#5F5E5A;font-size:8.5pt;white-space:pre-line;margin-top:2px}
-.sum{width:auto;margin:0 0 10px}.sum td{border:1px solid #003366;padding:4px 10px}.sum td.k{background:#E6EEF5;font-weight:700}
+.sum{width:auto;margin:0 0 10px}.sum td{border:1px solid #003366;padding:4px 10px}.sum td.k{background:#E6EEF5;font-weight:600}
 .val td{border:1px solid #003366;padding:6px 8px;vertical-align:middle;height:64px}
 .val th{background:#E6EEF5;border:1px solid #003366;text-align:left;padding:5px 8px}
 .visa{width:36%}.when{font-size:8pt;color:#5F5E5A}

@@ -95,7 +95,7 @@ function summarySlides(pptx, items, ctx) {
     const hdr = ["PJ", "Projet", "Pays", "État", "Montant", "Avanc. global", "Départ prévu", "Dérive initial", "Écart MaD ORC", "Statut", "Retard déclaré"].map(t => ({ text: t, options: { bold: true, color: C.white, fontSize: 9.5, fontFace: FONT, fill: { color: C.navy }, align: "left", valign: "middle" } }));
     const rows = [hdr];
     part.forEach((i, qi) => {
-      const band = { color: qi % 2 ? C.white : C.pale };
+      const band = { color: C.white }; // v346 (audit taste) : plus de lignes zébrées, filets seuls
       const cell = (text, o = {}) => ({ text, options: { fontFace: FONT, fontSize: 10.5, color: C.ink, valign: "middle", fill: band, ...o } });
       rows.push([
         cell(i.pj, { bold: true, color: C.navy }), cell(clip(i.nom, 28)), cell(i.pays && i.pays !== "—" ? clip(i.pays, 14) : "—", { fontSize: 9.5 }), cell(i.etatLabel, { fontSize: 9.5, color: C.ink2 }),
@@ -120,7 +120,7 @@ function changesSlide(pptx, items, ctx) {
   if (!ch.length) { s.addText("Aucun changement sur vos projets lors de la dernière mise à jour.", { x: MX, y: 1.8, w: 10, h: 0.5, fontFace: FONT, fontSize: 18, color: C.green, bold: true, margin: 0 }); return; }
   const rows = [[{ text: "PJ", options: { bold: true, color: C.white, fontSize: 9.5, fontFace: FONT, fill: { color: C.navy } } }, { text: "Projet", options: { bold: true, color: C.white, fontSize: 9.5, fontFace: FONT, fill: { color: C.navy } } }, { text: "Ce qui a bougé", options: { bold: true, color: C.white, fontSize: 9.5, fontFace: FONT, fill: { color: C.navy } } }]];
   ch.slice(0, 11).forEach((i, qi) => {
-    const c = i.change; const runs = []; const band = { color: qi % 2 ? C.white : C.pale };
+    const c = i.change; const runs = []; const band = { color: C.white }; // v346 (audit taste) : plus de lignes zébrées, filets seuls
     if (c.isNew) runs.push({ text: "Nouveau PJ dans cette version", options: { color: C.amber, bold: true, fontSize: 10.5 } });
     Object.entries(c.d || {}).forEach(([f, v], k) => {
       runs.push({ text: (k ? "   ·   " : "") + FIELD_LABEL[f] + " " + (v.delta == null ? (v.to ? "défini" : "retiré") : sg(v.delta)), options: { color: v.delta == null ? C.amber : dcol(v.delta), bold: true, fontSize: 10.5 } });

@@ -16,12 +16,12 @@ import { ACCESS_PAGES, LEVELS, LEVEL_LABEL, levelsOf, rolesOf, accessOn, slugRol
 import { AF } from "../autoFocusOk";
 
 const tone = l => l === "a" ? { bg: T.accentSoft, ink: T.accentInk } : l === "w" ? { bg: T.emerald100, ink: T.emerald600 } : l === "r" ? { bg: T.info100, ink: T.info600 } : { bg: T.surfaceAlt, ink: T.ink500 };
-const card = { background: T.card, borderRadius: 12, padding: "14px 16px", minWidth: 0 };
+const card = { get background() { return T.card; }, borderRadius: 12, padding: "14px 16px", minWidth: 0  }; // v346 : accesseurs (suivent le clair / sombre)
 const h3 = { margin: "0 0 4px", fontFamily: T.fontDisplay, fontSize: 16, fontWeight: 600, color: T.ink900 };
-const hint = { margin: "0 0 10px", fontSize: 13, color: T.ink500 };
+const hint = { margin: "0 0 10px", fontSize: 13, get color() { return T.ink500; } }; // v346 : accesseurs (suivent le clair / sombre)
 const initials = (name, email) => { const s = String(name || email || "?").replace(/@.*/, "").split(/[\s._-]+/).filter(Boolean); return ((s[0] || "?")[0] + ((s[1] || "")[0] || "")).toUpperCase(); };
 const Avatar = ({ p }) => <span aria-hidden="true" style={{ width: 28, height: 28, borderRadius: 999, background: T.surfaceAlt, color: T.ink700, display: "grid", placeItems: "center", fontFamily: T.fontDisplay, fontWeight: 600, fontSize: 11, flex: "0 0 28px" }}>{initials(p.name, p.email)}</span>;
-const field = { minHeight: 34, border: "1px solid " + T.line, borderRadius: 8, background: T.card, color: T.ink900, padding: "0 10px", fontFamily: T.font, fontSize: 13, minWidth: 0 };
+const field = { minHeight: 34, get border() { return "1px solid " + T.line; }, borderRadius: 8, get background() { return T.card; }, get color() { return T.ink900; }, padding: "0 10px", get fontFamily() { return T.font; }, fontSize: 13, minWidth: 0  }; // v346 : accesseurs (suivent le clair / sombre)
 
 // Choix du niveau : 4 segments (Masqué, Lecture, Modifier, Admin)
 function LevelPicker({ value, onChange, label, min }) {

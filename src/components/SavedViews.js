@@ -12,7 +12,7 @@ const store = list => { try { localStorage.setItem(KEY, JSON.stringify(list)); }
 // Clé de comparaison indépendante de l'ordre des cases cochées
 export const viewKey = st => JSON.stringify(Object.keys(st).sort().map(k => [k, Array.isArray(st[k]) ? [...st[k]].sort() : st[k]]));
 
-const BTN = { padding: "0 10px", borderRadius: 8, border: "none", fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, minHeight: 28, fontFamily: T.font }; // v286 : tailles du bouton commun (sm)
+const BTN = { padding: "0 10px", borderRadius: 8, border: "none", fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, minHeight: 28, get fontFamily() { return T.font; } }; // v346 : accesseurs (suivent le clair / sombre) // v286 : tailles du bouton commun (sm)
 
 export function ViewsMenu({ current, presets, onApply }) {
   const [open, setOpen] = useState(false); const [list, setList] = useState(load); const [name, setName] = useState("");

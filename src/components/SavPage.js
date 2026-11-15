@@ -24,7 +24,7 @@ const eur = v => (v ? Math.round(v).toLocaleString("fr-FR") + " €" : "—");
 const TYPE_TONE = { cur: "bad", prev: "ok", mes: "info", dev: "neutral", qtech: "violet", qcom: "violet", audit: "accent", diag: "warn", autre: "neutral" };
 const PRIO_TONE = { h: "bad", m: "warn", b: "muted" };
 const ST_TONE = { "À planifier": "warn", Planifiée: "info", "En cours": "accent", Réalisée: "ok", Validée: "ok", "Non validée": "bad", Annulée: "muted" };
-const lab = { display: "flex", flexDirection: "column", gap: 4, fontSize: 12, color: T.ink500, fontWeight: 600, minWidth: 0 };
+const lab = { display: "flex", flexDirection: "column", gap: 4, fontSize: 12, get color() { return T.ink500; }, fontWeight: 600, minWidth: 0  }; // v346 : accesseurs (suivent le clair / sombre)
 const inp = () => ({ minHeight: 32, padding: "0 10px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, boxSizing: "border-box", width: "100%" });
 const SUBS = [["tickets", "Tickets"], ["inters", "Interventions"], ["planning", "Planning des équipes"], ["parc", "Parc"], ["kpi", "KPI"]];
 const DESC = { tickets: "Le ticket est la demande (le problème à régler) ; une intervention est un déplacement sur site pour le traiter", inters: "Interventions sur site : équipe, dates, préparation, clôture et coûts",

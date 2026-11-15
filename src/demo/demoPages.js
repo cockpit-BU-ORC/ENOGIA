@@ -17,6 +17,9 @@ import { MentionBell } from "../components/MentionBell";
 import { SavPage } from "../components/SavPage";
 import { WorkshopScreen } from "../components/WorkshopScreen";
 import { userKey } from "../mentions";
+import { ManagerPanel } from "../components/ManagerPanel";
+import { PlannerView } from "../planner/Planner";
+import { setOwner, setSuperAdmin } from "../roles";
 
 const no = () => {}, yes = async () => true;
 const common = { comments: DEMO_COMMENTS, addComment: yes, deleteComment: yes, pinOk: true, delays: [], delayTypes: [], setDelayTypes: no, addDelayAllocation: yes, deleteDelayAllocation: yes, addDelayComment: yes, deleteDelayComment: yes, authorName: DEMO_ME.name, savePjMetaOverride: yes, canEditMeta: true };
@@ -68,6 +71,14 @@ const Cloche = () => <div style={{ display: "flex", justifyContent: "flex-end", 
 const savApi = { put: async (c, id, d) => { if (typeof window !== "undefined") window.__savLast = { c, id, d }; return true; }, del: async () => true, setField: async () => true };
 function SavDemo({ level, sub0 }) { const [sub, setSub] = useState(sub0); return <SavPage doc={DEMO_SAV} dem={DEMO_SAV_DEM} api={savApi} demApi={savApi} rows={DEMO_ROWS} level={level} canCost={level !== "r"} me={DEMO_ME.email} myName={DEMO_ME.name} myPjs={["PJ901", "PJ902"]} team={[]} sub={sub} onSub={setSub} onOpenPj={no} />; }
 
+// v346 : Manager (KPI, fiche projet, point hebdo) et Planificateur, vus en propriétaire (droits remis à zéro en quittant la page)
+function AsOwner({ children }) { setOwner(true); setSuperAdmin(true); React.useEffect(() => () => { setOwner(false); setSuperAdmin(false); }, []); return children; }
+function Manager({ tab0 }) { const [tab, setTab] = useState(tab0); return <AsOwner><ManagerPanel tab={tab} setTab={setTab} kpiOk calOk data={DEMO_ROWS} initialData={DEMO_ROWS} progress={DEMO_PROGRESS} setProgress={no} changeLog={[]} profiles={{ byEmail: {} }} saveProfiles={yes}
+  comments={DEMO_COMMENTS} delays={[]} delayTypes={[]} setDelayTypes={no} addDelayAllocationMulti={yes} deleteDelayAllocation={yes} managerEmails={[]} setManagerEmails={no} currentUserEmail={DEMO_ME.email} authorName={DEMO_ME.name}
+  savePjMetaOverride={yes} savePjMetaMulti={yes} addCommentMulti={yes} addComment={yes} resolveComment={yes} deleteComment={yes} closurePeriods={[]} setClosurePeriods={no} productionExclusions={{}} setProductionExclusionDays={no}
+  customEtats={[]} setCustomEtats={no} etatEdits={{}} setEtatEdits={no} clientPresence={{}} setClientPresenceFor={no} setEtatFor={no} certifs={[]} setCertifs={no} releases={[]} releaseSelection={null} /></AsOwner>; }
+const Planificateur = () => <AsOwner><PlannerView planLoaded planDoc={null} rows={DEMO_ROWS} closurePeriods={[]} productionExclusions={{}} authorName={DEMO_ME.name} onSavePlan={yes} onPublish={yes} onLoadHistory={async () => []} onRestorePublication={yes} testers={testersOf(DEMO_TESTS)} pendingDeparts={{}} onPendingApplied={no} /></AsOwner>;
+
 export const DEMO_PAGES = [
   { id: "home", label: "Accueil", Render: Accueil, expect: [] },
   { id: "home-produit", label: "Accueil · resp. produit", Render: AccueilProduit, expect: ["Livrables Produit", "P&ID validé", "Papeterie du Nord"] },
@@ -88,4 +99,8 @@ export const DEMO_PAGES = [
   { id: "tests-fiche", label: "Tests · fiche", Render: TestsFiche, expect: ["Qui teste ?", "Configuration ORC", "Checklist de tests", "Signature"] },
   { id: "turb-orc", label: "Turbines · besoins", Render: () => <Turbines tab0="orc" />, expect: ["Turbines prêtes · avec roue", "SAV-12"] },
   { id: "turb-prod", label: "Turbines · production", Render: () => <Turbines tab0="prod" />, expect: ["Production turbines"] },
+  { id: "kpi", label: "Manager · KPI", Render: () => <Manager tab0="derives" />, expect: [] },
+  { id: "fiche", label: "Manager · fiche projet", Render: () => <Manager tab0="fiche" />, expect: [] },
+  { id: "hebdo", label: "Manager · point hebdo", Render: () => <Manager tab0="hebdo" />, expect: [] },
+  { id: "planner", label: "Planificateur", Render: Planificateur, expect: [] },
 ];

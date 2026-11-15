@@ -996,4 +996,9 @@ export const RELEASE_CATALOG = [
     ["Général", "Fenêtres sans flou derrière ; barres collées de Turbines › Besoins et onglets de la fiche projet en surface pleine."],
     ["Tests", "Au banc maintenant : avancement en barre au lieu de l'anneau (aussi sur les cartes des besoins turbines)."],
   ] },
+  { v: "346", t: "KPI lisibles en sombre, rapports harmonisés", items: [
+    ["Pilotage", "KPI : les encadrés « réponse » restaient blancs en mode sombre ; corrigé (et dans Gestion des accès, Checklists, SAV)."],
+    ["Projets", "Fiche projet : bouton « Définir les pénalités » et pourcentages de la liste lisibles en sombre ; titres de zones pour les lecteurs d'écran."],
+    ["Général", "Rapports CODIR, PV et rapport chef de projet : graisses harmonisées, plus de lignes zébrées."],
+  ] },
 ];

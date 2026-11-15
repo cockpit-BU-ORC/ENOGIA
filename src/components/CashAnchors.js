@@ -10,7 +10,7 @@ import { useCashin } from "../useCashin";
 
 const fd = iso => (iso ? String(iso).slice(8, 10) + "/" + String(iso).slice(5, 7) + "/" + String(iso).slice(2, 4) : "—");
 const btn = primary => ({ padding: "6px 12px", minHeight: 32, borderRadius: 8, border: "1px solid " + (primary ? T.ink900 : T.line), background: primary ? T.ink900 : T.card, color: primary ? T.card : T.ink700, fontSize: FZ.xs, fontWeight: 600, cursor: "pointer", fontFamily: T.font });
-const field = { padding: "4px 6px", minHeight: 30, borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, boxSizing: "border-box" };
+const field = { padding: "4px 6px", minHeight: 30, borderRadius: 8, get border() { return "1px solid " + T.line; }, get background() { return T.card; }, get color() { return T.ink900; }, fontSize: FZ.sm, get fontFamily() { return T.font; }, boxSizing: "border-box"  }; // v346 : accesseurs (suivent le clair / sombre)
 
 export function CashAnchorsDialog({ planRows, authorName, onClose }) {
   useCashin();

@@ -8,7 +8,7 @@ import { askConfirm } from "../confirm";
 import { AF } from "../autoFocusOk";
 
 const btn = (extra = {}) => ({ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "4px 10px", fontSize: FZ.xs, fontWeight: 600, cursor: "pointer", fontFamily: T.font, ...extra });
-const fld = { padding: "6px 10px", borderRadius: 8, border: "1px solid " + T.line, background: T.surface, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font };
+const fld = { padding: "6px 10px", borderRadius: 8, get border() { return "1px solid " + T.line; }, get background() { return T.surface; }, get color() { return T.ink900; }, fontSize: FZ.sm, get fontFamily() { return T.font; } }; // v346 : accesseurs (suivent le clair / sombre)
 
 export function CompCatalogDialog({ catalog, setCatalog, nPj, missingCount, onApplyAll, onClose }) {
   const list = catalog && catalog.length ? catalog : DEFAULT_COMPOSANTS;

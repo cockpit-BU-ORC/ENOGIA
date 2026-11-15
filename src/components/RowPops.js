@@ -6,7 +6,7 @@ import { STAGES } from "../prodStages";
 
 // ── v162 : contenus des bulles de la liste (survol d'État, d'écart de départ et d'Avancement) ─────────────────────────
 // Rien de nouveau n'est calculé ici : on ne fait que « déplier » ce que la ligne contient déjà.
-const kick={fontSize:FZ.xs,fontWeight:600,letterSpacing: ".01em",color:T.ink500,marginBottom:8};
+const kick = {fontSize:FZ.xs,fontWeight:600,letterSpacing: ".01em", get color() { return T.ink500; },marginBottom:8 }; // v346 : accesseurs (suivent le clair / sombre)
 const d2=(d,df)=>d?fmtMode(new Date(d),df):"—";
 
 export function EtatPopBody({r,df}){

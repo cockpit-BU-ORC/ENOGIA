@@ -10,7 +10,7 @@ import { fmtEur } from "../pjProgress";
 import { useCashin } from "../useCashin";
 
 const btn = (primary, on = true) => ({ padding: "5px 11px", borderRadius: 8, border: "1px solid " + (primary ? T.teal600 : T.line), background: primary ? T.teal600 : T.card, color: primary ? T.onFill : T.ink900, fontSize: FZ.xs, fontWeight: 600, fontFamily: T.font, cursor: on ? "pointer" : "default", opacity: on ? 1 : .5, whiteSpace: "nowrap" });
-const field = { padding: "6px 10px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, minWidth: 0 };
+const field = { padding: "6px 10px", borderRadius: 8, get border() { return "1px solid " + T.line; }, get background() { return T.card; }, get color() { return T.ink900; }, fontSize: FZ.sm, get fontFamily() { return T.font; }, minWidth: 0  }; // v346 : accesseurs (suivent le clair / sombre)
 const same = (a, b) => normPj(a) === normPj(b);
 
 // Résumé d'une liaison : ce que l'utilisateur voit dans la liste.

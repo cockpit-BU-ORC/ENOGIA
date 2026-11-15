@@ -242,7 +242,7 @@ export function FicheContratPanel({ part, r, meta, rows, getMeta, today, save, s
       <Sub title="Pénalités de retard" right={savedPen ? <button onClick={async () => { if (await askConfirm({ title: "Retirer les pénalités de cette fiche ?", message: "Les conditions de pénalité sont effacées et ne comptent plus dans les totaux ni les rapports.", confirmLabel: "Retirer les pénalités", danger: true })) save({ penalite: undefined }); }} style={{ ...btn(), padding: "1px 8px" }}>Retirer</button> : null} />
       {!pen ? <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <span style={{ fontSize: FZ.sm, color: T.ink300 }}>Aucune condition de pénalité sur cette fiche</span>
-        <button onClick={() => setDraft({ ...PEN_DEFAULT })} style={{ ...btn(), color: T.navy700 }}>＋ Définir les pénalités</button>
+        <button onClick={() => setDraft({ ...PEN_DEFAULT })} style={{ ...btn(), color: T.accentInk }}>＋ Définir les pénalités</button>
       </div> : <>
         {isDraft && <div role="status" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "8px 12px", borderRadius: 8, background: T.amber100, color: T.ink900, marginBottom: 8, fontSize: FZ.sm }}>
           <span style={{ flex: "1 1 220px" }}><b>Brouillon</b> — rien n'est enregistré ni compté dans les totaux tant que vous n'avez pas enregistré.</span>

@@ -25,7 +25,7 @@ export function debugHtml({ pj, date, name, debug, sign, sections = DEBUG_SECTIO
 *{box-sizing:border-box}body{margin:0;font:9pt Calibri,Carlito,Arial,sans-serif;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 table{width:100%;border-collapse:collapse;table-layout:fixed}td,th{border:1px solid #000;padding:2px 4px;vertical-align:top;word-wrap:break-word}
 .head td{text-align:center;vertical-align:middle;font-size:12pt}.info td{font-size:10pt}
-.sec th{background:#BFBFBF;font-weight:700;text-align:left}.sec th.c,.c{text-align:center}.b{font-weight:700}.h{font-size:8pt}
+.sec th{background:#BFBFBF;font-weight:600;text-align:left}.sec th.c,.c{text-align:center}.b{font-weight:600}.h{font-size:8pt}
 tr{page-break-inside:avoid}thead{display:table-header-group}.gap{height:8px}
 .bar{position:fixed;top:8px;right:8px;font:600 13px Arial}.bar button{padding:8px 14px;border-radius:8px;border:none;background:#003366;color:#fff;cursor:pointer}
 @media print{.bar{display:none}}

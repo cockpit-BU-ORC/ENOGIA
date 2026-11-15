@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v346",
+    date: "2026-11-15",
+    title: "V346 : KPI en sombre",
+    items: [
+      { t: "Pilotage", d: "Les KPI s'affichent correctement en mode sombre." },
+    ],
+  },
+  {
     id: "2026-11-v345",
     date: "2026-11-15",
     title: "V345 : plus net",
