@@ -31,6 +31,7 @@ import { PageGuard } from "./components/PageGuard";
 import { ArrangeCtx } from "./components/Arrange"; // v235 : cadrans partagés, réglés par le propriétaire
 import { backdropStyle } from "./pageBackdrop"; // v225 : un fond léger par page
 import { useA11yFallback } from "./a11yFallback";
+import { readUrlState, urlSub, writeUrlState, URL_VIEWS } from "./urlState";
 import { ManagerAccessNotice, PIN, NavIcon, Hl, EmptyState, LoadingSkeleton, PageHead, notify, Toaster } from "./components/SharedUI";
 import { PjDialog, PjDialogCtx } from "./components/RowDetail";
 import { listenPlan, savePlan, loadHistory, publishPlan, restorePublication, setDepartDate, clearPendingDeparts } from "./planner/store";
@@ -66,7 +67,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-15-v341-toucher";
+const APP_BUILD_VERSION = "2026-11-15-v342-adresse";
 
 const ReleasePopup = React.lazy(() => import("./components/ReleaseNotes").then(m => ({ default: m.ReleasePopup })));
 function Navigate0({ go }) { useEffect(() => { go(); }, []); return null; } // eslint-disable-line react-hooks/exhaustive-deps
@@ -203,7 +204,7 @@ export default function App(){
   const [initialImporting,setInitialImporting]=useState(false);
   const [lastInitialImport,setLastInitialImport]=useState(null);
   const [lastInitialAdd,setLastInitialAdd]=useState(null);
-  const [view,setView]=useState(()=>{try{const v0=localStorage.getItem("enogia_view"),v=v0==="prodturb"?"turbines":v0;return ["home","table","gantt","calendar","changes","comments","tests","planner","cashin","turbines","prodturb","achats"].includes(v)?v:"home";}catch(e){return "home";}});
+  const [view,setView]=useState(()=>{try{const u0=readUrlState();if(u0.p)return u0.p;const v0=localStorage.getItem("enogia_view"),v=v0==="prodturb"?"turbines":v0;return ["home","table","gantt","calendar","changes","comments","tests","planner","cashin","turbines","prodturb","achats"].includes(v)?v:"home";}catch(e){return "home";}});
   useEffect(()=>{try{localStorage.setItem("enogia_view",view);}catch(e){}},[view]);
   useEffect(()=>{
     const h=e=>{
@@ -241,7 +242,7 @@ export default function App(){
       localStorage.setItem("enogia_calZoom",String(calZoom));
     }catch(e){}
   },[calMode,calAnchor,calDayAnchor,calZoom]);
-  const [managerTab,setManagerTab]=useState("derives");
+  const [managerTab,setManagerTab]=useState(()=>urlSub("manager","derives"));
   const [managerJump,setManagerJump]=useState(null); // v152 : PJ à ouvrir dans la fiche Manager depuis la cloche @
   // v261 : filtres de la Liste (listFilters.js)
   const {selEtats,setSelEtats,selGammes,setSelGammes,selMoisArrivee,setSelMoisArrivee,selMoisTests,setSelMoisTests,selMoisFinProd,setSelMoisFinProd,selMoisDepart,setSelMoisDepart,selPJs,setSelPJs,selProjets,setSelProjets,selPays,setSelPays,selChefs,setSelChefs,onlyDrift,setOnlyDrift}=useListFilters();
@@ -261,7 +262,7 @@ export default function App(){
   const canCash=accMe?accAt("finance","r"):(isOwner||(CASH_FOR_ADMINS&&pinOk));
   setSuperAdmin(canEditMeta); // pose le rôle avant que les composants ne le lisent (src/roles.js)
   const [progress,setProgress]=useState({});
-  const [calSel,setCalSel]=useState(null),[calDay,setCalDay]=useState(null),[calTab,setCalTab]=useState("resume"); // v221 : jour cliqué dans le Calendrier (bouton « production ce jour » de la fiche)
+  const [calSel,setCalSel]=useState(()=>readUrlState().pj||null),[calDay,setCalDay]=useState(null),[calTab,setCalTab]=useState("resume"); // v221 : jour cliqué dans le Calendrier (bouton « production ce jour » de la fiche)
   const [etatChoice,setEtatChoice]=useState({});
   const [releaseSelection,setReleaseSelection]=useState(null); // v146.16 : sélection en cours dans le catalogue des nouveautés
   const [releaseNotes,setReleaseNotes]=useState(null); // v146.10 : pop-up Nouveautés rédigé dans l'appli (Réglages › Nouveautés)
@@ -954,12 +955,12 @@ export default function App(){
   const PLANNING_VIEWS=["table","gantt","calendar","planner","changes"];
   const planViewOk=v=>v==="planner"?isOwner:subOk("planning."+v); // v308
   // v307 : sous-pages de Tests et de Turbines choisies depuis le menu ou le sélecteur de la page
-  const [testsSub,setTestsSub]=useState("semaine");
-  const [accSub,setAccSub]=useState("roles");
-  const [savSub,setSavSub]=useState("tickets"),[savFocus,setSavFocus]=useState(null); // v326 : sous-page SAV / MES, PJ cherché // v320 : sous-page de « Personnes et accès » (Rôles / Accès par page)
+  const [testsSub,setTestsSub]=useState(()=>urlSub("tests","semaine"));
+  const [accSub,setAccSub]=useState(()=>urlSub("access","roles"));
+  const [savSub,setSavSub]=useState(()=>urlSub("sav","tickets")),[savFocus,setSavFocus]=useState(null); // v326 : sous-page SAV / MES, PJ cherché // v320 : sous-page de « Personnes et accès » (Rôles / Accès par page)
   const [testsFocus,setTestsFocus]=useState(null);
   const [pendingDeparts,setPendingDeparts]=useState({}); // v312 // v310 : PJ à ouvrir dans Tests depuis sa fiche
-  const [turbTab,setTurbTab]=useState(()=>{try{const v=localStorage.getItem("enogia_turbines_tab");return v==="orc"?"orc":"prod";}catch(e){return "prod";}});
+  const [turbTab,setTurbTab]=useState(()=>{const s0=urlSub("turbines","");if(s0)return s0;try{const v=localStorage.getItem("enogia_turbines_tab");return v==="orc"?"orc":"prod";}catch(e){return "prod";}});
   const lastPlanRef=useRef("table");/* v305 */if(PLANNING_VIEWS.includes(view))lastPlanRef.current=view;
   const firstPlanView=()=>["table","gantt","calendar","changes"].find(planViewOk)||"home";
   const turbEdit=accMe?atLeast(accMe["turbines."+turbTab]||"n","w"):canProdTurbL; // v308 : modifier la sous-page affichée
@@ -997,6 +998,13 @@ export default function App(){
     return()=>{clearTimeout(t);if(window.cancelIdleCallback&&id)window.cancelIdleCallback(id);};},[loggedIn,canProdTurb,canSeeTests,canSav]);
   const savAllowed=["tickets","inters","planning","parc","kpi"].filter(s=>subOk("sav."+s));
   const savTeam=useMemo(()=>Object.values((profiles&&profiles.byEmail)||{}).filter(p=>p&&!p.removed&&p.role==="sav").map(p=>p.name||String(p.email||"").split("@")[0]).filter(Boolean).sort(),[profiles]);
+  // v342 (audit Web Interface Guidelines, lot 6) : page, sous-page et fiche ouverte dans l'adresse ; Précédent / Suivant du navigateur
+  const urlSubs={manager:[managerTab,setManagerTab],tests:[testsSub,setTestsSub],turbines:[turbTab,setTurbTab],sav:[savSub,setSavSub],access:[accSub,setAccSub]};
+  const curSub=urlSubs[view]?urlSubs[view][0]:"";
+  const urlReady=useRef(false);
+  useEffect(()=>{writeUrlState({p:view,s:curSub,pj:calSel||""},urlReady.current);urlReady.current=true;},[view,curSub,calSel]);
+  const urlSubsRef=useRef(urlSubs);urlSubsRef.current=urlSubs;
+  useEffect(()=>{const h=()=>{const u=readUrlState();if(u.p&&URL_VIEWS.includes(u.p))setView(u.p);const sub=urlSubsRef.current[u.p];if(u.s&&sub)sub[1](u.s);setCalSel(u.pj||null);};window.addEventListener("popstate",h);return()=>window.removeEventListener("popstate",h);},[]);
   const openSav=(sub,pj)=>{setSavSub(sub||"tickets");setSavFocus(pj||null);setCalSel(null);setView("sav");};
   const inboxActions=useMemo(()=>{
     const out=[],todayK=new Date().toISOString().slice(0,10),fr=s=>s?String(s).slice(0,10).split("-").reverse().join("/"):"";

@@ -2474,3 +2474,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Titres équilibrés (text-wrap: balance) ; points de suspension « … ».
 - Aucune clé localStorage ; règles Firestore inchangées.
 - Fichiers : autoFocusOk.js, motion.js, styles.css, 12 composants (autoFocus), ProjectModal.js, SharedUI.js, versions.
+
+## v342 — audit Web Interface Guidelines (lot 6) : page dans l'adresse
+
+- Adresse : ?p=<page>&s=<sous-page>&pj=<PJ> (urlState.js) ; Précédent / Suivant du navigateur ; liens partageables (l'accès reste vérifié par le rôle).
+- Liste : pas de virtualisation (content-visibility sans effet sur les lignes de tableau ; ~100 PJ).
+- Aucune nouvelle clé localStorage (enogia_view reste lue si l'adresse ne dit rien) ; règles Firestore inchangées.
+- Fichiers : urlState.js(+test), App.js, versions.

@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v342",
+    date: "2026-11-15",
+    title: "V342 : liens vers une page",
+    items: [
+      { t: "Général", d: "Le bouton Précédent du navigateur fonctionne, et vous pouvez envoyer le lien d'une page ou d'une fiche de PJ." },
+    ],
+  },
+  {
     id: "2026-11-v341",
     date: "2026-11-15",
     title: "V341 : tablette plus confortable",

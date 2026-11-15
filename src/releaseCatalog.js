@@ -981,4 +981,7 @@ export const RELEASE_CATALOG = [
     ["Général", "Au doigt : le clavier ne s'ouvre plus tout seul à l'ouverture d'une fenêtre, plus de délai ni de flash gris au toucher."],
     ["Général", "Faire défiler une fenêtre ne fait plus défiler la page derrière ; titres sans mot isolé en fin de ligne."],
   ] },
+  { v: "342", t: "La page affichée est dans l'adresse", items: [
+    ["Général", "Le bouton Précédent du navigateur revient à la page d'avant ; un lien copié ouvre la même page, la même sous-page et la même fiche de PJ."],
+  ] },
 ];
