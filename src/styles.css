@@ -221,7 +221,8 @@ th { letter-spacing: .02em; }
 @keyframes enogiaMenuIn { from { opacity: 0; transform: translateY(-4px) scale(.97); } to { opacity: 1; transform: none; } }
 .enogia-menu { animation: enogiaMenuIn .14s var(--e-ease) both; transform-origin: top left; }
 .enogia-menu-item { display: flex; align-items: center; gap: 10px; width: 100%; border: none; background: transparent; padding: 8px 12px; border-radius: 8px; cursor: pointer; text-align: left; font: inherit; color: inherit; }
-.enogia-menu-item:hover, .enogia-menu-item:focus-visible { background: var(--e-surface-alt, rgba(128,138,150,.14)); outline: none; }
+.enogia-menu-item:hover, .enogia-menu-item:focus-visible { background: var(--e-surface-alt, rgba(128,138,150,.14)); }
+.enogia-menu-item:focus-visible { outline: 2px solid var(--e-accent, #0E8C9E); outline-offset: -2px; } /* v340 : anneau au clavier */
 .enogia-rowact { opacity: 0; transition: opacity .12s ease; }
 tr:hover .enogia-rowact, tr:focus-within .enogia-rowact, .enogia-rowact[aria-expanded="true"] { opacity: 1; }
 @media (hover: none) { .enogia-rowact { opacity: .7; } }
@@ -465,7 +466,8 @@ button:not(:disabled):active { transform: scale(.97); }
 
 /* v212 : sous-menus du Manager en surimpression à droite du menu */
 .enogia-fly { animation: enogiaFlyIn .16s var(--e-ease) both; }
-.enogia-fly-item:hover, .enogia-fly-item:focus-visible { background: rgba(127,127,127,.12) !important; outline: none; }
+.enogia-fly-item:hover, .enogia-fly-item:focus-visible { background: rgba(127,127,127,.12) !important; }
+.enogia-fly-item:focus-visible { outline: 2px solid var(--e-accent, #0E8C9E); outline-offset: -2px; }
 @keyframes enogiaFlyIn { from { opacity: 0; transform: translateX(-4px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .enogia-fly { animation: none; } }
 
@@ -631,3 +633,7 @@ button, input, select, textarea { font-family: inherit; }
 
 /* v335 : carte du parc et liste des sites empilées sur écran étroit */
 @media (max-width: 900px) { .enogia-map-split { grid-template-columns: 1fr !important; } }
+
+/* v340 (audit Web Interface Guidelines, lot 3) : champ sans contour propre → anneau sur son cadre au clavier ; éléments rendus atteignables par le filet */
+.e-fw:focus-within { box-shadow: 0 0 0 2px var(--e-accent, #0E8C9E); }
+[data-kbd]:focus-visible { outline: 2px solid var(--e-accent, #0E8C9E); outline-offset: 2px; }

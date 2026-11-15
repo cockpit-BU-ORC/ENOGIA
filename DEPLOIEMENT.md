@@ -2458,3 +2458,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Réglages : fermetures de l'atelier (ex-Calendrier de production, entrée retirée) ; titres au format commun.
 - Aucune clé localStorage ; règles Firestore inchangées.
 - Fichiers : components/WorkshopScreen.js, ManagerFiche.js, ManagerPanel.js, AccessPage.js, TestFiche.js, TestsTab.js, testPlan.js, testFiche.js, access.js, App.js, demo, versions.
+
+## v340 — audit Web Interface Guidelines (lots 1 à 4)
+
+- Fiche projet : confirmation avant de supprimer une action, une mitigation, un composant ou un jalon.
+- Clavier : éléments cliquables atteignables (filet a11yFallback), focus visible dans les menus, boutons de zoom nommés.
+- Alerte du navigateur avant de quitter avec un brouillon (accès, checklists, pénalités).
+- Aucune clé localStorage ; règles Firestore inchangées.
+- Fichiers : a11yFallback.js(+test), unsavedGuard.js, styles.css, components/ManagerFiche.js, ManagerNav.js, FicheContrat.js, CalendarView.js, GanttView.js, AccessPage.js, ChecklistsView.js, versions.

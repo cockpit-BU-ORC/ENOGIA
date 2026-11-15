@@ -51,6 +51,16 @@ function pass(root) {
     if (el.title || el.closest("[title]") || el.scrollWidth <= el.clientWidth + 1) return;
     const t = (el.innerText || "").trim(); if (t) el.title = t;
   });
+  // v340 (audit Web Interface Guidelines, lot 2) : div / span / ligne cliquables (curseur main, sans rôle ni tabindex)
+  // → atteignables par Tab et ouvertes par Entrée / Espace (keyActivate) ; les fonds de fenêtre (position fixe) sont ignorés.
+  scope.querySelectorAll('[style*="cursor: pointer"]').forEach(el => {
+    if (el.dataset.kbd || el.hasAttribute("tabindex") || el.hasAttribute("role") || el.getAttribute("aria-hidden") === "true") return;
+    if (/^(BUTTON|A|INPUT|SELECT|TEXTAREA|LABEL|SUMMARY|OPTION)$/.test(el.tagName) || el.closest("button,a,label,[role=button],[contenteditable]")) return;
+    if (el.style.position === "fixed" || el.style.inset) return;
+    el.dataset.kbd = "1"; el.tabIndex = 0;
+    if (!/^(TR|TD|LI)$/.test(el.tagName)) el.setAttribute("role", "button");
+    if (!el.getAttribute("aria-label") && !(el.innerText || "").trim() && el.title) el.setAttribute("aria-label", el.title);
+  });
   scope.querySelectorAll("button,[role=button]").forEach(b => {
     if (!(b.getAttribute("aria-label") || b.getAttribute("aria-labelledby") || b.title || (b.innerText || "").trim())) {
       const th = b.closest("th");
@@ -81,6 +91,9 @@ export function useA11yFallback() {
     schedule();
     const mo = new MutationObserver(muts => { if (muts.some(m => m.addedNodes && m.addedNodes.length)) schedule(); });
     mo.observe(document.body, { childList: true, subtree: true });
-    return () => { mo.disconnect(); clearTimeout(t); };
+    // v340 : Entrée / Espace sur un élément rendu atteignable par le filet = clic
+    const keyActivate = e => { const el = e.target; if (!el || !el.dataset || el.dataset.kbd !== "1" || (e.key !== "Enter" && e.key !== " ") || e.repeat) return; e.preventDefault(); el.click(); };
+    document.addEventListener("keydown", keyActivate);
+    return () => { mo.disconnect(); clearTimeout(t); document.removeEventListener("keydown", keyActivate); };
   }, []);
 }

@@ -10,6 +10,7 @@ import { NavIcon } from "./SharedUI";
 import { ETAT_SWATCHES } from "./EtatsDialog";
 import { PEN_REFS, PEN_DEFAULT, penaltyCalc, ficheBase, siblingsOf, pjBase } from "../penalties";
 import { askConfirm } from "../confirm";
+import { useUnsavedGuard } from "../unsavedGuard";
 
 const fd = iso => iso ? new Date(String(iso).slice(0, 10) + "T12:00:00").toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 const capLbl = () => ({ fontSize: FZ.xs, fontWeight: 600, color: T.ink500, letterSpacing: ".01em" });
@@ -102,7 +103,7 @@ function CapInput({ value, type, base, onSave }) {
   const commit = () => { if (!dirty) return; if (num != null && (isNaN(num) || num < 0 || (!eur && num > 100))) { setV(value == null ? "" : String(value)); return; } onSave({ cap: num }); };
   return <div style={{ minWidth: 0 }}>
     <div style={{ ...capLbl(), display: "flex", justifyContent: "space-between", gap: 6 }}><span>Plafond</span><span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 600, color: T.ink300 }}>{value && base ? "= " + fmtEur(eur ? Number(value) : base * Number(value) / 100) : "vide = sans"}</span></div>
-    <div style={{ display: "flex", alignItems: "stretch", marginTop: 3, border: "1.5px solid " + (dirty ? T.teal500 : T.line), borderRadius: 8, background: T.card, overflow: "hidden" }}>
+    <div className="e-fw" style={{ display: "flex", alignItems: "stretch", marginTop: 3, border: "1.5px solid " + (dirty ? T.teal500 : T.line), borderRadius: 8, background: T.card, overflow: "hidden" }}>
       <input type="text" inputMode="decimal" value={v} onChange={e => setV(e.target.value)} onBlur={commit} onKeyDown={e => { if (e.key === "Enter") e.currentTarget.blur(); }} placeholder="—" aria-label="Plafond"
         style={{ flex: 1, minWidth: 0, width: 56, border: "none", outline: "none", background: "transparent", color: T.ink900, fontSize: FZ.sm, fontWeight: 600, fontFamily: T.font, textAlign: "right", padding: "4px 6px" }} />
       <select value={type} onChange={e => onSave({ capType: e.target.value })} aria-label="Unité du plafond" style={{ border: "none", borderLeft: "1px solid " + T.line, background: T.surfaceAlt, color: T.ink700, fontSize: FZ.xs, fontWeight: 600, fontFamily: T.font, padding: "0 4px", cursor: "pointer" }}>
@@ -192,6 +193,7 @@ export function FicheContratPanel({ part, r, meta, rows, getMeta, today, save, s
   const savedPen = meta.penalite ? { ...PEN_DEFAULT, ...meta.penalite } : null;
   const [draft, setDraft] = useState(null);
   useEffect(() => { setDraft(null); }, [r.pj]);
+  useUnsavedGuard(!savedPen && !!draft); // v340
   const isDraft = !savedPen && !!draft;
   const pen = savedPen || draft;
   const setPen = f => { if (savedPen) save({ penalite: { ...savedPen, ...f } }); else setDraft(d => ({ ...(d || PEN_DEFAULT), ...f })); };

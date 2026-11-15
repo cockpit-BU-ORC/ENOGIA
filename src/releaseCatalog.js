@@ -972,4 +972,9 @@ export const RELEASE_CATALOG = [
     ["Réglages", "Les fermetures de l'atelier passent dans Réglages ; l'entrée Calendrier de production est retirée (jours sans production : depuis le Calendrier)."],
     ["Général", "Titres des pages du Manager et de la gestion des accès au même format que les autres pages."],
   ] },
+  { v: "340", t: "Clavier, suppressions confirmées, brouillons protégés", items: [
+    ["Projets", "Fiche projet : supprimer une action, un plan de mitigation, un composant ou un jalon demande confirmation."],
+    ["Général", "Les lignes et cases cliquables s'ouvrent aussi au clavier (Tab, puis Entrée) ; focus visible dans les menus."],
+    ["Général", "Le navigateur prévient avant de fermer la page si des accès, une checklist ou des pénalités ne sont pas enregistrés."],
+  ] },
 ];

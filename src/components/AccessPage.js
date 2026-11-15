@@ -10,6 +10,7 @@ import { T, FZ, btn } from "../theme";
 import { PlanSwitch } from "./PlanSwitch";
 import { Hl } from "./SharedUI";
 import { askConfirm } from "../confirm";
+import { useUnsavedGuard } from "../unsavedGuard";
 import { profileOf, setProfile, isRemoved } from "../profiles";
 import { ACCESS_PAGES, LEVELS, LEVEL_LABEL, levelsOf, rolesOf, accessOn, slugRole, setLevel, copyRole, BUILTIN_ROLE_IDS } from "../access";
 
@@ -54,6 +55,7 @@ export default function AccessPage({ profiles, saveProfiles, accessDoc, saveAcce
   const levelChanges = levels ? Object.keys(L).reduce((n, id) => n + R.filter(([k]) => (L[id] || {})[k] !== (base.levels[id] || {})[k]).length, 0) : 0;
   const roleChanges = roles ? (R.length !== base.roles.length || R.some(([k, n], i) => !base.roles[i] || base.roles[i][0] !== k || base.roles[i][1] !== n) ? 1 : 0) : 0;
   const nChanges = peopleChanged.length + levelChanges + roleChanges;
+  useUnsavedGuard(nChanges > 0); // v340
   const on = accessOn(accessDoc);
 
   const assign = (emails, k) => setRoleOf(m => { const n = { ...m }; emails.forEach(e => { n[e] = k; }); return n; });

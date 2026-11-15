@@ -206,8 +206,8 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
         <button type="button" onClick={()=>setGrouped(!grouped)} aria-pressed={grouped} title="Regrouper les lignes par projet"
           style={{padding:"5px 11px",borderRadius:8,border:"1px solid "+(grouped?T.teal400:T.line),background:grouped?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:grouped?(T.mode==="dark"?"#0B1130":"#FFFFFF"):T.ink700,fontSize:FZF.sm,fontWeight:600,cursor:"pointer",transition:"background-color .15s ease, color .15s ease",display:"inline-flex",alignItems:"center",gap:6}}><NavIcon name="layers" size={15}/>Par projet</button>
         <div style={{display:"flex",gap:4}}>
-          <button onClick={zoomOut} disabled={dayW<=ZMIN} style={{padding:"5px 9px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:dayW<=ZMIN?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:600,cursor:dayW<=ZMIN?"default":"pointer"}}>−</button>
-          <button onClick={zoomIn} disabled={dayW>=ZMAX} style={{padding:"5px 9px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:dayW>=ZMAX?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:600,cursor:dayW>=ZMAX?"default":"pointer"}}>+</button>
+          <button type="button" aria-label="Dézoomer" onClick={zoomOut} disabled={dayW<=ZMIN} style={{padding:"5px 9px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:dayW<=ZMIN?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:600,cursor:dayW<=ZMIN?"default":"pointer"}}>−</button>
+          <button type="button" aria-label="Zoomer" onClick={zoomIn} disabled={dayW>=ZMAX} style={{padding:"5px 9px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:dayW>=ZMAX?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:600,cursor:dayW>=ZMAX?"default":"pointer"}}>+</button>
         </div>
         <button onClick={()=>scrollToDay(dayOf(today))} className="enogia-btn-ind" style={{padding:"5px 11px",borderRadius:8,border:"1.5px solid "+T.teal500,background:"transparent",color:T.teal600,fontSize:FZF.sm,fontWeight:600,cursor:"pointer"}}>Aujourd'hui</button>
       </div>

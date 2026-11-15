@@ -126,7 +126,7 @@ export function ManagerPalette({ groups, data, onGo, onOpenPj, onClose, activeKe
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 16px", borderBottom: "1px solid " + T.line, color: T.ink500 }}>
         <NavIcon name="search" size={17} />
         <input ref={ref} value={q} onChange={e => setQ(e.target.value)} placeholder="Aller à… (ex. dérives, cash, accès, PJ2003)" aria-label="Rechercher une destination" autoComplete="off"
-          style={{ flex: 1, border: "none", outline: "none", background: "transparent", color: T.ink900, fontSize: FZ.md, padding: "15px 0", fontFamily: T.font }} />
+          style={{ flex: 1, border: "none", background: "transparent", color: T.ink900, fontSize: FZ.md, padding: "15px 0", fontFamily: T.font }} />
       </div>
       <div ref={listRef} role="listbox" style={{ maxHeight: 340, overflowY: "auto", padding: 6 }}>
         {items.map((it, i) => { if (it.head) return <div key={"h" + i} style={{fontFamily:T.font,fontSize:12,fontWeight:600,color:T.accentInk,padding: "8px 12px 3px"}}>{it.head}</div>;

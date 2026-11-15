@@ -10,6 +10,7 @@ import { parseDocxXml, parseChecklistText, docxDocumentXml, zipFiles } from "../
 import { parseManual, bookStepsOf, bookImages, slug } from "../manualImport";
 import { vibRows } from "../testFiche";
 import { askConfirm } from "../confirm";
+import { useUnsavedGuard } from "../unsavedGuard";
 
 const nid = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const btn = (primary, ghost) => ({ padding: "0 12px", minHeight: 32, borderRadius: 8, border: "1px solid " + (primary && !ghost ? T.ink900 : T.line), background: primary && !ghost ? T.ink900 : T.card, color: primary && !ghost ? T.card : T.ink700, fontSize: FZ.sm, fontWeight: 600, cursor: "pointer", fontFamily: T.font });
@@ -50,6 +51,7 @@ function DebugModelView({ doc, commit }) {
   const saved = useMemo(() => debugSections(doc && doc.debugModel), [doc]);
   const [secs, setSecs] = useState(saved), [dirty, setDirty] = useState(false), [imp, setImp] = useState(false), [msg, setMsg] = useState(null), [busy, setBusy] = useState(false);
   useEffect(() => { if (!dirty) setSecs(saved); }, [saved, dirty]);
+  useUnsavedGuard(dirty); // v340
   const upd = fn => { setSecs(s => fn(s.map(x => ({ ...x, items: x.items.map(i => ({ ...i })) })))); setDirty(true); };
   const move = (arr, i, d) => { const j = i + d; if (j < 0 || j >= arr.length) return arr; const c = arr.slice(); [c[i], c[j]] = [c[j], c[i]]; return c; };
   const save = async () => { setBusy(true); const ok = await commit({ debugModel: { sections: secs, at: new Date().toISOString() } }); setBusy(false); if (ok !== false) { setDirty(false); setMsg({ t: "Checklist enregistrée : elle s'applique à toutes les machines." }); } else setMsg({ t: "L'enregistrement a échoué.", bad: true }); };
@@ -173,6 +175,7 @@ function VibModelView({ doc, commit }) {
   const saved = useMemo(() => vibRows(doc && doc.vibModel), [doc]);
   const [rows, setRows] = useState(saved), [dirty, setDirty] = useState(false), [msg, setMsg] = useState("");
   useEffect(() => { if (!dirty) setRows(saved); }, [saved, dirty]);
+  useUnsavedGuard(dirty); // v340
   const upd = (i, p) => { setRows(L => L.map((x, k) => (k === i ? { ...x, ...p } : x))); setDirty(true); };
   const save = async () => { const ok = await commit({ vibModel: { rows: rows.filter(r => r.label.trim()), at: new Date().toISOString() } }); if (ok !== false) { setDirty(false); setMsg("Enregistré : s'applique à toutes les fiches de tests."); } else setMsg("L'enregistrement a échoué."); };
   return <section style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10 }}>

@@ -172,7 +172,7 @@ function DelayComposer({types,onAdd,onNewType}){
     </>}
   </div>);
 }
-const TrashBtn=({onClick,title})=><SuperOnly><button onClick={onClick} title={title} className="e-hov-ink" style={{border:"none",background:"transparent",color:T.ink300,cursor:"pointer",fontSize:FZ.md,lineHeight:1,padding:"0 3px","--e-hov-ink":T.red500}}><NavIcon name="close" size={11}/></button></SuperOnly>;
+const TrashBtn=({onClick,title})=><SuperOnly><button type="button" onClick={onClick} title={title} aria-label={title} className="e-hov-ink" style={{border:"none",background:"transparent",color:T.ink300,cursor:"pointer",fontSize:FZ.md,lineHeight:1,padding:"0 3px","--e-hov-ink":T.red500}}><NavIcon name="close" size={11}/></button></SuperOnly>;
 
 // ── Statut global : 4 feux de confiance (planning / cash / risques / communication client) ──────────
 // v124 : seuls les axes évalués ont leur carte (avec commentaire) ; les axes « Non évalué » sont repliés sur une seule ligne
@@ -491,7 +491,7 @@ function ItemsSection({title,kind,meta,field,atKey,color,showWeek,onSave,onGroup
           {x.done&&<label style={{display:"inline-flex",alignItems:"center",gap:5,fontSize:FZ.xs,fontWeight:600,color:T.emerald600}}>clôturée le{dateIn(x.doneAt,v=>v&&patch(x.id,{doneAt:v}),{width:128,fontWeight:600})}</label>}
           {x.groupId&&Array.isArray(x.groupPjs)&&x.groupPjs.length>1&&<span title={"Saisie commune à "+x.groupPjs.join(", ")} style={{fontSize:FZ.xs,fontWeight:600,color:T.ink500,border:"1px solid "+T.line,borderRadius:999,padding:"0 7px",whiteSpace:"nowrap"}}>× {x.groupPjs.length} PJ</span>}
           {enteredOn(x)&&<i title={"Saisie le "+enteredOn(x).full} style={{fontSize:FZ.xs,fontStyle:"italic",fontWeight:400,color:T.ink500,whiteSpace:"nowrap"}}>saisie {enteredOn(x).short}</i>}
-          <span style={{marginLeft:"auto"}}><TrashBtn title="Supprimer cette ligne" onClick={()=>save(items.filter(i=>i.id!==x.id))}/></span>
+          <span style={{marginLeft:"auto"}}><TrashBtn title="Supprimer cette ligne" onClick={async()=>{if(await askConfirm({title:"Supprimer cette ligne ?",message:"« "+String((mit?x.risk:x.text)||"").slice(0,80)+" » disparaît de la fiche.",confirmLabel:"Supprimer la ligne",danger:true}))save(items.filter(i=>i.id!==x.id));}}/></span>
         </div>
       </div>);
     })}
@@ -562,7 +562,7 @@ function ComposantsSection({meta,onSave,catalog,setCatalog,pjsToComplete,onApply
       {list.map(c=>{const all=COMP_STEPS.every(([f])=>c[f]);return(<div key={c.id} style={{display:"grid",gridTemplateColumns:GRID,alignItems:"center",padding:"1px 8px",minHeight:30,gap:4,borderTop:"1px solid "+T.line,background:all?T.emerald100:"transparent"}}>
         <input defaultValue={c.label} key={c.id+c.label} title="Renommer ce composant (administrateurs)" aria-label={"Nom du composant : "+c.label} onBlur={e=>{const t=e.target.value.trim();if(t&&t!==c.label)save(list.map(x=>x.id===c.id?{...x,label:t}:x));else if(!t)e.target.value=c.label;}} onKeyDown={e=>{if(e.key==="Enter")e.target.blur();}} style={{...FIELD,fontSize:FZ.xs,fontWeight:600,color:T.ink900,background:"transparent",border:"1px solid transparent",padding:"1px 4px",minWidth:0,width:"100%",textOverflow:"ellipsis"}}/>
         {COMP_STEPS.map(([f,l])=><span key={f} style={{textAlign:"center"}}><input type="checkbox" checked={!!c[f]} onChange={()=>toggle(c.id,f)} style={stepBox(f,!!c[f])} aria-label={c.label+" "+l}/></span>)}
-        <TrashBtn title="Retirer ce composant" onClick={()=>save(list.filter(x=>x.id!==c.id))}/>
+        <TrashBtn title="Retirer ce composant" onClick={async()=>{if(await askConfirm({title:"Retirer ce composant ?",message:"« "+c.label+" » et ses cases cochées disparaissent de la fiche.",confirmLabel:"Retirer le composant",danger:true}))save(list.filter(x=>x.id!==c.id));}}/>
       </div>);})}
       {list.length===0&&<EmptyState compact icon="inbox" title="Aucun composant" hint="Ajoutez-en un ci-dessous."/>}
     </div>
@@ -650,7 +650,7 @@ function PaiementsManual({meta,onSave,extra}){
       <input defaultValue={p.label} key={p.id+p.label} onBlur={e=>{const t=e.target.value.trim();if(t&&t!==p.label)patch(p.id,{label:t});}} style={{...FIELD,flex:1,fontWeight:600,background:"transparent",border:"1px solid transparent"}}/>
       <span style={{display:"inline-flex",alignItems:"center",gap:3}}><input type="number" min="0" max="100" defaultValue={p.pct==null?"":p.pct} key={p.id+"p"+p.pct} onBlur={e=>{const v=e.target.value===""?null:Number(e.target.value);if(v!==p.pct)patch(p.id,{pct:v});}} placeholder="%" style={{...FIELD,width:50,boxSizing:"border-box",textAlign:"right"}}/><span style={{fontSize:FZ.xs,color:T.ink300}}>%</span></span>
       <span style={{fontSize:FZ.xs,color:p.done?T.emerald600:T.ink300,width:86,textAlign:"right",whiteSpace:"nowrap",fontWeight:mt&&p.pct?600:400}}>{mt&&p.pct?fmtEur(mt*Number(p.pct)/100):(p.done&&p.doneAt?fmt(new Date(p.doneAt)):"")}</span>
-      <TrashBtn title="Supprimer ce jalon" onClick={()=>save(items.filter(x=>x.id!==p.id))}/>
+      <TrashBtn title="Supprimer ce jalon" onClick={async()=>{if(await askConfirm({title:"Supprimer ce jalon ?",message:"« "+(p.label||"Jalon")+" » disparaît des jalons de paiement.",confirmLabel:"Supprimer le jalon",danger:true}))save(items.filter(x=>x.id!==p.id));}}/>
     </div>))}
     {tot>0&&Math.round(tot)!==100&&<div style={{fontSize:FZ.xs,color:T.amber600,marginBottom:4}}>Somme des jalons : {tot} % (le total attendu est 100 %).</div>}
     <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>

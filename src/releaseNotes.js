@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v340",
+    date: "2026-11-15",
+    title: "V340 : clavier et suppressions",
+    items: [
+      { t: "Projets", d: "Supprimer une ligne de la fiche projet demande désormais confirmation." },
+      { t: "Général", d: "Le site s'utilise mieux au clavier, et vous êtes prévenu avant de quitter une page non enregistrée." },
+    ],
+  },
+  {
     id: "2026-11-v339",
     date: "2026-11-13",
     title: "V339 : écran atelier et objectifs",

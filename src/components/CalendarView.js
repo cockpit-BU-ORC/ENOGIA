@@ -328,8 +328,8 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
         {allPJs&&<DropFilter label="PJ" options={allPJs} selected={selPJs||new Set(allPJs)} onChange={setSelPJs}/>}
         {mode!=="month"&&<button type="button" onClick={toggleIni} aria-pressed={showIni} title="Afficher le départ prévu au planning initial et l'écart" style={{padding:"5px 10px",borderRadius:8,border:"1px solid "+(showIni?T.teal500:T.line),background:showIni?T.teal100:"transparent",color:showIni?T.teal600:T.ink700,fontSize:FZF.sm,fontWeight:600,cursor:"pointer"}}>Planning initial</button>}
         {mode!=="month"&&<div style={{display:"flex",gap:4}}>
-          <button onClick={zoomOut} disabled={zoomLevel>=maxZoomLevel} style={{padding:"5px 9px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:zoomLevel>=maxZoomLevel?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:600,cursor:zoomLevel>=maxZoomLevel?"default":"pointer"}}>−</button>
-          <button onClick={zoomIn} disabled={zoomLevel<=0} style={{padding:"5px 9px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:zoomLevel<=0?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:600,cursor:zoomLevel<=0?"default":"pointer"}}>+</button>
+          <button type="button" aria-label="Dézoomer" onClick={zoomOut} disabled={zoomLevel>=maxZoomLevel} style={{padding:"5px 9px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:zoomLevel>=maxZoomLevel?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:600,cursor:zoomLevel>=maxZoomLevel?"default":"pointer"}}>−</button>
+          <button type="button" aria-label="Zoomer" onClick={zoomIn} disabled={zoomLevel<=0} style={{padding:"5px 9px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:zoomLevel<=0?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:600,cursor:zoomLevel<=0?"default":"pointer"}}>+</button>
         </div>}
         <button onClick={goToday} className="enogia-btn-ind" style={{padding:"5px 11px",borderRadius:8,border:"1.5px solid "+T.teal500,background:"transparent",color:T.teal600,fontSize:FZF.sm,fontWeight:600,cursor:"pointer"}}>Aujourd'hui</button>
       </div>
