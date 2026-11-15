@@ -28,7 +28,7 @@ function InlinePanelPlaceholder(){
 }
 
 // v350 (audit de performance) : défini hors du composant (sinon recréé et remonté à chaque rendu)
-const Num=({l,v,c})=><div style={{background:T.panel,borderRadius:12,padding:"7px 10px",minWidth:0}}><div style={{fontFamily:T.fontLabel,fontSize:12,color:T.ink500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{l}</div><div style={{fontFamily:T.fontDisplay,fontSize:17,fontWeight:600,color:c||T.ink900,fontVariantNumeric:"tabular-nums",lineHeight:1.2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{v}</div></div>;
+const Num=({l,v,c})=><div style={{background:T.panel,borderRadius:12,padding:"7px 10px",minWidth:0}}><div style={{fontFamily:T.fontLabel,fontSize:12,color:T.ink500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{l}</div><div style={{fontFamily:T.fontDisplay,fontSize:16,fontWeight:600,color:c||T.ink900,fontVariantNumeric:"tabular-nums",lineHeight:1.2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{v}</div></div>;
 export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComment,pinOk,delays,delayTypes,setDelayTypes,addDelayAllocation,deleteDelayAllocation,addDelayComment,deleteDelayComment,authorName,savePjMetaOverride,inline,canEditMeta,embedded}){
   const [editingMeta,setEditingMeta]=useState(false);
   const [detailMode,setDetailMode]=useDetailMode();
@@ -87,10 +87,10 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
         {!embedded&&<><PjPlate pj={pj} size="lg"/>
         <Badge etat={r.etat}/></>}
         <EpcTag meta={meta}/>
-        {r.gamme&&<span style={{fontFamily:T.fontLabel,fontSize:12,fontWeight:600,color:T.ink700,border:"1px solid "+T.line,borderRadius:8,padding:"1px 7px"}}>{r.gamme}</span>}
+        {r.gamme&&<span style={{fontFamily:T.fontLabel,fontSize:12,fontWeight:500,color:T.ink700,border:"1px solid "+T.line,borderRadius:8,padding:"1px 7px"}}>{r.gamme}</span>}
         {!editingMeta&&meta.nomProjet&&meta.nomProjet!=="—"&&<span style={{fontFamily:T.fontDisplay,fontSize:20,fontWeight:600,letterSpacing:"-.01em",color:T.ink900,minWidth:0,lineHeight:1.15,flex:"1 1 140px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} title={meta.nomProjet}>{meta.nomProjet}</span>}
         <span style={{display:"inline-flex",gap:6,alignItems:"center",marginLeft:"auto",flexShrink:0}}>
-          {!embedded&&<button onClick={()=>setDetailMode(detailMode==="popup"?"panel":"popup")} title={detailMode==="popup"?"Afficher les fiches dans un volet à droite":"Afficher les fiches dans une fenêtre centrale"} aria-label={detailMode==="popup"?"Passer en volet latéral":"Passer en pop-up central"} style={{background:T.panel,border:"none",borderRadius:8,height:30,padding:"0 9px",fontSize:FZ.xs,fontWeight:600,cursor:"pointer",color:T.ink700,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font}}><NavIcon name={detailMode==="popup"?"sidepanel":"popup"} size={13}/>{detailMode==="popup"?"Volet":"Pop-up"}</button>}
+          {!embedded&&<button onClick={()=>setDetailMode(detailMode==="popup"?"panel":"popup")} title={detailMode==="popup"?"Afficher les fiches dans un volet à droite":"Afficher les fiches dans une fenêtre centrale"} aria-label={detailMode==="popup"?"Passer en volet latéral":"Passer en pop-up central"} style={{background:T.panel,border:"none",borderRadius:8,height:30,padding:"0 9px",fontSize:FZ.xs,fontWeight:500,cursor:"pointer",color:T.ink700,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font}}><NavIcon name={detailMode==="popup"?"sidepanel":"popup"} size={13}/>{detailMode==="popup"?"Volet":"Pop-up"}</button>}
           <button onClick={onClose} title={inline?"Désélectionner":"Fermer"} aria-label={inline?"Désélectionner":"Fermer"} style={{background:T.panel,border:"none",borderRadius:8,width:30,height:30,fontSize:FZ.md,cursor:"pointer",color:T.ink700,flexShrink:0}}><NavIcon name="close" size={11}/></button>
         </span>
       </div>
@@ -102,7 +102,7 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
           {orcSupportOf(meta)&&<span title="Chef de projet ORC en soutien du chef de projet EPC">soutien ORC : {orcSupportOf(meta)}</span>}
           <SerieTag pj={pj} size={11}/>
           {presenceKind(r.clientPresence)&&<PresenceChip kind={presenceKind(r.clientPresence)} date={presenceFirstDate(r.clientPresence)} dates={presenceDates(r.clientPresence)} compact tiny/>}
-          {canEditMeta&&savePjMetaOverride&&<button onClick={()=>setEditingMeta(true)} title="Modifier le nom, le pays, le chef de projet, la gamme" style={{background:"transparent",border:"none",padding:"2px 4px",minHeight:24,fontSize:FZ.xs,fontWeight:600,color:T.teal600,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4,fontFamily:T.font}}><NavIcon name="edit" size={12}/>Modifier</button>}
+          {canEditMeta&&savePjMetaOverride&&<button onClick={()=>setEditingMeta(true)} title="Modifier le nom, le pays, le chef de projet, la gamme" style={{background:"transparent",border:"none",padding:"2px 4px",minHeight:24,fontSize:FZ.xs,fontWeight:500,color:T.teal600,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4,fontFamily:T.font}}><NavIcon name="edit" size={12}/>Modifier</button>}
         </div>}
       {(()=>{
         const S=stageSoft(),d=k=>r[k]?new Date(r[k]):null,t0=new Date(today);t0.setHours(0,0,0,0);
@@ -118,9 +118,9 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
           <div role="list" aria-label="Parcours de la machine" style={{display:"grid",gridTemplateColumns:"repeat(5,minmax(0,1fr))",gap:3,marginBottom:10}}>
             {steps.map(([k,l,dt,tone],i)=>{const done=i<curI||(i===curI&&i===4),on=i===curI&&i!==4,fill=done||on;return(
               <div role="listitem" key={k} className="enogia-bar-fill" aria-current={on?"step":undefined} style={{background:fill?tone.solid:T.panel,color:fill?inkOn(tone.solid):T.ink500,borderRadius:i===0?"6px 0 0 6px":i===4?"0 8px 8px 0":0,padding:"5px 4px",textAlign:"center",minWidth:0,outline:on?"2px solid "+T.ink900:"none",outlineOffset:-2}}>
-                <div style={{fontFamily:T.fontLabel,fontSize:11,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{l}</div>
-                <div style={{fontSize:FZ.xs,fontWeight:600,fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{k==="production"?"":dt?fmtMode(dt,df):"—"}{k==="depart"&&r.drift>0?" +"+r.drift+" j":""}</div>
-                {on&&<div style={{fontFamily:T.fontLabel,fontSize:11,fontWeight:600}}>en cours</div>}
+                <div style={{fontFamily:T.fontLabel,fontSize:12,fontWeight:500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{l}</div>
+                <div style={{fontSize:FZ.xs,fontWeight:500,fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{k==="production"?"":dt?fmtMode(dt,df):"—"}{k==="depart"&&r.drift>0?" +"+r.drift+" j":""}</div>
+                {on&&<div style={{fontFamily:T.fontLabel,fontSize:12,fontWeight:500}}>en cours</div>}
               </div>);})}
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(90px,1fr))",gap:6,marginBottom:14}}>
@@ -139,8 +139,8 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
           {key:"apercu",label:"Aperçu",icon:"calendar"},
           {key:"commentaires",label:"Commentaires",icon:"comments",count:(comments?.[pj]||[]).filter(c=>!c.private).length},
           ...(pinOk&&delayTypes?[{key:"retards",label:"Retards",icon:"clock",count:(delays?.[pj]||[]).length}]:[]),
-        ].map(t=><button key={t.key} role="tab" aria-selected={tab===t.key} onClick={()=>setTab(t.key)} style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:4,padding:"9px 6px",marginBottom:-1,border:"none",borderBottom:"3px solid "+(tab===t.key?T.teal500:"transparent"),borderRadius:0,cursor:"pointer",background:"transparent",color:tab===t.key?T.ink900:T.ink500,fontSize:FZ.xs,fontWeight:600,transition:"border-color .18s ease,color .15s ease"}}>
-          <NavIcon name={t.icon} size={12}/>{t.label}{t.count>0&&<span style={{fontSize:FZ.xs,fontWeight:600,color:tab===t.key?T.onFill:T.ink500,background:tab===t.key?T.teal500:T.ink100,borderRadius:999,padding:"1px 6px"}}>{t.count}</span>}
+        ].map(t=><button key={t.key} role="tab" aria-selected={tab===t.key} onClick={()=>setTab(t.key)} style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:4,padding:"9px 6px",marginBottom:-1,border:"none",borderBottom:"3px solid "+(tab===t.key?T.teal500:"transparent"),borderRadius:0,cursor:"pointer",background:"transparent",color:tab===t.key?T.ink900:T.ink500,fontSize:FZ.xs,fontWeight:500,transition:"border-color var(--e-dur-menu) ease,color var(--e-dur-menu) ease"}}>
+          <NavIcon name={t.icon} size={12}/>{t.label}{t.count>0&&<span style={{fontSize:FZ.xs,fontWeight:500,color:tab===t.key?T.onFill:T.ink500,background:tab===t.key?T.teal500:T.ink100,borderRadius:999,padding:"1px 6px"}}>{t.count}</span>}
         </button>)}
       </div>
 
@@ -158,14 +158,14 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
             const dim=new Date(y,m+1,0).getDate();
             const cells=[...Array(adj).fill(null),...Array.from({length:dim},(_,i)=>i+1)];
             return(<div key={mi} style={{minWidth:0}}>
-              <div style={{textAlign:"center",fontWeight:600,fontSize:FZ.xs,color:T.ink900,marginBottom:8}}>{MONTHS_FULL[m]} {y}</div>
+              <div style={{textAlign:"center",fontWeight:500,fontSize:FZ.xs,color:T.ink900,marginBottom:8}}>{MONTHS_FULL[m]} {y}</div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(0,1fr))",gap:2}}>
-                {["L","M","M","J","V","S","D"].map((d,i)=><div key={i} style={{textAlign:"center",fontSize:FZ.xs,fontWeight:600,color:T.ink300}}>{d}</div>)}
+                {["L","M","M","J","V","S","D"].map((d,i)=><div key={i} style={{textAlign:"center",fontSize:FZ.xs,fontWeight:500,color:T.ink300}}>{d}</div>)}
                 {cells.map((day,ci)=>{
                   if(!day)return<div key={"e"+ci}/>;
                   const evs=de[day]||[];
                   const isToday=day===today.getDate()&&m===today.getMonth()&&y===today.getFullYear();
-                  return(<div key={day} style={{aspectRatio:"1",borderRadius:8,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontSize:FZ.xs,fontWeight:evs.length?600:500,color:evs.length?evs[0].ink:isToday?T.teal600:T.ink700,background:evs.length?evs[0].bg:isToday?T.teal100:"transparent",border:evs.length?"1.5px solid "+evs[0].c:isToday?"1.5px solid "+T.teal400:"none",position:"relative"}}>
+                  return(<div key={day} style={{aspectRatio:"1",borderRadius:8,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontSize:FZ.xs,fontWeight:evs.length?500:500,color:evs.length?evs[0].ink:isToday?T.teal600:T.ink700,background:evs.length?evs[0].bg:isToday?T.teal100:"transparent",border:evs.length?"1.5px solid "+evs[0].c:isToday?"1.5px solid "+T.teal400:"none",position:"relative"}}>
                     {day}
                     {evs.length>1&&<div style={{position:"absolute",bottom:1,right:2,fontSize:FZ.xs,color:evs[0].ink}}>+{evs.length-1}</div>}
                   </div>);
@@ -184,9 +184,9 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
       {tab==="commentaires"&&<ProjectComments pj={pj} comments={comments?.[pj]||[]} addComment={addComment} deleteComment={deleteComment} pinOk={pinOk} authorName={authorName}/>}
       {tab==="retards"&&pinOk&&delayTypes&&<DelayAllocations pj={pj} delays={delays?.[pj]||[]} delayTypes={delayTypes} setDelayTypes={setDelayTypes} addDelayAllocation={addDelayAllocation} deleteDelayAllocation={deleteDelayAllocation} addDelayComment={addDelayComment} deleteDelayComment={deleteDelayComment} authorName={authorName}/>}
       <div style={embedded?{marginTop:12,display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}:{position:"sticky",bottom:-fp,margin:"16px -"+fp+"px -"+fp+"px",padding:"10px "+fp+"px",background:T.card,borderTop:"1px solid "+T.line,display:"flex",gap:6,flexWrap:"wrap",alignItems:"center",zIndex:3}}>
-        <button type="button" onClick={()=>setTab("commentaires")} className="enogia-btn-ind" style={{background:"transparent",border:"1px solid "+T.line,borderRadius:8,minHeight:30,padding:"0 10px",fontSize:FZ.xs,fontWeight:600,cursor:"pointer",color:T.ink700,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font}}><NavIcon name="comments" size={13}/>Commenter</button>
-        {pinOk&&delayTypes&&<button type="button" onClick={()=>setTab("retards")} className="enogia-btn-ind" style={{background:"transparent",border:"1px solid "+T.line,borderRadius:8,minHeight:30,padding:"0 10px",fontSize:FZ.xs,fontWeight:600,cursor:"pointer",color:T.ink700,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font}}><NavIcon name="clock" size={13}/>Déclarer un retard</button>}
-        {pinOk&&<button type="button" className="enogia-btn-ind" onClick={()=>{try{window.dispatchEvent(new CustomEvent("enogia:openSynthese",{detail:{pj}}));}catch(e){}if(onClose)onClose();}} title="Ouvrir la fiche synthèse de ce PJ (Manager)" style={{marginLeft:"auto",background:T.ink900,border:"none",borderRadius:8,minHeight:30,padding:"0 12px",fontSize:FZ.xs,fontWeight:600,cursor:"pointer",color:T.card,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font,whiteSpace:"nowrap"}}><NavIcon name="arrow" size={13}/>Fiche synthèse</button>}
+        <button type="button" onClick={()=>setTab("commentaires")} className="enogia-btn-ind" style={{background:"transparent",border:"1px solid "+T.line,borderRadius:8,minHeight:30,padding:"0 10px",fontSize:FZ.xs,fontWeight:500,cursor:"pointer",color:T.ink700,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font}}><NavIcon name="comments" size={13}/>Commenter</button>
+        {pinOk&&delayTypes&&<button type="button" onClick={()=>setTab("retards")} className="enogia-btn-ind" style={{background:"transparent",border:"1px solid "+T.line,borderRadius:8,minHeight:30,padding:"0 10px",fontSize:FZ.xs,fontWeight:500,cursor:"pointer",color:T.ink700,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font}}><NavIcon name="clock" size={13}/>Déclarer un retard</button>}
+        {pinOk&&<button type="button" className="enogia-btn-ind" onClick={()=>{try{window.dispatchEvent(new CustomEvent("enogia:openSynthese",{detail:{pj}}));}catch(e){}if(onClose)onClose();}} title="Ouvrir la fiche synthèse de ce PJ (Manager)" style={{marginLeft:"auto",background:T.ink900,border:"none",borderRadius:8,minHeight:30,padding:"0 12px",fontSize:FZ.xs,fontWeight:500,cursor:"pointer",color:T.card,display:"inline-flex",alignItems:"center",gap:6,fontFamily:T.font,whiteSpace:"nowrap"}}><NavIcon name="arrow" size={13}/>Fiche synthèse</button>}
       </div>
 
   </>);
@@ -216,10 +216,10 @@ export function EditMetaForm({meta,gamme,onSave,onCancel}){
   const fieldStyle={padding:"8px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink900,background:T.card};
   return(<div style={{display:"flex",flexDirection:"column",gap:8,marginTop:6,maxWidth:420}}>
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-      <label style={{display:"flex",flexDirection:"column",gap:3,fontSize:FZ.xs,fontWeight:600,color:T.ink500}}>Nom du projet
+      <label style={{display:"flex",flexDirection:"column",gap:3,fontSize:FZ.xs,fontWeight:500,color:T.ink500}}>Nom du projet
         <input type="text" value={nomProjet} onChange={e=>setNomProjet(e.target.value)} style={fieldStyle}/>
       </label>
-      <label style={{display:"flex",flexDirection:"column",gap:3,fontSize:FZ.xs,fontWeight:600,color:T.ink500}}>Pays
+      <label style={{display:"flex",flexDirection:"column",gap:3,fontSize:FZ.xs,fontWeight:500,color:T.ink500}}>Pays
         {/* Liste déroulante (plutôt qu'un texte libre) — le drapeau se met à jour automatiquement
             dès qu'on choisit un pays (demandé explicitement), garanti puisqu'on ne peut plus taper
             une orthographe qui ne correspond à aucun drapeau connu. */}
@@ -233,7 +233,7 @@ export function EditMetaForm({meta,gamme,onSave,onCancel}){
       </label>
     </div>
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-      <label style={{display:"flex",flexDirection:"column",gap:3,fontSize:FZ.xs,fontWeight:600,color:T.ink500}}>Chef de projet
+      <label style={{display:"flex",flexDirection:"column",gap:3,fontSize:FZ.xs,fontWeight:500,color:T.ink500}}>Chef de projet
         {/* Liste déroulante (plutôt qu'un texte libre) construite à partir des chefs de projet
             connus (référentiel + synchro Suivi ORC + corrections manuelles), déjà stockés en
             "Prénom NOM" complet — demandé explicitement. */}
@@ -241,7 +241,7 @@ export function EditMetaForm({meta,gamme,onSave,onCancel}){
         <input list="enogia-chef-main" value={chefProjet} onChange={e=>setChefProjet(e.target.value)} placeholder="Nom du chef de projet" style={fieldStyle}/>
         <datalist id="enogia-chef-main">{allChefs.map(c=><option key={c} value={c}/>)}</datalist>
       </label>
-      <label style={{display:"flex",flexDirection:"column",gap:3,fontSize:FZ.xs,fontWeight:600,color:T.ink500}}>Gamme
+      <label style={{display:"flex",flexDirection:"column",gap:3,fontSize:FZ.xs,fontWeight:500,color:T.ink500}}>Gamme
         <select value={gammeVal} onChange={e=>setGammeVal(e.target.value)} style={fieldStyle}>
           {!ALL_GAMMES.includes(gammeVal)&&gammeVal&&<option value={gammeVal}>{gammeVal}</option>}
           {ALL_GAMMES.map(g=><option key={g} value={g}>{g}</option>)}
@@ -292,7 +292,7 @@ export function ProjectComments({pj,comments,addComment,deleteComment,pinOk,auth
           <span style={{fontSize:FZ.xs,color:T.ink500}}>En tant que <strong style={{color:T.ink700}}>{authorName}</strong></span>
           :<input type="text" value={authorInput} onChange={e=>{setAuthorInput(e.target.value);setErr("");}} placeholder="Votre nom (obligatoire)" maxLength={40}
             style={{padding:"8px 12px",borderRadius:8,border:"1px solid "+(err?T.red500:T.line),fontSize:FZ.sm,fontFamily:T.font,color:T.ink700}}/>}
-        {pinOk?<label style={{display:"flex",alignItems:"center",gap:6,fontSize:FZ.xs,color:T.ink500,fontWeight:600,cursor:"pointer"}}>
+        {pinOk?<label style={{display:"flex",alignItems:"center",gap:6,fontSize:FZ.xs,color:T.ink500,fontWeight:500,cursor:"pointer"}}>
           <input type="checkbox" checked={isPrivate} onChange={e=>setIsPrivate(e.target.checked)}/> Privé (BU ORC uniquement)
         </label>:<span/>}
       </div>
@@ -306,8 +306,8 @@ export function ProjectComments({pj,comments,addComment,deleteComment,pinOk,auth
     </div>
 
     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,flexWrap:"wrap",marginBottom:8}}>
-      <span style={{fontSize:FZ.xs,fontWeight:600,color:T.ink500}}>{sorted.length} commentaire{sorted.length!==1?"s":""}</span>
-      {nPriv>0&&<button onClick={()=>setShowPrivate(v=>!v)} aria-pressed={showPrivate} style={{border:"1px solid "+(showPrivate?T.amber500:T.line),background:showPrivate?T.amber100:"transparent",color:showPrivate?T.amber600:T.ink500,borderRadius:8,padding:"2px 8px",fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font}}>{showPrivate?"Masquer les privés":"Afficher les privés ("+nPriv+")"}</button>}
+      <span style={{fontSize:FZ.xs,fontWeight:500,color:T.ink500}}>{sorted.length} commentaire{sorted.length!==1?"s":""}</span>
+      {nPriv>0&&<button onClick={()=>setShowPrivate(v=>!v)} aria-pressed={showPrivate} style={{border:"1px solid "+(showPrivate?T.amber500:T.line),background:showPrivate?T.amber100:"transparent",color:showPrivate?T.amber600:T.ink500,borderRadius:8,padding:"2px 8px",fontSize:FZ.xs,fontWeight:500,cursor:"pointer",fontFamily:T.font}}>{showPrivate?"Masquer les privés":"Afficher les privés ("+nPriv+")"}</button>}
     </div>
     {/* Refonte "chat" (demandé explicitement : "je vois ça plus comme un chat gmail") — avatar +
         bloc aligné à gauche, même registre que la page Commentaires dédiée. */}
@@ -318,15 +318,15 @@ export function ProjectComments({pj,comments,addComment,deleteComment,pinOk,auth
           <div style={{flex:1,minWidth:0}}>
             <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap",marginBottom:2}}>
               <span style={{fontWeight:600,color:T.ink700,fontSize:FZ.sm}}>{c.author}</span>
-              {c.private&&<span style={{fontSize:FZ.xs,color:T.amber600,background:T.amber100,borderRadius:4,padding:"1px 6px",fontWeight:600,letterSpacing:".01em"}}>Privé</span>}
-              {c.groupPjs&&<span title={"Commentaire groupé : "+c.groupPjs.join(", ")} style={{fontSize:FZ.xs,color:T.violet600,background:T.violet100,borderRadius:4,padding:"1px 6px",fontWeight:600}}>groupé ×{c.groupPjs.length}</span>}
+              {c.private&&<span style={{fontSize:FZ.xs,color:T.amber600,background:T.amber100,borderRadius:4,padding:"1px 6px",fontWeight:500,letterSpacing:".01em"}}>Privé</span>}
+              {c.groupPjs&&<span title={"Commentaire groupé : "+c.groupPjs.join(", ")} style={{fontSize:FZ.xs,color:T.violet600,background:T.violet100,borderRadius:4,padding:"1px 6px",fontWeight:500}}>groupé ×{c.groupPjs.length}</span>}
               <span style={{fontSize:FZ.xs,color:T.ink300}}>{relTime(c.date)}</span>
               <SuperOnly><button onClick={()=>{setDeleteTarget(c._idx);setPinInput("");}} title="Supprimer" style={{background:"none",border:"none",color:T.ink100,cursor:"pointer",fontSize:FZ.xs,padding:0,marginLeft:2}}><NavIcon name="close" size={11}/></button></SuperOnly>
             </div>
             <div data-no-i18n="1" style={{background:c.private?T.amber100:T.panel,borderRadius:"4px 12px 12px 12px",padding:"8px 12px",display:"inline-block",maxWidth:"100%",fontSize:FZ.xs,color:T.ink700,whiteSpace:"pre-wrap"}}>{c.text}</div>
             <CommentMarks c={c} pj={pj} idx={c._idx} me={mctx.me} nameOf={e=>((mctx.options||[]).find(o=>o.email===e)||{}).name||undefined} resolveComment={resolveComment}/>
             <Reactions c={c} pj={pj} idx={c._idx}/>
-            {c.linkedDate&&<div style={{marginTop:5,fontSize:FZ.xs,color:T.ink500,fontWeight:600}}>Lié au {fmt(new Date(c.linkedDate))}</div>}
+            {c.linkedDate&&<div style={{marginTop:5,fontSize:FZ.xs,color:T.ink500,fontWeight:500}}>Lié au {fmt(new Date(c.linkedDate))}</div>}
             {deleteTarget===c._idx&&<div style={{marginTop:8,paddingTop:8,borderTop:"1px solid "+T.line,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
               <span style={{fontSize:FZ.sm,fontWeight:600,color:T.ink900}}>Supprimer ce commentaire ?</span>
               <button onClick={confirmDelete} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.redFill,color:T.onFill,fontSize:FZ.sm,fontWeight:600,cursor:"pointer"}}>Confirmer la suppression</button>
@@ -398,7 +398,7 @@ export function DelayAllocations({pj,delays,delayTypes,setDelayTypes,addDelayAll
             </div>
           </div>
           {d.note&&<div style={{fontSize:FZ.sm,color:T.ink500,marginTop:3}}>{d.note}</div>}
-          {addDelayComment&&<button onClick={()=>setOpenThread(openThread===d.id?null:d.id)} style={{marginTop:6,background:"none",border:"none",padding:0,color:T.teal600,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
+          {addDelayComment&&<button onClick={()=>setOpenThread(openThread===d.id?null:d.id)} style={{marginTop:6,background:"none",border:"none",padding:0,color:T.teal600,fontSize:FZ.xs,fontWeight:500,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
             {(d.comments||[]).length>0?(d.comments.length+" réponse"+(d.comments.length>1?"s":"")):"Répondre"}
           </button>}
           {openThread===d.id&&<DelayThread d={d} pj={pj} authorName={authorName} addDelayComment={addDelayComment} deleteDelayComment={deleteDelayComment}/>}
@@ -433,7 +433,7 @@ function DelayThread({d,pj,authorName,addDelayComment,deleteDelayComment}){
     {(d.comments||[]).map((c,i)=>(
       <div key={i} style={{background:T.card,borderRadius:8,padding:"8px 8px"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8}}>
-          <span style={{fontWeight:600,color:T.teal600,fontSize:FZ.xs}}>{c.author}</span>
+          <span style={{fontWeight:500,color:T.teal600,fontSize:FZ.xs}}>{c.author}</span>
           <div style={{display:"flex",alignItems:"center",gap:6}}>
             <span style={{fontSize:FZ.xs,color:T.ink300}}>{new Date(c.date).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</span>
             {deleteDelayComment&&<SuperOnly><button onClick={()=>{setDelTarget(i);setPin("");}} title="Supprimer" style={{background:"none",border:"none",color:T.ink300,cursor:"pointer",fontSize:FZ.xs,padding:0}}><NavIcon name="close" size={11}/></button></SuperOnly>}
@@ -442,7 +442,7 @@ function DelayThread({d,pj,authorName,addDelayComment,deleteDelayComment}){
         <div data-no-i18n="1" style={{fontSize:FZ.sm,color:T.ink700,whiteSpace:"pre-wrap",marginTop:2}}>{c.text}</div>
         {delTarget===i&&<div style={{marginTop:6,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
           <input type="password" value={pin} onChange={e=>setPin(e.target.value)} placeholder="Code Manager" style={{padding:"4px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.xs,fontFamily:T.font,width:110}}/>
-          <button onClick={()=>confirmDelete(i)} style={{padding:"4px 8px",borderRadius:8,border:"none",background:T.redFill,color:T.onFill,fontSize:FZ.xs,fontWeight:600,cursor:"pointer"}}>Confirmer</button>
+          <button onClick={()=>confirmDelete(i)} style={{padding:"4px 8px",borderRadius:8,border:"none",background:T.redFill,color:T.onFill,fontSize:FZ.xs,fontWeight:500,cursor:"pointer"}}>Confirmer</button>
           <button onClick={()=>setDelTarget(null)} style={{padding:"4px 8px",borderRadius:8,border:"none",background:T.panelDim,color:T.ink700,fontSize:FZ.xs,cursor:"pointer"}}>Annuler</button>
         </div>}
       </div>
@@ -450,7 +450,7 @@ function DelayThread({d,pj,authorName,addDelayComment,deleteDelayComment}){
     <div style={{display:"flex",gap:6,alignItems:"flex-start"}}>
       {!authorName&&<input type="text" value={authorInput} onChange={e=>setAuthorInput(e.target.value)} placeholder="Nom" maxLength={40} style={{width:90,padding:"8px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.xs,fontFamily:T.font,color:T.ink700}}/>}
       <input type="text" value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();send();}}} placeholder="Répondre sur ce retard… (Entrée pour envoyer)" maxLength={500} style={{flex:1,padding:"8px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.xs,fontFamily:T.font,color:T.ink700}}/>
-      <button onClick={send} disabled={!text.trim()||!author.trim()} style={{padding:"8px 12px",borderRadius:8,border:"none",background:text.trim()&&author.trim()?T.teal500:T.panelDim,color:text.trim()&&author.trim()?T.onFill:T.ink300,fontSize:FZ.xs,fontWeight:600,cursor:text.trim()&&author.trim()?"pointer":"default"}}>Envoyer</button>
+      <button onClick={send} disabled={!text.trim()||!author.trim()} style={{padding:"8px 12px",borderRadius:8,border:"none",background:text.trim()&&author.trim()?T.teal500:T.panelDim,color:text.trim()&&author.trim()?T.onFill:T.ink300,fontSize:FZ.xs,fontWeight:500,cursor:text.trim()&&author.trim()?"pointer":"default"}}>Envoyer</button>
     </div>
   </div>);
 }

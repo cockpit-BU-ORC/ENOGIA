@@ -199,12 +199,12 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
         {setSelEtats&&<EtatInfoButton/>}
         {allPJs&&<DropFilter label="PJ" options={allPJs} selected={selPJs||new Set(allPJs)} onChange={setSelPJs}/>}
         <button type="button" onClick={()=>setGrouped(!grouped)} aria-pressed={grouped} title="Regrouper les lignes par projet"
-          style={{padding:"5px 11px",borderRadius:8,border:"1px solid "+(grouped?T.teal400:T.line),background:grouped?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:grouped?T.onInd:T.ink700,fontSize:FZF.sm,fontWeight:600,cursor:"pointer",transition:"background-color .15s ease, color .15s ease",display:"inline-flex",alignItems:"center",gap:6}}><NavIcon name="layers" size={15}/>Par projet</button>
+          style={{padding:"5px 11px",borderRadius:8,border:"1px solid "+(grouped?T.teal400:T.line),background:grouped?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:grouped?T.onInd:T.ink700,fontSize:FZF.sm,fontWeight:500,cursor:"pointer",transition:"background-color var(--e-dur-menu) ease, color var(--e-dur-menu) ease",display:"inline-flex",alignItems:"center",gap:6}}><NavIcon name="layers" size={15}/>Par projet</button>
         <div style={{display:"flex",gap:4}}>
           <button type="button" aria-label="Dézoomer" onClick={zoomOut} disabled={dayW<=ZMIN} style={{padding:"5px 9px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:dayW<=ZMIN?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:600,cursor:dayW<=ZMIN?"default":"pointer"}}>−</button>
           <button type="button" aria-label="Zoomer" onClick={zoomIn} disabled={dayW>=ZMAX} style={{padding:"5px 9px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:dayW>=ZMAX?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:600,cursor:dayW>=ZMAX?"default":"pointer"}}>+</button>
         </div>
-        <button onClick={()=>scrollToDay(dayOf(today))} className="enogia-btn-ind" style={{padding:"5px 11px",borderRadius:8,border:"1.5px solid "+T.teal500,background:"transparent",color:T.teal600,fontSize:FZF.sm,fontWeight:600,cursor:"pointer"}}>Aujourd'hui</button>
+        <button onClick={()=>scrollToDay(dayOf(today))} className="enogia-btn-ind" style={{padding:"5px 11px",borderRadius:8,border:"1.5px solid "+T.teal500,background:"transparent",color:T.teal600,fontSize:FZF.sm,fontWeight:500,cursor:"pointer"}}>Aujourd'hui</button>
       </div>
     </div>
 
@@ -223,14 +223,14 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
 
     <div ref={scrollRef} onScroll={syncFromBottom} style={{display:"flex",overflowX:"auto",overflowY:"auto",maxHeight:"calc(100dvh - 300px)",position:"relative"}}>
       <div style={{width:colW,height:ganttH,flexShrink:0,position:"sticky",left:0,zIndex:8,background:T.surface,borderRight:"1px solid "+T.line,boxShadow:"2px 0 6px rgba(15,40,60,.04)"}}>
-        <div className="enogia-lblcell" style={{height:HEADER_H,padding:"0 16px",display:"flex",alignItems:"center",fontFamily:T.font,fontSize:12,fontWeight:600,color:T.accentInk,borderBottom:"1px solid "+T.line,background:T.surface,position:"sticky",top:0,zIndex:9}}>Machine</div>
+        <div className="enogia-lblcell" style={{height:HEADER_H,padding:"0 16px",display:"flex",alignItems:"center",fontFamily:T.font,fontSize:12,fontWeight:500,color:T.accentInk,borderBottom:"1px solid "+T.line,background:T.surface,position:"sticky",top:0,zIndex:9}}>Machine</div>
         {items.map((it,ri)=>{
-          if(it.g)return(<div key={"g"+ri} className="enogia-lblcell" style={{height:GROUP_H,boxSizing:"border-box",padding:"0 16px",display:"flex",alignItems:"center",gap:8,background:T.surfaceAlt,borderBottom:"1px solid "+T.line,fontSize:FZF.sm,fontWeight:600,color:T.ink700,overflow:"hidden"}}>
+          if(it.g)return(<div key={"g"+ri} className="enogia-lblcell" style={{height:GROUP_H,boxSizing:"border-box",padding:"0 16px",display:"flex",alignItems:"center",gap:8,background:T.surfaceAlt,borderBottom:"1px solid "+T.line,fontSize:FZF.sm,fontWeight:500,color:T.ink700,overflow:"hidden"}}>
             <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{it.g}</span><span style={{fontWeight:600,color:T.ink500,flexShrink:0}}>{it.n}</span></div>);
           const r=it.r;
           const meta=getPjMeta(r.pj,r);
           const isSel=sel===r.pj;
-          return(<div key={ri} className="enogia-lblcell e-hov" data-on={isSel?"1":"0"} {...pressable(()=>setSel(isSel?null:r.pj),{"aria-pressed":isSel})} title={meta.numSerie?"S/N "+meta.numSerie:undefined} style={{height:rowH,boxSizing:"border-box",padding:"3px 16px",display:"flex",flexDirection:"column",justifyContent:"center",gap:1,borderBottom:"1px solid "+T.surfaceAlt,borderLeft:"3px solid "+(isSel?T.teal500:"transparent"),background:isSel?T.surfaceAlt:"transparent",cursor:"pointer",transition:"background .12s ease, border-color .12s ease","--e-hov-bg":T.surfaceAlt}}>
+          return(<div key={ri} className="enogia-lblcell e-hov" data-on={isSel?"1":"0"} {...pressable(()=>setSel(isSel?null:r.pj),{"aria-pressed":isSel})} title={meta.numSerie?"S/N "+meta.numSerie:undefined} style={{height:rowH,boxSizing:"border-box",padding:"3px 16px",display:"flex",flexDirection:"column",justifyContent:"center",gap:1,borderBottom:"1px solid "+T.surfaceAlt,borderLeft:"3px solid "+(isSel?T.teal500:"transparent"),background:isSel?T.surfaceAlt:"transparent",cursor:"pointer",transition:"background var(--e-dur-micro) ease, border-color var(--e-dur-micro) ease","--e-hov-bg":T.surfaceAlt}}>
             <ProjectLabelCell pj={r.pj} r={r} meta={meta} noSn/>
           </div>);
         })}
@@ -296,7 +296,7 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
                   {w>2&&<div aria-hidden="true" style={{position:"absolute",left:a,width:w,top:"50%",marginTop:12,height:0,borderTop:"2px dotted "+col,zIndex:2}}/>}
                   <div title={"Départ prévu au planning initial : "+fmt(new Date(new Date(r.depart).getTime()-r.drift*86400000))} style={{position:"absolute",left:xi-5,top:"50%",marginTop:7,width:10,height:10,background:T.ink500,transform:"rotate(45deg)",zIndex:3,boxShadow:"0 0 0 1.5px "+T.card}}/>
                 </>;})()}
-                {(txt||prevision)&&<span style={{position:"absolute",left:mb.left+mb.width+8,top:"50%",transform:"translateY(-50%)",marginTop:-4,zIndex:4,whiteSpace:"nowrap",fontSize:FZF.xs,fontWeight:600,padding:"1px 8px",borderRadius:999,fontVariantNumeric:"tabular-nums",
+                {(txt||prevision)&&<span style={{position:"absolute",left:mb.left+mb.width+8,top:"50%",transform:"translateY(-50%)",marginTop:-4,zIndex:4,whiteSpace:"nowrap",fontSize:FZF.xs,fontWeight:500,padding:"1px 8px",borderRadius:999,fontVariantNumeric:"tabular-nums",
                   background:prevision?"transparent":pill?pill.bg:"transparent",color:prevision?T.ink500:pill?pill.fg:T.ink500}}>{prevision?"dates prévisionnelles":txt}</span>}
               </>;})()}
           </div>);
@@ -306,7 +306,7 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
             sûr qu'elle descend exactement jusqu'à la dernière ligne quel que soit le nombre de PJ. */}
         <div style={{position:"absolute",left:xOf(today)-1,top:HEADER_H,height:ganttH-HEADER_H,width:2,background:T.red500,zIndex:3,pointerEvents:"none"}}/>
         {/* v142 : repère « aujourd'hui » net : trait plein + pastille datée posée sur le bord de l'en-tête. */}
-        <div style={{position:"absolute",left:xOf(today),top:HEADER_H-10,transform:"translateX(-50%)",zIndex:9,pointerEvents:"none",background:T.redFill,color:T.onFill,fontSize:FZF.xs,fontWeight:600,padding:"2px 8px",borderRadius:999,whiteSpace:"nowrap",boxShadow:T.shadowFlat}}>Aujourd'hui · {fmt(today)}</div>
+        <div style={{position:"absolute",left:xOf(today),top:HEADER_H-10,transform:"translateX(-50%)",zIndex:9,pointerEvents:"none",background:T.redFill,color:T.onFill,fontSize:FZF.xs,fontWeight:500,padding:"2px 8px",borderRadius:999,whiteSpace:"nowrap",boxShadow:T.shadowFlat}}>Aujourd'hui · {fmt(today)}</div>
       </div>
       {/* Marge de fin : sans elle, « aujourd'hui » ne peut pas être centré quand il est proche de la fin de la plage. */}
       <div style={{width:endPad,height:1,flexShrink:0}}/>

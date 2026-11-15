@@ -23,7 +23,7 @@ export function BetaBanner({canCopy}){
   return(<div style={{flexShrink:0,display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",padding:"6px 28px",background:T.amber600,color:inkOn(T.amber600),fontSize:FZ.sm,fontWeight:600,fontFamily:T.font}}>
     <span style={{letterSpacing:".08em"}}>VERSION BÊTA</span>
     <span style={{fontWeight:500,opacity:.95}}>Données de test séparées : rien de ce que vous faites ici n'affecte la production.</span>
-    {canCopy&&<button onClick={copy} style={{marginLeft:"auto",padding:"4px 12px",borderRadius:8,border:"1px solid rgba(255,255,255,.7)",background:"rgba(255,255,255,.15)",color:T.onFill,fontWeight:600,fontSize:FZ.xs,cursor:"pointer",fontFamily:T.font}}>Copier la production vers la bêta</button>}
+    {canCopy&&<button onClick={copy} style={{marginLeft:"auto",padding:"4px 12px",borderRadius:8,border:"1px solid rgba(255,255,255,.7)",background:"rgba(255,255,255,.15)",color:T.onFill,fontWeight:500,fontSize:FZ.xs,cursor:"pointer",fontFamily:T.font}}>Copier la production vers la bêta</button>}
     {st&&<span style={{fontWeight:600}}>{st}</span>}
   </div>);
 }
@@ -50,7 +50,7 @@ export function UserChip({user,onSignOut,role}){
       <div style={{padding:"6px 8px 8px",borderBottom:"1px solid "+T.line,marginBottom:6}}>
         <div style={{fontSize:FZ.sm,fontWeight:600,color:T.ink900,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{name}</div>
         <div style={{fontSize:FZ.xs,color:T.ink500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{user.email}</div>
-        {role&&<div style={{marginTop:4,display:"inline-block",fontSize:FZ.xs,fontWeight:600,color:role==="Super admin"?T.onFill:T.teal600,background:role==="Super admin"?T.teal500:T.teal100,borderRadius:999,padding:"1px 8px"}}>{role}</div>}
+        {role&&<div style={{marginTop:4,display:"inline-block",fontSize:FZ.xs,fontWeight:500,color:role==="Super admin"?T.onFill:T.teal600,background:role==="Super admin"?T.teal500:T.teal100,borderRadius:999,padding:"1px 8px"}}>{role}</div>}
       </div>
       <button onClick={onSignOut} style={{width:"100%",display:"flex",alignItems:"center",gap:8,background:"none",border:"none",borderRadius:8,padding:"8px 8px",fontSize:FZ.sm,fontWeight:600,color:T.red500,cursor:"pointer",textAlign:"left"}}><NavIcon name="logout" size={15}/>Se déconnecter</button>
     </div>}

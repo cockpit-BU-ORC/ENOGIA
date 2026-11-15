@@ -126,7 +126,7 @@ export function HomeView({ produit, data, comments, myEmail, myName, people, uns
       <PjPlate pj={pj} style={{ minWidth: 58, textAlign: "center", boxShadow: "inset 3px 0 0 " + ((ETAT_META[live.current.etatOf.get(pj)] || {}).bar || T.ink300) }} />
       <span style={{ fontSize: FZ.sm, color: T.ink700, minWidth: 0, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{main}</span>
       {presence}
-      <span style={{ fontSize: FZ.xs, fontWeight: 600, color: rightColor || T.ink500, flexShrink: 0, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{right}</span>
+      <span style={{ fontSize: FZ.xs, fontWeight: 500, color: rightColor || T.ink500, flexShrink: 0, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{right}</span>
     </button>
   );
     const Head = ({ title, sub, count }) => (
@@ -185,8 +185,8 @@ export function HomeView({ produit, data, comments, myEmail, myName, people, uns
           <div style={{ ...grey, marginBottom: 10 }}>+ {shipped} expédiée{shipped > 1 ? "s" : ""} depuis janvier{notShipped.length > 0 && <span title={notShipped.map(r => r.pj).join(", ")} style={{ color: T.amber600, fontWeight: 600 }}> · {notShipped.length} départ{notShipped.length > 1 ? "s" : ""} passé{notShipped.length > 1 ? "s" : ""} pas encore « Expédiée » ({notShipped.map(r => r.pj).join(", ")})</span>}</div>
           {open.length === 0 ? <div style={grey}>Aucune machine ouverte pour l'instant</div> : (<>
             <div role="img" aria-label={journey.map(j => j.l + " " + j.n).join(", ") + ", pas encore lancées " + notStarted} className="enogia-bar-fill" style={{ display: "flex", height: 32, gap: 4 }}>
-              {journey.filter(j => j.n > 0).map(j => <div key={j.id} title={j.l + " : " + j.n} style={{ flex: j.n, minWidth: 0, background: j.c, color: inkOn(j.c), borderRadius: 4, display: "flex", alignItems: "center", padding: "0 8px", fontSize: 11, fontWeight: 600, letterSpacing: ".01em", whiteSpace: "nowrap", overflow: "hidden" }}>{j.n}</div>)}
-              {notStarted > 0 && <div title={"Pas encore lancées : " + notStarted} style={{ flex: notStarted, minWidth: 0, background: T.ink100, color: T.ink900, borderRadius: 4, display: "flex", alignItems: "center", padding: "0 8px", fontSize: 11, fontWeight: 600, letterSpacing: ".01em", whiteSpace: "nowrap", overflow: "hidden" }}>{notStarted}</div>}
+              {journey.filter(j => j.n > 0).map(j => <div key={j.id} title={j.l + " : " + j.n} style={{ flex: j.n, minWidth: 0, background: j.c, color: inkOn(j.c), borderRadius: 4, display: "flex", alignItems: "center", padding: "0 8px", fontSize: 12, fontWeight: 500, letterSpacing: ".01em", whiteSpace: "nowrap", overflow: "hidden" }}>{j.n}</div>)}
+              {notStarted > 0 && <div title={"Pas encore lancées : " + notStarted} style={{ flex: notStarted, minWidth: 0, background: T.ink100, color: T.ink900, borderRadius: 4, display: "flex", alignItems: "center", padding: "0 8px", fontSize: 12, fontWeight: 500, letterSpacing: ".01em", whiteSpace: "nowrap", overflow: "hidden" }}>{notStarted}</div>}
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px", marginTop: 8, fontSize: FZ.xs, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>
               {journey.map(j => <span key={j.id} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: 4, background: j.c }} />{j.l} <b style={{ color: T.ink900 }}>{j.n}</b></span>)}
@@ -213,7 +213,7 @@ export function HomeView({ produit, data, comments, myEmail, myName, people, uns
           </p>}
         </div>
         {!role && <button type="button" className="enogia-ui-edit" onClick={() => setCustomize(v => !v)} aria-expanded={customize}
-          style={{ border: "1px solid " + T.line, background: customize ? T.teal100 : "transparent", color: T.ink700, borderRadius: R.pill, padding: "6px 12px", minHeight: 28, fontSize: FZ.xs, fontWeight: 600, cursor: "pointer", fontFamily: T.font, display: "inline-flex", alignItems: "center", gap: 6 }}>
+          style={{ border: "1px solid " + T.line, background: customize ? T.teal100 : "transparent", color: T.ink700, borderRadius: R.pill, padding: "6px 12px", minHeight: 28, fontSize: FZ.xs, fontWeight: 500, cursor: "pointer", fontFamily: T.font, display: "inline-flex", alignItems: "center", gap: 6 }}>
           <NavIcon name="edit" size={13} />Personnaliser
         </button>}
       </div>
@@ -232,8 +232,8 @@ export function HomeView({ produit, data, comments, myEmail, myName, people, uns
       {!role && kpiEl}
 
       {owner && <div role="tablist" aria-label="Accueil affiché" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, margin: "0 0 14px" }}>
-        <span style={{ fontSize: FZ.xs, color: T.ink500, fontWeight: 600, marginRight: 4 }}>Accueil de :</span>
-        {ROLES.map(([k, l]) => <button key={k} type="button" role="tab" aria-selected={role === k} onClick={() => setViewAs({ role: k })} style={{ border: "1px solid " + (role === k ? T.ink900 : T.line), background: role === k ? T.ink900 : T.card, color: role === k ? T.card : T.ink700, borderRadius: 999, padding: "3px 12px", minHeight: 28, fontSize: FZ.xs, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>{l}</button>)}
+        <span style={{ fontSize: FZ.xs, color: T.ink500, fontWeight: 500, marginRight: 4 }}>Accueil de :</span>
+        {ROLES.map(([k, l]) => <button key={k} type="button" role="tab" aria-selected={role === k} onClick={() => setViewAs({ role: k })} style={{ border: "1px solid " + (role === k ? T.ink900 : T.line), background: role === k ? T.ink900 : T.card, color: role === k ? T.card : T.ink700, borderRadius: 999, padding: "3px 12px", minHeight: 28, fontSize: FZ.xs, fontWeight: 500, cursor: "pointer", fontFamily: T.font }}>{l}</button>)}
         {role === "cdp" && chefList.length > 0 && <select aria-label="Chef de projet affiché" value={asChef} onChange={e => setViewAs({ chef: e.target.value })} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink900, borderRadius: 8, minHeight: 28, padding: "0 8px", fontSize: FZ.xs, fontFamily: T.font }}>{chefList.map(c => <option key={c} value={c}>{c}</option>)}</select>}
         {role === "testeur" && testerList.length > 0 && <select aria-label="Testeur affiché" value={asTester ? asTester.id : ""} onChange={e => setViewAs({ tester: e.target.value })} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink900, borderRadius: 8, minHeight: 28, padding: "0 8px", fontSize: FZ.xs, fontFamily: T.font }}>{testerList.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select>}
         {role !== autoRole && <span style={{ fontSize: FZ.xs, color: T.ink500 }}>— vue telle que la personne la voit ; la disposition réglée ici vaut pour tout le poste.</span>}

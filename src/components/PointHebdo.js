@@ -25,7 +25,7 @@ const ageOf = x => {
 const ageTone = a => (a == null ? T.ink500 : a >= 30 ? T.red500 : a >= 14 ? T.amber600 : T.ink500);
 
 const SORTS = [["age", "Plus ancien d'abord"], ["depart", "Départ le plus proche"], ["pj", "Ordre du planning"]];
-const BTN = on => ({ border: "1px solid " + (on ? T.teal500 : T.line), background: on ? T.teal100 : T.card, color: on ? T.teal600 : T.ink700, borderRadius: 8, padding: "4px 12px", fontSize: FZ.xs, fontWeight: 600, cursor: "pointer", fontFamily: T.font, minHeight: 28 });
+const BTN = on => ({ border: "1px solid " + (on ? T.teal500 : T.line), background: on ? T.teal100 : T.card, color: on ? T.teal600 : T.ink700, borderRadius: 8, padding: "4px 12px", fontSize: FZ.xs, fontWeight: 500, cursor: "pointer", fontFamily: T.font, minHeight: 28 });
 
 export function PointHebdo({ data, savePjMetaOverride, onOpenPj }) {
   const [kind, setKind] = useState("all");
@@ -85,7 +85,7 @@ export function PointHebdo({ data, savePjMetaOverride, onOpenPj }) {
   };
 
   const chip = (label, val, tone) => (<div style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "8px 12px", minWidth: 120 }}>
-    <div style={{ fontSize: FZ.xs, fontWeight: 600, color: T.ink500 }}>{label}</div>
+    <div style={{ fontSize: FZ.xs, fontWeight: 500, color: T.ink500 }}>{label}</div>
     <div style={{ fontSize: FZ.lg, fontWeight: 600, letterSpacing: "-.02em", color: tone || T.ink900, lineHeight: "26px" }}>{val}</div>
   </div>);
 
@@ -101,7 +101,7 @@ export function PointHebdo({ data, savePjMetaOverride, onOpenPj }) {
       <ChipGroup label="Type" options={[["all", "Tout"], ["actions", "Actions"], ["mitigations", "Mitigations"]]} value={kind} onChange={setKind} />
       <Chip on={old7} onClick={() => setOld7(v => !v)}>{old7 ? "✓ " : ""}Plus de 7 jours seulement</Chip>
       <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: FZ.xs, color: T.ink500 }}>Tri
-        <select value={sort} onChange={e => setSort(e.target.value)} aria-label="Trier le point hebdo" style={{ padding: "4px 8px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.xs, fontWeight: 600, fontFamily: T.font, minHeight: 28 }}>
+        <select value={sort} onChange={e => setSort(e.target.value)} aria-label="Trier le point hebdo" style={{ padding: "4px 8px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.xs, fontWeight: 500, fontFamily: T.font, minHeight: 28 }}>
           {SORTS.map(([id, l]) => <option key={id} value={id}>{l}</option>)}
         </select></label>
       <input type="text" value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher un PJ, un projet, un mot…" aria-label="Rechercher dans le point hebdo" style={{ padding: "4px 8px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.xs, fontFamily: T.font, minHeight: 28, width: 240, boxSizing: "border-box" }} />
@@ -130,10 +130,10 @@ export function PointHebdo({ data, savePjMetaOverride, onOpenPj }) {
                 return (<div key={it.kind + it.id} style={{ display: "flex", alignItems: "flex-start", gap: 8, background: T.card, borderRadius: 8, borderLeft: "3px solid " + K.color, padding: "6px 8px" }}>
                   <input type="checkbox" checked={false} onChange={() => toggle(r, meta, it.kind, it.id)} title="Clôturer (date du jour)" aria-label={"Clôturer : " + it.text} style={{ marginTop: 2, flexShrink: 0, width: 15, height: 15, cursor: "pointer", accentColor: T.teal500 }} />
                   <span style={{ flex: 1, minWidth: 0, fontSize: FZ.sm, color: T.ink900, fontWeight: 600, lineHeight: 1.35, overflowWrap: "anywhere" }}>
-                    <span style={{ fontSize: FZ.xs, fontWeight: 600, color: K.color, marginRight: 6 }}>{K.label}</span>{it.text}
+                    <span style={{ fontSize: FZ.xs, fontWeight: 500, color: K.color, marginRight: 6 }}>{K.label}</span>{it.text}
                   </span>
                   <span style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0, lineHeight: 1.25 }}>
-                    <span style={{ fontSize: FZ.xs, fontWeight: 600, color: ageTone(it.age) }}>{it.age == null ? "—" : it.age === 0 ? "aujourd'hui" : it.age + " j"}</span>
+                    <span style={{ fontSize: FZ.xs, fontWeight: 500, color: ageTone(it.age) }}>{it.age == null ? "—" : it.age === 0 ? "aujourd'hui" : it.age + " j"}</span>
                     {e && <i title={"Saisie le " + e.full} style={{ fontSize: FZ.xs, fontStyle: "italic", fontWeight: 400, color: T.ink500, whiteSpace: "nowrap" }}>{e.short}</i>}
                   </span>
                 </div>);

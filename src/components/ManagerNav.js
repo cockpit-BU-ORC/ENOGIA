@@ -48,7 +48,7 @@ export function ManagerRail({ groups, activeId, activeSub, onGo, collapsed, setC
   </nav>);
   return (<>{flyout}<nav aria-label="Navigation Manager" style={{ width: w, flex: "none", position: "sticky", top: 8, alignSelf: "flex-start", background: T.surface, border: "1px solid " + T.line, borderRadius: 12, padding: "8px 8px 10px", display: "flex", flexDirection: "column", gap: 2, overflow: "hidden", fontFamily: T.font }}>
     {groups.map(g => (<div key={g.label} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-      <div style={{fontFamily:T.font,fontSize:12,fontWeight:600,color:T.accentInk,padding: collapsed ? "6px 0 2px" : "10px 10px 3px",whiteSpace: "nowrap",textAlign: collapsed ? "center" : "left",overflow: "hidden",height: collapsed ? 14 : "auto",transition: "padding .2s"}}>{collapsed ? "·" : g.label}</div>
+      <div style={{fontFamily:T.font,fontSize:12,fontWeight:500,color:T.accentInk,padding: collapsed ? "6px 0 2px" : "10px 10px 3px",whiteSpace: "nowrap",textAlign: collapsed ? "center" : "left",overflow: "hidden",height: collapsed ? 14 : "auto",transition: "padding var(--e-dur-in)"}}>{collapsed ? "·" : g.label}</div>
       {g.entries.map(e => { const on = e.id === activeId; return (<React.Fragment key={e.id}>
         <button onClick={() => onGo(e.go)} title={collapsed && !fly ? e.label : undefined} aria-current={on ? "page" : undefined} aria-haspopup={collapsed ? "menu" : undefined} aria-expanded={collapsed ? !!(fly && fly.e.id === e.id) : undefined}
           onFocus={x => openFly(e, x.currentTarget)} onBlur={closeFly}
@@ -56,10 +56,10 @@ export function ManagerRail({ groups, activeId, activeSub, onGo, collapsed, setC
           onMouseEnter={x => { openFly(e, x.currentTarget); if (!on) { x.currentTarget.style.background = T.card; x.currentTarget.style.color = T.ink900; } }} onMouseLeave={x => { closeFly(); if (!on) { x.currentTarget.style.background = "transparent"; x.currentTarget.style.color = T.ink500; } }}>
           <span style={{ display: "inline-flex", color: on ? T.teal500 : "inherit", flex: "none" }}><NavIcon name={e.icon} size={17} /></span>
           {!collapsed && <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>{e.label}</span>}
-          {!collapsed && e.badge > 0 && <span style={{ fontSize: 11, fontWeight: 600, background: T.red500, color: T.onFill, borderRadius: 999, padding: "0 6px", minWidth: 18, textAlign: "center" }}>{e.badge}</span>}
-          {!collapsed && e.lock && <span style={{ fontSize:11, fontWeight: 600, color: T.amber600, background: T.amber100, padding: "1px 6px", borderRadius: 999 }}>Admin</span>}
+          {!collapsed && e.badge > 0 && <span style={{ fontSize: 12, fontWeight: 500, background: T.red500, color: T.onFill, borderRadius: 999, padding: "0 6px", minWidth: 18, textAlign: "center" }}>{e.badge}</span>}
+          {!collapsed && e.lock && <span style={{ fontSize:12, fontWeight: 500, color: T.amber600, background: T.amber100, padding: "1px 6px", borderRadius: 999 }}>Admin</span>}
         </button>
-        {e.subs && !collapsed && <div style={{ display: "grid", gridTemplateRows: on ? "1fr" : "0fr", opacity: on ? 1 : 0, transition: "opacity .2s ease" }}>
+        {e.subs && !collapsed && <div style={{ display: "grid", gridTemplateRows: on ? "1fr" : "0fr", opacity: on ? 1 : 0, transition: "opacity var(--e-dur-in) ease" }}>
           <div style={{ overflow: "hidden", minHeight: 0 }}>
             <div style={{ display: "flex", flexDirection: "column", margin: "2px 0 4px 19px", paddingLeft: 6, borderLeft: "2px solid " + T.line }}>
               {e.subs.map(s => { const sOn = on && s.id === activeSub; return (
@@ -73,7 +73,7 @@ export function ManagerRail({ groups, activeId, activeSub, onGo, collapsed, setC
     </div>))}
     <button onClick={() => setCollapsed(!collapsed)} aria-label={collapsed ? "Agrandir le menu" : "Réduire le menu"} title={collapsed ? "Agrandir le menu" : "Réduire le menu"}
       style={{ marginTop: 8, border: "1px solid " + T.line, background: T.card, borderRadius: 8, padding: 6, display: "flex", justifyContent: "center", color: T.ink500, cursor: "pointer" }}>
-      <span style={{ display: "inline-flex", transform: "rotate(" + (collapsed ? "-90deg" : "90deg") + ")", transition: "transform .28s var(--e-ease)" }}><NavIcon name="chevronDown" size={15} /></span>
+      <span style={{ display: "inline-flex", transform: "rotate(" + (collapsed ? "-90deg" : "90deg") + ")", transition: "transform var(--e-dur-in) var(--e-ease)" }}><NavIcon name="chevronDown" size={15} /></span>
     </button>
   </nav></>);
 }
@@ -86,7 +86,7 @@ export function ManagerCrumb({ parts, onOpenPalette }) {
     </div>
     <button onClick={onOpenPalette} aria-label="Aller à… (Ctrl K)" style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 210, border: "1px solid " + T.line, background: T.surface, borderRadius: 12, padding: "6px 10px 6px 12px", color: T.ink500, fontSize: FZ.sm, cursor: "pointer", fontFamily: T.font }}>
       <NavIcon name="search" size={15} /><span>Aller à…</span>
-      <kbd style={{ marginLeft: "auto", fontFamily: T.font, fontSize: 11, fontWeight: 600, border: "1px solid " + T.line, borderRadius: 4, padding: "1px 6px", background: T.card, color: T.ink500 }}>Ctrl K</kbd>
+      <kbd style={{ marginLeft: "auto", fontFamily: T.font, fontSize: 12, fontWeight: 500, border: "1px solid " + T.line, borderRadius: 4, padding: "1px 6px", background: T.card, color: T.ink500 }}>Ctrl K</kbd>
     </button>
   </div>);
 }
@@ -129,13 +129,13 @@ export function ManagerPalette({ groups, data, onGo, onOpenPj, onClose, activeKe
           style={{ flex: 1, border: "none", background: "transparent", color: T.ink900, fontSize: FZ.md, padding: "15px 0", fontFamily: T.font }} />
       </div>
       <div ref={listRef} role="listbox" style={{ maxHeight: 340, overflowY: "auto", padding: 6 }}>
-        {items.map((it, i) => { if (it.head) return <div key={"h" + i} style={{fontFamily:T.font,fontSize:12,fontWeight:600,color:T.accentInk,padding: "8px 12px 3px"}}>{it.head}</div>;
+        {items.map((it, i) => { if (it.head) return <div key={"h" + i} style={{fontFamily:T.font,fontSize:12,fontWeight:500,color:T.accentInk,padding: "8px 12px 3px"}}>{it.head}</div>;
           n++; const on = n === sel, idx = n; return (
             <div key={it.key} role="option" aria-selected={on} data-sel={on ? "1" : "0"} onMouseEnter={() => setSel(idx)} onMouseDown={e => { e.preventDefault(); choose(it); }}
               style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 12px", borderRadius: 8, cursor: "pointer", background: on ? T.teal100 : "transparent", color: T.ink900, fontSize: FZ.sm }}>
               <span style={{ display: "inline-flex", color: T.teal500 }}><NavIcon name={it.icon} size={16} /></span>
               <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: on ? 600 : 500 }}>{it.label}</span>
-              {it.lock && <span style={{ fontSize:11, fontWeight: 600, color: T.amber600, background: T.amber100, padding: "1px 6px", borderRadius: 999 }}>Admin</span>}
+              {it.lock && <span style={{ fontSize:12, fontWeight: 500, color: T.amber600, background: T.amber100, padding: "1px 6px", borderRadius: 999 }}>Admin</span>}
               <span style={{ fontSize: FZ.xs, color: T.ink500, minWidth: 14, textAlign: "right" }}>{on ? "↵" : it.lock ? "" : it.group}</span>
             </div>); })}
         {real.length === 0 && <div style={{ padding: "18px 14px", fontSize: FZ.sm, color: T.ink500 }}>Aucun résultat pour « {q} ».</div>}

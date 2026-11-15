@@ -50,7 +50,7 @@ export function TutoVideoModal({ cfg, onClose }) {
 
 // Bouton « Vidéo » (plus affiché dans la barre depuis la v243 : la vidéo est dans la cloche)
 export function TutoVideoButton({ onOpen }) {
-  return <button type="button" onClick={onOpen} title="Revoir la vidéo de présentation" aria-label="Revoir la vidéo de présentation" style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 32, padding: "0 10px", border: "1px solid " + T.line, borderRadius: 8, background: T.card, color: T.ink900, fontSize: FZ.xs, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}><NavIcon name="play" size={14} />Vidéo</button>;
+  return <button type="button" onClick={onOpen} title="Revoir la vidéo de présentation" aria-label="Revoir la vidéo de présentation" style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 32, padding: "0 10px", border: "1px solid " + T.line, borderRadius: 8, background: T.card, color: T.ink900, fontSize: FZ.xs, fontWeight: 500, cursor: "pointer", fontFamily: T.font }}><NavIcon name="play" size={14} />Vidéo</button>;
 }
 
 // Manager › Réglages › Nouveautés (propriétaire) : lien, date de fin, titre ; « Publier » change l'identifiant → elle se rouvre pour tous
@@ -70,13 +70,13 @@ export function TutoVideoSettings({ profiles, saveProfiles }) {
     <div style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: FZ.md, color: T.ink900, marginBottom: 4 }}>Vidéo de présentation</div>
     <div style={{ fontSize: FZ.sm, color: T.ink500, lineHeight: 1.5, marginBottom: 12 }}>Proposée une seule fois à chaque personne à sa prochaine connexion, puis disponible dans la cloche (sans compter comme une notification) jusqu'à la date de fin. Lien Google Drive (partagé avec ENOGIA), YouTube non répertorié ou fichier .mp4 : la vidéo contient de vraies données, elle ne doit pas être publique.{on ? " En ce moment : en ligne jusqu'au " + fmt(cur.until) + "." : ""}</div>
     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-end" }}>
-      <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: FZ.xs, fontWeight: 600, color: T.ink500, flex: "2 1 320px" }}>Lien de la vidéo<input value={url} onChange={e => { setUrl(e.target.value); setMsg(""); }} placeholder="https://drive.google.com/file/d/…/view" style={field} /></label>
-      <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: FZ.xs, fontWeight: 600, color: T.ink500, flex: "1 1 200px" }}>Titre<input value={title} onChange={e => setTitle(e.target.value)} style={field} /></label>
-      <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: FZ.xs, fontWeight: 600, color: T.ink500 }}>Disponible jusqu'au<input type="date" value={until} onChange={e => setUntil(e.target.value)} style={field} /></label>
+      <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: FZ.xs, fontWeight: 500, color: T.ink500, flex: "2 1 320px" }}>Lien de la vidéo<input value={url} onChange={e => { setUrl(e.target.value); setMsg(""); }} placeholder="https://drive.google.com/file/d/…/view" style={field} /></label>
+      <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: FZ.xs, fontWeight: 500, color: T.ink500, flex: "1 1 200px" }}>Titre<input value={title} onChange={e => setTitle(e.target.value)} style={field} /></label>
+      <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: FZ.xs, fontWeight: 500, color: T.ink500 }}>Disponible jusqu'au<input type="date" value={until} onChange={e => setUntil(e.target.value)} style={field} /></label>
       <button type="button" onClick={() => save(true)} style={{ ...field, background: T.ink900, color: T.card, border: "none", fontWeight: 600, cursor: "pointer" }}>Publier</button>
       {cur.id && <button type="button" onClick={() => save(false)} style={{ ...field, cursor: "pointer", fontWeight: 600 }}>Enregistrer sans rouvrir</button>}
       {cur.id && <button type="button" onClick={stop} style={{ ...field, cursor: "pointer", fontWeight: 600, color: T.red500 }}>Retirer</button>}
     </div>
-    {msg && <div role="status" style={{ marginTop: 8, fontSize: FZ.xs, fontWeight: 600, color: T.ink700 }}>{msg}</div>}
+    {msg && <div role="status" style={{ marginTop: 8, fontSize: FZ.xs, fontWeight: 500, color: T.ink700 }}>{msg}</div>}
   </div>);
 }

@@ -408,9 +408,9 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
           <span style={{fontSize:FZ.sm,color:T.ink500}}>{PAGE_DESC[activeEntry.id]||""}</span>
         </div>
         {!phone&&tab==="fiche"&&<button type="button" className="enogia-btn-ind" onClick={()=>setFocusFiche(v=>!v)} aria-pressed={focusFiche} title={focusFiche?"Réafficher le menu complet et la liste des projets":"Replier le menu et la liste pour laisser toute la place à la fiche"}
-        style={{display:"inline-flex",alignItems:"center",gap:6,height:30,padding:"0 10px",borderRadius:8,border:"1.5px solid "+T.teal500,background:focusFiche?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:focusFiche?T.onInd:T.teal600,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font,whiteSpace:"nowrap"}}><NavIcon name="sidepanel" size={15}/>{focusFiche?"Afficher les colonnes":"Fiche plein écran"}</button>}
-        {showFilters&&<button type="button" onClick={()=>setFiltersOpen(v=>!v)} aria-expanded={filtersOpen} style={{display:"inline-flex",alignItems:"center",gap:6,height:32,padding:"0 12px",borderRadius:8,border:"1px solid "+(nFilters?T.teal500:T.line),background:nFilters?T.teal100:T.card,color:nFilters?T.teal600:T.ink700,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font}}><NavIcon name="layers" size={14}/>Filtres{nFilters?" · "+nFilters:""}</button>}
-        <button type="button" onClick={()=>setPalOpen(true)} aria-label="Aller à… (Ctrl K)" style={{display:"inline-flex",alignItems:"center",gap:8,height:32,padding:"0 12px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink500,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font}}><NavIcon name="search" size={14}/>Aller à…<kbd style={{fontFamily:T.fontMono,fontSize:11,color:T.ink500,border:"1px solid "+T.line,borderRadius:4,padding:"0 4px"}}>Ctrl K</kbd></button>
+        style={{display:"inline-flex",alignItems:"center",gap:6,height:30,padding:"0 10px",borderRadius:8,border:"1.5px solid "+T.teal500,background:focusFiche?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:focusFiche?T.onInd:T.teal600,fontSize:FZ.xs,fontWeight:500,cursor:"pointer",fontFamily:T.font,whiteSpace:"nowrap"}}><NavIcon name="sidepanel" size={15}/>{focusFiche?"Afficher les colonnes":"Fiche plein écran"}</button>}
+        {showFilters&&<button type="button" onClick={()=>setFiltersOpen(v=>!v)} aria-expanded={filtersOpen} style={{display:"inline-flex",alignItems:"center",gap:6,height:32,padding:"0 12px",borderRadius:8,border:"1px solid "+(nFilters?T.teal500:T.line),background:nFilters?T.teal100:T.card,color:nFilters?T.teal600:T.ink700,fontSize:FZ.xs,fontWeight:500,cursor:"pointer",fontFamily:T.font}}><NavIcon name="layers" size={14}/>Filtres{nFilters?" · "+nFilters:""}</button>}
+        <button type="button" onClick={()=>setPalOpen(true)} aria-label="Aller à… (Ctrl K)" style={{display:"inline-flex",alignItems:"center",gap:8,height:32,padding:"0 12px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink500,fontSize:FZ.xs,fontWeight:500,cursor:"pointer",fontFamily:T.font}}><NavIcon name="search" size={14}/>Aller à…<kbd style={{fontFamily:T.fontMono,fontSize:12,color:T.ink500,border:"1px solid "+T.line,borderRadius:4,padding:"0 4px"}}>Ctrl K</kbd></button>
       </div>
       {subItems&&<PlanSwitch label={"Sous-pages : "+((group==="fiche"||group==="orc")?"Projets":activeEntry.label)} value={subValue} onGo={onSub} views={subItems.map(([id,l])=>({id,l}))} tools={[]}/>}
       {showFilters&&filtersOpen&&<div className="enogia-view-in" style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",padding:"8px 10px",background:T.surface,border:"1px solid "+T.line,borderRadius:12}}>
@@ -429,7 +429,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
         le contenu détaillé d'avant reste dessous comme « détail » */}
     {kpi&&tab==="derives"&&<KpiStory tab={kpiTab} rows={fk} driftRows={driftRows} targets={kpiTg} metrics={{...kpiM,charge:w4h}} saveTargets={me&&saveProfiles?(o=>saveProfiles({...(profiles||{}),kpiTargets:o})):null} sel={kpiSel} periodLabel={perLab} scopeLabel={codirScope==="all"?"toutes les machines":codirScope==="shipped"?"machines expédiées":"machines en cours"}
       weeks6={kpiWeeks(6)} weeks8={kpiWeeks(8)} weeks12={kpiWeeks(12)} notes={(profiles&&profiles.monthNotes)||{}} stepSummary={stepSummary} comparable={comparable} kpiStep={kpiStep} stepLabels={STEP_LABELS} progress={progress||{}} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}}/>}
-    {kpi&&tab==="derives"&&kpiTab!=="synthese"&&<div style={{fontSize:12,fontWeight:600,color:T.ink500,margin:"4px 0 8px",display:"flex",alignItems:"center",gap:8}}>Détail<span style={{flex:1,height:1,background:T.line}}/>{(kpiTab==="derives"||kpiTab==="bilan")&&<button type="button" aria-expanded={kpiDetail} onClick={()=>setKpiDetail(v=>!v)} className="e-btn e-btn-sec" style={{...btn("sec","sm")}}>{kpiDetail?"Replier le détail":kpiTab==="derives"?"Voir le détail par PJ et par étape":"Voir les jalons de chaque mois"}</button>}</div>}
+    {kpi&&tab==="derives"&&kpiTab!=="synthese"&&<div style={{fontSize:12,fontWeight:500,color:T.ink500,margin:"4px 0 8px",display:"flex",alignItems:"center",gap:8}}>Détail<span style={{flex:1,height:1,background:T.line}}/>{(kpiTab==="derives"||kpiTab==="bilan")&&<button type="button" aria-expanded={kpiDetail} onClick={()=>setKpiDetail(v=>!v)} className="e-btn e-btn-sec" style={{...btn("sec","sm")}}>{kpiDetail?"Replier le détail":kpiTab==="derives"?"Voir le détail par PJ et par étape":"Voir les jalons de chaque mois"}</button>}</div>}
     {/* v281 : l'ancien tableau de pilotage (KpiPilotage) est remplacé par le récit de la Synthèse ci-dessus */}
 
     {/* v274 : bilan mensuel — réalisé des deux derniers mois, objectifs du mois en cours et du suivant */}
@@ -498,7 +498,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
           {chargeByMonthMulti.length>0?<ResponsiveContainer width="100%" height={260}>
             <BarChart data={chargeByMonthMulti}>
               <CartesianGrid vertical={false} stroke={T.line} strokeOpacity={0.7}/>
-              <XAxis dataKey="mois" tick={{fontSize:FZ.xs,fill:T.ink700,fontWeight:600}}/>
+              <XAxis dataKey="mois" tick={{fontSize:FZ.xs,fill:T.ink700,fontWeight:500}}/>
               <YAxis allowDecimals={false} tick={{fontSize:FZ.xs,fill:T.ink500}}/>
               <Tooltip contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
               <Legend wrapperStyle={{fontSize:FZ.sm}}/>
@@ -604,26 +604,26 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
             </div>
           </div>
           <div role="group" aria-label="Machines prises en compte" style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",margin:"8px 0 10px"}}>
-            <span style={{fontSize:12,color:T.ink500,fontWeight:600}}>Machines :</span>
+            <span style={{fontSize:12,color:T.ink500,fontWeight:500}}>Machines :</span>
             <div style={{display:"inline-flex",background:T.surfaceAlt,borderRadius:8,padding:2,gap:2}}>
               <Segmented bare options={[["all","Toutes"],["open","En cours"],["shipped","Expédiées"]]} value={codirScope} onChange={setCodirScope}/>
             </div>
-            <span style={{fontSize:12,color:T.ink500,fontWeight:600,marginLeft:8}}>Mois promis :</span>
-            {/* v280 (signalé : « mois passé = 6/22 arrivées tenues alors que je n’en avais pas 22 de prévues ») : « Mois passés » prenait tous les mois jusqu’au mois dernier ; remplacé par des raccourcis d’un mois ou de quelques mois fermés */}{[["Mois dernier",mKey(new Date(today.getFullYear(),today.getMonth()-1,1)),mKey(new Date(today.getFullYear(),today.getMonth()-1,1))],["Mois en cours",mKey(today),mKey(today)],["3 derniers mois",mKey(new Date(today.getFullYear(),today.getMonth()-3,1)),mKey(new Date(today.getFullYear(),today.getMonth()-1,1))],["Année "+today.getFullYear(),today.getFullYear()+"-01",today.getFullYear()+"-12"],["Tout","",""]].map(([l,a,b])=>{const on=codirFrom===a&&codirTo===b;return <button key={l} type="button" aria-pressed={on} onClick={()=>{setCodirFrom(a);setCodirTo(b);}} style={{border:"1px solid "+(on?T.ink900:T.line),borderRadius:8,minHeight:28,padding:"0 10px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:T.font,background:on?T.ink900:T.card,color:on?T.card:T.ink700}}>{l}</button>;})}
+            <span style={{fontSize:12,color:T.ink500,fontWeight:500,marginLeft:8}}>Mois promis :</span>
+            {/* v280 (signalé : « mois passé = 6/22 arrivées tenues alors que je n’en avais pas 22 de prévues ») : « Mois passés » prenait tous les mois jusqu’au mois dernier ; remplacé par des raccourcis d’un mois ou de quelques mois fermés */}{[["Mois dernier",mKey(new Date(today.getFullYear(),today.getMonth()-1,1)),mKey(new Date(today.getFullYear(),today.getMonth()-1,1))],["Mois en cours",mKey(today),mKey(today)],["3 derniers mois",mKey(new Date(today.getFullYear(),today.getMonth()-3,1)),mKey(new Date(today.getFullYear(),today.getMonth()-1,1))],["Année "+today.getFullYear(),today.getFullYear()+"-01",today.getFullYear()+"-12"],["Tout","",""]].map(([l,a,b])=>{const on=codirFrom===a&&codirTo===b;return <button key={l} type="button" aria-pressed={on} onClick={()=>{setCodirFrom(a);setCodirTo(b);}} style={{border:"1px solid "+(on?T.ink900:T.line),borderRadius:8,minHeight:28,padding:"0 10px",fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:T.font,background:on?T.ink900:T.card,color:on?T.card:T.ink700}}>{l}</button>;})}
             <label style={{fontSize:12,color:T.ink500,display:"inline-flex",alignItems:"center",gap:4}}>du<select value={codirFrom} onChange={e=>setCodirFrom(e.target.value)} style={{minHeight:28,borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink900,fontSize:12,fontFamily:T.font}}><option value="">début</option>{codirMonths.map(k=><option key={k} value={k}>{mLab(k)}</option>)}</select></label>
             <label style={{fontSize:12,color:T.ink500,display:"inline-flex",alignItems:"center",gap:4}}>au<select value={codirTo} onChange={e=>setCodirTo(e.target.value)} style={{minHeight:28,borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink900,fontSize:12,fontFamily:T.font}}><option value="">fin</option>{codirMonths.map(k=><option key={k} value={k}>{mLab(k)}</option>)}</select></label>
             <span style={{fontSize:12,color:T.ink500}}>{comparable.length} machine{comparable.length>1?"s":""} ({STEP_LABELS[kpiStep].toLowerCase()} promis{codirFrom||codirTo?" "+(codirFrom?"de "+mLab(codirFrom):"")+(codirTo?" à "+mLab(codirTo):""):""}) · s'applique à toute la vue CODIR</span>
           </div>
           {/* Résumé compact, prêt à capturer : une ligne par étape */}
           <div aria-label="PJ tenus à date par étape" style={{maxWidth:980,border:"1px solid "+T.line,borderRadius:12,overflow:"hidden",marginBottom:12,background:T.card}}>
-            <div style={{display:"flex",alignItems:"baseline",gap:8,padding:"8px 12px",borderBottom:"1px solid "+T.line}}><b style={{fontSize:13.5,color:T.ink900}}>PJ tenus à date, par étape</b><span style={{fontSize:12,color:T.ink500}}>écart au planning initial ≤ 0 · {codirScope==="all"?"toutes les machines":codirScope==="shipped"?"machines expédiées":"machines en cours"}{codirFrom||codirTo?" · jalons promis "+(codirFrom?"de "+mLab(codirFrom)+" ":"")+(codirTo?"à "+mLab(codirTo):""):""} · {new Date().toLocaleDateString("fr-FR")}</span></div>
+            <div style={{display:"flex",alignItems:"baseline",gap:8,padding:"8px 12px",borderBottom:"1px solid "+T.line}}><b style={{fontSize:14,color:T.ink900}}>PJ tenus à date, par étape</b><span style={{fontSize:12,color:T.ink500}}>écart au planning initial ≤ 0 · {codirScope==="all"?"toutes les machines":codirScope==="shipped"?"machines expédiées":"machines en cours"}{codirFrom||codirTo?" · jalons promis "+(codirFrom?"de "+mLab(codirFrom)+" ":"")+(codirTo?"à "+mLab(codirTo):""):""} · {new Date().toLocaleDateString("fr-FR")}</span></div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(4,minmax(0,1fr))"}}>
               {stepSummary.map((x,i)=><div key={x.k} style={{padding:"8px 12px",borderLeft:i?"1px solid "+T.line:"none"}}>
-                <div style={{fontSize:12,fontWeight:600,color:T.ink500}}>{x.l}</div>
-                <div style={{display:"flex",alignItems:"baseline",gap:6}}><b style={{fontSize:22,fontVariantNumeric:"tabular-nums",color:x.pct==null?T.ink300:x.pct>=kpiTg.tenus?T.emerald600:x.pct>=kpiTg.tenus-20?T.amber600:T.red600}}>{x.pct==null?"—":x.pct+" %"}</b><span style={{fontSize:12.5,color:T.ink700,fontVariantNumeric:"tabular-nums"}}>{x.ok} / {x.n} tenus · objectif ≥ {kpiTg.tenus} %</span></div>
+                <div style={{fontSize:12,fontWeight:500,color:T.ink500}}>{x.l}</div>
+                <div style={{display:"flex",alignItems:"baseline",gap:6}}><b style={{fontSize:20,fontVariantNumeric:"tabular-nums",color:x.pct==null?T.ink300:x.pct>=kpiTg.tenus?T.emerald600:x.pct>=kpiTg.tenus-20?T.amber600:T.red600}}>{x.pct==null?"—":x.pct+" %"}</b><span style={{fontSize:13,color:T.ink700,fontVariantNumeric:"tabular-nums"}}>{x.ok} / {x.n} tenus · objectif ≥ {kpiTg.tenus} %</span></div>
                 <div aria-hidden="true" style={{height:5,borderRadius:4,background:T.red100,overflow:"hidden",margin:"4px 0"}}><div style={{height:"100%",width:(x.pct||0)+"%",background:T.emerald500}}/></div>
                 <div style={{fontSize:12,color:T.ink500,fontVariantNumeric:"tabular-nums"}}>{x.late?x.late+" en retard · moy. +"+x.avg+" j"+(x.crit?" · "+x.crit+" > 30 j":""):"aucun retard"}</div>
-                {x.worst.length>0&&<div style={{fontSize:11.5,color:T.red600,fontFamily:T.fontMono,marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{x.worst.join(" · ")}</div>}
+                {x.worst.length>0&&<div style={{fontSize:12,color:T.red600,fontFamily:T.fontMono,marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{x.worst.join(" · ")}</div>}
               </div>)}
             </div>
           </div>
@@ -634,7 +634,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
             <ResponsiveContainer width="100%" height={170}>
               <LineChart data={promiseVsReality}>
                 <CartesianGrid vertical={false} stroke={T.line} strokeOpacity={0.7}/>
-                <XAxis dataKey="mois" tick={{fontSize:FZ.xs,fill:T.ink700,fontWeight:600}}/>
+                <XAxis dataKey="mois" tick={{fontSize:FZ.xs,fill:T.ink700,fontWeight:500}}/>
                 <YAxis allowDecimals={false} tick={{fontSize:FZ.xs,fill:T.ink500}}/>
                 <Tooltip contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
                 <Legend wrapperStyle={{fontSize:FZ.sm}}/>
@@ -714,7 +714,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
               <ResponsiveContainer width="100%" height={150}>
                 <LineChart data={trajectory}>
                   <CartesianGrid vertical={false} stroke={T.line} strokeOpacity={0.7}/>
-                  <XAxis dataKey="jalon" tick={{fontSize:FZ.xs,fill:T.ink700,fontWeight:600}}/>
+                  <XAxis dataKey="jalon" tick={{fontSize:FZ.xs,fill:T.ink700,fontWeight:500}}/>
                   <YAxis tick={{fontSize:FZ.xs,fill:T.ink500}}/>
                   <Tooltip contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
                   <Line type="linear" dataKey="moyenne" stroke={stageSoft().production.solid} strokeWidth={2} dot={false}/>
@@ -738,12 +738,12 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
           <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap",marginBottom:8}}><b style={{fontSize:FZ.md,color:T.ink900}}>Jalons par mois</b><span style={{fontSize:12,color:T.ink500}}>12 mois (5 passés, le mois en cours, 6 à venir) · gris : planning initial · couleur : planning actuel</span></div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,300px),1fr))",gap:12}}>
             {monthsBy.map(g=><div key={g.k} style={{background:T.surface,borderRadius:12,padding:"8px 10px"}}>
-              <div style={{fontSize:12.5,fontWeight:600,color:T.ink900,marginBottom:2}}>{g.k==="arrivee"?"Arrivées":g.k==="tests"?"Débuts de tests":g.k==="finProd"?"Fins de production":"Départs"} par mois <span style={{fontWeight:400,color:T.ink500}}>· {g.data.reduce((a,b)=>a+b.revise,0)} au total</span></div>
+              <div style={{fontSize:13,fontWeight:500,color:T.ink900,marginBottom:2}}>{g.k==="arrivee"?"Arrivées":g.k==="tests"?"Débuts de tests":g.k==="finProd"?"Fins de production":"Départs"} par mois <span style={{fontWeight:400,color:T.ink500}}>· {g.data.reduce((a,b)=>a+b.revise,0)} au total</span></div>
               <ResponsiveContainer width="100%" height={130}>
                 <BarChart data={g.data} barGap={1} margin={{top:6,right:4,left:-26,bottom:0}}>
                   <CartesianGrid vertical={false} stroke={T.line} strokeOpacity={0.7}/>
-                  <XAxis dataKey="mois" tick={{fontSize:10,fill:T.ink500}} interval={0} tickLine={false}/>
-                  <YAxis allowDecimals={false} tick={{fontSize:10,fill:T.ink500}} tickLine={false} axisLine={false}/>
+                  <XAxis dataKey="mois" tick={{fontSize:12,fill:T.ink500}} interval={0} tickLine={false}/>
+                  <YAxis allowDecimals={false} tick={{fontSize:12,fill:T.ink500}} tickLine={false} axisLine={false}/>
                   <Tooltip contentStyle={{fontFamily:T.font,fontSize:12,borderRadius:8}} formatter={(v,n)=>[v,n==="initial"?"Planning initial":"Planning actuel"]}/>
                   <Bar dataKey="initial" fill={T.ink300} radius={[2,2,0,0]}/>
                   <Bar dataKey="revise" radius={[2,2,0,0]}>{g.data.map((d,i)=><Cell key={i} fill={d.now?T.amber500:(g.k==="depart"?stageSoft().depart.solid:g.k==="arrivee"?stageSoft().arrivee.solid:g.k==="tests"?stageSoft().tests.solid:stageSoft().finProd.solid)}/>)}</Bar>
@@ -797,7 +797,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
             {driftTrend.length>0?<ResponsiveContainer width="100%" height={220}>
               <LineChart data={driftTrend}>
                 <CartesianGrid vertical={false} stroke={T.line} strokeOpacity={0.7}/>
-                <XAxis dataKey="mois" tick={{fontSize:FZ.xs,fill:T.ink700,fontWeight:600}}/>
+                <XAxis dataKey="mois" tick={{fontSize:FZ.xs,fill:T.ink700,fontWeight:500}}/>
                 <YAxis tick={{fontSize:FZ.xs,fill:T.ink500}}/>
                 <Tooltip formatter={(v,n,p)=>[v+"j (n="+p.payload.n+")","Dérive moyenne"]} contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
                 <Line type="linear" dataKey="moyenne" stroke={stageSoft().production.solid} strokeWidth={2} dot={({cx,cy,payload})=><circle key={payload.mois} cx={cx} cy={cy} r={5} fill={payload.moyenne>0?T.red500:T.emerald500}/>}/>
@@ -855,8 +855,8 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
       <ManagerAccessManager managerEmails={managerEmails} setManagerEmails={setManagerEmails} currentUserEmail={currentUserEmail}/>
       {/* Nom du build : réservé au propriétaire (demandé : « uniquement visible par moi, dans l'onglet manager »). */}
       {buildVersion&&<div style={{...CARD,padding:"8px 12px",marginTop:14,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-        <span style={{fontFamily:T.font,fontSize:12,fontWeight:600,color:T.accentInk}}>Version du site</span>
-        <span style={{fontFamily:"monospace",fontSize:FZ.xs,fontWeight:600,color:T.ink700,background:T.ink100,borderRadius:8,padding:"3px 8px"}}>build {buildVersion}</span>
+        <span style={{fontFamily:T.font,fontSize:12,fontWeight:500,color:T.accentInk}}>Version du site</span>
+        <span style={{fontFamily:"monospace",fontSize:FZ.xs,fontWeight:500,color:T.ink700,background:T.ink100,borderRadius:8,padding:"3px 8px"}}>build {buildVersion}</span>
       </div>}
     </>}
     {me&&tab==="nouveautes"&&<><TutoVideoSettings profiles={profiles} saveProfiles={saveProfiles}/><ReleaseManager isBeta={!!isBeta} selection={releaseSelection} releases={releases||[]} onSaveSelection={saveReleaseSelection} onPublish={publishRelease} authorName={authorName}/></>}
@@ -865,7 +865,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
       <div style={{display:"inline-flex",alignItems:"center",gap:8,padding:"4px 4px 4px 12px",border:"1px solid "+(hasInitial?T.line:T.amber500),borderRadius:12,background:hasInitial?T.card:T.amber100}}>
         <span style={{color:hasInitial?T.teal600:T.amber600,display:"inline-flex"}}><NavIcon name={hasInitial?"pin":"warning"} size={13}/></span>
         <div style={{lineHeight:1.25}}>
-          <div style={{fontSize:FZ.xs,fontWeight:600,color:T.ink900}}>Planning initial</div>
+          <div style={{fontSize:FZ.xs,fontWeight:500,color:T.ink900}}>Planning initial</div>
           <div style={{fontSize:FZ.xs,color:hasInitial?T.ink500:T.amber600}}>{hasInitial?initialData.length+" unités"+(lastInitialImport?" · "+lastInitialImport:" · figé")+(lastInitialAdd?" · ajout "+lastInitialAdd:""):"absent — dérives indisponibles"}</div>
         </div>
       </div>
@@ -909,7 +909,7 @@ function ManagerAccessManager({managerEmails,setManagerEmails,currentUserEmail})
       <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
         {managerEmails.map(email=>(
           <div key={email} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:T.surface,borderRadius:8,padding:"8px 12px"}}>
-            <span style={{fontSize:FZ.sm,color:T.ink700,fontWeight:600}}>{email}{email===currentUserEmail&&<span style={{marginLeft:8,fontSize:FZ.xs,color:T.teal600,background:T.teal100,borderRadius:4,padding:"1px 8px",fontWeight:600}}>vous</span>}</span>
+            <span style={{fontSize:FZ.sm,color:T.ink700,fontWeight:600}}>{email}{email===currentUserEmail&&<span style={{marginLeft:8,fontSize:FZ.xs,color:T.teal600,background:T.teal100,borderRadius:4,padding:"1px 8px",fontWeight:500}}>vous</span>}</span>
             <button onClick={()=>removeEmail(email)} title="Retirer" style={{background:"none",border:"none",color:T.ink300,cursor:"pointer",fontSize:FZ.md,padding:0}}><NavIcon name="close" size={11}/></button>
           </div>
         ))}
@@ -957,15 +957,15 @@ export function ClosurePeriodsManager({closurePeriods,setClosurePeriods}){
     </div>}
     <div style={{display:"flex",gap:8,alignItems:"flex-end",flexWrap:"wrap",paddingTop:10,borderTop:closurePeriods.length>0?"1px solid "+T.line:"none"}}>
       <div>
-        <label style={{fontSize:FZ.xs,color:T.ink500,fontWeight:600,display:"block",marginBottom:4}}>Libellé</label>
+        <label style={{fontSize:FZ.xs,color:T.ink500,fontWeight:500,display:"block",marginBottom:4}}>Libellé</label>
         <input type="text" value={newLabel} onChange={e=>setNewLabel(e.target.value)} placeholder="Ex: Vacances été" style={{padding:"8px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,width:140}}/>
       </div>
       <div>
-        <label style={{fontSize:FZ.xs,color:T.ink500,fontWeight:600,display:"block",marginBottom:4}}>Du</label>
+        <label style={{fontSize:FZ.xs,color:T.ink500,fontWeight:500,display:"block",marginBottom:4}}>Du</label>
         <input type="date" value={newStart} onChange={e=>setNewStart(e.target.value)} style={{padding:"8px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font}}/>
       </div>
       <div>
-        <label style={{fontSize:FZ.xs,color:T.ink500,fontWeight:600,display:"block",marginBottom:4}}>Au</label>
+        <label style={{fontSize:FZ.xs,color:T.ink500,fontWeight:500,display:"block",marginBottom:4}}>Au</label>
         <input type="date" value={newEnd} onChange={e=>setNewEnd(e.target.value)} style={{padding:"8px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font}}/>
       </div>
       <button onClick={addPeriod} disabled={!newStart||!newEnd} style={{padding:"8px 16px",borderRadius:8,border:"none",background:newStart&&newEnd?T.teal500:T.surfaceAlt,color:newStart&&newEnd?T.onFill:T.ink300,fontSize:FZ.sm,fontWeight:600,cursor:newStart&&newEnd?"pointer":"default"}}>+ Ajouter</button>
@@ -980,14 +980,14 @@ function PlanLoadCard({weeks}){
   const wk=d=>{const x=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const n=x.getUTCDay()||7;x.setUTCDate(x.getUTCDate()+4-n);const y=new Date(Date.UTC(x.getUTCFullYear(),0,1));return Math.ceil(((x-y)/86400000+1)/7);};
   const over=weeks.filter(w=>w.hours>w.cap+0.5).length;
   return(<section aria-label="Charge d'après le planificateur" style={{background:T.card,border:"1px solid "+T.line,borderRadius:12,padding:"12px 14px"}}>
-    <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap",marginBottom:10}}><h3 style={{margin:0,fontSize:FZ.md,fontWeight:600,color:T.ink900}}>Charge atelier — 12 semaines</h3><span style={{fontSize:12,color:T.ink500}}>d'après le planificateur · trait = capacité de la semaine</span><span style={{marginLeft:"auto",fontSize:12.5,fontWeight:600,color:over?T.red500:T.emerald600}}>{over?over+" semaine"+(over>1?"s":"")+" en surcharge":"aucune surcharge"}</span></div>
+    <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap",marginBottom:10}}><h3 style={{margin:0,fontSize:FZ.md,fontWeight:600,color:T.ink900}}>Charge atelier — 12 semaines</h3><span style={{fontSize:12,color:T.ink500}}>d'après le planificateur · trait = capacité de la semaine</span><span style={{marginLeft:"auto",fontSize:13,fontWeight:500,color:over?T.red500:T.emerald600}}>{over?over+" semaine"+(over>1?"s":"")+" en surcharge":"aucune surcharge"}</span></div>
     <div role="img" aria-label={weeks.map(w=>"S"+wk(w.a)+" "+w.hours+" h sur "+Math.round(w.cap)).join(", ")} style={{display:"flex",alignItems:"flex-end",gap:6,height:H,borderBottom:"1px solid "+T.line}}>
       {weeks.map(w=>{const h=Math.round(w.hours/maxH*H),c=Math.round(w.cap/maxH*H),o=w.hours>w.cap+0.5;return(<div key={w.key} title={"S"+wk(w.a)+" : "+w.hours+" h / "+Math.round(w.cap)+" h"} style={{flex:1,position:"relative",height:"100%",minWidth:0}}>
         <div style={{position:"absolute",left:0,right:0,bottom:0,height:Math.max(1,h),background:o?T.red500:stageSoft().production.solid,borderRadius:0}}/>
         <div style={{position:"absolute",left:-2,right:-2,bottom:c,borderTop:"2px dashed "+T.ink500}}/>
-        <div style={{position:"absolute",left:0,right:0,bottom:Math.max(h,c)+4,textAlign:"center",fontSize:11,fontWeight:600,color:o?T.red500:T.ink700,fontVariantNumeric:"tabular-nums"}}>{w.hours}</div>
+        <div style={{position:"absolute",left:0,right:0,bottom:Math.max(h,c)+4,textAlign:"center",fontSize:12,fontWeight:500,color:o?T.red500:T.ink700,fontVariantNumeric:"tabular-nums"}}>{w.hours}</div>
       </div>);})}
     </div>
-    <div style={{display:"flex",gap:6,marginTop:4}}>{weeks.map(w=><span key={w.key} style={{flex:1,textAlign:"center",fontSize:11,color:T.ink500}}>S{wk(w.a)}</span>)}</div>
+    <div style={{display:"flex",gap:6,marginTop:4}}>{weeks.map(w=><span key={w.key} style={{flex:1,textAlign:"center",fontSize:12,color:T.ink500}}>S{wk(w.a)}</span>)}</div>
   </section>);
 }

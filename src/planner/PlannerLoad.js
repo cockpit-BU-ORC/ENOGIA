@@ -59,11 +59,11 @@ export function PlannerLoad({ plan, load, cal, tl, scrollX, leftW, standalone, m
     return (<section aria-label="Charge atelier (repliée)" className="pg-load" style={{ borderTop: "1px solid " + T.line, background: T.card, position: "sticky", bottom: 0, zIndex: 9 }}>
       <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", padding: "8px 14px" }}>
         <b style={{ color: T.ink900, fontSize: 14 }}>Charge atelier</b>
-        <span style={{ fontSize: 12.5, color: T.ink500 }}>{Math.round(capW)} h / sem.</span>
+        <span style={{ fontSize: 13, color: T.ink500 }}>{Math.round(capW)} h / sem.</span>
         <span role="img" aria-label={"Charge des " + next.length + " prochaines périodes : " + next.map(b => b.label + " " + (b.cap > 0 ? Math.round(b.hours / b.cap * 100) : 0) + " %").join(", ")} style={{ display: "inline-flex", gap: 2 }}>
           {next.map(b => { const r = b.cap > 0 ? b.hours / b.cap : 0; return <span key={b.key} title={b.label + " · " + Math.round(b.hours) + " h / " + Math.round(b.cap) + " h (" + Math.round(r * 100) + " %)"} style={{ width: 16, height: 16, borderRadius: 4, background: r > 1 ? T.red500 : r >= 0.9 ? T.amber500 : T.line }} />; })}
         </span>
-        <span style={{ fontSize: 12.5, fontWeight: 600, color: over.length ? T.red500 : T.emerald600 }}>{over.length ? over.length + " " + (mode === "month" ? "mois" : "semaine" + (over.length > 1 ? "s" : "")) + " en surcharge · pic " + Math.round(peak * 100) + " %" + (pk ? " (" + pk.label + ")" : "") : "Aucune surcharge"}</span>
+        <span style={{ fontSize: 13, fontWeight: 500, color: over.length ? T.red500 : T.emerald600 }}>{over.length ? over.length + " " + (mode === "month" ? "mois" : "semaine" + (over.length > 1 ? "s" : "")) + " en surcharge · pic " + Math.round(peak * 100) + " %" + (pk ? " (" + pk.label + ")" : "") : "Aucune surcharge"}</span>
         <span style={{ flex: 1 }} />
         {!readOnly && <button className="pg-btn" onClick={() => onPropose("level")} style={{...btn("sec","sm")}}>Niveler…</button>}
         <button className="pg-btn" onClick={() => setFolded(false)} aria-expanded="false" style={{...btn("sec","sm")}}>Déplier ▴</button>
@@ -75,14 +75,14 @@ export function PlannerLoad({ plan, load, cal, tl, scrollX, leftW, standalone, m
       <b style={{ color: T.ink900, fontSize: 14 }}>Charge atelier</b>
       {setFolded && <button className="pg-btn" onClick={() => setFolded(true)} aria-expanded="true" style={{...btn("sec","sm")}}>Replier ▾</button>}
       <button className="pg-btn" onClick={() => setSmall(!small)} aria-pressed={!!small} title={small ? "Agrandir le graphique de charge" : "Réduire le graphique de charge"} style={{...btn("sec","sm")}}>{small ? "Agrandir" : "Réduire"}</button>
-      <span style={{ display: "inline-flex", gap: 6, alignItems: "center", fontSize: 12.5, color: T.ink500 }}>capacité
+      <span style={{ display: "inline-flex", gap: 6, alignItems: "center", fontSize: 13, color: T.ink500 }}>capacité
         <NumField label="Nombre de personnes" value={cap.people} width={52} onCommit={v => onCap({ people: Math.max(0, Number(v) || 0) })} /> pers. ×
         <NumField label="Heures par personne et par semaine" value={cap.hours} width={58} onCommit={v => onCap({ hours: Math.max(0, Number(v) || 0) })} /> h =
         <b style={{ fontFamily: T.fontMono, color: T.ink900 }}>{Math.round(capW)} h / sem.</b></span>
       <div role="group" aria-label="Période" style={{ display: "inline-flex", border: "1px solid " + T.line, borderRadius: 8, overflow: "hidden" }}>
-        {[["week", "Semaine"], ["month", "Mois"]].map(([k, l]) => <button key={k} aria-pressed={mode === k} onClick={() => setMode(k)} className="pg-btn" style={{ border: 0, padding: "5px 12px", fontSize: 12.5, fontWeight: 600, cursor: "pointer", background: mode === k ? T.ink900 : T.card, color: mode === k ? T.card : T.ink700 }}>{l}</button>)}
+        {[["week", "Semaine"], ["month", "Mois"]].map(([k, l]) => <button key={k} aria-pressed={mode === k} onClick={() => setMode(k)} className="pg-btn" style={{ border: 0, padding: "5px 12px", fontSize: 13, fontWeight: 500, cursor: "pointer", background: mode === k ? T.ink900 : T.card, color: mode === k ? T.card : T.ink700 }}>{l}</button>)}
       </div>
-      <span style={{ fontSize: 12.5, fontWeight: 600, color: over.length ? T.red500 : T.emerald600 }}>
+      <span style={{ fontSize: 13, fontWeight: 500, color: over.length ? T.red500 : T.emerald600 }}>
         {over.length ? "▲ " + over.length + " " + (mode === "month" ? "mois" : "semaine" + (over.length > 1 ? "s" : "")) + " en surcharge (pic " + Math.round(peak * 100) + " %)" : "✓ Aucune surcharge"}</span>
       <span style={{ fontSize: 12, color: T.ink500 }}>{Math.round(free)} h libres sur la période</span>
       {!readOnly && mode === "week" && <span style={{ fontSize: 12, color: T.ink500 }}>{nSpecial ? nSpecial + " semaine" + (nSpecial > 1 ? "s" : "") + " à capacité spéciale · " : ""}cliquez une semaine pour changer sa capacité</span>}
@@ -91,8 +91,8 @@ export function PlannerLoad({ plan, load, cal, tl, scrollX, leftW, standalone, m
         <button className="pg-btn" onClick={() => onPropose("level")} title="Choisir la période et la capacité, puis voir le décalage des phases des PJ les moins prioritaires (aperçu avant d'appliquer)" style={{...btn("pri","sm")}}>Niveler la charge</button>
         <Pop width={290} align="right" trigger={(o, t) => <button className="pg-btn" aria-haspopup="menu" aria-expanded={o} onClick={t} style={{...btn("sec","sm")}}>Plus ▾</button>}>
           {close => (<>
-            <MenuItem onClick={() => { close(); onPropose("early"); }}>Voir au plus tôt<div style={{ fontSize: 11.5, color: T.ink500 }}>Libère les dates imposées (sauf arrivées et départs)</div></MenuItem>
-            <MenuItem disabled={!nTooDense} onClick={() => { close(); onPropose("fit"); }}>Ajuster les durées{nTooDense ? " (" + nTooDense + ")" : ""}<div style={{ fontSize: 11.5, color: T.ink500 }}>Allonge les phases dont les heures ne tiennent pas</div></MenuItem>
+            <MenuItem onClick={() => { close(); onPropose("early"); }}>Voir au plus tôt<div style={{ fontSize: 12, color: T.ink500 }}>Libère les dates imposées (sauf arrivées et départs)</div></MenuItem>
+            <MenuItem disabled={!nTooDense} onClick={() => { close(); onPropose("fit"); }}>Ajuster les durées{nTooDense ? " (" + nTooDense + ")" : ""}<div style={{ fontSize: 12, color: T.ink500 }}>Allonge les phases dont les heures ne tiennent pas</div></MenuItem>
             <MenuItem onClick={() => { close(); onPropose("sort"); }}>Trier les PJ par date de début</MenuItem>
             <MenuItem disabled={!hasLevelNow} onClick={() => { close(); onPropose("clear"); }}>Retirer le nivellement</MenuItem>
           </>)}
@@ -101,7 +101,7 @@ export function PlannerLoad({ plan, load, cal, tl, scrollX, leftW, standalone, m
     </div>
     <div style={{ display: "flex" }}>
       <div style={{ width: standalone ? 190 : leftW, flexShrink: 0, borderRight: "2px solid " + T.line, padding: "0 12px", boxSizing: "border-box", position: "relative", height: H }}>
-        <div style={{ position: "absolute", top: 8, left: 12, right: 12, fontSize: 11, color: T.ink500, lineHeight: 1.4 }}>
+        <div style={{ position: "absolute", top: 8, left: 12, right: 12, fontSize: 12, color: T.ink500, lineHeight: 1.4 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 14, height: 9, border: "1.5px solid " + T.ink500, borderRadius: 4, display: "inline-block", background: "rgba(23,115,79,.08)" }} />capacité ({unit})</div>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 14, height: 9, background: T.emerald500, borderRadius: 4, display: "inline-block" }} />heures planifiées</div>
           {!small && <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 14, height: 9, border: "1.5px dashed " + T.amber600, borderRadius: 4, display: "inline-block" }} />semaine spéciale</div>}
@@ -122,7 +122,7 @@ export function PlannerLoad({ plan, load, cal, tl, scrollX, leftW, standalone, m
               <div style={{ position: "absolute", left: 0, right: 0, bottom: PAD_B, height: hCap, border: "1.5px " + (b.special ? "dashed " + T.amber600 : "solid " + T.ink500), borderRadius: 4, background: "rgba(23,115,79,.07)", boxSizing: "border-box" }} />
               <div style={{ position: "absolute", left: 3, right: 3, bottom: PAD_B, height: inCap, background: b.over ? T.red500 : T.emerald500, borderRadius: 0, opacity: 0.92 }} />
               {ex > 0 && <div style={{ position: "absolute", left: 3, right: 3, bottom: PAD_B + inCap, height: ex, background: T.red500, borderRadius: 0, backgroundImage: "repeating-linear-gradient(45deg,rgba(255,255,255,.35) 0 3px,transparent 3px 6px)" }} />}
-              {bw >= 34 && b.hours > 0 && <div style={{ position: "absolute", left: 0, right: 0, bottom: PAD_B + Math.max(hBar, hCap) + 2, textAlign: "center", fontSize: 11, fontWeight: 600, fontFamily: T.fontMono, color: b.over ? T.red500 : T.ink700, whiteSpace: "nowrap" }}>{b.over ? "▲ " : ""}{Math.round(b.hours)}{bw >= 60 ? " / " + Math.round(b.cap) : ""}</div>}
+              {bw >= 34 && b.hours > 0 && <div style={{ position: "absolute", left: 0, right: 0, bottom: PAD_B + Math.max(hBar, hCap) + 2, textAlign: "center", fontSize: 12, fontWeight: 600, fontFamily: T.fontMono, color: b.over ? T.red500 : T.ink700, whiteSpace: "nowrap" }}>{b.over ? "▲ " : ""}{Math.round(b.hours)}{bw >= 60 ? " / " + Math.round(b.cap) : ""}</div>}
             </div>);
           })}
           <div title="Aujourd'hui" style={{ position: "absolute", left: (tl.today - tl.lo) * tl.px + tl.px / 2 - 1, top: 0, bottom: 0, width: 2, background: T.red500, opacity: 0.6, pointerEvents: "none" }} />
@@ -130,7 +130,7 @@ export function PlannerLoad({ plan, load, cal, tl, scrollX, leftW, standalone, m
         </div>
       </div>
     </div>
-    {hb && <div style={{ position: "fixed", left: Math.min(hov.x + 14, window.innerWidth - 270), top: Math.max(8, hov.y - 150), width: 252, zIndex: 10002, pointerEvents: "none", background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, padding: "10px 12px", fontSize: 12.5, boxShadow: T.shadowLg }}>
+    {hb && <div style={{ position: "fixed", left: Math.min(hov.x + 14, window.innerWidth - 270), top: Math.max(8, hov.y - 150), width: 252, zIndex: 10002, pointerEvents: "none", background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, padding: "10px 12px", fontSize: 13, boxShadow: T.shadowLg }}>
       <div style={{ fontWeight: 600, marginBottom: 4 }}>{hb.label}</div>
       <div style={{ fontFamily: T.fontMono }}>{Math.round(hb.hours)} h planifiées / {Math.round(hb.cap)} h ({hb.days} j ouvrés)</div>
       {hb.special && <div style={{ color: T.amber600, fontWeight: 600 }}>Capacité spéciale pour cette semaine</div>}

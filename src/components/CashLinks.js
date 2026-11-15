@@ -9,7 +9,7 @@ import { allCashGroups, getCashinDoc, getCashinLinks, getOrdoPjs, getOrdoName, s
 import { fmtEur } from "../pjProgress";
 import { useCashin } from "../useCashin";
 
-const btn = (primary, on = true) => ({ padding: "5px 11px", borderRadius: 8, border: "1px solid " + (primary ? T.teal600 : T.line), background: primary ? T.teal600 : T.card, color: primary ? T.onFill : T.ink900, fontSize: FZ.xs, fontWeight: 600, fontFamily: T.font, cursor: on ? "pointer" : "default", opacity: on ? 1 : .5, whiteSpace: "nowrap" });
+const btn = (primary, on = true) => ({ padding: "5px 11px", borderRadius: 8, border: "1px solid " + (primary ? T.teal600 : T.line), background: primary ? T.teal600 : T.card, color: primary ? T.onFill : T.ink900, fontSize: FZ.xs, fontWeight: 500, fontFamily: T.font, cursor: on ? "pointer" : "default", opacity: on ? 1 : .5, whiteSpace: "nowrap" });
 const field = { padding: "6px 10px", borderRadius: 8, get border() { return "1px solid " + T.line; }, get background() { return T.card; }, get color() { return T.ink900; }, fontSize: FZ.sm, get fontFamily() { return T.font; }, minWidth: 0  }; // v346 : accesseurs (suivent le clair / sombre)
 const same = (a, b) => normPj(a) === normPj(b);
 
@@ -71,7 +71,7 @@ function RowsEditor({ g, links, ordo, onSave, busy }) {
   const setMode = (r, shared) => setDraft(d => ({ ...d, [r.id]: shared ? targets.slice() : null }));
   const save = () => { const n = { ...links }; g.rows.forEach(r => { const v = draft[r.id]; if (v) n[rowKey(r.id)] = v; else delete n[rowKey(r.id)]; }); onSave(n); };
   if (targets.length < 2) return null;
-  const seg = on => ({ padding: "2px 10px", border: "1px solid " + (on ? T.teal600 : T.line), background: on ? T.teal600 : "transparent", color: on ? T.onFill : T.ink500, fontSize: FZ.xs, fontWeight: 600, fontFamily: T.font, cursor: "pointer" });
+  const seg = on => ({ padding: "2px 10px", border: "1px solid " + (on ? T.teal600 : T.line), background: on ? T.teal600 : "transparent", color: on ? T.onFill : T.ink500, fontSize: FZ.xs, fontWeight: 500, fontFamily: T.font, cursor: "pointer" });
   return (<div style={{ marginTop: 8, padding: 10, borderRadius: 12, background: T.surface, border: "1px solid " + T.line }}>
     <div style={{ fontSize: FZ.sm, fontWeight: 600, color: T.ink900, marginBottom: 2 }}>Jalon par jalon : réparti, ou sur des machines cochées ?</div>
     <div style={{ fontSize: FZ.xs, color: T.ink700, marginBottom: 8, lineHeight: 1.5 }}><b>Réparti</b> : le jalon concerne toutes les machines de la même façon, le montant est divisé entre elles. <b>Machines cochées</b> : le montant reste entier — cochez <b>une</b> machine pour un jalon qui lui est propre (FAT, livraison de l'ORC n°1…), ou <b>plusieurs</b> pour un paiement unique du contrat (acompte, avance), qui n'est alors compté qu'une fois : ne l'additionnez pas d'une machine à l'autre.</div>
@@ -79,14 +79,14 @@ function RowsEditor({ g, links, ordo, onSave, busy }) {
       <div style={{ display: "flex", gap: 8, alignItems: "baseline", flexWrap: "wrap" }}>
         <b style={{ fontSize: FZ.sm }}>{r.jalon || "Jalon sans nom"}</b>
         <span style={{ fontSize: FZ.xs, color: T.ink500 }}>{shared ? fmtEur(r.montant || 0) + (cur.length > 1 ? " en entier, un seul paiement montré sur les " + cur.length + " machines cochées" : cur.length === 1 ? " en entier → " + cur[0] + " seulement" : " · aucune machine cochée") : fmtEur(r.montant || 0) + " ÷ " + cur.length + " = " + fmtEur((r.montant || 0) / cur.length) + " par machine"}</span>
-        {!shared && /acompte|avance|advance|down ?payment|commande|order/i.test(r.jalon || "") && <span title="Un acompte ou une avance est en général un paiement unique pour tout le contrat : « Machines cochées », toutes cochées" style={{ fontSize: 11, fontWeight: 600, color: T.amber600, background: T.amber100, borderRadius: 999, padding: "1px 8px" }}>acompte : en général non divisé</span>}
+        {!shared && /acompte|avance|advance|down ?payment|commande|order/i.test(r.jalon || "") && <span title="Un acompte ou une avance est en général un paiement unique pour tout le contrat : « Machines cochées », toutes cochées" style={{ fontSize: 12, fontWeight: 500, color: T.amber600, background: T.amber100, borderRadius: 999, padding: "1px 8px" }}>acompte : en général non divisé</span>}
         <span style={{ marginLeft: "auto", display: "inline-flex" }}>
           <button onClick={() => setMode(r, false)} aria-pressed={!shared} title="Payé une fois par machine : montant divisé" style={{ ...seg(!shared), borderRadius: "99px 0 0 99px" }}>Réparti ÷ {targets.length}</button>
           <button onClick={() => setMode(r, true)} aria-pressed={shared} title="Montant entier sur les machines cochées : une machine (jalon propre) ou plusieurs (paiement unique du contrat)" style={{ ...seg(shared), borderRadius: "0 99px 99px 0", borderLeft: 0 }}>Machines cochées</button>
         </span>
       </div>
       {shared && <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 4 }}>
-        {targets.map(p => { const on = cur.some(x => same(x, p)); return (<button key={p} onClick={() => flip(r, p)} aria-pressed={on} title={getOrdoName(p)} style={{ padding: "2px 9px", borderRadius: 999, border: "1px solid " + (on ? T.teal600 : T.line), background: on ? T.teal100 : "transparent", color: on ? T.teal600 : T.ink500, fontSize: FZ.xs, fontWeight: 600, fontFamily: T.font, cursor: "pointer" }}>{p}</button>); })}
+        {targets.map(p => { const on = cur.some(x => same(x, p)); return (<button key={p} onClick={() => flip(r, p)} aria-pressed={on} title={getOrdoName(p)} style={{ padding: "2px 9px", borderRadius: 999, border: "1px solid " + (on ? T.teal600 : T.line), background: on ? T.teal100 : "transparent", color: on ? T.teal600 : T.ink500, fontSize: FZ.xs, fontWeight: 500, fontFamily: T.font, cursor: "pointer" }}>{p}</button>); })}
       </div>}
     </div>); })}
     <div style={{ marginTop: 8 }}><button style={btn(true, !busy)} disabled={busy} onClick={save}>Enregistrer les jalons</button></div>
@@ -144,7 +144,7 @@ export function CashLinksDialog({ onClose, authorName, focusPj }) {
               <div style={{ fontWeight: 600, fontSize: FZ.sm }}>{g.pj}{g.label ? <span style={{ fontWeight: 400 }}> · {g.label}</span> : null}</div>
               <div style={{ fontSize: FZ.xs }}>{g.rows.length} jalon{g.rows.length > 1 ? "s" : ""} · {fmtEur(g.total)}</div>
             </div>
-            <div style={{ flex: "2 1 240px", fontSize: FZ.xs, fontWeight: 600 }}>{s.text}</div>
+            <div style={{ flex: "2 1 240px", fontSize: FZ.xs, fontWeight: 500 }}>{s.text}</div>
             {focusPj && <button style={btn(!on, !busy)} disabled={busy} onClick={() => write(toggleLink(links, g.pj, focusPj, ordo))}>{on ? "Délier de " + focusPj : "Lier à " + focusPj}</button>}
             <button style={btn(false)} onClick={() => setOpen(isOpen ? null : g.pj)} aria-expanded={isOpen}>{isOpen ? "Fermer" : "Modifier"}</button>
           </div>

@@ -18,7 +18,7 @@ function Note({ value, onSave, placeholder }) {
   return (<div>
     <textarea value={v} onChange={e => setV(e.target.value)} onBlur={save} placeholder={placeholder} rows={3} disabled={!onSave} aria-label={placeholder}
       style={{ width: "100%", boxSizing: "border-box", resize: "vertical", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, padding: "7px 9px", fontFamily: T.font, fontSize: 13, lineHeight: 1.45 }} />
-    {state && <div role="status" style={{ fontSize: 12, fontWeight: 600, color: state === "échec" ? T.red600 : T.emerald600 }}>{state}</div>}
+    {state && <div role="status" style={{ fontSize: 12, fontWeight: 500, color: state === "échec" ? T.red600 : T.emerald600 }}>{state}</div>}
   </div>);
 }
 export function KpiBilan({ rows, initialByPJ, profiles, saveProfiles, onOpenPj, today = new Date() }) {
@@ -39,10 +39,10 @@ export function KpiBilan({ rows, initialByPJ, profiles, saveProfiles, onOpenPj, 
         <BarChart data={chart} barGap={3} margin={{ top: 16, right: 8, left: -22, bottom: 0 }}>
           <CartesianGrid vertical={false} stroke={T.line} strokeOpacity={0.7} />
           <XAxis dataKey="mois" tick={{ fontSize: 12, fill: T.ink700 }} tickLine={false} />
-          <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: T.ink500 }} tickLine={false} axisLine={false} />
+          <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: T.ink500 }} tickLine={false} axisLine={false} />
           <Tooltip contentStyle={{ fontFamily: T.font, fontSize: 12, borderRadius: 8 }} />
           <Legend wrapperStyle={{ fontSize: 12 }} />
-          {[["Départs", S.depart.solid], ["Tests terminés", S.tests.solid], ["Arrivées", S.arrivee.solid]].map(([k, c]) => <Bar key={k} dataKey={k} fill={c} radius={[2, 2, 0, 0]}><LabelList dataKey={k} position="top" style={{ fontSize: 11, fill: T.ink700 }} /></Bar>)}
+          {[["Départs", S.depart.solid], ["Tests terminés", S.tests.solid], ["Arrivées", S.arrivee.solid]].map(([k, c]) => <Bar key={k} dataKey={k} fill={c} radius={[2, 2, 0, 0]}><LabelList dataKey={k} position="top" style={{ fontSize: 12, fill: T.ink700 }} /></Bar>)}
         </BarChart>
       </ResponsiveContainer>
     </section>
@@ -50,27 +50,27 @@ export function KpiBilan({ rows, initialByPJ, profiles, saveProfiles, onOpenPj, 
       {data.map((m, i) => { const past = i < 2, now = i === 2;
         return <section key={m.key} aria-label={monthLabel(m.key)} style={{ background: T.card, border: "1px solid " + (now ? T.ink900 : T.line), borderRadius: 12, padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10, minWidth: 0 }}>
           <div>
-            <div style={{ fontSize: 12, fontWeight: 600, color: T.ink500 }}>{past ? "Réalisé" : now ? "Mois en cours" : "Objectifs du mois suivant"}</div>
-            <div style={{ fontSize: 18, fontWeight: 600, letterSpacing: "-.01em", color: T.ink900 }}>{monthLabel(m.key)}</div>
+            <div style={{ fontSize: 12, fontWeight: 500, color: T.ink500 }}>{past ? "Réalisé" : now ? "Mois en cours" : "Objectifs du mois suivant"}</div>
+            <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: "-.01em", color: T.ink900 }}>{monthLabel(m.key)}</div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6 }}>
             {[[m.done, "faits", "emerald"], [m.late, "en retard", "red"], [m.todo, "à venir", "ink"]].map(([v, l, c]) => <div key={l} style={{ background: T.surface, borderRadius: 8, padding: "6px 8px" }}>
               <div style={{ fontSize: 20, fontWeight: 600, fontVariantNumeric: "tabular-nums", color: v ? tone(c)[0] : T.ink300 }}>{v}</div><div style={{ fontSize: 12, color: T.ink500 }}>{l}</div></div>)}
           </div>
           {m.groups.filter(g => g.items.length).map(g => <div key={g.k}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 600, color: T.ink500, borderBottom: "1px solid " + T.line, paddingBottom: 3, marginBottom: 3 }}><span>{g.l}</span><span style={{ fontVariantNumeric: "tabular-nums" }}>{g.items.length}</span></div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 500, color: T.ink500, borderBottom: "1px solid " + T.line, paddingBottom: 3, marginBottom: 3 }}><span>{g.l}</span><span style={{ fontVariantNumeric: "tabular-nums" }}>{g.items.length}</span></div>
             {g.items.map(it => { const meta = getPjMeta(it.pj, it.r), [lab, c] = ST[it.st], [ink, bg] = tone(c);
               return <button key={g.k + it.pj} type="button" onClick={() => onOpenPj && onOpenPj(it.pj)} title={"Ouvrir la fiche de " + it.pj}
                 style={{ width: "100%", display: "flex", alignItems: "center", gap: 6, minHeight: 30, padding: "2px 0", border: "none", background: "transparent", cursor: "pointer", textAlign: "left", fontFamily: T.font, color: T.ink900 }}>
-                <b style={{ fontFamily: T.fontMono, fontSize: 12.5, whiteSpace: "nowrap" }}>{it.pj}</b><CountryFlag pays={meta.pays} size={12} />
-                <span style={{ fontSize: 12.5, color: T.ink700, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : ""}</span>
+                <b style={{ fontFamily: T.fontMono, fontSize: 13, whiteSpace: "nowrap" }}>{it.pj}</b><CountryFlag pays={meta.pays} size={12} />
+                <span style={{ fontSize: 13, color: T.ink700, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : ""}</span>
                 <span style={{ fontSize: 12, fontVariantNumeric: "tabular-nums", color: T.ink500 }}>{fd(it.date)}</span>
-                {it.drift != null && it.drift !== 0 && <span title={"Initial : " + fd(it.ini)} style={{ fontSize: 11.5, fontWeight: 600, color: it.drift > 0 ? T.red600 : T.emerald600, fontVariantNumeric: "tabular-nums" }}>{it.drift > 0 ? "+" : ""}{it.drift} j</span>}
-                <span style={{ fontSize: 11.5, fontWeight: 600, color: ink, background: bg, borderRadius: 999, padding: "0 7px", whiteSpace: "nowrap" }}>{lab}</span>
+                {it.drift != null && it.drift !== 0 && <span title={"Initial : " + fd(it.ini)} style={{ fontSize: 12, fontWeight: 500, color: it.drift > 0 ? T.red600 : T.emerald600, fontVariantNumeric: "tabular-nums" }}>{it.drift > 0 ? "+" : ""}{it.drift} j</span>}
+                <span style={{ fontSize: 12, fontWeight: 500, color: ink, background: bg, borderRadius: 999, padding: "0 7px", whiteSpace: "nowrap" }}>{lab}</span>
               </button>; })}
           </div>)}
           {!m.groups.some(g => g.items.length) && <div style={{ fontSize: 13, color: T.ink500 }}>Aucun jalon dans le planning ce mois-ci</div>}
-          <div><div style={{ fontSize: 12, fontWeight: 600, color: T.ink500, marginBottom: 4 }}>{past ? "Faits marquants" : "Objectifs"}</div>
+          <div><div style={{ fontSize: 12, fontWeight: 500, color: T.ink500, marginBottom: 4 }}>{past ? "Faits marquants" : "Objectifs"}</div>
             <Note value={(notes[m.key] || {}).text} onSave={saveNote ? t => saveNote(m.key, t) : null} placeholder={past ? "Ce qui a marqué le mois (livraisons, incidents, décisions)…" : "Objectifs du mois (départs à tenir, tests, décisions)…"} /></div>
         </section>; })}
     </div>

@@ -28,7 +28,7 @@ function ImportDialog({ onApply, onClose }) {
   const n = (res || []).reduce((a, s) => a + s.items.length, 0);
   return (<div onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 10010, background: "rgba(10,20,30,.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
     <div role="dialog" aria-modal="true" aria-label="Importer une checklist" style={{ width: "min(720px,100%)", maxHeight: "90dvh", overflow: "auto", background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, padding: "16px 18px", fontFamily: T.font, display: "flex", flexDirection: "column", gap: 10 }}>
-      <div style={{ fontSize: 18, fontWeight: 600 }}>Importer une checklist</div>
+      <div style={{ fontSize: 20, fontWeight: 600 }}>Importer une checklist</div>
       <div style={{ fontSize: 13, color: T.ink500, lineHeight: 1.5 }}>Un document Word au format du modèle ({DEBUG_DOC.ref}) : chaque ligne de tableau dont les colonnes 2 et 3 sont « OK » et « NOK » ouvre une section ; les lignes suivantes sont les contrôles (1re colonne) et leur consigne (dernière colonne).<br />Ou un tableau Excel / CSV : <b>Section ; Contrôle ; Consigne ; Option</b> (une ligne par contrôle).</div>
       <input type="file" accept=".docx,.csv,.txt" onChange={pick} aria-label="Fichier de checklist" disabled={busy} />
       <textarea value={txt} onChange={e => setTxt(e.target.value)} rows={5} placeholder={"Ou collez ici depuis Excel :\nSorties\tVentilateur circuit de cooling\tActiver le ventilateur…\t"} aria-label="Checklist collée" style={{ ...field, resize: "vertical", fontFamily: T.fontMono, fontSize: 12 }} />
@@ -36,7 +36,7 @@ function ImportDialog({ onApply, onClose }) {
       {err && <div role="alert" style={{ color: T.red600, fontWeight: 600, fontSize: FZ.sm }}>{err}</div>}
       {res && res.length > 0 && <div style={{ border: "1px solid " + T.line, borderRadius: 8, padding: "8px 10px", maxHeight: 260, overflow: "auto" }}>
         <div style={{ fontWeight: 600, fontSize: FZ.sm, marginBottom: 4 }}>{res.length} section{res.length > 1 ? "s" : ""} · {n} contrôle{n > 1 ? "s" : ""}</div>
-        {res.map(s => <div key={s.id} style={{ fontSize: 12.5, marginBottom: 4 }}><b>{s.title}</b> <span style={{ color: T.ink500 }}>({s.items.length})</span> — <span style={{ color: T.ink700 }}>{s.items.slice(0, 4).map(i => i.label).join(", ")}{s.items.length > 4 ? "…" : ""}</span></div>)}
+        {res.map(s => <div key={s.id} style={{ fontSize: 13, marginBottom: 4 }}><b>{s.title}</b> <span style={{ color: T.ink500 }}>({s.items.length})</span> — <span style={{ color: T.ink700 }}>{s.items.slice(0, 4).map(i => i.label).join(", ")}{s.items.length > 4 ? "…" : ""}</span></div>)}
       </div>}
       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
         <button type="button" style={btn(false, true)} onClick={onClose}>Annuler</button>
@@ -61,7 +61,7 @@ function DebugModelView({ doc, commit }) {
     <section style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
       <div style={{ flex: "1 1 320px" }}>
         <div style={{ fontSize: 16, fontWeight: 600 }}>Checklist de debug · modèle</div>
-        <div style={{ fontSize: 12.5, color: T.ink500 }}>{secs.length} sections · {total} contrôles · s'applique à toutes les machines (fiche de tests et export PDF). Elle ne se modifie qu'ici, pas depuis un PJ.</div>
+        <div style={{ fontSize: 13, color: T.ink500 }}>{secs.length} sections · {total} contrôles · s'applique à toutes les machines (fiche de tests et export PDF). Elle ne se modifie qu'ici, pas depuis un PJ.</div>
       </div>
       <button type="button" style={btn(false, true)} onClick={() => setImp(true)}>Importer…</button>
       <button type="button" style={btn(false, true)} onClick={reset} disabled={busy}>Modèle d'origine</button>
@@ -82,7 +82,7 @@ function DebugModelView({ doc, commit }) {
         {s.items.map((it, ii) => <React.Fragment key={it.id}>
           <div style={{ padding: "4px 6px", borderBottom: "1px solid " + T.line }}><input value={it.label} onChange={e => upd(a => { a[si].items[ii].label = e.target.value; return a; })} aria-label="Contrôle" style={field} /></div>
           <div style={{ padding: "4px 6px", borderBottom: "1px solid " + T.line }}><textarea value={it.hint} rows={Math.min(4, Math.max(1, String(it.hint).split("\n").length))} onChange={e => upd(a => { a[si].items[ii].hint = e.target.value; return a; })} aria-label={"Consigne : " + it.label} style={{ ...field, resize: "vertical", lineHeight: 1.4 }} /></div>
-          <label style={{ padding: "4px 8px", borderBottom: "1px solid " + T.line, display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, color: T.ink700 }}><input type="checkbox" checked={!!it.opt} onChange={e => upd(a => { a[si].items[ii].opt = e.target.checked; return a; })} />S.O.</label>
+          <label style={{ padding: "4px 8px", borderBottom: "1px solid " + T.line, display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: T.ink700 }}><input type="checkbox" checked={!!it.opt} onChange={e => upd(a => { a[si].items[ii].opt = e.target.checked; return a; })} />S.O.</label>
           <div style={{ padding: "4px 6px", borderBottom: "1px solid " + T.line, display: "flex", gap: 4, alignItems: "center" }}>
             <button type="button" aria-label={"Monter " + it.label} style={mini} disabled={ii === 0} onClick={() => upd(a => { a[si].items = move(a[si].items, ii, -1); return a; })}>↑</button>
             <button type="button" aria-label={"Descendre " + it.label} style={mini} disabled={ii === s.items.length - 1} onClick={() => upd(a => { a[si].items = move(a[si].items, ii, 1); return a; })}>↓</button>
@@ -148,7 +148,7 @@ function BookImportView({ book, bookApi }) {
     <section style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
       <div style={{ flex: "1 1 320px" }}>
         <div style={{ fontSize: 16, fontWeight: 600 }}>Livret de configuration · {cur.length ? (book.title || "Livret") : "pas encore chargé"}</div>
-        <div style={{ fontSize: 12.5, color: T.ink500 }}>{cur.length ? (book.ref ? book.ref + " · " : "") + book.chapters.length + " chapitres · " + cur.length + " étapes" + (book.at ? " · importé le " + new Date(book.at).toLocaleDateString("fr-FR") + (book.by ? " par " + book.by : "") : "") : "Importez le manuel Word : il est découpé en chapitres (titres 1) et en étapes (chaque titre qui porte du texte, un tableau ou une image)."}</div>
+        <div style={{ fontSize: 13, color: T.ink500 }}>{cur.length ? (book.ref ? book.ref + " · " : "") + book.chapters.length + " chapitres · " + cur.length + " étapes" + (book.at ? " · importé le " + new Date(book.at).toLocaleDateString("fr-FR") + (book.by ? " par " + book.by : "") : "") : "Importez le manuel Word : il est découpé en chapitres (titres 1) et en étapes (chaque titre qui porte du texte, un tableau ou une image)."}</div>
       </div>
       <label style={{ ...btn(true), display: "inline-flex", alignItems: "center", cursor: busy ? "default" : "pointer" }}>Importer le manuel Word…<input type="file" accept=".docx" disabled={!!busy} onChange={pick} aria-label="Manuel Word (.docx)" style={{ display: "none" }} /></label>
     </section>
@@ -180,7 +180,7 @@ function VibModelView({ doc, commit }) {
   const save = async () => { const ok = await commit({ vibModel: { rows: rows.filter(r => r.label.trim()), at: new Date().toISOString() } }); if (ok !== false) { setDirty(false); setMsg("Enregistré : s'applique à toutes les fiches de tests."); } else setMsg("L'enregistrement a échoué."); };
   return <section style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
     <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}><div style={{ flex: "1 1 320px" }}><div style={{ fontSize: 16, fontWeight: 600 }}>Fréquences turbines et vibrations</div>
-      <div style={{ fontSize: 12.5, color: T.ink500 }}>Étape de la checklist de debug : la fréquence est figée (affichée), le testeur saisit la vibration relevée ; au-dessus de la limite, la ligne passe en rouge.</div></div>
+      <div style={{ fontSize: 13, color: T.ink500 }}>Étape de la checklist de debug : la fréquence est figée (affichée), le testeur saisit la vibration relevée ; au-dessus de la limite, la ligne passe en rouge.</div></div>
       <button type="button" style={btn(true)} disabled={!dirty} onClick={save}>{dirty ? "Enregistrer" : "Enregistré"}</button></div>
     {msg && <div role="status" style={{ fontSize: FZ.sm, fontWeight: 600, color: /échoué/.test(msg) ? T.red600 : T.emerald600 }}>{msg}</div>}
     <div style={{ display: "grid", gridTemplateColumns: "minmax(160px,1.4fr) minmax(120px,1fr) minmax(120px,1fr) 40px", gap: 6, alignItems: "center" }}>

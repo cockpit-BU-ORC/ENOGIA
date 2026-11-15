@@ -31,11 +31,11 @@ export function StepRail({ steps, cur, onPick }) {
       return <li key={s.id} style={{ position: "relative" }}><button type="button" onClick={() => onPick(i)} aria-current={on ? "step" : undefined}
         style={{ width: "100%", display: "grid", gridTemplateColumns: "30px 1fr", gap: 10, alignItems: "center", textAlign: "left", border: "none", borderRadius: 8, padding: "8px 6px", minHeight: 52, cursor: "pointer", fontFamily: T.font, background: on ? T.card : "transparent", boxShadow: on ? "inset 3px 0 0 " + T.ink900 + ", " + T.shadowSm : "none" }}>
         <span aria-hidden="true" style={{ position: "relative", zIndex: 1, width: 30, height: 30, borderRadius: "50%", display: "grid", placeItems: "center", fontFamily: T.fontDisplay, fontWeight: 600, fontSize: 13, background: done ? T.emerald600 : T.card, border: "2px " + (done || on ? "solid " : "dashed ") + (done ? T.emerald600 : bad ? T.red500 : on ? T.ink900 : T.line), color: done ? T.card : on ? T.ink900 : T.ink500 }}>{done ? "✓" : i + 1}</span>
-        <span style={{ minWidth: 0 }}><span style={{ display: "block", fontWeight: 600, fontSize: FZ.sm, color: T.ink900 }}>{s.t}</span><span style={{ display: "block", fontSize: 12, color: bad ? T.red600 : done ? T.emerald600 : T.ink500, fontWeight: bad || done ? 600 : 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.s}</span></span>
+        <span style={{ minWidth: 0 }}><span style={{ display: "block", fontWeight: 600, fontSize: FZ.sm, color: T.ink900 }}>{s.t}</span><span style={{ display: "block", fontSize: 12, color: bad ? T.red600 : done ? T.emerald600 : T.ink500, fontWeight: bad || done ? 500 : 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.s}</span></span>
       </button></li>; })}
   </ol>;
 }
-export const StepHead = ({ title, lead }) => <div style={{ marginBottom: 14 }}><h2 style={{ margin: 0, fontFamily: T.fontDisplay, fontSize: 22, fontWeight: 600, color: T.ink900 }}>{title}</h2>{lead && <p style={{ margin: "4px 0 0", color: T.ink500, fontSize: FZ.sm, maxWidth: "68ch" }}>{lead}</p>}</div>;
+export const StepHead = ({ title, lead }) => <div style={{ marginBottom: 14 }}><h2 style={{ margin: 0, fontFamily: T.fontDisplay, fontSize: 20, fontWeight: 600, color: T.ink900 }}>{title}</h2>{lead && <p style={{ margin: "4px 0 0", color: T.ink500, fontSize: FZ.sm, maxWidth: "68ch" }}>{lead}</p>}</div>;
 
 // ── D13 : livret de configuration (manuel Word découpé en chapitres et en étapes, manualImport.js)
 // Par étape : case de validation, statut (À faire, OK, Problème), commentaire. Suivi : progression, filtres, synthèse des problèmes ;
@@ -69,7 +69,7 @@ function IoButtons({ io, canMark, compact }) {
     <button type="button" onClick={() => { if (!io.pdf()) setMsg("Le navigateur a bloqué la fenêtre : autorisez les fenêtres pour ce site."); }} style={B("sec", "sm")}>PDF imprimable</button>
     {canMark && <><button type="button" onClick={() => fileRef.current && fileRef.current.click()} style={B("ghost", "sm")}>Reprendre une session…</button>
       <input ref={fileRef} type="file" accept=".json,.csv,.txt" aria-label="Fichier d'export du livret à reprendre" style={{ display: "none" }} onChange={async e => { const f = e.target.files && e.target.files[0]; e.target.value = ""; if (!f) return; try { const n = await io.reimport(f); if (n) setMsg(n + " réponse" + (n > 1 ? "s" : "") + " reprise" + (n > 1 ? "s" : "")); } catch (x) { setMsg("Reprise impossible : " + x.message); } }} /></>}
-    {msg && <span role="status" style={{ fontSize: 12, color: /impossible|bloqué/.test(msg) ? T.red600 : T.emerald600, fontWeight: 600, flexBasis: compact ? "100%" : "auto" }}>{msg}</span>}
+    {msg && <span role="status" style={{ fontSize: 12, color: /impossible|bloqué/.test(msg) ? T.red600 : T.emerald600, fontWeight: 500, flexBasis: compact ? "100%" : "auto" }}>{msg}</span>}
   </div>;
 }
 export function BookStep({ r, plan, book, bookApi, canMark, saveTests, who, canAdmin, meta }) {
@@ -83,10 +83,10 @@ export function BookStep({ r, plan, book, bookApi, canMark, saveTests, who, canA
         style={{ position: "relative", aspectRatio: "210 / 297", borderRadius: "4px 12px 12px 4px", background: T.navy700 || T.teal500, color: T.onFill, padding: "20px 14px 14px 22px", boxShadow: T.shadowLg, border: "none", textAlign: "left", cursor: "pointer", fontFamily: T.font }}>
         <span aria-hidden="true" style={{ position: "absolute", left: 9, top: 0, bottom: 0, width: 2, background: "color-mix(in srgb, " + T.card + " 22%, transparent)" }} />
         <span aria-hidden="true" style={{ position: "absolute", right: 14, top: -4, width: 16, height: 40, background: T.amber500, clipPath: "polygon(0 0,100% 0,100% 100%,50% 80%,0 100%)" }} />
-        <span style={{ display: "block", fontSize: 11, opacity: 0.8 }}>{book.ref || "ENOGIA"}</span>
-        <span style={{ display: "block", fontFamily: T.fontDisplay, fontSize: 19, fontWeight: 600, lineHeight: 1.12, margin: "10px 0 6px" }}>{book.title || BOOK_DOC.title}</span>
-        <span style={{ display: "block", fontSize: 11, opacity: 0.85 }}>{r.pj}{r.gamme ? " · " + r.gamme : ""}</span>
-        <span style={{ position: "absolute", left: 22, right: 14, bottom: 12, fontSize: 11, opacity: 0.85, display: "flex", justifyContent: "space-between" }}><span>{book.chapters.length} chapitres</span><span>{pr.valid} / {pr.total}</span></span>
+        <span style={{ display: "block", fontSize: 12, opacity: 0.8 }}>{book.ref || "ENOGIA"}</span>
+        <span style={{ display: "block", fontFamily: T.fontDisplay, fontSize: 20, fontWeight: 600, lineHeight: 1.12, margin: "10px 0 6px" }}>{book.title || BOOK_DOC.title}</span>
+        <span style={{ display: "block", fontSize: 12, opacity: 0.85 }}>{r.pj}{r.gamme ? " · " + r.gamme : ""}</span>
+        <span style={{ position: "absolute", left: 22, right: 14, bottom: 12, fontSize: 12, opacity: 0.85, display: "flex", justifyContent: "space-between" }}><span>{book.chapters.length} chapitres</span><span>{pr.valid} / {pr.total}</span></span>
       </button>
       <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 12 }}>
         <div>
@@ -99,10 +99,10 @@ export function BookStep({ r, plan, book, bookApi, canMark, saveTests, who, canA
             <em style={{ fontStyle: "normal", color: c.pb ? T.red600 : T.ink500, fontWeight: c.pb ? 600 : 500, fontVariantNumeric: "tabular-nums" }}>{c.pb ? c.pb + " problème" + (c.pb > 1 ? "s" : "") + " · " : ""}{c.valid} / {c.total}</em></button></li>)}
         </ol>
         {pr.problems.length > 0 && <div style={{ border: "1px solid " + T.red500, background: T.red100, borderRadius: 8, padding: "8px 10px", fontSize: 13 }}><b style={{ color: T.red600 }}>Problèmes signalés ({pr.problems.length})</b>
-          {pr.problems.slice(0, 4).map(p => <div key={p.id} style={{ marginTop: 4, color: T.ink900 }}><button type="button" onClick={() => { setFocus({ id: p.id }); setOpen(true); }} style={{ border: "none", background: "transparent", padding: 0, color: T.ink900, fontWeight: 600, cursor: "pointer", textDecoration: "underline", fontFamily: T.font, fontSize: 13 }}>{p.title}</button>{p.c ? " : " + p.c : ""}</div>)}
+          {pr.problems.slice(0, 4).map(p => <div key={p.id} style={{ marginTop: 4, color: T.ink900 }}><button type="button" onClick={() => { setFocus({ id: p.id }); setOpen(true); }} style={{ border: "none", background: "transparent", padding: 0, color: T.ink900, fontWeight: 500, cursor: "pointer", textDecoration: "underline", fontFamily: T.font, fontSize: 13 }}>{p.title}</button>{p.c ? " : " + p.c : ""}</div>)}
           {pr.problems.length > 4 && <div style={{ color: T.ink700, marginTop: 4 }}>+ {pr.problems.length - 4} autre{pr.problems.length - 4 > 1 ? "s" : ""} dans le livret</div>}</div>}
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-          <button type="button" onClick={() => { setFocus(null); setOpen(true); }} style={B("pri", "md")}>{canMark ? (pr.valid || pr.ok || pr.pb ? "Reprendre le livret" : "Ouvrir le livret") : "Consulter le livret"}</button>
+          <button type="button" onClick={() => { setFocus(null); setOpen(true); }} style={B("sec", "md")}>{canMark ? (pr.valid || pr.ok || pr.pb ? "Reprendre le livret" : "Ouvrir le livret") : "Consulter le livret"}</button>
           <IoButtons io={io} canMark={canMark} />
         </div>
       </div>
@@ -129,12 +129,12 @@ function StepCtl({ s, row, canMark, io }) {
       <span style={{ flex: 1 }} />
       <div role="radiogroup" aria-label={"Statut : " + s.title} style={{ display: "inline-flex", gap: 2, background: T.surfaceAlt, borderRadius: 8, padding: 2 }}>
         {STEP_STATUS.map(([v, l]) => { const on = st === v, [ink, bg] = ST_TONE[v](); return <button key={v} type="button" role="radio" aria-checked={on} disabled={!canMark} onClick={() => io.setRow(s.id, { s: v })}
-          style={{ border: "none", borderRadius: 8, minHeight: 32, padding: "0 12px", fontSize: 12, fontWeight: 600, fontFamily: T.font, cursor: canMark ? "pointer" : "default", background: on ? bg : "transparent", color: on ? ink : T.ink500 }}>{l}</button>; })}
+          style={{ border: "none", borderRadius: 8, minHeight: 32, padding: "0 12px", fontSize: 12, fontWeight: 500, fontFamily: T.font, cursor: canMark ? "pointer" : "default", background: on ? bg : "transparent", color: on ? ink : T.ink500 }}>{l}</button>; })}
       </div>
     </div>
     <textarea rows={2} disabled={!canMark} key={s.id + ((row && row.c) || "")} defaultValue={(row && row.c) || ""} placeholder={st === "pb" ? "Décrivez le problème" : "Commentaire (facultatif)"} aria-label={"Commentaire : " + s.title}
       onBlur={e => { const t = e.target.value.trim(); if (t !== ((row && row.c) || "")) io.setRow(s.id, { c: t }); }} style={{ ...field(), fontSize: FZ.sm, resize: "vertical", borderColor: st === "pb" ? T.red500 : T.line }} />
-    {row && row.by && <span style={{ fontSize: 11, color: T.ink500 }}>{row.by}{row.at ? " · " + fdt(row.at) : ""}</span>}
+    {row && row.by && <span style={{ fontSize: 12, color: T.ink500 }}>{row.by}{row.at ? " · " + fdt(row.at) : ""}</span>}
   </div>;
 }
 function BookReader({ r, book, bookApi, canMark, io, focus, onClose }) {
@@ -149,14 +149,14 @@ function BookReader({ r, book, bookApi, canMark, io, focus, onClose }) {
   const paper = "color-mix(in srgb, " + T.card + " 94%, " + T.amber100 + ")";
   const Page = ({ s, n }) => !s ? <div style={{ padding: 30, color: T.ink500, fontSize: FZ.sm }}>{list.length ? "Fin de la sélection" : "Aucune étape avec ces filtres"}</div>
     : <article aria-label={s.title} style={{ padding: "26px 30px 40px", position: "relative", minWidth: 0, display: "flex", flexDirection: "column" }}>
-      <div style={{ fontSize: 11, color: T.ink500, marginBottom: 4 }}>{[s.chapTitle, ...s.path.slice(1)].filter((x, i, a) => x && a.indexOf(x) === i).join(" › ")}</div>
-      <h3 style={{ margin: "0 0 10px", fontFamily: T.fontDisplay, fontSize: 19, fontWeight: 600, color: T.ink900, display: "flex", gap: 8, alignItems: "center" }}>{s.title}
-        {stepStatus(io.rows[s.id]) !== "todo" && <span style={{ fontFamily: T.font, fontSize: 11, fontWeight: 600, borderRadius: 999, padding: "1px 8px", color: ST_TONE[stepStatus(io.rows[s.id])]()[0], background: ST_TONE[stepStatus(io.rows[s.id])]()[1] }}>{Object.fromEntries(STEP_STATUS)[stepStatus(io.rows[s.id])]}</span>}</h3>
+      <div style={{ fontSize: 12, color: T.ink500, marginBottom: 4 }}>{[s.chapTitle, ...s.path.slice(1)].filter((x, i, a) => x && a.indexOf(x) === i).join(" › ")}</div>
+      <h3 style={{ margin: "0 0 10px", fontFamily: T.fontDisplay, fontSize: 20, fontWeight: 600, color: T.ink900, display: "flex", gap: 8, alignItems: "center" }}>{s.title}
+        {stepStatus(io.rows[s.id]) !== "todo" && <span style={{ fontFamily: T.font, fontSize: 12, fontWeight: 500, borderRadius: 999, padding: "1px 8px", color: ST_TONE[stepStatus(io.rows[s.id])]()[0], background: ST_TONE[stepStatus(io.rows[s.id])]()[1] }}>{Object.fromEntries(STEP_STATUS)[stepStatus(io.rows[s.id])]}</span>}</h3>
       <div style={{ flex: 1 }}><Blocks blocks={s.blocks} book={book} bookApi={bookApi} /></div>
       <StepCtl s={s} row={io.rows[s.id]} canMark={canMark} io={io} />
-      <span style={{ position: "absolute", bottom: 12, [n % 2 ? "left" : "right"]: 30, fontSize: 11, color: T.ink500 }}>{n} / {list.length}</span>
+      <span style={{ position: "absolute", bottom: 12, [n % 2 ? "left" : "right"]: 30, fontSize: 12, color: T.ink500 }}>{n} / {list.length}</span>
     </article>;
-  const chip = (v, l, n) => { const on = flt.status === v; return <button key={v} type="button" aria-pressed={on} onClick={() => setF({ status: v })} style={{ minHeight: 30, padding: "0 10px", borderRadius: 999, border: "1px solid " + (on ? T.ink900 : T.line), background: on ? T.ink900 : T.card, color: on ? T.card : T.ink700, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>{l} <span style={{ opacity: 0.7 }}>{n}</span></button>; };
+  const chip = (v, l, n) => { const on = flt.status === v; return <button key={v} type="button" aria-pressed={on} onClick={() => setF({ status: v })} style={{ minHeight: 30, padding: "0 10px", borderRadius: 999, border: "1px solid " + (on ? T.ink900 : T.line), background: on ? T.ink900 : T.card, color: on ? T.card : T.ink700, fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: T.font }}>{l} <span style={{ opacity: 0.7 }}>{n}</span></button>; };
   return <div onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} className="enogia-book-reader" style={{ position: "fixed", inset: 0, zIndex: 10020, background: "rgba(10,14,22,.58)", display: "grid", gridTemplateColumns: "minmax(250px,300px) minmax(0,1080px)", gap: 14, alignContent: "center", justifyContent: "center", padding: 16 }}>
     <aside aria-label="Suivi du livret" style={{ background: T.card, borderRadius: 12, boxShadow: T.shadowLg, padding: 14, alignSelf: "stretch", maxHeight: "92dvh", overflow: "auto", display: "flex", flexDirection: "column", gap: 10 }}>
       <div><div style={{ fontFamily: T.fontDisplay, fontSize: 16, fontWeight: 600, color: T.ink900 }}>{book.title || BOOK_DOC.title} · {r.pj}</div>
@@ -167,16 +167,16 @@ function BookReader({ r, book, bookApi, canMark, io, focus, onClose }) {
       <input type="search" value={flt.q} onChange={e => setF({ q: e.target.value })} placeholder="Rechercher dans le livret" aria-label="Rechercher dans le livret" style={{ ...field(), fontSize: FZ.sm, minHeight: 34 }} />
       <ol style={{ listStyle: "none", margin: 0, padding: 0, flex: 1, minHeight: 120, overflow: "auto", borderTop: "1px solid " + T.line }}>
         {list.map((s, i) => { const st = stepStatus(io.rows[s.id]), on = i === pg || i === pg + 1, head = i === 0 || list[i - 1].chap !== s.chap;
-          return <li key={s.id}>{head && <div style={{ fontSize: 11, fontWeight: 600, color: T.ink500, padding: "8px 4px 2px" }}>{s.chapTitle}</div>}
+          return <li key={s.id}>{head && <div style={{ fontSize: 12, fontWeight: 500, color: T.ink500, padding: "8px 4px 2px" }}>{s.chapTitle}</div>}
             <button type="button" onClick={() => setCur(i)} aria-current={on ? "step" : undefined} style={{ width: "100%", display: "flex", gap: 8, alignItems: "center", padding: "5px 6px", minHeight: 34, border: "none", borderRadius: 8, background: on ? T.surfaceAlt : "transparent", cursor: "pointer", textAlign: "left", fontFamily: T.font, fontSize: 13, color: T.ink900 }}>
-              <span aria-hidden="true" style={{ width: 16, height: 16, borderRadius: 4, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 11, border: "1.5px solid " + ((io.rows[s.id] || {}).v ? T.emerald600 : T.line), background: (io.rows[s.id] || {}).v ? T.emerald600 : "transparent", color: T.card }}>{(io.rows[s.id] || {}).v ? "✓" : ""}</span>
+              <span aria-hidden="true" style={{ width: 16, height: 16, borderRadius: 4, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 12, border: "1.5px solid " + ((io.rows[s.id] || {}).v ? T.emerald600 : T.line), background: (io.rows[s.id] || {}).v ? T.emerald600 : "transparent", color: T.card }}>{(io.rows[s.id] || {}).v ? "✓" : ""}</span>
               <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.title}</span>
               {st !== "todo" && <i aria-label={Object.fromEntries(STEP_STATUS)[st]} style={{ width: 8, height: 8, borderRadius: "50%", background: st === "pb" ? T.red500 : T.emerald500, flexShrink: 0 }} />}</button></li>; })}
       </ol>
       <div style={{ borderTop: "1px solid " + T.line, paddingTop: 8 }}>
-        <button type="button" aria-expanded={showPb} onClick={() => setShowPb(v => !v)} style={{ border: "none", background: "transparent", padding: 0, fontWeight: 600, fontSize: 13, color: pr.pb ? T.red600 : T.ink700, cursor: "pointer", fontFamily: T.font, minHeight: 28 }}>Synthèse des problèmes ({pr.problems.length}) {showPb ? "▾" : "▸"}</button>
+        <button type="button" aria-expanded={showPb} onClick={() => setShowPb(v => !v)} style={{ border: "none", background: "transparent", padding: 0, fontWeight: 500, fontSize: 13, color: pr.pb ? T.red600 : T.ink700, cursor: "pointer", fontFamily: T.font, minHeight: 28 }}>Synthèse des problèmes ({pr.problems.length}) {showPb ? "▾" : "▸"}</button>
         {showPb && (pr.problems.length ? pr.problems.map(p => <button key={p.id} type="button" onClick={() => goId(p.id)} style={{ display: "block", width: "100%", textAlign: "left", border: "none", borderLeft: "3px solid " + T.red500, background: T.red100, borderRadius: 4, padding: "6px 8px", marginTop: 6, cursor: "pointer", fontFamily: T.font }}>
-          <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: T.ink900 }}>{p.title}</span><span style={{ display: "block", fontSize: 11, color: T.ink700 }}>{p.chap}{p.c ? " · " + p.c : ""}</span></button>) : <div style={{ fontSize: 12, color: T.ink500, marginTop: 4 }}>Aucun problème signalé</div>)}
+          <span style={{ display: "block", fontSize: 12, fontWeight: 500, color: T.ink900 }}>{p.title}</span><span style={{ display: "block", fontSize: 12, color: T.ink700 }}>{p.chap}{p.c ? " · " + p.c : ""}</span></button>) : <div style={{ fontSize: 12, color: T.ink500, marginTop: 4 }}>Aucun problème signalé</div>)}
       </div>
       <IoButtons io={io} canMark={canMark} compact />
     </aside>
@@ -199,12 +199,12 @@ function BookReader({ r, book, bookApi, canMark, io, focus, onClose }) {
 export function VibBlock({ plan, rows, canMark, saveTests, who, canAdmin }) {
   const debug = plan.debug || {}, v = debug.vib || {}, pr = vibProgress(debug, rows);
   const save = (id, val) => saveTests({ ...plan, debug: { ...debug, name: debug.name || who, vib: { ...v, [id]: val }, at: new Date().toISOString() } });
-  const th = { textAlign: "left", fontSize: 12, fontWeight: 600, color: T.ink700, padding: "8px 12px", borderBottom: "1px solid " + T.line };
+  const th = { textAlign: "left", fontSize: 12, fontWeight: 500, color: T.ink700, padding: "8px 12px", borderBottom: "1px solid " + T.line };
   const td = { padding: "6px 12px", borderBottom: "1px solid " + T.line, fontSize: FZ.sm, fontVariantNumeric: "tabular-nums", color: T.ink900 };
   return <section aria-label="Fréquences turbines et vibrations" style={{ marginTop: 16, border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden" }}>
     <header style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", padding: "10px 14px", background: T.surface, borderBottom: "1px solid " + T.line }}>
-      <b style={{ fontFamily: T.fontDisplay, fontSize: 15, fontWeight: 600 }}>Fréquences turbines et vibrations</b>
-      <span style={{ fontSize: 12, color: pr.over ? T.red600 : T.ink500, fontWeight: pr.over ? 600 : 500 }}>{pr.done} / {pr.total} relevé{pr.total > 1 ? "s" : ""}{pr.over ? " · " + pr.over + " au-dessus de la limite" : ""}</span>
+      <b style={{ fontFamily: T.fontDisplay, fontSize: 16, fontWeight: 600 }}>Fréquences turbines et vibrations</b>
+      <span style={{ fontSize: 12, color: pr.over ? T.red600 : T.ink500, fontWeight: pr.over ? 500 : 500 }}>{pr.done} / {pr.total} relevé{pr.total > 1 ? "s" : ""}{pr.over ? " · " + pr.over + " au-dessus de la limite" : ""}</span>
       <span style={{ flex: 1 }} /><span style={{ fontSize: 12, color: T.ink500 }}>Fréquences figées{canAdmin ? " (réglage : Tests › Checklists)" : ""}</span></header>
     <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", minWidth: 560 }}>
       <thead><tr><th style={th}>Point de mesure</th><th style={th}>Fréquence turbine (figée)</th><th style={th}>Vibrations relevées</th><th style={th}>Limite</th><th style={th}>Résultat</th></tr></thead>
@@ -244,15 +244,15 @@ function TestsChecklistDialog({ r, plan, catalog, act, canMark, canAsk, saveTest
   useEffect(() => { const k = e => { if (e.key === "Escape" && !ask) onClose(); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose, ask]);
   const tres = plan.tres || {}, label = k => (SECTIONS.find(x => x[0] === k) || [])[1];
   const all = groups.flatMap(g => [...g.rows, ...g.asks].map(x => ({ ...x, k: g.k }))), done = all.filter(x => ["ok", "ko"].includes(statusOf(plan, x.k, x.id))).length, ko = all.filter(x => statusOf(plan, x.k, x.id) === "ko").length;
-  const th = { textAlign: "left", padding: "6px 8px", fontSize: 12, fontWeight: 600, color: T.ink900, background: T.surfaceAlt, borderBottom: "1px solid " + T.line, whiteSpace: "nowrap", position: "sticky", top: 0, zIndex: 1 };
+  const th = { textAlign: "left", padding: "6px 8px", fontSize: 12, fontWeight: 500, color: T.ink900, background: T.surfaceAlt, borderBottom: "1px solid " + T.line, whiteSpace: "nowrap", position: "sticky", top: 0, zIndex: 1 };
   const td = { padding: "4px 6px", borderBottom: "1px solid " + T.line, verticalAlign: "top", fontSize: FZ.xs, color: T.ink900 };
   const Cell = ({ k, id, val, lab }) => { const st = statusOf(plan, k, id), on = (val === "ok" && st === "ok") || (val === "nok" && st === "ko"), tone = val === "ok" ? [T.emerald600, T.emerald100] : [T.red600, T.red100];
     return <button type="button" disabled={!canMark} aria-pressed={on} aria-label={lab} onClick={() => saveTests(setTestMark(plan, k, id, val, who))}
-      style={{ width: 40, minHeight: 30, borderRadius: 8, border: "1px solid " + (on ? tone[0] : T.line), background: on ? tone[1] : T.card, color: on ? tone[0] : T.ink300, fontWeight: 600, fontSize: FZ.xs, cursor: canMark ? "pointer" : "default", fontFamily: T.font }}>{on ? "X" : ""}</button>; };
+      style={{ width: 40, minHeight: 30, borderRadius: 8, border: "1px solid " + (on ? tone[0] : T.line), background: on ? tone[1] : T.card, color: on ? tone[0] : T.ink300, fontWeight: 500, fontSize: FZ.xs, cursor: canMark ? "pointer" : "default", fontFamily: T.font }}>{on ? "X" : ""}</button>; };
   const Row = ({ k, x }) => { const d = (tres[k] || {})[x.id] || {}, st = statusOf(plan, k, x.id);
     return <tr style={{ background: st === "ko" ? T.red100 : "transparent" }}>
-      <td style={{ ...td, fontWeight: 600 }}>{x.label}{x.ask && <span style={{ display: "block", fontWeight: 500, fontSize: 11, color: T.info600, marginTop: 2 }}>{x.fiche ? "fiche projet" : "demande du client"}{x.by ? " · " + x.by : ""}{x.at ? " · " + fdt(x.at) : ""}</span>}
-        {x.ask && canAsk && !x.fiche && <button type="button" onClick={async () => { if (await askConfirm({ title: "Retirer la demande « " + x.label + " » ?", message: "Elle disparaît de la checklist de tests de " + r.pj + ".", confirmLabel: "Retirer la demande", danger: true })) saveTests(delAsk(plan, x.id)); }} style={{ border: "none", background: "transparent", color: T.red600, fontSize: 11, fontWeight: 600, padding: 0, marginTop: 2, cursor: "pointer", fontFamily: T.font, minHeight: 24 }}>Retirer</button>}</td>
+      <td style={{ ...td, fontWeight: 600 }}>{x.label}{x.ask && <span style={{ display: "block", fontWeight: 500, fontSize: 12, color: T.info600, marginTop: 2 }}>{x.fiche ? "fiche projet" : "demande du client"}{x.by ? " · " + x.by : ""}{x.at ? " · " + fdt(x.at) : ""}</span>}
+        {x.ask && canAsk && !x.fiche && <button type="button" onClick={async () => { if (await askConfirm({ title: "Retirer la demande « " + x.label + " » ?", message: "Elle disparaît de la checklist de tests de " + r.pj + ".", confirmLabel: "Retirer la demande", danger: true })) saveTests(delAsk(plan, x.id)); }} style={{ border: "none", background: "transparent", color: T.red600, fontSize: 12, fontWeight: 500, padding: 0, marginTop: 2, cursor: "pointer", fontFamily: T.font, minHeight: 24 }}>Retirer</button>}</td>
       <td style={{ ...td, textAlign: "center" }}><Cell k={k} id={x.id} val="ok" lab={"OK : " + x.label} /></td>
       <td style={{ ...td, textAlign: "center" }}><Cell k={k} id={x.id} val="nok" lab={"NOK : " + x.label} /></td>
       {DEBUG_FIELDS.map(([f, l]) => <td key={f} style={td}><textarea rows={1} disabled={!canMark} key={f + x.id + (d[f] || "")} defaultValue={d[f] || ""} aria-label={l + " : " + x.label} onBlur={e => { const t = e.target.value.trim(); if (t !== (d[f] || "")) saveTests(setTestDetail(plan, k, x.id, { [f]: t })); }} style={{ ...field(), resize: "vertical" }} /></td>)}
@@ -273,7 +273,7 @@ function TestsChecklistDialog({ r, plan, catalog, act, canMark, canAsk, saveTest
             <tbody><tr><th colSpan={8} style={{ textAlign: "left", padding: "8px 8px", background: T.surface, fontFamily: T.fontDisplay, fontSize: 14, fontWeight: 600, borderBottom: "1px solid " + T.line }}>{label(g.k)}</th></tr>
               {g.rows.length === 0 && <tr><td colSpan={8} style={{ ...td, color: T.ink500 }}>Aucun test retenu</td></tr>}
               {g.rows.map(x => <Row key={x.id} k={g.k} x={x} />)}</tbody>
-            {g.k === "interne" && <tbody><tr><th colSpan={8} style={{ textAlign: "left", padding: "8px 8px", background: T.info100, color: T.info600, fontSize: 13, fontWeight: 600, borderBottom: "1px solid " + T.line }}>
+            {g.k === "interne" && <tbody><tr><th colSpan={8} style={{ textAlign: "left", padding: "8px 8px", background: T.info100, color: T.info600, fontSize: 13, fontWeight: 500, borderBottom: "1px solid " + T.line }}>
               {label(g.k)} · Demandes spécifiques du client
               {canAsk && <button type="button" onClick={() => setAsk({ label: "", hint: "" })} style={{ ...B("sec", "sm"), marginLeft: 10 }}>＋ Ajouter une demande</button>}</th></tr>
               {ask && <tr><td colSpan={8} style={{ ...td, background: T.surface }}><div style={{ display: "grid", gridTemplateColumns: "minmax(200px,1fr) minmax(240px,2fr) auto auto", gap: 8, alignItems: "center", padding: 4 }}>

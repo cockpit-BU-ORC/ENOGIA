@@ -7,7 +7,7 @@ import { DEFAULT_COMPOSANTS } from "../pjProgress";
 import { askConfirm } from "../confirm";
 import { AF } from "../autoFocusOk";
 
-const btn = (extra = {}) => ({ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "4px 10px", fontSize: FZ.xs, fontWeight: 600, cursor: "pointer", fontFamily: T.font, ...extra });
+const btn = (extra = {}) => ({ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "4px 10px", fontSize: FZ.xs, fontWeight: 500, cursor: "pointer", fontFamily: T.font, ...extra });
 const fld = { padding: "6px 10px", borderRadius: 8, get border() { return "1px solid " + T.line; }, get background() { return T.surface; }, get color() { return T.ink900; }, fontSize: FZ.sm, get fontFamily() { return T.font; } }; // v346 : accesseurs (suivent le clair / sombre)
 
 export function CompCatalogDialog({ catalog, setCatalog, nPj, missingCount, onApplyAll, onClose }) {
@@ -43,11 +43,11 @@ export function CompCatalogDialog({ catalog, setCatalog, nPj, missingCount, onAp
         <input value={name} autoFocus={AF} onChange={e => { setName(e.target.value); setErr(""); }} onKeyDown={e => { if (e.key === "Enter") add(); }} placeholder="Nouveau composant (ex. Vanne, Bac à huile…)" aria-label="Nouveau composant" maxLength={40} style={{ ...fld, flex: 1, minWidth: 0 }} />
         <button onClick={add} disabled={!name.trim()} style={{ border: "none", borderRadius: 12, padding: "7px 14px", background: name.trim() ? T.navy700 : T.ink100, color: name.trim() ? T.onFill : T.ink500, fontWeight: 600, fontSize: FZ.sm, cursor: name.trim() ? "pointer" : "default", fontFamily: T.font }}>Ajouter</button>
       </div>
-      {err && <div role="alert" style={{ marginTop: 8, fontSize: FZ.xs, color: T.red600, fontWeight: 600 }}>{err}</div>}
+      {err && <div role="alert" style={{ marginTop: 8, fontSize: FZ.xs, color: T.red600, fontWeight: 500 }}>{err}</div>}
       {onApplyAll && <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid " + T.line, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <button onClick={apply} disabled={!missingCount} style={btn({ color: missingCount ? T.navy700 : T.ink300 })}>Ajouter aux PJ en cours</button>
         <span style={{ fontSize: FZ.xs, color: T.ink500 }}>{missingCount ? missingCount + " PJ ont une liste à compléter" : "Toutes les listes en cours sont à jour"}</span>
-        {msg && <span role="status" style={{ fontSize: FZ.xs, color: T.emerald600, fontWeight: 600 }}>{msg} ✓</span>}
+        {msg && <span role="status" style={{ fontSize: FZ.xs, color: T.emerald600, fontWeight: 500 }}>{msg} ✓</span>}
       </div>}
     </div>
   </div>, document.body);

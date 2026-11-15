@@ -19,7 +19,7 @@ export function Reactions({ c, pj, idx }) {
   if (!react) return null;
   const r = (c && c.reactions) || {};
   const nameOf = e => ((options || []).find(o => lc(o.email) === lc(e)) || {}).name || nameFromEmail(e);
-  const chip = on => ({ display: "inline-flex", alignItems: "center", gap: 4, minHeight: 26, padding: "0 8px", borderRadius: 999, border: "1px solid " + (on ? T.accent || T.teal500 : T.line), background: on ? T.accentSoft || T.teal100 : T.card, color: T.ink700, fontSize: FZ.xs, fontWeight: 600, cursor: "pointer", fontFamily: T.font });
+  const chip = on => ({ display: "inline-flex", alignItems: "center", gap: 4, minHeight: 26, padding: "0 8px", borderRadius: 999, border: "1px solid " + (on ? T.accent || T.teal500 : T.line), background: on ? T.accentSoft || T.teal100 : T.card, color: T.ink700, fontSize: FZ.xs, fontWeight: 500, cursor: "pointer", fontFamily: T.font });
   const used = REACTIONS.filter(e => (r[e] || []).length).concat(Object.keys(r).filter(e => !REACTIONS.includes(e) && (r[e] || []).length));
   return (<div ref={box} style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginTop: 6, position: "relative" }}>
     {used.map(e => { const who = r[e] || [], on = !!me && who.map(lc).includes(lc(me));
@@ -30,7 +30,7 @@ export function Reactions({ c, pj, idx }) {
     {open && <div role="menu" aria-label="Réactions" style={{ position: "absolute", left: 0, bottom: "calc(100% + 4px)", zIndex: 30, display: "flex", gap: 2, padding: 4, background: T.card, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowMd }}>
       {REACTIONS.map(e => { const on = !!me && (r[e] || []).map(lc).includes(lc(me));
         return <button key={e} type="button" role="menuitemcheckbox" aria-checked={on} aria-label={"Réagir " + e} onClick={() => { react(pj, idx, e); setOpen(false); }}
-          style={{ width: 34, height: 34, border: "none", borderRadius: 8, background: on ? (T.accentSoft || T.teal100) : "transparent", fontSize: 18, cursor: "pointer", lineHeight: 1 }}>{e}</button>; })}
+          style={{ width: 34, height: 34, border: "none", borderRadius: 8, background: on ? (T.accentSoft || T.teal100) : "transparent", fontSize: 20, cursor: "pointer", lineHeight: 1 }}>{e}</button>; })}
     </div>}
   </div>);
 }

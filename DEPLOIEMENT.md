@@ -2541,3 +2541,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Composants internes remontés hors des composants (accueil, KPI, Turbines, écran atelier, fenêtre projet) ; polices réduites ; copie bêta en parallèle.
 - Aucune clé localStorage ; règles Firestore inchangées.
 - Fichiers : scripts/gen-icons.js, src/iconPaths.js, src/ganttPhases.js, components/SharedUI.js, GanttView.js, ProjectModal.js, HomeView.js, RoleHome.js, KpiPilotage.js, TurbinesHub.js, WorkshopScreen.js, AppChrome.js, planner/store.js, public/index.html, versions.
+
+## v351 — direction design (UI UX Pro Max) : échelle, graisses, bouton principal, règles UX
+
+- Une seule échelle de tailles (12 · 13 · 14 · 16 · 20 · 28 · 36 · 44) ; graisses 400 / 500 / 600 selon le rôle.
+- Un bouton principal par écran ; focus sur le titre après un changement de page ; textes d'aide ≤ 75 caractères ; durées sur les jetons.
+- DESIGN.md et .impeccable/design.json mis à jour (régénérés sans Impeccable).
+- Aucune clé localStorage ; règles Firestore inchangées.
+- Fichiers : theme.js, styles.css, App.js, ~70 composants et planner/*, DESIGN.md, versions.

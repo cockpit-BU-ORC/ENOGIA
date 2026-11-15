@@ -1018,4 +1018,8 @@ export const RELEASE_CATALOG = [
     ["Général", "Le site télécharge moins au démarrage (icônes allégées, Gantt chargé seulement quand on l'ouvre, polices réduites)."],
     ["Général", "L'accueil se met à jour plus légèrement à chaque changement dans la base."],
   ] },
+  { v: "351", t: "Texte plus lisible : une échelle, une hiérarchie", items: [
+    ["Général", "Tailles de texte harmonisées sur tout le site ; petits textes et étiquettes moins gras, titres et chiffres qui ressortent."],
+    ["Général", "Un seul bouton principal par écran ; en changeant de page, le lecteur d'écran se place sur le titre."],
+  ] },
 ];

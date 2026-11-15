@@ -14,7 +14,7 @@ import { useUnsavedGuard } from "../unsavedGuard";
 import { AF } from "../autoFocusOk";
 
 const fd = iso => iso ? new Date(String(iso).slice(0, 10) + "T12:00:00").toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" }) : "—";
-const capLbl = () => ({ fontSize: FZ.xs, fontWeight: 600, color: T.ink500, letterSpacing: ".01em" });
+const capLbl = () => ({ fontSize: FZ.xs, fontWeight: 500, color: T.ink500, letterSpacing: ".01em" });
 const inp = dirty => ({ padding: "4px 8px", borderRadius: 8, border: "1.5px solid " + (dirty ? T.teal500 : T.line), background: T.card, color: T.ink900, fontSize: FZ.sm, fontWeight: 600, fontFamily: T.font, minWidth: 0, width: "100%" });
 const btn = () => themeBtn("sec", "sm"); // v291 (lot H) : bouton commun
 
@@ -22,7 +22,7 @@ const btn = () => themeBtn("sec", "sm"); // v291 (lot H) : bouton commun
 export const certifSlug = t => "CERT_" + t.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_|_$/g, "");
 export function CertifChip({ c, onRemove, small }) {
   const m = etatColors(c.color), p = T.mode === "dark" ? m.dark : m.light;
-  return <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: p.bg, color: p.text, border: "1px solid " + p.border, borderRadius: 999, padding: small ? "1px 9px" : "3px 6px 3px 12px", fontSize: FZ.xs, fontWeight: 600, whiteSpace: "nowrap" }}>
+  return <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: p.bg, color: p.text, border: "1px solid " + p.border, borderRadius: 999, padding: small ? "1px 9px" : "3px 6px 3px 12px", fontSize: FZ.xs, fontWeight: 500, whiteSpace: "nowrap" }}>
     <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: "50%", background: p.bar, flexShrink: 0, marginLeft: small ? 0 : -4 }} />{c.name}
     {onRemove && <button onClick={onRemove} title={"Retirer " + c.name} aria-label={"Retirer " + c.name} style={{ border: "none", background: "transparent", color: "inherit", cursor: "pointer", padding: "0 4px", fontSize: FZ.sm, lineHeight: 1 }}>×</button>}
   </span>;
@@ -41,7 +41,7 @@ export function CertifDialog({ onClose, certifs, setCertifs, usage }) {
   const patch = (id, f) => setCertifs(certifs.map(c => c.id === id ? { ...c, ...f } : c));
   const del = id => { const n = usage(id); if (n > 0) { setErr("Cette certification est utilisée par " + n + " fiche" + (n > 1 ? "s" : "") + " : retirez-la d'abord de ces fiches."); return; } askConfirm({ title: "Supprimer cette certification ?", message: "Elle ne sera plus proposée dans les fiches. Aucune fiche ne l'utilise.", confirmLabel: "Supprimer la certification", danger: true }).then(ok => { if (ok) setCertifs(certifs.filter(c => c.id !== id)); }); };
   const fld = { padding: "6px 10px", borderRadius: 8, border: "1px solid " + T.line, background: T.surface, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font };
-  const lbl = { fontSize: FZ.xs, fontWeight: 600, color: T.ink500, letterSpacing: ".01em", margin: "0 0 6px" };
+  const lbl = { fontSize: FZ.xs, fontWeight: 500, color: T.ink500, letterSpacing: ".01em", margin: "0 0 6px" };
   return createPortal(<div role="dialog" aria-modal="true" aria-label="Certifications" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}
     style={{ position: "fixed", inset: 0, zIndex: 20010, background: "rgba(10,16,28,.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 12 }}>
     <div style={{ background: T.card, color: T.ink900, borderRadius: 12, boxShadow: T.shadowLg, border: "1px solid " + T.line, width: "min(560px,100%)", maxHeight: "90dvh", overflow: "auto", padding: 20, fontFamily: T.font }}>
@@ -72,7 +72,7 @@ export function CertifDialog({ onClose, certifs, setCertifs, usage }) {
         {name.trim() && <span style={{ marginLeft: 8 }}><CertifChip c={{ name: name.trim(), color }} /></span>}
         <button onClick={add} disabled={!name.trim()} style={{ marginLeft: "auto", border: "none", borderRadius: 12, padding: "7px 14px", background: name.trim() ? T.navy700 : T.ink100, color: name.trim() ? T.onFill : T.ink500, fontWeight: 600, fontSize: FZ.sm, cursor: name.trim() ? "pointer" : "default", fontFamily: T.font }}>Créer</button>
       </div>
-      {err && <div role="alert" style={{ marginTop: 8, fontSize: FZ.xs, color: T.red600, fontWeight: 600 }}>{err}</div>}
+      {err && <div role="alert" style={{ marginTop: 8, fontSize: FZ.xs, color: T.red600, fontWeight: 500 }}>{err}</div>}
     </div>
   </div>, document.body);
 }
@@ -107,7 +107,7 @@ function CapInput({ value, type, base, onSave }) {
     <div className="e-fw" style={{ display: "flex", alignItems: "stretch", marginTop: 3, border: "1.5px solid " + (dirty ? T.teal500 : T.line), borderRadius: 8, background: T.card, overflow: "hidden" }}>
       <input type="text" inputMode="decimal" value={v} onChange={e => setV(e.target.value)} onBlur={commit} onKeyDown={e => { if (e.key === "Enter") e.currentTarget.blur(); }} placeholder="—" aria-label="Plafond"
         style={{ flex: 1, minWidth: 0, width: 56, border: "none", outline: "none", background: "transparent", color: T.ink900, fontSize: FZ.sm, fontWeight: 600, fontFamily: T.font, textAlign: "right", padding: "4px 6px" }} />
-      <select value={type} onChange={e => onSave({ capType: e.target.value })} aria-label="Unité du plafond" style={{ border: "none", borderLeft: "1px solid " + T.line, background: T.surfaceAlt, color: T.ink700, fontSize: FZ.xs, fontWeight: 600, fontFamily: T.font, padding: "0 4px", cursor: "pointer" }}>
+      <select value={type} onChange={e => onSave({ capType: e.target.value })} aria-label="Unité du plafond" style={{ border: "none", borderLeft: "1px solid " + T.line, background: T.surfaceAlt, color: T.ink700, fontSize: FZ.xs, fontWeight: 500, fontFamily: T.font, padding: "0 4px", cursor: "pointer" }}>
         <option value="pct">% du prix</option><option value="eur">€</option>
       </select>
     </div>
@@ -156,13 +156,13 @@ export function CertifTag({ r, meta, rows, getMeta, save, saveMulti, certifs, se
   const pal = c => { const m = etatColors(c.color); return T.mode === "dark" ? m.dark : m.light; };
   const choose = v => { setOpen(false); if (v === "__MANAGE__" || v === "__COPY__") pick(v); else setCerts(v ? [v, ...extra.filter(x => x !== v)] : []); };
   const triggerP = cur ? pal(cur) : null;
-  const itemSt = { display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left", border: "none", background: "transparent", padding: "5px 8px", borderRadius: 8, cursor: "pointer", fontFamily: T.font, fontSize: FZ.xs, color: T.ink700, fontWeight: 600 };
+  const itemSt = { display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left", border: "none", background: "transparent", padding: "5px 8px", borderRadius: 8, cursor: "pointer", fontFamily: T.font, fontSize: FZ.xs, color: T.ink700, fontWeight: 500 };
   return <span ref={box} style={{ display: "inline-flex", alignItems: "center", gap: 6, flexWrap: "wrap", position: "relative" }}>
-    <span style={{ fontSize: FZ.xs, color: T.ink500, fontWeight: 600, whiteSpace: "nowrap" }}>Certification machine :</span>
+    <span style={{ fontSize: FZ.xs, color: T.ink500, fontWeight: 500, whiteSpace: "nowrap" }}>Certification machine :</span>
     {editable
       ? <>
         <button type="button" onClick={() => setOpen(o => !o)} aria-haspopup="listbox" aria-expanded={open} aria-label={"Certification machine : " + (cur ? cur.name : first || "aucune") + " — changer"}
-          style={{ display: "inline-flex", alignItems: "center", gap: 6, borderRadius: 999, padding: "3px 10px 3px 12px", fontSize: FZ.xs, fontWeight: 600, fontFamily: T.font, cursor: "pointer", maxWidth: 240, whiteSpace: "nowrap",
+          style={{ display: "inline-flex", alignItems: "center", gap: 6, borderRadius: 999, padding: "3px 10px 3px 12px", fontSize: FZ.xs, fontWeight: 500, fontFamily: T.font, cursor: "pointer", maxWidth: 240, whiteSpace: "nowrap",
             border: triggerP ? "1.5px solid " + triggerP.border : "1.5px dashed " + T.teal500, background: triggerP ? triggerP.bg : T.teal100, color: triggerP ? triggerP.text : T.teal600 }}>
           <span aria-hidden="true" style={{ width: 9, height: 9, borderRadius: "50%", background: triggerP ? triggerP.bar : T.teal500, flexShrink: 0 }} />
           <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{cur ? cur.name : first ? first + " (supprimée)" : "Choisir…"}</span>
@@ -181,7 +181,7 @@ export function CertifTag({ r, meta, rows, getMeta, save, saveMulti, certifs, se
       </>
       : (byId[first] ? <CertifChip c={byId[first]} small /> : null)}
     {extra.map(id => byId[id] ? <CertifChip key={id} c={byId[id]} small onRemove={editable ? () => setCerts(mine.filter(x => x !== id)) : null} /> : null)}
-    {copied && <span role="status" style={{ fontSize: FZ.xs, color: T.emerald600, fontWeight: 600 }}>{copied} ✓</span>}
+    {copied && <span role="status" style={{ fontSize: FZ.xs, color: T.emerald600, fontWeight: 500 }}>{copied} ✓</span>}
     {dlg && <CertifDialog onClose={() => setDlg(false)} certifs={certifs || []} setCertifs={setCertifs} usage={usage} />}
   </span>;
 }
@@ -276,9 +276,9 @@ export function FicheContratPanel({ part, r, meta, rows, getMeta, today, save, s
           <span style={{ color: T.ink500, flex: 1 }}>{x.c.status === "off" ? "pas de pénalité définie" : x.c.status === "inactive" ? "non activées par le client" : x.c.status === "incomplete" ? "à compléter : " + x.c.missing.join(", ") : (x.c.lateDays > 0 ? x.c.lateDays + " j de retard · " : "dans les temps · ") + x.c.chargeableWeeks + " sem."}</span>
           <span style={{ fontWeight: 600, color: x.c.amount > 0 ? T.red500 : T.ink500 }}>{x.c.status === "ok" ? fmtEur(x.c.amount) : "—"}</span>
         </div>)}
-        <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 10px", fontSize: FZ.xs, fontWeight: 600, borderTop: "1px solid " + T.line, color: T.ink900 }}><span>Total {pjBase(r.pj)}</span><span style={{ color: totPen > 0 ? T.red500 : T.ink900 }}>{fmtEur(totPen)}</span></div>
+        <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 10px", fontSize: FZ.xs, fontWeight: 500, borderTop: "1px solid " + T.line, color: T.ink900 }}><span>Total {pjBase(r.pj)}</span><span style={{ color: totPen > 0 ? T.red500 : T.ink900 }}>{fmtEur(totPen)}</span></div>
       </div>}
-      {copied && <div role="status" style={{ marginTop: 6, fontSize: FZ.xs, color: T.emerald600, fontWeight: 600 }}>{copied} ✓</div>}
+      {copied && <div role="status" style={{ marginTop: 6, fontSize: FZ.xs, color: T.emerald600, fontWeight: 500 }}>{copied} ✓</div>}
     </div>}
   </div>);
 }

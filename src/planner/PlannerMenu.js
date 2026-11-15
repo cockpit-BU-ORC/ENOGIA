@@ -25,5 +25,5 @@ export function Pop({ trigger, children, width = 260, align = "left" }) {
 }
 
 export function MenuItem({ children, onClick, danger, disabled }) {
-  return <button role="menuitem" className="pg-menuitem" disabled={disabled} onClick={onClick} style={{ display: "block", width: "100%", textAlign: "left", padding: "8px 12px", border: 0, background: "transparent", borderRadius: 8, cursor: disabled ? "default" : "pointer", color: danger ? T.red500 : T.ink900, opacity: disabled ? 0.45 : 1, fontSize: 13, fontFamily: T.font, fontWeight: 600 }}>{children}</button>;
+  return <button role="menuitem" className="pg-menuitem" disabled={disabled} onClick={onClick} style={{ display: "block", width: "100%", textAlign: "left", padding: "8px 12px", border: 0, background: "transparent", borderRadius: 8, cursor: disabled ? "default" : "pointer", color: danger ? T.red500 : T.ink900, opacity: disabled ? 0.45 : 1, fontSize: 13, fontFamily: T.font, fontWeight: 500 }}>{children}</button>;
 }

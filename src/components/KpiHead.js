@@ -11,12 +11,12 @@ export function TargetChip({ k, v, targets, label }) {
   const d = targetDef(k), j = judge(k, v, targets);
   const tone = j.ok == null ? [T.ink500, T.surface, T.line] : j.ok ? [T.emerald600, T.emerald100, T.emerald500] : [T.red600, T.red100, T.red500];
   return <div title={d.how} style={{ display: "flex", flexDirection: "column", gap: 1, minWidth: 150, padding: "6px 10px", borderRadius: 12, background: tone[1], border: "1px solid " + tone[2] }}>
-    <span style={{ fontSize: 12, color: T.ink700, fontWeight: 600 }}>{label || d.l}</span>
+    <span style={{ fontSize: 12, color: T.ink700, fontWeight: 500 }}>{label || d.l}</span>
     <span style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
       <b style={{ fontSize: 20, color: tone[0], fontVariantNumeric: "tabular-nums" }}>{fmtV(k, v)}</b>
       <span style={{ fontSize: 12, color: T.ink700, fontVariantNumeric: "tabular-nums" }}>objectif {d.dir === "min" ? "≥" : "≤"} {fmtV(k, j.target)}</span>
     </span>
-    <span style={{ fontSize: 11.5, fontWeight: 600, color: tone[0] }}>{j.ok == null ? "pas de donnée" : j.ok ? "tenu" + (j.gap ? " (marge " + Math.abs(j.gap) + (d.unit === "%" ? " pts" : d.unit ? " " + d.unit : "") + ")" : "") : "écart " + Math.abs(j.gap) + (d.unit === "%" ? " pts" : d.unit ? " " + d.unit : "")}</span>
+    <span style={{ fontSize: 12, fontWeight: 500, color: tone[0] }}>{j.ok == null ? "pas de donnée" : j.ok ? "tenu" + (j.gap ? " (marge " + Math.abs(j.gap) + (d.unit === "%" ? " pts" : d.unit ? " " + d.unit : "") + ")" : "") : "écart " + Math.abs(j.gap) + (d.unit === "%" ? " pts" : d.unit ? " " + d.unit : "")}</span>
   </div>;
 }
 export function TargetsDialog({ targets, onSave, onClose }) {
@@ -24,8 +24,8 @@ export function TargetsDialog({ targets, onSave, onClose }) {
   useEffect(() => { const k = e => { if (e.key === "Escape") onClose(); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose]);
   return (<div onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 10010, background: "rgba(10,20,30,.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
     <div role="dialog" aria-modal="true" aria-label="Objectifs des KPI" style={{ width: "min(560px,100%)", background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, padding: "16px 18px", fontFamily: T.font, display: "flex", flexDirection: "column", gap: 10 }}>
-      <div style={{ fontSize: 18, fontWeight: 600 }}>Objectifs des KPI</div>
-      <div style={{ fontSize: 12.5, color: T.ink500 }}>Chaque objectif s'affiche à côté de la valeur, en vert s'il est tenu, en rouge sinon. Valeurs pour tout le Manager.</div>
+      <div style={{ fontSize: 20, fontWeight: 600 }}>Objectifs des KPI</div>
+      <div style={{ fontSize: 13, color: T.ink500 }}>Chaque objectif s'affiche à côté de la valeur, en vert s'il est tenu, en rouge sinon. Valeurs pour tout le Manager.</div>
       {KPI_TARGETS.map(d => <label key={d.k} style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) auto 120px", gap: 8, alignItems: "center", fontSize: 13 }}>
         <span><b>{d.l}</b><span style={{ display: "block", fontSize: 12, color: T.ink500 }}>{d.how}</span></span>
         <span style={{ fontSize: 13, color: T.ink700 }}>{d.dir === "min" ? "au moins" : "au plus"}</span>
@@ -48,7 +48,7 @@ export function PeriodPicker({ sel }) {
   const presets = [["Mois dernier", m(-1), m(-1)], ["Mois en cours", m(0), m(0)], ["3 derniers mois", m(-3), m(-1)], ["Année " + t.getFullYear(), t.getFullYear() + "-01", t.getFullYear() + "-12"], ["Tout", "", ""]];
   const sl = { minHeight: 28, borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: 12, fontFamily: T.font };
   return <div role="group" aria-label="Période des objectifs" style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", width: "100%" }}>
-    <span style={{ fontSize: 12, fontWeight: 600, color: T.ink500 }}>Période :</span>
+    <span style={{ fontSize: 12, fontWeight: 500, color: T.ink500 }}>Période :</span>
     {presets.map(([l, a, b]) => <Chip key={l} on={sel.from === a && sel.to === b} onClick={() => sel.set(a, b)}>{l}</Chip>)}
     <label style={{ fontSize: 12, color: T.ink500, display: "inline-flex", alignItems: "center", gap: 4 }}>du<select value={sel.from} onChange={e => sel.set(e.target.value, sel.to && sel.to < e.target.value ? e.target.value : sel.to)} style={sl}><option value="">début</option>{sel.months.map(k => <option key={k} value={k}>{monthLab(k)}</option>)}</select></label>
     <label style={{ fontSize: 12, color: T.ink500, display: "inline-flex", alignItems: "center", gap: 4 }}>au<select value={sel.to} onChange={e => sel.set(sel.from && sel.from > e.target.value && e.target.value ? e.target.value : sel.from, e.target.value)} style={sl}><option value="">fin</option>{sel.months.map(k => <option key={k} value={k}>{monthLab(k)}</option>)}</select></label>
@@ -58,11 +58,11 @@ export function KpiHead({ question, period, how, items, targets, onSaveTargets, 
   const [open, setOpen] = useState(false);
   return (<section aria-label="Question et objectifs de la page" style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "10px 14px", marginBottom: 12, display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
     <div style={{ flex: "1 1 320px", minWidth: 0 }}>
-      <div style={{ fontSize: 15, fontWeight: 600, color: T.ink900 }}>{question}</div>
-      <div style={{ fontSize: 12.5, color: T.ink500, marginTop: 2 }}>{period}{how ? " · " + how : ""}</div>
+      <div style={{ fontSize: 16, fontWeight: 600, color: T.ink900 }}>{question}</div>
+      <div style={{ fontSize: 13, color: T.ink500, marginTop: 2 }}>{period}{how ? " · " + how : ""}</div>
     </div>
     {(items || []).length > 0 && <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>{items.map(([k, v, l]) => <TargetChip key={k} k={k} v={v} label={l} targets={targets} />)}</div>}
-    {onSaveTargets && <button type="button" onClick={() => setOpen(true)} style={{ minHeight: 30, padding: "0 12px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink700, fontWeight: 600, fontSize: 12.5, cursor: "pointer", fontFamily: T.font }}>Objectifs</button>}
+    {onSaveTargets && <button type="button" onClick={() => setOpen(true)} style={{ minHeight: 30, padding: "0 12px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink700, fontWeight: 500, fontSize: 13, cursor: "pointer", fontFamily: T.font }}>Objectifs</button>}
     {sel && <PeriodPicker sel={sel} />}
     {open && <TargetsDialog targets={targets} onSave={onSaveTargets} onClose={() => setOpen(false)} />}
   </section>);

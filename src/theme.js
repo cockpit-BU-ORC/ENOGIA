@@ -117,7 +117,9 @@ const SHARED = {
 
 export function buildPalette(themeId, dark){
   const th = THEMES[themeId] || THEMES[DEFAULT_THEME];
-  return { ...SHARED, ...(dark ? SEMANTIC_DARK : SEMANTIC_LIGHT), ...(dark ? th.dark : th.light), mode: dark ? "dark" : "light", themeId: THEMES[themeId] ? themeId : DEFAULT_THEME };
+  const pal = { ...SHARED, ...(dark ? SEMANTIC_DARK : SEMANTIC_LIGHT), ...(dark ? th.dark : th.light), mode: dark ? "dark" : "light", themeId: THEMES[themeId] ? themeId : DEFAULT_THEME };
+  // v351 : alias lisibles — « teal* » est historiquement la couleur de marque (ardoise marine en clair, bleu acier en sombre)
+  return { ...pal, brand: pal.teal500, brandDeep: pal.teal600, brandMid: pal.teal400, brandSoft: pal.teal100 };
 }
 
 // T est un objet MUTABLE (même référence tout le temps) : setThemeMode() modifie ses champs en place.
@@ -140,9 +142,9 @@ export function mixHex(a, b, t) {
   return "#" + x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, "0")).join("");
 }
 
-export const FZ = { xs: 12, sm: 14, md: 16, lg: 20, xl: 28, xxl: 40, hero: 64 };
+export const FZ = { xs: 12, sm: 14, md: 16, lg: 20, xl: 28, xxl: 36, hero: 44 }; // v351 (UI UX Pro Max) : une seule échelle 12 · 13 · 14 · 16 · 20 · 28 · 36 · 44
 // v132 : même échelle, un cran plus petite, pour les fiches synthèse (fiche Manager et volet de droite) : plus d'informations à l'écran, moins de défilement.
-export const FZF = { xs: 12, sm: 13, md: 14, lg: 16, xl: 24, xxl: 34, hero: 52 }; // v291 (lot H) : échelle 12 · 13 · 14 · 16 (avant 11 · 12,5 · 14,5 · 17)
+export const FZF = { xs: 12, sm: 13, md: 14, lg: 16, xl: 20, xxl: 36, hero: 44 }; // v351 : mêmes paliers que FZ (13 = tableaux) // v291 (lot H) : échelle 12 · 13 · 14 · 16 (avant 11 · 12,5 · 14,5 · 17)
 
 export const T = buildPalette(DEFAULT_THEME,false);
 
@@ -276,7 +278,7 @@ export function stagePalette() {
 export function btn(variant = "sec", size = "md") {
   const sm = size === "sm";
   const base = { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: R.sm, minHeight: sm ? 28 : 34, padding: sm ? "0 10px" : "0 14px",
-    fontSize: sm ? 12.5 : 13.5, fontWeight: 600, fontFamily: T.font, cursor: "pointer", whiteSpace: "nowrap", border: "1px solid transparent", boxSizing: "border-box" };
+    fontSize: sm ? 13 : 14, fontWeight: 600, fontFamily: T.font, cursor: "pointer", whiteSpace: "nowrap", border: "1px solid transparent", boxSizing: "border-box" };
   if (variant === "pri") return { ...base, background: T.ink900, color: T.card, borderColor: T.ink900 };
   if (variant === "ghost") return { ...base, background: "transparent", color: T.ink700 };
   if (variant === "dan") return { ...base, background: T.card, color: T.red500, borderColor: T.line };

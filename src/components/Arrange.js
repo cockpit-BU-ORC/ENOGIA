@@ -146,7 +146,7 @@ export function Arrange({ id, children, spans = {}, defaultSpan = 6, labels = {}
     const P0 = current(), p = P0[k]; const n = e.shiftKey ? norm({ ...p, w: p.w + dx, h: p.h + dy * 4 }) : norm({ ...p, x: p.x + dx, y: p.y + dy * 4 });
     save({ ...lay, pos: resolve({ ...P0, [k]: n }, k) }); };
 
-  const tb = { border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, minWidth: 26, minHeight: 26, fontWeight: 600, cursor: "pointer", fontFamily: T.font, fontSize: 13, padding: 0 };
+  const tb = { border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, minWidth: 26, minHeight: 26, fontWeight: 500, cursor: "pointer", fontFamily: T.font, fontSize: 13, padding: 0 };
   const on = can && edit && !!(onLayout || !shared);
   const grip = (k, dir, st, cursor) => <span aria-hidden="true" data-arr-resize="1" title={dir === "x" ? "Tirer pour la largeur" : dir === "y" ? "Tirer pour la hauteur" : "Tirer pour la largeur et la hauteur"} onPointerDown={e => startResize(k, e, dir)}
     style={{ position: "absolute", zIndex: 4, cursor, touchAction: "none", display: "flex", alignItems: "center", justifyContent: "center", ...st }} />;
@@ -171,8 +171,8 @@ export function Arrange({ id, children, spans = {}, defaultSpan = 6, labels = {}
           style={{ ...place, minWidth: 0, minHeight: 0, position: "relative", outline: on ? "2px dashed " + (act ? T.teal500 : T.line) : "none", outlineOffset: 3, borderRadius: 12, marginBottom: p ? GAP : undefined, opacity: act && live.mode === "drag" ? .9 : 1, zIndex: act ? 5 : undefined, cursor: on ? (act && live.mode === "drag" ? "grabbing" : "grab") : undefined, touchAction: on ? "none" : undefined, boxShadow: act && live.mode === "drag" ? T.shadowLg : undefined }}>
           {on && <span role="button" tabIndex={0} aria-label={lab + " : flèches pour déplacer, Maj + flèches pour la largeur et la hauteur"} onKeyDown={e => nudge(k, e)}
             style={{ position: "absolute", inset: 0, zIndex: 3, borderRadius: 12 }} />}
-          {on && onRemove && <button type="button" data-arr-resize="1" onClick={() => onRemove(k)} aria-label={"Retirer « " + lab + " » de la page"} style={{ position: "absolute", right: 8, top: 8, zIndex: 4, border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "0 8px", minHeight: 24, fontSize: FZ.xs, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>Retirer</button>}
-          {act && live.mode === "size" && <span aria-hidden="true" style={{ position: "absolute", right: 8, bottom: 8, zIndex: 4, background: T.ink900, color: T.card, borderRadius: 8, padding: "1px 7px", fontSize: FZ.xs, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{Math.round(sp / 12 * 100)} % · {p ? p.h * ROW - GAP : ""} px</span>}
+          {on && onRemove && <button type="button" data-arr-resize="1" onClick={() => onRemove(k)} aria-label={"Retirer « " + lab + " » de la page"} style={{ position: "absolute", right: 8, top: 8, zIndex: 4, border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "0 8px", minHeight: 24, fontSize: FZ.xs, fontWeight: 500, cursor: "pointer", fontFamily: T.font }}>Retirer</button>}
+          {act && live.mode === "size" && <span aria-hidden="true" style={{ position: "absolute", right: 8, bottom: 8, zIndex: 4, background: T.ink900, color: T.card, borderRadius: 8, padding: "1px 7px", fontSize: FZ.xs, fontWeight: 500, fontVariantNumeric: "tabular-nums" }}>{Math.round(sp / 12 * 100)} % · {p ? p.h * ROW - GAP : ""} px</span>}
           <div className={p ? "enogia-arr-fit" : undefined} style={{ pointerEvents: on ? "none" : "auto", height: p ? "100%" : undefined, overflow: p ? "auto" : undefined }}>{c}</div>
           {on && <span>
             {grip(k, "x", { top: 0, bottom: 14, right: -9, width: 12 }, "ew-resize")}

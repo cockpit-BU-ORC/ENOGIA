@@ -89,7 +89,7 @@ export function MentionPicker({ text, options, pjs }) {
   const tagged = typedMentions(text, opts || []);
   return (<div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 6 }}>
     {tagged.length > 0 ? <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-      {tagged.map(o => <span key={o.email} title={o.email} style={{ border: "1px solid " + T.violet500, background: T.violet100, color: T.violet600, borderRadius: 999, padding: "1px 9px", fontSize: FZ.xs, fontWeight: 600 }}>@ {o.name}</span>)}
+      {tagged.map(o => <span key={o.email} title={o.email} style={{ border: "1px solid " + T.violet500, background: T.violet100, color: T.violet600, borderRadius: 999, padding: "1px 9px", fontSize: FZ.xs, fontWeight: 500 }}>@ {o.name}</span>)}
       <span style={{ fontSize: FZ.xs, color: T.violet600 }}>{tagged.length > 1 ? "verront" : "verra"} cette demande dans {tagged.length > 1 ? "leur" : "sa"} cloche et pourr{tagged.length > 1 ? "ont" : "a"} la marquer « traitée ».</span>
     </div> : <div style={{ fontSize: FZ.xs, color: T.ink300 }}>Tapez @ pour taguer un collègue.</div>}
     {chefs.map(c => <div key={c.name} style={{ fontSize: FZ.xs, color: c.account ? T.teal600 : T.ink500 }}>

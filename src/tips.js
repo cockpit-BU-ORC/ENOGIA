@@ -21,7 +21,7 @@ function ensureTip() {
   if (tip && tip.isConnected) return tip;
   tip = document.createElement("div");
   tip.id = "enogia-tip"; tip.setAttribute("role", "tooltip");
-  Object.assign(tip.style, { position: "fixed", zIndex: "10050", maxWidth: "300px", padding: "7px 10px", borderRadius: "8px", fontSize: "12.5px", lineHeight: "1.4",
+  Object.assign(tip.style, { position: "fixed", zIndex: "10050", maxWidth: "300px", padding: "7px 10px", borderRadius: "8px", fontSize: "13px", lineHeight: "1.4",
     whiteSpace: "pre-line", pointerEvents: "none", opacity: "0", transform: "translateY(3px)", boxShadow: "0 8px 24px rgba(10,20,40,.22)", left: "0", top: "0" });
   document.body.appendChild(tip);
   return tip;

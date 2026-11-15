@@ -106,16 +106,16 @@ export function KpiSemaines({ rows, driftRows, closurePeriods, productionExclusi
   ];
   const Chip = ({ r }) => { const d = driftOf[r.pj] || 0; return (
     <button type="button" onClick={() => onOpenPj && onOpenPj(r.pj)} aria-label={"Ouvrir la fiche de " + r.pj} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", width: "100%", border: "1px solid " + T.line, borderRadius: 8, background: T.card, padding: "4px 7px", cursor: "pointer", fontFamily: T.font, textAlign: "left", color: T.ink900, minHeight: 36 }}>
-      <span style={{ display: "flex", width: "100%", justifyContent: "space-between", gap: 4, whiteSpace: "nowrap" }}><b style={{ fontFamily: T.fontMono, fontSize: 12.5 }}>{r.pj}</b>{d > 0 && <b style={{ color: T.red500, fontSize: 12, fontVariantNumeric: "tabular-nums" }}>+{d} j</b>}</span>
+      <span style={{ display: "flex", width: "100%", justifyContent: "space-between", gap: 4, whiteSpace: "nowrap" }}><b style={{ fontFamily: T.fontMono, fontSize: 13 }}>{r.pj}</b>{d > 0 && <b style={{ color: T.red500, fontSize: 12, fontVariantNumeric: "tabular-nums" }}>+{d} j</b>}</span>
       <span style={{ fontSize: 12, color: T.ink700, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{nom(r) || fdm(r.depart)}</span>
     </button>); };
   return (<div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
     <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
       <p style={{ margin: 0, fontSize: FZ.md, color: T.ink700 }}>Charge de l'atelier et départs, semaine par semaine{fromPlan ? " (charge d'après le planificateur)" : " (charge d'après le planning, " + capaWeek + " h / semaine)"}.</p>
       <div style={{ display: "flex", gap: 28, fontVariantNumeric: "tabular-nums" }}>
-        <div><div style={lbl}>Départs</div><div style={{ fontFamily: T.fontDisplay, fontSize: 26, fontWeight: 600, color: T.ink900 }}>{nDeps}</div></div>
-        <div><div style={lbl}>Semaines en surcharge</div><div style={{ fontFamily: T.fontDisplay, fontSize: 26, fontWeight: 600, color: overW.length ? T.red500 : T.emerald600 }}>{overW.length}</div></div>
-        {hasInitial && <div><div style={lbl}>En retard sur l'initial</div><div style={{ fontFamily: T.fontDisplay, fontSize: 26, fontWeight: 600, color: late.length ? T.red500 : T.emerald600 }}>{late.length}</div></div>}
+        <div><div style={lbl}>Départs</div><div style={{ fontFamily: T.fontDisplay, fontSize: 28, fontWeight: 600, color: T.ink900 }}>{nDeps}</div></div>
+        <div><div style={lbl}>Semaines en surcharge</div><div style={{ fontFamily: T.fontDisplay, fontSize: 28, fontWeight: 600, color: overW.length ? T.red500 : T.emerald600 }}>{overW.length}</div></div>
+        {hasInitial && <div><div style={lbl}>En retard sur l'initial</div><div style={{ fontFamily: T.fontDisplay, fontSize: 28, fontWeight: 600, color: late.length ? T.red500 : T.emerald600 }}>{late.length}</div></div>}
       </div>
     </div>
     <section aria-label={"Les " + N + " prochaines semaines"} style={{ ...card(), overflowX: "auto" }}>
@@ -128,14 +128,14 @@ export function KpiSemaines({ rows, driftRows, closurePeriods, productionExclusi
           <div key={c.key} role="img" aria-label={"S" + isoWeek(c.a) + " : " + c.hours + " heures sur " + Math.round(c.cap)} style={{ ...cell(c), borderBottom: "1px solid " + T.line, height: H + 34, position: "relative", padding: "6px 10px" }}>
             <div style={{ position: "absolute", left: 10, right: 10, bottom: 6, height: Math.max(1, h), background: c.over ? T.red500 : T.teal500 }} />
             <div aria-hidden="true" style={{ position: "absolute", left: 4, right: 4, bottom: 6 + k, borderTop: "2px dashed " + T.ink700 }} />
-            <div style={{ position: "absolute", left: 0, right: 0, bottom: 6 + Math.max(h, k) + 4, textAlign: "center", fontSize: 12.5, fontWeight: 600, color: c.over ? T.red500 : T.ink700, fontVariantNumeric: "tabular-nums" }}>{c.hours} h</div>
+            <div style={{ position: "absolute", left: 0, right: 0, bottom: 6 + Math.max(h, k) + 4, textAlign: "center", fontSize: 13, fontWeight: 500, color: c.over ? T.red500 : T.ink700, fontVariantNumeric: "tabular-nums" }}>{c.hours} h</div>
           </div>); })}
 
         <div style={{ ...rowHead, borderBottom: "1px solid " + T.line }}><b style={{ fontSize: FZ.sm, color: T.ink900 }}>Départs</b><span style={{ fontSize: 12, color: T.ink500 }}>{hasInitial ? "dérive vs initial" : "date de départ"}</span></div>
-        {cols.map(c => <div key={c.key} style={{ ...cell(c), borderBottom: "1px solid " + T.line, display: "flex", flexDirection: "column", gap: 6 }}>{c.deps.length ? c.deps.map(r => <Chip key={r.pj} r={r} />) : <span style={{ fontSize: 12.5, color: T.ink300 }}>—</span>}</div>)}
+        {cols.map(c => <div key={c.key} style={{ ...cell(c), borderBottom: "1px solid " + T.line, display: "flex", flexDirection: "column", gap: 6 }}>{c.deps.length ? c.deps.map(r => <Chip key={r.pj} r={r} />) : <span style={{ fontSize: 13, color: T.ink300 }}>—</span>}</div>)}
 
         <div style={rowHead}><b style={{ fontSize: FZ.sm, color: T.ink900 }}>Au banc</b><span style={{ fontSize: 12, color: T.ink500 }}>période de tests</span></div>
-        {cols.map(c => <div key={c.key} style={{ ...cell(c), display: "flex", flexWrap: "wrap", gap: 4, alignContent: "flex-start" }}>{c.bench.length ? c.bench.map(r => <button key={r.pj} type="button" onClick={() => onOpenPj && onOpenPj(r.pj)} title={nom(r)} style={{ border: "1px solid " + T.line, background: T.panel, color: T.ink900, borderRadius: 999, padding: "1px 8px", fontFamily: T.fontMono, fontWeight: 600, fontSize: 12, cursor: "pointer", minHeight: 24 }}>{r.pj}</button>) : <span style={{ fontSize: 12.5, color: T.ink300 }}>—</span>}</div>)}
+        {cols.map(c => <div key={c.key} style={{ ...cell(c), display: "flex", flexWrap: "wrap", gap: 4, alignContent: "flex-start" }}>{c.bench.length ? c.bench.map(r => <button key={r.pj} type="button" onClick={() => onOpenPj && onOpenPj(r.pj)} title={nom(r)} style={{ border: "1px solid " + T.line, background: T.panel, color: T.ink900, borderRadius: 999, padding: "1px 8px", fontFamily: T.fontMono, fontWeight: 600, fontSize: 12, cursor: "pointer", minHeight: 24 }}>{r.pj}</button>) : <span style={{ fontSize: 13, color: T.ink300 }}>—</span>}</div>)}
       </div>
     </section>
     <section aria-label="À décider" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))", gap: 12 }}>

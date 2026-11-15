@@ -61,11 +61,11 @@ export function PeopleRoles({ profiles, saveProfiles, data }) {
             <span style={{ fontSize: FZ.xs, color: T.ink500 }}>Seules les adresses @enogia.com sont gardées. Les personnes ajoutées peuvent être taguées avant leur première connexion.</span>
           </div>
         </div>}
-        {bulkMsg && <span role="status" style={{ fontSize: FZ.xs, color: T.ink700, fontWeight: 600 }}>{bulkMsg}</span>}
+        {bulkMsg && <span role="status" style={{ fontSize: FZ.xs, color: T.ink700, fontWeight: 500 }}>{bulkMsg}</span>}
         <div role="group" aria-label="Filtrer par rôle" style={{ display: "flex", gap: 6, flexWrap: "wrap", width: "100%" }}>
           {counts.map(([id, l, n]) => <button key={id || "auto"} type="button" aria-pressed={rf === id} onClick={() => setRf(id)} style={{ ...chip(rf === id), minHeight: 30 }}>{l} <span style={{ fontWeight: 500, fontVariantNumeric: "tabular-nums" }}>{n}</span></button>)}
         </div>
-        {err && <span role="alert" style={{ fontSize: FZ.xs, color: T.red500, fontWeight: 600 }}>{err}</span>}
+        {err && <span role="alert" style={{ fontSize: FZ.xs, color: T.red500, fontWeight: 500 }}>{err}</span>}
       </div>
     </div>
     <div style={{ background: T.card, borderRadius: 12, border: "1px solid " + T.line, overflow: "hidden" }}>
@@ -90,13 +90,13 @@ export function PeopleRoles({ profiles, saveProfiles, data }) {
           {isOpen && <div style={{ padding: "4px 14px 14px", display: "flex", flexDirection: "column", gap: 10, background: T.surface }}>
             {/* v191 : le super admin choisit les blocs de l'accueil de chaque personne (plus de sélecteur sur l'accueil lui-même) */}
             <div>
-              <div style={{ fontSize: FZ.xs, fontWeight: 600, color: T.ink700, margin: "8px 0 6px" }}>Blocs de son accueil</div>
+              <div style={{ fontSize: FZ.xs, fontWeight: 500, color: T.ink700, margin: "8px 0 6px" }}>Blocs de son accueil</div>
               {!pr.role ? <span style={{ fontSize: FZ.xs, color: T.ink500 }}>Choisissez d'abord un rôle : « Automatique » garde l'accueil général.</span>
                 : <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>{(ROLE_BLOCKS[pr.role] || []).map(([id, l]) => { const all = (ROLE_BLOCKS[pr.role] || []).map(x => x[0]), cur = pr.blocks || all, on = cur.includes(id); return (
                   <button key={id} type="button" aria-pressed={on} onClick={() => save(p.email, { name: pr.name || p.name, blocks: on ? cur.filter(x => x !== id) : [...cur, id] })} style={chip(on)}>{on ? "✓ " : ""}{l}</button>); })}</div>}
             </div>
             <div>
-              <div style={{ fontSize: FZ.xs, fontWeight: 600, color: T.ink700, margin: "8px 0 6px" }}>Tous les PJ d'un chef de projet</div>
+              <div style={{ fontSize: FZ.xs, fontWeight: 500, color: T.ink700, margin: "8px 0 6px" }}>Tous les PJ d'un chef de projet</div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {chefs.length === 0 && <span style={{ fontSize: FZ.xs, color: T.ink500 }}>Aucun chef de projet renseigné dans les fiches</span>}
                 {chefs.map(c => { const on = pr.chefs.map(lc).includes(lc(c.name)); return (
@@ -104,7 +104,7 @@ export function PeopleRoles({ profiles, saveProfiles, data }) {
               </div>
             </div>
             <div>
-              <div style={{ fontSize: FZ.xs, fontWeight: 600, color: T.ink700, margin: "0 0 6px" }}>PJ ajoutés un par un</div>
+              <div style={{ fontSize: FZ.xs, fontWeight: 500, color: T.ink700, margin: "0 0 6px" }}>PJ ajoutés un par un</div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
                 {pr.pjs.map(pj => <span key={pj} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><PjPlate pj={pj} /><button type="button" aria-label={"Retirer " + pj} onClick={() => save(p.email, { pjs: pr.pjs.filter(x => x !== pj) })} style={{ border: "none", background: "transparent", color: T.ink500, cursor: "pointer", minWidth: 24, minHeight: 24, fontSize: 14 }}>×</button></span>)}
                 <input list={"pjs-" + i} placeholder="Ajouter un PJ" aria-label={"Ajouter un PJ à " + p.name} style={{ ...field(), width: 150 }}

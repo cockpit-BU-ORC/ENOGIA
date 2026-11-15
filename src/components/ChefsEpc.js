@@ -13,9 +13,9 @@ export function ChefsEpcFields({ value, onChange, mainChef }) {
   const v = value, set = patch => onChange({ ...v, ...patch });
   const push = () => { const n = add.trim(); if (!n || n === mainChef || v.chefsExtra.includes(n)) { setAdd(""); return; } set({ chefsExtra: [...v.chefsExtra, n] }); setAdd(""); };
   return (<div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-    <div style={{ fontSize: FZ.xs, fontWeight: 600, color: T.ink500 }}>Autres chefs de projet</div>
+    <div style={{ fontSize: FZ.xs, fontWeight: 500, color: T.ink500 }}>Autres chefs de projet</div>
     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-      {v.chefsExtra.map(c => <span key={c} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: FZ.xs, fontWeight: 600, color: T.ink700, background: T.panel, borderRadius: 999, padding: "2px 4px 2px 10px" }}>{c}
+      {v.chefsExtra.map(c => <span key={c} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: FZ.xs, fontWeight: 500, color: T.ink700, background: T.panel, borderRadius: 999, padding: "2px 4px 2px 10px" }}>{c}
         <button type="button" aria-label={"Retirer " + c} onClick={() => set({ chefsExtra: v.chefsExtra.filter(x => x !== c) })} style={{ border: "none", background: "transparent", color: T.ink500, cursor: "pointer", minWidth: 24, minHeight: 24, fontSize: 14 }}>×</button></span>)}
       <input list="enogia-chefs-all" value={add} onChange={e => setAdd(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); push(); } }} placeholder="Ajouter un chef de projet" aria-label="Ajouter un chef de projet" style={{ ...field(), width: 200 }} />
       <datalist id="enogia-chefs-all">{all.map(c => <option key={c} value={c} />)}</datalist>
@@ -24,7 +24,7 @@ export function ChefsEpcFields({ value, onChange, mainChef }) {
     <label style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: FZ.sm, fontWeight: 600, color: T.ink900, cursor: "pointer", minHeight: 28 }}>
       <input type="checkbox" checked={v.epc} onChange={e => set({ epc: e.target.checked })} style={{ width: 16, height: 16, accentColor: T.violet500 }} />Projet EPC
     </label>
-    {v.epc && <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: FZ.xs, fontWeight: 600, color: T.ink500, maxWidth: 420 }}>Chef de projet ORC en soutien
+    {v.epc && <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: FZ.xs, fontWeight: 500, color: T.ink500, maxWidth: 420 }}>Chef de projet ORC en soutien
       <input list="enogia-chefs-all" value={v.chefOrc} onChange={e => set({ chefOrc: e.target.value })} placeholder="Nom du chef de projet ORC (facultatif)" style={field()} />
       <span style={{ fontWeight: 400, lineHeight: 1.4 }}>Le chef de projet de la fiche est celui de l'EPC : c'est lui qui figure dans les listes. Le chef ORC est en soutien : il n'est pas relié au projet EPC.</span>
     </label>}

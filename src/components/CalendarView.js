@@ -96,7 +96,7 @@ function RowTrack({r,xOf,rowH,showIni,offDates,closedOf,totalW}){
   const box=(a,b)=>{const x0=xOf(a,false),x1=xOf(b,true);if(x1<=0||x0>=totalW)return null;return{l:Math.max(0,x0),w:Math.min(totalW,x1)-Math.max(0,x0),cutL:x0<0,cutR:x1>totalW};};
   const out=[];
   segs.forEach((s,i)=>{const bx=box(s.a,s.b);if(!bx)return;const st=S[s.k]||S["Production"];const first=i===0&&!bx.cutL,last=i===segs.length-1&&!bx.cutR;
-    out.push(<div key={"s"+i} title={s.label+" ("+fdShort(s.a)+" → "+fdShort(s.b)+")"} style={{position:"absolute",left:bx.l,width:Math.max(2,bx.w),top,height:h,background:st.c,color:st.t,display:"flex",alignItems:"center",padding:"0 8px",boxSizing:"border-box",fontSize:FZF.xs,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",
+    out.push(<div key={"s"+i} title={s.label+" ("+fdShort(s.a)+" → "+fdShort(s.b)+")"} style={{position:"absolute",left:bx.l,width:Math.max(2,bx.w),top,height:h,background:st.c,color:st.t,display:"flex",alignItems:"center",padding:"0 8px",boxSizing:"border-box",fontSize:FZF.xs,fontWeight:500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",
       borderRadius:(first?8:0)+"px "+(last?8:0)+"px "+(last?8:0)+"px "+(first?8:0)+"px",boxShadow:i>0&&!bx.cutL?"inset 2px 0 0 "+T.surface:"none"}}><span style={{overflow:"hidden",textOverflow:"ellipsis"}}>{bx.cutL?"← ":""}{bx.w>46?s.label:""}</span></div>);});
   // jours sans production (ce PJ) et atelier fermé, sur la partie production de la barre
   (offDates||[]).forEach(d=>{if(!p0||!pEnd||d<p0||d>pEnd)return;const bx=box(d,d);if(!bx)return;out.push(<div key={"o"+d} title={"Pas de production le "+fdShort(d)} style={{position:"absolute",left:bx.l,width:bx.w,top,height:h,backgroundImage:"repeating-linear-gradient(135deg,rgba(255,255,255,.55) 0 3px,transparent 3px 7px)"}}/>);});
@@ -105,10 +105,10 @@ function RowTrack({r,xOf,rowH,showIni,offDates,closedOf,totalW}){
   const start=segs[0]&&segs[0].a;
   if(start){const x=xOf(start,false);if(x>4&&x<totalW)out.push(<div key="la" style={{...lab,right:totalW-x+6}}>Arrivée&nbsp;<b style={{color:T.ink900}}>{fdShort(arr)}</b></div>);}
   if(dep){const lastB=segs.length?segs[segs.length-1].b:null,x=Math.max(xOf(addIso(dep,-1),true),lastB?xOf(lastB,true):-1);if(x>=0&&x<totalW-20)out.push(<div key="ld" style={{...lab,left:x+6}}>Départ&nbsp;<b style={{color:T.ink900}}>{fdShort(dep)}</b>{ini&&drift>0?<span style={{color:T.red600,fontWeight:600,marginLeft:4}}>+{drift} j</span>:null}</div>);}
-  if(ini){const x=xOf(ini,false);if(x>=0&&x<totalW)out.push(<div key="ini" title={"Départ au planning initial : "+fdShort(ini)} style={{position:"absolute",left:x,top:2,bottom:2,borderLeft:"2px dashed "+T.ink500,opacity:.75}}/>,<div key="inil" style={{position:"absolute",left:x+3,bottom:1,fontSize:10.5,color:T.ink500,background:T.surface,padding:"0 3px",borderRadius:4,whiteSpace:"nowrap"}}>initial {fdShort(ini)}</div>);}
+  if(ini){const x=xOf(ini,false);if(x>=0&&x<totalW)out.push(<div key="ini" title={"Départ au planning initial : "+fdShort(ini)} style={{position:"absolute",left:x,top:2,bottom:2,borderLeft:"2px dashed "+T.ink500,opacity:.75}}/>,<div key="inil" style={{position:"absolute",left:x+3,bottom:1,fontSize:12,color:T.ink500,background:T.surface,padding:"0 3px",borderRadius:4,whiteSpace:"nowrap"}}>initial {fdShort(ini)}</div>);}
   let tagEnd=-1; // deux visites proches : la seconde étiquette se place après la première
   ["client","nobo"].map(k=>({k,d:isoD(vis[k])})).filter(v=>v.d).sort((p,q)=>p.d<q.d?-1:1).forEach(({k,d})=>{let x=xOf(d,false);if(x<0||x>=totalW)return;const m=PRESENCE_META[k];x=Math.max(x,tagEnd+4);tagEnd=x+2+(m.label.length+6)*6.6+14;
-    out.push(<div key={"v"+k} title={m.label+" présent aux tests le "+fdShort(d)} style={{position:"absolute",left:x+2,top:Math.max(1,top-19),height:17,display:"flex",alignItems:"center",gap:4,padding:"0 6px",borderRadius:4,background:T.card,border:"1px solid "+T.line,boxShadow:"inset 3px 0 0 "+m.color,fontSize:11,fontWeight:600,color:T.ink900 /* v343 : encre du thème (m.ink, sombre, illisible en mode sombre : 1,8:1) */,whiteSpace:"nowrap",zIndex:2}}>{m.label}<span style={{fontWeight:500,color:T.ink500}}>{fdShort(d)}</span></div>);});
+    out.push(<div key={"v"+k} title={m.label+" présent aux tests le "+fdShort(d)} style={{position:"absolute",left:x+2,top:Math.max(1,top-19),height:17,display:"flex",alignItems:"center",gap:4,padding:"0 6px",borderRadius:4,background:T.card,border:"1px solid "+T.line,boxShadow:"inset 3px 0 0 "+m.color,fontSize:12,fontWeight:500,color:T.ink900 /* v343 : encre du thème (m.ink, sombre, illisible en mode sombre : 1,8:1) */,whiteSpace:"nowrap",zIndex:2}}>{m.label}<span style={{fontWeight:500,color:T.ink500}}>{fdShort(d)}</span></div>);});
   return out;
 }
 export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusionDays,data,onSelectPj,mode,setMode,anchor,setAnchor,dayAnchor,setDayAnchor,closurePeriods,productionExclusions,zoomLevel:zoomRaw,setZoomLevel,selEtats,setSelEtats,allPJs,selPJs,setSelPJs}){
@@ -305,11 +305,11 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
   return(<div className="enogia-view-in" style={{background:stripeBg(T.teal500,T.surface,4),borderRadius:12,overflow:"hidden",border:"1px solid "+T.line,fontFamily:T.font}}>
     <div className="e-tb" style={{display:"flex",alignItems:"center",gap:10,padding:"14px 18px",borderBottom:"1px solid "+T.line,background:T.surface,flexWrap:"wrap"}}>
       <div style={{display:"flex",gap:4,background:T.surfaceAlt,borderRadius:8,padding:3}}>
-        <button onClick={()=>setMode("week")} style={{padding:"6px 14px",borderRadius:8,border:"none",background:mode==="week"?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:mode==="week"?T.onInd:T.ink500,transition:"background-color .15s ease, color .15s ease",fontWeight:600,fontSize:FZF.md,cursor:"pointer",boxShadow:mode==="week"?T.shadowSm:"none"}}>Semaine</button>
-        <button onClick={()=>setMode("day")} style={{padding:"6px 14px",borderRadius:8,border:"none",background:mode==="day"?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:mode==="day"?T.onInd:T.ink500,transition:"background-color .15s ease, color .15s ease",fontWeight:600,fontSize:FZF.md,cursor:"pointer",boxShadow:mode==="day"?T.shadowSm:"none"}}>Jour</button>
-        <button onClick={()=>setMode("month")} style={{padding:"6px 14px",borderRadius:8,border:"none",background:mode==="month"?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:mode==="month"?T.onInd:T.ink500,transition:"background-color .15s ease, color .15s ease",fontWeight:600,fontSize:FZF.md,cursor:"pointer",boxShadow:mode==="month"?T.shadowSm:"none"}}>Mois</button>
+        <button onClick={()=>setMode("week")} style={{padding:"6px 14px",borderRadius:8,border:"none",background:mode==="week"?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:mode==="week"?T.onInd:T.ink500,transition:"background-color var(--e-dur-menu) ease, color var(--e-dur-menu) ease",fontWeight:600,fontSize:FZF.md,cursor:"pointer",boxShadow:mode==="week"?T.shadowSm:"none"}}>Semaine</button>
+        <button onClick={()=>setMode("day")} style={{padding:"6px 14px",borderRadius:8,border:"none",background:mode==="day"?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:mode==="day"?T.onInd:T.ink500,transition:"background-color var(--e-dur-menu) ease, color var(--e-dur-menu) ease",fontWeight:600,fontSize:FZF.md,cursor:"pointer",boxShadow:mode==="day"?T.shadowSm:"none"}}>Jour</button>
+        <button onClick={()=>setMode("month")} style={{padding:"6px 14px",borderRadius:8,border:"none",background:mode==="month"?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:mode==="month"?T.onInd:T.ink500,transition:"background-color var(--e-dur-menu) ease, color var(--e-dur-menu) ease",fontWeight:600,fontSize:FZF.md,cursor:"pointer",boxShadow:mode==="month"?T.shadowSm:"none"}}>Mois</button>
       </div>
-      <span style={{fontFamily:T.fontDisplay,fontWeight:300,fontSize:22,letterSpacing:"-.02em",color:T.ink900,minWidth:220,textAlign:"center",fontVariantNumeric:"tabular-nums"}}>
+      <span style={{fontFamily:T.fontDisplay,fontWeight:300,fontSize:20,letterSpacing:"-.02em",color:T.ink900,minWidth:220,textAlign:"center",fontVariantNumeric:"tabular-nums"}}>
         {mode==="month"?MONTHS_FULL[monthD.getMonth()]+" "+monthD.getFullYear():mode==="week"
           ?"Sem. "+weekNum(weeks[0])+" → "+weekNum(weeks[Math.min(effCount,weeks.length)-1])+", "+weeks[0].getFullYear()
           :days[0].toLocaleDateString("fr-FR",{day:"numeric",month:"short"})+" → "+days[Math.min(effCount,days.length)-1].toLocaleDateString("fr-FR",{day:"numeric",month:"short",year:"numeric"})}
@@ -326,12 +326,12 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
         {setSelEtats&&<DropFilter label="État" options={ALL_ETATS} selected={selEtats} onChange={setSelEtats} getLabel={o=>ETAT_META[o]?.label||o}/>}
         {setSelEtats&&<EtatInfoButton/>}
         {allPJs&&<DropFilter label="PJ" options={allPJs} selected={selPJs||new Set(allPJs)} onChange={setSelPJs}/>}
-        {mode!=="month"&&<button type="button" onClick={toggleIni} aria-pressed={showIni} title="Afficher le départ prévu au planning initial et l'écart" style={{padding:"5px 10px",borderRadius:8,border:"1px solid "+(showIni?T.teal500:T.line),background:showIni?T.teal100:"transparent",color:showIni?T.teal600:T.ink700,fontSize:FZF.sm,fontWeight:600,cursor:"pointer"}}>Planning initial</button>}
+        {mode!=="month"&&<button type="button" onClick={toggleIni} aria-pressed={showIni} title="Afficher le départ prévu au planning initial et l'écart" style={{padding:"5px 10px",borderRadius:8,border:"1px solid "+(showIni?T.teal500:T.line),background:showIni?T.teal100:"transparent",color:showIni?T.teal600:T.ink700,fontSize:FZF.sm,fontWeight:500,cursor:"pointer"}}>Planning initial</button>}
         {mode!=="month"&&<div style={{display:"flex",gap:4}}>
           <button type="button" aria-label="Dézoomer" onClick={zoomOut} disabled={zoomLevel>=maxZoomLevel} style={{padding:"5px 9px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:zoomLevel>=maxZoomLevel?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:600,cursor:zoomLevel>=maxZoomLevel?"default":"pointer"}}>−</button>
           <button type="button" aria-label="Zoomer" onClick={zoomIn} disabled={zoomLevel<=0} style={{padding:"5px 9px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:zoomLevel<=0?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:600,cursor:zoomLevel<=0?"default":"pointer"}}>+</button>
         </div>}
-        <button onClick={goToday} className="enogia-btn-ind" style={{padding:"5px 11px",borderRadius:8,border:"1.5px solid "+T.teal500,background:"transparent",color:T.teal600,fontSize:FZF.sm,fontWeight:600,cursor:"pointer"}}>Aujourd'hui</button>
+        <button onClick={goToday} className="enogia-btn-ind" style={{padding:"5px 11px",borderRadius:8,border:"1.5px solid "+T.teal500,background:"transparent",color:T.teal600,fontSize:FZF.sm,fontWeight:500,cursor:"pointer"}}>Aujourd'hui</button>
       </div>
     </div>
 
@@ -341,7 +341,7 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
         ?"repeat("+cols.length+","+colPx+"px)"
         :cols.map(d=>(d.getDay()===0||d.getDay()===6)?wePx+"px":colPx+"px").join(" ")
       )}}>
-        <div className="enogia-lblcell" style={{padding:"4px 14px",fontSize:FZF.sm,fontWeight:600,color:T.ink300,background:T.surface,borderBottom:"1px solid "+T.line,borderRight:"1px solid "+T.line,position:"sticky",left:0,top:0,zIndex:12,height:MONTH_H,width:LEFT_W,minWidth:LEFT_W,maxWidth:LEFT_W,boxSizing:"border-box",gridColumn:1,gridRow:1}}/>
+        <div className="enogia-lblcell" style={{padding:"4px 14px",fontSize:FZF.sm,fontWeight:500,color:T.ink300,background:T.surface,borderBottom:"1px solid "+T.line,borderRight:"1px solid "+T.line,position:"sticky",left:0,top:0,zIndex:12,height:MONTH_H,width:LEFT_W,minWidth:LEFT_W,maxWidth:LEFT_W,boxSizing:"border-box",gridColumn:1,gridRow:1}}/>
         {(()=>{
           // Regroupe les colonnes consécutives par mois pour afficher une bande "Mois Année" au-dessus
           const groups=[];
@@ -352,7 +352,7 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
             else groups.push({m,y,span:1,start:i});
           });
           return groups.map((g,gi)=>(
-            <div key={gi} style={{gridColumn:(g.start+2)+" / span "+g.span,gridRow:1,padding:"2px 4px",textAlign:"center",fontSize:FZF.sm,fontWeight:600,color:g.m===today.getMonth()&&g.y===today.getFullYear()?T.teal600:T.ink500,background:g.m===today.getMonth()&&g.y===today.getFullYear()?T.teal100:T.surface,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,position:"sticky",top:0,zIndex:10,height:MONTH_H,boxSizing:"border-box",display:"flex",alignItems:"center",justifyContent:"center"}}>{MONTHS_FULL[g.m]} {g.y}</div>
+            <div key={gi} style={{gridColumn:(g.start+2)+" / span "+g.span,gridRow:1,padding:"2px 4px",textAlign:"center",fontSize:FZF.sm,fontWeight:500,color:g.m===today.getMonth()&&g.y===today.getFullYear()?T.teal600:T.ink500,background:g.m===today.getMonth()&&g.y===today.getFullYear()?T.teal100:T.surface,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,position:"sticky",top:0,zIndex:10,height:MONTH_H,boxSizing:"border-box",display:"flex",alignItems:"center",justifyContent:"center"}}>{MONTHS_FULL[g.m]} {g.y}</div>
           ));
         })()}
 
@@ -369,15 +369,15 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
             else wgroups.push({wn,wy,span:1,start:i});
           });
           return wgroups.map((g,gi)=>(
-            <div key={gi} style={{gridColumn:(g.start+2)+" / span "+g.span,gridRow:2,padding:"1px 4px",textAlign:"center",fontSize:FZF.xs,fontWeight:600,color:T.ink500,background:T.surface,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,position:"sticky",top:MONTH_H,zIndex:9,height:WEEK_BAND_H,boxSizing:"border-box",display:"flex",alignItems:"center",justifyContent:"center"}}>S{g.wn}</div>
+            <div key={gi} style={{gridColumn:(g.start+2)+" / span "+g.span,gridRow:2,padding:"1px 4px",textAlign:"center",fontSize:FZF.xs,fontWeight:500,color:T.ink500,background:T.surface,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,position:"sticky",top:MONTH_H,zIndex:9,height:WEEK_BAND_H,boxSizing:"border-box",display:"flex",alignItems:"center",justifyContent:"center"}}>S{g.wn}</div>
           ));
         })()}
 
-        <div className="enogia-lblcell" style={{padding:"6px 14px",fontFamily:T.font,fontSize:12,fontWeight:600,color:T.accentInk,background:T.surface,borderBottom:"1px solid "+T.line,borderRight:"1px solid "+T.line,position:"sticky",left:0,top:headerTop,zIndex:12,width:LEFT_W,minWidth:LEFT_W,maxWidth:LEFT_W,boxSizing:"border-box",gridColumn:1,gridRow:HEAD_ROW}}>Machine</div>
+        <div className="enogia-lblcell" style={{padding:"6px 14px",fontFamily:T.font,fontSize:12,fontWeight:500,color:T.accentInk,background:T.surface,borderBottom:"1px solid "+T.line,borderRight:"1px solid "+T.line,position:"sticky",left:0,top:headerTop,zIndex:12,width:LEFT_W,minWidth:LEFT_W,maxWidth:LEFT_W,boxSizing:"border-box",gridColumn:1,gridRow:HEAD_ROW}}>Machine</div>
         {mode==="week"?weeks.map((w,wi)=>{
           const we=new Date(w);we.setDate(we.getDate()+7);
           const closed=isClosurePeriod(w,we);
-          return(<div key={wi} style={{padding:"6px 4px",textAlign:"center",fontSize:FZF.sm,fontWeight:600,color:wi===todayWeekIdx?T.red600:closed?T.ink300:T.ink500,background:wi===todayWeekIdx?T.red100:closed?T.ink100:T.surface,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,boxShadow:wi===todayWeekIdx?"inset 0 -3px 0 "+T.red500:"none",position:"sticky",top:headerTop,zIndex:10,gridColumn:wi+2,gridRow:HEAD_ROW}}>S{weekNum(w)}</div>);
+          return(<div key={wi} style={{padding:"6px 4px",textAlign:"center",fontSize:FZF.sm,fontWeight:500,color:wi===todayWeekIdx?T.red600:closed?T.ink300:T.ink500,background:wi===todayWeekIdx?T.red100:closed?T.ink100:T.surface,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,boxShadow:wi===todayWeekIdx?"inset 0 -3px 0 "+T.red500:"none",position:"sticky",top:headerTop,zIndex:10,gridColumn:wi+2,gridRow:HEAD_ROW}}>S{weekNum(w)}</div>);
         }):days.map((d,di)=>{
           const isWE=d.getDay()===0||d.getDay()===6;
           const dEnd=new Date(d);dEnd.setDate(dEnd.getDate()+1);
@@ -385,8 +385,8 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
           return(<div key={di} {...(canEditDays&&!isWE?{role:"button",tabIndex:0,"aria-label":"Options de production du "+d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"}),title:"Options de production de ce jour",onClick:e=>{const r=e.currentTarget.getBoundingClientRect();setDayMenu({iso:toLocalISO(d),x:r.left,y:r.bottom});},onKeyDown:e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();const r=e.currentTarget.getBoundingClientRect();setDayMenu({iso:toLocalISO(d),x:r.left,y:r.bottom});}}}:{})} style={{cursor:canEditDays&&!isWE?"pointer":undefined,padding:"3px 1px",textAlign:"center",background:di===todayDayIdx?T.red100:closed?T.ink100:isWE?T.ink100:T.surface,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,boxShadow:di===todayDayIdx?"inset 0 -3px 0 "+T.red500:"none",position:"sticky",top:headerTop,zIndex:10,gridColumn:di+2,gridRow:HEAD_ROW}}>
             {/* Numéro de semaine retiré d'ici (demandé explicitement) : il vit désormais uniquement
                 dans la bande groupée au-dessus. */}
-            <div style={{fontSize:FZF.xs,fontWeight:600,lineHeight:1.2,color:di===todayDayIdx?T.red600:closed?T.ink300:T.ink300}}>{DAY_NAMES[d.getDay()]}</div>
-            <div style={{fontSize:FZF.sm,fontWeight:600,lineHeight:1.25,color:di===todayDayIdx?T.red600:closed?T.ink300:T.ink700}}>{d.getDate()}</div>
+            <div style={{fontSize:FZF.xs,fontWeight:500,lineHeight:1.2,color:di===todayDayIdx?T.red600:closed?T.ink300:T.ink300}}>{DAY_NAMES[d.getDay()]}</div>
+            <div style={{fontSize:FZF.sm,fontWeight:500,lineHeight:1.25,color:di===todayDayIdx?T.red600:closed?T.ink300:T.ink700}}>{d.getDate()}</div>
           </div>);
         })}
 
@@ -412,7 +412,7 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
               const cellBg=closed?T.ink100:isTodayCol?T.red500+"12":rowBg;
               const todayEdge=isTodayCol?"inset 2px 0 0 "+T.red500+", inset -2px 0 0 "+T.red500:"none";
               if(!status)return<div key={wi} style={{...pos,height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,background:cellBg,boxShadow:todayEdge}}/>;
-              return(<div key={wi} className="e-hov" onClick={()=>onSelectPj&&onSelectPj(pj)} style={{"--e-hov-bg":T.teal100+"50",...pos,height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,boxShadow:todayEdge,padding:3,cursor:"pointer",position:"relative",background:cellBg,transition:"background .12s ease"}}>
+              return(<div key={wi} className="e-hov" onClick={()=>onSelectPj&&onSelectPj(pj)} style={{"--e-hov-bg":T.teal100+"50",...pos,height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,boxShadow:todayEdge,padding:3,cursor:"pointer",position:"relative",background:cellBg,transition:"background var(--e-dur-micro) ease"}}>
               </div>);
             }):days.slice(lo,hi+1).map((d,k)=>{
               const di=lo+k,pos={gridColumn:di+2,gridRow:row};
@@ -432,7 +432,7 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
               // étroite. Centré au milieu de la tuile (pivot au centre, plutôt qu'ancré au coin
               // bas-gauche) et contenu dans la tuile (overflow:"hidden" sur le conteneur) — demandé
               // explicitement : "les étapes sont pas au milieu des tiles et dépassent de celles-ci".
-              return(<div key={di} className="enogia-cal-daycell e-hov" onClick={cellMenu||(()=>onSelectPj&&onSelectPj(pj))} style={{"--e-hov-bg":T.teal100+"50",...pos,height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,boxShadow:todayEdge,cursor:"pointer",background:cellBg,position:"relative",transition:"background .12s ease"}}>
+              return(<div key={di} className="enogia-cal-daycell e-hov" onClick={cellMenu||(()=>onSelectPj&&onSelectPj(pj))} style={{"--e-hov-bg":T.teal100+"50",...pos,height:rowH,borderBottom:"1px solid "+T.line,borderLeft:"1px solid "+T.line,boxShadow:todayEdge,cursor:"pointer",background:cellBg,position:"relative",transition:"background var(--e-dur-micro) ease"}}>
               </div>);
             })}
             <div aria-hidden="true" style={{gridColumn:"2 / span "+cols.length,gridRow:row,position:"relative",height:rowH,pointerEvents:"none",zIndex:3}}>
@@ -444,13 +444,13 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
     </div>}
 
     {mode!=="month"&&<div style={{padding:"11px 18px",borderTop:"1px solid "+T.line,display:"flex",gap:16,flexWrap:"wrap",background:T.surface,alignItems:"center"}}>
-      <span style={{fontFamily:T.font,fontSize:12,fontWeight:600,color:T.accentInk}}>Étapes</span>
+      <span style={{fontFamily:T.font,fontSize:12,fontWeight:500,color:T.accentInk}}>Étapes</span>
       {[["Arrivée","Réception"],["Production","Production"],["Tests","Tests"],["Fin prod","Packaging"]].map(([k,label])=><span key={k} style={{display:"flex",alignItems:"center",gap:6,fontSize:FZF.md}}>
         <span style={{width:14,height:14,borderRadius:4,background:SEGMENT_STYLE[k].c}}/>
         <span style={{color:T.ink700,fontWeight:500}}>{label}</span>
       </span>)}
       <span style={{display:"flex",alignItems:"center",gap:8,paddingLeft:16,borderLeft:"1px solid "+T.line,fontSize:FZF.md,color:T.ink700}}>
-        {["client","nobo"].map(k=><span key={k} style={{display:"inline-flex",alignItems:"center",height:17,padding:"0 6px",borderRadius:4,background:T.card,border:"1px solid "+T.line,boxShadow:"inset 3px 0 0 "+PRESENCE_META[k].color,fontSize:11,fontWeight:600,color:T.ink900}}>{PRESENCE_META[k].label}</span>)}visite aux tests
+        {["client","nobo"].map(k=><span key={k} style={{display:"inline-flex",alignItems:"center",height:17,padding:"0 6px",borderRadius:4,background:T.card,border:"1px solid "+T.line,boxShadow:"inset 3px 0 0 "+PRESENCE_META[k].color,fontSize:12,fontWeight:500,color:T.ink900}}>{PRESENCE_META[k].label}</span>)}visite aux tests
       </span>
       <span style={{display:"flex",alignItems:"center",gap:6,paddingLeft:16,borderLeft:"1px solid "+T.line,fontSize:FZF.md,color:T.ink700}}><span style={{width:14,height:14,borderRadius:4,background:SEGMENT_STYLE["Production"].c,backgroundImage:"repeating-linear-gradient(135deg,rgba(255,255,255,.55) 0 3px,transparent 3px 7px)"}}/>sans production / atelier fermé</span>
       <span style={{fontSize:FZF.md,color:T.ink500,marginLeft:"auto"}}>Une barre par machine · « Planning initial » = départ prévu à l'origine · Clic = fiche</span>
@@ -472,13 +472,13 @@ function DayProdMenu({menu,data,closurePeriods,productionExclusions,setClosurePe
   const nEx=inProd.filter(r=>ex(r.pj)).length;
   const setAll=on=>{const m={};inProd.forEach(r=>{m[r.pj]=[k];});setProductionExclusionDays&&setProductionExclusionDays(m,on);};
   const W=320,left=Math.max(8,Math.min(menu.x,window.innerWidth-W-8)),top=Math.min(menu.y+4,window.innerHeight-120);
-  const btn={border:"1px solid "+T.line,background:T.card,color:T.ink900,borderRadius:8,padding:"7px 10px",fontSize:FZF.sm,fontWeight:600,cursor:"pointer",fontFamily:T.font,minHeight:34,textAlign:"left"};
+  const btn={border:"1px solid "+T.line,background:T.card,color:T.ink900,borderRadius:8,padding:"7px 10px",fontSize:FZF.sm,fontWeight:500,cursor:"pointer",fontFamily:T.font,minHeight:34,textAlign:"left"};
   return(<><div onClick={onClose} style={{position:"fixed",inset:0,zIndex:1300}}/>
     <div role="dialog" aria-label={"Production du "+d.toLocaleDateString("fr-FR")} style={{position:"fixed",left,top,width:W,maxHeight:"min(70vh,520px)",overflow:"auto",zIndex:1301,background:T.card,color:T.ink900,border:"1px solid "+T.line,borderRadius:12,boxShadow:T.shadowFloat||T.shadowLg,padding:12,fontFamily:T.font}}>
       <div style={{fontWeight:600,fontSize:FZF.md,marginBottom:2}}>{d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})}</div>
       <div style={{fontSize:FZF.xs,color:T.ink500,marginBottom:10}}>{closed?"Atelier fermé ce jour.":"Jour travaillé."} Le Gantt et la charge en tiennent compte.</div>
       {menu.pj&&!closed&&<div style={{border:"1px solid "+T.line,borderRadius:8,padding:10,marginBottom:10}}>
-        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}><b style={{fontFamily:T.fontMono||"monospace",fontSize:13}}>{menu.pj}</b><span style={{fontSize:12,color:ex(menu.pj)?T.red600:T.emerald600,fontWeight:600}}>{ex(menu.pj)?"pas de production ce jour":"en production ce jour"}</span></div>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}><b style={{fontFamily:T.fontMono||"monospace",fontSize:13}}>{menu.pj}</b><span style={{fontSize:12,color:ex(menu.pj)?T.red600:T.emerald600,fontWeight:500}}>{ex(menu.pj)?"pas de production ce jour":"en production ce jour"}</span></div>
         <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
           <button type="button" style={{...btn,color:ex(menu.pj)?T.emerald600:T.red600}} onClick={()=>{setProductionExclusionDays&&setProductionExclusionDays({[menu.pj]:[k]},!ex(menu.pj));onClose();}}>{ex(menu.pj)?"Rétablir la production ce jour":"Pas de production ce jour"}</button>
           {onOpenPj&&<button type="button" style={btn} onClick={()=>{onClose();onOpenPj(menu.pj);}}>Ouvrir la fiche</button>}
@@ -491,7 +491,7 @@ function DayProdMenu({menu,data,closurePeriods,productionExclusions,setClosurePe
         {inProd.map(r=><label key={r.pj} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 2px",fontSize:FZF.sm,cursor:"pointer",minHeight:30}}>
           <input type="checkbox" checked={!ex(r.pj)} onChange={e=>setProductionExclusionDays&&setProductionExclusionDays({[r.pj]:[k]},!e.target.checked)}/>
           <b style={{fontFamily:T.fontMono||"monospace",fontSize:12}}>{r.pj}</b><span style={{color:T.ink500,fontSize:12,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{getPjMeta(r.pj,r).nomProjet||""}</span>
-          <span style={{marginLeft:"auto",fontSize:11,color:ex(r.pj)?T.red600:T.emerald600,fontWeight:600}}>{ex(r.pj)?"pas de prod.":"en prod."}</span></label>)}
+          <span style={{marginLeft:"auto",fontSize:12,color:ex(r.pj)?T.red600:T.emerald600,fontWeight:500}}>{ex(r.pj)?"pas de prod.":"en prod."}</span></label>)}
       </div>}
       {!closed&&inProd.length===0&&<div style={{marginTop:10,fontSize:FZF.xs,color:T.ink500}}>Aucun PJ en production ce jour</div>}
       {/* v292 (demandé : « warning sur le lien planificateur / calendrier / Gantt ») : ce qui change, et quand */}

@@ -64,7 +64,7 @@ export function NewMark({ mark }) {
   const text = mark.isNew ? "nouveau" : late ? "↻ +" + d + " j" : early ? "↻ −" + Math.abs(d) + " j" : "modifié";
   const [bg, fg] = mark.isNew ? [T.teal100, T.teal600] : [T.surfaceAlt, T.ink700];
   const title = mark.isNew ? "Nouveau PJ depuis votre dernière visite" : late ? "Départ repoussé de " + d + " j par la dernière mise à jour" : early ? "Départ avancé de " + Math.abs(d) + " j par la dernière mise à jour" : "Modifié par la dernière mise à jour";
-  return <span title={title} aria-label={title} style={{ background: bg, color: fg, borderRadius: 999, padding: "0 6px", fontSize:11, lineHeight: "16px", fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{text}</span>;
+  return <span title={title} aria-label={title} style={{ background: bg, color: fg, borderRadius: 999, padding: "0 6px", fontSize:12, lineHeight: "16px", fontWeight: 500, whiteSpace: "nowrap", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{text}</span>;
 }
 
 const fmtAt = at => new Date(at).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
@@ -73,7 +73,7 @@ const plural = (n, s, p) => n + " " + (n > 1 ? (p || s + "s") : s);
 function Chip({ children, tone }) {
   const map = { red: [T.red100, T.red500], green: [T.emerald100, T.emerald600], blue: [T.teal100, T.teal600], gray: [T.surfaceAlt, T.ink700] };
   const [bg, fg] = map[tone || "gray"];
-  return <span style={{ background: bg, color: fg, borderRadius: 999, padding: "3px 8px", fontSize: FZ.xs, fontWeight: 600, whiteSpace: "nowrap" }}>{children}</span>;
+  return <span style={{ background: bg, color: fg, borderRadius: 999, padding: "3px 8px", fontSize: FZ.xs, fontWeight: 500, whiteSpace: "nowrap" }}>{children}</span>;
 }
 
 export function ChangesPopup({ entries, onOpen, onLater, onRead, userName }) {
@@ -126,5 +126,5 @@ export function ChangesPopup({ entries, onOpen, onLater, onRead, userName }) {
 // Pastille posée sur l'icône de l'onglet
 export function ChangesBadge({ n }) {
   if (!n) return null;
-  return <><span aria-hidden="true" className="enogia-badge-pop" style={{ position: "absolute", bottom: -1, left: -2, fontSize: 12, lineHeight: 0, filter: "drop-shadow(0 1px 1px rgba(0,0,0,.25))", pointerEvents: "none" }}><NavIcon name="bell" size={13} /></span><span aria-hidden="true" className="enogia-badge-pop" style={{ position: "absolute", top: 1, right: 0, minWidth: 17, height: 17, padding: "0 4px", borderRadius: 999, background: T.redFill, color: T.onFill, fontSize: 11, fontWeight: 600, lineHeight: "17px", textAlign: "center", boxShadow: "0 0 0 2px " + T.card, boxSizing: "border-box" }}>{n > 9 ? "9+" : n}</span></>;
+  return <><span aria-hidden="true" className="enogia-badge-pop" style={{ position: "absolute", bottom: -1, left: -2, fontSize: 12, lineHeight: 0, filter: "drop-shadow(0 1px 1px rgba(0,0,0,.25))", pointerEvents: "none" }}><NavIcon name="bell" size={13} /></span><span aria-hidden="true" className="enogia-badge-pop" style={{ position: "absolute", top: 1, right: 0, minWidth: 17, height: 17, padding: "0 4px", borderRadius: 999, background: T.redFill, color: T.onFill, fontSize: 12, fontWeight: 500, lineHeight: "17px", textAlign: "center", boxShadow: "0 0 0 2px " + T.card, boxSizing: "border-box" }}>{n > 9 ? "9+" : n}</span></>;
 }

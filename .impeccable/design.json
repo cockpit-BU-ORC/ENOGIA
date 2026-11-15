@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-15T20:11:28.378Z",
+  "generatedAt": "2026-11-15T20:40:46.882Z",
   "title": "Design System: Cockpit BU ORC",
   "extensions": {
     "colorMeta": {
@@ -753,6 +753,16 @@
         "name": "The Token-Only Rule",
         "body": "Aucune couleur écrite en dur dans un composant : tout passe par les jetons du thème, qui changent entre clair et sombre. Un style défini hors d'un composant lit le thème par accesseurs.",
         "section": "colors"
+      },
+      {
+        "name": "The One Scale Rule",
+        "body": "Huit tailles seulement : 12 · 13 · 14 · 16 · 20 · 28 · 36 · 44 px (jetons FZ / FZF) ; aucune taille intermédiaire (11, 12,5, 13,5…).",
+        "section": "typography"
+      },
+      {
+        "name": "The Weight Ladder Rule",
+        "body": "400 pour le texte, 500 pour les étiquettes et les petits textes (≤ 13 px), 600 pour les titres, les boutons, les n° de PJ et les chiffres clés.",
+        "section": "typography"
       },
       {
         "name": "The 600 Ceiling Rule",

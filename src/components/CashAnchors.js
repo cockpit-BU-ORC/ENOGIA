@@ -9,7 +9,7 @@ import { allCashGroups, getCashinDoc, getCashinLinks, setCashinLinks, anchorOf, 
 import { useCashin } from "../useCashin";
 
 const fd = iso => (iso ? String(iso).slice(8, 10) + "/" + String(iso).slice(5, 7) + "/" + String(iso).slice(2, 4) : "—");
-const btn = primary => ({ padding: "6px 12px", minHeight: 32, borderRadius: 8, border: "1px solid " + (primary ? T.ink900 : T.line), background: primary ? T.ink900 : T.card, color: primary ? T.card : T.ink700, fontSize: FZ.xs, fontWeight: 600, cursor: "pointer", fontFamily: T.font });
+const btn = primary => ({ padding: "6px 12px", minHeight: 32, borderRadius: 8, border: "1px solid " + (primary ? T.ink900 : T.line), background: primary ? T.ink900 : T.card, color: primary ? T.card : T.ink700, fontSize: FZ.xs, fontWeight: 500, cursor: "pointer", fontFamily: T.font });
 const field = { padding: "4px 6px", minHeight: 30, borderRadius: 8, get border() { return "1px solid " + T.line; }, get background() { return T.card; }, get color() { return T.ink900; }, fontSize: FZ.sm, get fontFamily() { return T.font; }, boxSizing: "border-box"  }; // v346 : accesseurs (suivent le clair / sombre)
 
 export function CashAnchorsDialog({ planRows, authorName, onClose }) {
@@ -33,17 +33,17 @@ export function CashAnchorsDialog({ planRows, authorName, onClose }) {
     <div role="dialog" aria-modal="true" aria-label="Jalons liés au planning" style={{ background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, width: "min(980px,100%)", maxHeight: "90dvh", display: "flex", flexDirection: "column", fontFamily: T.font }}>
       <div style={{ padding: "14px 18px", borderBottom: "1px solid " + T.line }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-          <div style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: 18 }}>Jalons liés au planning</div>
+          <div style={{ fontFamily: T.fontDisplay, fontWeight: 600, fontSize: 20 }}>Jalons liés au planning</div>
           <input value={q} onChange={e => setQ(e.target.value)} placeholder="Chercher un PJ…" aria-label="Chercher un PJ" style={{ ...field, marginLeft: "auto", width: 200 }} />
         </div>
-        <div style={{ fontSize: 12.5, color: T.ink500, marginTop: 4, lineHeight: 1.5 }}>Un jalon lié suit une date du planning de ses PJ (la plus tardive s'il y en a plusieurs), plus un décalage en jours. Quand le planning bouge, le Cash in propose de remettre sa date de facturation à jour. Les jalons déjà facturés ne bougent jamais.</div>
+        <div style={{ fontSize: 13, color: T.ink500, marginTop: 4, lineHeight: 1.5 }}>Un jalon lié suit une date du planning de ses PJ (la plus tardive s'il y en a plusieurs), plus un décalage en jours. Quand le planning bouge, le Cash in propose de remettre sa date de facturation à jour. Les jalons déjà facturés ne bougent jamais.</div>
       </div>
       <div style={{ overflow: "auto", padding: "4px 18px", flex: 1 }}>
         {groups.length === 0 && <div style={{ padding: 16, color: T.ink500, fontSize: 13 }}>Aucun jalon</div>}
         {groups.map(g => <section key={g.pj} aria-label={g.pj} style={{ borderTop: "1px solid " + T.line, padding: "8px 0" }}>
-          <div style={{ fontWeight: 600, fontSize: 13.5, marginBottom: 4 }}><span style={{ fontFamily: T.fontMono }}>{g.pj}</span> <span style={{ fontWeight: 400, color: T.ink500 }}>{g.label}</span></div>
+          <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}><span style={{ fontFamily: T.fontMono }}>{g.pj}</span> <span style={{ fontWeight: 400, color: T.ink500 }}>{g.label}</span></div>
           {g.rows.map(r => { const a = cur(r), done = !!(r.factReelle || r.encReelle), want = a ? anchoredBill(r, byPj, { ...links, [anchorKey(r.id)]: a }) : null; return (
-            <div key={r.id} style={{ display: "grid", gridTemplateColumns: "minmax(160px,1fr) 90px 170px 90px 110px", gap: 8, alignItems: "center", minHeight: 36, fontSize: 12.5, opacity: done ? 0.55 : 1 }}>
+            <div key={r.id} style={{ display: "grid", gridTemplateColumns: "minmax(160px,1fr) 90px 170px 90px 110px", gap: 8, alignItems: "center", minHeight: 36, fontSize: 13, opacity: done ? 0.55 : 1 }}>
               <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={r.jalon}>{r.jalon || "Jalon sans nom"}</span>
               <span style={{ fontVariantNumeric: "tabular-nums", color: T.ink700 }} title="Facturation prévue actuelle">{done ? "facturé" : fd(r.factPrevue)}</span>
               <select disabled={done} value={(a && a.on) || ""} onChange={e => set(r, { on: e.target.value })} aria-label={"Date suivie par " + (r.jalon || r.id)} style={field}><option value="">Pas lié</option>{ANCHOR_FIELDS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
@@ -52,7 +52,7 @@ export function CashAnchorsDialog({ planRows, authorName, onClose }) {
             </div>); })}
         </section>)}
       </div>
-      {err && <div role="alert" style={{ color: T.red600, fontWeight: 600, fontSize: 13, padding: "0 18px 8px" }}>{err}</div>}
+      {err && <div role="alert" style={{ color: T.red600, fontWeight: 500, fontSize: 13, padding: "0 18px 8px" }}>{err}</div>}
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, padding: "10px 18px 14px", borderTop: "1px solid " + T.line }}>
         <button type="button" style={btn(false)} onClick={onClose}>Annuler</button>
         <button type="button" style={btn(true)} disabled={busy || !n} onClick={save}>{busy ? "Enregistrement…" : "Enregistrer" + (n ? " (" + n + ")" : "")}</button>

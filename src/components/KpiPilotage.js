@@ -25,9 +25,9 @@ const fdm = v => { if (!v) return "—"; const d = new Date(v); return isNaN(d) 
 // en barre à 100 % + légende chiffrée. La dérive moyenne et les retards déclarés passent en tête de la sous-page Dérives.
 // v350 (audit de performance) : défini hors du composant (sinon recréé et remonté à chaque rendu)
 const Kpi = ({ label, value, sub, bad, good, subBad, how }) => (<div style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "12px 14px", minWidth: 0 }}>
-    <div style={{ fontSize: 12.5, color: T.ink500, fontFamily: T.fontLabel, display: "flex", alignItems: "center", gap: 6 }}>{label}{how && <span tabIndex={0} role="note" aria-label={"Méthode : " + how} title={"Méthode : " + how} style={{ cursor: "help", fontSize: 11, fontWeight: 600, color: T.ink500, border: "1px solid " + T.line, borderRadius: 999, width: 16, height: 16, display: "inline-grid", placeItems: "center", flexShrink: 0 }}>i</span>}</div>
-    <div style={{ fontFamily: T.fontDisplay, fontSize: 32, fontWeight: 600, color: bad ? T.red500 : good ? T.emerald600 : T.ink900, fontVariantNumeric: "tabular-nums", lineHeight: 1.1, marginTop: 4 }}>{value}</div>
-    <div style={{ fontSize: 12.5, color: subBad ? T.red500 : T.ink500, fontWeight: subBad ? 600 : 400, marginTop: 4 }}>{sub}</div>
+    <div style={{ fontSize: 13, color: T.ink500, fontFamily: T.fontLabel, display: "flex", alignItems: "center", gap: 6 }}>{label}{how && <span tabIndex={0} role="note" aria-label={"Méthode : " + how} title={"Méthode : " + how} style={{ cursor: "help", fontSize: 12, fontWeight: 500, color: T.ink500, border: "1px solid " + T.line, borderRadius: 999, width: 16, height: 16, display: "inline-grid", placeItems: "center", flexShrink: 0 }}>i</span>}</div>
+    <div style={{ fontFamily: T.fontDisplay, fontSize: 36, fontWeight: 600, color: bad ? T.red500 : good ? T.emerald600 : T.ink900, fontVariantNumeric: "tabular-nums", lineHeight: 1.1, marginTop: 4 }}>{value}</div>
+    <div style={{ fontSize: 13, color: subBad ? T.red500 : T.ink500, fontWeight: subBad ? 500 : 400, marginTop: 4 }}>{sub}</div>
   </div>);
 export function KpiPilotage({ rows, driftRows, closurePeriods, productionExclusions, capaWeek, hasInitial, onOpenPj, onSeeDerives, plan }) {
   const today = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }, []);
@@ -49,7 +49,7 @@ export function KpiPilotage({ rows, driftRows, closurePeriods, productionExclusi
   const risky = open.filter(r => (driftOf[r.pj] || 0) > 0).sort((a, b) => (driftOf[b.pj] || 0) - (driftOf[a.pj] || 0));
   const S = stageSoft();
   const card = { background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "12px 14px", minWidth: 0 };
-  const etatChip = e => { const m = ETAT_META[e]; return m ? <span style={{ background: m.bg, color: m.text, borderRadius: 999, padding: "0 9px", fontSize: 12, fontWeight: 600, lineHeight: "20px", display: "inline-block", maxWidth: 190, overflow: "hidden", textOverflow: "ellipsis", verticalAlign: "middle" }}>{m.label}</span> : (e || "—"); };
+  const etatChip = e => { const m = ETAT_META[e]; return m ? <span style={{ background: m.bg, color: m.text, borderRadius: 999, padding: "0 9px", fontSize: 12, fontWeight: 500, lineHeight: "20px", display: "inline-block", maxWidth: 190, overflow: "hidden", textOverflow: "ellipsis", verticalAlign: "middle" }}>{m.label}</span> : (e || "—"); };
   const th = tableTh(), td = { ...tableTd({ h: 40 }), padding: "0 8px", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 220 }; // v313 : tableau commun
 
   // portefeuille par état : 4 états les plus fournis + « autres »
@@ -121,10 +121,10 @@ export function KpiPilotage({ rows, driftRows, closurePeriods, productionExclusi
               <div key={w.key} title={"S" + isoWeek(w.a) + " : " + w.hours + " h / " + Math.round(w.cap) + " h"} style={{ flex: 1, position: "relative", height: "100%", minWidth: 0 }}>
                 <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: Math.max(1, h), background: over ? T.red500 : S.production.solid, borderRadius: 0 }} />
                 <div style={{ position: "absolute", left: -3, right: -3, bottom: c, borderTop: "2px dashed " + T.ink500 }} />
-                <div style={{ position: "absolute", left: 0, right: 0, bottom: Math.max(h, c) + 4, textAlign: "center", fontSize: 12.5, fontWeight: 600, color: over ? T.red500 : T.ink700, fontVariantNumeric: "tabular-nums" }}>{w.hours} h</div>
+                <div style={{ position: "absolute", left: 0, right: 0, bottom: Math.max(h, c) + 4, textAlign: "center", fontSize: 13, fontWeight: 500, color: over ? T.red500 : T.ink700, fontVariantNumeric: "tabular-nums" }}>{w.hours} h</div>
               </div>); })}
           </div>
-          <div style={{ display: "flex", gap: 8, marginTop: 6 }}>{weeks.map(w => <span key={w.key} style={{ flex: 1, minWidth: 0, textAlign: "center", fontSize: 11.5, color: T.ink500, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{weekLabel(w.a)}</span>)}</div>
+          <div style={{ display: "flex", gap: 8, marginTop: 6 }}>{weeks.map(w => <span key={w.key} style={{ flex: 1, minWidth: 0, textAlign: "center", fontSize: 12, color: T.ink500, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{weekLabel(w.a)}</span>)}</div>
         </section>
         <section aria-label="Portefeuille par état" style={card}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><h3 style={{ margin: 0, fontSize: FZ.md, fontWeight: 600, color: T.ink900 }}>Portefeuille par état</h3><span style={{ fontSize: 12, color: T.ink500 }}>{tot} PJ ouverts</span></div>
@@ -146,7 +146,7 @@ export function KpiPilotage({ rows, driftRows, closurePeriods, productionExclusi
             <span style={{ fontSize: 12, color: T.ink500 }}>{parcRows.length} machine{parcRows.length > 1 ? "s" : ""} · filtres du Manager appliqués · chef = chef de projet principal</span>
           </div>
           {parcRows.length ? <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,420px),1fr))", gap: 12 }}>
-            {pies.map(([t, data]) => <div key={t} style={{ background: T.surface, borderRadius: 12, padding: "8px 10px", minWidth: 0 }}><div style={{ fontSize: 12.5, fontWeight: 600, color: T.ink900, marginBottom: 4 }}>{t}</div><PieBlock data={data} unit=" machines" size={110} /></div>)}
+            {pies.map(([t, data]) => <div key={t} style={{ background: T.surface, borderRadius: 12, padding: "8px 10px", minWidth: 0 }}><div style={{ fontSize: 13, fontWeight: 500, color: T.ink900, marginBottom: 4 }}>{t}</div><PieBlock data={data} unit=" machines" size={110} /></div>)}
           </div> : <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Aucune machine avec ce choix</div>}
         </section>
   </Arrange>);

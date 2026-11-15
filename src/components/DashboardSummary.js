@@ -85,18 +85,18 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
       {/* v283 (audit apple-design, lot 2) : une ligne de chiffres, les 4 répartitions repliées par défaut derrière « Répartitions » */}
       <div style={{display:"flex",alignItems:"baseline",gap:"6px 16px",flexWrap:"wrap",minWidth:0}}>
         {[[total,"machine"+(total>1?"s":""),T.ink900],...topEtats.map(x=>[x.value,x.name.toLowerCase(),T.ink900]),[shippedYTD,"expédiée"+(shippedYTD>1?"s":"")+" depuis mai",T.emerald600]].map(([n,l,c],i)=>
-          <span key={i} style={{display:"inline-flex",alignItems:"baseline",gap:6,minWidth:0}}><b style={{fontFamily:T.fontDisplay,fontSize:18,fontWeight:600,color:c,fontVariantNumeric:"tabular-nums"}}><AnimatedNumber count value={n}/></b><span style={{fontSize:FZ.sm,color:T.ink500}}>{l}</span></span>)}
+          <span key={i} style={{display:"inline-flex",alignItems:"baseline",gap:6,minWidth:0}}><b style={{fontFamily:T.fontDisplay,fontSize:20,fontWeight:600,color:c,fontVariantNumeric:"tabular-nums"}}><AnimatedNumber count value={n}/></b><span style={{fontSize:FZ.sm,color:T.ink500}}>{l}</span></span>)}
         {/* v292 (demandé) : plus de « + N départs passés pas encore Expédiée » sur la Liste */}
       </div>
       <button className="e-btn e-btn-sec" onClick={toggleCollapsed} aria-expanded={!collapsed} style={{...btn("sec","md"),marginLeft:"auto",flexShrink:0}}>
         Répartitions
-        <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{transform:collapsed?"rotate(180deg)":"rotate(0deg)",transition:"transform .18s ease"}}>
+        <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{transform:collapsed?"rotate(180deg)":"rotate(0deg)",transition:"transform var(--e-dur-menu) ease"}}>
           <polyline points="18 15 12 9 6 15"/>
         </svg>
       </button>
     </div>
 
-    <div className="enogia-fold" style={{display:"grid",gridTemplateRows:folded?"0fr":"1fr",opacity:folded?0:1,transform:folded?"translateY(-6px)":"none",transition:"opacity .22s ease, transform .22s var(--e-ease)"}} aria-hidden={folded?"true":undefined}><div style={{overflow:"hidden",minHeight:0}}>
+    <div className="enogia-fold" style={{display:"grid",gridTemplateRows:folded?"0fr":"1fr",opacity:folded?0:1,transform:folded?"translateY(-6px)":"none",transition:"opacity var(--e-dur-in) ease, transform var(--e-dur-in) var(--e-ease)"}} aria-hidden={folded?"true":undefined}><div style={{overflow:"hidden",minHeight:0}}>
     {<div className="enogia-dash" style={{display:"flex",alignItems:"center",gap:24,flexWrap:"wrap",marginTop:12}}>
       <div style={{display:"flex",flexDirection:"column",gap:2,minWidth:120,flexShrink:0}}>
         <div style={{fontSize:"clamp(28px,2.8vw,36px)" /* v343 (audit taste) : 46 → 36 px */,fontWeight:300,letterSpacing:"-.03em",color:T.ink900,fontFamily:T.fontDisplay,lineHeight:.95,fontVariantNumeric:"tabular-nums"}}><AnimatedNumber count value={shippedYTD}/></div>
@@ -119,8 +119,8 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
             </div>
             <div style={{minWidth:0,flex:1}}>
               <div style={{display:"flex",alignItems:"baseline",marginBottom:4}}>
-                <h2 style={{margin:0,fontSize:FZ.xs,fontWeight:600,color:T.ink900}}>Par {d.label.toLowerCase()}</h2>
-                <span style={{marginLeft:8,fontSize:FZ.xs,fontWeight:600,color:T.ink900,fontVariantNumeric:"tabular-nums"}}>{total}</span>
+                <h2 style={{margin:0,fontSize:FZ.xs,fontWeight:500,color:T.ink900}}>Par {d.label.toLowerCase()}</h2>
+                <span style={{marginLeft:8,fontSize:FZ.xs,fontWeight:500,color:T.ink900,fontVariantNumeric:"tabular-nums"}}>{total}</span>
               </div>
               {total===0?<div style={{fontSize:FZ.xs,color:T.ink500}}>Aucune machine avec ces filtres</div>:
                 <div style={{display:"grid",gridTemplateColumns:pie.length>6?"repeat(2,minmax(0,max-content))":"minmax(0,max-content)",columnGap:12,rowGap:1,overflow:"hidden","--lw":/* v195 : noms à la largeur du plus long (max 18 car.), chiffre juste après */Math.min(18,Math.max(...pie.map(x=>String(x.name).length)))+1+"ch"}}>

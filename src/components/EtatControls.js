@@ -10,7 +10,7 @@ export function EtatSelect({value,onChange,onCreate,compact,pill}){
   const m=ETAT_META[value]||ETAT_META["A_DEFINIR"];
   const options=ASSIGNABLE_ETATS.includes(value)?ASSIGNABLE_ETATS:[value,...ASSIGNABLE_ETATS];
   // v333 (audit tablette) : pastille compacte (point + libellé coupé) ; la vraie liste est posée dessus, invisible : un toucher l ouvre
-  if(pill)return(<span title={m.label} style={{position:"relative",display:"inline-flex",alignItems:"center",gap:6,maxWidth:118,minHeight:28,padding:"2px 10px 2px 8px",borderRadius:999,border:"1px solid "+m.text /* v349 : bord ≥ 3:1 (WCAG 1.4.11), encre de l'état */,background:m.bg,color:m.text,fontSize:FZ.xs,fontWeight:600,fontFamily:T.font,boxSizing:"border-box"}}>
+  if(pill)return(<span title={m.label} style={{position:"relative",display:"inline-flex",alignItems:"center",gap:6,maxWidth:118,minHeight:28,padding:"2px 10px 2px 8px",borderRadius:999,border:"1px solid "+m.text /* v349 : bord ≥ 3:1 (WCAG 1.4.11), encre de l'état */,background:m.bg,color:m.text,fontSize:FZ.xs,fontWeight:500,fontFamily:T.font,boxSizing:"border-box"}}>
     <i aria-hidden="true" style={{width:8,height:8,borderRadius:"50%",background:m.bar||m.text,flexShrink:0}}/>
     <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",minWidth:0}}>{m.label}</span>
     <select aria-label={"État : "+m.label} value={value} onChange={e=>{if(e.target.value===NEW_ETAT){if(onCreate)onCreate();return;}onChange(e);}} style={{position:"absolute",inset:0,width:"100%",height:"100%",opacity:0,cursor:"pointer",fontSize:16,border:"none",margin:0}}>
@@ -18,9 +18,9 @@ export function EtatSelect({value,onChange,onCreate,compact,pill}){
       {onCreate&&<option value={NEW_ETAT}>＋ Créer / gérer les états…</option>}
     </select></span>);
   return(<div style={{position:"relative",display:"inline-block"}}>
-    <select aria-label="État de la machine" value={value} onChange={e=>{if(e.target.value===NEW_ETAT){if(onCreate)onCreate();return;}onChange(e);}} style={{appearance:"none",WebkitAppearance:"none",MozAppearance:"none",padding:compact?"2px 20px 2px 9px":"4px 24px 4px 12px",borderRadius:999,border:"1px solid "+m.text /* v349 : bord ≥ 3:1 (WCAG 1.4.11), encre de l'état */,background:m.bg,color:m.text,fontSize:FZ.xs,fontWeight:600,fontFamily:T.font,cursor:"pointer",minWidth:compact?0:150,maxWidth:"100%"}}>
-      {options.map(o=><option key={o} value={o} disabled={o===value&&!ASSIGNABLE_ETATS.includes(o)} style={{background:T.card,color:T.ink900,fontWeight:600}}>{(ETAT_META[o]||ETAT_META["A_DEFINIR"]).label}</option>)}
-      {onCreate&&<option value={NEW_ETAT} style={{background:T.card,color:T.teal600,fontWeight:600}}>＋ Créer / gérer les états…</option>}
+    <select aria-label="État de la machine" value={value} onChange={e=>{if(e.target.value===NEW_ETAT){if(onCreate)onCreate();return;}onChange(e);}} style={{appearance:"none",WebkitAppearance:"none",MozAppearance:"none",padding:compact?"2px 20px 2px 9px":"4px 24px 4px 12px",borderRadius:999,border:"1px solid "+m.text /* v349 : bord ≥ 3:1 (WCAG 1.4.11), encre de l'état */,background:m.bg,color:m.text,fontSize:FZ.xs,fontWeight:500,fontFamily:T.font,cursor:"pointer",minWidth:compact?0:150,maxWidth:"100%"}}>
+      {options.map(o=><option key={o} value={o} disabled={o===value&&!ASSIGNABLE_ETATS.includes(o)} style={{background:T.card,color:T.ink900,fontWeight:500}}>{(ETAT_META[o]||ETAT_META["A_DEFINIR"]).label}</option>)}
+      {onCreate&&<option value={NEW_ETAT} style={{background:T.card,color:T.teal600,fontWeight:500}}>＋ Créer / gérer les états…</option>}
     </select>
     <span style={{position:"absolute",right:compact?7:10,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",color:m.text,opacity:.7}}><NavIcon name="chevronDown" size={10}/></span>
   </div>);
@@ -34,7 +34,7 @@ export function PresencePicker({kind,onChange}){
   return(<div role="radiogroup" aria-label="Présence aux tests" style={{display:"inline-flex",background:T.surface,border:"1px solid "+T.line,borderRadius:8,padding:2,gap:2,flexShrink:0}}>
     {opts.map(o=>{
       const on=(kind||null)===o.k;
-      return(<button key={o.k||"none"} role="radio" aria-checked={on} onClick={()=>onChange(o.k)} style={{border:"none",cursor:"pointer",borderRadius:8,padding:"4px 8px",fontSize:FZ.xs,fontWeight:600,fontFamily:T.font,color:on?(o.k?PRESENCE_META[o.k].ink:T.ink900):T.ink500,background:on?(o.k?presenceBg(o.k):T.card):"transparent",boxShadow:on?(o.k&&!PRESENCE_META[o.k].color2?"inset 0 0 0 1px "+PRESENCE_META[o.k].color:T.shadowSm):"none",transition:"background .12s ease"}}>{o.label}</button>);
+      return(<button key={o.k||"none"} role="radio" aria-checked={on} onClick={()=>onChange(o.k)} style={{border:"none",cursor:"pointer",borderRadius:8,padding:"4px 8px",fontSize:FZ.xs,fontWeight:500,fontFamily:T.font,color:on?(o.k?PRESENCE_META[o.k].ink:T.ink900):T.ink500,background:on?(o.k?presenceBg(o.k):T.card):"transparent",boxShadow:on?(o.k&&!PRESENCE_META[o.k].color2?"inset 0 0 0 1px "+PRESENCE_META[o.k].color:T.shadowSm):"none",transition:"background var(--e-dur-micro) ease"}}>{o.label}</button>);
     })}
   </div>);
 }
@@ -60,12 +60,12 @@ export function PresenceEditor({r,presence,onChange}){
   return(<div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",minWidth:0}}>
     <PresencePicker kind={kind} onChange={k=>onChange(k?{...pres,present:true,who:k}:{...pres,present:false})}/>
     {kind&&(noTests
-      ?<span style={{fontSize:FZ.xs,color:T.red500,fontWeight:600}}>Période de tests non définie — date impossible</span>
+      ?<span style={{fontSize:FZ.xs,color:T.red500,fontWeight:500}}>Période de tests non définie — date impossible</span>
       :<>
-        {(kind==="both"?["client","nobo"]:[kind]).map(w=><label key={w} style={{display:"inline-flex",alignItems:"center",gap:5,fontSize:FZ.xs,fontWeight:600,color:PRESENCE_META[w].ink}}>
+        {(kind==="both"?["client","nobo"]:[kind]).map(w=><label key={w} style={{display:"inline-flex",alignItems:"center",gap:5,fontSize:FZ.xs,fontWeight:500,color:PRESENCE_META[w].ink}}>
           <span style={{background:presenceBg(w),borderRadius:8,padding:"2px 8px"}}>{w==="client"?"Client":"NOBO"}</span>
           <input type="date" value={pDates[w]||""} min={minD||undefined} max={maxD||undefined} onChange={e=>onDate(w,e.target.value)}
-            style={{padding:"3px 8px",borderRadius:8,border:"1.5px solid "+PRESENCE_META[w].color,fontSize:FZ.xs,fontFamily:T.font,color:T.ink700,fontWeight:600}}/>
+            style={{padding:"3px 8px",borderRadius:8,border:"1.5px solid "+PRESENCE_META[w].color,fontSize:FZ.xs,fontFamily:T.font,color:T.ink700,fontWeight:500}}/>
         </label>)}
         <span style={{fontSize:FZ.xs,color:T.ink300}}>entre le {fmt(new Date(minD))} et le {fmt(new Date(maxD))}</span>
       </>)}

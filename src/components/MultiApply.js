@@ -83,7 +83,7 @@ export function MultiApplyDialog({ onClose, data, currentPj, savePjMetaMulti, ad
 
   const field = { width: "100%", boxSizing: "border-box", fontFamily: T.font, fontSize: FZ.sm, color: T.ink900, background: T.surface, border: "1px solid " + T.line, borderRadius: 8, padding: "7px 10px" };
   const chip = chipStyle; // v311 : puce commune
-  const lbl = { fontSize: FZ.xs, fontWeight: 600, color: T.ink500, display: "block", marginBottom: 4 };
+  const lbl = { fontSize: FZ.xs, fontWeight: 500, color: T.ink500, display: "block", marginBottom: 4 };
 
   return createPortal(<div role="dialog" aria-modal="true" aria-label="Saisie sur plusieurs projets" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}
     style={{ position: "fixed", inset: 0, zIndex: 20010, background: "rgba(10,16,28,.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 12 }}>
@@ -107,7 +107,7 @@ export function MultiApplyDialog({ onClose, data, currentPj, savePjMetaMulti, ad
             </label>))}
             {!shown.length && <div style={{ padding: 10, fontSize: FZ.sm, color: T.ink500 }}>Aucun PJ ne correspond</div>}
           </div>
-          <div style={{ fontSize: FZ.xs, color: T.ink500, fontWeight: 600 }}>{pjs.length} projet{pjs.length > 1 ? "s" : ""} coché{pjs.length > 1 ? "s" : ""}</div>
+          <div style={{ fontSize: FZ.xs, color: T.ink500, fontWeight: 500 }}>{pjs.length} projet{pjs.length > 1 ? "s" : ""} coché{pjs.length > 1 ? "s" : ""}</div>
         </div>
         <div style={{ flex: "1.3 1 330px", minWidth: 300, padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
           <div role="tablist" style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>{TABS.map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} style={chip(tab === k)} onClick={() => { setTab(k); setMsg(null); }}>{l}</button>)}</div>
@@ -149,7 +149,7 @@ export function MultiApplyDialog({ onClose, data, currentPj, savePjMetaMulti, ad
           <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginTop: "auto" }}>
             <button disabled={!!problem || busy} onClick={apply} title={problem || ""} style={{ border: "none", borderRadius: 12, padding: "8px 16px", background: problem ? T.ink100 : T.navy700, color: problem ? T.ink500 : T.onFill, fontWeight: 600, fontSize: FZ.sm, fontFamily: T.font, cursor: problem ? "default" : "pointer" }}>{busy ? "Enregistrement…" : "Appliquer à " + pjs.length + " projet" + (pjs.length > 1 ? "s" : "")}</button>
             {problem && <span style={{ fontSize: FZ.xs, color: T.ink500 }}>{problem}</span>}
-            {msg && <span role="status" style={{ fontSize: FZ.xs, fontWeight: 600, color: msg.err ? T.red600 : T.emerald600 }}>{msg.t}</span>}
+            {msg && <span role="status" style={{ fontSize: FZ.xs, fontWeight: 500, color: msg.err ? T.red600 : T.emerald600 }}>{msg.t}</span>}
           </div>
         </div>
       </div>

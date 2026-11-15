@@ -41,7 +41,7 @@ const signed=d=>d==null?"—":(d>0?"+":"")+d+"j";
 // Mise en page éditoriale (même langage visuel que le rapport CODIR) : une grande carte unique, des blocs
 // séparés par un filet fin, des chiffres généreux, un seul accent (laiton). Les textes saisis ici
 // (commentaires de feux / d'indicateurs, actions de la semaine) sont repris tels quels dans les rapports (CODIR, chef de projet).
-const Cap=({children,style})=><div style={{fontFamily:T.font,fontSize:12,fontWeight:600,color:T.ink500,...style}}>{children}</div>; // v272 (audit apple-design) : étiquette grise, plus de couleur qui ressemble à un lien
+const Cap=({children,style})=><div style={{fontFamily:T.font,fontSize:12,fontWeight:500,color:T.ink500,...style}}>{children}</div>; // v272 (audit apple-design) : étiquette grise, plus de couleur qui ressemble à un lien
 function Section({title,right,children,style}){
   // v129 : sous-titre de bloc (niveau 2) — la phrase en gras, sans majuscules ; le cadre thématique (Frame) porte le niveau 1.
   return(<div style={{minWidth:0,...style}}>
@@ -120,14 +120,14 @@ function Timeline({r,ini,kind}){
       const next=!past&&rv&&(i===0||(dOf(r[MS[i-1][0]])||0)<=today);
       const mk=past?{background:T.navy700,border:"2px solid "+T.navy700}:next?{background:T.card,border:"3px solid "+T.accent,boxShadow:"0 0 0 4px "+T.accent+"33"}:{background:T.card,border:"2px solid "+(rv?T.ink300:T.line)};
       return(<div key={k} style={{position:"relative",textAlign:"center",padding:"0 6px",minWidth:0}}>
-        <div style={{width:14,height:14,borderRadius:"50%",boxSizing:"border-box",margin:"0 auto 2px",display:"flex",alignItems:"center",justifyContent:"center",color:T.onFill,fontSize:FZ.xs,fontWeight:600,...mk}}>{past?"✓":""}</div>
+        <div style={{width:14,height:14,borderRadius:"50%",boxSizing:"border-box",margin:"0 auto 2px",display:"flex",alignItems:"center",justifyContent:"center",color:T.onFill,fontSize:FZ.xs,fontWeight:500,...mk}}>{past?"✓":""}</div>
         <Cap>{label}</Cap>
         <div style={{fontSize:FZ.sm,fontWeight:600,color:T.ink900,marginTop:0,whiteSpace:"nowrap",letterSpacing:"-.01em"}}>{rv?fmt(rv):"—"}</div>
         {k==="tests"&&r.testsFin&&<div style={{fontSize:FZ.xs,color:T.ink300,marginTop:1}}>→ {fmtLong(dOf(r.testsFin))}</div>}
         <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:4,marginTop:1,minHeight:14,flexWrap:"wrap"}}>
           {iv&&delta!==0&&<span style={{fontSize:FZ.xs,color:T.ink300,textDecoration:"line-through"}}>{fmt(iv)}</span>}
-          {delta!=null&&delta!==0&&<span style={{fontSize:FZ.xs,fontWeight:600,color:driftColor(delta),background:delta>0?T.red100:T.emerald100,borderRadius:999,padding:"1px 8px"}}>{signed(delta)}</span>}
-          {delta===0&&<span style={{fontSize:FZ.xs,fontWeight:600,color:T.emerald600}}>conforme</span>}
+          {delta!=null&&delta!==0&&<span style={{fontSize:FZ.xs,fontWeight:500,color:driftColor(delta),background:delta>0?T.red100:T.emerald100,borderRadius:999,padding:"1px 8px"}}>{signed(delta)}</span>}
+          {delta===0&&<span style={{fontSize:FZ.xs,fontWeight:500,color:T.emerald600}}>conforme</span>}
         </div>
         {k==="tests"&&kind&&<div style={{marginTop:4}}><PresenceChip kind={kind} date={presenceFirstDate(r.clientPresence)} dates={presenceDates(r.clientPresence)} compact/></div>}
       </div>);
@@ -150,7 +150,7 @@ function CommentComposer({onAdd,options,me,info,pj}){
     <MentionTextarea options={options} value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&(e.metaKey||e.ctrlKey))submit();}} rows={2} placeholder="Écrire un commentaire… (utilisez les puces @ pour taguer un manager)" style={{...FIELD,width:"100%",resize:"vertical",boxSizing:"border-box"}}/>
     <MentionPicker text={text} options={options} pjs={[pj]}/>
     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginTop:6,flexWrap:"wrap"}}>
-      <label style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:FZ.xs,color:priv?T.amber600:T.ink500,fontWeight:600,cursor:"pointer"}}><input type="checkbox" checked={priv} onChange={e=>setPriv(e.target.checked)}/>Privé (visible des seuls accès Manager)</label>
+      <label style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:FZ.xs,color:priv?T.amber600:T.ink500,fontWeight:500,cursor:"pointer"}}><input type="checkbox" checked={priv} onChange={e=>setPriv(e.target.checked)}/>Privé (visible des seuls accès Manager)</label>
       <button onClick={submit} disabled={!ok} style={BTN(ok)}>{busy?"Envoi…":"Publier"}</button>
     </div>
   </div>);
@@ -195,7 +195,7 @@ function StatutGlobal({meta,pj,onSave,onNote}){
           <FeuPicker value={lv||null} onChange={v=>gate.ask(pj,meta,k,v)} size={18}/>
           <span style={{fontSize:FZ.sm,fontWeight:600,color:lv?feuText(lv):T.ink300}}>{lv?feuLabel(lv):"non évalué"}</span>
           <div style={{minWidth:0,marginTop:-4}}>{lv&&(lv!=="green"||notes[k])?<NoteField value={notes[k]} onSave={t=>lv==="red"&&!String(t||"").trim()?false:onNote(k,t)} placeholder={lv==="red"?"Commentaire obligatoire (statut à risque)":"＋ Commentaire"}/>:null}
-            {lv==="red"&&redNeeds(meta,k).length>0&&<div role="alert" style={{fontSize:FZ.xs,fontWeight:600,color:T.red600}}>À renseigner : {redNeeds(meta,k).join(" et ")}</div>}</div>
+            {lv==="red"&&redNeeds(meta,k).length>0&&<div role="alert" style={{fontSize:FZ.xs,fontWeight:500,color:T.red600}}>À renseigner : {redNeeds(meta,k).join(" et ")}</div>}</div>
         </div>);})}
     </div>
   </Section>);
@@ -242,7 +242,7 @@ function DateField({label,value,onSave,hint}){
   React.useEffect(()=>{setV(value||"");},[value]);
   const dirty=(v||"")!==(value||"");
   return(<div style={{minWidth:0}}>
-    <div style={{fontFamily:T.font,fontSize:12,fontWeight:600,color:T.accentInk}}>{label}</div>
+    <div style={{fontFamily:T.font,fontSize:12,fontWeight:500,color:T.accentInk}}>{label}</div>
     <div style={{display:"flex",alignItems:"center",gap:4,marginTop:3}}>
       <input type="date" value={v} onChange={e=>setV(e.target.value)} onBlur={()=>{if(dirty)onSave(v||null);}}
         onKeyDown={e=>{if(e.key==="Enter"&&dirty){onSave(v||null);e.currentTarget.blur();}}}
@@ -259,7 +259,7 @@ function MontantField({value,onSave}){
   const dirty=(num||null)!==(value||null);
   const commit=()=>{if(!dirty||(num!=null&&(isNaN(num)||num<0)))return;onSave(num);};
   return(<div style={{minWidth:0}}>
-    <div style={{fontFamily:T.font,fontSize:12,fontWeight:600,color:T.accentInk}}>Montant global</div>
+    <div style={{fontFamily:T.font,fontSize:12,fontWeight:500,color:T.accentInk}}>Montant global</div>
     <div style={{display:"flex",alignItems:"center",gap:4,marginTop:3}}>
       <input type="text" inputMode="decimal" value={v} onChange={e=>setV(e.target.value)} onBlur={commit} onKeyDown={e=>{if(e.key==="Enter")e.currentTarget.blur();}} placeholder="0"
         style={{padding:"4px 8px",borderRadius:8,border:"1.5px solid "+(dirty?T.teal500:T.line),background:T.card,color:T.ink900,fontSize:FZ.sm,fontWeight:600,fontFamily:T.font,minWidth:0,width:"100%",maxWidth:120,textAlign:"right"}}/>
@@ -316,7 +316,7 @@ function NumField({label,value,onSave,suffix,hint,width=60}){
   React.useEffect(()=>{setV(value==null?"":String(value));},[value]);
   const save=()=>{const n=v.trim()===""?null:Math.max(0,Number(String(v).replace(",",".")));if(n!=null&&isNaN(n))return;if((n??null)!==(value??null))onSave(n);};
   return(<div style={{minWidth:0}}>
-    {label&&<div style={{fontFamily:T.font,fontSize:12,fontWeight:600,color:T.accentInk}}>{label}</div>}
+    {label&&<div style={{fontFamily:T.font,fontSize:12,fontWeight:500,color:T.accentInk}}>{label}</div>}
     <div style={{display:"flex",alignItems:"center",gap:4,marginTop:3}}><input type="number" min={0} step="any" value={v} onChange={e=>setV(e.target.value)} onBlur={save} onKeyDown={e=>{if(e.key==="Enter")e.currentTarget.blur();}} aria-label={label||hint} style={{padding:"4px 8px",borderRadius:8,border:"1.5px solid "+T.line,background:T.card,color:T.ink900,fontSize:FZ.sm,fontWeight:600,fontFamily:T.font,width}}/>{suffix&&<span style={{fontSize:FZ.sm,color:T.ink500}}>{suffix}</span>}</div>
     {hint&&<div style={{fontSize:FZ.xs,color:T.ink300,marginTop:2}}>{hint}</div>}
   </div>);
@@ -356,19 +356,19 @@ function TurbineSection({r,meta,onSave}){
   const injRefs=[...new Set(tiles.injs.map(t=>t.ref))].map(ref=>({ref,q:tiles.injs.filter(t=>t.ref===ref).reduce((s,t)=>s+t.qte,0)}));if(meta.turbInj&&!injRefs.some(x=>x.ref===meta.turbInj))injRefs.push({ref:meta.turbInj,q:null});
   const ii=meta.turbInj&&prod?injInfo(prod,meta.turbInj):null,mx=ii?maxBouches(ii.ouv):99,nb=meta.turbInjB==null?0:+meta.turbInjB;
   const prepared=ii?(nb?((ii.variantes.find(v=>v.bouches===nb)||{}).qte||0):ii.vierges):null;
-  const pk=on=>({border:"1px solid "+(on?T.ink900:T.line),background:on?T.ink900:T.card,color:on?T.card:T.ink900,borderRadius:8,minHeight:28,padding:"0 9px",fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font,display:"inline-flex",alignItems:"center",gap:5,transition:"background 120ms, border-color 120ms"});
+  const pk=on=>({border:"1px solid "+(on?T.ink900:T.line),background:on?T.ink900:T.card,color:on?T.card:T.ink900,borderRadius:8,minHeight:28,padding:"0 9px",fontSize:FZ.xs,fontWeight:500,cursor:"pointer",fontFamily:T.font,display:"inline-flex",alignItems:"center",gap:5,transition:"background var(--e-dur-micro), border-color var(--e-dur-micro)"});
   const qS=(on,q)=>({fontWeight:500,fontVariantNumeric:"tabular-nums",color:on?T.card:q===0?T.red600:T.ink500,opacity:on?.8:1});
-  const lab={fontFamily:T.font,fontSize:12,fontWeight:600,color:T.ink500,minWidth:58,flexBasis:"100%"}; // v277 : étiquette au-dessus, contenu dessous (colonne étroite)
+  const lab={fontFamily:T.font,fontSize:12,fontWeight:500,color:T.ink500,minWidth:58,flexBasis:"100%"}; // v277 : étiquette au-dessus, contenu dessous (colonne étroite)
   const row={display:"flex",alignItems:"center",gap:"2px 6px",flexWrap:"wrap"};
   const step={width:28,height:28,borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink900,cursor:"pointer",fontSize:14,fontFamily:T.font,padding:0};
   const missing=[!meta.turbRoue&&"roue",!meta.turbInj&&"injecteur"].filter(Boolean);
   const none=(t)=><span style={{fontSize:FZ.xs,color:T.ink500}}>{t}</span>;
-  return(<Section title="Turbine" right={<span style={{fontSize:FZ.xs,color:missing.length?T.amber600:T.emerald600,fontWeight:600}}>{cfg?(missing.length?missing.join(" et ")+" à choisir":"complet"+(nb?" · "+nb+" bouchage"+(nb>1?"s":""):"")):""}</span>}>
+  return(<Section title="Turbine" right={<span style={{fontSize:FZ.xs,color:missing.length?T.amber600:T.emerald600,fontWeight:500}}>{cfg?(missing.length?missing.join(" et ")+" à choisir":"complet"+(nb?" · "+nb+" bouchage"+(nb>1?"s":""):"")):""}</span>}>
     <div style={{display:"flex",flexDirection:"column",gap:8}}>
       <div style={row}><span style={lab}>Turbine <span style={{fontWeight:400,color:T.ink500}}>kW{!meta.turbCfg&&cfg?" · d’après la gamme":""}</span></span>
         <div role="radiogroup" aria-label="Configuration des turbines" style={{display:"inline-flex",background:T.surfaceAlt,borderRadius:8,padding:2,gap:2,flexWrap:"wrap"}}>
           {TURB_CFGS.map(c=>{const on=!!(cfg&&cfg.id===c.id);return <button key={c.id} type="button" role="radio" aria-checked={on} onClick={()=>onSave({turbCfg:c.id,...(cfg&&cfg.g!==c.g?{turbRoue:null,turbInj:null,turbInjB:null}:{})})} title={c.n+" turbine"+(c.n>1?"s":"")+" "+c.g+" kW"+(!meta.turbCfg&&on?" (d’après la gamme)":"")}
-            style={{border:"none",borderRadius:8,minHeight:28,padding:"0 8px",display:"inline-flex",alignItems:"center",gap:5,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font,background:on?T.card:"transparent",color:on?T.ink900:T.ink500,boxShadow:on?"0 1px 2px rgba(0,0,0,.10)":"none",transition:"background 120ms, color 120ms"}}><TurbGlyph cfg={c}/>{c.l.replace(/ kW$/,"").replace(" × ","×")}</button>;})} {/* v277 : libellés courts (2×100, 100, 20, 2×40) : tient sur une ligne dans la colonne Machine */}
+            style={{border:"none",borderRadius:8,minHeight:28,padding:"0 8px",display:"inline-flex",alignItems:"center",gap:5,fontSize:FZ.xs,fontWeight:500,cursor:"pointer",fontFamily:T.font,background:on?T.card:"transparent",color:on?T.ink900:T.ink500,boxShadow:on?"0 1px 2px rgba(0,0,0,.10)":"none",transition:"background var(--e-dur-micro), color var(--e-dur-micro)"}}><TurbGlyph cfg={c}/>{c.l.replace(/ kW$/,"").replace(" × ","×")}</button>;})} {/* v277 : libellés courts (2×100, 100, 20, 2×40) : tient sur une ligne dans la colonne Machine */}
         </div>
       </div>
       {cfg&&<div style={row}><span style={lab}>Roue</span>
@@ -377,7 +377,7 @@ function TurbineSection({r,meta,onSave}){
       {cfg&&<div style={row}><span style={lab}>Injecteur</span>
         {injRefs.length?injRefs.map(x=>{const on=meta.turbInj===x.ref;return <button key={x.ref} type="button" aria-pressed={on} onClick={()=>onSave({turbInj:on?null:x.ref,turbInjB:null})} style={pk(on)}>{x.ref}{x.q!=null&&<span style={qS(on,x.q)}>{x.q}</span>}</button>;}):none(prod?"aucun en stock ("+g+" kW)":"stock indisponible")}
         {meta.turbInj&&<span style={{display:"inline-flex",alignItems:"center",gap:4,marginLeft:6,paddingLeft:8,borderLeft:"1px solid "+T.line}}>
-          <span style={{fontSize:FZ.xs,color:T.ink700,fontWeight:600}}>Bouchages</span>
+          <span style={{fontSize:FZ.xs,color:T.ink700,fontWeight:500}}>Bouchages</span>
           <button type="button" aria-label="Un bouchage de moins" disabled={nb<=0} onClick={()=>onSave({turbInjB:nb-1>0?nb-1:null})} style={{...step,opacity:nb<=0?.4:1}}>−</button>
           <b aria-live="polite" style={{minWidth:20,textAlign:"center",fontVariantNumeric:"tabular-nums",fontSize:FZ.sm}}>{nb}</b>
           <button type="button" aria-label="Un bouchage de plus" disabled={nb>=mx} onClick={()=>onSave({turbInjB:Math.min(mx,nb+1)})} style={{...step,opacity:nb>=mx?.4:1}}>+</button>
@@ -408,7 +408,7 @@ function ContratSection({r,meta,onSave,onNote}){
       <DateField label="T0 · début" value={t0} onSave={v=>save({contratT0:v})} hint={dT0?"":"non renseigné"}/>
       <NumField label="Durée" value={meta.contratSemaines==null?null:meta.contratSemaines} suffix="semaines" onSave={n=>save({contratSemaines:n==null?undefined:n})} hint={meta.contratSemaines?"":"à partir de T0"}/>
       <div style={{minWidth:0}}>
-        <div style={{fontFamily:T.font,fontSize:12,fontWeight:600,color:T.accentInk}}>Tf · échéance du contrat</div>
+        <div style={{fontFamily:T.font,fontSize:12,fontWeight:500,color:T.accentInk}}>Tf · échéance du contrat</div>
         {cd.auto?<><div style={{fontWeight:600,fontSize:FZ.sm,color:T.ink900,marginTop:6}}>{fmt(dOf(cd.deadline))}</div><div style={{fontSize:FZ.xs,color:T.ink300,marginTop:2}}>T0 + {meta.contratSemaines} sem. · {cd.transport?"livraison sur site":"MàD ORC"}</div></>
           :<DateField label="" value={meta.contratTFin||""} onSave={v=>onSave({contratTFin:v})} hint={duree!=null?"durée "+duree+" j":"ou renseignez la durée en semaines"}/>}
       </div>
@@ -429,7 +429,7 @@ function ContratSection({r,meta,onSave,onNote}){
       {[[a,"T0",T.teal600,false],[b,"MaD ORC",T.navy700,true],[c,shipped?"Tf final":"Fin proj.",late?T.red500:T.ink700,false]].map(([x,lab,col,above],i)=>x==null?null:
         <React.Fragment key={i}>
           <div style={{position:"absolute",left:x+"%",top:above?13:17,height:above?14:18,width:2,background:col,transform:"translateX(-1px)"}}/>
-          <div style={{position:"absolute",left:x+"%",top:above?0:36,transform:x>88?"translateX(-100%)":x<12?"none":"translateX(-50%)",fontSize:FZ.xs,fontWeight:600,color:col,whiteSpace:"nowrap",lineHeight:"12px"}}>{lab}</div>
+          <div style={{position:"absolute",left:x+"%",top:above?0:36,transform:x>88?"translateX(-100%)":x<12?"none":"translateX(-50%)",fontSize:FZ.xs,fontWeight:500,color:col,whiteSpace:"nowrap",lineHeight:"12px"}}>{lab}</div>
         </React.Fragment>)}
       {n!=null&&<div title="Aujourd'hui" style={{position:"absolute",left:n+"%",top:19,width:10,height:10,borderRadius:"50%",background:T.card,border:"2px solid "+T.ember500,transform:"translateX(-50%)"}}/>}
     </div>}
@@ -449,7 +449,7 @@ export const enteredOn=x=>{if(!x||!x.createdAt||/^l\d+$/.test(x.id))return null;
   return{short:d.toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"2-digit"}),full:d.toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric"})+" à "+d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})};};
 // v146.19 — Chaque ligne est structurée : action = [action · état · date] ; mitigation = [risque · ce qu'on fait pour l'éviter · état · date].
 const ST_COLOR={get todo(){return T.ink500;},get doing(){return T.info500;},get blocked(){return T.red500;},get done(){return T.emerald600;}};
-const Lab=({label,children,grow=180})=><label style={{display:"flex",flexDirection:"column",gap:2,flex:"1 1 "+grow+"px",minWidth:0}}><span style={{fontSize:FZ.xs,fontWeight:600,color:T.ink500}}>{label}</span>{children}</label>;
+const Lab=({label,children,grow=180})=><label style={{display:"flex",flexDirection:"column",gap:2,flex:"1 1 "+grow+"px",minWidth:0}}><span style={{fontSize:FZ.xs,fontWeight:500,color:T.ink500}}>{label}</span>{children}</label>;
 const StatusSelect=({value,onChange,label})=><select value={value} onChange={e=>onChange(e.target.value)} aria-label={label} style={{...FIELD,fontWeight:600,padding:"3px 6px",color:ST_COLOR[value],border:"1.5px solid "+ST_COLOR[value]}}>{ITEM_STATUS.map(([k,l])=><option key={k} value={k} style={{background:T.card,color:T.ink900}}>{l}</option>)}</select>;
 function ItemsSection({title,kind,meta,field,atKey,color,showWeek,onSave,onGroup}){
   const mit=kind==="mitigations";
@@ -492,16 +492,16 @@ function ItemsSection({title,kind,meta,field,atKey,color,showWeek,onSave,onGroup
           </>:<Lab label="Action" grow={260}>{inp(x.text,t=>patch(x.id,{text:t}),"Qui fait quoi ?",x)}</Lab>}
         </div>
         <div style={{display:"flex",flexWrap:"wrap",alignItems:"center",gap:"4px 12px"}}>
-          <label style={{display:"inline-flex",alignItems:"center",gap:5,fontSize:FZ.xs,fontWeight:600,color:T.ink500}}>État<StatusSelect value={st} label={"État : "+(mit?p.risk:x.text)} onChange={v=>patch(x.id,statusPatch(x,v,todayIso()))}/></label>
-          <label style={{display:"inline-flex",alignItems:"center",gap:5,fontSize:FZ.xs,fontWeight:600,color:late||none?T.red600:T.ink500}} title={none?"Pas d'échéance : à renseigner":late?"Échéance dépassée":"Échéance"}>{late?"En retard · ":"Date"}{dateIn(x.deadline,v=>v&&patch(x.id,{deadline:v}),{width:128,border:"1px solid "+(late||none?T.red500:T.line)})}</label>
-          {x.done&&<label style={{display:"inline-flex",alignItems:"center",gap:5,fontSize:FZ.xs,fontWeight:600,color:T.emerald600}}>clôturée le{dateIn(x.doneAt,v=>v&&patch(x.id,{doneAt:v}),{width:128,fontWeight:600})}</label>}
-          {x.groupId&&Array.isArray(x.groupPjs)&&x.groupPjs.length>1&&<span title={"Saisie commune à "+x.groupPjs.join(", ")} style={{fontSize:FZ.xs,fontWeight:600,color:T.ink500,border:"1px solid "+T.line,borderRadius:999,padding:"0 7px",whiteSpace:"nowrap"}}>× {x.groupPjs.length} PJ</span>}
+          <label style={{display:"inline-flex",alignItems:"center",gap:5,fontSize:FZ.xs,fontWeight:500,color:T.ink500}}>État<StatusSelect value={st} label={"État : "+(mit?p.risk:x.text)} onChange={v=>patch(x.id,statusPatch(x,v,todayIso()))}/></label>
+          <label style={{display:"inline-flex",alignItems:"center",gap:5,fontSize:FZ.xs,fontWeight:500,color:late||none?T.red600:T.ink500}} title={none?"Pas d'échéance : à renseigner":late?"Échéance dépassée":"Échéance"}>{late?"En retard · ":"Date"}{dateIn(x.deadline,v=>v&&patch(x.id,{deadline:v}),{width:128,border:"1px solid "+(late||none?T.red500:T.line)})}</label>
+          {x.done&&<label style={{display:"inline-flex",alignItems:"center",gap:5,fontSize:FZ.xs,fontWeight:500,color:T.emerald600}}>clôturée le{dateIn(x.doneAt,v=>v&&patch(x.id,{doneAt:v}),{width:128,fontWeight:600})}</label>}
+          {x.groupId&&Array.isArray(x.groupPjs)&&x.groupPjs.length>1&&<span title={"Saisie commune à "+x.groupPjs.join(", ")} style={{fontSize:FZ.xs,fontWeight:500,color:T.ink500,border:"1px solid "+T.line,borderRadius:999,padding:"0 7px",whiteSpace:"nowrap"}}>× {x.groupPjs.length} PJ</span>}
           {enteredOn(x)&&<i title={"Saisie le "+enteredOn(x).full} style={{fontSize:FZ.xs,fontStyle:"italic",fontWeight:400,color:T.ink500,whiteSpace:"nowrap"}}>saisie {enteredOn(x).short}</i>}
           <span style={{marginLeft:"auto"}}><TrashBtn title="Supprimer cette ligne" onClick={async()=>{if(await askConfirm({title:"Supprimer cette ligne ?",message:"« "+String((mit?x.risk:x.text)||"").slice(0,80)+" » disparaît de la fiche.",confirmLabel:"Supprimer la ligne",danger:true}))save(items.filter(i=>i.id!==x.id));}}/></span>
         </div>
       </div>);
     })}
-    {hidden>0&&<button type="button" onClick={()=>setAll(v=>!v)} aria-expanded={all} style={{border:"none",background:"transparent",padding:"2px 0",minHeight:24,color:T.ink700,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font,textDecoration:"underline",textUnderlineOffset:2,marginBottom:4}}>{all?"Réduire":"Afficher tout ("+hidden+" de plus"+(closed?", dont "+closed+" clôturée"+(closed>1?"s":""):"")+")"}</button>}
+    {hidden>0&&<button type="button" onClick={()=>setAll(v=>!v)} aria-expanded={all} style={{border:"none",background:"transparent",padding:"2px 0",minHeight:24,color:T.ink700,fontSize:FZ.xs,fontWeight:500,cursor:"pointer",fontFamily:T.font,textDecoration:"underline",textUnderlineOffset:2,marginBottom:4}}>{all?"Réduire":"Afficher tout ("+hidden+" de plus"+(closed?", dont "+closed+" clôturée"+(closed>1?"s":""):"")+")"}</button>}
     <div style={{display:"flex",flexDirection:"column",gap:6,marginTop:items.length?6:0,padding:"8px 10px",border:"1px dashed "+T.line,borderRadius:8}}>
       <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
         {mit?<>
@@ -510,8 +510,8 @@ function ItemsSection({title,kind,meta,field,atKey,color,showWeek,onSave,onGroup
         </>:<Lab label="Action" grow={260}><input ref={firstRef} value={a} onChange={e=>setA(e.target.value)} onKeyDown={enter} placeholder="Qui fait quoi ?" style={FIELD}/></Lab>}
       </div>
       <div style={{display:"flex",flexWrap:"wrap",alignItems:"center",gap:"4px 12px"}}>
-        <label style={{display:"inline-flex",alignItems:"center",gap:5,fontSize:FZ.xs,fontWeight:600,color:T.ink500}}>État<StatusSelect value={ns} onChange={setNs} label="État de la nouvelle ligne"/></label>
-        <label style={{display:"inline-flex",alignItems:"center",gap:5,fontSize:FZ.xs,fontWeight:600,color:T.ink500}}>Date<input ref={dateRef} type="date" value={nd||""} onChange={e=>setNd(e.target.value)} onKeyDown={enter} aria-label="Échéance de la nouvelle ligne" style={{...FIELD,colorScheme:T.mode==="dark"?"dark":"light",width:128,border:"1px solid "+(a.trim()&&!nd?T.red500:T.line)}}/></label>
+        <label style={{display:"inline-flex",alignItems:"center",gap:5,fontSize:FZ.xs,fontWeight:500,color:T.ink500}}>État<StatusSelect value={ns} onChange={setNs} label="État de la nouvelle ligne"/></label>
+        <label style={{display:"inline-flex",alignItems:"center",gap:5,fontSize:FZ.xs,fontWeight:500,color:T.ink500}}>Date<input ref={dateRef} type="date" value={nd||""} onChange={e=>setNd(e.target.value)} onKeyDown={enter} aria-label="Échéance de la nouvelle ligne" style={{...FIELD,colorScheme:T.mode==="dark"?"dark":"light",width:128,border:"1px solid "+(a.trim()&&!nd?T.red500:T.line)}}/></label>
         <span style={{fontSize:FZ.xs,color:T.ink500}}>Entrée pour ajouter</span>
         <button onClick={add} disabled={!canAdd} title={!canAdd?(mit?"Renseignez le risque, la mesure et la date":"Renseignez l'action et la date"):undefined} style={{...BTN(canAdd),marginLeft:"auto"}}>Ajouter</button>
       </div>
@@ -532,9 +532,9 @@ function LastChange({entry,pj}){
     {!p?<div style={{fontSize:FZ.sm,color:T.emerald600,fontWeight:600}}>✓ Aucun changement pour ce PJ</div>:p.isNew?<div style={{fontSize:FZ.sm,color:T.amber600,fontWeight:600}}>Nouveau PJ dans cette version.</div>:
     <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
       {Object.entries(p.d||{}).map(([f,c])=>{const dl=c.delta;const col=dl==null?T.amber600:dl>0?T.red500:T.emerald600;const bg=dl==null?T.amber100:dl>0?T.red100:T.emerald100;
-        return(<span key={f} title={short(c.from)+" → "+short(c.to)} style={{background:bg,color:col,borderRadius:8,padding:"4px 8px",fontSize:FZ.xs,fontWeight:600}}>{L[f]} {dl==null?(c.to?"défini":"retiré"):(dl>0?"+":"−")+Math.abs(dl)+" j"} <span style={{fontWeight:500,opacity:.8}}>({short(c.from)} → {short(c.to)})</span></span>);})}
-      {p.hours&&p.hours.at&&<span style={{background:T.card,color:T.ink700,borderRadius:8,padding:"4px 8px",fontSize:FZ.xs,fontWeight:600}}>Heures atelier {p.hours.at.from} → {p.hours.at.to} h</span>}
-      {p.hours&&p.hours.au&&<span style={{background:T.card,color:T.ink700,borderRadius:8,padding:"4px 8px",fontSize:FZ.xs,fontWeight:600}}>Heures autom {p.hours.au.from} → {p.hours.au.to} h</span>}
+        return(<span key={f} title={short(c.from)+" → "+short(c.to)} style={{background:bg,color:col,borderRadius:8,padding:"4px 8px",fontSize:FZ.xs,fontWeight:500}}>{L[f]} {dl==null?(c.to?"défini":"retiré"):(dl>0?"+":"−")+Math.abs(dl)+" j"} <span style={{fontWeight:500,opacity:.8}}>({short(c.from)} → {short(c.to)})</span></span>);})}
+      {p.hours&&p.hours.at&&<span style={{background:T.card,color:T.ink700,borderRadius:8,padding:"4px 8px",fontSize:FZ.xs,fontWeight:500}}>Heures atelier {p.hours.at.from} → {p.hours.at.to} h</span>}
+      {p.hours&&p.hours.au&&<span style={{background:T.card,color:T.ink700,borderRadius:8,padding:"4px 8px",fontSize:FZ.xs,fontWeight:500}}>Heures autom {p.hours.au.from} → {p.hours.au.to} h</span>}
     </div>}
   </Section>);
 }
@@ -547,7 +547,7 @@ const CHK = {width:20,height:20, get accentColor() { return T.teal500; },cursor:
 const STEP_COLOR={get des(){return T.amber500;},get cmd(){return T.info500;},get inst(){return T.emerald500;}};
 const stepColor=f=>STEP_COLOR[f]||T.teal500;
 const CHECK_SVG="url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-7' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\")";
-const stepBox=(f,on,size=20)=>({appearance:"none",WebkitAppearance:"none",width:size,height:size,margin:2,borderRadius:4,cursor:"pointer",boxSizing:"border-box",border:"2px solid "+stepColor(f),background:on?stepColor(f):"transparent",backgroundImage:on?CHECK_SVG:"none",backgroundSize:"85%",backgroundRepeat:"no-repeat",backgroundPosition:"center",transition:"background .12s ease"});
+const stepBox=(f,on,size=20)=>({appearance:"none",WebkitAppearance:"none",width:size,height:size,margin:2,borderRadius:4,cursor:"pointer",boxSizing:"border-box",border:"2px solid "+stepColor(f),background:on?stepColor(f):"transparent",backgroundImage:on?CHECK_SVG:"none",backgroundSize:"85%",backgroundRepeat:"no-repeat",backgroundPosition:"center",transition:"background var(--e-dur-micro) ease"});
 function ComposantsSection({meta,onSave,catalog,setCatalog,pjsToComplete,onApplyAll}){
   const list=composantsOf(meta);const pct=compPct(meta);const [nl,setNl]=useState("");const [catOpen,setCatOpen]=useState(false);const [adding,setAdding]=useState(false); // v277 : champ d'ajout replié
   const missing=(catalog||[]).filter(c=>!list.some(x=>x.label.toLowerCase()===c.toLowerCase())); // composants de la liste générale absents de cette fiche
@@ -563,24 +563,24 @@ function ComposantsSection({meta,onSave,catalog,setCatalog,pjsToComplete,onApply
     <div style={{border:"1px solid "+T.line,borderRadius:8,overflow:"hidden"}}>
       <div style={{display:"grid",gridTemplateColumns:GRID,background:T.card,alignItems:"center",padding:"4px 8px",gap:4}}>
         <Cap>Composant</Cap>
-        {COMP_STEPS.map(([f,l])=><button key={f} onClick={()=>colAll(f)} title={"Cocher / décocher toute la colonne « "+l+" »"+(f==="inst"?" — pièce reçue à ENOGIA ou installée sur la machine":"")} style={{fontFamily:T.font,fontSize:12,fontWeight:600,color:T.accentInk,border:"none",background:"transparent",cursor:"pointer",padding:0,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:4}}><span style={{width:7,height:7,borderRadius:4,background:stepColor(f)}}/>{l}</button>)}
+        {COMP_STEPS.map(([f,l])=><button key={f} onClick={()=>colAll(f)} title={"Cocher / décocher toute la colonne « "+l+" »"+(f==="inst"?" — pièce reçue à ENOGIA ou installée sur la machine":"")} style={{fontFamily:T.font,fontSize:12,fontWeight:500,color:T.accentInk,border:"none",background:"transparent",cursor:"pointer",padding:0,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:4}}><span style={{width:7,height:7,borderRadius:4,background:stepColor(f)}}/>{l}</button>)}
         <span/>
       </div>
       {list.map(c=>{const all=COMP_STEPS.every(([f])=>c[f]);return(<div key={c.id} style={{display:"grid",gridTemplateColumns:GRID,alignItems:"center",padding:"1px 8px",minHeight:30,gap:4,borderTop:"1px solid "+T.line,background:all?T.emerald100:"transparent"}}>
-        <input defaultValue={c.label} key={c.id+c.label} title="Renommer ce composant (administrateurs)" aria-label={"Nom du composant : "+c.label} onBlur={e=>{const t=e.target.value.trim();if(t&&t!==c.label)save(list.map(x=>x.id===c.id?{...x,label:t}:x));else if(!t)e.target.value=c.label;}} onKeyDown={e=>{if(e.key==="Enter")e.target.blur();}} style={{...FIELD,fontSize:FZ.xs,fontWeight:600,color:T.ink900,background:"transparent",border:"1px solid transparent",padding:"1px 4px",minWidth:0,width:"100%",textOverflow:"ellipsis"}}/>
+        <input defaultValue={c.label} key={c.id+c.label} title="Renommer ce composant (administrateurs)" aria-label={"Nom du composant : "+c.label} onBlur={e=>{const t=e.target.value.trim();if(t&&t!==c.label)save(list.map(x=>x.id===c.id?{...x,label:t}:x));else if(!t)e.target.value=c.label;}} onKeyDown={e=>{if(e.key==="Enter")e.target.blur();}} style={{...FIELD,fontSize:FZ.xs,fontWeight:500,color:T.ink900,background:"transparent",border:"1px solid transparent",padding:"1px 4px",minWidth:0,width:"100%",textOverflow:"ellipsis"}}/>
         {COMP_STEPS.map(([f,l])=><span key={f} style={{textAlign:"center"}}><input type="checkbox" checked={!!c[f]} onChange={()=>toggle(c.id,f)} style={stepBox(f,!!c[f])} aria-label={c.label+" "+l}/></span>)}
         <TrashBtn title="Retirer ce composant" onClick={async()=>{if(await askConfirm({title:"Retirer ce composant ?",message:"« "+c.label+" » et ses cases cochées disparaissent de la fiche.",confirmLabel:"Retirer le composant",danger:true}))save(list.filter(x=>x.id!==c.id));}}/>
       </div>);})}
       {list.length===0&&<EmptyState compact icon="inbox" title="Aucun composant" hint="Ajoutez-en un ci-dessous."/>}
     </div>
-    {!adding?<button type="button" onClick={()=>setAdding(true)} style={{marginTop:6,border:"none",background:"transparent",padding:"2px 0",minHeight:24,color:T.ink700,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font}}>＋ Ajouter un composant</button>:
+    {!adding?<button type="button" onClick={()=>setAdding(true)} style={{marginTop:6,border:"none",background:"transparent",padding:"2px 0",minHeight:24,color:T.ink700,fontSize:FZ.xs,fontWeight:500,cursor:"pointer",fontFamily:T.font}}>＋ Ajouter un composant</button>:
     <div style={{display:"flex",gap:6,marginTop:6}}>
       <input autoFocus={AF} value={nl} onChange={e=>setNl(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")add();else if(e.key==="Escape"){setNl("");setAdding(false);}}} placeholder="＋ Ajouter un composant (ex. Vanne, Bac à huile…) — nom modifiable, ✕ pour retirer" style={{...FIELD,flex:1,padding:"3px 8px"}}/>
       <button onClick={add} disabled={!nl.trim()} style={BTN(!!nl.trim())}>Ajouter</button>
     </div>}
     {(missing.length>0||setCatalog)&&<div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",marginTop:6}}>
-      {missing.length>0&&<span style={{fontSize:FZ.xs,fontWeight:600,color:T.ink500}}>De la liste :</span>}
-      {missing.map(c=><button key={c} type="button" onClick={()=>save([...list,{id:"c"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),label:c,des:false,cmd:false,inst:false}])} style={{border:"1px dashed "+T.teal500,background:T.teal100,color:T.teal600,borderRadius:999,padding:"1px 9px",fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font}}>＋ {c}</button>)}
+      {missing.length>0&&<span style={{fontSize:FZ.xs,fontWeight:500,color:T.ink500}}>De la liste :</span>}
+      {missing.map(c=><button key={c} type="button" onClick={()=>save([...list,{id:"c"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),label:c,des:false,cmd:false,inst:false}])} style={{border:"1px dashed "+T.teal500,background:T.teal100,color:T.teal600,borderRadius:999,padding:"1px 9px",fontSize:FZ.xs,fontWeight:500,cursor:"pointer",fontFamily:T.font}}>＋ {c}</button>)}
       {setCatalog&&<button className="e-btn e-btn-sec" type="button" onClick={()=>setCatOpen(true)} style={{...btn("sec","sm"),marginLeft:"auto"}}>Gérer la liste des composants</button>}
     </div>}
     {catOpen&&<CompCatalogDialog catalog={catalog} setCatalog={setCatalog} nPj={pjsToComplete?pjsToComplete.total:0} missingCount={pjsToComplete?pjsToComplete.missing:0} onApplyAll={onApplyAll} onClose={()=>setCatOpen(false)}/>}
@@ -607,12 +607,12 @@ function PaiementsLinked({items,onOpenCash,pj,onLinks}){
   return(<Section title="Jalons de paiement" right={<span style={{fontSize:FZ.xs,color:T.ink300,whiteSpace:"nowrap"}}>Source : Cash in{cs&&!cs.allEpc?" · "+live.filter(p=>p.done).length+"/"+live.length+" payés · "+pct+"% · "+fmtEur(cs.paid)+" sur "+fmtEur(cs.total):""}</span>}>
     {live.length>0&&<div style={{marginBottom:6}}><ProgressBar value={pct||0} height={5}/></div>}
     {groups.map(g=>(<div key={g.k} style={{marginBottom:4}}>
-      {(groups.length>1||g.l.some(x=>x.split>1))&&<div style={{fontSize:FZ.xs,fontWeight:600,color:T.ink500,margin:"4px 0 3px"}}>{g.k}{g.label?" · "+g.label:""}{g.l.some(x=>x.split>1)?" · jalons répartis sur "+g.l.find(x=>x.split>1).split+" PJ (÷ "+g.l.find(x=>x.split>1).split+")":""}</div>}
+      {(groups.length>1||g.l.some(x=>x.split>1))&&<div style={{fontSize:FZ.xs,fontWeight:500,color:T.ink500,margin:"4px 0 3px"}}>{g.k}{g.label?" · "+g.label:""}{g.l.some(x=>x.split>1)?" · jalons répartis sur "+g.l.find(x=>x.split>1).split+" PJ (÷ "+g.l.find(x=>x.split>1).split+")":""}</div>}
       {g.l.filter(p=>showPaid||!p.done).map(p=>{const c=SS[p.epc?"epc":p.tone]||SS.future,ch=chip(p);
         return(<div key={p.id} style={{padding:"5px 8px",borderRadius:8,background:c.bg,border:"1px solid "+c.ring,color:c.ink,marginBottom:3,opacity:p.epc?.75:1}}>
           <div style={{display:"flex",alignItems:"baseline",gap:8}}>
             <span style={{flex:1,minWidth:0,fontWeight:600,fontSize:FZ.sm,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} title={p.label}>{p.label}</span>
-            <span style={{fontSize:FZ.xs,fontWeight:600,whiteSpace:"nowrap"}}>{p.pct!=null?p.pct+" % · ":""}{fmtEur(p.montant)}</span>
+            <span style={{fontSize:FZ.xs,fontWeight:500,whiteSpace:"nowrap"}}>{p.pct!=null?p.pct+" % · ":""}{fmtEur(p.montant)}</span>
           </div>
           <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap",fontSize:FZ.xs,marginTop:1}}>
             <span style={{fontWeight:600}}>{p.epc?"EPC":STATUS_LABEL[p.tone]||STATUS_LABEL[p.k]}{ch?" · "+ch:""}</span>
@@ -622,7 +622,7 @@ function PaiementsLinked({items,onOpenCash,pj,onLinks}){
           </div>
         </div>);})}
     </div>))}
-    {nPaid>0&&<button type="button" onClick={()=>setShowPaid(v=>!v)} aria-expanded={showPaid} style={{border:"none",background:"transparent",padding:"2px 0",minHeight:24,color:T.ink700,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font,textDecoration:"underline",textUnderlineOffset:2}}>{showPaid?"Masquer les "+nPaid+" jalons payés":nPaid+" jalon"+(nPaid>1?"s":"")+" payé"+(nPaid>1?"s":"")+" — afficher"}</button>}
+    {nPaid>0&&<button type="button" onClick={()=>setShowPaid(v=>!v)} aria-expanded={showPaid} style={{border:"none",background:"transparent",padding:"2px 0",minHeight:24,color:T.ink700,fontSize:FZ.xs,fontWeight:500,cursor:"pointer",fontFamily:T.font,textDecoration:"underline",textUnderlineOffset:2}}>{showPaid?"Masquer les "+nPaid+" jalons payés":nPaid+" jalon"+(nPaid>1?"s":"")+" payé"+(nPaid>1?"s":"")+" — afficher"}</button>}
     <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginTop:4}}>
       {onOpenCash&&<button onClick={()=>onOpenCash(pj)} style={BTN(true)}>Ouvrir dans Cash in</button>}
       {onLinks&&<button onClick={onLinks} style={{...BTN(false),border:"1px solid "+T.line,background:T.card,color:T.ink900}}>Modifier la liaison</button>}
@@ -656,7 +656,7 @@ function PaiementsManual({meta,onSave,extra}){
       <input type="checkbox" checked={!!p.done} onChange={()=>patch(p.id,{done:!p.done,doneAt:!p.done?new Date().toISOString():null})} style={{...CHK,accentColor:T.emerald500}} aria-label={"Jalon payé : "+p.label}/>
       <input defaultValue={p.label} key={p.id+p.label} onBlur={e=>{const t=e.target.value.trim();if(t&&t!==p.label)patch(p.id,{label:t});}} style={{...FIELD,flex:1,fontWeight:600,background:"transparent",border:"1px solid transparent"}}/>
       <span style={{display:"inline-flex",alignItems:"center",gap:3}}><input type="number" min="0" max="100" defaultValue={p.pct==null?"":p.pct} key={p.id+"p"+p.pct} onBlur={e=>{const v=e.target.value===""?null:Number(e.target.value);if(v!==p.pct)patch(p.id,{pct:v});}} placeholder="%" style={{...FIELD,width:50,boxSizing:"border-box",textAlign:"right"}}/><span style={{fontSize:FZ.xs,color:T.ink300}}>%</span></span>
-      <span style={{fontSize:FZ.xs,color:p.done?T.emerald600:T.ink300,width:86,textAlign:"right",whiteSpace:"nowrap",fontWeight:mt&&p.pct?600:400}}>{mt&&p.pct?fmtEur(mt*Number(p.pct)/100):(p.done&&p.doneAt?fmt(new Date(p.doneAt)):"")}</span>
+      <span style={{fontSize:FZ.xs,color:p.done?T.emerald600:T.ink300,width:86,textAlign:"right",whiteSpace:"nowrap",fontWeight:mt&&p.pct?500:400}}>{mt&&p.pct?fmtEur(mt*Number(p.pct)/100):(p.done&&p.doneAt?fmt(new Date(p.doneAt)):"")}</span>
       <TrashBtn title="Supprimer ce jalon" onClick={async()=>{if(await askConfirm({title:"Supprimer ce jalon ?",message:"« "+(p.label||"Jalon")+" » disparaît des jalons de paiement.",confirmLabel:"Supprimer le jalon",danger:true}))save(items.filter(x=>x.id!==p.id));}}/>
     </div>))}
     {tot>0&&Math.round(tot)!==100&&<div style={{fontSize:FZ.xs,color:T.amber600,marginBottom:4}}>Somme des jalons : {tot} % (le total attendu est 100 %).</div>}
@@ -684,7 +684,7 @@ function GlobalTile({gp,onSave}){
     <div style={{minWidth:0}}>
       {onSave?<span style={{display:"inline-flex",alignItems:"center",gap:3}}>
         <input type="number" min={0} max={100} step={5} value={v} placeholder="—" onChange={e=>setV(e.target.value)} onBlur={commit} onKeyDown={e=>{if(e.key==="Enter")e.currentTarget.blur();}} aria-label="Avancement global (%)" style={{width:58,padding:"3px 6px",borderRadius:8,border:"1.5px solid "+(gp.set?T.teal500:T.line),background:T.card,color:T.ink900,fontSize:FZ.sm,fontWeight:600,fontFamily:T.font,textAlign:"right"}}/>
-        <span style={{fontSize:FZ.xs,color:T.ink500,fontWeight:600}}>%</span>
+        <span style={{fontSize:FZ.xs,color:T.ink500,fontWeight:500}}>%</span>
       </span>:null}
       <div style={{fontSize:FZ.xs,color:T.ink300,marginTop:3,lineHeight:1.3}}>{gp.set?"signature → mise en service":"à saisir : signature → MES"}</div>
     </div>
@@ -711,7 +711,7 @@ function ProjectSummary({rows,pvOf,comments,delays,onPick}){
   const msgs=rows.flatMap(x=>((comments&&comments[x.pj])||[]).filter(c=>!c.private).map(c=>({...c,pj:x.pj}))).sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,3);
   const kpi=(l,v,sub,tone)=>(<div style={{minWidth:0}}>
     <div style={{fontSize:12,color:T.ink500}}>{l}</div>
-    <div style={{fontFamily:T.fontDisplay,fontSize:26,fontWeight:500,lineHeight:1.1,color:tone||T.ink900,fontVariantNumeric:"tabular-nums"}}>{v}</div>
+    <div style={{fontFamily:T.fontDisplay,fontSize:28,fontWeight:500,lineHeight:1.1,color:tone||T.ink900,fontVariantNumeric:"tabular-nums"}}>{v}</div>
     {sub&&<div style={{fontSize:FZ.xs,color:T.ink500}}>{sub}</div>}
   </div>);
   return(<section aria-label="Résumé du projet" style={{border:"1px solid "+T.line,borderRadius:12,padding:"12px 14px",marginBottom:12,background:T.card}}>
@@ -773,14 +773,14 @@ function ChefOverview({name,rows,pvOf,onPick,onClose,summary}){
     <div className="enogia-stagger" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(210px,1fr))",gap:10}}>
       {sorted.map(x=>{const m=getPjMeta(x.pj,x),ec=ETAT_META[x.etat]||ETAT_META["NOT ORDERED"],pv=pvOf(x),nx=nextOf(x),edge=x.etat!=="SHIPPED"&&x.drift>10?T.red500:ec.bar;return(
         <div key={x.pj} {...pressable(()=>onPick(x.pj),{"aria-label":"Ouvrir la fiche "+x.pj})} className="enogia-test-card" style={{background:T.card,border:"1px solid "+T.line,borderTop:"4px solid "+edge,borderRadius:"0 0 12px 12px",padding:"10px 12px",cursor:"pointer",minWidth:0}}>
-          <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}><PjPlate pj={x.pj}/><EpcTag meta={m} short/>{x.gamme&&<span style={{fontFamily:T.fontLabel,fontSize:12,fontWeight:600,color:T.ink700}}>{x.gamme}</span>}<span style={{marginLeft:"auto"}}><CountryFlag pays={m.pays} size={13}/></span></div>
+          <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}><PjPlate pj={x.pj}/><EpcTag meta={m} short/>{x.gamme&&<span style={{fontFamily:T.fontLabel,fontSize:12,fontWeight:500,color:T.ink700}}>{x.gamme}</span>}<span style={{marginLeft:"auto"}}><CountryFlag pays={m.pays} size={13}/></span></div>
           <div title={m.nomProjet||""} style={{margin:"6px 0 2px",fontSize:FZ.sm,fontWeight:600,color:T.ink900,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{m.nomProjet&&m.nomProjet!=="—"?m.nomProjet:"—"}</div>
           <div style={{display:"flex",alignItems:"center",gap:6,fontSize:FZ.xs,color:T.ink500,flexWrap:"wrap"}}>
             <span style={{color:etatInk(x.etat),fontWeight:600}}>{ec.label}</span>
             {x.etat!=="SHIPPED"&&x.drift>0&&<span style={{fontFamily:T.fontLabel,fontWeight:600,color:x.drift>10?T.red600:T.amber600}}>+{x.drift} j</span>}
             <span style={{marginLeft:"auto",fontVariantNumeric:"tabular-nums"}}>{nx?nx[0]+" "+fmt(nx[1]):x.depart?"Départ "+fmt(new Date(x.depart)):""}</span>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:8,marginTop:6}}><div style={{flex:1}}><ProgressBar value={pv} height={4} color={ec.bar}/></div><span style={{fontSize:FZ.xs,fontWeight:600,color:etatInk(x.etat),fontVariantNumeric:"tabular-nums"}}>{pv}%</span></div>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginTop:6}}><div style={{flex:1}}><ProgressBar value={pv} height={4} color={ec.bar}/></div><span style={{fontSize:FZ.xs,fontWeight:500,color:etatInk(x.etat),fontVariantNumeric:"tabular-nums"}}>{pv}%</span></div>
         </div>);})}
     </div>
   </div>);
@@ -795,12 +795,12 @@ function FicheTabs({r,zones,zone,setZone,saved,worst,onUndo}){
   return(<div ref={ref} className="enogia-fiche-tabs" style={{position:"sticky",top:0,zIndex:9,margin:"0 -16px",padding:"0 16px",display:"flex",alignItems:"center",gap:16,boxShadow:"0 1px 0 "+T.line,"--fiche-bg":T.card}}>
     <span style={{fontFamily:T.fontMono,fontWeight:600,fontSize:FZ.sm,color:T.ink900,whiteSpace:"nowrap"}}>{r.pj}</span>
     <div role="tablist" aria-label="Vues de la fiche" style={{display:"flex",gap:16,overflowX:"auto",minWidth:0}}>
-      {zones.map(([id,l])=><button key={id} type="button" role="tab" aria-selected={zone===id} onClick={()=>go(id)} style={{border:"none",background:"transparent",padding:"10px 0",minHeight:40,cursor:"pointer",fontFamily:T.font,fontSize:FZ.sm,fontWeight:zone===id?600:500,color:zone===id?T.ink900:T.ink500,borderBottom:"2px solid "+(zone===id?T.ink900:"transparent"),whiteSpace:"nowrap",transition:"color 120ms, border-color 120ms"}}>{l}</button>)}
+      {zones.map(([id,l])=><button key={id} type="button" role="tab" aria-selected={zone===id} onClick={()=>go(id)} style={{border:"none",background:"transparent",padding:"10px 0",minHeight:40,cursor:"pointer",fontFamily:T.font,fontSize:FZ.sm,fontWeight:zone===id?600:500,color:zone===id?T.ink900:T.ink500,borderBottom:"2px solid "+(zone===id?T.ink900:"transparent"),whiteSpace:"nowrap",transition:"color var(--e-dur-micro), border-color var(--e-dur-micro)"}}>{l}</button>)}
     </div>
     <span style={{flex:1}}/>
-    {saved&&<span role="status" className="enogia-bell-peek" style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:FZ.xs,fontWeight:600,color:saved.ok?T.emerald600:T.red600,whiteSpace:"nowrap"}}>{!saved.ok?"Échec de l’enregistrement, réessayez":saved.undone?"↶ Modification annulée":"✓ Enregistré"}
+    {saved&&<span role="status" className="enogia-bell-peek" style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:FZ.xs,fontWeight:500,color:saved.ok?T.emerald600:T.red600,whiteSpace:"nowrap"}}>{!saved.ok?"Échec de l’enregistrement, réessayez":saved.undone?"↶ Modification annulée":"✓ Enregistré"}
       {saved.ok&&saved.undo&&onUndo&&<button type="button" onClick={onUndo} className="e-btn e-btn-sec" style={{...btn("sec","sm"),minHeight:26}}>Annuler</button>}</span>}
-    {worst&&<span style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:FZ.xs,fontWeight:600,color:feuText(worst),whiteSpace:"nowrap"}}><span style={{width:8,height:8,borderRadius:"50%",background:feuColor(worst)}}/>{feuLabel(worst)}</span>}
+    {worst&&<span style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:FZ.xs,fontWeight:500,color:feuText(worst),whiteSpace:"nowrap"}}><span style={{width:8,height:8,borderRadius:"50%",background:feuColor(worst)}}/>{feuLabel(worst)}</span>}
   </div>);
 }
 export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,managerEmails,currentUserEmail,resolveComment,certifs,setCertifs,openPj,openNonce,lastChange,data,initialData,comments,delays,progress,savePjMetaOverride:saveMetaRaw,savePjMetaMulti,addCommentMulti,addComment,deleteComment,addDelayAllocationMulti,deleteDelayAllocation,delayTypes,setDelayTypes,changeLog,authorName,onOpenCash}){
@@ -966,27 +966,27 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
     {cdpOpen&&<CdpDialog certifs={certifs} data={data} initialData={initialData} delays={delays} comments={comments} progress={progress} changeLog={changeLog} initialChef={meta&&meta.chefProjet&&meta.chefProjet!=="—"?meta.chefProjet:undefined} onClose={()=>setCdpOpen(false)}/>}
     {codirOpen&&isSuperAdmin()&&<CodirDialog data={data} initialData={initialData} comments={comments} delays={delays} progress={progress} initialPj={r&&r.pj} onClose={()=>setCodirOpen(false)}/>}
     {/* ── Liste : avancement, état et compteurs visibles sans ouvrir la fiche ── */}
-    <div className="enogia-mlist" aria-hidden={focus?"true":undefined} style={{...CARD,width:focus?0:listMini?44:listW,opacity:focus?0:1,pointerEvents:focus?"none":"auto",visibility:focus?"hidden":"visible",padding:focus?0:CARD.padding,borderWidth:focus?0:undefined,marginRight:focus?-12:0,transition:"opacity .22s ease, visibility 0s linear "+(focus?".22s":"0s"),flexShrink:0,maxHeight:"calc(100dvh - 200px)",minHeight:300,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+    <div className="enogia-mlist" aria-hidden={focus?"true":undefined} style={{...CARD,width:focus?0:listMini?44:listW,opacity:focus?0:1,pointerEvents:focus?"none":"auto",visibility:focus?"hidden":"visible",padding:focus?0:CARD.padding,borderWidth:focus?0:undefined,marginRight:focus?-12:0,transition:"opacity var(--e-dur-in) ease, visibility var(--e-dur-micro) linear "+(focus?".22s":"0s"),flexShrink:0,maxHeight:"calc(100dvh - 200px)",minHeight:300,display:"flex",flexDirection:"column",overflow:"hidden"}}>
       <div style={{padding:8,borderBottom:"1px solid "+T.line}}>
         <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:listMini?0:6,justifyContent:listMini?"center":"flex-end"}}>
-          {!listMini&&<span style={{fontFamily:T.font,fontSize:12,fontWeight:600,color:T.accentInk,marginRight:"auto"}}>Projets</span>}
-          {listMini&&<button type="button" onClick={()=>setListMini(false)} aria-label="Ouvrir la liste des projets" title="Ouvrir la liste des projets" style={{border:"none",background:"transparent",color:T.ink700,cursor:"pointer",writingMode:"vertical-rl",transform:"rotate(180deg)",fontFamily:T.font,fontSize:FZ.xs,fontWeight:600,padding:"10px 0",minHeight:120,letterSpacing:".04em"}}>Projets · {filteredList.length}</button>}
+          {!listMini&&<span style={{fontFamily:T.font,fontSize:12,fontWeight:500,color:T.accentInk,marginRight:"auto"}}>Projets</span>}
+          {listMini&&<button type="button" onClick={()=>setListMini(false)} aria-label="Ouvrir la liste des projets" title="Ouvrir la liste des projets" style={{border:"none",background:"transparent",color:T.ink700,cursor:"pointer",writingMode:"vertical-rl",transform:"rotate(180deg)",fontFamily:T.font,fontSize:FZ.xs,fontWeight:500,padding:"10px 0",minHeight:120,letterSpacing:".04em"}}>Projets · {filteredList.length}</button>}
           <button type="button" onClick={()=>setListMini(v=>!v)} aria-label={listMini?"Agrandir la liste":"Réduire la liste"} title={listMini?"Agrandir la liste":"Réduire la liste pour laisser plus de place à la fiche"} style={{border:"1px solid "+T.line,background:"transparent",color:T.ink500,borderRadius:8,width:28,height:28,cursor:"pointer",display:"inline-flex",alignItems:"center",justifyContent:"center",padding:0}}><span style={{display:"inline-flex",transform:"rotate("+(listMini?"-90deg":"90deg")+")"}}><NavIcon name="chevronDown" size={15}/></span></button>
         </div>
         {!listMini&&<input type="text" value={search} onChange={e=>setSearch(e.target.value)} aria-label="Rechercher un projet" placeholder="Rechercher un PJ, projet, pays, chef, gamme…" style={{width:"100%",padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.xs,fontFamily:T.font,color:T.ink700,boxSizing:"border-box"}}/>}
         {!listMini&&<div style={{fontSize:FZ.xs,color:T.ink300,marginTop:4,display:"flex",alignItems:"center",justifyContent:"space-between",gap:6}}><span>{filteredList.length} PJ</span><span style={{display:"inline-flex",gap:10}}><label style={{display:"inline-flex",alignItems:"center",gap:4,cursor:"pointer"}}><input type="checkbox" checked={showShipped} onChange={e=>setShowShipped(e.target.checked)}/>Expédiées</label><label style={{display:"inline-flex",alignItems:"center",gap:4,cursor:"pointer"}}><input type="checkbox" checked={showSlots} onChange={e=>setShowSlots(e.target.checked)}/>Slots libres</label></span></div>}
         {!listMini&&<div role="tablist" aria-label="Regrouper la liste" style={{display:"flex",gap:2,marginTop:6,background:T.surface,borderRadius:8,padding:2}}>
-          {[["chef","Par chef"],["all","Tous"],["mine","Mes PJ"]].map(([id,l])=><button key={id} type="button" role="tab" aria-selected={groupBy===id} onClick={()=>setGroupBy(id)} style={{flex:1,border:"none",borderRadius:8,minHeight:26,fontSize:FZ.xs,fontWeight:600,fontFamily:T.font,cursor:"pointer",background:groupBy===id?T.card:"transparent",color:groupBy===id?T.teal600:T.ink500,boxShadow:groupBy===id?T.shadowSm:"none"}}>{l}{id==="mine"&&myPjs.size?" "+myPjs.size:""}</button>)}
+          {[["chef","Par chef"],["all","Tous"],["mine","Mes PJ"]].map(([id,l])=><button key={id} type="button" role="tab" aria-selected={groupBy===id} onClick={()=>setGroupBy(id)} style={{flex:1,border:"none",borderRadius:8,minHeight:26,fontSize:FZ.xs,fontWeight:500,fontFamily:T.font,cursor:"pointer",background:groupBy===id?T.card:"transparent",color:groupBy===id?T.teal600:T.ink500,boxShadow:groupBy===id?T.shadowSm:"none"}}>{l}{id==="mine"&&myPjs.size?" "+myPjs.size:""}</button>)}
         </div>}
       </div>
       <div style={{overflowY:"auto",overflowX:"hidden",flex:1}}>
         {groups.map(g=>(<React.Fragment key={g.key}>
         {g.head&&!listMini&&(
           <div style={{display:"flex",alignItems:"center",gap:4,padding:"4px 6px",background:chefView===g.head?T.teal100:T.surface,borderBottom:"1px solid "+T.line,position:"sticky",top:0,zIndex:1}}>
-            <button type="button" onClick={()=>toggleFold(g.key)} aria-expanded={!folded.has(g.key)} aria-label={(folded.has(g.key)?"Déplier ":"Replier ")+g.head} style={{border:"none",background:"transparent",cursor:"pointer",color:T.ink500,minWidth:24,minHeight:24,display:"inline-flex",alignItems:"center",justifyContent:"center",padding:0}}><span style={{display:"inline-flex",transform:folded.has(g.key)?"rotate(-90deg)":"none",transition:"transform .15s ease"}}><NavIcon name="chevronDown" size={13}/></span></button>
+            <button type="button" onClick={()=>toggleFold(g.key)} aria-expanded={!folded.has(g.key)} aria-label={(folded.has(g.key)?"Déplier ":"Replier ")+g.head} style={{border:"none",background:"transparent",cursor:"pointer",color:T.ink500,minWidth:24,minHeight:24,display:"inline-flex",alignItems:"center",justifyContent:"center",padding:0}}><span style={{display:"inline-flex",transform:folded.has(g.key)?"rotate(-90deg)":"none",transition:"transform var(--e-dur-menu) ease"}}><NavIcon name="chevronDown" size={13}/></span></button>
             <button type="button" onClick={()=>setChefView(g.head)} title={"Voir tous les projets de "+g.head} style={{flex:1,minWidth:0,border:"none",background:"transparent",cursor:"pointer",textAlign:"left",padding:"2px 0",fontFamily:T.font,fontSize:FZ.sm,fontWeight:600,color:T.ink900,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{g.head}</button>
-            {g.late>0&&<span title="En retard sur l'initial" style={{fontFamily:T.fontLabel,fontSize: 12,fontWeight:600,color:T.red600,background:T.red100,borderRadius:999,padding:"0 6px"}}>{g.late} en retard</span>}
-            <span style={{fontSize:FZ.xs,fontWeight:600,color:T.ink500,fontVariantNumeric:"tabular-nums"}}>{g.rows.length}</span>
+            {g.late>0&&<span title="En retard sur l'initial" style={{fontFamily:T.fontLabel,fontSize: 12,fontWeight:500,color:T.red600,background:T.red100,borderRadius:999,padding:"0 6px"}}>{g.late} en retard</span>}
+            <span style={{fontSize:FZ.xs,fontWeight:500,color:T.ink500,fontVariantNumeric:"tabular-nums"}}>{g.rows.length}</span>
           </div>)}
         {(!g.head||!folded.has(g.key))&&(()=>{const rowEl=(row,sub)=>{
           const m=getPjMeta(row.pj,row);
@@ -1012,7 +1012,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
             <div style={{display:"flex",alignItems:"center",gap:6,marginTop:2,minWidth:0}}><SerieTag pj={row.pj} size={12}/><EpcTag meta={m} short/><span style={{fontSize:FZ.xs,color:T.ink500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",minWidth:0,flex:1}}>{m.nomProjet}</span></div>
             <div style={{display:"flex",alignItems:"center",gap:8,marginTop:3}}>
               <div style={{flex:1}}><ProgressBar value={pv} height={3} color={ec.bar}/></div>
-              <span style={{fontSize:FZ.xs,fontWeight:600,color:T.ink700,width:30,textAlign:"right"}}>{pv}%</span>
+              <span style={{fontSize:FZ.xs,fontWeight:500,color:T.ink700,width:30,textAlign:"right"}}>{pv}%</span>
               <span style={{fontSize:FZ.xs,color:T.ink300}}>{row.depart?fmt(new Date(row.depart)):"—"}</span>
             </div>
           </div>);
@@ -1028,13 +1028,13 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
                 <button type="button" onClick={()=>{setChefView(null);setClusterView({key:g.key+cl.base,label:cl.base+(m0.nomProjet?" · "+m0.nomProjet:"")+" ("+cl.rows.length+" machines)",rows:cl.rows});}} title={"Synthèse commune des "+cl.rows.length+" machines de "+cl.base} style={{flex:1,minWidth:0,border:"none",background:"transparent",cursor:"pointer",textAlign:"left",padding:"2px 0",fontFamily:T.font,display:"flex",alignItems:"center",gap:8}}>
                   <span style={{fontFamily:T.fontMono,fontWeight:600,fontSize:FZ.sm,color:T.ink900}}>{cl.base}</span>
                   <span style={{fontSize:FZ.xs,color:T.ink500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",minWidth:0}}>{m0.nomProjet||""}</span>
-                  <span style={{marginLeft:"auto",fontSize:FZ.xs,fontWeight:600,color:T.ink700,background:T.surfaceAlt,borderRadius:999,padding:"0 8px",whiteSpace:"nowrap"}}>{cl.rows.length} machines · {pvAvg}%</span>
+                  <span style={{marginLeft:"auto",fontSize:FZ.xs,fontWeight:500,color:T.ink700,background:T.surfaceAlt,borderRadius:999,padding:"0 8px",whiteSpace:"nowrap"}}>{cl.rows.length} machines · {pvAvg}%</span>
                 </button>
               </div>
               {open&&cl.rows.map(row=>rowEl(row,true))}
             </React.Fragment>);
           });})()}</React.Fragment>))}
-        {!listMini&&<label style={{display:"flex",alignItems:"center",gap:6,padding:"8px 10px",fontSize:FZ.xs,color:T.ink700,fontWeight:600,cursor:"pointer",borderTop:"1px solid "+T.line}}><input type="checkbox" checked={clusterOn} onChange={e=>setClusterOn(e.target.checked)}/>Regrouper les machines d'un même PJ (PJ461-1, -2…)</label>}
+        {!listMini&&<label style={{display:"flex",alignItems:"center",gap:6,padding:"8px 10px",fontSize:FZ.xs,color:T.ink700,fontWeight:500,cursor:"pointer",borderTop:"1px solid "+T.line}}><input type="checkbox" checked={clusterOn} onChange={e=>setClusterOn(e.target.checked)}/>Regrouper les machines d'un même PJ (PJ461-1, -2…)</label>}
         {filteredList.length===0&&<EmptyNote>Aucun résultat</EmptyNote>}
         {groupBy==="mine"&&filteredList.length>0&&groups[0].rows.length===0&&<EmptyNote>Aucun PJ à votre nom. Associez vos PJ dans Réglages › Personnes et rôles.</EmptyNote>}
       </div>
@@ -1073,7 +1073,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
                 {orcChefsOf(meta).map(c=><span key={c} style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:FZ.xs,fontWeight:400}}><Avatar name={c} size={16}/>{c}</span>)}
                 {epcChefOf(meta)&&<span title="Projet EPC : chef de projet côté EPC" style={{fontSize:FZ.xs,fontWeight:400}}>chef EPC : {epcChefOf(meta)}</span>}
                 <EpcTag meta={meta}/>
-                {isSuperAdmin()&&savePjMetaOverride&&<button type="button" onClick={()=>setChefEdit(v=>!v)} aria-expanded={chefEdit} style={{border:"none",background:"transparent",color:T.teal600,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",minHeight:24,fontFamily:T.font}}>Chefs / EPC</button>}
+                {isSuperAdmin()&&savePjMetaOverride&&<button type="button" onClick={()=>setChefEdit(v=>!v)} aria-expanded={chefEdit} style={{border:"none",background:"transparent",color:T.teal600,fontSize:FZ.xs,fontWeight:500,cursor:"pointer",minHeight:24,fontFamily:T.font}}>Chefs / EPC</button>}
               </div>
               {chefEdit&&<ChefsEpcEditor meta={meta} onSave={f=>savePjMetaOverride(r.pj,f)} onCancel={()=>setChefEdit(false)}/>}
               <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",marginTop:5,fontSize:FZ.xs,color:T.ink500}}>
@@ -1082,7 +1082,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
               </div>
             </div>
             <div style={{display:"inline-flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
-              {worst&&<span style={{display:"inline-flex",alignItems:"center",gap:8,background:feuColor(worst)+"22",color:feuText(worst),borderRadius:999,padding:"4px 12px 4px 8px",fontSize:FZ.xs,fontWeight:600}}><span style={{width:9,height:9,borderRadius:"50%",background:feuColor(worst)}}/>Statut global : {feuLabel(worst)}</span>}
+              {worst&&<span style={{display:"inline-flex",alignItems:"center",gap:8,background:feuColor(worst)+"22",color:feuText(worst),borderRadius:999,padding:"4px 12px 4px 8px",fontSize:FZ.xs,fontWeight:500}}><span style={{width:9,height:9,borderRadius:"50%",background:feuColor(worst)}}/>Statut global : {feuLabel(worst)}</span>}
             </div>
           </div>
         </div>
@@ -1102,7 +1102,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
         {/* ── Légende : les deux types de commentaires (v123 : repliée, un clic sur « ? » l'affiche) ── */}
         {savePjMetaOverride&&<div style={{marginTop:-6}}>
           <button type="button" onClick={()=>setShowLegend(v=>!v)} aria-expanded={showLegend} style={{border:"none",background:"transparent",padding:"4px 0",minHeight:24,cursor:"pointer",color:T.ink500,fontSize:FZ.xs,fontFamily:T.font,display:"inline-flex",alignItems:"center",gap:6}}>
-            <span aria-hidden="true" style={{width:16,height:16,borderRadius:"50%",border:"1.5px solid "+T.ink500,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:FZ.xs,fontWeight:600}}>?</span>{showLegend?"Masquer la légende des commentaires":"Légende des commentaires"}
+            <span aria-hidden="true" style={{width:16,height:16,borderRadius:"50%",border:"1.5px solid "+T.ink500,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:FZ.xs,fontWeight:500}}>?</span>{showLegend?"Masquer la légende des commentaires":"Légende des commentaires"}
           </button>
           {showLegend&&<div style={{display:"flex",gap:16,flexWrap:"wrap",alignItems:"center",fontSize:FZ.xs,color:T.ink500,marginTop:4}}>
             <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span style={{width:14,height:10,borderRadius:4,background:T.accent+"14",border:"1px dashed "+T.accent+"99",borderLeft:"3px solid "+T.accent}}/><b style={{color:T.ink700}}>Commentaire de synthèse</b> : cadres laiton, repris dans le rapport CdP (CODIR : commentaire général seul)</span>
@@ -1154,7 +1154,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
           </Blk>
           {savePjMetaOverride&&<Blk>
         {/* ── Retards ── */}
-            <Section title={"Retards"+(pjDelays.length?" ("+pjDelays.length+")":"")} right={totalDelayDays>0&&<span style={{fontSize:FZ.xs,fontWeight:600,color:T.red500,background:T.red100,borderRadius:8,padding:"2px 8px"}}>{totalDelayDays} j</span>}>
+            <Section title={"Retards"+(pjDelays.length?" ("+pjDelays.length+")":"")} right={totalDelayDays>0&&<span style={{fontSize:FZ.xs,fontWeight:500,color:T.red500,background:T.red100,borderRadius:8,padding:"2px 8px"}}>{totalDelayDays} j</span>}>
             <Section>
               {addDelayAllocationMulti&&<DelayComposer key={r.pj} types={delayTypes} onNewType={setDelayTypes} onAdd={(t,d,n)=>addDelayAllocationMulti([r.pj],t,d,n,authorName)}/>}
               {pjDelays.length===0?<div style={{color:T.ink300,fontSize:FZ.sm}}>Aucune cause de retard enregistrée</div>:<>
@@ -1166,7 +1166,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
                     const others=d.groupPjs?d.groupPjs.filter(p=>p!==r.pj):[];
                     return(<div key={d.id} style={{background:T.card,borderRadius:8,padding:"4px 8px",borderLeft:"3px solid "+T.red500}}>
                       <div style={{display:"flex",justifyContent:"space-between",gap:8,flexWrap:"wrap"}}>
-                        <span style={{fontWeight:600,color:T.ink900,fontSize:FZ.xs,display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>{d.type} — {d.days}j{others.length>0&&<span style={{fontSize:FZ.xs,color:T.violet600,background:T.violet100,borderRadius:4,padding:"1px 8px",fontWeight:600}}>aussi : {others.join(", ")}</span>}</span>
+                        <span style={{fontWeight:500,color:T.ink900,fontSize:FZ.xs,display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>{d.type} — {d.days}j{others.length>0&&<span style={{fontSize:FZ.xs,color:T.violet600,background:T.violet100,borderRadius:4,padding:"1px 8px",fontWeight:500}}>aussi : {others.join(", ")}</span>}</span>
                         <span style={{fontSize:FZ.xs,color:T.ink300,display:"inline-flex",alignItems:"center",gap:4}}>{d.author} · {new Date(d.date).toLocaleDateString("fr-FR")}{deleteDelayAllocation&&<TrashBtn title="Supprimer cette cause de retard" onClick={async()=>{if(await askConfirm({title:"Supprimer cette cause de retard ?",message:d.type+", "+d.days+" j sur "+r.pj+".",confirmLabel:"Supprimer la cause",danger:true}))deleteDelayAllocation(r.pj,d.id);}}/>}</span>
                       </div>
                       {d.note&&<div style={{fontSize:FZ.xs,color:T.ink500,marginTop:2}}>{d.note}</div>}
@@ -1179,7 +1179,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
 
           </Blk>}
           {savePjMetaOverride&&<Blk>
-                    <Section title="Fil de commentaires" right={<span style={{display:"inline-flex",alignItems:"center",gap:8}}><button className="e-btn e-btn-sec" type="button" onClick={toggleThread} aria-expanded={threadOpen} style={{...btn("sec","sm")}}>{threadOpen?"Replier":"Ouvrir"}</button><span style={{fontSize:FZ.xs,color:T.ink500}}>{(showPrivate?pjComments:publicComments).length} message{(showPrivate?pjComments:publicComments).length>1?"s":""}</span>{mentionOpts.length>0&&me&&pjComments.some(c=>mentionsOf(c).includes(me))&&<button onClick={()=>setOnlyMine(v=>!v)} style={{border:"1px solid "+(onlyMine||nMine>0?T.violet500:T.line),background:onlyMine?T.violet100:"transparent",color:onlyMine||nMine>0?T.violet600:T.ink500,borderRadius:8,padding:"2px 8px",fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font}}>@ Pour moi{nMine>0?" ("+nMine+" à traiter)":""}</button>}{nPrivate>0&&<button onClick={()=>setShowPrivate(v=>!v)} aria-pressed={showPrivate} title={showPrivate?"Masquer les commentaires privés":"Afficher les commentaires privés (BU ORC uniquement)"} style={{border:"1px solid "+(showPrivate?T.amber500:T.line),background:showPrivate?T.amber100:"transparent",color:showPrivate?T.amber600:T.ink500,borderRadius:8,padding:"2px 8px",fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font}}>{showPrivate?"Masquer les privés":"Afficher les privés ("+nPrivate+")"}</button>}<span style={{fontSize:FZ.xs,color:T.ink300,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",minWidth:0}}>{threadOpen?"Discussion entre managers, propre à ce projet":((showPrivate?pjComments:publicComments).length?(()=>{const c=publicComments[0]||pjComments[0];const t=(c.private?"(privé) ":"")+c.author+" : "+String(c.text||"").replace(/\s+/g," ");return t.length>90?t.slice(0,89)+"…":t;})():"Aucun message pour l'instant")}</span></span>}>
+                    <Section title="Fil de commentaires" right={<span style={{display:"inline-flex",alignItems:"center",gap:8}}><button className="e-btn e-btn-sec" type="button" onClick={toggleThread} aria-expanded={threadOpen} style={{...btn("sec","sm")}}>{threadOpen?"Replier":"Ouvrir"}</button><span style={{fontSize:FZ.xs,color:T.ink500}}>{(showPrivate?pjComments:publicComments).length} message{(showPrivate?pjComments:publicComments).length>1?"s":""}</span>{mentionOpts.length>0&&me&&pjComments.some(c=>mentionsOf(c).includes(me))&&<button onClick={()=>setOnlyMine(v=>!v)} style={{border:"1px solid "+(onlyMine||nMine>0?T.violet500:T.line),background:onlyMine?T.violet100:"transparent",color:onlyMine||nMine>0?T.violet600:T.ink500,borderRadius:8,padding:"2px 8px",fontSize:FZ.xs,fontWeight:500,cursor:"pointer",fontFamily:T.font}}>@ Pour moi{nMine>0?" ("+nMine+" à traiter)":""}</button>}{nPrivate>0&&<button onClick={()=>setShowPrivate(v=>!v)} aria-pressed={showPrivate} title={showPrivate?"Masquer les commentaires privés":"Afficher les commentaires privés (BU ORC uniquement)"} style={{border:"1px solid "+(showPrivate?T.amber500:T.line),background:showPrivate?T.amber100:"transparent",color:showPrivate?T.amber600:T.ink500,borderRadius:8,padding:"2px 8px",fontSize:FZ.xs,fontWeight:500,cursor:"pointer",fontFamily:T.font}}>{showPrivate?"Masquer les privés":"Afficher les privés ("+nPrivate+")"}</button>}<span style={{fontSize:FZ.xs,color:T.ink300,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",minWidth:0}}>{threadOpen?"Discussion entre managers, propre à ce projet":((showPrivate?pjComments:publicComments).length?(()=>{const c=publicComments[0]||pjComments[0];const t=(c.private?"(privé) ":"")+c.author+" : "+String(c.text||"").replace(/\s+/g," ");return t.length>90?t.slice(0,89)+"…":t;})():"Aucun message pour l'instant")}</span></span>}>
               {threadOpen&&<>
               <div style={{fontSize:FZ.xs,color:T.ink500,marginBottom:2,lineHeight:1.45}}>Écrivez ici pour échanger avec les autres managers : chaque message est daté et signé ; taguez un manager (@) pour qu'il suive une demande précise. <b>Ces messages ne font pas partie de la synthèse ci-dessus</b> ; seuls les derniers messages non privés peuvent être joints au CODIR.</div>
               {addComment&&<CommentComposer key={r.pj} pj={r.pj} options={mentionOpts} me={me} info={{pj:r.pj,projet:getPjMeta(r.pj,r).nomProjet,author:authorName||"Manager"}} onAdd={(t,pv,mn)=>addComment(r.pj,authorName||"Manager",t,null,pv,mn)}/>}
@@ -1190,13 +1190,13 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
                     const mine=isOpenFor(c,me),mn=mentionsOf(c);
                     return(<div key={c._idx} style={{background:c.private?T.amber100:mine?T.violet100:T.card,borderRadius:8,padding:"4px 8px",borderLeft:"3px solid "+(c.private?T.amber500:mn.length?T.violet500:T.teal500)}}>
                       <div style={{display:"flex",justifyContent:"space-between",gap:8,flexWrap:"wrap"}}>
-                        <span style={{fontWeight:600,color:T.teal600,fontSize:FZ.xs,display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>{c.author}{c.private&&<span style={{fontSize:FZ.xs,color:T.amber600,background:T.amber100,borderRadius:4,padding:"1px 6px",fontWeight:600}}>Privé</span>}{others.length>0&&<span style={{fontSize:FZ.xs,color:T.violet600,background:T.violet100,borderRadius:4,padding:"1px 6px",fontWeight:600}}>aussi : {others.join(", ")}</span>}</span>
+                        <span style={{fontWeight:500,color:T.teal600,fontSize:FZ.xs,display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>{c.author}{c.private&&<span style={{fontSize:FZ.xs,color:T.amber600,background:T.amber100,borderRadius:4,padding:"1px 6px",fontWeight:500}}>Privé</span>}{others.length>0&&<span style={{fontSize:FZ.xs,color:T.violet600,background:T.violet100,borderRadius:4,padding:"1px 6px",fontWeight:500}}>aussi : {others.join(", ")}</span>}</span>
                         <span style={{fontSize:FZ.xs,color:T.ink300,display:"inline-flex",alignItems:"center",gap:4}}>{new Date(c.date).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})}{deleteComment&&<TrashBtn title="Supprimer ce commentaire" onClick={async()=>{if(await askConfirm({title:"Supprimer ce commentaire ?",message:"Il disparaît pour tout le monde.",confirmLabel:"Supprimer le commentaire",danger:true}))deleteComment(r.pj,c._idx);}}/>}</span>
                       </div>
                       <div data-no-i18n="1" style={{fontSize:FZ.xs,color:T.ink700,whiteSpace:"pre-wrap",marginTop:2}}>{c.text}</div>
                       {mn.length>0&&<CommentMarks c={c} nameOf={nameOf}/>}
                       <Reactions c={c} pj={r.pj} idx={c._idx}/>
-                      {c.linkedDate&&<div style={{marginTop:4,fontSize:FZ.xs,color:T.ink500,fontWeight:600}}>Lié au {fmt(new Date(c.linkedDate))}</div>}
+                      {c.linkedDate&&<div style={{marginTop:4,fontSize:FZ.xs,color:T.ink500,fontWeight:500}}>Lié au {fmt(new Date(c.linkedDate))}</div>}
                     </div>);
                   })}
                 </div>}

@@ -11,7 +11,7 @@ export function EtatInfoButton({ style }) {
   const [open, setOpen] = useState(false);
   return (<>
     <button type="button" aria-label="Voir les étapes de production" title="Étapes de production et avancement" onClick={e => { e.stopPropagation(); setOpen(true); }}
-      style={{ width: 20, height: 20, borderRadius: "50%", border: "1.5px solid " + T.teal500, background: "transparent", color: T.teal600, fontSize: 12, fontWeight: 600, fontStyle: "italic", fontFamily: T.font, lineHeight: "17px", padding: 0, cursor: "pointer", flexShrink: 0, ...style }}>i</button>
+      style={{ width: 20, height: 20, borderRadius: "50%", border: "1.5px solid " + T.teal500, background: "transparent", color: T.teal600, fontSize: 12, fontWeight: 500, fontStyle: "italic", fontFamily: T.font, lineHeight: "17px", padding: 0, cursor: "pointer", flexShrink: 0, ...style }}>i</button>
     {open && <StageTimelineDialog onClose={() => setOpen(false)} />}
   </>);
 }
@@ -46,7 +46,7 @@ export function StageTimelineDialog({ onClose }) {
           <span style={{ position: "absolute", top: 0, left: 0, width: 17, height: 17, borderRadius: "50%", background: barOf(nd.id), border: "3px solid " + T.card, boxShadow: "0 0 0 1.5px " + barOf(nd.id) }} />
           <div style={{ background: ETAT_META[nd.id].bg, border: "1px solid " + ETAT_META[nd.id].border, borderRadius: 12, padding: "11px 13px", minHeight: 118, boxSizing: "border-box" }}>
             <div style={{ fontSize: FZ.md, fontWeight: 600, color: ETAT_META[nd.id].text, ...wrap }}>{i + 1}. {nd.label}</div>
-            <div style={{ fontSize: FZ.xs, fontWeight: 600, color: ETAT_META[nd.id].text, opacity: .85, fontVariantNumeric: "tabular-nums", marginBottom: 6 }}>{nd.range}</div>
+            <div style={{ fontSize: FZ.xs, fontWeight: 500, color: ETAT_META[nd.id].text, opacity: .85, fontVariantNumeric: "tabular-nums", marginBottom: 6 }}>{nd.range}</div>
             {nd.steps.map(s => <div key={s} style={{ fontSize: FZ.xs, color: ETAT_META[nd.id].text, display: "flex", gap: 6, alignItems: "baseline", marginTop: 2 }}>
               <span aria-hidden="true">•</span><span style={{ ...wrap, lineHeight: 1.35 }}>{s}</span></div>)}
           </div>

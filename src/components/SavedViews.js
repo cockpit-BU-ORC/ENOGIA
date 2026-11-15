@@ -12,7 +12,7 @@ const store = list => { try { localStorage.setItem(KEY, JSON.stringify(list)); }
 // Clé de comparaison indépendante de l'ordre des cases cochées
 export const viewKey = st => JSON.stringify(Object.keys(st).sort().map(k => [k, Array.isArray(st[k]) ? [...st[k]].sort() : st[k]]));
 
-const BTN = { padding: "0 10px", borderRadius: 8, border: "none", fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, minHeight: 28, get fontFamily() { return T.font; } }; // v346 : accesseurs (suivent le clair / sombre) // v286 : tailles du bouton commun (sm)
+const BTN = { padding: "0 10px", borderRadius: 8, border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, minHeight: 28, get fontFamily() { return T.font; } }; // v346 : accesseurs (suivent le clair / sombre) // v286 : tailles du bouton commun (sm)
 
 export function ViewsMenu({ current, presets, onApply }) {
   const [open, setOpen] = useState(false); const [list, setList] = useState(load); const [name, setName] = useState("");
@@ -47,9 +47,9 @@ export function ViewsMenu({ current, presets, onApply }) {
       <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{custom ? "Vue : " + active.name : "Vues"}</span><span aria-hidden="true" style={{ fontSize: FZ.xs }}>▾</span>
     </button>
     {open && <div role="group" aria-label="Vues enregistrées" style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, zIndex: 9999, minWidth: 280, maxWidth: 340, background: T.card, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, padding: 8, display: "flex", flexDirection: "column", gap: 2 }}>
-      <div style={{ fontSize: FZ.xs, fontWeight: 600, letterSpacing: ".01em", color: T.ink500, padding: "4px 8px" }}>Vues prêtes à l'emploi</div>
+      <div style={{ fontSize: FZ.xs, fontWeight: 500, letterSpacing: ".01em", color: T.ink500, padding: "4px 8px" }}>Vues prêtes à l'emploi</div>
       {presets.map(v => row(v, true))}
-      <div style={{ fontSize: FZ.xs, fontWeight: 600, letterSpacing: ".01em", color: T.ink500, padding: "8px 8px 4px", borderTop: "1px solid " + T.line, marginTop: 4 }}>Mes vues</div>
+      <div style={{ fontSize: FZ.xs, fontWeight: 500, letterSpacing: ".01em", color: T.ink500, padding: "8px 8px 4px", borderTop: "1px solid " + T.line, marginTop: 4 }}>Mes vues</div>
       {list.length === 0 && <div style={{ fontSize: FZ.xs, color: T.ink500, padding: "2px 8px 6px" }}>Aucune pour l'instant</div>}
       {list.map(v => row(v, false))}
       <div style={{ borderTop: "1px solid " + T.line, marginTop: 4, padding: "8px 4px 2px" }}>

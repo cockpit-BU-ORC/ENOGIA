@@ -62,7 +62,7 @@ typography:
   label:
     fontFamily: "'Satoshi', -apple-system, 'Segoe UI', sans-serif"
     fontSize: "12px"
-    fontWeight: 600
+    fontWeight: 500
     lineHeight: 1.35
   figure:
     fontFamily: "'Cabinet Grotesk', 'Satoshi', sans-serif"
@@ -197,10 +197,14 @@ Une palette de bureau d'études : neutres froids pour la structure, teintes d'é
 - **Headline** (600, 20 px, 1,25) : titres de zone et de fenêtre.
 - **Title** (600, 16 px, 1,3) : titres de carte et de bloc.
 - **Body** (400, 14 px, 1,5) : texte courant ; 13 px dans les tableaux denses, jamais moins de 12 px.
-- **Label** (600, 12 px) : étiquettes grises au-dessus des valeurs, en-têtes de tableau, en casse normale.
+- **Label** (500, 12 px) : étiquettes grises au-dessus des valeurs, en-têtes de tableau, pastilles, en casse normale.
 - **Figure** (500, 28–36 px, chiffres tabulaires) : chiffres clés ; le chiffre « réponse » de l'écran peut monter à 1,3 fois (46 px au plus).
 
 ### Named Rules
+**The One Scale Rule.** Huit tailles seulement : 12 · 13 · 14 · 16 · 20 · 28 · 36 · 44 px (jetons FZ / FZF) ; aucune taille intermédiaire (11, 12,5, 13,5…).
+
+**The Weight Ladder Rule.** 400 pour le texte, 500 pour les étiquettes et les petits textes (≤ 13 px), 600 pour les titres, les boutons, les n° de PJ et les chiffres clés.
+
 **The 600 Ceiling Rule.** Graisses 400, 500 et 600 seulement ; jamais 700 ou plus, y compris pour `<b>`.
 
 **The Sentence Case Rule.** Casse normale partout : pas de majuscules espacées sur les étiquettes, pas de point final sur un libellé, un bouton ou un message d'une phrase.

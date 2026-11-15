@@ -188,7 +188,7 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
   // facture initiale et prévue ») — données planning/cashinProduit (copie des jalons cochés « Produit » dans le Cash in)
   W.produit = { label: "Livrables Produit (jalons cash)", span: 12, only: () => !!produit, render: () => { const L = (produit && produit.items) || [], todo = L.filter(x => !x.factReelle), done = L.length - todo.length;
     const late = x => !x.factReelle && x.factPrevue && x.factPrevue < today, shift = x => x.factInit && x.factPrevue && x.factPrevue !== x.factInit;
-    const th = { textAlign: "left", fontSize: 12, fontWeight: 600, color: T.ink500, padding: "6px 8px", borderBottom: "1px solid " + T.line, whiteSpace: "nowrap" };
+    const th = { textAlign: "left", fontSize: 12, fontWeight: 500, color: T.ink500, padding: "6px 8px", borderBottom: "1px solid " + T.line, whiteSpace: "nowrap" };
     const td = (num, ink) => ({ padding: "6px 8px", height: 36, borderBottom: "1px solid " + T.line, fontSize: FZ.sm, color: ink || T.ink900, textAlign: num ? "right" : "left", fontVariantNumeric: num ? "tabular-nums" : undefined, whiteSpace: num ? "nowrap" : undefined });
     return sec("produit", "Livrables Produit (jalons cash)", S.tests.ring, <>
       <Head title="Livrables Produit" sub={"jalons cash flagués par les chefs de projet" + (done ? " · " + done + " déjà facturé" + (done > 1 ? "s" : "") : "")} count={todo.length} />
@@ -211,8 +211,8 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
       <div style={{ display: "grid", gridTemplateColumns: "repeat(5,minmax(0,1fr))", gap: 6, marginTop: 6 }}>
         {days.map(({ l, d }) => { const list = tView ? mineT.filter(r => { const e = effOf(r); return e.from <= d && e.to >= d; }) : []; return (
           <div key={d} style={{ background: d === today ? T.teal100 : T.surface, borderRadius: 8, padding: "6px 6px 8px", minWidth: 0 }}>
-            <div style={{ fontSize: FZ.xs, fontWeight: 600, color: d === today ? T.teal600 : T.ink700 }}>{l} {d.slice(8, 10)}</div>
-            {list.length === 0 ? <div style={{ ...grey, marginTop: 4 }}>—</div> : list.map(r => <button key={r.pj} type="button" onClick={() => onOpenPj && onOpenPj(r.pj)} style={{ display: "block", width: "100%", marginTop: 4, border: "none", borderLeft: "3px solid " + S.tests.solid, background: T.card, borderRadius: "0 8px 8px 0", padding: "3px 6px", textAlign: "left", cursor: "pointer", fontFamily: T.fontMono, fontSize: 11, fontWeight: 600, color: T.ink900, minHeight: 24 }}>{r.pj}</button>)}
+            <div style={{ fontSize: FZ.xs, fontWeight: 500, color: d === today ? T.teal600 : T.ink700 }}>{l} {d.slice(8, 10)}</div>
+            {list.length === 0 ? <div style={{ ...grey, marginTop: 4 }}>—</div> : list.map(r => <button key={r.pj} type="button" onClick={() => onOpenPj && onOpenPj(r.pj)} style={{ display: "block", width: "100%", marginTop: 4, border: "none", borderLeft: "3px solid " + S.tests.solid, background: T.card, borderRadius: "0 8px 8px 0", padding: "3px 6px", textAlign: "left", cursor: "pointer", fontFamily: T.fontMono, fontSize: 12, fontWeight: 600, color: T.ink900, minHeight: 24 }}>{r.pj}</button>)}
           </div>); })}
       </div></>); } };
   W.arrivees = { label: "Prochaines arrivées au banc", span: 6, render: () => sec("arrivees", "Prochaines arrivées au banc", S.arrivee.ring, <>
@@ -228,7 +228,7 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
       {charge.every(w => !w.hours) ? <div style={{ ...grey, padding: "16px 0 8px" }}>Pas d'heures d'atelier prévues sur les 4 prochaines semaines</div> :
       <div style={{ display: "flex", alignItems: "flex-end", gap: 10, height: 120, marginTop: 8 }}>
         {charge.map(w => { const over = w.hours > w.cap; return (<div key={w.a} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, height: "100%", justifyContent: "flex-end", position: "relative" }}>
-          <span style={{ fontSize: FZ.xs, fontWeight: 600, color: over ? T.red500 : T.ink900, fontVariantNumeric: "tabular-nums" }}>{w.hours} h</span>
+          <span style={{ fontSize: FZ.xs, fontWeight: 500, color: over ? T.red500 : T.ink900, fontVariantNumeric: "tabular-nums" }}>{w.hours} h</span>
           <div style={{ width: "100%", maxWidth: 52, height: 84, position: "relative" }}>
             <div title={"capacité " + w.cap + " h"} style={{ position: "absolute", left: -4, right: -4, bottom: Math.round(84 * w.cap / max), borderTop: "1.5px dashed " + T.ink500 }} />
             <div className="enogia-bar-fill" style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: Math.max(3, Math.round(84 * w.hours / max)), background: over ? T.red500 : S.production.solid, borderRadius: 0 }} />
@@ -286,7 +286,7 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
       {L.length === 0 ? empty("check", "Rien à suivre", "") : L.slice(0, 5).map((p, i) => <div key={p.id} style={{ display: "flex", gap: 8, minHeight: 30, alignItems: "center", borderTop: i ? "1px solid " + T.line : "none", fontSize: FZ.sm }}>
         <Pill tone={p.statut === "nc" ? A.red : p.statut === "cq" ? S.tests : A.orange}>{p.statut === "nc" ? "NC" : p.statut === "cq" ? "Contrôle" : "Appro"}</Pill>
         <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.designation}{p.turbine ? " · " + p.turbine : ""}{p.statut === "nc" && p.motif ? " · " + p.motif : ""}</span>
-        {p.statut === "appro" && <span style={{ color: T.red500, fontSize: FZ.xs, fontWeight: 600 }}>livraison {fmtD(p.dateLiv)}</span>}</div>)}
+        {p.statut === "appro" && <span style={{ color: T.red500, fontSize: FZ.xs, fontWeight: 500 }}>livraison {fmtD(p.dateLiv)}</span>}</div>)}
       {ptOpen()}</>); } };
   W.ptDates = { label: "Dates prévisionnelles des turbines", span: 12, only: ptOnly, render: () => { const L = pt.upcoming.slice(0, 6); const Hd = Math.min(120, Math.ceil(Math.max(10, ...L.map(u => u.s.end ?? 0))) + 2); const pct = x => Math.max(0, Math.min(100, x / Hd * 100));
     const col = ph => ({ carter: S.production.solid, assy: S.finProd.solid, tests: S.tests.solid })[ph] || T.ink300;
@@ -326,7 +326,7 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
     return sec("depMois", "Départs par mois", S.depart.ring, <><Head title="Départs par mois" sub="6 prochains mois" count={months.reduce((a, m) => a + m.n, 0)} />
       <div style={{ display: "flex", alignItems: "flex-end", gap: 10, height: 110, marginTop: 8 }}>
         {months.map(m => <div key={m.k} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, height: "100%", justifyContent: "flex-end" }}>
-          <span style={{ fontSize: FZ.xs, fontWeight: 600, color: T.ink900, fontVariantNumeric: "tabular-nums" }}>{m.n}</span>
+          <span style={{ fontSize: FZ.xs, fontWeight: 500, color: T.ink900, fontVariantNumeric: "tabular-nums" }}>{m.n}</span>
           <div className="enogia-bar-fill" style={{ width: "100%", maxWidth: 44, height: Math.max(2, Math.round(70 * m.n / max)), background: S.depart.solid }} />
           <span style={grey}>{m.l}</span></div>)}
       </div></>); } };

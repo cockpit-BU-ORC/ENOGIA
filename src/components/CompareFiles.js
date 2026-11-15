@@ -14,7 +14,7 @@ function Drop({ label, file, onFile }) {
   return (<div onDragOver={e => { e.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)} onDrop={e => { e.preventDefault(); setOver(false); const f = e.dataTransfer.files[0]; if (f) onFile(f); }}
     onClick={() => document.getElementById(id).click()}
     style={{ flex: "1 1 240px", minWidth: 220, border: "2px dashed " + (over ? T.teal500 : file ? T.emerald500 : T.ink100), borderRadius: 12, padding: "12px 16px", background: over ? T.teal100 : T.surface, cursor: "pointer", textAlign: "center" }}>
-    <div style={{fontFamily:T.font,fontSize:12,fontWeight:600,color:T.accentInk}}>{label}</div>
+    <div style={{fontFamily:T.font,fontSize:12,fontWeight:500,color:T.accentInk}}>{label}</div>
     <div style={{ fontSize: FZ.sm, color: file ? T.ink900 : T.ink300, fontWeight: file ? 600 : 400, marginTop: 5, wordBreak: "break-all" }}>{file ? file.name : "Glisser un fichier ou cliquer"}</div>
     <input id={id} type="file" accept=".xlsx,.xls,.txt,.tsv" style={{ display: "none" }} onChange={e => { const f = e.target.files[0]; if (f) onFile(f); e.target.value = ""; }} />
   </div>);
@@ -38,7 +38,7 @@ export function CompareFiles({ onOpenPj, defaultOpen }) {
   };
   const ok = oldF && newF && !busy;
   return (<div style={{ marginBottom: 12 }}>
-    <button onClick={() => setOpen(o => !o)} title="Ancien export ↔ nouvel export MS Project, sans rien importer : sert à voir l'écart une première fois" style={{ display: "inline-flex", alignItems: "center", gap: 6, border: "1px solid " + (open ? T.teal500 : T.line), background: open ? T.teal100 : "transparent", color: open ? T.teal600 : T.ink500, borderRadius: 8, padding: "3px 8px", fontSize: FZ.xs, fontWeight: 600, fontFamily: T.font, cursor: "pointer" }}>
+    <button onClick={() => setOpen(o => !o)} title="Ancien export ↔ nouvel export MS Project, sans rien importer : sert à voir l'écart une première fois" style={{ display: "inline-flex", alignItems: "center", gap: 6, border: "1px solid " + (open ? T.teal500 : T.line), background: open ? T.teal100 : "transparent", color: open ? T.teal600 : T.ink500, borderRadius: 8, padding: "3px 8px", fontSize: FZ.xs, fontWeight: 500, fontFamily: T.font, cursor: "pointer" }}>
       <span aria-hidden>⇄</span>Comparer 2 plannings
     </button>
     {open && <div style={{ ...card, padding: "0 16px 16px", marginTop: 8 }}>

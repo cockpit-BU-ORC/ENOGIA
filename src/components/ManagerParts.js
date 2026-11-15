@@ -101,7 +101,7 @@ export function StatutTab({rows,etatChoice,setEtatFor,clientPresence,setClientPr
       <div style={H_TITLE}>Statut & état des machines</div>
       <div style={H_SUB}>L'état choisi ici est celui affiché partout sur le site, immédiatement visible par tous. En Montage, Élec, Tests, Packaging et Expédiée, l'avancement de production s'en déduit automatiquement (voir le « i » des filtres d'état).</div>
     </div>
-    <div style={{fontFamily:T.font,fontSize:12,fontWeight:600,color:T.accentInk,display:"grid",gridTemplateColumns:COLS,gap:12,padding:"8px 16px",background:T.surface,borderTop:"1px solid "+T.line,borderBottom:"1px solid "+T.line}}>
+    <div style={{fontFamily:T.font,fontSize:12,fontWeight:500,color:T.accentInk,display:"grid",gridTemplateColumns:COLS,gap:12,padding:"8px 16px",background:T.surface,borderTop:"1px solid "+T.line,borderBottom:"1px solid "+T.line}}>
       <span>PJ</span><span>S/N</span><span>Gamme</span><span>État</span><span>Présence client / NOBO aux tests</span>
     </div>
     {rows.length===0&&<EmptyNote>Aucun PJ à afficher</EmptyNote>}
@@ -148,7 +148,7 @@ export function KpiAvancement({rows,progress}){
           <div key={x.g} style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
             <span style={{width:80,fontSize:FZ.sm,fontWeight:600,color:T.ink700,flexShrink:0}}>{x.g}</span>
             <div style={{flex:1,background:T.surfaceAlt,borderRadius:8,height:10,overflow:"hidden"}}><div className="enogia-bar-fill" style={{width:x.avg+"%",height:"100%",background:T.teal500,borderRadius:8}}/></div>
-            <span style={{width:70,textAlign:"right",fontSize:FZ.xs,fontWeight:600,color:T.ink900}}>{x.avg}% <span style={{color:T.ink300,fontWeight:500}}>({x.n})</span></span>
+            <span style={{width:70,textAlign:"right",fontSize:FZ.xs,fontWeight:500,color:T.ink900}}>{x.avg}% <span style={{color:T.ink300,fontWeight:500}}>({x.n})</span></span>
           </div>
         ))}
       </div>
@@ -159,7 +159,7 @@ export function KpiAvancement({rows,progress}){
           <div key={r.pj} style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
             <span style={{width:92,fontFamily:T.fontMono,fontSize:FZ.xs,fontWeight:600,color:T.teal600,flexShrink:0}}><PjPlate pj={r.pj}/></span>
             <div style={{flex:1,background:T.surfaceAlt,borderRadius:8,height:10,overflow:"hidden"}}><div className="enogia-bar-fill" style={{width:pv+"%",height:"100%",background:pv>=50?T.teal500:T.amber500,borderRadius:8}}/></div>
-            <span style={{width:40,textAlign:"right",fontSize:FZ.xs,fontWeight:600,color:T.ink900}}>{pv}%</span>
+            <span style={{width:40,textAlign:"right",fontSize:FZ.xs,fontWeight:500,color:T.ink900}}>{pv}%</span>
           </div>
         ))}
       </div>
@@ -273,7 +273,7 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
   };
   const removeType=t=>{if(delayTypes.length<=1)return;setDelayTypes(delayTypes.filter(x=>x!==t));if(type===t)setType("");};
 
-  const label={fontSize:FZ.xs,fontWeight:600,color:T.ink500,marginBottom:6,display:"block"};
+  const label={fontSize:FZ.xs,fontWeight:500,color:T.ink500,marginBottom:6,display:"block"};
   const pjOptions=[{value:"",label:"Choisir un PJ…"},...data.map(d=>{const m=getPjMeta(d.pj,d);return{value:d.pj,label:d.pj+(m.nomProjet?" — "+m.nomProjet:"")};})];
 
   // ── Vue Kanban (demandé : « une vue plus UX/UI comme un Kanban ») ────────────────────────────
@@ -302,14 +302,14 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
     return(<div key={e.pj+"-"+e.id} style={{background:T.card,border:"1px solid "+T.line,borderLeft:"3px solid "+c,borderRadius:12,padding:"8px 12px",boxShadow:T.shadowSm}}>
       <div style={{display:"flex",alignItems:"center",gap:8}}>
         {byPj
-          ?<span style={{display:"inline-flex",alignItems:"center",gap:4,background:T.surface,borderRadius:999,padding:"1px 8px 1px 8px",fontSize:FZ.xs,fontWeight:600,color:T.ink700}}><span style={{width:7,height:7,borderRadius:"50%",background:c}}/>{e.type}</span>
+          ?<span style={{display:"inline-flex",alignItems:"center",gap:4,background:T.surface,borderRadius:999,padding:"1px 8px 1px 8px",fontSize:FZ.xs,fontWeight:500,color:T.ink700}}><span style={{width:7,height:7,borderRadius:"50%",background:c}}/>{e.type}</span>
           :<span style={{fontFamily:T.fontMono,fontWeight:600,fontSize:FZ.sm,color:T.teal600}}><PjPlate pj={e.pj}/></span>}
         {!byPj&&<SerieTag pj={e.pj}/>}
         <span style={{fontSize:FZ.sm,fontWeight:600,color:T.red500,background:T.red100,borderRadius:8,padding:"0 8px"}}>+{e.days}j</span>
-        {e.groupPjs&&e.groupPjs.length>1&&<span title={e.groupPjs.join(", ")} style={{fontSize:FZ.xs,color:T.violet600,background:T.violet100,borderRadius:8,padding:"1px 6px",fontWeight:600}}>×{e.groupPjs.length}</span>}
+        {e.groupPjs&&e.groupPjs.length>1&&<span title={e.groupPjs.join(", ")} style={{fontSize:FZ.xs,color:T.violet600,background:T.violet100,borderRadius:8,padding:"1px 6px",fontWeight:500}}>×{e.groupPjs.length}</span>}
         <span style={{marginLeft:"auto"}}>
           {ask
-            ?<span style={{display:"inline-flex",gap:4,alignItems:"center"}}><button onClick={async()=>{await deleteDelayAllocation(e.pj,e.id);setConfirmId(null);}} style={{border:"none",background:T.redFill,color:T.onFill,borderRadius:8,fontSize:FZ.xs,fontWeight:600,padding:"1px 8px",cursor:"pointer"}}>Supprimer ?</button><button onClick={()=>setConfirmId(null)} style={{border:"none",background:"none",color:T.ink300,fontSize:FZ.xs,cursor:"pointer"}}>Non</button></span>
+            ?<span style={{display:"inline-flex",gap:4,alignItems:"center"}}><button onClick={async()=>{await deleteDelayAllocation(e.pj,e.id);setConfirmId(null);}} style={{border:"none",background:T.redFill,color:T.onFill,borderRadius:8,fontSize:FZ.xs,fontWeight:500,padding:"1px 8px",cursor:"pointer"}}>Supprimer ?</button><button onClick={()=>setConfirmId(null)} style={{border:"none",background:"none",color:T.ink300,fontSize:FZ.xs,cursor:"pointer"}}>Non</button></span>
             :<SuperOnly><button onClick={()=>setConfirmId(e.id)} title="Supprimer ce retard" style={{border:"none",background:"none",color:T.ink300,fontSize:FZ.xs,cursor:"pointer",padding:0}}><NavIcon name="close" size={11}/></button></SuperOnly>}
         </span>
       </div>
@@ -390,7 +390,7 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
       <div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <span style={label}>{multiMode?"PJ concernés":"PJ"}</span>
-          <button onClick={()=>{setMultiMode(m=>!m);}} style={{background:"none",border:"none",color:T.teal600,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",padding:0,marginBottom:6}}>{multiMode?"← Un seul PJ":"Plusieurs PJ (décalage groupé)"}</button>
+          <button onClick={()=>{setMultiMode(m=>!m);}} style={{background:"none",border:"none",color:T.teal600,fontSize:FZ.xs,fontWeight:500,cursor:"pointer",padding:0,marginBottom:6}}>{multiMode?"← Un seul PJ":"Plusieurs PJ (décalage groupé)"}</button>
         </div>
         {multiMode?<PjChecklist data={data} selected={selPjs} onChange={setSelPjs} maxHeight={180}/>
           :<Select value={selPj} onChange={e=>setSelPj(e.target.value)} options={pjOptions}/>}
@@ -400,7 +400,7 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
         <span style={label}>Cause du retard</span>
         <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
           {delayTypes.map(t=>{const on=type===t;const c=colorOf(t);return(
-            <button key={t} onClick={()=>setType(on?"":t)} aria-pressed={on} style={{padding:"6px 12px",borderRadius:999,border:"1.5px solid "+(on?c:T.line),background:on?c:T.card,color:on?inkOn(c):T.ink700,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font,transition:"background-color .12s ease, border-color .12s ease, color .12s ease"}}>{t}</button>
+            <button key={t} onClick={()=>setType(on?"":t)} aria-pressed={on} style={{padding:"6px 12px",borderRadius:999,border:"1.5px solid "+(on?c:T.line),background:on?c:T.card,color:on?inkOn(c):T.ink700,fontSize:FZ.xs,fontWeight:500,cursor:"pointer",fontFamily:T.font,transition:"background-color var(--e-dur-micro) ease, border-color var(--e-dur-micro) ease, color var(--e-dur-micro) ease"}}>{t}</button>
           );})}
           <NewDelayType types={delayTypes} onCreate={setDelayTypes} onCreated={setType}/>
         </div>
@@ -410,7 +410,7 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
         <span style={label}>Durée du retard</span>
         <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
           {[1,2,3,5,10,15].map(v=>{const on=n===v&&String(days)===String(v);return(
-            <button key={v} onClick={()=>setDays(String(v))} style={{padding:"6px 12px",borderRadius:8,border:"1px solid "+(on?T.teal500:T.line),background:on?T.teal100:T.card,color:on?T.teal600:T.ink700,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font}}>{v} j</button>
+            <button key={v} onClick={()=>setDays(String(v))} style={{padding:"6px 12px",borderRadius:8,border:"1px solid "+(on?T.teal500:T.line),background:on?T.teal100:T.card,color:on?T.teal600:T.ink700,fontSize:FZ.xs,fontWeight:500,cursor:"pointer",fontFamily:T.font}}>{v} j</button>
           );})}
           <input type="number" min="1" value={days} onChange={e=>setDays(e.target.value)} placeholder="Autre" style={{width:70,padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700}}/>
           <span style={{fontSize:FZ.xs,color:T.ink500}}>jours</span>
@@ -437,11 +437,11 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
       {missing.length>0&&<div style={{fontSize:FZ.xs,color:T.ink300,marginTop:-8}}>Il manque : {missing.join(" · ")}</div>}
 
       <div style={{borderTop:"1px solid "+T.line,paddingTop:12}}>
-        <button onClick={()=>setShowTypes(v=>!v)} style={{background:"none",border:"none",padding:0,fontSize:FZ.xs,fontWeight:600,color:T.ink500,cursor:"pointer",fontFamily:T.font}}>{showTypes?"▾":"▸"} Gérer les causes proposées ({delayTypes.length})</button>
+        <button onClick={()=>setShowTypes(v=>!v)} style={{background:"none",border:"none",padding:0,fontSize:FZ.xs,fontWeight:500,color:T.ink500,cursor:"pointer",fontFamily:T.font}}>{showTypes?"▾":"▸"} Gérer les causes proposées ({delayTypes.length})</button>
         {showTypes&&<div style={{marginTop:10}}>
           <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:10}}>
             {delayTypes.map(t=>(
-              <span key={t} style={{display:"inline-flex",alignItems:"center",gap:6,background:T.surface,borderRadius:999,padding:"4px 8px 4px 12px",fontSize:FZ.xs,color:T.ink700,fontWeight:600}}>
+              <span key={t} style={{display:"inline-flex",alignItems:"center",gap:6,background:T.surface,borderRadius:999,padding:"4px 8px 4px 12px",fontSize:FZ.xs,color:T.ink700,fontWeight:500}}>
                 <span style={{width:8,height:8,borderRadius:"50%",background:colorOf(t)}}/>{t}
                 <SuperOnly><button onClick={()=>removeType(t)} disabled={delayTypes.length<=1} title="Supprimer cette cause" style={{background:"none",border:"none",color:T.ink300,cursor:delayTypes.length<=1?"default":"pointer",fontSize:FZ.xs,padding:0}}><NavIcon name="close" size={11}/></button></SuperOnly>
               </span>
@@ -449,7 +449,7 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
           </div>
           <div style={{display:"flex",gap:6}}>
             <input type="text" value={newType} onChange={e=>setNewType(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")addType();}} placeholder="Nouvelle cause…" maxLength={60} style={{flex:1,padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700}}/>
-            <button onClick={addType} disabled={!newType.trim()} style={{padding:"6px 12px",borderRadius:8,border:"none",background:newType.trim()?T.teal500:T.surfaceAlt,color:newType.trim()?T.onFill:T.ink300,fontSize:FZ.xs,fontWeight:600,cursor:newType.trim()?"pointer":"default"}}>Ajouter</button>
+            <button onClick={addType} disabled={!newType.trim()} style={{padding:"6px 12px",borderRadius:8,border:"none",background:newType.trim()?T.teal500:T.surfaceAlt,color:newType.trim()?T.onFill:T.ink300,fontSize:FZ.xs,fontWeight:500,cursor:newType.trim()?"pointer":"default"}}>Ajouter</button>
           </div>
         </div>}
       </div>
@@ -558,7 +558,7 @@ export function ProductionCalendarManager({data,productionExclusions,setProducti
         <div style={H_SUB}>Désactivez les jours sans activité (férié, pont, arrêt) : ils disparaissent de la vue « Production » du Calendrier.</div>
       </div>
       <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
-        <label style={{display:"flex",alignItems:"center",gap:8,fontSize:FZ.xs,fontWeight:600,color:T.ink700,cursor:"pointer"}}>
+        <label style={{display:"flex",alignItems:"center",gap:8,fontSize:FZ.xs,fontWeight:500,color:T.ink700,cursor:"pointer"}}>
           <input type="checkbox" checked={allMode} onChange={e=>setAllMode(e.target.checked)}/> Tous les PJ
         </label>
         {!allMode&&<div style={{width:190}}><Select value={selectedPj} onChange={e=>setSelectedPj(e.target.value)} options={pjOptions}/></div>}
@@ -589,7 +589,7 @@ export function ProductionCalendarManager({data,productionExclusions,setProducti
           return(<div key={y+"-"+mo} style={{border:"1px solid "+T.line,borderRadius:12,padding:8}}>
             <div style={{fontSize:FZ.sm,fontWeight:600,color:T.ink900,textTransform:"capitalize",marginBottom:6}}>{m.toLocaleDateString("fr-FR",{month:"long",year:"numeric"})}</div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2}}>
-              {DOW.map((l,i)=><div key={i} style={{textAlign:"center",fontSize:FZ.xs,fontWeight:600,color:T.ink300,paddingBottom:2}}>{l}</div>)}
+              {DOW.map((l,i)=><div key={i} style={{textAlign:"center",fontSize:FZ.xs,fontWeight:500,color:T.ink300,paddingBottom:2}}>{l}</div>)}
               {cells.map((d,i)=>{
                 if(!d)return<div key={"b"+i}/>;
                 const iso=toLocalISO(d);
@@ -609,11 +609,11 @@ export function ProductionCalendarManager({data,productionExclusions,setProducti
       </div>
 
       {!allMode&&<div style={{marginTop:16}}>
-        <div style={{fontSize:FZ.xs,fontWeight:600,color:T.ink700,marginBottom:8}}>Jours désactivés ({excluded.length})</div>
+        <div style={{fontSize:FZ.xs,fontWeight:500,color:T.ink700,marginBottom:8}}>Jours désactivés ({excluded.length})</div>
         {excluded.length===0?<div style={{fontSize:FZ.sm,color:T.ink300}}>Aucun jour exclu pour ce PJ</div>:
           <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
             {[...excluded].sort().map(iso=>(
-              <span key={iso} style={{display:"inline-flex",alignItems:"center",gap:6,background:T.red100,color:T.red600,borderRadius:999,padding:"3px 8px 3px 12px",fontSize:FZ.xs,fontWeight:600}}>
+              <span key={iso} style={{display:"inline-flex",alignItems:"center",gap:6,background:T.red100,color:T.red600,borderRadius:999,padding:"3px 8px 3px 12px",fontSize:FZ.xs,fontWeight:500}}>
                 {fmt(new Date(iso+"T00:00:00"))}
                 <button onClick={()=>setProductionExclusionDays({[selectedPj]:[iso]},false)} title="Réactiver ce jour" style={{background:"none",border:"none",color:T.red500,cursor:"pointer",fontSize:FZ.xs,padding:0}}><NavIcon name="close" size={11}/></button>
               </span>

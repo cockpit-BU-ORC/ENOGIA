@@ -31,7 +31,7 @@ export function DelayScopeNote(){
   </div>);
 }
 
-export function Badge({etat,wrap}){const c=ETAT_META[etat]||ETAT_META["NOT ORDERED"];const urgent=etat==="NOT ORDERED";return <span className={urgent?"enogia-pulse-urgent":""} style={{background:c.bg,color:c.text,border:"1px solid "+c.border,borderRadius:wrap?12:20,padding:"2.5px 8px 2.5px 8px",fontSize:FZ.xs,fontWeight:600,letterSpacing:".01em",display:"inline-flex",alignItems:"center",gap:4,maxWidth:"100%",boxSizing:"border-box"}}><span style={{width:6,height:6,borderRadius:"50%",background:c.bar,flexShrink:0}}/><span style={wrap?{lineHeight:1.2,overflowWrap:"break-word",minWidth:0}:{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.label||etat}</span></span>;}
+export function Badge({etat,wrap}){const c=ETAT_META[etat]||ETAT_META["NOT ORDERED"];const urgent=etat==="NOT ORDERED";return <span className={urgent?"enogia-pulse-urgent":""} style={{background:c.bg,color:c.text,border:"1px solid "+c.border,borderRadius:wrap?12:20,padding:"2.5px 8px 2.5px 8px",fontSize:FZ.xs,fontWeight:500,letterSpacing:".01em",display:"inline-flex",alignItems:"center",gap:4,maxWidth:"100%",boxSizing:"border-box"}}><span style={{width:6,height:6,borderRadius:"50%",background:c.bar,flexShrink:0}}/><span style={wrap?{lineHeight:1.2,overflowWrap:"break-word",minWidth:0}:{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.label||etat}</span></span>;}
 
 // v139.1 : un seul menu flottant à la fois. Tout composant qui ouvre l'un d'eux (ou un panneau) envoie « enogia:closemenus » : les autres se ferment.
 export const closeAllMenus=()=>{try{window.dispatchEvent(new Event("enogia:closemenus"));}catch(e){}};
@@ -84,8 +84,8 @@ export function DropFilter({label,options,selected,onChange,getLabel,icon,sort})
       {/* Bouton resserré (demandé explicitement : "les filtres ... sont trop grandes ... plus
           discret") — mêmes proportions sur le Gantt et le Calendrier (et ici, partout où ce
           composant est utilisé). */}
-      <button type="button" ref={btnRef} onClick={openMenu} aria-label={icon?"Filtrer et trier : "+label:undefined} aria-haspopup="menu" style={icon?{padding:"2px 4px",borderRadius:8,border:"none",background:(!all||(sort&&sort.active))?T.teal100:"transparent",color:(!all||(sort&&sort.active))?T.teal600:T.ink300,fontSize:FZ.xs,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:3,verticalAlign:"middle",marginLeft:4}:{padding:"4px 8px",borderRadius:8,border:"1px solid "+(!all||open?T.teal500:T.line),background:!all?T.teal100:T.card,color:!all?T.teal600:T.ink700,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:4,whiteSpace:"nowrap",fontFamily:T.font,transition:"border-color .15s"}}>
-        {icon?(<>{!all&&selected.size}{sort&&sort.active&&<span aria-hidden="true" style={{fontSize:FZ.xs,fontWeight:600,color:T.teal600,lineHeight:1}}>{sort.active==="desc"?"↓":"↑"}</span>}<NavIcon name="chevronDown" size={10}/></>):(<>{label}{!all?" ("+selected.size+")":""}<NavIcon name="chevronDown" size={11}/></>)}
+      <button type="button" ref={btnRef} onClick={openMenu} aria-label={icon?"Filtrer et trier : "+label:undefined} aria-haspopup="menu" style={icon?{padding:"2px 4px",borderRadius:8,border:"none",background:(!all||(sort&&sort.active))?T.teal100:"transparent",color:(!all||(sort&&sort.active))?T.teal600:T.ink300,fontSize:FZ.xs,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:3,verticalAlign:"middle",marginLeft:4}:{padding:"4px 8px",borderRadius:8,border:"1px solid "+(!all||open?T.teal500:T.line),background:!all?T.teal100:T.card,color:!all?T.teal600:T.ink700,fontSize:FZ.xs,fontWeight:500,cursor:"pointer",display:"flex",alignItems:"center",gap:4,whiteSpace:"nowrap",fontFamily:T.font,transition:"border-color var(--e-dur-menu)"}}>
+        {icon?(<>{!all&&selected.size}{sort&&sort.active&&<span aria-hidden="true" style={{fontSize:FZ.xs,fontWeight:500,color:T.teal600,lineHeight:1}}>{sort.active==="desc"?"↓":"↑"}</span>}<NavIcon name="chevronDown" size={10}/></>):(<>{label}{!all?" ("+selected.size+")":""}<NavIcon name="chevronDown" size={11}/></>)}
       </button>
       {/* Popover affiné (demandé explicitement : "les filtres sur les colonnes sont grossiers quand
           on clique dessus, la police est trop grande") — police et cases à cocher réduites, coins et
@@ -97,28 +97,28 @@ export function DropFilter({label,options,selected,onChange,getLabel,icon,sort})
             {[{id:"asc",label:sort.asc||"Du plus petit au plus grand",arrow:"↑"},{id:"desc",label:sort.desc||"Du plus grand au plus petit",arrow:"↓"},...(sort.extra||[]).map(x=>({...x,arrow:"↓"}))].map(o=>{const on=sort.active===o.id;return(
               <div key={o.id} role="button" tabIndex={0} aria-pressed={on} onClick={()=>{sort.onChange(on?null:o.id);}} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();sort.onChange(on?null:o.id);}}}
                 style={{display:"flex",alignItems:"center",gap:8,padding:"6px 12px",cursor:"pointer",background:on?T.teal100:"transparent"}}>
-                <span aria-hidden="true" style={{width:13,textAlign:"center",fontSize:FZ.xs,fontWeight:600,color:on?T.teal600:T.ink500}}>{o.arrow}</span>
-                <span style={{fontSize:FZ.xs,color:on?T.teal600:T.ink700,fontWeight:on?600:500}}>{o.label}</span>
+                <span aria-hidden="true" style={{width:13,textAlign:"center",fontSize:FZ.xs,fontWeight:500,color:on?T.teal600:T.ink500}}>{o.arrow}</span>
+                <span style={{fontSize:FZ.xs,color:on?T.teal600:T.ink700,fontWeight:on?500:500}}>{o.label}</span>
               </div>);})}
           </div>}
           <div {...pressable(()=>onChange(all?new Set():new Set(options)),{role:"checkbox","aria-checked":all})} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",cursor:"pointer",borderBottom:"1px solid "+T.line,background:T.surface,flexShrink:0,borderRadius:"12px 12px 0 0"}}>
             <div style={{width:13,height:13,borderRadius:4,border:"1.5px solid "+(all?T.teal500:T.ink100),background:all?T.teal500:T.card,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-              {all&&<span style={{color:T.card,fontSize:FZ.xs,fontWeight:600}}>✓</span>}
-              {!all&&!none&&<span style={{color:T.teal600,fontSize:FZ.xs,fontWeight:600}}>—</span>}
+              {all&&<span style={{color:T.card,fontSize:FZ.xs,fontWeight:500}}>✓</span>}
+              {!all&&!none&&<span style={{color:T.teal600,fontSize:FZ.xs,fontWeight:500}}>—</span>}
             </div>
-            <span style={{fontSize:FZ.xs,fontWeight:600,color:T.ink700}}>Tout sélectionner</span>
+            <span style={{fontSize:FZ.xs,fontWeight:500,color:T.ink700}}>Tout sélectionner</span>
           </div>
           <div style={{overflowY:"auto",flex:1}}>
             {options.map(o=>{const a=selected.has(o);return(
               <div key={o} {...pressable(()=>toggle(o),{role:"checkbox","aria-checked":a})} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 12px",cursor:"pointer",background:a?T.teal100:T.card,borderBottom:"1px solid "+T.surface}}>
-                <div style={{width:13,height:13,borderRadius:4,border:"1.5px solid "+(a?T.teal500:T.ink100),background:a?T.teal500:T.card,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{a&&<span style={{color:T.card,fontSize:FZ.xs,fontWeight:600}}>✓</span>}</div>
-                <span style={{fontSize:FZ.xs,color:T.ink700,fontWeight:a?600:400}}>{disp(o)}</span>
+                <div style={{width:13,height:13,borderRadius:4,border:"1.5px solid "+(a?T.teal500:T.ink100),background:a?T.teal500:T.card,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{a&&<span style={{color:T.card,fontSize:FZ.xs,fontWeight:500}}>✓</span>}</div>
+                <span style={{fontSize:FZ.xs,color:T.ink700,fontWeight:a?500:400}}>{disp(o)}</span>
               </div>
             );})}
           </div>
           <div style={{padding:"8px 12px",borderTop:"1px solid "+T.line,display:"flex",justifyContent:"space-between",alignItems:"center",background:T.surface,flexShrink:0,borderRadius:"0 0 12px 12px"}}>
             <span style={{fontSize:FZ.xs,color:T.ink500,fontWeight:500}}>{selected.size}/{options.length}</span>
-            <button onClick={()=>setOpen(false)} style={{padding:"4px 12px",borderRadius:8,border:"none",background:T.ink900,color:T.card,fontSize:FZ.xs,fontWeight:600,cursor:"pointer"}}>OK</button>
+            <button onClick={()=>setOpen(false)} style={{padding:"4px 12px",borderRadius:8,border:"none",background:T.ink900,color:T.card,fontSize:FZ.xs,fontWeight:500,cursor:"pointer"}}>OK</button>
           </div>
         </div>
       </>,document.body)}
@@ -163,18 +163,18 @@ export function PjChecklist({data,selected,onChange,maxHeight=220}){
   return(<div style={{border:"1px solid "+T.line,borderRadius:12,background:T.card,overflow:"hidden"}}>
     <div style={{padding:8,borderBottom:"1px solid "+T.line,display:"flex",gap:8,alignItems:"center",background:T.surface}}>
       <input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher un PJ, un projet…" style={{flex:1,padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700,background:T.card}}/>
-      <span style={{fontSize:FZ.xs,color:T.ink500,fontWeight:600,whiteSpace:"nowrap"}}>{selected.size} sélectionné{selected.size!==1?"s":""}</span>
+      <span style={{fontSize:FZ.xs,color:T.ink500,fontWeight:500,whiteSpace:"nowrap"}}>{selected.size} sélectionné{selected.size!==1?"s":""}</span>
     </div>
     <div {...pressable(toggleAll,{role:"checkbox","aria-checked":allChecked})} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 8px",cursor:"pointer",borderBottom:"1px solid "+T.line}}>
-      <div style={{width:15,height:15,borderRadius:4,border:"1.5px solid "+(allChecked?T.teal500:T.ink100),background:allChecked?T.teal500:T.card,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{allChecked&&<span style={{color:T.card,fontSize:FZ.xs,fontWeight:600}}>✓</span>}</div>
-      <span style={{fontSize:FZ.xs,fontWeight:600,color:T.ink700}}>Tout sélectionner{q?" (résultats filtrés)":""}</span>
+      <div style={{width:15,height:15,borderRadius:4,border:"1.5px solid "+(allChecked?T.teal500:T.ink100),background:allChecked?T.teal500:T.card,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{allChecked&&<span style={{color:T.card,fontSize:FZ.xs,fontWeight:500}}>✓</span>}</div>
+      <span style={{fontSize:FZ.xs,fontWeight:500,color:T.ink700}}>Tout sélectionner{q?" (résultats filtrés)":""}</span>
     </div>
     <div style={{maxHeight,overflowY:"auto"}}>
       {filtered.map(d=>{
         const meta=getPjMeta(d.pj,d);
         const checked=selected.has(d.pj);
         return(<div key={d.pj} {...pressable(()=>toggle(d.pj),{role:"checkbox","aria-checked":checked})} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 8px",cursor:"pointer",background:checked?T.teal100:"transparent",borderBottom:"1px solid "+T.surface}}>
-          <div style={{width:15,height:15,borderRadius:4,border:"1.5px solid "+(checked?T.teal500:T.ink100),background:checked?T.teal500:T.card,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{checked&&<span style={{color:T.card,fontSize:FZ.xs,fontWeight:600}}>✓</span>}</div>
+          <div style={{width:15,height:15,borderRadius:4,border:"1.5px solid "+(checked?T.teal500:T.ink100),background:checked?T.teal500:T.card,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{checked&&<span style={{color:T.card,fontSize:FZ.xs,fontWeight:500}}>✓</span>}</div>
           <span style={{fontWeight:600,color:T.ink900,fontSize:FZ.sm,fontFamily:T.fontMono,flexShrink:0}}>{d.pj}</span><SerieTag pj={d.pj}/>
           <span style={{fontSize:FZ.xs,color:T.ink500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{meta.nomProjet}</span>
         </div>);
@@ -193,7 +193,7 @@ export function PinGate({onUnlock}){
     <div style={{width:48,height:48,margin:"0 auto 14px",borderRadius:12,background:T.surface,boxShadow:T.insetSm,color:T.teal600,display:"flex",alignItems:"center",justifyContent:"center"}}><NavIcon name="lock" size={22}/></div>
     <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.lg,color:T.ink900,marginBottom:18}}>Accès Manager</div>
     <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,maxWidth:190,margin:"0 auto 14px"}}>
-      {[1,2,3,4,5,6,7,8,9,"","0","⌫"].map((k,i)=><button key={i} onClick={()=>{if(k==="⌫")setV(x=>x.slice(0,-1));else if(k!=="")setV(x=>x.length<4?x+k:x);}} style={{height:48,borderRadius:12,border:"none",background:k===""?"transparent":T.surface,boxShadow:k===""?"none":T.outline,fontSize:FZ.lg,fontWeight:600,cursor:k===""?"default":"pointer",color:T.ink900,transition:"box-shadow .1s ease"}}
+      {[1,2,3,4,5,6,7,8,9,"","0","⌫"].map((k,i)=><button key={i} onClick={()=>{if(k==="⌫")setV(x=>x.slice(0,-1));else if(k!=="")setV(x=>x.length<4?x+k:x);}} style={{height:48,borderRadius:12,border:"none",background:k===""?"transparent":T.surface,boxShadow:k===""?"none":T.outline,fontSize:FZ.lg,fontWeight:600,cursor:k===""?"default":"pointer",color:T.ink900,transition:"box-shadow var(--e-dur-micro) ease"}}
         onMouseDown={e=>{if(k!=="")e.currentTarget.style.boxShadow=T.insetSm;}}
         onMouseUp={e=>{if(k!=="")e.currentTarget.style.boxShadow=T.outline;}}
         onMouseLeave={e=>{if(k!=="")e.currentTarget.style.boxShadow=T.outline;}}>{k}</button>)}
@@ -271,7 +271,7 @@ export function ImportButton({onImport, busy, label, accent, helpText, warnText,
   };
 
   return(<div style={{position:"relative",fontFamily:T.font}}>
-    <button ref={btnRef} onClick={openMenu} disabled={busy} aria-label={btnLabel} title={iconOnly?btnLabel:undefined} style={iconOnly?{"--e-lift-shadow":T.shadowMd,width:26,height:26,borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:T.ink500,fontWeight:600,fontSize:FZ.md,lineHeight:1,cursor:busy?"default":"pointer",opacity:busy?.6:1,display:"flex",alignItems:"center",justifyContent:"center",padding:0}:{"--e-lift-shadow":T.shadowMd,padding:"4px 8px",borderRadius:8,border:"none",background:bg,color:T.card,fontWeight:600,fontSize:FZ.xs,cursor:busy?"default":"pointer",opacity:busy?.6:1,display:"flex",alignItems:"center",gap:4,boxShadow:T.shadowSm,transition:"transform .12s ease, box-shadow .12s ease"}}
+    <button ref={btnRef} onClick={openMenu} disabled={busy} aria-label={btnLabel} title={iconOnly?btnLabel:undefined} style={iconOnly?{"--e-lift-shadow":T.shadowMd,width:26,height:26,borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:T.ink500,fontWeight:600,fontSize:FZ.md,lineHeight:1,cursor:busy?"default":"pointer",opacity:busy?.6:1,display:"flex",alignItems:"center",justifyContent:"center",padding:0}:{"--e-lift-shadow":T.shadowMd,padding:"4px 8px",borderRadius:8,border:"none",background:bg,color:T.card,fontWeight:500,fontSize:FZ.xs,cursor:busy?"default":"pointer",opacity:busy?.6:1,display:"flex",alignItems:"center",gap:4,boxShadow:T.shadowSm,transition:"transform var(--e-dur-micro) ease, box-shadow var(--e-dur-micro) ease"}}
       className="e-lift">
       {iconOnly?(busy?"…":(iconGlyph||"⋯")):busy?<span style={{display:"inline-flex",alignItems:"center",gap:6}}><span style={{width:10,height:10,borderRadius:"50%",border:"2px solid rgba(255,255,255,.4)",borderTopColor:"#fff",display:"inline-block",animation:"enogiaSpin .8s linear infinite"}}/>Mise à jour...</span>:<span style={{display:"inline-flex",alignItems:"center",gap:4}}><NavIcon name="upload" size={10}/><span className="enogia-import-label">{btnLabel}</span></span>}
     </button>
@@ -315,7 +315,7 @@ export function EmptyState({icon="inbox",title,hint,action,onAction,compact=fals
     <span aria-hidden="true" style={{width:compact?32:44,height:compact?32:44,borderRadius:R.md,background:bg,color:col,display:"inline-flex",alignItems:"center",justifyContent:"center",marginBottom:compact?2:4}}><NavIcon name={icon} size={compact?16:22}/></span>
     {title&&<div style={{fontSize:compact?FZ.sm:FZ.md,fontWeight:600,color:T.ink700,lineHeight:1.35}}>{title}</div>}
     {hint&&<div style={{fontSize:FZ.xs,color:T.ink500,lineHeight:1.4,maxWidth:380}}>{hint}</div>}
-    {action&&<button onClick={onAction} className="enogia-btn-tap" style={{marginTop:4,border:"none",background:"transparent",color:T.teal600,fontWeight:600,fontSize:FZ.xs,cursor:"pointer",fontFamily:T.font,padding:"4px 8px",borderRadius:R.sm,textDecoration:"underline"}}>{action}</button>}
+    {action&&<button onClick={onAction} className="enogia-btn-tap" style={{marginTop:4,border:"none",background:"transparent",color:T.teal600,fontWeight:500,fontSize:FZ.xs,cursor:"pointer",fontFamily:T.font,padding:"4px 8px",borderRadius:R.sm,textDecoration:"underline"}}>{action}</button>}
   </div>);
 }
 
@@ -358,7 +358,7 @@ export function NewDelayType({types,onCreate,onCreated,style}){
   const [open,setOpen]=useState(false),[v,setV]=useState(""),[busy,setBusy]=useState(false);
   if(!onCreate)return null;
   const go=async()=>{const n=v.trim();if(!n||busy)return;setBusy(true);try{if(!(types||[]).some(t=>String(t).toLowerCase()===n.toLowerCase()))await onCreate([...(types||[]),n]);onCreated&&onCreated(n);setV("");setOpen(false);}finally{setBusy(false);}};
-  const base={fontFamily:T.font,fontSize:FZ.xs,fontWeight:600,cursor:"pointer"};
+  const base={fontFamily:T.font,fontSize:FZ.xs,fontWeight:500,cursor:"pointer"};
   if(!open)return <button type="button" onClick={()=>setOpen(true)} style={{...base,padding:"5px 11px",borderRadius:999,border:"1.5px dashed "+T.teal500,background:"transparent",color:T.teal600,...style}}>＋ Nouvelle cause</button>;
   return <span style={{display:"inline-flex",gap:6,alignItems:"center",flexWrap:"wrap",...style}}>
     <input autoFocus={AF} type="text" value={v} maxLength={60} onChange={e=>setV(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();go();}if(e.key==="Escape")setOpen(false);}} placeholder="Nom de la cause" style={{padding:"5px 9px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink900,fontSize:FZ.sm,fontFamily:T.font,minWidth:150}}/>
@@ -441,9 +441,9 @@ export function PageHead({kicker,title,sub,right,style,accent}){ // v185 : accen
   // v178 : en-tête plus bas (demandé : « trop de hauteur à chaque fois ») — sur-titre, titre et sous-titre sur une même ligne de base.
   return(<div className="enogia-view-in" style={{display:"flex",alignItems:"flex-end",gap:12,flexWrap:"wrap",marginBottom:12,paddingBottom:6,borderBottom:"3px solid "+T.teal500,...style}}>
     <div style={{minWidth:0,flex:1,display:"flex",alignItems:"baseline",gap:"4px 14px",flexWrap:"wrap"}}>
-      {kicker&&<span style={{fontFamily:T.font,fontSize:12,fontWeight:600,color:T.accentInk}}>{kicker}</span>}
+      {kicker&&<span style={{fontFamily:T.font,fontSize:12,fontWeight:500,color:T.accentInk}}>{kicker}</span>}
       <h1 style={{margin:0,fontFamily:T.fontDisplay,fontSize:"clamp(32px,3.6vw,44px)",fontWeight:600,letterSpacing:"-.02em",color:T.ink900,lineHeight:1.1}}><Hl color={accent}>{title}</Hl></h1>
-      {sub&&<span style={{fontSize:FZ.sm,color:T.ink500}}>{sub}</span>}
+      {sub&&<span style={{fontSize:FZ.sm,color:T.ink500,maxWidth:"75ch"}}>{sub}</span>}
     </div>
     {right}
   </div>);
@@ -460,9 +460,9 @@ export const PILL_TONES = () => ({ ok: [T.emerald100, T.emerald600], warn: [T.am
   accent: [T.accentSoft || T.teal100, T.accentInk || T.teal600], violet: [T.violet100, T.violet600], neutral: [T.surfaceAlt, T.ink700], muted: [T.surface, T.ink500] });
 export function Pill({ tone = "neutral", bg, ink, size = "sm", children, style, title, className }) {
   const [b, i] = PILL_TONES()[tone] || PILL_TONES().neutral;
-  return <span className={"e-pill" + (className ? " " + className : "")} title={title} style={{ display: "inline-flex", alignItems: "center", gap: 5, flexShrink: 0, fontFamily: T.fontLabel || T.font, fontSize: FZ.xs, fontWeight: 600, lineHeight: size === "md" ? "22px" : "18px", padding: size === "md" ? "0 10px" : "0 8px", borderRadius: 999, background: bg || b, color: ink || i, whiteSpace: "nowrap", ...style }}>{children}</span>;
+  return <span className={"e-pill" + (className ? " " + className : "")} title={title} style={{ display: "inline-flex", alignItems: "center", gap: 5, flexShrink: 0, fontFamily: T.fontLabel || T.font, fontSize: FZ.xs, fontWeight: 500, lineHeight: size === "md" ? "22px" : "18px", padding: size === "md" ? "0 10px" : "0 8px", borderRadius: 999, background: bg || b, color: ink || i, whiteSpace: "nowrap", ...style }}>{children}</span>;
 }
-export const chipStyle = on => ({ display: "inline-flex", alignItems: "center", gap: 6, minHeight: 28, padding: "2px 10px", borderRadius: 999, border: "1px solid " + (on ? T.teal500 : T.line), background: on ? T.teal100 : T.card, color: on ? T.teal600 : T.ink700, fontFamily: T.font, fontSize: FZ.xs, fontWeight: 600, cursor: "pointer", "--e-chip-hover": T.contour || T.ink300 });
+export const chipStyle = on => ({ display: "inline-flex", alignItems: "center", gap: 6, minHeight: 28, padding: "2px 10px", borderRadius: 999, border: "1px solid " + (on ? T.teal500 : T.line), background: on ? T.teal100 : T.card, color: on ? T.teal600 : T.ink700, fontFamily: T.font, fontSize: FZ.xs, fontWeight: 500, cursor: "pointer", "--e-chip-hover": T.contour || T.ink300 });
 export function Chip({ on, onClick, children, count, style, title, disabled }) {
   return <button type="button" className="e-chip" aria-pressed={!!on} onClick={onClick} title={title} disabled={disabled} style={{ ...chipStyle(on), ...style }}>{children}{count != null && <span style={{ fontWeight: 600, opacity: 0.75, fontVariantNumeric: "tabular-nums" }}>{count}</span>}</button>;
 }
@@ -487,11 +487,11 @@ export function SortTh({ label, col, sort, onSort, num, style, title }) {
   const on = sort && sort.col === col && sort.dir;
   return <th aria-sort={on ? (sort.dir === "asc" ? "ascending" : "descending") : "none"} style={{ ...tableTh({ num }), ...style }}>
     <button type="button" onClick={() => onSort(col)} title={title || "Trier"} className="e-hov-ink" style={{ border: "none", background: "transparent", padding: 0, font: "inherit", color: on ? T.ink900 : "inherit", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4, "--e-hov-ink": T.ink900 }}>
-      {label}<span aria-hidden="true" style={{ fontSize: 11, opacity: on ? 1 : 0.45 }}>{on ? (sort.dir === "asc" ? "↑" : "↓") : "↕"}</span></button></th>;
+      {label}<span aria-hidden="true" style={{ fontSize: 12, opacity: on ? 1 : 0.45 }}>{on ? (sort.dir === "asc" ? "↑" : "↓") : "↕"}</span></button></th>;
 }
 export function Segmented({ options, value, onChange, label, bare, size = "sm" }) {
   const items = options.map(([id, l]) => { const on = value === id; return <button key={id} type="button" aria-pressed={on} onClick={() => onChange(id)} className="e-hov-ink"
-    style={{ border: "none", borderRadius: 8, minHeight: size === "md" ? 32 : 28, padding: "0 12px", fontSize: FZ.xs, fontWeight: 600, cursor: "pointer", fontFamily: T.font, background: on ? T.card : "transparent", color: on ? T.ink900 : T.ink500, boxShadow: on ? "0 1px 2px rgba(0,0,0,.08)" : "none", "--e-hov-ink": T.ink900 }}>{l}</button>; });
+    style={{ border: "none", borderRadius: 8, minHeight: size === "md" ? 32 : 28, padding: "0 12px", fontSize: FZ.xs, fontWeight: 500, cursor: "pointer", fontFamily: T.font, background: on ? T.card : "transparent", color: on ? T.ink900 : T.ink500, boxShadow: on ? "0 1px 2px rgba(0,0,0,.08)" : "none", "--e-hov-ink": T.ink900 }}>{l}</button>; });
   if (bare) return <>{items}</>;
   return <div role="group" aria-label={label} style={{ display: "inline-flex", background: T.surfaceAlt, borderRadius: 8, padding: 2, gap: 2 }}>{items}</div>;
 }

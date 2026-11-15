@@ -20,7 +20,7 @@ const card = { get background() { return T.card; }, borderRadius: 12, padding: "
 const h3 = { margin: "0 0 4px", fontFamily: T.fontDisplay, fontSize: 16, fontWeight: 600, color: T.ink900 };
 const hint = { margin: "0 0 10px", fontSize: 13, get color() { return T.ink500; } }; // v346 : accesseurs (suivent le clair / sombre)
 const initials = (name, email) => { const s = String(name || email || "?").replace(/@.*/, "").split(/[\s._-]+/).filter(Boolean); return ((s[0] || "?")[0] + ((s[1] || "")[0] || "")).toUpperCase(); };
-const Avatar = ({ p }) => <span aria-hidden="true" style={{ width: 28, height: 28, borderRadius: 999, background: T.surfaceAlt, color: T.ink700, display: "grid", placeItems: "center", fontFamily: T.fontDisplay, fontWeight: 600, fontSize: 11, flex: "0 0 28px" }}>{initials(p.name, p.email)}</span>;
+const Avatar = ({ p }) => <span aria-hidden="true" style={{ width: 28, height: 28, borderRadius: 999, background: T.surfaceAlt, color: T.ink700, display: "grid", placeItems: "center", fontFamily: T.fontDisplay, fontWeight: 600, fontSize: 12, flex: "0 0 28px" }}>{initials(p.name, p.email)}</span>;
 const field = { minHeight: 34, get border() { return "1px solid " + T.line; }, borderRadius: 8, get background() { return T.card; }, get color() { return T.ink900; }, padding: "0 10px", get fontFamily() { return T.font; }, fontSize: 13, minWidth: 0  }; // v346 : accesseurs (suivent le clair / sombre)
 
 // Choix du niveau : 4 segments (Masqué, Lecture, Modifier, Admin)
@@ -28,7 +28,7 @@ function LevelPicker({ value, onChange, label, min }) {
   return <div role="radiogroup" aria-label={label} style={{ display: "inline-flex", gap: 2, padding: 2, borderRadius: 8, background: T.surfaceAlt, flexShrink: 0 }}>
     {LEVELS.map(l => { const on = value === l, c = tone(l), off = min && LEVELS.indexOf(l) < LEVELS.indexOf(min);
       return <button key={l} type="button" role="radio" aria-checked={on} disabled={off} onClick={() => onChange(l)} title={off ? "Toujours visible" : LEVEL_LABEL[l]}
-        style={{ border: "none", borderRadius: 8, minHeight: 28, minWidth: 70, padding: "0 8px", cursor: off ? "not-allowed" : "pointer", fontFamily: T.font, fontSize: 12, fontWeight: on ? 600 : 500, opacity: off ? .4 : 1,
+        style={{ border: "none", borderRadius: 8, minHeight: 28, minWidth: 70, padding: "0 8px", cursor: off ? "not-allowed" : "pointer", fontFamily: T.font, fontSize: 12, fontWeight: on ? 500 : 500, opacity: off ? .4 : 1,
           background: on ? c.bg : "transparent", color: on ? c.ink : T.ink500, boxShadow: on ? "inset 0 0 0 1.5px color-mix(in srgb, " + c.ink + " 45%, transparent)" : "none" }}>{LEVEL_LABEL[l]}</button>; })}
   </div>;
 }
@@ -87,14 +87,14 @@ export default function AccessPage({ profiles, saveProfiles, accessDoc, saveAcce
   const rolesView = <div style={{ display: "grid", gridTemplateColumns: "minmax(220px,280px) minmax(0,1fr)", gap: 14, alignItems: "start" }} className="enogia-access-grid">
     <nav aria-label="Rôles" style={{ ...card, padding: 8, display: "flex", flexDirection: "column", gap: 2 }}>
       {R.map(([k, l]) => { const sel = k === curRole, n = members(k).length; return <button key={k} type="button" onClick={() => { setCur(k); setAdding(false); setPick({}); }} aria-current={sel ? "true" : undefined}
-        style={{ display: "flex", alignItems: "center", gap: 8, border: "none", borderRadius: 8, minHeight: 38, padding: "0 10px", cursor: "pointer", textAlign: "left", fontFamily: T.font, fontSize: 13, background: sel ? T.surfaceAlt : "transparent", color: T.ink900, fontWeight: sel ? 600 : 500 }}>
+        style={{ display: "flex", alignItems: "center", gap: 8, border: "none", borderRadius: 8, minHeight: 38, padding: "0 10px", cursor: "pointer", textAlign: "left", fontFamily: T.font, fontSize: 13, background: sel ? T.surfaceAlt : "transparent", color: T.ink900, fontWeight: sel ? 500 : 500 }}>
         <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l}</span><span style={{ fontSize: 12, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{n}</span></button>; })}
       {newRole == null ? <button type="button" onClick={() => setNewRole("")} style={{ ...btn("ghost", "sm"), marginTop: 6, justifyContent: "flex-start" }}>＋ Nouveau rôle</button>
         : <div style={{ display: "flex", gap: 4, marginTop: 6 }}><input autoFocus={AF} value={newRole} onChange={e => setNewRole(e.target.value)} onKeyDown={e => { if (e.key === "Enter") addRole(); if (e.key === "Escape") setNewRole(null); }} placeholder="Nom du rôle" aria-label="Nom du nouveau rôle" style={{ ...field, flex: 1 }} /><button type="button" onClick={addRole} style={{ ...btn("sec", "sm") }}>Créer</button></div>}
     </nav>
     <section aria-label={"Rôle " + roleName(curRole)} style={card}>
       <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 8 }}>
-        <input value={roleName(curRole)} onChange={e => renameRole(curRole, e.target.value)} aria-label="Nom du rôle" style={{ ...field, fontFamily: T.fontDisplay, fontSize: 18, fontWeight: 600, minHeight: 38, flex: "1 1 220px" }} />
+        <input value={roleName(curRole)} onChange={e => renameRole(curRole, e.target.value)} aria-label="Nom du rôle" style={{ ...field, fontFamily: T.fontDisplay, fontSize: 20, fontWeight: 600, minHeight: 38, flex: "1 1 220px" }} />
         <button type="button" onClick={() => { setPrevRole(curRole); setSub("acces"); }} style={{ ...btn("sec", "sm") }}>Voir ses accès</button>
         {!BUILTIN_ROLE_IDS.includes(curRole) && <button type="button" onClick={() => deleteRole(curRole)} style={{ ...btn("dan", "sm") }}>Supprimer le rôle</button>}
       </div>
@@ -102,7 +102,7 @@ export default function AccessPage({ profiles, saveProfiles, accessDoc, saveAcce
       <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
         {members(curRole).map(p => { const chg = (roleOf[p.email] || null) && roleNow(p.email) !== savedRole(p.email);
           return <li key={p.email} style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 44, borderBottom: "1px solid " + T.line }}>
-            <Avatar p={p} /><span style={{ flex: 1, minWidth: 0 }}><b style={{ display: "block", fontSize: 13, color: T.ink900 }}>{p.name || p.email.replace(/@.*/, "")}{chg && <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 600, color: T.accentInk }}>nouveau</span>}</b><span style={{ fontSize: 12, color: T.ink500 }}>{p.email}</span></span>
+            <Avatar p={p} /><span style={{ flex: 1, minWidth: 0 }}><b style={{ display: "block", fontSize: 13, color: T.ink900 }}>{p.name || p.email.replace(/@.*/, "")}{chg && <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 500, color: T.accentInk }}>nouveau</span>}</b><span style={{ fontSize: 12, color: T.ink500 }}>{p.email}</span></span>
             {curRole !== "autre" && <button type="button" onClick={() => assign([p.email], "autre")} aria-label={"Retirer " + (p.name || p.email) + " du rôle"} title="Retirer du rôle (passe dans Autres personnes)" style={{ ...btn("ghost", "sm"), minWidth: 32 }}>×</button>}
           </li>; })}
         {!members(curRole).length && <li style={{ ...hint, margin: "6px 0" }}>Personne pour l'instant.</li>}
@@ -131,7 +131,7 @@ export default function AccessPage({ profiles, saveProfiles, accessDoc, saveAcce
   const accesView = <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(220px,280px)", gap: 14, alignItems: "start" }} className="enogia-access-grid">
     <section aria-label="Accès par page" style={card}>
       <div role="group" aria-label="Rôle" style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 10 }}>
-        {R.map(([k, l]) => { const sel = k === aRole; return <button key={k} type="button" aria-pressed={sel} onClick={() => setPrevRole(k)} style={{ border: "1px solid " + (sel ? T.ink900 : T.line), background: sel ? T.ink900 : T.card, color: sel ? T.card : T.ink700, borderRadius: 999, minHeight: 30, padding: "0 12px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>{l} <span style={{ opacity: .7, fontWeight: 500 }}>{members(k).length}</span></button>; })}
+        {R.map(([k, l]) => { const sel = k === aRole; return <button key={k} type="button" aria-pressed={sel} onClick={() => setPrevRole(k)} style={{ border: "1px solid " + (sel ? T.ink900 : T.line), background: sel ? T.ink900 : T.card, color: sel ? T.card : T.ink700, borderRadius: 999, minHeight: 30, padding: "0 12px", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: T.font }}>{l} <span style={{ opacity: .7, fontWeight: 500 }}>{members(k).length}</span></button>; })}
       </div>
       <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 6 }}>
         <span style={{ fontSize: 13, color: T.ink500, flex: 1 }}>Accès du rôle <b style={{ color: T.ink900 }}>{roleName(aRole)}</b>. Changer une page change toutes ses sous-pages.</span>
@@ -156,8 +156,8 @@ export default function AccessPage({ profiles, saveProfiles, accessDoc, saveAcce
       <h3 style={h3}>Menu de « {roleName(aRole)} »</h3>
       <div style={{ marginTop: 8, borderRadius: 8, background: T.mode === "dark" ? T.surface : T.ink900, color: T.mode === "dark" ? T.ink900 : T.card, padding: 8, fontSize: 13 }}>
         {groups.map(g => { const its = ACCESS_PAGES.filter(p => p.g === g && lv(p.id) !== "n"); return its.length ? <div key={g}>
-          <div style={{ fontSize: 12, fontWeight: 600, opacity: .65, padding: "6px 6px 2px" }}>{g}</div>
-          {its.map(p => <div key={p.id}><div style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "3px 8px" }}><span>{p.l}</span><span style={{ fontSize: 11, opacity: .8 }}>{{ r: "lecture", w: "modifier", a: "admin" }[lv(p.id)]}</span></div>
+          <div style={{ fontSize: 12, fontWeight: 500, opacity: .65, padding: "6px 6px 2px" }}>{g}</div>
+          {its.map(p => <div key={p.id}><div style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "3px 8px" }}><span>{p.l}</span><span style={{ fontSize: 12, opacity: .8 }}>{{ r: "lecture", w: "modifier", a: "admin" }[lv(p.id)]}</span></div>
             {(p.subs || []).filter(([s]) => lv(p.id + "." + s) !== "n").map(([s, sl]) => <div key={s} style={{ padding: "1px 8px 1px 22px", fontSize: 12, opacity: .8 }}>{sl}</div>)}</div>)}</div> : null; })}
       </div>
     </aside>

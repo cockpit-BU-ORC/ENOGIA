@@ -21,8 +21,8 @@ function DateCell({ c, strong }) {
   const tone = TONE[c.delta === null ? "neutral" : c.delta > 0 ? "late" : "early"];
   const label = c.delta === null ? (c.to ? "défini" : "retiré") : fmtDelta(c.delta);
   return (<span title={fmtIso(c.from) + " → " + fmtIso(c.to) + (c.delta !== null ? " (" + fmtDelta(c.delta) + " calendaires)" : "")} style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 1, lineHeight: 1.15 }}>
-    <span style={{ background: tone.bg, color: tone.fg, borderRadius: 8, padding: strong ? "2px 8px" : "1px 7px", fontWeight: 600, fontSize: strong ? 12.5 : 12 }}>{label}</span>
-    <span style={{ fontSize: 11.5, color: T.ink500, fontFamily: T.fontMono, whiteSpace: "nowrap" }}>{c.from ? fmtIso(c.from).slice(0, 5) : "—"} → {c.to ? fmtIso(c.to).slice(0, 5) : "—"}</span>
+    <span style={{ background: tone.bg, color: tone.fg, borderRadius: 8, padding: strong ? "2px 8px" : "1px 7px", fontWeight: 600, fontSize: strong ? 13 : 12 }}>{label}</span>
+    <span style={{ fontSize: 12, color: T.ink500, fontFamily: T.fontMono, whiteSpace: "nowrap" }}>{c.from ? fmtIso(c.from).slice(0, 5) : "—"} → {c.to ? fmtIso(c.to).slice(0, 5) : "—"}</span>
   </span>);
 }
 
@@ -65,25 +65,25 @@ export function PlannerChanges({ summary, planDiff, refs, refId, setRefId, refLa
   return (<div style={{ padding: "14px 16px 16px" }}>
     <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 12 }}>
       <span style={{ fontSize: 13, color: T.ink500 }}>{lead || "Plan en cours comparé à"}</span>
-      <select value={refId} onChange={e => { setRefId(e.target.value); setFilter("all"); }} aria-label="Référence de comparaison" style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: 13, fontWeight: 600, fontFamily: T.font, maxWidth: 560 }}>
+      <select value={refId} onChange={e => { setRefId(e.target.value); setFilter("all"); }} aria-label="Référence de comparaison" style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: 13, fontWeight: 500, fontFamily: T.font, maxWidth: 560 }}>
         {refs.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
       </select>
       {loadingRefs && <span style={{ fontSize: 12, color: T.ink500 }}>chargement de l'historique…</span>}
       <span style={{ flex: 1 }} />
-      <button className="pg-tb" style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink700, fontSize: 12.5, fontWeight: 600, cursor: "pointer", fontFamily: T.font, whiteSpace: "nowrap" }} onClick={copy} title="Copie la synthèse en texte, prête à coller dans un mail ou un compte rendu">{copied ? "Copié ✓" : "Copier la synthèse"}</button>
+      <button className="pg-tb" style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink700, fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: T.font, whiteSpace: "nowrap" }} onClick={copy} title="Copie la synthèse en texte, prête à coller dans un mail ou un compte rendu">{copied ? "Copié ✓" : "Copier la synthèse"}</button>
     </div>
 
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 8, marginBottom: 12 }}>
       {tiles.map(([k, label, n, sub, col]) => (<button key={k} onClick={() => setFilter(filter === k && k !== "all" ? "all" : k)} aria-pressed={filter === k}
         style={{ textAlign: "left", cursor: "pointer", fontFamily: T.font, background: filter === k ? T.teal100 : T.card, border: "1px solid " + (filter === k ? T.teal500 : T.line), borderRadius: 12, padding: "9px 12px" }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: T.ink500 }}>{label}</div>
-        <div style={{ fontSize: 24, fontWeight: 600, color: n ? col : T.ink300, lineHeight: 1.15 }}>{n}</div>
-        <div style={{ fontSize: 11.5, color: T.ink500 }}>{sub}</div>
+        <div style={{ fontSize: 12, fontWeight: 500, color: T.ink500 }}>{label}</div>
+        <div style={{ fontSize: 28, fontWeight: 600, color: n ? col : T.ink300, lineHeight: 1.15 }}>{n}</div>
+        <div style={{ fontSize: 12, color: T.ink500 }}>{sub}</div>
       </button>))}
     </div>
 
     {summary.pjs.length === 0 ? <div style={{ background: T.emerald100, color: T.emerald600, borderRadius: 12, padding: "14px 16px", fontWeight: 600, fontSize: 14 }}>{ctx === "version" ? "✓ Aucune date ni heure n'a changé entre ces deux versions." : <>✓ Aucune différence : le plan en cours est identique à « {refLabel} ».</>}</div>
-      : list.length === 0 ? <div style={{ color: T.ink500, fontSize: 13.5, padding: "10px 2px" }}>Aucun PJ ne correspond à ce filtre.</div>
+      : list.length === 0 ? <div style={{ color: T.ink500, fontSize: 14, padding: "10px 2px" }}>Aucun PJ ne correspond à ce filtre.</div>
       : <div style={{ border: "1px solid " + T.line, borderRadius: 12, overflow: "auto", maxHeight: 520 }}>
         <table style={{ width: "100%", minWidth: 860, borderCollapse: "collapse", fontSize: 13 }}>
           <thead><tr>
@@ -94,27 +94,27 @@ export function PlannerChanges({ summary, planDiff, refs, refId, setRefId, refLa
           <tbody>
             {list.map(p => (<tr key={p.pj} className="pg-row" onClick={() => onOpenPj(p.pj)} style={{ cursor: "pointer", borderTop: "1px solid " + T.line }}>
               <td style={{ padding: "7px 8px 7px 12px", minWidth: 190 }}>
-                <div style={{ fontFamily: T.fontMono, fontWeight: 600, color: T.teal600 }}>{p.pj}{p.isNew && <span style={{ marginLeft: 6, fontFamily: T.font, fontSize: 11.5, background: T.amber100, color: T.amber600, borderRadius: 4, padding: "1px 6px" }}>nouveau</span>}</div>
+                <div style={{ fontFamily: T.fontMono, fontWeight: 600, color: T.teal600 }}>{p.pj}{p.isNew && <span style={{ marginLeft: 6, fontFamily: T.font, fontSize: 12, background: T.amber100, color: T.amber600, borderRadius: 4, padding: "1px 6px" }}>nouveau</span>}</div>
                 {p.nomProjet && <div style={{ fontSize: 12, color: T.ink500, maxWidth: 240, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.nomProjet}</div>}
               </td>
-              {FIELDS.map(([f]) => <td key={f} style={{ padding: "6px 4px", textAlign: "center", background: f === "depart" && p.d.depart ? "rgba(0,0,0,.025)" : "transparent" }}>{p.isNew ? (f === "depart" && p.row.depart ? <span style={{ fontSize: 11.5, color: T.ink500, fontFamily: T.fontMono }}>{fmtIso(p.row.depart)}</span> : null) : <DateCell c={p.d[f]} strong={f === "depart"} />}</td>)}
+              {FIELDS.map(([f]) => <td key={f} style={{ padding: "6px 4px", textAlign: "center", background: f === "depart" && p.d.depart ? "rgba(0,0,0,.025)" : "transparent" }}>{p.isNew ? (f === "depart" && p.row.depart ? <span style={{ fontSize: 12, color: T.ink500, fontFamily: T.fontMono }}>{fmtIso(p.row.depart)}</span> : null) : <DateCell c={p.d[f]} strong={f === "depart"} />}</td>)}
               <td style={{ padding: "6px 6px", textAlign: "center", fontSize: 12, color: T.ink700, whiteSpace: "nowrap" }}>
                 {p.hours ? <>{p.hours.at && <div title="Heures atelier">At. {p.hours.at.from} → {p.hours.at.to} h</div>}{p.hours.au && <div title="Heures autom">Au. {p.hours.au.from} → {p.hours.au.to} h</div>}</> : <span style={{ color: T.ink300 }}>·</span>}
               </td>
-              <td style={{ padding: "6px 10px", textAlign: "right", whiteSpace: "nowrap" }}><span style={{ fontSize: 12, fontWeight: 600, color: T.teal600 }}>Voir ›</span></td>
+              <td style={{ padding: "6px 10px", textAlign: "right", whiteSpace: "nowrap" }}><span style={{ fontSize: 12, fontWeight: 500, color: T.teal600 }}>Voir ›</span></td>
             </tr>))}
           </tbody>
         </table>
       </div>}
-    <div style={{ fontSize: 11.5, color: T.ink500, marginTop: 6 }}>Écarts en jours calendaires : <span style={{ color: TONE.late.fg, fontWeight: 600 }}>rouge = plus tard</span>, <span style={{ color: TONE.early.fg, fontWeight: 600 }}>vert = plus tôt</span> · cliquez une ligne pour l'ouvrir {openHint || "dans le Gantt"}.</div>
-    {removed && removed.length > 0 && <div style={{ marginTop: 10, fontSize: 12.5, color: T.ink700, lineHeight: 1.7 }}><b style={{ color: T.red500 }}>Retirés de cette version :</b> {removed.map(r => <span key={r.pj} title={r.nomProjet || ""} style={{ fontFamily: T.fontMono, fontWeight: 600, background: T.red100, color: T.red500, borderRadius: 4, padding: "1px 7px", marginRight: 5, display: "inline-block" }}>{r.pj}</span>)}</div>}
+    <div style={{ fontSize: 12, color: T.ink500, marginTop: 6 }}>Écarts en jours calendaires : <span style={{ color: TONE.late.fg, fontWeight: 600 }}>rouge = plus tard</span>, <span style={{ color: TONE.early.fg, fontWeight: 600 }}>vert = plus tôt</span> · cliquez une ligne pour l'ouvrir {openHint || "dans le Gantt"}.</div>
+    {removed && removed.length > 0 && <div style={{ marginTop: 10, fontSize: 13, color: T.ink700, lineHeight: 1.7 }}><b style={{ color: T.red500 }}>Retirés de cette version :</b> {removed.map(r => <span key={r.pj} title={r.nomProjet || ""} style={{ fontFamily: T.fontMono, fontWeight: 600, background: T.red100, color: T.red500, borderRadius: 4, padding: "1px 7px", marginRight: 5, display: "inline-block" }}>{r.pj}</span>)}</div>}
 
     {hasDetail ? (planDiff.length > 0 && <div style={{ marginTop: 16 }}>
-      <div style={{ fontWeight: 600, fontSize: 13.5, color: T.ink900, marginBottom: 6 }}>Ce qui a changé dans le plan ({planDiff.length}) <span style={{ fontWeight: 400, color: T.ink500, fontSize: 12 }}>· les causes des décalages ci-dessus</span></div>
+      <div style={{ fontWeight: 600, fontSize: 14, color: T.ink900, marginBottom: 6 }}>Ce qui a changé dans le plan ({planDiff.length}) <span style={{ fontWeight: 400, color: T.ink500, fontSize: 12 }}>· les causes des décalages ci-dessus</span></div>
       <div style={{ border: "1px solid " + T.line, borderRadius: 12, overflow: "auto", maxHeight: allDiff ? 520 : 240 }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}><tbody>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}><tbody>
           {(allDiff ? planDiff : planDiff.slice(0, 60)).map((x, i) => (<tr key={i} onClick={x.pj ? () => onOpenPj(x.pj) : undefined} className={x.pj ? "pg-row" : undefined} style={{ borderTop: i ? "1px solid " + T.line : "none", cursor: x.pj ? "pointer" : "default" }}>
-            <td style={{ padding: "5px 10px", width: 110 }}><span style={{ fontSize: 11, fontWeight: 600, color: KIND_COLOR[x.kind] || T.ink700 }}>{x.kind}</span></td>
+            <td style={{ padding: "5px 10px", width: 110 }}><span style={{ fontSize: 12, fontWeight: 500, color: KIND_COLOR[x.kind] || T.ink700 }}>{x.kind}</span></td>
             <td style={{ padding: "5px 8px", width: 100, fontFamily: T.fontMono, fontWeight: 600, color: T.teal600 }}>{x.pj || ""}</td>
             <td style={{ padding: "5px 10px", color: T.ink700 }}>{x.text}</td>
           </tr>))}

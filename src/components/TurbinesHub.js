@@ -57,7 +57,7 @@ function ChoicePop({ anchor, title, options, value, onPick, onClose, extra }) {
     return () => { window.removeEventListener("keydown", k); document.removeEventListener("pointerdown", d); }; }, [anchor, onClose]);
   const r = anchor ? anchor.getBoundingClientRect() : { left: 0, bottom: 0 };
   return createPortal(<div ref={ref} role="dialog" aria-label={title} className="enogia-bell-peek" style={{ position: "fixed", left: Math.max(8, Math.min(r.left, window.innerWidth - 300)), top: Math.min(r.bottom + 6, window.innerHeight - 220), width: 288, zIndex: 10020, background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, padding: 10, transformOrigin: "top left", fontFamily: T.font }}>
-    <div style={{ fontSize: 12, color: T.ink500, fontWeight: 600, marginBottom: 6 }}>{title}</div>
+    <div style={{ fontSize: 12, color: T.ink500, fontWeight: 500, marginBottom: 6 }}>{title}</div>
     <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
       {options.map(o => <button key={o.v} type="button" aria-pressed={o.v === value} onClick={() => onPick(o.v)} style={{ border: "1px solid " + (o.v === value ? T.ink900 : T.line), background: o.v === value ? T.ink900 : T.card, color: o.v === value ? T.card : T.ink900, borderRadius: 8, minHeight: 32, padding: "0 10px", fontSize: FZ.sm, cursor: "pointer", fontFamily: T.font, display: "inline-flex", gap: 6, alignItems: "center" }}>
         {o.l}{o.q != null && <span style={{ fontSize: FZ.xs, fontVariantNumeric: "tabular-nums", color: o.v === value ? T.card : o.q > 0 ? T.ink500 : T.red600, opacity: o.v === value ? 0.8 : 1 }}>{o.q}</span>}</button>)}
@@ -76,9 +76,9 @@ const fdS = s => (s ? String(s).slice(8, 10) + "/" + String(s).slice(5, 7) : "�
 const U2 = v => String(v || "").trim().toUpperCase();
 const NEEDS_CSS = `
 .enogia-nd-glass{background:var(--nd-bg)}
-.enogia-nd-tile{transition:transform 120ms cubic-bezier(.2,.8,.2,1),box-shadow 120ms,opacity 160ms}
+.enogia-nd-tile{transition:transform var(--e-dur-micro) cubic-bezier(.2,.8,.2,1),box-shadow var(--e-dur-micro),opacity var(--e-dur-menu)}
 .enogia-nd-tile:active{transform:scale(.97)}
-.enogia-nd-sock{transition:background 140ms,box-shadow 140ms,transform 180ms cubic-bezier(.2,.8,.2,1),opacity 140ms}
+.enogia-nd-sock{transition:background var(--e-dur-menu),box-shadow var(--e-dur-menu),transform var(--e-dur-menu) cubic-bezier(.2,.8,.2,1),opacity var(--e-dur-menu)}
 .enogia-nd-sock[role=button]{cursor:pointer}
 .enogia-nd-sock[role=button]:active{transform:scale(.97);transition-duration:100ms}
 .enogia-nd-month{position:sticky;z-index:2;border-bottom:1px solid var(--nd-line)}
@@ -86,7 +86,7 @@ const NEEDS_CSS = `
 @keyframes enogiaNdLand{0%{transform:scale(1.06)}100%{transform:scale(1)}}
 @media (prefers-reduced-motion: reduce){.enogia-nd-land{animation:none}.enogia-nd-sock,.enogia-nd-tile{transition:none}}
 
-@media (max-width: 860px){.enogia-nd-app{grid-template-columns:1fr !important;height:auto !important;overflow:clip !important}.enogia-nd-need{grid-template-columns:1fr !important}.enogia-nd-stock{position:sticky !important;bottom:0;order:2;z-index:6;border-right:none !important;border-top:1px solid var(--nd-line);max-height:50vh;overflow-y:auto;transition:max-height 200ms ease-out}.enogia-nd-stock[data-open="0"]{max-height:52px;overflow:hidden}.enogia-nd-drawer{display:inline-flex !important}}
+@media (max-width: 860px){.enogia-nd-app{grid-template-columns:1fr !important;height:auto !important;overflow:clip !important}.enogia-nd-need{grid-template-columns:1fr !important}.enogia-nd-stock{position:sticky !important;bottom:0;order:2;z-index:6;border-right:none !important;border-top:1px solid var(--nd-line);max-height:50vh;overflow-y:auto;transition:max-height var(--e-dur-in) ease-out}.enogia-nd-stock[data-open="0"]{max-height:52px;overflow:hidden}.enogia-nd-drawer{display:inline-flex !important}}
 /* v333 (audit tablette) : sous 860 px, le stock devient un tiroir collé en bas, replié par défaut (toucher une pièce le referme) */`;
 function ProgBar({ p }) { return <span aria-hidden="true" style={{ display: "inline-block", width: 28, height: 6, borderRadius: 4, background: T.surfaceAlt, overflow: "hidden", flexShrink: 0 }}><span style={{ display: "block", width: Math.round(p * 100) + "%", height: "100%", background: T.emerald500 }} /></span>; } // v345 (taste) : barre au lieu de l'anneau
 // v300 (maquette V300 validée : « Go ») : tuile du stock compacte, 30 px, liseré de couleur à gauche, quantité à droite
@@ -96,9 +96,9 @@ function Tile({ ctx, p, k, title, sub, q, disabled, tc, subMono }) { const { dnd
       onClick={() => { if (!canEdit || disabled) return; setPicked(isPicked(p) ? null : p); }}
       onKeyDown={e => { if ((e.key === "Enter" || e.key === " ") && canEdit && !disabled) { e.preventDefault(); setPicked(isPicked(p) ? null : p); } }}
       style={{ display: "flex", alignItems: "center", gap: 6, height: 30, padding: "0 8px 0 10px", boxSizing: "border-box", minWidth: 0, borderRadius: 8, background: T.card, boxShadow: "inset 3px 0 0 " + k + ", inset 0 0 0 " + (isPicked(p) ? "2px " + T.ink900 : "1px " + T.line), cursor: canEdit && !disabled ? "grab" : "default", touchAction: "none", userSelect: "none", opacity: on ? 0.25 : disabled ? 0.45 : 1, fontFamily: T.font }}>
-      <span style={{ flex: 1, minWidth: 0, fontWeight: 600, fontSize: 12, color: tc || T.ink900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{title}</span>
-      {sub && <span style={{ fontSize: subMono ? 11 : 12, fontFamily: subMono ? T.fontMono : T.font, color: T.ink500, whiteSpace: "nowrap" }}>{sub}</span>}
-      {q != null && <span style={{ fontSize: 12, fontWeight: 600, fontVariantNumeric: "tabular-nums", color: q ? T.ink700 : T.red600 }}>{q}</span>}
+      <span style={{ flex: 1, minWidth: 0, fontWeight: 500, fontSize: 12, color: tc || T.ink900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{title}</span>
+      {sub && <span style={{ fontSize: subMono ? 12 : 12, fontFamily: subMono ? T.fontMono : T.font, color: T.ink500, whiteSpace: "nowrap" }}>{sub}</span>}
+      {q != null && <span style={{ fontSize: 12, fontWeight: 500, fontVariantNumeric: "tabular-nums", color: q ? T.ink700 : T.red600 }}>{q}</span>}
     </div>; }
 const IC = {
   ok: <svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true" style={{ flexShrink: 0 }}><path d="M2.5 6.5l2.2 2.2L9.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>,
@@ -130,21 +130,21 @@ function Sock({ ctx, n, s, kind, label, want, tone, empty, hint, children }) {
       style={{ position: "relative", minWidth: 0, minHeight: 50, borderRadius: 8, padding: "3px 7px", boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "center", border: bd, cursor: !filled && canEdit && !lock ? "pointer" : "default",
         background: refused ? T.red100 : over ? T.emerald100 : can ? T.surfaceAlt : filled ? tone.bg : "transparent", transform: over ? "scale(1.03)" : "none", opacity: active && !can0 && !filled ? 0.35 : 1 }}>
       {filled ? children : <>
-        <span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11, fontWeight: 600, lineHeight: 1.15, color: refused ? T.red600 : T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{lock ? IC.lock : IC.plus}{refused ? "Refusé : roue " + n.roue + " prévue" : lock ? label + " · verrouillé" : label}</span>
+        <span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 12, fontWeight: 500, lineHeight: 1.15, color: refused ? T.red600 : T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{lock ? IC.lock : IC.plus}{refused ? "Refusé : roue " + n.roue + " prévue" : lock ? label + " · verrouillé" : label}</span>
         <span style={{ ...REF_ST, fontFamily: want ? T.fontDisplay : T.font, fontSize: want ? 14 : 13, fontWeight: 600, color: want ? T.ink500 : T.ink700 }}>{want || empty || (kind === "turbine" ? "glisser une turbine" : "à choisir")}</span>
-        {hint && <span style={{ fontSize: 11, lineHeight: 1.15, color: T.ink500 }}>{hint}</span>}</>}
+        {hint && <span style={{ fontSize: 12, lineHeight: 1.15, color: T.ink500 }}>{hint}</span>}</>}
     </div>;
   }
 // v301 (demandé : « je n'arrive pas à voir le nom complet de l'injecteur ») : la référence passe à la ligne (2 lignes au plus) au lieu d'être coupée
 const REF_ST = { lineHeight: 1.12, overflowWrap: "anywhere", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" };
 // contenu d'un logement rempli : quoi (icône + état), référence complète, détail
 function Piece({ tone, icon, label, val, mono, detail, x }) {
-  return <><span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11, fontWeight: 600, lineHeight: 1.15, color: tone.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", paddingRight: x ? 16 : 0 }}>{icon}{label}</span>
+  return <><span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 12, fontWeight: 500, lineHeight: 1.15, color: tone.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", paddingRight: x ? 16 : 0 }}>{icon}{label}</span>
     <span title={val} style={{ ...REF_ST, fontFamily: mono ? T.fontMono : T.fontDisplay, fontSize: mono ? 12 : 14, fontWeight: 600, color: tone.ink, paddingRight: x ? 14 : 0 }}>{val}</span>
-    {detail && <span style={{ fontSize: 11, lineHeight: 1.15, color: tone.ink, opacity: 0.85 }}>{detail}</span>}{x}</>;
+    {detail && <span style={{ fontSize: 12, lineHeight: 1.15, color: tone.ink, opacity: 0.85 }}>{detail}</span>}{x}</>;
 }
 // v350 (audit de performance) : défini hors du composant (sinon recréé et remonté à chaque rendu)
-const Sub = ({ t, n, children }) => <div style={{ display: "flex", flexDirection: "column", gap: 3 }}><div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 600, color: T.ink500, padding: "0 2px" }}><span>{t}</span><span style={{ fontVariantNumeric: "tabular-nums" }}>{n}</span></div>{children}</div>;
+const Sub = ({ t, n, children }) => <div style={{ display: "flex", flexDirection: "column", gap: 3 }}><div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 500, color: T.ink500, padding: "0 2px" }}><span>{t}</span><span style={{ fontVariantNumeric: "tabular-nums" }}>{n}</span></div>{children}</div>;
 function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
   const [tick, setTick] = useState(0); // la fiche PJ (pjMetaOverrides) change sans changer rows : recalcul après une modification ici
   const { needs, free } = useMemo(() => buildNeeds(doc, rows, r => getPjMeta(r.pj, r)), [doc, rows, tick]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -215,9 +215,9 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
   const Sect = ({ t, n, k, note, children }) => { const open = !fold[t];
     return <section aria-label={t} style={{ margin: "10px 10px 0", background: T.card, border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden" }}>
     <button type="button" aria-expanded={open} onClick={() => flipFold(t)} style={{ display: "flex", alignItems: "center", gap: 7, width: "100%", minHeight: 34, padding: "7px 10px", border: "none", borderBottom: open ? "1px solid " + T.line : "none", background: T.surface, color: T.ink900, cursor: "pointer", fontFamily: T.font, textAlign: "left" }}>
-      <span aria-hidden="true" style={{ display: "inline-flex", color: T.ink500, transform: open ? "none" : "rotate(-90deg)", transition: "transform 120ms" }}><NavIcon name="chevronDown" size={14} /></span>
-      <i aria-hidden="true" style={{ width: 10, height: 10, borderRadius: 4, background: k, flexShrink: 0 }} /><b style={{ fontSize: 13, flex: 1 }}>{t}</b><span style={{ fontSize: 12, fontWeight: 600, color: T.ink700, fontVariantNumeric: "tabular-nums" }}>{n}</span></button>
-    {open && <div style={{ padding: 8, display: "flex", flexDirection: "column", gap: 6 }}>{children}{note && <span style={{ fontSize: 11, color: T.ink500, lineHeight: 1.35 }}>{note}</span>}</div>}</section>; };
+      <span aria-hidden="true" style={{ display: "inline-flex", color: T.ink500, transform: open ? "none" : "rotate(-90deg)", transition: "transform var(--e-dur-micro)" }}><NavIcon name="chevronDown" size={14} /></span>
+      <i aria-hidden="true" style={{ width: 10, height: 10, borderRadius: 4, background: k, flexShrink: 0 }} /><b style={{ fontSize: 13, flex: 1 }}>{t}</b><span style={{ fontSize: 12, fontWeight: 500, color: T.ink700, fontVariantNumeric: "tabular-nums" }}>{n}</span></button>
+    {open && <div style={{ padding: 8, display: "flex", flexDirection: "column", gap: 6 }}>{children}{note && <span style={{ fontSize: 12, color: T.ink500, lineHeight: 1.35 }}>{note}</span>}</div>}</section>; };
   const none = <span style={{ fontSize: 12, color: T.ink500 }}>Aucune.</span>;
   const xBtn = (lab, fn) => canEdit && <button type="button" data-no-drag aria-label={lab} title="Remettre dans le stock" onClick={e => { e.stopPropagation(); fn(); }} style={{ position: "absolute", top: 1, right: 2, border: "none", background: "transparent", color: "inherit", opacity: 0.7, cursor: "pointer", width: 22, height: 22, borderRadius: 4, fontSize: 14, lineHeight: 1, padding: 0 }}>×</button>;
   const injTxt = n => n.inj || "";
@@ -244,8 +244,8 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
     if (!x.installee && !full) { const miss = [!x.roueOk && "la roue", !x.inj && "l'injecteur"].filter(Boolean);
       if (!(await askConfirm({ title: "Marquer " + (x.t.num || "la turbine") + " installée ?", message: "Il manque " + miss.join(" et ") + " pour " + n.label + ". La turbine sera quand même marquée installée.", confirmLabel: "Marquer installée" }))) return; }
     run(installOps(doc, x.t, !x.installee)); };
-  const pill = { display: "inline-flex", alignItems: "center", borderRadius: 999, padding: "1px 7px", fontSize: 11, fontWeight: 600, whiteSpace: "nowrap" };
-  const linkB = { border: "none", background: "transparent", padding: 0, fontSize: 12, fontWeight: 600, cursor: canEdit ? "pointer" : "default", textDecoration: "underline", textUnderlineOffset: 2, fontFamily: T.font, whiteSpace: "nowrap" };
+  const pill = { display: "inline-flex", alignItems: "center", borderRadius: 999, padding: "1px 7px", fontSize: 12, fontWeight: 500, whiteSpace: "nowrap" };
+  const linkB = { border: "none", background: "transparent", padding: 0, fontSize: 12, fontWeight: 500, cursor: canEdit ? "pointer" : "default", textDecoration: "underline", textUnderlineOffset: 2, fontFamily: T.font, whiteSpace: "nowrap" };
   const gapEl = x => x.ecart == null ? null : <span style={{ fontWeight: 600, color: x.ecart < 0 ? T.red600 : x.ecart < 5 ? T.amber600 : T.emerald600 }}>{x.ecart < 0 ? -x.ecart + " j de retard" : x.ecart === 0 ? "juste à temps" : x.ecart + " j de marge"}</span>;
   const legend = [["à attribuer", { border: "1.5px dashed " + T.ink300 }], ["roue", { background: TN.roue.bg, border: "1.5px solid " + TN.roue.bd }], ["injecteur", { background: TN.inj.bg, border: "1.5px solid " + TN.inj.bd }],
     ["turbine allouée", { background: TN.turbine.bg, border: "1.5px solid " + TN.turbine.bd }], ["installée (roue et injecteur verrouillés)", { background: TN.inst.bg, border: "1.5px solid " + TN.inst.bd }], ["refusé", { background: TN.bad.bg, border: "1.5px solid " + TN.bad.bd }]];
@@ -255,9 +255,9 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
       <aside className="enogia-nd-stock" data-open={drawer ? "1" : "0"} aria-label="Stock de la production turbines" style={{ background: T.surface, borderRight: "1px solid " + T.line, overflowY: "auto" }}>
         <div style={{ position: "sticky", top: 0, zIndex: 2, background: T.surface, padding: "10px 12px 6px", display: "flex", alignItems: "center", gap: 8, boxShadow: "0 1px 0 " + T.line }}>
           <b style={{ fontSize: 13, flex: 1 }}>Stock de la production</b>
-          <button type="button" className="enogia-nd-drawer" aria-expanded={drawer} onClick={() => setDrawer(v => !v)} style={{ display: "none", alignItems: "center", gap: 4, minHeight: 32, padding: "0 10px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>{drawer ? "Replier" : "Ouvrir"}</button>
+          <button type="button" className="enogia-nd-drawer" aria-expanded={drawer} onClick={() => setDrawer(v => !v)} style={{ display: "none", alignItems: "center", gap: 4, minHeight: 32, padding: "0 10px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: T.font }}>{drawer ? "Replier" : "Ouvrir"}</button>
           <div role="group" aria-label="Gamme" style={{ display: "inline-flex", background: T.surfaceAlt, borderRadius: 8, padding: 2, gap: 2 }}>
-            {["100", "20"].map(g => <button key={g} type="button" aria-pressed={gam === g} onClick={() => { setGam(g); setPicked(null); }} style={{ border: "none", borderRadius: 8, minHeight: 26, padding: "0 10px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: T.font, background: gam === g ? T.card : "transparent", color: gam === g ? T.ink900 : T.ink500, boxShadow: gam === g ? "0 1px 2px rgba(0,0,0,.08)" : "none" }}>{g} kW</button>)}
+            {["100", "20"].map(g => <button key={g} type="button" aria-pressed={gam === g} onClick={() => { setGam(g); setPicked(null); }} style={{ border: "none", borderRadius: 8, minHeight: 26, padding: "0 10px", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: T.font, background: gam === g ? T.card : "transparent", color: gam === g ? T.ink900 : T.ink500, boxShadow: gam === g ? "0 1px 2px rgba(0,0,0,.08)" : "none" }}>{g} kW</button>)}
           </div>
         </div>
         {/* v320 (demandé : « voir en premier les turbines prêtes avec roue, puis prêtes sans roue, puis roues et injecteurs ») : sections repliables */}
@@ -284,7 +284,7 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
         <div ref={barRef} className="enogia-nd-glass e-tb" style={{ position: "sticky", top: 0, zIndex: 3, display: "flex", alignItems: "center", gap: "6px 12px", flexWrap: "wrap", padding: "8px 12px", boxShadow: "0 1px 0 " + T.line }}>
           <div role="group" aria-label="Type de besoin" style={{ display: "inline-flex", background: T.surfaceAlt, borderRadius: 8, padding: 2, gap: 2 }}>
             {[["all", "Tout", needs.length], ["pj", "ORC", nOrc], ["sav", "SAV", nSav]].map(([k, l, c]) => <button key={k} type="button" aria-pressed={kind === k} onClick={() => setKind(k)}
-              style={{ border: "none", borderRadius: 8, minHeight: 26, padding: "0 10px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: T.font, background: kind === k ? T.card : "transparent", color: kind === k ? T.ink900 : T.ink500, boxShadow: kind === k ? "0 1px 2px rgba(0,0,0,.08)" : "none" }}>{l} <span style={{ fontWeight: 500, fontVariantNumeric: "tabular-nums" }}>{c}</span></button>)}
+              style={{ border: "none", borderRadius: 8, minHeight: 26, padding: "0 10px", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: T.font, background: kind === k ? T.card : "transparent", color: kind === k ? T.ink900 : T.ink500, boxShadow: kind === k ? "0 1px 2px rgba(0,0,0,.08)" : "none" }}>{l} <span style={{ fontWeight: 500, fontVariantNumeric: "tabular-nums" }}>{c}</span></button>)}
           </div>
           <label style={{ fontSize: 12, color: T.ink700, display: "inline-flex", gap: 6, alignItems: "center", cursor: "pointer" }}><input type="checkbox" checked={onlyOpen} onChange={e => setOnlyOpen(e.target.checked)} />À compléter</label>
           <span aria-label="Légende" style={{ display: "inline-flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: T.ink500 }}>{legend.map(([l, st]) => <span key={l} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><i aria-hidden="true" style={{ width: 16, height: 12, borderRadius: 4, boxSizing: "border-box", display: "inline-block", ...st }} />{l}</span>)}</span>
@@ -302,7 +302,7 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
             // v302 (demandé : « plus léger sur ORC (bleu léger) et violet sur SAV ») : bleu information très pâle / violet pâle, mêlés au fond de carte
             const rk = rankOf.get(n.key), bgC = n.kind === "sav" ? "color-mix(in srgb, " + T.violet100 + " 80%, " + T.card + ")" : "color-mix(in srgb, " + T.info100 + " 45%, " + T.card + ")";
             return <React.Fragment key={n.key}>
-              {head && <h2 className="enogia-nd-month enogia-nd-glass" style={{ gridColumn: "1 / -1", top: barH, margin: "2px -12px 0", padding: "7px 14px", fontSize: 13, fontWeight: 600, color: T.ink700, fontFamily: T.font }}>{monthLab(n.date)}</h2>}
+              {head && <h2 className="enogia-nd-month enogia-nd-glass" style={{ gridColumn: "1 / -1", top: barH, margin: "2px -12px 0", padding: "7px 14px", fontSize: 13, fontWeight: 500, color: T.ink700, fontFamily: T.font }}>{monthLab(n.date)}</h2>}
               <article className="enogia-nd-need" aria-label={"Besoin n° " + rk + ", " + (n.kind === "sav" ? "SAV " : "ORC ") + n.label} style={{ display: "flex", flexDirection: "column", gap: 6, padding: "8px 10px", borderRadius: 12, minWidth: 0, boxSizing: "border-box", background: bgC,
               boxShadow: "inset 0 0 0 " + (n.late || badI.length ? "1.5px " + T.red600 : "1px " + (done ? T.emerald600 : n.kind === "sav" ? "color-mix(in srgb, " + T.violet500 + " 45%, transparent)" : "color-mix(in srgb, " + T.info600 + " 22%, transparent)")) }}>
               <div style={{ display: "flex", alignItems: "center", gap: "4px 6px", flexWrap: "wrap", minWidth: 0, minHeight: 24 }}>
@@ -311,9 +311,9 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
                   <button type="button" aria-label={"Descendre " + n.label + " d'un cran dans l'ordre de besoin"} disabled={!canDown} onClick={() => moveNeed(n, 1)} style={{ ...arrowB, opacity: canDown ? 1 : 0.35, cursor: canDown ? "pointer" : "default" }}>▼</button></span>}
                 {rankEdit === n.key ? <input type="number" min={1} max={needs.length} defaultValue={rk} autoFocus={AF} aria-label={"Priorité de " + n.label + " (1 à " + needs.length + ")"}
                     onKeyDown={e => { if (e.key === "Enter") setRank(n, +e.currentTarget.value); if (e.key === "Escape") setRankEdit(null); }} onBlur={e => setRank(n, +e.currentTarget.value)}
-                    style={{ width: 52, height: 24, borderRadius: 8, border: "1px solid " + T.ink900, background: T.card, color: T.ink900, fontSize: 12, fontWeight: 600, padding: "0 4px", fontFamily: T.font }} />
+                    style={{ width: 52, height: 24, borderRadius: 8, border: "1px solid " + T.ink900, background: T.card, color: T.ink900, fontSize: 12, fontWeight: 500, padding: "0 4px", fontFamily: T.font }} />
                   : <button type="button" disabled={!canEdit} onClick={() => setRankEdit(n.key)} title={canEdit ? "Priorité n° " + rk + " : cliquer pour l'échanger avec un autre besoin, même d'un autre mois" : "Priorité n° " + rk} aria-label={"Priorité n° " + rk + " de " + n.label}
-                    style={{ minWidth: 22, height: 22, padding: "0 5px", boxSizing: "border-box", border: "none", borderRadius: 999, background: T.ink900, color: T.card, display: "inline-grid", placeItems: "center", fontSize: 12, fontWeight: 600, fontVariantNumeric: "tabular-nums", cursor: canEdit ? "pointer" : "default", fontFamily: T.font }}>{rk}</button>}
+                    style={{ minWidth: 22, height: 22, padding: "0 5px", boxSizing: "border-box", border: "none", borderRadius: 999, background: T.ink900, color: T.card, display: "inline-grid", placeItems: "center", fontSize: 12, fontWeight: 500, fontVariantNumeric: "tabular-nums", cursor: canEdit ? "pointer" : "default", fontFamily: T.font }}>{rk}</button>}
                 <ProgBar p={T3 ? G3 / T3 : 1} /><b style={{ fontFamily: T.fontMono, fontSize: 13, whiteSpace: "nowrap" }}>{n.label}</b>
                 {meta && <CountryFlag pays={meta.pays} size={13} />}
                 <span style={{ ...pill, background: T.card, color: n.kind === "sav" ? T.violet600 : T.ink700 }}>{n.kind === "sav" ? "SAV" : "ORC"}</span>
@@ -323,7 +323,7 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
                 {canEdit && <button type="button" onClick={() => closeNeed(n)} title="Turbines installées : retirer ce besoin de la liste" aria-label={"Clore le besoin " + n.label} style={{ ...themeBtn(allDone(n) ? "sec" : "ghost", "sm"), minHeight: 26, padding: "0 8px", fontSize: 12 }}>Clore</button>}
                 {canEdit && <button type="button" aria-label={"Configuration des turbines de " + n.label + " (" + n.cfg.l + ")"} title={"Configuration : " + n.cfg.l} onClick={e => setPop({ n, kind: "cfg", el: e.currentTarget })} style={{ ...arrowB, fontSize: 14, border: "none", background: "transparent" }}>⋯</button>}
               </div>
-              {badI.length > 0 && <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>{badI.map((i, q) => <span key={q} style={{ fontSize: 12, fontWeight: 600, color: T.red600 }}>{i.t}</span>)}</div>}
+              {badI.length > 0 && <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>{badI.map((i, q) => <span key={q} style={{ fontSize: 12, fontWeight: 500, color: T.red600 }}>{i.t}</span>)}</div>}
               {n.slots.map(x => {
                 const rr = x.roue ? x.roue.ref : x.roueMontee, roueBad = !!(n.roue && rr && U2(rr) !== U2(n.roue)), injBad = !!(n.inj && x.inj && U2(x.inj.ref) !== U2(n.inj));
                 const full = !!(x.t && x.roueOk && x.inj), tT = x.installee ? TN.inst : TN.turbine;
@@ -331,7 +331,7 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
                 const injDet = x.inj ? (x.inj.bouches == null ? (n.injB ? "vierge · " + n.injB + " à boucher" : "vierge") : x.inj.bouches + " bouchage" + (x.inj.bouches > 1 ? "s" : "") + (n.injB != null && +x.inj.bouches !== n.injB ? " (prévu " + n.injB + ")" : "")) : "";
                 return <React.Fragment key={x.i}>
                   <div style={{ display: "grid", gridTemplateColumns: "16px repeat(3, minmax(0, 1fr))", gap: 4, alignItems: "stretch" }}>
-                    <span aria-hidden="true" style={{ display: "grid", placeItems: "center", fontSize: 11, fontWeight: 600, color: T.ink300 }}>{n.want > 1 || x.extra ? x.i + 1 : ""}</span>
+                    <span aria-hidden="true" style={{ display: "grid", placeItems: "center", fontSize: 12, fontWeight: 500, color: T.ink300 }}>{n.want > 1 || x.extra ? x.i + 1 : ""}</span>
                     <Sock ctx={ctx} n={n} s={x} kind="roue" label={x.t && !x.roueOk ? "Roue à poser" : "Roue"} want={n.roue} hint={n.roue ? "prévue" : ""} tone={x.roueOk ? (roueBad ? TN.bad : TN.roue) : null}>
                       {x.roueOk && <Piece tone={roueBad ? TN.bad : TN.roue} icon={roueBad ? null : IC.ok} label="Roue" val={rr} detail={roueBad ? "prévue " + n.roue : x.roue ? "prise dans le stock" : "montée sur la turbine"} x={x.roue && !x.installee && xBtn("Remettre la roue " + rr + " en stock", () => outAlloc(x.roue))} />}</Sock>
                     <Sock ctx={ctx} n={n} s={x} kind="inj" label="Injecteur" want={injTxt(n)} hint={n.inj ? (n.injB ? n.injB + " bouchage" + (n.injB > 1 ? "s" : "") + " prévu" + (n.injB > 1 ? "s" : "") : "vierge prévu") : ""} tone={x.inj ? (injBad ? TN.bad : TN.inj) : null}>
@@ -470,7 +470,7 @@ export function TurbinesHub({ doc, api, rows, canEdit, owner, savePjMeta, tab: t
     </div>
     <div style={{ display: tab === "prod" && canEdit ? "flex" : "none", justifyContent: "flex-end", marginBottom: 8 }}>
       {/* v268 (demandé : « mettre à disposition le bouton importer à Jérémie ») : toute personne qui peut modifier la production (propriétaire + liste d’accès) */}
-      {canEdit && tab === "prod" && <button type="button" onClick={() => setImp(true)} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "4px 12px", minHeight: 30, fontSize: FZ.xs, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>Importer des données (JSON)</button>}
+      {canEdit && tab === "prod" && <button type="button" onClick={() => setImp(true)} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "4px 12px", minHeight: 30, fontSize: FZ.xs, fontWeight: 500, cursor: "pointer", fontFamily: T.font }}>Importer des données (JSON)</button>}
     </div>
     {tab === "prod" ? <ProdTurbines doc={doc} api={api} canEdit={canEdit} owner={owner} pjs={pjs} /> : <NeedsView doc={doc} api={api} rows={rows} canEdit={canEdit} savePjMeta={savePjMeta} authorName={authorName} />}
     {imp && <ImportDialog doc={doc} api={api} onClose={() => setImp(false)} />}

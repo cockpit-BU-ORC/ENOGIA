@@ -84,13 +84,13 @@ export function ChangesTable({ summary, refs, refId, setRefId, refLabel, q, onOp
       </select>
       </>}
             <span style={{ flex: 1 }} />
-      <button style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink700, fontSize: FZ.xs, fontWeight: 600, cursor: "pointer", fontFamily: T.font, whiteSpace: "nowrap" }} onClick={copy} title="Copie la synthèse en texte, prête à coller dans un mail ou un compte rendu">{copied ? "Copié ✓" : "Copier la synthèse"}</button>
+      <button style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink700, fontSize: FZ.xs, fontWeight: 500, cursor: "pointer", fontFamily: T.font, whiteSpace: "nowrap" }} onClick={copy} title="Copie la synthèse en texte, prête à coller dans un mail ou un compte rendu">{copied ? "Copié ✓" : "Copier la synthèse"}</button>
     </div>
 
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 8, marginBottom: 12 }}>
       {tiles.map(([k, label, n, sub, col]) => (<button key={k} onClick={() => setFilter(filter === k && k !== "all" ? "all" : k)} aria-pressed={filter === k}
         style={{ textAlign: "left", cursor: "pointer", fontFamily: T.font, background: filter === k ? T.teal100 : T.card, border: "1px solid " + (filter === k ? T.teal500 : T.line), borderRadius: 12, padding: "8px 12px" }}>
-        <div style={{fontFamily:T.font,fontSize:12,fontWeight:600,color:T.accentInk}}>{label}</div>
+        <div style={{fontFamily:T.font,fontSize:12,fontWeight:500,color:T.accentInk}}>{label}</div>
         <div style={{ fontSize: FZ.xl, fontWeight: 600, color: n ? col : T.ink300, lineHeight: 1.15 }}>{n}</div>
         <div style={{ fontSize: FZ.xs, color: T.ink500 }}>{sub}</div>
       </button>))}
@@ -98,7 +98,7 @@ export function ChangesTable({ summary, refs, refId, setRefId, refLabel, q, onOp
 
     {filter !== "all" && <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, fontSize: FZ.xs, color: T.ink500 }}>
       <span>Filtre : <b style={{ color: T.ink900 }}>{(tiles.find(t => t[0] === filter) || [])[1]}</b></span>
-      <button onClick={() => setFilter("all")} style={{ border: "none", background: "transparent", color: T.teal600, fontWeight: 600, fontSize: FZ.xs, cursor: "pointer", fontFamily: T.font, padding: "2px 4px", minHeight: 24 }}>Tout afficher</button>
+      <button onClick={() => setFilter("all")} style={{ border: "none", background: "transparent", color: T.teal600, fontWeight: 500, fontSize: FZ.xs, cursor: "pointer", fontFamily: T.font, padding: "2px 4px", minHeight: 24 }}>Tout afficher</button>
     </div>}
 
     {summary.pjs.length === 0 && !(removed && removed.length) ? <div style={{ background: T.emerald100, borderRadius: 12 }}><EmptyState compact tone="ok" icon="check" title="Aucune date ni heure n'a changé entre ces deux versions." /></div>
@@ -120,7 +120,7 @@ export function ChangesTable({ summary, refs, refId, setRefId, refLabel, q, onOp
               <td style={{ padding: "6px 6px", textAlign: "center", fontSize: FZ.xs, color: T.ink700, whiteSpace: "nowrap" }}>
                 {p.hours ? <>{p.hours.at && <div title="Heures atelier">At. {p.hours.at.from} → {p.hours.at.to} h</div>}{p.hours.au && <div title="Heures autom">Au. {p.hours.au.from} → {p.hours.au.to} h</div>}</> : <span style={{ color: T.ink300 }}>·</span>}
               </td>
-              <td style={{ padding: "6px 8px", textAlign: "right", whiteSpace: "nowrap" }}><span style={{ fontSize: FZ.xs, fontWeight: 600, color: T.teal600 }}>Voir ›</span></td>
+              <td style={{ padding: "6px 8px", textAlign: "right", whiteSpace: "nowrap" }}><span style={{ fontSize: FZ.xs, fontWeight: 500, color: T.teal600 }}>Voir ›</span></td>
             </tr>))}
             {gone.map(r => (<tr key={"rm-" + r.pj} style={{ borderTop: "1px solid " + T.line }}>
               <td style={{ padding: "8px 8px 8px 12px", minWidth: 190 }}>

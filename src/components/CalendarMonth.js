@@ -77,7 +77,7 @@ export function CalendarMonth({ data, month, closurePeriods, productionExclusion
   return <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
     <div role="grid" aria-label={"Mois de " + month.toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
       style={{ display: "grid", gridTemplateColumns: "repeat(5,minmax(0,1fr))", gap: 1, background: T.line, border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden" }}>
-      {DAY_NAMES.map(n => <div key={n} role="columnheader" style={{ background: T.card, padding: "8px 10px", fontSize: FZF.xs, fontWeight: 600, color: T.ink500 }}>{n}</div>)}
+      {DAY_NAMES.map(n => <div key={n} role="columnheader" style={{ background: T.card, padding: "8px 10px", fontSize: FZF.xs, fontWeight: 500, color: T.ink500 }}>{n}</div>)}
       {cells.map(c => {
         const isToday = c.k === todayK, all = open.has(c.k), shown = all ? c.evs : c.evs.slice(0, MAX_LINES), more = c.evs.length - shown.length;
         return <div key={c.k} role="gridcell" aria-label={c.d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }) + (c.evs.length ? ", " + c.evs.length + " événement" + (c.evs.length > 1 ? "s" : "") : "")}
@@ -89,7 +89,7 @@ export function CalendarMonth({ data, month, closurePeriods, productionExclusion
           {c.closed && <span style={{ fontSize: FZF.xs, color: T.ink500 }}>{c.closedLabel || "Atelier fermé"}</span>}
           {shown.map((x, j) => <Plate key={x.ev.pj + x.ev.kind + (x.ev.who || "") + j} ev={x.ev} note={x.note} onOpen={onOpen} />)}
           {(more > 0 || (all && c.evs.length > MAX_LINES)) && <button type="button" onClick={() => toggle(c.k)} aria-expanded={all}
-            style={{ alignSelf: "flex-start", border: "none", background: "transparent", color: T.accentInk || T.ink700, fontFamily: T.font, fontSize: FZF.xs, fontWeight: 600, padding: "2px 0", cursor: "pointer" }}>{all ? "Réduire" : "+ " + more + " autre" + (more > 1 ? "s" : "")}</button>}
+            style={{ alignSelf: "flex-start", border: "none", background: "transparent", color: T.accentInk || T.ink700, fontFamily: T.font, fontSize: FZF.xs, fontWeight: 500, padding: "2px 0", cursor: "pointer" }}>{all ? "Réduire" : "+ " + more + " autre" + (more > 1 ? "s" : "")}</button>}
         </div>;
       })}
     </div>

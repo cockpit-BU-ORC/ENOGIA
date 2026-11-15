@@ -92,18 +92,18 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
   const openPage = (v, sub) => { if (ctx.openPage) { ctx.openPage(v, sub); if (onClose) onClose(); } };
   const gapTxt = g => g == null ? "" : g > 0 ? g + " j de marge" : g < 0 ? -g + " j de retard" : "juste à temps";
   const pill = (txt, ink, bg, key) => <Pill key={key} ink={ink} bg={bg} size="md">{txt}</Pill>; // v311 : pastille commune
-  const btn = primary => ({ display: "inline-flex", alignItems: "center", gap: 6, minHeight: 36, padding: "0 14px", borderRadius: 999, border: primary ? "none" : "1px solid " + T.line, background: primary ? T.ink900 : T.card, color: primary ? T.card : T.ink700, fontFamily: T.font, fontSize: FZ.xs, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" });
+  const btn = primary => ({ display: "inline-flex", alignItems: "center", gap: 6, minHeight: 36, padding: "0 14px", borderRadius: 999, border: primary ? "none" : "1px solid " + T.line, background: primary ? T.ink900 : T.card, color: primary ? T.card : T.ink700, fontFamily: T.font, fontSize: FZ.xs, fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap" });
   const toggle = id => setOpen(o => (o === id ? null : id));
   const doneBg = mixHex(T.card, ETAT_META.SHIPPED.bar, T.mode === "dark" ? .3 : .28);
   const TABS = [["resume", "Résumé", ""], ...(plan ? [["tests", "Tests", nokAll ? nokAll + " NOK" : "", true]] : []), ...(turb ? [["turbine", "Turbine", turb.issues.length ? turb.issues.length + " à voir" : "", true]] : []), ...(ach ? [["achats", "Achats", ach.retards ? ach.retards + " en retard" : "", true]] : []), ...(cash ? [["cash", "Cash", cash.lateN ? cash.lateN + " en retard" : "", true]] : []), ...(ctx.savDoc && ctx.SavTab ? [["sav", "SAV", "", true]] : []), ["comments", "Commentaires", pub.length ? String(pub.length) : ""]];
   const tile = { textAlign: "left", border: "1px solid " + T.line, borderRadius: 12, background: T.card, padding: "10px 12px", cursor: "pointer", fontFamily: T.font, color: T.ink900, display: "flex", flexDirection: "column", gap: 4, minWidth: 0 };
   const meter = (p, c) => <span aria-hidden="true" style={{ display: "block", height: 6, borderRadius: 4, background: T.surfaceAlt, overflow: "hidden", marginTop: "auto" }}><span style={{ display: "block", height: "100%", width: Math.max(0, Math.min(100, p)) + "%", background: c }} /></span>;
-  const dateTile = (label, value, sub, bad) => <div key={label} style={{ background: T.surface, borderRadius: 12, padding: "8px 12px", minWidth: 0 }}><div style={{ fontFamily: T.fontLabel, fontSize: 12, color: T.ink500 }}>{label}</div><div style={{ fontFamily: T.fontDisplay, fontSize: 19, fontWeight: 600, color: T.ink900, fontVariantNumeric: "tabular-nums" }}>{value || "—"}</div>{sub && <div style={{ fontSize: 11.5, color: bad ? T.red600 : T.ink500 }}>{sub}</div>}</div>;
+  const dateTile = (label, value, sub, bad) => <div key={label} style={{ background: T.surface, borderRadius: 12, padding: "8px 12px", minWidth: 0 }}><div style={{ fontFamily: T.fontLabel, fontSize: 12, color: T.ink500 }}>{label}</div><div style={{ fontFamily: T.fontDisplay, fontSize: 20, fontWeight: 600, color: T.ink900, fontVariantNumeric: "tabular-nums" }}>{value || "—"}</div>{sub && <div style={{ fontSize: 12, color: bad ? T.red600 : T.ink500 }}>{sub}</div>}</div>;
 
   return (<div style={{ fontFamily: T.font }}>
     {/* Où en est la machine, en une ligne */}
     <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-      <span style={{ fontFamily: T.fontLabel, fontSize: 13, fontWeight: 600, background: bar, color: inkOn(bar), borderRadius: 999, padding: "3px 12px" }}>{title}{shipped ? "" : " · " + pct + " %"}</span>
+      <span style={{ fontFamily: T.fontLabel, fontSize: 13, fontWeight: 500, background: bar, color: inkOn(bar), borderRadius: 999, padding: "3px 12px" }}>{title}{shipped ? "" : " · " + pct + " %"}</span>
       <span style={{ fontSize: FZ.sm, color: T.ink700 }}>{shipped ? "Partie le " + dmy(r.depart) : daysLeft == null ? "Départ pas encore daté" : <>Départ le <b style={{ color: T.ink900 }}>{dmy(r.depart)}</b>{daysLeft > 0 ? " · dans " + daysLeft + " j" : daysLeft === 0 ? " · aujourd'hui" : ""}</>}</span>
       {drift !== 0 && !shipped && pill((drift > 0 ? "+" : "−") + Math.abs(drift) + " j sur l'initial", drift > 0 ? T.red600 : T.emerald600, drift > 0 ? T.red100 : T.emerald100, "d")}
     </div>
@@ -115,22 +115,22 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
           <button type="button" onClick={() => setFocus(s.id)} aria-pressed={on} aria-current={isCur ? "step" : undefined} title={"Voir les sous-étapes · " + s.label}
             style={{ width: "100%", border: "none", background: "transparent", padding: "0 0 2px", cursor: "pointer", textAlign: "left", fontFamily: T.font, minWidth: 0 }}>
             <span aria-hidden="true" style={{ display: "block", height: 10, borderRadius: 4, background: isCur ? bar : done ? doneBg : T.surfaceAlt, boxShadow: on ? "0 0 0 2px " + T.ink900 : "none" }} />
-            <span style={{ display: "block", marginTop: 3, fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: isCur || on ? 600 : 400, color: isCur || on ? T.ink900 : T.ink500 }}>{done ? "✓ " : ""}{s.label}</span>
+            <span style={{ display: "block", marginTop: 3, fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: isCur || on ? 500 : 400, color: isCur || on ? T.ink900 : T.ink500 }}>{done ? "✓ " : ""}{s.label}</span>
           </button>
         </li>; })}
     </ol>
     {(() => { const fi = RIBBON.findIndex(x => x.id === focus), fs0 = RIBBON[fi], st = STAGES.find(x => x.id === focus), state = shipped || fi < cur ? "done" : fi === cur ? "cur" : "todo", col = (ETAT_META[fs0.color] || {}).bar || bar;
       return <div className="enogia-view-in" style={{ marginTop: 8, background: T.surface, borderRadius: 12, padding: "10px 12px", borderLeft: "3px solid " + col }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><b style={{ fontSize: FZ.sm, color: T.ink900 }}>{st ? "Sous-étapes · " + fs0.label : fs0.label}</b><span style={{ fontSize: 11.5, color: T.ink500 }}>{state === "done" ? "étape terminée" : state === "cur" ? "étape en cours" : "à venir"}</span>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><b style={{ fontSize: FZ.sm, color: T.ink900 }}>{st ? "Sous-étapes · " + fs0.label : fs0.label}</b><span style={{ fontSize: 12, color: T.ink500 }}>{state === "done" ? "étape terminée" : state === "cur" ? "étape en cours" : "à venir"}</span>
           </div>
         {st ? <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: "2px 16px", marginTop: 4 }}>{st.steps.map(x => <div key={x} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: FZ.xs, color: T.ink700, padding: "2px 0" }}>
           <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: "50%", flexShrink: 0, background: state === "done" ? ETAT_META.SHIPPED.bar : state === "cur" ? col : "transparent", boxShadow: state === "todo" ? "inset 0 0 0 1.5px " + T.ink300 : "none" }} />{x}</div>)}</div>
           : <div style={{ fontSize: FZ.xs, color: T.ink700, lineHeight: 1.5, marginTop: 4 }}>{focus === "PRE" ? "Design de l’ORC, commande, fabrication et montage chez les fournisseurs (armoire et skid) ou stockage externe." : MEANING.SHIPPED[1]}</div>}
-        {st && st.steps.some(x => x.endsWith("*")) && <div style={{ fontSize: 11, color: T.ink500, marginTop: 4, lineHeight: 1.4 }}>{STEP_NOTE}</div>}
+        {st && st.steps.some(x => x.endsWith("*")) && <div style={{ fontSize: 12, color: T.ink500, marginTop: 4, lineHeight: 1.4 }}>{STEP_NOTE}</div>}
       </div>; })()}
     {/* Onglets */}
     <div role="tablist" aria-label="Rubriques de la fiche" style={{ display: "flex", gap: 18, borderBottom: "1px solid " + T.line, marginTop: 12 }}>
-      {TABS.map(([id, label, badge, warn]) => <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)} style={{ border: "none", background: "transparent", padding: "8px 0", minHeight: 36, cursor: "pointer", fontFamily: T.font, fontSize: FZ.sm, fontWeight: tab === id ? 600 : 500, color: tab === id ? T.ink900 : T.ink500, borderBottom: "2px solid " + (tab === id ? T.ink900 : "transparent"), marginBottom: -1, display: "inline-flex", alignItems: "center", gap: 6 }}>{label}{badge && <span style={{ fontSize: 11, fontWeight: 600, borderRadius: 999, padding: "0 7px", background: warn ? T.red100 : T.surfaceAlt, color: warn ? T.red600 : T.ink700 }}>{badge}</span>}</button>)}
+      {TABS.map(([id, label, badge, warn]) => <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)} style={{ border: "none", background: "transparent", padding: "8px 0", minHeight: 36, cursor: "pointer", fontFamily: T.font, fontSize: FZ.sm, fontWeight: tab === id ? 600 : 500, color: tab === id ? T.ink900 : T.ink500, borderBottom: "2px solid " + (tab === id ? T.ink900 : "transparent"), marginBottom: -1, display: "inline-flex", alignItems: "center", gap: 6 }}>{label}{badge && <span style={{ fontSize: 12, fontWeight: 500, borderRadius: 999, padding: "0 7px", background: warn ? T.red100 : T.surfaceAlt, color: warn ? T.red600 : T.ink700 }}>{badge}</span>}</button>)}
     </div>
 
     <div role="tabpanel" style={{ paddingTop: 12, display: "flex", flexDirection: "column", gap: 12 }}>
@@ -185,8 +185,8 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
           <EpcTag meta={meta} />
           {testers.length > 0 && <span><span style={{ color: T.ink500 }}>Testeurs</span> {testers.join(", ")}</span>}
           {kind && <PresenceChip kind={kind} date={presenceFirstDate(r.clientPresence)} dates={presenceDates(r.clientPresence)} />}
-          {meta.numSerie ? <span style={{ fontFamily: T.fontMono, fontSize: 11, color: T.ink500 }}>{meta.numSerie}</span> : plannedSnOf(r.pj) && <span title="S/N prévu d'après l'ordo, fixé à l'arrivée de la machine" style={{ fontFamily: T.fontMono, fontSize: 11, color: T.ink500, fontStyle: "italic" }}>S/N prévu {plannedSnOf(r.pj).sn}</span>}
-          {canEditMeta && savePjMetaOverride && <button type="button" onClick={() => toggle("edit")} aria-expanded={open === "edit"} style={{ border: "none", background: "transparent", color: T.teal600, fontWeight: 600, fontSize: FZ.xs, cursor: "pointer", minHeight: 24, padding: 0, fontFamily: T.font }}>Modifier</button>}
+          {meta.numSerie ? <span style={{ fontFamily: T.fontMono, fontSize: 12, color: T.ink500 }}>{meta.numSerie}</span> : plannedSnOf(r.pj) && <span title="S/N prévu d'après l'ordo, fixé à l'arrivée de la machine" style={{ fontFamily: T.fontMono, fontSize: 12, color: T.ink500, fontStyle: "italic" }}>S/N prévu {plannedSnOf(r.pj).sn}</span>}
+          {canEditMeta && savePjMetaOverride && <button type="button" onClick={() => toggle("edit")} aria-expanded={open === "edit"} style={{ border: "none", background: "transparent", color: T.teal600, fontWeight: 500, fontSize: FZ.xs, cursor: "pointer", minHeight: 24, padding: 0, fontFamily: T.font }}>Modifier</button>}
         </div>
         {last && <button type="button" onClick={() => setTab("comments")} style={{ background: T.surface, borderRadius: 12, padding: "10px 12px", display: "block", width: "100%", textAlign: "left", border: "none", cursor: "pointer", fontFamily: T.font, fontSize: FZ.sm, color: T.ink900, lineHeight: 1.45 }}>« {String(last.text || "").replace(/\s+/g, " ").slice(0, 200)}{String(last.text || "").length > 200 ? "…" : ""} » <span style={{ fontSize: FZ.xs, color: T.ink500 }}>{last.author || ""}, {relTime(last.date)}</span></button>}
       </>}
@@ -194,11 +194,11 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
       {tab === "tests" && plan && <>
         {act.map(k => { const ids = selectedIds(plan, catalog, k), items = ids.map(id => ({ id, name: ((catalog[k] || []).find(t => t.id === id) || { name: id }).name, st: statusOf(plan, k, id) })); const ok = items.filter(x => x.st === "ok").length, ko = items.filter(x => x.st === "ko");
           return <div key={k} style={{ background: T.surface, borderRadius: 12, padding: "8px 12px" }}>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><b style={{ fontSize: FZ.sm }}>{(SECTIONS.find(x => x[0] === k) || [])[1] || k}</b><span style={{ fontSize: FZ.xs, color: T.ink500 }}>{ok} réussi{ok > 1 ? "s" : ""} sur {items.length}{ko.length ? " · " : ""}</span>{ko.length > 0 && <span style={{ fontSize: FZ.xs, color: T.red600, fontWeight: 600 }}>{ko.length} échec{ko.length > 1 ? "s" : ""}</span>}</div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><b style={{ fontSize: FZ.sm }}>{(SECTIONS.find(x => x[0] === k) || [])[1] || k}</b><span style={{ fontSize: FZ.xs, color: T.ink500 }}>{ok} réussi{ok > 1 ? "s" : ""} sur {items.length}{ko.length ? " · " : ""}</span>{ko.length > 0 && <span style={{ fontSize: FZ.xs, color: T.red600, fontWeight: 500 }}>{ko.length} échec{ko.length > 1 ? "s" : ""}</span>}</div>
             {ko.length > 0 && <div style={{ fontSize: FZ.xs, color: T.red600, marginTop: 4 }}>{ko.map(x => x.name).join(" · ")}</div>}
           </div>; })}
         <div style={{ background: T.surface, borderRadius: 12, padding: "8px 12px" }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><b style={{ fontSize: FZ.sm }}>Checklist de debug</b><span style={{ fontSize: FZ.xs, color: T.ink500 }}>{dbg.done} / {dbg.total} renseignés{dbg.signed ? " · signée" : " · pas encore signée"}</span>{dbg.nok > 0 && <span style={{ fontSize: FZ.xs, color: T.red600, fontWeight: 600 }}>{dbg.nok} NOK</span>}</div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><b style={{ fontSize: FZ.sm }}>Checklist de debug</b><span style={{ fontSize: FZ.xs, color: T.ink500 }}>{dbg.done} / {dbg.total} renseignés{dbg.signed ? " · signée" : " · pas encore signée"}</span>{dbg.nok > 0 && <span style={{ fontSize: FZ.xs, color: T.red600, fontWeight: 500 }}>{dbg.nok} NOK</span>}</div>
           {dbg.nok > 0 && <div style={{ fontSize: FZ.xs, color: T.red600, marginTop: 4 }}>{dbgSecs.flatMap(s => s.items).filter(i => plan.debug && plan.debug.rows && plan.debug.rows[i.id] && plan.debug.rows[i.id].r === "nok").map(i => i.label).join(" · ")}</div>}
         </div>
         <div style={{ fontSize: FZ.xs, color: T.ink500 }}>{testers.length ? "Testeurs : " + testers.join(", ") + "." : "Aucun testeur affecté."} Le détail se remplit dans la page Tests.</div>

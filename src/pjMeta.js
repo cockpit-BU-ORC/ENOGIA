@@ -367,7 +367,7 @@ export function SerieTag({pj,size=10.5,style}){
 }
 // v173-v176 : plaque de n° de PJ (plaque signalétique de machine) — police d'identifiant ; v176 : fond clair + filet au lieu du marine plein (jugé « bizarre »).
 export function PjPlate({pj,size="sm",style}){
-  return <span className="enogia-plate" style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:size==="lg"?15:13,lineHeight:1,letterSpacing:".02em",background:T.surfaceAlt,color:T.ink900,border:"1px solid "+T.line,padding:size==="lg"?"5px 8px":"3px 7px",borderRadius:4,whiteSpace:"nowrap",display:"inline-block",flexShrink:0,fontVariantNumeric:"tabular-nums",...style}}>{pj}</span>;
+  return <span className="enogia-plate" style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:size==="lg"?16:13,lineHeight:1,letterSpacing:".02em",background:T.surfaceAlt,color:T.ink900,border:"1px solid "+T.line,padding:size==="lg"?"5px 8px":"3px 7px",borderRadius:4,whiteSpace:"nowrap",display:"inline-block",flexShrink:0,fontVariantNumeric:"tabular-nums",...style}}>{pj}</span>;
 }
 export function ProjectLabelCell({pj,r,meta,mark,noSn}){
   const c=ETAT_META[r.etat]||ETAT_META["NOT ORDERED"];
@@ -381,15 +381,15 @@ export function ProjectLabelCell({pj,r,meta,mark,noSn}){
     <div style={{display:"flex",alignItems:"center",gap:7,minWidth:0}}>
       {/* v174 : n° de PJ en plaque, liseré intérieur à la couleur de l'état (remplace la pastille ronde). */}
       <PjPlate pj={pj} style={{boxShadow:"inset 3px 0 0 "+c.bar,paddingLeft:9}}/>
-      {r.gamme&&<span className="enogia-hide-phone" title={"Gamme "+r.gamme} style={{fontSize:FZ.xs,fontWeight:600,color:T.ink700,background:T.surfaceAlt,borderRadius:4,padding:"0 6px",lineHeight:"16px",whiteSpace:"nowrap",flexShrink:0}}>{r.gamme}</span>}
+      {r.gamme&&<span className="enogia-hide-phone" title={"Gamme "+r.gamme} style={{fontSize:FZ.xs,fontWeight:500,color:T.ink700,background:T.surfaceAlt,borderRadius:4,padding:"0 6px",lineHeight:"16px",whiteSpace:"nowrap",flexShrink:0}}>{r.gamme}</span>}
       {mark&&<span style={{marginLeft:"auto",flexShrink:0}}>{mark}</span>}
     </div>
     <div title={meta.nomProjet||""} style={{display:"flex",alignItems:"center",gap:6,paddingLeft:15,minWidth:0}}>
       <CountryFlag pays={meta.pays} size={11}/>
       <span style={{fontSize:FZ.xs,fontWeight:500,color:T.ink700,whiteSpace:"nowrap",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",lineHeight:1.25}}>{meta.nomProjet}</span>
     </div>
-    {sn&&!noSn&&<div style={{paddingLeft:15,fontVariantNumeric:"tabular-nums",fontSize:11,fontWeight:600,color:T.ink500,whiteSpace:"nowrap",lineHeight:1.2}}>S/N {sn}</div>}
-    {!sn&&!noSn&&plannedSnOf(pj)&&<div title="S/N prévu d'après l'ordo, fixé à l'arrivée de la machine" style={{paddingLeft:15,fontVariantNumeric:"tabular-nums",fontSize:11,fontWeight:500,fontStyle:"italic",color:T.ink500,whiteSpace:"nowrap",lineHeight:1.2}}>S/N prévu {plannedSnOf(pj).sn}</div>}
+    {sn&&!noSn&&<div style={{paddingLeft:15,fontVariantNumeric:"tabular-nums",fontSize:12,fontWeight:500,color:T.ink500,whiteSpace:"nowrap",lineHeight:1.2}}>S/N {sn}</div>}
+    {!sn&&!noSn&&plannedSnOf(pj)&&<div title="S/N prévu d'après l'ordo, fixé à l'arrivée de la machine" style={{paddingLeft:15,fontVariantNumeric:"tabular-nums",fontSize:12,fontWeight:500,fontStyle:"italic",color:T.ink500,whiteSpace:"nowrap",lineHeight:1.2}}>S/N prévu {plannedSnOf(pj).sn}</div>}
   </>);
 }
 export const ALL_GAMMES=Object.keys(GAMME_COLORS);
@@ -441,7 +441,7 @@ export const epcChefOf=meta=>meta&&meta.epc?clean(meta.chefProjet):"";
 export const isEpc=meta=>!!(meta&&meta.epc);
 export function EpcTag({meta,short}){
   if(!isEpc(meta))return null;
-  return <span title="Projet EPC : le chef de projet est celui de l'EPC" style={{display:"inline-flex",alignItems:"center",gap:4,fontFamily:T.fontLabel,fontSize:11,fontWeight:600,lineHeight:"16px",padding:"0 6px",borderRadius:4,background:T.violet100,color:T.violet600,border:"1px solid "+T.violet500,whiteSpace:"nowrap",flexShrink:0}}>EPC</span>; // v241 : pas de nom du chef ORC sur la pastille
+  return <span title="Projet EPC : le chef de projet est celui de l'EPC" style={{display:"inline-flex",alignItems:"center",gap:4,fontFamily:T.fontLabel,fontSize:12,fontWeight:500,lineHeight:"16px",padding:"0 6px",borderRadius:4,background:T.violet100,color:T.violet600,border:"1px solid "+T.violet500,whiteSpace:"nowrap",flexShrink:0}}>EPC</span>; // v241 : pas de nom du chef ORC sur la pastille
 }
 export function getAllChefs(){
   const set=new Set();

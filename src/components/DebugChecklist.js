@@ -36,12 +36,12 @@ export function DebugChecklistStep({ r, plan, saveTests, canMark, who, signApi, 
         <div style={{ fontSize: FZ.sm, fontWeight: 600, color: T.ink900 }}>{pr.done} / {pr.total} contrôles renseignés{pr.nok ? <span style={{ color: T.red600 }}> · {pr.nok} NOK</span> : ""}<span style={{ fontWeight: 500, color: vpr.over ? T.red600 : T.ink500 }}> · vibrations {vpr.done} / {vpr.total}{vpr.over ? " (" + vpr.over + " au-dessus de la limite)" : ""}</span></div>
         <div aria-hidden="true" style={{ height: 6, borderRadius: 4, background: T.surfaceAlt, marginTop: 6, overflow: "hidden" }}><div style={{ width: pct + "%", height: "100%", background: pr.nok ? T.red500 : T.emerald500 }} /></div>
       </div>
-      {pr.signed ? <span style={{ fontSize: 12, fontWeight: 600, color: T.emerald600, background: T.emerald100, borderRadius: 999, padding: "2px 10px" }}>Signée le {fd((debug.signed.at || "").slice(0, 10))} · {debug.signed.name}</span>
+      {pr.signed ? <span style={{ fontSize: 12, fontWeight: 500, color: T.emerald600, background: T.emerald100, borderRadius: 999, padding: "2px 10px" }}>Signée le {fd((debug.signed.at || "").slice(0, 10))} · {debug.signed.name}</span>
         : <span style={{ fontSize: 12, color: T.ink500 }}>Pas encore signée</span>}
       <button type="button" onClick={() => setOpen(true)} style={btn(true)}>{canMark ? (pr.done ? "Continuer la checklist" : "Remplir la checklist") : "Voir la checklist"}</button>
       <button type="button" onClick={exportWord} disabled={busy} style={btn(true, true)}>Exporter en PDF</button>
     </div>
-    {err && <div role="alert" style={{ fontSize: FZ.xs, color: T.red600, fontWeight: 600 }}>{err}</div>}
+    {err && <div role="alert" style={{ fontSize: FZ.xs, color: T.red600, fontWeight: 500 }}>{err}</div>}
     {open && <DebugChecklistDialog {...{ r, plan, saveTests, canMark, who, signApi, SignForm, model, saveModel, vibModel, onExport: exportWord, onClose: () => setOpen(false) }} />}
   </div>);
 }
@@ -61,11 +61,11 @@ function DebugChecklistDialog({ r, plan, saveTests, canMark, who, signApi, SignF
     setBusy(false);
   };
   const changedAfter = debug.signed && debug.at && debug.at > debug.signed.at;
-  const th = { textAlign: "left", padding: "6px 8px", fontSize: 12, fontWeight: 600, color: T.ink900, background: T.surfaceAlt, borderBottom: "1px solid " + T.line, whiteSpace: "nowrap" };
+  const th = { textAlign: "left", padding: "6px 8px", fontSize: 12, fontWeight: 500, color: T.ink900, background: T.surfaceAlt, borderBottom: "1px solid " + T.line, whiteSpace: "nowrap" };
   const td = { padding: "4px 6px", borderBottom: "1px solid " + T.line, verticalAlign: "top", fontSize: FZ.xs, color: T.ink900 };
   const Cell = ({ id, v, val, label, tone }) => { const on = (rows[id] && rows[id].r) === val;
     return <button type="button" disabled={!canMark} aria-pressed={on} aria-label={label} onClick={() => setRow(id, { r: val })}
-      style={{ width: 40, minHeight: 28, borderRadius: 8, border: "1px solid " + (on ? tone[0] : T.line), background: on ? tone[1] : T.card, color: on ? tone[0] : T.ink300, fontWeight: 600, fontSize: FZ.xs, cursor: canMark ? "pointer" : "default", fontFamily: T.font }}>{on ? (val === "na" ? "S.O." : "X") : v}</button>; };
+      style={{ width: 40, minHeight: 28, borderRadius: 8, border: "1px solid " + (on ? tone[0] : T.line), background: on ? tone[1] : T.card, color: on ? tone[0] : T.ink300, fontWeight: 500, fontSize: FZ.xs, cursor: canMark ? "pointer" : "default", fontFamily: T.font }}>{on ? (val === "na" ? "S.O." : "X") : v}</button>; };
   const OK = [T.emerald600, T.emerald100], NOK = [T.red600, T.red100], NA = [T.ink700, T.surfaceAlt];
   return (<div onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 10010, background: "rgba(10,20,30,.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 12 }}>
     <div role="dialog" aria-modal="true" aria-label={"Checklist de debug " + r.pj} style={{ width: "min(1480px,100%)", maxHeight: "94dvh", display: "flex", flexDirection: "column", background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, fontFamily: T.font }}>
@@ -96,14 +96,14 @@ function DebugChecklistDialog({ r, plan, saveTests, canMark, who, signApi, SignF
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "10px 16px", borderTop: "1px solid " + T.line }}>
         <span style={{ fontSize: FZ.sm, fontWeight: 600 }}>{pr.done} / {pr.total} renseignés{pr.nok ? <span style={{ color: T.red600 }}> · {pr.nok} NOK</span> : ""}</span>
-        {debug.signed ? <span style={{ fontSize: 12, fontWeight: 600, color: changedAfter ? T.amber600 : T.emerald600, background: changedAfter ? T.amber100 : T.emerald100, borderRadius: 999, padding: "2px 10px" }}>Signée le {fd(debug.signed.at.slice(0, 10))} par {debug.signed.name}{changedAfter ? " · modifiée depuis, à signer de nouveau" : ""}</span> : null}
+        {debug.signed ? <span style={{ fontSize: 12, fontWeight: 500, color: changedAfter ? T.amber600 : T.emerald600, background: changedAfter ? T.amber100 : T.emerald100, borderRadius: 999, padding: "2px 10px" }}>Signée le {fd(debug.signed.at.slice(0, 10))} par {debug.signed.name}{changedAfter ? " · modifiée depuis, à signer de nouveau" : ""}</span> : null}
         <span style={{ flex: 1 }} />
         {saveModel && <span style={{ fontSize: 12, color: T.ink500 }}>La liste des contrôles se modifie dans Tests › Checklists.</span>}
         {canMark && !sigOpen && <button type="button" disabled={busy} onClick={() => setSigOpen(true)} style={btn(true, !!debug.signed && !changedAfter)}>{debug.signed ? "Signer de nouveau" : pr.done < pr.total ? "Signer (" + (pr.total - pr.done) + " ligne" + (pr.total - pr.done > 1 ? "s" : "") + " vide" + (pr.total - pr.done > 1 ? "s" : "") + ")" : "Signer la checklist"}</button>}
         <button type="button" onClick={onExport} style={btn(true, true)}>Exporter en PDF</button>
       </div>
       {sigOpen && <div style={{ padding: "0 16px 14px" }}><SignForm init={{ name: debug.name || who, fn: (debug.signed && debug.signed.fn) || "" }} busy={busy} onCancel={() => setSigOpen(false)} onSave={sign} /></div>}
-      {err && <div role="alert" style={{ padding: "0 16px 12px", fontSize: FZ.xs, color: T.red600, fontWeight: 600 }}>{err}</div>}
+      {err && <div role="alert" style={{ padding: "0 16px 12px", fontSize: FZ.xs, color: T.red600, fontWeight: 500 }}>{err}</div>}
     </div>
   </div>);
 }
