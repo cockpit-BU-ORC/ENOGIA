@@ -20,10 +20,16 @@ async function post(url, body, headers, key) {
   } finally { clearTimeout(t); }
 }
 
+// v354 (revue de sécurité) : le domaine vient de Firestore (planning/achats.params.odoo, modifiable par l'équipe Achats) ; sans contrôle,
+// la clé API partait vers n'importe quel serveur. Seuls *.odoo.com et les domaines listés dans la variable d'environnement
+// ODOO_ALLOWED_HOSTS (functions/.env, ex. « erp.enogia.com ») sont acceptés ; http://localhost seulement pour les tests (ODOO_ALLOW_LOCAL=1).
+const allowedHosts = () => ["odoo.com", ...String(process.env.ODOO_ALLOWED_HOSTS || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean)];
 function host(domaine) {
-  if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(String(domaine || ""))) return String(domaine); // tests locaux seulement
-  const d = String(domaine || "").trim().replace(/^https?:\/\//, "").replace(/\/+$/, "");
-  if (!d || /[\s/]/.test(d)) throw new Error("Domaine Odoo invalide (attendu : par exemple enogia.odoo.com).");
+  const raw = String(domaine || "").trim();
+  if (process.env.ODOO_ALLOW_LOCAL === "1" && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(raw)) return raw;
+  const d = raw.replace(/^https?:\/\//i, "").replace(/\/+$/, "").toLowerCase();
+  if (!d || !/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(d)) throw new Error("Domaine Odoo invalide (attendu : par exemple enogia.odoo.com).");
+  if (!allowedHosts().some(a => d === a || d.endsWith("." + a))) throw new Error("Domaine Odoo non autorisé : " + d + " (seuls *.odoo.com et les domaines de ODOO_ALLOWED_HOSTS sont acceptés).");
   return "https://" + d;
 }
 

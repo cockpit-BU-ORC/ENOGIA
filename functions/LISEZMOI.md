@@ -77,3 +77,13 @@ Pour savoir ce que la fonction lit et écrit exactement, voir le contrat en têt
 - Elle ne modifie pas l'affectation d'une PO à une ligne de nomenclature.
 - Elle ne change rien aux commandes plus anciennes que « Commandes depuis ».
 - Une commande annulée ou disparue d'Odoo est **marquée annulée** si elle est affectée à une ligne de nomenclature, sinon elle est retirée.
+
+## Domaines Odoo autorisés (v354)
+
+Par sécurité, la fonction n'envoie la clé API qu'à un domaine `*.odoo.com`. Si l'Odoo d'ENOGIA est sur un autre domaine (par exemple `erp.enogia.com`), créer le fichier `functions/.env` avec la ligne :
+
+```
+ODOO_ALLOWED_HOSTS=erp.enogia.com
+```
+
+puis redéployer les fonctions (`firebase deploy --only functions`). Plusieurs domaines : séparés par des virgules.

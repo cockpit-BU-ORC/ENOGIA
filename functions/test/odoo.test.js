@@ -3,7 +3,24 @@
 const test = require("node:test");
 const assert = require("node:assert");
 const http = require("node:http");
-const { readPurchases } = require("../odoo");
+process.env.ODOO_ALLOW_LOCAL = "1"; // v354 : faux serveur local autorisé seulement dans les tests
+const { readPurchases, host } = require("../odoo");
+
+// v354 (revue de sécurité) : la clé API ne part que vers *.odoo.com ou un domaine de ODOO_ALLOWED_HOSTS
+test("v354 : domaine Odoo limité à *.odoo.com et aux domaines autorisés", () => {
+  assert.strictEqual(host("enogia.odoo.com"), "https://enogia.odoo.com");
+  assert.strictEqual(host("https://enogia.odoo.com/"), "https://enogia.odoo.com");
+  assert.throws(() => host("attaquant.exemple"), /non autorisé/);
+  assert.throws(() => host("enogia.odoo.com.attaquant.exemple"), /non autorisé/);
+  assert.throws(() => host("enogia.odoo.com@attaquant.exemple"), /invalide/);
+  assert.throws(() => host("enogia.odoo.com:8443"), /invalide/);
+  process.env.ODOO_ALLOWED_HOSTS = "erp.enogia.com";
+  assert.strictEqual(host("erp.enogia.com"), "https://erp.enogia.com");
+  delete process.env.ODOO_ALLOWED_HOSTS;
+  delete process.env.ODOO_ALLOW_LOCAL;
+  assert.throws(() => host("http://localhost:8069"), /invalide|non autorisé/);
+  process.env.ODOO_ALLOW_LOCAL = "1";
+});
 
 const ORDERS = [{ id: 1, name: "P00010", date_approve: false, date_order: "2026-10-01 09:00:00", state: "purchase" }];
 const LINES = [{ id: 10, order_id: [1, "P00010"], sequence: 1, product_id: [7, "Pompe"], name: "Pompe", product_qty: 1, qty_received: 0, date_planned: "2026-11-01 00:00:00", x_projet: "PJ1" }];

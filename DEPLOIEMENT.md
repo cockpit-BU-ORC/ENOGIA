@@ -2562,3 +2562,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Mouvement : jetons --e-dur-* entre 150 et 300 ms, signaux d'attention joués une fois, plus de transition sur la mise en page ; aucune bibliothèque d'animation.
 - Aucune clé localStorage ; règles Firestore inchangées.
 - Fichiers : components/RoleHome.js, styles.css, SharedUI.js, TurbinesHub.js, ManagerNav.js, WorkshopScreen.js, demo/demoPages.js, versions.
+
+## v354 — corrections de sécurité (revue security-review)
+
+- PDF de la checklist de debug : signature limitée à une image PNG / JPEG et échappée (XSS stockée corrigée).
+- Fonction Odoo : la clé API n'est envoyée qu'à *.odoo.com ou aux domaines de ODOO_ALLOWED_HOSTS (functions/.env). **Redéployer les fonctions** : `firebase deploy --only functions` (après avoir créé functions/.env si l'Odoo n'est pas en *.odoo.com).
+- Aucune clé localStorage ; règles Firestore inchangées.
+- Fichiers : src/debugPdf.js (+test), functions/odoo.js, functions/test/odoo.test.js, functions/LISEZMOI.md, versions.

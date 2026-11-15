@@ -1030,4 +1030,8 @@ export const RELEASE_CATALOG = [
     ["Accueil", "Nouveaux cadrans à ajouter : tableau des départs, écarts au planning initial, machines par chef, par pays, par gamme, fins de production et arrivées à venir."],
     ["Général", "Toutes les animations durent entre 150 et 300 ms ; les signaux d'attention ne clignotent plus qu'une fois."],
   ] },
+  { v: "354", t: "Sécurité : signature du PDF de debug et connexion Odoo", items: [
+    ["Tests", "PDF de la checklist de debug : seule une vraie image de signature est acceptée."],
+    ["Achats / Appro", "La synchronisation Odoo n'envoie la clé qu'à un domaine Odoo autorisé."],
+  ] },
 ];

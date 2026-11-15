@@ -19,7 +19,9 @@ export function debugHtml({ pj, date, name, debug, sign, sections = DEBUG_SECTIO
       + s.items.map(it => { const v = rows[it.id] || {};
         return "<tr><td>" + x(it.label) + '</td><td class="c b">' + mark(v.r, "ok") + '</td><td class="c b">' + mark(v.r, "nok") + "</td><td>" + br(v.pb) + "</td><td>" + br(v.cause) + "</td><td>" + br(v.fix) + "</td><td>" + br(v.temps) + '</td><td class="h">' + br(it.hint) + "</td></tr>"; }).join("");
   }).join("");
-  const sigImg = sign && sign.img && /^data:image\//.test(sign.img) ? '<img src="' + sign.img + '" alt="Signature" style="max-height:60px;max-width:220px">' : "";
+  // v354 (revue de sécurité) : la signature vient de Firestore (testsign_<PJ>, inscriptible par tout compte) — seule une image PNG / JPEG
+  // en base64 est acceptée, et la valeur est échappée (sinon un faux « data:image/… » pouvait ajouter un script à la page)
+  const sigImg = sign && typeof sign.img === "string" && /^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(sign.img) ? '<img src="' + x(sign.img) + '" alt="Signature" style="max-height:60px;max-width:220px">' : "";
   return `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>${x(debugPdfName(pj))}</title><style>
 @page{size:A4 landscape;margin:12mm}
 *{box-sizing:border-box}body{margin:0;font:9pt Calibri,Carlito,Arial,sans-serif;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
