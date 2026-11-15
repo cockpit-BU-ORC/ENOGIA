@@ -1,0 +1,795 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-15T20:11:28.378Z",
+  "title": "Design System: Cockpit BU ORC",
+  "extensions": {
+    "colorMeta": {
+      "ink-strong": {
+        "role": "neutral",
+        "displayName": "Encre forte",
+        "canonical": "#101828",
+        "oklch": "oklch(21.0% 0.034 263.4)",
+        "tonalRamp": [
+          "#080B12",
+          "#1F2635",
+          "#3C4558",
+          "#5C667A",
+          "#7F899E",
+          "#A5AEC0",
+          "#CCD1DB",
+          "#ECEEF2"
+        ]
+      },
+      "ink-body": {
+        "role": "neutral",
+        "displayName": "Encre de lecture",
+        "canonical": "#344054",
+        "oklch": "oklch(36.9% 0.038 260.5)",
+        "tonalRamp": [
+          "#070B13",
+          "#1D2737",
+          "#39455A",
+          "#5A677C",
+          "#7C8AA1",
+          "#A3AFC2",
+          "#CBD1DD",
+          "#ECEFF3"
+        ]
+      },
+      "ink-muted": {
+        "role": "neutral",
+        "displayName": "Encre discrète",
+        "canonical": "#52607A",
+        "oklch": "oklch(48.8% 0.045 262.7)",
+        "tonalRamp": [
+          "#070B14",
+          "#1C263A",
+          "#38455E",
+          "#586681",
+          "#7B8AA5",
+          "#A2AEC6",
+          "#CAD1DF",
+          "#ECEFF3"
+        ]
+      },
+      "ink-faint": {
+        "role": "neutral",
+        "displayName": "Encre légère",
+        "canonical": "#5B6880",
+        "oklch": "oklch(51.6% 0.041 262.6)",
+        "tonalRamp": [
+          "#070B14",
+          "#1D2638",
+          "#39455C",
+          "#59667E",
+          "#7C8AA3",
+          "#A3AEC4",
+          "#CBD1DE",
+          "#ECEEF3"
+        ]
+      },
+      "hairline": {
+        "role": "neutral",
+        "displayName": "Filet",
+        "canonical": "#DDE2EA",
+        "oklch": "oklch(91.1% 0.012 259.8)",
+        "tonalRamp": [
+          "#0A0B0E",
+          "#23272C",
+          "#41454C",
+          "#62666D",
+          "#858991",
+          "#AAAEB4",
+          "#CFD1D5",
+          "#EEEEF0"
+        ]
+      },
+      "field-line": {
+        "role": "neutral",
+        "displayName": "Filet de champ",
+        "canonical": "#7E8796",
+        "oklch": "oklch(62.1% 0.025 260.7)",
+        "tonalRamp": [
+          "#080B10",
+          "#202731",
+          "#3D4553",
+          "#5E6775",
+          "#818A99",
+          "#A7AEBB",
+          "#CDD1D9",
+          "#EDEEF1"
+        ]
+      },
+      "page-cool": {
+        "role": "neutral",
+        "displayName": "Papier froid",
+        "canonical": "#F3F5F8",
+        "oklch": "oklch(96.9% 0.005 258.3)",
+        "tonalRamp": [
+          "#0B0B0C",
+          "#252628",
+          "#434547",
+          "#646669",
+          "#87898C",
+          "#ACAEB0",
+          "#D0D1D2",
+          "#EEEEEF"
+        ]
+      },
+      "surface-raised": {
+        "role": "neutral",
+        "displayName": "Surface relevée",
+        "canonical": "#E9EDF3",
+        "oklch": "oklch(94.5% 0.009 258.3)",
+        "tonalRamp": [
+          "#0A0B0D",
+          "#24272A",
+          "#42454A",
+          "#63666B",
+          "#86898F",
+          "#ABAEB3",
+          "#CFD1D4",
+          "#EEEEEF"
+        ]
+      },
+      "card-white": {
+        "role": "neutral",
+        "displayName": "Carte blanche",
+        "canonical": "#FFFFFF",
+        "oklch": "oklch(100.0% 0.000 89.9)",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#262626",
+          "#454545",
+          "#666666",
+          "#898989",
+          "#AEAEAE",
+          "#D1D1D1",
+          "#EEEEEE"
+        ]
+      },
+      "slate-navy": {
+        "role": "primary",
+        "displayName": "Ardoise marine",
+        "canonical": "#1D2C4E",
+        "oklch": "oklch(29.9% 0.065 264.8)",
+        "tonalRamp": [
+          "#050B18",
+          "#192542",
+          "#344468",
+          "#54668C",
+          "#7689B1",
+          "#9EAED0",
+          "#C8D1E5",
+          "#EBEFF6"
+        ]
+      },
+      "slate-navy-deep": {
+        "role": "primary",
+        "displayName": "Ardoise marine profonde",
+        "canonical": "#121B30",
+        "oklch": "oklch(22.5% 0.043 265.5)",
+        "tonalRamp": [
+          "#070B14",
+          "#1E2639",
+          "#3A455D",
+          "#5A667F",
+          "#7D89A4",
+          "#A3AEC5",
+          "#CBD1DE",
+          "#ECEEF3"
+        ]
+      },
+      "slate-navy-wash": {
+        "role": "primary",
+        "displayName": "Lavis d'ardoise",
+        "canonical": "#E8EAF0",
+        "oklch": "oklch(93.7% 0.008 271.3)",
+        "tonalRamp": [
+          "#0A0B0D",
+          "#25262A",
+          "#43454A",
+          "#64666B",
+          "#87898E",
+          "#ACAEB2",
+          "#D0D1D3",
+          "#EEEEEF"
+        ]
+      },
+      "instrument-teal": {
+        "role": "secondary",
+        "displayName": "Sarcelle instrument",
+        "canonical": "#0A9DB5",
+        "oklch": "oklch(64.0% 0.111 213.8)",
+        "tonalRamp": [
+          "#001018",
+          "#003042",
+          "#005269",
+          "#00758C",
+          "#009AB2",
+          "#65BDD0",
+          "#ACDAE5",
+          "#E2F2F6"
+        ]
+      },
+      "instrument-teal-ink": {
+        "role": "secondary",
+        "displayName": "Encre sarcelle",
+        "canonical": "#076477",
+        "oklch": "oklch(46.5% 0.081 217.2)",
+        "tonalRamp": [
+          "#000F16",
+          "#002E3D",
+          "#004F61",
+          "#1F7184",
+          "#4895A9",
+          "#7EB9C9",
+          "#B7D7E1",
+          "#E5F1F4"
+        ]
+      },
+      "instrument-teal-wash": {
+        "role": "secondary",
+        "displayName": "Lavis sarcelle",
+        "canonical": "#D3F0F6",
+        "oklch": "oklch(93.6% 0.031 211.5)",
+        "tonalRamp": [
+          "#040D0F",
+          "#162A2E",
+          "#314A4F",
+          "#516B70",
+          "#748F94",
+          "#9DB3B7",
+          "#C7D4D6",
+          "#EBEFF0"
+        ]
+      },
+      "highlighter-gold": {
+        "role": "tertiary",
+        "displayName": "Surligneur or",
+        "canonical": "#F3C35B",
+        "oklch": "oklch(84.0% 0.133 84.3)",
+        "tonalRamp": [
+          "#170700",
+          "#3F1D00",
+          "#653B00",
+          "#895D00",
+          "#AE8100",
+          "#CDA85A",
+          "#E3CFA5",
+          "#F5EEDF"
+        ]
+      },
+      "stage-arrival": {
+        "role": "semantic",
+        "displayName": "Étape arrivée (bleu clair)",
+        "canonical": "#A8D5E2",
+        "oklch": "oklch(84.5% 0.050 217.3)",
+        "tonalRamp": [
+          "#010E12",
+          "#062B34",
+          "#214C57",
+          "#436D79",
+          "#66919D",
+          "#92B5BF",
+          "#C1D5DB",
+          "#E9F0F2"
+        ]
+      },
+      "stage-production": {
+        "role": "semantic",
+        "displayName": "Étape production (marine)",
+        "canonical": "#0D3B66",
+        "oklch": "oklch(34.7% 0.089 251.1)",
+        "tonalRamp": [
+          "#000B1C",
+          "#01274A",
+          "#1B4773",
+          "#3D6997",
+          "#5F8DBE",
+          "#8DB2DA",
+          "#BED3EB",
+          "#E8EFF8"
+        ]
+      },
+      "stage-tests": {
+        "role": "semantic",
+        "displayName": "Étape tests (or)",
+        "canonical": "#F4D35E",
+        "oklch": "oklch(87.3% 0.140 93.5)",
+        "tonalRamp": [
+          "#150900",
+          "#3A2100",
+          "#5E4000",
+          "#816200",
+          "#A68600",
+          "#C6AC55",
+          "#DFD1A3",
+          "#F3EFDE"
+        ]
+      },
+      "stage-endprod": {
+        "role": "semantic",
+        "displayName": "Étape fin de production (vert forêt)",
+        "canonical": "#548C2F",
+        "oklch": "oklch(58.1% 0.139 135.1)",
+        "tonalRamp": [
+          "#001000",
+          "#023100",
+          "#1D5300",
+          "#407614",
+          "#629B3F",
+          "#8FBE76",
+          "#C0DBB2",
+          "#E8F2E3"
+        ]
+      },
+      "stage-departure": {
+        "role": "semantic",
+        "displayName": "Étape départ (vert sapin)",
+        "canonical": "#104911",
+        "oklch": "oklch(35.6% 0.104 143.2)",
+        "tonalRamp": [
+          "#001000",
+          "#003102",
+          "#1B521B",
+          "#3F753D",
+          "#62995F",
+          "#8FBC8C",
+          "#C0D9BE",
+          "#E8F2E7"
+        ]
+      },
+      "risk-red": {
+        "role": "semantic",
+        "displayName": "Rouge retard",
+        "canonical": "#B8331A",
+        "oklch": "oklch(52.2% 0.174 32.7)",
+        "tonalRamp": [
+          "#240000",
+          "#5B0000",
+          "#8B0000",
+          "#B42F15",
+          "#DE573E",
+          "#F98B74",
+          "#FFBFB1",
+          "#FFE8E3"
+        ]
+      },
+      "risk-red-wash": {
+        "role": "semantic",
+        "displayName": "Lavis rouge",
+        "canonical": "#FEE6DF",
+        "oklch": "oklch(94.2% 0.028 36.9)",
+        "tonalRamp": [
+          "#100907",
+          "#31221E",
+          "#53403A",
+          "#75615B",
+          "#99847D",
+          "#BCA9A4",
+          "#D9CECB",
+          "#F1EDEC"
+        ]
+      },
+      "vigilance-amber": {
+        "role": "semantic",
+        "displayName": "Ambre vigilance",
+        "canonical": "#8A5700",
+        "oklch": "oklch(50.2% 0.108 70.5)",
+        "tonalRamp": [
+          "#180600",
+          "#411A00",
+          "#683700",
+          "#8D5905",
+          "#B27D37",
+          "#D1A570",
+          "#E6CCAF",
+          "#F6EDE2"
+        ]
+      },
+      "vigilance-amber-wash": {
+        "role": "semantic",
+        "displayName": "Lavis ambre",
+        "canonical": "#FDF0D5",
+        "oklch": "oklch(95.8% 0.038 85.3)",
+        "tonalRamp": [
+          "#0F0B04",
+          "#2E2513",
+          "#4E442D",
+          "#70654D",
+          "#94886F",
+          "#B7AD99",
+          "#D6D0C5",
+          "#F0EEEA"
+        ]
+      },
+      "conform-green": {
+        "role": "semantic",
+        "displayName": "Vert conforme",
+        "canonical": "#3B6620",
+        "oklch": "oklch(46.3% 0.111 135.5)",
+        "tonalRamp": [
+          "#021000",
+          "#0D3000",
+          "#275105",
+          "#48742E",
+          "#6B9852",
+          "#95BB82",
+          "#C3D9B9",
+          "#E9F1E6"
+        ]
+      },
+      "conform-green-wash": {
+        "role": "semantic",
+        "displayName": "Lavis vert",
+        "canonical": "#E6F0DF",
+        "oklch": "oklch(94.3% 0.025 132.1)",
+        "tonalRamp": [
+          "#090C07",
+          "#22291E",
+          "#40483A",
+          "#61695B",
+          "#848D7D",
+          "#A9B1A4",
+          "#CED3CB",
+          "#EDEFEC"
+        ]
+      },
+      "info-blue": {
+        "role": "semantic",
+        "displayName": "Bleu information",
+        "canonical": "#2557B8",
+        "oklch": "oklch(48.1% 0.163 261.9)",
+        "tonalRamp": [
+          "#00062B",
+          "#001A69",
+          "#093B9A",
+          "#2D60C2",
+          "#5085EA",
+          "#80ADFF",
+          "#B7D2FF",
+          "#E5EFFF"
+        ]
+      },
+      "info-blue-wash": {
+        "role": "semantic",
+        "displayName": "Lavis bleu",
+        "canonical": "#E6EEFC",
+        "oklch": "oklch(94.7% 0.021 261.8)",
+        "tonalRamp": [
+          "#090B0F",
+          "#22272F",
+          "#3F4550",
+          "#606672",
+          "#828996",
+          "#A8AEB9",
+          "#CED1D7",
+          "#EDEEF1"
+        ]
+      },
+      "graphite-page": {
+        "role": "neutral",
+        "displayName": "Graphite page (sombre)",
+        "canonical": "#111214",
+        "oklch": "oklch(18.2% 0.004 264.5)",
+        "tonalRamp": [
+          "#0B0B0C",
+          "#252628",
+          "#444547",
+          "#656669",
+          "#88898C",
+          "#ADAEB0",
+          "#D0D1D2",
+          "#EEEEEF"
+        ]
+      },
+      "graphite-card": {
+        "role": "neutral",
+        "displayName": "Graphite carte (sombre)",
+        "canonical": "#191A1D",
+        "oklch": "oklch(21.8% 0.006 271.1)",
+        "tonalRamp": [
+          "#0B0B0C",
+          "#252629",
+          "#444548",
+          "#65666A",
+          "#88898D",
+          "#ADAEB1",
+          "#D0D1D3",
+          "#EEEEEF"
+        ]
+      },
+      "graphite-raised": {
+        "role": "neutral",
+        "displayName": "Graphite relevé (sombre)",
+        "canonical": "#1F2125",
+        "oklch": "oklch(24.7% 0.008 264.4)",
+        "tonalRamp": [
+          "#0A0B0D",
+          "#25262A",
+          "#43454A",
+          "#64666B",
+          "#87898E",
+          "#ACAEB2",
+          "#D0D1D3",
+          "#EEEEEF"
+        ]
+      },
+      "graphite-hairline": {
+        "role": "neutral",
+        "displayName": "Filet graphite (sombre)",
+        "canonical": "#2A2C31",
+        "oklch": "oklch(29.3% 0.010 268.3)",
+        "tonalRamp": [
+          "#0A0B0D",
+          "#25262B",
+          "#43454A",
+          "#64666C",
+          "#87898F",
+          "#ACAEB3",
+          "#D0D1D4",
+          "#EEEEEF"
+        ]
+      },
+      "graphite-ink": {
+        "role": "neutral",
+        "displayName": "Encre graphite (sombre)",
+        "canonical": "#F2F3F5",
+        "oklch": "oklch(96.4% 0.003 264.5)",
+        "tonalRamp": [
+          "#0B0B0C",
+          "#262628",
+          "#444547",
+          "#656668",
+          "#88898B",
+          "#ADAEAF",
+          "#D0D1D2",
+          "#EEEEEF"
+        ]
+      },
+      "graphite-gold": {
+        "role": "tertiary",
+        "displayName": "Or (accent sombre)",
+        "canonical": "#F4D35E",
+        "oklch": "oklch(87.3% 0.140 93.5)",
+        "tonalRamp": [
+          "#150900",
+          "#3A2100",
+          "#5E4000",
+          "#816200",
+          "#A68600",
+          "#C6AC55",
+          "#DFD1A3",
+          "#F3EFDE"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Titre de page",
+        "purpose": "Titre de chaque page (PageHead), surligné, avec la phrase d'explication."
+      },
+      "headline": {
+        "displayName": "Titre de zone",
+        "purpose": "Zones et fenêtres."
+      },
+      "title": {
+        "displayName": "Titre de bloc",
+        "purpose": "Cartes et blocs."
+      },
+      "body": {
+        "displayName": "Texte",
+        "purpose": "Texte courant ; 13 px dans les tableaux denses."
+      },
+      "label": {
+        "displayName": "Étiquette",
+        "purpose": "Au-dessus des valeurs, en-têtes de tableau, casse normale."
+      },
+      "figure": {
+        "displayName": "Chiffre clé",
+        "purpose": "Chiffres clés, tabulaires ; le chiffre réponse jusqu'à 46 px."
+      },
+      "identifier": {
+        "displayName": "Identifiant",
+        "purpose": "N° de PJ, S/N, raccourcis clavier."
+      }
+    },
+    "shadows": [
+      {
+        "name": "flat",
+        "value": "0 0 0 1px rgba(16,24,34,.07)",
+        "purpose": "Filet des boutons, champs, pastilles."
+      },
+      {
+        "name": "card",
+        "value": "0 0 0 1px rgba(16,24,34,.06), 0 1px 2px rgba(16,24,34,.05), 0 6px 16px -8px rgba(16,24,34,.12)",
+        "purpose": "Rare : élément qui doit se détacher d'un fond identique."
+      },
+      {
+        "name": "float",
+        "value": "0 16px 40px rgba(10,20,32,.14), 0 2px 8px rgba(10,20,32,.06)",
+        "purpose": "Menus, fenêtres, tiroirs."
+      },
+      {
+        "name": "float-dark",
+        "value": "0 0 0 1px rgba(255,255,255,.14), 0 12px 28px rgba(0,0,0,.32)",
+        "purpose": "Ce qui flotte, en sombre."
+      }
+    ],
+    "motion": [
+      {
+        "name": "micro",
+        "value": "120ms",
+        "purpose": "Retour d'un clic, survol."
+      },
+      {
+        "name": "menu",
+        "value": "160ms",
+        "purpose": "Ouverture d'un menu."
+      },
+      {
+        "name": "dialog-in",
+        "value": "240ms",
+        "purpose": "Entrée d'une fenêtre."
+      },
+      {
+        "name": "dialog-out",
+        "value": "170ms",
+        "purpose": "Sortie d'une fenêtre."
+      },
+      {
+        "name": "ease",
+        "value": "var(--e-ease)",
+        "purpose": "Courbe commune ; transform et opacity seulement, prefers-reduced-motion respecté."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "phone",
+        "value": "760px"
+      },
+      {
+        "name": "stack",
+        "value": "900px"
+      },
+      {
+        "name": "tablet-wide",
+        "value": "1100px"
+      },
+      {
+        "name": "touch",
+        "value": "(pointer: coarse)"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Bouton principal",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Une seule action principale par écran.",
+      "html": "<button class=\"ds-btn-pri\">Publier</button>",
+      "css": ".ds-btn-pri{display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:0 14px;border-radius:8px;border:1px solid #101828;background:#101828;color:#fff;font:600 13.5px Satoshi,system-ui,sans-serif;cursor:pointer;transition:background .12s,transform .12s}.ds-btn-pri:hover{background:#344054;border-color:#344054}.ds-btn-pri:active{transform:scale(.97)}.ds-btn-pri:focus-visible{outline:2px solid #0A9DB5;outline-offset:2px}"
+    },
+    {
+      "name": "Bouton secondaire",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Bouton par défaut.",
+      "html": "<button class=\"ds-btn-sec\">Annuler</button>",
+      "css": ".ds-btn-sec{display:inline-flex;align-items:center;min-height:34px;padding:0 14px;border-radius:8px;border:1px solid #DDE2EA;background:#fff;color:#101828;font:600 13.5px Satoshi,system-ui,sans-serif;cursor:pointer;transition:background .12s,transform .12s}.ds-btn-sec:hover{background:#F3F5F8}.ds-btn-sec:active{transform:scale(.97)}.ds-btn-sec:focus-visible{outline:2px solid #0A9DB5;outline-offset:2px}"
+    },
+    {
+      "name": "Champ de saisie",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Bord à 3:1, libellé visible.",
+      "html": "<label class=\"ds-field\">Rechercher<span class=\"ds-in\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 256 256\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z\"/></svg><input placeholder=\"PJ, projet, pays…\"></span></label>",
+      "css": ".ds-field{display:flex;flex-direction:column;gap:4px;font:600 12px Satoshi,system-ui,sans-serif;color:#52607A}.ds-in{display:flex;align-items:center;gap:6px;min-height:34px;padding:0 8px;border:1px solid #7E8796;border-radius:8px;background:#fff;color:#52607A}.ds-in input{border:0;outline:0;flex:1;font:400 14px Satoshi,system-ui,sans-serif;color:#101828;background:transparent}.ds-in:focus-within{box-shadow:0 0 0 2px #0A9DB5}"
+    },
+    {
+      "name": "Plaque de PJ",
+      "kind": "custom",
+      "refersTo": "pj-plate",
+      "description": "Identifie une machine ; liseré gauche = couleur de l'état.",
+      "html": "<span class=\"ds-plate\">PJ903-1</span>",
+      "css": ".ds-plate{display:inline-block;padding:3px 7px;border-radius:4px;background:#E9EDF3;border:1px solid #DDE2EA;box-shadow:inset 3px 0 0 #F4D35E;font:600 13px 'Cabinet Grotesk',sans-serif;color:#101828;font-variant-numeric:tabular-nums;letter-spacing:.02em}"
+    },
+    {
+      "name": "Pastille de statut",
+      "kind": "chip",
+      "refersTo": "status-pill",
+      "description": "Teinte pâle + texte foncé de la même teinte, jamais la couleur seule.",
+      "html": "<span class=\"ds-pill\"><i></i>Vigilance</span>",
+      "css": ".ds-pill{display:inline-flex;align-items:center;gap:6px;height:20px;padding:0 8px;border-radius:999px;background:#FDF0D5;color:#8A5700;border:1px solid #8A5700;font:600 12px Satoshi,system-ui,sans-serif}.ds-pill i{width:6px;height:6px;border-radius:50%;background:#8A5700}"
+    },
+    {
+      "name": "Carte à liseré",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Cadran de l'accueil : liseré de 4 px de la couleur du thème, plat.",
+      "html": "<section class=\"ds-card\"><h3>Tests</h3><p><b>3</b> au banc · <b>0</b> échec</p></section>",
+      "css": ".ds-card{background:linear-gradient(#F4D35E,#F4D35E) top/100% 4px no-repeat,#fff;border:1px solid #DDE2EA;border-radius:12px;padding:18px 16px 14px;font:400 14px Satoshi,system-ui,sans-serif;color:#344054;max-width:260px}.ds-card h3{margin:0 0 6px;font:600 16px Satoshi,system-ui,sans-serif;color:#101828}.ds-card b{font:600 18px 'Cabinet Grotesk',sans-serif;color:#101828;font-variant-numeric:tabular-nums}"
+    },
+    {
+      "name": "Sélecteur segmenté",
+      "kind": "nav",
+      "description": "Vues d'une page (Liste · Gantt · Calendrier), touches 1 2 3.",
+      "html": "<div class=\"ds-seg\" role=\"tablist\"><button aria-selected=\"true\">Liste</button><button>Gantt</button><button>Calendrier</button></div>",
+      "css": ".ds-seg{display:inline-flex;gap:2px;padding:3px;border-radius:12px;background:#E9EDF3}.ds-seg button{border:0;background:transparent;border-radius:8px;padding:6px 12px;min-height:30px;font:500 13px Satoshi,system-ui,sans-serif;color:#52607A;cursor:pointer}.ds-seg button[aria-selected=true]{background:#1D2C4E;color:#fff;font-weight:600}.ds-seg button:hover{color:#101828}.ds-seg button:focus-visible{outline:2px solid #0A9DB5;outline-offset:1px}"
+    },
+    {
+      "name": "Titre de page",
+      "kind": "custom",
+      "description": "PageHead : titre surligné, phrase sur la même ligne, trait de 3 px.",
+      "html": "<header class=\"ds-head\"><h1>Cockpit <span>BU ORC</span></h1><p>Ordonnancement · Production · Tests · Projets</p></header>",
+      "css": ".ds-head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;border-bottom:3px solid #1D2C4E;padding-bottom:8px}.ds-head h1{margin:0;font:600 36px/1.1 'Cabinet Grotesk',sans-serif;letter-spacing:-.02em;color:#101828}.ds-head h1 span{box-shadow:inset 0 -.32em 0 #F3C35B}.ds-head p{margin:0;font:400 14px Satoshi,system-ui,sans-serif;color:#52607A}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Le tableau de bord d'atelier",
+    "overview": "Le Cockpit est l'outil de travail quotidien de la BU ORC : on y suit chaque machine de la commande au départ, au bureau comme au pied du banc d'essai, à la souris comme au doigt sur tablette. Tout y est **calme, exact, industriel** : chaque élément a une raison d'être, la donnée prime sur la décoration, et l'écran se lit d'un coup d'œil comme le tableau d'une machine en marche.\n\nLa structure est neutre (gris froid en clair, graphite en sombre) et dense par défaut ; la couleur est réservée à deux usages précis : **les étapes de production** (arrivée, production, tests, fin de production, départ, toujours les mêmes teintes partout) et **les signaux** (rouge = retard, ambre = vigilance, vert = conforme, bleu = information). L'identité vit dans les détails : la plaque du n° de PJ, le surligneur sous les titres, les chiffres tabulaires, le liseré de couleur en haut des cartes.\n\nRejets confirmés : pas de dégradé décoratif, pas de verre dépoli ni de flou, pas de néomorphisme, pas d'émoji en guise d'icône, pas de majuscules espacées, pas de graisse au-delà de 600.",
+    "keyCharacteristics": [
+      "Neutres froids, une seule couleur d'accent, couleurs d'étape et de signal fixes",
+      "Trois familles de police : Cabinet Grotesk (titres, chiffres), Satoshi (texte), JetBrains Mono (identifiants)",
+      "Rayons 4 · 8 · 12 et pilule, rien d'autre",
+      "Plat par défaut, ombre seulement sur ce qui flotte",
+      "Clair et sombre conçus ensemble, contrastes AA vérifiés",
+      "Cibles de 44 px au doigt, densité compacte à la souris"
+    ],
+    "rules": [
+      {
+        "name": "The Stage Color Rule",
+        "body": "Arrivée bleu clair, production marine, tests or, fin de production vert forêt, départ vert sapin : la même teinte pour la même étape dans la Liste, le Gantt, le Calendrier, les Tests et la fiche d'un PJ. Une nouvelle vue n'invente pas sa palette d'étapes.",
+        "section": "colors"
+      },
+      {
+        "name": "The Signal Rule",
+        "body": "Rouge = retard ou risque, ambre = vigilance, vert = conforme ou en avance, bleu = information. Ces couleurs ne servent qu'à ça, et elles s'accompagnent toujours d'un mot, d'une forme ou d'une hachure (un daltonien doit lire le même statut).",
+        "section": "colors"
+      },
+      {
+        "name": "The Token-Only Rule",
+        "body": "Aucune couleur écrite en dur dans un composant : tout passe par les jetons du thème, qui changent entre clair et sombre. Un style défini hors d'un composant lit le thème par accesseurs.",
+        "section": "colors"
+      },
+      {
+        "name": "The 600 Ceiling Rule",
+        "body": "Graisses 400, 500 et 600 seulement ; jamais 700 ou plus, y compris pour `<b>`.",
+        "section": "typography"
+      },
+      {
+        "name": "The Sentence Case Rule",
+        "body": "Casse normale partout : pas de majuscules espacées sur les étiquettes, pas de point final sur un libellé, un bouton ou un message d'une phrase.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Figures Rule",
+        "body": "Tout nombre qui se compare (tableaux, chiffres clés, dates, compteurs) est en chiffres tabulaires et aligné à droite dans une colonne.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-By-Default Rule",
+        "body": "Une surface au repos est plate. Une bordure ou une ombre, jamais les deux ; l'ombre est réservée à ce qui flotte.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do prendre toute couleur dans les jetons du thème et vérifier le contraste en clair et en sombre (`npm run check:contrast`, 0 échec).",
+      "Do garder les teintes d'étape (arrivée #A8D5E2, production #0D3B66, tests #F4D35E, fin de production #548C2F, départ #104911) identiques dans toutes les vues.",
+      "Do doubler chaque statut coloré d'un mot, d'une forme ou d'une hachure.",
+      "Do utiliser les briques communes : bouton `btn()` / `Btn`, `Pill`, `Chip`, `Segmented`, `Panel`, `tableTh` / `tableTd`, `PageHead`, `askConfirm`.",
+      "Do donner 44 px aux cibles au doigt et `touch-action: none` aux éléments à glisser.",
+      "Do garder le liseré des cartes, les lignes alternées du planning des bancs, les camemberts des répartitions et le « Bonsoir Prénom » de l'accueil : choix validés."
+    ],
+    "donts": [
+      "Don't utiliser de graisse 700 ou plus, de majuscules espacées, ni de point final sur un libellé.",
+      "Don't utiliser de dégradé décoratif, de verre dépoli, de flou derrière les fenêtres, ni d'ombre sur une surface au repos.",
+      "Don't utiliser d'autres rayons que 4, 8, 12 et la pilule.",
+      "Don't écrire « #fff » sur un aplat : le texte sur un aplat prend `onFill` ou `inkOn(fond)`.",
+      "Don't utiliser d'émoji comme icône : une seule famille d'icônes, au trait, de la couleur du texte.",
+      "Don't définir un composant à l'intérieur d'un autre composant."
+    ]
+  }
+}
