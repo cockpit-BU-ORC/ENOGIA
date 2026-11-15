@@ -100,7 +100,7 @@ export const DEMO_PAGES = [
   { id: "turb-orc", label: "Turbines · besoins", Render: () => <Turbines tab0="orc" />, expect: ["Turbines prêtes · avec roue", "SAV-12"] },
   { id: "turb-prod", label: "Turbines · production", Render: () => <Turbines tab0="prod" />, expect: ["Production turbines"] },
   { id: "kpi", label: "Manager · KPI", Render: () => <Manager tab0="derives" />, expect: [] },
-  { id: "fiche", label: "Manager · fiche projet", Render: () => <Manager tab0="fiche" />, expect: [] },
+  { id: "fiche", label: "Manager · fiche projet", Render: () => <Manager tab0="fiche" />, expect: ["Cette semaine", "Contrat et dates", "Actions de la semaine", "Statut global"] },
   { id: "hebdo", label: "Manager · point hebdo", Render: () => <Manager tab0="hebdo" />, expect: [] },
   { id: "planner", label: "Planificateur", Render: Planificateur, expect: [] },
 ];

@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v347",
+    date: "2026-11-15",
+    title: "V347 : fiche projet « Cette semaine »",
+    items: [
+      { t: "Projets", d: "La fiche projet s'ouvre sur ce qu'on remplit chaque semaine, sur un seul écran ; le reste est dans ses onglets." },
+      { t: "Projets", d: "Ajoutez une action ou une mitigation avec la touche Entrée." },
+    ],
+  },
+  {
     id: "2026-11-v346",
     date: "2026-11-15",
     title: "V346 : KPI en sombre",

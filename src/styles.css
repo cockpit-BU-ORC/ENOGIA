@@ -649,3 +649,6 @@ h1, h2, h3 { text-wrap: balance; }
 
 /* v343 (audit taste, lot 2) : <b> et <strong> à 600 (le navigateur met 700 ; règle V331 : graisses 400 / 500 / 600) */
 b, strong { font-weight: 600; }
+
+/* v347 : texte lu par les lecteurs d’\écran seulement */
+.enogia-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }

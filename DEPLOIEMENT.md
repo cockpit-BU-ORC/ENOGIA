@@ -2513,3 +2513,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Sombre : styles de module en accesseurs (KPI, accès, checklists, SAV…) ; fiche projet : pénalités et pourcentages lisibles, titres h2 / h3.
 - Aucune clé localStorage ; règles Firestore inchangées.
 - Fichiers : CodirReport.js, testReport.js, debugPdf.js, reports/cdpPptx.js, demo/demoPages.js, demo/pages.test.js, KpiStory.js, AccessPage.js, CashAnchors.js, CashLinks.js, ChecklistsView.js, CompCatalog.js, ManagerFiche.js, FicheContrat.js, ReleaseNotes.js, RowPops.js, SavedViews.js, SavPage.js, versions.
+
+## v347 — fiche projet : vue « Cette semaine »
+
+- Fiche projet en vues : Cette semaine (par défaut), Contrat et dates, Finance, Machine ; bloc « À compléter ».
+- Enregistrement : témoin unique dans les onglets ; commentaire d'axe seulement en vigilance / à risque ; Entrée pour ajouter une action.
+- Aucune clé localStorage ; règles Firestore inchangées ; données inchangées.
+- Fichiers : components/ManagerFiche.js, styles.css, demo/demoPages.js, versions.

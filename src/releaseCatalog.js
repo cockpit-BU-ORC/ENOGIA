@@ -1001,4 +1001,9 @@ export const RELEASE_CATALOG = [
     ["Projets", "Fiche projet : bouton « Définir les pénalités » et pourcentages de la liste lisibles en sombre ; titres de zones pour les lecteurs d'écran."],
     ["Général", "Rapports CODIR, PV et rapport chef de projet : graisses harmonisées, plus de lignes zébrées."],
   ] },
+  { v: "347", t: "Fiche projet : la vue « Cette semaine »", items: [
+    ["Projets", "La fiche projet s'ouvre sur « Cette semaine » : statut, commentaire général, actions, mitigations, retards et commentaires sur un seul écran."],
+    ["Projets", "Contrat et dates, Finance et Machine dans leurs onglets ; « À compléter » mène au bon onglet."],
+    ["Projets", "Actions et mitigations : Entrée pour ajouter ; le commentaire d'un axe n'est demandé qu'en vigilance ou à risque."],
+  ] },
 ];
