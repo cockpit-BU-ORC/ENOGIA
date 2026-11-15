@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v355",
+    date: "2026-11-15",
+    title: "V355 : l'accueil en widgets",
+    items: [
+      { t: "Accueil", d: "L'accueil passe en widgets de taille fixe (petit, moyen, grand, bandeau) : on les déplace en les glissant, on les empile en posant l'un sur l'autre." },
+      { t: "Accueil", d: "Sept petits widgets : aujourd'hui, prochain départ, en production, départs à 30 jours, en retard, au banc, expédiées depuis mai." },
+    ],
+  },
+  {
     id: "2026-11-v354",
     date: "2026-11-15",
     title: "V354 : sécurité",

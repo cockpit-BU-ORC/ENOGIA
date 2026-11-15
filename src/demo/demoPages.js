@@ -57,6 +57,11 @@ const Accueil = () => <HomeView pinOk testsDoc={DEMO_TESTS} data={DEMO_ROWS} com
 const AccueilAtelier = () => <HomeView pinOk testsDoc={DEMO_TESTS} data={DEMO_ROWS} comments={DEMO_COMMENTS} myEmail={DEMO_ME.email} myName={DEMO_ME.name} people={DEMO_PEOPLE} unseenChanges={[]} lastImport={null} onOpenPj={no} onGo={no}
   profiles={{ byEmail: {}, homeLayouts: { direction: { extra: ["ligne", "suiveuses", "depBoard", "ecarts", "parChef", "parPays", "parGamme", "finProd", "arrivees30"] } } }} owner cash={false} turbineDoc={null} onOpenCash={null} prodDoc={DEMO_PROD} canProdTurb productionExclusions={{}} plan={null} closurePeriods={[]} saveHomeLayout={null} />;
 
+// v355 : accueil en widgets (tailles fixes, une pile, petits widgets) ; « Modifier l'accueil » marche ici (disposition gardée en mémoire)
+const WG_DEMO = { widgets: [{ t: "jour", z: "s" }, { t: "nextDep", z: "s" }, { t: "nLate", z: "m" }, { t: "kpis", z: "xl" }, { stack: ["nProd", "nDep30", "nShipped"], z: "m" }, { t: "nBanc", z: "s" }, { t: "ecarts", z: "s" }, { t: "depBoard", z: "l" }, { t: "parcours", z: "l" }, { t: "ligne", z: "xl" }] };
+function AccueilWidgets() { const [lay, setLay] = useState(WG_DEMO); return <HomeView pinOk testsDoc={DEMO_TESTS} data={DEMO_ROWS} comments={DEMO_COMMENTS} myEmail={DEMO_ME.email} myName={DEMO_ME.name} people={DEMO_PEOPLE} unseenChanges={[]} lastImport={null} onOpenPj={no} onGo={no}
+  profiles={{ byEmail: {}, homeLayouts: { direction: lay } }} owner cash={false} turbineDoc={null} onOpenCash={null} prodDoc={DEMO_PROD} canProdTurb productionExclusions={{}} plan={null} closurePeriods={[]} saveHomeLayout={(r, l) => setLay(l)} />; }
+
 // v323 : accueil du responsable produit (responsable des testeurs) avec les jalons cash « Produit »
 const DEMO_PRODUIT = { items: [
   { id: "p1", pj: "PJ901", nom: "Papeterie du Nord", jalon: "P&ID validé", montant: 18000, factInit: "2026-11-30", factPrevue: "2026-12-14" },
@@ -84,6 +89,7 @@ const Planificateur = () => <AsOwner><PlannerView planLoaded planDoc={null} rows
 
 export const DEMO_PAGES = [
   { id: "home", label: "Accueil", Render: Accueil, expect: [] },
+  { id: "home-widgets", label: "Accueil · widgets", Render: AccueilWidgets, expect: ["Modifier l'accueil", "Prochain départ", "En retard sur l'initial", "Ligne d'atelier", "Tableau des départs"] },
   { id: "home-atelier", label: "Accueil · ligne d'atelier", Render: AccueilAtelier, expect: ["Ligne d'atelier", "Fiches suiveuses", "Montage méca", "Tableau des départs", "Écarts au planning initial", "Machines par gamme"] },
   { id: "home-produit", label: "Accueil · resp. produit", Render: AccueilProduit, expect: ["Livrables Produit", "P&ID validé", "Papeterie du Nord"] },
   { id: "sav", label: "SAV · équipe", Render: () => <SavDemo level="w" sub0="tickets" />, expect: ["SAV / MES", "TC-26-41", "Sucrerie Centre"] },

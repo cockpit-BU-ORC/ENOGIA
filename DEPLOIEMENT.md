@@ -2569,3 +2569,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Fonction Odoo : la clé API n'est envoyée qu'à *.odoo.com ou aux domaines de ODOO_ALLOWED_HOSTS (functions/.env). **Redéployer les fonctions** : `firebase deploy --only functions` (après avoir créé functions/.env si l'Odoo n'est pas en *.odoo.com).
 - Aucune clé localStorage ; règles Firestore inchangées.
 - Fichiers : src/debugPdf.js (+test), functions/odoo.js, functions/test/odoo.test.js, functions/LISEZMOI.md, versions.
+
+## v355 — l'accueil en widgets (maquette v354-cadrans-widgets validée)
+
+- Nouveau composant components/WidgetBoard.js : grille de 4 colonnes (2 sous 900 px), tailles Petit 1×2, Moyen 2×2, Grand 2×4, Bandeau 4×2, Grand bandeau 4×4 (lignes de 112 px) ; mode édition (« Modifier l'accueil » ou appui long, propriétaire) ; glisser 1:1 avec animation FLIP ; piles ; galerie d'ajout avec aperçu ; clavier (Entrée, flèches, Suppr).
+- Données : planning/profiles.homeLayouts[poste].widgets = [{ t, z } | { stack: [ids], z }] ; sans cette liste, la disposition est reprise de l'ancienne (cadrans par défaut + ajoutés − retirés, largeur → taille). Une seule écriture au lâcher. Règles Firestore inchangées.
+- Sept petits widgets (RoleHome.js) : jour, nextDep, nProd, nDep30, nLate, nBanc, nShipped. Les pages KPI et Tests gardent Arrange.js.
+- Aucune clé localStorage.
+- Fichiers : components/WidgetBoard.js, components/RoleHome.js, styles.css, demo/demoPages.js, versions.

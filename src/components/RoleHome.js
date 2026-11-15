@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
-import { Arrange } from "./Arrange";
+import { WidgetBoard, widgetsFromSpans } from "./WidgetBoard";
 import { T, FZ } from "../theme";
-import { presenceKind, presenceDates, ETAT_META, PjPlate, getPjMeta, chefsOf, CountryFlag } from "../pjMeta";
+import { presenceKind, presenceDates, ETAT_META, PjPlate, getPjMeta, chefsOf, CountryFlag, SHIPPED_SINCE, countShippedYTD } from "../pjMeta";
 import { NavIcon } from "./SharedUI";
 import { planOf, catalogOf, activeSections, progressOf, effRange, isForced, testersOf, findConflicts } from "../testPlan";
 import { turbineStatus } from "../turbines";
@@ -437,6 +437,37 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
   W.arrivees30 = { label: "Prochaines arrivées", span: 6, render: () => { const L = upcoming("arrivee", 45);
     return sec("arrivees30", "Prochaines arrivées", S.arrivee.ring, <><Head title="Prochaines arrivées" sub="machines qui arrivent à l'atelier, 45 jours" count={L.length} />
       {L.length === 0 ? empty("check", "Aucune arrivée prévue", "") : L.slice(0, 6).map((r, i) => <Row key={r.pj} first={i === 0} pj={r.pj} main={nomOf(r) || r.gamme || ""} right={fmtD(r.arrivee)} />)}</>); } };
+  // v355 (demandé : « plus de widgets », façon widgets Apple) : petits widgets d'un chiffre (Petit) ou d'un chiffre et de ses machines (Moyen)
+  const stat = (id, title, n, sub, color, L, open1) => z => sec(id, title, color, <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: 4 }}>
+    <span style={{ fontSize: 13, fontWeight: 500, color: T.ink500 }}>{title}</span>
+    <b style={{ fontFamily: T.fontDisplay, fontSize: FZ.xxl, fontWeight: 600, lineHeight: 1.05, color: T.ink900, fontVariantNumeric: "tabular-nums" }}>{n}</b>
+    {sub && <span style={{ fontSize: 13, color: T.ink700 }}>{sub}</span>}
+    {z !== "s" && L && L.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: "auto" }}>{L.slice(0, 6).map(r => <button key={r.pj} type="button" onClick={() => (open1 || onOpenPj) && (open1 || onOpenPj)(r.pj)} aria-label={"Ouvrir " + r.pj} style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer" }}><PjPlate pj={r.pj} style={{ boxShadow: "inset 3px 0 0 " + etatBar(r.etat) }} /></button>)}</div>}
+  </div>);
+  const SMALL = ["s", "m"];
+  const prodL = open.filter(r => ["MONTAGE", "ELEC", "TESTS", "PACKAGING"].includes(r.etat)), dep30L = upcoming("depart", 30), lateL = open.filter(r => r.drift > 0).sort((a, b) => b.drift - a.drift);
+  W.nProd = { label: "En production", sizes: SMALL, render: z => stat("nProd", "En production", prodL.length, "montage, tests, packaging", S.production.ring, prodL)(z) };
+  W.nDep30 = { label: "Départs à 30 jours", sizes: SMALL, render: z => stat("nDep30", "Départs à 30 jours", dep30L.length, dep30L[0] ? "prochain le " + fmtD(dep30L[0].depart) : "aucun départ prévu", S.depart.ring, dep30L)(z) };
+  W.nLate = { label: "En retard sur l'initial", sizes: SMALL, render: z => stat("nLate", "En retard sur l'initial", lateL.length, lateL[0] ? "le plus fort : +" + lateL[0].drift + " j" : "aucune machine en retard", T.red600, lateL)(z) };
+  W.nBanc = { label: "Au banc (chiffre)", sizes: SMALL, render: z => stat("nBanc", "Au banc aujourd'hui", nowTest.length, nowTest.length ? "machines en tests" : "aucun banc occupé", S.tests.ring, nowTest)(z) };
+  W.nShipped = { label: "Expédiées depuis mai", sizes: SMALL, render: z => { const L = rows.filter(r => r.etat === "SHIPPED" && dIso(r.depart) >= SHIPPED_SINCE).sort((a, b) => dIso(b.depart).localeCompare(dIso(a.depart)));
+    return stat("nShipped", "Expédiées depuis mai", countShippedYTD(rows), L[0] ? "dernière le " + fmtD(L[0].depart) : "", T.emerald600, L)(z); } };
+  W.nextDep = { label: "Prochain départ", sizes: SMALL, render: z => { const r = upcoming("depart", 365)[0], m = r ? ETAT_META[r.etat] || {} : {};
+    return sec("nextDep", "Prochain départ", S.depart.ring, <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: 6 }}>
+      <span style={{ fontSize: 13, fontWeight: 500, color: T.ink500 }}>Prochain départ</span>
+      {!r ? <span style={{ fontSize: 13, color: T.ink700 }}>Aucun départ prévu</span> : <>
+        <b style={{ fontFamily: T.fontDisplay, fontSize: FZ.xxl, fontWeight: 600, lineHeight: 1.05, color: r.drift > 0 ? T.red600 : T.ink900 }}>{jIn(dIso(r.depart))}</b>
+        <button type="button" onClick={() => onOpenPj && onOpenPj(r.pj)} style={{ alignSelf: "flex-start", border: "none", background: "transparent", padding: 0, cursor: "pointer" }} aria-label={"Ouvrir " + r.pj}><PjPlate pj={r.pj} style={{ boxShadow: "inset 3px 0 0 " + etatBar(r.etat) }} /></button>
+        <span style={{ fontSize: 13, color: T.ink700 }}>{fmtDay(r.depart)}{z !== "s" ? " · " + (nomOf(r) || r.gamme || "") + " · " + (m.label || r.etat) : ""}</span></>}
+    </div>); } };
+  W.jour = { label: "Aujourd'hui", sizes: SMALL, render: z => { const d = new Date(today + "T12:00:00"), th = new Date(d); th.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7)); const y1 = new Date(th.getFullYear(), 0, 4);
+    const wk = 1 + Math.round(((th - y1) / 864e5 - 3 + ((y1.getDay() + 6) % 7)) / 7);
+    return sec("jour", "Aujourd'hui", H.brand, <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: 2 }}>
+      <span style={{ fontSize: 13, fontWeight: 500, color: T.red600, textTransform: "capitalize" }}>{d.toLocaleDateString("fr-FR", { weekday: "long" })}</span>
+      <b style={{ fontFamily: T.fontDisplay, fontSize: FZ.hero, fontWeight: 600, lineHeight: 1, color: T.ink900 }}>{d.getDate()}</b>
+      <span style={{ fontSize: 13, color: T.ink700 }}>{d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" })} · semaine {wk}</span>
+      {z !== "s" && <span style={{ fontSize: 13, color: T.ink700, marginTop: "auto" }}>{nowTest.length} au banc · {arrDep.filter(x => x.l === "Arrivée").length} arrivée(s) et {arrDep.filter(x => x.l === "Départ").length} départ(s) cette semaine</span>}
+    </div>); } };
 
   /* ── disposition du poste ── */
   const avail = id => W[id] && (!W[id].only || W[id].only());
@@ -444,7 +475,6 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
   const defs = HOME_DEFAULTS[role] || HOME_DEFAULTS.autre;
   const ids = [...defs.map(x => x[0]).filter(id => on(id)), ...extra].filter((id, i, a) => a.indexOf(id) === i && !hidden.includes(id) && avail(id));
   const spans = Object.fromEntries([...defs, ...Object.entries(W).map(([k, w]) => [k, w.span])].reverse().map(([k, s]) => [k, s]));
-  const items = ids.map(id => { const el = W[id].render(); return el ? React.cloneElement(el, { key: id, "aria-label": el.props["aria-label"] || W[id].label }) : null; }).filter(Boolean);
   // v231 (demandé : « Ajouter un cadran n'est pas clair : des thèmes ou des liens avec les onglets ») : chaque cadran est rangé sous
   // la page du site d'où viennent ses données, avec une phrase qui dit ce qu'il montre.
   const THEMES = [
@@ -456,14 +486,14 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
     ["Gestion — Turbines et Cash in", { turbines: "pool de turbines", cash: "encaissements à venir", produit: "jalons cash liés à un livrable du Produit" }],
     ["Échanges — Commentaires", { mentions: "les mentions qui vous attendent" }],
   ];
-  const addable = []; const placed = new Set();
-  THEMES.forEach(([g, m]) => Object.keys(m).forEach(id => { if (W[id] && !ids.includes(id) && avail(id) && W[id].render()) { addable.push([id, W[id].label, g, m[id]]); placed.add(id); } }));
-  Object.keys(W).filter(id => !placed.has(id) && !ids.includes(id) && avail(id) && W[id].render()).forEach(id => addable.push([id, W[id].label, "Autres", ""]));
-  const setL = patch => onLayout && onLayout({ ...L, ...patch });
-  return (<>{leadSegs && renderLead ? renderLead(leadSegs) : null}<Arrange id={"home-" + role} defaultSpan={4} spans={spans} labels={Object.fromEntries(Object.entries(W).map(([k, w]) => [k, w.label]))}
-    layout={L} onLayout={onLayout ? v => onLayout(v) : undefined}
-    catalog={onLayout ? addable : null} onAdd={id => setL({ extra: [...extra.filter(x => x !== id), id], hidden: hidden.filter(x => x !== id) })}
-    onRemove={id => setL({ extra: extra.filter(x => x !== id), hidden: defs.some(d => d[0] === id) ? [...hidden.filter(x => x !== id), id] : hidden })}>
-    {items}
-  </Arrange></>);
+  // v355 : widgets à tailles fixes (WidgetBoard). Tailles permises : chiffres = Petit / Moyen ; cadrans larges = Bandeau ; autres = Moyen, Grand, Bandeau.
+  const sizesOf = id => (W[id] && W[id].sizes) || ((spans[id] || 4) >= 9 ? ["xl", "xxl", "l"] : ["m", "l", "xl"]);
+  const widgets = {}; Object.keys(W).forEach(id => { if (avail(id)) widgets[id] = { label: W[id].label, sizes: sizesOf(id), render: z => W[id].render(z) }; });
+  const items = Array.isArray(L.widgets) ? L.widgets : widgetsFromSpans(ids, id => spans[id] || 4, sizesOf);
+  const SMALL_DESC = { jour: "la date et le n° de semaine", nextDep: "compte à rebours du prochain départ", nProd: "machines en montage, tests ou packaging", nDep30: "départs des 30 prochains jours", nLate: "machines en retard sur le planning initial", nBanc: "machines au banc aujourd'hui", nShipped: "machines expédiées depuis mai" };
+  const gal = [["Chiffres et repères", Object.keys(SMALL_DESC).filter(id => widgets[id]).map(id => [id, SMALL_DESC[id]])]]; const placed = new Set(Object.keys(SMALL_DESC));
+  THEMES.forEach(([g, m]) => { const list = Object.keys(m).filter(id => widgets[id] && W[id].render("m")).map(id => [id, m[id]]); list.forEach(([id]) => placed.add(id)); if (list.length) gal.push([g, list]); });
+  const rest = Object.keys(widgets).filter(id => !placed.has(id) && W[id].render("m")); if (rest.length) gal.push(["Autres", rest.map(id => [id, ""])]);
+  return (<>{leadSegs && renderLead ? renderLead(leadSegs) : null}
+    <WidgetBoard items={items} widgets={widgets} catalog={gal} canEdit={!!onLayout} onChange={onLayout ? w => onLayout({ ...L, widgets: w }) : undefined} label="Widgets de l'accueil" /></>);
 }

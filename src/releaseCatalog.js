@@ -1034,4 +1034,9 @@ export const RELEASE_CATALOG = [
     ["Tests", "PDF de la checklist de debug : seule une vraie image de signature est acceptée."],
     ["Achats / Appro", "La synchronisation Odoo n'envoie la clé qu'à un domaine Odoo autorisé."],
   ] },
+  { v: "355", t: "L'accueil en widgets", items: [
+    ["Accueil", "Widgets de taille fixe sur une grille qui se remplit seule : « Modifier l'accueil », glisser pour déplacer, « − » pour retirer, bouton de taille."],
+    ["Accueil", "Piles : poser un widget au centre d'un autre de même taille ; on passe de l'un à l'autre en faisant défiler."],
+    ["Accueil", "Galerie « Ajouter un widget » avec aperçu dans la taille choisie, et sept petits widgets (chiffres et repères)."],
+  ] },
 ];
