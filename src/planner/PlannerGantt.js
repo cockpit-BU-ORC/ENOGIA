@@ -169,8 +169,8 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
       if (tipRef.current) { tipRef.current.style.left = (e.clientX + 14) + "px"; tipRef.current.style.top = (e.clientY + 16) + "px"; }
       // v214 (demandé : « quand je tire entre 2 tâches, il ne se passe rien ») : tirer une barre vers le haut ou le bas = créer un lien
       if (d.kind === "move" && !d.linking && Math.abs(e.clientY - d.y0) > d.rowH * 0.7 && Math.abs(e.clientY - d.y0) > Math.abs(e.clientX - d.x0)) { d.linking = true; d.cand = null; d.dd = 0; onPreview(null); setTip("Lâchez sur la tâche qui doit suivre (lien fin → début)"); }
-      if (d.linking) return;
-      const dd = Math.round((e.clientX - d.x0) / px); if (dd === d.dd) return; d.dd = dd;
+      if (d.linking) { follow(d, 0); return; }
+      const dd = Math.round((e.clientX - d.x0) / px); follow(d, (e.clientX - d.x0) - dd * px); if (dd === d.dd) return; d.dd = dd;
       if (dd === 0) { d.cand = null; onPreview(null); return; }
       let cand = null;
       if (d.kind === "move") cand = moveStepTo(d.base, cal, d.pj, d.step, cal.dateOf(cal.idxOnOrAfter(isoOfDay(dayNum(d.node.start) + dd))));
@@ -182,7 +182,7 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
       d.cand = cand; setTip(d.kind === "move" ? "début " + fmtIso(cal.dateOf(cal.idxOnOrAfter(isoOfDay(dayNum(d.node.start) + dd)))) : d.kind === "resize" ? Math.max(1, cal.countBetween(d.node.start, isoOfDay(dayNum(d.node.finish) + dd))) + " j ouvrés" : (dd > 0 ? "+" : "") + dd + " j calendaires"); onPreview(cand);
     };
     const up = e => {
-      const d = drag.current; drag.current = null; setDragging(false); setTip(null); if (!d) return;
+      const d = drag.current; drag.current = null; setDragging(false); setTip(null); if (!d) return; settle(d);
       if (d.linking) {
         const el = document.elementFromPoint(e.clientX, e.clientY), tgt = el && el.closest && el.closest("[data-key]"), to = tgt && tgt.getAttribute("data-key"), from = nodeKey(d.pj, d.step), cb = cbRef.current;
         if (!to || to === from) { if (cb.onError) cb.onError("Lâchez sur une autre tâche (sa barre ou sa ligne) pour créer le lien."); return; }
@@ -193,11 +193,14 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
       }
       if (d.dd && d.cand) { const want = d.kind === "move" ? cal.dateOf(cal.idxOnOrAfter(isoOfDay(dayNum(d.node.start) + d.dd))) : null; onCommit(d.cand, { pj: d.pj, key: want ? nodeKey(d.pj, d.step) : null, want }); } else onPreview(null);
     };
-    const esc = e => { if (e.key === "Escape") { drag.current = null; setDragging(false); setTip(null); onPreview(null); } };
-    window.addEventListener("mousemove", move); window.addEventListener("mouseup", up); window.addEventListener("keydown", esc);
-    return () => { window.removeEventListener("mousemove", move); window.removeEventListener("mouseup", up); window.removeEventListener("keydown", esc); };
+    const esc = e => { if (e.key === "Escape") { settle(drag.current); drag.current = null; setDragging(false); setTip(null); onPreview(null); } };
+    window.addEventListener("pointermove", move); window.addEventListener("pointerup", up); window.addEventListener("pointercancel", up); window.addEventListener("keydown", esc);
+    return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); window.removeEventListener("pointercancel", up); window.removeEventListener("keydown", esc); };
   }, [dragging, px, cal, onPreview, onCommit]);
-  const startDrag = (e, d) => { if (readOnly) return; e.preventDefault(); e.stopPropagation(); drag.current = { ...d, x0: e.clientX, y0: e.clientY, rowH: ROW_H, dd: 0, base }; setDragging(true); };
+  const startDrag = (e, d) => { if (readOnly || e.button > 0) return; e.preventDefault(); e.stopPropagation(); drag.current = { ...d, x0: e.clientX, y0: e.clientY, rowH: ROW_H, dd: 0, base, el: d.kind === "resize" ? null : e.currentTarget }; setDragging(true); };
+  // v356 (audit apple-design) : la barre reste collée au pointeur (reste entre deux jours en translateX), puis se pose en 150 ms
+  const follow = (d, x) => { if (!d.el) return; d.el.style.transition = "none"; d.el.style.transform = x ? "translateX(" + x + "px)" : ""; };
+  const settle = d => { if (!d || !d.el) return; const el = d.el; el.style.transition = "transform var(--e-dur-micro) var(--e-ease)"; el.style.transform = ""; };
 
   // ── nouvelle tâche libre ──
   const addTask = pj => { if (onAddTask) { onAddTask(pj); return; } addTaskRaw(pj); };
@@ -387,7 +390,7 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
               if (!ns.length) return <div key={"p" + r.p.pj} style={rowStyle} />;
               const a = Math.min(...ns.map(n => dayNum(n.start))), b = Math.max(...ns.map(n => dayNum(n.finish))); const startIso = isoOfDay(a); const on = sel && sel.pj === r.p.pj;
               return (<div key={"p" + r.p.pj} style={rowStyle}>
-                <div title={r.p.pj + " : " + fmtIso(startIso) + " → " + fmtIso(isoOfDay(b)) + (readOnly ? "" : "\nGlisser pour décaler tout le PJ")} onMouseDown={e => startDrag(e, { kind: "pj", pj: r.p.pj, startIso })} onClick={() => setSel({ pj: r.p.pj, step: null })}
+                <div title={r.p.pj + " : " + fmtIso(startIso) + " → " + fmtIso(isoOfDay(b)) + (readOnly ? "" : "\nGlisser pour décaler tout le PJ")} data-dnd-drag="1" onPointerDown={e => startDrag(e, { kind: "pj", pj: r.p.pj, startIso })} onClick={() => setSel({ pj: r.p.pj, step: null })}
                   style={{ position: "absolute", left: X(startIso), width: Math.max(px, (b - a + 1) * px), top: MID - 3, height: 6, borderRadius: 4, background: on ? T.ink700 : T.ink300, cursor: readOnly ? "default" : "grab" }} />
                 <span aria-hidden="true" style={{ position: "absolute", left: X(isoOfDay(b)) + px + 16, top: MID - 9, fontSize: 12, fontWeight: 500, color: T.ink900, whiteSpace: "nowrap", pointerEvents: "none" }}>{r.p.pj}{r.p.nomProjet ? <span style={{ fontWeight: 500, color: T.ink500 }}> · {r.p.nomProjet}</span> : null}</span>
                 {ns.filter(n => n.ms).map(n => <span key={n.step} style={{ position: "absolute", left: X(n.start) + px / 2 - 6, top: MID - 6, width: 12, height: 12, transform: "rotate(45deg)", background: STEP_COLOR[n.step], border: "1px solid #fff", pointerEvents: "none" }} />)}
@@ -400,12 +403,12 @@ export function PlannerGantt({ plan, basePlan, sched, cal, closurePeriods, tl, p
             const tipTxt = r.p.pj + " · " + stepLabel(r.p, r.k) + "\n" + fmtIso(n.start) + (n.ms ? "" : " → " + fmtIso(n.finish) + " (" + n.dur + " j ouvrés)") + (pinned ? "\nDate imposée" : n.driver ? "\nCalée par un lien" : "") + (readOnly ? "" : "\nGlisser pour déplacer");
             return (<div key={key} style={rowStyle} className="pg-trow" data-key={key}>
               {n.ms
-                ? <div title={tipTxt} onMouseDown={e => startDrag(e, { kind: "move", pj: r.p.pj, step: r.k, node: n })} onClick={() => pick(r.p.pj, r.k)} onDoubleClick={e => { if (!readOnly) setQe({ pj: r.p.pj, step: r.k, x: e.clientX, y: e.clientY }); }} data-key={key} className="pg-bar"
+                ? <div title={tipTxt} data-dnd-drag="1" onPointerDown={e => startDrag(e, { kind: "move", pj: r.p.pj, step: r.k, node: n })} onClick={() => pick(r.p.pj, r.k)} onDoubleClick={e => { if (!readOnly) setQe({ pj: r.p.pj, step: r.k, x: e.clientX, y: e.clientY }); }} data-key={key} className="pg-bar"
                     style={{ position: "absolute", left: X(n.start) + px / 2 - 8, top: MID - Math.min(8, BAR_H / 2), width: Math.min(16, BAR_H), height: Math.min(16, BAR_H), transform: "rotate(45deg)", background: col, border: on ? "2px solid " + T.ink900 : "1px solid #fff", outline: ch ? "2px dashed #E08A00" : "none", outlineOffset: 2, boxSizing: "border-box", cursor: readOnly ? "default" : "grab", borderRadius: 4 }} />
-                : <div title={tipTxt} onMouseDown={e => startDrag(e, { kind: "move", pj: r.p.pj, step: r.k, node: n })} onClick={() => pick(r.p.pj, r.k)} onDoubleClick={e => { if (!readOnly) setQe({ pj: r.p.pj, step: r.k, x: e.clientX, y: e.clientY }); }} data-key={key} className="pg-bar"
+                : <div title={tipTxt} data-dnd-drag="1" onPointerDown={e => startDrag(e, { kind: "move", pj: r.p.pj, step: r.k, node: n })} onClick={() => pick(r.p.pj, r.k)} onDoubleClick={e => { if (!readOnly) setQe({ pj: r.p.pj, step: r.k, x: e.clientX, y: e.clientY }); }} data-key={key} className="pg-bar"
                     style={{ position: "absolute", left: X(n.start), width: Math.max(px, (dayNum(n.finish) - dayNum(n.start) + 1) * px), top: BAR_T, height: BAR_H, borderRadius: 4, background: col, outline: on ? "2px solid " + T.ink900 : ch ? "2px dashed #E08A00" : "none", outlineOffset: 1, cursor: readOnly ? "default" : "grab", display: "flex", alignItems: "center", justifyContent: "center", color: inkOn(col), fontSize: 12, fontWeight: 500, overflow: "hidden", boxSizing: "border-box" }}>
                     {fits ? <span style={{ pointerEvents: "none", padding: "0 8px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{lab}</span> : bw >= 40 ? <span style={{ pointerEvents: "none", fontFamily: T.fontMono }}>{n.noDur ? "?" : n.dur + " j"}</span> : null}
-                    {!readOnly && <div onMouseDown={e => startDrag(e, { kind: "resize", pj: r.p.pj, step: r.k, node: n })} style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 7, cursor: "ew-resize", background: "rgba(0,0,0,.25)" }} />}
+                    {!readOnly && <div onPointerDown={e => startDrag(e, { kind: "resize", pj: r.p.pj, step: r.k, node: n })} style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 7, cursor: "ew-resize", background: "rgba(0,0,0,.25)" }} />}
                   </div>}
               {!readOnly && (() => { const xs = n.ms ? X(n.start) + px / 2 - 20 : X(n.start) - 16, xe = n.ms ? X(n.start) + px / 2 + 12 : X(n.finish) + px + 4; const cy = r.y + ROW_H / 2;
                 const H = (x, side, label) => <span role="button" aria-label={label} title={label} className={"pg-h" + (lk || on || linkFrom ? " on" : "")} data-key={key} data-side={side} onMouseDown={e => startLink(e, key, side, x + 6, cy)} style={{ position: "absolute", left: x - 1, top: MID - 7, width: 14, height: 14, borderRadius: 8, border: "2px solid " + T.accentInk, background: T.card, cursor: "crosshair", boxSizing: "border-box" }} />;

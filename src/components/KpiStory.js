@@ -43,7 +43,7 @@ export function Bullet({ k, label, v, how, targets, max }) {
   const u = unitOf(k), pts = d.unit === "%" ? " pts" : u;
   return (<div style={card}>
     <div style={{ fontSize: 13, color: T.ink500, fontWeight: 500, display: "flex", gap: 6, alignItems: "center" }}>{label || d.l}<span tabIndex={0} role="note" data-tip={"Méthode : " + (how || d.how)} aria-label={"Méthode : " + (how || d.how)} style={{ width: 16, height: 16, borderRadius: "50%", border: "1px solid " + T.line, display: "inline-grid", placeItems: "center", fontSize: 12, cursor: "help", flexShrink: 0 }}>i</span></div>
-    <div style={{ fontSize: 28, fontWeight: 600, fontVariantNumeric: "tabular-nums", lineHeight: 1.1, marginTop: 2, color: ok === false ? T.red600 : T.ink900 }}>{v == null ? "—" : (k === "derive" && v > 0 ? "+" : "") + fr(v) + u}</div>
+    <div style={{ fontFamily: T.fontDisplay, fontSize: 28, letterSpacing: "-0.02em", fontWeight: 600, fontVariantNumeric: "tabular-nums", lineHeight: 1.1, marginTop: 2, color: ok === false ? T.red600 : T.ink900 }}>{v == null ? "—" : (k === "derive" && v > 0 ? "+" : "") + fr(v) + u}</div>
     <div role="img" aria-label={(label || d.l) + " : " + (v == null ? "pas de donnée" : v) + ", objectif " + t} style={{ position: "relative", height: 18, margin: "6px 0 2px" }}>
       <div style={{ position: "absolute", left: 0, right: 0, top: 5, height: 8, borderRadius: 4, background: T.surfaceAlt }} />
       {v != null && <div style={{ position: "absolute", left: 0, width: x(v) + "%", top: 5, height: 8, borderRadius: 4, background: ok ? T.emerald500 : T.red500 }} />}
@@ -54,7 +54,7 @@ export function Bullet({ k, label, v, how, targets, max }) {
   </div>);
 }
 // Chiffre sans objectif (contexte)
-const Fact = ({ label, v, sub, bad }) => <div style={card}><div style={{ fontSize: 13, color: T.ink500, fontWeight: 500 }}>{label}</div><div style={{ fontSize: 28, fontWeight: 600, fontVariantNumeric: "tabular-nums", marginTop: 2, color: bad ? T.red600 : T.ink900 }}>{v}</div>{sub && <div style={{ fontSize: 13, color: T.ink500 }}>{sub}</div>}</div>;
+const Fact = ({ label, v, sub, bad }) => <div style={card}><div style={{ fontSize: 13, color: T.ink500, fontWeight: 500 }}>{label}</div><div style={{ fontFamily: T.fontDisplay, fontSize: 28, letterSpacing: "-0.02em", fontWeight: 600, fontVariantNumeric: "tabular-nums", marginTop: 2, color: bad ? T.red600 : T.ink900 }}>{v}</div>{sub && <div style={{ fontSize: 13, color: T.ink500 }}>{sub}</div>}</div>;
 const Grid = ({ min = 220, children, style }) => <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%," + min + "px),1fr))", gap: 12, ...style }}>{children}</div>;
 function Card({ title, sub, table, children }) {
   const [tab, setTab] = useState(false);

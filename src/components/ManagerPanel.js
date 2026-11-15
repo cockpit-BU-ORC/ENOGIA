@@ -726,9 +726,9 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
               <div style={{fontSize:FZ.sm,fontWeight:600,color:T.ink900,marginBottom:4}}>Durée de production : initial vs révisé</div>
               <div style={{fontSize:FZ.xs,color:T.ink300,marginBottom:8}}>Moyenne sur le portefeuille comparable (Arrivée → Départ)</div>
               <div style={{display:"flex",gap:20,alignItems:"baseline"}}>
-                <div><div style={{fontFamily:T.fontDisplay,fontSize:FZ.xl,fontWeight:600,color:T.ink500}}>{dureeCompare.avgIni}j</div><div style={{fontSize:FZ.xs,color:T.ink300}}>Initial</div></div>
+                <div><div style={{fontFamily:T.fontDisplay,fontSize:FZ.xl,letterSpacing:"-0.02em",fontWeight:600,color:T.ink500}}>{dureeCompare.avgIni}j</div><div style={{fontSize:FZ.xs,color:T.ink300}}>Initial</div></div>
                 <div style={{fontSize:FZ.lg,color:T.ink300}}>→</div>
-                <div><div style={{fontFamily:T.fontDisplay,fontSize:FZ.xl,fontWeight:600,color:dureeCompare.ecart>0?T.red500:T.emerald600}}>{dureeCompare.avgRev}j</div><div style={{fontSize:FZ.xs,color:T.ink300}}>Révisé</div></div>
+                <div><div style={{fontFamily:T.fontDisplay,fontSize:FZ.xl,letterSpacing:"-0.02em",fontWeight:600,color:dureeCompare.ecart>0?T.red500:T.emerald600}}>{dureeCompare.avgRev}j</div><div style={{fontSize:FZ.xs,color:T.ink300}}>Révisé</div></div>
               </div>
             </div>}
           </div>

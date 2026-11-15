@@ -81,6 +81,29 @@ function anchorMenu(el) {
   el.style.transformOrigin = Math.round(ox) + "px " + Math.round(oy) + "px";
 }
 
+// v356 (audit apple-design, lot 3) : menus et bulles non modales — un menu ouvert par un clic ou une touche reçoit le focus
+// (premier choix, flèches haut / bas pour passer d'un choix à l'autre) ; à la fermeture d'un menu, d'une liste ou d'une bulle,
+// le focus revient sur l'élément qui l'avait ouvert. Un menu ouvert au survol ne prend pas le focus.
+const popOrigin = new WeakMap(); let lastKey = 0;
+const ITEM_SEL = '[role^="menuitem"], button:not([disabled]), input:not([disabled]), select, [tabindex="0"]';
+function popOpen(el) {
+  const a = document.activeElement, recent = lastTrigger && Date.now() - lastTrigger.at < 800;
+  const prev = recent && lastTrigger.el.isConnected ? lastTrigger.el : a && a !== document.body && !el.contains(a) ? a : null;
+  if (prev) popOrigin.set(el, prev);
+  if (el.getAttribute("role") !== "menu" || !(recent || Date.now() - lastKey < 800)) return;
+  setTimeout(() => { if (!el.isConnected || el.contains(document.activeElement)) return; const f = [...el.querySelectorAll(ITEM_SEL)].find(visible); if (f) f.focus({ preventScroll: true }); }, 0);
+}
+function popClose(el) {
+  const back = popOrigin.get(el); if (!back) return;
+  setTimeout(() => { const a = document.activeElement; if (back.isConnected && (!a || a === document.body || !a.isConnected)) back.focus({ preventScroll: true }); }, 0);
+}
+function menuArrows(e) {
+  if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+  const a = document.activeElement, m = a && a.closest && a.closest('[role="menu"]'); if (!m || /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)) return;
+  const f = [...m.querySelectorAll(ITEM_SEL)].filter(visible); const i = f.indexOf(a); if (i < 0 || f.length < 2) return;
+  e.preventDefault(); f[(i + (e.key === "ArrowDown" ? 1 : f.length - 1)) % f.length].focus();
+}
+
 export function initMotion() {
   if (typeof window === "undefined" || typeof MutationObserver === "undefined" || window.__enogiaMotion) return;
   window.__enogiaMotion = true;
@@ -89,9 +112,10 @@ export function initMotion() {
     const backs = [];
     muts.forEach(m => {
       m.addedNodes.forEach(n => modalsIn(n).forEach(onOpen));
-      m.addedNodes.forEach(n => menusIn(n).forEach(anchorMenu)); // v263
+      m.addedNodes.forEach(n => menusIn(n).forEach(el => { anchorMenu(el); popOpen(el); })); // v263 ; v356 : focus
       [...m.removedNodes].filter(n => n.nodeType === 1 && !n.classList.contains("enogia-ghost")).forEach(n => {
         modalsIn(n).forEach(d => { closed = true; onClose(d, n, m.target, m.nextSibling); });
+        menusIn(n).forEach(popClose); // v356
         if (n.getAttribute("aria-hidden") === "true" && n.style.position === "fixed" && n.style.inset === "0px") backs.push([n, m.target, m.nextSibling]);
       });
     });
@@ -99,6 +123,7 @@ export function initMotion() {
     if (closed) backs.forEach(([n, p, nx]) => ghost(n, p, nx));
   }).observe(document.body, { childList: true, subtree: true });
   document.addEventListener("keydown", onKey, true);
+  document.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " " || e.key === "ArrowDown") lastKey = Date.now(); menuArrows(e); }, true);
   document.addEventListener("focusin", e => { const t = e.target; if (t && t.closest && !t.closest('[aria-modal="true"]')) lastOutside = t; }, true);
-  document.addEventListener("pointerdown", e => { const b = e.target && e.target.closest && e.target.closest("button, a, [tabindex]"); if (b && !b.closest('[aria-modal="true"]')) lastOutside = b; if (b) lastTrigger = { r: b.getBoundingClientRect(), at: Date.now() }; }, true);
+  document.addEventListener("pointerdown", e => { const b = e.target && e.target.closest && e.target.closest("button, a, [tabindex]"); if (b && !b.closest('[aria-modal="true"]')) lastOutside = b; if (b) lastTrigger = { el: b, r: b.getBoundingClientRect(), at: Date.now() }; }, true);
 }

@@ -13,6 +13,7 @@ import { exportPlanningXlsx } from "../exportExcel";
 import { useIsPhone } from "../useIsPhone";
 import { useZoomAdvice, zoomTip } from "./ZoomHint";
 import { AF } from "../autoFocusOk";
+import { smooth } from "../scrollMode";
 
 export const TABLE_COLUMNS=[
   {id:"serie",label:"N° de série (sous le PJ)"},
@@ -159,7 +160,7 @@ function PresenceCell({r,tight,onChange}){
     e.stopPropagation();
     const b=e.currentTarget.getBoundingClientRect();
     const W=Math.min(460,window.innerWidth-16);
-    setPos({left:Math.max(8,Math.min(b.left,window.innerWidth-W-8)),top:b.bottom+6>window.innerHeight-170?Math.max(8,b.top-150):b.bottom+6,W});
+    const up=b.bottom+6>window.innerHeight-170;setPos({left:Math.max(8,Math.min(b.left,window.innerWidth-W-8)),top:up?undefined:b.bottom+6,bottom:up?window.innerHeight-b.top+6:undefined,W});
   };
   return(<span onClick={e=>e.stopPropagation()} style={{flexShrink:0,display:"inline-flex"}}>
     <button onClick={open} title={kind?"Modifier la présence client / NOBO":"Ajouter une présence client / NOBO"} aria-label="Modifier la présence client / NOBO" style={{border:kind?"none":"1px dashed "+T.line,background:"transparent",padding:kind?0:"1px 6px",borderRadius:999,cursor:"pointer",display:"inline-flex",alignItems:"center",color:T.ink300,fontSize: 12,fontWeight:500,fontFamily:T.font,lineHeight:1.4}}>
@@ -169,7 +170,7 @@ function PresenceCell({r,tight,onChange}){
     </button>
     {pos&&<>
       <div onClick={e=>{e.stopPropagation();setPos(null);}} style={{position:"fixed",inset:0,zIndex:9998}}/>
-      <div role="dialog" aria-label={"Présence client / NOBO — "+r.pj} style={{position:"fixed",left:pos.left,top:pos.top,width:pos.W,zIndex:9999,background:T.card,border:"1px solid "+T.line,borderRadius:12,boxShadow:T.shadowLg||"0 12px 32px rgba(15,23,42,.18)",padding:12,display:"flex",flexDirection:"column",gap:8}}>
+      <div role="dialog" aria-label={"Présence client / NOBO — "+r.pj} style={{position:"fixed",left:pos.left,top:pos.top,bottom:pos.bottom,maxHeight:"calc(100dvh - 16px)",overflowY:"auto",width:pos.W,zIndex:9999,background:T.card,border:"1px solid "+T.line,borderRadius:12,boxShadow:T.shadowLg||"0 12px 32px rgba(15,23,42,.18)",padding:12,display:"flex",flexDirection:"column",gap:8}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
           <span style={{fontSize:FZ.sm,fontWeight:600,color:T.ink900}}>Présence aux tests · <span style={{fontFamily:T.fontMono,color:T.teal600}}>{r.pj}</span></span>
           <button onClick={()=>setPos(null)} aria-label="Fermer" style={{border:"none",background:"transparent",cursor:"pointer",color:T.ink500,fontSize:FZ.sm,fontWeight:600,padding:"0 4px",display:"inline-flex"}}><NavIcon name="close" size={14}/></button>
@@ -197,7 +198,7 @@ export function TableView({data,onSetDepart,progress,df,setDf,selEtats,setSelEta
   const setSel=setExternalSel||setSelInternal;
   const [rowMenu,setRowMenu]=useState(null); // v162 : menu d'actions rapides {pj,x,y}
   const closeRowMenu=React.useCallback(()=>setRowMenu(null),[]);
-  const focusComment=()=>{let n=0;const t=setInterval(()=>{const el=document.querySelector("textarea");n++;if(el){clearInterval(t);try{el.scrollIntoView({block:"center",behavior:"smooth"});el.focus({preventScroll:true});}catch(e){}}else if(n>12)clearInterval(t);},120);};
+  const focusComment=()=>{let n=0;const t=setInterval(()=>{const el=document.querySelector("textarea");n++;if(el){clearInterval(t);try{el.scrollIntoView({block:"center",behavior:smooth()});el.focus({preventScroll:true});}catch(e){}}else if(n>12)clearInterval(t);},120);};
   const phone=useIsPhone();
   const [hiddenCols,setHiddenCols]=useState(new Set());
   const [colWidths,setColWidths]=useState(DEFAULT_COL_WIDTHS_PCT);

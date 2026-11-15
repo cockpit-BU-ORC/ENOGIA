@@ -2577,3 +2577,13 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Sept petits widgets (RoleHome.js) : jour, nextDep, nProd, nDep30, nLate, nBanc, nShipped. Les pages KPI et Tests gardent Arrange.js.
 - Aucune clé localStorage.
 - Fichiers : components/WidgetBoard.js, components/RoleHome.js, styles.css, demo/demoPages.js, versions.
+
+## v356 — audit apple-design de toutes les pages et pop-ups (lots 1 à 4)
+
+- Galerie ?demo complétée (fiche d'un PJ, Modifications, Gestion des accès, Achats, Retards, Machines ORC, Fermetures, Personnes, Nouveautés).
+- Gestes : barres du Gantt du planificateur en événements pointeur (doigt, stylet), collées au pointeur entre deux jours ; fiche d'un PJ en feuille (≤ 640 px) fermée en la tirant vers le bas par son en-tête (> 120 px ou geste rapide) ; détail de la charge du planificateur au toucher et au clavier.
+- Retour à l'appui (styles.css) : éléments role=button / data-kbd enfoncés à 0,98, lignes voilées.
+- Fenêtres et menus (motion.js) : un menu ouvert par un clic ou une touche reçoit le focus, flèches haut / bas, focus rendu à la fermeture de tout menu, liste ou bulle ; Échap ferme d'abord le volet ouvert dans la fiche d'un PJ ; bulle Présence collée à son bouton.
+- Finitions : src/scrollMode.js `smooth()` (défilement doux coupé si réduire les animations) ; grands chiffres (≥ 28 px) resserrés à -0,02 em, police d'affichage pour les chiffres des KPI.
+- Aucune clé localStorage ; données et règles Firestore inchangées.
+- Fichiers : planner/PlannerGantt.js, planner/PlannerLoad.js, planner/PlannerLanes.js, components/RowDetail.js, TableView.js, CalendarView.js, GanttView.js, SavPage.js, TestsTab.js, KpiStory.js, KpiViews.js, ManagerPanel.js, WorkshopScreen.js, RoleHome.js, motion.js, scrollMode.js, styles.css, demo/demoPages.js, versions.

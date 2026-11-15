@@ -1039,4 +1039,10 @@ export const RELEASE_CATALOG = [
     ["Accueil", "Piles : poser un widget au centre d'un autre de même taille ; on passe de l'un à l'autre en faisant défiler."],
     ["Accueil", "Galerie « Ajouter un widget » avec aperçu dans la taille choisie, et sept petits widgets (chiffres et repères)."],
   ] },
+  { v: "356", t: "Gestes et retours plus fluides (audit apple-design)", items: [
+    ["Général", "Lignes, cartes et plaques cliquables réagissent dès l'appui ; les menus prennent le focus (flèches haut / bas) et le rendent en se fermant."],
+    ["Général", "Échap ferme d'abord le volet ouvert dans la fiche d'un PJ ; le défilement doux respecte « réduire les animations »."],
+    ["Planificateur", "Barres du Gantt glissées au doigt ou à la souris, collées au pointeur entre deux jours ; détail de la charge au toucher."],
+    ["Téléphone", "Fiche d'un PJ : on la tire vers le bas par son en-tête pour la fermer."],
+  ] },
 ];

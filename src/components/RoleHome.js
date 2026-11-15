@@ -440,7 +440,7 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
   // v355 (demandé : « plus de widgets », façon widgets Apple) : petits widgets d'un chiffre (Petit) ou d'un chiffre et de ses machines (Moyen)
   const stat = (id, title, n, sub, color, L, open1) => z => sec(id, title, color, <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: 4 }}>
     <span style={{ fontSize: 13, fontWeight: 500, color: T.ink500 }}>{title}</span>
-    <b style={{ fontFamily: T.fontDisplay, fontSize: FZ.xxl, fontWeight: 600, lineHeight: 1.05, color: T.ink900, fontVariantNumeric: "tabular-nums" }}>{n}</b>
+    <b style={{ fontFamily: T.fontDisplay, fontSize: FZ.xxl, letterSpacing: "-0.02em", fontWeight: 600, lineHeight: 1.05, color: T.ink900, fontVariantNumeric: "tabular-nums" }}>{n}</b>
     {sub && <span style={{ fontSize: 13, color: T.ink700 }}>{sub}</span>}
     {z !== "s" && L && L.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: "auto" }}>{L.slice(0, 6).map(r => <button key={r.pj} type="button" onClick={() => (open1 || onOpenPj) && (open1 || onOpenPj)(r.pj)} aria-label={"Ouvrir " + r.pj} style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer" }}><PjPlate pj={r.pj} style={{ boxShadow: "inset 3px 0 0 " + etatBar(r.etat) }} /></button>)}</div>}
   </div>);
@@ -456,7 +456,7 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
     return sec("nextDep", "Prochain départ", S.depart.ring, <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: 6 }}>
       <span style={{ fontSize: 13, fontWeight: 500, color: T.ink500 }}>Prochain départ</span>
       {!r ? <span style={{ fontSize: 13, color: T.ink700 }}>Aucun départ prévu</span> : <>
-        <b style={{ fontFamily: T.fontDisplay, fontSize: FZ.xxl, fontWeight: 600, lineHeight: 1.05, color: r.drift > 0 ? T.red600 : T.ink900 }}>{jIn(dIso(r.depart))}</b>
+        <b style={{ fontFamily: T.fontDisplay, fontSize: FZ.xxl, letterSpacing: "-0.02em", fontWeight: 600, lineHeight: 1.05, color: r.drift > 0 ? T.red600 : T.ink900 }}>{jIn(dIso(r.depart))}</b>
         <button type="button" onClick={() => onOpenPj && onOpenPj(r.pj)} style={{ alignSelf: "flex-start", border: "none", background: "transparent", padding: 0, cursor: "pointer" }} aria-label={"Ouvrir " + r.pj}><PjPlate pj={r.pj} style={{ boxShadow: "inset 3px 0 0 " + etatBar(r.etat) }} /></button>
         <span style={{ fontSize: 13, color: T.ink700 }}>{fmtDay(r.depart)}{z !== "s" ? " · " + (nomOf(r) || r.gamme || "") + " · " + (m.label || r.etat) : ""}</span></>}
     </div>); } };
@@ -464,7 +464,7 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
     const wk = 1 + Math.round(((th - y1) / 864e5 - 3 + ((y1.getDay() + 6) % 7)) / 7);
     return sec("jour", "Aujourd'hui", H.brand, <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: 2 }}>
       <span style={{ fontSize: 13, fontWeight: 500, color: T.red600, textTransform: "capitalize" }}>{d.toLocaleDateString("fr-FR", { weekday: "long" })}</span>
-      <b style={{ fontFamily: T.fontDisplay, fontSize: FZ.hero, fontWeight: 600, lineHeight: 1, color: T.ink900 }}>{d.getDate()}</b>
+      <b style={{ fontFamily: T.fontDisplay, fontSize: FZ.hero, letterSpacing: "-0.02em", fontWeight: 600, lineHeight: 1, color: T.ink900 }}>{d.getDate()}</b>
       <span style={{ fontSize: 13, color: T.ink700 }}>{d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" })} · semaine {wk}</span>
       {z !== "s" && <span style={{ fontSize: 13, color: T.ink700, marginTop: "auto" }}>{nowTest.length} au banc · {arrDep.filter(x => x.l === "Arrivée").length} arrivée(s) et {arrDep.filter(x => x.l === "Départ").length} départ(s) cette semaine</span>}
     </div>); } };

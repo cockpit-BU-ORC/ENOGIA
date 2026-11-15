@@ -25,6 +25,7 @@ import { gcalUrl } from "../gcal";
 import { openTestReport } from "../testReport";
 import { makeCalendar } from "../planner/engine";
 import { Arrange } from "./Arrange";
+import { smooth } from "../scrollMode";
 
 const field = () => ({ padding: "5px 9px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, minWidth: 0 });
 // v291 (lot H) : branché sur le bouton commun (theme.js) — principal encre, secondaire bordé, désactivé gris
@@ -305,7 +306,7 @@ function BenchGrid({ rows, allRows, doc, catalog, testers, conflicts, on, onPick
   const scRef = useRef(null), [vis, setVis] = useState([0, 0]);
   const onScroll = () => { const el = scRef.current; if (!el) return; const lw = (el.querySelector(".enogia-bg-row > button, .enogia-bg-lab") || {}).offsetWidth || 0; const a = Math.max(0, Math.floor(el.scrollLeft / BG_COL)), b = Math.min(days.length - 1, Math.floor((el.scrollLeft + el.clientWidth - lw) / BG_COL)); setVis(v => (v[0] === a && v[1] === b ? v : [a, b])); };
   const goToday = () => { const el = scRef.current; if (!el) return; const i = Math.max(0, days.findIndex(d => d >= todayIso)); el.scrollLeft = Math.max(0, (i - 5) * BG_COL); onScroll(); };
-  const page = dir => { const el = scRef.current; if (el) el.scrollBy({ left: dir * Math.round(el.clientWidth * 0.7), behavior: "smooth" }); };
+  const page = dir => { const el = scRef.current; if (el) el.scrollBy({ left: dir * Math.round(el.clientWidth * 0.7), behavior: smooth() }); };
   useEffect(() => { goToday(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const bench = r => { const b = benches && benches[r.pj]; return b === 2 || r.banc === 2 || r.banc === "2" ? 2 : b === 1 || r.banc ? 1 : 1; };
   const ORDER = { late: 0, wip: 1, next: 2, done: 3, none: 4 };

@@ -42,7 +42,7 @@ const Col = ({ title, items }) => <div style={{ flex: 1, minWidth: 0, display: "
       {items.map(g => { const tot = g.list.length, pct = tot ? Math.round(g.done / tot * 100) : 0;
         return <div key={g.k} style={{ background: T.card, border: "1px solid " + T.line, borderRadius: u(12), padding: u(14) + " " + u(20), display: "flex", flexDirection: "column", gap: u(8) }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: u(14) }}><span style={{ fontSize: u(24), color: T.ink700, fontWeight: 600, flex: 1 }}>{g.lab}</span>
-            <span style={{ fontSize: u(44), fontWeight: 600, fontVariantNumeric: "tabular-nums", color: tot && g.done === tot ? T.emerald600 : T.ink900, lineHeight: 1 }}>{tot ? g.done + " / " + tot : "—"}</span></div>
+            <span style={{ fontSize: u(44), letterSpacing: "-0.02em", fontWeight: 600, fontVariantNumeric: "tabular-nums", color: tot && g.done === tot ? T.emerald600 : T.ink900, lineHeight: 1 }}>{tot ? g.done + " / " + tot : "—"}</span></div>
           <div style={{ height: u(12), borderRadius: 999, background: T.surfaceAlt, overflow: "hidden" }}><div style={{ width: pct + "%", height: "100%", background: T.emerald500 }} /></div>
           <div style={{ display: "flex", gap: u(8), flexWrap: "wrap", minHeight: u(30) }}>{tot === 0 ? <span style={{ fontSize: u(20), color: T.ink500 }}>Rien de prévu</span>
             : g.list.slice(0, 8).map(x => <span key={x.r.pj} style={{ fontSize: u(20), fontWeight: 600, borderRadius: u(8), padding: u(2) + " " + u(10), background: x.ok ? T.emerald100 : T.surfaceAlt, color: x.ok ? T.emerald600 : T.ink900, fontVariantNumeric: "tabular-nums" }}>{x.ok ? "✓ " : ""}{x.r.pj}</span>)}
@@ -51,7 +51,7 @@ const Col = ({ title, items }) => <div style={{ flex: 1, minWidth: 0, display: "
     </div>;
 // v350 (audit de performance) : défini hors du composant (sinon recréé et remonté à chaque rendu)
 const Kpi = ({ v, l }) => <div style={{ flex: 1, minWidth: 0, background: T.card, border: "1px solid " + T.line, borderRadius: u(18), padding: u(14) + " " + u(18), textAlign: "center" }}>
-      <div style={{ fontSize: u(70), fontWeight: 600, lineHeight: 1, color: T.teal600, fontVariantNumeric: "tabular-nums" }}>{v}</div>
+      <div style={{ fontSize: u(70), letterSpacing: "-0.02em", fontWeight: 600, lineHeight: 1, color: T.teal600, fontVariantNumeric: "tabular-nums" }}>{v}</div>
       <div style={{ fontSize: u(22), color: T.ink500, marginTop: u(6), fontWeight: 600 }}>{l}</div></div>;
 // v350 (audit de performance) : défini hors du composant (sinon recréé et remonté à chaque rendu)
 const Head = ({ t }) => <div style={{ fontSize: u(26), fontWeight: 600, color: T.ink900, letterSpacing: ".01em" }}>{t}</div>;

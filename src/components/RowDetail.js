@@ -100,7 +100,7 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
   const meter = (p, c) => <span aria-hidden="true" style={{ display: "block", height: 6, borderRadius: 4, background: T.surfaceAlt, overflow: "hidden", marginTop: "auto" }}><span style={{ display: "block", height: "100%", width: Math.max(0, Math.min(100, p)) + "%", background: c }} /></span>;
   const dateTile = (label, value, sub, bad) => <div key={label} style={{ background: T.surface, borderRadius: 12, padding: "8px 12px", minWidth: 0 }}><div style={{ fontFamily: T.fontLabel, fontSize: 12, color: T.ink500 }}>{label}</div><div style={{ fontFamily: T.fontDisplay, fontSize: 20, fontWeight: 600, color: T.ink900, fontVariantNumeric: "tabular-nums" }}>{value || "—"}</div>{sub && <div style={{ fontSize: 12, color: bad ? T.red600 : T.ink500 }}>{sub}</div>}</div>;
 
-  return (<div style={{ fontFamily: T.font }}>
+  return (<div style={{ fontFamily: T.font }} onKeyDown={e => { if (e.key === "Escape" && open) { e.preventDefault(); e.stopPropagation(); setOpen(null); } }}>
     {/* Où en est la machine, en une ligne */}
     <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
       <span style={{ fontFamily: T.fontLabel, fontSize: 13, fontWeight: 500, background: bar, color: inkOn(bar), borderRadius: 999, padding: "3px 12px" }}>{title}{shipped ? "" : " · " + pct + " %"}</span>
@@ -260,8 +260,19 @@ export function RowDialog(props) {
   const { r, onClose } = props;
   const [closing, setClosing] = useState(false), box = useRef(null), tm = useRef(0);
   const close = () => { if (closing) return; setClosing(true); tm.current = setTimeout(onClose, 180); };
+  const pull = useRef(null);
+  const sheet = () => { try { return window.matchMedia("(max-width: 640px)").matches; } catch (e) { return false; } };
+  const onPullDown = e => { const el = box.current; if (!sheet() || !el || el.scrollTop > 0 || !e.target.closest(".enogia-dlg-grab") || e.target.closest("button, input, select, textarea, a")) return;
+    pull.current = { y0: e.clientY, t0: e.timeStamp, y: 0, v: 0, id: e.pointerId }; };
+  const onPullMove = e => { const p = pull.current, el = box.current; if (!p || !el) return; const dy = e.clientY - p.y0;
+    if (!p.on) { if (dy < 8) { if (dy < -4) pull.current = null; return; } p.on = true; try { el.setPointerCapture(p.id); } catch (er) { /* rien */ } }
+    p.v = (dy - p.y) / Math.max(1, e.timeStamp - (p.t || p.t0)); p.y = dy; p.t = e.timeStamp;
+    el.style.transition = "none"; el.style.transform = "translateY(" + Math.max(0, dy) + "px)"; };
+  const onPullUp = () => { const p = pull.current, el = box.current; pull.current = null; if (!p || !p.on || !el) return;
+    if (p.y > 120 || (p.v > 0.6 && p.y > 40)) { el.style.transition = "transform var(--e-dur-out) var(--e-ease-in)"; el.style.transform = "translateY(100%)"; tm.current = setTimeout(onClose, 170); return; }
+    el.style.transition = "transform var(--e-dur-in) var(--e-ease)"; el.style.transform = ""; };
   useEffect(() => {
-    const prev = document.activeElement, k = e => { if (e.key === "Escape") close(); };
+    const prev = document.activeElement, k = e => { if (e.key === "Escape" && !e.defaultPrevented) close(); };
     window.addEventListener("keydown", k); if (box.current) box.current.focus();
     const ov = document.body.style.overflow; document.body.style.overflow = "hidden";
     return () => { window.removeEventListener("keydown", k); document.body.style.overflow = ov; clearTimeout(tm.current); if (prev && prev.focus) prev.focus(); };
@@ -271,11 +282,12 @@ export function RowDialog(props) {
   const sub = [r.gamme, meta.pays && meta.pays !== "—" ? meta.pays : ""].filter(Boolean);
   return (<div className={"enogia-dlg-backdrop" + (closing ? " closing" : "")} onMouseDown={e => { if (e.target === e.currentTarget) close(); }}
     style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(8,12,28,.42)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-    <div ref={box} tabIndex={-1} role="dialog" aria-modal="true" aria-label={"Fiche " + r.pj} className="enogia-dlg"
+    <div ref={box} tabIndex={-1} role="dialog" aria-modal="true" aria-label={"Fiche " + r.pj} className="enogia-dlg" onPointerDown={onPullDown} onPointerMove={onPullMove} onPointerUp={onPullUp} onPointerCancel={onPullUp}
       style={{ width: "min(720px, 100%)", maxHeight: "90dvh", overflowY: "auto", background: T.card, borderRadius: 22, boxShadow: "0 30px 80px rgba(8,12,28,.35), 0 0 0 1px " + T.line, outline: "none" }}>
-      <div aria-hidden="true" style={{ height: 6, background: bar }} />
+      <div aria-hidden="true" className="enogia-dlg-grab" style={{ height: 6, background: bar }} />
+      <div aria-hidden="true" className="enogia-dlg-grab enogia-dlg-grabber" />
       <div style={{ padding: "16px 22px 22px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
+        <div className="enogia-dlg-grab" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
           <PjPlate pj={r.pj} size="lg" />
           <span style={{ fontFamily: T.fontDisplay, fontSize: 20, fontWeight: 600, color: T.ink900, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : ""}</span>
           {sub.length > 0 && <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: FZ.xs, color: T.ink500 }}>{meta.pays && meta.pays !== "—" && <CountryFlag pays={meta.pays} size={12} />}{sub.join(" · ")}</span>}

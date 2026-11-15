@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v356",
+    date: "2026-11-15",
+    title: "V356 : gestes et retours plus fluides",
+    items: [
+      { t: "Général", d: "Tout ce qui se clique réagit dès l'appui ; Échap ferme d'abord le volet ouvert dans une fiche, puis la fiche." },
+      { t: "Planificateur", d: "Les barres du Gantt suivent la souris ou le doigt au pixel près, puis se posent sur le jour." },
+      { t: "Téléphone", d: "La fiche d'un PJ se ferme en la tirant vers le bas." },
+    ],
+  },
+  {
     id: "2026-11-v355",
     date: "2026-11-15",
     title: "V355 : l'accueil en widgets",

@@ -4,6 +4,7 @@ import { T, inkOn } from "../theme";
 import { STEP_LABEL, nodeKey, dayNum, isoOfDay, moveStepTo, setStep, orderOf, rulesOf, schedule, benchOf, stepWork, setWork, startAtKeepLinks, startReason } from "./engine";
 import { fmtIso, STEP_COLOR, headerCells } from "./PlannerGantt";
 import { landFrom } from "../pointerDrag";
+import { smooth } from "../scrollMode";
 
 // Vue « Couloirs » : le planning lu comme un atelier. Deux rails de jalons (Arrivées en haut, Départs en bas) encadrent
 // trois couloirs de travail (Production, Banc d'essai, Fin de production). Même échelle de temps que le Gantt, défilement
@@ -173,7 +174,7 @@ export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load,
     const up = () => { pan.current = null; setPanning(false); };
     window.addEventListener("pointermove", move); window.addEventListener("pointerup", up); return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
   }, [panning, scrollRef]);
-  const shift = k => { if (scrollRef.current) scrollRef.current.scrollBy({ left: k * 7 * px * 4, behavior: "smooth" }); };
+  const shift = k => { if (scrollRef.current) scrollRef.current.scrollBy({ left: k * 7 * px * 4, behavior: smooth() }); };
 
   const head = useMemo(() => headerCells(tl), [tl]);
   const wmap = useMemo(() => { const m = new Map(); (load ? load.weeks : []).forEach(w => m.set(w.week, w)); return m; }, [load]);

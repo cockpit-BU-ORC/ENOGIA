@@ -71,8 +71,8 @@ export function KpiDerivesHead({ rows, driftRows, delays, hasInitial, onOpenPj }
             </button>); })}
         </section>
         <section aria-label="Repères" style={{ ...card(), padding: "12px 16px", display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 }}>
-          <div><div style={lbl}>Dérive moyenne</div><div style={{ fontFamily: T.fontDisplay, fontSize: 28, fontWeight: 600, fontVariantNumeric: "tabular-nums", color: avg > 3 ? T.red500 : T.ink900 }}>{avg == null ? "—" : (avg > 0 ? "+" : avg < 0 ? "−" : "") + Math.abs(avg) + " j"}</div><div style={{ fontSize: 12, color: T.ink500 }}>machines en cours, vs initial</div></div>
-          <div><div style={lbl}>Retards déclarés</div><div style={{ fontFamily: T.fontDisplay, fontSize: 28, fontWeight: 600, fontVariantNumeric: "tabular-nums", color: T.ink900 }}>{delayInfo.n}</div><div style={{ fontSize: 12, color: T.ink500, overflow: "hidden", textOverflow: "ellipsis" }}>{delayInfo.top ? "1re cause : " + delayInfo.top[0] : "aucune cause saisie"}</div></div>
+          <div><div style={lbl}>Dérive moyenne</div><div style={{ fontFamily: T.fontDisplay, fontSize: 28, letterSpacing: "-0.02em", fontWeight: 600, fontVariantNumeric: "tabular-nums", color: avg > 3 ? T.red500 : T.ink900 }}>{avg == null ? "—" : (avg > 0 ? "+" : avg < 0 ? "−" : "") + Math.abs(avg) + " j"}</div><div style={{ fontSize: 12, color: T.ink500 }}>machines en cours, vs initial</div></div>
+          <div><div style={lbl}>Retards déclarés</div><div style={{ fontFamily: T.fontDisplay, fontSize: 28, letterSpacing: "-0.02em", fontWeight: 600, fontVariantNumeric: "tabular-nums", color: T.ink900 }}>{delayInfo.n}</div><div style={{ fontSize: 12, color: T.ink500, overflow: "hidden", textOverflow: "ellipsis" }}>{delayInfo.top ? "1re cause : " + delayInfo.top[0] : "aucune cause saisie"}</div></div>
         </section>
       </div>
     </div>
@@ -113,9 +113,9 @@ export function KpiSemaines({ rows, driftRows, closurePeriods, productionExclusi
     <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
       <p style={{ margin: 0, fontSize: FZ.md, color: T.ink700 }}>Charge de l'atelier et départs, semaine par semaine{fromPlan ? " (charge d'après le planificateur)" : " (charge d'après le planning, " + capaWeek + " h / semaine)"}.</p>
       <div style={{ display: "flex", gap: 28, fontVariantNumeric: "tabular-nums" }}>
-        <div><div style={lbl}>Départs</div><div style={{ fontFamily: T.fontDisplay, fontSize: 28, fontWeight: 600, color: T.ink900 }}>{nDeps}</div></div>
-        <div><div style={lbl}>Semaines en surcharge</div><div style={{ fontFamily: T.fontDisplay, fontSize: 28, fontWeight: 600, color: overW.length ? T.red500 : T.emerald600 }}>{overW.length}</div></div>
-        {hasInitial && <div><div style={lbl}>En retard sur l'initial</div><div style={{ fontFamily: T.fontDisplay, fontSize: 28, fontWeight: 600, color: late.length ? T.red500 : T.emerald600 }}>{late.length}</div></div>}
+        <div><div style={lbl}>Départs</div><div style={{ fontFamily: T.fontDisplay, fontSize: 28, letterSpacing: "-0.02em", fontWeight: 600, color: T.ink900 }}>{nDeps}</div></div>
+        <div><div style={lbl}>Semaines en surcharge</div><div style={{ fontFamily: T.fontDisplay, fontSize: 28, letterSpacing: "-0.02em", fontWeight: 600, color: overW.length ? T.red500 : T.emerald600 }}>{overW.length}</div></div>
+        {hasInitial && <div><div style={lbl}>En retard sur l'initial</div><div style={{ fontFamily: T.fontDisplay, fontSize: 28, letterSpacing: "-0.02em", fontWeight: 600, color: late.length ? T.red500 : T.emerald600 }}>{late.length}</div></div>}
       </div>
     </div>
     <section aria-label={"Les " + N + " prochaines semaines"} style={{ ...card(), overflowX: "auto" }}>

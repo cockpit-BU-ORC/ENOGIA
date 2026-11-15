@@ -12,6 +12,7 @@ import { PlanSwitch } from "./PlanSwitch";
 import { NavIcon, Panel, Pill, Btn, Segmented, PjPlate, tableTh, tableTd, EmptyState, PageHead, useSheetJS, SortTh, useSort } from "./SharedUI";
 import { stageSoft } from "../theme";
 import { askConfirm } from "../confirm";
+import { smooth } from "../scrollMode";
 import { TICKET_TYPES, typeOf, flowOf, PRIOS, ORIGINS, INTER_TYPES, INTER_STATUS, PREP_ITEMS, CLO_ITEMS, COST_FIELDS, CONTRACTS, DEM_STATUS,
   nextTicketId, nextInterId, isClosed, ticketAge, interCost, interTeam, interDays, planBars, dayLoad, workDaysFrom, mondayOf,
   acceptDemande, parcOf, savKpis, savStats, fournTypesOf, fournLabel, addStepNote, delStepNote } from "../savModel";
@@ -39,7 +40,7 @@ const SortHead = ({ cols, sort, onSort }) => <thead><tr>{cols.map(([c, l, n]) =>
 function Kpi({ l, v, tone }) {
   return <div style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "10px 12px", minWidth: 0 }}>
     <div style={{ fontSize: 12, color: T.ink500 }}>{l}</div>
-    <div style={{ fontFamily: T.fontDisplay, fontSize: 28, fontWeight: 500, fontVariantNumeric: "tabular-nums", color: tone === "bad" ? T.red600 : tone === "warn" ? T.amber600 : T.ink900 }}>{v == null ? "—" : v}</div>
+    <div style={{ fontFamily: T.fontDisplay, fontSize: 28, letterSpacing: "-0.02em", fontWeight: 500, fontVariantNumeric: "tabular-nums", color: tone === "bad" ? T.red600 : tone === "warn" ? T.amber600 : T.ink900 }}>{v == null ? "—" : v}</div>
   </div>;
 }
 // v328 (demandé : « la gestion des étapes n'est pas claire sur le ticket ») : frise des étapes toujours visible ; l'équipe SAV clique une étape
@@ -388,7 +389,7 @@ function PlanningView({ inters, demandes, techs, canEdit, nomOf, me, myPjs, onOp
   const onScroll = () => { const el = scRef.current; if (!el) return; const a = idxAt(el.scrollLeft), b = Math.max(a, idxAt(el.scrollLeft + el.clientWidth - labW - 1));
     first.current = days[a]; setVis(v => (v[0] === a && v[1] === b ? v : [a, b])); };
   const goToday = () => { const el = scRef.current; if (!el) return; const i = idxOf[t0] ?? days.findIndex(d => d >= t0); el.scrollLeft = Math.max(0, X[Math.max(0, i - 7)]); onScroll(); };
-  const page = dir => { const el = scRef.current; if (el) el.scrollBy({ left: dir * Math.round((el.clientWidth - labW) * 0.85), behavior: "smooth" }); };
+  const page = dir => { const el = scRef.current; if (el) el.scrollBy({ left: dir * Math.round((el.clientWidth - labW) * 0.85), behavior: smooth() }); };
   // à l'ouverture : la semaine passée à gauche ; au zoom : garder le premier jour visible
   useEffect(() => { const el = scRef.current; if (!el) return; if (first.current == null) goToday(); else { el.scrollLeft = X[idxOf[first.current] || 0]; onScroll(); } }, [colPx]); // eslint-disable-line react-hooks/exhaustive-deps
   const bars = planBars(inters, techs), load = dayLoad(inters, techs, days), loadOf = {}; load.forEach(x => { loadOf[x.d] = x; });
@@ -526,7 +527,7 @@ function TeamDialog({ techs, onClose, onSave }) {
 const shortM = m => new Date(m + "-01T12:00:00").toLocaleDateString("fr-FR", { month: "short" }).replace(".", "");
 function KTile({ l, v, sub, tone }) {
   return <div style={{ minWidth: 0 }}><div style={{ fontSize: 12, color: T.ink500 }}>{l}</div>
-    <div style={{ fontFamily: T.fontDisplay, fontSize: 28, fontWeight: 500, lineHeight: 1.2, fontVariantNumeric: "tabular-nums", color: tone === "bad" ? T.red600 : tone === "ok" ? T.emerald600 : T.ink900 }}>{v == null ? "—" : v}</div>
+    <div style={{ fontFamily: T.fontDisplay, fontSize: 28, letterSpacing: "-0.02em", fontWeight: 500, lineHeight: 1.2, fontVariantNumeric: "tabular-nums", color: tone === "bad" ? T.red600 : tone === "ok" ? T.emerald600 : T.ink900 }}>{v == null ? "—" : v}</div>
     {sub && <div style={{ fontSize: 12, color: T.ink500 }}>{sub}</div>}</div>;
 }
 const KRow = ({ children }) => <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 14 }}>{children}</div>;

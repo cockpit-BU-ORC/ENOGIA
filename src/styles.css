@@ -709,3 +709,19 @@ b, strong { font-weight: 600; }
   .e-wg-edit .e-wg-cell { outline: 1px dashed var(--wg-line); outline-offset: 3px; }
   .e-wg-veil, .e-wg-sheet { animation: none; }
 }
+
+/* v356 (audit apple-design) : la fiche d'un PJ en feuille (téléphone) se ferme en la tirant vers le bas par son en-tête */
+.enogia-dlg-grabber { display: none; }
+@media (max-width: 640px) {
+  .enogia-dlg-grab { touch-action: none; }
+  .enogia-dlg-grabber { display: block; width: 40px; height: 5px; border-radius: 999px; background: var(--e-field-line, #8a909c); opacity: .6; margin: 8px auto 0; }
+}
+
+/* v356 (audit apple-design, lot 2) : retour dès l'appui pour tout ce qui se clique sans être un <button> —
+   cartes, plaques, éléments role=button : léger enfoncement ; lignes de tableau et de liste : voile, sans déformer la ligne */
+[role="button"]:not(tr):not(td):not(li):not([aria-disabled="true"]):active,
+[data-kbd]:not(tr):not(td):not(li):not([data-dnd-drag]):not([data-lane-key]):not([data-bench-pj]):active { transform: scale(.98); }
+tr[data-kbd]:active > td, tr[role="button"]:active > td, li[data-kbd]:active, li[role="button"]:active, td[data-kbd]:active { background-image: linear-gradient(rgba(120,130,145,.14), rgba(120,130,145,.14)); }
+@media (prefers-reduced-motion: reduce) {
+  [role="button"]:active, [data-kbd]:active { transform: none !important; opacity: .8; }
+}

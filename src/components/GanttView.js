@@ -8,6 +8,7 @@ import { getPjMeta, ETAT_META, ALL_ETATS, MONTHS, today, ProjectLabelCell } from
 import { DropFilter, NavIcon, pressable } from "./SharedUI";
 import { PjDialog } from "./RowDetail";
 import { gapRanges } from "../workDays";
+import { smooth } from "../scrollMode";
 
 // Couleurs lues à chaque rendu (accesseurs) : un tableau figé à l'import garderait le thème clair.
 export { PHASES } from "../ganttPhases";
@@ -146,8 +147,8 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
   const scrollToDay=dIdx=>{
     if(scrollRef.current){
       const target=centerTarget(dIdx*dayW+dayW/2);
-      scrollRef.current.scrollTo({left:target,behavior:"smooth"});
-      if(topScrollRef.current)topScrollRef.current.scrollTo({left:target,behavior:"smooth"});
+      scrollRef.current.scrollTo({left:target,behavior:smooth()});
+      if(topScrollRef.current)topScrollRef.current.scrollTo({left:target,behavior:smooth()});
     }
   };
 

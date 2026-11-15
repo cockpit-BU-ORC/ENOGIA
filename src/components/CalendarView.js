@@ -8,6 +8,7 @@ import { DropFilter, pressable } from "./SharedUI";
 import { toLocalISO, weekStartOf } from "../parsers";
 import { toggleClosedDay, isClosedDay } from "../workDays";
 import { CalendarMonth } from "./CalendarMonth";
+import { smooth } from "../scrollMode";
 
 export function getWeekStatus(r,weekStart,weekEnd){
   const a=r.arrivee?new Date(r.arrivee):null;
@@ -300,7 +301,7 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
   const r0=Math.max(0,Math.floor((scrollPos.y-VIEW_BUF)/ROW_PX));
   const r1=Math.min(pjs.length-1,Math.ceil((scrollPos.y+viewH+VIEW_BUF)/ROW_PX));
   // Page précédente / suivante : défile d'environ une largeur d'écran.
-  const pageScroll=dir=>{if(scrollRef.current)scrollRef.current.scrollBy({left:dir*Math.round((viewW-LEFT_W)*0.85),behavior:"smooth"});};
+  const pageScroll=dir=>{if(scrollRef.current)scrollRef.current.scrollBy({left:dir*Math.round((viewW-LEFT_W)*0.85),behavior:smooth()});};
 
   return(<div className="enogia-view-in" style={{background:stripeBg(T.teal500,T.surface,4),borderRadius:12,overflow:"hidden",border:"1px solid "+T.line,fontFamily:T.font}}>
     <div className="e-tb" style={{display:"flex",alignItems:"center",gap:10,padding:"14px 18px",borderBottom:"1px solid "+T.line,background:T.surface,flexWrap:"wrap"}}>
