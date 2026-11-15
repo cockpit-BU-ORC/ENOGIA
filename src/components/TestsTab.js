@@ -139,13 +139,15 @@ function WeekBoard({ doc, rows, testers, catalog, conflicts, commit, certifs, ca
 // résultats (réussis et échecs des 14 derniers jours, d'après l'horodatage des statuts).
 const DAY = 86400000;
 const segsOf = (plan, catalog, act) => { const out = []; act.forEach(k => selectedIds(plan, catalog, k).forEach(id => { const t = (catalog[k] || []).find(x => x.id === id); out.push({ k, id, name: t ? t.name : id, v: statusOf(plan, k, id) }); })); return out; };
+// v348 (WCAG 1.4.1) : échec / retard hachurés en plus du rouge (lisible sans les couleurs)
+const HATCH = "repeating-linear-gradient(135deg, rgba(255,255,255,.55) 0 2px, transparent 2px 5px)";
 const SEG_FILL = { ok: () => stageSoft().finProd.solid, wip: () => stageSoft().tests.solid, ko: () => T.red500, todo: () => T.line };
 const ST_LABEL = Object.fromEntries(TEST_STATUS);
 // v289 (lot G) : still = sans animation d'entrée (grille des bancs : une barre par machine, tout bougeait en même temps)
 function SegBar({ segs, h = 8, gap = 2, width, still }) {
   if (!segs.length) return <span aria-hidden="true" style={{ width: width || "100%", height: h, borderRadius: 4, background: T.surfaceAlt, display: "block" }} />;
   return (<span aria-hidden="true" className={still ? undefined : "enogia-segbar"} style={{ display: "flex", gap, height: h, width: width || "100%", flexShrink: 0 }}>
-    {segs.map((s, i) => <i key={s.k + s.id} title={s.name + " — " + ST_LABEL[s.v]} style={{ flex: 1, minWidth: 2, borderRadius: 4, background: SEG_FILL[s.v](), animationDelay: (i * 25) + "ms" }} />)}
+    {segs.map((s, i) => <i key={s.k + s.id} title={s.name + " — " + ST_LABEL[s.v]} style={{ flex: 1, minWidth: 2, borderRadius: 4, background: SEG_FILL[s.v](), backgroundImage: s.v === "ko" ? HATCH : undefined, animationDelay: (i * 25) + "ms" }} />)}
   </span>);
 }
 // v345 (audit taste, validé) : dans les listes, barre d'avancement au lieu de l'anneau
@@ -349,7 +351,7 @@ function BenchGrid({ rows, allRows, doc, catalog, testers, conflicts, on, onPick
         {list.map(({ r, ms, c0, c1, names, pd, pres: dots, out, conf }, ri) => {
           const bk = bench(r), first = ri === 0 || bench(list[ri - 1].r) !== bk;
           const tn = toneOfSt(ms.st === "none" ? "next" : ms.st), sel = on === r.pj, segs = segsOf(ms.plan, catalog, ms.act);
-          const info = ms.st === "late" ? "en retard de " + ms.lateD + " j" : ms.st === "wip" ? "jour " + ms.n + " / " + ms.m : ms.st === "done" ? (isForced(ms.plan) ? "validé" : "terminé") : ms.st === "none" ? "période à définir" : "prévu";
+          const info = ms.st === "late" ? "en retard de " + ms.lateD + " j" : ms.st === "wip" ? "jour " + ms.n + " / " + ms.m : ms.st === "done" ? (isForced(ms.plan) ? "✓ validé" : "✓ terminé") : ms.st === "none" ? "période à définir" : "prévu";
           const aria = r.pj + (r.gamme ? ", " + r.gamme : "") + (ms.st === "none" ? ", période de tests à définir" : ", tests du " + fd(ms.a) + " au " + fd(ms.b)) + ", " + info + ", " + ms.q.done + " tests faits sur " + ms.q.total + (names.length ? ", " + names.join(" et ") : ", sans testeur");
           return (<React.Fragment key={r.pj}>{first && <div className="enogia-bg-bench" style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 34, background: T.surfaceAlt, borderTop: ri ? "6px solid " + T.card : "none", borderBottom: "2px solid " + (bk === 2 ? T.info600 : T.ink900) }}>
             <span style={{ position: "sticky", left: 0, padding: "0 14px", display: "inline-flex", gap: 8, alignItems: "baseline" }}><b style={{ fontFamily: T.fontDisplay, fontSize: 15, fontWeight: 600, color: T.ink900 }}>Banc {bk}</b><span style={{ fontSize: 12, color: T.ink500 }}>{nBench(bk)} machine{nBench(bk) > 1 ? "s" : ""}</span></span></div>}
@@ -361,13 +363,13 @@ function BenchGrid({ rows, allRows, doc, catalog, testers, conflicts, on, onPick
                 <span style={{ ...cellS, color: names.length ? T.ink900 : T.red600, fontWeight: names.length ? 500 : 600 }} title={names.join(", ")}>{names.length ? names.join(", ") : "sans testeur"}</span>
                 <span className="c-opt" style={cellS}>{pres("client", pd.client)}</span>
                 <span className="c-opt" style={cellS}>{pres("nobo", pd.nobo)}</span>
-                <span style={{ ...cellS, justifyContent: "flex-end", gap: 6 }}><SegBar still segs={segs} h={7} gap={1} width={Math.max(18, Math.min(40, segs.length * 4))} /><span style={{ fontWeight: 600, color: T.ink700, fontVariantNumeric: "tabular-nums" }}>{ms.q.done}/{ms.q.total}</span></span>
+                <span style={{ ...cellS, justifyContent: "flex-end", gap: 6 }}><SegBar still segs={segs} h={7} gap={1} width={Math.max(18, Math.min(40, segs.length * 4))} /><span style={{ fontWeight: 600, color: T.ink700, fontVariantNumeric: "tabular-nums" }}>{ms.q.done}/{ms.q.total}{segs.some(x => x.v === "ko") ? <span style={{ color: T.red600 }}>{" · " + segs.filter(x => x.v === "ko").length + " échec" + (segs.filter(x => x.v === "ko").length > 1 ? "s" : "")}</span> : null}</span></span>
               </span>
             </button>
             <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
               <TrackBg days={days} todayIso={todayIso} />
               {c0 >= 0 && <button type="button" className="enogia-bg-bar" onClick={() => onPick(r.pj)} aria-label={aria} title={r.pj + " · " + fd(ms.a) + " → " + fd(ms.b) + " · " + info + (conf ? " · testeur en conflit" : "")}
-                style={{ position: "absolute", left: "calc(" + pctOf(c0, days.length) + " + 3px)", width: "calc(" + pctOf(c1 - c0 + 1, days.length) + " - 6px)", top: 8, bottom: 8, border: tn.bd, boxShadow: conf ? "0 0 0 2px " + T.amber600 : sel ? "0 0 0 2px " + T.ink900 : "0 0 0 2px " + T.card + ", " + T.shadowSm, borderRadius: 8, background: tn.bg, color: tn.ink, cursor: "pointer", padding: "0 6px", fontSize: 12, fontWeight: 600, fontFamily: T.font, textAlign: "left", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", boxSizing: "border-box" }}>
+                style={{ position: "absolute", left: "calc(" + pctOf(c0, days.length) + " + 3px)", width: "calc(" + pctOf(c1 - c0 + 1, days.length) + " - 6px)", top: 8, bottom: 8, border: tn.bd, boxShadow: conf ? "0 0 0 2px " + T.amber600 : sel ? "0 0 0 2px " + T.ink900 : "0 0 0 2px " + T.card + ", " + T.shadowSm, borderRadius: 8, background: tn.bg, backgroundImage: ms.st === "late" ? HATCH : undefined, color: tn.ink, cursor: "pointer", padding: "0 6px", fontSize: 12, fontWeight: 600, fontFamily: T.font, textAlign: "left", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", boxSizing: "border-box" }}>
                 <span className="bg-bar-txt">{info}</span>
               </button>}
               {out && <span style={{ position: "absolute", top: 0, bottom: 0, display: "flex", alignItems: "center", fontSize: 12, color: ms.st === "late" ? T.red600 : T.ink500, fontWeight: 600, whiteSpace: "nowrap", ...(out === "after" ? { right: 10 } : { left: 10 }) }}>

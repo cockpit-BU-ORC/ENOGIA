@@ -1006,4 +1006,9 @@ export const RELEASE_CATALOG = [
     ["Projets", "Contrat et dates, Finance et Machine dans leurs onglets ; « À compléter » mène au bon onglet."],
     ["Projets", "Actions et mitigations : Entrée pour ajouter ; le commentaire d'un axe n'est demandé qu'en vigilance ou à risque."],
   ] },
+  { v: "348", t: "Accessibilité : champs, titres, échecs visibles sans couleur", items: [
+    ["Général", "Bord des champs de saisie plus marqué (repérables d'un coup d'œil) ; titres de page dans le bon ordre pour les lecteurs d'écran."],
+    ["Tests", "Échecs et retards hachurés en plus du rouge, « ✓ terminé » sur les bancs, nombre d'échecs écrit à côté de la barre des tests."],
+    ["Tests", "Couverture du livret de configuration lisible en mode sombre."],
+  ] },
 ];

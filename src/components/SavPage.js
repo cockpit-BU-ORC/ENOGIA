@@ -199,7 +199,7 @@ function TicketsView({ tickets, inters, canEdit, isAdmin, myName, nomOf, onEdit,
   const { sorted, sort, setSort } = useSort(L, T_SORT);
   const cur = L.find(t => t.id === sel) || L[0] || null;
   return <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(300px, 400px)", gap: 12, alignItems: "start" }} className="enogia-sav-split">
-    <Panel title="Tickets" pad={0} right={<div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", padding: "10px 12px 0 0" }}>
+    <Panel level={2} title="Tickets" pad={0} right={<div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", padding: "10px 12px 0 0" }}>
       <Segmented label="Filtrer les tickets" value={filt} onChange={setFilt} options={[["open", "Ouverts"], ["mine", "Les miens"], ["all", "Tous"]]} />
       <input type="search" value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher un PJ, un ticket…" aria-label="Rechercher un ticket" style={{ ...inp(), width: 220 }} /></div>}>
       {L.length === 0 ? <EmptyState icon="inbox" compact title={all.length ? "Aucun ticket avec ce filtre" : "Aucun ticket pour l'instant"} hint={canEdit && !all.length ? "« ＋ Nouveau ticket » pour enregistrer la première demande." : ""} /> :
@@ -213,7 +213,7 @@ function TicketsView({ tickets, inters, canEdit, isAdmin, myName, nomOf, onEdit,
           <td style={tableTd({ wrap: true })}><Steps t={t} /><div style={{ fontSize: 12, color: T.ink500 }}>{flowOf(t.type)[t.step || 0]}</div></td>
           <td style={tableTd()}>{t.resp || "—"}</td><td style={tableTd({ num: true })}>{ticketAge(t) == null ? "—" : ticketAge(t) + " j"}</td></tr>)}</tbody></table></div>}
     </Panel>
-    {cur ? <Panel title={<span style={{ display: "inline-flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}><span style={{ fontFamily: T.fontMono, fontSize: 12 }}>{cur.id}</span><Pill tone={TYPE_TONE[cur.type] || "neutral"}>{typeOf(cur.type)[1]}</Pill><Pill tone={PRIO_TONE[cur.prio] || "muted"}>{(PRIOS.find(p => p[0] === cur.prio) || PRIOS[1])[1]}</Pill></span>}
+    {cur ? <Panel level={2} title={<span style={{ display: "inline-flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}><span style={{ fontFamily: T.fontMono, fontSize: 12 }}>{cur.id}</span><Pill tone={TYPE_TONE[cur.type] || "neutral"}>{typeOf(cur.type)[1]}</Pill><Pill tone={PRIO_TONE[cur.prio] || "muted"}>{(PRIOS.find(p => p[0] === cur.prio) || PRIOS[1])[1]}</Pill></span>}
       right={canEdit && <Btn size="sm" onClick={() => onEdit(cur.id, tickets[cur.id])}>Modifier</Btn>}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}><button type="button" onClick={() => onOpenPj && onOpenPj(cur.pj)} aria-label={"Ouvrir la fiche de " + cur.pj} style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer" }}><PjPlate pj={cur.pj} /></button><b style={{ fontSize: FZ.md, color: T.ink900 }}>{nomOf(cur.pj)}</b></div>
       {cur.det && <p data-no-i18n="1" style={{ margin: 0, fontSize: FZ.sm, color: T.ink900, whiteSpace: "pre-wrap" }}>{cur.det}</p>}
@@ -271,7 +271,7 @@ function IntersView({ inters, canCost, nomOf, onOpen }) {
   const L = Object.entries(inters).map(([id, i]) => ({ id, ...i })).filter(i => filt === "all" || (filt === "open" ? !["Réalisée", "Validée", "Non validée", "Annulée"].includes(i.st) : ["Réalisée", "Validée", "Non validée"].includes(i.st)))
     .sort((a, b) => String(a.a || "9").localeCompare(String(b.a || "9")) || a.id.localeCompare(b.id));
   const { sorted, sort, setSort } = useSort(L, I_SORT);
-  return <Panel title="Interventions" pad={0} right={<div style={{ padding: "10px 12px 0 0" }}><Segmented label="Filtrer les interventions" value={filt} onChange={setFilt} options={[["open", "À venir"], ["done", "Réalisées"], ["all", "Toutes"]]} /></div>}>
+  return <Panel level={2} title="Interventions" pad={0} right={<div style={{ padding: "10px 12px 0 0" }}><Segmented label="Filtrer les interventions" value={filt} onChange={setFilt} options={[["open", "À venir"], ["done", "Réalisées"], ["all", "Toutes"]]} /></div>}>
     {L.length === 0 ? <EmptyState icon="calendar" compact title="Aucune intervention avec ce filtre" /> :
     <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse" }}>
       <SortHead sort={sort} onSort={setSort} cols={[["id", "N°"], ["pj", "PJ"], ["obj", "Objectif"], ["type", "Type"], ["team", "Équipe"], ["date", "Dates"], ["prep", "Préparation"], ["clo", "Clôture"], ["st", "Statut"], ...(canCost ? [["cost", "Coût", true]] : [])]} />
@@ -476,7 +476,7 @@ function PlanningView({ inters, demandes, techs, canEdit, nomOf, me, myPjs, onOp
       {legend}
     </div>
     {canEdit ? <>
-      <Panel title={<span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>Demandes des chefs de projet {pend.length > 0 && <Pill tone="warn">{pend.length}</Pill>}</span>}>
+      <Panel level={2} title={<span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>Demandes des chefs de projet {pend.length > 0 && <Pill tone="warn">{pend.length}</Pill>}</span>}>
         {dems.length === 0 ? <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Aucune demande pour l'instant</div> : dems.slice(0, 12).map(d => <div key={d.id} style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", padding: "6px 0", borderTop: "1px solid " + T.line }}>
           <PjPlate pj={d.pj} /><span style={{ flex: "1 1 260px", minWidth: 0, fontSize: FZ.sm, color: T.ink900 }}>{d.obj || "—"}<div style={{ fontSize: 12, color: T.ink500 }}>{nomOf(d.pj)} · demandé par {d.by || "—"} · à partir du {fdd(d.date)} · {d.days || 1} j</div></span>
           {d.st === "attente" ? <>
@@ -485,12 +485,12 @@ function PlanningView({ inters, demandes, techs, canEdit, nomOf, me, myPjs, onOp
             : <Pill tone={d.st === "ok" ? "ok" : "bad"}>{d.st === "ok" ? "Acceptée" + (d.iid ? " · " + d.iid : "") : "Refusée"}</Pill>}</div>)}
         {pend.length > 0 && <div style={{ fontSize: 12, color: T.ink500 }}>Accepter crée le ticket et une intervention « à planifier » aux dates demandées ; cochez « Dates validées avec le client » dans l'intervention quand c'est confirmé</div>}
       </Panel>
-      <Panel title={<span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>À planifier {toPlan.length > 0 && <Pill tone="warn">{toPlan.length}</Pill>}</span>}>
+      <Panel level={2} title={<span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>À planifier {toPlan.length > 0 && <Pill tone="warn">{toPlan.length}</Pill>}</span>}>
         {toPlan.length === 0 ? <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Toutes les interventions sont planifiées et validées avec le client</div> : toPlan.map(([id, i]) => <div key={id} style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", padding: "6px 0", borderTop: "1px solid " + T.line }}>
           <span style={{ fontFamily: T.fontMono, fontSize: 12, fontWeight: 600 }}>{id}</span><PjPlate pj={i.pj} /><span style={{ flex: 1, minWidth: 0, fontSize: FZ.sm }}>{i.obj || "—"}</span>
           <span style={{ fontSize: 12, color: T.ink500 }}>{!i.a || !i.b ? "sans dates" : !i.resp ? "sans technicien" : fd(i.a) + " → " + fd(i.b) + " · à confirmer avec le client"}</span><Btn v="pri" size="sm" onClick={() => onOpenInter(id)}>{!i.a || !i.b || !i.resp ? "Planifier" : "Ouvrir"}</Btn></div>)}
       </Panel></>
-    : <Panel title="Mes demandes">
+    : <Panel level={2} title="Mes demandes">
       {mine.length === 0 ? <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Vous n'avez pas encore fait de demande. Cliquez sur « + » dans la ligne Demandes du planning.</div> : mine.map(d => <div key={d.id} style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", padding: "6px 0", borderTop: "1px solid " + T.line }}>
         <PjPlate pj={d.pj} /><span style={{ flex: "1 1 260px", minWidth: 0, fontSize: FZ.sm }}>{d.obj || "—"}<div style={{ fontSize: 12, color: T.ink500 }}>à partir du {fdd(d.date)} · {d.days || 1} j{d.note ? " · « " + d.note + " »" : ""}</div></span>
         <Pill tone={d.st === "ok" ? "ok" : d.st === "ko" ? "bad" : "warn"}>{DEM_STATUS[d.st] || d.st}</Pill>
@@ -554,7 +554,7 @@ function SavKpiView({ doc, techs, canCost, nomOf }) {
   const occ = p => Math.round(p.past / S.workdays * 100);
   const period = "depuis le " + fd(S.from) + "/" + S.from.slice(2, 4);
   return <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-    <Panel title="Affectation de l'équipe" right={<span style={{ fontSize: 12, color: T.ink500 }}>jours d'intervention (jours ouvrés, responsable ou en appui) {period} · à venir = 90 prochains jours</span>}>
+    <Panel level={2} title="Affectation de l'équipe" right={<span style={{ fontSize: 12, color: T.ink500 }}>jours d'intervention (jours ouvrés, responsable ou en appui) {period} · à venir = 90 prochains jours</span>}>
       {P.length === 0 ? <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Aucun technicien ni intervention</div> :
       <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead><tr><th style={tableTh()}>Personne</th><th style={{ ...tableTh(), width: "34%" }}>Jours sur site (12 mois)</th><th style={tableTh({ num: true })}>Occupation</th><th style={tableTh({ num: true })}>À venir (90 j)</th><th style={tableTh({ num: true })}>Responsable</th><th style={tableTh({ num: true })}>En appui</th></tr></thead>
@@ -567,14 +567,14 @@ function SavKpiView({ doc, techs, canCost, nomOf }) {
       <div style={{ fontSize: 12, color: T.ink500 }}>Occupation = jours sur site ÷ {S.workdays} jours ouvrés de la période</div>
     </Panel>
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(420px, 1fr))", gap: 12 }}>
-      <Panel title="Interventions" right={<span style={{ fontSize: 12, color: T.ink500 }}>{period}</span>}>
+      <Panel level={2} title="Interventions" right={<span style={{ fontSize: 12, color: T.ink500 }}>{period}</span>}>
         <KRow><KTile l="Sur la période" v={I.count} sub={I.done + " réalisées"} /><KTile l="À venir" v={I.upcoming} /><KTile l="À planifier" v={I.toPlan} tone={I.toPlan ? "bad" : null} sub="sans dates ou sans technicien" />
           <KTile l="Durée moyenne" v={I.avgDays == null ? null : String(I.avgDays).replace(".", ",") + " j"} /><KTile l="Réussite" v={pct(I.success)} sub="parmi les clôtures renseignées" />
           <KTile l="Préparation complète" v={pct(I.prepFull)} /><KTile l="Clôture complète" v={pct(I.cloFull)} tone={I.cloFull != null && I.cloFull < 80 ? "bad" : null} /></KRow>
         <div style={{ fontSize: 12, fontWeight: 600, color: T.ink700 }}>Par type</div>
         <HBars items={I.byType} />
       </Panel>
-      <Panel title="Tickets" right={<span style={{ fontSize: 12, color: T.ink500 }}>{period}</span>}>
+      <Panel level={2} title="Tickets" right={<span style={{ fontSize: 12, color: T.ink500 }}>{period}</span>}>
         <KRow><KTile l="Ouverts" v={Tk.open} sub={Tk.high + " en priorité haute"} /><KTile l="Ouverts depuis plus de 30 j" v={Tk.over30} tone={Tk.over30 ? "bad" : null} />
           <KTile l="Reçus / clos" v={Tk.opened + " / " + Tk.closed} /><KTile l="Délai moyen de traitement" v={Tk.avgDays == null ? null : Tk.avgDays + " j"} /><KTile l="Satisfaction client" v={Tk.satisf == null ? null : String(Tk.satisf).replace(".", ",") + " / 5"} /></KRow>
         <MonthCols months={S.months} series={[{ l: "Reçus", c: T.dv1, get: m => (Tk.byMonth.find(x => x.m === m) || {}).opened || 0 }, { l: "Clos", c: T.dv2, get: m => (Tk.byMonth.find(x => x.m === m) || {}).closed || 0 }]} />
@@ -582,7 +582,7 @@ function SavKpiView({ doc, techs, canCost, nomOf }) {
         <HBars items={Tk.byType} color={T.dv2} />
       </Panel>
     </div>
-    {canCost && <Panel title="Finance" right={<span style={{ fontSize: 12, color: T.ink500 }}>coûts saisis dans les interventions (mois d'arrivée sur site) {period}</span>}>
+    {canCost && <Panel level={2} title="Finance" right={<span style={{ fontSize: 12, color: T.ink500 }}>coûts saisis dans les interventions (mois d'arrivée sur site) {period}</span>}>
       <KRow><KTile l="Coût des interventions" v={eur(F.total)} /><KTile l="Coût moyen d'une intervention" v={eur(F.perInter)} sub="interventions avec des coûts saisis" />
         <KTile l="Contrats de maintenance en cours" v={F.contracts} /><KTile l="Forfaits annuels des contrats" v={eur(F.forfaits)} /></KRow>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 16 }}>
@@ -602,7 +602,7 @@ function ParcView({ rows, metaOf, parc, tickets, canEdit, onEdit, onOpenPj, four
     .filter(p => !q || (p.pj + " " + p.nom + " " + p.pays + " " + (p.info.ville || "") + " " + p.sn.join(" ") + " " + fournLabel(p.info.fourn)).toLowerCase().includes(q.toLowerCase()));
   const { sorted, sort, setSort } = useSort(L, P_SORT);
   return <><WorldMap points={mapPoints(all)} onPick={pj => setQ(pj)} />
-    <Panel title={"Parc ORC (" + all.length + " projets)"} pad={0} right={<div style={{ display: "flex", gap: 8, padding: "10px 12px 0 0", flexWrap: "wrap" }}>
+    <Panel level={2} title={"Parc ORC (" + all.length + " projets)"} pad={0} right={<div style={{ display: "flex", gap: 8, padding: "10px 12px 0 0", flexWrap: "wrap" }}>
     <Segmented label="Filtrer le parc" value={filt} onChange={setFilt} options={[["all", "Tous"], ["ctr", "Avec contrat"], ["no", "Sans contrat"]]} />
     <input type="search" value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher un PJ, un S/N, une fourniture…" aria-label="Rechercher dans le parc" style={{ ...inp(), width: 240 }} />
     {canEdit && onTypes && <Btn size="sm" onClick={onTypes} title={"Types proposés : " + fournTypes.join(", ")}>Types de fournitures</Btn>}</div>}>
@@ -684,7 +684,7 @@ function WorldMap({ points, onPick }) {
   const listed = (bounds ? points.filter(p => inBox(p, bounds) || inBox({ ...p, lon: p.lon - 360 }, bounds) || inBox({ ...p, lon: p.lon + 360 }, bounds)) : points)
     .slice().sort((a, b) => (a.pays || "").localeCompare(b.pays || "") || a.pj.localeCompare(b.pj, "fr", { numeric: true }));
   const dotUi = p => (p.ouverts ? T.red600 : ctrOk(p) ? T.emerald600 : T.info600);
-  return <Panel title={"Carte du parc (" + points.length + " sites)"} right={<span style={{ fontSize: 12, color: T.ink500 }}>{groups.length} pays</span>}>
+  return <Panel level={2} title={"Carte du parc (" + points.length + " sites)"} right={<span style={{ fontSize: 12, color: T.ink500 }}>{groups.length} pays</span>}>
     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }} role="group" aria-label="Régions">
       {MAP_REGIONS.map(([id, l, b]) => { const n = id === "monde" ? points.length : points.filter(p => inBox(p, b)).length, on = reg === id;
         return <button key={id} type="button" aria-pressed={on} onClick={() => goReg(id)} disabled={!n && id !== "monde"}

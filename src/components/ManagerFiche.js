@@ -90,7 +90,7 @@ function Donut({v,size=42}){
 
 // Zone de commentaire : enregistrée à la sortie du champ (ou Ctrl/Cmd+Entrée), Échap annule.
 // Vide = discrète (pointillés) ; remplie = filet laiton. Le texte vide efface la note.
-function NoteField({value,onSave,placeholder,max=NOTE_MAX,big}){
+function NoteField({value,onSave,placeholder,max=NOTE_MAX,big,label}){
   const [v,setV]=useState(value||"");const [foc,setFoc]=useState(false);const [st,setSt]=useState("");
   useEffect(()=>{if(!foc)setV(value||"");},[value,foc]);
   const commit=async()=>{const t=v.trim();if(t===(value||"").trim()){setV(value||"");return;}setSt("…");const ok=await onSave(t);setSt(ok===false?"échec":"");setTimeout(()=>setSt(""),1600);};
@@ -99,7 +99,7 @@ function NoteField({value,onSave,placeholder,max=NOTE_MAX,big}){
   // Hauteur automatique : le champ s'agrandit avec le texte (rien de tronqué à l'écran).
   useLayoutEffect(()=>{const el=ref.current;if(!el)return;el.style.height="auto";el.style.height=(el.scrollHeight+2)+"px";},[v,foc]);
   return(<div style={{marginTop:4}}>
-    <textarea ref={ref} value={v} maxLength={max} rows={1} placeholder={placeholder||"＋ Commentaire de synthèse"}
+    <textarea ref={ref} value={v} maxLength={max} rows={1} aria-label={label||String(placeholder||"Commentaire de synthèse").replace(/^＋\s*/,"")} placeholder={placeholder||"＋ Commentaire de synthèse"}
       onFocus={()=>setFoc(true)} onBlur={()=>{setFoc(false);commit();}} onChange={e=>setV(e.target.value)}
       onKeyDown={e=>{if(e.key==="Escape"){setV(value||"");e.currentTarget.blur();}else if(e.key==="Enter"&&(e.metaKey||e.ctrlKey))e.currentTarget.blur();}}
       style={{width:"100%",boxSizing:"border-box",resize:"none",fontFamily:T.font,fontSize:big?FZ.sm:FZ.xs,lineHeight:1.4,color:T.ink700,background:foc?T.card:T.accent+(filled?"1c":"0d"),
@@ -164,13 +164,13 @@ function DelayComposer({types,onAdd,onNewType}){
   const createType=async()=>{const v=newType.trim();if(!v)return;if(!(types||[]).includes(v)&&onNewType)await onNewType([...(types||[]),v]);setType(v);setNewType("");setCreating(false);};
   return(<div style={{marginBottom:8,background:T.card,borderRadius:12,padding:8,display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
     {creating?<>
-      <input autoFocus={AF} type="text" value={newType} maxLength={60} onChange={e=>setNewType(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")createType();if(e.key==="Escape")setCreating(false);}} placeholder="Nom de la nouvelle cause de retard" style={{...FIELD,flex:"1 1 200px"}}/>
+      <input autoFocus={AF} aria-label="Nouvelle cause de retard" type="text" value={newType} maxLength={60} onChange={e=>setNewType(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")createType();if(e.key==="Escape")setCreating(false);}} placeholder="Nom de la nouvelle cause de retard" style={{...FIELD,flex:"1 1 200px"}}/>
       <button onClick={createType} disabled={!newType.trim()} style={BTN(!!newType.trim())}>Créer la cause</button>
       <button onClick={()=>{setCreating(false);setNewType("");}} style={{border:"none",background:"transparent",color:T.ink500,cursor:"pointer",fontFamily:T.font,fontSize:FZ.sm,fontWeight:600}}>Annuler</button>
     </>:<>
-      <select value={type} onChange={e=>{if(e.target.value===NEW)setCreating(true);else setType(e.target.value);}} style={{...FIELD,flex:"1 1 150px"}}>{(types||[]).map(t=><option key={t} value={t}>{t}</option>)}{onNewType&&<option value={NEW}>＋ Nouvelle cause…</option>}</select>
-      <input type="number" value={days} onChange={e=>setDays(e.target.value)} placeholder="jours" style={{...FIELD,width:70}}/>
-      <input type="text" value={note} onChange={e=>setNote(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")submit();}} placeholder="Précision (facultatif)" style={{...FIELD,flex:"2 1 160px"}}/>
+      <select aria-label="Cause du retard" value={type} onChange={e=>{if(e.target.value===NEW)setCreating(true);else setType(e.target.value);}} style={{...FIELD,flex:"1 1 150px"}}>{(types||[]).map(t=><option key={t} value={t}>{t}</option>)}{onNewType&&<option value={NEW}>＋ Nouvelle cause…</option>}</select>
+      <input type="number" aria-label="Retard en jours" value={days} onChange={e=>setDays(e.target.value)} placeholder="jours" style={{...FIELD,width:70}}/>
+      <input type="text" aria-label="Précision sur le retard" value={note} onChange={e=>setNote(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")submit();}} placeholder="Précision (facultatif)" style={{...FIELD,flex:"2 1 160px"}}/>
       <button onClick={submit} disabled={!ok} style={BTN(ok)}>{busy?"…":"Ajouter"}</button>
     </>}
   </div>);
@@ -973,7 +973,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
           {listMini&&<button type="button" onClick={()=>setListMini(false)} aria-label="Ouvrir la liste des projets" title="Ouvrir la liste des projets" style={{border:"none",background:"transparent",color:T.ink700,cursor:"pointer",writingMode:"vertical-rl",transform:"rotate(180deg)",fontFamily:T.font,fontSize:FZ.xs,fontWeight:600,padding:"10px 0",minHeight:120,letterSpacing:".04em"}}>Projets · {filteredList.length}</button>}
           <button type="button" onClick={()=>setListMini(v=>!v)} aria-label={listMini?"Agrandir la liste":"Réduire la liste"} title={listMini?"Agrandir la liste":"Réduire la liste pour laisser plus de place à la fiche"} style={{border:"1px solid "+T.line,background:"transparent",color:T.ink500,borderRadius:8,width:28,height:28,cursor:"pointer",display:"inline-flex",alignItems:"center",justifyContent:"center",padding:0}}><span style={{display:"inline-flex",transform:"rotate("+(listMini?"-90deg":"90deg")+")"}}><NavIcon name="chevronDown" size={15}/></span></button>
         </div>
-        {!listMini&&<input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher un PJ, projet, pays, chef, gamme…" style={{width:"100%",padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.xs,fontFamily:T.font,color:T.ink700,boxSizing:"border-box"}}/>}
+        {!listMini&&<input type="text" value={search} onChange={e=>setSearch(e.target.value)} aria-label="Rechercher un projet" placeholder="Rechercher un PJ, projet, pays, chef, gamme…" style={{width:"100%",padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.xs,fontFamily:T.font,color:T.ink700,boxSizing:"border-box"}}/>}
         {!listMini&&<div style={{fontSize:FZ.xs,color:T.ink300,marginTop:4,display:"flex",alignItems:"center",justifyContent:"space-between",gap:6}}><span>{filteredList.length} PJ</span><span style={{display:"inline-flex",gap:10}}><label style={{display:"inline-flex",alignItems:"center",gap:4,cursor:"pointer"}}><input type="checkbox" checked={showShipped} onChange={e=>setShowShipped(e.target.checked)}/>Expédiées</label><label style={{display:"inline-flex",alignItems:"center",gap:4,cursor:"pointer"}}><input type="checkbox" checked={showSlots} onChange={e=>setShowSlots(e.target.checked)}/>Slots libres</label></span></div>}
         {!listMini&&<div role="tablist" aria-label="Regrouper la liste" style={{display:"flex",gap:2,marginTop:6,background:T.surface,borderRadius:8,padding:2}}>
           {[["chef","Par chef"],["all","Tous"],["mine","Mes PJ"]].map(([id,l])=><button key={id} type="button" role="tab" aria-selected={groupBy===id} onClick={()=>setGroupBy(id)} style={{flex:1,border:"none",borderRadius:8,minHeight:26,fontSize:FZ.xs,fontWeight:600,fontFamily:T.font,cursor:"pointer",background:groupBy===id?T.card:"transparent",color:groupBy===id?T.teal600:T.ink500,boxShadow:groupBy===id?T.shadowSm:"none"}}>{l}{id==="mine"&&myPjs.size?" "+myPjs.size:""}</button>)}
@@ -1112,7 +1112,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
 
         {/* ── Commentaire général : le seul commentaire repris dans le CODIR ── */}
         {savePjMetaOverride&&<Section title="Commentaire général" right={<span style={{fontSize:FZ.xs,color:T.ink300,whiteSpace:"nowrap"}}>repris dans le CODIR et le rapport chef de projet</span>}>
-          <NoteField big max={400} value={notes.gen} onSave={t=>saveNote("gen",t)} placeholder="＋ Commentaire général sur le projet (synthèse en 2-3 lignes)"/>
+          <NoteField big label="Commentaire général" max={400} value={notes.gen} onSave={t=>saveNote("gen",t)} placeholder="＋ Commentaire général sur le projet (synthèse en 2-3 lignes)"/>
         </Section>}
 
         {/* ── Statut global : 4 feux + explication de chacun ── */}
@@ -1147,7 +1147,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
               <div key={k} className="enogia-pilot-card" style={{background:T.card,borderRadius:8,padding:"6px 8px",minWidth:0,display:"flex",flexDirection:"column"}}>
                 <Cap style={{marginBottom:4}}>{lab}</Cap>{val}
                 {sub&&<div style={{fontSize:FZ.xs,color:T.ink300,marginTop:3}}>{sub}</div>}
-                {savePjMetaOverride&&<NoteField value={notes[k]} onSave={t=>saveNote(k,t)} placeholder="＋ Commentaire de synthèse"/>}
+                {savePjMetaOverride&&<NoteField label={"Commentaire : "+lab} value={notes[k]} onSave={t=>saveNote(k,t)} placeholder="＋ Commentaire de synthèse"/>}
               </div>)}
           </div>
         </Section>

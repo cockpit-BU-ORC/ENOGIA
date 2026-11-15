@@ -59,7 +59,7 @@ const Grid = ({ min = 220, children, style }) => <div style={{ display: "grid", 
 function Card({ title, sub, table, children }) {
   const [tab, setTab] = useState(false);
   return (<section aria-label={title} style={card}>
-    <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><h3 style={{ margin: 0, fontSize: 14.5, fontWeight: 600, color: T.ink900 }}>{title}</h3><span style={{ flex: 1 }} />
+    <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><h2 style={{ margin: 0, fontSize: 14.5, fontWeight: 600, color: T.ink900 }}>{title}</h2><span style={{ flex: 1 }} />
       {table && <button type="button" onClick={() => setTab(v => !v)} style={{ border: "none", background: "transparent", color: T.ink500, fontWeight: 600, fontSize: 12, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2, fontFamily: T.font }}>{tab ? "Voir le graphique" : "Voir en tableau"}</button>}</div>
     {sub && <div style={{ fontSize: 12.5, color: T.ink500, margin: "1px 0 8px" }}>{sub}</div>}
     {tab && table ? <Table {...table} /> : children}
@@ -130,7 +130,7 @@ function Dumbbell({ rows, onOpenPj }) {
 }
 function Actions({ items, onOpenPj }) {
   return <section aria-label="À faire" style={{ ...card, marginTop: 12 }}>
-    <h3 style={{ margin: "0 0 6px", fontSize: 14.5, fontWeight: 600, color: T.ink900 }}>À faire</h3>
+    <h2 style={{ margin: "0 0 6px", fontSize: 14.5, fontWeight: 600, color: T.ink900 }}>À faire</h2>
     <ol style={{ margin: 0, paddingLeft: 20, color: T.ink700, fontSize: 13.5 }}>{items.map((a, i) => <li key={i} style={{ margin: "3px 0" }}><b style={{ color: T.ink900, fontWeight: 600 }}>{a.b}</b>{a.t ? " " + a.t : ""}{a.pjs && a.pjs.length > 0 && <span style={{ display: "inline-flex", gap: 8, marginLeft: 6, flexWrap: "wrap" }}>{a.pjs.map(p => <span key={p}>{pjCell(p, onOpenPj)}</span>)}</span>}</li>)}</ol>
   </section>;
 }
@@ -162,7 +162,7 @@ export function KpiStory({ tab, rows, driftRows, targets, metrics, saveTargets, 
       <Grid><Bullet k="realisation" v={metrics.realisation} targets={targets} max={100} label={"Jalons tenus · " + (periodLabel || "mois écoulé")} /><Bullet k="livraisons" v={metrics.livraisons} targets={targets} label={(metrics.months && metrics.months.length > 1 ? "Expédiées par mois · " : "Expédiées · ") + (periodLabel || "mois écoulé")} /></Grid>
       <Grid min={460} style={{ marginTop: 12 }}>
         <Card title="Départs, tests terminés et arrivées par mois" sub="un groupe par mois · plein = fait · pointillé = prévu" table={{ head: ["Mois", "Départs", "Tests terminés", "Arrivées", "En retard"], rows: b.months.map(m => [m.m + " (" + m.kind + ")", m.d, m.t, m.a, m.late]), right: [1, 2, 3, 4] }}><MonthCols months={b.months} /></Card>
-        <section aria-label="Le mois en une ligne" style={card}><h3 style={{ margin: 0, fontSize: 14.5, fontWeight: 600 }}>Le mois en une ligne</h3><div style={{ fontSize: 12.5, color: T.ink500, margin: "1px 0 8px" }}>notes saisies plus bas, mois par mois</div>
+        <section aria-label="Le mois en une ligne" style={card}><h2 style={{ margin: 0, fontSize: 14.5, fontWeight: 600 }}>Le mois en une ligne</h2><div style={{ fontSize: 12.5, color: T.ink500, margin: "1px 0 8px" }}>notes saisies plus bas, mois par mois</div>
           {b.months.map(m => <div key={m.key} style={{ display: "grid", gridTemplateColumns: "92px 1fr", gap: 8, padding: "6px 0", borderTop: "1px solid " + T.line, fontSize: 13 }}><b>{m.m}</b><span style={{ color: (notes[m.key] || {}).text ? T.ink700 : T.ink500, fontStyle: (notes[m.key] || {}).text ? "normal" : "italic" }}>{(notes[m.key] || {}).text || "pas encore écrite"}</span></div>)}</section>
       </Grid>
       <Actions items={b.actions} onOpenPj={onOpenPj} />

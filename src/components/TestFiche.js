@@ -80,7 +80,7 @@ export function BookStep({ r, plan, book, bookApi, canMark, saveTests, who, canA
   return <>
     <div style={{ display: "grid", gridTemplateColumns: "minmax(160px,200px) minmax(0,1fr)", gap: 24, alignItems: "start" }} className="enogia-book-cover">
       <button type="button" onClick={() => { setFocus(null); setOpen(true); }} aria-label={"Ouvrir le livret de configuration de " + r.pj}
-        style={{ position: "relative", aspectRatio: "210 / 297", borderRadius: "4px 12px 12px 4px", background: T.navy700 || T.teal500, color: T.card, padding: "20px 14px 14px 22px", boxShadow: T.shadowLg, border: "none", textAlign: "left", cursor: "pointer", fontFamily: T.font }}>
+        style={{ position: "relative", aspectRatio: "210 / 297", borderRadius: "4px 12px 12px 4px", background: T.navy700 || T.teal500, color: T.onFill, padding: "20px 14px 14px 22px", boxShadow: T.shadowLg, border: "none", textAlign: "left", cursor: "pointer", fontFamily: T.font }}>
         <span aria-hidden="true" style={{ position: "absolute", left: 9, top: 0, bottom: 0, width: 2, background: "color-mix(in srgb, " + T.card + " 22%, transparent)" }} />
         <span aria-hidden="true" style={{ position: "absolute", right: 14, top: -4, width: 16, height: 40, background: T.amber500, clipPath: "polygon(0 0,100% 0,100% 100%,50% 80%,0 100%)" }} />
         <span style={{ display: "block", fontSize: 11, opacity: 0.8 }}>{book.ref || "ENOGIA"}</span>

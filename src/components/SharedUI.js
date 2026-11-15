@@ -84,7 +84,7 @@ export function DropFilter({label,options,selected,onChange,getLabel,icon,sort})
       {/* Bouton resserré (demandé explicitement : "les filtres ... sont trop grandes ... plus
           discret") — mêmes proportions sur le Gantt et le Calendrier (et ici, partout où ce
           composant est utilisé). */}
-      <button ref={btnRef} onClick={openMenu} style={icon?{padding:"2px 4px",borderRadius:8,border:"none",background:(!all||(sort&&sort.active))?T.teal100:"transparent",color:(!all||(sort&&sort.active))?T.teal600:T.ink300,fontSize:FZ.xs,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:3,verticalAlign:"middle",marginLeft:4}:{padding:"4px 8px",borderRadius:8,border:"1px solid "+(!all||open?T.teal500:T.line),background:!all?T.teal100:T.card,color:!all?T.teal600:T.ink700,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:4,whiteSpace:"nowrap",fontFamily:T.font,transition:"border-color .15s"}}>
+      <button type="button" ref={btnRef} onClick={openMenu} aria-label={icon?"Filtrer et trier : "+label:undefined} aria-haspopup="menu" style={icon?{padding:"2px 4px",borderRadius:8,border:"none",background:(!all||(sort&&sort.active))?T.teal100:"transparent",color:(!all||(sort&&sort.active))?T.teal600:T.ink300,fontSize:FZ.xs,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:3,verticalAlign:"middle",marginLeft:4}:{padding:"4px 8px",borderRadius:8,border:"1px solid "+(!all||open?T.teal500:T.line),background:!all?T.teal100:T.card,color:!all?T.teal600:T.ink700,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:4,whiteSpace:"nowrap",fontFamily:T.font,transition:"border-color .15s"}}>
         {icon?(<>{!all&&selected.size}{sort&&sort.active&&<span aria-hidden="true" style={{fontSize:FZ.xs,fontWeight:600,color:T.teal600,lineHeight:1}}>{sort.active==="desc"?"↓":"↑"}</span>}<NavIcon name="chevronDown" size={10}/></>):(<>{label}{!all?" ("+selected.size+")":""}<NavIcon name="chevronDown" size={11}/></>)}
       </button>
       {/* Popover affiné (demandé explicitement : "les filtres sur les colonnes sont grossiers quand
@@ -504,9 +504,10 @@ export function ChipGroup({ options, value, onChange, label, multi }) {
   </div>;
 }
 
-export function Panel({ title, right, children, pad = 14, style, id, as: Tag = "section" }) {
+export function Panel({ title, right, children, pad = 14, style, id, as: Tag = "section", level = 3 }) { // v348 : level = niveau du titre (2 sous le h1 d'une page)
+  const H = "h" + level;
   return <Tag id={id} aria-label={typeof title === "string" ? title : undefined} style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: pad, display: "flex", flexDirection: "column", gap: 10, minWidth: 0, ...style }}>
-    {(title || right) && <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>{title && <h3 style={{ margin: 0, fontFamily: T.font, fontSize: FZ.md, fontWeight: 600, color: T.ink900, flex: 1, minWidth: 0 }}>{title}</h3>}{right}</div>}
+    {(title || right) && <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>{title && <H style={{ margin: 0, fontFamily: T.font, fontSize: FZ.md, fontWeight: 600, color: T.ink900, flex: 1, minWidth: 0 }}>{title}</H>}{right}</div>}
     {children}
   </Tag>;
 }

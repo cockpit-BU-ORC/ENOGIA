@@ -18,7 +18,7 @@ export function EtatSelect({value,onChange,onCreate,compact,pill}){
       {onCreate&&<option value={NEW_ETAT}>＋ Créer / gérer les états…</option>}
     </select></span>);
   return(<div style={{position:"relative",display:"inline-block"}}>
-    <select value={value} onChange={e=>{if(e.target.value===NEW_ETAT){if(onCreate)onCreate();return;}onChange(e);}} style={{appearance:"none",WebkitAppearance:"none",MozAppearance:"none",padding:compact?"2px 20px 2px 9px":"4px 24px 4px 12px",borderRadius:999,border:"1px solid "+m.border,background:m.bg,color:m.text,fontSize:FZ.xs,fontWeight:600,fontFamily:T.font,cursor:"pointer",minWidth:compact?0:150,maxWidth:"100%"}}>
+    <select aria-label="État de la machine" value={value} onChange={e=>{if(e.target.value===NEW_ETAT){if(onCreate)onCreate();return;}onChange(e);}} style={{appearance:"none",WebkitAppearance:"none",MozAppearance:"none",padding:compact?"2px 20px 2px 9px":"4px 24px 4px 12px",borderRadius:999,border:"1px solid "+m.border,background:m.bg,color:m.text,fontSize:FZ.xs,fontWeight:600,fontFamily:T.font,cursor:"pointer",minWidth:compact?0:150,maxWidth:"100%"}}>
       {options.map(o=><option key={o} value={o} disabled={o===value&&!ASSIGNABLE_ETATS.includes(o)} style={{background:T.card,color:T.ink900,fontWeight:600}}>{(ETAT_META[o]||ETAT_META["A_DEFINIR"]).label}</option>)}
       {onCreate&&<option value={NEW_ETAT} style={{background:T.card,color:T.teal600,fontWeight:600}}>＋ Créer / gérer les états…</option>}
     </select>

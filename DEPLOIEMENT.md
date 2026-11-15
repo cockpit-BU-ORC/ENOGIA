@@ -2520,3 +2520,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Enregistrement : témoin unique dans les onglets ; commentaire d'axe seulement en vigilance / à risque ; Entrée pour ajouter une action.
 - Aucune clé localStorage ; règles Firestore inchangées ; données inchangées.
 - Fichiers : components/ManagerFiche.js, styles.css, demo/demoPages.js, versions.
+
+## v348 — audit accessibilité (WCAG 2.1 AA)
+
+- Bord des champs à 3:1 (jeton fieldLine, variable --e-field-line).
+- Échecs / retards hachurés, « ✓ terminé », nombre d'échecs écrit ; couverture du livret lisible en sombre.
+- Titres sans saut (Panel level, KPI, Besoins turbines) ; libellés de champs à la source.
+- Aucune clé localStorage ; règles Firestore inchangées.
+- Fichiers : theme.js, App.js, styles.css, components/TestFiche.js, TestsTab.js, SharedUI.js, SavPage.js, InboxPage.js, KpiStory.js, TurbinesHub.js, ManagerFiche.js, EtatControls.js, versions.

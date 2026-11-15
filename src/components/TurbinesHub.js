@@ -301,7 +301,7 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
             // v302 (demandé : « plus léger sur ORC (bleu léger) et violet sur SAV ») : bleu information très pâle / violet pâle, mêlés au fond de carte
             const rk = rankOf.get(n.key), bgC = n.kind === "sav" ? "color-mix(in srgb, " + T.violet100 + " 80%, " + T.card + ")" : "color-mix(in srgb, " + T.info100 + " 45%, " + T.card + ")";
             return <React.Fragment key={n.key}>
-              {head && <h3 className="enogia-nd-month enogia-nd-glass" style={{ gridColumn: "1 / -1", top: barH, margin: "2px -12px 0", padding: "7px 14px", fontSize: 13, fontWeight: 600, color: T.ink700, fontFamily: T.font }}>{monthLab(n.date)}</h3>}
+              {head && <h2 className="enogia-nd-month enogia-nd-glass" style={{ gridColumn: "1 / -1", top: barH, margin: "2px -12px 0", padding: "7px 14px", fontSize: 13, fontWeight: 600, color: T.ink700, fontFamily: T.font }}>{monthLab(n.date)}</h2>}
               <article className="enogia-nd-need" aria-label={"Besoin n° " + rk + ", " + (n.kind === "sav" ? "SAV " : "ORC ") + n.label} style={{ display: "flex", flexDirection: "column", gap: 6, padding: "8px 10px", borderRadius: 12, minWidth: 0, boxSizing: "border-box", background: bgC,
               boxShadow: "inset 0 0 0 " + (n.late || badI.length ? "1.5px " + T.red600 : "1px " + (done ? T.emerald600 : n.kind === "sav" ? "color-mix(in srgb, " + T.violet500 + " 45%, transparent)" : "color-mix(in srgb, " + T.info600 + " 22%, transparent)")) }}>
               <div style={{ display: "flex", alignItems: "center", gap: "4px 6px", flexWrap: "wrap", minWidth: 0, minHeight: 24 }}>

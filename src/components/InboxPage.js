@@ -26,7 +26,7 @@ export function InboxPage({ popup, me, comments, data, resolveComment, canSeePri
     {popup ? <div style={{ padding: "2px 4px" }}><div style={{ fontSize: FZ.md, fontWeight: 600, color: T.ink900, fontFamily: T.fontDisplay }}>À traiter</div><div style={{ fontSize: FZ.xs, color: T.ink500 }}>{lead}</div></div>
       : <PageHead title="À traiter" sub={lead} accent={T.red500} />}
 
-    <Panel title={<span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>Demandes à valider {acts.length > 0 && <Pill tone="bad">{acts.reduce((a, x) => a + (x.n || 1), 0)}</Pill>}</span>}>
+    <Panel level={2} title={<span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>Demandes à valider {acts.length > 0 && <Pill tone="bad">{acts.reduce((a, x) => a + (x.n || 1), 0)}</Pill>}</span>}>
       {acts.length === 0 ? <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Aucune demande en attente. Les demandes d'intervention SAV arriveront ici.</div>
         : acts.map((a, i) => <div key={a.id} style={{ borderTop: i ? "1px solid " + T.line : "none", paddingTop: i ? 10 : 0, display: "flex", flexDirection: "column", gap: 6 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
@@ -46,7 +46,7 @@ export function InboxPage({ popup, me, comments, data, resolveComment, canSeePri
         </div>)}
     </Panel>
 
-    <Panel title={<span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>Vous êtes cité {unseen.length > 0 && <Pill tone="bad">{unseen.length} à voir</Pill>}{seenL.length > 0 && <Pill tone="muted">{seenL.length} vu{seenL.length > 1 ? "s" : ""}, pas traité{seenL.length > 1 ? "s" : ""}</Pill>}</span>}>
+    <Panel level={2} title={<span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>Vous êtes cité {unseen.length > 0 && <Pill tone="bad">{unseen.length} à voir</Pill>}{seenL.length > 0 && <Pill tone="muted">{seenL.length} vu{seenL.length > 1 ? "s" : ""}, pas traité{seenL.length > 1 ? "s" : ""}</Pill>}</span>}>
       {ments.length === 0 ? <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Personne ne vous attend dans un commentaire.</div>
         : [...unseen, ...seenL].map(({ pj, idx, c }, k) => { const seen = isSeenFor(c, me); return <Row key={pj + "-" + idx} first={k === 0}>
           <PjBtn pj={pj} onClick={() => onOpen(pj, "comments")} />
@@ -61,7 +61,7 @@ export function InboxPage({ popup, me, comments, data, resolveComment, canSeePri
         </Row>; })}
     </Panel>
 
-    {asg.length > 0 && <Panel title={<span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>Vous êtes affecté aux tests <Pill tone="bad">{asg.length}</Pill></span>} right={<Btn size="sm" onClick={onSeenAssign}>Tout marquer vu</Btn>}>
+    {asg.length > 0 && <Panel level={2} title={<span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>Vous êtes affecté aux tests <Pill tone="bad">{asg.length}</Pill></span>} right={<Btn size="sm" onClick={onSeenAssign}>Tout marquer vu</Btn>}>
       {asg.map((a, k) => { const r = rowOf(a.pj), from = a.from || String(r.tests || "").slice(0, 10), to = a.to || String(r.testsFin || r.tests || "").slice(0, 10); return <Row key={a.pj + a.at} first={k === 0}>
         <PjBtn pj={a.pj} onClick={() => onOpenTests && onOpenTests(a.pj)} />
         <span style={{ flex: 1, minWidth: 0, fontSize: FZ.sm, color: T.ink700 }}>{r.gamme ? r.gamme + " · " : ""}{from ? from.slice(8, 10) + "/" + from.slice(5, 7) + (to && to !== from ? " → " + to.slice(8, 10) + "/" + to.slice(5, 7) : "") : "période à fixer"}{a.by ? " · par " + a.by : ""}</span>
@@ -69,7 +69,7 @@ export function InboxPage({ popup, me, comments, data, resolveComment, canSeePri
       </Row>; })}
     </Panel>}
 
-    <Panel title="Pour information" right={chg.length > 0 ? <Btn size="sm" onClick={onSeenPjChanges}>Tout marquer vu</Btn> : null}>
+    <Panel level={2} title="Pour information" right={chg.length > 0 ? <Btn size="sm" onClick={onSeenPjChanges}>Tout marquer vu</Btn> : null}>
       {!chg.length && !video && <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Rien de nouveau.</div>}
       {video && <Row first>
         <NavIcon name="play" size={16} />

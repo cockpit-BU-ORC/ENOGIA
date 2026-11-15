@@ -652,3 +652,7 @@ b, strong { font-weight: 600; }
 
 /* v347 : texte lu par les lecteurs d’\écran seulement */
 .enogia-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* v348 (audit accessibilité, WCAG 1.4.11) : un champ de saisie dessiné avec le filet du thème (clair #DDE2EA, sombre #2A2C31) prend un bord à 3:1 ;
+   les champs volontairement sans bord ou à bord transparent (édition sur place) ne sont pas touchés */
+:is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea):is([style*="221, 226, 234"], [style*="42, 44, 49"]) { border-color: var(--e-field-line, #7E8796) !important; }
