@@ -283,7 +283,7 @@ export function WorkshopScreen({ data, onClose, darkMode, productionExclusions, 
     </div>
     <div key={cur.id} className="enogia-fade-in" style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>{body}</div>
     <div style={{ display: "flex", alignItems: "center", gap: u(14), marginTop: u(18) }}>
-      {slides.map((s, i) => <span key={s.id} aria-hidden="true" style={{ width: i === idx % n ? u(46) : u(14), height: u(14), borderRadius: 999, background: i === idx % n ? T.accent : T.line, transition: "width var(--e-dur-in)" }}/>)}
+      {slides.map((s, i) => <span key={s.id} aria-hidden="true" style={{ width: i === idx % n ? u(46) : u(14), height: u(14), borderRadius: 999, background: i === idx % n ? T.accent : T.line }}/>)}
       <span style={{ flex: 1 }}/>
       <span style={{ fontSize: u(18), color: T.ink500 }}>{paused ? "⏸ En pause · " : ""}Échap : quitter · ← → : changer de page · Espace : pause</span>
     </div>

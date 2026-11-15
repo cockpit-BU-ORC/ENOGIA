@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { Arrange } from "./Arrange";
 import { T, FZ } from "../theme";
-import { presenceKind, presenceDates, ETAT_META, PjPlate } from "../pjMeta";
+import { presenceKind, presenceDates, ETAT_META, PjPlate, getPjMeta, chefsOf, CountryFlag } from "../pjMeta";
 import { NavIcon } from "./SharedUI";
 import { planOf, catalogOf, activeSections, progressOf, effRange, isForced, testersOf, findConflicts } from "../testPlan";
 import { turbineStatus } from "../turbines";
@@ -403,6 +403,41 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
       </div>}
       {L.length > MAX && more("Voir les " + L.length + " machines dans la Liste", () => onGo && onGo("table"))}</>); } };
 
+  // v353 (demandé : « plus de modèles de cadrans ») : sept cadrans de plus, inactifs par défaut
+  const countBy = (list, keyOf) => { const m = new Map(); list.forEach(r => { const ks = [].concat(keyOf(r) || []); (ks.length ? ks : ["—"]).forEach(k => m.set(k, (m.get(k) || 0) + 1)); }); return [...m.entries()].sort((a, b) => b[1] - a[1]); };
+  const barList = (id, title, sub, color, L, labelEl) => { const max = Math.max(1, ...L.map(x => x[1])); return sec(id, title, color, <><Head title={title} sub={sub} count={L.reduce((a, x) => a + x[1], 0)} />
+    {L.length === 0 ? empty("inbox", "Aucune machine", "") : L.slice(0, 8).map(([k, c]) => <div key={k} style={{ display: "grid", gridTemplateColumns: "minmax(0,160px) 1fr 32px", gap: 8, alignItems: "center", minHeight: 28, fontSize: FZ.sm }}>
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: T.ink700 }}>{labelEl ? labelEl(k) : k}</span>{bar(c / max * 100, color)}
+      <b style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>{c}</b></div>)}</>); };
+  const upcoming = (field, days) => { const end = addD(today, days); return open.filter(r => dIso(r[field]) && dIso(r[field]) >= today && dIso(r[field]) <= end).sort((a, b) => dIso(a[field]).localeCompare(dIso(b[field]))); };
+  const jIn = d => { const n = Math.round((new Date(d + "T12:00:00") - new Date(today + "T12:00:00")) / 864e5); return n <= 0 ? "aujourd'hui" : "J-" + n; };
+  // tableau des départs : compte à rebours en grand (direction B de la maquette v352)
+  W.depBoard = { label: "Tableau des départs", span: 8, render: () => { const L = upcoming("depart", 60).slice(0, 6);
+    return sec("depBoard", "Tableau des départs", S.depart.ring, <><Head title="Tableau des départs" sub="les 60 prochains jours" count={L.length} />
+      {L.length === 0 ? empty("check", "Aucun départ dans les 60 jours", "") : L.map((r, i) => { const m = ETAT_META[r.etat] || {}; return (
+        <button key={r.pj} type="button" onClick={() => onOpenPj && onOpenPj(r.pj)} style={{ display: "grid", gridTemplateColumns: "92px auto minmax(0,1fr) auto", gap: 12, alignItems: "center", width: "100%", minHeight: 44, border: "none", borderTop: i ? "1px solid " + T.line : "none", background: "transparent", padding: "4px 0", cursor: "pointer", fontFamily: T.font, textAlign: "left", color: T.ink900 }}>
+          <b style={{ fontFamily: T.fontDisplay, fontSize: 20, fontWeight: 600, color: r.drift > 0 ? T.red600 : T.ink900, fontVariantNumeric: "tabular-nums" }}>{jIn(dIso(r.depart))}</b>
+          <PjPlate pj={r.pj} style={{ boxShadow: "inset 3px 0 0 " + (m.bar || T.ink300) }} />
+          <span style={{ fontSize: FZ.sm, color: T.ink700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{nomOf(r) || r.gamme || ""} · {m.label || r.etat}</span>
+          <span style={{ fontSize: 13, fontWeight: 500, color: r.drift > 0 ? T.red600 : T.ink500, whiteSpace: "nowrap" }}>{r.drift > 0 ? "+" + r.drift + " j" : "à l'heure"}</span>
+        </button>); })}</>); } };
+  // écart au planning initial : combien en avance, à l'heure, en retard
+  W.ecarts = { label: "Écarts au planning initial", span: 4, render: () => { const L = open.filter(r => r.drift != null);
+    const g = [["En avance", L.filter(r => r.drift < 0).length, T.emerald600], ["À l'heure", L.filter(r => r.drift === 0).length, T.ink500], ["1 à 10 j de retard", L.filter(r => r.drift > 0 && r.drift <= 10).length, T.amber600], ["Plus de 10 j", L.filter(r => r.drift > 10).length, T.red600]];
+    const max = Math.max(1, ...g.map(x => x[1]));
+    return sec("ecarts", "Écarts au planning initial", A.orange ? A.orange.ink || S.production.ring : S.production.ring, <><Head title="Écarts au planning initial" sub="départ, machines en cours" count={L.length} />
+      {g.map(([l, c, col]) => <div key={l} style={{ display: "grid", gridTemplateColumns: "minmax(0,140px) 1fr 32px", gap: 8, alignItems: "center", minHeight: 28, fontSize: FZ.sm }}>
+        <span style={{ color: T.ink700 }}>{l}</span>{bar(c / max * 100, col)}<b style={{ textAlign: "right", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{c}</b></div>)}</>); } };
+  W.parChef = { label: "Machines par chef de projet", span: 4, render: () => barList("parChef", "Machines par chef de projet", "machines en cours", S.production.ring, countBy(open, r => chefsOf(getPjMeta(r.pj, r)))) };
+  W.parPays = { label: "Machines par pays", span: 4, render: () => barList("parPays", "Machines par pays", "machines en cours", S.arrivee.ring, countBy(open, r => getPjMeta(r.pj, r).pays || "—"), k => <><CountryFlag pays={k} size={13} />{k}</>) };
+  W.parGamme = { label: "Machines par gamme", span: 4, render: () => barList("parGamme", "Machines par gamme", "machines en cours", S.tests.ring, countBy(open, r => r.gamme || "—")) };
+  W.finProd = { label: "Fins de production à venir", span: 6, render: () => { const L = upcoming("finProd", 30);
+    return sec("finProd", "Fins de production à venir", S.finProd.ring, <><Head title="Fins de production à venir" sub="les 30 prochains jours" count={L.length} />
+      {L.length === 0 ? empty("check", "Aucune fin de production dans les 30 jours", "") : L.slice(0, 6).map((r, i) => <Row key={r.pj} first={i === 0} pj={r.pj} main={nomOf(r) || r.gamme || ""} right={fmtD(r.finProd)} />)}</>); } };
+  W.arrivees30 = { label: "Prochaines arrivées", span: 6, render: () => { const L = upcoming("arrivee", 45);
+    return sec("arrivees30", "Prochaines arrivées", S.arrivee.ring, <><Head title="Prochaines arrivées" sub="machines qui arrivent à l'atelier, 45 jours" count={L.length} />
+      {L.length === 0 ? empty("check", "Aucune arrivée prévue", "") : L.slice(0, 6).map((r, i) => <Row key={r.pj} first={i === 0} pj={r.pj} main={nomOf(r) || r.gamme || ""} right={fmtD(r.arrivee)} />)}</>); } };
+
   /* ── disposition du poste ── */
   const avail = id => W[id] && (!W[id].only || W[id].only());
   const L = layout || {}, extra = Array.isArray(L.extra) ? L.extra : [], hidden = Array.isArray(L.hidden) ? L.hidden : [];
@@ -413,7 +448,7 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
   // v231 (demandé : « Ajouter un cadran n'est pas clair : des thèmes ou des liens avec les onglets ») : chaque cadran est rangé sous
   // la page du site d'où viennent ses données, avec une phrase qui dit ce qu'il montre.
   const THEMES = [
-    ["Vue d'ensemble — Liste et Gantt", { ligne: "les sept postes de l'atelier, chaque machine sur son poste", suiveuses: "une fiche suiveuse par machine en cours, étapes et départ", kpis: "les grands chiffres du portefeuille", departs: "les 5 prochains départs", parcours: "combien de machines à chaque étape", alertes: "les dérives fortes et les retards à déclarer", etats: "nombre de machines dans chaque état", depMois: "départs prévus sur les 6 prochains mois", shipped: "les dernières machines parties", raccourcis: "boutons vers les pages du site" }],
+    ["Vue d'ensemble — Liste et Gantt", { ligne: "les sept postes de l'atelier, chaque machine sur son poste", suiveuses: "une fiche suiveuse par machine en cours, étapes et départ", depBoard: "compte à rebours des départs des 60 jours", ecarts: "machines en avance, à l'heure ou en retard sur l'initial", parChef: "machines en cours par chef de projet", parPays: "machines en cours par pays", parGamme: "machines en cours par gamme", finProd: "fins de production des 30 jours", arrivees30: "arrivées à l'atelier des 45 jours", kpis: "les grands chiffres du portefeuille", departs: "les 5 prochains départs", parcours: "combien de machines à chaque étape", alertes: "les dérives fortes et les retards à déclarer", etats: "nombre de machines dans chaque état", depMois: "départs prévus sur les 6 prochains mois", shipped: "les dernières machines parties", raccourcis: "boutons vers les pages du site" }],
     ["Projets — Fiches projet", { pjs: "les PJ d'un chef de projet, triés par départ", jalons: "arrivées, tests et départs des 3 semaines", todo: "retards à déclarer et mentions", fat: "FAT client et NOBO à venir (mes PJ)", visites: "visites client et NOBO à venir, toutes machines", avance: "avancement moyen et PJ en avance / en retard" }],
     ["Tests — page Tests", { tests: "machines au banc et tests des 3 semaines", today: "machines au banc aujourd'hui (jour N / M)", sign: "fiches de test à signer", week: "la semaine de tests d'un testeur", arrivees: "machines qui arrivent au banc", results: "réussis et échecs des 14 derniers jours", postes: "occupation des postes de test", benchWeek: "toutes les machines au banc cette semaine" }],
     ["Atelier — Planificateur et Calendrier", { charge: "heures atelier sur 4 semaines face à la capacité", arrdep: "arrivées et départs de la semaine", montage: "machines en montage méca / élec", fermetures: "fermetures de l’atelier à venir" }],

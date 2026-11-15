@@ -48,7 +48,7 @@ export function ManagerRail({ groups, activeId, activeSub, onGo, collapsed, setC
   </nav>);
   return (<>{flyout}<nav aria-label="Navigation Manager" style={{ width: w, flex: "none", position: "sticky", top: 8, alignSelf: "flex-start", background: T.surface, border: "1px solid " + T.line, borderRadius: 12, padding: "8px 8px 10px", display: "flex", flexDirection: "column", gap: 2, overflow: "hidden", fontFamily: T.font }}>
     {groups.map(g => (<div key={g.label} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-      <div style={{fontFamily:T.font,fontSize:12,fontWeight:500,color:T.accentInk,padding: collapsed ? "6px 0 2px" : "10px 10px 3px",whiteSpace: "nowrap",textAlign: collapsed ? "center" : "left",overflow: "hidden",height: collapsed ? 14 : "auto",transition: "padding var(--e-dur-in)"}}>{collapsed ? "·" : g.label}</div>
+      <div style={{fontFamily:T.font,fontSize:12,fontWeight:500,color:T.accentInk,padding: collapsed ? "6px 0 2px" : "10px 10px 3px",whiteSpace: "nowrap",textAlign: collapsed ? "center" : "left",overflow: "hidden",height: collapsed ? 14 : "auto"}}>{collapsed ? "·" : g.label}</div>
       {g.entries.map(e => { const on = e.id === activeId; return (<React.Fragment key={e.id}>
         <button onClick={() => onGo(e.go)} title={collapsed && !fly ? e.label : undefined} aria-current={on ? "page" : undefined} aria-haspopup={collapsed ? "menu" : undefined} aria-expanded={collapsed ? !!(fly && fly.e.id === e.id) : undefined}
           onFocus={x => openFly(e, x.currentTarget)} onBlur={closeFly}

@@ -50,13 +50,13 @@
 }
 
 /* v139 : fill-mode « backwards » (et non « both ») : une fois l'animation finie, aucun transform ne reste sur l'élément, donc les fenêtres et panneaux en position:fixed qu'il contient se calent sur l'écran et non sur la page. */
-.enogia-fade-in { animation: enogiaFadeInUp .4s cubic-bezier(.2,.7,.3,1) backwards; }
+.enogia-fade-in { animation: enogiaFadeInUp var(--e-dur-in) var(--e-ease) backwards; }
 .enogia-float-in { animation: enogiaFloatIn .28s cubic-bezier(.2,.8,.3,1) backwards; }
 .enogia-modal-backdrop { animation: enogiaBackdropFade .18s ease both; }
 .enogia-modal-pop { animation: enogiaModalPop .25s cubic-bezier(.2,.85,.3,1.15) both; }
 .enogia-panel-backdrop { animation: enogiaBackdropFade .18s ease both; }
 .enogia-panel-slide { animation: enogiaPanelSlideIn .22s cubic-bezier(.2,.85,.3,1.1) both; }
-.enogia-pulse-urgent { animation: enogiaPulseRing 2.2s 3; } /* v263 : 3 pulsations à l'affichage, puis fixe (plus de mouvement permanent) */
+.enogia-pulse-urgent { animation: enogiaPulseRing var(--e-dur-long) var(--e-ease) 1; } /* v263 : 3 pulsations à l'affichage, puis fixe (plus de mouvement permanent) */
 .enogia-modal-pop-out { animation: enogiaModalPopOut .18s cubic-bezier(.4,0,.6,1) both; }
 .enogia-fade-out { animation: enogiaFadeOutDown .18s cubic-bezier(.4,0,.6,1) both; }
 /* Léger retour tactile au clic (demandé : effets sur les boutons d'action), sans dépendre d'un
@@ -136,12 +136,12 @@ input[type="checkbox"] { transition: background-color var(--e-dur-menu) ease, bo
 /* changement d'onglet (espace Manager), de PJ (fiche), arrivée d'une carte */
 .enogia-view-in { animation: enogiaViewIn .26s var(--e-ease) backwards; }
 /* barres d'avancement : elles se remplissent depuis la gauche ; les anneaux se dessinent */
-.enogia-bar-fill { animation: enogiaBarGrow .7s var(--e-ease) backwards; transition: background-color var(--e-dur-in) ease; } /* v282 : plus de largeur animée (mise en page recalculée à chaque image) */
-.enogia-ring     { animation: enogiaRingDraw .8s var(--e-ease) backwards; transition: stroke-dasharray .45s var(--e-ease), stroke var(--e-dur-in) ease; }
+.enogia-bar-fill { animation: enogiaBarGrow var(--e-dur-long) var(--e-ease) backwards; transition: background-color var(--e-dur-in) ease; } /* v282 : plus de largeur animée (mise en page recalculée à chaque image) */
+.enogia-ring     { animation: enogiaRingDraw var(--e-dur-long) var(--e-ease) backwards; transition: stroke-dasharray var(--e-dur-long) var(--e-ease), stroke var(--e-dur-in) ease; }
 /* pastille « nouveautés » : elle jaillit puis émet 3 ondes discrètes pour attirer l'œil, ensuite elle reste fixe */
-.enogia-badge-pop { animation: enogiaBadgePop .42s var(--e-ease) both, enogiaPulseRing 1.8s ease-out .5s 3; }
+.enogia-badge-pop { animation: enogiaBadgePop var(--e-dur-in) var(--e-ease) both, enogiaPulseRing var(--e-dur-long) ease-out var(--e-dur-in) 1; }
 /* tuiles qui arrivent l'une après l'autre (40 ms d'écart) */
-.enogia-stagger > * { animation: enogiaViewIn .32s var(--e-ease) backwards; }
+.enogia-stagger > * { animation: enogiaViewIn var(--e-dur-in) var(--e-ease) backwards; }
 .enogia-stagger > *:nth-child(2) { animation-delay: .04s; }
 .enogia-stagger > *:nth-child(3) { animation-delay: .08s; }
 .enogia-stagger > *:nth-child(4) { animation-delay: .12s; }
@@ -219,7 +219,7 @@ th { letter-spacing: .02em; }
 .enogia-homelink:hover { text-decoration: underline; text-underline-offset: 3px; }
 /* menu d'actions rapides (clic droit / ⋯ sur une ligne) */
 @keyframes enogiaMenuIn { from { opacity: 0; transform: translateY(-4px) scale(.97); } to { opacity: 1; transform: none; } }
-.enogia-menu { animation: enogiaMenuIn .14s var(--e-ease) both; transform-origin: top left; }
+.enogia-menu { animation: enogiaMenuIn var(--e-dur-menu) var(--e-ease) both; transform-origin: top left; }
 .enogia-menu-item { display: flex; align-items: center; gap: 10px; width: 100%; border: none; background: transparent; padding: 8px 12px; border-radius: 8px; cursor: pointer; text-align: left; font: inherit; color: inherit; }
 .enogia-menu-item:hover, .enogia-menu-item:focus-visible { background: var(--e-surface-alt, rgba(128,138,150,.14)); }
 .enogia-menu-item:focus-visible { outline: 2px solid var(--e-accent, #0E8C9E); outline-offset: -2px; } /* v340 : anneau au clavier */
@@ -227,7 +227,7 @@ th { letter-spacing: .02em; }
 tr:hover .enogia-rowact, tr:focus-within .enogia-rowact, .enogia-rowact[aria-expanded="true"] { opacity: 1; }
 @media (hover: none) { .enogia-rowact { opacity: .7; } }
 /* aperçu au survol d'une barre du Gantt */
-.enogia-ganttcard { animation: enogiaMenuIn .12s var(--e-ease) both; pointer-events: none; }
+.enogia-ganttcard { animation: enogiaMenuIn var(--e-dur-micro) var(--e-ease) both; pointer-events: none; }
 
 /* ── v162 (palette B affinée) : menu latéral « C » — liseré sur l'entrée active ── */
 .enogia-nav-btn[aria-current="page"]::before { content:""; position:absolute; left:0; top:9px; bottom:9px; width:3px; border-radius:0 3px 3px 0; background: var(--nav-mark, currentColor); }
@@ -244,8 +244,8 @@ body.enogia-present tbody td { font-size: 1.08em; }
 .enogia-mhandle:hover > span, .enogia-mhandle:focus-visible > span { background: var(--e-accent); }
 .enogia-mhandle:focus-visible { outline: none; }
 @media (max-width: 760px) { .enogia-mhandle { display: none !important; } }
-.enogia-skip { position: fixed; left: 12px; top: -48px; z-index: 11000; background: var(--e-card); color: var(--e-ink900); border: 2px solid var(--e-accent); border-radius: 12px; padding: 8px 14px; font-weight: 600; font-size: 13px; text-decoration: none; transition: top var(--e-dur-menu) ease; }
-.enogia-skip:focus { top: 12px; }
+.enogia-skip { position: fixed; left: 12px; top: -48px; z-index: 11000; background: var(--e-card); color: var(--e-ink900); border: 2px solid var(--e-accent); border-radius: 12px; padding: 8px 14px; font-weight: 600; font-size: 13px; text-decoration: none; transition: transform var(--e-dur-menu) var(--e-ease); }
+.enogia-skip:focus { transform: translateY(60px); }
 .enogia-mhandle:focus-visible > span { width: 5px; outline: 2px solid var(--e-accent); outline-offset: 2px; }
 
 /* v165 : zones cliquables élargies (WCAG 2.2, 24 px) pour les petits boutons repérés par a11yFallback.js */
@@ -323,8 +323,8 @@ button:not(:disabled):active { transform: scale(.97); }
 .enogia-flyout { animation: enogiaPopIn .18s var(--e-ease) backwards; transform-origin: left top; }
 
 /* 7. Alertes qui doivent attirer l'œil : 3 pulsations d'échelle puis immobiles (plus de halo infini en box-shadow). */
-.enogia-pulse-urgent { animation: enogiaNudge .6s ease-in-out 3; }
-.enogia-badge-pop    { animation: enogiaBadgePop .3s var(--e-ease) both, enogiaNudge .6s ease-in-out .4s 3; }
+.enogia-pulse-urgent { animation: enogiaNudge var(--e-dur-long) ease-in-out 1; }
+.enogia-badge-pop    { animation: enogiaBadgePop var(--e-dur-long) var(--e-ease) both, enogiaNudge var(--e-dur-long) ease-in-out var(--e-dur-long) 1; }
 
 /* ── v183 : sorties animées (skill animation-principles : ce qui part accélère, 60–70 % de la durée d'entrée) ── */
 @keyframes enogiaToastOut { to { opacity: 0; transform: translateX(14px); } }
@@ -334,19 +334,19 @@ button:not(:disabled):active { transform: scale(.97); }
 /* Écran de transition après connexion : logo, nom, sous-titre et barre de chargement entrent l'un après l'autre (60 ms). */
 @keyframes enogiaRise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @keyframes enogiaLoad { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-.enogia-tr > * { animation: enogiaRise .36s var(--e-ease) backwards; }
+.enogia-tr > * { animation: enogiaRise var(--e-dur-in) var(--e-ease) backwards; }
 .enogia-tr > *:nth-child(2) { animation-delay: .06s; }
 .enogia-tr > *:nth-child(3) { animation-delay: .12s; }
 .enogia-tr > *:nth-child(4) { animation-delay: .18s; }
-.enogia-tr-bar { transform-origin: left center; animation: enogiaLoad 1.8s linear .2s backwards; }
+.enogia-tr-bar { transform-origin: left center; animation: enogiaLoad var(--e-dur-long) var(--e-ease) backwards; }
 
 /* v185 : vue d'ensemble — apparition plus marquée (demandé) : cartes en cascade, anneaux dessinés l'un après l'autre (Recharts,
    600 ms + 120 ms d'écart), total qui « éclot » au centre, lignes de légende en cascade (40 ms). Exception assumée à la règle 150–300 ms. */
 @keyframes enogiaPieCard { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
 @keyframes enogiaPieTotal { 0% { opacity: 0; transform: scale(.6); } 70% { opacity: 1; transform: scale(1.08); } 100% { opacity: 1; transform: scale(1); } }
 @keyframes enogiaPieLeg { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
-.enogia-pie-card  { animation: enogiaPieCard .42s var(--e-ease) backwards; }
-.enogia-pie-total { animation: enogiaPieTotal .4s var(--e-ease) backwards; }
+.enogia-pie-card  { animation: enogiaPieCard var(--e-dur-in) var(--e-ease) backwards; }
+.enogia-pie-total { animation: enogiaPieTotal var(--e-dur-in) var(--e-ease) backwards; }
 .enogia-pie-leg   { animation: enogiaPieLeg .28s var(--e-ease) backwards; }
 .enogia-pie-card .recharts-sector { transition: transform var(--e-dur-menu) var(--e-ease); transform-origin: center; transform-box: fill-box; }
 .enogia-pie-card .recharts-sector:hover { transform: scale(1.06); }
@@ -371,7 +371,7 @@ button:not(:disabled):active { transform: scale(.97); }
 .enogia-home-grid > section { min-width: 0; margin: 0 !important; }
 @media (min-width: 980px) { .enogia-home-grid > .enogia-home-wide { grid-column: span 2; } }
 @keyframes enogiaTileIn { from { opacity: 0; transform: translateY(12px) scale(.985); } to { opacity: 1; transform: none; } }
-.enogia-home-grid > * { animation: enogiaTileIn .42s cubic-bezier(.16,1,.3,1) backwards; }
+.enogia-home-grid > * { animation: enogiaTileIn var(--e-dur-in) var(--e-ease) backwards; }
 .enogia-home-grid > *:nth-child(2) { animation-delay: .07s; }
 .enogia-home-grid > *:nth-child(3) { animation-delay: .14s; }
 .enogia-home-grid > *:nth-child(4) { animation-delay: .21s; }
@@ -429,7 +429,7 @@ button:not(:disabled):active { transform: scale(.97); }
 .enogia-rib { transition: transform var(--e-dur-menu) ease-out, box-shadow var(--e-dur-menu) ease-out; }
 .enogia-rib:hover { transform: translateY(-2px); }
 @keyframes enogiaRingIn { from { stroke-dasharray: 0 260; } }
-.enogia-ring { animation: enogiaRingIn .6s cubic-bezier(.16,1,.3,1) .1s backwards; }
+.enogia-ring { animation: enogiaRingIn var(--e-dur-long) var(--e-ease) backwards; }
 @keyframes enogiaSheetIn { from { transform: translateY(100%); } to { transform: none; } }
 @keyframes enogiaSheetOut { from { transform: none; } to { transform: translateY(100%); } }
 @media (max-width: 640px) {
@@ -489,7 +489,7 @@ button:not(:disabled):active { transform: scale(.97); }
    170 ms à la sortie. Entrée = décélération (--e-ease), sortie = accélération (--e-ease-in). Transform / opacity uniquement,
    plus de rebond. S'applique à toutes les fenêtres modales ([aria-modal]), à leur fond et aux menus / sélecteurs, sans retoucher
    chaque composant ; la sortie est jouée par src/motion.js (copie inerte .enogia-ghost). */
-:root { --e-dur-micro: .12s; --e-dur-menu: .16s; --e-dur-in: .24s; --e-dur-out: .17s; }
+:root { --e-dur-micro: .15s; --e-dur-menu: .18s; --e-dur-in: .24s; --e-dur-out: .17s; --e-dur-long: .3s; } /* v353 : tout entre 150 et 300 ms */
 button { transition: background-color var(--e-dur-micro) var(--e-ease), border-color var(--e-dur-micro) var(--e-ease), color var(--e-dur-micro) var(--e-ease), box-shadow var(--e-dur-micro) var(--e-ease), transform var(--e-dur-micro) var(--e-ease), filter var(--e-dur-micro) ease, opacity var(--e-dur-micro) ease; }
 .enogia-modal-pop { animation: enogiaDlgIn var(--e-dur-in) var(--e-ease) both; }
 .enogia-modal-pop-out { animation: enogiaDlgOut var(--e-dur-out) var(--e-ease-in) both; }
@@ -547,8 +547,8 @@ button { transition: background-color var(--e-dur-micro) var(--e-ease), border-c
 [style*="font-size: 12px"], [style*="font-size: 12px"], [style*="font-size: 12px"], [style*="font-size: 12px"], th { letter-spacing: .01em; }
 
 /* v271 : cloche (piste C) — tintement + halo quand le nombre de demandes augmente, aperçu qui sort de la cloche */
-.enogia-bell-ring svg{animation:enogiaBellRing 900ms cubic-bezier(.2,.8,.2,1) 1;transform-origin:50% 10%}
-.enogia-bell-ring::after{content:"";position:absolute;inset:-2px;border-radius:12px;pointer-events:none;animation:enogiaBellHalo 1.6s ease-out 2}
+.enogia-bell-ring svg{animation:enogiaBellRing var(--e-dur-long) var(--e-ease) 1;transform-origin:50% 10%}
+.enogia-bell-ring::after{content:"";position:absolute;inset:-2px;border-radius:12px;pointer-events:none;animation:enogiaBellHalo var(--e-dur-long) ease-out 1}
 @keyframes enogiaBellRing{0%{transform:rotate(0)}15%{transform:rotate(14deg)}30%{transform:rotate(-12deg)}45%{transform:rotate(8deg)}60%{transform:rotate(-5deg)}75%{transform:rotate(2deg)}100%{transform:rotate(0)}}
 @keyframes enogiaBellHalo{0%{box-shadow:0 0 0 0 rgba(168,47,21,.45)}100%{box-shadow:0 0 0 12px rgba(168,47,21,0)}}
 .enogia-bell-peek{animation:enogiaBellPeek 240ms cubic-bezier(.2,.8,.2,1)}

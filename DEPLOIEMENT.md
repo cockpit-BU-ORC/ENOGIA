@@ -2555,3 +2555,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Deux cadrans dans le catalogue de l'accueil, actifs sur aucun poste par défaut (« Disposer les cadrans » › « Ajouter un cadran »).
 - Aucune clé localStorage ; données inchangées (dispositions dans planning/profiles.homeLayouts, comme avant) ; règles Firestore inchangées.
 - Fichiers : components/RoleHome.js, demo/demoPages.js, versions.
+
+## v353 — sept cadrans de plus, animations entre 150 et 300 ms
+
+- Cadrans d'accueil : tableau des départs, écarts au planning initial, machines par chef / pays / gamme, fins de production à venir, prochaines arrivées (inactifs par défaut).
+- Mouvement : jetons --e-dur-* entre 150 et 300 ms, signaux d'attention joués une fois, plus de transition sur la mise en page ; aucune bibliothèque d'animation.
+- Aucune clé localStorage ; règles Firestore inchangées.
+- Fichiers : components/RoleHome.js, styles.css, SharedUI.js, TurbinesHub.js, ManagerNav.js, WorkshopScreen.js, demo/demoPages.js, versions.

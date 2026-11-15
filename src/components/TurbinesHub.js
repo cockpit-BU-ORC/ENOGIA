@@ -80,13 +80,13 @@ const NEEDS_CSS = `
 .enogia-nd-tile:active{transform:scale(.97)}
 .enogia-nd-sock{transition:background var(--e-dur-menu),box-shadow var(--e-dur-menu),transform var(--e-dur-menu) cubic-bezier(.2,.8,.2,1),opacity var(--e-dur-menu)}
 .enogia-nd-sock[role=button]{cursor:pointer}
-.enogia-nd-sock[role=button]:active{transform:scale(.97);transition-duration:100ms}
+.enogia-nd-sock[role=button]:active{transform:scale(.97);transition-duration:var(--e-dur-micro)}
 .enogia-nd-month{position:sticky;z-index:2;border-bottom:1px solid var(--nd-line)}
 .enogia-nd-land{animation:enogiaNdLand 260ms cubic-bezier(.2,.8,.2,1)}
 @keyframes enogiaNdLand{0%{transform:scale(1.06)}100%{transform:scale(1)}}
 @media (prefers-reduced-motion: reduce){.enogia-nd-land{animation:none}.enogia-nd-sock,.enogia-nd-tile{transition:none}}
 
-@media (max-width: 860px){.enogia-nd-app{grid-template-columns:1fr !important;height:auto !important;overflow:clip !important}.enogia-nd-need{grid-template-columns:1fr !important}.enogia-nd-stock{position:sticky !important;bottom:0;order:2;z-index:6;border-right:none !important;border-top:1px solid var(--nd-line);max-height:50vh;overflow-y:auto;transition:max-height var(--e-dur-in) ease-out}.enogia-nd-stock[data-open="0"]{max-height:52px;overflow:hidden}.enogia-nd-drawer{display:inline-flex !important}}
+@media (max-width: 860px){.enogia-nd-app{grid-template-columns:1fr !important;height:auto !important;overflow:clip !important}.enogia-nd-need{grid-template-columns:1fr !important}.enogia-nd-stock{position:sticky !important;bottom:0;order:2;z-index:6;border-right:none !important;border-top:1px solid var(--nd-line);max-height:50vh;overflow-y:auto}.enogia-nd-stock[data-open="0"]{max-height:52px;overflow:hidden}.enogia-nd-drawer{display:inline-flex !important}}
 /* v333 (audit tablette) : sous 860 px, le stock devient un tiroir collé en bas, replié par défaut (toucher une pièce le referme) */`;
 function ProgBar({ p }) { return <span aria-hidden="true" style={{ display: "inline-block", width: 28, height: 6, borderRadius: 4, background: T.surfaceAlt, overflow: "hidden", flexShrink: 0 }}><span style={{ display: "block", width: Math.round(p * 100) + "%", height: "100%", background: T.emerald500 }} /></span>; } // v345 (taste) : barre au lieu de l'anneau
 // v300 (maquette V300 validée : « Go ») : tuile du stock compacte, 30 px, liseré de couleur à gauche, quantité à droite

@@ -1026,4 +1026,8 @@ export const RELEASE_CATALOG = [
     ["Accueil", "« Ligne d'atelier » : les sept postes de la commande à l'expédition, chaque machine posée sur son poste, retard écrit dessous."],
     ["Accueil", "« Fiches suiveuses » : une fiche par machine en cours, ses étapes en barrettes et son départ ; à ajouter avec « Disposer les cadrans »."],
   ] },
+  { v: "353", t: "Sept cadrans de plus, animations plus vives", items: [
+    ["Accueil", "Nouveaux cadrans à ajouter : tableau des départs, écarts au planning initial, machines par chef, par pays, par gamme, fins de production et arrivées à venir."],
+    ["Général", "Toutes les animations durent entre 150 et 300 ms ; les signaux d'attention ne clignotent plus qu'une fois."],
+  ] },
 ];

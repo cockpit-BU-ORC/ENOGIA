@@ -55,7 +55,7 @@ const Accueil = () => <HomeView pinOk testsDoc={DEMO_TESTS} data={DEMO_ROWS} com
   profiles={{ byEmail: {} }} owner cash={false} turbineDoc={null} onOpenCash={null} prodDoc={DEMO_PROD} canProdTurb productionExclusions={{}} plan={null} closurePeriods={[]} saveHomeLayout={null} />;
 // v352 : cadrans « Ligne d'atelier » et « Fiches suiveuses » (à ajouter dans la disposition d'un poste)
 const AccueilAtelier = () => <HomeView pinOk testsDoc={DEMO_TESTS} data={DEMO_ROWS} comments={DEMO_COMMENTS} myEmail={DEMO_ME.email} myName={DEMO_ME.name} people={DEMO_PEOPLE} unseenChanges={[]} lastImport={null} onOpenPj={no} onGo={no}
-  profiles={{ byEmail: {}, homeLayouts: { direction: { extra: ["ligne", "suiveuses"] } } }} owner cash={false} turbineDoc={null} onOpenCash={null} prodDoc={DEMO_PROD} canProdTurb productionExclusions={{}} plan={null} closurePeriods={[]} saveHomeLayout={null} />;
+  profiles={{ byEmail: {}, homeLayouts: { direction: { extra: ["ligne", "suiveuses", "depBoard", "ecarts", "parChef", "parPays", "parGamme", "finProd", "arrivees30"] } } }} owner cash={false} turbineDoc={null} onOpenCash={null} prodDoc={DEMO_PROD} canProdTurb productionExclusions={{}} plan={null} closurePeriods={[]} saveHomeLayout={null} />;
 
 // v323 : accueil du responsable produit (responsable des testeurs) avec les jalons cash « Produit »
 const DEMO_PRODUIT = { items: [
@@ -84,7 +84,7 @@ const Planificateur = () => <AsOwner><PlannerView planLoaded planDoc={null} rows
 
 export const DEMO_PAGES = [
   { id: "home", label: "Accueil", Render: Accueil, expect: [] },
-  { id: "home-atelier", label: "Accueil · ligne d'atelier", Render: AccueilAtelier, expect: ["Ligne d'atelier", "Fiches suiveuses", "Montage méca"] },
+  { id: "home-atelier", label: "Accueil · ligne d'atelier", Render: AccueilAtelier, expect: ["Ligne d'atelier", "Fiches suiveuses", "Montage méca", "Tableau des départs", "Écarts au planning initial", "Machines par gamme"] },
   { id: "home-produit", label: "Accueil · resp. produit", Render: AccueilProduit, expect: ["Livrables Produit", "P&ID validé", "Papeterie du Nord"] },
   { id: "sav", label: "SAV · équipe", Render: () => <SavDemo level="w" sub0="tickets" />, expect: ["SAV / MES", "TC-26-41", "Sucrerie Centre"] },
   { id: "sav-plan", label: "SAV · planning", Render: () => <SavDemo level="w" sub0="planning" />, expect: ["Lou Martin", "Demandes des chefs de projet", "Aujourd'hui"] },
