@@ -2481,3 +2481,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Liste : pas de virtualisation (content-visibility sans effet sur les lignes de tableau ; ~100 PJ).
 - Aucune nouvelle clé localStorage (enogia_view reste lue si l'adresse ne dit rien) ; règles Firestore inchangées.
 - Fichiers : urlState.js(+test), App.js, versions.
+
+## v343 — audit taste (lots 1 à 3)
+
+- Calendrier : étiquettes Client / NOBO lisibles en sombre.
+- Gras : <b> / <strong> à 600 (styles.css).
+- Accueil : chiffres clés 36 px, retard sur l'initial 46 px ; vue d'ensemble de la Liste 36 px.
+- Aucune clé localStorage ; règles Firestore inchangées.
+- Fichiers : styles.css, components/CalendarView.js, HomeView.js, DashboardSummary.js, TurbinesHub.js, versions.

@@ -984,4 +984,8 @@ export const RELEASE_CATALOG = [
   { v: "342", t: "La page affichée est dans l'adresse", items: [
     ["Général", "Le bouton Précédent du navigateur revient à la page d'avant ; un lien copié ouvre la même page, la même sous-page et la même fiche de PJ."],
   ] },
+  { v: "343", t: "Lisibilité : sombre, gras, chiffres clés", items: [
+    ["Calendrier", "Étiquettes Client et NOBO lisibles en mode sombre."],
+    ["Général", "Textes en gras ramenés à la graisse du site ; chiffres clés de l'accueil et de la Liste moins grands, le retard sur l'initial mis en avant."],
+  ] },
 ];

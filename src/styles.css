@@ -647,3 +647,6 @@ button, a, label, select, summary, [role="button"], [role="tab"], [role="option"
 @media (pointer: coarse) { [data-dnd-drag], [data-lane-key], [data-bench-pj] { touch-action: none; } }
 /* titres : pas de mot seul sur la dernière ligne */
 h1, h2, h3 { text-wrap: balance; }
+
+/* v343 (audit taste, lot 2) : <b> et <strong> à 600 (le navigateur met 700 ; règle V331 : graisses 400 / 500 / 600) */
+b, strong { font-weight: 600; }

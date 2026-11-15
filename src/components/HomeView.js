@@ -104,10 +104,10 @@ export function HomeView({ produit, data, comments, myEmail, myName, people, uns
   const link = { border: "none", background: "transparent", color: T.accentInk /* v285 : 3,2:1 → ≥ 4,5:1 */, fontWeight: 600, fontSize: FZ.sm, cursor: "pointer", padding: "4px 0", minHeight: 24, display: "inline-flex", alignItems: "center", gap: 6, fontFamily: T.font };
   const etatOf = useMemo(() => { const m = new Map(); rows.forEach(r => m.set(r.pj, r.etat)); return m; }, [rows]);
 
-  const Kpi = ({ label, value, tone, onClick, hint, sub }) => (
+  const Kpi = ({ label, value, tone, onClick, hint, sub, answer }) => (
     <button type="button" onClick={onClick} disabled={!onClick} className="enogia-kpi enogia-kpi-ed" title={hint}
       style={{ border: "none", borderRight: "1px solid " + T.line, background: "transparent", textAlign: "left", cursor: onClick ? "pointer" : "default", fontFamily: T.font, display: "flex", flexDirection: "column", gap: 4, padding: "12px 16px 6px 0", minWidth: 0 }}>
-      <span style={{ fontSize: "clamp(40px,5vw,56px)", fontWeight: 500 /* v284 : 300 → 500, plus lisible (audit apple-design, lot 3) */, lineHeight: .95, letterSpacing: "-.03em", fontFamily: T.fontDisplay, color: tone || T.ink900, fontVariantNumeric: "tabular-nums" }}><AnimatedNumber value={value} /></span>
+      <span style={{ fontSize: answer ? "clamp(36px,3.6vw,46px)" /* v343 (audit taste) : chiffre « réponse » 1,3 × */ : "clamp(28px,2.8vw,36px)" /* v343 : 56 → 36 px (taste : 24–40 px) */, fontWeight: 500 /* v284 : 300 → 500, plus lisible (audit apple-design, lot 3) */, lineHeight: .95, letterSpacing: "-.03em", fontFamily: T.fontDisplay, color: tone || T.ink900, fontVariantNumeric: "tabular-nums" }}><AnimatedNumber value={value} /></span>
       <span style={{ fontSize: FZ.sm, fontWeight: 500, color: T.ink700 }}>{label}</span>
       {sub && <span style={{ ...grey, minHeight: 16 }}>{sub}</span>}
     </button>
@@ -163,7 +163,7 @@ export function HomeView({ produit, data, comments, myEmail, myName, people, uns
         <Kpi color={S.depart.ring} label="Expédiées depuis mai" value={shipped} tone={shipped ? T.emerald600 : T.ink900} sub={shipped28 > 0 ? shipped28 + " sur les 28 derniers jours" : open.length + " encore en cours"} onClick={() => onGo && onGo("table")} hint="Ouvrir la liste" />
         <Kpi color={S.production.ring} label="En production" value={inProd} sub={"sur " + open.length + " projet" + (open.length > 1 ? "s" : "") + " ouvert" + (open.length > 1 ? "s" : "")} onClick={() => onGo && onGo("table")} hint="Ouvrir la liste" />
         <Kpi color={S.tests.ring} label="Départs sous 30 j" value={next30} sub={nextDep ? "prochain " + nextDep.pj + " · " + fmtD(nextDep.depart) : "Aucun départ à venir"} onClick={() => onGo && onGo("calendar")} hint="Ouvrir le calendrier" />
-        <Kpi color={H.warn} label="En retard sur l'initial" value={late.length} tone={late.length ? T.red500 : T.ink900} sub={maxLate ? "max " + maxLate.pj + " · +" + maxLate.drift + " j" : "Aucune dérive"} onClick={() => onGo && onGo("table")} hint="Ouvrir la liste" />
+        <Kpi answer color={H.warn} label="En retard sur l'initial" value={late.length} tone={late.length ? T.red500 : T.ink900} sub={maxLate ? "max " + maxLate.pj + " · +" + maxLate.drift + " j" : "Aucune dérive"} onClick={() => onGo && onGo("table")} hint="Ouvrir la liste" />
       </div>;
   const depEl = <section key="departs" aria-label="Prochains départs" style={{ ...cardS(S.depart.ring) }}>
         <Head title="Prochains départs" count={departs.length} />

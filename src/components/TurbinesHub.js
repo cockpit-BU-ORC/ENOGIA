@@ -131,7 +131,7 @@ function Sock({ ctx, n, s, kind, label, want, tone, empty, hint, children }) {
         background: refused ? T.red100 : over ? T.emerald100 : can ? T.surfaceAlt : filled ? tone.bg : "transparent", transform: over ? "scale(1.03)" : "none", opacity: active && !can0 && !filled ? 0.35 : 1 }}>
       {filled ? children : <>
         <span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11, fontWeight: 600, lineHeight: 1.15, color: refused ? T.red600 : T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{lock ? IC.lock : IC.plus}{refused ? "Refusé : roue " + n.roue + " prévue" : lock ? label + " · verrouillé" : label}</span>
-        <span style={{ ...REF_ST, fontFamily: want ? T.fontDisplay : T.font, fontSize: want ? 14 : 13, fontWeight: want ? 600 : 700, color: want ? T.ink500 : T.ink700 }}>{want || empty || (kind === "turbine" ? "glisser une turbine" : "à choisir")}</span>
+        <span style={{ ...REF_ST, fontFamily: want ? T.fontDisplay : T.font, fontSize: want ? 14 : 13, fontWeight: 600, color: want ? T.ink500 : T.ink700 }}>{want || empty || (kind === "turbine" ? "glisser une turbine" : "à choisir")}</span>
         {hint && <span style={{ fontSize: 11, lineHeight: 1.15, color: T.ink500 }}>{hint}</span>}</>}
     </div>;
   }

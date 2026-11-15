@@ -99,7 +99,7 @@ export function DashboardSummary({data,allData,progress,changeLog,onOpenChanges}
     <div className="enogia-fold" style={{display:"grid",gridTemplateRows:folded?"0fr":"1fr",opacity:folded?0:1,transform:folded?"translateY(-6px)":"none",transition:"opacity .22s ease, transform .22s var(--e-ease)"}} aria-hidden={folded?"true":undefined}><div style={{overflow:"hidden",minHeight:0}}>
     {<div className="enogia-dash" style={{display:"flex",alignItems:"center",gap:24,flexWrap:"wrap",marginTop:12}}>
       <div style={{display:"flex",flexDirection:"column",gap:2,minWidth:120,flexShrink:0}}>
-        <div style={{fontSize:"clamp(36px,4vw,46px)",fontWeight:300,letterSpacing:"-.03em",color:T.ink900,fontFamily:T.fontDisplay,lineHeight:.95,fontVariantNumeric:"tabular-nums"}}><AnimatedNumber count value={shippedYTD}/></div>
+        <div style={{fontSize:"clamp(28px,2.8vw,36px)" /* v343 (audit taste) : 46 → 36 px */,fontWeight:300,letterSpacing:"-.03em",color:T.ink900,fontFamily:T.fontDisplay,lineHeight:.95,fontVariantNumeric:"tabular-nums"}}><AnimatedNumber count value={shippedYTD}/></div>
         <div style={{fontSize:FZ.xs,color:T.ink500}}>machine{shippedYTD>1?"s":""} expédiée{shippedYTD>1?"s":""}<br/>depuis le {SHIPPED_SINCE_LABEL}</div>
         
       </div>
