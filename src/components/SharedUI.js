@@ -31,7 +31,7 @@ export function DelayScopeNote(){
   </div>);
 }
 
-export function Badge({etat,wrap}){const c=ETAT_META[etat]||ETAT_META["NOT ORDERED"];const urgent=etat==="NOT ORDERED";return <span className={urgent?"enogia-pulse-urgent":""} style={{background:c.bg,color:c.text,border:"1px solid "+c.border,borderRadius:wrap?14:20,padding:"2.5px 8px 2.5px 8px",fontSize:FZ.xs,fontWeight:600,letterSpacing:".01em",display:"inline-flex",alignItems:"center",gap:4,maxWidth:"100%",boxSizing:"border-box"}}><span style={{width:6,height:6,borderRadius:"50%",background:c.bar,flexShrink:0}}/><span style={wrap?{lineHeight:1.2,overflowWrap:"break-word",minWidth:0}:{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.label||etat}</span></span>;}
+export function Badge({etat,wrap}){const c=ETAT_META[etat]||ETAT_META["NOT ORDERED"];const urgent=etat==="NOT ORDERED";return <span className={urgent?"enogia-pulse-urgent":""} style={{background:c.bg,color:c.text,border:"1px solid "+c.border,borderRadius:wrap?12:20,padding:"2.5px 8px 2.5px 8px",fontSize:FZ.xs,fontWeight:600,letterSpacing:".01em",display:"inline-flex",alignItems:"center",gap:4,maxWidth:"100%",boxSizing:"border-box"}}><span style={{width:6,height:6,borderRadius:"50%",background:c.bar,flexShrink:0}}/><span style={wrap?{lineHeight:1.2,overflowWrap:"break-word",minWidth:0}:{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.label||etat}</span></span>;}
 
 // v139.1 : un seul menu flottant à la fois. Tout composant qui ouvre l'un d'eux (ou un panneau) envoie « enogia:closemenus » : les autres se ferment.
 export const closeAllMenus=()=>{try{window.dispatchEvent(new Event("enogia:closemenus"));}catch(e){}};
@@ -93,17 +93,17 @@ export function DropFilter({label,options,selected,onChange,getLabel,icon,sort})
       {open&&createPortal(<>
         <div onClick={()=>setOpen(false)} style={{position:"fixed",inset:0,zIndex:9998}}/>
         <div style={{position:"fixed",top:pos.top,left:pos.left,background:T.card,borderRadius:12,boxShadow:T.shadowLg,border:"1px solid "+T.line,zIndex:9999,minWidth:190,maxHeight:300,display:"flex",flexDirection:"column",fontFamily:T.font}}>
-          {sort&&<div role="group" aria-label="Trier" style={{display:"flex",flexDirection:"column",borderBottom:"1px solid "+T.line,flexShrink:0,padding:"4px 0",background:T.card,borderRadius:"10px 10px 0 0"}}>
+          {sort&&<div role="group" aria-label="Trier" style={{display:"flex",flexDirection:"column",borderBottom:"1px solid "+T.line,flexShrink:0,padding:"4px 0",background:T.card,borderRadius:"12px 12px 0 0"}}>
             {[{id:"asc",label:sort.asc||"Du plus petit au plus grand",arrow:"↑"},{id:"desc",label:sort.desc||"Du plus grand au plus petit",arrow:"↓"},...(sort.extra||[]).map(x=>({...x,arrow:"↓"}))].map(o=>{const on=sort.active===o.id;return(
               <div key={o.id} role="button" tabIndex={0} aria-pressed={on} onClick={()=>{sort.onChange(on?null:o.id);}} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();sort.onChange(on?null:o.id);}}}
                 style={{display:"flex",alignItems:"center",gap:8,padding:"6px 12px",cursor:"pointer",background:on?T.teal100:"transparent"}}>
                 <span aria-hidden="true" style={{width:13,textAlign:"center",fontSize:FZ.xs,fontWeight:600,color:on?T.teal600:T.ink500}}>{o.arrow}</span>
-                <span style={{fontSize:FZ.xs,color:on?T.teal600:T.ink700,fontWeight:on?700:500}}>{o.label}</span>
+                <span style={{fontSize:FZ.xs,color:on?T.teal600:T.ink700,fontWeight:on?600:500}}>{o.label}</span>
               </div>);})}
           </div>}
-          <div {...pressable(()=>onChange(all?new Set():new Set(options)),{role:"checkbox","aria-checked":all})} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",cursor:"pointer",borderBottom:"1px solid "+T.line,background:T.surface,flexShrink:0,borderRadius:"10px 10px 0 0"}}>
+          <div {...pressable(()=>onChange(all?new Set():new Set(options)),{role:"checkbox","aria-checked":all})} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",cursor:"pointer",borderBottom:"1px solid "+T.line,background:T.surface,flexShrink:0,borderRadius:"12px 12px 0 0"}}>
             <div style={{width:13,height:13,borderRadius:4,border:"1.5px solid "+(all?T.teal500:T.ink100),background:all?T.teal500:T.card,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-              {all&&<span style={{color:"#fff",fontSize:FZ.xs,fontWeight:600}}>✓</span>}
+              {all&&<span style={{color:T.card,fontSize:FZ.xs,fontWeight:600}}>✓</span>}
               {!all&&!none&&<span style={{color:T.teal600,fontSize:FZ.xs,fontWeight:600}}>—</span>}
             </div>
             <span style={{fontSize:FZ.xs,fontWeight:600,color:T.ink700}}>Tout sélectionner</span>
@@ -111,12 +111,12 @@ export function DropFilter({label,options,selected,onChange,getLabel,icon,sort})
           <div style={{overflowY:"auto",flex:1}}>
             {options.map(o=>{const a=selected.has(o);return(
               <div key={o} {...pressable(()=>toggle(o),{role:"checkbox","aria-checked":a})} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 12px",cursor:"pointer",background:a?T.teal100:T.card,borderBottom:"1px solid "+T.surface}}>
-                <div style={{width:13,height:13,borderRadius:4,border:"1.5px solid "+(a?T.teal500:T.ink100),background:a?T.teal500:T.card,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{a&&<span style={{color:"#fff",fontSize:FZ.xs,fontWeight:600}}>✓</span>}</div>
+                <div style={{width:13,height:13,borderRadius:4,border:"1.5px solid "+(a?T.teal500:T.ink100),background:a?T.teal500:T.card,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{a&&<span style={{color:T.card,fontSize:FZ.xs,fontWeight:600}}>✓</span>}</div>
                 <span style={{fontSize:FZ.xs,color:T.ink700,fontWeight:a?600:400}}>{disp(o)}</span>
               </div>
             );})}
           </div>
-          <div style={{padding:"8px 12px",borderTop:"1px solid "+T.line,display:"flex",justifyContent:"space-between",alignItems:"center",background:T.surface,flexShrink:0,borderRadius:"0 0 10px 10px"}}>
+          <div style={{padding:"8px 12px",borderTop:"1px solid "+T.line,display:"flex",justifyContent:"space-between",alignItems:"center",background:T.surface,flexShrink:0,borderRadius:"0 0 12px 12px"}}>
             <span style={{fontSize:FZ.xs,color:T.ink500,fontWeight:500}}>{selected.size}/{options.length}</span>
             <button onClick={()=>setOpen(false)} style={{padding:"4px 12px",borderRadius:8,border:"none",background:T.ink900,color:T.card,fontSize:FZ.xs,fontWeight:600,cursor:"pointer"}}>OK</button>
           </div>
@@ -166,7 +166,7 @@ export function PjChecklist({data,selected,onChange,maxHeight=220}){
       <span style={{fontSize:FZ.xs,color:T.ink500,fontWeight:600,whiteSpace:"nowrap"}}>{selected.size} sélectionné{selected.size!==1?"s":""}</span>
     </div>
     <div {...pressable(toggleAll,{role:"checkbox","aria-checked":allChecked})} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 8px",cursor:"pointer",borderBottom:"1px solid "+T.line}}>
-      <div style={{width:15,height:15,borderRadius:4,border:"1.5px solid "+(allChecked?T.teal500:T.ink100),background:allChecked?T.teal500:T.card,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{allChecked&&<span style={{color:"#fff",fontSize:FZ.xs,fontWeight:600}}>✓</span>}</div>
+      <div style={{width:15,height:15,borderRadius:4,border:"1.5px solid "+(allChecked?T.teal500:T.ink100),background:allChecked?T.teal500:T.card,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{allChecked&&<span style={{color:T.card,fontSize:FZ.xs,fontWeight:600}}>✓</span>}</div>
       <span style={{fontSize:FZ.xs,fontWeight:600,color:T.ink700}}>Tout sélectionner{q?" (résultats filtrés)":""}</span>
     </div>
     <div style={{maxHeight,overflowY:"auto"}}>
@@ -174,7 +174,7 @@ export function PjChecklist({data,selected,onChange,maxHeight=220}){
         const meta=getPjMeta(d.pj,d);
         const checked=selected.has(d.pj);
         return(<div key={d.pj} {...pressable(()=>toggle(d.pj),{role:"checkbox","aria-checked":checked})} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 8px",cursor:"pointer",background:checked?T.teal100:"transparent",borderBottom:"1px solid "+T.surface}}>
-          <div style={{width:15,height:15,borderRadius:4,border:"1.5px solid "+(checked?T.teal500:T.ink100),background:checked?T.teal500:T.card,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{checked&&<span style={{color:"#fff",fontSize:FZ.xs,fontWeight:600}}>✓</span>}</div>
+          <div style={{width:15,height:15,borderRadius:4,border:"1.5px solid "+(checked?T.teal500:T.ink100),background:checked?T.teal500:T.card,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{checked&&<span style={{color:T.card,fontSize:FZ.xs,fontWeight:600}}>✓</span>}</div>
           <span style={{fontWeight:600,color:T.ink900,fontSize:FZ.sm,fontFamily:T.fontMono,flexShrink:0}}>{d.pj}</span><SerieTag pj={d.pj}/>
           <span style={{fontSize:FZ.xs,color:T.ink500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{meta.nomProjet}</span>
         </div>);
@@ -200,7 +200,7 @@ export function PinGate({onUnlock}){
     </div>
     <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:12}}>{[0,1,2,3].map(i=><div key={i} style={{width:11,height:11,borderRadius:"50%",background:i<v.length?T.teal500:T.ink100}}/>)}</div>
     {err&&<div style={{color:T.red500,fontSize:FZ.md,marginBottom:8,fontWeight:600}}>Code incorrect</div>}
-    <button onClick={check} disabled={v.length<4} style={{padding:"8px 28px",background:v.length<4?T.ink100:T.teal500,color:v.length<4?T.ink300:"#fff",border:"none",borderRadius:12,fontWeight:600,fontSize:FZ.md,cursor:v.length<4?"default":"pointer"}}>Valider</button>
+    <button onClick={check} disabled={v.length<4} style={{padding:"8px 28px",background:v.length<4?T.ink100:T.teal500,color:v.length<4?T.ink300:T.onFill,border:"none",borderRadius:12,fontWeight:600,fontSize:FZ.md,cursor:v.length<4?"default":"pointer"}}>Valider</button>
   </div>);
 }
 
@@ -271,7 +271,7 @@ export function ImportButton({onImport, busy, label, accent, helpText, warnText,
   };
 
   return(<div style={{position:"relative",fontFamily:T.font}}>
-    <button ref={btnRef} onClick={openMenu} disabled={busy} aria-label={btnLabel} title={iconOnly?btnLabel:undefined} style={iconOnly?{"--e-lift-shadow":T.shadowMd,width:26,height:26,borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:T.ink500,fontWeight:600,fontSize:FZ.md,lineHeight:1,cursor:busy?"default":"pointer",opacity:busy?.6:1,display:"flex",alignItems:"center",justifyContent:"center",padding:0}:{"--e-lift-shadow":T.shadowMd,padding:"4px 8px",borderRadius:8,border:"none",background:bg,color:"#fff",fontWeight:600,fontSize:FZ.xs,cursor:busy?"default":"pointer",opacity:busy?.6:1,display:"flex",alignItems:"center",gap:4,boxShadow:T.shadowSm,transition:"transform .12s ease, box-shadow .12s ease"}}
+    <button ref={btnRef} onClick={openMenu} disabled={busy} aria-label={btnLabel} title={iconOnly?btnLabel:undefined} style={iconOnly?{"--e-lift-shadow":T.shadowMd,width:26,height:26,borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:T.ink500,fontWeight:600,fontSize:FZ.md,lineHeight:1,cursor:busy?"default":"pointer",opacity:busy?.6:1,display:"flex",alignItems:"center",justifyContent:"center",padding:0}:{"--e-lift-shadow":T.shadowMd,padding:"4px 8px",borderRadius:8,border:"none",background:bg,color:T.card,fontWeight:600,fontSize:FZ.xs,cursor:busy?"default":"pointer",opacity:busy?.6:1,display:"flex",alignItems:"center",gap:4,boxShadow:T.shadowSm,transition:"transform .12s ease, box-shadow .12s ease"}}
       className="e-lift">
       {iconOnly?(busy?"…":(iconGlyph||"⋯")):busy?<span style={{display:"inline-flex",alignItems:"center",gap:6}}><span style={{width:10,height:10,borderRadius:"50%",border:"2px solid rgba(255,255,255,.4)",borderTopColor:"#fff",display:"inline-block",animation:"enogiaSpin .8s linear infinite"}}/>Mise à jour...</span>:<span style={{display:"inline-flex",alignItems:"center",gap:4}}><NavIcon name="upload" size={10}/><span className="enogia-import-label">{btnLabel}</span></span>}
     </button>
@@ -363,7 +363,7 @@ export function NewDelayType({types,onCreate,onCreated,style}){
   if(!open)return <button type="button" onClick={()=>setOpen(true)} style={{...base,padding:"5px 11px",borderRadius:999,border:"1.5px dashed "+T.teal500,background:"transparent",color:T.teal600,...style}}>＋ Nouvelle cause</button>;
   return <span style={{display:"inline-flex",gap:6,alignItems:"center",flexWrap:"wrap",...style}}>
     <input autoFocus={AF} type="text" value={v} maxLength={60} onChange={e=>setV(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();go();}if(e.key==="Escape")setOpen(false);}} placeholder="Nom de la cause" style={{padding:"5px 9px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink900,fontSize:FZ.sm,fontFamily:T.font,minWidth:150}}/>
-    <button type="button" onClick={go} disabled={!v.trim()||busy} style={{...base,padding:"5px 11px",borderRadius:8,border:"none",background:v.trim()?T.teal500:T.surfaceAlt,color:v.trim()?"#fff":T.ink300}}>Créer</button>
+    <button type="button" onClick={go} disabled={!v.trim()||busy} style={{...base,padding:"5px 11px",borderRadius:8,border:"none",background:v.trim()?T.teal500:T.surfaceAlt,color:v.trim()?T.onFill:T.ink300}}>Créer</button>
     <button type="button" onClick={()=>{setOpen(false);setV("");}} style={{...base,padding:"5px 6px",border:"none",background:"transparent",color:T.ink500,fontWeight:600}}>Annuler</button>
   </span>;
 }

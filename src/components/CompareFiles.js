@@ -47,7 +47,7 @@ export function CompareFiles({ onOpenPj, defaultOpen }) {
         <Drop label="Nouveau fichier" file={newF} onFile={f => { setNewF(f); setRes(null); }} />
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <button disabled={!ok} onClick={run} style={{ border: "none", borderRadius: 8, padding: "8px 16px", fontWeight: 600, fontSize: FZ.sm, fontFamily: T.font, color: "#fff", cursor: ok ? "pointer" : "default", background: ok ? T.navy700 : T.ink100 }}>{busy ? "Comparaison…" : "Comparer"}</button>
+        <button disabled={!ok} onClick={run} style={{ border: "none", borderRadius: 8, padding: "8px 16px", fontWeight: 600, fontSize: FZ.sm, fontFamily: T.font, color: T.onFill, cursor: ok ? "pointer" : "default", background: ok ? T.navy700 : T.ink100 }}>{busy ? "Comparaison…" : "Comparer"}</button>
         <span style={{ fontSize: FZ.xs, color: T.ink500 }}>Les fichiers restent dans votre navigateur : aucune donnée du site n'est modifiée.</span>
       </div>
       {err && <div style={{ marginTop: 10, color: T.red500, background: T.red100, borderRadius: 8, padding: "8px 12px", fontSize: FZ.sm }}>{err}</div>}

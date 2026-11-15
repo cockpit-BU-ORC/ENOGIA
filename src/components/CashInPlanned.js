@@ -45,7 +45,7 @@ export function PlannedDialog({ rows, labels, today, onClose, onOpenRow }) {
             {byMonth.map(g => { const tot = g.items.reduce((a, x) => a + x.montant, 0); return (<tbody key={g.m}>
               <tr><td colSpan={5} style={{ padding: "10px 8px 4px", fontSize: FZ.xs, fontWeight: 600, color: g.m === "retard" ? T.red500 : T.ink900 }}>{g.m === "retard" ? "Déjà en retard" : MOIS[Number(g.m.slice(5, 7)) - 1] + " " + g.m.slice(0, 4)} <span style={{ color: T.ink500, fontWeight: 600 }}>· {fmtEur(tot)}</span></td></tr>
               {g.items.map((x, i) => <tr key={x.r.id + x.kind + i} className="enogia-kpi-row" tabIndex={0} onClick={() => onOpenRow(x.r.id)} onKeyDown={e => { if (e.key === "Enter") onOpenRow(x.r.id); }} style={{ cursor: "pointer" }} aria-label={"Ouvrir le jalon " + x.r.pj + " " + (x.r.jalon || "")}>
-                <td style={{ ...td, color: x.date < today ? T.red500 : T.ink700, fontWeight: x.date < today ? 700 : 400 }}>{fd(x.date)}</td>
+                <td style={{ ...td, color: x.date < today ? T.red500 : T.ink700, fontWeight: x.date < today ? 600 : 400 }}>{fd(x.date)}</td>
                 <td style={{ ...td, fontFamily: T.fontMono, fontWeight: 600, color: T.ink900 }}>{x.r.pj}<span style={{ fontFamily: T.font, fontWeight: 400, color: T.ink500 }}>{labels[x.r.pj] ? " · " + labels[x.r.pj] : ""}</span></td>
                 <td style={{ ...td, maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis" }}>{x.r.jalon || "Jalon sans nom"}</td>
                 <td style={td}>{x.kind === "facture" ? "Facturation" : "Encaissement"}</td>

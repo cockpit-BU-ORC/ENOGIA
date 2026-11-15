@@ -94,8 +94,8 @@ export function CalendarMonth({ data, month, closurePeriods, productionExclusion
       })}
     </div>
     <div style={{ display: "flex", gap: 14, flexWrap: "wrap", fontSize: FZF.xs, color: T.ink700, alignItems: "center" }}>
-      {legend.map(([k, l]) => <span key={k} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><i style={{ width: 12, height: 12, borderRadius: 3, background: k === "Production" || k === "Tests" ? T.surfaceAlt : P[k].c, boxShadow: k === "Production" || k === "Tests" ? "inset 3px 0 0 " + P[k].c : "none", border: "1px solid " + T.line }} />{l}</span>)}
-      {["client", "nobo"].map(w => <span key={w} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><i style={{ width: 12, height: 12, borderRadius: 3, background: PRESENCE_META[w].bg, boxShadow: "inset 3px 0 0 " + PRESENCE_META[w].color }} />Visite {PRESENCE_META[w].label}</span>)}
+      {legend.map(([k, l]) => <span key={k} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><i style={{ width: 12, height: 12, borderRadius: 4, background: k === "Production" || k === "Tests" ? T.surfaceAlt : P[k].c, boxShadow: k === "Production" || k === "Tests" ? "inset 3px 0 0 " + P[k].c : "none", border: "1px solid " + T.line }} />{l}</span>)}
+      {["client", "nobo"].map(w => <span key={w} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><i style={{ width: 12, height: 12, borderRadius: 4, background: PRESENCE_META[w].bg, boxShadow: "inset 3px 0 0 " + PRESENCE_META[w].color }} />Visite {PRESENCE_META[w].label}</span>)}
       <span style={{ color: T.ink500 }}>Plaques pleines = jalons ; plaques claires = chaque jour de production ou de tests. Week-end rangé le vendredi.</span>
     </div>
   </div>;

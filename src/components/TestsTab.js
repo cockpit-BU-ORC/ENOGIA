@@ -183,12 +183,12 @@ function BenchStrip({ rows, doc, catalog, testers, on, onPick }) {
         const pct = q.total ? Math.round(q.done / q.total * 100) : 0, meta = getPjMeta(r.pj, r), todo = q.total - q.done - q.wip;
         const sum = [q.ok && q.ok + " réussi" + (q.ok > 1 ? "s" : ""), q.wip && q.wip + " en cours", q.ko && q.ko + " échec" + (q.ko > 1 ? "s" : ""), todo > 0 && todo + " à faire"].filter(Boolean).join(" · ");
         return (<div key={r.pj} {...pressable(() => onPick(r.pj), { "aria-pressed": on === r.pj, "aria-label": r.pj + " au banc — " + q.done + " tests faits sur " + q.total + (lateD ? " — en retard de " + lateD + " jours" : "") })}
-          className="enogia-bench-card" style={{ background: on === r.pj ? T.teal100 : T.card, border: "1px solid " + T.line, borderTop: "4px solid " + (lateD ? T.red500 : stageSoft().tests.solid), borderRadius: "0 0 10px 10px", padding: "10px 12px", cursor: "pointer", minWidth: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+          className="enogia-bench-card" style={{ background: on === r.pj ? T.teal100 : T.card, border: "1px solid " + T.line, borderTop: "4px solid " + (lateD ? T.red500 : stageSoft().tests.solid), borderRadius: "0 0 12px 12px", padding: "10px 12px", cursor: "pointer", minWidth: 0, display: "flex", flexDirection: "column", gap: 8 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
             <PjPlate pj={r.pj} />
             {r.gamme && <span style={{ fontFamily: T.fontLabel, fontSize: 12, fontWeight: 600, color: T.ink700, whiteSpace: "nowrap" }}>{r.gamme}</span>}
             <span title={meta.nomProjet || ""} style={{ flex: 1, minWidth: 0, fontSize: FZ.xs, color: T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : ""}</span>
-            <span style={{ fontSize: FZ.xs, fontWeight: lateD ? 700 : 600, color: lateD ? T.red600 : T.ink500, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{lateD ? "en retard " + lateD + " j" : "jour " + n + " / " + m}</span>
+            <span style={{ fontSize: FZ.xs, fontWeight: lateD ? 600 : 600, color: lateD ? T.red600 : T.ink500, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{lateD ? "en retard " + lateD + " j" : "jour " + n + " / " + m}</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
             <Ring pct={pct} />
@@ -273,7 +273,7 @@ function GridHead({ days, todayIso, labelStyle, label }) {
     <div style={{ ...labelStyle, fontFamily: T.fontLabel, fontSize: 12, fontWeight: 600, color: T.ink500, display: "flex", alignItems: "flex-end", paddingBottom: 6 }}>{label}</div>
     <div style={{ flex: 1, minWidth: 0, display: "grid", gridTemplateColumns: "repeat(" + days.length + ",minmax(0,1fr))" }}>
       {days.filter((d, i) => i % 5 === 0).map((d, i) => <div key={"w" + d} style={{ gridColumn: "span 5", padding: "7px 8px 2px", fontSize: 12, fontWeight: 600, color: T.ink900, borderLeft: i ? "2px solid " + T.line : "none", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{wk(d)}</div>)}
-      {days.map((d, i) => { const td = d === todayIso, off = !HOLI.isWork(d); return <div key={d} title={off ? "Jour férié" : td ? "Aujourd'hui" : undefined} style={{ padding: "3px 0 6px", textAlign: "center", fontSize: 12, fontWeight: td ? 700 : 500, color: td ? S.tests.ink : off ? T.ink300 : T.ink500, background: td ? S.tests.bg : "transparent", borderRadius: td ? "6px 6px 0 0" : 0, borderLeft: i % 5 === 0 && i ? "2px solid " + T.line : "none", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", overflow: "hidden" }}>{off ? "férié" : DOW1[i % 5] + " " + Number(d.slice(8, 10))}</div>; })}
+      {days.map((d, i) => { const td = d === todayIso, off = !HOLI.isWork(d); return <div key={d} title={off ? "Jour férié" : td ? "Aujourd'hui" : undefined} style={{ padding: "3px 0 6px", textAlign: "center", fontSize: 12, fontWeight: td ? 600 : 500, color: td ? S.tests.ink : off ? T.ink300 : T.ink500, background: td ? S.tests.bg : "transparent", borderRadius: td ? "8px 8px 0 0" : 0, borderLeft: i % 5 === 0 && i ? "2px solid " + T.line : "none", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", overflow: "hidden" }}>{off ? "férié" : DOW1[i % 5] + " " + Number(d.slice(8, 10))}</div>; })}
     </div>
   </div>);
 }
@@ -359,7 +359,7 @@ function BenchGrid({ rows, allRows, doc, catalog, testers, conflicts, on, onPick
               <span style={COLS}>
                 <span style={{ ...cellS, borderLeft: "none" }}><PjPlate pj={r.pj} /></span>
                 <span className="c-opt" style={{ ...cellS, fontFamily: T.fontLabel, fontWeight: 600, color: T.ink700 }}>{r.gamme || "—"}</span>
-                <span style={{ ...cellS, color: names.length ? T.ink900 : T.red600, fontWeight: names.length ? 500 : 700 }} title={names.join(", ")}>{names.length ? names.join(", ") : "sans testeur"}</span>
+                <span style={{ ...cellS, color: names.length ? T.ink900 : T.red600, fontWeight: names.length ? 500 : 600 }} title={names.join(", ")}>{names.length ? names.join(", ") : "sans testeur"}</span>
                 <span className="c-opt" style={cellS}>{pres("client", pd.client)}</span>
                 <span className="c-opt" style={cellS}>{pres("nobo", pd.nobo)}</span>
                 <span style={{ ...cellS, justifyContent: "flex-end", gap: 6 }}><SegBar still segs={segs} h={7} gap={1} width={Math.max(18, Math.min(40, segs.length * 4))} /><span style={{ fontWeight: 600, color: T.ink700, fontVariantNumeric: "tabular-nums" }}>{ms.q.done}/{ms.q.total}</span></span>
@@ -443,7 +443,7 @@ export function TestDialog({ r, onClose, doc, testers, catalog, conflicts, commi
         </main>
       </div>
       <div style={{ display: "flex", gap: 12, alignItems: "center", padding: "12px 18px", borderTop: "1px solid " + T.line, flexWrap: "wrap" }}>
-        <div aria-hidden="true" style={{ display: "flex", gap: 4, flex: "1 1 200px", maxWidth: 420 }}>{steps.map((x, i) => <i key={x.id} style={{ flex: 1, height: 6, borderRadius: 2, background: x.st === "done" ? T.emerald500 : x.st === "bad" ? T.red500 : i === cur ? T.ink900 : T.surfaceAlt }} />)}</div>
+        <div aria-hidden="true" style={{ display: "flex", gap: 4, flex: "1 1 200px", maxWidth: 420 }}>{steps.map((x, i) => <i key={x.id} style={{ flex: 1, height: 6, borderRadius: 4, background: x.st === "done" ? T.emerald500 : x.st === "bad" ? T.red500 : i === cur ? T.ink900 : T.surfaceAlt }} />)}</div>
         <span style={{ fontSize: 12, color: T.ink500 }}>{nDone} étape{nDone > 1 ? "s" : ""} sur 6 terminée{nDone > 1 ? "s" : ""}</span>
         <span style={{ flex: 1 }} />
         {cur > 0 && <button type="button" onClick={() => setCur(cur - 1)} style={btn(true, "ghost")}>← {steps[cur - 1].t}</button>}
@@ -730,7 +730,7 @@ function Step({ n, title, hint, children }) {
   const big = React.useContext(StepBigCtx);
   if (big) return <div><StepHead title={title} lead={hint} />{children}</div>;
   return (<div style={{ display: "flex", gap: 12 }}>
-    <span aria-hidden="true" style={{ width: 24, height: 24, borderRadius: "50%", background: T.teal600, color: "#fff", fontSize: FZ.xs, fontWeight: 600, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>{n}</span>
+    <span aria-hidden="true" style={{ width: 24, height: 24, borderRadius: "50%", background: T.teal600, color: T.onFill, fontSize: FZ.xs, fontWeight: 600, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>{n}</span>
     <div style={{ flex: 1, minWidth: 0 }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap", marginBottom: 6 }}><span style={{ fontSize: FZ.sm, fontWeight: 600, color: T.ink900 }}>{title}</span>{hint && <span style={{ fontSize: FZ.xs, color: T.ink300 }}>{hint}</span>}</div>
       {children}

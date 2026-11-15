@@ -296,7 +296,7 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
     if(preset.type!==undefined)setType(preset.type);
     setDrawerOpen(true);
   };
-  const seg=on=>({padding:"4px 12px",borderRadius:8,border:"none",background:on?T.card:"transparent",boxShadow:on?T.shadowSm:"none",color:on?T.teal600:T.ink500,fontWeight:on?700:600,fontSize:FZ.sm,cursor:"pointer",fontFamily:T.font});
+  const seg=on=>({padding:"4px 12px",borderRadius:8,border:"none",background:on?T.card:"transparent",boxShadow:on?T.shadowSm:"none",color:on?T.teal600:T.ink500,fontWeight:on?600:600,fontSize:FZ.sm,cursor:"pointer",fontFamily:T.font});
   const card=(e,byPj)=>{
     const c=colorOf(e.type);const ask=confirmId===e.id;const m=meta(e.pj);
     return(<div key={e.pj+"-"+e.id} style={{background:T.card,border:"1px solid "+T.line,borderLeft:"3px solid "+c,borderRadius:12,padding:"8px 12px",boxShadow:T.shadowSm}}>
@@ -309,7 +309,7 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
         {e.groupPjs&&e.groupPjs.length>1&&<span title={e.groupPjs.join(", ")} style={{fontSize:FZ.xs,color:T.violet600,background:T.violet100,borderRadius:8,padding:"1px 6px",fontWeight:600}}>×{e.groupPjs.length}</span>}
         <span style={{marginLeft:"auto"}}>
           {ask
-            ?<span style={{display:"inline-flex",gap:4,alignItems:"center"}}><button onClick={async()=>{await deleteDelayAllocation(e.pj,e.id);setConfirmId(null);}} style={{border:"none",background:T.redFill,color:"#fff",borderRadius:8,fontSize:FZ.xs,fontWeight:600,padding:"1px 8px",cursor:"pointer"}}>Supprimer ?</button><button onClick={()=>setConfirmId(null)} style={{border:"none",background:"none",color:T.ink300,fontSize:FZ.xs,cursor:"pointer"}}>Non</button></span>
+            ?<span style={{display:"inline-flex",gap:4,alignItems:"center"}}><button onClick={async()=>{await deleteDelayAllocation(e.pj,e.id);setConfirmId(null);}} style={{border:"none",background:T.redFill,color:T.onFill,borderRadius:8,fontSize:FZ.xs,fontWeight:600,padding:"1px 8px",cursor:"pointer"}}>Supprimer ?</button><button onClick={()=>setConfirmId(null)} style={{border:"none",background:"none",color:T.ink300,fontSize:FZ.xs,cursor:"pointer"}}>Non</button></span>
             :<SuperOnly><button onClick={()=>setConfirmId(e.id)} title="Supprimer ce retard" style={{border:"none",background:"none",color:T.ink300,fontSize:FZ.xs,cursor:"pointer",padding:0}}><NavIcon name="close" size={11}/></button></SuperOnly>}
         </span>
       </div>
@@ -430,7 +430,7 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
         {authorName
           ?<span style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:FZ.sm,color:T.ink700,fontWeight:600}}><Avatar name={authorName} size={24}/>{authorName}</span>
           :<input type="text" value={authorInput} onChange={e=>setAuthorInput(e.target.value)} placeholder="Votre nom" maxLength={40} style={{width:140,padding:"8px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700}}/>}
-        <button onClick={submit} disabled={!canSubmit} style={{marginLeft:"auto",padding:"8px 20px",borderRadius:8,border:"none",background:canSubmit?T.teal500:T.surfaceAlt,color:canSubmit?"#fff":T.ink300,fontSize:FZ.sm,fontWeight:600,cursor:canSubmit?"pointer":"default",fontFamily:T.font}}>
+        <button onClick={submit} disabled={!canSubmit} style={{marginLeft:"auto",padding:"8px 20px",borderRadius:8,border:"none",background:canSubmit?T.teal500:T.surfaceAlt,color:canSubmit?T.onFill:T.ink300,fontSize:FZ.sm,fontWeight:600,cursor:canSubmit?"pointer":"default",fontFamily:T.font}}>
           {saving?"Enregistrement…":ok?"✓ Enregistré":"Enregistrer le retard"}
         </button>
       </div>
@@ -449,7 +449,7 @@ export function DelaysTab({data,delays,delayTypes,setDelayTypes,addDelayAllocati
           </div>
           <div style={{display:"flex",gap:6}}>
             <input type="text" value={newType} onChange={e=>setNewType(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")addType();}} placeholder="Nouvelle cause…" maxLength={60} style={{flex:1,padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700}}/>
-            <button onClick={addType} disabled={!newType.trim()} style={{padding:"6px 12px",borderRadius:8,border:"none",background:newType.trim()?T.teal500:T.surfaceAlt,color:newType.trim()?"#fff":T.ink300,fontSize:FZ.xs,fontWeight:600,cursor:newType.trim()?"pointer":"default"}}>Ajouter</button>
+            <button onClick={addType} disabled={!newType.trim()} style={{padding:"6px 12px",borderRadius:8,border:"none",background:newType.trim()?T.teal500:T.surfaceAlt,color:newType.trim()?T.onFill:T.ink300,fontSize:FZ.xs,fontWeight:600,cursor:newType.trim()?"pointer":"default"}}>Ajouter</button>
           </div>
         </div>}
       </div>

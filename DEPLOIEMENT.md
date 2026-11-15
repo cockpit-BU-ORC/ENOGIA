@@ -2489,3 +2489,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Accueil : chiffres clés 36 px, retard sur l'initial 46 px ; vue d'ensemble de la Liste 36 px.
 - Aucune clé localStorage ; règles Firestore inchangées.
 - Fichiers : styles.css, components/CalendarView.js, HomeView.js, DashboardSummary.js, TurbinesHub.js, versions.
+
+## v344 — audit taste (lots 4 et 5)
+
+- Rayons 4 / 8 / 12 partout (hors kits et rapports) ; colonnes de graphiques à angles nets.
+- Graisses : plus aucun 700+ hors kits et rapports ; planificateur sans majuscules ni texte < 11 px.
+- Couleurs : jetons T.onFill / T.onInd (theme.js), planificateur et Nouveautés branchés sur le thème.
+- Aucune clé localStorage ; règles Firestore inchangées.
+- Fichiers : theme.js, styles.css, App.js, ~40 composants et planner/*, versions.

@@ -39,12 +39,12 @@ export function ManagerRail({ groups, activeId, activeSub, onGo, collapsed, setC
         onMouseEnter={x => { x.currentTarget.style.background = T.surface; }} onMouseLeave={x => { x.currentTarget.style.background = "transparent"; }}>{fly.e.label}</button>
       {(fly.e.subs || []).map(s => { const sOn = fly.e.id === activeId && (!fly.e.subs || s.id === activeSub); return (
         <button key={s.id || "open"} role="menuitem" type="button" onClick={() => { onGo(s.go); setFly(null); }} aria-current={sOn ? "page" : undefined}
-          style={{ display: "block", width: "100%", textAlign: "left", border: "none", background: sOn ? T.teal100 : "transparent", color: sOn ? T.teal600 : T.ink700, fontWeight: sOn ? 700 : 500, fontSize: FZ.sm, fontFamily: T.font, padding: "7px 10px", minHeight: 32, borderRadius: 8, cursor: "pointer" }}
+          style={{ display: "block", width: "100%", textAlign: "left", border: "none", background: sOn ? T.teal100 : "transparent", color: sOn ? T.teal600 : T.ink700, fontWeight: sOn ? 600 : 500, fontSize: FZ.sm, fontFamily: T.font, padding: "7px 10px", minHeight: 32, borderRadius: 8, cursor: "pointer" }}
           onMouseEnter={x => { if (!sOn) x.currentTarget.style.background = T.surface; }} onMouseLeave={x => { if (!sOn) x.currentTarget.style.background = "transparent"; }}>{s.label}</button>); })}
     </div>, document.body) : null;
   if (phone) return (<nav aria-label="Navigation Manager" style={{ display: "flex", gap: 4, overflowX: "auto", paddingBottom: 4, borderBottom: "1px solid " + T.line }}>
     {groups.flatMap(g => g.entries).map(e => { const on = e.id === activeId; return (
-      <button key={e.id} onClick={() => onGo(e.go)} aria-current={on ? "page" : undefined} style={{ flex: "none", display: "flex", alignItems: "center", gap: 6, padding: "7px 11px", border: "none", borderBottom: "2px solid " + (on ? T.teal500 : "transparent"), background: "transparent", color: on ? T.teal600 : T.ink500, fontWeight: on ? 700 : 600, fontSize: FZ.sm, cursor: "pointer", fontFamily: T.font }}><NavIcon name={e.icon} size={15} />{e.label}</button>); })}
+      <button key={e.id} onClick={() => onGo(e.go)} aria-current={on ? "page" : undefined} style={{ flex: "none", display: "flex", alignItems: "center", gap: 6, padding: "7px 11px", border: "none", borderBottom: "2px solid " + (on ? T.teal500 : "transparent"), background: "transparent", color: on ? T.teal600 : T.ink500, fontWeight: on ? 600 : 600, fontSize: FZ.sm, cursor: "pointer", fontFamily: T.font }}><NavIcon name={e.icon} size={15} />{e.label}</button>); })}
   </nav>);
   return (<>{flyout}<nav aria-label="Navigation Manager" style={{ width: w, flex: "none", position: "sticky", top: 8, alignSelf: "flex-start", background: T.surface, border: "1px solid " + T.line, borderRadius: 12, padding: "8px 8px 10px", display: "flex", flexDirection: "column", gap: 2, overflow: "hidden", fontFamily: T.font }}>
     {groups.map(g => (<div key={g.label} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -52,11 +52,11 @@ export function ManagerRail({ groups, activeId, activeSub, onGo, collapsed, setC
       {g.entries.map(e => { const on = e.id === activeId; return (<React.Fragment key={e.id}>
         <button onClick={() => onGo(e.go)} title={collapsed && !fly ? e.label : undefined} aria-current={on ? "page" : undefined} aria-haspopup={collapsed ? "menu" : undefined} aria-expanded={collapsed ? !!(fly && fly.e.id === e.id) : undefined}
           onFocus={x => openFly(e, x.currentTarget)} onBlur={closeFly}
-          style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", border: "none", borderRadius: 8, padding: collapsed ? "9px 0" : "8px 10px", justifyContent: collapsed ? "center" : "flex-start", background: on ? T.card : "transparent", boxShadow: on ? T.shadowSm : "none", color: on ? T.ink900 : T.ink500, fontWeight: on ? 700 : 500, fontSize: FZ.sm, cursor: "pointer", fontFamily: T.font, textAlign: "left", whiteSpace: "nowrap" }}
+          style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", border: "none", borderRadius: 8, padding: collapsed ? "9px 0" : "8px 10px", justifyContent: collapsed ? "center" : "flex-start", background: on ? T.card : "transparent", boxShadow: on ? T.shadowSm : "none", color: on ? T.ink900 : T.ink500, fontWeight: on ? 600 : 500, fontSize: FZ.sm, cursor: "pointer", fontFamily: T.font, textAlign: "left", whiteSpace: "nowrap" }}
           onMouseEnter={x => { openFly(e, x.currentTarget); if (!on) { x.currentTarget.style.background = T.card; x.currentTarget.style.color = T.ink900; } }} onMouseLeave={x => { closeFly(); if (!on) { x.currentTarget.style.background = "transparent"; x.currentTarget.style.color = T.ink500; } }}>
           <span style={{ display: "inline-flex", color: on ? T.teal500 : "inherit", flex: "none" }}><NavIcon name={e.icon} size={17} /></span>
           {!collapsed && <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>{e.label}</span>}
-          {!collapsed && e.badge > 0 && <span style={{ fontSize: 11, fontWeight: 600, background: T.red500, color: "#fff", borderRadius: 999, padding: "0 6px", minWidth: 18, textAlign: "center" }}>{e.badge}</span>}
+          {!collapsed && e.badge > 0 && <span style={{ fontSize: 11, fontWeight: 600, background: T.red500, color: T.onFill, borderRadius: 999, padding: "0 6px", minWidth: 18, textAlign: "center" }}>{e.badge}</span>}
           {!collapsed && e.lock && <span style={{ fontSize:11, fontWeight: 600, color: T.amber600, background: T.amber100, padding: "1px 6px", borderRadius: 999 }}>Admin</span>}
         </button>
         {e.subs && !collapsed && <div style={{ display: "grid", gridTemplateRows: on ? "1fr" : "0fr", opacity: on ? 1 : 0, transition: "opacity .2s ease" }}>
@@ -64,7 +64,7 @@ export function ManagerRail({ groups, activeId, activeSub, onGo, collapsed, setC
             <div style={{ display: "flex", flexDirection: "column", margin: "2px 0 4px 19px", paddingLeft: 6, borderLeft: "2px solid " + T.line }}>
               {e.subs.map(s => { const sOn = on && s.id === activeSub; return (
                 <button key={s.id} tabIndex={on ? 0 : -1} onClick={() => onGo(s.go)} aria-current={sOn ? "page" : undefined}
-                  style={{ border: "none", background: sOn ? T.teal100 : "transparent", textAlign: "left", padding: "5px 10px", borderRadius: 8, color: sOn ? T.teal600 : T.ink500, fontWeight: sOn ? 700 : 500, fontSize: FZ.sm, cursor: "pointer", fontFamily: T.font, whiteSpace: "nowrap" }}
+                  style={{ border: "none", background: sOn ? T.teal100 : "transparent", textAlign: "left", padding: "5px 10px", borderRadius: 8, color: sOn ? T.teal600 : T.ink500, fontWeight: sOn ? 600 : 500, fontSize: FZ.sm, cursor: "pointer", fontFamily: T.font, whiteSpace: "nowrap" }}
                   onMouseEnter={x => { if (!sOn) x.currentTarget.style.color = T.ink900; }} onMouseLeave={x => { if (!sOn) x.currentTarget.style.color = T.ink500; }}>{s.label}</button>); })}
             </div>
           </div>
@@ -134,7 +134,7 @@ export function ManagerPalette({ groups, data, onGo, onOpenPj, onClose, activeKe
             <div key={it.key} role="option" aria-selected={on} data-sel={on ? "1" : "0"} onMouseEnter={() => setSel(idx)} onMouseDown={e => { e.preventDefault(); choose(it); }}
               style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 12px", borderRadius: 8, cursor: "pointer", background: on ? T.teal100 : "transparent", color: T.ink900, fontSize: FZ.sm }}>
               <span style={{ display: "inline-flex", color: T.teal500 }}><NavIcon name={it.icon} size={16} /></span>
-              <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: on ? 700 : 500 }}>{it.label}</span>
+              <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: on ? 600 : 500 }}>{it.label}</span>
               {it.lock && <span style={{ fontSize:11, fontWeight: 600, color: T.amber600, background: T.amber100, padding: "1px 6px", borderRadius: 999 }}>Admin</span>}
               <span style={{ fontSize: FZ.xs, color: T.ink500, minWidth: 14, textAlign: "right" }}>{on ? "↵" : it.lock ? "" : it.group}</span>
             </div>); })}

@@ -21,7 +21,7 @@ export function Ring({ v, max, bad, size = 64 }) {
     <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={bad ? T.red500 : T.emerald500} strokeWidth={7} strokeLinecap="round" strokeDasharray={(c * p) + " " + c} transform={"rotate(-90 " + size / 2 + " " + size / 2 + ")"} />
     <text x={size / 2} y={size / 2 + 5} textAnchor="middle" style={{ fontFamily: T.fontDisplay, fontSize: 14, fontWeight: 600, fill: T.ink900, fontVariantNumeric: "tabular-nums" }}>{Math.round(p * 100)}%</text></svg>;
 }
-const Bars = ({ total, ok, bad }) => <div aria-hidden="true" style={{ display: "flex", gap: 2, marginTop: 8 }}>{Array.from({ length: Math.min(total, 60) }, (_, i) => <i key={i} style={{ flex: 1, height: 8, borderRadius: 2, background: i < ok ? T.emerald500 : i < ok + bad ? T.red500 : T.surfaceAlt }} />)}</div>;
+const Bars = ({ total, ok, bad }) => <div aria-hidden="true" style={{ display: "flex", gap: 2, marginTop: 8 }}>{Array.from({ length: Math.min(total, 60) }, (_, i) => <i key={i} style={{ flex: 1, height: 8, borderRadius: 4, background: i < ok ? T.emerald500 : i < ok + bad ? T.red500 : T.surfaceAlt }} />)}</div>;
 
 // ── fil des étapes (gauche de la fiche)
 export function StepRail({ steps, cur, onPick }) {
@@ -80,7 +80,7 @@ export function BookStep({ r, plan, book, bookApi, canMark, saveTests, who, canA
   return <>
     <div style={{ display: "grid", gridTemplateColumns: "minmax(160px,200px) minmax(0,1fr)", gap: 24, alignItems: "start" }} className="enogia-book-cover">
       <button type="button" onClick={() => { setFocus(null); setOpen(true); }} aria-label={"Ouvrir le livret de configuration de " + r.pj}
-        style={{ position: "relative", aspectRatio: "210 / 297", borderRadius: "4px 10px 10px 4px", background: T.navy700 || T.teal500, color: T.card, padding: "20px 14px 14px 22px", boxShadow: T.shadowLg, border: "none", textAlign: "left", cursor: "pointer", fontFamily: T.font }}>
+        style={{ position: "relative", aspectRatio: "210 / 297", borderRadius: "4px 12px 12px 4px", background: T.navy700 || T.teal500, color: T.card, padding: "20px 14px 14px 22px", boxShadow: T.shadowLg, border: "none", textAlign: "left", cursor: "pointer", fontFamily: T.font }}>
         <span aria-hidden="true" style={{ position: "absolute", left: 9, top: 0, bottom: 0, width: 2, background: "color-mix(in srgb, " + T.card + " 22%, transparent)" }} />
         <span aria-hidden="true" style={{ position: "absolute", right: 14, top: -4, width: 16, height: 40, background: T.amber500, clipPath: "polygon(0 0,100% 0,100% 100%,50% 80%,0 100%)" }} />
         <span style={{ display: "block", fontSize: 11, opacity: 0.8 }}>{book.ref || "ENOGIA"}</span>
@@ -113,7 +113,7 @@ export function BookStep({ r, plan, book, bookApi, canMark, saveTests, who, canA
 function BookImg({ k, src, bookApi }) {
   const [url, setUrl] = useState(null), [none, setNone] = useState(false);
   useEffect(() => { let on = true; if (!k || !bookApi) { setNone(true); return undefined; } bookApi.loadImg(k).then(d => { if (!on) return; if (d) setUrl(d); else setNone(true); }); return () => { on = false; }; }, [k, bookApi]);
-  if (none) return <div style={{ fontSize: 12, color: T.ink500, border: "1px dashed " + T.line, borderRadius: 6, padding: 8, margin: "6px 0" }}>Image non disponible ({src})</div>;
+  if (none) return <div style={{ fontSize: 12, color: T.ink500, border: "1px dashed " + T.line, borderRadius: 8, padding: 8, margin: "6px 0" }}>Image non disponible ({src})</div>;
   return url ? <img src={url} alt="" style={{ display: "block", maxWidth: "100%", height: "auto", borderRadius: 4, margin: "8px 0", border: "1px solid " + T.line, background: "#FFFFFF" }} /> : <div aria-hidden="true" style={{ height: 120, borderRadius: 4, background: T.surfaceAlt, margin: "8px 0" }} />;
 }
 function Blocks({ blocks, book, bookApi }) {
@@ -168,7 +168,7 @@ function BookReader({ r, book, bookApi, canMark, io, focus, onClose }) {
       <ol style={{ listStyle: "none", margin: 0, padding: 0, flex: 1, minHeight: 120, overflow: "auto", borderTop: "1px solid " + T.line }}>
         {list.map((s, i) => { const st = stepStatus(io.rows[s.id]), on = i === pg || i === pg + 1, head = i === 0 || list[i - 1].chap !== s.chap;
           return <li key={s.id}>{head && <div style={{ fontSize: 11, fontWeight: 600, color: T.ink500, padding: "8px 4px 2px" }}>{s.chapTitle}</div>}
-            <button type="button" onClick={() => setCur(i)} aria-current={on ? "step" : undefined} style={{ width: "100%", display: "flex", gap: 8, alignItems: "center", padding: "5px 6px", minHeight: 34, border: "none", borderRadius: 6, background: on ? T.surfaceAlt : "transparent", cursor: "pointer", textAlign: "left", fontFamily: T.font, fontSize: 13, color: T.ink900 }}>
+            <button type="button" onClick={() => setCur(i)} aria-current={on ? "step" : undefined} style={{ width: "100%", display: "flex", gap: 8, alignItems: "center", padding: "5px 6px", minHeight: 34, border: "none", borderRadius: 8, background: on ? T.surfaceAlt : "transparent", cursor: "pointer", textAlign: "left", fontFamily: T.font, fontSize: 13, color: T.ink900 }}>
               <span aria-hidden="true" style={{ width: 16, height: 16, borderRadius: 4, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 11, border: "1.5px solid " + ((io.rows[s.id] || {}).v ? T.emerald600 : T.line), background: (io.rows[s.id] || {}).v ? T.emerald600 : "transparent", color: T.card }}>{(io.rows[s.id] || {}).v ? "✓" : ""}</span>
               <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.title}</span>
               {st !== "todo" && <i aria-label={Object.fromEntries(STEP_STATUS)[st]} style={{ width: 8, height: 8, borderRadius: "50%", background: st === "pb" ? T.red500 : T.emerald500, flexShrink: 0 }} />}</button></li>; })}
@@ -181,7 +181,7 @@ function BookReader({ r, book, bookApi, canMark, io, focus, onClose }) {
       <IoButtons io={io} canMark={canMark} compact />
     </aside>
     <div role="dialog" aria-modal="true" aria-label={"Livret de configuration " + r.pj} style={{ position: "relative", minWidth: 0, alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 10, maxHeight: "92dvh" }}>
-      <div key={pg} className="enogia-book-flip" style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "1fr 1fr", background: paper, borderRadius: 6, boxShadow: T.shadowLg, overflow: "auto", position: "relative" }}>
+      <div key={pg} className="enogia-book-flip" style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "1fr 1fr", background: paper, borderRadius: 8, boxShadow: T.shadowLg, overflow: "auto", position: "relative" }}>
         <span aria-hidden="true" style={{ position: "absolute", left: "50%", top: 0, bottom: 0, width: 34, transform: "translateX(-50%)", background: "linear-gradient(90deg, transparent, rgba(16,24,40,.08) 45%, rgba(16,24,40,.14) 50%, rgba(16,24,40,.08) 55%, transparent)", pointerEvents: "none" }} />
         <Page s={L} n={pg + 1} /><Page s={R2} n={pg + 2} />
       </div>

@@ -50,12 +50,12 @@ export function ColumnPicker({hidden,setHidden}){
         {/* v180 : vues prêtes selon le public (audit : « trop de colonnes à la fois ») — un clic règle les colonnes visibles. */}
         <div role="group" aria-label="Vues prêtes" style={{display:"flex",gap:6,flexWrap:"wrap",padding:"8px 12px",borderBottom:"1px solid "+T.line}}>
           {COLUMN_PRESETS.map(([l,hid])=>{const on=hid.length===hidden.size&&hid.every(h=>hidden.has(h));return(
-            <button key={l} type="button" aria-pressed={on} onClick={()=>setHidden(new Set(hid))} style={{border:"1.5px solid "+T.teal500,background:on?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:on?(T.mode==="dark"?"#0B1130":"#FFFFFF"):T.teal600,borderRadius:8,padding:"4px 10px",minHeight:28,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font}}>{l}</button>);})}
+            <button key={l} type="button" aria-pressed={on} onClick={()=>setHidden(new Set(hid))} style={{border:"1.5px solid "+T.teal500,background:on?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:on?T.onInd:T.teal600,borderRadius:8,padding:"4px 10px",minHeight:28,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font}}>{l}</button>);})}
         </div>
         <div style={{padding:"8px 12px",fontSize:12,fontWeight:600,color:T.accentInk,borderBottom:"1px solid "+T.line,background:T.surface}}>Colonnes visibles</div>
         {TABLE_COLUMNS.map(c=>{const visible=!hidden.has(c.id);return(
           <div key={c.id} {...pressable(()=>toggle(c.id),{role:"checkbox","aria-checked":visible})} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",cursor:"pointer",borderBottom:"1px solid "+T.surface}}>
-            <div style={{width:16,height:16,borderRadius:4,border:"1.5px solid "+(visible?T.teal500:T.ink100),background:visible?T.teal500:T.card,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{visible&&<span style={{color:"#fff",fontSize:FZ.sm,fontWeight:600}}>✓</span>}</div>
+            <div style={{width:16,height:16,borderRadius:4,border:"1.5px solid "+(visible?T.teal500:T.ink100),background:visible?T.teal500:T.card,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{visible&&<span style={{color:T.onFill,fontSize:FZ.sm,fontWeight:600}}>✓</span>}</div>
             <span style={{fontSize:FZ.md,color:T.ink700,fontWeight:visible?600:400}}>{c.label}</span>
           </div>
         );})}
@@ -83,7 +83,7 @@ export function DateFormatPicker({df,setDf}){
     {open&&<>
       <div onClick={()=>setOpen(false)} style={{position:"fixed",inset:0,zIndex:9998}}/>
       <div style={{position:"fixed",top:pos.top,left:pos.left,background:T.card,borderRadius:12,boxShadow:T.shadowLg,border:"1px solid "+T.line,zIndex:9999,minWidth:150,overflow:"hidden",fontFamily:T.font}}>
-        {Object.entries(LABELS).map(([k,l])=><div key={k} {...pressable(()=>{setDf(k);setOpen(false);},{role:"radio","aria-checked":df===k})} style={{padding:"8px 12px",cursor:"pointer",fontSize:FZ.sm,fontWeight:df===k?700:500,color:df===k?T.teal600:T.ink700,background:df===k?T.teal100:"transparent"}}>{l}</div>)}
+        {Object.entries(LABELS).map(([k,l])=><div key={k} {...pressable(()=>{setDf(k);setOpen(false);},{role:"radio","aria-checked":df===k})} style={{padding:"8px 12px",cursor:"pointer",fontSize:FZ.sm,fontWeight:df===k?600:500,color:df===k?T.teal600:T.ink700,background:df===k?T.teal100:"transparent"}}>{l}</div>)}
       </div>
     </>}
   </span>);

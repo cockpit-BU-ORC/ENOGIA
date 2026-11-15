@@ -43,7 +43,7 @@ export function askConfirm({ title, message, confirmLabel = "Confirmer", cancelL
       useEffect(() => { const el = danger ? cancelRef.current : okRef.current; const t = setTimeout(() => el && el.focus({ preventScroll: true }), 30); return () => clearTimeout(t); }, []);
       return (<Box title={title} onCancel={() => done(false)} actions={<>
         <button ref={cancelRef} type="button" className="e-btn e-btn-sec" style={btn("sec", "md")} onClick={() => done(false)}>{cancelLabel}</button>
-        <button ref={okRef} type="button" className={"e-btn " + (danger ? "e-btn-dan" : "e-btn-pri")} style={danger ? { ...btn("pri", "md"), background: T.redFill || T.red600, borderColor: T.redFill || T.red600, color: "#FFFFFF" } : btn("pri", "md")} onClick={() => done(true)}>{confirmLabel}</button>
+        <button ref={okRef} type="button" className={"e-btn " + (danger ? "e-btn-dan" : "e-btn-pri")} style={danger ? { ...btn("pri", "md"), background: T.redFill || T.red600, borderColor: T.redFill || T.red600, color: T.onFill } : btn("pri", "md")} onClick={() => done(true)}>{confirmLabel}</button>
       </>}>
         {message && <div style={{ fontSize: 14, lineHeight: 1.5, color: T.ink700, whiteSpace: "pre-line" }}>{message}</div>}
       </Box>);

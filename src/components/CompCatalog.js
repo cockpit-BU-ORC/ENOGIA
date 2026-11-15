@@ -41,7 +41,7 @@ export function CompCatalogDialog({ catalog, setCatalog, nPj, missingCount, onAp
       </div>
       <div style={{ display: "flex", gap: 8, paddingTop: 12, borderTop: "1px solid " + T.line }}>
         <input value={name} autoFocus={AF} onChange={e => { setName(e.target.value); setErr(""); }} onKeyDown={e => { if (e.key === "Enter") add(); }} placeholder="Nouveau composant (ex. Vanne, Bac à huile…)" aria-label="Nouveau composant" maxLength={40} style={{ ...fld, flex: 1, minWidth: 0 }} />
-        <button onClick={add} disabled={!name.trim()} style={{ border: "none", borderRadius: 12, padding: "7px 14px", background: name.trim() ? T.navy700 : T.ink100, color: name.trim() ? "#fff" : T.ink500, fontWeight: 600, fontSize: FZ.sm, cursor: name.trim() ? "pointer" : "default", fontFamily: T.font }}>Ajouter</button>
+        <button onClick={add} disabled={!name.trim()} style={{ border: "none", borderRadius: 12, padding: "7px 14px", background: name.trim() ? T.navy700 : T.ink100, color: name.trim() ? T.onFill : T.ink500, fontWeight: 600, fontSize: FZ.sm, cursor: name.trim() ? "pointer" : "default", fontFamily: T.font }}>Ajouter</button>
       </div>
       {err && <div role="alert" style={{ marginTop: 8, fontSize: FZ.xs, color: T.red600, fontWeight: 600 }}>{err}</div>}
       {onApplyAll && <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid " + T.line, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>

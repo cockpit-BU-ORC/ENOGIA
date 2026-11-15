@@ -204,7 +204,7 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
         {setSelEtats&&<EtatInfoButton/>}
         {allPJs&&<DropFilter label="PJ" options={allPJs} selected={selPJs||new Set(allPJs)} onChange={setSelPJs}/>}
         <button type="button" onClick={()=>setGrouped(!grouped)} aria-pressed={grouped} title="Regrouper les lignes par projet"
-          style={{padding:"5px 11px",borderRadius:8,border:"1px solid "+(grouped?T.teal400:T.line),background:grouped?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:grouped?(T.mode==="dark"?"#0B1130":"#FFFFFF"):T.ink700,fontSize:FZF.sm,fontWeight:600,cursor:"pointer",transition:"background-color .15s ease, color .15s ease",display:"inline-flex",alignItems:"center",gap:6}}><NavIcon name="layers" size={15}/>Par projet</button>
+          style={{padding:"5px 11px",borderRadius:8,border:"1px solid "+(grouped?T.teal400:T.line),background:grouped?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:grouped?T.onInd:T.ink700,fontSize:FZF.sm,fontWeight:600,cursor:"pointer",transition:"background-color .15s ease, color .15s ease",display:"inline-flex",alignItems:"center",gap:6}}><NavIcon name="layers" size={15}/>Par projet</button>
         <div style={{display:"flex",gap:4}}>
           <button type="button" aria-label="Dézoomer" onClick={zoomOut} disabled={dayW<=ZMIN} style={{padding:"5px 9px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:dayW<=ZMIN?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:600,cursor:dayW<=ZMIN?"default":"pointer"}}>−</button>
           <button type="button" aria-label="Zoomer" onClick={zoomIn} disabled={dayW>=ZMAX} style={{padding:"5px 9px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:dayW>=ZMAX?T.ink300:T.ink700,fontSize:FZF.md,fontWeight:600,cursor:dayW>=ZMAX?"default":"pointer"}}>+</button>
@@ -311,7 +311,7 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
             sûr qu'elle descend exactement jusqu'à la dernière ligne quel que soit le nombre de PJ. */}
         <div style={{position:"absolute",left:xOf(today)-1,top:HEADER_H,height:ganttH-HEADER_H,width:2,background:T.red500,zIndex:3,pointerEvents:"none"}}/>
         {/* v142 : repère « aujourd'hui » net : trait plein + pastille datée posée sur le bord de l'en-tête. */}
-        <div style={{position:"absolute",left:xOf(today),top:HEADER_H-10,transform:"translateX(-50%)",zIndex:9,pointerEvents:"none",background:T.redFill,color:"#fff",fontSize:FZF.xs,fontWeight:600,padding:"2px 8px",borderRadius:999,whiteSpace:"nowrap",boxShadow:T.shadowFlat}}>Aujourd'hui · {fmt(today)}</div>
+        <div style={{position:"absolute",left:xOf(today),top:HEADER_H-10,transform:"translateX(-50%)",zIndex:9,pointerEvents:"none",background:T.redFill,color:T.onFill,fontSize:FZF.xs,fontWeight:600,padding:"2px 8px",borderRadius:999,whiteSpace:"nowrap",boxShadow:T.shadowFlat}}>Aujourd'hui · {fmt(today)}</div>
       </div>
       {/* Marge de fin : sans elle, « aujourd'hui » ne peut pas être centré quand il est proche de la fin de la plage. */}
       <div style={{width:endPad,height:1,flexShrink:0}}/>

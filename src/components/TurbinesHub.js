@@ -213,7 +213,7 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
   const Sect = ({ t, n, k, note, children }) => { const open = !fold[t];
     return <section aria-label={t} style={{ margin: "10px 10px 0", background: T.card, border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden" }}>
     <button type="button" aria-expanded={open} onClick={() => flipFold(t)} style={{ display: "flex", alignItems: "center", gap: 7, width: "100%", minHeight: 34, padding: "7px 10px", border: "none", borderBottom: open ? "1px solid " + T.line : "none", background: T.surface, color: T.ink900, cursor: "pointer", fontFamily: T.font, textAlign: "left" }}>
-      <span aria-hidden="true" style={{ fontSize: 10, color: T.ink500, width: 10, transform: open ? "rotate(90deg)" : "none", transition: "transform 120ms" }}>▶</span>
+      <span aria-hidden="true" style={{ display: "inline-flex", color: T.ink500, transform: open ? "none" : "rotate(-90deg)", transition: "transform 120ms" }}><NavIcon name="chevronDown" size={14} /></span>
       <i aria-hidden="true" style={{ width: 10, height: 10, borderRadius: 4, background: k, flexShrink: 0 }} /><b style={{ fontSize: 13, flex: 1 }}>{t}</b><span style={{ fontSize: 12, fontWeight: 600, color: T.ink700, fontVariantNumeric: "tabular-nums" }}>{n}</span></button>
     {open && <div style={{ padding: 8, display: "flex", flexDirection: "column", gap: 6 }}>{children}{note && <span style={{ fontSize: 11, color: T.ink500, lineHeight: 1.35 }}>{note}</span>}</div>}</section>; };
   const Sub = ({ t, n, children }) => <div style={{ display: "flex", flexDirection: "column", gap: 3 }}><div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 600, color: T.ink500, padding: "0 2px" }}><span>{t}</span><span style={{ fontVariantNumeric: "tabular-nums" }}>{n}</span></div>{children}</div>;
@@ -232,7 +232,7 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
   const moveNeed = (n, dir) => { const m = neighbor(n, dir); if (m) saveKeys(swapNeedKeys(needs, n.key, m.key), n.label + (dir < 0 ? " remonte" : " descend") + " d'un cran."); };
   const setRank = (n, r) => { setRankEdit(null); const m = needs[r - 1]; if (!m || m.key === n.key) return; saveKeys(swapNeedKeys(needs, n.key, m.key), n.label + " passe en priorité n° " + r + " (échangé avec " + m.label + ")."); };
   const monthLab = iso => { if (!iso) return "Sans date"; const d = new Date(String(iso).slice(0, 7) + "-01T12:00:00"); const t = d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" }); return t.charAt(0).toUpperCase() + t.slice(1); };
-  const arrowB = { width: 24, height: 24, borderRadius: 4, border: "1px solid " + T.line, background: T.card, color: T.ink700, cursor: "pointer", fontSize: 10, lineHeight: 1, padding: 0, display: "inline-grid", placeItems: "center" };
+  const arrowB = { width: 24, height: 24, borderRadius: 4, border: "1px solid " + T.line, background: T.card, color: T.ink700, cursor: "pointer", fontSize: 12, lineHeight: 1, padding: 0, display: "inline-grid", placeItems: "center" };
   let lastMo = "";
   // v303 (maquette « effets des skills », piste Apple choisie, stock gardé visible) : barre d'outils et titres de mois en verre dépoli,
   // collés en haut de la liste ; les titres se posent juste sous la barre (hauteur mesurée).

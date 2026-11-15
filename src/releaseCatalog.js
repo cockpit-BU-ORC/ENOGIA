@@ -988,4 +988,8 @@ export const RELEASE_CATALOG = [
     ["Calendrier", "Étiquettes Client et NOBO lisibles en mode sombre."],
     ["Général", "Textes en gras ramenés à la graisse du site ; chiffres clés de l'accueil et de la Liste moins grands, le retard sur l'initial mis en avant."],
   ] },
+  { v: "344", t: "Finitions : arrondis, gras, couleurs du thème", items: [
+    ["Général", "Arrondis, gras et couleurs harmonisés sur tout le site (mêmes règles partout, en clair comme en sombre)."],
+    ["Planificateur", "Textes du planificateur plus lisibles : plus de petits caractères ni de majuscules."],
+  ] },
 ];

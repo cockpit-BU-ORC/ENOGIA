@@ -30,7 +30,7 @@ export function InboxPage({ popup, me, comments, data, resolveComment, canSeePri
       {acts.length === 0 ? <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Aucune demande en attente. Les demandes d'intervention SAV arriveront ici.</div>
         : acts.map((a, i) => <div key={a.id} style={{ borderTop: i ? "1px solid " + T.line : "none", paddingTop: i ? 10 : 0, display: "flex", flexDirection: "column", gap: 6 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-            <span aria-hidden="true" style={{ width: 4, alignSelf: "stretch", minHeight: 20, borderRadius: 2, background: a.tone === "warn" ? T.amber500 : T.red500 }} />
+            <span aria-hidden="true" style={{ width: 4, alignSelf: "stretch", minHeight: 20, borderRadius: 4, background: a.tone === "warn" ? T.amber500 : T.red500 }} />
             <div style={{ flex: "1 1 260px", minWidth: 0 }}>
               <div style={{ fontSize: FZ.sm, fontWeight: 600, color: T.ink900 }}>{a.title}</div>
               {a.detail && <div style={{ fontSize: FZ.xs, color: T.ink500 }}>{a.detail}</div>}

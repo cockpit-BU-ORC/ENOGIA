@@ -28,7 +28,7 @@ export function ReleasePopup({ releases, userName, onClose }) {
   return (<div className="enogia-modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 10001, background: "rgba(10,20,34,.58)", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
     <div role="dialog" aria-modal="true" aria-labelledby="rel-title" className="enogia-modal-pop" style={{ background: T.card, color: T.ink900, borderRadius: 22, border: "1px solid " + T.line, boxShadow: "0 30px 80px rgba(8,16,30,.38)", width: "min(600px,100%)", maxHeight: "90dvh", display: "flex", flexDirection: "column", fontFamily: T.font, overflow: "hidden" }}>
       {/* bandeau */}
-      <div style={{ position: "relative", flexShrink: 0, padding: "26px 30px 24px", color: "#fff", background: dark ? "#16324A" : T.navy700, overflow: "hidden" }}>
+      <div style={{ position: "relative", flexShrink: 0, padding: "26px 30px 24px", color: T.onFill, background: dark ? T.navy700 : T.navy700, overflow: "hidden" }}>
         <span aria-hidden="true" style={{ position: "absolute", right: -40, top: -50, width: 190, height: 190, borderRadius: "50%", background: "rgba(255,255,255,.09)" }} />
         <span aria-hidden="true" style={{ position: "absolute", right: 60, bottom: -70, width: 140, height: 140, borderRadius: "50%", background: "rgba(255,255,255,.06)" }} />
         <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
@@ -43,7 +43,7 @@ export function ReleasePopup({ releases, userName, onClose }) {
         {/* v244 (demandé : « sans marquer le numéro de la version ») : toutes les lignes à la suite, sans titre de version */}
         {releases.map((r, ri) => (<div key={r.id}>
           {r.items.map((i, k) => (<div key={i.t + k} style={{ display: "flex", gap: 14, alignItems: "flex-start", padding: "14px 0", borderBottom: (k < r.items.length - 1 || ri < releases.length - 1) ? "1px solid " + T.line : "none" }}>
-            <span aria-hidden="true" style={{ width: 38, height: 38, borderRadius: 12, flexShrink: 0, display: "inline-flex", alignItems: "center", justifyContent: "center", color: dark ? "#9BD6E4" : T.teal600, background: dark ? "rgba(99,185,210,.14)" : T.teal100, border: "1px solid " + (dark ? "rgba(99,185,210,.28)" : T.teal400 + "55") }}><NavIcon name={iconFor(i.t)} size={19} /></span>
+            <span aria-hidden="true" style={{ width: 38, height: 38, borderRadius: 12, flexShrink: 0, display: "inline-flex", alignItems: "center", justifyContent: "center", color: dark ? T.teal400 : T.teal600, background: dark ? "rgba(99,185,210,.14)" : T.teal100, border: "1px solid " + (dark ? "rgba(99,185,210,.28)" : T.teal400 + "55") }}><NavIcon name={iconFor(i.t)} size={19} /></span>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: FZ.md, fontWeight: 600, lineHeight: 1.25, overflowWrap: "anywhere" }}>{i.t}</div>
               {i.d && <div style={{ fontSize: FZ.sm, color: T.ink700, lineHeight: 1.5, marginTop: 3, overflowWrap: "anywhere" }}>{i.d}</div>}
@@ -52,7 +52,7 @@ export function ReleasePopup({ releases, userName, onClose }) {
         </div>))}
       </div>
       <div style={{ display: "flex", flexShrink: 0, alignItems: "center", justifyContent: "flex-end", padding: "14px 30px 24px" }}>
-        <button ref={okRef} onClick={onClose} className="enogia-btn-tap" style={{ border: "none", color: "#fff", background: dark ? "#1E5C7A" : T.navy700, borderRadius: 12, padding: "11px 28px", fontSize: FZ.sm, fontWeight: 600, letterSpacing: ".01em", cursor: "pointer", fontFamily: T.font, boxShadow: "0 8px 20px rgba(20,60,90,.28)" }}>C'est compris</button>
+        <button ref={okRef} onClick={onClose} className="enogia-btn-tap" style={{ border: "none", color: T.onFill, background: dark ? T.teal500 : T.navy700, borderRadius: 12, padding: "11px 28px", fontSize: FZ.sm, fontWeight: 600, letterSpacing: ".01em", cursor: "pointer", fontFamily: T.font, boxShadow: "0 8px 20px rgba(20,60,90,.28)" }}>C'est compris</button>
       </div>
     </div>
   </div>);

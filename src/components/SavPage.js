@@ -83,7 +83,7 @@ function StepFlow({ t, canEdit, onSet, onNotes, me, isAdmin }) {
 function Steps({ t }) {
   const F = flowOf(t.type), s = t.step || 0;
   return <span aria-label={"Étape " + (s + 1) + " sur " + F.length + " : " + F[s]} style={{ display: "inline-flex", gap: 2, width: 110 }}>
-    {F.map((_, i) => <i key={i} style={{ flex: 1, height: 6, borderRadius: 2, background: i < s ? T.ink700 : i === s ? (isClosed(t) ? T.emerald600 : T.amber500) : T.surfaceAlt }} />)}</span>;
+    {F.map((_, i) => <i key={i} style={{ flex: 1, height: 6, borderRadius: 4, background: i < s ? T.ink700 : i === s ? (isClosed(t) ? T.emerald600 : T.amber500) : T.surfaceAlt }} />)}</span>;
 }
 function Modal({ title, onClose, children, width = 640 }) {
   return <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 10010, background: "rgba(10,14,22,.45)", display: "grid", placeItems: "center", padding: 16 }}>
@@ -428,7 +428,7 @@ function PlanningView({ inters, demandes, techs, canEdit, nomOf, me, myPjs, onOp
       <button type="button" onClick={() => setZ(z + 1)} disabled={z >= ZOOMS.length - 1} aria-label="Zoomer" title="Agrandir les jours" style={{ ...navBtn, color: z >= ZOOMS.length - 1 ? T.ink300 : T.ink700, cursor: z >= ZOOMS.length - 1 ? "default" : "pointer" }}>+</button></div>
     <button type="button" onClick={goToday} className="enogia-btn-ind" style={{ minHeight: 32, padding: "0 12px", borderRadius: 8, border: "1.5px solid " + T.teal500, background: "transparent", color: T.teal600, fontSize: FZ.sm, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>Aujourd'hui</button>
   </div>;
-  const sw = (bg, extra) => <i aria-hidden="true" style={{ display: "inline-block", width: 22, height: 12, borderRadius: 3, background: bg, ...extra }} />;
+  const sw = (bg, extra) => <i aria-hidden="true" style={{ display: "inline-block", width: 22, height: 12, borderRadius: 4, background: bg, ...extra }} />;
   const legend = <div style={{ padding: "8px 14px", fontSize: 12, color: T.ink500, borderTop: "1px solid " + T.line, display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center" }}>
     {canEdit ? <>
       <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw(T.info100, { borderLeft: "3px solid " + T.info600 })}Planifiée (validée avec le client)</span>
@@ -535,7 +535,7 @@ function HBars({ items, fmt = v => v, color }) {
   if (!items.length) return <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Rien sur la période</div>;
   return <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>{items.map(([l, v]) => <div key={l} style={{ display: "grid", gridTemplateColumns: "minmax(110px, 180px) 1fr auto", gap: 8, alignItems: "center", fontSize: FZ.sm }}>
     <span style={{ color: T.ink700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={l}>{l}</span>
-    <span style={{ height: 10, background: T.surfaceAlt, borderRadius: 2, overflow: "hidden" }}><i style={{ display: "block", height: "100%", width: (v / max * 100) + "%", background: color || T.dv1 }} /></span>
+    <span style={{ height: 10, background: T.surfaceAlt, borderRadius: 4, overflow: "hidden" }}><i style={{ display: "block", height: "100%", width: (v / max * 100) + "%", background: color || T.dv1 }} /></span>
     <span style={{ fontVariantNumeric: "tabular-nums", color: T.ink900, minWidth: 48, textAlign: "right" }}>{fmt(v)}</span></div>)}</div>;
 }
 function MonthCols({ months, series, fmt = v => v, h = 120 }) {
@@ -560,7 +560,7 @@ function SavKpiView({ doc, techs, canCost, nomOf }) {
         <thead><tr><th style={tableTh()}>Personne</th><th style={{ ...tableTh(), width: "34%" }}>Jours sur site (12 mois)</th><th style={tableTh({ num: true })}>Occupation</th><th style={tableTh({ num: true })}>À venir (90 j)</th><th style={tableTh({ num: true })}>Responsable</th><th style={tableTh({ num: true })}>En appui</th></tr></thead>
         <tbody>{P.map(p => { const maxD = Math.max(1, ...P.map(x => x.past)); return <tr key={p.name}>
           <td style={tableTd({ ink: T.ink900 })}>{p.name}</td>
-          <td style={tableTd()}><span style={{ display: "flex", gap: 8, alignItems: "center" }}><span style={{ flex: 1, height: 10, background: T.surfaceAlt, borderRadius: 2, overflow: "hidden" }}><i style={{ display: "block", height: "100%", width: (p.past / maxD * 100) + "%", background: T.dv1 }} /></span><span style={{ fontVariantNumeric: "tabular-nums", minWidth: 36, textAlign: "right", color: T.ink900 }}>{p.past} j</span></span></td>
+          <td style={tableTd()}><span style={{ display: "flex", gap: 8, alignItems: "center" }}><span style={{ flex: 1, height: 10, background: T.surfaceAlt, borderRadius: 4, overflow: "hidden" }}><i style={{ display: "block", height: "100%", width: (p.past / maxD * 100) + "%", background: T.dv1 }} /></span><span style={{ fontVariantNumeric: "tabular-nums", minWidth: 36, textAlign: "right", color: T.ink900 }}>{p.past} j</span></span></td>
           <td style={tableTd({ num: true })}>{occ(p)} %</td>
           <td style={tableTd({ num: true, ink: p.next ? T.ink900 : T.ink500 })}>{p.next} j</td>
           <td style={tableTd({ num: true })}>{p.lead}</td><td style={tableTd({ num: true })}>{p.support}</td></tr>; })}</tbody></table></div>}

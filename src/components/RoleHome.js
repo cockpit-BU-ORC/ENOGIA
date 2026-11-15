@@ -210,7 +210,7 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
         {days.map(({ l, d }) => { const list = tView ? mineT.filter(r => { const e = effOf(r); return e.from <= d && e.to >= d; }) : []; return (
           <div key={d} style={{ background: d === today ? T.teal100 : T.surface, borderRadius: 8, padding: "6px 6px 8px", minWidth: 0 }}>
             <div style={{ fontSize: FZ.xs, fontWeight: 600, color: d === today ? T.teal600 : T.ink700 }}>{l} {d.slice(8, 10)}</div>
-            {list.length === 0 ? <div style={{ ...grey, marginTop: 4 }}>—</div> : list.map(r => <button key={r.pj} type="button" onClick={() => onOpenPj && onOpenPj(r.pj)} style={{ display: "block", width: "100%", marginTop: 4, border: "none", borderLeft: "3px solid " + S.tests.solid, background: T.card, borderRadius: "0 6px 6px 0", padding: "3px 6px", textAlign: "left", cursor: "pointer", fontFamily: T.fontMono, fontSize: 11, fontWeight: 600, color: T.ink900, minHeight: 24 }}>{r.pj}</button>)}
+            {list.length === 0 ? <div style={{ ...grey, marginTop: 4 }}>—</div> : list.map(r => <button key={r.pj} type="button" onClick={() => onOpenPj && onOpenPj(r.pj)} style={{ display: "block", width: "100%", marginTop: 4, border: "none", borderLeft: "3px solid " + S.tests.solid, background: T.card, borderRadius: "0 8px 8px 0", padding: "3px 6px", textAlign: "left", cursor: "pointer", fontFamily: T.fontMono, fontSize: 11, fontWeight: 600, color: T.ink900, minHeight: 24 }}>{r.pj}</button>)}
           </div>); })}
       </div></>); } };
   W.arrivees = { label: "Prochaines arrivées au banc", span: 6, render: () => sec("arrivees", "Prochaines arrivées au banc", S.arrivee.ring, <>
@@ -229,7 +229,7 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
           <span style={{ fontSize: FZ.xs, fontWeight: 600, color: over ? T.red500 : T.ink900, fontVariantNumeric: "tabular-nums" }}>{w.hours} h</span>
           <div style={{ width: "100%", maxWidth: 52, height: 84, position: "relative" }}>
             <div title={"capacité " + w.cap + " h"} style={{ position: "absolute", left: -4, right: -4, bottom: Math.round(84 * w.cap / max), borderTop: "1.5px dashed " + T.ink500 }} />
-            <div className="enogia-bar-fill" style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: Math.max(3, Math.round(84 * w.hours / max)), background: over ? T.red500 : S.production.solid, borderRadius: "3px 3px 0 0" }} />
+            <div className="enogia-bar-fill" style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: Math.max(3, Math.round(84 * w.hours / max)), background: over ? T.red500 : S.production.solid, borderRadius: 0 }} />
           </div>
           <span style={grey}>{fmtD(w.a)}</span>
         </div>); })}

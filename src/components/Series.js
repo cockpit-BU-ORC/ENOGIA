@@ -149,7 +149,7 @@ function ImportPanel({rows,save,onClose,onDone}){
         </table>
       </div>
       <div style={{display:"flex",alignItems:"center",gap:12,marginTop:10}}>
-        <button disabled={!chosen.length||(run&&run.done<run.total)} onClick={go} style={{padding:"8px 16px",borderRadius:8,border:"none",background:chosen.length?T.teal500:T.line,color:"#fff",fontSize:FZ.sm,fontWeight:600,cursor:chosen.length?"pointer":"default"}}>Enregistrer {chosen.length} N° de série</button>
+        <button disabled={!chosen.length||(run&&run.done<run.total)} onClick={go} style={{padding:"8px 16px",borderRadius:8,border:"none",background:chosen.length?T.teal500:T.line,color:T.onFill,fontSize:FZ.sm,fontWeight:600,cursor:chosen.length?"pointer":"default"}}>Enregistrer {chosen.length} N° de série</button>
         {run&&<span style={{fontSize:FZ.xs,fontWeight:600,color:run.fail?T.red500:T.teal600}}>{run.done} / {run.total}{run.fail?" · "+run.fail+" échec"+(run.fail>1?"s":""):""}</span>}
       </div>
     </>}

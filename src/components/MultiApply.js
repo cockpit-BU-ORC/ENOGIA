@@ -147,7 +147,7 @@ export function MultiApplyDialog({ onClose, data, currentPj, savePjMetaMulti, ad
             {tab === "comment" && <label style={{ display: "flex", gap: 7, alignItems: "center", fontSize: FZ.sm }}><input type="checkbox" checked={priv} onChange={e => setPriv(e.target.checked)} style={{ accentColor: T.teal600 }} />Commentaire privé</label>}
           </>}
           <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginTop: "auto" }}>
-            <button disabled={!!problem || busy} onClick={apply} title={problem || ""} style={{ border: "none", borderRadius: 12, padding: "8px 16px", background: problem ? T.ink100 : T.navy700, color: problem ? T.ink500 : "#fff", fontWeight: 600, fontSize: FZ.sm, fontFamily: T.font, cursor: problem ? "default" : "pointer" }}>{busy ? "Enregistrement…" : "Appliquer à " + pjs.length + " projet" + (pjs.length > 1 ? "s" : "")}</button>
+            <button disabled={!!problem || busy} onClick={apply} title={problem || ""} style={{ border: "none", borderRadius: 12, padding: "8px 16px", background: problem ? T.ink100 : T.navy700, color: problem ? T.ink500 : T.onFill, fontWeight: 600, fontSize: FZ.sm, fontFamily: T.font, cursor: problem ? "default" : "pointer" }}>{busy ? "Enregistrement…" : "Appliquer à " + pjs.length + " projet" + (pjs.length > 1 ? "s" : "")}</button>
             {problem && <span style={{ fontSize: FZ.xs, color: T.ink500 }}>{problem}</span>}
             {msg && <span role="status" style={{ fontSize: FZ.xs, fontWeight: 600, color: msg.err ? T.red600 : T.emerald600 }}>{msg.t}</span>}
           </div>

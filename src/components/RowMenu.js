@@ -54,7 +54,7 @@ export function RowMenu({ pj, x, y, canSetEtat, etat, onOpen, onComment, onSetEt
           {ASSIGNABLE_ETATS.map(id => {
             const m = ETAT_META[id]; if (!m) return null;
             return (
-              <button key={id} type="button" role="menuitemradio" aria-checked={id === etat} className="enogia-menu-item" onClick={() => { onSetEtat(id); onClose(); }} style={{ fontSize: FZ.sm, color: T.ink900, fontWeight: id === etat ? 700 : 400 }}>
+              <button key={id} type="button" role="menuitemradio" aria-checked={id === etat} className="enogia-menu-item" onClick={() => { onSetEtat(id); onClose(); }} style={{ fontSize: FZ.sm, color: T.ink900, fontWeight: id === etat ? 600 : 400 }}>
                 <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: "50%", background: m.bar, flexShrink: 0 }} />{m.label}
                 {id === etat && <span style={{ marginLeft: "auto", color: T.accent, display: "inline-flex" }}><NavIcon name="check" size={14} /></span>}
               </button>

@@ -67,7 +67,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-15-v343-audit-taste";
+const APP_BUILD_VERSION = "2026-11-15-v344-audit-taste-4-5";
 
 const ReleasePopup = React.lazy(() => import("./components/ReleaseNotes").then(m => ({ default: m.ReleasePopup })));
 function Navigate0({ go }) { useEffect(() => { go(); }, []); return null; } // eslint-disable-line react-hooks/exhaustive-deps
@@ -190,7 +190,7 @@ export default function App(){
     root.style.setProperty("--e-ink700",T.ink700);
     root.style.setProperty("--e-ink300",T.ink300);
     root.style.setProperty("--e-accent",T.accent);
-    root.style.setProperty("--e-ind-bg",T.mode==="dark"?T.teal600:T.teal500);root.style.setProperty("--e-ind-ink",T.mode==="dark"?"#0B1130":"#FFFFFF"); // v174 : survol des boutons d'action
+    root.style.setProperty("--e-ind-bg",T.mode==="dark"?T.teal600:T.teal500);root.style.setProperty("--e-ind-ink",T.onInd); // v174 : survol des boutons d'action
     root.style.setProperty("--e-teal500",T.teal500);
     root.style.setProperty("--e-scroll",mixHex(T.surface,T.ink900,T.mode==="dark"?.32:.25)); // barres de défilement : teinte du thème (v141)
     root.style.setProperty("--e-scroll-hover",mixHex(T.surface,T.ink900,T.mode==="dark"?.5:.45));
@@ -1140,7 +1140,7 @@ export default function App(){
       <button type="button" onClick={()=>setView("home")} aria-label={SITE_TITLE+" — accueil"} title="Accueil" style={{border:"none",background:"transparent",cursor:"pointer",padding:navCompact?"2px 0 10px":"2px 10px 12px",display:"flex",justifyContent:navCompact?"center":"flex-start",alignItems:"center",minHeight:44}}>
         <span style={{display:"flex",flexDirection:"column",alignItems:navCompact?"center":"flex-start",gap:6,minWidth:0}}>
         <img src={process.env.PUBLIC_URL+"/enogia-logo-color-crop.svg"} alt="" aria-hidden="true" width="105" height="42" style={{height:navCompact?24:34,width:"auto",maxWidth:navCompact?44:170,objectFit:"contain",objectPosition:"left center",filter:NAV.industrial||darkMode?"brightness(0) invert(1)":"none"}}/>
-        {!navCompact&&<span style={{textAlign:"left",lineHeight:1.25}}><span style={{display:"block",fontFamily:T.fontDisplay,fontWeight:600,fontSize:14,letterSpacing:".02em",color:NAV.industrial?"#FFFFFF":T.ink900}}>{SITE_NAME} <Hl color={NAV.industrial?NAV.mark:T.amber500} style={{fontWeight:600,whiteSpace:"nowrap"}}>{SITE_SCOPE}</Hl></span><span style={{display:"block",fontSize:11,color:NAV.ink,marginTop:2,whiteSpace:"normal"}}>{SITE_SUB}</span></span>}
+        {!navCompact&&<span style={{textAlign:"left",lineHeight:1.25}}><span style={{display:"block",fontFamily:T.fontDisplay,fontWeight:600,fontSize:14,letterSpacing:".02em",color:NAV.industrial?T.onFill:T.ink900}}>{SITE_NAME} <Hl color={NAV.industrial?NAV.mark:T.amber500} style={{fontWeight:600,whiteSpace:"nowrap"}}>{SITE_SCOPE}</Hl></span><span style={{display:"block",fontSize:11,color:NAV.ink,marginTop:2,whiteSpace:"normal"}}>{SITE_SUB}</span></span>}
         </span>
       </button>
       {NAV_TREE.map(({g,items})=><React.Fragment key={g}>
@@ -1149,7 +1149,7 @@ export default function App(){
         {items.map(it=>{const on=it.on,hasSubs=it.subs&&it.subs.length>1,showSubs=(on||subsOpen.has(it.id))&&hasSubs;return(<React.Fragment key={it.id}>
           <div style={{position:"relative"}}>
           <button className="enogia-nav-btn e-hov e-hov-ink" data-on={on?"1":"0"} onClick={()=>{if(coarse&&!on&&hasSubs&&!subsOpen.has(it.id)){togSubs(it.id);return;}it.go();setNavPeek(false);}} title={it.l} aria-label={it.badge?it.l+", "+it.badge+" nouvelle"+(it.badge>1?"s":"")+" mise"+(it.badge>1?"s":"")+" à jour":it.l} aria-current={on?"page":undefined}
-            style={{position:"relative",width:navCompact?40:"100%",height:40,borderRadius:navCompact?12:10,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:navCompact?"center":"flex-start",gap:12,padding:navCompact?0:"0 12px",background:on?NAV.bgOn:"transparent",color:on?NAV.inkOn:NAV.ink,fontFamily:T.font,fontSize:FZ.sm,fontWeight:on?700:500,whiteSpace:"nowrap",transition:"background .15s ease, color .15s ease","--nav-mark":NAV.mark,"--e-hov-bg":NAV.hover,"--e-hov-ink":NAV.hoverInk}}
+            style={{position:"relative",width:navCompact?40:"100%",height:40,borderRadius:navCompact?12:12,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:navCompact?"center":"flex-start",gap:12,padding:navCompact?0:"0 12px",background:on?NAV.bgOn:"transparent",color:on?NAV.inkOn:NAV.ink,fontFamily:T.font,fontSize:FZ.sm,fontWeight:on?600:500,whiteSpace:"nowrap",transition:"background .15s ease, color .15s ease","--nav-mark":NAV.mark,"--e-hov-bg":NAV.hover,"--e-hov-ink":NAV.hoverInk}}
             aria-expanded={hasSubs?!!showSubs:undefined}>
             <NavIcon name={it.icon} size={19}/>{!navCompact&&<span className="enogia-nav-lab" style={{flex:1,textAlign:"left"}}>{it.l}</span>}{hasSubs&&!navCompact&&<span aria-hidden="true" style={{width:28,flexShrink:0}}/>}{it.id==="planning"&&<ChangesBadge n={unseenChanges.length}/>}</button>
           {hasSubs&&!navCompact&&!on&&<button type="button" onClick={e=>{e.stopPropagation();togSubs(it.id);}} aria-label={(showSubs?"Replier":"Déplier")+" les pages de "+it.l} aria-expanded={!!showSubs} title={(showSubs?"Replier":"Déplier")+" les sous-pages"}
@@ -1159,7 +1159,7 @@ export default function App(){
           </div>
           {showSubs&&<div role="group" aria-label={"Pages de "+it.l} className="enogia-nav-subs" style={{display:"flex",flexDirection:"column",margin:"0 0 4px 30px",paddingLeft:8,borderLeft:"1px solid "+(NAV.industrial?"rgba(255,255,255,.16)":T.line)}}>
             {it.subs.map(sb=><button key={sb.id} type="button" className="enogia-nav-sub" onClick={()=>{sb.go();setNavPeek(false);}} aria-current={sb.on?"page":undefined}
-              style={{border:"none",background:"transparent",textAlign:"left",cursor:"pointer",padding:"6px 8px",minHeight:30,borderRadius:8,fontFamily:T.font,fontSize:FZ.sm,fontWeight:sb.on?700:500,color:sb.on?NAV.inkOn:NAV.ink,whiteSpace:"nowrap"}}>{sb.l}</button>)}
+              style={{border:"none",background:"transparent",textAlign:"left",cursor:"pointer",padding:"6px 8px",minHeight:30,borderRadius:8,fontFamily:T.font,fontSize:FZ.sm,fontWeight:sb.on?600:500,color:sb.on?NAV.inkOn:NAV.ink,whiteSpace:"nowrap"}}>{sb.l}</button>)}
           </div>}
         </React.Fragment>);})}
       </React.Fragment>)}

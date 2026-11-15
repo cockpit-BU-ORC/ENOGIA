@@ -89,7 +89,7 @@ function LoadCols({ weeks, H = 200 }) {
   return <div role="img" aria-label={weeks.map(w => w.lab + " " + w.hours + " h sur " + w.cap).join(", ")}>
     <div style={{ display: "flex", alignItems: "flex-end", gap: 8, height: H, borderBottom: "1px solid " + T.line, position: "relative" }}>
       {weeks.map(w => { const over = w.cap && w.hours > w.cap; return <div key={w.lab} data-tip={w.lab + " : " + w.hours + " h pour " + w.cap + " h (" + (w.pct == null ? "—" : w.pct + " %") + ")"} style={{ flex: 1, minWidth: 0, height: "100%", position: "relative", display: "flex", justifyContent: "center" }}>
-        <div style={{ position: "absolute", bottom: 0, width: "min(24px, 70%)", height: Math.max(1, y(w.hours)), background: over ? T.red500 : T.dvSeq4, borderRadius: "4px 4px 0 0" }} />
+        <div style={{ position: "absolute", bottom: 0, width: "min(24px, 70%)", height: Math.max(1, y(w.hours)), background: over ? T.red500 : T.dvSeq4, borderRadius: 0 }} />
         <div style={{ position: "absolute", left: -4, right: -4, bottom: y(w.cap), borderTop: "2px solid " + T.ink900 }} />
         {over && <div style={{ position: "absolute", bottom: y(w.hours) + 4, fontSize: 11, fontWeight: 600, color: T.ink900, fontVariantNumeric: "tabular-nums" }}>{w.pct} %</div>}
       </div>; })}
@@ -107,7 +107,7 @@ function MonthCols({ months, H = 180 }) {
       {months.map(m => <div key={m.key} style={{ flex: 1, height: "100%", display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 3 }}>
         {ser.map(s => { const v = m[s[0]], plan = m.kind === "prévu"; return <div key={s[0]} data-tip={m.m + " · " + s[1] + " : " + v + (plan ? " (prévu)" : m.kind === "en cours" ? " (prévu ou fait, mois en cours)" : " (fait)")} style={{ width: 20, height: "100%", display: "flex", flexDirection: "column", justifyContent: "flex-end", alignItems: "center" }}>
           <span style={{ fontSize: 11, color: T.ink700, fontVariantNumeric: "tabular-nums" }}>{v}</span>
-          <span style={{ width: 20, height: Math.max(1, v / max * (H - 18)), background: plan ? "transparent" : s[2], border: plan ? "1.5px dashed " + s[2] : "none", boxSizing: "border-box", borderRadius: "4px 4px 0 0" }} />
+          <span style={{ width: 20, height: Math.max(1, v / max * (H - 18)), background: plan ? "transparent" : s[2], border: plan ? "1.5px dashed " + s[2] : "none", boxSizing: "border-box", borderRadius: 0 }} />
         </div>; })}
       </div>)}
     </div>

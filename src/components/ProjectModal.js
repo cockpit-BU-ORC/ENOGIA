@@ -116,7 +116,7 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
         return(<>
           <div role="list" aria-label="Parcours de la machine" style={{display:"grid",gridTemplateColumns:"repeat(5,minmax(0,1fr))",gap:3,marginBottom:10}}>
             {steps.map(([k,l,dt,tone],i)=>{const done=i<curI||(i===curI&&i===4),on=i===curI&&i!==4,fill=done||on;return(
-              <div role="listitem" key={k} className="enogia-bar-fill" aria-current={on?"step":undefined} style={{background:fill?tone.solid:T.panel,color:fill?inkOn(tone.solid):T.ink500,borderRadius:i===0?"6px 0 0 6px":i===4?"0 6px 6px 0":0,padding:"5px 4px",textAlign:"center",minWidth:0,outline:on?"2px solid "+T.ink900:"none",outlineOffset:-2}}>
+              <div role="listitem" key={k} className="enogia-bar-fill" aria-current={on?"step":undefined} style={{background:fill?tone.solid:T.panel,color:fill?inkOn(tone.solid):T.ink500,borderRadius:i===0?"6px 0 0 6px":i===4?"0 8px 8px 0":0,padding:"5px 4px",textAlign:"center",minWidth:0,outline:on?"2px solid "+T.ink900:"none",outlineOffset:-2}}>
                 <div style={{fontFamily:T.fontLabel,fontSize:11,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{l}</div>
                 <div style={{fontSize:FZ.xs,fontWeight:600,fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>{k==="production"?"":dt?fmtMode(dt,df):"—"}{k==="depart"&&r.drift>0?" +"+r.drift+" j":""}</div>
                 {on&&<div style={{fontFamily:T.fontLabel,fontSize:11,fontWeight:600}}>en cours</div>}
@@ -139,7 +139,7 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
           {key:"commentaires",label:"Commentaires",icon:"comments",count:(comments?.[pj]||[]).filter(c=>!c.private).length},
           ...(pinOk&&delayTypes?[{key:"retards",label:"Retards",icon:"clock",count:(delays?.[pj]||[]).length}]:[]),
         ].map(t=><button key={t.key} role="tab" aria-selected={tab===t.key} onClick={()=>setTab(t.key)} style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:4,padding:"9px 6px",marginBottom:-1,border:"none",borderBottom:"3px solid "+(tab===t.key?T.teal500:"transparent"),borderRadius:0,cursor:"pointer",background:"transparent",color:tab===t.key?T.ink900:T.ink500,fontSize:FZ.xs,fontWeight:600,transition:"border-color .18s ease,color .15s ease"}}>
-          <NavIcon name={t.icon} size={12}/>{t.label}{t.count>0&&<span style={{fontSize:FZ.xs,fontWeight:600,color:tab===t.key?"#fff":T.ink500,background:tab===t.key?T.teal500:T.ink100,borderRadius:999,padding:"1px 6px"}}>{t.count}</span>}
+          <NavIcon name={t.icon} size={12}/>{t.label}{t.count>0&&<span style={{fontSize:FZ.xs,fontWeight:600,color:tab===t.key?T.onFill:T.ink500,background:tab===t.key?T.teal500:T.ink100,borderRadius:999,padding:"1px 6px"}}>{t.count}</span>}
         </button>)}
       </div>
 
@@ -164,7 +164,7 @@ export function ProjectModal({pj,data,df,onClose,comments,addComment,deleteComme
                   if(!day)return<div key={"e"+ci}/>;
                   const evs=de[day]||[];
                   const isToday=day===today.getDate()&&m===today.getMonth()&&y===today.getFullYear();
-                  return(<div key={day} style={{aspectRatio:"1",borderRadius:8,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontSize:FZ.xs,fontWeight:evs.length?700:500,color:evs.length?evs[0].ink:isToday?T.teal600:T.ink700,background:evs.length?evs[0].bg:isToday?T.teal100:"transparent",border:evs.length?"1.5px solid "+evs[0].c:isToday?"1.5px solid "+T.teal400:"none",position:"relative"}}>
+                  return(<div key={day} style={{aspectRatio:"1",borderRadius:8,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontSize:FZ.xs,fontWeight:evs.length?600:500,color:evs.length?evs[0].ink:isToday?T.teal600:T.ink700,background:evs.length?evs[0].bg:isToday?T.teal100:"transparent",border:evs.length?"1.5px solid "+evs[0].c:isToday?"1.5px solid "+T.teal400:"none",position:"relative"}}>
                     {day}
                     {evs.length>1&&<div style={{position:"absolute",bottom:1,right:2,fontSize:FZ.xs,color:evs[0].ink}}>+{evs.length-1}</div>}
                   </div>);
@@ -300,7 +300,7 @@ export function ProjectComments({pj,comments,addComment,deleteComment,pinOk,auth
         style={{padding:"8px 12px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700,resize:"vertical",width:"100%",boxSizing:"border-box",background:T.card}}/>
       <MentionPicker text={text} pjs={[pj]}/>
       <div style={{display:"flex",justifyContent:"flex-end",marginTop:8}}>
-        <button onClick={submit} disabled={!text.trim()} style={{padding:"8px 16px",borderRadius:8,border:"none",background:text.trim()?T.teal500:T.panelDim,color:text.trim()?"#fff":T.ink300,fontSize:FZ.sm,fontWeight:600,cursor:text.trim()?"pointer":"default"}}>Publier</button>
+        <button onClick={submit} disabled={!text.trim()} style={{padding:"8px 16px",borderRadius:8,border:"none",background:text.trim()?T.teal500:T.panelDim,color:text.trim()?T.onFill:T.ink300,fontSize:FZ.sm,fontWeight:600,cursor:text.trim()?"pointer":"default"}}>Publier</button>
       </div>
     </div>
 
@@ -322,13 +322,13 @@ export function ProjectComments({pj,comments,addComment,deleteComment,pinOk,auth
               <span style={{fontSize:FZ.xs,color:T.ink300}}>{relTime(c.date)}</span>
               <SuperOnly><button onClick={()=>{setDeleteTarget(c._idx);setPinInput("");}} title="Supprimer" style={{background:"none",border:"none",color:T.ink100,cursor:"pointer",fontSize:FZ.xs,padding:0,marginLeft:2}}><NavIcon name="close" size={11}/></button></SuperOnly>
             </div>
-            <div data-no-i18n="1" style={{background:c.private?T.amber100:T.panel,borderRadius:"3px 12px 12px 12px",padding:"8px 12px",display:"inline-block",maxWidth:"100%",fontSize:FZ.xs,color:T.ink700,whiteSpace:"pre-wrap"}}>{c.text}</div>
+            <div data-no-i18n="1" style={{background:c.private?T.amber100:T.panel,borderRadius:"4px 12px 12px 12px",padding:"8px 12px",display:"inline-block",maxWidth:"100%",fontSize:FZ.xs,color:T.ink700,whiteSpace:"pre-wrap"}}>{c.text}</div>
             <CommentMarks c={c} pj={pj} idx={c._idx} me={mctx.me} nameOf={e=>((mctx.options||[]).find(o=>o.email===e)||{}).name||undefined} resolveComment={resolveComment}/>
             <Reactions c={c} pj={pj} idx={c._idx}/>
             {c.linkedDate&&<div style={{marginTop:5,fontSize:FZ.xs,color:T.ink500,fontWeight:600}}>Lié au {fmt(new Date(c.linkedDate))}</div>}
             {deleteTarget===c._idx&&<div style={{marginTop:8,paddingTop:8,borderTop:"1px solid "+T.line,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
               <span style={{fontSize:FZ.sm,fontWeight:600,color:T.ink900}}>Supprimer ce commentaire ?</span>
-              <button onClick={confirmDelete} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.redFill,color:"#fff",fontSize:FZ.sm,fontWeight:600,cursor:"pointer"}}>Confirmer la suppression</button>
+              <button onClick={confirmDelete} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.redFill,color:T.onFill,fontSize:FZ.sm,fontWeight:600,cursor:"pointer"}}>Confirmer la suppression</button>
               <button onClick={()=>setDeleteTarget(null)} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.panel,boxShadow:T.outline,color:T.ink700,fontSize:FZ.sm,cursor:"pointer"}}>Annuler</button>
             </div>}
           </div>
@@ -403,7 +403,7 @@ export function DelayAllocations({pj,delays,delayTypes,setDelayTypes,addDelayAll
           {openThread===d.id&&<DelayThread d={d} pj={pj} authorName={authorName} addDelayComment={addDelayComment} deleteDelayComment={deleteDelayComment}/>}
           {deleteTarget===d.id&&<div style={{marginTop:8,paddingTop:8,borderTop:"1px solid "+T.line,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
             <input type="password" value={pinInput} onChange={e=>setPinInput(e.target.value)} placeholder="Code Manager" style={{padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,width:120}}/>
-            <button onClick={confirmDelete} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.redFill,color:"#fff",fontSize:FZ.sm,fontWeight:600,cursor:"pointer"}}>Confirmer</button>
+            <button onClick={confirmDelete} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.redFill,color:T.onFill,fontSize:FZ.sm,fontWeight:600,cursor:"pointer"}}>Confirmer</button>
             <button onClick={()=>setDeleteTarget(null)} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.panel,boxShadow:T.outline,color:T.ink700,fontSize:FZ.sm,cursor:"pointer"}}>Annuler</button>
           </div>}
         </div>
@@ -441,7 +441,7 @@ function DelayThread({d,pj,authorName,addDelayComment,deleteDelayComment}){
         <div data-no-i18n="1" style={{fontSize:FZ.sm,color:T.ink700,whiteSpace:"pre-wrap",marginTop:2}}>{c.text}</div>
         {delTarget===i&&<div style={{marginTop:6,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
           <input type="password" value={pin} onChange={e=>setPin(e.target.value)} placeholder="Code Manager" style={{padding:"4px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.xs,fontFamily:T.font,width:110}}/>
-          <button onClick={()=>confirmDelete(i)} style={{padding:"4px 8px",borderRadius:8,border:"none",background:T.redFill,color:"#fff",fontSize:FZ.xs,fontWeight:600,cursor:"pointer"}}>Confirmer</button>
+          <button onClick={()=>confirmDelete(i)} style={{padding:"4px 8px",borderRadius:8,border:"none",background:T.redFill,color:T.onFill,fontSize:FZ.xs,fontWeight:600,cursor:"pointer"}}>Confirmer</button>
           <button onClick={()=>setDelTarget(null)} style={{padding:"4px 8px",borderRadius:8,border:"none",background:T.panelDim,color:T.ink700,fontSize:FZ.xs,cursor:"pointer"}}>Annuler</button>
         </div>}
       </div>
@@ -449,7 +449,7 @@ function DelayThread({d,pj,authorName,addDelayComment,deleteDelayComment}){
     <div style={{display:"flex",gap:6,alignItems:"flex-start"}}>
       {!authorName&&<input type="text" value={authorInput} onChange={e=>setAuthorInput(e.target.value)} placeholder="Nom" maxLength={40} style={{width:90,padding:"8px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.xs,fontFamily:T.font,color:T.ink700}}/>}
       <input type="text" value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();send();}}} placeholder="Répondre sur ce retard… (Entrée pour envoyer)" maxLength={500} style={{flex:1,padding:"8px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.xs,fontFamily:T.font,color:T.ink700}}/>
-      <button onClick={send} disabled={!text.trim()||!author.trim()} style={{padding:"8px 12px",borderRadius:8,border:"none",background:text.trim()&&author.trim()?T.teal500:T.panelDim,color:text.trim()&&author.trim()?"#fff":T.ink300,fontSize:FZ.xs,fontWeight:600,cursor:text.trim()&&author.trim()?"pointer":"default"}}>Envoyer</button>
+      <button onClick={send} disabled={!text.trim()||!author.trim()} style={{padding:"8px 12px",borderRadius:8,border:"none",background:text.trim()&&author.trim()?T.teal500:T.panelDim,color:text.trim()&&author.trim()?T.onFill:T.ink300,fontSize:FZ.xs,fontWeight:600,cursor:text.trim()&&author.trim()?"pointer":"default"}}>Envoyer</button>
     </div>
   </div>);
 }

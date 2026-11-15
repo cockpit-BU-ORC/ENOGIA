@@ -118,7 +118,7 @@ function Timeline({r,ini,kind}){
       const next=!past&&rv&&(i===0||(dOf(r[MS[i-1][0]])||0)<=today);
       const mk=past?{background:T.navy700,border:"2px solid "+T.navy700}:next?{background:T.card,border:"3px solid "+T.accent,boxShadow:"0 0 0 4px "+T.accent+"33"}:{background:T.card,border:"2px solid "+(rv?T.ink300:T.line)};
       return(<div key={k} style={{position:"relative",textAlign:"center",padding:"0 6px",minWidth:0}}>
-        <div style={{width:14,height:14,borderRadius:"50%",boxSizing:"border-box",margin:"0 auto 2px",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:FZ.xs,fontWeight:600,...mk}}>{past?"✓":""}</div>
+        <div style={{width:14,height:14,borderRadius:"50%",boxSizing:"border-box",margin:"0 auto 2px",display:"flex",alignItems:"center",justifyContent:"center",color:T.onFill,fontSize:FZ.xs,fontWeight:600,...mk}}>{past?"✓":""}</div>
         <Cap>{label}</Cap>
         <div style={{fontSize:FZ.sm,fontWeight:600,color:T.ink900,marginTop:0,whiteSpace:"nowrap",letterSpacing:"-.01em"}}>{rv?fmt(rv):"—"}</div>
         {k==="tests"&&r.testsFin&&<div style={{fontSize:FZ.xs,color:T.ink300,marginTop:1}}>→ {fmtLong(dOf(r.testsFin))}</div>}
@@ -766,7 +766,7 @@ function ChefOverview({name,rows,pvOf,onPick,onClose,summary}){
     {summary&&<ProjectSummary rows={rows} pvOf={pvOf} comments={summary.comments} delays={summary.delays} onPick={onPick}/>}
     <div className="enogia-stagger" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(210px,1fr))",gap:10}}>
       {sorted.map(x=>{const m=getPjMeta(x.pj,x),ec=ETAT_META[x.etat]||ETAT_META["NOT ORDERED"],pv=pvOf(x),nx=nextOf(x),edge=x.etat!=="SHIPPED"&&x.drift>10?T.red500:ec.bar;return(
-        <div key={x.pj} {...pressable(()=>onPick(x.pj),{"aria-label":"Ouvrir la fiche "+x.pj})} className="enogia-test-card" style={{background:T.card,border:"1px solid "+T.line,borderTop:"4px solid "+edge,borderRadius:"0 0 10px 10px",padding:"10px 12px",cursor:"pointer",minWidth:0}}>
+        <div key={x.pj} {...pressable(()=>onPick(x.pj),{"aria-label":"Ouvrir la fiche "+x.pj})} className="enogia-test-card" style={{background:T.card,border:"1px solid "+T.line,borderTop:"4px solid "+edge,borderRadius:"0 0 12px 12px",padding:"10px 12px",cursor:"pointer",minWidth:0}}>
           <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}><PjPlate pj={x.pj}/><EpcTag meta={m} short/>{x.gamme&&<span style={{fontFamily:T.fontLabel,fontSize:12,fontWeight:600,color:T.ink700}}>{x.gamme}</span>}<span style={{marginLeft:"auto"}}><CountryFlag pays={m.pays} size={13}/></span></div>
           <div title={m.nomProjet||""} style={{margin:"6px 0 2px",fontSize:FZ.sm,fontWeight:600,color:T.ink900,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{m.nomProjet&&m.nomProjet!=="—"?m.nomProjet:"—"}</div>
           <div style={{display:"flex",alignItems:"center",gap:6,fontSize:FZ.xs,color:T.ink500,flexWrap:"wrap"}}>
@@ -794,7 +794,7 @@ function FicheTabs({r,zones,zone,setZone,saved,worst,onUndo}){
   return(<div ref={ref} className="enogia-fiche-tabs" style={{position:"sticky",top:0,zIndex:9,margin:"0 -16px",padding:"0 16px",display:"flex",alignItems:"center",gap:16,boxShadow:"0 1px 0 "+T.line,"--fiche-bg":T.card}}>
     <span style={{fontFamily:T.fontMono,fontWeight:600,fontSize:FZ.sm,color:T.ink900,whiteSpace:"nowrap"}}>{r.pj}</span>
     <div role="tablist" aria-label="Zones de la fiche" style={{display:"flex",gap:16,overflowX:"auto",minWidth:0}}>
-      {zones.map(([id,l])=><button key={id} type="button" role="tab" aria-selected={zone===id} onClick={()=>go(id)} style={{border:"none",background:"transparent",padding:"10px 0",minHeight:40,cursor:"pointer",fontFamily:T.font,fontSize:FZ.sm,fontWeight:zone===id?700:500,color:zone===id?T.ink900:T.ink500,borderBottom:"2px solid "+(zone===id?T.ink900:"transparent"),whiteSpace:"nowrap",transition:"color 120ms, border-color 120ms"}}>{l}</button>)}
+      {zones.map(([id,l])=><button key={id} type="button" role="tab" aria-selected={zone===id} onClick={()=>go(id)} style={{border:"none",background:"transparent",padding:"10px 0",minHeight:40,cursor:"pointer",fontFamily:T.font,fontSize:FZ.sm,fontWeight:zone===id?600:500,color:zone===id?T.ink900:T.ink500,borderBottom:"2px solid "+(zone===id?T.ink900:"transparent"),whiteSpace:"nowrap",transition:"color 120ms, border-color 120ms"}}>{l}</button>)}
     </div>
     <span style={{flex:1}}/>
     {saved&&<span role="status" className="enogia-bell-peek" style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:FZ.xs,fontWeight:600,color:saved.ok?T.emerald600:T.red600,whiteSpace:"nowrap"}}>{!saved.ok?"Échec de l’enregistrement, réessayez":saved.undone?"↶ Modification annulée":"✓ Enregistré"}

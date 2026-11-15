@@ -193,20 +193,20 @@ export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load,
         {/* en-tête */}
         <div style={{ display: "flex", position: "sticky", top: 0, zIndex: 8, height: HEAD, background: C.bg, borderBottom: "1px solid " + C.line }}>
           <div style={{ width: LABEL_W, flex: "none", position: "sticky", left: 0, zIndex: 9, background: C.bg, borderRight: "1px solid " + C.line, display: "flex", alignItems: "flex-end", justifyContent: "space-between", padding: "0 8px 6px 12px", boxSizing: "border-box" }}>
-            <span style={{ fontSize: 11, fontWeight: 500, letterSpacing: ".06em", textTransform: "uppercase", color: C.ink3 }}>Couloirs</span>
+            <span style={{ fontSize: 12, fontWeight: 600, color: C.ink3 }}>Couloirs</span>
             <span style={{ display: "inline-flex", gap: 2 }}>
               {[["‹", -1, "Plus tôt"], ["›", 1, "Plus tard"]].map(([t, k, a]) => <button key={t} onClick={() => shift(k)} aria-label={a} title={a} style={{ width: 24, height: 22, border: "1px solid " + C.line, background: C.bg, color: C.ink2, borderRadius: 4, cursor: "pointer", fontSize: 14, lineHeight: 1, padding: 0 }}>{t}</button>)}
             </span>
           </div>
           <div style={{ position: "relative", width: W, flex: "none" }}>
             {head.top.map((m, i) => <div key={i} style={{ position: "absolute", left: m.x, width: m.w, top: 0, height: HEAD1, borderLeft: "1px solid " + C.line, padding: "4px 8px", fontSize: 11.5, fontWeight: 500, color: C.ink2, whiteSpace: "nowrap", overflow: "hidden", boxSizing: "border-box" }}>{m.w > 60 ? m.label : ""}</div>)}
-            {head.bottom.map((m, i) => <div key={i} style={{ position: "absolute", left: m.x, width: m.w, top: HEAD1, height: HEAD2, borderLeft: "1px solid " + C.line2, display: "flex", flexDirection: "column", alignItems: tl.zoom === "day" ? "center" : "flex-start", justifyContent: "center", paddingLeft: tl.zoom === "day" ? 0 : 6, fontSize: 10.5, color: m.we ? "#9CA3AF" : C.ink3, fontWeight: m.cur || m.today ? 700 : 400, background: m.cur ? T.surface : "transparent", boxSizing: "border-box", overflow: "hidden", lineHeight: 1.15 }}>
-              {tl.zoom === "day" && <span style={{ fontSize: 9, color: C.ink3 }}>{m.sub}</span>}<span style={m.today ? { background: C.ink, color: C.bg, borderRadius: 8, padding: "0 5px" } : undefined}>{m.label}</span></div>)}
+            {head.bottom.map((m, i) => <div key={i} style={{ position: "absolute", left: m.x, width: m.w, top: HEAD1, height: HEAD2, borderLeft: "1px solid " + C.line2, display: "flex", flexDirection: "column", alignItems: tl.zoom === "day" ? "center" : "flex-start", justifyContent: "center", paddingLeft: tl.zoom === "day" ? 0 : 6, fontSize: 11.5, color: m.we ? T.ink300 : C.ink3, fontWeight: m.cur || m.today ? 600 : 400, background: m.cur ? T.surface : "transparent", boxSizing: "border-box", overflow: "hidden", lineHeight: 1.15 }}>
+              {tl.zoom === "day" && <span style={{ fontSize: 11, color: C.ink3 }}>{m.sub}</span>}<span style={m.today ? { background: C.ink, color: C.bg, borderRadius: 8, padding: "0 5px" } : undefined}>{m.label}</span></div>)}
             {showGauge && Array.from({ length: Math.ceil((tl.hi - lo + 1) / 7) }, (_, i) => {
               const n = lo + i * 7, w = wmap.get(isoOfDay(n)); if (!w) return null; const r = w.cap > 0 ? w.hours / w.cap : (w.hours > 0 ? 9 : 0); const over = w.over;
               return (<div key={"g" + i} title={Math.round(w.hours) + " h planifiées / " + Math.round(w.cap) + " h de capacité"} style={{ position: "absolute", left: i * 7 * px + 3, width: 7 * px - 6, top: HEAD1 + HEAD2 + 7, height: 4, borderRadius: 4, background: C.line2 }}>
                 <div style={{ width: Math.min(100, r * 100) + "%", height: "100%", borderRadius: 4, background: over ? C.bad : r > 0.85 ? C.warn : C.ok }} />
-                {px >= 10 && <span style={{ position: "absolute", left: 0, top: 5, fontSize: 9, fontFamily: MONO, color: over ? C.bad : C.ink3, whiteSpace: "nowrap" }}>{Math.round(w.hours)}</span>}
+                {px >= 10 && <span style={{ position: "absolute", left: 0, top: 5, fontSize: 11, fontFamily: MONO, color: over ? C.bad : C.ink3, whiteSpace: "nowrap" }}>{Math.round(w.hours)}</span>}
               </div>);
             })}
           </div>
@@ -220,7 +220,7 @@ export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load,
                 <span style={{ width: 8, height: 8, background: STEP_COLOR[l.step], borderRadius: l.ms ? 1 : 2, transform: l.ms ? "rotate(45deg)" : "none", flex: "none" }} />
                 <span style={{ fontSize: 12, fontWeight: 500, color: C.ink }}>{l.title}</span>
               </div>
-              {bh >= 14 && <div style={{ fontSize: 10.5, color: C.ink3, marginTop: 3, paddingLeft: 15 }}>{l.items.length} PJ{l.res && rules[l.res] ? " · 1 à la fois" : ""}</div>}
+              {bh >= 14 && <div style={{ fontSize: 11.5, color: C.ink3, marginTop: 3, paddingLeft: 15 }}>{l.items.length} PJ{l.res && rules[l.res] ? " · 1 à la fois" : ""}</div>}
             </div>))}
           </div>
           <div style={{ position: "relative", width: W, flex: "none" }} onPointerDown={e => { if (e.target === e.currentTarget || e.target.dataset.bg) { setSel(null); if (scrollRef.current) { pan.current = { x0: e.clientX, s0: scrollRef.current.scrollLeft }; setPanning(true); } } }}>
@@ -242,12 +242,12 @@ export function PlannerLanes({ plan, basePlan, sched, cal, closurePeriods, load,
                 const y = it.y; return (<div key={it.key} {...common} onPointerDown={e => startDrag(e, { kind: "move", pj: it.pj, step: l.step, key: it.key, node: n })} onClick={() => { setSel({ pj: it.pj, step: l.step }); if (!readOnly && Date.now() - dragged.current > 300) setEdit({ it, step: l.step }); }}
                   style={{ position: "absolute", left: it.cx - 6, top: y, height: BH, display: "flex", alignItems: "center", gap: 6, opacity: dim ? 0.3 : 1, cursor: readOnly ? "default" : "grab", zIndex: on ? 5 : 2, whiteSpace: "nowrap" }}>
                   <span style={{ width: 11, height: 11, background: col, transform: "rotate(45deg)", borderRadius: 4, outline: on ? "2px solid " + C.ink : ch ? "2px dashed #E08A00" : "none", outlineOffset: 2, flex: "none", marginLeft: 0 }} />
-                  <span style={{ fontSize: FS + 0.5, fontWeight: on ? 700 : 500, color: on ? C.ink : C.ink2, fontFamily: MONO }}>{it.pj}</span>
+                  <span style={{ fontSize: FS + 0.5, fontWeight: on ? 600 : 500, color: on ? C.ink : C.ink2, fontFamily: MONO }}>{it.pj}</span>
                 </div>);
               }
               return (<div key={it.key} {...common} onPointerDown={e => startDrag(e, { kind: "move", pj: it.pj, step: l.step, key: it.key, node: n })} onClick={() => { setSel({ pj: it.pj, step: l.step }); if (!readOnly && Date.now() - dragged.current > 300) setEdit({ it, step: l.step }); }}
                 style={{ position: "absolute", left: it.x, top: it.y, width: it.w, height: BH, borderRadius: 4, background: col, opacity: dim ? 0.28 : 1, outline: on ? "2px solid " + C.ink : ch ? "2px dashed #E08A00" : "none", outlineOffset: 1, display: "flex", alignItems: "center", padding: "0 6px", gap: 5, color: inkOn(col), fontSize: FS, fontWeight: 500, overflow: "hidden", whiteSpace: "nowrap", cursor: readOnly ? "default" : "grab", zIndex: on ? 5 : 2, boxSizing: "border-box" }}>
-                {rank > 0 && it.w > 36 && <span style={{ fontFamily: MONO, fontSize: 9.5, background: "rgba(255,255,255,.25)", borderRadius: 4, padding: "0 3px", flex: "none" }}>{rank}</span>}
+                {rank > 0 && it.w > 36 && <span style={{ fontFamily: MONO, fontSize: 11, background: "rgba(255,255,255,.25)", borderRadius: 4, padding: "0 3px", flex: "none" }}>{rank}</span>}
                 <span style={{ fontFamily: MONO, pointerEvents: "none", overflow: "hidden", textOverflow: "ellipsis" }}>{it.out ? "" : label(it)}</span>
                 {it.w > 96 && <span style={{ marginLeft: "auto", opacity: 0.85, pointerEvents: "none", flex: "none", fontFamily: MONO }}>{n.dur} j</span>}
                 {pinned && <span aria-hidden="true" style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: "rgba(0,0,0,.35)" }} />}

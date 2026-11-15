@@ -66,7 +66,7 @@ export function InitialAddReview({parsed,initialData,onConfirm,onCancel,busy}){
       </div>
       <div style={{display:"flex",justifyContent:"flex-end",gap:8,marginTop:16}}>
         <button onClick={onCancel} style={{padding:"8px 16px",borderRadius:8,border:"1px solid "+T.line,background:"transparent",color:T.ink700,fontWeight:600,fontSize:FZ.sm,cursor:"pointer",fontFamily:T.font}}>Annuler</button>
-        <button disabled={busy||(chosen.length+fixChosen.length)===0} onClick={()=>onConfirm(chosen,fixChosen)} style={{padding:"8px 16px",borderRadius:8,border:"none",background:(chosen.length+fixChosen.length)===0?T.ink100:T.navy700,color:"#fff",fontWeight:600,fontSize:FZ.sm,cursor:(chosen.length+fixChosen.length)===0||busy?"default":"pointer",fontFamily:T.font,opacity:busy?.7:1}}>{busy?"Enregistrement…":[chosen.length?"Ancrer "+chosen.length+" nouveau"+(chosen.length>1?"x":""):"",fixChosen.length?"Corriger "+fixChosen.length+" PJ":""].filter(Boolean).join(" + ")||"Ancrer"}</button>
+        <button disabled={busy||(chosen.length+fixChosen.length)===0} onClick={()=>onConfirm(chosen,fixChosen)} style={{padding:"8px 16px",borderRadius:8,border:"none",background:(chosen.length+fixChosen.length)===0?T.ink100:T.navy700,color:T.onFill,fontWeight:600,fontSize:FZ.sm,cursor:(chosen.length+fixChosen.length)===0||busy?"default":"pointer",fontFamily:T.font,opacity:busy?.7:1}}>{busy?"Enregistrement…":[chosen.length?"Ancrer "+chosen.length+" nouveau"+(chosen.length>1?"x":""):"",fixChosen.length?"Corriger "+fixChosen.length+" PJ":""].filter(Boolean).join(" + ")||"Ancrer"}</button>
       </div>
     </div>
   </div>);

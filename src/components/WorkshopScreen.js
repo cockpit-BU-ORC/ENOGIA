@@ -124,20 +124,20 @@ export function WorkshopScreen({ data, onClose, darkMode, productionExclusions, 
   }, [n]);
 
   const name = r => getPjMeta(r.pj, r).nomProjet || "";
-  const Row = ({ children, style }) => <div style={{ display: "flex", alignItems: "center", gap: u(18), padding: u(10) + " " + u(18), borderRadius: u(14), background: T.card, border: "1px solid " + T.line, ...style }}>{children}</div>;
+  const Row = ({ children, style }) => <div style={{ display: "flex", alignItems: "center", gap: u(18), padding: u(10) + " " + u(18), borderRadius: u(12), background: T.card, border: "1px solid " + T.line, ...style }}>{children}</div>;
   // Gamme de la machine, en grand (demandé) : pastille pleine à la couleur de la gamme, jamais tronquée.
-  const Gamme = ({ r, size = 26 }) => r.gamme ? <span style={{ background: GAMME_COLORS[r.gamme] || T.ink500, color: "#fff", borderRadius: u(10), padding: u(2) + " " + u(12), fontSize: u(size), fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0, letterSpacing: ".01em" }}>{r.gamme}</span> : null;
+  const Gamme = ({ r, size = 26 }) => r.gamme ? <span style={{ background: GAMME_COLORS[r.gamme] || T.ink500, color: T.onFill, borderRadius: u(12), padding: u(2) + " " + u(12), fontSize: u(size), fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0, letterSpacing: ".01em" }}>{r.gamme}</span> : null;
   // f = facteur de réduction quand il y a beaucoup de lignes (toutes tiennent sur la page)
   const PjCell = ({ r, f = 1 }) => <Row style={{ minWidth: 0, padding: u(6 * f) + " " + u(18), height: "100%", boxSizing: "border-box" }}><b style={{ fontSize: u(28 * f), fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>{r.pj}</b><Gamme r={r} size={26 * f} /><span style={{ fontSize: u(22 * f), color: T.ink500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{name(r)}</span></Row>;
   // Plusieurs étapes dans la même case : coupée en diagonale, une bande par étape
   const tile = (c, i, f = 1) => c
-    ? (() => { const fl = stageFill(c); return <div key={i} style={{ background: fl.background, color: fl.color, borderRadius: u(14), display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", fontSize: u((c.includes("+") ? 20 : 22) * f), fontWeight: 600, padding: u(4 * f), overflow: "hidden", overflowWrap: "anywhere", minWidth: 0 }}>{c.replace(/ \+ /g, " · ")}</div>; })()
-    : <div key={i} style={{ borderRadius: u(14), border: "1px dashed " + T.line }} />;
+    ? (() => { const fl = stageFill(c); return <div key={i} style={{ background: fl.background, color: fl.color, borderRadius: u(12), display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", fontSize: u((c.includes("+") ? 20 : 22) * f), fontWeight: 600, padding: u(4 * f), overflow: "hidden", overflowWrap: "anywhere", minWidth: 0 }}>{c.replace(/ \+ /g, " · ")}</div>; })()
+    : <div key={i} style={{ borderRadius: u(12), border: "1px dashed " + T.line }} />;
 
   // Légende des couleurs (en bas de page) : une pastille par étape ; une case coupée en diagonale = plusieurs étapes la même semaine.
   const Legend = () => { const SPL = stagePalette(); return (<div style={{ display: "flex", gap: u(26), alignItems: "center", flexWrap: "wrap", fontSize: u(20), color: T.ink500, flexShrink: 0, paddingTop: u(4) }}>
-    {Object.entries(SPL).map(([k, pal]) => <span key={k} style={{ display: "inline-flex", alignItems: "center", gap: u(8) }}><span style={{ background: pal.c, color: pal.t, border: "1px solid " + T.line, borderRadius: u(6), width: u(30), height: u(20), display: "inline-block" }} />{k}</span>)}
-    <span style={{ display: "inline-flex", alignItems: "center", gap: u(8) }}><span style={{ background: stageFill("Arrivée + Départ").background, borderRadius: u(6), width: u(30), height: u(20), display: "inline-block", border: "1px solid " + T.line }} />Plusieurs étapes dans la semaine</span>
+    {Object.entries(SPL).map(([k, pal]) => <span key={k} style={{ display: "inline-flex", alignItems: "center", gap: u(8) }}><span style={{ background: pal.c, color: pal.t, border: "1px solid " + T.line, borderRadius: u(8), width: u(30), height: u(20), display: "inline-block" }} />{k}</span>)}
+    <span style={{ display: "inline-flex", alignItems: "center", gap: u(8) }}><span style={{ background: stageFill("Arrivée + Départ").background, borderRadius: u(8), width: u(30), height: u(20), display: "inline-block", border: "1px solid " + T.line }} />Plusieurs étapes dans la semaine</span>
   </div>); };
 
   let body = null;
@@ -145,7 +145,7 @@ export function WorkshopScreen({ data, onClose, darkMode, productionExclusions, 
     const Col = ({ title, items }) => <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: u(14) }}>
       <div style={{ fontSize: u(30), fontWeight: 600, color: T.ink900 }}>{title}</div>
       {items.map(g => { const tot = g.list.length, pct = tot ? Math.round(g.done / tot * 100) : 0;
-        return <div key={g.k} style={{ background: T.card, border: "1px solid " + T.line, borderRadius: u(16), padding: u(14) + " " + u(20), display: "flex", flexDirection: "column", gap: u(8) }}>
+        return <div key={g.k} style={{ background: T.card, border: "1px solid " + T.line, borderRadius: u(12), padding: u(14) + " " + u(20), display: "flex", flexDirection: "column", gap: u(8) }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: u(14) }}><span style={{ fontSize: u(24), color: T.ink700, fontWeight: 600, flex: 1 }}>{g.lab}</span>
             <span style={{ fontSize: u(44), fontWeight: 600, fontVariantNumeric: "tabular-nums", color: tot && g.done === tot ? T.emerald600 : T.ink900, lineHeight: 1 }}>{tot ? g.done + " / " + tot : "—"}</span></div>
           <div style={{ height: u(12), borderRadius: 999, background: T.surfaceAlt, overflow: "hidden" }}><div style={{ width: pct + "%", height: "100%", background: T.emerald500 }} /></div>
@@ -191,12 +191,12 @@ export function WorkshopScreen({ data, onClose, darkMode, productionExclusions, 
       </div>
       <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateRows: wMax.map(m => "minmax(0," + (m + 1.1) + "fr)").join(" "), gap: u(8) }}>
         {cur.calWeeks.map((w, wi) => (<div key={wi} style={{ display: "grid", gridTemplateColumns: DCOLS, gap: u(8), minHeight: 0 }}>
-          <div style={{ background: T.card, border: "1px solid " + T.line, borderRadius: u(14), display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minWidth: 0 }}>
+          <div style={{ background: T.card, border: "1px solid " + T.line, borderRadius: u(12), display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minWidth: 0 }}>
             <b style={{ fontSize: u(30), color: wi === 0 ? T.red600 : T.ink900 }}>S{isoWeek(w.start)}</b>
             <span style={{ fontSize: u(18), color: T.ink500 }}>{fmtD(w.start)}</span>
           </div>
           {w.days.map(({ d, ev }, di) => { const isT = d.getTime() === today.getTime(), we = di >= 5;
-            return (<div key={di} style={{ background: we ? T.surfaceAlt : T.card, border: "1px solid " + (isT ? T.red500 : T.line), boxShadow: isT ? "inset 0 0 0 " + u(2) + " " + T.red500 : "none", borderRadius: u(14), padding: u(6) + " " + u(8), display: "flex", flexDirection: "column", gap: u(4), minWidth: 0, minHeight: 0, overflow: "hidden" }}>
+            return (<div key={di} style={{ background: we ? T.surfaceAlt : T.card, border: "1px solid " + (isT ? T.red500 : T.line), boxShadow: isT ? "inset 0 0 0 " + u(2) + " " + T.red500 : "none", borderRadius: u(12), padding: u(6) + " " + u(8), display: "flex", flexDirection: "column", gap: u(4), minWidth: 0, minHeight: 0, overflow: "hidden" }}>
               <div style={{ fontSize: u(18), fontWeight: 600, color: isT ? T.red600 : T.ink500 }}>{d.getDate()}{d.getDate() === 1 || (wi === 0 && di === 0) ? " " + d.toLocaleDateString("fr-FR", { month: "short" }).replace(".", "") : ""}</div>
               {ev.map((e, j) => { const pal = KIND[e.k][1]; return (<div key={j} style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", columnGap: u(6), rowGap: 0, background: pal.c, color: pal.t, borderRadius: u(8), padding: u(2) + " " + u(7), fontSize: u(19 * cf), lineHeight: 1.18, fontWeight: 600, minWidth: 0, overflowWrap: "anywhere" }}>
                 <span style={{ fontWeight: 600 }}>{e.k}</span><span style={{ fontVariantNumeric: "tabular-nums" }}>{e.r.pj}</span><span style={{ opacity: .85, fontWeight: 600 }}>{e.r.gamme}</span>
@@ -205,7 +205,7 @@ export function WorkshopScreen({ data, onClose, darkMode, productionExclusions, 
         </div>))}
       </div>
       <div style={{ display: "flex", gap: u(28), alignItems: "center", fontSize: u(20), color: T.ink500, flexShrink: 0 }}>
-        {Object.entries(KIND).map(([k, [, pal]]) => <span key={k} style={{ display: "inline-flex", alignItems: "center", gap: u(8) }}><span style={{ background: pal.c, border: "1px solid " + T.line, borderRadius: u(6), width: u(30), height: u(20), display: "inline-block" }} />{k}</span>)}
+        {Object.entries(KIND).map(([k, [, pal]]) => <span key={k} style={{ display: "inline-flex", alignItems: "center", gap: u(8) }}><span style={{ background: pal.c, border: "1px solid " + T.line, borderRadius: u(8), width: u(30), height: u(20), display: "inline-block" }} />{k}</span>)}
       </div>
     </div>);
   } else if (cur.id === "stats") {

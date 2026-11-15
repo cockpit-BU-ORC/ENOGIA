@@ -28,7 +28,7 @@ function LevelPicker({ value, onChange, label, min }) {
   return <div role="radiogroup" aria-label={label} style={{ display: "inline-flex", gap: 2, padding: 2, borderRadius: 8, background: T.surfaceAlt, flexShrink: 0 }}>
     {LEVELS.map(l => { const on = value === l, c = tone(l), off = min && LEVELS.indexOf(l) < LEVELS.indexOf(min);
       return <button key={l} type="button" role="radio" aria-checked={on} disabled={off} onClick={() => onChange(l)} title={off ? "Toujours visible" : LEVEL_LABEL[l]}
-        style={{ border: "none", borderRadius: 6, minHeight: 28, minWidth: 70, padding: "0 8px", cursor: off ? "not-allowed" : "pointer", fontFamily: T.font, fontSize: 12, fontWeight: on ? 700 : 500, opacity: off ? .4 : 1,
+        style={{ border: "none", borderRadius: 8, minHeight: 28, minWidth: 70, padding: "0 8px", cursor: off ? "not-allowed" : "pointer", fontFamily: T.font, fontSize: 12, fontWeight: on ? 600 : 500, opacity: off ? .4 : 1,
           background: on ? c.bg : "transparent", color: on ? c.ink : T.ink500, boxShadow: on ? "inset 0 0 0 1.5px color-mix(in srgb, " + c.ink + " 45%, transparent)" : "none" }}>{LEVEL_LABEL[l]}</button>; })}
   </div>;
 }
@@ -87,7 +87,7 @@ export default function AccessPage({ profiles, saveProfiles, accessDoc, saveAcce
   const rolesView = <div style={{ display: "grid", gridTemplateColumns: "minmax(220px,280px) minmax(0,1fr)", gap: 14, alignItems: "start" }} className="enogia-access-grid">
     <nav aria-label="Rôles" style={{ ...card, padding: 8, display: "flex", flexDirection: "column", gap: 2 }}>
       {R.map(([k, l]) => { const sel = k === curRole, n = members(k).length; return <button key={k} type="button" onClick={() => { setCur(k); setAdding(false); setPick({}); }} aria-current={sel ? "true" : undefined}
-        style={{ display: "flex", alignItems: "center", gap: 8, border: "none", borderRadius: 8, minHeight: 38, padding: "0 10px", cursor: "pointer", textAlign: "left", fontFamily: T.font, fontSize: 13, background: sel ? T.surfaceAlt : "transparent", color: T.ink900, fontWeight: sel ? 700 : 500 }}>
+        style={{ display: "flex", alignItems: "center", gap: 8, border: "none", borderRadius: 8, minHeight: 38, padding: "0 10px", cursor: "pointer", textAlign: "left", fontFamily: T.font, fontSize: 13, background: sel ? T.surfaceAlt : "transparent", color: T.ink900, fontWeight: sel ? 600 : 500 }}>
         <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l}</span><span style={{ fontSize: 12, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{n}</span></button>; })}
       {newRole == null ? <button type="button" onClick={() => setNewRole("")} style={{ ...btn("ghost", "sm"), marginTop: 6, justifyContent: "flex-start" }}>＋ Nouveau rôle</button>
         : <div style={{ display: "flex", gap: 4, marginTop: 6 }}><input autoFocus={AF} value={newRole} onChange={e => setNewRole(e.target.value)} onKeyDown={e => { if (e.key === "Enter") addRole(); if (e.key === "Escape") setNewRole(null); }} placeholder="Nom du rôle" aria-label="Nom du nouveau rôle" style={{ ...field, flex: 1 }} /><button type="button" onClick={addRole} style={{ ...btn("sec", "sm") }}>Créer</button></div>}

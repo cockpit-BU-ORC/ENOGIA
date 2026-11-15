@@ -103,9 +103,9 @@ export function PlannerLoad({ plan, load, cal, tl, scrollX, leftW, standalone, m
       <div style={{ width: standalone ? 190 : leftW, flexShrink: 0, borderRight: "2px solid " + T.line, padding: "0 12px", boxSizing: "border-box", position: "relative", height: H }}>
         <div style={{ position: "absolute", top: 8, left: 12, right: 12, fontSize: 11, color: T.ink500, lineHeight: 1.4 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 14, height: 9, border: "1.5px solid " + T.ink500, borderRadius: 4, display: "inline-block", background: "rgba(23,115,79,.08)" }} />capacité ({unit})</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 14, height: 9, background: "#17734F", borderRadius: 4, display: "inline-block" }} />heures planifiées</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 14, height: 9, background: T.emerald500, borderRadius: 4, display: "inline-block" }} />heures planifiées</div>
           {!small && <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 14, height: 9, border: "1.5px dashed " + T.amber600, borderRadius: 4, display: "inline-block" }} />semaine spéciale</div>}
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 14, height: 9, background: "#B3261E", borderRadius: 4, display: "inline-block" }} />dépassement</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 14, height: 9, background: T.red500, borderRadius: 4, display: "inline-block" }} />dépassement</div>
           {!small && <div style={{ marginTop: 4, color: T.ink500 }}>Le vide du cadre = ce qu'il reste possible.</div>}
         </div>
       </div>
@@ -120,12 +120,12 @@ export function PlannerLoad({ plan, load, cal, tl, scrollX, leftW, standalone, m
               {...(canEd ? { role: "button", tabIndex: 0, "aria-label": b.label + " : " + Math.round(b.hours) + " h sur " + Math.round(b.cap) + " h. Changer la capacité de cette semaine", onClick: e => { setHov(null); setEd({ key: b.key, week: isoOfDay(b.start), label: b.label, cap: b.cap, special: b.special, x: e.clientX, y: e.clientY }); }, onKeyDown: e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); const r = e.currentTarget.getBoundingClientRect(); setEd({ key: b.key, week: isoOfDay(b.start), label: b.label, cap: b.cap, special: b.special, x: r.left, y: r.top }); } } } : {})}
               style={{ position: "absolute", left: bx, width: bw, top: 0, height: H, cursor: canEd ? "pointer" : "default" }}>
               <div style={{ position: "absolute", left: 0, right: 0, bottom: PAD_B, height: hCap, border: "1.5px " + (b.special ? "dashed " + T.amber600 : "solid " + T.ink500), borderRadius: 4, background: "rgba(23,115,79,.07)", boxSizing: "border-box" }} />
-              <div style={{ position: "absolute", left: 3, right: 3, bottom: PAD_B, height: inCap, background: b.over ? "#B3261E" : "#17734F", borderRadius: "2px 2px 0 0", opacity: 0.92 }} />
-              {ex > 0 && <div style={{ position: "absolute", left: 3, right: 3, bottom: PAD_B + inCap, height: ex, background: "#B3261E", borderRadius: "3px 3px 0 0", backgroundImage: "repeating-linear-gradient(45deg,rgba(255,255,255,.35) 0 3px,transparent 3px 6px)" }} />}
+              <div style={{ position: "absolute", left: 3, right: 3, bottom: PAD_B, height: inCap, background: b.over ? T.red500 : T.emerald500, borderRadius: 0, opacity: 0.92 }} />
+              {ex > 0 && <div style={{ position: "absolute", left: 3, right: 3, bottom: PAD_B + inCap, height: ex, background: T.red500, borderRadius: 0, backgroundImage: "repeating-linear-gradient(45deg,rgba(255,255,255,.35) 0 3px,transparent 3px 6px)" }} />}
               {bw >= 34 && b.hours > 0 && <div style={{ position: "absolute", left: 0, right: 0, bottom: PAD_B + Math.max(hBar, hCap) + 2, textAlign: "center", fontSize: 11, fontWeight: 600, fontFamily: T.fontMono, color: b.over ? T.red500 : T.ink700, whiteSpace: "nowrap" }}>{b.over ? "▲ " : ""}{Math.round(b.hours)}{bw >= 60 ? " / " + Math.round(b.cap) : ""}</div>}
             </div>);
           })}
-          <div title="Aujourd'hui" style={{ position: "absolute", left: (tl.today - tl.lo) * tl.px + tl.px / 2 - 1, top: 0, bottom: 0, width: 2, background: "#CB4848", opacity: 0.6, pointerEvents: "none" }} />
+          <div title="Aujourd'hui" style={{ position: "absolute", left: (tl.today - tl.lo) * tl.px + tl.px / 2 - 1, top: 0, bottom: 0, width: 2, background: T.red500, opacity: 0.6, pointerEvents: "none" }} />
           {buckets.length === 0 && <div style={{ padding: 16, fontSize: 13, color: T.ink500 }}>Aucune heure atelier planifiée : renseignez le « Travail » des tâches Production et Fin de production.</div>}
         </div>
       </div>

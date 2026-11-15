@@ -36,7 +36,7 @@ export function ViewsMenu({ current, presets, onApply }) {
   const del = id => { const next = list.filter(v => v.id !== id); setList(next); store(next); };
   const row = (v, isPreset) => (<div key={v.id} style={{ display: "flex", alignItems: "center", gap: 4 }}>
     <button onClick={() => { onApply(v.state); setOpen(false); }} aria-current={active && active.id === v.id ? "true" : undefined}
-      style={{ flex: 1, textAlign: "left", border: "none", background: active && active.id === v.id ? T.teal100 : "transparent", color: T.ink900, fontSize: FZ.sm, fontWeight: active && active.id === v.id ? 700 : 500, padding: "8px 8px", borderRadius: 8, cursor: "pointer", fontFamily: T.font, minHeight: 28 }}>
+      style={{ flex: 1, textAlign: "left", border: "none", background: active && active.id === v.id ? T.teal100 : "transparent", color: T.ink900, fontSize: FZ.sm, fontWeight: active && active.id === v.id ? 600 : 500, padding: "8px 8px", borderRadius: 8, cursor: "pointer", fontFamily: T.font, minHeight: 28 }}>
       {active && active.id === v.id ? "✓ " : ""}{v.name}
     </button>
     {!isPreset && <button onClick={() => del(v.id)} aria-label={"Supprimer la vue « " + v.name + " »"} title="Supprimer cette vue" style={{ border: "none", background: "transparent", color: T.ink500, cursor: "pointer", fontSize: FZ.md, width: 28, height: 28, borderRadius: 8 }}><NavIcon name="close" size={11}/></button>}
@@ -57,7 +57,7 @@ export function ViewsMenu({ current, presets, onApply }) {
         <div style={{ display: "flex", gap: 6 }}>
           <input value={name} onChange={e => setName(e.target.value)} onKeyDown={e => { if (e.key === "Enter") save(); }} placeholder="Nom de la vue" aria-label="Nom de la vue" maxLength={40}
             style={{ flex: 1, minWidth: 0, padding: "6px 8px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font }} />
-          <button onClick={save} disabled={!name.trim()} style={{ ...BTN, background: name.trim() ? T.navy700 : T.ink100, color: "#fff", cursor: name.trim() ? "pointer" : "default" }}>Enregistrer</button>
+          <button onClick={save} disabled={!name.trim()} style={{ ...BTN, background: name.trim() ? T.navy700 : T.ink100, color: T.onFill, cursor: name.trim() ? "pointer" : "default" }}>Enregistrer</button>
         </div>
         <div style={{ fontSize: FZ.xs, color: T.ink500, padding: "6px 6px 2px" }}>Gardées sur ce navigateur : propres à chaque personne et à chaque poste.</div>
       </div>

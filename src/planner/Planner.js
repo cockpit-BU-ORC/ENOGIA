@@ -634,7 +634,7 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
         <span aria-hidden="true" style={{ width: 1, height: 18, background: T.line, margin: "0 2px", flexShrink: 0 }} />
       </>}
       <div role="group" aria-label="Vue" style={{ display: "inline-flex" }}>
-        {[["list", "Liste"], ["both", "Liste + Gantt"], ["gantt", "Gantt"], ["lanes", "Couloirs"], ["changes", "Modifications"]].map(([k, l], i, arr) => <button key={k} className="pg-tb" aria-pressed={ui.view === k} onClick={() => setUi({ view: k })} style={{ borderRadius: i === 0 ? "6px 0 0 6px" : i === arr.length - 1 ? "0 6px 6px 0" : 0, marginLeft: i ? -1 : 0 }}>{l}{k === "changes" && nTouched > 0 && <span style={{ marginLeft: 6, background: ui.view === k ? "rgba(255,255,255,.25)" : T.amber100, color: ui.view === k ? "#fff" : T.amber600, borderRadius: 999, padding: "0 7px", fontSize: 11.5 }}>{nTouched}</span>}</button>)}
+        {[["list", "Liste"], ["both", "Liste + Gantt"], ["gantt", "Gantt"], ["lanes", "Couloirs"], ["changes", "Modifications"]].map(([k, l], i, arr) => <button key={k} className="pg-tb" aria-pressed={ui.view === k} onClick={() => setUi({ view: k })} style={{ borderRadius: i === 0 ? "6px 0 0 6px" : i === arr.length - 1 ? "0 8px 8px 0" : 0, marginLeft: i ? -1 : 0 }}>{l}{k === "changes" && nTouched > 0 && <span style={{ marginLeft: 6, background: ui.view === k ? "rgba(255,255,255,.25)" : T.amber100, color: ui.view === k ? T.onFill : T.amber600, borderRadius: 999, padding: "0 7px", fontSize: 11.5 }}>{nTouched}</span>}</button>)}
       </div>
       <button className="pg-tb" onClick={() => setDlg("bench")} title="Attribuer les 2 bancs d'essai (une seule machine par banc à la fois)">Bancs d'essai{conflicts.length ? <span style={{ color: T.red500 }}> ⚠ {conflicts.length}</span> : null}</button>
       <span aria-hidden="true" style={{ width: 1, height: 18, background: T.line, margin: "0 2px", flexShrink: 0 }} />
@@ -642,7 +642,7 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
       <div role="group" aria-label="Zoom" style={{ display: "inline-flex", gap: 0 }}>
         <button className="pg-tb" disabled={noT || tl.px <= PX_MIN} onClick={() => zoomFn.current(1 / 1.4)} aria-label="Dézoomer" title="Dézoomer (Ctrl + molette)" style={{ borderRadius: "6px 0 0 6px" }}>−</button>
         {[["day", "Jour"], ["week", "Sem."], ["month", "Mois"]].map(([k, l]) => <button key={k} className="pg-tb" disabled={noT} aria-pressed={(!ui.px && ui.zoom === k) || ui.px === ZOOM_PX[k]} onClick={() => setUi({ zoom: k, px: null })} style={{ borderRadius: 0, marginLeft: -1 }}>{l}</button>)}
-        <button className="pg-tb" disabled={noT || tl.px >= PX_MAX} onClick={() => zoomFn.current(1.4)} aria-label="Zoomer" title="Zoomer (Ctrl + molette)" style={{ borderRadius: "0 6px 6px 0", marginLeft: -1 }}>+</button>
+        <button className="pg-tb" disabled={noT || tl.px >= PX_MAX} onClick={() => zoomFn.current(1.4)} aria-label="Zoomer" title="Zoomer (Ctrl + molette)" style={{ borderRadius: "0 8px 8px 0", marginLeft: -1 }}>+</button>
       </div>
       <span aria-hidden="true" style={{ width: 1, height: 18, background: T.line, margin: "0 2px", flexShrink: 0 }} />
       <Pop width={270} align="left" trigger={(o, t) => <button className="pg-tb" aria-haspopup="menu" aria-expanded={o} onClick={t}>Affichage ▾</button>}>

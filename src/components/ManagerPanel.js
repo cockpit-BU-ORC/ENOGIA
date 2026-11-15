@@ -408,7 +408,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
           <span style={{fontSize:FZ.sm,color:T.ink500}}>{PAGE_DESC[activeEntry.id]||""}</span>
         </div>
         {!phone&&tab==="fiche"&&<button type="button" className="enogia-btn-ind" onClick={()=>setFocusFiche(v=>!v)} aria-pressed={focusFiche} title={focusFiche?"Réafficher le menu complet et la liste des projets":"Replier le menu et la liste pour laisser toute la place à la fiche"}
-        style={{display:"inline-flex",alignItems:"center",gap:6,height:30,padding:"0 10px",borderRadius:8,border:"1.5px solid "+T.teal500,background:focusFiche?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:focusFiche?(T.mode==="dark"?"#0B1130":"#FFFFFF"):T.teal600,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font,whiteSpace:"nowrap"}}><NavIcon name="sidepanel" size={15}/>{focusFiche?"Afficher les colonnes":"Fiche plein écran"}</button>}
+        style={{display:"inline-flex",alignItems:"center",gap:6,height:30,padding:"0 10px",borderRadius:8,border:"1.5px solid "+T.teal500,background:focusFiche?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:focusFiche?T.onInd:T.teal600,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font,whiteSpace:"nowrap"}}><NavIcon name="sidepanel" size={15}/>{focusFiche?"Afficher les colonnes":"Fiche plein écran"}</button>}
         {showFilters&&<button type="button" onClick={()=>setFiltersOpen(v=>!v)} aria-expanded={filtersOpen} style={{display:"inline-flex",alignItems:"center",gap:6,height:32,padding:"0 12px",borderRadius:8,border:"1px solid "+(nFilters?T.teal500:T.line),background:nFilters?T.teal100:T.card,color:nFilters?T.teal600:T.ink700,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font}}><NavIcon name="layers" size={14}/>Filtres{nFilters?" · "+nFilters:""}</button>}
         <button type="button" onClick={()=>setPalOpen(true)} aria-label="Aller à… (Ctrl K)" style={{display:"inline-flex",alignItems:"center",gap:8,height:32,padding:"0 12px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink500,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font}}><NavIcon name="search" size={14}/>Aller à…<kbd style={{fontFamily:T.fontMono,fontSize:11,color:T.ink500,border:"1px solid "+T.line,borderRadius:4,padding:"0 4px"}}>Ctrl K</kbd></button>
       </div>
@@ -473,8 +473,8 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
         <div style={{display:"flex",gap:4,alignItems:"flex-end",height:84}}>
           {byMonth.map((n,i)=>{const iC=i===today.getMonth();return(<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
             <div style={{fontSize:FZ.sm,color:T.ink500,fontWeight:600}}>{n||""}</div>
-            <div style={{width:"100%",height:n?(n/maxBar*60)+"px":"0",minHeight:n?4:0,background:i<today.getMonth()?T.ink100:iC?T.teal500:T.teal400,borderRadius:"3px 3px 0 0"}}/>
-            <div style={{fontSize:FZ.sm,color:iC?T.teal600:T.ink300,fontWeight:iC?700:500}}>{MONTHS[i]}</div>
+            <div style={{width:"100%",height:n?(n/maxBar*60)+"px":"0",minHeight:n?4:0,background:i<today.getMonth()?T.ink100:iC?T.teal500:T.teal400,borderRadius:0}}/>
+            <div style={{fontSize:FZ.sm,color:iC?T.teal600:T.ink300,fontWeight:iC?600:500}}>{MONTHS[i]}</div>
           </div>);})}
         </div>
       </div>
@@ -919,7 +919,7 @@ function ManagerAccessManager({managerEmails,setManagerEmails,currentUserEmail})
       <div style={{display:"flex",gap:8}}>
         <input type="email" value={newEmail} onChange={e=>{setNewEmail(e.target.value);setErr("");}} onKeyDown={e=>{if(e.key==="Enter")addEmail();}}
           placeholder="prenom.nom@enogia.com" style={{flex:1,padding:"8px 12px",borderRadius:8,border:"1px solid "+(err?T.red500:T.line),fontSize:FZ.sm,fontFamily:T.font,color:T.ink700}}/>
-        <button onClick={addEmail} disabled={!newEmail.trim()} style={{padding:"8px 16px",borderRadius:8,border:"none",background:newEmail.trim()?T.teal500:T.surfaceAlt,color:newEmail.trim()?"#fff":T.ink300,fontSize:FZ.sm,fontWeight:600,cursor:newEmail.trim()?"pointer":"default",whiteSpace:"nowrap"}}>Ajouter</button>
+        <button onClick={addEmail} disabled={!newEmail.trim()} style={{padding:"8px 16px",borderRadius:8,border:"none",background:newEmail.trim()?T.teal500:T.surfaceAlt,color:newEmail.trim()?T.onFill:T.ink300,fontSize:FZ.sm,fontWeight:600,cursor:newEmail.trim()?"pointer":"default",whiteSpace:"nowrap"}}>Ajouter</button>
       </div>
       {err&&<div style={{fontSize:FZ.sm,color:T.red500,marginTop:8}}>{err}</div>}
     </div>
@@ -968,7 +968,7 @@ export function ClosurePeriodsManager({closurePeriods,setClosurePeriods}){
         <label style={{fontSize:FZ.xs,color:T.ink500,fontWeight:600,display:"block",marginBottom:4}}>Au</label>
         <input type="date" value={newEnd} onChange={e=>setNewEnd(e.target.value)} style={{padding:"8px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font}}/>
       </div>
-      <button onClick={addPeriod} disabled={!newStart||!newEnd} style={{padding:"8px 16px",borderRadius:8,border:"none",background:newStart&&newEnd?T.teal500:T.surfaceAlt,color:newStart&&newEnd?"#fff":T.ink300,fontSize:FZ.sm,fontWeight:600,cursor:newStart&&newEnd?"pointer":"default"}}>+ Ajouter</button>
+      <button onClick={addPeriod} disabled={!newStart||!newEnd} style={{padding:"8px 16px",borderRadius:8,border:"none",background:newStart&&newEnd?T.teal500:T.surfaceAlt,color:newStart&&newEnd?T.onFill:T.ink300,fontSize:FZ.sm,fontWeight:600,cursor:newStart&&newEnd?"pointer":"default"}}>+ Ajouter</button>
     </div>
   </div>);
 }
@@ -983,7 +983,7 @@ function PlanLoadCard({weeks}){
     <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap",marginBottom:10}}><h3 style={{margin:0,fontSize:FZ.md,fontWeight:600,color:T.ink900}}>Charge atelier — 12 semaines</h3><span style={{fontSize:12,color:T.ink500}}>d'après le planificateur · trait = capacité de la semaine</span><span style={{marginLeft:"auto",fontSize:12.5,fontWeight:600,color:over?T.red500:T.emerald600}}>{over?over+" semaine"+(over>1?"s":"")+" en surcharge":"aucune surcharge"}</span></div>
     <div role="img" aria-label={weeks.map(w=>"S"+wk(w.a)+" "+w.hours+" h sur "+Math.round(w.cap)).join(", ")} style={{display:"flex",alignItems:"flex-end",gap:6,height:H,borderBottom:"1px solid "+T.line}}>
       {weeks.map(w=>{const h=Math.round(w.hours/maxH*H),c=Math.round(w.cap/maxH*H),o=w.hours>w.cap+0.5;return(<div key={w.key} title={"S"+wk(w.a)+" : "+w.hours+" h / "+Math.round(w.cap)+" h"} style={{flex:1,position:"relative",height:"100%",minWidth:0}}>
-        <div style={{position:"absolute",left:0,right:0,bottom:0,height:Math.max(1,h),background:o?T.red500:stageSoft().production.solid,borderRadius:"2px 2px 0 0"}}/>
+        <div style={{position:"absolute",left:0,right:0,bottom:0,height:Math.max(1,h),background:o?T.red500:stageSoft().production.solid,borderRadius:0}}/>
         <div style={{position:"absolute",left:-2,right:-2,bottom:c,borderTop:"2px dashed "+T.ink500}}/>
         <div style={{position:"absolute",left:0,right:0,bottom:Math.max(h,c)+4,textAlign:"center",fontSize:11,fontWeight:600,color:o?T.red500:T.ink700,fontVariantNumeric:"tabular-nums"}}>{w.hours}</div>
       </div>);})}

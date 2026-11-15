@@ -9,7 +9,7 @@ import { allCashGroups, getCashinDoc, getCashinLinks, getOrdoPjs, getOrdoName, s
 import { fmtEur } from "../pjProgress";
 import { useCashin } from "../useCashin";
 
-const btn = (primary, on = true) => ({ padding: "5px 11px", borderRadius: 8, border: "1px solid " + (primary ? T.teal600 : T.line), background: primary ? T.teal600 : T.card, color: primary ? "#fff" : T.ink900, fontSize: FZ.xs, fontWeight: 600, fontFamily: T.font, cursor: on ? "pointer" : "default", opacity: on ? 1 : .5, whiteSpace: "nowrap" });
+const btn = (primary, on = true) => ({ padding: "5px 11px", borderRadius: 8, border: "1px solid " + (primary ? T.teal600 : T.line), background: primary ? T.teal600 : T.card, color: primary ? T.onFill : T.ink900, fontSize: FZ.xs, fontWeight: 600, fontFamily: T.font, cursor: on ? "pointer" : "default", opacity: on ? 1 : .5, whiteSpace: "nowrap" });
 const field = { padding: "6px 10px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, minWidth: 0 };
 const same = (a, b) => normPj(a) === normPj(b);
 
@@ -71,7 +71,7 @@ function RowsEditor({ g, links, ordo, onSave, busy }) {
   const setMode = (r, shared) => setDraft(d => ({ ...d, [r.id]: shared ? targets.slice() : null }));
   const save = () => { const n = { ...links }; g.rows.forEach(r => { const v = draft[r.id]; if (v) n[rowKey(r.id)] = v; else delete n[rowKey(r.id)]; }); onSave(n); };
   if (targets.length < 2) return null;
-  const seg = on => ({ padding: "2px 10px", border: "1px solid " + (on ? T.teal600 : T.line), background: on ? T.teal600 : "transparent", color: on ? "#fff" : T.ink500, fontSize: FZ.xs, fontWeight: 600, fontFamily: T.font, cursor: "pointer" });
+  const seg = on => ({ padding: "2px 10px", border: "1px solid " + (on ? T.teal600 : T.line), background: on ? T.teal600 : "transparent", color: on ? T.onFill : T.ink500, fontSize: FZ.xs, fontWeight: 600, fontFamily: T.font, cursor: "pointer" });
   return (<div style={{ marginTop: 8, padding: 10, borderRadius: 12, background: T.surface, border: "1px solid " + T.line }}>
     <div style={{ fontSize: FZ.sm, fontWeight: 600, color: T.ink900, marginBottom: 2 }}>Jalon par jalon : réparti, ou sur des machines cochées ?</div>
     <div style={{ fontSize: FZ.xs, color: T.ink700, marginBottom: 8, lineHeight: 1.5 }}><b>Réparti</b> : le jalon concerne toutes les machines de la même façon, le montant est divisé entre elles. <b>Machines cochées</b> : le montant reste entier — cochez <b>une</b> machine pour un jalon qui lui est propre (FAT, livraison de l'ORC n°1…), ou <b>plusieurs</b> pour un paiement unique du contrat (acompte, avance), qui n'est alors compté qu'une fois : ne l'additionnez pas d'une machine à l'autre.</div>

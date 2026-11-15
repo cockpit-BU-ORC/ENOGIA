@@ -92,7 +92,7 @@ function RedGateDialog({pj,meta,axis,onCancel,onConfirm}){
       </div>
       <div style={{padding:"12px 18px",borderTop:"1px solid "+T.line,display:"flex",justifyContent:"flex-end",gap:8}}>
         <button type="button" onClick={onCancel} style={{padding:"7px 14px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink700,fontWeight:600,fontSize:FZ.sm,cursor:"pointer",fontFamily:T.font}}>Annuler</button>
-        <button type="button" disabled={!ok} onClick={()=>onConfirm({comment:comment.trim(),mitigation:needMit?{risk:risk.trim(),measure:measure.trim(),deadline:mdate}:null})} style={{padding:"7px 16px",borderRadius:8,border:"none",background:ok?T.red500:T.line,color:ok?"#fff":T.ink300,fontWeight:600,fontSize:FZ.sm,cursor:ok?"pointer":"not-allowed",fontFamily:T.font}}>Passer à risque</button>
+        <button type="button" disabled={!ok} onClick={()=>onConfirm({comment:comment.trim(),mitigation:needMit?{risk:risk.trim(),measure:measure.trim(),deadline:mdate}:null})} style={{padding:"7px 16px",borderRadius:8,border:"none",background:ok?T.red500:T.line,color:ok?T.onFill:T.ink300,fontWeight:600,fontSize:FZ.sm,cursor:ok?"pointer":"not-allowed",fontFamily:T.font}}>Passer à risque</button>
       </div>
     </div>
   </div>,document.body);

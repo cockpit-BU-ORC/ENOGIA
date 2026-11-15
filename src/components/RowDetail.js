@@ -115,7 +115,7 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
           <button type="button" onClick={() => setFocus(s.id)} aria-pressed={on} aria-current={isCur ? "step" : undefined} title={"Voir les sous-étapes · " + s.label}
             style={{ width: "100%", border: "none", background: "transparent", padding: "0 0 2px", cursor: "pointer", textAlign: "left", fontFamily: T.font, minWidth: 0 }}>
             <span aria-hidden="true" style={{ display: "block", height: 10, borderRadius: 4, background: isCur ? bar : done ? doneBg : T.surfaceAlt, boxShadow: on ? "0 0 0 2px " + T.ink900 : "none" }} />
-            <span style={{ display: "block", marginTop: 3, fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: isCur || on ? 700 : 400, color: isCur || on ? T.ink900 : T.ink500 }}>{done ? "✓ " : ""}{s.label}</span>
+            <span style={{ display: "block", marginTop: 3, fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: isCur || on ? 600 : 400, color: isCur || on ? T.ink900 : T.ink500 }}>{done ? "✓ " : ""}{s.label}</span>
           </button>
         </li>; })}
     </ol>
@@ -130,7 +130,7 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
       </div>; })()}
     {/* Onglets */}
     <div role="tablist" aria-label="Rubriques de la fiche" style={{ display: "flex", gap: 18, borderBottom: "1px solid " + T.line, marginTop: 12 }}>
-      {TABS.map(([id, label, badge, warn]) => <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)} style={{ border: "none", background: "transparent", padding: "8px 0", minHeight: 36, cursor: "pointer", fontFamily: T.font, fontSize: FZ.sm, fontWeight: tab === id ? 700 : 500, color: tab === id ? T.ink900 : T.ink500, borderBottom: "2px solid " + (tab === id ? T.ink900 : "transparent"), marginBottom: -1, display: "inline-flex", alignItems: "center", gap: 6 }}>{label}{badge && <span style={{ fontSize: 11, fontWeight: 600, borderRadius: 999, padding: "0 7px", background: warn ? T.red100 : T.surfaceAlt, color: warn ? T.red600 : T.ink700 }}>{badge}</span>}</button>)}
+      {TABS.map(([id, label, badge, warn]) => <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)} style={{ border: "none", background: "transparent", padding: "8px 0", minHeight: 36, cursor: "pointer", fontFamily: T.font, fontSize: FZ.sm, fontWeight: tab === id ? 600 : 500, color: tab === id ? T.ink900 : T.ink500, borderBottom: "2px solid " + (tab === id ? T.ink900 : "transparent"), marginBottom: -1, display: "inline-flex", alignItems: "center", gap: 6 }}>{label}{badge && <span style={{ fontSize: 11, fontWeight: 600, borderRadius: 999, padding: "0 7px", background: warn ? T.red100 : T.surfaceAlt, color: warn ? T.red600 : T.ink700 }}>{badge}</span>}</button>)}
     </div>
 
     <div role="tabpanel" style={{ paddingTop: 12, display: "flex", flexDirection: "column", gap: 12 }}>
@@ -226,7 +226,7 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
         {ach.pos.length > 0 ? ach.pos.map(p => <div key={p.numero} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 10px", background: T.surface, borderRadius: 8, fontSize: FZ.xs }}>
           <span style={{ fontFamily: T.fontMono, fontWeight: 600, color: T.ink900 }}>{p.numero}</span>
           <span style={{ flex: 1, color: T.ink500 }}>{p.lignes} ligne{p.lignes > 1 ? "s" : ""}{p.source === "odoo" ? " · Odoo" : ""}</span>
-          <span style={{ color: p.retard ? T.red600 : T.ink700, fontWeight: p.retard ? 700 : 500 }}>{(ACHAT_ST.find(x => x[0] === p.statut) || ["", ""])[1]}{p.livraison ? " · livraison " + dmy(p.livraison) : ""}{p.retard ? " · en retard" : ""}</span>
+          <span style={{ color: p.retard ? T.red600 : T.ink700, fontWeight: p.retard ? 600 : 500 }}>{(ACHAT_ST.find(x => x[0] === p.statut) || ["", ""])[1]}{p.livraison ? " · livraison " + dmy(p.livraison) : ""}{p.retard ? " · en retard" : ""}</span>
         </div>) : <div style={{ fontSize: FZ.xs, color: T.ink500 }}>Aucune commande (PO) pour l'instant</div>}
         {ctx.openPage && <OpenIn label="Ouvrir dans Achats / Appro" onClick={() => openPage("achats")} />}
       </div>}
