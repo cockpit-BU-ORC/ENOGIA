@@ -121,7 +121,7 @@ export function ManagerPalette({ groups, data, onGo, onOpenPj, onClose, activeKe
     else if (e.key === "Enter") { e.preventDefault(); choose(real[sel]); }
   };
   let n = -1;
-  return (<div onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(8,12,28,.45)", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "min(14vh,110px) 16px 16px", animation: "enogiaFadeIn .18s ease" }}>
+  return (<div onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(8,12,28,.45)", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "min(14vh,110px) 16px 16px", animation: "enogiaFadeIn .18s ease" }}>
     <div role="dialog" aria-modal="true" aria-label="Aller à…" onKeyDown={keyDown} style={{ width: "min(560px,100%)", background: T.card, border: "1px solid " + T.line, borderRadius: 12, boxShadow: "0 24px 70px rgba(0,0,0,.35)", overflow: "hidden", animation: "enogiaPop .24s var(--e-ease)", fontFamily: T.font }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 16px", borderBottom: "1px solid " + T.line, color: T.ink500 }}>
         <NavIcon name="search" size={17} />

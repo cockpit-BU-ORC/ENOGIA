@@ -2497,3 +2497,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Couleurs : jetons T.onFill / T.onInd (theme.js), planificateur et Nouveautés branchés sur le thème.
 - Aucune clé localStorage ; règles Firestore inchangées.
 - Fichiers : theme.js, styles.css, App.js, ~40 composants et planner/*, versions.
+
+## v345 — choix sur l'audit taste
+
+- Fenêtres sans flou (voile seul) ; barres collées de Besoins turbines et onglets de la fiche projet pleins.
+- Avancement en barre dans les listes (Tests › Au banc maintenant, Besoins turbines).
+- Gardés : liseré des cartes, lignes alternées des bancs, camemberts, « Bonsoir Prénom ».
+- Aucune clé localStorage ; règles Firestore inchangées.
+- Fichiers : styles.css, components/TurbinesHub.js, TestsTab.js, RowDetail.js, ManagerNav.js, ProjectModal.js, ReleaseNotes.js, versions.

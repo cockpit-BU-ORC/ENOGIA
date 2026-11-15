@@ -992,4 +992,8 @@ export const RELEASE_CATALOG = [
     ["Général", "Arrondis, gras et couleurs harmonisés sur tout le site (mêmes règles partout, en clair comme en sombre)."],
     ["Planificateur", "Textes du planificateur plus lisibles : plus de petits caractères ni de majuscules."],
   ] },
+  { v: "345", t: "Moins d'effets de verre et de flou", items: [
+    ["Général", "Fenêtres sans flou derrière ; barres collées de Turbines › Besoins et onglets de la fiche projet en surface pleine."],
+    ["Tests", "Au banc maintenant : avancement en barre au lieu de l'anneau (aussi sur les cartes des besoins turbines)."],
+  ] },
 ];

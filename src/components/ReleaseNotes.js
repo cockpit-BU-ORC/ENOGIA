@@ -25,7 +25,7 @@ export function ReleasePopup({ releases, userName, onClose }) {
   const first = (userName || "").split(/[\s@]/)[0];
   const dark = T.mode === "dark";
   const total = releases.reduce((a, r) => a + r.items.length, 0);
-  return (<div className="enogia-modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 10001, background: "rgba(10,20,34,.58)", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+  return (<div className="enogia-modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 10001, background: "rgba(10,20,34,.58)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
     <div role="dialog" aria-modal="true" aria-labelledby="rel-title" className="enogia-modal-pop" style={{ background: T.card, color: T.ink900, borderRadius: 22, border: "1px solid " + T.line, boxShadow: "0 30px 80px rgba(8,16,30,.38)", width: "min(600px,100%)", maxHeight: "90dvh", display: "flex", flexDirection: "column", fontFamily: T.font, overflow: "hidden" }}>
       {/* bandeau */}
       <div style={{ position: "relative", flexShrink: 0, padding: "26px 30px 24px", color: T.onFill, background: dark ? T.navy700 : T.navy700, overflow: "hidden" }}>

@@ -148,13 +148,12 @@ function SegBar({ segs, h = 8, gap = 2, width, still }) {
     {segs.map((s, i) => <i key={s.k + s.id} title={s.name + " — " + ST_LABEL[s.v]} style={{ flex: 1, minWidth: 2, borderRadius: 4, background: SEG_FILL[s.v](), animationDelay: (i * 25) + "ms" }} />)}
   </span>);
 }
-function Ring({ pct, size = 54 }) {
-  const r = size / 2 - 5, c = 2 * Math.PI * r;
-  return (<svg width={size} height={size} viewBox={"0 0 " + size + " " + size} aria-hidden="true" style={{ flexShrink: 0 }}>
-    <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={T.line} strokeWidth={6} />
-    <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={stageSoft().finProd.solid} strokeWidth={6} strokeLinecap="round" strokeDasharray={(c * pct / 100) + " " + c} transform={"rotate(-90 " + size / 2 + " " + size / 2 + ")"} />
-    <text x={size / 2} y={size / 2 + 5} textAnchor="middle" style={{ fontFamily: T.fontDisplay || T.font, fontSize: 14, fontWeight: 600, fill: T.ink900, fontVariantNumeric: "tabular-nums" }}>{pct}%</text>
-  </svg>);
+// v345 (audit taste, validé) : dans les listes, barre d'avancement au lieu de l'anneau
+function ProgBar({ pct, size = 54 }) {
+  return (<div aria-hidden="true" style={{ width: size, flexShrink: 0 }}>
+    <div style={{ fontFamily: T.fontDisplay || T.font, fontSize: 14, fontWeight: 600, color: T.ink900, fontVariantNumeric: "tabular-nums" }}>{pct} %</div>
+    <div style={{ height: 6, marginTop: 4, borderRadius: 4, background: T.line, overflow: "hidden" }}><div style={{ width: pct + "%", height: "100%", background: stageSoft().finProd.solid }} /></div>
+  </div>);
 }
 const dayStart = d => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
 function BenchStrip({ rows, doc, catalog, testers, on, onPick }) {
@@ -191,7 +190,7 @@ function BenchStrip({ rows, doc, catalog, testers, on, onPick }) {
             <span style={{ fontSize: FZ.xs, fontWeight: lateD ? 600 : 600, color: lateD ? T.red600 : T.ink500, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{lateD ? "en retard " + lateD + " j" : "jour " + n + " / " + m}</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
-            <Ring pct={pct} />
+            <ProgBar pct={pct} />
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: FZ.md || 14, fontWeight: 600, color: T.ink900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{cur ? cur.name : q.total ? "Tous les tests sont faits" : "Aucun test retenu"}</div>
               <div style={{ fontSize: FZ.xs, color: names.length ? T.ink500 : T.red600, marginTop: 2 }}>{cur ? ST_LABEL[cur.v].toLowerCase() : ""}{cur ? " · " : ""}{names.length ? names.join(", ") : "sans testeur"}</div>

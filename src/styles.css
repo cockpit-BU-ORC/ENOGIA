@@ -506,7 +506,7 @@ button { transition: background-color var(--e-dur-micro) var(--e-ease), border-c
 
 /* v248 — fin de l'audit des transitions : flou du fond identique sous toutes les fenêtres modales (celles qui bloquent la page ;
    jamais sous un menu), et cascades d'apparition au même rythme partout (40 ms entre deux éléments, 200 ms de retard au plus). */
-[style*="position: fixed"]:has(> [aria-modal="true"]) { -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); } /* v249 : un flou sur un conteneur ordinaire y accrochait les éléments fixes (volet « Déclarer un retard » décalé) */
+/* v345 (taste) : plus de flou derrière les fenêtres, voile seul */ /* v249 : un flou sur un conteneur ordinaire y accrochait les éléments fixes (volet « Déclarer un retard » décalé) */
 .enogia-tr > *:nth-child(2) { animation-delay: .04s; }
 .enogia-tr > *:nth-child(3) { animation-delay: .08s; }
 .enogia-tr > *:nth-child(4) { animation-delay: .12s; }
@@ -522,9 +522,9 @@ button { transition: background-color var(--e-dur-micro) var(--e-ease), border-c
       le fond se fond et se floute, c'est son contenu qui monte (avant, tout le fond glissait de 14 px).
    2. Le fond est un frère placé juste avant la fenêtre (volet « Déclarer un retard ») : il se fond et se floute aussi ; le volet
       glisse depuis la droite. */
-[aria-modal="true"][style*="position: fixed"][style*="inset: 0px"] { animation: enogiaBackIn .2s ease-out backwards; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+[aria-modal="true"][style*="position: fixed"][style*="inset: 0px"] { animation: enogiaBackIn .2s ease-out backwards; }
 [aria-modal="true"][style*="position: fixed"][style*="inset: 0px"] > * { animation: enogiaDlgIn var(--e-dur-in) var(--e-ease) backwards; }
-[style*="position: fixed"][style*="inset: 0px"]:has(+ [aria-modal="true"]) { animation: enogiaBackIn .2s ease-out backwards; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+[style*="position: fixed"][style*="inset: 0px"]:has(+ [aria-modal="true"]) { animation: enogiaBackIn .2s ease-out backwards; }
 @keyframes enogiaDrawerIn { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
 @keyframes enogiaDrawerOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateX(28px); } }
 [aria-modal="true"][style*="position: fixed"][style*="right: 0px"][style*="bottom: 0px"]:not([style*="inset"]) { animation: enogiaDrawerIn var(--e-dur-in) var(--e-ease) backwards; }
@@ -556,8 +556,7 @@ button { transition: background-color var(--e-dur-micro) var(--e-ease), border-c
 @media (prefers-reduced-motion: reduce){.enogia-bell-ring svg,.enogia-bell-ring::after,.enogia-bell-peek{animation:none}}
 
 /* v272 : barre d’onglets de la fiche projet — matière translucide (apple-design), pleine si « réduire la transparence » */
-.enogia-fiche-tabs{background:color-mix(in srgb, var(--fiche-bg) 82%, transparent);backdrop-filter:blur(16px) saturate(160%);-webkit-backdrop-filter:blur(16px) saturate(160%)}
-@media (prefers-reduced-transparency: reduce){.enogia-fiche-tabs{background:var(--fiche-bg);backdrop-filter:none;-webkit-backdrop-filter:none}}
+.enogia-fiche-tabs{background:var(--fiche-bg)} /* v345 (taste) : plein, plus de verre dépoli */
 
 /* v274 : fiche projet — colonnes qui se remplissent (blocs insécables) et tailles de texte harmonisées (audit apple-design poussé :
    trois tailles — 12 px étiquettes, 13 px texte, 15 px et plus pour les chiffres ; pas de 800) */

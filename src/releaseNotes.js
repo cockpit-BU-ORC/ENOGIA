@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v345",
+    date: "2026-11-15",
+    title: "V345 : plus net",
+    items: [
+      { t: "Général", d: "Plus de flou derrière les fenêtres ni d'effet de verre : l'écran reste net et défile plus léger." },
+    ],
+  },
+  {
     id: "2026-11-v344",
     date: "2026-11-15",
     title: "V344 : finitions",
