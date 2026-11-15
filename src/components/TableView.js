@@ -12,6 +12,7 @@ import { EtatSelect, PresenceEditor } from "./EtatControls"; // v289 : sans les 
 import { exportPlanningXlsx } from "../exportExcel";
 import { useIsPhone } from "../useIsPhone";
 import { useZoomAdvice, zoomTip } from "./ZoomHint";
+import { AF } from "../autoFocusOk";
 
 export const TABLE_COLUMNS=[
   {id:"serie",label:"N° de série (sous le PJ)"},
@@ -184,7 +185,7 @@ function DepartEdit({r,onSet,children}){
   const [ed,setEd]=useState(false),[v,setV]=useState("");
   const iso=r.depart?String(r.depart).slice(0,10):"";
   if(!onSet)return children;
-  if(ed)return <input type="date" autoFocus value={v} aria-label={"Nouvelle date de départ de "+r.pj} onClick={e=>e.stopPropagation()} onChange={e=>setV(e.target.value)}
+  if(ed)return <input type="date" autoFocus={AF} value={v} aria-label={"Nouvelle date de départ de "+r.pj} onClick={e=>e.stopPropagation()} onChange={e=>setV(e.target.value)}
     onKeyDown={e=>{e.stopPropagation();if(e.key==="Escape")setEd(false);if(e.key==="Enter"){setEd(false);if(v&&v!==iso)onSet(r.pj,v);}}}
     onBlur={()=>{setEd(false);if(v&&v!==iso)onSet(r.pj,v);}} style={{font:"inherit",fontSize:FZ.sm,padding:"2px 4px",border:"1px solid "+T.teal500,borderRadius:8,background:T.card,color:T.ink900,maxWidth:140}}/>;
   return <span className="e-editcell" style={{display:"inline-flex",alignItems:"center",gap:4}}>{children}<button type="button" className="e-editbtn" aria-label={"Changer la date de départ de "+r.pj} title="Changer la date de départ (admins)" onClick={e=>{e.stopPropagation();setV(iso);setEd(true);}} style={{border:"none",background:"transparent",color:T.ink500,cursor:"pointer",padding:2,borderRadius:4,display:"inline-flex"}}><NavIcon name="edit" size={13}/></button></span>;

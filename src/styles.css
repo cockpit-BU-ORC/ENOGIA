@@ -637,3 +637,13 @@ button, input, select, textarea { font-family: inherit; }
 /* v340 (audit Web Interface Guidelines, lot 3) : champ sans contour propre → anneau sur son cadre au clavier ; éléments rendus atteignables par le filet */
 .e-fw:focus-within { box-shadow: 0 0 0 2px var(--e-accent, #0E8C9E); }
 [data-kbd]:focus-visible { outline: 2px solid var(--e-accent, #0E8C9E); outline-offset: 2px; }
+
+/* v341 (audit Web Interface Guidelines, lot 5) */
+/* fenêtres et tiroirs : faire défiler leur contenu ne fait plus défiler la page derrière */
+[aria-modal="true"], [aria-modal="true"] *, [role="dialog"], [role="dialog"] *, .enogia-nd-drawer { overscroll-behavior: contain; }
+/* toucher : pas de délai de double-tap ni de flash gris (les boutons ont leur propre retour à l'appui) */
+html { -webkit-tap-highlight-color: transparent; }
+button, a, label, select, summary, [role="button"], [role="tab"], [role="option"], [data-kbd], input[type="checkbox"], input[type="radio"] { touch-action: manipulation; }
+@media (pointer: coarse) { [data-dnd-drag], [data-lane-key], [data-bench-pj] { touch-action: none; } }
+/* titres : pas de mot seul sur la dernière ligne */
+h1, h2, h3 { text-wrap: balance; }

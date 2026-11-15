@@ -18,6 +18,7 @@ import { PlannerLanes } from "./PlannerLanes";
 import { PlannerChanges } from "./PlannerChanges";
 import { Pop, MenuItem } from "./PlannerMenu";
 import { askConfirm } from "../confirm";
+import { AF } from "../autoFocusOk";
 
 // ── Module « Planification » (super admin) : remplace MS Project pour construire le planning d'ordonnancement ──
 // Un seul tableau Gantt modifiable en direct (dates, durées, travail, prédécesseurs, priorité) + la charge atelier sous le Gantt.
@@ -178,7 +179,7 @@ function TaskDialog({ plan, pj, after, testers, onClose, onApply }) {
   return (<Modal title={"Nouvelle tâche · " + pj} onClose={onClose} width={620}>
     <div style={{ fontSize: 13, color: T.ink500, lineHeight: 1.5, marginBottom: 12 }}>La tâche est rangée dans sa phase et commence après la tâche choisie (lien fin → début). Ses heures comptent dans la charge si elle est faite par l'atelier.</div>
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))", gap: 10 }}>
-      <label style={L}>Nom<input autoFocus value={f.name} onChange={e => { set({ name: e.target.value }); setErr(""); }} placeholder="Câblage armoire" className="pg-in" style={{ ...INP }} /></label>
+      <label style={L}>Nom<input autoFocus={AF} value={f.name} onChange={e => { set({ name: e.target.value }); setErr(""); }} placeholder="Câblage armoire" className="pg-in" style={{ ...INP }} /></label>
       <label style={L}>Phase<select value={f.phase} onChange={e => set({ phase: e.target.value, res: e.target.value === "tests" ? "testeur" : "atelier" })} className="pg-in" style={{ ...INP }}>{PHASES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
       <label style={L}>Ressource<select value={f.res} onChange={e => set({ res: e.target.value })} className="pg-in" style={{ ...INP }}>{RES_OPTS(testers, f.phase).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
       <label style={L}>Durée (j ouvrés)<input type="number" min={1} value={f.dur} onChange={e => set({ dur: e.target.value })} className="pg-in" style={{ ...INP }} /></label>

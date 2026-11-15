@@ -8,6 +8,7 @@ import { DEBUG_FIELDS } from "../debugChecklist";
 import { BOOK_DOC, vibOver, vibProgress, testRows, setTestMark, setTestDetail, addAsk, delAsk } from "../testFiche";
 import { bookStepsOf, manualProgress, filterSteps, setStep, stepStatus, STEP_STATUS, exportCsv, exportJson, parseExport, printHtml } from "../manualImport";
 import { askConfirm } from "../confirm";
+import { AF } from "../autoFocusOk";
 
 const B = (v = "sec", s = "sm") => ({ ...themeBtn(v, s), flexShrink: 0 });
 const field = () => ({ padding: "4px 6px", minHeight: 30, borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.xs, fontFamily: T.font, boxSizing: "border-box", width: "100%" });
@@ -276,7 +277,7 @@ function TestsChecklistDialog({ r, plan, catalog, act, canMark, canAsk, saveTest
               {label(g.k)} · Demandes spécifiques du client
               {canAsk && <button type="button" onClick={() => setAsk({ label: "", hint: "" })} style={{ ...B("sec", "sm"), marginLeft: 10 }}>＋ Ajouter une demande</button>}</th></tr>
               {ask && <tr><td colSpan={8} style={{ ...td, background: T.surface }}><div style={{ display: "grid", gridTemplateColumns: "minmax(200px,1fr) minmax(240px,2fr) auto auto", gap: 8, alignItems: "center", padding: 4 }}>
-                <input autoFocus value={ask.label} onChange={e => setAsk(a => ({ ...a, label: e.target.value }))} placeholder="Test demandé par le client" aria-label="Test demandé par le client" style={{ ...field(), fontSize: FZ.sm }} />
+                <input autoFocus={AF} value={ask.label} onChange={e => setAsk(a => ({ ...a, label: e.target.value }))} placeholder="Test demandé par le client" aria-label="Test demandé par le client" style={{ ...field(), fontSize: FZ.sm }} />
                 <input value={ask.hint} onChange={e => setAsk(a => ({ ...a, hint: e.target.value }))} placeholder="Objectif ou précision (facultatif)" aria-label="Objectif de la demande" style={{ ...field(), fontSize: FZ.sm }} />
                 <button type="button" disabled={!ask.label.trim()} onClick={async () => { if ((await saveTests(addAsk(plan, ask.label, ask.hint, who))) !== false) setAsk(null); }} style={B("pri", "sm")}>Ajouter</button>
                 <button type="button" onClick={() => setAsk(null)} style={B("ghost", "sm")}>Annuler</button></div></td></tr>}

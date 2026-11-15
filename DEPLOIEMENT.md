@@ -2466,3 +2466,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Alerte du navigateur avant de quitter avec un brouillon (accès, checklists, pénalités).
 - Aucune clé localStorage ; règles Firestore inchangées.
 - Fichiers : a11yFallback.js(+test), unsavedGuard.js, styles.css, components/ManagerFiche.js, ManagerNav.js, FicheContrat.js, CalendarView.js, GanttView.js, AccessPage.js, ChecklistsView.js, versions.
+
+## v341 — audit Web Interface Guidelines (lot 5)
+
+- Fenêtres : défilement contenu (overscroll-behavior), plus de défilement de la page derrière.
+- Toucher : touch-action manipulation, pas de flash gris ; au doigt, pas de clavier ouvert automatiquement (autoFocusOk.js, motion.js).
+- Titres équilibrés (text-wrap: balance) ; points de suspension « … ».
+- Aucune clé localStorage ; règles Firestore inchangées.
+- Fichiers : autoFocusOk.js, motion.js, styles.css, 12 composants (autoFocus), ProjectModal.js, SharedUI.js, versions.

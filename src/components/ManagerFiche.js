@@ -25,6 +25,7 @@ import { livrPrevueOf, contractDatesOf, contractPatch } from "../penalties";
 import { ProdDocCtx, TURB_CFGS, pjCfg, stockTiles, injInfo, maxBouches } from "../turbineNeeds";
 import { FEUX, FeuPicker, feuxOf, worstFeu, feuColor, feuText, feuLabel, NOTE_MAX, useRedGate, redNeeds } from "./Feux";
 import { askConfirm } from "../confirm";
+import { AF } from "../autoFocusOk";
 
 // ── Fiche projet (Manager) ─────────────────────────────────────────────────────────────────────
 // Demandé : « la fiche projet manque cruellement de style, fais-nous une fiche plus dense en
@@ -161,7 +162,7 @@ function DelayComposer({types,onAdd,onNewType}){
   const createType=async()=>{const v=newType.trim();if(!v)return;if(!(types||[]).includes(v)&&onNewType)await onNewType([...(types||[]),v]);setType(v);setNewType("");setCreating(false);};
   return(<div style={{marginBottom:8,background:T.card,borderRadius:12,padding:8,display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
     {creating?<>
-      <input autoFocus type="text" value={newType} maxLength={60} onChange={e=>setNewType(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")createType();if(e.key==="Escape")setCreating(false);}} placeholder="Nom de la nouvelle cause de retard" style={{...FIELD,flex:"1 1 200px"}}/>
+      <input autoFocus={AF} type="text" value={newType} maxLength={60} onChange={e=>setNewType(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")createType();if(e.key==="Escape")setCreating(false);}} placeholder="Nom de la nouvelle cause de retard" style={{...FIELD,flex:"1 1 200px"}}/>
       <button onClick={createType} disabled={!newType.trim()} style={BTN(!!newType.trim())}>Créer la cause</button>
       <button onClick={()=>{setCreating(false);setNewType("");}} style={{border:"none",background:"transparent",color:T.ink500,cursor:"pointer",fontFamily:T.font,fontSize:FZ.sm,fontWeight:600}}>Annuler</button>
     </>:<>
@@ -568,7 +569,7 @@ function ComposantsSection({meta,onSave,catalog,setCatalog,pjsToComplete,onApply
     </div>
     {!adding?<button type="button" onClick={()=>setAdding(true)} style={{marginTop:6,border:"none",background:"transparent",padding:"2px 0",minHeight:24,color:T.ink700,fontSize:FZ.xs,fontWeight:600,cursor:"pointer",fontFamily:T.font}}>＋ Ajouter un composant</button>:
     <div style={{display:"flex",gap:6,marginTop:6}}>
-      <input autoFocus value={nl} onChange={e=>setNl(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")add();else if(e.key==="Escape"){setNl("");setAdding(false);}}} placeholder="＋ Ajouter un composant (ex. Vanne, Bac à huile…) — nom modifiable, ✕ pour retirer" style={{...FIELD,flex:1,padding:"3px 8px"}}/>
+      <input autoFocus={AF} value={nl} onChange={e=>setNl(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")add();else if(e.key==="Escape"){setNl("");setAdding(false);}}} placeholder="＋ Ajouter un composant (ex. Vanne, Bac à huile…) — nom modifiable, ✕ pour retirer" style={{...FIELD,flex:1,padding:"3px 8px"}}/>
       <button onClick={add} disabled={!nl.trim()} style={BTN(!!nl.trim())}>Ajouter</button>
     </div>}
     {(missing.length>0||setCatalog)&&<div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",marginTop:6}}>

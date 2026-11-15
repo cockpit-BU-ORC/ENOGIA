@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import { T, btn } from "../theme";
 import { dayNum, isoOfDay, capDayFn } from "./engine";
 import { Pop, MenuItem } from "./PlannerMenu";
+import { AF } from "../autoFocusOk";
 
 // Charge atelier vs capacité, alignée sur la frise du Gantt (même échelle, même défilement horizontal).
 // Chaque période (semaine ou mois) montre un cadre = la capacité ; la barre = les heures planifiées ; le vide du cadre = ce qui reste possible.
@@ -149,7 +150,7 @@ function WeekCapEditor({ ed, normal, onClose, onSave }) {
     <div style={{ fontWeight: 600, marginBottom: 4 }}>{ed.label}</div>
     <div style={{ color: T.ink500, fontSize: 12, marginBottom: 10 }}>Capacité normale : {normal} h. Saisissez les heures disponibles cette semaine (absences, renfort, fermeture…).</div>
     <label style={{ display: "flex", alignItems: "center", gap: 8 }}>Capacité
-      <input autoFocus type="number" min={0} value={v} onChange={e => setV(e.target.value)} onKeyDown={e => { if (e.key === "Enter") ok(); }} className="pg-in" style={{ width: 90, height: 32, padding: "0 8px", border: "1px solid " + T.line, borderRadius: 8, background: T.card, color: T.ink900, fontFamily: T.fontMono, fontSize: 13, textAlign: "right" }} /> h</label>
+      <input autoFocus={AF} type="number" min={0} value={v} onChange={e => setV(e.target.value)} onKeyDown={e => { if (e.key === "Enter") ok(); }} className="pg-in" style={{ width: 90, height: 32, padding: "0 8px", border: "1px solid " + T.line, borderRadius: 8, background: T.card, color: T.ink900, fontFamily: T.fontMono, fontSize: 13, textAlign: "right" }} /> h</label>
     <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
       <button className="pg-btn" onClick={ok} style={{...btn("pri","md")}}>Appliquer</button>
       {ed.special && <button className="pg-btn" onClick={() => onSave(null)} style={{...btn("sec","md")}}>Revenir à la normale</button>}

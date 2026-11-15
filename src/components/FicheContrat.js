@@ -11,6 +11,7 @@ import { ETAT_SWATCHES } from "./EtatsDialog";
 import { PEN_REFS, PEN_DEFAULT, penaltyCalc, ficheBase, siblingsOf, pjBase } from "../penalties";
 import { askConfirm } from "../confirm";
 import { useUnsavedGuard } from "../unsavedGuard";
+import { AF } from "../autoFocusOk";
 
 const fd = iso => iso ? new Date(String(iso).slice(0, 10) + "T12:00:00").toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 const capLbl = () => ({ fontSize: FZ.xs, fontWeight: 600, color: T.ink500, letterSpacing: ".01em" });
@@ -63,7 +64,7 @@ export function CertifDialog({ onClose, certifs, setCertifs, usage }) {
       </>}
       <div style={{ ...lbl, paddingTop: 12, borderTop: "1px solid " + T.line }}>Nouvelle certification</div>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <input value={name} autoFocus onChange={e => { setName(e.target.value); setErr(""); }} onKeyDown={e => { if (e.key === "Enter") add(); }} placeholder="Nom (ex. ATEX, CE, UL…)" aria-label="Nom de la nouvelle certification" maxLength={40} style={{ ...fld, flex: 1, minWidth: 160 }} />
+        <input value={name} autoFocus={AF} onChange={e => { setName(e.target.value); setErr(""); }} onKeyDown={e => { if (e.key === "Enter") add(); }} placeholder="Nom (ex. ATEX, CE, UL…)" aria-label="Nom de la nouvelle certification" maxLength={40} style={{ ...fld, flex: 1, minWidth: 160 }} />
         <input type="color" value={color} onChange={e => setColor(e.target.value)} aria-label="Couleur de la nouvelle certification" style={{ width: 42, height: 32, border: "1px solid " + T.line, borderRadius: 8, background: "transparent", padding: 2, cursor: "pointer" }} />
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap", marginTop: 10 }}>

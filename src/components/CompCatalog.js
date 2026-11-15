@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { T, FZF as FZ } from "../theme";
 import { DEFAULT_COMPOSANTS } from "../pjProgress";
 import { askConfirm } from "../confirm";
+import { AF } from "../autoFocusOk";
 
 const btn = (extra = {}) => ({ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "4px 10px", fontSize: FZ.xs, fontWeight: 600, cursor: "pointer", fontFamily: T.font, ...extra });
 const fld = { padding: "6px 10px", borderRadius: 8, border: "1px solid " + T.line, background: T.surface, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font };
@@ -39,7 +40,7 @@ export function CompCatalogDialog({ catalog, setCatalog, nPj, missingCount, onAp
         </div>)}
       </div>
       <div style={{ display: "flex", gap: 8, paddingTop: 12, borderTop: "1px solid " + T.line }}>
-        <input value={name} autoFocus onChange={e => { setName(e.target.value); setErr(""); }} onKeyDown={e => { if (e.key === "Enter") add(); }} placeholder="Nouveau composant (ex. Vanne, Bac à huile…)" aria-label="Nouveau composant" maxLength={40} style={{ ...fld, flex: 1, minWidth: 0 }} />
+        <input value={name} autoFocus={AF} onChange={e => { setName(e.target.value); setErr(""); }} onKeyDown={e => { if (e.key === "Enter") add(); }} placeholder="Nouveau composant (ex. Vanne, Bac à huile…)" aria-label="Nouveau composant" maxLength={40} style={{ ...fld, flex: 1, minWidth: 0 }} />
         <button onClick={add} disabled={!name.trim()} style={{ border: "none", borderRadius: 12, padding: "7px 14px", background: name.trim() ? T.navy700 : T.ink100, color: name.trim() ? "#fff" : T.ink500, fontWeight: 600, fontSize: FZ.sm, cursor: name.trim() ? "pointer" : "default", fontFamily: T.font }}>Ajouter</button>
       </div>
       {err && <div role="alert" style={{ marginTop: 8, fontSize: FZ.xs, color: T.red600, fontWeight: 600 }}>{err}</div>}

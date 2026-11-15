@@ -13,6 +13,7 @@ import { askConfirm } from "../confirm";
 import { useUnsavedGuard } from "../unsavedGuard";
 import { profileOf, setProfile, isRemoved } from "../profiles";
 import { ACCESS_PAGES, LEVELS, LEVEL_LABEL, levelsOf, rolesOf, accessOn, slugRole, setLevel, copyRole, BUILTIN_ROLE_IDS } from "../access";
+import { AF } from "../autoFocusOk";
 
 const tone = l => l === "a" ? { bg: T.accentSoft, ink: T.accentInk } : l === "w" ? { bg: T.emerald100, ink: T.emerald600 } : l === "r" ? { bg: T.info100, ink: T.info600 } : { bg: T.surfaceAlt, ink: T.ink500 };
 const card = { background: T.card, borderRadius: 12, padding: "14px 16px", minWidth: 0 };
@@ -89,7 +90,7 @@ export default function AccessPage({ profiles, saveProfiles, accessDoc, saveAcce
         style={{ display: "flex", alignItems: "center", gap: 8, border: "none", borderRadius: 8, minHeight: 38, padding: "0 10px", cursor: "pointer", textAlign: "left", fontFamily: T.font, fontSize: 13, background: sel ? T.surfaceAlt : "transparent", color: T.ink900, fontWeight: sel ? 700 : 500 }}>
         <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l}</span><span style={{ fontSize: 12, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{n}</span></button>; })}
       {newRole == null ? <button type="button" onClick={() => setNewRole("")} style={{ ...btn("ghost", "sm"), marginTop: 6, justifyContent: "flex-start" }}>＋ Nouveau rôle</button>
-        : <div style={{ display: "flex", gap: 4, marginTop: 6 }}><input autoFocus value={newRole} onChange={e => setNewRole(e.target.value)} onKeyDown={e => { if (e.key === "Enter") addRole(); if (e.key === "Escape") setNewRole(null); }} placeholder="Nom du rôle" aria-label="Nom du nouveau rôle" style={{ ...field, flex: 1 }} /><button type="button" onClick={addRole} style={{ ...btn("sec", "sm") }}>Créer</button></div>}
+        : <div style={{ display: "flex", gap: 4, marginTop: 6 }}><input autoFocus={AF} value={newRole} onChange={e => setNewRole(e.target.value)} onKeyDown={e => { if (e.key === "Enter") addRole(); if (e.key === "Escape") setNewRole(null); }} placeholder="Nom du rôle" aria-label="Nom du nouveau rôle" style={{ ...field, flex: 1 }} /><button type="button" onClick={addRole} style={{ ...btn("sec", "sm") }}>Créer</button></div>}
     </nav>
     <section aria-label={"Rôle " + roleName(curRole)} style={card}>
       <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 8 }}>
@@ -108,7 +109,7 @@ export default function AccessPage({ profiles, saveProfiles, accessDoc, saveAcce
       </ul>
       {curRole !== "autre" && (!adding ? <button type="button" onClick={() => setAdding(true)} style={{ ...btn("sec", "md"), marginTop: 10 }}>＋ Ajouter des personnes</button>
         : <div style={{ marginTop: 12, border: "1px solid " + T.line, borderRadius: 12, padding: 10 }}>
-          <input type="search" autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher une personne" aria-label="Rechercher une personne à ajouter" style={{ ...field, width: "100%" }} />
+          <input type="search" autoFocus={AF} value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher une personne" aria-label="Rechercher une personne à ajouter" style={{ ...field, width: "100%" }} />
           <div style={{ maxHeight: 280, overflowY: "auto", marginTop: 6 }}>
             {list.filter(p => roleNow(p.email) !== curRole && (!q || (p.name + " " + p.email).toLowerCase().includes(q.toLowerCase()))).map(p => <label key={p.email} style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 40, padding: "0 4px", cursor: "pointer", borderBottom: "1px solid " + T.line }}>
               <input type="checkbox" checked={!!pick[p.email]} onChange={e => setPick({ ...pick, [p.email]: e.target.checked })} />

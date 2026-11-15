@@ -977,4 +977,8 @@ export const RELEASE_CATALOG = [
     ["Général", "Les lignes et cases cliquables s'ouvrent aussi au clavier (Tab, puis Entrée) ; focus visible dans les menus."],
     ["Général", "Le navigateur prévient avant de fermer la page si des accès, une checklist ou des pénalités ne sont pas enregistrés."],
   ] },
+  { v: "341", t: "Tablette plus confortable", items: [
+    ["Général", "Au doigt : le clavier ne s'ouvre plus tout seul à l'ouverture d'une fenêtre, plus de délai ni de flash gris au toucher."],
+    ["Général", "Faire défiler une fenêtre ne fait plus défiler la page derrière ; titres sans mot isolé en fin de ligne."],
+  ] },
 ];

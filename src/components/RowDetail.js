@@ -19,6 +19,7 @@ import { canCash } from "../roles";
 import { fmtEur } from "../pjProgress";
 import { turbineOf, achatsOf, ACHAT_ST } from "../pjDossier";
 import { useProdModel } from "../prodModel";
+import { AF } from "../autoFocusOk";
 
 // Données de contexte fournies par App (tests, turbines) pour les pastilles, sans les faire passer par chaque vue.
 export const PjDialogCtx = createContext({ testsDoc: null, turbineDoc: null });
@@ -140,7 +141,7 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
           {dateTile(r.testsFin ? "Fin des tests" : "Tests", dmy(r.testsFin || r.tests), r.tests && r.testsFin ? "début " + dmy(r.tests) : "")}
           {depEd ? <div style={{ background: T.surface, borderRadius: 12, padding: "8px 12px", minWidth: 0, display: "flex", flexDirection: "column", gap: 6 }}>
             <label style={{ fontFamily: T.fontLabel, fontSize: 12, color: T.ink500 }}>Nouvelle date de départ
-              <input type="date" autoFocus value={depV} onChange={e => setDepV(e.target.value)} onKeyDown={e => { if (e.key === "Escape") { e.stopPropagation(); setDepEd(false); } if (e.key === "Enter") saveDep(); }}
+              <input type="date" autoFocus={AF} value={depV} onChange={e => setDepV(e.target.value)} onKeyDown={e => { if (e.key === "Escape") { e.stopPropagation(); setDepEd(false); } if (e.key === "Enter") saveDep(); }}
                 style={{ display: "block", marginTop: 4, font: "inherit", fontSize: FZ.sm, padding: "4px 6px", border: "1px solid " + T.teal500, borderRadius: 8, background: T.card, color: T.ink900, width: "100%", boxSizing: "border-box" }} /></label>
             <span style={{ display: "flex", gap: 6 }}><button type="button" onClick={saveDep} disabled={!depV} style={{ ...btn(true), minHeight: 30 }}>Enregistrer</button><button type="button" onClick={() => setDepEd(false)} style={{ ...btn(false), minHeight: 30 }}>Annuler</button></span>
           </div>

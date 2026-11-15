@@ -23,7 +23,10 @@ function onOpen(dlg) {
   setTimeout(() => { // laisse le composant placer son propre focus d'abord
     if (!dlg.isConnected || dlg.contains(document.activeElement)) return;
     const first = [...dlg.querySelectorAll(FOCUSABLE)].find(visible);
-    if (first && first.tagName !== "IFRAME") first.focus({ preventScroll: true });
+    // v341 : au doigt, pas de focus dans un champ de texte à l'ouverture (le clavier de la tablette s'ouvrirait)
+    const typing = first && (first.tagName === "TEXTAREA" || (first.tagName === "INPUT" && !/^(checkbox|radio|button|submit|range|file)$/.test(first.type)));
+    let coarse = false; try { coarse = window.matchMedia("(pointer: coarse)").matches; } catch (e) {}
+    if (first && first.tagName !== "IFRAME" && !(coarse && typing)) first.focus({ preventScroll: true });
     else { if (!dlg.hasAttribute("tabindex")) dlg.setAttribute("tabindex", "-1"); dlg.focus({ preventScroll: true }); }
   }, 0);
 }

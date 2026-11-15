@@ -6,6 +6,7 @@ import { numberRows, predText, applyPredText } from "./predecessors";
 import { Pop, MenuItem } from "./PlannerMenu";
 import { usePointerDnD } from "../pointerDrag";
 import { askConfirm } from "../confirm";
+import { AF } from "../autoFocusOk";
 
 export const fmtIso = iso => iso ? iso.slice(8, 10) + "/" + iso.slice(5, 7) + "/" + iso.slice(2, 4) : "—";
 export const STEP_COLOR_BASE = { arrivee: "#7A5A1C", production: "#17734F", tests: "#5A44A6", finProd: "#A4570B", depart: "#A8332F" };
@@ -70,7 +71,7 @@ function EditCell({ value, display, onCommit, type = "text", disabled, align = "
   const [ed, setEd] = useState(!!autoEdit); const [v, setV] = useState(autoEdit && value != null ? String(value) : ""); const cancel = useRef(false);
   if (!ed || disabled) return <div className={"pg-cell" + (disabled ? "" : " pg-ed")} title={title} onClick={() => { if (disabled) return; cancel.current = false; setV(value == null ? "" : String(value)); setEd(true); }} style={{ textAlign: align, fontFamily: mono ? T.fontMono : T.font, ...style }}>{display}</div>;
   const done = () => { setEd(false); if (!cancel.current && v !== String(value == null ? "" : value)) onCommit(v); };
-  return <input autoFocus type={type} value={v} placeholder={placeholder} onChange={e => setV(e.target.value)} onBlur={done} onFocus={e => e.target.select && type !== "date" && e.target.select()}
+  return <input autoFocus={AF} type={type} value={v} placeholder={placeholder} onChange={e => setV(e.target.value)} onBlur={done} onFocus={e => e.target.select && type !== "date" && e.target.select()}
     onKeyDown={e => { if (e.key === "Enter") e.currentTarget.blur(); else if (e.key === "Escape") { cancel.current = true; e.currentTarget.blur(); } }}
     style={{ width: "100%", height: ROW_H - 6, margin: "0 0 0 0", padding: "0 4px", border: "2px solid " + T.teal500, borderRadius: 8, background: T.card, color: T.ink900, fontFamily: mono ? T.fontMono : T.font, fontSize: 12.5, textAlign: align, boxSizing: "border-box" }} />;
 }

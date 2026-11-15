@@ -15,6 +15,7 @@ import { createPortal } from "react-dom";
 import { allTurbines, monthOf, swapNeedKeys, TURB_CFGS, cfgById, refsOf, buildNeeds, assignOps, unassignOps, installOps, allocOps, unallocOps, stockTiles, injInfo, maxBouches, autoFill, roueConflict, prodState, workDate, pjOfAffaire, closedNeeds } from "../turbineNeeds";
 import { getPjMeta, CountryFlag } from "../pjMeta";
 import { askConfirm } from "../confirm";
+import { AF } from "../autoFocusOk";
 
 const COLLS = ["turbines", "arbres", "pieces", "roues", "injecteurs"];
 export { prodState, workDate, pjOfAffaire };
@@ -30,7 +31,7 @@ function SavDialog({ doc, init, onSave, onDelete, onClose }) {
   return (<div onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 10010, background: "rgba(10,20,30,.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
     <div role="dialog" aria-modal="true" aria-label={init ? "Besoin SAV " + (init.label || "") : "Nouveau besoin SAV"} style={{ background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, width: "min(520px,100%)", padding: "16px 18px", fontFamily: T.font, display: "flex", flexDirection: "column", gap: 10 }}>
       <div style={{ fontFamily: T.fontDisplay, fontSize: FZ.lg, fontWeight: 600 }}>{init ? "Besoin SAV" : "Nouveau besoin SAV"}</div>
-      <L l="Client / n° SAV"><input autoFocus value={v.label} onChange={e => setV({ ...v, label: e.target.value })} placeholder="Par exemple : SAV411 - Client" style={f} /></L>
+      <L l="Client / n° SAV"><input autoFocus={AF} value={v.label} onChange={e => setV({ ...v, label: e.target.value })} placeholder="Par exemple : SAV411 - Client" style={f} /></L>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
         <L l="Turbine"><select value={v.cfg} onChange={e => setV({ ...v, cfg: e.target.value })} style={f}>{TURB_CFGS.map(c => <option key={c.id} value={c.id}>{c.l}</option>)}</select></L>
         <L l="Pour le"><input type="date" value={v.date} onChange={e => setV({ ...v, date: e.target.value })} style={f} /></L>
@@ -307,7 +308,7 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
                 {canEdit && <span style={{ display: "inline-flex", gap: 2 }}>
                   <button type="button" aria-label={"Monter " + n.label + " d'un cran dans l'ordre de besoin"} disabled={!canUp} onClick={() => moveNeed(n, -1)} style={{ ...arrowB, opacity: canUp ? 1 : 0.35, cursor: canUp ? "pointer" : "default" }}>▲</button>
                   <button type="button" aria-label={"Descendre " + n.label + " d'un cran dans l'ordre de besoin"} disabled={!canDown} onClick={() => moveNeed(n, 1)} style={{ ...arrowB, opacity: canDown ? 1 : 0.35, cursor: canDown ? "pointer" : "default" }}>▼</button></span>}
-                {rankEdit === n.key ? <input type="number" min={1} max={needs.length} defaultValue={rk} autoFocus aria-label={"Priorité de " + n.label + " (1 à " + needs.length + ")"}
+                {rankEdit === n.key ? <input type="number" min={1} max={needs.length} defaultValue={rk} autoFocus={AF} aria-label={"Priorité de " + n.label + " (1 à " + needs.length + ")"}
                     onKeyDown={e => { if (e.key === "Enter") setRank(n, +e.currentTarget.value); if (e.key === "Escape") setRankEdit(null); }} onBlur={e => setRank(n, +e.currentTarget.value)}
                     style={{ width: 52, height: 24, borderRadius: 8, border: "1px solid " + T.ink900, background: T.card, color: T.ink900, fontSize: 12, fontWeight: 600, padding: "0 4px", fontFamily: T.font }} />
                   : <button type="button" disabled={!canEdit} onClick={() => setRankEdit(n.key)} title={canEdit ? "Priorité n° " + rk + " : cliquer pour l'échanger avec un autre besoin, même d'un autre mois" : "Priorité n° " + rk} aria-label={"Priorité n° " + rk + " de " + n.label}

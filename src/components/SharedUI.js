@@ -6,6 +6,7 @@ import { isSuperAdmin } from "../roles";
 import { ETAT_META, getPjMeta, SerieTag } from "../pjMeta";
 import { parseMSProjectRows } from "../parsers";
 import { askConfirm } from "../confirm";
+import { AF } from "../autoFocusOk";
 
 export function useSheetJS(){
   const [ready,setReady]=useState(!!window.XLSX);
@@ -161,7 +162,7 @@ export function PjChecklist({data,selected,onChange,maxHeight=220}){
   };
   return(<div style={{border:"1px solid "+T.line,borderRadius:12,background:T.card,overflow:"hidden"}}>
     <div style={{padding:8,borderBottom:"1px solid "+T.line,display:"flex",gap:8,alignItems:"center",background:T.surface}}>
-      <input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher un PJ, un projet..." style={{flex:1,padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700,background:T.card}}/>
+      <input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher un PJ, un projet…" style={{flex:1,padding:"6px 8px",borderRadius:8,border:"1px solid "+T.line,fontSize:FZ.sm,fontFamily:T.font,color:T.ink700,background:T.card}}/>
       <span style={{fontSize:FZ.xs,color:T.ink500,fontWeight:600,whiteSpace:"nowrap"}}>{selected.size} sélectionné{selected.size!==1?"s":""}</span>
     </div>
     <div {...pressable(toggleAll,{role:"checkbox","aria-checked":allChecked})} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 8px",cursor:"pointer",borderBottom:"1px solid "+T.line}}>
@@ -361,7 +362,7 @@ export function NewDelayType({types,onCreate,onCreated,style}){
   const base={fontFamily:T.font,fontSize:FZ.xs,fontWeight:600,cursor:"pointer"};
   if(!open)return <button type="button" onClick={()=>setOpen(true)} style={{...base,padding:"5px 11px",borderRadius:999,border:"1.5px dashed "+T.teal500,background:"transparent",color:T.teal600,...style}}>＋ Nouvelle cause</button>;
   return <span style={{display:"inline-flex",gap:6,alignItems:"center",flexWrap:"wrap",...style}}>
-    <input autoFocus type="text" value={v} maxLength={60} onChange={e=>setV(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();go();}if(e.key==="Escape")setOpen(false);}} placeholder="Nom de la cause" style={{padding:"5px 9px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink900,fontSize:FZ.sm,fontFamily:T.font,minWidth:150}}/>
+    <input autoFocus={AF} type="text" value={v} maxLength={60} onChange={e=>setV(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();go();}if(e.key==="Escape")setOpen(false);}} placeholder="Nom de la cause" style={{padding:"5px 9px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink900,fontSize:FZ.sm,fontFamily:T.font,minWidth:150}}/>
     <button type="button" onClick={go} disabled={!v.trim()||busy} style={{...base,padding:"5px 11px",borderRadius:8,border:"none",background:v.trim()?T.teal500:T.surfaceAlt,color:v.trim()?"#fff":T.ink300}}>Créer</button>
     <button type="button" onClick={()=>{setOpen(false);setV("");}} style={{...base,padding:"5px 6px",border:"none",background:"transparent",color:T.ink500,fontWeight:600}}>Annuler</button>
   </span>;

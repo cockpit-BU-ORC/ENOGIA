@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v341",
+    date: "2026-11-15",
+    title: "V341 : tablette plus confortable",
+    items: [
+      { t: "Tablette", d: "Le clavier ne s'ouvre plus tout seul dans les fenêtres, et le toucher répond sans délai." },
+    ],
+  },
+  {
     id: "2026-11-v340",
     date: "2026-11-15",
     title: "V340 : clavier et suppressions",
