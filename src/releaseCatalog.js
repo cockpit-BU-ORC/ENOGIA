@@ -1011,4 +1011,7 @@ export const RELEASE_CATALOG = [
     ["Tests", "Échecs et retards hachurés en plus du rouge, « ✓ terminé » sur les bancs, nombre d'échecs écrit à côté de la barre des tests."],
     ["Tests", "Couverture du livret de configuration lisible en mode sombre."],
   ] },
+  { v: "349", t: "Pastilles d'état mieux détourées", items: [
+    ["Planning", "Liste : les pastilles d'état ont un contour de la couleur du texte, visible en clair comme en sombre."],
+  ] },
 ];

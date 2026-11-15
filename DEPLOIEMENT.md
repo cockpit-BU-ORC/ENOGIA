@@ -2528,3 +2528,9 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Titres sans saut (Panel level, KPI, Besoins turbines) ; libellés de champs à la source.
 - Aucune clé localStorage ; règles Firestore inchangées.
 - Fichiers : theme.js, App.js, styles.css, components/TestFiche.js, TestsTab.js, SharedUI.js, SavPage.js, InboxPage.js, KpiStory.js, TurbinesHub.js, ManagerFiche.js, EtatControls.js, versions.
+
+## v349 — pastilles d'état de la Liste
+
+- Bord des pastilles d'état en encre de l'état (≥ 3:1, WCAG 1.4.11).
+- Aucune clé localStorage ; règles Firestore inchangées.
+- Fichiers : components/EtatControls.js, versions.
