@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { Arrange } from "./Arrange";
 import { T, FZ } from "../theme";
-import { presenceKind, presenceDates, ETAT_META } from "../pjMeta";
+import { presenceKind, presenceDates, ETAT_META, PjPlate } from "../pjMeta";
 import { NavIcon } from "./SharedUI";
 import { planOf, catalogOf, activeSections, progressOf, effRange, isForced, testersOf, findConflicts } from "../testPlan";
 import { turbineStatus } from "../turbines";
@@ -25,6 +25,19 @@ const monday = s => { const d = new Date(s + "T12:00:00"); d.setDate(d.getDate()
 const DOW = ["Lun", "Mar", "Mer", "Jeu", "Ven"];
 const workDays = (a, b) => { let n = 0; const d = new Date(a + "T12:00:00"), e = new Date(b + "T12:00:00"); while (d <= e) { const w = d.getDay(); if (w && w !== 6) n++; d.setDate(d.getDate() + 1); } return n; };
 export const CAPA_SEMAINE = CAPA_DEFAUT; // h atelier par semaine sans plan ; avec un plan : atelierCap(plan) (v282)
+
+// v352 : les postes de l'atelier, de la commande à l'expédition (cadrans « Ligne d'atelier » et « Fiches suiveuses »)
+const LINE_STATIONS = [
+  { id: "cmd", label: "Commande", etats: ["NOT ORDERED", "NON_DESIGNEE"] },
+  { id: "four", label: "Fournisseurs", etats: ["En fabrication", "STOCKAGE_EXT"] },
+  { id: "meca", label: "Montage méca", etats: ["MONTAGE"] },
+  { id: "elec", label: "Montage élec", etats: ["ELEC"] },
+  { id: "tests", label: "Tests", etats: ["TESTS"] },
+  { id: "pack", label: "Packaging", etats: ["PACKAGING"] },
+  { id: "dep", label: "Expédiée", etats: ["SHIPPED"] },
+];
+const stationOf = etat => { const i = LINE_STATIONS.findIndex(st => st.etats.includes(etat)); return i < 0 ? 1 : i; };
+const etatBar = etat => (ETAT_META[etat] || {}).bar || T.ink300;
 
 // Cadrans par défaut de chaque poste (id, largeur sur 12)
 export const HOME_DEFAULTS = {
@@ -342,6 +355,54 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
         <button key={v} type="button" onClick={() => onGo && onGo(v)} style={{ display: "flex", alignItems: "center", gap: 6, minHeight: 36, border: "1px solid " + T.line, background: T.card, borderRadius: 8, padding: "0 10px", cursor: "pointer", fontFamily: T.font, fontSize: FZ.sm, fontWeight: 600, color: T.ink900 }}><NavIcon name={ic} size={16} />{l}</button>)}
     </div></>) };
 
+  // v352 (direction frontend-design, A) : la ligne d'atelier — les sept postes reliés, chaque machine posée sur son poste
+  // (plaque à liseré de la couleur de l'état), retard sur l'initial écrit dessous ; expédiées des 30 derniers jours seulement.
+  W.ligne = { label: "Ligne d'atelier", span: 12, render: () => {
+    const since = addD(today, -30);
+    const L = rows.filter(r => r.etat !== "A_DEFINIR" && (r.etat !== "SHIPPED" || (dIso(r.depart) && dIso(r.depart) >= since)));
+    const by = LINE_STATIONS.map(() => []); L.forEach(r => by[stationOf(r.etat)].push(r));
+    by.forEach(l => l.sort((a, b) => (dIso(a.depart) || "9").localeCompare(dIso(b.depart) || "9")));
+    const MAX = 4;
+    return sec("ligne", "Ligne d'atelier", S.production.ring, <><Head title="Ligne d'atelier" sub="où sont les machines, de la commande à l'expédition" count={L.length} />
+      <div style={{ overflowX: "auto", marginTop: 6 }}>
+        <ol aria-label="Postes de l'atelier" style={{ listStyle: "none", margin: 0, padding: "0 0 4px", display: "grid", gridTemplateColumns: "repeat(7, minmax(104px, 1fr))", position: "relative", minWidth: 728 }}>
+          <span aria-hidden="true" style={{ position: "absolute", left: "7%", right: "7%", top: 31, height: 6, borderRadius: 999, background: T.line }} />
+          {LINE_STATIONS.map((st, i) => { const list = by[i], c = etatBar(st.etats[0]); return (
+            <li key={st.id} aria-label={st.label + " : " + list.length + " machine" + (list.length > 1 ? "s" : "")} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, minWidth: 0, padding: "0 4px" }}>
+              <span style={{ fontSize: 12, fontWeight: 500, color: T.ink500, minHeight: 18, textAlign: "center" }}>{st.label}</span>
+              <span aria-hidden="true" style={{ width: 22, height: 22, borderRadius: "50%", background: T.card, border: "4px solid " + c, position: "relative", zIndex: 1, boxSizing: "border-box" }} />
+              <b style={{ fontFamily: T.fontDisplay, fontSize: 20, fontWeight: 600, lineHeight: 1, color: list.length ? T.ink900 : T.ink300 }}>{list.length}</b>
+              <span style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                {list.slice(0, MAX).map(r => <button key={r.pj} type="button" onClick={() => onOpenPj && onOpenPj(r.pj)} title={(nomOf(r) || r.pj) + (r.drift > 0 ? " · +" + r.drift + " j sur l'initial" : "")} aria-label={"Ouvrir " + r.pj + (r.drift > 0 ? ", " + r.drift + " jours de retard sur l'initial" : "")}
+                  style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                  <PjPlate pj={r.pj} style={{ boxShadow: "inset 3px 0 0 " + etatBar(r.etat) }} />
+                  {r.drift > 0 && <span style={{ fontSize: 12, fontWeight: 500, color: T.red600 }}>+{r.drift} j</span>}
+                </button>)}
+                {list.length > MAX && <button type="button" onClick={() => onGo && onGo("table")} style={{ border: "none", background: "transparent", color: T.accentInk, fontSize: 12, fontWeight: 500, cursor: "pointer", minHeight: 24 }}>+ {list.length - MAX} autre{list.length - MAX > 1 ? "s" : ""}</button>}
+              </span>
+            </li>); })}
+        </ol>
+      </div></>); } };
+  // v352 (direction frontend-design, C) : la fiche suiveuse de chaque machine en cours — liseré de la couleur de l'état, les sept
+  // postes en barrettes (fait / en cours / à venir), départ et retard sur l'initial ; triées par départ.
+  W.suiveuses = { label: "Fiches suiveuses", span: 12, render: () => {
+    const L = open.filter(r => r.etat !== "A_DEFINIR").slice().sort((a, b) => (dIso(a.depart) || "9").localeCompare(dIso(b.depart) || "9"));
+    const MAX = 9;
+    return sec("suiveuses", "Fiches suiveuses", S.production.ring, <><Head title="Fiches suiveuses" sub="les machines en cours, par date de départ" count={L.length} />
+      {L.length === 0 ? empty("check", "Aucune machine en cours", "") : <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 10, marginTop: 6 }}>
+        {L.slice(0, MAX).map(r => { const c = etatBar(r.etat), cur = stationOf(r.etat), m = ETAT_META[r.etat] || {}; return (
+          <button key={r.pj} type="button" onClick={() => onOpenPj && onOpenPj(r.pj)} aria-label={"Ouvrir " + r.pj + ", " + (m.label || r.etat) + ", départ " + fmtD(r.depart)}
+            style={{ textAlign: "left", cursor: "pointer", border: "1px solid " + T.line, borderRadius: "4px 12px 12px 4px", background: T.card, boxShadow: "inset 6px 0 0 " + c, padding: "10px 12px 10px 16px", fontFamily: T.font, color: T.ink900, display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}><PjPlate pj={r.pj} /><span style={{ marginLeft: "auto", fontSize: 12, color: T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.label || r.etat}</span></span>
+            <span style={{ fontSize: 13, color: T.ink700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{nomOf(r) || r.gamme || ""}</span>
+            <span aria-hidden="true" style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 3 }}>
+              {LINE_STATIONS.map((st, i) => <i key={st.id} title={st.label} style={{ height: 8, borderRadius: 2, background: i <= cur ? c : T.surfaceAlt, boxShadow: i === cur ? "0 0 0 2px " + T.card + ", 0 0 0 3px " + c : "none" }} />)}
+            </span>
+            <span style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: T.ink500 }}><span>Départ</span><b style={{ fontWeight: 600, color: r.drift > 0 ? T.red600 : T.ink900, fontVariantNumeric: "tabular-nums" }}>{fmtD(r.depart)}{r.drift > 0 ? " · +" + r.drift + " j" : ""}</b></span>
+          </button>); })}
+      </div>}
+      {L.length > MAX && more("Voir les " + L.length + " machines dans la Liste", () => onGo && onGo("table"))}</>); } };
+
   /* ── disposition du poste ── */
   const avail = id => W[id] && (!W[id].only || W[id].only());
   const L = layout || {}, extra = Array.isArray(L.extra) ? L.extra : [], hidden = Array.isArray(L.hidden) ? L.hidden : [];
@@ -352,7 +413,7 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
   // v231 (demandé : « Ajouter un cadran n'est pas clair : des thèmes ou des liens avec les onglets ») : chaque cadran est rangé sous
   // la page du site d'où viennent ses données, avec une phrase qui dit ce qu'il montre.
   const THEMES = [
-    ["Vue d'ensemble — Liste et Gantt", { kpis: "les grands chiffres du portefeuille", departs: "les 5 prochains départs", parcours: "combien de machines à chaque étape", alertes: "les dérives fortes et les retards à déclarer", etats: "nombre de machines dans chaque état", depMois: "départs prévus sur les 6 prochains mois", shipped: "les dernières machines parties", raccourcis: "boutons vers les pages du site" }],
+    ["Vue d'ensemble — Liste et Gantt", { ligne: "les sept postes de l'atelier, chaque machine sur son poste", suiveuses: "une fiche suiveuse par machine en cours, étapes et départ", kpis: "les grands chiffres du portefeuille", departs: "les 5 prochains départs", parcours: "combien de machines à chaque étape", alertes: "les dérives fortes et les retards à déclarer", etats: "nombre de machines dans chaque état", depMois: "départs prévus sur les 6 prochains mois", shipped: "les dernières machines parties", raccourcis: "boutons vers les pages du site" }],
     ["Projets — Fiches projet", { pjs: "les PJ d'un chef de projet, triés par départ", jalons: "arrivées, tests et départs des 3 semaines", todo: "retards à déclarer et mentions", fat: "FAT client et NOBO à venir (mes PJ)", visites: "visites client et NOBO à venir, toutes machines", avance: "avancement moyen et PJ en avance / en retard" }],
     ["Tests — page Tests", { tests: "machines au banc et tests des 3 semaines", today: "machines au banc aujourd'hui (jour N / M)", sign: "fiches de test à signer", week: "la semaine de tests d'un testeur", arrivees: "machines qui arrivent au banc", results: "réussis et échecs des 14 derniers jours", postes: "occupation des postes de test", benchWeek: "toutes les machines au banc cette semaine" }],
     ["Atelier — Planificateur et Calendrier", { charge: "heures atelier sur 4 semaines face à la capacité", arrdep: "arrivées et départs de la semaine", montage: "machines en montage méca / élec", fermetures: "fermetures de l’atelier à venir" }],

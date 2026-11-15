@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v352",
+    date: "2026-11-15",
+    title: "V352 : ligne d'atelier",
+    items: [
+      { t: "Accueil", d: "Deux nouveaux cadrans à ajouter à l'accueil : la ligne d'atelier (chaque machine sur son poste) et les fiches suiveuses." },
+    ],
+  },
+  {
     id: "2026-11-v351",
     date: "2026-11-15",
     title: "V351 : texte plus lisible",

@@ -2549,3 +2549,9 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - DESIGN.md et .impeccable/design.json mis à jour (régénérés sans Impeccable).
 - Aucune clé localStorage ; règles Firestore inchangées.
 - Fichiers : theme.js, styles.css, App.js, ~70 composants et planner/*, DESIGN.md, versions.
+
+## v352 — cadrans « Ligne d'atelier » et « Fiches suiveuses »
+
+- Deux cadrans dans le catalogue de l'accueil, actifs sur aucun poste par défaut (« Disposer les cadrans » › « Ajouter un cadran »).
+- Aucune clé localStorage ; données inchangées (dispositions dans planning/profiles.homeLayouts, comme avant) ; règles Firestore inchangées.
+- Fichiers : components/RoleHome.js, demo/demoPages.js, versions.

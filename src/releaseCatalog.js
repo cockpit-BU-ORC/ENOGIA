@@ -1022,4 +1022,8 @@ export const RELEASE_CATALOG = [
     ["Général", "Tailles de texte harmonisées sur tout le site ; petits textes et étiquettes moins gras, titres et chiffres qui ressortent."],
     ["Général", "Un seul bouton principal par écran ; en changeant de page, le lecteur d'écran se place sur le titre."],
   ] },
+  { v: "352", t: "Deux nouveaux cadrans d'accueil : ligne d'atelier et fiches suiveuses", items: [
+    ["Accueil", "« Ligne d'atelier » : les sept postes de la commande à l'expédition, chaque machine posée sur son poste, retard écrit dessous."],
+    ["Accueil", "« Fiches suiveuses » : une fiche par machine en cours, ses étapes en barrettes et son départ ; à ajouter avec « Disposer les cadrans »."],
+  ] },
 ];
