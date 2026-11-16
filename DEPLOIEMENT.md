@@ -2638,3 +2638,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Données (même document `planning/tests`, objets seulement) : `vibModel.speeds = [{ id, label }]`, `vibModel.ranges = { [turbine]: { [vitesse]: { min, max } } }` ; par PJ `plans[PJ].debug.spd = { [turbine]: { [vitesse]: "valeur" } }`.
 - TestFiche.js : `SpeedTable` sous le bloc vibrations (`VibBlock model`), `FREQ_LOOK` ; ChecklistsView.js : vitesses + plages dans « Fréquences et vibrations » ; DebugChecklist.js : avancement « fréquences n / m » et données du PDF ; debugPdf.js : tableau `spd` (valeurs échappées par `x()`, classes `.in` / `.out`) ; TestsTab.js : étape en rouge si une fréquence est hors plage.
 - Aucune clé localStorage ; règles Firestore inchangées. Galerie : vitesses fictives dans `demoData.js`.
+
+## v364 — gestion des accueils par rôle
+
+- components/HomeRoles.js (nouveau) : `HomeRoles` (rôles à gauche, actions, aperçu = `RoleHome` du rôle), `layoutModified`, `layoutCount`, `copyLayout` (widgets du rôle source, sinon ses widgets par défaut) ; « Partir de zéro » = `widgets: []` (askConfirm), « Rétablir » = `{}` ; Annuler 6 s.
+- HomeView.js : bouton « Gérer les accueils par rôle » dans la ligne « Accueil de : » (point ambre = rôle modifié) ; clé localStorage **`enogia_home_manage`** (« 1 » = écran de gestion ouvert).
+- WidgetBoard.js : galerie en choix multiple (`Choisir` / « Ajouter N widgets », `add(picks)`), bouton « ＋ Ajouter des widgets ».
+- Données inchangées (`planning/profiles.homeLayouts[rôle]`, propriétaire) ; règles Firestore inchangées. Galerie : « Accueil · gestion par rôle » (`home-roles`).

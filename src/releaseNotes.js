@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v364",
+    date: "2026-11-16",
+    title: "V364 : gestion des accueils par rôle sur un seul écran",
+    items: [
+      { t: "Accueil", d: "Nouvel écran « Gérer les accueils par rôle » : rôles modifiés ou par défaut, copie depuis un autre rôle, départ de zéro, retour à l'accueil par défaut, aperçu réel." },
+      { t: "Accueil", d: "La galerie des widgets permet d'en choisir plusieurs et de les ajouter en une fois." },
+    ],
+  },
+  {
     id: "2026-11-v363",
     date: "2026-11-16",
     title: "V363 : fréquences par vitesse de turbine dans la checklist de debug",

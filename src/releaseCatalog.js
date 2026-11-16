@@ -1079,4 +1079,9 @@ export const RELEASE_CATALOG = [
     ["Tests", "Tests › Checklists › Fréquences et vibrations : vitesses de turbine et plage min – max par turbine et par vitesse (bornes comprises)."],
     ["Tests", "PDF de la checklist de debug : même tableau, mêmes couleurs et signes ; étape signalée « fréquences hors plage » dans la fiche."],
   ] },
+  { v: "364", t: "Gestion des accueils par rôle sur un seul écran", items: [
+    ["Accueil", "« Gérer les accueils par rôle » (propriétaire) : liste des rôles avec « modifié / par défaut » et le nombre de widgets, aperçu réel de l'accueil du rôle choisi."],
+    ["Accueil", "Actions « Copier depuis un autre rôle », « Partir de zéro », « Rétablir l'accueil par défaut », « Voir comme » ; chaque action s'annule pendant 6 s."],
+    ["Accueil", "Galerie « Ajouter des widgets » : « Choisir » sur plusieurs widgets puis « Ajouter N widgets » (une seule annulation)."],
+  ] },
 ];

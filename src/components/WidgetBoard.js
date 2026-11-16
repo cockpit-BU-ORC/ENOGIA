@@ -66,7 +66,9 @@ export function WidgetBoard({ items, widgets, onChange, onReset, canEdit, catalo
   const sizesOf = it => { const all = (it.stack || [it.t]).map(t => widths(widgets[t] && widgets[t].sizes)); return all.reduce((a, s) => a.filter(z => s.includes(z))); };
   const resize = i => { const it = list[i], opts = sizesOf(it); if (opts.length < 2) return; const z = opts[(opts.indexOf(it.z) + 1) % opts.length]; const prev = base(), n = list.slice(); n[i] = { ...it, z }; save(n); say("Taille : " + WG_SIZES[z], prev); };
   const unstack = (i, t) => { const prev = base(), it = list[i]; const rest = it.stack.filter(x => x !== t); const n = list.slice(); n.splice(i, 1, rest.length > 1 ? { ...it, stack: rest } : { t: rest[0], z: it.z }, { t, z: it.z }); save(n); say("Sorti de la pile", prev); };
-  const add = (t, z) => { const prev = base(); save([{ t, z }, ...list]); setGallery(false); say((widgets[t] && widgets[t].label) + " ajouté", prev); };
+  // v364 : plusieurs widgets choisis dans la galerie s'ajoutent en une fois (un seul enregistrement, une seule annulation)
+  const add = picks => { if (!picks.length) return; const prev = base(); save([...picks.map(([t, z]) => ({ t, z })), ...list]); setGallery(false);
+    say(picks.length > 1 ? picks.length + " widgets ajoutés" : (widgets[picks[0][0]] && widgets[picks[0][0]].label) + " ajouté", prev); };
 
   // ── glisser au pointeur
   const onDown = (e, i) => {
@@ -117,7 +119,7 @@ export function WidgetBoard({ items, widgets, onChange, onReset, canEdit, catalo
   return (<div className="e-wg-root" style={{ "--wg-card": T.card, "--wg-surface": T.surface, "--wg-line": T.line, "--wg-dot": T.fieldLine || T.ink300, "--wg-ink": T.ink900, "--wg-accent": T.accentInk || T.ink900, "--wg-veil": "rgba(10,14,20,.45)", "--wg-shadow": T.shadowLg }}>
     {canEdit && <div className="e-tb" style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginBottom: 10 }}>
       {edit && onReset && <button type="button" onClick={reset} style={{ ...btn("ghost", "md") }}>Réinitialiser</button>}
-      {edit && <button type="button" onClick={() => setGallery(true)} style={{ ...btn("sec", "md") }}>＋ Ajouter un widget</button>}
+      {edit && <button type="button" onClick={() => setGallery(true)} style={{ ...btn("sec", "md") }}>＋ Ajouter des widgets</button>}
       <button type="button" onClick={() => { setEdit(v => !v); setHeld(null); }} aria-pressed={edit} style={{ ...btn(edit ? "pri" : "sec", "md") }}>{edit ? "Terminé" : editLabel}</button>
     </div>}
     <div ref={grid} className={"e-wg" + (edit ? " e-wg-edit" : "")} role="list" aria-label={label} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
@@ -156,15 +158,19 @@ function Stack({ els, widgets, edit, onOut }) {
 }
 
 function Gallery({ catalog, widgets, used, onAdd, onClose }) {
-  const [pick, setPick] = useState({}), [q, setQ] = useState(""), ref = useRef(null);
+  const [pick, setPick] = useState({}), [chosen, setChosen] = useState([]), [q, setQ] = useState(""), ref = useRef(null);
+  // v364 : choix multiple — « Choisir » sur chaque widget, puis « Ajouter N widgets » en une fois
+  const toggle = id => setChosen(L => (L.includes(id) ? L.filter(x => x !== id) : [...L, id]));
+  const sizeOf = id => pick[id] || widths(widgets[id].sizes)[0];
   useEffect(() => { const k = e => { if (e.key === "Escape") onClose(); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose]);
   const match = (id, d) => !q.trim() || (widgets[id].label + " " + d).toLowerCase().includes(q.trim().toLowerCase());
   return (<div className="e-wg-veil" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
     <div ref={ref} role="dialog" aria-modal="true" aria-labelledby="wg-gal-h" className="e-wg-sheet">
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 18px", borderBottom: "1px solid " + T.line, flexWrap: "wrap" }}>
-        <h2 id="wg-gal-h" style={{ margin: 0, fontFamily: T.fontDisplay, fontSize: 20, fontWeight: 600 }}>Ajouter un widget</h2>
+        <h2 id="wg-gal-h" style={{ margin: 0, fontFamily: T.fontDisplay, fontSize: 20, fontWeight: 600 }}>Ajouter des widgets</h2>
         <input type="search" value={q} onChange={e => setQ(e.target.value)} placeholder="Rechercher un widget…" aria-label="Rechercher un widget" style={{ flex: "1 1 200px", minHeight: 34, border: "1px solid " + T.line, borderRadius: 8, padding: "0 10px", background: T.card, color: T.ink900, fontSize: FZ.sm }} />
         <button type="button" onClick={onClose} style={{ ...btn("sec", "md") }}>Fermer</button>
+        <button type="button" disabled={!chosen.length} onClick={() => onAdd(chosen.map(id => [id, sizeOf(id)]))} style={{ ...btn("pri", "md"), opacity: chosen.length ? 1 : 0.5, cursor: chosen.length ? "pointer" : "default" }}>{chosen.length ? "Ajouter " + chosen.length + " widget" + (chosen.length > 1 ? "s" : "") : "Choisissez des widgets"}</button>
       </div>
       <div style={{ overflow: "auto", padding: "4px 18px 22px", overscrollBehavior: "contain" }}>
         {catalog.map(([g, ids]) => { const L = ids.filter(([id, d]) => widgets[id] && match(id, d)); if (!L.length) return null;
@@ -180,7 +186,7 @@ function Gallery({ catalog, widgets, used, onAdd, onClose }) {
                         style={{ border: "none", borderRadius: 999, padding: "4px 9px", minHeight: 26, fontSize: 12, fontWeight: 500, cursor: "pointer", background: s === z ? T.card : "transparent", color: s === z ? T.ink900 : T.ink700, boxShadow: s === z ? "0 0 0 1px " + T.line : "none", fontFamily: T.font }}>{WG_SIZES[s]}</button>)}
                     </span>}
                     <span style={{ flex: 1 }} />
-                    {used.has(id) ? <span style={{ fontSize: 12, color: T.ink500 }}>Sur l'accueil</span> : <button type="button" onClick={() => onAdd(id, z)} style={{ ...btn("sec", "sm") }}>Ajouter</button>}
+                    {used.has(id) ? <span style={{ fontSize: 12, color: T.ink500 }}>Sur l'accueil</span> : <button type="button" aria-pressed={chosen.includes(id)} onClick={() => toggle(id)} style={{ ...btn(chosen.includes(id) ? "pri" : "sec", "sm") }}>{chosen.includes(id) ? "✓ Choisi" : "Choisir"}</button>}
                   </div>
                 </div>); })}
             </div></section>); })}

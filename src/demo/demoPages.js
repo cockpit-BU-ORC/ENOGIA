@@ -1,6 +1,6 @@
 // v321 (revue, point 7) : les pages de la galerie ?demo et du test des pages — chaque entrée rend une page avec les données d'exemple.
 // Ajouter ici toute nouvelle page (une ligne) : elle est alors vérifiée à chaque série de tests et visible dans la galerie.
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { DEMO_BOOK, DEMO_SAV, DEMO_SAV_DEM, DEMO_ROWS, DEMO_COMMENTS, DEMO_PROGRESS, DEMO_TESTS, DEMO_PROD, DEMO_ME, DEMO_PEOPLE, demoApi } from "./demoData";
 import { useListFilters, filterOptions, filterRows } from "../listFilters";
 import { DashboardSummary } from "../components/DashboardSummary";
@@ -69,6 +69,12 @@ const WG_DEMO = { widgets: [{ t: "jour", z: "s" }, { t: "nextDep", z: "s" }, { t
 function AccueilWidgets() { const [lay, setLay] = useState(WG_DEMO); return <HomeView pinOk testsDoc={DEMO_TESTS} data={DEMO_ROWS} comments={DEMO_COMMENTS} myEmail={DEMO_ME.email} myName={DEMO_ME.name} people={DEMO_PEOPLE} unseenChanges={[]} lastImport={null} onOpenPj={no} onGo={no}
   profiles={{ byEmail: {}, homeLayouts: { direction: lay } }} owner cash={false} turbineDoc={null} onOpenCash={null} prodDoc={DEMO_PROD} canProdTurb productionExclusions={{}} plan={null} closurePeriods={[]} saveHomeLayout={(r, l) => setLay(l)} />; }
 
+// v364 : gestion des accueils par rôle (liste des rôles, copier, partir de zéro, rétablir) — dispositions gardées en mémoire
+function AccueilRoles() { const [lays, setLays] = useState(() => { try { localStorage.setItem("enogia_home_manage", "1"); } catch (e) { /* galerie */ } return { cdp: { widgets: [{ t: "pjs", z: "m" }, { t: "jalons", z: "m" }] } }; });
+  useEffect(() => () => { try { localStorage.removeItem("enogia_home_manage"); } catch (e) { /* galerie */ } }, []);
+  return <HomeView pinOk testsDoc={DEMO_TESTS} data={DEMO_ROWS} comments={DEMO_COMMENTS} myEmail={DEMO_ME.email} myName={DEMO_ME.name} people={DEMO_PEOPLE} unseenChanges={[]} lastImport={null} onOpenPj={no} onGo={no}
+    profiles={{ byEmail: {}, homeLayouts: lays }} owner cash={false} turbineDoc={null} onOpenCash={null} prodDoc={DEMO_PROD} canProdTurb productionExclusions={{}} plan={null} closurePeriods={[]} saveHomeLayout={(r, l) => setLays(L => ({ ...L, [r]: l }))} />; }
+
 // v356 (audit apple-design « ne manque aucune page ») : pages absentes de la galerie jusque-là
 const shift = (d, n) => { if (!d) return d; const x = new Date(d); x.setDate(x.getDate() + n); return x.toISOString().slice(0, 10); };
 const DEMO_CHANGES = (() => { const after = DEMO_ROWS.map((r, i) => (i < 3 ? { ...r, depart: shift(r.depart, i === 1 ? -3 : 5), tests: shift(r.tests, 4) } : r)); const sm = summarizeChanges(DEMO_ROWS, after);
@@ -111,6 +117,7 @@ export const DEMO_PAGES = [
   { id: "home", label: "Accueil", Render: Accueil, expect: [] },
   { id: "home-widgets", label: "Accueil · widgets", Render: AccueilWidgets, expect: ["Modifier l'accueil", "Prochain départ", "En retard sur l'initial", "Ligne d'atelier", "Tableau des départs"] },
   { id: "home-atelier", label: "Accueil · ligne d'atelier", Render: AccueilAtelier, expect: ["Ligne d'atelier", "Fiches suiveuses", "Montage méca", "Tableau des départs", "Écarts au planning initial", "Machines par gamme"] },
+  { id: "home-roles", label: "Accueil · gestion par rôle", Render: AccueilRoles, expect: ["Accueils par rôle", "Copier depuis un autre rôle…", "Partir de zéro", "Rétablir l'accueil par défaut", "modifié"] },
   { id: "home-produit", label: "Accueil · resp. produit", Render: AccueilProduit, expect: ["Livrables Produit", "P&ID validé", "Papeterie du Nord"] },
   { id: "sav", label: "SAV · équipe", Render: () => <SavDemo level="w" sub0="tickets" />, expect: ["SAV / MES", "TC-26-41", "Sucrerie Centre"] },
   { id: "sav-plan", label: "SAV · planning", Render: () => <SavDemo level="w" sub0="planning" />, expect: ["Lou Martin", "Demandes des chefs de projet", "Aujourd'hui"] },

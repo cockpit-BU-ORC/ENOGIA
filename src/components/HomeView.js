@@ -6,6 +6,7 @@ import { openMentionsFor, chefAccount, nameFromEmail } from "../mentions";
 import { SITE_NAME, SITE_SCOPE, SITE_SUB } from "../siteName";
 import { testerOfEmail, planOf, testersOf } from "../testPlan";
 import { RoleHome } from "./RoleHome";
+import { HomeRoles, layoutModified } from "./HomeRoles";
 import { profileOf, effectiveRole, pjsOfProfile, ROLES } from "../profiles";
 
 // v173 — direction « Éditorial industriel » : sur-titre d'atelier en mono, grande phrase légère, chiffres géants sous un filet marine,
@@ -78,6 +79,9 @@ export function HomeView({ produit, data, comments, myEmail, myName, people, uns
   const [viewAs, setViewAsS] = useState(() => { try { return JSON.parse(localStorage.getItem("enogia_home_viewas") || "null") || {}; } catch (e) { return {}; } });
   const setViewAs = v => { const n = { ...viewAs, ...v }; setViewAsS(n); try { localStorage.setItem("enogia_home_viewas", JSON.stringify(n)); } catch (e) { /* stockage indisponible */ } };
   const role = owner && viewAs.role ? viewAs.role : autoRole;
+  // v364 : écran de gestion des accueils par rôle (propriétaire), mémorisé sur le poste
+  const [manage, setManageS] = useState(() => { try { return localStorage.getItem("enogia_home_manage") === "1"; } catch (e) { return false; } });
+  const setManage = v => { setManageS(v); try { localStorage.setItem("enogia_home_manage", v ? "1" : "0"); } catch (e) { /* stockage indisponible */ } };
   const chefList = useMemo(() => owner ? [...new Set(open.flatMap(r => chefsOf(getPjMeta(r.pj, r))).filter(Boolean))].sort((a, b) => a.localeCompare(b, "fr")) : [], [owner, open]);
   const testerList = useMemo(() => owner && testsDoc ? testersOf(testsDoc) : [], [owner, testsDoc]);
   const asChef = owner && role === "cdp" ? (chefList.includes(viewAs.chef) ? viewAs.chef : chefList[0] || "") : "";
@@ -231,17 +235,26 @@ export function HomeView({ produit, data, comments, myEmail, myName, people, uns
 
       {!role && kpiEl}
 
-      {owner && <div role="tablist" aria-label="Accueil affiché" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, margin: "0 0 14px" }}>
+      {owner && !manage && <div role="tablist" aria-label="Accueil affiché" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, margin: "0 0 14px" }}>
         <span style={{ fontSize: FZ.xs, color: T.ink500, fontWeight: 500, marginRight: 4 }}>Accueil de :</span>
-        {ROLES.map(([k, l]) => <button key={k} type="button" role="tab" aria-selected={role === k} onClick={() => setViewAs({ role: k })} style={{ border: "1px solid " + (role === k ? T.ink900 : T.line), background: role === k ? T.ink900 : T.card, color: role === k ? T.card : T.ink700, borderRadius: 999, padding: "3px 12px", minHeight: 28, fontSize: FZ.xs, fontWeight: 500, cursor: "pointer", fontFamily: T.font }}>{l}</button>)}
+        {ROLES.map(([k, l]) => <button key={k} title={layoutModified(layouts[k]) ? "Accueil modifié" : undefined} type="button" role="tab" aria-selected={role === k} onClick={() => setViewAs({ role: k })} style={{ border: "1px solid " + (role === k ? T.ink900 : T.line), background: role === k ? T.ink900 : T.card, color: role === k ? T.card : T.ink700, borderRadius: 999, padding: "3px 12px", minHeight: 28, fontSize: FZ.xs, fontWeight: 500, cursor: "pointer", fontFamily: T.font }}>{l}{layoutModified(layouts[k]) ? <span aria-label=" (modifié)" style={{ display: "inline-block", width: 6, height: 6, borderRadius: 999, background: T.amber500, marginLeft: 6, verticalAlign: "middle" }} /> : null}</button>)}
         {role === "cdp" && chefList.length > 0 && <select aria-label="Chef de projet affiché" value={asChef} onChange={e => setViewAs({ chef: e.target.value })} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink900, borderRadius: 8, minHeight: 28, padding: "0 8px", fontSize: FZ.xs, fontFamily: T.font }}>{chefList.map(c => <option key={c} value={c}>{c}</option>)}</select>}
         {role === "testeur" && testerList.length > 0 && <select aria-label="Testeur affiché" value={asTester ? asTester.id : ""} onChange={e => setViewAs({ tester: e.target.value })} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink900, borderRadius: 8, minHeight: 28, padding: "0 8px", fontSize: FZ.xs, fontFamily: T.font }}>{testerList.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select>}
         {role !== autoRole && <span style={{ fontSize: FZ.xs, color: T.ink500 }}>— vue telle que la personne la voit ; la disposition réglée ici vaut pour tout le poste.</span>}
+        <button type="button" onClick={() => setManage(true)} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink900, borderRadius: 8, minHeight: 28, padding: "0 10px", fontSize: FZ.xs, fontWeight: 500, cursor: "pointer", fontFamily: T.font, marginLeft: "auto" }}>Gérer les accueils par rôle</button>
       </div>}
-      {role && <RoleHome produit={produit} key={role} kpiEl={kpiEl} depEl={depEl} parcoursEl={parcoursEl} role={role} profile={profile} rows={rows} open={open} late={late} mentions={mentions} myPjs={homePjs} testsDoc={testsDoc} myTester={homeTester} turbineDoc={turbineDoc} owner={owner} cash={cash} onOpenPj={onOpenPj} onGo={onGo} onOpenCash={onOpenCash}
+      {role && (owner && manage
+        ? <HomeRoles roles={ROLES} role={role} layouts={layouts} onPick={k => setViewAs({ role: k })} onClose={() => setManage(false)} onSave={(k, lay) => saveHomeLayout && saveHomeLayout(k, lay)}
+            viewAsEl={<span style={{ display: "inline-flex", gap: 6, alignItems: "center", fontSize: FZ.xs, color: T.ink500 }}>{(role === "cdp" && chefList.length > 0) || (role === "testeur" && testerList.length > 0) ? "Voir comme" : null}{role === "cdp" && chefList.length > 0 && <select aria-label="Chef de projet affiché" value={asChef} onChange={e => setViewAs({ chef: e.target.value })} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink900, borderRadius: 8, minHeight: 28, padding: "0 8px", fontSize: FZ.xs, fontFamily: T.font }}>{chefList.map(c => <option key={c} value={c}>{c}</option>)}</select>}{role === "testeur" && testerList.length > 0 && <select aria-label="Testeur affiché" value={asTester ? asTester.id : ""} onChange={e => setViewAs({ tester: e.target.value })} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink900, borderRadius: 8, minHeight: 28, padding: "0 8px", fontSize: FZ.xs, fontFamily: T.font }}>{testerList.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select>}</span>}>
+            <RoleHome produit={produit} key={role} kpiEl={kpiEl} depEl={depEl} parcoursEl={parcoursEl} role={role} profile={profile} rows={rows} open={open} late={late} mentions={mentions} myPjs={homePjs} testsDoc={testsDoc} myTester={homeTester} turbineDoc={turbineDoc} owner={owner} cash={cash} onOpenPj={onOpenPj} onGo={onGo} onOpenCash={onOpenCash}
         prodDoc={canProdTurb ? prodDoc : null} plan={plan} closurePeriods={closurePeriods} productionExclusions={productionExclusions} hello={hello() + (homeName ? " " + homeName : "")} renderLead={renderLead}
         layout={layouts[role] || {}} onLayout={owner && saveHomeLayout ? lay => saveHomeLayout(role, lay) : undefined}
-        ui={{ Row, Head, cardS, Pill, presenceOf, nomOf, empty, grey, link, S, H, A }} />}
+        ui={{ Row, Head, cardS, Pill, presenceOf, nomOf, empty, grey, link, S, H, A }} />
+          </HomeRoles>
+        : <RoleHome produit={produit} key={role} kpiEl={kpiEl} depEl={depEl} parcoursEl={parcoursEl} role={role} profile={profile} rows={rows} open={open} late={late} mentions={mentions} myPjs={homePjs} testsDoc={testsDoc} myTester={homeTester} turbineDoc={turbineDoc} owner={owner} cash={cash} onOpenPj={onOpenPj} onGo={onGo} onOpenCash={onOpenCash}
+        prodDoc={canProdTurb ? prodDoc : null} plan={plan} closurePeriods={closurePeriods} productionExclusions={productionExclusions} hello={hello() + (homeName ? " " + homeName : "")} renderLead={renderLead}
+        layout={layouts[role] || {}} onLayout={owner && saveHomeLayout ? lay => saveHomeLayout(role, lay) : undefined}
+        ui={{ Row, Head, cardS, Pill, presenceOf, nomOf, empty, grey, link, S, H, A }} />)}
 
 
       {!role && (showTodo || showSide) && (
