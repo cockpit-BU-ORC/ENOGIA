@@ -19,7 +19,8 @@ const fd = v => { if (!v) return "—"; const d = new Date(v); return d.getDate(
 const fdm = v => { if (!v) return "—"; const d = new Date(v); return d.getDate() + " " + MONTHS[d.getMonth()]; };
 const sg = d => d == null ? "—" : d === 0 ? "=" : (d > 0 ? "+" : "−") + Math.abs(d) + " j";
 const dcol = d => d == null || d === 0 ? C.mute : d > 0 ? C.red : C.green;
-const clip = (t, n) => { t = (t || "").replace(/\s+/g, " ").trim(); return t.length > n ? t.slice(0, n - 1) + "…" : t; };
+// v368 : coupe à la fin d'un mot (plus de « plannin… »)
+const clip = (t, n) => { t = (t || "").replace(/\s+/g, " ").trim(); if (t.length <= n) return t; const c = t.slice(0, n - 1), sp = c.lastIndexOf(" "); return (sp > n * 0.6 ? c.slice(0, sp) : c).replace(/[\s,;:.·—-]+$/, "") + "…"; };
 // v146.12 : estimation du nombre de lignes d'un texte (Calibri ≈ 0,54 em par caractère, par prudence) pour dimensionner les zones de commentaire :
 // PowerPoint ne réduit pas le texte à l'ouverture (« fit: shrink » n'agit qu'à la modification), donc la hauteur doit être juste dès la génération.
 const CHW = size => size * 0.545 / 72, LHT = size => size * 1.22 / 72;
@@ -535,14 +536,13 @@ function pjSlideFull(pptx, i, ctx) {
   sec(s, "Textes complets de la fiche", MX, 1.42, 12.33, "repris en entier");
   const blocks = [["Commentaire général", note(i, "gen")], ...FEU_NAMES.map(([k]) => ["Statut · " + FEU_LABEL[k] + (i.feux[k] ? " (" + LEVEL[i.feux[k]].toLowerCase() + ")" : ""), note(i, k)]),
     ...[["gl", "Avancement global"], ["av", "Avancement production"], ["dr", "Dérive du départ"], ["rt", "Retards déclarés"]].map(([k, l]) => ["Indicateur · " + l, note(i, k)]), ["Contrat & roadmap", note(i, "ct")]].filter(b => b[1]);
-  const colW = (12.33 - 0.4) / 2, top = 1.85, bottom = 7.0; let col = 0, y = top;
-  blocks.forEach(([lab, t]) => {
-    const h = 0.26 + estLines(t, colW - 0.1, 10.5) * LHT(10.5) + 0.12;
-    if (y + h > bottom && col === 0) { col = 1; y = top; }
-    const x = MX + col * (colW + 0.4);
-    s.addText(lab, { x, y, w: colW, h: 0.24, fontFace: FONT, fontSize: 10, bold: true, color: C.navy, margin: 0 });
-    s.addText(t, { x, y: y + 0.26, w: colW, h: h - 0.32, fontFace: FONT, fontSize: 10.5, color: C.ink, margin: 0, valign: "top", fit: "shrink" });
-    y += h + 0.08;
+  // deux colonnes qui coulent d'un seul tenant (PowerPoint place les lignes lui-même) ; partage d'après la longueur estimée
+  const colW = (12.33 - 0.4) / 2, hOf = ([, t]) => 0.3 + estLines(t, colW - 0.1, 10.5) * LHT(10.5);
+  const tot = blocks.reduce((q, b) => q + hOf(b), 0); let acc = 0, cut = blocks.length;
+  blocks.forEach((b, k) => { if (cut === blocks.length && acc > 0 && acc + hOf(b) / 2 > tot / 2) cut = k; acc += hOf(b); });
+  [blocks.slice(0, cut), blocks.slice(cut)].forEach((L, c) => { if (!L.length) return;
+    const runs = L.flatMap(([lab, t], k) => [{ text: lab, options: { bold: true, color: C.navy, fontSize: 10, breakLine: true, paraSpaceBefore: k ? 10 : 0 } }, { text: t, options: { color: C.ink, fontSize: 10.5, breakLine: k < L.length - 1 } }]);
+    s.addText(runs, { x: MX + c * (colW + 0.4), y: 1.85, w: colW, h: 5.15, fontFace: FONT, margin: 0, valign: "top", fit: "shrink", lineSpacingMultiple: 1.1 });
   });
 }
 const pjSlides = (pptx, i, ctx) => { pjSlide1(pptx, i, ctx); pjSlide2(pptx, i, ctx); if (needsFin(i)) pjSlideFin(pptx, i, ctx); if (needsThird(i)) pjSlide3(pptx, i, ctx); if (needsFull(i)) pjSlideFull(pptx, i, ctx); };

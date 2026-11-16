@@ -2673,3 +2673,4 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - CdpReport.js : `infoOf` exporté ; mitigations avec `risk`, `measure`, `deadline`.
 - TestsTab.js : `BENCH_C` = jaune des tests (banc 1) / mélange avec `T.amber500` (banc 2, `mixHex`), barres « en cours » et liseré des barres prévues à la couleur du banc, `GridLegend benches`.
 - Fichiers de contrôle (hors dépôt) : maquettes-design/v368-rapport-cdp-avant.pptx, -apres.pptx, -apres-textes-longs.pptx (données fictives). Données et règles Firestore inchangées.
+- Suite (vérifiée en exportant les diapositives par PowerPoint) : `clip` coupe à la fin d'un mot ; « Textes complets de la fiche » en deux colonnes continues (un seul bloc de texte par colonne).
