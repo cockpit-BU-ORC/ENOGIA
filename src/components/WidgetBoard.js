@@ -10,23 +10,30 @@
 import React, { useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { T, FZ, btn } from "../theme";
 import { ArrangeCtx } from "./Arrange";
+import { askConfirm } from "../confirm";
 
 export const WG_SIZES = { s: "Petit", m: "Moyen", l: "Grand", xl: "Bandeau", xxl: "Grand bandeau", auto: "Pleine hauteur" }; // v357 : auto = toute la largeur, hauteur du contenu
 const calm = () => { try { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { return false; } };
 const keyOf = it => (it.stack ? "p:" + it.stack[0] : "w:" + it.t); // stable : un widget n'est jamais deux fois sur l'accueil
 
-export function WidgetBoard({ items, widgets, onChange, canEdit, catalog = [], label = "Widgets de l'accueil", editLabel = "Modifier l'accueil" }) {
-  // items : disposition ; widgets : { id: { label, sizes, render(size) } } ; catalog : [[groupe, [[id, description]…]]]
+export function WidgetBoard({ items, widgets, onChange, onReset, canEdit, catalog = [], label = "Widgets de l'accueil", editLabel = "Modifier l'accueil" }) {
+  // items : disposition ; widgets : { id: { label, sizes, render(size) } } ; catalog : [[groupe, [[id, description]…]]] ou une fonction
+  // qui le construit (v358 : appelée seulement à l'ouverture de la galerie) ; onReset : revenir à la disposition d'origine.
   const [draft, setDraft] = useState(null); // ordre provisoire pendant un glisser : une seule écriture, au lâcher
   // widgets connus seulement, taille ramenée à une taille permise
   const fit = it => { const kids = it.stack ? it.stack.filter(t => widgets[t]) : null; const x = kids ? (kids.length > 1 ? { ...it, stack: kids } : { t: kids[0], z: it.z }) : it;
     const ok = (x.stack || [x.t]).map(t => widgets[t].sizes).reduce((p, q) => p.filter(z => q.includes(z))); return ok.includes(x.z) ? x : { ...x, z: ok[0] || "m" }; };
   const list = (draft || items || []).filter(it => (it.stack ? it.stack.some(t => widgets[t]) : widgets[it.t])).map(fit);
-  const [edit, setEdit] = useState(false), [gallery, setGallery] = useState(false), [msg, setMsg] = useState("");
+  const [edit, setEdit] = useState(false), [gallery, setGallery] = useState(false), [msg, setMsg] = useState(""), [undo, setUndo] = useState(null);
   const [held, setHeld] = useState(null), [merge, setMerge] = useState(null), [dragK, setDragK] = useState(null);
   const grid = useRef(null), before = useRef(null), drag = useRef(null), msgT = useRef(null), landing = useRef(null);
-  const say = m => { setMsg(m); clearTimeout(msgT.current); msgT.current = setTimeout(() => setMsg(""), 1800); };
+  // v358 : message affiché 4 s (6 s avec « Annuler ») — 1,8 s ne laissait pas le temps de lire
+  const say = (m, prev) => { setMsg(m); setUndo(prev || null); clearTimeout(msgT.current); msgT.current = setTimeout(() => { setMsg(""); setUndo(null); }, prev ? 6000 : 4000); };
   const save = next => { if (!canEdit || !onChange) return; snap(); setDraft(next); onChange(next); };
+  // v358 (audit apple-design : pardonner les erreurs) : toute modification se défait pendant 6 s ; « Réinitialiser » revient à l'origine
+  const undoNow = () => { if (!undo || !onChange) return; const prev = undo; snap(); setDraft(prev); onChange(prev); setUndo(null); setMsg("Modification annulée"); clearTimeout(msgT.current); msgT.current = setTimeout(() => setMsg(""), 4000); };
+  const reset = async () => { if (!onReset) return; if (!(await askConfirm({ title: "Revenir à la disposition d'origine ?", message: "Les widgets, leur ordre et leurs tailles reviennent à ceux prévus pour cette page. La disposition actuelle est perdue.", confirmLabel: "Réinitialiser", danger: true }))) return; snap(); setDraft(null); onReset(); say("Disposition d'origine rétablie"); };
+  const base = () => (items || []).slice();
   useEffect(() => { setDraft(null); }, [items]); // la disposition enregistrée est revenue : plus besoin du brouillon
   // FLIP : on relève les places affichées avant le changement, puis chaque widget glisse de là vers sa nouvelle place
   const snap = () => { const m = {}; if (grid.current) grid.current.querySelectorAll("[data-wg]").forEach(el => { m[el.dataset.wg] = el.getBoundingClientRect(); }); before.current = m; };
@@ -46,11 +53,11 @@ export function WidgetBoard({ items, widgets, onChange, canEdit, catalog = [], l
 
   const kOf = it => keyOf(it);
   const move = (from, to) => { if (to < 0 || to >= list.length || from === to) return; const n = list.slice(); const [m] = n.splice(from, 1); n.splice(to, 0, m); save(n); };
-  const remove = i => { const n = list.slice(); n.splice(i, 1); save(n); say("Widget retiré"); };
+  const remove = i => { const prev = base(), n = list.slice(); n.splice(i, 1); save(n); say("Widget retiré", prev); };
   const sizesOf = it => { const all = (it.stack || [it.t]).map(t => (widgets[t] && widgets[t].sizes) || ["m"]); return all.reduce((a, s) => a.filter(z => s.includes(z))); };
-  const resize = i => { const it = list[i], opts = sizesOf(it); if (opts.length < 2) return; const z = opts[(opts.indexOf(it.z) + 1) % opts.length]; const n = list.slice(); n[i] = { ...it, z }; save(n); say(WG_SIZES[z]); };
-  const unstack = (i, t) => { const it = list[i]; const rest = it.stack.filter(x => x !== t); const n = list.slice(); n.splice(i, 1, rest.length > 1 ? { ...it, stack: rest } : { t: rest[0], z: it.z }, { t, z: it.z }); save(n); say("Sorti de la pile"); };
-  const add = (t, z) => { save([{ t, z }, ...list]); setGallery(false); say((widgets[t] && widgets[t].label) + " ajouté"); };
+  const resize = i => { const it = list[i], opts = sizesOf(it); if (opts.length < 2) return; const z = opts[(opts.indexOf(it.z) + 1) % opts.length]; const prev = base(), n = list.slice(); n[i] = { ...it, z }; save(n); say("Taille : " + WG_SIZES[z], prev); };
+  const unstack = (i, t) => { const prev = base(), it = list[i]; const rest = it.stack.filter(x => x !== t); const n = list.slice(); n.splice(i, 1, rest.length > 1 ? { ...it, stack: rest } : { t: rest[0], z: it.z }, { t, z: it.z }); save(n); say("Sorti de la pile", prev); };
+  const add = (t, z) => { const prev = base(); save([{ t, z }, ...list]); setGallery(false); say((widgets[t] && widgets[t].label) + " ajouté", prev); };
 
   // ── glisser au pointeur
   const onDown = (e, i) => {
@@ -86,7 +93,7 @@ export function WidgetBoard({ items, widgets, onChange, canEdit, catalog = [], l
     const r = d.clone.getBoundingClientRect(); d.clone.remove();
     if (d.ready) { const a = list.findIndex((it, j) => kOf(it, j) === d.k), b = list.findIndex((it, j) => kOf(it, j) === d.ready);
       if (a >= 0 && b >= 0) { const A = list[a], B = list[b], kids = x => (x.stack || [x.t]); const st = { stack: [...kids(B), ...kids(A).filter(t => !kids(B).includes(t))], z: B.z };
-        const n = list.slice(); n[b] = st; n.splice(a, 1); save(n); say("Pile de " + st.stack.length + " widgets"); return; } }
+        const prev = base(), n = list.slice(); n[b] = st; n.splice(a, 1); save(n); say("Pile de " + st.stack.length + " widgets", prev); return; } }
     landing.current = { k: d.k, r }; save(list.slice()); };
 
   const onKey = (e, i, k) => { if (!edit || e.target !== e.currentTarget) return;
@@ -98,38 +105,44 @@ export function WidgetBoard({ items, widgets, onChange, canEdit, catalog = [], l
   useEffect(() => { if (!held || !grid.current) return; const el = grid.current.querySelector('[data-wg="' + held + '"]'); if (el && document.activeElement !== el) el.focus(); });
 
   const used = new Set(list.flatMap(it => it.stack || [it.t]));
-  return (<div className="e-wg-root" style={{ "--wg-card": T.card, "--wg-surface": T.surface, "--wg-line": T.line, "--wg-ink": T.ink900, "--wg-accent": T.accentInk || T.ink900, "--wg-veil": "rgba(10,14,20,.45)", "--wg-shadow": T.shadowLg }}>
+  return (<div className="e-wg-root" style={{ "--wg-card": T.card, "--wg-surface": T.surface, "--wg-line": T.line, "--wg-dot": T.fieldLine || T.ink300, "--wg-ink": T.ink900, "--wg-accent": T.accentInk || T.ink900, "--wg-veil": "rgba(10,14,20,.45)", "--wg-shadow": T.shadowLg }}>
     {canEdit && <div className="e-tb" style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginBottom: 10 }}>
+      {edit && onReset && <button type="button" onClick={reset} style={{ ...btn("ghost", "md") }}>Réinitialiser</button>}
       {edit && <button type="button" onClick={() => setGallery(true)} style={{ ...btn("sec", "md") }}>＋ Ajouter un widget</button>}
       <button type="button" onClick={() => { setEdit(v => !v); setHeld(null); }} aria-pressed={edit} style={{ ...btn(edit ? "pri" : "sec", "md") }}>{edit ? "Terminé" : editLabel}</button>
     </div>}
     <div ref={grid} className={"e-wg" + (edit ? " e-wg-edit" : "")} role="list" aria-label={label} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
-      {list.map((it, i) => { const k = kOf(it), kids = it.stack || [it.t], name = kids.map(t => widgets[t] ? widgets[t].label : t).join(", ");
+      {list.map((it, i) => { const k = kOf(it), all = it.stack || [it.t], els = all.map(t => [t, widgets[t] ? widgets[t].render(it.z) : null]).filter(x => x[1] != null && x[1] !== false);
+        if (!els.length) return null; // v358 : un widget sans contenu ne garde pas sa case (il reste dans la disposition et revient avec son contenu)
+        const kids = els.map(x => x[0]), name = kids.map(t => widgets[t].label).join(", ");
         return (<div key={k} data-wg={k} role="listitem" tabIndex={edit ? 0 : -1} aria-label={(it.stack ? "Pile : " : "") + name + (edit ? ", " + WG_SIZES[it.z] : "")}
           className={"e-wg-cell e-wg-" + it.z + (dragK === k ? " e-wg-ghost" : "") + (merge === k ? " e-wg-merge" : "") + (held === k ? " e-wg-held" : "")}
           onPointerDown={e => onDown(e, i)} onKeyDown={e => onKey(e, i, k)}>
-          {it.stack ? <Stack kids={kids} z={it.z} widgets={widgets} edit={edit} onOut={t => unstack(i, t)} /> : <div className="e-wg-body">{widgets[it.t].render(it.z)}</div>}
+          {it.stack && els.length > 1 ? <Stack els={els} widgets={widgets} edit={edit} onOut={t => unstack(i, t)} /> : <div className="e-wg-body">{els[0][1]}</div>}
           {edit && <><button type="button" data-wg-act="rm" className="e-wg-rm" onClick={() => remove(i)} aria-label={"Retirer " + name}>−</button>
             {sizesOf(it).length > 1 && <button type="button" data-wg-act="size" className="e-wg-size" onClick={() => resize(i)} aria-label={"Taille : " + WG_SIZES[it.z] + ", changer"}>{WG_SIZES[it.z]}</button>}</>}
           {merge === k && <span className="e-wg-mergehint" aria-hidden="true">Lâcher pour empiler</span>}
         </div>); })}
       {list.length === 0 && <div style={{ gridColumn: "1 / -1", color: T.ink500, fontSize: FZ.sm, padding: 24, textAlign: "center" }}>{canEdit ? "Aucun widget : « Modifier l'accueil » puis « Ajouter un widget »." : "Aucun widget sur cet accueil."}</div>}
     </div>
-    <span role="status" aria-live="polite" className={"e-wg-toast" + (msg ? " on" : "")}>{msg}</span>
-    {gallery && <Gallery catalog={catalog} widgets={widgets} used={used} onAdd={add} onClose={() => setGallery(false)} />}
+    <span role="status" aria-live="polite" className={"e-wg-toast" + (msg ? " on" : "")}>{msg}{msg && undo && <button type="button" className="e-wg-undo" onClick={undoNow}>Annuler</button>}</span>
+    {gallery && <Gallery catalog={typeof catalog === "function" ? catalog() : catalog} widgets={widgets} used={used} onAdd={add} onClose={() => setGallery(false)} />}
   </div>);
 }
 
-function Stack({ kids, z, widgets, edit, onOut }) {
-  const pane = useRef(null), [cur, setCur] = useState(0);
-  const go = n => { const p = pane.current; if (!p) return; const c = Math.max(0, Math.min(kids.length - 1, n)); p.scrollTo({ top: c * p.clientHeight, behavior: calm() ? "auto" : "smooth" }); };
+// v358 (audit apple-design) : la pile se feuillette à l'horizontale — au doigt en glissant, à la souris par les points,
+// au clavier par ← → ; la molette verticale reste à la page (en vertical, elle restait prise dans la pile).
+function Stack({ els, widgets, edit, onOut }) {
+  const pane = useRef(null), [cur, setCur] = useState(0), n = els.length, at = Math.min(cur, n - 1);
+  const go = i => { const p = pane.current; if (!p) return; const c = Math.max(0, Math.min(n - 1, i)); p.scrollTo({ left: c * p.clientWidth, behavior: calm() ? "auto" : "smooth" }); };
   return (<>
-    <div ref={pane} className="e-wg-pane" onScroll={e => { const p = e.currentTarget, c = Math.round(p.scrollTop / Math.max(1, p.clientHeight)); if (c !== cur) setCur(c); }}
-      onKeyDown={e => { if (edit) return; if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); go(cur + (e.key === "ArrowDown" ? 1 : -1)); } }} tabIndex={edit ? -1 : 0} aria-label={"Pile de " + kids.length + " widgets, flèches haut et bas pour changer"}>
-      {kids.map(t => widgets[t] ? <div key={t} className="e-wg-page e-wg-body">{widgets[t].render(z)}</div> : null)}
+    <div ref={pane} className="e-wg-pane" onScroll={e => { const p = e.currentTarget, c = Math.round(p.scrollLeft / Math.max(1, p.clientWidth)); if (c !== cur) setCur(c); }}
+      onKeyDown={e => { if (edit) return; const d = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 0; if (d && e.target === e.currentTarget) { e.preventDefault(); go(at + d); } }}
+      tabIndex={edit ? -1 : 0} role="group" aria-roledescription="pile de widgets" aria-label={"Pile de " + n + " widgets : " + widgets[els[at][0]].label + " (" + (at + 1) + " sur " + n + "), flèches gauche et droite pour changer"}>
+      {els.map(([t, el]) => <div key={t} className="e-wg-page e-wg-body">{el}</div>)}
     </div>
-    <span className="e-wg-dots" aria-hidden="true">{kids.map((t, j) => <i key={t} className={j === cur ? "on" : ""} />)}</span>
-    {edit && kids.length > 1 && <button type="button" data-wg-act="out" className="e-wg-out" onClick={() => onOut(kids[cur])}>Sortir « {widgets[kids[cur]] ? widgets[kids[cur]].label : ""} »</button>}
+    <span className="e-wg-dots">{els.map(([t], j) => <button key={t} type="button" data-wg-act="dot" tabIndex={-1} className={j === at ? "on" : ""} aria-label={"Afficher " + widgets[t].label} aria-current={j === at ? "true" : undefined} onClick={() => go(j)} />)}</span>
+    {edit && n > 1 && <button type="button" data-wg-act="out" className="e-wg-out" onClick={() => onOut(els[at][0])}>Sortir « {widgets[els[at][0]].label} »</button>}
   </>);
 }
 
@@ -183,5 +196,6 @@ export function WidgetArrange({ id, children, spans = {}, labels = {}, sizes = {
   kids.forEach(c => { const k = idOfChild(c), sp = spans[k] || 6; ids.push(k);
     widgets[k] = { label: labels[k] || c.props["aria-label"] || k, sizes: sizes[k] || (sp >= 9 ? ["xl", "xxl", "auto"] : sp >= 7 ? ["l", "m", "xl"] : ["m", "l", "xl"]), render: () => c }; });
   const items = Array.isArray(lay.widgets) ? lay.widgets : ids.map(t => ({ t, z: defaults[t] || widgets[t].sizes[0] }));
-  return <WidgetBoard items={items} widgets={widgets} catalog={[["Cadrans de la page", ids.map(t => [t, ""])]]} canEdit={!!save} onChange={save ? w => save({ ...lay, widgets: w }) : undefined} label={label} editLabel="Modifier la page" />;
+  return <WidgetBoard items={items} widgets={widgets} catalog={[["Cadrans de la page", ids.map(t => [t, ""])]]} canEdit={!!save} onChange={save ? w => save({ ...lay, widgets: w }) : undefined}
+    onReset={save && Array.isArray(lay.widgets) ? () => save({ ...lay, widgets: null }) : undefined} label={label} editLabel="Modifier la page" />;
 }

@@ -219,8 +219,9 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
   W.sign = { label: "Fiches à signer", span: 4, render: () => sec("sign", "Fiches à signer", S.finProd.ring, <>
     <Head title="Fiches à signer" sub="tests terminés" count={toSign.length} />
     {toSign.length === 0 ? empty("check", "Rien à signer", "Les fiches de test à signer apparaîtront ici.") : toSign.slice(0, 5).map((r, i) => <Row key={r.pj} first={i === 0} pj={r.pj} main={nomOf(r) || r.gamme || ""} right={progPill(prog(r))} />)}</>) };
-  W.week = { label: allT ? "La semaine" : "Ma semaine", span: 12, render: () => { const days = DOW.map((l, i) => ({ l, d: addD(w0, i) }));
-    return sec("week", allT ? "La semaine" : "Ma semaine", S.production.ring, <><Head title={allT ? "La semaine" : "Ma semaine"} sub={"du " + fmtD(days[0].d) + " au " + fmtD(days[4].d)} />
+  W.week = { label: allT ? "La semaine" : "Ma semaine", span: 12, render: () => { const wkEnd = [0, 6].includes(new Date(today + "T12:00:00").getDay()), wk0 = wkEnd ? addD(w0, 7) : w0; // v358 : le week-end, la semaine qui vient
+    const days = DOW.map((l, i) => ({ l, d: addD(wk0, i) })), wkTitle = (allT ? "La semaine" : "Ma semaine") + (wkEnd ? " prochaine" : "");
+    return sec("week", wkTitle, S.production.ring, <><Head title={wkTitle} sub={"du " + fmtD(days[0].d) + " au " + fmtD(days[4].d)} />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(5,minmax(0,1fr))", gap: 6, marginTop: 6 }}>
         {days.map(({ l, d }) => { const list = tView ? mineT.filter(r => { const e = effOf(r); return e.from <= d && e.to >= d; }) : []; return (
           <div key={d} style={{ background: d === today ? T.teal100 : T.surface, borderRadius: 8, padding: "6px 6px 8px", minWidth: 0 }}>
@@ -491,9 +492,12 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
   const widgets = {}; Object.keys(W).forEach(id => { if (avail(id)) widgets[id] = { label: W[id].label, sizes: sizesOf(id), render: z => W[id].render(z) }; });
   const items = Array.isArray(L.widgets) ? L.widgets : widgetsFromSpans(ids, id => spans[id] || 4, sizesOf);
   const SMALL_DESC = { jour: "la date et le n° de semaine", nextDep: "compte à rebours du prochain départ", nProd: "machines en montage, tests ou packaging", nDep30: "départs des 30 prochains jours", nLate: "machines en retard sur le planning initial", nBanc: "machines au banc aujourd'hui", nShipped: "machines expédiées depuis mai" };
-  const gal = [["Chiffres et repères", Object.keys(SMALL_DESC).filter(id => widgets[id]).map(id => [id, SMALL_DESC[id]])]]; const placed = new Set(Object.keys(SMALL_DESC));
-  THEMES.forEach(([g, m]) => { const list = Object.keys(m).filter(id => widgets[id] && W[id].render("m")).map(id => [id, m[id]]); list.forEach(([id]) => placed.add(id)); if (list.length) gal.push([g, list]); });
-  const rest = Object.keys(widgets).filter(id => !placed.has(id) && W[id].render("m")); if (rest.length) gal.push(["Autres", rest.map(id => [id, ""])]);
+  // v358 : le catalogue dessine chaque widget pour savoir s'il a un contenu — il n'est construit qu'à l'ouverture de la galerie
+  const gal = () => { const g = [["Chiffres et repères", Object.keys(SMALL_DESC).filter(id => widgets[id]).map(id => [id, SMALL_DESC[id]])]]; const placed = new Set(Object.keys(SMALL_DESC));
+    THEMES.forEach(([n, m]) => { const list = Object.keys(m).filter(id => widgets[id] && W[id].render("m")).map(id => [id, m[id]]); list.forEach(([id]) => placed.add(id)); if (list.length) g.push([n, list]); });
+    const rest = Object.keys(widgets).filter(id => !placed.has(id) && W[id].render("m")); if (rest.length) g.push(["Autres", rest.map(id => [id, ""])]);
+    return g; };
   return (<>{leadSegs && renderLead ? renderLead(leadSegs) : null}
-    <WidgetBoard items={items} widgets={widgets} catalog={gal} canEdit={!!onLayout} onChange={onLayout ? w => onLayout({ ...L, widgets: w }) : undefined} label="Widgets de l'accueil" /></>);
+    <WidgetBoard items={items} widgets={widgets} catalog={gal} canEdit={!!onLayout} onChange={onLayout ? w => onLayout({ ...L, widgets: w }) : undefined}
+      onReset={onLayout && Array.isArray(L.widgets) ? () => onLayout({ ...L, widgets: null }) : undefined} label="Widgets de l'accueil" /></>);
 }

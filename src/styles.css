@@ -667,13 +667,16 @@ b, strong { font-weight: 600; }
 .e-wg-xl { grid-column: span 4; grid-row: span 2; } .e-wg-xxl { grid-column: span 4; grid-row: span 4; }
 @media (max-width: 900px) { .e-wg { grid-template-columns: repeat(2, minmax(0, 1fr)); } .e-wg-xl, .e-wg-xxl { grid-column: span 2; } }
 .e-wg-body, .e-wg-pane { height: 100%; }
-.e-wg-body > * { height: 100%; box-sizing: border-box; margin: 0 !important; overflow: auto; overscroll-behavior: contain; }
-.e-wg-pane { overflow-y: auto; scroll-snap-type: y mandatory; border-radius: 12px; scrollbar-width: none; overscroll-behavior: contain; }
+.e-wg-body > * { height: 100%; box-sizing: border-box; margin: 0 !important; overflow: auto; } /* v358 : plus de « contain » — en fin de liste, la molette repasse à la page */
+.e-wg-pane { display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; border-radius: 12px; scrollbar-width: none; overscroll-behavior-x: contain; } /* v358 : pile horizontale, la molette verticale reste à la page */
 .e-wg-pane::-webkit-scrollbar { display: none; }
-.e-wg-page { height: 100%; scroll-snap-align: start; scroll-snap-stop: always; }
-.e-wg-dots { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 4px; pointer-events: none; }
-.e-wg-dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--wg-line); transition: background-color var(--e-dur-micro) ease; }
-.e-wg-dots i.on { background: var(--wg-ink); }
+.e-wg-page { flex: 0 0 100%; min-width: 0; height: 100%; scroll-snap-align: start; scroll-snap-stop: always; }
+.e-wg-dots { position: absolute; left: 0; right: 0; bottom: 2px; display: flex; justify-content: center; gap: 0; }
+.e-wg-dots button { width: 20px; height: 20px; padding: 0; border: none; background: transparent; cursor: pointer; display: grid; place-items: center; }
+.e-wg-dots button::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--wg-dot); transition: background-color var(--e-dur-micro) ease; }
+.e-wg-dots button.on::before { background: var(--wg-ink); }
+.e-wg-dots button:active { transform: none; }
+.e-wg-edit .e-wg-dots { pointer-events: none; }
 .e-wg-cell:focus-visible { box-shadow: 0 0 0 3px var(--wg-accent); }
 /* mode édition : frémissement léger (coupé si « réduire les animations »), retirer, taille, sortir d'une pile */
 .e-wg-edit .e-wg-cell { cursor: grab; touch-action: none; }
@@ -686,14 +689,16 @@ b, strong { font-weight: 600; }
 .e-wg-rm, .e-wg-size, .e-wg-out { position: absolute; z-index: 2; border: 1px solid var(--wg-line); background: var(--wg-card); color: var(--wg-ink); font: inherit; cursor: pointer; }
 .e-wg-rm { left: -8px; top: -8px; width: 28px; height: 28px; border-radius: 50%; font-size: 18px; font-weight: 600; line-height: 1; display: grid; place-items: center; padding: 0; }
 .e-wg-size { right: 8px; top: 8px; min-height: 28px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 500; }
-.e-wg-out { left: 50%; bottom: 8px; transform: translateX(-50%); min-height: 28px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 500; white-space: nowrap; max-width: 90%; overflow: hidden; text-overflow: ellipsis; }
+.e-wg-out { left: 50%; bottom: 26px; transform: translateX(-50%); min-height: 28px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 500; white-space: nowrap; max-width: 90%; overflow: hidden; text-overflow: ellipsis; }
 .e-wg-ghost { opacity: .35; }
 .e-wg-held { box-shadow: 0 0 0 3px var(--wg-accent); }
 .e-wg-held > *, .e-wg-merge > * { animation: none !important; }
 .e-wg-merge { box-shadow: 0 0 0 3px var(--wg-accent); transform: scale(.96); }
 .e-wg-mergehint { position: absolute; inset: auto 0 10px; text-align: center; font-size: 12px; font-weight: 600; color: var(--wg-ink); pointer-events: none; }
-.e-wg-toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 12px); opacity: 0; pointer-events: none; z-index: 1100; background: var(--wg-ink); color: var(--wg-card); border-radius: 999px; padding: 8px 16px; font-size: 13px; font-weight: 500; transition: opacity var(--e-dur-in) var(--e-ease), transform var(--e-dur-in) var(--e-ease); }
-.e-wg-toast.on { opacity: 1; transform: translate(-50%, 0); }
+.e-wg-toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 12px); opacity: 0; pointer-events: none; z-index: 1100; background: var(--wg-ink); color: var(--wg-card); border-radius: 999px; padding: 8px 16px; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 12px; max-width: calc(100vw - 32px); transition: opacity var(--e-dur-in) var(--e-ease), transform var(--e-dur-in) var(--e-ease); }
+.e-wg-toast.on { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.e-wg-undo { border: 1px solid currentColor; background: transparent; color: inherit; border-radius: 999px; min-height: 28px; padding: 0 12px; font: inherit; font-weight: 600; cursor: pointer; }
+@media (pointer: coarse) { .e-wg-rm { width: 44px; height: 44px; left: -12px; top: -12px; } .e-wg-size, .e-wg-out, .e-wg-undo { min-height: 44px; padding: 0 14px; } .e-wg-dots button { width: 32px; height: 32px; } .e-wg-edit .e-wg-cell { -webkit-touch-callout: none; user-select: none; } }
 .e-wg-toast:empty { padding: 0; }
 /* galerie : feuille qui monte du bas et redescend par le même chemin, voile sans flou (v345) */
 .e-wg-veil { position: fixed; inset: 0; z-index: 1050; background: var(--wg-veil); display: flex; align-items: flex-end; justify-content: center; animation: eWgFade var(--e-dur-in) ease backwards; }
@@ -731,3 +736,38 @@ tr[data-kbd]:active > td, tr[role="button"]:active > td, li[data-kbd]:active, li
 .e-wg-auto > .e-wg-body { height: auto; }
 .e-wg-auto > .e-wg-body > * { height: auto; overflow: visible; }
 .e-wg-preview.e-wg-pv-auto { width: 100%; height: 220px; }
+
+/* v358 (audit, lot 2 — téléphone) */
+/* fiche de tests : sous 720 px, le fil des étapes passe en bande horizontale au-dessus de l'étape (il prenait toute la largeur) */
+@media (max-width: 720px) {
+  .enogia-fiche-body { grid-template-columns: minmax(0, 1fr) !important; grid-template-rows: auto minmax(0, 1fr); }
+  .enogia-fiche-body > nav { border-right: none !important; border-bottom: 1px solid var(--e-field-line, #8a909c); padding: 8px 8px 4px !important; overflow: visible !important; }
+  .enogia-fiche-body > nav > div:first-child { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; padding-bottom: 8px !important; margin-bottom: 4px !important; }
+  .enogia-fiche-body > main { padding: 14px 14px 20px !important; }
+  .enogia-step-rail { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x proximity; }
+  .enogia-step-rail::-webkit-scrollbar { display: none; }
+  .enogia-step-line { display: none; }
+  .enogia-step-rail > li { flex: 0 0 auto; scroll-snap-align: center; }
+  .enogia-step-rail > li > button { grid-template-columns: 30px auto !important; width: auto !important; padding-right: 10px !important; box-shadow: none !important; white-space: nowrap; }
+  .enogia-step-rail > li > button[aria-current] { box-shadow: inset 0 -3px 0 currentColor !important; }
+  .enogia-step-rail > li > button > span:last-child > span:last-child { display: none !important; }
+}
+/* onglets en piste : toujours sur une ligne */
+.enogia-seg::-webkit-scrollbar { display: none; }
+.enogia-seg > button { flex: 0 0 auto; white-space: nowrap; }
+[role="tablist"]::-webkit-scrollbar { height: 0; }
+/* Calendrier › Mois : libellé long à l'ordinateur, lettre d'étape au téléphone */
+.enogia-cm-short { display: none; }
+@media (max-width: 640px) {
+  .enogia-cm-long { display: none; }
+  .enogia-cm-short { display: inline; }
+  .enogia-cm-pfx { display: none; } /* « 903-2 P » : le n° sans « PJ », puis la lettre de l'étape */
+  .enogia-cm-plate { gap: 2px !important; padding: 2px 3px 2px 5px !important; }
+  .enogia-cm-pj { flex-shrink: 1 !important; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+}
+
+/* v358 (audit, lot 3) : Machines ORC tient dans 1 280 px (liste d'état bornée, cases resserrées) */
+.enogia-serie-table th, .enogia-serie-table td { padding-left: 8px !important; padding-right: 8px !important; }
+.enogia-serie-table select { width: 172px !important; min-width: 0 !important; max-width: 172px !important; }
+/* v358 : livret (fiche de tests) au téléphone — couverture au-dessus du suivi, plus côte à côte */
+@media (max-width: 560px) { .enogia-book-cover { grid-template-columns: minmax(0, 1fr) !important; gap: 14px !important; } .enogia-book-cover > button { max-width: 170px; } }

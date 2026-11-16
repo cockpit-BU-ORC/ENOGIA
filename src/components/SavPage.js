@@ -76,7 +76,7 @@ function StepFlow({ t, canEdit, onSet, onNotes, me, isAdmin }) {
           {op && <StepNotes notes={SN[i] || []} canEdit={canEdit && !!onNotes} me={me} isAdmin={isAdmin} onAdd={txt => onNotes(addStepNote(t, i, txt, me))} onDel={k => onNotes(delStepNote(t, i, k))} />}</li>; })}
     </ol>
     {canEdit && <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-      {!closed && <Btn v="pri" size="sm" onClick={() => onSet(cur + 1)}>{cur + 1 >= F.length - 1 ? "Clore le ticket" : "Passer à « " + F[cur + 1] + " »"}</Btn>}
+      {!closed && <Btn v="pri" size="sm" style={{ whiteSpace: "normal", height: "auto", minHeight: 28, maxWidth: "100%", textAlign: "left", padding: "6px 12px" }} onClick={() => onSet(cur + 1)}>{cur + 1 >= F.length - 1 ? "Clore le ticket" : "Passer à « " + F[cur + 1] + " »"}</Btn>}
       {cur > 0 && <Btn v="ghost" size="sm" onClick={() => onSet(cur - 1)}>← Revenir à l'étape {cur}</Btn>}
       {closed && <Btn size="sm" onClick={() => onSet(F.length - 2)}>Rouvrir le ticket</Btn>}</div>}
   </div>;
@@ -150,7 +150,7 @@ export function SavPage({ doc, dem, api, demApi, rows, level = "r", canCost, me,
     {/* v328 (demandé : « les demandes de ticket / intervention vers la gauche ») */}
     {canEdit && (sub === "tickets" || sub === "inters" || sub === "parc") && <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
       {sub === "tickets" && <Btn v="sec" size="sm" onClick={() => setTicketDlg({ id: null, t: { type: "cur", prio: "m", step: 0, orig: "Client", date: todayIso(), resp: myName || "" } })}>＋ Nouveau ticket</Btn>}
-      {sub === "inters" && <Btn v="pri" size="sm" onClick={() => setInterDlg({ id: null, i: { st: "À planifier", type: "Maintenance curative", resp: "", who: [], prep: [], clo: [], costs: {} } })}>＋ Intervention sur site</Btn>}
+      {sub === "inters" && <Btn v="sec" size="sm" onClick={() => setInterDlg({ id: null, i: { st: "À planifier", type: "Maintenance curative", resp: "", who: [], prep: [], clo: [], costs: {} } })}>＋ Intervention sur site</Btn>}
       {sub === "parc" && <Btn size="sm" onClick={() => setParcDlg({ pj: "", p: {}, isNew: true })}>＋ Projet du parc</Btn>}
       {isAdmin && api.merge && <HistoryImport doc={D} api={api} />}
     </div>}
@@ -488,7 +488,7 @@ function PlanningView({ inters, demandes, techs, canEdit, nomOf, me, myPjs, onOp
       </Panel>
       <Panel level={2} title={<span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>À planifier {toPlan.length > 0 && <Pill tone="warn">{toPlan.length}</Pill>}</span>}>
         {toPlan.length === 0 ? <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Toutes les interventions sont planifiées et validées avec le client</div> : toPlan.map(([id, i]) => <div key={id} style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", padding: "6px 0", borderTop: "1px solid " + T.line }}>
-          <span style={{ fontFamily: T.fontMono, fontSize: 12, fontWeight: 600 }}>{id}</span><PjPlate pj={i.pj} /><span style={{ flex: 1, minWidth: 0, fontSize: FZ.sm }}>{i.obj || "—"}</span>
+          <span style={{ fontFamily: T.fontMono, fontSize: 12, fontWeight: 600 }}>{id}</span><PjPlate pj={i.pj} /><span style={{ flex: "1 1 200px", minWidth: 0, fontSize: FZ.sm }}>{i.obj || "—"}</span>
           <span style={{ fontSize: 12, color: T.ink500 }}>{!i.a || !i.b ? "sans dates" : !i.resp ? "sans technicien" : fd(i.a) + " → " + fd(i.b) + " · à confirmer avec le client"}</span><Btn v="sec" size="sm" onClick={() => onOpenInter(id)}>{!i.a || !i.b || !i.resp ? "Planifier" : "Ouvrir"}</Btn></div>)}
       </Panel></>
     : <Panel level={2} title="Mes demandes">
@@ -580,16 +580,16 @@ function SavKpiView({ doc, techs, canCost, nomOf }) {
           <KTile l="Reçus / clos" v={Tk.opened + " / " + Tk.closed} /><KTile l="Délai moyen de traitement" v={Tk.avgDays == null ? null : Tk.avgDays + " j"} /><KTile l="Satisfaction client" v={Tk.satisf == null ? null : String(Tk.satisf).replace(".", ",") + " / 5"} /></KRow>
         <MonthCols months={S.months} series={[{ l: "Reçus", c: T.dv1, get: m => (Tk.byMonth.find(x => x.m === m) || {}).opened || 0 }, { l: "Clos", c: T.dv2, get: m => (Tk.byMonth.find(x => x.m === m) || {}).closed || 0 }]} />
         <div style={{ fontSize: 12, fontWeight: 500, color: T.ink700 }}>Par type de demande</div>
-        <HBars items={Tk.byType} color={T.dv2} />
+        <HBars items={Tk.byType} color={T.dv1} />
       </Panel>
     </div>
     {canCost && <Panel level={2} title="Finance" right={<span style={{ fontSize: 12, color: T.ink500 }}>coûts saisis dans les interventions (mois d'arrivée sur site) {period}</span>}>
       <KRow><KTile l="Coût des interventions" v={eur(F.total)} /><KTile l="Coût moyen d'une intervention" v={eur(F.perInter)} sub="interventions avec des coûts saisis" />
         <KTile l="Contrats de maintenance en cours" v={F.contracts} /><KTile l="Forfaits annuels des contrats" v={eur(F.forfaits)} /></KRow>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 16 }}>
-        <div><div style={{ fontSize: 12, fontWeight: 500, color: T.ink700, marginBottom: 6 }}>Coûts par mois</div><MonthCols months={S.months} fmt={eur} series={[{ l: "Coûts", c: T.dv3, get: m => (F.byMonth.find(x => x.m === m) || {}).v || 0 }]} /></div>
-        <div><div style={{ fontSize: 12, fontWeight: 500, color: T.ink700, marginBottom: 6 }}>Par poste</div><HBars items={F.byField} fmt={eur} color={T.dv3} />
-          <div style={{ fontSize: 12, fontWeight: 500, color: T.ink700, margin: "12px 0 6px" }}>Projets les plus coûteux</div><HBars items={F.byPj.map(([pj, v]) => [pj + (nomOf(pj) ? " · " + nomOf(pj) : ""), v])} fmt={eur} color={T.dv3} /></div>
+        <div><div style={{ fontSize: 12, fontWeight: 500, color: T.ink700, marginBottom: 6 }}>Coûts par mois</div><MonthCols months={S.months} fmt={eur} series={[{ l: "Coûts", c: T.dv1, get: m => (F.byMonth.find(x => x.m === m) || {}).v || 0 }]} /></div>
+        <div><div style={{ fontSize: 12, fontWeight: 500, color: T.ink700, marginBottom: 6 }}>Par poste</div><HBars items={F.byField} fmt={eur} color={T.dv1} />
+          <div style={{ fontSize: 12, fontWeight: 500, color: T.ink700, margin: "12px 0 6px" }}>Projets les plus coûteux</div><HBars items={F.byPj.map(([pj, v]) => [pj + (nomOf(pj) ? " · " + nomOf(pj) : ""), v])} fmt={eur} color={T.dv1} /></div>
       </div>
     </Panel>}
   </div>;

@@ -26,6 +26,7 @@ import { KpiBilan } from "./KpiBilan";
 import { isSuperAdmin, canCash, isOwner } from "../roles";
 import { PeopleRoles } from "./PeopleRoles";
 import { TutoVideoSettings } from "./TutoVideo";
+import { chartAnim } from "../scrollMode";
 
 // Filtre de période (mois et/ou année) réutilisable sur chaque graphique temporel
 export function PeriodFilter({yearsAvailable,year,setYear,month,setMonth,showMonth=true}){
@@ -43,7 +44,7 @@ export function ManagerPanel({onAccess,hideTabs,kpiOk,calOk,planDoc,initialAddFr
   // de l'étape ; vide = sans borne. Skill kpi-dashboard-design : période et méthode affichées sur la carte.
   const [codirFrom,setCodirFrom]=useState(""),[codirTo,setCodirTo]=useState("");
   const [kpiTab,setKpiTab]=useState("synthese"); // sous-onglet KPI par famille
-  const [kpiDetail,setKpiDetail]=useState(false); // v290 (lot F) : détail de Dérives et du Bilan mensuel replié par défaut
+  const [kpiDetail,setKpiDetail]=useState(false); // v290 (lot F) : détail replié par défaut ; v358 : sur tous les sous-onglets (il redisait le récit du haut)
   useEffect(()=>{setKpiDetail(false);},[kpiTab]);
   useEffect(()=>{if(kpiTab==="retards")setKpiTab("synthese");},[kpiTab]); // v217 : l'analyse des retards est passée dans Retards › Analyse
   const [fichePj,setFichePj]=useState(null); // v134 : PJ à ouvrir dans la fiche depuis le Point hebdo
@@ -96,7 +97,7 @@ export function ManagerPanel({onAccess,hideTabs,kpiOk,calOk,planDoc,initialAddFr
   const kpiMonths=(()=>{const s=new Set();fk.forEach(r=>["arrivee","tests","finProd","depart"].forEach(k=>{const v=r[k];if(v){const d=new Date(v);if(!isNaN(d))s.add(d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"));}}));return [...s].sort();})();
   const kpiSel={from:kpiFrom,to:kpiTo,set:(a,b)=>{setKpiFrom(a);setKpiTo(b);},months:kpiMonths};
   const perLab=kpiFrom||kpiTo?(kpiFrom===kpiTo?monthLab(kpiFrom):(kpiFrom?monthLab(kpiFrom):"début")+" → "+(kpiTo?monthLab(kpiTo):"fin")):"";
-  const w4h=(()=>{try{const ws=loadWeeks(fk,closurePeriods,productionExclusions,175,planDoc&&planDoc.plan,4,new Date()) /* 175 h = CAPA_ATELIER_SEM, déclarée plus bas */;const h=ws.reduce((a,w)=>a+w.hours,0),c=ws.reduce((a,w)=>a+w.cap,0);return c?Math.round(h/c*100):null;}catch(e){return null;}})();
+  const w4h=(()=>{try{const ws=loadWeeks(fk,closurePeriods,productionExclusions,175,planDoc&&planDoc.plan,4,new Date()) /* 175 h = CAPA_ATELIER_SEM, déclarée plus bas */;const h=ws.reduce((a,w)=>a+w.hours,0),c=ws.reduce((a,w)=>a+w.cap,0);return c&&h>0?Math.round(h/c*100):null;}catch(e){return null;}})();
   // v281 : semaines de charge pour les récits KPI (planificateur si disponible, sinon planning ; 175 h = CAPA_ATELIER_SEM)
   const kpiWeeks=n=>{try{return loadWeeks(fk,closurePeriods,productionExclusions,175,planDoc&&planDoc.plan,n,new Date()).map(w=>({...w,lab:"S"+String(weekNum(new Date(w.a))).padStart(2,"0")}));}catch(e){return [];}};
   // v281 : les en-têtes V279 (KPI_HEADS) sont remplacés par les récits de KpiStory;
@@ -264,6 +265,15 @@ export function ManagerPanel({onAccess,hideTabs,kpiOk,calOk,planDoc,initialAddFr
   // ── Nouveaux KPI : volumétrie, durée moyenne, charge mensuelle ─
   const chargeByMonthMulti=useMemo(()=>{
     const steps=[["arrivee","Arrivée",T.teal500],["tests","Tests",T.amber500],["finProd","Fin prod",T.emerald500],["depart","Départ",T.red500]];
+    if(!chargeYear){ // v358
+      const mm={},key=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
+      const get=k=>mm[k]||(mm[k]={mois:MONTHS[+k.slice(5)-1]+" "+k.slice(2,4),"Arrivée":0,"Tests":0,"Fin prod":0,"Départ":0,"Production":0});
+      fd.forEach(r=>{
+        steps.forEach(([k,l])=>{if(r[k]){const dt=new Date(r[k]);if(!isNaN(dt))get(key(dt))[l]++;}});
+        if(r.arrivee&&r.finProd){const a=new Date(r.arrivee),e=new Date(r.finProd);if(!isNaN(a)&&!isNaN(e)){const d=new Date(a.getFullYear(),a.getMonth(),1);let g=0;while(d<=e&&g++<72){get(key(d))["Production"]++;d.setMonth(d.getMonth()+1);}}}
+      });
+      return Object.keys(mm).sort().map(k=>mm[k]);
+    }
     const m={};
     MONTHS.forEach(mo=>{m[mo]={mois:mo};steps.forEach(([k,l])=>{m[mo][l]=0;});m[mo]["Production"]=0;});
     fd.forEach(r=>{
@@ -429,16 +439,16 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
         le contenu détaillé d'avant reste dessous comme « détail » */}
     {kpi&&tab==="derives"&&<KpiStory tab={kpiTab} rows={fk} driftRows={driftRows} targets={kpiTg} metrics={{...kpiM,charge:w4h}} saveTargets={me&&saveProfiles?(o=>saveProfiles({...(profiles||{}),kpiTargets:o})):null} sel={kpiSel} periodLabel={perLab} scopeLabel={codirScope==="all"?"toutes les machines":codirScope==="shipped"?"machines expédiées":"machines en cours"}
       weeks6={kpiWeeks(6)} weeks8={kpiWeeks(8)} weeks12={kpiWeeks(12)} notes={(profiles&&profiles.monthNotes)||{}} stepSummary={stepSummary} comparable={comparable} kpiStep={kpiStep} stepLabels={STEP_LABELS} progress={progress||{}} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}}/>}
-    {kpi&&tab==="derives"&&kpiTab!=="synthese"&&<div style={{fontSize:12,fontWeight:500,color:T.ink500,margin:"4px 0 8px",display:"flex",alignItems:"center",gap:8}}>Détail<span style={{flex:1,height:1,background:T.line}}/>{(kpiTab==="derives"||kpiTab==="bilan")&&<button type="button" aria-expanded={kpiDetail} onClick={()=>setKpiDetail(v=>!v)} className="e-btn e-btn-sec" style={{...btn("sec","sm")}}>{kpiDetail?"Replier le détail":kpiTab==="derives"?"Voir le détail par PJ et par étape":"Voir les jalons de chaque mois"}</button>}</div>}
+    {kpi&&tab==="derives"&&kpiTab!=="synthese"&&<div style={{fontSize:12,fontWeight:500,color:T.ink500,margin:"4px 0 8px",display:"flex",alignItems:"center",gap:8}}>Détail<span style={{flex:1,height:1,background:T.line}}/><button type="button" aria-expanded={kpiDetail} onClick={()=>setKpiDetail(v=>!v)} className="e-btn e-btn-sec" style={{...btn("sec","sm")}}>{kpiDetail?"Replier le détail":({derives:"Voir le détail par PJ et par étape",bilan:"Voir les jalons de chaque mois",semaines:"Voir le détail semaine par semaine",charge:"Voir la charge par étape et par mois",avancement:"Voir l'avancement par gamme",explorer:"Voir les autres répartitions"})[kpiTab]||"Voir le détail"}</button></div>}
     {/* v281 : l'ancien tableau de pilotage (KpiPilotage) est remplacé par le récit de la Synthèse ci-dessus */}
 
     {/* v274 : bilan mensuel — réalisé des deux derniers mois, objectifs du mois en cours et du suivant */}
     {kpi&&tab==="derives"&&kpiTab==="bilan"&&kpiDetail&&<KpiBilan rows={fk} initialByPJ={initialByPJ} profiles={profiles} saveProfiles={saveProfiles} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}}/>}
     {/* v246 (maquette C de Claude Design) : les 8 prochaines semaines — charge, départs, banc, à décider */}
-    {kpi&&tab==="derives"&&kpiTab==="semaines"&&<KpiSemaines rows={fk} driftRows={driftRows} closurePeriods={closurePeriods} productionExclusions={productionExclusions} capaWeek={CAPA_ATELIER_SEM} plan={planDoc&&planDoc.plan} hasInitial={hasInitial} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}}/>}
+    {kpi&&tab==="derives"&&kpiTab==="semaines"&&kpiDetail&&<KpiSemaines rows={fk} driftRows={driftRows} closurePeriods={closurePeriods} productionExclusions={productionExclusions} capaWeek={CAPA_ATELIER_SEM} plan={planDoc&&planDoc.plan} hasInitial={hasInitial} onOpenPj={pj=>{setFichePj({pj,n:Date.now()});setTab("fiche");}}/>}
 
     {/* v219 (demandé : « l'imbrication des KPI est un peu brouillonne ») : répartitions et explorateur sur leur propre sous-page */}
-    {kpi&&tab==="derives"&&kpiTab==="explorer"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
+    {kpi&&tab==="derives"&&kpiTab==="explorer"&&kpiDetail&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,380px),1fr))",gap:12}}>
         {countByPays.length>0&&<div style={{background:T.card,borderRadius:12,padding:20,border:"1px solid "+T.line}}>
           <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900,marginBottom:4}}>Répartition par pays</div>
@@ -463,7 +473,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
               <XAxis type="number" tick={{fontSize:FZ.xs,fill:T.ink500}}/>
               <YAxis type="category" dataKey="key" width={100} tick={{fontSize:FZ.sm,fill:T.ink700,fontWeight:600}}/>
               <Tooltip formatter={(v,n,p)=>[v,exploreMetricInfo[exploreMetric].label]} contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
-              <Bar dataKey={exploreMetric} radius={[0,2,2,0]} fill={T.violet500}/>
+              <Bar {...chartAnim()} dataKey={exploreMetric} radius={[0,2,2,0]} fill={T.dv1}/>
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -485,7 +495,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
       </div>
     </div>}
 
-    {kpi&&tab==="derives"&&kpiTab==="charge"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
+    {kpi&&tab==="derives"&&kpiTab==="charge"&&kpiDetail&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
       <PlanLoadCard weeks={planWeeks(planDoc&&planDoc.plan,closurePeriods,productionExclusions,12,weekStartOf(today))}/>
         {fd.length>0&&<div style={{background:T.card,borderRadius:12,padding:20,border:"1px solid "+T.line,gridColumn:"1 / -1"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8}}>
@@ -502,11 +512,11 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
               <YAxis allowDecimals={false} tick={{fontSize:FZ.xs,fill:T.ink500}}/>
               <Tooltip contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
               <Legend wrapperStyle={{fontSize:FZ.sm}}/>
-              <Bar dataKey="Arrivée" fill={stageSoft().arrivee.solid} radius={[2,2,0,0]}/>
-              <Bar dataKey="Production" fill={stageSoft().production.solid} radius={[2,2,0,0]}/>
-              <Bar dataKey="Tests" fill={stageSoft().tests.solid} radius={[2,2,0,0]}/>
-              <Bar dataKey="Fin prod" fill={stageSoft().finProd.solid} radius={[2,2,0,0]}/>
-              <Bar dataKey="Départ" fill={stageSoft().depart.solid} radius={[2,2,0,0]}/>
+              <Bar {...chartAnim()} dataKey="Arrivée" fill={stageSoft().arrivee.solid} radius={[2,2,0,0]}/>
+              <Bar {...chartAnim()} dataKey="Production" fill={stageSoft().production.solid} radius={[2,2,0,0]}/>
+              <Bar {...chartAnim()} dataKey="Tests" fill={stageSoft().tests.solid} radius={[2,2,0,0]}/>
+              <Bar {...chartAnim()} dataKey="Fin prod" fill={stageSoft().finProd.solid} radius={[2,2,0,0]}/>
+              <Bar {...chartAnim()} dataKey="Départ" fill={stageSoft().depart.solid} radius={[2,2,0,0]}/>
             </BarChart>
           </ResponsiveContainer>:<div style={{padding:"40px 0",textAlign:"center",color:T.ink300,fontSize:FZ.sm}}>Aucune donnée pour cette période</div>}
         </div>}
@@ -551,8 +561,8 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
                     <YAxis tick={{fontSize:FZ.xs,fill:T.ink500}} tickFormatter={v=>v+"%"}/>
                     <Tooltip formatter={(v,n)=>[v+"%",n]} contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
                     <Legend wrapperStyle={{fontSize:FZ.sm}}/>
-                    <Line type="linear" dataKey="satAtelier" name="Atelier" stroke={stageSoft().production.solid} strokeWidth={2} dot={false}/>
-                    <Line type="linear" dataKey="satAutom" name="Autom" stroke={T.amber600} strokeWidth={2} dot={false}/>
+                    <Line {...chartAnim()} type="linear" dataKey="satAtelier" name="Atelier" stroke={stageSoft().production.solid} strokeWidth={2} dot={false}/>
+                    <Line {...chartAnim()} type="linear" dataKey="satAutom" name="Autom" stroke={T.amber600} strokeWidth={2} dot={false}/>
                   </LineChart>
                 </ResponsiveContainer>:<div style={{padding:"40px 0",textAlign:"center",color:T.ink300,fontSize:FZ.sm}}>Aucune donnée pour cette période</div>}
               </div>
@@ -572,8 +582,8 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
                     <YAxis tick={{fontSize:FZ.xs,fill:T.ink500}} tickFormatter={v=>v+"h"}/>
                     <Tooltip formatter={(v,n)=>[v+"h",n]} contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
                     <Legend wrapperStyle={{fontSize:FZ.sm}}/>
-                    <Line type="linear" dataKey="atelier" name="Atelier" stroke={stageSoft().production.solid} strokeWidth={2} dot={false}/>
-                    <Line type="linear" dataKey="autom" name="Autom" stroke={T.amber600} strokeWidth={2} dot={false}/>
+                    <Line {...chartAnim()} type="linear" dataKey="atelier" name="Atelier" stroke={stageSoft().production.solid} strokeWidth={2} dot={false}/>
+                    <Line {...chartAnim()} type="linear" dataKey="autom" name="Autom" stroke={T.amber600} strokeWidth={2} dot={false}/>
                   </LineChart>
                 </ResponsiveContainer>:<div style={{padding:"40px 0",textAlign:"center",color:T.ink300,fontSize:FZ.sm}}>Aucune donnée pour cette période</div>}
               </div>
@@ -638,8 +648,8 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
                 <YAxis allowDecimals={false} tick={{fontSize:FZ.xs,fill:T.ink500}}/>
                 <Tooltip contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
                 <Legend wrapperStyle={{fontSize:FZ.sm}}/>
-                <Line type="linear" dataKey="promis" name="Promis (initial)" stroke={T.ink300} strokeWidth={2} strokeDasharray="5 4" dot={false}/>
-                <Line type="linear" dataKey="realise" name="Maintenu dans le mois" stroke={T.teal500} strokeWidth={2} dot={false}/>
+                <Line {...chartAnim()} type="linear" dataKey="promis" name="Promis (initial)" stroke={T.ink300} strokeWidth={2} strokeDasharray="5 4" dot={false}/>
+                <Line {...chartAnim()} type="linear" dataKey="realise" name="Maintenu dans le mois" stroke={T.teal500} strokeWidth={2} dot={false}/>
               </LineChart>
             </ResponsiveContainer>
           </div>}
@@ -717,7 +727,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
                   <XAxis dataKey="jalon" tick={{fontSize:FZ.xs,fill:T.ink700,fontWeight:500}}/>
                   <YAxis tick={{fontSize:FZ.xs,fill:T.ink500}}/>
                   <Tooltip contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
-                  <Line type="linear" dataKey="moyenne" stroke={stageSoft().production.solid} strokeWidth={2} dot={false}/>
+                  <Line {...chartAnim()} type="linear" dataKey="moyenne" stroke={stageSoft().production.solid} strokeWidth={2} dot={false}/>
                 </LineChart>
               </ResponsiveContainer>
             </div>}
@@ -745,8 +755,8 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
                   <XAxis dataKey="mois" tick={{fontSize:12,fill:T.ink500}} interval={0} tickLine={false}/>
                   <YAxis allowDecimals={false} tick={{fontSize:12,fill:T.ink500}} tickLine={false} axisLine={false}/>
                   <Tooltip contentStyle={{fontFamily:T.font,fontSize:12,borderRadius:8}} formatter={(v,n)=>[v,n==="initial"?"Planning initial":"Planning actuel"]}/>
-                  <Bar dataKey="initial" fill={T.ink300} radius={[2,2,0,0]}/>
-                  <Bar dataKey="revise" radius={[2,2,0,0]}>{g.data.map((d,i)=><Cell key={i} fill={d.now?T.amber500:(g.k==="depart"?stageSoft().depart.solid:g.k==="arrivee"?stageSoft().arrivee.solid:g.k==="tests"?stageSoft().tests.solid:stageSoft().finProd.solid)}/>)}</Bar>
+                  <Bar {...chartAnim()} dataKey="initial" fill={T.ink300} radius={[2,2,0,0]}/>
+                  <Bar {...chartAnim()} dataKey="revise" radius={[2,2,0,0]}>{g.data.map((d,i)=><Cell key={i} fill={d.now?T.amber500:(g.k==="depart"?stageSoft().depart.solid:g.k==="arrivee"?stageSoft().arrivee.solid:g.k==="tests"?stageSoft().tests.solid:stageSoft().finProd.solid)}/>)}</Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>)}
@@ -763,7 +773,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
                 <XAxis type="number" tick={{fontSize:FZ.xs,fill:T.ink500}}/>
                 <YAxis type="category" dataKey="gamme" width={90} tick={{fontSize:FZ.sm,fill:T.ink700,fontWeight:600}}/>
                 <Tooltip formatter={(v,n,p)=>[v+"j (n="+p.payload.n+")","Dérive moyenne"]} contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
-                <Bar dataKey="moyenne" radius={[0,2,2,0]}>
+                <Bar {...chartAnim()} dataKey="moyenne" radius={[0,2,2,0]}>
                   {driftByGamme.map((d,i)=><Cell key={i} fill={d.moyenne>0?T.red500:T.emerald500}/>)}
                 </Bar>
               </BarChart>
@@ -779,7 +789,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
                 <XAxis dataKey="jalon" tick={{fontSize:FZ.sm,fill:T.ink700,fontWeight:600}}/>
                 <YAxis tick={{fontSize:FZ.xs,fill:T.ink500}}/>
                 <Tooltip formatter={(v,n,p)=>[v+"j (n="+p.payload.n+")","Dérive moyenne"]} contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
-                <Bar dataKey="moyenne" radius={[2,2,0,0]}>
+                <Bar {...chartAnim()} dataKey="moyenne" radius={[2,2,0,0]}>
                   {driftByMilestone.map((d,i)=><Cell key={i} fill={d.moyenne>0?T.amber500:T.emerald500}/>)}
                 </Bar>
               </BarChart>
@@ -800,7 +810,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
                 <XAxis dataKey="mois" tick={{fontSize:FZ.xs,fill:T.ink700,fontWeight:500}}/>
                 <YAxis tick={{fontSize:FZ.xs,fill:T.ink500}}/>
                 <Tooltip formatter={(v,n,p)=>[v+"j (n="+p.payload.n+")","Dérive moyenne"]} contentStyle={{fontFamily:T.font,fontSize:FZ.sm,borderRadius:8}}/>
-                <Line type="linear" dataKey="moyenne" stroke={stageSoft().production.solid} strokeWidth={2} dot={({cx,cy,payload})=><circle key={payload.mois} cx={cx} cy={cy} r={5} fill={payload.moyenne>0?T.red500:T.emerald500}/>}/>
+                <Line {...chartAnim()} type="linear" dataKey="moyenne" stroke={stageSoft().production.solid} strokeWidth={2} dot={({cx,cy,payload})=><circle key={payload.mois} cx={cx} cy={cy} r={5} fill={payload.moyenne>0?T.red500:T.emerald500}/>}/>
               </LineChart>
             </ResponsiveContainer>:<div style={{padding:"40px 0",textAlign:"center",color:T.ink300,fontSize:FZ.sm}}>Aucune donnée pour cette période</div>}
           </div>}
@@ -840,7 +850,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
       </>}
     </div>}
 
-    {kpi&&tab==="derives"&&kpiTab==="avancement"&&<KpiAvancement rows={fk} progress={progress}/>}
+    {kpi&&tab==="derives"&&kpiTab==="avancement"&&kpiDetail&&<KpiAvancement rows={fk} progress={progress}/>}
     {tab==="retardsKpi"&&<DelayInsights delays={delays} delayTypes={delayTypes}/>}
 
     {tab==="sante"&&<SanteTab rows={fk} onSave={(pj,f)=>savePjMetaOverride&&savePjMetaOverride(pj,f)}/>}

@@ -38,7 +38,7 @@ export function DebugChecklistStep({ r, plan, saveTests, canMark, who, signApi, 
       </div>
       {pr.signed ? <span style={{ fontSize: 12, fontWeight: 500, color: T.emerald600, background: T.emerald100, borderRadius: 999, padding: "2px 10px" }}>Signée le {fd((debug.signed.at || "").slice(0, 10))} · {debug.signed.name}</span>
         : <span style={{ fontSize: 12, color: T.ink500 }}>Pas encore signée</span>}
-      <button type="button" onClick={() => setOpen(true)} style={btn(true)}>{canMark ? (pr.done ? "Continuer la checklist" : "Remplir la checklist") : "Voir la checklist"}</button>
+      <button type="button" onClick={() => setOpen(true)} style={btn(false)}>{canMark ? (pr.done ? "Continuer la checklist" : "Remplir la checklist") : "Voir la checklist"}</button>
       <button type="button" onClick={exportWord} disabled={busy} style={btn(true, true)}>Exporter en PDF</button>
     </div>
     {err && <div role="alert" style={{ fontSize: FZ.xs, color: T.red600, fontWeight: 500 }}>{err}</div>}

@@ -248,6 +248,8 @@ const ALERT_HUES = {
 // Rouge / orange / neutre doux (même grain que les étapes) — pour les états d'alerte partout dans l'appli.
 // v168 : encre lisible posée sur une couleur pleine (pastille sélectionnée…) — blanc ou encre foncée, celle qui contraste le plus.
 const relLum = hex => { const c = String(hex || "").replace("#", ""); if (c.length < 6) return 1; return [0, 2, 4].map(i => parseInt(c.slice(i, i + 2), 16) / 255).map(v => v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4)).reduce((a, v, i) => a + v * [.2126, .7152, .0722][i], 0); };
+// v358 (audit) : contraste entre deux couleurs hexadécimales (1 à 21)
+export function contrastOf(a, b) { const x = relLum(a), y = relLum(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); }
 export function inkOn(bg) { const L = relLum(bg), INK = "#101828"; return (1.05 / (L + .05)) >= ((L + .05) / (relLum(INK) + .05)) ? "#FFFFFF" : INK; }
 export function alertSoft() { const m = T.mode === "dark" ? "dark" : "light"; return { red: ALERT_HUES.red[m], orange: ALERT_HUES.orange[m], neutral: ALERT_HUES.neutral[m], note: ALERT_HUES.note[m] }; }
 export function statusSoft() {

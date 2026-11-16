@@ -9,7 +9,10 @@ export function PlanSwitch({ views, tools, value, onGo, label }) {
   useLayoutEffect(() => {
     const el = box.current; if (!el) return undefined;
     const place = () => { const b = el.querySelector('[aria-selected="true"]'); setThumb(b ? { x: b.offsetLeft, w: b.offsetWidth } : null); };
-    place(); if (typeof ResizeObserver === "undefined") return undefined;
+    place();
+    // v358 : piste plus large que l'écran (téléphone) — l'onglet actif est amené dans la partie visible
+    const on = el.querySelector('[aria-selected="true"]'); if (on && el.scrollWidth > el.clientWidth + 2) el.scrollLeft = Math.max(0, on.offsetLeft - 24);
+    if (typeof ResizeObserver === "undefined") return undefined;
     const ro = new ResizeObserver(place); ro.observe(el); return () => ro.disconnect();
   }, [value, views.length]);
   const onKey = e => {
@@ -20,7 +23,7 @@ export function PlanSwitch({ views, tools, value, onGo, label }) {
     requestAnimationFrame(() => { const b = box.current && box.current.querySelectorAll('[role="tab"]')[j]; if (b) b.focus(); });
   };
   return (<div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-    <div ref={box} role="tablist" aria-label={label} onKeyDown={onKey} className="enogia-seg" style={{ position: "relative", display: "inline-flex", gap: 2, padding: 3, borderRadius: 12, background: T.surfaceAlt }}>
+    <div ref={box} role="tablist" aria-label={label} onKeyDown={onKey} className="enogia-seg" style={{ position: "relative", display: "inline-flex", gap: 2, padding: 3, borderRadius: 12, background: T.surfaceAlt, maxWidth: "100%", overflowX: "auto", scrollbarWidth: "none" }}>
       {thumb && <span aria-hidden="true" className="enogia-seg-thumb" style={{ position: "absolute", top: 3, bottom: 3, left: 0, width: thumb.w, transform: "translateX(" + thumb.x + "px)", borderRadius: 8, background: T.card, boxShadow: "0 1px 3px rgba(0,0,0,.14)" }} />}
       {views.map(v => { const on = v.id === value; return <button key={v.id} type="button" role="tab" aria-selected={on} tabIndex={on || (!views.some(x => x.id === value) && v === views[0]) ? 0 : -1} onClick={() => onGo(v.id)} title={v.key ? v.l + " (touche " + v.key + ")" : v.l}
         style={{ position: "relative", zIndex: 1, border: "none", background: "transparent", borderRadius: 8, minHeight: 32, padding: "0 12px", display: "inline-flex", alignItems: "center", gap: 7, cursor: "pointer", fontFamily: T.font, fontSize: FZ.sm, fontWeight: on ? 600 : 600, color: on ? T.ink900 : T.ink500 }}>

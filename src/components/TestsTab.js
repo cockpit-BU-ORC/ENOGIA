@@ -676,7 +676,7 @@ function Signatures({ r, plan, assigned, mine, myTester, canEdit, who, signApi, 
         {form && form.key === key && <SignForm init={form} busy={busy} onCancel={() => setForm(null)} onSave={(name, fn, img) => sign(key, name, fn, img)} />}
       </div>); })}
     <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-      <button type="button" onClick={pdf} disabled={busy} className="enogia-btn-ind" style={{...themeBtn("pri","md")}}><NavIcon name="copy" size={15} />PV de tests (PDF)</button>
+      <button type="button" onClick={pdf} disabled={busy} className="enogia-btn-ind" style={{...themeBtn("sec","md")}}><NavIcon name="copy" size={15} />PV de tests (PDF)</button>
       <span style={{ fontSize: FZ.xs, color: T.ink500 }}>S'ouvre dans un nouvel onglet : Imprimer → « Enregistrer au format PDF ».</span>
     </div>
     {err && <div role="alert" style={{ fontSize: FZ.xs, color: T.red500, fontWeight: 500 }}>{err}</div>}

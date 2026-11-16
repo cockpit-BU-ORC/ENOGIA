@@ -25,8 +25,8 @@ const Bars = ({ total, ok, bad }) => <div aria-hidden="true" style={{ display: "
 
 // ── fil des étapes (gauche de la fiche)
 export function StepRail({ steps, cur, onPick }) {
-  return <ol aria-label="Étapes de la fiche" style={{ listStyle: "none", margin: 0, padding: 0, position: "relative" }}>
-    <span aria-hidden="true" style={{ position: "absolute", left: 21, top: 18, bottom: 18, width: 2, background: T.line }} />
+  return <ol aria-label="Étapes de la fiche" className="enogia-step-rail" style={{ listStyle: "none", margin: 0, padding: 0, position: "relative" }}>
+    <span aria-hidden="true" className="enogia-step-line" style={{ position: "absolute", left: 21, top: 18, bottom: 18, width: 2, background: T.line }} />
     {steps.map((s, i) => { const on = i === cur, done = s.st === "done", bad = s.st === "bad";
       return <li key={s.id} style={{ position: "relative" }}><button type="button" onClick={() => onPick(i)} aria-current={on ? "step" : undefined}
         style={{ width: "100%", display: "grid", gridTemplateColumns: "30px 1fr", gap: 10, alignItems: "center", textAlign: "left", border: "none", borderRadius: 8, padding: "8px 6px", minHeight: 52, cursor: "pointer", fontFamily: T.font, background: on ? T.card : "transparent", boxShadow: on ? "inset 3px 0 0 " + T.ink900 + ", " + T.shadowSm : "none" }}>
@@ -228,7 +228,7 @@ export function TestsChecklistStep({ r, plan, catalog, act, canMark, canAsk, sav
       <div style={{ minWidth: 0 }}><div style={{ fontFamily: T.fontDisplay, fontSize: 16, fontWeight: 600, color: T.ink900 }}>{pr.done} test{pr.done > 1 ? "s" : ""} renseigné{pr.done > 1 ? "s" : ""} sur {pr.total}</div>
         <div style={{ fontSize: 13, color: T.ink500 }}>{pr.ok} OK{pr.ko ? " · " + pr.ko + " NOK" : ""}{plan.asks.length ? " · " + plan.asks.length + " demande" + (plan.asks.length > 1 ? "s" : "") + " du client" : ""}</div>
         <Bars total={pr.total} ok={pr.ok} bad={pr.ko} /></div>
-      <button type="button" onClick={() => setOpen(true)} style={B("pri", "md")}>{canMark ? (pr.done ? "Continuer la checklist" : "Remplir la checklist de tests") : canAsk ? "Ouvrir · demandes du client" : "Voir la checklist"}</button>
+      <button type="button" onClick={() => setOpen(true)} style={B("sec", "md")}>{canMark ? (pr.done ? "Continuer la checklist" : "Remplir la checklist de tests") : canAsk ? "Ouvrir · demandes du client" : "Voir la checklist"}</button>
     </div>
     <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(230px,1fr))", gap: 8 }}>
       {groups.map(g => [["", g.rows], ...(g.k === "interne" ? [[" · Demandes du client", g.asks]] : [])].map(([suf, L]) => { const ok = L.filter(x => statusOf(plan, g.k, x.id) === "ok").length, ko = L.filter(x => statusOf(plan, g.k, x.id) === "ko").length;

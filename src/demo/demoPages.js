@@ -131,7 +131,7 @@ export const DEMO_PAGES = [
   { id: "fiche", label: "Manager · fiche projet", Render: () => <Manager tab0="fiche" />, expect: ["Cette semaine", "Contrat et dates", "Actions de la semaine", "Statut global"] },
   { id: "retards", label: "Manager · retards", Render: () => <Manager tab0="retards" />, expect: [] },
   { id: "serie", label: "Machines ORC", Render: () => <Manager tab0="serie" />, expect: [] },
-  { id: "fermetures", label: "Réglages · fermetures", Render: () => <Manager tab0="production" />, expect: [] },
+  { id: "fermetures", label: "Réglages · fermetures", Render: () => <Manager tab0="vacances" />, expect: [] },
   { id: "personnes", label: "Personnes", Render: () => <Manager tab0="personnes" />, expect: [] },
   { id: "nouveautes", label: "Réglages · nouveautés", Render: () => <Manager tab0="nouveautes" />, expect: [] },
   { id: "fiche-pj", label: "Fiche d'un PJ", Render: FichePj, expect: [] },

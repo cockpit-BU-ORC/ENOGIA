@@ -73,7 +73,7 @@ export function TutoVideoSettings({ profiles, saveProfiles }) {
       <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: FZ.xs, fontWeight: 500, color: T.ink500, flex: "2 1 320px" }}>Lien de la vidéo<input value={url} onChange={e => { setUrl(e.target.value); setMsg(""); }} placeholder="https://drive.google.com/file/d/…/view" style={field} /></label>
       <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: FZ.xs, fontWeight: 500, color: T.ink500, flex: "1 1 200px" }}>Titre<input value={title} onChange={e => setTitle(e.target.value)} style={field} /></label>
       <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: FZ.xs, fontWeight: 500, color: T.ink500 }}>Disponible jusqu'au<input type="date" value={until} onChange={e => setUntil(e.target.value)} style={field} /></label>
-      <button type="button" onClick={() => save(true)} style={{ ...field, background: T.ink900, color: T.card, border: "none", fontWeight: 600, cursor: "pointer" }}>Publier</button>
+      <button type="button" onClick={() => save(true)} style={{ ...field, fontWeight: 600, cursor: "pointer" }}>Publier</button>
       {cur.id && <button type="button" onClick={() => save(false)} style={{ ...field, cursor: "pointer", fontWeight: 600 }}>Enregistrer sans rouvrir</button>}
       {cur.id && <button type="button" onClick={stop} style={{ ...field, cursor: "pointer", fontWeight: 600, color: T.red500 }}>Retirer</button>}
     </div>

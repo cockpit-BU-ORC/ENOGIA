@@ -3,12 +3,13 @@
 import React from "react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { T, FZ } from "../theme";
+import { chartAnim } from "../scrollMode";
 
 export default function MiniPie({ pie, di }) {
   return (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={pie} dataKey="value" nameKey="name" innerRadius={22} outerRadius={37} paddingAngle={pie.length>1?2:0} stroke="none" isAnimationActive={true} animationBegin={120+di*120} animationDuration={600} animationEasing="ease-out">
+                  <Pie {...chartAnim()} data={pie} dataKey="value" nameKey="name" innerRadius={22} outerRadius={37} paddingAngle={pie.length>1?2:0} stroke="none" isAnimationActive={true} animationBegin={120+di*120} animationDuration={600} animationEasing="ease-out">
                     {pie.map(x=><Cell key={x.name} fill={x.color}/>)}
                   </Pie>
                   <Tooltip content={({active,payload})=>{

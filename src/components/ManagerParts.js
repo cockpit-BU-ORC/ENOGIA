@@ -6,6 +6,7 @@ import { fmt, toLocalISO } from "../parsers";
 import { EtatsDialog } from "./EtatsDialog";
 import { EtatSelect, PresenceEditor } from "./EtatControls";
 import { Select, NavIcon, PjChecklist, DelayScopeNote, EmptyState, SuperOnly, NewDelayType } from "./SharedUI";
+import { chartAnim } from "../scrollMode";
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // Briques de la refonte de la page Manager (« un sacré coup de jeune ») : même langage visuel partout
@@ -27,7 +28,7 @@ export function PieBlock({data,unit="",size=150,centerLabel,sub}){
     <div role="img" aria-label={data.map(d=>d.name+" : "+d.value+unit).join(", ")} style={{position:"relative",width:size,height:size,flexShrink:0}}>
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
-          <Pie data={data} dataKey="value" nameKey="name" innerRadius={size*.38} outerRadius={size*.5} paddingAngle={data.length>1?2:0} stroke="none">
+          <Pie {...chartAnim()} data={data} dataKey="value" nameKey="name" innerRadius={size*.38} outerRadius={size*.5} paddingAngle={data.length>1?2:0} stroke="none">
             {data.map((d,i)=><Cell key={d.name+i} fill={d.color}/>)}
           </Pie>
           <Tooltip content={({active,payload})=>{

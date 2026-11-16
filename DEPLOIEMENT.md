@@ -2595,3 +2595,13 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - KPI : la Synthèse n'a plus de cadrans disposables depuis la V281 (récit validé) ; KpiPilotage (inutilisé) passé lui aussi sur WidgetArrange.
 - Aucune clé localStorage ; règles Firestore inchangées.
 - Fichiers : components/WidgetBoard.js, TestsTab.js, KpiPilotage.js, styles.css, demo/demoPages.js, versions.
+
+## v358 — les 4 lots de l'audit apple-design / taste-skill / UI-UX Pro Max
+
+- Widgets (WidgetBoard.js) : « Annuler » 6 s après chaque modification, « Réinitialiser » (`onReset` → `widgets: null`), message 4 s, pile horizontale (points cliquables, ← →), widget sans contenu sans case, catalogue de la galerie construit à l'ouverture, plus de `overscroll-behavior: contain` dans les tuiles, boutons d'édition de 44 px au doigt.
+- Accueil : « Ma semaine » = semaine suivante le week-end ; « expédiée depuis mai ».
+- Téléphone : fiche de tests (fil des étapes en bande sous 720 px, livret empilé), SAV (bouton d'étape sur plusieurs lignes, ligne « À planifier »), onglets en piste sur une ligne (PlanSwitch défile), Calendrier › Mois (n° sans « PJ » + lettre d'étape, légende assortie), onglets de la fiche d'un PJ.
+- Lisibilité : `Hl` éclaircit le surligneur quand son contraste avec le titre est inférieur à 4 (clair seulement) ; Liste (« Chef », « ＋ Client/NOBO » décollé) ; boutons pleins en double passés en secondaire (fiche de tests, PV, Nouveautés, SAV, Checklists « ✓ Enregistré ») ; Machines ORC (largeurs) ; planificateur (colonne Tâche 304 px) ; Gestion des accès (titre de niveau 2).
+- KPI : `chartAnim()` (scrollMode.js) sur tous les graphiques recharts (300 ms, sans délai, coupé si réduire les animations) ; « Détail » replié sur tous les sous-onglets ; Semaines : 0 % en gris ; Charge « Toutes années » en mois réels ; charge sans heures = pas de donnée ; KPI du SAV en une teinte.
+- Aucune clé localStorage ; données : `homeLayouts[poste].widgets` et `pageLayouts[id].widgets` peuvent valoir `null` (disposition d'origine) ; règles Firestore inchangées.
+- Fichiers : components/WidgetBoard.js, RoleHome.js, HomeView.js, TestFiche.js, TestsTab.js, DebugChecklist.js, SavPage.js, PlanSwitch.js, CalendarMonth.js, RowDetail.js, SharedUI.js, TableView.js, TutoVideo.js, ChecklistsView.js, ManagerFiche.js, ManagerPanel.js, ManagerParts.js, MiniPie.js, KpiBilan.js, KpiStory.js, Series.js, AccessPage.js, planner/PlannerGantt.js, theme.js, scrollMode.js, styles.css, demo/DemoGallery.js, demo/demoPages.js, versions.

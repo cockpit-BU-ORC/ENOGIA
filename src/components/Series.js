@@ -31,15 +31,15 @@ function Row({r,meta,value,onSave,onPasteMany,saveMeta,etat,setEtat,presence,set
     <td style={{padding:"6px 12px",fontWeight:600,color:T.teal600,fontFamily:T.fontMono,fontSize:FZ.sm,whiteSpace:"nowrap"}}>{r.pj}</td>
     <td style={{padding:"6px 12px",fontSize:FZ.sm,color:T.ink900,fontWeight:600}}>{meta.nomProjet}</td>
     <td style={{padding:"6px 12px",fontSize:FZ.xs,color:T.ink500,whiteSpace:"nowrap"}}>{r.gamme}</td>
-    {saveMeta?<MetaCell pj={r.pj} field="chefProjet" value={meta.chefProjet} onSave={saveMeta} width={150} placeholder="Chef de projet"/>:<td style={{padding:"6px 12px",fontSize:FZ.xs}}>{meta.chefProjet}</td>}
+    {saveMeta?<MetaCell pj={r.pj} field="chefProjet" value={meta.chefProjet} onSave={saveMeta} width={128} placeholder="Chef de projet"/>:<td style={{padding:"6px 12px",fontSize:FZ.xs}}>{meta.chefProjet}</td>}
     {saveMeta?<td style={{padding:"4px 8px",whiteSpace:"nowrap"}}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><CountryFlag pays={meta.pays} size={12}/><MetaInline pj={r.pj} value={meta.pays} onSave={saveMeta}/></span></td>:<td style={{padding:"6px 12px",fontSize:FZ.xs,color:T.ink500,whiteSpace:"nowrap"}}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><CountryFlag pays={meta.pays} size={12}/>{meta.pays}</span></td>}
     <td style={{padding:"4px 8px",whiteSpace:"nowrap"}}>{setEtat?<EtatSelect value={etat||"A_DEFINIR"} onChange={e=>setEtat(r.pj,e.target.value)}/>:null}</td>
-    {setPresence&&<td style={{padding:"4px 8px",minWidth:260}}><PresenceEditor r={r} presence={presence||{present:false,date:""}} onChange={v=>setPresence(r.pj,v)}/></td>}
+    {setPresence&&<td style={{padding:"4px 8px"}}><PresenceEditor r={r} presence={presence||{present:false,date:""}} onChange={v=>setPresence(r.pj,v)}/></td>}
     <td style={{padding:"4px 12px",whiteSpace:"nowrap"}}>
       <input type="text" value={v} placeholder={planned?"prévu "+planned.sn:"N° de série"} title={planned?"S/N prévu d'après l'ordo (arrivée le "+planned.arrivee.split("-").reverse().join("/")+") ; fixé à l'arrivée de la machine":undefined} onChange={e=>setV(e.target.value)} onBlur={commit}
         onKeyDown={e=>{if(e.key==="Enter")e.currentTarget.blur();else if(e.key==="Escape"){setV(value||"");e.currentTarget.blur();}}}
         onPaste={e=>{const t=e.clipboardData.getData("text");if(/[\r\n]/.test(t.trim())){e.preventDefault();onPasteMany(r.pj,t);}}}
-        style={{width:170,padding:"4px 8px",borderRadius:8,border:"1.5px solid "+(dirty?T.teal500:T.line),background:T.card,color:T.ink900,fontSize:FZ.sm,fontFamily:T.fontMono,fontWeight:600}}/>
+        style={{width:150,padding:"4px 8px",borderRadius:8,border:"1.5px solid "+(dirty?T.teal500:T.line),background:T.card,color:T.ink900,fontSize:FZ.sm,fontFamily:T.fontMono,fontWeight:600}}/>
       {/* v320 (demandé : « pouvoir cliquer sur oui si le S/N proposé me va ») : fixe le S/N prévu de cette machine */}
       {!v.trim()&&planned&&!planned.missingCode&&<button type="button" onClick={async()=>{setSt("…");const ok=await onSave(r.pj,planned.sn);setSt(ok===false?"échec":"✓");setTimeout(()=>setSt(""),1400);}} title={"Garder "+planned.sn+" comme S/N de "+r.pj} aria-label={"Oui, garder "+planned.sn+" pour "+r.pj}
         style={{marginLeft:6,minHeight:26,padding:"0 10px",borderRadius:8,border:"1px solid "+T.emerald500,background:T.emerald100,color:T.emerald600,fontSize:FZ.xs,fontWeight:500,cursor:"pointer",fontFamily:T.font}}>✓ Oui</button>}
@@ -51,7 +51,7 @@ function Row({r,meta,value,onSave,onPasteMany,saveMeta,etat,setEtat,presence,set
 
 function MetaInline({pj,value,onSave}){
   const [v,setV]=useState(value||"");useEffect(()=>{setV(value||"");},[value]);
-  return <input type="text" value={v} placeholder="Pays" aria-label={"Pays de "+pj} onChange={e=>setV(e.target.value)} onBlur={()=>{if(v.trim()!==(value||"").trim())onSave(pj,{pays:v.trim()});}} onKeyDown={e=>{if(e.key==="Enter")e.currentTarget.blur();}} style={{width:100,padding:"4px 8px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink900,fontSize:FZ.xs,fontFamily:T.font}}/>;
+  return <input type="text" value={v} placeholder="Pays" aria-label={"Pays de "+pj} onChange={e=>setV(e.target.value)} onBlur={()=>{if(v.trim()!==(value||"").trim())onSave(pj,{pays:v.trim()});}} onKeyDown={e=>{if(e.key==="Enter")e.currentTarget.blur();}} style={{width:84,padding:"4px 8px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink900,fontSize:FZ.xs,fontFamily:T.font}}/>;
 }
 
 // ── Import d'une liste (PJ · client · N° de série) ────────────────────────────────────────────────────
@@ -176,7 +176,7 @@ export function SerieTab({data,savePjMetaOverride,etatChoice,setEtatFor,clientPr
   };
   return(<div style={{...CARD,padding:0,overflow:"hidden"}}>
     <div style={{padding:"12px 16px",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",borderBottom:"1px solid "+T.line}}>
-      <div style={{flex:"1 1 260px",minWidth:0}}>
+      <div style={{flex:"1 1 100%",minWidth:0}}>
         <div style={{fontFamily:T.fontDisplay,fontWeight:600,fontSize:FZ.md,color:T.ink900}}>Machines ORC</div>
         <div style={{fontSize:FZ.xs,color:T.ink300,marginTop:2}}>N° de série, chef de projet, pays, état et présence client / NOBO aux tests de chaque PJ, repris partout dans l'application. Collez une colonne Excel dans une case N° de série pour remplir les lignes suivantes.</div>
       </div>
@@ -191,7 +191,7 @@ export function SerieTab({data,savePjMetaOverride,etatChoice,setEtatFor,clientPr
     {imp&&<ImportPanel rows={rows} save={save} onClose={()=>setImp(false)} onDone={(ok,fail)=>{setMsg(ok+" N° de série enregistré"+(ok>1?"s":"")+(fail?" · "+fail+" échec"+(fail>1?"s":""):"")+".");setTimeout(()=>setMsg(""),5000);}}/>}
     {msg&&<div style={{padding:"6px 16px",fontSize:FZ.xs,fontWeight:500,color:T.teal600,background:T.teal100}}>{msg}</div>}
     <div style={{overflow:"auto",maxHeight:"calc(100dvh - 290px)"}}>
-      <table style={{width:"100%",borderCollapse:"collapse"}}>
+      <table className="enogia-serie-table" style={{width:"100%",borderCollapse:"collapse"}}>
         <thead><tr>{["N° PJ","Projet","Gamme","Chef de projet","Pays","État",...(setClientPresenceFor?["Présence aux tests"]:[]),"N° de série"].map(h=><th key={h} style={{position:"sticky",top:0,zIndex:2,background:T.surface,boxShadow:"0 1px 0 "+T.line,textAlign:"left",padding:"8px 12px",fontSize:FZ.xs,fontWeight:500,color:T.ink500}}>{h}</th>)}</tr></thead>
         <tbody>
           {shown.map(({r,meta})=><Row key={r.pj} r={r} meta={meta} planned={!meta.numSerie?snPlan.get(r.pj):null} value={meta.numSerie} onSave={save} onPasteMany={pasteMany} saveMeta={savePjMetaOverride} etat={etatChoice&&etatChoice[r.pj]} setEtat={setEtatFor} presence={clientPresence&&clientPresence[r.pj]} setPresence={setClientPresenceFor}/>)}

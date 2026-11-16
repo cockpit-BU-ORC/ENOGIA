@@ -8,6 +8,7 @@ import { T, stageSoft } from "../theme";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LabelList } from "recharts";
 import { getPjMeta, CountryFlag } from "../pjMeta";
 import { monthReview, monthKey, addMonths, monthLabel } from "../monthReview";
+import { chartAnim } from "../scrollMode";
 
 const fd = s => (s ? s.slice(8, 10) + "/" + s.slice(5, 7) : "—");
 const ST = { done: ["fait", "emerald"], late: ["en retard", "red"], todo: ["prévu", "ink"] };
@@ -42,7 +43,7 @@ export function KpiBilan({ rows, initialByPJ, profiles, saveProfiles, onOpenPj, 
           <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: T.ink500 }} tickLine={false} axisLine={false} />
           <Tooltip contentStyle={{ fontFamily: T.font, fontSize: 12, borderRadius: 8 }} />
           <Legend wrapperStyle={{ fontSize: 12 }} />
-          {[["Départs", S.depart.solid], ["Tests terminés", S.tests.solid], ["Arrivées", S.arrivee.solid]].map(([k, c]) => <Bar key={k} dataKey={k} fill={c} radius={[2, 2, 0, 0]}><LabelList dataKey={k} position="top" style={{ fontSize: 12, fill: T.ink700 }} /></Bar>)}
+          {[["Départs", S.depart.solid], ["Tests terminés", S.tests.solid], ["Arrivées", S.arrivee.solid]].map(([k, c]) => <Bar {...chartAnim()} key={k} dataKey={k} fill={c} radius={[2, 2, 0, 0]}><LabelList dataKey={k} position="top" style={{ fontSize: 12, fill: T.ink700 }} /></Bar>)}
         </BarChart>
       </ResponsiveContainer>
     </section>

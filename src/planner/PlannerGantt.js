@@ -19,7 +19,7 @@ const MONTHS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "aoû
 const MONTHS_L = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 const dow = n => (((n + 3) % 7) + 7) % 7; // 0 = lundi
 export const ROW_H = 32, HEAD_H = 56;
-export const COLS_FULL = [["id", 40], ["name", 280], ["start", 96], ["end", 88], ["dur", 56], ["work", 66], ["pred", 110]];
+export const COLS_FULL = [["id", 40], ["name", 304], ["start", 96], ["end", 88], ["dur", 56], ["work", 66], ["pred", 110]];
 export const COLS_LIST = [["id", 44], ["name", 400], ["start", 112], ["end", 112], ["dur", 84], ["work", 92], ["pred", 260]];
 export const COLS_COMPACT = [["id", 40], ["name", 256], ["start", 104], ["dur", 60]];
 export const colsFor = view => view === "list" || view === "lanes" ? COLS_LIST : view === "gantt" ? COLS_COMPACT : COLS_FULL;

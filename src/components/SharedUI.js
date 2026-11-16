@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { ICON_PATHS } from "../iconPaths"; // v350 : icônes Phosphor (graisse regular) extraites par scripts/gen-icons.js
 import { createPortal } from "react-dom";
-import { T, FZ, R, btn } from "../theme";
+import { T, FZ, R, btn, contrastOf } from "../theme";
 import { isSuperAdmin } from "../roles";
 import { ETAT_META, getPjMeta, SerieTag } from "../pjMeta";
 import { parseMSProjectRows } from "../parsers";
@@ -432,8 +432,12 @@ export function HoverPop({render,children,delay=220,width=260,style,disabled}){
 
 // ── v162 : en-tête de page commun (kicker en capitales espacées + titre) — même gabarit sur toutes les vues ──────────────
 // v178 : « surligneur décalé » (demandé : « les lignes de couleur sous la police, en décalé ») — un trait épais de couleur posé sous le bas des lettres.
+// v358 (audit apple-design / UI-UX) : la couleur du surligneur vient de la page ; quand elle est trop proche de l'encre du titre
+// (marine, vert forêt, rouge brique en clair), le bas des lettres disparaissait — elle est alors fondue à 34 % dans le fond.
+// En sombre, rien ne change : l'or sous un titre clair est le rendu validé.
+const hlSafe=c=>{try{return T.mode!=="dark"&&/^#[0-9a-f]{6}$/i.test(c)&&contrastOf(c,T.ink900)<4?"color-mix(in srgb, "+c+" 34%, "+T.surface+")":c;}catch(e){return c;}};
 export function Hl({children,color,style}){
-  return <span className="enogia-hl" style={{textDecorationLine:"underline",textDecorationColor:color||T.accent,textDecorationThickness:".3em",textUnderlineOffset:"-.08em",textDecorationSkipInk:"none",WebkitTextDecorationSkip:"none",...style}}>{children}</span>;
+  return <span className="enogia-hl" style={{textDecorationLine:"underline",textDecorationColor:hlSafe(color||T.accent),textDecorationThickness:".3em",textUnderlineOffset:"-.08em",textDecorationSkipInk:"none",WebkitTextDecorationSkip:"none",...style}}>{children}</span>;
 }
 // v173 (direction « Éditorial industriel ») : sur-titre en police d'identifiant couleur ocre (marquage d'atelier), titre éditorial plus grand et léger,
 // filet épais marine dessous — même en-tête sur toutes les pages.

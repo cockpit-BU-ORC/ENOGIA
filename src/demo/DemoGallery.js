@@ -18,6 +18,7 @@ export default function DemoGallery() {
   const [dark, setDark] = useState(q.get("dark") === "1");
   const [w, setW] = useState(q.get("w") || "desktop");
   setThemeMode(dark);
+  try { document.documentElement.style.colorScheme = dark ? "dark" : "light"; } catch (e) { /* rien */ } // v358 : comme App (cases et listes natives)
   const [, force] = useState(0);
   const P = DEMO_PAGES.find(p => p.id === page) || DEMO_PAGES[0];
   const ctx = { options: DEMO_PEOPLE, me: DEMO_ME.email, chefOf: () => ({ name: "", account: null }), react: () => {} };

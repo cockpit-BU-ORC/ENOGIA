@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v358",
+    date: "2026-11-16",
+    title: "V358 : accueil, téléphone et lisibilité",
+    items: [
+      { t: "Accueil", d: "Une modification des widgets s'annule pendant 6 secondes ; « Réinitialiser » revient à la disposition d'origine ; une pile se feuillette de gauche à droite." },
+      { t: "Téléphone", d: "La fiche de tests, le SAV et le calendrier du mois se lisent correctement sur un petit écran." },
+      { t: "Général", d: "Titres de page plus lisibles (surligneur éclairci), graphiques qui s'affichent sans attendre." },
+    ],
+  },
+  {
     id: "2026-11-v357",
     date: "2026-11-15",
     title: "V357 : la page Tests en widgets",

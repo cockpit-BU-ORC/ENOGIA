@@ -1049,4 +1049,12 @@ export const RELEASE_CATALOG = [
     ["Tests", "Au banc maintenant, Derniers résultats et Planning des bancs : widgets à tailles fixes, à déplacer, empiler, agrandir ou retirer (« Modifier la page »)."],
     ["Tests", "Nouvelle taille « Pleine hauteur » : toute la largeur, hauteur du contenu (planning des bancs)."],
   ] },
+  { v: "358", t: "Accueil, téléphone et lisibilité (audit apple-design, taste, UI/UX)", items: [
+    ["Accueil", "Widgets : « Annuler » pendant 6 secondes après chaque modification, « Réinitialiser », pile feuilletée de gauche à droite (la molette reste à la page), widget sans contenu masqué."],
+    ["Accueil", "« Ma semaine » montre la semaine qui vient le samedi et le dimanche ; « expédiée depuis mai » partout."],
+    ["Téléphone", "Fiche de tests : étapes en bande au-dessus du contenu ; SAV : onglets et boutons sur l'écran ; Calendrier du mois : lettre de l'étape sur chaque plaque."],
+    ["Général", "Surligneur des titres éclairci quand la couleur de la page est foncée (SAV / MES, Projets, À traiter) ; un seul bouton plein par écran dans la fiche de tests et les Réglages."],
+    ["KPI", "Détail replié sur tous les onglets ; graphiques animés en 0,3 s ; charge par mois dans l'ordre du temps ; pas de statut « tenu » sans heures planifiées."],
+    ["Machines ORC", "Le tableau tient dans un écran de 1 280 px."],
+  ] },
 ];

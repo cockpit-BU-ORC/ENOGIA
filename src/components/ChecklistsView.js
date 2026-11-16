@@ -66,7 +66,7 @@ function DebugModelView({ doc, commit }) {
       <button type="button" style={btn(false, true)} onClick={() => setImp(true)}>Importer…</button>
       <button type="button" style={btn(false, true)} onClick={reset} disabled={busy}>Modèle d'origine</button>
       {dirty && <button type="button" style={btn(false, true)} onClick={() => { setSecs(saved); setDirty(false); }}>Annuler les modifications</button>}
-      <button type="button" style={btn(true)} disabled={!dirty || busy} onClick={save}>{busy ? "Enregistrement…" : dirty ? "Enregistrer" : "Enregistré"}</button>
+      <button type="button" style={btn(dirty)} disabled={!dirty || busy} onClick={save}>{busy ? "Enregistrement…" : dirty ? "Enregistrer" : "✓ Enregistré"}</button>
     </section>
     {msg && <div role="status" style={{ fontSize: FZ.sm, fontWeight: 600, color: msg.bad ? T.red600 : T.emerald600 }}>{msg.t}</div>}
     {secs.map((s, si) => <section key={s.id} aria-label={"Section " + s.title} style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden" }}>
@@ -181,7 +181,7 @@ function VibModelView({ doc, commit }) {
   return <section style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
     <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}><div style={{ flex: "1 1 320px" }}><div style={{ fontSize: 16, fontWeight: 600 }}>Fréquences turbines et vibrations</div>
       <div style={{ fontSize: 13, color: T.ink500 }}>Étape de la checklist de debug : la fréquence est figée (affichée), le testeur saisit la vibration relevée ; au-dessus de la limite, la ligne passe en rouge.</div></div>
-      <button type="button" style={btn(true)} disabled={!dirty} onClick={save}>{dirty ? "Enregistrer" : "Enregistré"}</button></div>
+      <button type="button" style={btn(dirty)} disabled={!dirty} onClick={save}>{dirty ? "Enregistrer" : "✓ Enregistré"}</button></div>
     {msg && <div role="status" style={{ fontSize: FZ.sm, fontWeight: 600, color: /échoué/.test(msg) ? T.red600 : T.emerald600 }}>{msg}</div>}
     <div style={{ display: "grid", gridTemplateColumns: "minmax(160px,1.4fr) minmax(120px,1fr) minmax(120px,1fr) 40px", gap: 6, alignItems: "center" }}>
       {["Point de mesure", "Fréquence figée", "Limite de vibrations", ""].map(h => <div key={h} style={{ fontSize: 12, color: T.ink500 }}>{h}</div>)}

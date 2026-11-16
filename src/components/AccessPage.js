@@ -153,7 +153,7 @@ export default function AccessPage({ profiles, saveProfiles, accessDoc, saveAcce
       <p style={{ ...hint, margin: "12px 0 0" }}>Planificateur, Personnes et site et Accès restent à vous seul.</p>
     </section>
     <aside aria-label="Aperçu du menu" style={card}>
-      <h3 style={h3}>Menu de « {roleName(aRole)} »</h3>
+      <h2 style={h3}>Menu de « {roleName(aRole)} »</h2>
       <div style={{ marginTop: 8, borderRadius: 8, background: T.mode === "dark" ? T.surface : T.ink900, color: T.mode === "dark" ? T.ink900 : T.card, padding: 8, fontSize: 13 }}>
         {groups.map(g => { const its = ACCESS_PAGES.filter(p => p.g === g && lv(p.id) !== "n"); return its.length ? <div key={g}>
           <div style={{ fontSize: 12, fontWeight: 500, opacity: .65, padding: "6px 6px 2px" }}>{g}</div>
