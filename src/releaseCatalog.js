@@ -1095,4 +1095,9 @@ export const RELEASE_CATALOG = [
     ["Tests", "« Tests validés » repliable sous le planning : machines aux tests faits ou validés, par mois, avec testeurs et résultats."],
     ["Turbines", "Besoins ORC et SAV : cartes plus étroites ; besoins installés et complets dans « Besoins validés » (par mois, « Voir la carte ») ; case « À compléter » retirée."],
   ] },
+  { v: "367", t: "Fiches projet : dossiers dépliés seuls, projets EPC dans le rapport, clôturées réduites", items: [
+    ["Fiches projet", "Liste de gauche : le groupe du chef et le dossier (machines d'un même PJ) du PJ choisi se déplient seuls ; la ligne vient à l'écran en douceur, sans mouvement si « réduire les animations »."],
+    ["Fiches projet", "Actions et plans de mitigation : les clôturés passent dans « Clôturées (N) », replié, une ligne compacte chacun avec « Rouvrir »."],
+    ["Rapport chef de projet", "Un projet EPC est rangé chez son chef ORC (comme les fiches projet) ; le chef de l'EPC est rappelé en mention."],
+  ] },
 ];

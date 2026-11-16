@@ -775,3 +775,8 @@ tr[data-kbd]:active > td, tr[role="button"]:active > td, li[data-kbd]:active, li
 @media (hover: none) { .e-bell-acts { opacity: 1; } }
 @media (pointer: coarse) { .e-bell-swipe { display: flex; } }
 @media (prefers-reduced-motion: reduce) { .e-bell-acts { transition: none; } }
+
+/* v367 : machines d un dossier (fiches projet) qui apparaissent au dépliage — fondu court, sans mouvement si réduire les animations */
+@keyframes enogiaClIn { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+.enogia-cl-in { animation: enogiaClIn var(--e-dur-menu) ease-out both; }
+@media (prefers-reduced-motion: reduce) { .enogia-cl-in { animation: none; } }

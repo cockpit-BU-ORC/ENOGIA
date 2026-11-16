@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useLayoutEffect, useRef } from "react";
+import { smooth } from "../scrollMode";
 import { T, FZF as FZ, D, statusSoft, stripeBg, stripeHues, btn } from "../theme";
 import { SerieTag, getPjMeta, PJ_META_OVERRIDES, CountryFlag, Avatar, GAMME_COLORS, ETAT_META, etatInk, PresenceChip, PRESENCE_META, presenceKind, presenceDates, presenceFirstDate, today, PjPlate, orcChefsOf, epcChefOf, EpcTag } from "../pjMeta";
 import { ChefsEpcEditor } from "./ChefsEpc";
@@ -478,7 +479,10 @@ function ItemsSection({title,kind,meta,field,atKey,color,showWeek,onSave,onGroup
   const open=items.filter(x=>!x.done).length,closed=items.length-open;
   // v277 (audit apple-design : « Suivi trop long ») : les deux premières lignes ouvertes, le reste (dont les clôturées) derrière « Afficher tout »
   const [all,setAll]=useState(false);
-  const full=sortedItems(items),shortL=full.filter(x=>!x.done).slice(0,2),list=all?full:shortL,hidden=full.length-shortL.length;
+  // v367 (demandé : « réduire les actions quand c'est clôturé ») : les lignes ouvertes en entier (deux, puis « Afficher tout ») ; les clôturées à part,
+  // repliées, une ligne compacte chacune (texte grisé, date de clôture, « Rouvrir »)
+  const [showClosed,setShowClosed]=useState(false);
+  const full=sortedItems(items),openL=full.filter(x=>!x.done),closedL=full.filter(x=>x.done),list=all?openL:openL.slice(0,2),hidden=openL.length-list.length;
   const inp=(val,onCommit,ph,x)=><input defaultValue={val} key={x.id+"|"+val} placeholder={ph} onBlur={e=>{const t=e.target.value.trim();if(t&&t!==val)onCommit(t);else if(!t)e.target.value=val;}} style={{...FIELD,width:"100%",boxSizing:"border-box",fontWeight:x.done?400:600,color:x.done?T.ink300:T.ink900,textDecoration:x.done?"line-through":"none"}}/>;
   const dateIn=(val,onCh,ex)=><input type="date" value={val||""} onChange={e=>onCh(e.target.value)} style={{...FIELD,colorScheme:T.mode==="dark"?"dark":"light",...ex}}/>;
   return(<Section title={title} right={<span style={{fontSize:FZ.xs,color:T.ink300,whiteSpace:"normal",textAlign:"right"}}>{items.length?open+" ouverte"+(open>1?"s":"")+" · "+closed+" clôturée"+(closed>1?"s":""):"aucune"}{at?" · maj "+fmt(at)+(showWeek?" · S"+isoWeek(at):""):""}</span>}>
@@ -501,7 +505,18 @@ function ItemsSection({title,kind,meta,field,atKey,color,showWeek,onSave,onGroup
         </div>
       </div>);
     })}
-    {hidden>0&&<button type="button" onClick={()=>setAll(v=>!v)} aria-expanded={all} style={{border:"none",background:"transparent",padding:"2px 0",minHeight:24,color:T.ink700,fontSize:FZ.xs,fontWeight:500,cursor:"pointer",fontFamily:T.font,textDecoration:"underline",textUnderlineOffset:2,marginBottom:4}}>{all?"Réduire":"Afficher tout ("+hidden+" de plus"+(closed?", dont "+closed+" clôturée"+(closed>1?"s":""):"")+")"}</button>}
+    {(hidden>0||(all&&openL.length>2))&&<button type="button" onClick={()=>setAll(v=>!v)} aria-expanded={all} style={{border:"none",background:"transparent",padding:"2px 0",minHeight:24,color:T.ink700,fontSize:FZ.xs,fontWeight:500,cursor:"pointer",fontFamily:T.font,textDecoration:"underline",textUnderlineOffset:2,marginBottom:4}}>{all?"Réduire":"Afficher les "+hidden+" autre"+(hidden>1?"s":"")+" ouverte"+(hidden>1?"s":"")}</button>}
+    {closedL.length>0&&<div style={{marginBottom:4,borderTop:openL.length?"1px solid "+T.line:"none",paddingTop:openL.length?4:0}}>
+      <button type="button" onClick={()=>setShowClosed(v=>!v)} aria-expanded={showClosed} style={{display:"inline-flex",alignItems:"center",gap:6,border:"none",background:"transparent",padding:"2px 0",minHeight:28,color:T.ink500,fontSize:FZ.xs,fontWeight:500,cursor:"pointer",fontFamily:T.font}}>
+        <span aria-hidden="true" style={{display:"inline-flex",transform:showClosed?"none":"rotate(-90deg)",transition:"transform var(--e-dur-menu) ease"}}><NavIcon name="chevronDown" size={12}/></span>Clôturée{closedL.length>1?"s":""} ({closedL.length})</button>
+      {showClosed&&closedL.map(x=>{const p=mit?mitParts(x):null,txt=mit?(p.risk+(p.measure?" — "+p.measure:"")):x.text;
+        return <div key={x.id} className="enogia-cl-in" style={{display:"grid",gridTemplateColumns:"14px minmax(0,1fr) auto auto",gap:8,alignItems:"center",minHeight:30,padding:"2px 4px 2px 6px",borderRadius:8}}>
+          <span aria-hidden="true" style={{color:T.emerald600,fontSize:12,fontWeight:600}}>✓</span>
+          <span title={txt} style={{fontSize:FZ.xs,color:T.ink500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{txt}</span>
+          <span style={{fontSize:12,color:T.ink500,whiteSpace:"nowrap",fontVariantNumeric:"tabular-nums"}}>{x.doneAt?"le "+fmt(new Date(x.doneAt+(String(x.doneAt).length<=10?"T12:00:00":""))):""}</span>
+          <button type="button" onClick={()=>patch(x.id,statusPatch(x,"todo",todayIso()))} aria-label={"Rouvrir : "+txt} style={{border:"none",background:"transparent",padding:"0 4px",minHeight:28,color:T.accentInk||T.ink700,fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:T.font}}>Rouvrir</button>
+        </div>;})}
+    </div>}
     <div style={{display:"flex",flexDirection:"column",gap:6,marginTop:items.length?6:0,padding:"8px 10px",border:"1px dashed "+T.line,borderRadius:8}}>
       <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
         {mit?<>
@@ -878,6 +893,20 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
   const baseOf=pj=>{const m=/^(PJ\s*\d+)[-_ ]/i.exec(String(pj||""));return m?m[1].toUpperCase():null;};
   const clusterRows=list=>{if(!clusterOn)return list.map(row=>({base:row.pj,rows:[row]}));const out=[],idx={};list.forEach(row=>{const b=baseOf(row.pj);if(!b){out.push({base:row.pj,rows:[row]});return;}if(idx[b]==null){idx[b]=out.length;out.push({base:b,rows:[]});}out[idx[b]].rows.push(row);});return out;};
   const r=data.find(x=>x.pj===selPj);
+  // v367 (demandé : « le déploiement automatique des dossiers dans le panneau de gauche, en restant doux ») : le PJ choisi (ici, depuis une autre
+  // page ou le Point hebdo) a son groupe de chef et son dossier (machines d'un même PJ) dépliés, puis sa ligne amenée à l'écran en douceur
+  // (seulement si elle est hors de vue ; défilement coupé si « réduire les animations »)
+  const listRef=useRef(null);
+  useEffect(()=>{
+    if(!selPj)return;
+    const keys=groups.filter(g=>g.rows.some(x=>x.pj===selPj)).map(g=>g.key),b=baseOf(selPj);
+    setFolded(f=>keys.some(k=>f.has(k))?new Set([...f].filter(k=>!keys.includes(k))):f);
+    if(b&&clusterOn)setOpenCl(s0=>{const add=keys.map(k=>k+b).filter(k=>!s0.has(k));return add.length?new Set([...s0,...add]):s0;});
+    const t=setTimeout(()=>{const box=listRef.current,el=box&&box.querySelector('[data-pj="'+selPj+'"]');if(!box||!el)return;
+      const a=el.getBoundingClientRect(),c=box.getBoundingClientRect();if(a.top>=c.top+40&&a.bottom<=c.bottom)return;
+      box.scrollBy({top:a.top-c.top-Math.max(48,(c.height-a.height)/3),behavior:smooth()});},60);
+    return()=>clearTimeout(t);
+  },[selPj,groupBy,clusterOn]); // eslint-disable-line
   const meta=r?getPjMeta(r.pj,r):null;
   // v146.18 : applique la clôture / réouverture d'une ligne commune aux autres projets du même envoi (même groupId)
   const groupPatch=(x,field,atKey,f)=>{
@@ -963,7 +992,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
 
   return(<div style={{display:"flex",gap:12,alignItems:"flex-start",flexWrap:"wrap",justifyContent:"flex-start"}}>
     {multiOpen&&savePjMetaMulti&&<MultiApplyDialog data={data} currentPj={r&&r.pj} savePjMetaMulti={savePjMetaMulti} addCommentMulti={addCommentMulti} addDelayAllocationMulti={addDelayAllocationMulti} delayTypes={delayTypes} authorName={authorName} onClose={()=>setMultiOpen(false)}/>}
-    {cdpOpen&&<CdpDialog certifs={certifs} data={data} initialData={initialData} delays={delays} comments={comments} progress={progress} changeLog={changeLog} initialChef={meta&&meta.chefProjet&&meta.chefProjet!=="—"?meta.chefProjet:undefined} onClose={()=>setCdpOpen(false)}/>}
+    {cdpOpen&&<CdpDialog certifs={certifs} data={data} initialData={initialData} delays={delays} comments={comments} progress={progress} changeLog={changeLog} initialChef={meta&&orcChefsOf(meta)[0]&&orcChefsOf(meta)[0]!=="—"?orcChefsOf(meta)[0]:undefined} onClose={()=>setCdpOpen(false)}/>}
     {codirOpen&&isSuperAdmin()&&<CodirDialog data={data} initialData={initialData} comments={comments} delays={delays} progress={progress} initialPj={r&&r.pj} onClose={()=>setCodirOpen(false)}/>}
     {/* ── Liste : avancement, état et compteurs visibles sans ouvrir la fiche ── */}
     <div className="enogia-mlist" aria-hidden={focus?"true":undefined} style={{...CARD,width:focus?0:listMini?44:listW,opacity:focus?0:1,pointerEvents:focus?"none":"auto",visibility:focus?"hidden":"visible",padding:focus?0:CARD.padding,borderWidth:focus?0:undefined,marginRight:focus?-12:0,transition:"opacity var(--e-dur-in) ease, visibility var(--e-dur-micro) linear "+(focus?".22s":"0s"),flexShrink:0,maxHeight:"calc(100dvh - 200px)",minHeight:300,display:"flex",flexDirection:"column",overflow:"hidden"}}>
@@ -979,7 +1008,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
           {[["chef","Par chef"],["all","Tous"],["mine","Mes PJ"]].map(([id,l])=><button key={id} type="button" role="tab" aria-selected={groupBy===id} onClick={()=>setGroupBy(id)} style={{flex:1,border:"none",borderRadius:8,minHeight:26,fontSize:FZ.xs,fontWeight:500,fontFamily:T.font,cursor:"pointer",background:groupBy===id?T.card:"transparent",color:groupBy===id?T.teal600:T.ink500,boxShadow:groupBy===id?T.shadowSm:"none"}}>{l}{id==="mine"&&myPjs.size?" "+myPjs.size:""}</button>)}
         </div>}
       </div>
-      <div style={{overflowY:"auto",overflowX:"hidden",flex:1}}>
+      <div ref={listRef} style={{overflowY:"auto",overflowX:"hidden",flex:1}}>
         {groups.map(g=>(<React.Fragment key={g.key}>
         {g.head&&!listMini&&(
           <div style={{display:"flex",alignItems:"center",gap:4,padding:"4px 6px",background:chefView===g.head?T.teal100:T.surface,borderBottom:"1px solid "+T.line,position:"sticky",top:0,zIndex:1}}>
@@ -997,7 +1026,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
           const ec=(ETAT_META[row.etat]||ETAT_META["NOT ORDERED"]);
           const pv=pvOf(row);
           if(listMini)return null; // v196 : liste en tiroir — repliée, seule la languette « Projets » reste
-          return(<div key={row.pj} {...pressable(()=>pick(row.pj),{"aria-current":sel?"true":undefined})} style={{padding:sub?"6px 8px 6px 24px":"6px 8px 6px 8px",cursor:"pointer",background:sel?T.teal100:"transparent",borderLeft:"3px solid "+(sel?T.teal500:"transparent"),borderBottom:"1px solid "+T.line}}>
+          return(<div key={row.pj} data-pj={row.pj} className={sub?"enogia-cl-in":undefined} {...pressable(()=>pick(row.pj),{"aria-current":sel?"true":undefined})} style={{padding:sub?"6px 8px 6px 24px":"6px 8px 6px 8px",cursor:"pointer",background:sel?T.teal100:"transparent",borderLeft:"3px solid "+(sel?T.teal500:"transparent"),borderBottom:"1px solid "+T.line}}>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
               <span style={{width:8,height:8,borderRadius:"50%",background:ec.bar,flexShrink:0}} title={ec.label}/>
               <span style={{fontWeight:600,fontVariantNumeric:"tabular-nums",color:etatInk(row.etat),fontSize:FZ.sm,whiteSpace:"nowrap",flexShrink:0}}><PjPlate pj={row.pj}/></span>
@@ -1024,8 +1053,8 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
             const pvAvg=Math.round(cl.rows.reduce((t,x)=>t+pvOf(x),0)/cl.rows.length);
             return(<React.Fragment key={"cl"+g.key+cl.base}>
               <div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 8px",borderBottom:"1px solid "+T.line,background:act?T.teal100:"transparent"}}>
-                <button type="button" onClick={()=>setOpenCl(s0=>{const n=new Set(s0);const k=g.key+cl.base;if(n.has(k))n.delete(k);else n.add(k);return n;})} aria-expanded={open} aria-label={(open?"Replier ":"Déplier ")+cl.base} style={{border:"none",background:"transparent",cursor:"pointer",color:T.ink500,minWidth:24,minHeight:24,fontSize:12}}>{open?"▾":"▸"}</button>
-                <button type="button" onClick={()=>{setChefView(null);setClusterView({key:g.key+cl.base,label:cl.base+(m0.nomProjet?" · "+m0.nomProjet:"")+" ("+cl.rows.length+" machines)",rows:cl.rows});}} title={"Synthèse commune des "+cl.rows.length+" machines de "+cl.base} style={{flex:1,minWidth:0,border:"none",background:"transparent",cursor:"pointer",textAlign:"left",padding:"2px 0",fontFamily:T.font,display:"flex",alignItems:"center",gap:8}}>
+                <button type="button" onClick={()=>setOpenCl(s0=>{const n=new Set(s0);const k=g.key+cl.base;if(n.has(k))n.delete(k);else n.add(k);return n;})} aria-expanded={open} aria-label={(open?"Replier ":"Déplier ")+cl.base} style={{border:"none",background:"transparent",cursor:"pointer",color:T.ink500,minWidth:24,minHeight:24,fontSize:12,display:"inline-flex",alignItems:"center",justifyContent:"center",padding:0}}><span style={{display:"inline-flex",transform:open?"none":"rotate(-90deg)",transition:"transform var(--e-dur-menu) ease"}}><NavIcon name="chevronDown" size={14}/></span></button>
+                <button type="button" onClick={()=>{setChefView(null);setOpenCl(s0=>s0.has(g.key+cl.base)?s0:new Set([...s0,g.key+cl.base]));setClusterView({key:g.key+cl.base,label:cl.base+(m0.nomProjet?" · "+m0.nomProjet:"")+" ("+cl.rows.length+" machines)",rows:cl.rows});}} title={"Synthèse commune des "+cl.rows.length+" machines de "+cl.base} style={{flex:1,minWidth:0,border:"none",background:"transparent",cursor:"pointer",textAlign:"left",padding:"2px 0",fontFamily:T.font,display:"flex",alignItems:"center",gap:8}}>
                   <span style={{fontFamily:T.fontMono,fontWeight:600,fontSize:FZ.sm,color:T.ink900}}>{cl.base}</span>
                   <span style={{fontSize:FZ.xs,color:T.ink500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",minWidth:0}}>{m0.nomProjet||""}</span>
                   <span style={{marginLeft:"auto",fontSize:FZ.xs,fontWeight:500,color:T.ink700,background:T.surfaceAlt,borderRadius:999,padding:"0 8px",whiteSpace:"nowrap"}}>{cl.rows.length} machines · {pvAvg}%</span>

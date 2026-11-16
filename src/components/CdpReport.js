@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { T, FZ } from "../theme";
-import { getPjMeta, ETAT_META, PRESENCE_META, presenceKind, presenceDateText, GAMME_COLORS, etatColors } from "../pjMeta";
+import { getPjMeta, orcChefsOf, epcChefOf, ETAT_META, PRESENCE_META, presenceKind, presenceDateText, GAMME_COLORS, etatColors } from "../pjMeta";
 import { penaltyCalc, livrPrevueOf, ficheBase, siblingsOf, pjBase } from "../penalties";
 import { diffDays } from "../parsers";
 import { NavIcon } from "./SharedUI";
@@ -65,7 +65,9 @@ function infoOf(r, { initialByPj, delays, comments, progress, change, rows, cert
   const gSet = manualGlobal(meta) != null;
   const kind = presenceKind(r.clientPresence);
   return {
-    pj: r.pj, nom: meta.nomProjet || r.nomProjet || "", pays: meta.pays, gamme: r.gamme, chef: meta.chefProjet || NONE, sn: meta.numSerie || "",
+    pj: r.pj, nom: meta.nomProjet || r.nomProjet || "", pays: meta.pays, gamme: r.gamme, // v367 (demandé : « pas les projets EPC dans les extractions même si le chef de projet est ORC ») : un projet EPC est rangé chez son chef ORC
+    // (comme les fiches projet, V254) ; le chef de l'EPC reste en mention
+    chef: orcChefsOf(meta)[0] || NONE, epcChef: epcChefOf(meta) || "", sn: meta.numSerie || "",
     etat: r.etat, etatLabel: (ETAT_META[r.etat] || {}).label || r.etat || "—",
     presence: kind ? (PRESENCE_META[kind].label + (presenceDateText(r.clientPresence) ? " · " + presenceDateText(r.clientPresence) : "")) : "",
     arrivee: r.arrivee, tests: r.tests, testsFin: r.testsFin, finProd: r.finProd, dep: r.depart, tf: meta.contratTFin || null, t0: meta.contratT0 || null,

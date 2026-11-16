@@ -2659,3 +2659,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - TestsTab.js : `BenchStrip` (un cadre par banc, `BenchCard`, 4 suivantes), `BenchGrid` réécrit (piste A : ligne par banc, zoom `enogia_bg_zoom` = 2w / 6w / 3m, texte des barres collé au bord visible, PJ sans période en pied, `details` « Tests validés » par mois, 3 mois puis « Afficher les mois précédents ») ; « Au banc maintenant » en pleine largeur par défaut.
 - TurbinesHub.js (`NeedsView`) : `isValid` / `instOf`, besoins validés hors du fil dans `details` « Besoins validés » (« Voir la carte » = carte complète), carte extraite en `card(n)`, cartes ≥ 310 px ; case « À compléter » et clé `enogia_nd_open` retirées.
 - Galerie : PJ906 validé (expédiée) dans `DEMO_TESTS`. Données et règles Firestore inchangées.
+
+## v367 — fiches projet : dépliage automatique, EPC dans le rapport, clôturées réduites
+
+- ManagerFiche.js : effet sur `selPj` (groupe du chef retiré de `folded`, dossier ajouté à `openCl`, ligne `data-pj` amenée à l'écran par `scrollBy` + `smooth()` seulement si hors de vue) ; clic sur la synthèse d'un dossier = le déplier ; chevron des dossiers = icône qui pivote ; `ItemsSection` : ouvertes (2 puis « Afficher les N autres ouvertes »), clôturées dans « Clôturées (N) » repliable (ligne compacte, « Rouvrir » = `statusPatch(x, "todo")`) ; rapport chef de projet ouvert sur le chef ORC (`orcChefsOf`).
+- CdpReport.js : `chef` = `orcChefsOf(meta)[0]` (EPC : chef ORC), `epcChef` ; cdpPptx.js : « (chef EPC : …) » dans l'en-tête des fiches.
+- styles.css : `.enogia-cl-in` (fondu 180 ms, coupé si réduire les animations).
+- Aucune clé localStorage ; données et règles Firestore inchangées.

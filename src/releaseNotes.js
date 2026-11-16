@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v367",
+    date: "2026-11-16",
+    title: "V367 : fiches projet : dossiers dépliés seuls, projets EPC dans le rapport, clôturées réduites",
+    items: [
+      { t: "Fiches projet", d: "Le PJ choisi a son groupe et son dossier dépliés tout seuls dans la liste de gauche, amenés à l'écran en douceur. Actions et mitigations clôturées réduites à une ligne." },
+      { t: "Rapport chef de projet", d: "Les projets EPC apparaissent chez leur chef de projet ORC." },
+    ],
+  },
+  {
     id: "2026-11-v366",
     date: "2026-11-16",
     title: "V366 : bancs de tests séparés, planning par banc et historiques validés",
