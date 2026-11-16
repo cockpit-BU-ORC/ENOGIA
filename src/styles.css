@@ -661,13 +661,12 @@ b, strong { font-weight: 600; }
 #enogia-main h1[tabindex="-1"]:focus, #enogia-main h1[tabindex="-1"]:focus-visible { outline: none; }
 
 /* v355 : accueil en widgets (WidgetBoard.js) — grille de 4 colonnes, lignes de 112 px, tailles fixes, piles, mode édition */
-.e-wg { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 112px; grid-auto-flow: row dense; gap: 14px; }
+.e-wg { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 49px; grid-auto-flow: row dense; gap: 14px; } /* v359 : lignes de 49 px, une tuile en prend autant que son contenu */
 .e-wg-cell { position: relative; min-width: 0; border-radius: 12px; outline: none; transition: transform var(--e-dur-micro) var(--e-ease); }
-.e-wg-s { grid-column: span 1; grid-row: span 2; } .e-wg-m { grid-column: span 2; grid-row: span 2; } .e-wg-l { grid-column: span 2; grid-row: span 4; }
-.e-wg-xl { grid-column: span 4; grid-row: span 2; } .e-wg-xxl { grid-column: span 4; grid-row: span 4; }
-@media (max-width: 900px) { .e-wg { grid-template-columns: repeat(2, minmax(0, 1fr)); } .e-wg-xl, .e-wg-xxl { grid-column: span 2; } }
+.e-wg-s { grid-column: span 1; grid-row: span 3; } .e-wg-m { grid-column: span 2; grid-row: span 3; } .e-wg-xl { grid-column: span 4; grid-row: span 2; }
+@media (max-width: 900px) { .e-wg { grid-template-columns: repeat(2, minmax(0, 1fr)); } .e-wg-xl { grid-column: span 2; } }
 .e-wg-body, .e-wg-pane { height: 100%; }
-.e-wg-body > * { height: 100%; box-sizing: border-box; margin: 0 !important; overflow: auto; } /* v358 : plus de « contain » — en fin de liste, la molette repasse à la page */
+.e-wg-body > * { min-height: 100%; height: auto; box-sizing: border-box; margin: 0 !important; overflow: visible; } /* v358 : plus de « contain » — en fin de liste, la molette repasse à la page */
 .e-wg-pane { display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; border-radius: 12px; scrollbar-width: none; overscroll-behavior-x: contain; } /* v358 : pile horizontale, la molette verticale reste à la page */
 .e-wg-pane::-webkit-scrollbar { display: none; }
 .e-wg-page { flex: 0 0 100%; min-width: 0; height: 100%; scroll-snap-align: start; scroll-snap-stop: always; }
@@ -732,10 +731,7 @@ tr[data-kbd]:active > td, tr[role="button"]:active > td, li[data-kbd]:active, li
 }
 
 /* v357 : taille « Pleine hauteur » des widgets (planning des bancs…) — toute la largeur, autant de lignes que le contenu */
-.e-wg-auto { grid-column: 1 / -1; grid-row: span 4; }
-.e-wg-auto > .e-wg-body { height: auto; }
-.e-wg-auto > .e-wg-body > * { height: auto; overflow: visible; }
-.e-wg-preview.e-wg-pv-auto { width: 100%; height: 220px; }
+.e-wg-preview .e-wg-body > * { min-height: 0; }
 
 /* v358 (audit, lot 2 — téléphone) */
 /* fiche de tests : sous 720 px, le fil des étapes passe en bande horizontale au-dessus de l'étape (il prenait toute la largeur) */

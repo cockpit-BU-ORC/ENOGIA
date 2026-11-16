@@ -12,7 +12,12 @@ import { T, FZ, btn } from "../theme";
 import { ArrangeCtx } from "./Arrange";
 import { askConfirm } from "../confirm";
 
-export const WG_SIZES = { s: "Petit", m: "Moyen", l: "Grand", xl: "Bandeau", xxl: "Grand bandeau", auto: "Pleine hauteur" }; // v357 : auto = toute la largeur, hauteur du contenu
+// v359 : la taille règle la largeur (1, 2 ou 4 colonnes) ; la hauteur suit le contenu, par crans. Les anciennes tailles (Grand, Grand bandeau,
+// Pleine hauteur) sont lues comme la largeur correspondante.
+export const WG_SIZES = { s: "Petit", m: "Moyen", xl: "Large" };
+const WIDE = { s: "s", m: "m", l: "m", xl: "xl", xxl: "xl", auto: "xl" };
+const widths = sizes => [...new Set((sizes || ["m"]).map(z => WIDE[z] || "m"))];
+const UNIT = 49, GAP = 14; // une ligne de grille et l'écart : une tuile occupe n lignes, n = ce qu'il faut à son contenu (2 au moins)
 const calm = () => { try { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { return false; } };
 const keyOf = it => (it.stack ? "p:" + it.stack[0] : "w:" + it.t); // stable : un widget n'est jamais deux fois sur l'accueil
 
@@ -22,7 +27,7 @@ export function WidgetBoard({ items, widgets, onChange, onReset, canEdit, catalo
   const [draft, setDraft] = useState(null); // ordre provisoire pendant un glisser : une seule écriture, au lâcher
   // widgets connus seulement, taille ramenée à une taille permise
   const fit = it => { const kids = it.stack ? it.stack.filter(t => widgets[t]) : null; const x = kids ? (kids.length > 1 ? { ...it, stack: kids } : { t: kids[0], z: it.z }) : it;
-    const ok = (x.stack || [x.t]).map(t => widgets[t].sizes).reduce((p, q) => p.filter(z => q.includes(z))); return ok.includes(x.z) ? x : { ...x, z: ok[0] || "m" }; };
+    const ok = (x.stack || [x.t]).map(t => widths(widgets[t].sizes)).reduce((p, q) => p.filter(z => q.includes(z))), z0 = WIDE[x.z] || "m"; return ok.includes(z0) ? { ...x, z: z0 } : { ...x, z: ok[0] || "m" }; };
   const list = (draft || items || []).filter(it => (it.stack ? it.stack.some(t => widgets[t]) : widgets[it.t])).map(fit);
   const [edit, setEdit] = useState(false), [gallery, setGallery] = useState(false), [msg, setMsg] = useState(""), [undo, setUndo] = useState(null);
   const [held, setHeld] = useState(null), [merge, setMerge] = useState(null), [dragK, setDragK] = useState(null);
@@ -37,7 +42,11 @@ export function WidgetBoard({ items, widgets, onChange, onReset, canEdit, catalo
   useEffect(() => { setDraft(null); }, [items]); // la disposition enregistrée est revenue : plus besoin du brouillon
   // FLIP : on relève les places affichées avant le changement, puis chaque widget glisse de là vers sa nouvelle place
   const snap = () => { const m = {}; if (grid.current) grid.current.querySelectorAll("[data-wg]").forEach(el => { m[el.dataset.wg] = el.getBoundingClientRect(); }); before.current = m; };
-  useLayoutEffect(() => { const b = before.current; before.current = null; if (!b || calm() || !grid.current) return;
+  // v359 : hauteur de chaque tuile = celle de son contenu (le plus haut des widgets d'une pile), arrondie au cran supérieur
+  const fitRows = () => { const g = grid.current; if (!g) return; g.querySelectorAll("[data-wg]").forEach(cell => { let h = 0;
+    cell.querySelectorAll(".e-wg-body > *").forEach(el => { const keep = el.style.minHeight; el.style.minHeight = "0px"; h = Math.max(h, el.offsetHeight); el.style.minHeight = keep; });
+    const v = "span " + Math.max(2, Math.ceil((h + GAP) / (UNIT + GAP))); if (cell.style.gridRow !== v) cell.style.gridRow = v; }); };
+  useLayoutEffect(() => { fitRows(); const b = before.current; before.current = null; if (!b || calm() || !grid.current) return;
     grid.current.querySelectorAll("[data-wg]").forEach(el => { const k = el.dataset.wg; const from = landing.current && landing.current.k === k ? landing.current.r : b[k]; if (!from) return;
       const to = el.getBoundingClientRect(), dx = from.left - to.left, dy = from.top - to.top; if (!dx && !dy) return;
       el.style.transition = "none"; el.style.transform = "translate(" + dx + "px," + dy + "px)"; void el.offsetWidth;
@@ -45,16 +54,16 @@ export function WidgetBoard({ items, widgets, onChange, onReset, canEdit, catalo
     landing.current = null; });
   useEffect(() => () => clearTimeout(msgT.current), []);
   useEffect(() => { const g = grid.current; if (!g || typeof ResizeObserver === "undefined") return;
-    const fit = el => { const cell = el.closest(".e-wg-auto"); if (cell) cell.style.gridRow = "span " + Math.max(2, Math.ceil((el.offsetHeight + 14) / (112 + 14))); };
-    const ro = new ResizeObserver(es => es.forEach(e => fit(e.target)));
-    g.querySelectorAll(".e-wg-auto > .e-wg-body > *").forEach(el => { ro.observe(el); fit(el); });
-    return () => ro.disconnect(); });
+    // largeur de la fenêtre, police chargée, contenu qui change : mesure à l'image suivante (jamais pendant la notification)
+    let raf = 0; const ro = new ResizeObserver(() => { cancelAnimationFrame(raf); raf = requestAnimationFrame(fitRows); });
+    g.querySelectorAll(".e-wg-body > *").forEach(el => ro.observe(el));
+    return () => { cancelAnimationFrame(raf); ro.disconnect(); }; });
   useEffect(() => { if (!canEdit) setEdit(false); }, [canEdit]);
 
   const kOf = it => keyOf(it);
   const move = (from, to) => { if (to < 0 || to >= list.length || from === to) return; const n = list.slice(); const [m] = n.splice(from, 1); n.splice(to, 0, m); save(n); };
   const remove = i => { const prev = base(), n = list.slice(); n.splice(i, 1); save(n); say("Widget retiré", prev); };
-  const sizesOf = it => { const all = (it.stack || [it.t]).map(t => (widgets[t] && widgets[t].sizes) || ["m"]); return all.reduce((a, s) => a.filter(z => s.includes(z))); };
+  const sizesOf = it => { const all = (it.stack || [it.t]).map(t => widths(widgets[t] && widgets[t].sizes)); return all.reduce((a, s) => a.filter(z => s.includes(z))); };
   const resize = i => { const it = list[i], opts = sizesOf(it); if (opts.length < 2) return; const z = opts[(opts.indexOf(it.z) + 1) % opts.length]; const prev = base(), n = list.slice(); n[i] = { ...it, z }; save(n); say("Taille : " + WG_SIZES[z], prev); };
   const unstack = (i, t) => { const prev = base(), it = list[i]; const rest = it.stack.filter(x => x !== t); const n = list.slice(); n.splice(i, 1, rest.length > 1 ? { ...it, stack: rest } : { t: rest[0], z: it.z }, { t, z: it.z }); save(n); say("Sorti de la pile", prev); };
   const add = (t, z) => { const prev = base(); save([{ t, z }, ...list]); setGallery(false); say((widgets[t] && widgets[t].label) + " ajouté", prev); };
@@ -161,13 +170,13 @@ function Gallery({ catalog, widgets, used, onAdd, onClose }) {
         {catalog.map(([g, ids]) => { const L = ids.filter(([id, d]) => widgets[id] && match(id, d)); if (!L.length) return null;
           return (<section key={g}><h3 style={{ margin: "16px 0 8px", fontSize: 13, fontWeight: 500, color: T.ink500 }}>{g}</h3>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(270px, 1fr))", gap: 12 }}>
-              {L.map(([id, d]) => { const w = widgets[id], z = pick[id] || w.sizes[0];
+              {L.map(([id, d]) => { const w = widgets[id], S = widths(w.sizes), z = pick[id] || S[0];
                 return (<div key={id} style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: 10, display: "flex", flexDirection: "column", gap: 8 }}>
                   <div className={"e-wg-preview e-wg-pv-" + z} aria-hidden="true"><div className="e-wg-body">{w.render(z)}</div></div>
                   <div><div style={{ fontWeight: 600, fontSize: 13 }}>{w.label}</div><div style={{ fontSize: 12, color: T.ink500 }}>{d}</div></div>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                    {w.sizes.length > 1 && <span role="group" aria-label="Taille" style={{ display: "inline-flex", background: T.surfaceAlt, borderRadius: 999, padding: 2 }}>
-                      {w.sizes.map(s => <button key={s} type="button" aria-pressed={s === z} onClick={() => setPick(p => ({ ...p, [id]: s }))}
+                    {S.length > 1 && <span role="group" aria-label="Taille" style={{ display: "inline-flex", background: T.surfaceAlt, borderRadius: 999, padding: 2 }}>
+                      {S.map(s => <button key={s} type="button" aria-pressed={s === z} onClick={() => setPick(p => ({ ...p, [id]: s }))}
                         style={{ border: "none", borderRadius: 999, padding: "4px 9px", minHeight: 26, fontSize: 12, fontWeight: 500, cursor: "pointer", background: s === z ? T.card : "transparent", color: s === z ? T.ink900 : T.ink700, boxShadow: s === z ? "0 0 0 1px " + T.line : "none", fontFamily: T.font }}>{WG_SIZES[s]}</button>)}
                     </span>}
                     <span style={{ flex: 1 }} />
@@ -182,7 +191,7 @@ function Gallery({ catalog, widgets, used, onAdd, onClose }) {
 
 // Disposition initiale depuis l'ancienne (cadrans + largeurs sur 12) : 1–3 → Petit, 4–6 → Moyen, 7–8 → Grand, 9–12 → Bandeau
 export function widgetsFromSpans(ids, spanOf, sizesOf) {
-  const want = sp => (sp <= 3 ? "s" : sp <= 6 ? "m" : sp <= 8 ? "l" : "xl");
+  const want = sp => (sp <= 3 ? "s" : sp <= 8 ? "m" : "xl");
   return ids.map(t => { const ok = sizesOf(t), z = want(spanOf(t)); return { t, z: ok.includes(z) ? z : ok[0] }; });
 }
 
@@ -194,7 +203,7 @@ export function WidgetArrange({ id, children, spans = {}, labels = {}, sizes = {
   const ctx = useContext(ArrangeCtx), lay = (ctx && ctx.layouts && ctx.layouts[id]) || {}, save = ctx && ctx.save ? v => ctx.save(id, v) : null;
   const kids = React.Children.toArray(children).filter(c => c && c.props), widgets = {}, ids = [];
   kids.forEach(c => { const k = idOfChild(c), sp = spans[k] || 6; ids.push(k);
-    widgets[k] = { label: labels[k] || c.props["aria-label"] || k, sizes: sizes[k] || (sp >= 9 ? ["xl", "xxl", "auto"] : sp >= 7 ? ["l", "m", "xl"] : ["m", "l", "xl"]), render: () => c }; });
+    widgets[k] = { label: labels[k] || c.props["aria-label"] || k, sizes: sizes[k] || (sp >= 9 ? ["xl", "m"] : ["m", "s", "xl"]), render: () => c }; });
   const items = Array.isArray(lay.widgets) ? lay.widgets : ids.map(t => ({ t, z: defaults[t] || widgets[t].sizes[0] }));
   return <WidgetBoard items={items} widgets={widgets} catalog={[["Cadrans de la page", ids.map(t => [t, ""])]]} canEdit={!!save} onChange={save ? w => save({ ...lay, widgets: w }) : undefined}
     onReset={save && Array.isArray(lay.widgets) ? () => save({ ...lay, widgets: null }) : undefined} label={label} editLabel="Modifier la page" />;

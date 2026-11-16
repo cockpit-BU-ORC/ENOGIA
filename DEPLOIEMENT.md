@@ -2605,3 +2605,11 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - KPI : `chartAnim()` (scrollMode.js) sur tous les graphiques recharts (300 ms, sans délai, coupé si réduire les animations) ; « Détail » replié sur tous les sous-onglets ; Semaines : 0 % en gris ; Charge « Toutes années » en mois réels ; charge sans heures = pas de donnée ; KPI du SAV en une teinte.
 - Aucune clé localStorage ; données : `homeLayouts[poste].widgets` et `pageLayouts[id].widgets` peuvent valoir `null` (disposition d'origine) ; règles Firestore inchangées.
 - Fichiers : components/WidgetBoard.js, RoleHome.js, HomeView.js, TestFiche.js, TestsTab.js, DebugChecklist.js, SavPage.js, PlanSwitch.js, CalendarMonth.js, RowDetail.js, SharedUI.js, TableView.js, TutoVideo.js, ChecklistsView.js, ManagerFiche.js, ManagerPanel.js, ManagerParts.js, MiniPie.js, KpiBilan.js, KpiStory.js, Series.js, AccessPage.js, planner/PlannerGantt.js, theme.js, scrollMode.js, styles.css, demo/DemoGallery.js, demo/demoPages.js, versions.
+
+## v359 — widgets à la hauteur de leur contenu (maquette v359-accueil-avant-apres validée : « Go, applique »)
+
+- WidgetBoard.js : la taille règle la largeur seulement (`WG_SIZES` s Petit · m Moyen · xl Large) ; hauteur = contenu (`fitRows`, lignes de 49 px + écart 14 px, 2 lignes au moins, mesurée à l'image suivante par ResizeObserver). Anciennes tailles lues sans perte (`WIDE` : l → m, xxl / auto → xl).
+- Sur les 7 accueils de la galerie : tuiles à moitié vides 33 → 6 sur 42, listes coupées 4 → 0.
+- RoleHome, TestsTab, KpiPilotage : tailles permises ramenées à s / m / xl.
+- Aucune clé localStorage ; données et règles Firestore inchangées.
+- Fichiers : components/WidgetBoard.js, RoleHome.js, TestsTab.js, KpiPilotage.js, styles.css, versions.

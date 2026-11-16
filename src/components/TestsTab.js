@@ -124,7 +124,7 @@ function WeekBoard({ doc, rows, testers, catalog, conflicts, commit, certifs, ca
         {myTester && <label style={{ display: "inline-flex", alignItems: "center", gap: 6, marginLeft: "auto", minHeight: 24, cursor: "pointer", color: T.ink700, fontWeight: 600 }}><input type="checkbox" checked={onlyMine} onChange={e => setOnlyMine(e.target.checked)} />Seulement mes tests</label>}
       </div>
       <WidgetArrange id="tests-semaine" label="Cadrans de Tests › Par semaine" spans={{ banc: 8, resultats: 4, grille: 12 }} labels={{ banc: "Au banc maintenant", resultats: "Derniers résultats", grille: "Planning des bancs" }}
-        sizes={{ banc: ["m", "l", "xl", "auto"], resultats: ["m", "l", "xl", "auto"], grille: ["auto", "xxl"] }}>
+        sizes={{ banc: ["m", "xl"], resultats: ["m", "s", "xl"], grille: ["xl"] }}>
         <BenchStrip key="banc" rows={withP} {...{ doc, catalog, testers }} on={cur && cur.pj} onPick={setSel} />
         <ResultsFeed key="resultats" rows={withP} {...{ doc, catalog }} onPick={setSel} />
         <BenchGrid key="grille" rows={withP} allRows={rows} {...{ doc, catalog, testers, conflicts, benches }} on={cur && cur.pj} onPick={setSel} />

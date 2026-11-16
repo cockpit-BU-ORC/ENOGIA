@@ -1057,4 +1057,9 @@ export const RELEASE_CATALOG = [
     ["KPI", "Détail replié sur tous les onglets ; graphiques animés en 0,3 s ; charge par mois dans l'ordre du temps ; pas de statut « tenu » sans heures planifiées."],
     ["Machines ORC", "Le tableau tient dans un écran de 1 280 px."],
   ] },
+  { v: "359", t: "Des widgets à la hauteur de leur contenu", items: [
+    ["Accueil", "La hauteur d'un widget suit son contenu : plus de cadres à moitié vides, plus de listes coupées."],
+    ["Accueil", "Trois tailles, qui règlent la largeur : Petit (1 colonne), Moyen (2), Large (toute la largeur)."],
+    ["Tests", "Mêmes règles pour les cadres de Tests › Par semaine."],
+  ] },
 ];

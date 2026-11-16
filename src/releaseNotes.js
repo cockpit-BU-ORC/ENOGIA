@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v359",
+    date: "2026-11-16",
+    title: "V359 : des widgets à la hauteur de leur contenu",
+    items: [
+      { t: "Accueil", d: "Chaque widget prend la hauteur de ce qu'il montre : plus de cadres à moitié vides ni de listes coupées. La taille ne règle plus que la largeur (Petit, Moyen, Large)." },
+    ],
+  },
+  {
     id: "2026-11-v358",
     date: "2026-11-16",
     title: "V358 : accueil, téléphone et lisibilité",

@@ -488,7 +488,7 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
     ["Échanges — Commentaires", { mentions: "les mentions qui vous attendent" }],
   ];
   // v355 : widgets à tailles fixes (WidgetBoard). Tailles permises : chiffres = Petit / Moyen ; cadrans larges = Bandeau ; autres = Moyen, Grand, Bandeau.
-  const sizesOf = id => (W[id] && W[id].sizes) || ((spans[id] || 4) >= 9 ? ["xl", "xxl", "l"] : ["m", "l", "xl"]);
+  const sizesOf = id => (W[id] && W[id].sizes) || ((spans[id] || 4) >= 9 ? ["xl", "m"] : (spans[id] || 4) <= 3 ? ["s", "m", "xl"] : ["m", "s", "xl"]);
   const widgets = {}; Object.keys(W).forEach(id => { if (avail(id)) widgets[id] = { label: W[id].label, sizes: sizesOf(id), render: z => W[id].render(z) }; });
   const items = Array.isArray(L.widgets) ? L.widgets : widgetsFromSpans(ids, id => spans[id] || 4, sizesOf);
   const SMALL_DESC = { jour: "la date et le n° de semaine", nextDep: "compte à rebours du prochain départ", nProd: "machines en montage, tests ou packaging", nDep30: "départs des 30 prochains jours", nLate: "machines en retard sur le planning initial", nBanc: "machines au banc aujourd'hui", nShipped: "machines expédiées depuis mai" };

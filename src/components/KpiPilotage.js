@@ -83,7 +83,7 @@ export function KpiPilotage({ rows, driftRows, closurePeriods, productionExclusi
   ].filter(Boolean);
 
   return (<WidgetArrange id="kpi-synthese" label="Cadrans de KPI › Synthèse" spans={{ "Chiffres clés": 12, "À surveiller": 12, "PJ à risque": 7, "Charge atelier": 5, "Portefeuille par état": 5, "Répartition des machines": 12 }}
-    sizes={{ "Chiffres clés": ["xl", "auto"], "À surveiller": ["auto", "xl", "xxl"], "PJ à risque": ["l", "m", "xl", "xxl"], "Charge atelier": ["l", "m", "xl"], "Portefeuille par état": ["m", "l", "xl"], "Répartition des machines": ["auto", "xxl", "xl"] }}>
+    sizes={{ "Chiffres clés": ["xl"], "À surveiller": ["xl", "m"], "PJ à risque": ["m", "xl"], "Charge atelier": ["m", "xl"], "Portefeuille par état": ["m", "xl"], "Répartition des machines": ["xl"] }}>
     <div aria-label="Chiffres clés" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,170px),1fr))", gap: 10 }}>
       <Kpi how="PJ ouverts dont l'état est Montage méca, Montage élec, Tests, Packaging ou En fabrication (filtres du Manager appliqués)." label="En production" value={inProd.length} sub={"sur " + open.length + " projet" + (open.length > 1 ? "s" : "") + " ouvert" + (open.length > 1 ? "s" : "")} />
       <Kpi how="PJ non expédiés dont le départ du planning actuel tombe entre aujourd'hui et J+30 ; « en dérive » = départ plus tard que dans le planning initial." label="Départs d'ici 30 jours" value={dep30.length} sub={dep30.length ? (dep30Late === dep30.length ? (dep30.length > 1 ? "tous en dérive" : "en dérive") : dep30Late ? "dont " + dep30Late + " en dérive" : "aucun en dérive") : "aucun départ prévu"} subBad={dep30Late > 0} />
