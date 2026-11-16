@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v366",
+    date: "2026-11-16",
+    title: "V366 : bancs de tests séparés, planning par banc et historiques validés",
+    items: [
+      { t: "Tests", d: "« Au banc maintenant » : un cadre par banc avec la machine en cours et les 4 suivantes. Planning des bancs sur une ligne par banc, avec zoom et historique « Tests validés »." },
+      { t: "Turbines", d: "Besoins ORC et SAV : cartes plus resserrées ; les besoins terminés passent dans « Besoins validés », repliable." },
+    ],
+  },
+  {
     id: "2026-11-v365",
     date: "2026-11-16",
     title: "V365 : cloche : Vu, Traité et Plus tard sur chaque notification",

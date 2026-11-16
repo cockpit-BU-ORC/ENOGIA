@@ -2652,3 +2652,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Mention : « Vu » / « Traité » écrits sur le commentaire (`seen` / `resolved`, via `resolveComment`, visibles de tous) ; une réaction de la personne citée = Traité (V319). Autres lignes et « Plus tard » : sur le poste, clé localStorage **`enogia_bell_<adresse>`** = `{ [clé]: { s: seen | done | later, at, until } }` (ménage après 60 jours).
 - InboxPage.js réécrit (fil par jour, `FeedRow` : glisser au doigt, seuil 80 px) ; MentionBell.js : pastille = `buildFeed().red` + demandes à valider, marques passées au pop-up (`bell`) ; styles.css : `.e-bell-acts` (survol / focus, toujours visible si `hover: none`), `.e-bell-swipe` (au doigt).
 - Règles Firestore inchangées. Galerie : « Cloche » interactive.
+
+## v366 — bancs séparés, planning par banc, historiques validés
+
+- src/benchModel.js (nouveau, testé `benchModel.test.js`) : `BENCHES`, `benchOf` (planificateur, sinon planning publié, sinon banc 1), `nextByBench` (n par banc, ordre de passage), `packRows` (sous-lignes sans chevauchement), `byMonth`.
+- TestsTab.js : `BenchStrip` (un cadre par banc, `BenchCard`, 4 suivantes), `BenchGrid` réécrit (piste A : ligne par banc, zoom `enogia_bg_zoom` = 2w / 6w / 3m, texte des barres collé au bord visible, PJ sans période en pied, `details` « Tests validés » par mois, 3 mois puis « Afficher les mois précédents ») ; « Au banc maintenant » en pleine largeur par défaut.
+- TurbinesHub.js (`NeedsView`) : `isValid` / `instOf`, besoins validés hors du fil dans `details` « Besoins validés » (« Voir la carte » = carte complète), carte extraite en `card(n)`, cartes ≥ 310 px ; case « À compléter » et clé `enogia_nd_open` retirées.
+- Galerie : PJ906 validé (expédiée) dans `DEMO_TESTS`. Données et règles Firestore inchangées.

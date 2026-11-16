@@ -1089,4 +1089,10 @@ export const RELEASE_CATALOG = [
     ["Cloche", "Sur chaque ligne (au survol, au focus, toujours au doigt) : « Vu », « Traité », « Plus tard » ; « Tout marquer vu » ; au doigt, glisser à droite = Traité, à gauche = Plus tard."],
     ["Cloche", "« Plus tard » revient le lendemain à 8 h ; « Traités » repliés en bas (30 jours) avec « Rouvrir » ; les réactions émojis restent."],
   ] },
+  { v: "366", t: "Bancs de tests séparés, planning par banc et historiques validés", items: [
+    ["Tests", "Au banc maintenant : un cadre par banc (en cours ou « Libre jusqu'au … »), puis les 4 prochaines machines de ce banc avec leur date."],
+    ["Tests", "Planning des bancs : une ligne par banc où les machines se suivent comme des créneaux, trait « aujourd'hui », zoom 2 sem. / 6 sem. / 3 mois."],
+    ["Tests", "« Tests validés » repliable sous le planning : machines aux tests faits ou validés, par mois, avec testeurs et résultats."],
+    ["Turbines", "Besoins ORC et SAV : cartes plus étroites ; besoins installés et complets dans « Besoins validés » (par mois, « Voir la carte ») ; case « À compléter » retirée."],
+  ] },
 ];

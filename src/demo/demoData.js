@@ -56,7 +56,7 @@ export const DEMO_COMMENTS = {
 export const DEMO_PROGRESS = { PJ901: 40, PJ902: 65, "PJ903-1": 85, "PJ903-2": 95, PJ906: 100 };
 if (DEMO_BIG) DEMO_ROWS.slice(8).forEach((r, i) => { DEMO_PROGRESS[r.pj] = r.etat === "SHIPPED" ? 100 : r.etat === "PACKAGING" ? 92 : r.etat === "TESTS" ? 80 : r.etat === "ELEC" ? 60 : r.etat === "MONTAGE" ? 25 + (i % 5) * 6 : 0; });
 export const DEMO_TESTS = { testers: [{ id: "t1", name: "Lou Martin" }, { id: "t2", name: "Sam Petit" }], catalog: [],
-  plans: { "PJ903-2": { assign: [{ tid: "t1" }], st: { interne: { i1: "ok", i2: "ko" } }, tres: { interne: { i2: { pb: "TT-31 lit 0 °C débranché", cause: "Câblage inversé" } } },
+  plans: { PJ906: { assign: [{ tid: "t2" }], forced: { at: "2026-10-28", by: "Machine expédiée", auto: true } }, "PJ903-2": { assign: [{ tid: "t1" }], st: { interne: { i1: "ok", i2: "ko" } }, tres: { interne: { i2: { pb: "TT-31 lit 0 °C débranché", cause: "Câblage inversé" } } },
     asks: [{ id: "q1", label: "Affichage des pressions en psi sur l'IHM", hint: "Demande du client", by: "Camille Durand", at: "2026-10-28T09:00:00Z" }],
     book: { rows: { "prerequis": { v: true, s: "ok" }, "configuration-hardware/afe/md050n": { s: "pb", c: "Tension lue 380 V" } } },
     debug: { rows: { "s-vent": { r: "ok" } }, vib: { ta: "2,1" }, spd: { ta: { s1: "498", s2: "612" }, tb: { s1: "505" } } } } },

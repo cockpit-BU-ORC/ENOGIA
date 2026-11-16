@@ -10,7 +10,8 @@ import { fmt, toLocalISO } from "../parsers";
 import { useMentions } from "../mentionContext";
 import { CARD, H_SUB } from "./ManagerParts";
 import { CertifChip } from "./FicheContrat";
-import { NavIcon, PjPlate, pressable, tableTh } from "./SharedUI";
+import { NavIcon, PjPlate, pressable, tableTh, Segmented } from "./SharedUI";
+import { BENCHES, benchOf, nextByBench, packRows, byMonth } from "../benchModel";
 import { SECTIONS, DEFAULT_TEST_CATALOG, catalogOf, testersOf, planOf, activeSections, selectedIds, toggleTest, setExtra, setNote, assignTester, unassignTester, setAssignDates, effRange, findConflicts, assignmentsOf, dropTester, dropTestFromPlans, newId, packLanes, addDaysIso, mondayOf, testerOfEmail, doneIds, progressOf, TEST_STATUS, statusOf, statusByOf, setStatus, isForced, setForced } from "../testPlan";
 import { buildIcs, downloadIcs } from "../ics";
 import { usePointerDnD } from "../pointerDrag";
@@ -124,8 +125,8 @@ function WeekBoard({ doc, rows, testers, catalog, conflicts, commit, certifs, ca
         {myTester && <label style={{ display: "inline-flex", alignItems: "center", gap: 6, marginLeft: "auto", minHeight: 24, cursor: "pointer", color: T.ink700, fontWeight: 600 }}><input type="checkbox" checked={onlyMine} onChange={e => setOnlyMine(e.target.checked)} />Seulement mes tests</label>}
       </div>
       <WidgetArrange id="tests-semaine" label="Cadrans de Tests › Par semaine" spans={{ banc: 8, resultats: 4, grille: 12 }} labels={{ banc: "Au banc maintenant", resultats: "Derniers résultats", grille: "Planning des bancs" }}
-        sizes={{ banc: ["m", "xl"], resultats: ["m", "s", "xl"], grille: ["xl"] }}>
-        <BenchStrip key="banc" rows={withP} {...{ doc, catalog, testers }} on={cur && cur.pj} onPick={setSel} />
+        sizes={{ banc: ["xl", "m"], resultats: ["m", "s", "xl"], grille: ["xl"] }}>
+        <BenchStrip key="banc" rows={withP} {...{ doc, catalog, testers, benches }} on={cur && cur.pj} onPick={setSel} />
         <ResultsFeed key="resultats" rows={withP} {...{ doc, catalog }} onPick={setSel} />
         <BenchGrid key="grille" rows={withP} allRows={rows} {...{ doc, catalog, testers, conflicts, benches }} on={cur && cur.pj} onPick={setSel} />
       </WidgetArrange>
@@ -152,15 +153,33 @@ function SegBar({ segs, h = 8, gap = 2, width, still }) {
     {segs.map((s, i) => <i key={s.k + s.id} title={s.name + " — " + ST_LABEL[s.v]} style={{ flex: 1, minWidth: 2, borderRadius: 4, background: SEG_FILL[s.v](), backgroundImage: s.v === "ko" ? HATCH : undefined, animationDelay: (i * 25) + "ms" }} />)}
   </span>);
 }
-// v345 (audit taste, validé) : dans les listes, barre d'avancement au lieu de l'anneau
-function ProgBar({ pct, size = 54 }) {
-  return (<div aria-hidden="true" style={{ width: size, flexShrink: 0 }}>
-    <div style={{ fontFamily: T.fontDisplay || T.font, fontSize: 14, fontWeight: 600, color: T.ink900, fontVariantNumeric: "tabular-nums" }}>{pct} %</div>
-    <div style={{ height: 6, marginTop: 4, borderRadius: 4, background: T.line, overflow: "hidden" }}><div style={{ width: pct + "%", height: "100%", background: stageSoft().finProd.solid }} /></div>
+const dayStart = d => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
+// v366 (maquette v366-bancs-turbines.html, piste A validée) : un cadre par banc — la machine en cours (ou « Libre »), puis les 4 suivantes
+// de ce banc dans l'ordre de passage (banc d'après le planificateur, benchModel.js).
+const BENCH_C = b => (b === 2 ? T.info600 : T.ink900);
+function BenchCard({ r, plan, act, q, lateD, n, m, testers, catalog, on, onPick }) {
+  const segs = segsOf(plan, catalog, act), cur = segs.find(s => s.v === "wip") || segs.find(s => s.v === "todo") || segs.find(s => s.v === "ko");
+  const names = plan.assign.map(x => testers.find(t => t.id === x.tid)).filter(Boolean).map(t => t.name.split(" ")[0]);
+  const meta = getPjMeta(r.pj, r), todo = q.total - q.done - q.wip;
+  const sum = [q.ok && q.ok + " réussi" + (q.ok > 1 ? "s" : ""), q.wip && q.wip + " en cours", q.ko && q.ko + " échec" + (q.ko > 1 ? "s" : ""), todo > 0 && todo + " à faire"].filter(Boolean).join(" · ");
+  return (<div {...pressable(() => onPick(r.pj), { "aria-pressed": on === r.pj, "aria-label": r.pj + " au banc — " + q.done + " tests faits sur " + q.total + (lateD ? " — en retard de " + lateD + " jours" : "") })}
+    className="enogia-bench-card" style={{ background: on === r.pj ? T.teal100 : T.card, borderRadius: 12, boxShadow: T.shadowSm + (lateD ? ", inset 0 3px 0 " + T.red500 : ""), padding: "12px 14px", cursor: "pointer", minWidth: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+      <PjPlate pj={r.pj} />
+      {r.gamme && <span style={{ fontSize: 13, fontWeight: 600, color: T.ink900, whiteSpace: "nowrap" }}>{r.gamme}</span>}
+      <span title={meta.nomProjet || ""} style={{ flex: 1, minWidth: 0, fontSize: FZ.xs, color: T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : ""}</span>
+      <span style={{ fontSize: 13, fontWeight: 600, color: lateD ? T.red600 : T.ink700, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{lateD ? "en retard de " + lateD + " j" : "jour " + n + " / " + m}</span>
+    </div>
+    <div style={{ minWidth: 0 }}>
+      <div style={{ fontFamily: T.fontDisplay, fontSize: 16, fontWeight: 600, color: T.ink900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{cur ? cur.name : q.total ? "Tous les tests sont faits" : "Aucun test retenu"}</div>
+      <div style={{ fontSize: 13, color: names.length ? T.ink500 : T.red600, marginTop: 1 }}>{cur ? ST_LABEL[cur.v].toLowerCase() : ""}{cur ? " · " : ""}{names.length ? names.join(", ") : "sans testeur"}</div>
+    </div>
+    <SegBar segs={segs} />
+    <div style={{ fontSize: FZ.xs, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{sum || "Aucun test retenu"}</div>
   </div>);
 }
-const dayStart = d => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
-function BenchStrip({ rows, doc, catalog, testers, on, onPick }) {
+const inDays = (iso, today) => { const k = Math.round((new Date(iso + "T12:00:00") - today) / DAY); return k <= 0 ? "aujourd'hui" : k === 1 ? "demain" : k < 35 ? "dans " + k + " j" : "dans " + Math.round(k / 7) + " sem."; };
+function BenchStrip({ rows, doc, catalog, testers, on, onPick, benches }) {
   const today = dayStart(new Date());
   const startOf = r => dayStart(new Date(dIso(r.tests) + "T12:00:00")), endOf = r => dayStart(new Date((dIso(r.testsFin) || dIso(r.tests)) + "T12:00:00"));
   const items = [];
@@ -170,44 +189,40 @@ function BenchStrip({ rows, doc, catalog, testers, on, onPick }) {
     if (full || a > today) return;
     const lateD = b < today ? Math.round((today - b) / DAY) : 0;
     if (lateD > 30) return;
-    items.push({ r, plan, act, q, lateD, n: Math.round((today - a) / DAY) + 1, m: Math.round((b - a) / DAY) + 1 });
+    items.push({ r, plan, act, q, lateD, n: Math.round((today - a) / DAY) + 1, m: Math.round((b - a) / DAY) + 1, bench: benchOf(benches, r), end: dIso(r.testsFin) || dIso(r.tests) });
   });
   items.sort((x, y) => (y.lateD > 0) - (x.lateD > 0) || endOf(x.r) - endOf(y.r));
-  const next = rows.filter(r => startOf(r) > today).sort((x, y) => startOf(x) - startOf(y))[0];
+  const queue = nextByBench(rows.filter(r => startOf(r) > today).map(r => ({ r, pj: r.pj, a: dIso(r.tests), bench: benchOf(benches, r) })), 4);
+  const total = items.length;
   return (<section aria-label="Au banc maintenant" style={{ minWidth: 0 }}>
-    <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 6 }}>
+    <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 8 }}>
       <h2 style={{ margin: 0, fontSize: FZ.sm, fontWeight: 600, color: T.ink900 }}>Au banc maintenant</h2>
-      <Cap>{items.length ? items.length + " machine" + (items.length > 1 ? "s" : "") : "aucune machine aujourd'hui"}</Cap>
+      <Cap>{total ? total + " machine" + (total > 1 ? "s" : "") + " en test" : "aucune machine aujourd'hui"}</Cap>
     </div>
-    <div className="enogia-stagger" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%,240px),1fr))", gap: 10 }}>
-      {items.map(({ r, plan, act, q, lateD, n, m }) => {
-        const segs = segsOf(plan, catalog, act), cur = segs.find(s => s.v === "wip") || segs.find(s => s.v === "todo") || segs.find(s => s.v === "ko");
-        const names = plan.assign.map(x => testers.find(t => t.id === x.tid)).filter(Boolean).map(t => t.name.split(" ")[0]);
-        const pct = q.total ? Math.round(q.done / q.total * 100) : 0, meta = getPjMeta(r.pj, r), todo = q.total - q.done - q.wip;
-        const sum = [q.ok && q.ok + " réussi" + (q.ok > 1 ? "s" : ""), q.wip && q.wip + " en cours", q.ko && q.ko + " échec" + (q.ko > 1 ? "s" : ""), todo > 0 && todo + " à faire"].filter(Boolean).join(" · ");
-        return (<div key={r.pj} {...pressable(() => onPick(r.pj), { "aria-pressed": on === r.pj, "aria-label": r.pj + " au banc — " + q.done + " tests faits sur " + q.total + (lateD ? " — en retard de " + lateD + " jours" : "") })}
-          className="enogia-bench-card" style={{ background: on === r.pj ? T.teal100 : T.card, border: "1px solid " + T.line, borderTop: "4px solid " + (lateD ? T.red500 : stageSoft().tests.solid), borderRadius: "0 0 12px 12px", padding: "10px 12px", cursor: "pointer", minWidth: 0, display: "flex", flexDirection: "column", gap: 8 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
-            <PjPlate pj={r.pj} />
-            {r.gamme && <span style={{ fontFamily: T.fontLabel, fontSize: 12, fontWeight: 500, color: T.ink700, whiteSpace: "nowrap" }}>{r.gamme}</span>}
-            <span title={meta.nomProjet || ""} style={{ flex: 1, minWidth: 0, fontSize: FZ.xs, color: T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : ""}</span>
-            <span style={{ fontSize: FZ.xs, fontWeight: lateD ? 500 : 600, color: lateD ? T.red600 : T.ink500, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{lateD ? "en retard " + lateD + " j" : "jour " + n + " / " + m}</span>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,340px),1fr))", gap: 12 }}>
+      {BENCHES.map(b => { const cur = items.filter(x => x.bench === b), nx = queue[b] || [], late = cur.some(x => x.lateD);
+        const st = cur.length ? (late ? "occupé · en retard" : "occupé · fin des tests le " + fdm(cur.map(x => x.end).sort().pop())) : nx[0] ? "libre jusqu'au " + fdm(nx[0].a) : "libre";
+        return (<div key={b} style={{ background: T.surface, border: "1px solid " + T.line, borderRadius: 12, padding: 12, minWidth: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <i aria-hidden="true" style={{ width: 10, height: 10, borderRadius: 3, background: BENCH_C(b), flexShrink: 0 }} />
+            <h3 style={{ margin: 0, fontFamily: T.fontDisplay, fontSize: 20, fontWeight: 600, color: T.ink900 }}>Banc {b}</h3>
+            <span style={{ marginLeft: "auto", fontSize: 12, color: late ? T.red600 : T.ink500, fontWeight: late ? 600 : 500, textAlign: "right" }}>{st}</span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
-            <ProgBar pct={pct} />
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: FZ.md || 14, fontWeight: 600, color: T.ink900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{cur ? cur.name : q.total ? "Tous les tests sont faits" : "Aucun test retenu"}</div>
-              <div style={{ fontSize: FZ.xs, color: names.length ? T.ink500 : T.red600, marginTop: 2 }}>{cur ? ST_LABEL[cur.v].toLowerCase() : ""}{cur ? " · " : ""}{names.length ? names.join(", ") : "sans testeur"}</div>
-            </div>
-          </div>
-          <SegBar segs={segs} />
-          <div style={{ fontSize: FZ.xs, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{sum || "Aucun test retenu"}</div>
-        </div>);
-      })}
-      {next && <div {...pressable(() => onPick(next.pj), { "aria-label": "Prochaine machine au banc : " + next.pj })} style={{ border: "1px dashed " + T.line, borderRadius: 12, padding: "10px 12px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 4, cursor: "pointer", minHeight: 72 }}>
-        <Cap>Prochaine au banc</Cap>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}><PjPlate pj={next.pj} /><span style={{ fontSize: FZ.sm, color: T.ink700, fontVariantNumeric: "tabular-nums" }}>{fd(dIso(next.tests))}</span></div>
-      </div>}
+          {cur.map(x => <BenchCard key={x.r.pj} {...x} testers={testers} catalog={catalog} on={on} onPick={onPick} />)}
+          {!cur.length && <div style={{ border: "1.5px dashed " + T.line, borderRadius: 12, minHeight: 96, display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", padding: 12, fontSize: 13, color: T.ink500 }}>
+            {nx[0] ? <span>Libre jusqu'au {fdm(nx[0].a)} — prochaine : <b style={{ color: T.ink900, fontWeight: 600 }}>{nx[0].pj}</b></span> : "Libre, rien de prévu"}</div>}
+          {nx.length > 0 && <div>
+            <div style={{ fontSize: 12, fontWeight: 500, color: T.ink500, margin: "0 0 2px 2px" }}>À suivre sur le banc {b}</div>
+            <ol style={{ listStyle: "none", margin: 0, padding: 0 }}>
+              {nx.map((x, i) => { const meta = getPjMeta(x.pj, x.r), pd = presenceDates(x.r.clientPresence || null), vis = [pd.client && "client le " + fdm(dIso(pd.client)), pd.nobo && "NOBO le " + fdm(dIso(pd.nobo))].filter(Boolean).join(" · ");
+                return <li key={x.pj} style={{ borderTop: i ? "1px solid " + T.line : "none" }}>
+                  <button type="button" onClick={() => onPick(x.pj)} aria-label={"Ouvrir la fiche de tests de " + x.pj + ", tests le " + fd(x.a)} style={{ all: "unset", boxSizing: "border-box", width: "100%", cursor: "pointer", display: "grid", gridTemplateColumns: "auto minmax(0,1fr) auto", gap: 10, alignItems: "center", padding: "7px 8px", minHeight: 44, borderRadius: 8, "--e-hov-bg": T.card }} className="e-hov">
+                    <PjPlate pj={x.pj} />
+                    <span style={{ minWidth: 0, fontSize: 13, color: T.ink900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{[x.r.gamme, meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : ""].filter(Boolean).join(" · ")}{vis ? <span style={{ color: T.ink500 }}> · {vis}</span> : null}</span>
+                    <span style={{ textAlign: "right", lineHeight: 1.25, fontVariantNumeric: "tabular-nums" }}><b style={{ display: "block", fontSize: 13, fontWeight: 600, color: T.ink900 }}>{fdm(x.a)}</b><span style={{ fontSize: 12, color: T.ink500 }}>{inDays(x.a, today)}</span></span>
+                  </button></li>; })}
+            </ol></div>}
+        </div>); })}
     </div>
   </section>);
 }
@@ -267,8 +282,6 @@ function GridLegend() {
     <span style={{ display: "inline-flex", gap: 5, alignItems: "center" }}><i aria-hidden="true" style={{ width: 8, height: 8, borderRadius: "50%", background: PRESENCE_META.client.color }} />client<i aria-hidden="true" style={{ width: 8, height: 8, borderRadius: "50%", background: PRESENCE_META.nobo.color, marginLeft: 6 }} />NOBO</span>
   </span>);
 }
-const gridIdx = days => ({ from: d => { const i = days.findIndex(x => x >= d); return i; }, to: d => { let i = -1; days.forEach((x, k) => { if (x <= d) i = k; }); return i; } });
-const pctOf = (i, n) => (i / n * 100) + "%";
 function GridHead({ days, todayIso, labelStyle, label }) {
   const S = stageSoft(), m0 = mondayOf(todayIso);
   const wk = d => { const k = Math.round((new Date(d + "T12:00:00") - new Date(m0 + "T12:00:00")) / (7 * DAY)); return "S" + isoWeek(new Date(d + "T12:00:00")) + (k === 0 ? " · cette semaine" : k === 1 ? " · semaine prochaine" : ""); };
@@ -293,96 +306,120 @@ function GridNav({ off, setOff, step = 1 }) {
     <button type="button" onClick={() => setOff(o => o + step)} style={{ ...btn(true, "ghost"), minHeight: 30 }} aria-label="Une semaine plus tard">▶</button>
   </span>);
 }
-// v210 (demandé : « avoir en ligne tous les PJ et une bonne séparation entre le PJ, la gamme, le testeur, NOBO, client ») :
-// une ligne par PJ en cours (non expédié) ayant une période de tests, même hors des 3 semaines affichées (une flèche dit
-// alors quand), + en option ceux sans période ; à gauche, de vraies colonnes séparées : PJ · Gamme · Testeur · Client ·
-// NOBO · Tests, avec leur en-tête.
-// v338 (demandé : « pouvoir défiler dans le calendrier des tests comme dans les autres calendriers » + D10 « mieux séparer les slots 1 et 2
-// du banc ») : bande continue de 4 semaines avant à 16 semaines après, défilement horizontal (‹ › = un écran, Aujourd'hui, clic droit maintenu),
-// colonnes de 38 px, colonne des machines collée ; machines regroupées par banc (bandeau « Banc 1 » / « Banc 2 », d'après le planificateur).
-const BG_COL = 38, BG_WEEKS_BEFORE = 4, BG_DAYS = 100;
+// v366 (maquette v366-bancs-turbines.html, piste A validée : « Go, piste A ») : une ligne par banc — les machines s'y suivent comme des
+// créneaux (sous-lignes si deux périodes se chevauchent, contour orange = testeur en conflit), trait « aujourd'hui », zoom 2 sem. / 6 sem. /
+// 3 mois (enogia_bg_zoom), bande continue (4 semaines avant, 100 jours ouvrés), ‹ › = un écran. Dessous : PJ sans période, puis
+// « Tests validés » repliable (historique par mois : tous les tests faits ou validés à la main, expédiées comprises). Remplace la grille V338.
+const BG_WEEKS_BEFORE = 4, BG_DAYS = 100, BG_ZOOM = { "2w": 56, "6w": 30, "3m": 16 }, BG_LW = "min(180px, 34vw)";
 function BenchGrid({ rows, allRows, doc, catalog, testers, conflicts, on, onPick, benches }) {
-  const [noPer, setNoPer] = useState(false); const todayIso = toLocalISO(new Date());
-  const days = useMemo(() => workDaysFrom(addDaysIso(mondayOf(todayIso), -7 * BG_WEEKS_BEFORE), BG_DAYS), [todayIso]), end = days[days.length - 1], ix = gridIdx(days);
-  const scRef = useRef(null), [vis, setVis] = useState([0, 0]);
-  const onScroll = () => { const el = scRef.current; if (!el) return; const lw = (el.querySelector(".enogia-bg-row > button, .enogia-bg-lab") || {}).offsetWidth || 0; const a = Math.max(0, Math.floor(el.scrollLeft / BG_COL)), b = Math.min(days.length - 1, Math.floor((el.scrollLeft + el.clientWidth - lw) / BG_COL)); setVis(v => (v[0] === a && v[1] === b ? v : [a, b])); };
-  const goToday = () => { const el = scRef.current; if (!el) return; const i = Math.max(0, days.findIndex(d => d >= todayIso)); el.scrollLeft = Math.max(0, (i - 5) * BG_COL); onScroll(); };
-  const page = dir => { const el = scRef.current; if (el) el.scrollBy({ left: dir * Math.round(el.clientWidth * 0.7), behavior: smooth() }); };
-  useEffect(() => { goToday(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  const bench = r => { const b = benches && benches[r.pj]; return b === 2 || r.banc === 2 || r.banc === "2" ? 2 : b === 1 || r.banc ? 1 : 1; };
-  const ORDER = { late: 0, wip: 1, next: 2, done: 3, none: 4 };
-  const list = [];
+  const todayIso = toLocalISO(new Date());
+  const [zoom, setZoomS] = useState(() => { try { const z = localStorage.getItem("enogia_bg_zoom"); return BG_ZOOM[z] ? z : "6w"; } catch (e) { return "6w"; } });
+  const setZoom = z => { setZoomS(z); try { localStorage.setItem("enogia_bg_zoom", z); } catch (e) { /* stockage indisponible */ } };
+  const COL = BG_ZOOM[zoom];
+  const days = useMemo(() => workDaysFrom(addDaysIso(mondayOf(todayIso), -7 * BG_WEEKS_BEFORE), BG_DAYS), [todayIso]), end = days[days.length - 1];
+  const idx = d => { const i = days.findIndex(x => x >= d); return i < 0 ? days.length : i; };
+  const scRef = useRef(null), [vis, setVis] = useState([0, 0]), [months, setMonths] = useState(3);
+  const labW = () => { const el = scRef.current && scRef.current.querySelector(".e-bga-lab"); return el ? el.offsetWidth : 0; };
+  const onScroll = () => { const el = scRef.current; if (!el) return; const a = Math.max(0, Math.floor(el.scrollLeft / COL)), b = Math.min(days.length - 1, Math.floor((el.scrollLeft + el.clientWidth - labW()) / COL)); setVis(v => (v[0] === a && v[1] === b ? v : [a, b])); };
+  const goToday = () => { const el = scRef.current; if (!el) return; const i = idx(todayIso); el.scrollLeft = Math.max(0, (i - Math.max(2, Math.round((el.clientWidth - labW()) / COL / 6))) * COL); onScroll(); };
+  const page = dir => { const el = scRef.current; if (el) el.scrollBy({ left: dir * Math.round((el.clientWidth - labW()) * 0.8), behavior: smooth() }); };
+  useEffect(() => { goToday(); }, [zoom]); // eslint-disable-line react-hooks/exhaustive-deps
+  // machines par banc, avec leur créneau (fin = aujourd'hui pour une machine en retard)
+  const lanes = {}; BENCHES.forEach(b => { lanes[b] = []; });
+  const noPer = [];
   rows.forEach(r => {
-    const ms = machineState(r, doc, catalog, todayIso); if (!ms) return;
-    const a = ms.a, b = ms.st === "late" ? todayIso : ms.b;
-    let c0 = -1, c1 = -1;
-    if (!(b < days[0] || a > end)) { c0 = Math.max(0, ix.from(a)); c1 = ix.to(b); if (c1 < c0) { c0 = -1; c1 = -1; } }
-    const plan = ms.plan, names = plan.assign.map(x => testers.find(t => t.id === x.tid)).filter(Boolean).map(t => t.name.split(" ")[0]);
-    const pd = presenceDates(r.clientPresence || null), pres = ["client", "nobo"].map(k => pd[k] && { k, d: dIso(pd[k]), i: days.indexOf(dIso(pd[k])) }).filter(x => x && x.i >= 0);
-    list.push({ r, ms, c0, c1, names, pd, pres, out: c0 < 0 ? (a > end ? "after" : "before") : null, conf: conflicts.some(c => c.a.pj === r.pj || c.b.pj === r.pj) });
+    const ms = machineState(r, doc, catalog, todayIso); if (!ms) { noPer.push(r); return; }
+    const b = benchOf(benches, r), z = ms.st === "late" ? todayIso : ms.b;
+    if (z < days[0] || ms.a > end) return;
+    const names = ms.plan.assign.map(x => testers.find(t => t.id === x.tid)).filter(Boolean).map(t => t.name.split(" ")[0]);
+    (lanes[b] = lanes[b] || []).push({ r, ms, a: ms.a, b: z, names, conf: conflicts.some(c => c.a.pj === r.pj || c.b.pj === r.pj), pd: presenceDates(r.clientPresence || null) });
   });
-  const without = (allRows || []).filter(r => r && r.pj && r.etat !== "SHIPPED" && r.etat !== "SLOT_LIBRE" && !r.tests);
-  if (noPer) without.forEach(r => { const plan = planOf(doc, r.pj); list.push({ r, ms: { st: "none", plan, act: activeSections(presenceKind(r.clientPresence || null)), q: progressOf(plan, catalog, activeSections(presenceKind(r.clientPresence || null))), a: "9999" }, c0: -1, c1: -1, names: plan.assign.map(x => testers.find(t => t.id === x.tid)).filter(Boolean).map(t => t.name.split(" ")[0]), pd: presenceDates(r.clientPresence || null), pres: [], out: "none", conf: false }); });
-  list.sort((x, y) => bench(x.r) - bench(y.r) || ORDER[x.ms.st] - ORDER[y.ms.st] || (x.ms.a < y.ms.a ? -1 : x.ms.a > y.ms.a ? 1 : 0) || (x.r.pj < y.r.pj ? -1 : 1));
-  const nBench = b => list.filter(x => bench(x.r) === b).length;
-  const inWin = list.filter(x => x.c0 >= 0).length;
-  const lab = { width: "var(--bg-lw)", flexShrink: 0, padding: 0, borderRight: "2px solid " + T.line, boxSizing: "border-box", position: "sticky", left: 0, zIndex: 2, background: T.card };
-  const COLS = { display: "grid", gridTemplateColumns: "var(--bg-cols)", alignItems: "stretch", width: "100%", height: "100%" };
-  const hc = (txt, cls, right) => <span className={cls} style={{ padding: "0 8px", borderLeft: "1px solid " + T.line, display: "flex", alignItems: "flex-end", justifyContent: right ? "flex-end" : "flex-start", whiteSpace: "nowrap", overflow: "hidden" }}>{txt}</span>;
-  const head = (<div style={{ ...COLS, height: "auto", alignSelf: "stretch" }}>
-    <span style={{ padding: "0 8px", display: "flex", alignItems: "flex-end" }}>PJ</span>{hc("Gamme", "c-opt")}{hc("Testeur")}{hc("Client", "c-opt")}{hc("NOBO", "c-opt")}{hc("Tests", "", true)}
-  </div>);
-  const cellS = { padding: "0 8px", display: "flex", alignItems: "center", gap: 5, minWidth: 0, borderLeft: "1px solid " + T.line, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontSize: 13 };
-  const pres = (k, d) => d ? <><i aria-hidden="true" style={{ width: 8, height: 8, borderRadius: "50%", background: PRESENCE_META[k].color, flexShrink: 0 }} /><span style={{ fontVariantNumeric: "tabular-nums", color: T.ink900 }}>{fdm(dIso(d))}</span></> : d === "" ? <span style={{ color: T.ink500 }}>à fixer</span> : <span style={{ color: T.ink300 }}>—</span>;
-  return (<section aria-label="Planning des bancs" className="enogia-bg" style={{ ...CARD, padding: 0, overflow: "hidden" }}>
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "10px 14px", flexWrap: "wrap", borderBottom: "1px solid " + T.line }}>
-      <div><h2 style={{ margin: 0, fontSize: FZ.md, fontWeight: 600, color: T.ink900 }}>Planning des bancs</h2><div style={{ fontSize: FZ.xs, color: T.ink500, marginTop: 2 }}>{days[vis[0]] ? "Du " + fd(days[vis[0]]) + " au " + fd(days[vis[1]]) : ""} · {list.length} PJ ({inWin} entre le {fd(days[0])} et le {fd(end)})</div></div>
-      <span style={{ display: "inline-flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-        <GridLegend />
-        {without.length > 0 && <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: FZ.xs, color: T.ink700, fontWeight: 500, minHeight: 28, cursor: "pointer" }}><input type="checkbox" checked={noPer} onChange={e => setNoPer(e.target.checked)} />PJ sans période ({without.length})</label>}
-        <span className="e-tb" style={{ display: "inline-flex", gap: 6 }}>
-          <button type="button" onClick={() => page(-1)} style={{ ...btn(true, "ghost"), minHeight: 30 }} aria-label="Période précédente">‹</button>
-          <button type="button" onClick={goToday} style={{ ...btn(true, "ghost"), minHeight: 30 }}>Aujourd'hui</button>
-          <button type="button" onClick={() => page(1)} style={{ ...btn(true, "ghost"), minHeight: 30 }} aria-label="Période suivante">›</button></span>
-      </span>
+  (allRows || []).forEach(r => { if (r && r.pj && !r.tests && r.etat !== "SHIPPED" && r.etat !== "SLOT_LIBRE" && !noPer.includes(r)) noPer.push(r); });
+  // historique : tests validés (tous faits ou validés à la main), expédiées comprises
+  const done = (allRows || []).map(r => { const ms = r && r.pj && machineState(r, doc, catalog, todayIso); return ms && ms.full ? { r, ms } : null; }).filter(Boolean);
+  const hist = byMonth(done, x => x.ms.b);
+  const ROW = zoom === "3m" ? 34 : 44, wTot = days.length * COL;
+  const ti = days.indexOf(todayIso), tx = ti >= 0 ? ti * COL + COL / 2 : idx(todayIso) * COL;
+  const lab = { width: BG_LW, minWidth: BG_LW, flexShrink: 0, position: "sticky", left: 0, zIndex: 3, background: T.card, boxSizing: "border-box", padding: "8px 14px", borderRight: "1px solid " + T.line };
+  const weekStarts = days.map((d, i) => (i === 0 || (new Date(d + "T12:00:00").getDay() === 1) ? i : -1)).filter(i => i >= 0);
+  const m0 = mondayOf(todayIso);
+  const wkLab = d => { const k = Math.round((new Date(mondayOf(d) + "T12:00:00") - new Date(m0 + "T12:00:00")) / (7 * DAY)); return "S" + isoWeek(new Date(d + "T12:00:00")) + (COL >= 30 && k === 0 ? " · cette semaine" : ""); };
+
+  return (<section aria-label="Planning des bancs" className="enogia-bga" style={{ background: T.card, borderRadius: 12, boxShadow: T.shadowSm, border: "1px solid " + T.line, overflow: "hidden", minWidth: 0 }}>
+    <div className="e-tb" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "12px 14px" }}>
+      <h2 style={{ margin: 0, fontFamily: T.fontDisplay, fontSize: 20, fontWeight: 600, color: T.ink900 }}>Planning des bancs</h2>
+      <span style={{ fontSize: 13, color: T.ink500 }}>{days[vis[0]] ? "du " + fd(days[vis[0]]) + " au " + fd(days[vis[1]]) : ""}</span>
+      <span style={{ flex: 1 }} />
+      <Segmented label="Zoom du planning" value={zoom} onChange={setZoom} options={[["2w", "2 sem."], ["6w", "6 sem."], ["3m", "3 mois"]]} />
+      <span style={{ display: "inline-flex", gap: 6 }}>
+        <button type="button" onClick={() => page(-1)} style={{ ...btn(true, "ghost"), minHeight: 32, minWidth: 32 }} aria-label="Période précédente">‹</button>
+        <button type="button" onClick={goToday} style={{ ...btn(true, "ghost"), minHeight: 32 }}>Aujourd'hui</button>
+        <button type="button" onClick={() => page(1)} style={{ ...btn(true, "ghost"), minHeight: 32, minWidth: 32 }} aria-label="Période suivante">›</button></span>
     </div>
-    <div ref={scRef} onScroll={onScroll} style={{ overflow: "auto", maxHeight: "calc(100dvh - 220px)" }}>
-      <div className="enogia-bg-inner" style={{ width: "calc(var(--bg-lw) + " + days.length * BG_COL + "px)", minWidth: 0 }}>
-        <GridHead days={days} todayIso={todayIso} labelStyle={{ ...lab, background: T.surface }} label={head} />
-        {list.length === 0 && <div style={{ padding: "16px 14px", fontSize: FZ.sm, color: T.ink500 }}>Aucun PJ en cours avec une période de tests</div>}
-        {list.map(({ r, ms, c0, c1, names, pd, pres: dots, out, conf }, ri) => {
-          const bk = bench(r), first = ri === 0 || bench(list[ri - 1].r) !== bk;
-          const tn = toneOfSt(ms.st === "none" ? "next" : ms.st), sel = on === r.pj, segs = segsOf(ms.plan, catalog, ms.act);
-          const info = ms.st === "late" ? "en retard de " + ms.lateD + " j" : ms.st === "wip" ? "jour " + ms.n + " / " + ms.m : ms.st === "done" ? (isForced(ms.plan) ? "✓ validé" : "✓ terminé") : ms.st === "none" ? "période à définir" : "prévu";
-          const aria = r.pj + (r.gamme ? ", " + r.gamme : "") + (ms.st === "none" ? ", période de tests à définir" : ", tests du " + fd(ms.a) + " au " + fd(ms.b)) + ", " + info + ", " + ms.q.done + " tests faits sur " + ms.q.total + (names.length ? ", " + names.join(" et ") : ", sans testeur");
-          return (<React.Fragment key={r.pj}>{first && <div className="enogia-bg-bench" style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 34, background: T.surfaceAlt, borderTop: ri ? "6px solid " + T.card : "none", borderBottom: "2px solid " + (bk === 2 ? T.info600 : T.ink900) }}>
-            <span style={{ position: "sticky", left: 0, padding: "0 14px", display: "inline-flex", gap: 8, alignItems: "baseline" }}><b style={{ fontFamily: T.fontDisplay, fontSize: 16, fontWeight: 600, color: T.ink900 }}>Banc {bk}</b><span style={{ fontSize: 12, color: T.ink500 }}>{nBench(bk)} machine{nBench(bk) > 1 ? "s" : ""}</span></span></div>}
-          <div className="enogia-bg-row" style={{ display: "flex", minHeight: 46, borderBottom: "1px solid " + T.line, background: sel ? T.teal100 : ri % 2 ? "color-mix(in srgb, " + T.surface + " 70%, transparent)" : "transparent" }}>{/* v337 (D10) : lignes alternées, créneaux en plaques détachées */}
-            <button type="button" onClick={() => onPick(r.pj)} aria-label={"Ouvrir la fiche de tests : " + aria} style={{ ...lab, border: "none", borderRight: "2px solid " + T.line, background: sel ? T.teal100 : T.card, color: T.ink900, cursor: "pointer", textAlign: "left", fontFamily: T.font }}>
-              <span style={COLS}>
-                <span style={{ ...cellS, borderLeft: "none" }}><PjPlate pj={r.pj} /></span>
-                <span className="c-opt" style={{ ...cellS, fontFamily: T.fontLabel, fontWeight: 600, color: T.ink700 }}>{r.gamme || "—"}</span>
-                <span style={{ ...cellS, color: names.length ? T.ink900 : T.red600, fontWeight: names.length ? 500 : 600 }} title={names.join(", ")}>{names.length ? names.join(", ") : "sans testeur"}</span>
-                <span className="c-opt" style={cellS}>{pres("client", pd.client)}</span>
-                <span className="c-opt" style={cellS}>{pres("nobo", pd.nobo)}</span>
-                <span style={{ ...cellS, justifyContent: "flex-end", gap: 6 }}><SegBar still segs={segs} h={7} gap={1} width={Math.max(18, Math.min(40, segs.length * 4))} /><span style={{ fontWeight: 600, color: T.ink700, fontVariantNumeric: "tabular-nums" }}>{ms.q.done}/{ms.q.total}{segs.some(x => x.v === "ko") ? <span style={{ color: T.red600 }}>{" · " + segs.filter(x => x.v === "ko").length + " échec" + (segs.filter(x => x.v === "ko").length > 1 ? "s" : "")}</span> : null}</span></span>
-              </span>
-            </button>
-            <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
-              <TrackBg days={days} todayIso={todayIso} />
-              {c0 >= 0 && <button type="button" className="enogia-bg-bar" onClick={() => onPick(r.pj)} aria-label={aria} title={r.pj + " · " + fd(ms.a) + " → " + fd(ms.b) + " · " + info + (conf ? " · testeur en conflit" : "")}
-                style={{ position: "absolute", left: "calc(" + pctOf(c0, days.length) + " + 3px)", width: "calc(" + pctOf(c1 - c0 + 1, days.length) + " - 6px)", top: 8, bottom: 8, border: tn.bd, boxShadow: conf ? "0 0 0 2px " + T.amber600 : sel ? "0 0 0 2px " + T.ink900 : "0 0 0 2px " + T.card + ", " + T.shadowSm, borderRadius: 8, background: tn.bg, backgroundImage: ms.st === "late" ? HATCH : undefined, color: tn.ink, cursor: "pointer", padding: "0 6px", fontSize: 12, fontWeight: 500, fontFamily: T.font, textAlign: "left", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", boxSizing: "border-box" }}>
-                <span className="bg-bar-txt">{info}</span>
-              </button>}
-              {out && <span style={{ position: "absolute", top: 0, bottom: 0, display: "flex", alignItems: "center", fontSize: 12, color: ms.st === "late" ? T.red600 : T.ink500, fontWeight: 600, whiteSpace: "nowrap", ...(out === "after" ? { right: 10 } : { left: 10 }) }}>
-                {out === "after" ? "tests le " + fd(ms.a) + " →" : out === "before" ? "← " + info + " (" + fd(ms.a) + " → " + fd(ms.b) + ")" : "période de tests à définir"}
-              </span>}
-              {dots.map(x => <span key={x.k} title={(x.k === "client" ? "Client" : "NOBO") + " présent le " + fd(x.d)} aria-label={(x.k === "client" ? "Client" : "NOBO") + " présent le " + fd(x.d)} role="img" style={{ position: "absolute", left: "calc(" + pctOf(x.i + 1, days.length) + " - 12px)", top: 3, width: 8, height: 8, borderRadius: "50%", background: PRESENCE_META[x.k].color, boxShadow: "0 0 0 2px " + T.card, zIndex: 2 }} />)}
+    <div ref={scRef} onScroll={onScroll} style={{ overflowX: "auto", overflowY: "hidden", borderTop: "1px solid " + T.line }}>
+      <div style={{ width: "calc(" + BG_LW + " + " + wTot + "px)" }}>
+        {/* en-tête : semaines puis jours (aujourd'hui en pastille) */}
+        <div style={{ display: "flex", borderBottom: "1px solid " + T.line, background: T.card }}>
+          <div className="e-bga-lab" style={{ ...lab, display: "flex", alignItems: "flex-end", fontSize: 12, color: T.ink500, padding: "6px 14px" }}>Banc</div>
+          <div style={{ position: "relative", width: wTot, height: 46 }}>
+            {weekStarts.map(i => <span key={"w" + i} style={{ position: "absolute", left: i * COL, top: 0, height: 46, paddingLeft: 6, borderLeft: i ? "1px solid " + T.line : "none", fontSize: 12, fontWeight: 600, color: T.ink900, whiteSpace: "nowrap", lineHeight: "22px" }}>{wkLab(days[i])}</span>)}
+            {days.map((d, i) => { const td = d === todayIso, off = !HOLI.isWork(d), show = COL >= 24 || td || i % 5 === 0;
+              return show ? <span key={d} title={off ? "Jour férié" : undefined} style={{ position: "absolute", left: i * COL + (COL - 22) / 2, top: 22, width: 22, height: 20, lineHeight: "20px", textAlign: "center", fontSize: 12, fontWeight: td ? 600 : 500, borderRadius: 999, background: td ? T.red500 : "transparent", color: td ? T.onFill : off ? T.ink300 : T.ink500, fontVariantNumeric: "tabular-nums" }}>{Number(d.slice(8, 10))}</span> : null; })}
+          </div>
+        </div>
+        {BENCHES.map(bk => { const L = lanes[bk] || [], nRow = packRows(L), late = L.some(x => x.ms.st === "late"), cur = L.filter(x => x.ms.st === "wip" || x.ms.st === "late"), nx = L.filter(x => x.ms.st === "next").sort((p, q) => (p.a < q.a ? -1 : 1))[0];
+          const st = late ? "en retard" : cur.length ? "fin le " + fdm(cur.map(x => x.ms.b).sort().pop()) : nx ? "libre jusqu'au " + fdm(nx.a) : "libre";
+          return (<div key={bk} style={{ display: "flex", borderBottom: "1px solid " + T.line }}>
+            <div className="e-bga-lab" style={{ ...lab, display: "flex", flexDirection: "column", justifyContent: "center", gap: 2 }}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 600, color: T.ink900 }}><i aria-hidden="true" style={{ width: 10, height: 10, borderRadius: 3, background: BENCH_C(bk) }} />Banc {bk}</span>
+              <span style={{ fontSize: 12, color: late ? T.red600 : T.ink500, paddingLeft: 18 }}>{st}</span>
             </div>
-          </div></React.Fragment>);
-        })}
+            <div style={{ position: "relative", width: wTot, height: nRow * ROW + 16 }}>
+              <div aria-hidden="true" style={{ position: "absolute", inset: 0 }}>
+                {weekStarts.map(i => i ? <span key={i} style={{ position: "absolute", left: i * COL, top: 0, bottom: 0, borderLeft: "1px solid " + T.line, opacity: 0.6 }} /> : null)}
+                {days.map((d, i) => !HOLI.isWork(d) ? <span key={d} style={{ position: "absolute", left: i * COL, width: COL, top: 0, bottom: 0, background: T.surfaceAlt }} /> : null)}
+                <span style={{ position: "absolute", left: tx - 1, top: 0, bottom: 0, width: 2, borderRadius: 2, background: T.red500, zIndex: 1 }} />
+              </div>
+              {L.map(x => { const { r, ms } = x, tn = toneOfSt(ms.st), a0 = Math.max(0, idx(x.a)), z1 = Math.min(days.length - 1, idx(x.b) - (days.includes(x.b) ? 0 : 1)), w = Math.max(1, z1 - a0 + 1) * COL - 4, sel = on === r.pj;
+                const pct = ms.q.total ? Math.round(ms.q.done / ms.q.total * 100) : 0;
+                const info = ms.st === "late" ? "en retard de " + ms.lateD + " j" : ms.st === "wip" ? "jour " + ms.n + " / " + ms.m : ms.st === "done" ? (isForced(ms.plan) ? "✓ validé" : "✓ terminé") : "prévu le " + fdm(ms.a);
+                const aria = r.pj + (r.gamme ? ", " + r.gamme : "") + ", banc " + bk + ", tests du " + fd(ms.a) + " au " + fd(ms.b) + ", " + info + ", " + ms.q.done + " tests faits sur " + ms.q.total + (x.names.length ? ", " + x.names.join(" et ") : ", sans testeur") + (x.conf ? ", testeur en conflit" : "");
+                const dots = ["client", "nobo"].map(k => { const d = dIso(x.pd[k]); const i = d ? days.indexOf(d) : -1; return i >= 0 ? <span key={k} role="img" aria-label={(k === "client" ? "Client" : "NOBO") + " présent le " + fd(d)} title={(k === "client" ? "Client" : "NOBO") + " présent le " + fd(d)} style={{ position: "absolute", left: i * COL + COL / 2 - 4, top: 8 + x.row * ROW - 4, width: 8, height: 8, borderRadius: "50%", background: PRESENCE_META[k].color, boxShadow: "0 0 0 2px " + T.card, zIndex: 3 }} /> : null; });
+                return (<React.Fragment key={r.pj}>
+                  <button type="button" className="enogia-bg-bar" onClick={() => onPick(r.pj)} aria-label={aria} title={r.pj + " · " + fd(ms.a) + " → " + fd(ms.b) + " · " + info + (x.conf ? " · testeur en conflit" : "")}
+                    style={{ position: "absolute", left: a0 * COL + 2, width: w, top: 8 + x.row * ROW, height: ROW - 8, zIndex: 2, border: "none", borderRadius: 8, background: tn.bg, backgroundImage: ms.st === "late" ? HATCH : undefined, color: tn.ink,
+                      boxShadow: (tn.bd !== "none" ? "inset 0 0 0 1.5px " + T.ink300 : "") + (x.conf ? (tn.bd !== "none" ? ", " : "") + "0 0 0 2px " + T.amber600 : sel ? (tn.bd !== "none" ? ", " : "") + "0 0 0 2px " + T.ink900 : ""), cursor: "pointer", padding: "0 8px", textAlign: "left", fontFamily: T.font, overflow: "clip", whiteSpace: "nowrap", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "flex-start", lineHeight: 1.2 }}>
+                    <span style={{ position: "sticky", left: "calc(" + BG_LW + " + 8px)", display: "flex", flexDirection: "column", minWidth: 0, maxWidth: "100%" }}>
+                    <b style={{ fontFamily: T.fontDisplay, fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis" }}>{r.pj}{r.gamme && w > 120 ? " · " + r.gamme : ""}</b>
+                    {ROW >= 44 && w > 70 && <span style={{ fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", opacity: 0.9 }}>{info}{x.names.length ? " · " + x.names.join(", ") : ms.st !== "done" ? " · sans testeur" : ""}</span>}</span>
+                    {ms.st !== "next" && ms.st !== "done" && <span aria-hidden="true" style={{ position: "absolute", left: 0, bottom: 0, height: 3, width: pct + "%", background: "rgba(0,0,0,.28)" }} />}
+                  </button>{dots}</React.Fragment>); })}
+              {!L.length && <span style={{ position: "absolute", left: 12, top: 0, bottom: 0, display: "flex", alignItems: "center", fontSize: 13, color: T.ink500 }}>Aucune machine sur ce banc dans la période</span>}
+            </div>
+          </div>); })}
       </div>
     </div>
+    <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center", padding: "10px 14px", borderTop: "1px solid " + T.line }}>
+      <GridLegend />
+      {noPer.length > 0 && <span style={{ display: "inline-flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginLeft: "auto", fontSize: 12, color: T.ink500 }}>Sans période de tests :
+        {noPer.slice(0, 8).map(r => <button key={r.pj} type="button" onClick={() => onPick(r.pj)} aria-label={"Ouvrir la fiche de tests de " + r.pj} style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer" }}><PjPlate pj={r.pj} /></button>)}
+        {noPer.length > 8 ? "et " + (noPer.length - 8) + " autres" : null}</span>}
+    </div>
+    <details className="e-bga-hist" style={{ borderTop: "1px solid " + T.line }}>
+      <summary style={{ cursor: "pointer", padding: "12px 14px", display: "flex", alignItems: "center", gap: 8, fontWeight: 600, fontSize: 14, color: T.ink900, minHeight: 44, boxSizing: "border-box" }}>
+        <NavIcon name="chevronDown" size={14} />Tests validés <span style={{ fontWeight: 500, fontSize: 13, color: T.ink500 }}>· {done.length} machine{done.length > 1 ? "s" : ""}, historique</span></summary>
+      {done.length === 0 && <div style={{ padding: "0 14px 14px", fontSize: 13, color: T.ink500 }}>Les machines dont tous les tests sont faits, ou validées à la main, s'ajoutent ici.</div>}
+      {hist.slice(0, months).map(g => <div key={g.month}>
+        <div style={{ padding: "8px 14px 4px", fontSize: 12, fontWeight: 500, color: T.ink500 }}>{g.label}</div>
+        {g.items.map(({ r, ms }) => { const names = ms.plan.assign.map(x => testers.find(t => t.id === x.tid)).filter(Boolean).map(t => t.name.split(" ")[0]);
+          return <button key={r.pj} type="button" onClick={() => onPick(r.pj)} aria-label={"Ouvrir la fiche de tests de " + r.pj + ", validée le " + fd(ms.b)} className="e-hov" style={{ "--e-hov-bg": T.surface, width: "100%", border: "none", borderTop: "1px solid " + T.line, background: "transparent", cursor: "pointer", fontFamily: T.font, textAlign: "left", display: "grid", gridTemplateColumns: "auto minmax(0,1fr) auto", gap: 12, alignItems: "center", padding: "8px 14px", minHeight: 44, color: T.ink900 }}>
+            <PjPlate pj={r.pj} />
+            <span style={{ minWidth: 0, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{[r.gamme, names.join(", "), ms.q.total && ms.q.done ? ms.q.ok + " / " + ms.q.total + " réussis" + (ms.q.ko ? " · " + ms.q.ko + " échec" + (ms.q.ko > 1 ? "s" : "") : "") : "", isForced(ms.plan) ? (ms.plan.forced.auto ? "machine expédiée" : "validé à la main") : ""].filter(Boolean).join(" · ")}</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: T.emerald600, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>✓ validé le {fdm(ms.b)}</span>
+          </button>; })}
+      </div>)}
+      {hist.length > months && <div style={{ padding: "10px 14px" }}><button type="button" onClick={() => setMonths(n => n + 3)} style={{ ...btn(true, "ghost"), minHeight: 32 }}>Afficher les mois précédents</button></div>}
+    </details>
   </section>);
 }
 

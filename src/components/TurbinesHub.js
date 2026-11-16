@@ -149,7 +149,7 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
   const { needs, free } = useMemo(() => buildNeeds(doc, rows, r => getPjMeta(r.pj, r)), [doc, rows, tick]); // eslint-disable-line react-hooks/exhaustive-deps
   const dnd = usePointerDnD();
   const docRef = useRef(doc); docRef.current = doc;
-  const [gam, setGam] = useState("100"), [msg, setMsg] = useState(null), [sav, setSav] = useState(null), [busy, setBusy] = useState(false), [onlyOpen, setOnlyOpen0] = useState(() => { try { return localStorage.getItem("enogia_nd_open") === "1"; } catch (e) { return false; } }), [pop, setPop] = useState(null), [picked, setPicked] = useState(null), [landed, setLanded] = useState(null), [drawer, setDrawer] = useState(false), [closedDlg, setClosedDlg] = useState(false);
+  const [gam, setGam] = useState("100"), [msg, setMsg] = useState(null), [sav, setSav] = useState(null), [busy, setBusy] = useState(false), [pop, setPop] = useState(null), [picked, setPicked] = useState(null), [landed, setLanded] = useState(null), [drawer, setDrawer] = useState(false), [closedDlg, setClosedDlg] = useState(false);
   // v334 (demandé : « pouvoir fermer des PJ car les turbines sont déjà installées et donc plus dans la liste ») : clore / rouvrir un besoin
   const closeNeed = async n => {
     if (!(await askConfirm({ title: "Clore le besoin " + n.label + " ?", message: "Il sort de la liste des besoins (et du remplissage automatique). Les turbines et pièces déjà attribuées ne bougent pas. On le rouvre depuis « Besoins clos ».", confirmLabel: "Clore le besoin" }))) return;
@@ -205,9 +205,13 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
   const setKind = k => { setKind0(k); try { localStorage.setItem("enogia_nd_kind", k); } catch (e) { /* stockage indisponible */ } };
   const nOrc = needs.filter(n => n.kind === "pj").length, nSav = needs.length - nOrc;
   const allDone = n => n.slots.filter(x => !x.extra).every(x => x.installee);
-  // v361 (demandé : « voir les tuiles même si elles sont complètes ») : tous les besoins par défaut ; « À compléter » reste un filtre, mémorisé sur ce poste
-  const setOnlyOpen = v => { setOnlyOpen0(v); try { localStorage.setItem("enogia_nd_open", v ? "1" : "0"); } catch (e) { /* stockage indisponible */ } };
-  const shown = needs.filter(n => (kind === "all" || n.kind === kind) && (!onlyOpen || !allDone(n) || !n.complete || n.late || n.issues.some(i => i.bad && !/à attribuer$/.test(i.t))));
+  // v366 (maquette v366-bancs-turbines.html validée) : un besoin validé (turbines installées, besoin complet, sans retard ni problème) quitte le fil
+  // et passe dans « Besoins validés » (repliable, par mois d'installation) ; la case « À compléter » (V361) est retirée
+  const isValid = n => allDone(n) && n.complete && !n.late && !n.issues.some(i => i.bad && !/à attribuer$/.test(i.t));
+  const instOf = n => n.slots.filter(x => !x.extra).map(x => String(x.installee || "")).sort().pop() || "";
+  const shown = needs.filter(n => (kind === "all" || n.kind === kind) && !isValid(n));
+  const validL = needs.filter(n => (kind === "all" || n.kind === kind) && isValid(n)).sort((a, b) => instOf(b).localeCompare(instOf(a)));
+  const [openV, setOpenV] = useState(() => new Set());
   const freeG = free.filter(x => x.gamme === gam).sort((a, b) => (b.ready - a.ready) || (b.sansRoue - a.sansRoue) || String(a.end || "9").localeCompare(String(b.end || "9")));
   const active = dnd.drag || picked;
   const isPicked = p => picked && picked.kind === p.kind && (p.kind === "turbine" ? picked.id === p.id : picked.stockId === p.stockId && String(picked.bouches) === String(p.bouches));
@@ -250,60 +254,13 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
   const gapEl = x => x.ecart == null ? null : <span style={{ fontWeight: 600, color: x.ecart < 0 ? T.red600 : x.ecart < 5 ? T.amber600 : T.emerald600 }}>{x.ecart < 0 ? -x.ecart + " j de retard" : x.ecart === 0 ? "juste à temps" : x.ecart + " j de marge"}</span>;
   const legend = [["à attribuer", { border: "1.5px dashed " + T.ink300 }], ["roue", { background: TN.roue.bg, border: "1.5px solid " + TN.roue.bd }], ["injecteur", { background: TN.inj.bg, border: "1.5px solid " + TN.inj.bd }],
     ["turbine allouée", { background: TN.turbine.bg, border: "1.5px solid " + TN.turbine.bd }], ["installée (roue et injecteur verrouillés)", { background: TN.inst.bg, border: "1.5px solid " + TN.inst.bd }], ["refusé", { background: TN.bad.bg, border: "1.5px solid " + TN.bad.bd }]];
-  return (<div style={{ display: "flex", flexDirection: "column", gap: 10, "--nd-bg": T.card, "--nd-line": T.line }}>
-    <style>{NEEDS_CSS}</style>
-    <div className="enogia-nd-app" style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden", display: "grid", gridTemplateColumns: "260px minmax(0,1fr)", height: "min(80vh, 940px)" }}>
-      <aside className="enogia-nd-stock" data-open={drawer ? "1" : "0"} aria-label="Stock de la production turbines" style={{ background: T.surface, borderRight: "1px solid " + T.line, overflowY: "auto" }}>
-        <div style={{ position: "sticky", top: 0, zIndex: 2, background: T.surface, padding: "10px 12px 6px", display: "flex", alignItems: "center", gap: 8, boxShadow: "0 1px 0 " + T.line }}>
-          <b style={{ fontSize: 13, flex: 1 }}>Stock de la production</b>
-          <button type="button" className="enogia-nd-drawer" aria-expanded={drawer} onClick={() => setDrawer(v => !v)} style={{ display: "none", alignItems: "center", gap: 4, minHeight: 32, padding: "0 10px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: T.font }}>{drawer ? "Replier" : "Ouvrir"}</button>
-          <div role="group" aria-label="Gamme" style={{ display: "inline-flex", background: T.surfaceAlt, borderRadius: 8, padding: 2, gap: 2 }}>
-            {["100", "20"].map(g => <button key={g} type="button" aria-pressed={gam === g} onClick={() => { setGam(g); setPicked(null); }} style={{ border: "none", borderRadius: 8, minHeight: 26, padding: "0 10px", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: T.font, background: gam === g ? T.card : "transparent", color: gam === g ? T.ink900 : T.ink500, boxShadow: gam === g ? "0 1px 2px rgba(0,0,0,.08)" : "none" }}>{g} kW</button>)}
-          </div>
-        </div>
-        {/* v320 (demandé : « voir en premier les turbines prêtes avec roue, puis prêtes sans roue, puis roues et injecteurs ») : sections repliables */}
-        {(() => { const turbTile = (k, sub) => x => { const hasR = !!(x.roue && !x.sansRoue);
-            return <Tile ctx={ctx} key={x.id} p={{ kind: "turbine", id: x.id, g: x.gamme, roue: hasR ? x.roue : "" }} k={k} tc={hasR ? TN.roue.ink : T.ink700} title={hasR ? "roue " + x.roue : sub(x)} sub={(x.num || "sans n°") + (hasR && !x.dispo ? " · " + (x.end ? "fin " + fdS(x.end) : "sans date") : "")} subMono />; };
-          const grid = L => <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: 3 }}>{L}</div>;
-          const withR = freeG.filter(x => x.ready && x.roue && !x.sansRoue), noR = freeG.filter(x => x.sansRoue || (x.ready && !x.roue)), fab = freeG.filter(x => !x.dispo);
-          return <>
-            <Sect t="Turbines prêtes · avec roue" n={withR.length} k={T.emerald600}>{withR.length ? grid(withR.map(turbTile(T.emerald600, x => "roue " + x.roue))) : none}</Sect>
-            <Sect t="Turbines prêtes · sans roue" n={noR.length} k={T.amber500}>{noR.length ? grid(noR.map(turbTile(T.amber500, x => x.sansRoue ? "testée sans roue" : "roue à monter"))) : none}</Sect>
-        <Sect t="Roues équilibrées" n={stock.roues.reduce((q, r) => q + r.qte, 0)} k={TN.roue.bd} note="Roues seules. Une turbine qui a déjà sa roue ne consomme pas ce stock.">
-          {stock.roues.length ? <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: 3 }}>{stock.roues.map(t => <Tile ctx={ctx} key={t.stockId} p={{ kind: "roue", stockId: t.stockId, ref: t.ref, g: gam }} k={TN.roue.bd} tc={TN.roue.ink} title={t.ref} sub="" q={t.qte} disabled={!t.qte} />)}</div> : none}
-        </Sect>
-        <Sect t="Injecteurs" n={stock.injs.reduce((q, r) => q + r.qte, 0)} k={TN.inj.bd}>
-          {stock.injs.length ? [...new Set(stock.injs.map(t => t.stockId))].map(id => { const L = stock.injs.filter(t => t.stockId === id);
-            return <Sub key={id} t={<span style={{ color: TN.inj.ink, fontWeight: 600, overflowWrap: "anywhere" }}>{L[0].ref}{L[0].ouv ? <span style={{ fontWeight: 500, color: T.ink500 }}> · {L[0].ouv} ouvertures</span> : null}</span>} n={L.reduce((q, t) => q + t.qte, 0)}>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: 3 }}>{L.map(t => <Tile ctx={ctx} key={t.stockId + "-" + t.bouches} p={{ kind: "inj", stockId: t.stockId, ref: t.ref, bouches: t.bouches, g: gam }} k={TN.inj.bd} title={t.bouches == null ? "vierge" : t.bouches + " bouchage" + (t.bouches > 1 ? "s" : "")} sub="" q={t.qte} disabled={!t.qte} />)}</div></Sub>; }) : none}
-        </Sect>
-            <Sect t="En fabrication" n={fab.length} k={T.ink300}>{fab.length ? grid(fab.map(turbTile(T.ink300, x => (x.end ? "fin " + fdS(x.end) : "sans date") + (x.roue ? " · " + x.roue : "")))) : none}</Sect>
-          </>; })()}
-        <p style={{ fontSize: 12, color: T.ink500, padding: "10px 12px 14px", margin: 0, lineHeight: 1.45 }}>{picked ? "Pièce choisie : touchez un logement (Échap pour annuler)." : "Glissez une pièce sur un logement en pointillé, ou touchez-la puis touchez le logement. Une turbine sans roue s'alloue aussi : la roue reste à poser."}</p>
-      </aside>
-      <section aria-label="Besoins ORC et SAV" style={{ overflowY: "auto", position: "relative" }}>
-        <div ref={barRef} className="enogia-nd-glass e-tb" style={{ position: "sticky", top: 0, zIndex: 3, display: "flex", alignItems: "center", gap: "6px 12px", flexWrap: "wrap", padding: "8px 12px", boxShadow: "0 1px 0 " + T.line }}>
-          <div role="group" aria-label="Type de besoin" style={{ display: "inline-flex", background: T.surfaceAlt, borderRadius: 8, padding: 2, gap: 2 }}>
-            {[["all", "Tout", needs.length], ["pj", "ORC", nOrc], ["sav", "SAV", nSav]].map(([k, l, c]) => <button key={k} type="button" aria-pressed={kind === k} onClick={() => setKind(k)}
-              style={{ border: "none", borderRadius: 8, minHeight: 26, padding: "0 10px", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: T.font, background: kind === k ? T.card : "transparent", color: kind === k ? T.ink900 : T.ink500, boxShadow: kind === k ? "0 1px 2px rgba(0,0,0,.08)" : "none" }}>{l} <span style={{ fontWeight: 500, fontVariantNumeric: "tabular-nums" }}>{c}</span></button>)}
-          </div>
-          <label style={{ fontSize: 12, color: T.ink700, display: "inline-flex", gap: 6, alignItems: "center", cursor: "pointer" }}><input type="checkbox" checked={onlyOpen} onChange={e => setOnlyOpen(e.target.checked)} />À compléter</label>
-          <span aria-label="Légende" style={{ display: "inline-flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: T.ink500 }}>{legend.map(([l, st]) => <span key={l} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><i aria-hidden="true" style={{ width: 16, height: 12, borderRadius: 4, boxSizing: "border-box", display: "inline-block", ...st }} />{l}</span>)}</span>
-          <span style={{ fontSize: 12, color: T.ink500 }}>Par mois de besoin ; n° = priorité (cliquer dessus pour l'échanger avec un autre besoin, ▲ ▼ dans le mois).</span>
-          <span style={{ flex: 1 }} />
-          {canEdit && <button type="button" disabled={busy} onClick={auto} title="Propose une affectation du stock (par date de besoin, pièces prévues), annulable" style={{ ...themeBtn("sec", "sm") }}>Remplir automatiquement</button>}
-          {closedL.length > 0 && <button type="button" onClick={() => setClosedDlg(true)} style={{ ...themeBtn("ghost", "sm") }}>Besoins clos ({closedL.length})</button>}
-          {canEdit && <button type="button" onClick={() => setSav({})} style={{ ...themeBtn("pri", "sm") }}>＋ Besoin SAV</button>}
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 340px), 1fr))", gap: 8, padding: "8px 12px 16px", alignItems: "start" }}>
-          {shownD.map(n => { const mo = monthOf(n.date), head = mo !== lastMo; lastMo = mo;
+  const card = n => {
             const canUp = canEdit && !!neighbor(n, -1), canDown = canEdit && !!neighbor(n, 1);
             const T3 = n.want * 3, G3 = n.slots.filter(x => !x.extra).reduce((q, x) => q + !!x.t + !!x.roueOk + !!x.inj, 0), badI = n.issues.filter(i => i.bad && !/à attribuer$/.test(i.t) && !/après le besoin/.test(i.t));
             const meta = n.kind === "pj" ? getPjMeta(n.pj, n.r) : null, done = allDone(n);
             // v302 (demandé : « plus léger sur ORC (bleu léger) et violet sur SAV ») : bleu information très pâle / violet pâle, mêlés au fond de carte
             const rk = rankOf.get(n.key), bgC = n.kind === "sav" ? "color-mix(in srgb, " + T.violet100 + " 80%, " + T.card + ")" : "color-mix(in srgb, " + T.info100 + " 45%, " + T.card + ")";
-            return <React.Fragment key={n.key}>
-              {head && <h2 className="enogia-nd-month enogia-nd-glass" style={{ gridColumn: "1 / -1", top: barH, margin: "2px -12px 0", padding: "7px 14px", fontSize: 13, fontWeight: 500, color: T.ink700, fontFamily: T.font }}>{monthLab(n.date)}</h2>}
+    return (
               <article className="enogia-nd-need" aria-label={"Besoin n° " + rk + ", " + (n.kind === "sav" ? "SAV " : "ORC ") + n.label} style={{ display: "flex", flexDirection: "column", gap: 4, padding: "6px 8px", borderRadius: 12, minWidth: 0, boxSizing: "border-box", background: bgC,
               boxShadow: "inset 0 0 0 " + (n.late || badI.length ? "1.5px " + T.red600 : "1px " + (done ? T.emerald600 : n.kind === "sav" ? "color-mix(in srgb, " + T.violet500 + " 45%, transparent)" : "color-mix(in srgb, " + T.info600 + " 22%, transparent)")) }}>
               <div style={{ display: "flex", alignItems: "center", gap: "4px 6px", flexWrap: "wrap", minWidth: 0, minHeight: 24 }}>
@@ -353,9 +310,75 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
                     </span>
                   </div>}
                 </React.Fragment>; })}
-            </article></React.Fragment>; })}
-          {!shown.length && <div style={{ gridColumn: "1 / -1", padding: 30, textAlign: "center", color: T.ink500, fontSize: FZ.sm }}>{needs.length ? "Tout est installé. Décochez « À compléter » pour tout voir." : "Aucun PJ en cours avec une turbine, ni besoin SAV."}</div>}
+            </article>);
+  };
+  return (<div style={{ display: "flex", flexDirection: "column", gap: 10, "--nd-bg": T.card, "--nd-line": T.line }}>
+    <style>{NEEDS_CSS}</style>
+    <div className="enogia-nd-app" style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden", display: "grid", gridTemplateColumns: "260px minmax(0,1fr)", height: "min(80vh, 940px)" }}>
+      <aside className="enogia-nd-stock" data-open={drawer ? "1" : "0"} aria-label="Stock de la production turbines" style={{ background: T.surface, borderRight: "1px solid " + T.line, overflowY: "auto" }}>
+        <div style={{ position: "sticky", top: 0, zIndex: 2, background: T.surface, padding: "10px 12px 6px", display: "flex", alignItems: "center", gap: 8, boxShadow: "0 1px 0 " + T.line }}>
+          <b style={{ fontSize: 13, flex: 1 }}>Stock de la production</b>
+          <button type="button" className="enogia-nd-drawer" aria-expanded={drawer} onClick={() => setDrawer(v => !v)} style={{ display: "none", alignItems: "center", gap: 4, minHeight: 32, padding: "0 10px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: T.font }}>{drawer ? "Replier" : "Ouvrir"}</button>
+          <div role="group" aria-label="Gamme" style={{ display: "inline-flex", background: T.surfaceAlt, borderRadius: 8, padding: 2, gap: 2 }}>
+            {["100", "20"].map(g => <button key={g} type="button" aria-pressed={gam === g} onClick={() => { setGam(g); setPicked(null); }} style={{ border: "none", borderRadius: 8, minHeight: 26, padding: "0 10px", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: T.font, background: gam === g ? T.card : "transparent", color: gam === g ? T.ink900 : T.ink500, boxShadow: gam === g ? "0 1px 2px rgba(0,0,0,.08)" : "none" }}>{g} kW</button>)}
+          </div>
         </div>
+        {/* v320 (demandé : « voir en premier les turbines prêtes avec roue, puis prêtes sans roue, puis roues et injecteurs ») : sections repliables */}
+        {(() => { const turbTile = (k, sub) => x => { const hasR = !!(x.roue && !x.sansRoue);
+            return <Tile ctx={ctx} key={x.id} p={{ kind: "turbine", id: x.id, g: x.gamme, roue: hasR ? x.roue : "" }} k={k} tc={hasR ? TN.roue.ink : T.ink700} title={hasR ? "roue " + x.roue : sub(x)} sub={(x.num || "sans n°") + (hasR && !x.dispo ? " · " + (x.end ? "fin " + fdS(x.end) : "sans date") : "")} subMono />; };
+          const grid = L => <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: 3 }}>{L}</div>;
+          const withR = freeG.filter(x => x.ready && x.roue && !x.sansRoue), noR = freeG.filter(x => x.sansRoue || (x.ready && !x.roue)), fab = freeG.filter(x => !x.dispo);
+          return <>
+            <Sect t="Turbines prêtes · avec roue" n={withR.length} k={T.emerald600}>{withR.length ? grid(withR.map(turbTile(T.emerald600, x => "roue " + x.roue))) : none}</Sect>
+            <Sect t="Turbines prêtes · sans roue" n={noR.length} k={T.amber500}>{noR.length ? grid(noR.map(turbTile(T.amber500, x => x.sansRoue ? "testée sans roue" : "roue à monter"))) : none}</Sect>
+        <Sect t="Roues équilibrées" n={stock.roues.reduce((q, r) => q + r.qte, 0)} k={TN.roue.bd} note="Roues seules. Une turbine qui a déjà sa roue ne consomme pas ce stock.">
+          {stock.roues.length ? <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: 3 }}>{stock.roues.map(t => <Tile ctx={ctx} key={t.stockId} p={{ kind: "roue", stockId: t.stockId, ref: t.ref, g: gam }} k={TN.roue.bd} tc={TN.roue.ink} title={t.ref} sub="" q={t.qte} disabled={!t.qte} />)}</div> : none}
+        </Sect>
+        <Sect t="Injecteurs" n={stock.injs.reduce((q, r) => q + r.qte, 0)} k={TN.inj.bd}>
+          {stock.injs.length ? [...new Set(stock.injs.map(t => t.stockId))].map(id => { const L = stock.injs.filter(t => t.stockId === id);
+            return <Sub key={id} t={<span style={{ color: TN.inj.ink, fontWeight: 600, overflowWrap: "anywhere" }}>{L[0].ref}{L[0].ouv ? <span style={{ fontWeight: 500, color: T.ink500 }}> · {L[0].ouv} ouvertures</span> : null}</span>} n={L.reduce((q, t) => q + t.qte, 0)}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: 3 }}>{L.map(t => <Tile ctx={ctx} key={t.stockId + "-" + t.bouches} p={{ kind: "inj", stockId: t.stockId, ref: t.ref, bouches: t.bouches, g: gam }} k={TN.inj.bd} title={t.bouches == null ? "vierge" : t.bouches + " bouchage" + (t.bouches > 1 ? "s" : "")} sub="" q={t.qte} disabled={!t.qte} />)}</div></Sub>; }) : none}
+        </Sect>
+            <Sect t="En fabrication" n={fab.length} k={T.ink300}>{fab.length ? grid(fab.map(turbTile(T.ink300, x => (x.end ? "fin " + fdS(x.end) : "sans date") + (x.roue ? " · " + x.roue : "")))) : none}</Sect>
+          </>; })()}
+        <p style={{ fontSize: 12, color: T.ink500, padding: "10px 12px 14px", margin: 0, lineHeight: 1.45 }}>{picked ? "Pièce choisie : touchez un logement (Échap pour annuler)." : "Glissez une pièce sur un logement en pointillé, ou touchez-la puis touchez le logement. Une turbine sans roue s'alloue aussi : la roue reste à poser."}</p>
+      </aside>
+      <section aria-label="Besoins ORC et SAV" style={{ overflowY: "auto", position: "relative" }}>
+        <div ref={barRef} className="enogia-nd-glass e-tb" style={{ position: "sticky", top: 0, zIndex: 3, display: "flex", alignItems: "center", gap: "6px 12px", flexWrap: "wrap", padding: "8px 12px", boxShadow: "0 1px 0 " + T.line }}>
+          <div role="group" aria-label="Type de besoin" style={{ display: "inline-flex", background: T.surfaceAlt, borderRadius: 8, padding: 2, gap: 2 }}>
+            {[["all", "Tout", needs.length], ["pj", "ORC", nOrc], ["sav", "SAV", nSav]].map(([k, l, c]) => <button key={k} type="button" aria-pressed={kind === k} onClick={() => setKind(k)}
+              style={{ border: "none", borderRadius: 8, minHeight: 26, padding: "0 10px", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: T.font, background: kind === k ? T.card : "transparent", color: kind === k ? T.ink900 : T.ink500, boxShadow: kind === k ? "0 1px 2px rgba(0,0,0,.08)" : "none" }}>{l} <span style={{ fontWeight: 500, fontVariantNumeric: "tabular-nums" }}>{c}</span></button>)}
+          </div>
+          <span aria-label="Légende" style={{ display: "inline-flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: T.ink500 }}>{legend.map(([l, st]) => <span key={l} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><i aria-hidden="true" style={{ width: 16, height: 12, borderRadius: 4, boxSizing: "border-box", display: "inline-block", ...st }} />{l}</span>)}</span>
+          <span style={{ fontSize: 12, color: T.ink500 }}>Par mois de besoin ; n° = priorité (cliquer dessus pour l'échanger avec un autre besoin, ▲ ▼ dans le mois).</span>
+          <span style={{ flex: 1 }} />
+          {canEdit && <button type="button" disabled={busy} onClick={auto} title="Propose une affectation du stock (par date de besoin, pièces prévues), annulable" style={{ ...themeBtn("sec", "sm") }}>Remplir automatiquement</button>}
+          {closedL.length > 0 && <button type="button" onClick={() => setClosedDlg(true)} style={{ ...themeBtn("ghost", "sm") }}>Besoins clos ({closedL.length})</button>}
+          {canEdit && <button type="button" onClick={() => setSav({})} style={{ ...themeBtn("pri", "sm") }}>＋ Besoin SAV</button>}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 310px), 1fr))", gap: 8, padding: "8px 12px 16px", alignItems: "start" }}>
+          {shownD.map(n => { const mo = monthOf(n.date), head = mo !== lastMo; lastMo = mo;
+            return <React.Fragment key={n.key}>
+              {head && <h2 className="enogia-nd-month enogia-nd-glass" style={{ gridColumn: "1 / -1", top: barH, margin: "2px -12px 0", padding: "7px 14px", fontSize: 13, fontWeight: 500, color: T.ink700, fontFamily: T.font }}>{monthLab(n.date)}</h2>}
+              {card(n)}</React.Fragment>; })}
+          {!shown.length && <div style={{ gridColumn: "1 / -1", padding: 30, textAlign: "center", color: T.ink500, fontSize: FZ.sm }}>{needs.length ? "Tout est installé : les besoins terminés sont dans « Besoins validés »." : "Aucun PJ en cours avec une turbine, ni besoin SAV."}</div>}
+        </div>
+        {validL.length > 0 && <details className="enogia-nd-valid" style={{ margin: "0 12px 16px", background: T.card, border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden" }}>
+          <summary style={{ cursor: "pointer", padding: "10px 12px", display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 600, color: T.ink900, minHeight: 44, boxSizing: "border-box" }}>
+            <NavIcon name="chevronDown" size={14} />Besoins validés <span style={{ fontWeight: 500, fontSize: 13, color: T.ink500 }}>· {validL.length}, turbines installées</span></summary>
+          {(() => { let lm = ""; return validL.map(n => { const d = instOf(n), m = d.slice(0, 7), hd = m !== lm; lm = m; const op = openV.has(n.key);
+            const parts = n.slots.filter(x => !x.extra).map(x => [x.t && (x.t.num || "turbine"), x.roue ? x.roue.ref : x.roueMontee, x.inj && x.inj.ref].filter(Boolean).join(" · ")).join(" ; ");
+            return <React.Fragment key={n.key}>
+              {hd && <div style={{ padding: "8px 12px 4px", fontSize: 12, fontWeight: 500, color: T.ink500 }}>{monthLab(d)}</div>}
+              <div style={{ display: "grid", gridTemplateColumns: "auto minmax(0,1fr) auto auto", gap: 12, alignItems: "center", padding: "8px 12px", borderTop: "1px solid " + T.line, minHeight: 44 }}>
+                <b style={{ fontFamily: T.fontMono, fontSize: 13, whiteSpace: "nowrap" }}>{n.label} <span style={{ ...pill, background: T.surfaceAlt, color: n.kind === "sav" ? T.violet600 : T.ink700, fontFamily: T.font }}>{n.kind === "sav" ? "SAV" : "ORC"}</span></b>
+                <span style={{ minWidth: 0, fontSize: 13, color: T.ink700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={parts}>{parts}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: T.emerald600, whiteSpace: "nowrap" }}>✓ installée{d ? " le " + fdS(d) : ""}</span>
+                <button type="button" aria-expanded={op} onClick={() => setOpenV(S => { const N = new Set(S); if (N.has(n.key)) N.delete(n.key); else N.add(n.key); return N; })} style={{ ...themeBtn("ghost", "sm") }}>{op ? "Masquer" : "Voir la carte"}</button>
+              </div>
+              {op && <div style={{ padding: "0 12px 10px", maxWidth: 520 }}>{card(n)}</div>}
+            </React.Fragment>; }); })()}
+        </details>}
       </section>
     </div>
     {msg && <div role="status" className="enogia-bell-peek" style={{ position: "fixed", left: "50%", bottom: 24, transform: "translateX(-50%)", zIndex: 10015, background: msg.bad ? T.red600 : T.ink900, color: T.card, borderRadius: 12, padding: "9px 14px", fontSize: FZ.sm, boxShadow: T.shadowLg, display: "flex", gap: 12, alignItems: "center", maxWidth: "min(640px, 92vw)" }}>
