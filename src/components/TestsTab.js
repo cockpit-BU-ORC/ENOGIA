@@ -16,7 +16,7 @@ import { buildIcs, downloadIcs } from "../ics";
 import { usePointerDnD } from "../pointerDrag";
 import { DebugChecklistStep } from "./DebugChecklist";
 import { StepRail, StepHead, BookStep, TestsChecklistStep, SignPad } from "./TestFiche";
-import { vibRows, vibProgress } from "../testFiche";
+import { vibRows, vibProgress, speedProgress } from "../testFiche";
 import { manualProgress, bookStepsOf } from "../manualImport";
 import { debugSections, debugProgress } from "../debugChecklist";
 import { ChecklistsView } from "./ChecklistsView";
@@ -404,13 +404,13 @@ export function TestDialog({ r, onClose, doc, testers, catalog, conflicts, commi
   const mine = !!myTester && plan.assign.some(x => x.tid === myTester.id), canMark = canEdit || mine || !!lead;
   const canAsk = canEdit || !!lead || !!(askPjs && (askPjs.has(r.pj) || [...askPjs].some(p => String(p).replace(/-\d+[A-Z]*$/, "") === String(r.pj).replace(/-\d+[A-Z]*$/, ""))));
   const saveTests = p => commit({ plans: { ...(doc.plans || {}), [r.pj]: { ...p, asks: (p.asks || []).filter(a => !a.fiche) } } });
-  const dsec = debugSections(doc.debugModel), dpr = debugProgress(plan.debug, dsec), vRows = vibRows(doc.vibModel), vpr = vibProgress(plan.debug, vRows);
+  const dsec = debugSections(doc.debugModel), dpr = debugProgress(plan.debug, dsec), vRows = vibRows(doc.vibModel), vpr = vibProgress(plan.debug, vRows), spr = speedProgress(plan.debug, doc.vibModel);
   const bpr = manualProgress(book, plan.book && plan.book.rows), hasBook = bookStepsOf(book).length > 0;
   const steps = [
     { id: "who", t: "Qui teste ?", s: assigned.length ? assigned.map(t => t.name).join(", ") : "à affecter", st: assigned.length ? "done" : "todo" },
     { id: "pres", t: "Présence", s: kind === "both" ? "client et NOBO" : kind === "client" ? "client" + (pd.client ? " le " + fdm(dIso(pd.client)) : "") : kind === "nobo" ? "NOBO" + (pd.nobo ? " le " + fdm(dIso(pd.nobo)) : "") : "tests internes seuls", st: "done" },
     { id: "book", t: "Configuration ORC", s: hasBook ? bpr.valid + " / " + bpr.total + " validées" + (bpr.pb ? " · " + bpr.pb + " problème" + (bpr.pb > 1 ? "s" : "") : "") : "livret à charger", st: bpr.pb ? "bad" : hasBook && bpr.valid === bpr.total ? "done" : "todo" },
-    { id: "debug", t: "Checklist de debug", s: dpr.done + " / " + dpr.total + (dpr.nok ? " · " + dpr.nok + " NOK" : "") + (vpr.over ? " · vibrations hautes" : ""), st: dpr.nok || vpr.over ? "bad" : dpr.signed ? "done" : "todo" },
+    { id: "debug", t: "Checklist de debug", s: dpr.done + " / " + dpr.total + (dpr.nok ? " · " + dpr.nok + " NOK" : "") + (vpr.over ? " · vibrations hautes" : "") + (spr.out ? " · fréquences hors plage" : ""), st: dpr.nok || vpr.over || spr.out ? "bad" : dpr.signed ? "done" : "todo" },
     { id: "tests", t: "Checklist de tests", s: q.done + " / " + q.total + (q.ko ? " · " + q.ko + " NOK" : "") + (plan.asks.length ? " · " + plan.asks.length + " demande" + (plan.asks.length > 1 ? "s" : "") + " client" : ""), st: q.ko ? "bad" : q.total && q.done === q.total ? "done" : "todo" },
     { id: "sign", t: "Signature", s: signsDone + " / " + assigned.length + " testeur" + (assigned.length > 1 ? "s" : ""), st: assigned.length && signsDone === assigned.length ? "done" : "todo" },
   ];

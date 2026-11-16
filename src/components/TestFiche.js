@@ -5,7 +5,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { T, FZF as FZ, btn as themeBtn } from "../theme";
 import { SECTIONS, statusOf } from "../testPlan";
 import { DEBUG_FIELDS } from "../debugChecklist";
-import { BOOK_DOC, vibOver, vibProgress, testRows, setTestMark, setTestDetail, addAsk, delAsk } from "../testFiche";
+import { BOOK_DOC, vibOver, vibProgress, vibSpeeds, speedRange, freqStatus, speedProgress, testRows, setTestMark, setTestDetail, addAsk, delAsk } from "../testFiche";
 import { bookStepsOf, manualProgress, filterSteps, setStep, stepStatus, STEP_STATUS, exportCsv, exportJson, parseExport, printHtml } from "../manualImport";
 import { askConfirm } from "../confirm";
 import { AF } from "../autoFocusOk";
@@ -196,7 +196,7 @@ function BookReader({ r, book, bookApi, canMark, io, focus, onClose }) {
 }
 
 // ── D14 : fréquences turbines figées et vibrations (dans l'étape « Checklist de debug »)
-export function VibBlock({ plan, rows, canMark, saveTests, who, canAdmin }) {
+export function VibBlock({ plan, rows, canMark, saveTests, who, canAdmin, model }) {
   const debug = plan.debug || {}, v = debug.vib || {}, pr = vibProgress(debug, rows);
   const save = (id, val) => saveTests({ ...plan, debug: { ...debug, name: debug.name || who, vib: { ...v, [id]: val }, at: new Date().toISOString() } });
   const th = { textAlign: "left", fontSize: 12, fontWeight: 500, color: T.ink700, padding: "8px 12px", borderBottom: "1px solid " + T.line };
@@ -215,7 +215,34 @@ export function VibBlock({ plan, rows, canMark, saveTests, who, canAdmin }) {
           <td style={{ ...td, color: T.ink500 }}>{rw.limit || "—"}</td>
           <td style={{ ...td, fontWeight: 600, color: over == null ? T.ink500 : over ? T.red600 : T.emerald600 }}>{over == null ? (String(v[rw.id] || "").trim() ? "relevé" : "à saisir") : over ? "Au-dessus" : "OK"}</td></tr>; })}</tbody>
     </table></div>
+    <SpeedTable plan={plan} rows={rows} model={model} canMark={canMark} saveTests={saveTests} who={who} canAdmin={canAdmin} />
   </section>;
+}
+
+// v362 : fréquences par vitesse de turbine — lignes = turbines, colonnes = vitesses ; case verte « ✓ » dans la plage, rouge « hors plage » sinon
+export const FREQ_LOOK = () => ({ in: { bg: T.emerald100, ink: T.emerald600, txt: "✓ dans la plage" }, out: { bg: T.red100, ink: T.red600, txt: "hors plage" }, norange: { bg: "transparent", ink: T.ink500, txt: "sans plage" }, empty: { bg: "transparent", ink: T.ink500, txt: "" } });
+function SpeedTable({ plan, rows, model, canMark, saveTests, who, canAdmin }) {
+  const sps = vibSpeeds(model);
+  if (!sps.length) return canAdmin ? <div style={{ padding: "10px 14px", fontSize: 13, color: T.ink500, borderTop: "1px solid " + T.line }}>Aucune vitesse de turbine réglée (Tests › Checklists › Fréquences et vibrations).</div> : null;
+  const debug = plan.debug || {}, spd = debug.spd || {}, pr = speedProgress(debug, model), L = FREQ_LOOK();
+  const save = (tid, sid, val) => saveTests({ ...plan, debug: { ...debug, name: debug.name || who, spd: { ...spd, [tid]: { ...(spd[tid] || {}), [sid]: val } }, at: new Date().toISOString() } });
+  const th = { textAlign: "left", fontSize: 12, fontWeight: 500, color: T.ink700, padding: "8px 12px", borderBottom: "1px solid " + T.line, whiteSpace: "nowrap" };
+  return <div style={{ borderTop: "1px solid " + T.line }}>
+    <div style={{ display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap", padding: "10px 14px 4px" }}>
+      <b style={{ fontFamily: T.fontDisplay, fontSize: 14, fontWeight: 600 }}>Fréquences par vitesse (Hz)</b>
+      <span style={{ fontSize: 12, color: pr.out ? T.red600 : T.ink500, fontWeight: 500 }}>{pr.done} / {pr.total} relevée{pr.total > 1 ? "s" : ""}{pr.out ? " · " + pr.out + " hors plage" : ""}</span></div>
+    <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", minWidth: 160 + sps.length * 130 }}>
+      <thead><tr><th style={th}>Turbine</th>{sps.map(sp => <th key={sp.id} style={th}>{sp.label}</th>)}</tr></thead>
+      <tbody>{rows.map(rw => <tr key={rw.id}><td style={{ padding: "6px 12px", borderBottom: "1px solid " + T.line, fontSize: FZ.sm, color: T.ink900 }}>{rw.label}</td>
+        {sps.map(sp => { const val = (spd[rw.id] && spd[rw.id][sp.id]) || "", rg = speedRange(model, rw.id, sp.id), st = freqStatus(val, rg), lk = L[st];
+          const plage = rg.min || rg.max ? (rg.min || "…") + " – " + (rg.max || "…") + " Hz" : "";
+          return <td key={sp.id} style={{ padding: "6px 10px", borderBottom: "1px solid " + T.line, borderLeft: "1px solid " + T.line, background: lk.bg, verticalAlign: "top" }}>
+            <input disabled={!canMark} key={rw.id + sp.id + val} defaultValue={val} inputMode="decimal" placeholder="—" aria-label={"Fréquence " + rw.label + " à " + sp.label + (plage ? " (plage " + plage + ")" : "")}
+              onBlur={e => { const t = e.target.value.trim(); if (t !== val) save(rw.id, sp.id, t); }} style={{ ...field(), width: 96, textAlign: "right", fontSize: FZ.sm, fontVariantNumeric: "tabular-nums", borderColor: st === "in" ? T.emerald600 : st === "out" ? T.red600 : T.line }} />
+            <div style={{ fontSize: 12, marginTop: 2, color: lk.ink, fontWeight: st === "in" || st === "out" ? 600 : 500, fontVariantNumeric: "tabular-nums" }}>{lk.txt}{plage ? <span style={{ color: T.ink500, fontWeight: 500 }}>{lk.txt ? " · " : ""}{plage}</span> : null}</div>
+          </td>; })}</tr>)}</tbody>
+    </table></div>
+  </div>;
 }
 
 // ── checklist de tests au format de la checklist de debug (+ D12 demandes du client)

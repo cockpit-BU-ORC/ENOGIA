@@ -1074,4 +1074,9 @@ export const RELEASE_CATALOG = [
     ["Calendrier", "Machine hors de la partie affichée : « Arrivée jj/mm → » ou « ← Départ jj/mm » reste collé au bord pendant le défilement."],
     ["Calendrier", "Mois : les plaques Arrivée et Départ portent la même forme ; légendes complétées."],
   ] },
+  { v: "363", t: "Fréquences par vitesse de turbine dans la checklist de debug", items: [
+    ["Tests", "Checklist de debug : tableau « Fréquences par vitesse (Hz) », lignes = turbines, colonnes = vitesses ; case verte « ✓ dans la plage », rouge « hors plage »."],
+    ["Tests", "Tests › Checklists › Fréquences et vibrations : vitesses de turbine et plage min – max par turbine et par vitesse (bornes comprises)."],
+    ["Tests", "PDF de la checklist de debug : même tableau, mêmes couleurs et signes ; étape signalée « fréquences hors plage » dans la fiche."],
+  ] },
 ];

@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v363",
+    date: "2026-11-16",
+    title: "V363 : fréquences par vitesse de turbine dans la checklist de debug",
+    items: [
+      { t: "Tests", d: "Checklist de debug : tableau turbines × vitesses ; la fréquence saisie passe en vert dans la plage réglée, en rouge hors plage. Repris dans le PDF." },
+    ],
+  },
+  {
     id: "2026-11-v362",
     date: "2026-11-16",
     title: "V362 : jalons d'arrivée et de départ au calendrier",

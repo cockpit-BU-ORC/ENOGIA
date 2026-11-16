@@ -10,7 +10,7 @@ const br = s => x(s).replace(/\n/g, "<br>");
 const frD = iso => { if (!iso) return ""; const d = new Date(String(iso).length <= 10 ? iso + "T12:00:00" : iso); return isNaN(d) ? "" : d.toLocaleDateString("fr-FR"); };
 export const debugPdfName = pj => DEBUG_DOC.ref + "-" + DEBUG_DOC.version + "-Check list debug - " + (pj || "PJ");
 
-export function debugHtml({ pj, date, name, debug, sign, sections = DEBUG_SECTIONS, vib = [] }) {
+export function debugHtml({ pj, date, name, debug, sign, sections = DEBUG_SECTIONS, vib = [], spd = null }) {
   const rows = (debug && debug.rows) || {};
   const mark = (r, v) => (r === v ? "X" : r === "na" && v === "ok" ? "S.O." : "");
   const body = sections.map((s, si) => {
@@ -28,7 +28,7 @@ export function debugHtml({ pj, date, name, debug, sign, sections = DEBUG_SECTIO
 table{width:100%;border-collapse:collapse;table-layout:fixed}td,th{border:1px solid #000;padding:2px 4px;vertical-align:top;word-wrap:break-word}
 .head td{text-align:center;vertical-align:middle;font-size:12pt}.info td{font-size:10pt}
 .sec th{background:#BFBFBF;font-weight:600;text-align:left}.sec th.c,.c{text-align:center}.b{font-weight:600}.h{font-size:8pt}
-tr{page-break-inside:avoid}thead{display:table-header-group}.gap{height:8px}
+tr{page-break-inside:avoid}.in{background:#D9F0E3;color:#14532D}.out{background:#F9D6D2;color:#8A1C12}.rg{font-size:7.5pt;font-weight:400;color:#444}thead{display:table-header-group}.gap{height:8px}
 .bar{position:fixed;top:8px;right:8px;font:600 13px Arial}.bar button{padding:8px 14px;border-radius:8px;border:none;background:#003366;color:#fff;cursor:pointer}
 @media print{.bar{display:none}}
 </style></head><body>
@@ -39,7 +39,7 @@ tr{page-break-inside:avoid}thead{display:table-header-group}.gap{height:8px}
 <table class="info"><tr><td>N° Projet : ${x(pj || "PJ")}</td><td>Date : ${x(frD(date))}</td></tr><tr><td colspan="2">Nom et prénom : ${x(name || "")}</td></tr></table>
 <div class="gap"></div>
 <table><colgroup>${[1795, 574, 555, 1720, 1843, 2410, 992, 4333].map(w => '<col style="width:' + (w / 142.22).toFixed(2) + '%">').join("")}</colgroup>${body}</table>
-<div class="gap"></div>${vib.length ? '<table><colgroup><col style="width:28%"><col style="width:18%"><col style="width:18%"><col style="width:18%"><col style="width:18%"></colgroup><tr class="sec"><th>Fréquences turbines et vibrations</th><th class="c">Fréquence (figée)</th><th class="c">Vibrations relevées</th><th class="c">Limite</th><th class="c">Résultat</th></tr>' + vib.map(v => "<tr><td>" + x(v.label) + '</td><td class="c">' + x(v.freq || "") + '</td><td class="c b">' + x(v.val || "") + '</td><td class="c">' + x(v.limit || "") + '</td><td class="c b">' + x(v.res || "") + "</td></tr>").join("") + '</table><div class="gap"></div>' : ""}
+<div class="gap"></div>${vib.length ? '<table><colgroup><col style="width:28%"><col style="width:18%"><col style="width:18%"><col style="width:18%"><col style="width:18%"></colgroup><tr class="sec"><th>Fréquences turbines et vibrations</th><th class="c">Fréquence (figée)</th><th class="c">Vibrations relevées</th><th class="c">Limite</th><th class="c">Résultat</th></tr>' + vib.map(v => "<tr><td>" + x(v.label) + '</td><td class="c">' + x(v.freq || "") + '</td><td class="c b">' + x(v.val || "") + '</td><td class="c">' + x(v.limit || "") + '</td><td class="c b">' + x(v.res || "") + "</td></tr>").join("") + '</table><div class="gap"></div>' : ""}${spd && spd.speeds && spd.speeds.length ? '<table><tr class="sec"><th>Fréquences par vitesse (Hz)</th>' + spd.speeds.map(l => '<th class="c">' + x(l) + "</th>").join("") + "</tr>" + spd.rows.map(rw => "<tr><td>" + x(rw.label) + "</td>" + rw.cells.map(c => '<td class="c b' + (c.st === "in" ? " in" : c.st === "out" ? " out" : "") + '">' + x(c.val || "") + (c.st === "in" ? " ✓" : c.st === "out" ? " · hors plage" : "") + (c.min || c.max ? '<br><span class="rg">plage ' + x(c.min || "…") + " – " + x(c.max || "…") + "</span>" : "") + "</td>").join("") + "</tr>").join("") + '</table><div class="gap"></div>' : ""}
 <table><colgroup><col style="width:28.7%"><col style="width:23%"><col style="width:15.8%"><col style="width:32.5%"></colgroup>
 <tr class="sec"><th>Validation · Nom et prénom</th><th>Fonction</th><th>Date</th><th>Signature</th></tr>
 <tr style="height:70px"><td>${x(sign ? sign.name : name)}</td><td>${x(sign ? sign.fn : "")}</td><td>${x(sign ? frD(sign.at) : "")}</td><td style="text-align:center;vertical-align:middle">${sigImg}</td></tr></table>

@@ -2631,3 +2631,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - CalendarView.js : `MilestoneGlyph` (SVG, triangle = arrivée, losange = départ, couleurs `stagePalette`) ; `RowTrack` pose les repères contre le bord du jour (avant la barre / après), reçoit `viewL` / `viewR` / `stickL` : barre hors de la partie visible → rappel collé (sticky) « Arrivée jj/mm → » ou « ← Départ jj/mm » ; légende « Arrivée (réception) · Départ ».
 - CalendarMonth.js : forme dans les plaques Arrivée / Départ (`onFill`) et dans la légende.
 - Aucune clé localStorage ; données et règles Firestore inchangées. Fichiers : components/CalendarView.js, components/CalendarMonth.js, versions.
+
+## v363 — fréquences par vitesse de turbine (checklist de debug)
+
+- testFiche.js : `vibSpeeds`, `speedRange`, `freqStatus(val, plage)` (empty / norange / in / out, bornes comprises, une seule borne possible), `speedProgress` ; test `src/vibSpeeds.test.js`.
+- Données (même document `planning/tests`, objets seulement) : `vibModel.speeds = [{ id, label }]`, `vibModel.ranges = { [turbine]: { [vitesse]: { min, max } } }` ; par PJ `plans[PJ].debug.spd = { [turbine]: { [vitesse]: "valeur" } }`.
+- TestFiche.js : `SpeedTable` sous le bloc vibrations (`VibBlock model`), `FREQ_LOOK` ; ChecklistsView.js : vitesses + plages dans « Fréquences et vibrations » ; DebugChecklist.js : avancement « fréquences n / m » et données du PDF ; debugPdf.js : tableau `spd` (valeurs échappées par `x()`, classes `.in` / `.out`) ; TestsTab.js : étape en rouge si une fréquence est hors plage.
+- Aucune clé localStorage ; règles Firestore inchangées. Galerie : vitesses fictives dans `demoData.js`.

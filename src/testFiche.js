@@ -37,6 +37,25 @@ const num = v => { const n = parseFloat(String(v == null ? "" : v).replace(",", 
 export const vibOver = (val, limit) => { const a = num(val), b = num(limit); return a == null || b == null ? null : a > b; };
 export function vibProgress(debug, rows) { const v = (debug && debug.vib) || {}; const done = rows.filter(r => String(v[r.id] || "").trim()).length; return { done, total: rows.length, over: rows.filter(r => vibOver(v[r.id], r.limit)).length }; }
 
+// ── v362 : vitesses de turbine — tableau turbines (lignes = points de mesure du modèle) × vitesses (colonnes), case = fréquence relevée.
+// Réglage : vibModel.speeds = [{ id, label }], vibModel.ranges = { [id turbine]: { [id vitesse]: { min, max } } } (Hz).
+// Saisie : plans[PJ].debug.spd = { [id turbine]: { [id vitesse]: "valeur" } } — objets seulement (Firestore refuse les tableaux de tableaux).
+export const vibSpeeds = model => (model && Array.isArray(model.speeds) ? model.speeds : []).filter(sp => sp && sp.id).map(sp => ({ id: sp.id, label: sp.label || "Vitesse" }));
+export const speedRange = (model, tid, sid) => { const r = model && model.ranges && model.ranges[tid] && model.ranges[tid][sid]; return { min: (r && r.min) || "", max: (r && r.max) || "" }; };
+// statut d'une case : "empty" (rien saisi), "norange" (pas de plage réglée), "in" (dans la plage, bornes comprises), "out" (hors plage)
+export function freqStatus(val, range) {
+  const v = num(val); if (!String(val == null ? "" : val).trim() || v == null) return "empty";
+  const lo = num(range && range.min), hi = num(range && range.max);
+  if (lo == null && hi == null) return "norange";
+  return (lo == null || v >= lo) && (hi == null || v <= hi) ? "in" : "out";
+}
+export function speedProgress(debug, model) {
+  const rows = vibRows(model), sps = vibSpeeds(model), v = (debug && debug.spd) || {};
+  let done = 0, out = 0;
+  rows.forEach(r => sps.forEach(sp => { const st = freqStatus(v[r.id] && v[r.id][sp.id], speedRange(model, r.id, sp.id)); if (st !== "empty") done++; if (st === "out") out++; }));
+  return { done, total: rows.length * sps.length, out };
+}
+
 // ── D12 : demandes spécifiques du client (FAT interne)
 export function addAsk(plan, label, hint, by, at = new Date().toISOString()) { return { ...plan, asks: [...(plan.asks || []), { id: nid("q"), label: String(label).trim(), hint: String(hint || "").trim(), by: by || "", at }] }; }
 export function delAsk(plan, id) { const st = { ...(plan.st || {}) }; if (st.interne) { st.interne = { ...st.interne }; delete st.interne[id]; } return { ...plan, asks: (plan.asks || []).filter(a => a.id !== id), st }; }

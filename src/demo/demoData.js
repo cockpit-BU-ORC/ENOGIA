@@ -59,8 +59,8 @@ export const DEMO_TESTS = { testers: [{ id: "t1", name: "Lou Martin" }, { id: "t
   plans: { "PJ903-2": { assign: [{ tid: "t1" }], st: { interne: { i1: "ok", i2: "ko" } }, tres: { interne: { i2: { pb: "TT-31 lit 0 °C débranché", cause: "Câblage inversé" } } },
     asks: [{ id: "q1", label: "Affichage des pressions en psi sur l'IHM", hint: "Demande du client", by: "Camille Durand", at: "2026-10-28T09:00:00Z" }],
     book: { rows: { "prerequis": { v: true, s: "ok" }, "configuration-hardware/afe/md050n": { s: "pb", c: "Tension lue 380 V" } } },
-    debug: { rows: { "s-vent": { r: "ok" } }, vib: { ta: "2,1" } } } },
-  vibModel: { rows: [{ id: "ta", label: "Turbine A", freq: "500 Hz", limit: "4,5 mm/s" }, { id: "tb", label: "Turbine B (option)", freq: "500 Hz", limit: "4,5 mm/s" }] } };
+    debug: { rows: { "s-vent": { r: "ok" } }, vib: { ta: "2,1" }, spd: { ta: { s1: "498", s2: "612" }, tb: { s1: "505" } } } } },
+  vibModel: { rows: [{ id: "ta", label: "Turbine A", freq: "500 Hz", limit: "4,5 mm/s" }, { id: "tb", label: "Turbine B (option)", freq: "500 Hz", limit: "4,5 mm/s" }], speeds: [{ id: "s1", label: "3 000 tr/min" }, { id: "s2", label: "6 000 tr/min" }], ranges: { ta: { s1: { min: "480", max: "520" }, s2: { min: "560", max: "600" } }, tb: { s1: { min: "480", max: "520" }, s2: { min: "560", max: "600" } } } } };
 // v337 : livret de démonstration (contenu fictif, sans image)
 export const DEMO_BOOK = { title: "Manuel de configuration ORC", ref: "DEMO-001", images: {}, chapters: [
   { id: "prerequis", title: "Prérequis", steps: [{ id: "prerequis", title: "Prérequis", path: [], level: 1, blocks: [{ t: "p", text: "Avoir le PC de mise en service et les fichiers de paramètres de la gamme." }] }] },

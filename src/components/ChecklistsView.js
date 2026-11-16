@@ -8,7 +8,7 @@ import { T, FZF as FZ } from "../theme";
 import { DEBUG_DOC, debugSections } from "../debugChecklist";
 import { parseDocxXml, parseChecklistText, docxDocumentXml, zipFiles } from "../checklistImport";
 import { parseManual, bookStepsOf, bookImages, slug } from "../manualImport";
-import { vibRows } from "../testFiche";
+import { vibRows, vibSpeeds } from "../testFiche";
 import { askConfirm } from "../confirm";
 import { useUnsavedGuard } from "../unsavedGuard";
 
@@ -173,11 +173,15 @@ function BookImportView({ book, bookApi }) {
 // D14 : fréquences turbines figées (affichées telles quelles sur la fiche) et limite de vibrations, par point de mesure
 function VibModelView({ doc, commit }) {
   const saved = useMemo(() => vibRows(doc && doc.vibModel), [doc]);
+  // v362 : vitesses de turbine (colonnes) et plage min / max en Hz par case turbine × vitesse
+  const savedSp = useMemo(() => vibSpeeds(doc && doc.vibModel), [doc]), savedRg = useMemo(() => (doc && doc.vibModel && doc.vibModel.ranges) || {}, [doc]);
   const [rows, setRows] = useState(saved), [dirty, setDirty] = useState(false), [msg, setMsg] = useState("");
-  useEffect(() => { if (!dirty) setRows(saved); }, [saved, dirty]);
+  const [speeds, setSpeeds] = useState(savedSp), [ranges, setRanges] = useState(savedRg);
+  useEffect(() => { if (!dirty) { setRows(saved); setSpeeds(savedSp); setRanges(savedRg); } }, [saved, savedSp, savedRg, dirty]);
+  const setRg = (tid, sid, k, v) => { setRanges(R => ({ ...R, [tid]: { ...(R[tid] || {}), [sid]: { ...((R[tid] || {})[sid] || {}), [k]: v } } })); setDirty(true); };
   useUnsavedGuard(dirty); // v340
   const upd = (i, p) => { setRows(L => L.map((x, k) => (k === i ? { ...x, ...p } : x))); setDirty(true); };
-  const save = async () => { const ok = await commit({ vibModel: { rows: rows.filter(r => r.label.trim()), at: new Date().toISOString() } }); if (ok !== false) { setDirty(false); setMsg("Enregistré : s'applique à toutes les fiches de tests."); } else setMsg("L'enregistrement a échoué."); };
+  const save = async () => { const ok = await commit({ vibModel: { rows: rows.filter(r => r.label.trim()), speeds: speeds.filter(sp => sp.label.trim()), ranges, at: new Date().toISOString() } }); if (ok !== false) { setDirty(false); setMsg("Enregistré : s'applique à toutes les fiches de tests."); } else setMsg("L'enregistrement a échoué."); };
   return <section style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
     <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}><div style={{ flex: "1 1 320px" }}><div style={{ fontSize: 16, fontWeight: 600 }}>Fréquences turbines et vibrations</div>
       <div style={{ fontSize: 13, color: T.ink500 }}>Étape de la checklist de debug : la fréquence est figée (affichée), le testeur saisit la vibration relevée ; au-dessus de la limite, la ligne passe en rouge.</div></div>
@@ -193,5 +197,23 @@ function VibModelView({ doc, commit }) {
       </React.Fragment>)}
     </div>
     <div><button type="button" onClick={() => { setRows(L => [...L, { id: nid("v"), label: "Nouveau point", freq: "", limit: "" }]); setDirty(true); }} style={{ border: "none", background: "transparent", color: T.ink700, fontWeight: 600, fontSize: FZ.sm, cursor: "pointer", fontFamily: T.font, minHeight: 28 }}>＋ Ajouter un point de mesure</button></div>
+    <div style={{ borderTop: "1px solid " + T.line, paddingTop: 10 }}>
+      <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>Vitesses de turbine et plages de fréquence</h3>
+      <div style={{ fontSize: 13, color: T.ink500, marginTop: 2 }}>Colonnes = vitesses, lignes = turbines ci-dessus. Le testeur saisit la fréquence ; dans la plage (bornes comprises) la case passe en vert, sinon en rouge.</div>
+    </div>
+    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+      {speeds.map((sp, i) => <span key={sp.id} style={{ display: "inline-flex", gap: 4, alignItems: "center" }}>
+        <input value={sp.label} onChange={e => { const v = e.target.value; setSpeeds(L => L.map((x, k) => (k === i ? { ...x, label: v } : x))); setDirty(true); }} aria-label="Nom de la vitesse" placeholder="ex. 3 000 tr/min" style={{ ...field, width: 140 }} />
+        <button type="button" aria-label={"Supprimer la vitesse " + sp.label} style={{ ...mini, color: T.red600 }} onClick={() => { setSpeeds(L => L.filter((_, k) => k !== i)); setDirty(true); }}>×</button></span>)}
+      <button type="button" onClick={() => { setSpeeds(L => [...L, { id: nid("s"), label: "Nouvelle vitesse" }]); setDirty(true); }} style={{ border: "none", background: "transparent", color: T.ink700, fontWeight: 600, fontSize: FZ.sm, cursor: "pointer", fontFamily: T.font, minHeight: 28 }}>＋ Ajouter une vitesse</button>
+    </div>
+    {speeds.length > 0 && <div style={{ overflowX: "auto" }}><table style={{ borderCollapse: "collapse", minWidth: 160 + speeds.length * 190 }}>
+      <thead><tr><th style={{ textAlign: "left", fontSize: 12, fontWeight: 500, color: T.ink500, padding: "6px 8px" }}>Turbine</th>{speeds.map(sp => <th key={sp.id} style={{ textAlign: "left", fontSize: 12, fontWeight: 500, color: T.ink500, padding: "6px 8px" }}>{sp.label} · min – max (Hz)</th>)}</tr></thead>
+      <tbody>{rows.filter(rw => rw.label.trim()).map(rw => <tr key={rw.id}><td style={{ padding: "4px 8px", fontSize: FZ.sm, borderTop: "1px solid " + T.line }}>{rw.label}</td>
+        {speeds.map(sp => { const g = (ranges[rw.id] || {})[sp.id] || {}; return <td key={sp.id} style={{ padding: "4px 8px", borderTop: "1px solid " + T.line }}><span style={{ display: "inline-flex", gap: 4, alignItems: "center" }}>
+          <input value={g.min || ""} onChange={e => setRg(rw.id, sp.id, "min", e.target.value)} inputMode="decimal" placeholder="min" aria-label={"Fréquence minimale " + rw.label + " à " + sp.label} style={{ ...field, width: 72, textAlign: "right" }} />
+          <span aria-hidden="true" style={{ color: T.ink500 }}>–</span>
+          <input value={g.max || ""} onChange={e => setRg(rw.id, sp.id, "max", e.target.value)} inputMode="decimal" placeholder="max" aria-label={"Fréquence maximale " + rw.label + " à " + sp.label} style={{ ...field, width: 72, textAlign: "right" }} /></span></td>; })}</tr>)}</tbody>
+    </table></div>}
   </section>;
 }

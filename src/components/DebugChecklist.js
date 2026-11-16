@@ -5,7 +5,7 @@ import React, { useEffect, useState } from "react";
 import { T, FZF as FZ } from "../theme";
 import { DEBUG_FIELDS, DEBUG_DOC, debugProgress, setDebugRow, debugSections } from "../debugChecklist";
 import { openDebugPdf } from "../debugPdf"; // v272 : export PDF seulement (le Word de la V264 est retiré)
-import { vibRows, vibOver, vibProgress } from "../testFiche";
+import { vibRows, vibOver, vibProgress, vibSpeeds, speedRange, freqStatus, speedProgress } from "../testFiche";
 import { VibBlock } from "./TestFiche";
 
 const todayIso = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
@@ -25,15 +25,16 @@ export function DebugChecklistStep({ r, plan, saveTests, canMark, who, signApi, 
       let sign = null;
       if (debug.signed && signApi) { const imgs = (await signApi.load(r.pj)) || {}; sign = imgs.debug ? { ...debug.signed, img: imgs.debug.img } : debug.signed; }
       const vv = debug.vib || {}, vib = vibRows(vibModel).map(x => { const o = vibOver(vv[x.id], x.limit); return { ...x, val: vv[x.id] || "", res: o == null ? "" : o ? "NOK" : "OK" }; });
-      return { pj: r.pj, date: debug.date || todayIso(), name: debug.name || who, debug, sign, sections, vib };
+      const sps = vibSpeeds(vibModel), sv = debug.spd || {}, spd = sps.length ? { speeds: sps.map(s => s.label), rows: vibRows(vibModel).map(x => ({ label: x.label, cells: sps.map(sp => { const val = (sv[x.id] && sv[x.id][sp.id]) || "", rg = speedRange(vibModel, x.id, sp.id); return { val, min: rg.min, max: rg.max, st: freqStatus(val, rg) }; }) })) } : null;
+      return { pj: r.pj, date: debug.date || todayIso(), name: debug.name || who, debug, sign, sections, vib, spd };
     });
     if (!ok) setErr("Le navigateur a bloqué la fenêtre du PDF : autorisez les fenêtres pour ce site.");
   };
-  const pct = Math.round(pr.done / pr.total * 100), vpr = vibProgress(debug, vibRows(vibModel));
+  const pct = Math.round(pr.done / pr.total * 100), vpr = vibProgress(debug, vibRows(vibModel)), spr = speedProgress(debug, vibModel);
   return (<div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
     <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", padding: "8px 10px", background: T.card, border: "1px solid " + T.line, borderRadius: 12 }}>
       <div style={{ flex: "1 1 220px", minWidth: 0 }}>
-        <div style={{ fontSize: FZ.sm, fontWeight: 600, color: T.ink900 }}>{pr.done} / {pr.total} contrôles renseignés{pr.nok ? <span style={{ color: T.red600 }}> · {pr.nok} NOK</span> : ""}<span style={{ fontWeight: 500, color: vpr.over ? T.red600 : T.ink500 }}> · vibrations {vpr.done} / {vpr.total}{vpr.over ? " (" + vpr.over + " au-dessus de la limite)" : ""}</span></div>
+        <div style={{ fontSize: FZ.sm, fontWeight: 600, color: T.ink900 }}>{pr.done} / {pr.total} contrôles renseignés{pr.nok ? <span style={{ color: T.red600 }}> · {pr.nok} NOK</span> : ""}<span style={{ fontWeight: 500, color: vpr.over ? T.red600 : T.ink500 }}> · vibrations {vpr.done} / {vpr.total}{vpr.over ? " (" + vpr.over + " au-dessus de la limite)" : ""}</span>{spr.total ? <span style={{ fontWeight: 500, color: spr.out ? T.red600 : T.ink500 }}> · fréquences {spr.done} / {spr.total}{spr.out ? " (" + spr.out + " hors plage)" : ""}</span> : null}</div>
         <div aria-hidden="true" style={{ height: 6, borderRadius: 4, background: T.surfaceAlt, marginTop: 6, overflow: "hidden" }}><div style={{ width: pct + "%", height: "100%", background: pr.nok ? T.red500 : T.emerald500 }} /></div>
       </div>
       {pr.signed ? <span style={{ fontSize: 12, fontWeight: 500, color: T.emerald600, background: T.emerald100, borderRadius: 999, padding: "2px 10px" }}>Signée le {fd((debug.signed.at || "").slice(0, 10))} · {debug.signed.name}</span>
@@ -92,7 +93,7 @@ function DebugChecklistDialog({ r, plan, saveTests, canMark, who, signApi, SignF
             </tr>); })}
           </tbody>)}
         </table>
-        <div style={{ padding: "0 12px 14px" }}><VibBlock plan={plan} rows={vibRows(vibModel)} canMark={canMark} saveTests={saveTests} who={who} canAdmin={!!saveModel} /></div>
+        <div style={{ padding: "0 12px 14px" }}><VibBlock plan={plan} rows={vibRows(vibModel)} model={vibModel} canMark={canMark} saveTests={saveTests} who={who} canAdmin={!!saveModel} /></div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "10px 16px", borderTop: "1px solid " + T.line }}>
         <span style={{ fontSize: FZ.sm, fontWeight: 600 }}>{pr.done} / {pr.total} renseignés{pr.nok ? <span style={{ color: T.red600 }}> · {pr.nok} NOK</span> : ""}</span>
