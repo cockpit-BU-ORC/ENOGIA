@@ -181,3 +181,20 @@ export function ecartKpis(rows, today = todayISO()) {
   let worst = null; (rows || []).forEach(r => { const v = retard(r, today); if (v != null && (!worst || v > worst.v)) worst = { v, r }; });
   return { avgRet, paidN: paidRows.length, lateN, avgGl, glN: gl.length, worst };
 }
+
+// ── v369 (maquette v369-daf-encaissements.html, proposition A validée) : saisie des encaissements par le DAF ──────────
+// Jalons facturés (date de facture émise) et pas encore payés, hors EPC : groupe « late » (encaissement prévu dépassé),
+// « week » (prévu d'ici dimanche), « later » (ensuite ou sans date). L'encaissement prévu manquant = facture + délai.
+const sundayOf = iso => { const d = new Date(String(iso).slice(0, 10) + "T12:00:00Z"), k = (d.getUTCDay() + 6) % 7; return addDays(String(iso).slice(0, 10), 6 - k); };
+export function toCollect(rows, today = todayISO()) {
+  const end = sundayOf(today), rank = { late: 0, week: 1, later: 2 };
+  return (rows || []).filter(r => r && !r.epc && r.factReelle && !r.encReelle).map(r => {
+    const due = r.encPrevue || (r.delai != null ? addDays(r.factReelle, r.delai) : null);
+    const group = !due ? "later" : due < today ? "late" : due <= end ? "week" : "later";
+    return { r, due, group, days: due ? diffDays(today, due) : null };
+  }).sort((a, b) => rank[a.group] - rank[b.group] || String(a.due || "9999").localeCompare(String(b.due || "9999")) || String(a.r.pj).localeCompare(String(b.r.pj)));
+}
+// Paiements reçus depuis `days` jours (pour « Remettre à encaisser » en cas d'erreur), du plus récent
+export const recentlyPaid = (rows, today = todayISO(), days = 30) => (rows || []).filter(r => r && !r.epc && r.encReelle && r.encReelle >= addDays(today, -days)).sort((a, b) => b.encReelle.localeCompare(a.encReelle));
+// Seul champ que le DAF modifie : date de paiement reçu (ou vide) ; statut et dates liées recalculés comme dans la page Cash in
+export const setEncReelle = (rows, id, iso, today = todayISO()) => (rows || []).map(r => (r && r.id === id ? applyEdit(r, "encReelle", iso || null, today).row : r));

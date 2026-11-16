@@ -2674,3 +2674,12 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - TestsTab.js : `BENCH_C` = jaune des tests (banc 1) / mélange avec `T.amber500` (banc 2, `mixHex`), barres « en cours » et liseré des barres prévues à la couleur du banc, `GridLegend benches`.
 - Fichiers de contrôle (hors dépôt) : maquettes-design/v368-rapport-cdp-avant.pptx, -apres.pptx, -apres-textes-longs.pptx (données fictives). Données et règles Firestore inchangées.
 - Suite (vérifiée en exportant les diapositives par PowerPoint) : `clip` coupe à la fin d'un mot ; « Textes complets de la fiche » en deux colonnes continues (un seul bloc de texte par colonne).
+
+## v369 — Cash in › Encaissements (saisie DAF) + widget « À encaisser »
+
+- cashinModel.js : `toCollect(rows, today)` (factures émises non payées hors EPC, groupes late / week / later, encaissement prévu = facture + délai à défaut), `recentlyPaid`, `setEncReelle` (via `applyEdit` : statut et dates recalculés comme public/cashin.html) ; test `src/cashinCollect.test.js`.
+- components/CashInEncaissements.js (nouveau) : liste, saisie de la date de paiement, « Annuler » 6 s, « Reçus ces 30 jours » ; écriture `saveEncReelle` = `runTransaction` sur `planning/cashin` (seul `encReelle` du jalon change ; le tableau complet reçoit la mise à jour par sa lecture temps réel).
+- CashInTab.js : sélecteur « Tableau complet / Encaissements » (`sub`, `onSub`, `canEdit`) ; App.js : `cashSub` (clé localStorage **`enogia_cash_sub`**), `cashEdit` = Modifier sur Finance (sinon droits d'avant), `onOpenCash("enc")`.
+- RoleHome.js : widget `encaisser` (catalogue « Gestion — Turbines et Cash in »).
+- Droits : le DAF doit avoir « Modifier » sur Finance (rôle Direction par défaut, ou un rôle « DAF » à créer). Règles Firestore inchangées ; la restriction « seulement la date de paiement » est assurée par l'écran (les règles donnent Modifier sur tout le document).
+- Galerie : « Cash in · encaissements » (`DEMO_CASHIN`, en mémoire). public/cashin.html inchangé.

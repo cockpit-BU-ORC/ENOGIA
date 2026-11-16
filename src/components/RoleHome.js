@@ -6,7 +6,8 @@ import { NavIcon } from "./SharedUI";
 import { planOf, catalogOf, activeSections, progressOf, effRange, isForced, testersOf, findConflicts } from "../testPlan";
 import { turbineStatus } from "../turbines";
 import { blockOn } from "../profiles";
-import { getCashinDoc, cashOverview } from "../cashinLink";
+import { getCashinDoc, cashOverview, todayISO as cashToday } from "../cashinLink";
+import { toCollect } from "../cashinModel";
 import { useCashin } from "../useCashin";
 import { fmtEur } from "../pjProgress";
 import { useProdModel } from "../prodModel"; // v324 : makeModel chargé à la demande
@@ -285,6 +286,17 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
       <div style={{ ...grid, gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))" }}><Stat label="encaissé" value={fmtEur(c.paid)} /><Stat label="facturé, en attente" value={fmtEur(c.invoiced)} /><Stat label="en retard de paiement" value={fmtEur(c.late)} tone={c.late ? T.red500 : undefined} /><Stat label="à facturer" value={fmtEur(c.toBill)} tone={c.toBill ? T.amber600 : undefined} /><Stat label="attendu sous 30 j" value={fmtEur(c.next30)} /></div>
     </>}
     {onOpenCash && more("Ouvrir le Cash in", onOpenCash)}</>); } };
+  // v369 (raccourci de la proposition B) : factures émises en attente de paiement ; un appui ouvre Cash in › Encaissements
+  W.encaisser = { label: "À encaisser", span: 4, sizes: ["m", "s", "xl"], only: () => !!cash, render: z => { const d = getCashinDoc(); if (!d) return null;
+    const L = toCollect(d.rows, cashToday()), amt = x => Number(x.r.montant) || 0, tot = L.reduce((a, x) => a + amt(x), 0), lateN = L.filter(x => x.group === "late").length;
+    const go = () => onOpenCash && onOpenCash("enc"), fd = iso => (iso ? iso.slice(8, 10) + "/" + iso.slice(5, 7) : "—");
+    return sec("encaisser", "À encaisser", S.finProd.ring, <><Head title="À encaisser" sub={L.length ? L.length + " facture" + (L.length > 1 ? "s" : "") + " émise" + (L.length > 1 ? "s" : "") + (lateN ? " · " + lateN + " en retard" : "") : "rien en attente"} />
+      <div style={{ fontFamily: T.fontDisplay, fontSize: 28, fontWeight: 600, letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums", color: lateN ? T.red600 : T.ink900, margin: "2px 0 4px" }}>{fmtEur(tot)}</div>
+      {z !== "s" && L.slice(0, z === "xl" ? 6 : 3).map(x => <button key={x.r.id} type="button" onClick={go} aria-label={"Saisir l'encaissement de " + x.r.pj} style={{ all: "unset", boxSizing: "border-box", width: "100%", display: "grid", gridTemplateColumns: "auto minmax(0,1fr) auto", gap: 10, alignItems: "center", padding: "6px 4px", minHeight: 44, borderTop: "1px solid " + T.line, cursor: "pointer" }}>
+        <b style={{ fontFamily: T.fontMono, fontSize: 13, fontWeight: 600 }}>{x.r.pj}</b>
+        <span style={{ fontSize: 12, color: x.group === "late" ? T.red600 : T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.group === "late" ? -x.days + " j de retard" : "prévu le " + fd(x.due)}</span>
+        <b style={{ fontSize: 13, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{fmtEur(amt(x))}</b></button>)}
+      {onOpenCash && more("Saisir les encaissements", go)}</>); } };
   W.alertes = { label: "Alertes", span: 8, render: () => { const bigLate = late.filter(r => r.drift > 10);
     return sec("alertes", "Alertes", A.orange.ring, <><Head title="Alertes" sub="dérives de plus de 10 j" count={bigLate.length} />
       {bigLate.length === 0 ? empty("check", "Aucune alerte", "Pas de grosse dérive.") : bigLate.slice(0, 6).map((r, i) => <Row key={r.pj} first={i === 0} pj={r.pj} pill={<Pill tone={A.orange}>Dérive</Pill>} main={nomOf(r) || "Départ " + fmtD(r.depart)} right={"+" + r.drift + " j"} />)}</>); } };
@@ -484,7 +496,7 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
     ["Tests — page Tests", { tests: "machines au banc et tests des 3 semaines", today: "machines au banc aujourd'hui (jour N / M)", sign: "fiches de test à signer", week: "la semaine de tests d'un testeur", arrivees: "machines qui arrivent au banc", results: "réussis et échecs des 14 derniers jours", postes: "occupation des postes de test", benchWeek: "toutes les machines au banc cette semaine" }],
     ["Atelier — Planificateur et Calendrier", { charge: "heures atelier sur 4 semaines face à la capacité", arrdep: "arrivées et départs de la semaine", montage: "machines en montage méca / élec", fermetures: "fermetures de l’atelier à venir" }],
     ["Production turbines", { ptReady: "turbines prêtes", ptNoWheel: "turbines testées sans roue", ptPieces: "pièces à suivre", ptDates: "dates prévisionnelles des turbines", ptRoues: "stock de roues équilibrées", ptInj: "stock d'injecteurs" }],
-    ["Gestion — Turbines et Cash in", { turbines: "pool de turbines", cash: "encaissements à venir", produit: "jalons cash liés à un livrable du Produit" }],
+    ["Gestion — Turbines et Cash in", { turbines: "pool de turbines", cash: "encaissements à venir", encaisser: "factures émises en attente de paiement, saisie par le DAF", produit: "jalons cash liés à un livrable du Produit" }],
     ["Échanges — Commentaires", { mentions: "les mentions qui vous attendent" }],
   ];
   // v355 : widgets à tailles fixes (WidgetBoard). Tailles permises : chiffres = Petit / Moyen ; cadrans larges = Bandeau ; autres = Moyen, Grand, Bandeau.

@@ -94,3 +94,13 @@ export const DEMO_SAV = {
   parc: { PJ214: { nom: "Ancien site biomasse", pays: "Allemagne", gamme: "20LTV2", contrat: "Premium", contratNo: "MP214-001", contratStatut: "En cours", mes: "2022-10-20", application: "Biomasse", preventive: dd(60) } },
 };
 export const DEMO_SAV_DEM = { items: { d1: { pj: "PJ901", obj: "Réglage de la régulation avec le client", date: dd(7), days: 2, by: "Camille Durand", byEmail: "camille.durand@exemple.fr", at: new Date().toISOString(), st: "attente" } } };
+
+// v369 : Cash in fictif pour la page Encaissements (factures émises, payées ou non)
+export const DEMO_CASHIN = { labels: { PJ902: "Verrerie Alpes", PJ905: "Fonderie Est", PJ909: "Papeterie du Nord", PJ901: "Chimie Rhône", PJ898: "Brasserie Loire" }, rows: [
+  { id: "c1", pj: "PJ902", jalon: "Livraison", pct: 40, montant: 48000, delai: 30, statut: "late", factReelle: day(-47), encPrevue: day(-17), encReelle: null },
+  { id: "c2", pj: "PJ905", jalon: "À la commande", pct: 30, montant: 72600, delai: 7, statut: "billed", factReelle: day(-6), encPrevue: day(1), encReelle: null },
+  { id: "c3", pj: "PJ909", jalon: "FAT", pct: 20, montant: 36800, delai: 16, statut: "billed", factReelle: day(-13), encPrevue: day(3), encReelle: null },
+  { id: "c4", pj: "PJ901", jalon: "Mise en service", pct: 10, montant: 134000, delai: 30, statut: "billed", factReelle: day(-4), encPrevue: day(26), encReelle: null },
+  { id: "c5", pj: "PJ898", jalon: "Solde", pct: 10, montant: 21000, delai: 30, statut: "paid", factReelle: day(-40), encPrevue: day(-10), encReelle: day(-8) },
+  { id: "c6", pj: "PJ903", jalon: "À la commande", pct: 30, montant: 63000, delai: 30, statut: "future", factPrevue: day(12), encPrevue: day(42), encReelle: null },
+] };

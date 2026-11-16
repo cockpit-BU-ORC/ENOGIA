@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v369",
+    date: "2026-11-16",
+    title: "V369 : Cash in : sous-page Encaissements pour le DAF",
+    items: [
+      { t: "Cash in", d: "Nouvelle sous-page « Encaissements » : les factures émises en attente de paiement, par urgence ; un geste pour saisir la date de paiement reçu, « Annuler » pendant 6 s." },
+      { t: "Accueil", d: "Widget « À encaisser » (à ajouter à un accueil) qui ouvre directement la saisie." },
+    ],
+  },
+  {
     id: "2026-11-v368",
     date: "2026-11-16",
     title: "V368 : rapport chef de projet plus lisible, bancs en deux jaunes",

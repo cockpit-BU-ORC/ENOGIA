@@ -1106,4 +1106,9 @@ export const RELEASE_CATALOG = [
     ["Rapport chef de projet", "Un commentaire trop long pour sa diapositive est repris en entier sur « Textes complets de la fiche » (plus rien d'abrégé sans suite)."],
     ["Tests", "Planning des bancs : « en cours » en jaune sur le banc 1, en jaune ambré sur le banc 2 (légende à jour)."],
   ] },
+  { v: "369", t: "Cash in : sous-page Encaissements pour le DAF", items: [
+    ["Cash in", "Sous-page « Encaissements » à côté du tableau complet : factures émises non payées, groupées En retard / Cette semaine / Plus tard, avec montant, date de facture et encaissement prévu."],
+    ["Cash in", "« Encaissé aujourd'hui » ou une autre date ; « Annuler » 6 s ; « Reçus ces 30 jours » avec « Remettre à encaisser ». Seule la date de paiement change, avec les mêmes recalculs que le tableau."],
+    ["Accueil", "Widget « À encaisser » dans le catalogue (Gestion) : total, retards, prochaines factures ; un appui ouvre Cash in › Encaissements."],
+  ] },
 ];

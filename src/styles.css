@@ -780,3 +780,8 @@ tr[data-kbd]:active > td, tr[role="button"]:active > td, li[data-kbd]:active, li
 @keyframes enogiaClIn { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
 .enogia-cl-in { animation: enogiaClIn var(--e-dur-menu) ease-out both; }
 @media (prefers-reduced-motion: reduce) { .enogia-cl-in { animation: none; } }
+
+/* v369 : Cash in › Encaissements — lignes empilées au téléphone, message « Annuler » en fondu */
+@keyframes enogiaEncIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.enogia-enc-toast { animation: enogiaEncIn var(--e-dur-in) ease-out both; }
+@media (prefers-reduced-motion: reduce) { .enogia-enc-toast { animation: none; } }
