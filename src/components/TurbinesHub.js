@@ -124,24 +124,23 @@ function Sock({ ctx, n, s, kind, label, want, tone, empty, hint, children }) {
     const can = can0 && !refused, over = dnd.over === key && can;
     const bd = refused ? "1.5px solid " + T.red600 : over ? "2px solid " + T.emerald600 : can ? "1.5px solid " + T.ink700 : filled ? "1.5px solid " + tone.bd : "1.5px dashed " + (want || kind === "turbine" ? T.ink300 : T.amber600);
     return <div {...(canEdit ? dnd.dropProps(key, acc, d => drop(n, s.i, d)) : {})} className={"enogia-nd-sock" + (landed === key ? " enogia-nd-land" : "")}
-      role={!filled && !lock ? "button" : undefined} tabIndex={!filled && !lock ? 0 : undefined} aria-label={!filled ? label + " pour " + n.label + (lock ? ", verrouillé : turbine installée" : want ? ", prévu " + want : "") : undefined}
+      title={!filled && hint ? label + " : " + (want || "") + " (" + hint + ")" : undefined} role={!filled && !lock ? "button" : undefined} tabIndex={!filled && !lock ? 0 : undefined} aria-label={!filled ? label + " pour " + n.label + (lock ? ", verrouillé : turbine installée" : want ? ", prévu " + want : "") : undefined}
       onClick={!filled ? (e => { if (!canEdit || lock) return; if (picked) { if (acc(picked)) drop(n, s.i, picked); else setMsg({ t: "Cette pièce ne va pas dans ce logement.", warn: true }); } else if (kind !== "turbine") setPop({ n, kind: kind === "roue" ? "roue" : "inj", el: e.currentTarget }); }) : undefined}
       onKeyDown={!filled ? (e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.currentTarget.click(); } }) : undefined}
-      style={{ position: "relative", minWidth: 0, minHeight: 50, borderRadius: 8, padding: "3px 7px", boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "center", border: bd, cursor: !filled && canEdit && !lock ? "pointer" : "default",
+      style={{ position: "relative", minWidth: 0, minHeight: 40, borderRadius: 8, padding: "3px 6px", boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "center", border: bd, cursor: !filled && canEdit && !lock ? "pointer" : "default",
         background: refused ? T.red100 : over ? T.emerald100 : can ? T.surfaceAlt : filled ? tone.bg : "transparent", transform: over ? "scale(1.03)" : "none", opacity: active && !can0 && !filled ? 0.35 : 1 }}>
       {filled ? children : <>
         <span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 12, fontWeight: 500, lineHeight: 1.15, color: refused ? T.red600 : T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{lock ? IC.lock : IC.plus}{refused ? "Refusé : roue " + n.roue + " prévue" : lock ? label + " · verrouillé" : label}</span>
-        <span style={{ ...REF_ST, fontFamily: want ? T.fontDisplay : T.font, fontSize: want ? 14 : 13, fontWeight: 600, color: want ? T.ink500 : T.ink700 }}>{want || empty || (kind === "turbine" ? "glisser une turbine" : "à choisir")}</span>
-        {hint && <span style={{ fontSize: 12, lineHeight: 1.15, color: T.ink500 }}>{hint}</span>}</>}
+        <span style={{ ...REF_ST, fontFamily: want ? T.fontDisplay : T.font, fontSize: 13, fontWeight: 600, color: want ? T.ink500 : T.ink700 }}>{want || empty || (kind === "turbine" ? "glisser une turbine" : "à choisir")}</span>
+</>}
     </div>;
   }
 // v301 (demandé : « je n'arrive pas à voir le nom complet de l'injecteur ») : la référence passe à la ligne (2 lignes au plus) au lieu d'être coupée
 const REF_ST = { lineHeight: 1.12, overflowWrap: "anywhere", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" };
 // contenu d'un logement rempli : quoi (icône + état), référence complète, détail
-function Piece({ tone, icon, label, val, mono, detail, x }) {
-  return <><span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 12, fontWeight: 500, lineHeight: 1.15, color: tone.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", paddingRight: x ? 16 : 0 }}>{icon}{label}</span>
-    <span title={val} style={{ ...REF_ST, fontFamily: mono ? T.fontMono : T.fontDisplay, fontSize: mono ? 12 : 14, fontWeight: 600, color: tone.ink, paddingRight: x ? 14 : 0 }}>{val}</span>
-    {detail && <span style={{ fontSize: 12, lineHeight: 1.15, color: tone.ink, opacity: 0.85 }}>{detail}</span>}{x}</>;
+function Piece({ tone, icon, label, val, mono, detail, x }) { // v361 : détail sur la ligne du libellé (2 lignes au lieu de 3)
+  return <><span title={detail ? label + " · " + detail : undefined} style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 12, fontWeight: 500, lineHeight: 1.15, color: tone.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", paddingRight: x ? 16 : 0 }}>{icon}<span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{label}{detail ? <span style={{ fontWeight: 400, opacity: 0.85 }}> · {detail}</span> : null}</span></span>
+    <span title={val} style={{ ...REF_ST, fontFamily: mono ? T.fontMono : T.fontDisplay, fontSize: 13, fontWeight: 600, color: tone.ink, paddingRight: x ? 14 : 0 }}>{val}</span>{x}</>;
 }
 // v350 (audit de performance) : défini hors du composant (sinon recréé et remonté à chaque rendu)
 const Sub = ({ t, n, children }) => <div style={{ display: "flex", flexDirection: "column", gap: 3 }}><div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 500, color: T.ink500, padding: "0 2px" }}><span>{t}</span><span style={{ fontVariantNumeric: "tabular-nums" }}>{n}</span></div>{children}</div>;
@@ -150,7 +149,7 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
   const { needs, free } = useMemo(() => buildNeeds(doc, rows, r => getPjMeta(r.pj, r)), [doc, rows, tick]); // eslint-disable-line react-hooks/exhaustive-deps
   const dnd = usePointerDnD();
   const docRef = useRef(doc); docRef.current = doc;
-  const [gam, setGam] = useState("100"), [msg, setMsg] = useState(null), [sav, setSav] = useState(null), [busy, setBusy] = useState(false), [onlyOpen, setOnlyOpen] = useState(true), [pop, setPop] = useState(null), [picked, setPicked] = useState(null), [landed, setLanded] = useState(null), [drawer, setDrawer] = useState(false), [closedDlg, setClosedDlg] = useState(false);
+  const [gam, setGam] = useState("100"), [msg, setMsg] = useState(null), [sav, setSav] = useState(null), [busy, setBusy] = useState(false), [onlyOpen, setOnlyOpen0] = useState(() => { try { return localStorage.getItem("enogia_nd_open") === "1"; } catch (e) { return false; } }), [pop, setPop] = useState(null), [picked, setPicked] = useState(null), [landed, setLanded] = useState(null), [drawer, setDrawer] = useState(false), [closedDlg, setClosedDlg] = useState(false);
   // v334 (demandé : « pouvoir fermer des PJ car les turbines sont déjà installées et donc plus dans la liste ») : clore / rouvrir un besoin
   const closeNeed = async n => {
     if (!(await askConfirm({ title: "Clore le besoin " + n.label + " ?", message: "Il sort de la liste des besoins (et du remplissage automatique). Les turbines et pièces déjà attribuées ne bougent pas. On le rouvre depuis « Besoins clos ».", confirmLabel: "Clore le besoin" }))) return;
@@ -206,6 +205,8 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
   const setKind = k => { setKind0(k); try { localStorage.setItem("enogia_nd_kind", k); } catch (e) { /* stockage indisponible */ } };
   const nOrc = needs.filter(n => n.kind === "pj").length, nSav = needs.length - nOrc;
   const allDone = n => n.slots.filter(x => !x.extra).every(x => x.installee);
+  // v361 (demandé : « voir les tuiles même si elles sont complètes ») : tous les besoins par défaut ; « À compléter » reste un filtre, mémorisé sur ce poste
+  const setOnlyOpen = v => { setOnlyOpen0(v); try { localStorage.setItem("enogia_nd_open", v ? "1" : "0"); } catch (e) { /* stockage indisponible */ } };
   const shown = needs.filter(n => (kind === "all" || n.kind === kind) && (!onlyOpen || !allDone(n) || !n.complete || n.late || n.issues.some(i => i.bad && !/à attribuer$/.test(i.t))));
   const freeG = free.filter(x => x.gamme === gam).sort((a, b) => (b.ready - a.ready) || (b.sansRoue - a.sansRoue) || String(a.end || "9").localeCompare(String(b.end || "9")));
   const active = dnd.drag || picked;
@@ -294,7 +295,7 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
           {closedL.length > 0 && <button type="button" onClick={() => setClosedDlg(true)} style={{ ...themeBtn("ghost", "sm") }}>Besoins clos ({closedL.length})</button>}
           {canEdit && <button type="button" onClick={() => setSav({})} style={{ ...themeBtn("pri", "sm") }}>＋ Besoin SAV</button>}
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 420px), 1fr))", gap: 8, padding: "8px 12px 16px", alignItems: "start" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 340px), 1fr))", gap: 8, padding: "8px 12px 16px", alignItems: "start" }}>
           {shownD.map(n => { const mo = monthOf(n.date), head = mo !== lastMo; lastMo = mo;
             const canUp = canEdit && !!neighbor(n, -1), canDown = canEdit && !!neighbor(n, 1);
             const T3 = n.want * 3, G3 = n.slots.filter(x => !x.extra).reduce((q, x) => q + !!x.t + !!x.roueOk + !!x.inj, 0), badI = n.issues.filter(i => i.bad && !/à attribuer$/.test(i.t) && !/après le besoin/.test(i.t));
@@ -303,7 +304,7 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
             const rk = rankOf.get(n.key), bgC = n.kind === "sav" ? "color-mix(in srgb, " + T.violet100 + " 80%, " + T.card + ")" : "color-mix(in srgb, " + T.info100 + " 45%, " + T.card + ")";
             return <React.Fragment key={n.key}>
               {head && <h2 className="enogia-nd-month enogia-nd-glass" style={{ gridColumn: "1 / -1", top: barH, margin: "2px -12px 0", padding: "7px 14px", fontSize: 13, fontWeight: 500, color: T.ink700, fontFamily: T.font }}>{monthLab(n.date)}</h2>}
-              <article className="enogia-nd-need" aria-label={"Besoin n° " + rk + ", " + (n.kind === "sav" ? "SAV " : "ORC ") + n.label} style={{ display: "flex", flexDirection: "column", gap: 6, padding: "8px 10px", borderRadius: 12, minWidth: 0, boxSizing: "border-box", background: bgC,
+              <article className="enogia-nd-need" aria-label={"Besoin n° " + rk + ", " + (n.kind === "sav" ? "SAV " : "ORC ") + n.label} style={{ display: "flex", flexDirection: "column", gap: 4, padding: "6px 8px", borderRadius: 12, minWidth: 0, boxSizing: "border-box", background: bgC,
               boxShadow: "inset 0 0 0 " + (n.late || badI.length ? "1.5px " + T.red600 : "1px " + (done ? T.emerald600 : n.kind === "sav" ? "color-mix(in srgb, " + T.violet500 + " 45%, transparent)" : "color-mix(in srgb, " + T.info600 + " 22%, transparent)")) }}>
               <div style={{ display: "flex", alignItems: "center", gap: "4px 6px", flexWrap: "wrap", minWidth: 0, minHeight: 24 }}>
                 {canEdit && <span style={{ display: "inline-flex", gap: 2 }}>
@@ -339,7 +340,7 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
                     <Sock ctx={ctx} n={n} s={x} kind="turbine" label={"Turbine " + n.cfg.g + " kW"} want={x.estNum} hint={x.estNum ? "prochaine libre" : ""} empty={x.estNum ? "" : "glisser une turbine"} tone={x.t ? tT : null}>
                       {x.t && <Piece tone={tT} icon={x.installee ? IC.lock : IC.ok} label={x.installee ? "Installée" : "Turbine allouée"} val={x.t.num || "sans n°"} mono detail={tDet} x={!x.installee && xBtn("Retirer " + (x.t.num || "la turbine"), () => outTurbine(x.t))} />}</Sock>
                   </div>
-                  {!x.extra && <div style={{ display: "grid", gridTemplateColumns: "16px minmax(0, 1fr) auto", gap: 6, alignItems: "center", minHeight: 24, fontSize: 12, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>
+                  {!x.extra && <div style={{ display: "grid", gridTemplateColumns: "16px minmax(0, 1fr) auto", gap: 6, alignItems: "center", minHeight: 20, fontSize: 12, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>
                     <span />
                     {/* v302 (demandé : « la frise chronologique n'est pas claire du tout ») : une phrase — disponible le … pour un besoin le … — et l'écart */}
                     {x.installee ? <span style={{ color: T.emerald600, fontWeight: 600 }}>Installée sur la machine le {fdS(x.installee)}</span>

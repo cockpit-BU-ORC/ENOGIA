@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v361",
+    date: "2026-11-16",
+    title: "V361 : besoins turbines plus compacts",
+    items: [
+      { t: "Turbines", d: "Besoins ORC et SAV : cartes plus compactes, et les besoins complets restent affichés (« À compléter » pour les masquer)." },
+    ],
+  },
+  {
     id: "2026-11-v360",
     date: "2026-11-16",
     title: "V360 : trier la Liste d'un clic",

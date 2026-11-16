@@ -2619,3 +2619,9 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - TableView.js : le nom de chaque colonne est un bouton (`SL`, `cycleSort`, classe `enogia-sort-lbl`) — 1er clic ↓ (décroissant), 2e ↑ (croissant), 3e = plus de tri ; flèche ↕ grise sinon ; `aria-sort` sur l'en-tête (N° PJ compris) ; tri par nombre de commentaires ajouté ; les anciens petits boutons de Début prod et Avancement remplacés par le même nom cliquable. L'entonnoir garde les filtres et les tris spéciaux (date la plus ancienne, dérive).
 - Aucune clé localStorage ; données et règles Firestore inchangées.
 - Fichiers : components/TableView.js, versions.
+
+## v361 — besoins turbines plus compacts, besoins complets visibles
+
+- TurbinesHub.js : logement (`Sock`) 50 → 40 px, 2 lignes (la 3e ligne « prévue / prochaine libre » passe dans la bulle) ; `Piece` : détail sur la ligne du libellé, référence 13 px ; cartes minmax 420 → 340 px, padding 6 / 8 px ; cartes de la galerie 157 → 134 px et 245 → 202 px.
+- « À compléter » décochée par défaut : les besoins complets restent affichés. Clé localStorage **`enogia_nd_open`** (« 1 » = n'afficher que les besoins à compléter).
+- Données et règles Firestore inchangées. Fichiers : components/TurbinesHub.js, versions.

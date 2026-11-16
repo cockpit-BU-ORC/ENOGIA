@@ -1065,4 +1065,8 @@ export const RELEASE_CATALOG = [
   { v: "360", t: "Trier la Liste d'un clic", items: [
     ["Liste", "Clic sur le nom d'une colonne : ↓ décroissant, puis ↑ croissant, puis plus de tri ; toutes les colonnes, Commentaires compris."],
   ] },
+  { v: "361", t: "Besoins turbines plus compacts", items: [
+    ["Turbines", "Besoins ORC et SAV : logements sur 2 lignes (40 px au lieu de 50), cartes plus étroites et resserrées."],
+    ["Turbines", "Les besoins complets restent affichés par défaut ; la case « À compléter » les masque et se souvient du choix."],
+  ] },
 ];
