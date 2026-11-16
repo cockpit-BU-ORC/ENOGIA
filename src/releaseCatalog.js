@@ -1062,4 +1062,7 @@ export const RELEASE_CATALOG = [
     ["Accueil", "Trois tailles, qui règlent la largeur : Petit (1 colonne), Moyen (2), Large (toute la largeur)."],
     ["Tests", "Mêmes règles pour les cadres de Tests › Par semaine."],
   ] },
+  { v: "360", t: "Trier la Liste d'un clic", items: [
+    ["Liste", "Clic sur le nom d'une colonne : ↓ décroissant, puis ↑ croissant, puis plus de tri ; toutes les colonnes, Commentaires compris."],
+  ] },
 ];

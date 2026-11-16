@@ -2613,3 +2613,9 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - RoleHome, TestsTab, KpiPilotage : tailles permises ramenées à s / m / xl.
 - Aucune clé localStorage ; données et règles Firestore inchangées.
 - Fichiers : components/WidgetBoard.js, RoleHome.js, TestsTab.js, KpiPilotage.js, styles.css, versions.
+
+## v360 — trier la Liste d'un clic sur l'en-tête
+
+- TableView.js : le nom de chaque colonne est un bouton (`SL`, `cycleSort`, classe `enogia-sort-lbl`) — 1er clic ↓ (décroissant), 2e ↑ (croissant), 3e = plus de tri ; flèche ↕ grise sinon ; `aria-sort` sur l'en-tête (N° PJ compris) ; tri par nombre de commentaires ajouté ; les anciens petits boutons de Début prod et Avancement remplacés par le même nom cliquable. L'entonnoir garde les filtres et les tris spéciaux (date la plus ancienne, dérive).
+- Aucune clé localStorage ; données et règles Firestore inchangées.
+- Fichiers : components/TableView.js, versions.

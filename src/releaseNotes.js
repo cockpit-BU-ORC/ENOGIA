@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v360",
+    date: "2026-11-16",
+    title: "V360 : trier la Liste d'un clic",
+    items: [
+      { t: "Liste", d: "Cliquez sur le nom d'une colonne pour trier : un clic ↓, un deuxième ↑, un troisième retire le tri. L'entonnoir garde les filtres." },
+    ],
+  },
+  {
     id: "2026-11-v359",
     date: "2026-11-16",
     title: "V359 : des widgets à la hauteur de leur contenu",
