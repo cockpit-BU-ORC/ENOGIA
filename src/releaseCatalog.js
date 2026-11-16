@@ -1100,4 +1100,10 @@ export const RELEASE_CATALOG = [
     ["Fiches projet", "Actions et plans de mitigation : les clôturés passent dans « Clôturées (N) », replié, une ligne compacte chacun avec « Rouvrir »."],
     ["Rapport chef de projet", "Un projet EPC est rangé chez son chef ORC (comme les fiches projet) ; le chef de l'EPC est rappelé en mention."],
   ] },
+  { v: "368", t: "Rapport chef de projet plus lisible, bancs en deux jaunes", items: [
+    ["Rapport chef de projet", "Passe apple-design : plus de majuscules espacées, titres de section 11 pt, petits textes à 8,5–9 pt au moins, gras réservé aux titres et aux valeurs."],
+    ["Rapport chef de projet", "Comme la fiche : mitigation = risque puis « ce qu'on fait pour l'éviter », actions et mitigations ouvertes en entier, clôturées résumées sur une ligne."],
+    ["Rapport chef de projet", "Un commentaire trop long pour sa diapositive est repris en entier sur « Textes complets de la fiche » (plus rien d'abrégé sans suite)."],
+    ["Tests", "Planning des bancs : « en cours » en jaune sur le banc 1, en jaune ambré sur le banc 2 (légende à jour)."],
+  ] },
 ];

@@ -53,7 +53,7 @@ function financeOf(r, meta, rows, certifs) {
   return { base: ficheBase(meta), livrContr: meta.contratLivr || null, livrPrevue: livrPrevueOf(meta, r.depart), pen, certs, sibs, sibBase: pjBase(r.pj) };
 }
 
-function infoOf(r, { initialByPj, delays, comments, progress, change, rows, certifs }) {
+export function infoOf(r, { initialByPj, delays, comments, progress, change, rows, certifs }) {
   const meta = getPjMeta(r.pj, r);
   const ini = initialByPj[r.pj] || null;
   const dep = dOf(r.depart), tf = meta.contratTFin ? dOf(meta.contratTFin) : null, t0 = meta.contratT0 ? dOf(meta.contratT0) : null;
@@ -77,7 +77,7 @@ function infoOf(r, { initialByPj, delays, comments, progress, change, rows, cert
     gammeColor: GAMME_COLORS[r.gamme] || "#5068b0", etatColor: (ETAT_META[r.etat] || {}).bar || "#8a9199", presenceKind: kind || "",
     feux: feuxOf(meta), notes: meta.notes || {}, semAt: meta.semAt || null, mitAt: meta.mitAt || null,
     actions: sortedItems(itemsOf(meta, "actions")).map(x => ({ text: x.text, done: !!x.done, doneAt: x.doneAt || null, deadline: x.deadline || null })),
-    mitigations: sortedItems(itemsOf(meta, "mitigations")).map(x => ({ text: x.text, done: !!x.done, doneAt: x.doneAt || null })),
+    mitigations: sortedItems(itemsOf(meta, "mitigations")).map(x => ({ text: x.text, risk: x.risk || "", measure: x.measure || "", done: !!x.done, doneAt: x.doneAt || null, deadline: x.deadline || null })), // v368 : risque et mesure séparés, comme la fiche
     feuxAt: meta.feuxAt || null,
     global: gSet ? manualGlobal(meta) : null, montant: montantOf(meta), pv: prodPct(r, progress), compPct: compPct(meta), payPct: payPct(meta, r.pj),
     comps, pay: paiementsOf(meta, r.pj).filter(p => !p.epc).map(p => ({ label: p.label, pct: p.pct, done: !!p.done, doneAt: p.doneAt || null, linked: !!p.linked, montant: p.linked ? p.montant : null, tone: p.linked ? p.tone : null, retard: p.linked ? p.retard : null, shared: !!p.shared, sharedN: p.sharedN || 1 })),

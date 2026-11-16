@@ -4,7 +4,7 @@
 // Les données vivent dans planning/tests (un seul document).
 import { PlanSwitch } from "./PlanSwitch";
 import React, { useMemo, useState, useEffect, useRef } from "react";
-import { T, FZF as FZ, stageSoft, inkOn, btn as themeBtn } from "../theme";
+import { T, FZF as FZ, stageSoft, inkOn, mixHex, btn as themeBtn } from "../theme";
 import { getPjMeta, PRESENCE_META, PresenceChip, presenceKind, presenceDates, presenceFirstDate, Avatar, personTint } from "../pjMeta";
 import { fmt, toLocalISO } from "../parsers";
 import { useMentions } from "../mentionContext";
@@ -156,7 +156,9 @@ function SegBar({ segs, h = 8, gap = 2, width, still }) {
 const dayStart = d => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
 // v366 (maquette v366-bancs-turbines.html, piste A validée) : un cadre par banc — la machine en cours (ou « Libre »), puis les 4 suivantes
 // de ce banc dans l'ordre de passage (banc d'après le planificateur, benchModel.js).
-const BENCH_C = b => (b === 2 ? T.info600 : T.ink900);
+// v368 (demandé : « différencier les couleurs entre banc 1 et banc 2, garder le jaune mais nuancé ») : banc 1 = jaune des tests, banc 2 = jaune
+// tirant sur l'ambre (mélange avec T.amber500) ; texte posé dessus = inkOn
+const BENCH_C = b => (b === 2 ? mixHex(stageSoft().tests.solid, T.amber500, 0.75) : stageSoft().tests.solid);
 function BenchCard({ r, plan, act, q, lateD, n, m, testers, catalog, on, onPick }) {
   const segs = segsOf(plan, catalog, act), cur = segs.find(s => s.v === "wip") || segs.find(s => s.v === "todo") || segs.find(s => s.v === "ko");
   const names = plan.assign.map(x => testers.find(t => t.id === x.tid)).filter(Boolean).map(t => t.name.split(" ")[0]);
@@ -272,10 +274,11 @@ function machineState(r, doc, catalog, todayIso) {
   return { plan, act, q, a, b, full, st: full ? "done" : late ? "late" : a <= todayIso ? "wip" : "next", lateD: late ? dd(b, todayIso) : 0, n: dd(a, todayIso) + 1, m: dd(a, b) + 1 };
 }
 const toneOfSt = st => { const S = stageSoft(), c = st === "late" ? T.red500 : st === "done" ? S.finProd.solid : st === "wip" ? S.tests.solid : null; return c ? { bg: c, ink: inkOn(c), bd: "none" } : { bg: T.card, ink: T.ink900, bd: "1.5px solid " + T.ink500 }; };
-function GridLegend() {
+function GridLegend({ benches }) {
   const S = stageSoft(), sw = (bg, bd) => <i aria-hidden="true" style={{ width: 12, height: 9, borderRadius: 4, background: bg, border: bd || "none", boxSizing: "border-box", display: "inline-block" }} />;
   return (<span style={{ display: "inline-flex", gap: 12, flexWrap: "wrap", fontSize: FZ.xs, color: T.ink500, alignItems: "center" }}>
-    <span style={{ display: "inline-flex", gap: 5, alignItems: "center" }}>{sw(S.tests.solid)}en cours</span>
+    {benches ? <><span style={{ display: "inline-flex", gap: 5, alignItems: "center" }}>{sw(BENCH_C(1))}en cours · banc 1</span><span style={{ display: "inline-flex", gap: 5, alignItems: "center" }}>{sw(BENCH_C(2))}en cours · banc 2</span></>
+      : <span style={{ display: "inline-flex", gap: 5, alignItems: "center" }}>{sw(S.tests.solid)}en cours</span>}
     <span style={{ display: "inline-flex", gap: 5, alignItems: "center" }}>{sw(T.red500)}en retard</span>
     <span style={{ display: "inline-flex", gap: 5, alignItems: "center" }}>{sw(S.finProd.solid)}terminé</span>
     <span style={{ display: "inline-flex", gap: 5, alignItems: "center" }}>{sw(T.card, "1.5px solid " + T.ink500)}prévu</span>
@@ -380,7 +383,7 @@ function BenchGrid({ rows, allRows, doc, catalog, testers, conflicts, on, onPick
                 {days.map((d, i) => !HOLI.isWork(d) ? <span key={d} style={{ position: "absolute", left: i * COL, width: COL, top: 0, bottom: 0, background: T.surfaceAlt }} /> : null)}
                 <span style={{ position: "absolute", left: tx - 1, top: 0, bottom: 0, width: 2, borderRadius: 2, background: T.red500, zIndex: 1 }} />
               </div>
-              {L.map(x => { const { r, ms } = x, tn = toneOfSt(ms.st), a0 = Math.max(0, idx(x.a)), z1 = Math.min(days.length - 1, idx(x.b) - (days.includes(x.b) ? 0 : 1)), w = Math.max(1, z1 - a0 + 1) * COL - 4, sel = on === r.pj;
+              {L.map(x => { const { r, ms } = x, tn0 = toneOfSt(ms.st), tn = ms.st === "wip" ? { ...tn0, bg: BENCH_C(bk), ink: inkOn(BENCH_C(bk)) } : tn0, a0 = Math.max(0, idx(x.a)), z1 = Math.min(days.length - 1, idx(x.b) - (days.includes(x.b) ? 0 : 1)), w = Math.max(1, z1 - a0 + 1) * COL - 4, sel = on === r.pj;
                 const pct = ms.q.total ? Math.round(ms.q.done / ms.q.total * 100) : 0;
                 const info = ms.st === "late" ? "en retard de " + ms.lateD + " j" : ms.st === "wip" ? "jour " + ms.n + " / " + ms.m : ms.st === "done" ? (isForced(ms.plan) ? "✓ validé" : "✓ terminé") : "prévu le " + fdm(ms.a);
                 const aria = r.pj + (r.gamme ? ", " + r.gamme : "") + ", banc " + bk + ", tests du " + fd(ms.a) + " au " + fd(ms.b) + ", " + info + ", " + ms.q.done + " tests faits sur " + ms.q.total + (x.names.length ? ", " + x.names.join(" et ") : ", sans testeur") + (x.conf ? ", testeur en conflit" : "");
@@ -388,7 +391,7 @@ function BenchGrid({ rows, allRows, doc, catalog, testers, conflicts, on, onPick
                 return (<React.Fragment key={r.pj}>
                   <button type="button" className="enogia-bg-bar" onClick={() => onPick(r.pj)} aria-label={aria} title={r.pj + " · " + fd(ms.a) + " → " + fd(ms.b) + " · " + info + (x.conf ? " · testeur en conflit" : "")}
                     style={{ position: "absolute", left: a0 * COL + 2, width: w, top: 8 + x.row * ROW, height: ROW - 8, zIndex: 2, border: "none", borderRadius: 8, background: tn.bg, backgroundImage: ms.st === "late" ? HATCH : undefined, color: tn.ink,
-                      boxShadow: (tn.bd !== "none" ? "inset 0 0 0 1.5px " + T.ink300 : "") + (x.conf ? (tn.bd !== "none" ? ", " : "") + "0 0 0 2px " + T.amber600 : sel ? (tn.bd !== "none" ? ", " : "") + "0 0 0 2px " + T.ink900 : ""), cursor: "pointer", padding: "0 8px", textAlign: "left", fontFamily: T.font, overflow: "clip", whiteSpace: "nowrap", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "flex-start", lineHeight: 1.2 }}>
+                      boxShadow: (tn.bd !== "none" ? "inset 4px 0 0 " + BENCH_C(bk) + ", inset 0 0 0 1.5px " + T.ink300 : "") + (x.conf ? (tn.bd !== "none" ? ", " : "") + "0 0 0 2px " + T.amber600 : sel ? (tn.bd !== "none" ? ", " : "") + "0 0 0 2px " + T.ink900 : ""), cursor: "pointer", padding: "0 8px", textAlign: "left", fontFamily: T.font, overflow: "clip", whiteSpace: "nowrap", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "flex-start", lineHeight: 1.2 }}>
                     <span style={{ position: "sticky", left: "calc(" + BG_LW + " + 8px)", display: "flex", flexDirection: "column", minWidth: 0, maxWidth: "100%" }}>
                     <b style={{ fontFamily: T.fontDisplay, fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis" }}>{r.pj}{r.gamme && w > 120 ? " · " + r.gamme : ""}</b>
                     {ROW >= 44 && w > 70 && <span style={{ fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", opacity: 0.9 }}>{info}{x.names.length ? " · " + x.names.join(", ") : ms.st !== "done" ? " · sans testeur" : ""}</span>}</span>
@@ -400,7 +403,7 @@ function BenchGrid({ rows, allRows, doc, catalog, testers, conflicts, on, onPick
       </div>
     </div>
     <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center", padding: "10px 14px", borderTop: "1px solid " + T.line }}>
-      <GridLegend />
+      <GridLegend benches />
       {noPer.length > 0 && <span style={{ display: "inline-flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginLeft: "auto", fontSize: 12, color: T.ink500 }}>Sans période de tests :
         {noPer.slice(0, 8).map(r => <button key={r.pj} type="button" onClick={() => onPick(r.pj)} aria-label={"Ouvrir la fiche de tests de " + r.pj} style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer" }}><PjPlate pj={r.pj} /></button>)}
         {noPer.length > 8 ? "et " + (noPer.length - 8) + " autres" : null}</span>}

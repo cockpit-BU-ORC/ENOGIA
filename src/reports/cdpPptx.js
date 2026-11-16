@@ -29,7 +29,7 @@ const fitNote = (text, w, size, cap) => {
   const t = (text || "").replace(/[ \t]+/g, " ").trim(); if (!t) return { text: "", lines: 0, h: 0 };
   const n = estLines(t, w, size), lines = Math.min(cap, n);
   const per = Math.floor(w / CHW(size) / 1.06);
-  return { text: n > cap ? clip(t, Math.max(10, Math.floor(cap * per * 0.9))) : t, lines, h: lines * LHT(size) + 0.1 };
+  return { text: n > cap ? clip(t, Math.max(10, Math.floor(cap * per * 0.9))) : t, lines, h: lines * LHT(size) + 0.1, cut: n > cap };
 };
 const FIELD_LABEL = { arrivee: "Arrivée", tests: "Tests", testsFin: "Fin tests", finProd: "Fin de prod.", depart: "Départ" };
 
@@ -46,7 +46,8 @@ function frame(s, { eyebrow, title, page, total, label, right }) {
   s.addText("ENOGIA · " + (label || "Revue de projets") + " · Confidentiel", { x: MX, y: H - 0.38, w: 8, h: 0.25, fontFace: FONT, fontSize: 8, color: C.faint, margin: 0 });
   if (page) s.addText(String(page) + " / " + String(total), { x: W - MX - 1.5, y: H - 0.38, w: 1.5, h: 0.25, align: "right", fontFace: FONT, fontSize: 9, color: C.navy, margin: 0 });
 }
-const cap = (s, t, x, y, w) => s.addText(t.toUpperCase(), { x, y, w, h: 0.22, fontFace: FONT, fontSize: 8.5, bold: true, color: C.navy2, charSpacing: 3, margin: 0 });
+// v368 (passe apple-design) : titres de section en casse normale, sans espacement (plus de majuscules espacées), 11 pt
+const cap = (s, t, x, y, w) => s.addText(t, { x, y, w, h: 0.24, fontFace: FONT, fontSize: 11, bold: true, color: C.navy, margin: 0 });
 const rule = (s, x, y, w) => s.addShape("line", { x, y, w, h: 0, line: { color: C.hair, width: 1 } });
 const heading = (s, t, x, y, w) => { cap(s, t, x, y, w); rule(s, x, y + 0.26, w); };
 
@@ -67,7 +68,7 @@ function coverSlide(pptx, { title, sub, stats, dateLabel }) {
 function dividerSlide(pptx, chef, n) {
   const s = pptx.addSlide(); coverBg(s);
   img(s, "wave", { x: 0, y: 3.2, w: W, h: 3.5, transparency: 40 });
-  s.addText("CHEF DE PROJET", { x: 1.96, y: 1.9, w: 9.41, h: 0.35, align: "center", fontFace: FONT, fontSize: 13, bold: true, color: C.brass, charSpacing: 5, margin: 0 });
+  s.addText("Chef de projet", { x: 1.96, y: 1.9, w: 9.41, h: 0.35, align: "center", fontFace: FONT, fontSize: 14, color: C.brass, margin: 0 });
   s.addText(chef, { x: 1.96, y: 2.3, w: 9.41, h: 0.9, align: "center", fontFace: TFONT, fontSize: 38, bold: true, color: C.white, fit: "shrink", margin: 0, valign: "middle" });
   s.addText(n + " projet" + (n > 1 ? "s" : ""), { x: 1.96, y: 3.25, w: 9.41, h: 0.4, align: "center", fontFace: FONT, fontSize: 16, color: "CFEFEC", margin: 0 });
   img(s, "logo", { x: 5.46, y: 5.85, w: 2.41, h: 0.83 }); badges(s);
@@ -159,7 +160,7 @@ export function commentPages(i) {
 }
 const needsThird = i => (i.delayList || []).length > 0 || (i.comments || []).length > 0;
 const needsFin = i => !!i.fin && (i.fin.base != null || !!i.fin.pen || !!i.fin.livrContr || !!i.fin.livrPrevue || i.fin.certs.length > 0);
-export const slidesForPj = i => 2 + (needsFin(i) ? 1 : 0) + (needsThird(i) ? Math.max(1, commentPages(i).length) : 0);
+export const slidesForPj = i => 2 + (needsFin(i) ? 1 : 0) + (needsThird(i) ? Math.max(1, commentPages(i).length) : 0) + (needsFull(i) ? 1 : 0);
 
 const sec = (s, t, x, y, w, right, rcol) => { heading(s, t, x, y, w); if (right) s.addText(right, { x: x + w * 0.3, y, w: w * 0.7, h: 0.22, align: "right", fontFace: FONT, fontSize: 8.5, bold: !!rcol, color: rcol || C.faint, margin: 0 }); };
 const noteBox = (s, x, y, w, h, text, o = {}) => {
@@ -169,7 +170,7 @@ const noteBox = (s, x, y, w, h, text, o = {}) => {
   s.addText(text, { x: x + 0.13, y, w: w - 0.2, h, fontFace: FONT, fontSize: o.size || 9.5, color: C.ink, margin: 0, valign: "middle", bold: !!o.bold });
 };
 const tile = (s, x, y, w, h) => s.addShape("roundRect", { x, y, w, h, fill: { color: C.wash }, line: { color: C.wash, width: 0 }, rectRadius: 0.08 });
-const capT = (s, t, x, y, w) => s.addText(t.toUpperCase(), { x, y, w, h: 0.18, fontFace: FONT, fontSize: 7.5, bold: true, color: C.mute, charSpacing: 2, margin: 0 });
+const capT = (s, t, x, y, w) => s.addText(t, { x, y, w, h: 0.18, fontFace: FONT, fontSize: 9, color: C.mute, margin: 0 });
 const ring = (pptx, s, x, y, d, pct, col, label) => {
   s.addShape(pptx.shapes.DONUT, { x, y, w: d, h: d, fill: { color: C.hair }, line: { color: C.hair, width: 0 } });
   if (pct > 0) s.addShape(pptx.shapes.BLOCK_ARC, { x, y, w: d, h: d, fill: { color: col }, line: { color: col, width: 0 }, angleRange: [270, (270 + Math.min(99.9, pct) * 3.6) % 360], arcThicknessRatio: 0.25 });
@@ -195,24 +196,32 @@ function pjHeader(s, i, ctx, k, n) {
 }
 
 // ── 1 : identité, commentaire général, statut global, indicateurs clés, jalons ──
+// v368 : la mise en page (plafonds de lignes) est calculée à part ; si un texte ne tient pas, il est repris en entier en fin de fiche
+const NOTE_SZ = 9, GEN_SZ = 11;
+function layout1(i) {
+  const FW = 12.33, cw = (FW - 3 * 0.15) / 4, NOTE_W = cw - 0.4, GEN_W = FW - 0.2, LIMIT = 5.62, gen0 = note(i, "gen");
+  let L = null;
+  for (const [cg, cf, ck] of [[4, 6, 3], [3, 5, 2], [3, 5, 1], [3, 4, 2], [3, 4, 1], [2, 5, 1], [2, 4, 1], [2, 3, 1], [1, 3, 1], [1, 2, 1]]) {
+    const g = fitNote(gen0, GEN_W, GEN_SZ, cg);
+    const f = FEU_NAMES.map(([k]) => fitNote(note(i, k), NOTE_W, NOTE_SZ, cf)), nf = Math.max(0, ...f.map(x => x.h));
+    const kk = ["gl", "av", "dr", "rt"].map(k => fitNote(note(i, k), NOTE_W, NOTE_SZ, ck)), nk = Math.max(0, ...kk.map(x => x.h));
+    const tf = nf ? 0.56 + nf + 0.06 : 0.64, tk = nk ? 0.84 + nk + 0.05 : 0.9;
+    const yJ = 1.42 + (g.h ? 0.34 + g.h + 0.1 : 0) + 0.34 + tf + 0.12 + 0.34 + tk + 0.12;
+    L = { g, f, nf, kk, nk, tf, tk };
+    if (yJ <= LIMIT) break;
+  }
+  return L;
+}
+const ctCut = i => !!note(i, "ct") && fitNote("Commentaire : " + note(i, "ct"), 7.0 - 0.2, 9, 3).cut;
+const needsFull = i => { const L = layout1(i); return L.g.cut || L.f.some(x => x.cut) || L.kk.some(x => x.cut) || ctCut(i); };
 function pjSlide1(pptx, i, ctx) {
   const s = pptx.addSlide(); const n = slidesForPj(i); pjHeader(s, i, ctx, 1, n);
   let y = 1.42; const FW = 12.33;
   const cw = (FW - 3 * 0.15) / 4;
   // v146.12 : zones de commentaire dimensionnées sur le texte réel (jamais de débordement). On cherche le plus grand plafond de lignes
   // [commentaire général, feux, indicateurs] pour lequel la diapositive tient ; au-delà, le texte est abrégé par « … ».
-  const NOTE_W = cw - 0.4, GEN_W = FW - 0.2, SZ_N = 8.5, SZ_G = 11, LIMIT = 5.62;
-  const gen0 = note(i, "gen");
-  let L = null;
-  for (const [cg, cf, ck] of [[3, 5, 2], [3, 5, 1], [3, 4, 2], [3, 4, 1], [2, 5, 1], [2, 4, 1], [2, 3, 1], [1, 3, 1], [1, 2, 1]]) {
-    const g = fitNote(gen0, GEN_W, SZ_G, cg);
-    const f = FEU_NAMES.map(([k]) => fitNote(note(i, k), NOTE_W, SZ_N, cf)), nf = Math.max(0, ...f.map(x => x.h));
-    const kk = ["gl", "av", "dr", "rt"].map(k => fitNote(note(i, k), NOTE_W, SZ_N, ck)), nk = Math.max(0, ...kk.map(x => x.h));
-    const tf = nf ? 0.56 + nf + 0.06 : 0.64, tk = nk ? 0.84 + nk + 0.05 : 0.9;
-    const yJ = 1.42 + (g.h ? 0.34 + g.h + 0.1 : 0) + 0.34 + tf + 0.12 + 0.34 + tk + 0.12;
-    L = { g, f, nf, kk, nk, tf, tk };
-    if (yJ <= LIMIT) break;
-  }
+  const SZ_N = NOTE_SZ, SZ_G = GEN_SZ, L = layout1(i);
+  if (L.g.cut || L.f.some(x => x.cut) || L.kk.some(x => x.cut)) s.addText("Textes abrégés ici : repris en entier en fin de fiche", { x: W - MX - 5, y: H - 0.38, w: 3.4, h: 0.25, align: "right", fontFace: FONT, fontSize: 8.5, italic: true, color: C.faint, margin: 0 });
   if (L.g.h) { sec(s, "Commentaire général", MX, y, FW); noteBox(s, MX, y + 0.34, FW, L.g.h, L.g.text, { size: SZ_G }); y += 0.34 + L.g.h + 0.1; }
   // Statut global
   sec(s, "Statut global", MX, y, FW, i.feuxAt ? "évalué le " + fd(i.feuxAt) : "non évalué");
@@ -261,7 +270,7 @@ function pjSlide1(pptx, i, ctx) {
     const next = !past && v && (q === 0 || (prevV && prevV <= todayD));
     s.addShape("ellipse", { x: cx - 0.09, y: ly - 0.09, w: 0.18, h: 0.18, fill: { color: past ? C.navy2 : C.white }, line: { color: past ? C.navy2 : next ? C.brass : v ? C.faint : C.hair, width: next ? 2.5 : 1.5 } });
     if (past) s.addText("✓", { x: cx - 0.09, y: ly - 0.09, w: 0.18, h: 0.18, align: "center", valign: "middle", fontFace: FONT, fontSize: 8, bold: true, color: C.white, margin: 0 });
-    s.addText(lab.toUpperCase(), { x: cx - colw / 2, y: ly + 0.13, w: colw, h: 0.18, align: "center", fontFace: FONT, fontSize: 8, bold: true, color: C.mute, charSpacing: 2, margin: 0 });
+    s.addText(lab, { x: cx - colw / 2, y: ly + 0.13, w: colw, h: 0.18, align: "center", fontFace: FONT, fontSize: 9, color: C.mute, margin: 0 });
     s.addText(fd(i[k]), { x: cx - colw / 2, y: ly + 0.3, w: colw, h: 0.28, align: "center", fontFace: FONT, fontSize: 14, bold: true, color: C.ink, margin: 0 });
     let sub = "";
     if (k === "tests" && i.testsFin) sub = "→ " + fd(i.testsFin);
@@ -277,24 +286,28 @@ function pjSlide1(pptx, i, ctx) {
 }
 
 // ── 2 : contrat & roadmap, actions, mitigation | major components, paiements, dernier import ──
+// v368 (comme la fiche, V367) : lignes ouvertes en entier (texte ordinaire, échéance à droite) ; les clôturées résumées sur une ligne.
+// Mitigation : le risque en gras puis « ce qu'on fait pour l'éviter », comme les deux champs de la fiche.
 function itemRows(s, x, y, w, items, col, max, empty) {
-  if (!items.length) { s.addText(empty, { x, y, w, h: 0.26, fontFace: FONT, fontSize: 10, color: C.faint, margin: 0, valign: "middle" }); return y + 0.3; }
-  const open = items.filter(t => !t.done), closed = items.filter(t => t.done);
-  const shown = [...open.slice(0, max), ...closed.slice(0, Math.max(0, max - open.length))].slice(0, max);
+  if (!items.length) { s.addText(empty, { x, y, w, h: 0.26, fontFace: FONT, fontSize: 10.5, color: C.faint, margin: 0, valign: "middle" }); return y + 0.3; }
+  const open = items.filter(t => !t.done), closed = items.filter(t => t.done), shown = open.slice(0, max);
   let acc = y;
-  shown.forEach((t) => {
-    const ry = acc, tw = w - 0.36 - (t.done ? 1.45 : t.deadline ? 1.35 : 0.05);
-    const f = fitNote(t.text, tw, 10.5, 2), rh = Math.max(0.25, f.h + 0.03); // 2 lignes au plus ; hauteur calculée sur le texte réel
-    s.addShape("rect", { x, y: ry, w, h: rh, fill: { color: t.done ? C.white : (col === C.red ? RED_T : BRASS_T) }, line: { color: t.done ? C.white : (col === C.red ? RED_T : BRASS_T), width: 0 } });
-    s.addShape("rect", { x, y: ry, w: 0.05, h: rh, fill: { color: t.done ? C.hair : col }, line: { color: t.done ? C.hair : col, width: 0 } });
-    checkGlyph(s, x + 0.12, ry + (rh - 0.16) / 2, t.done, col);
-    s.addText(f.text, { x: x + 0.36, y: ry, w: tw, h: rh, fontFace: FONT, fontSize: 10.5, bold: !t.done, color: t.done ? C.faint : C.ink, strike: t.done ? "sngStrike" : undefined, margin: 0, valign: "middle" });
-    if (t.done && t.doneAt) s.addText("clôturée le " + fdm(t.doneAt), { x: x + w - 1.45, y: ry, w: 1.4, h: rh, align: "right", fontFace: FONT, fontSize: 8.5, bold: true, color: C.green, margin: 0, valign: "middle" });
-    if (!t.done && t.deadline) { const late = t.deadline < new Date().toISOString().slice(0, 10); s.addText((late ? "en retard · " : "avant le ") + fdm(t.deadline), { x: x + w - 1.35, y: ry, w: 1.3, h: rh, align: "right", fontFace: FONT, fontSize: 8.5, bold: true, color: late ? C.red : C.mute, margin: 0, valign: "middle" }); }
-    acc += rh + 0.03;
+  shown.forEach(t => {
+    const ry = acc, tw = w - 0.36 - (t.deadline ? 1.45 : 0.05), mit = !!(t.risk || t.measure);
+    const txt = mit ? (t.risk || "") + (t.measure ? "\n" + t.measure : "") : t.text;
+    const fN = fitNote(txt, tw, 10.5, mit ? 4 : 3), rh = Math.max(0.3, fN.h + 0.06);
+    s.addShape("rect", { x, y: ry, w, h: rh, fill: { color: C.wash }, line: { color: C.wash, width: 0 } });
+    s.addShape("rect", { x, y: ry, w: 0.05, h: rh, fill: { color: col }, line: { color: col, width: 0 } });
+    checkGlyph(s, x + 0.12, ry + (rh - 0.16) / 2, false, col);
+    const runs = mit ? [{ text: t.risk || t.text || "", options: { bold: true, breakLine: !!t.measure } }, ...(t.measure ? [{ text: t.measure, options: { color: C.ink2 } }] : [])] : [{ text: fN.text }];
+    s.addText(runs, { x: x + 0.36, y: ry, w: tw, h: rh, fontFace: FONT, fontSize: 10.5, color: C.ink, margin: 0, valign: "middle", fit: "shrink" });
+    if (t.deadline) { const late = t.deadline < new Date().toISOString().slice(0, 10); s.addText((late ? "en retard · " : "avant le ") + fdm(t.deadline), { x: x + w - 1.45, y: ry, w: 1.4, h: rh, align: "right", fontFace: FONT, fontSize: 9, bold: late, color: late ? C.red : C.mute, margin: 0, valign: "middle" }); }
+    acc += rh + 0.04;
   });
   let ny = acc;
-  if (items.length > shown.length) { s.addText("+ " + (items.length - shown.length) + " autre" + (items.length - shown.length > 1 ? "s" : "") + " dans la fiche", { x, y: ny, w, h: 0.2, fontFace: FONT, fontSize: 8.5, color: C.mute, margin: 0 }); ny += 0.22; }
+  if (open.length > shown.length) { s.addText("+ " + (open.length - shown.length) + " autre" + (open.length - shown.length > 1 ? "s" : "") + " ouverte" + (open.length - shown.length > 1 ? "s" : "") + " dans la fiche", { x, y: ny, w, h: 0.2, fontFace: FONT, fontSize: 9, color: C.mute, margin: 0 }); ny += 0.22; }
+  if (closed.length) { const last = closed.map(t => String(t.doneAt || "")).sort().pop();
+    s.addText("✓ " + closed.length + " clôturée" + (closed.length > 1 ? "s" : "") + (last ? " · dernière le " + fdm(last) : ""), { x, y: ny, w, h: 0.22, fontFace: FONT, fontSize: 9, color: C.green, margin: 0, valign: "middle" }); ny += 0.24; }
   return ny + 0.02;
 }
 const listRight = (items, at) => { const o = items.filter(t => !t.done).length, c = items.length - o; return items.length ? o + " ouverte" + (o > 1 ? "s" : "") + " · " + c + " clôturée" + (c > 1 ? "s" : "") + (at ? " · maj " + fdm(at) : "") : "aucune"; };
@@ -310,9 +323,9 @@ function pjSlide2(pptx, i, ctx) {
   const fw = LW / 5;
   fields.forEach(([lab, v, sub], q) => {
     const x = LX + q * fw, late = q === 3 ? i.ecart > 0 : q === 4 ? i.ecart > 0 : false;
-    s.addText(lab.toUpperCase(), { x, y: y + 0.34, w: fw - 0.05, h: 0.17, fontFace: FONT, fontSize: 7, bold: true, color: C.mute, charSpacing: 1, margin: 0, fit: "shrink" });
+    s.addText(lab, { x, y: y + 0.34, w: fw - 0.05, h: 0.17, fontFace: FONT, fontSize: 9, color: C.mute, margin: 0, fit: "shrink" });
     s.addText(v, { x, y: y + 0.52, w: fw - 0.05, h: 0.28, fontFace: FONT, fontSize: 12.5, bold: true, color: late ? C.red : (q === 4 && i.ecart != null ? C.green : C.ink), margin: 0, fit: "shrink" });
-    s.addText(sub, { x, y: y + 0.8, w: fw - 0.05, h: 0.16, fontFace: FONT, fontSize: 7.5, color: C.faint, margin: 0, fit: "shrink" });
+    s.addText(sub, { x, y: y + 0.8, w: fw - 0.05, h: 0.16, fontFace: FONT, fontSize: 8.5, color: C.faint, margin: 0, fit: "shrink" });
   });
   // Frise T0 → MaD ORC → fin projetée (+ aujourd'hui)
   const t0 = dd(i.t0) || dd(i.arrivee), tf = dd(i.tf), dep = dd(i.dep), today = new Date(new Date().toDateString());
@@ -345,11 +358,11 @@ function pjSlide2(pptx, i, ctx) {
   sec(s, "Major components", RX, ry, RW, (() => { const k = (i.comps || []).reduce((a, c) => a + (c.des ? 1 : 0) + (c.cmd ? 1 : 0) + (c.inst ? 1 : 0), 0); return k + " / " + (i.comps || []).length * 3 + " cases · " + (cpct == null ? "non démarré" : cpct + " %"); })());
   s.addShape("roundRect", { x: RX, y: ry + 0.36, w: RW, h: 0.07, fill: { color: C.hair }, line: { color: C.hair, width: 0 }, rectRadius: 0.03 });
   if (cpct > 0) s.addShape("roundRect", { x: RX, y: ry + 0.36, w: Math.max(0.08, RW * cpct / 100), h: 0.07, fill: { color: cpct >= 100 ? C.green : cpct >= 50 ? TEAL : C.amber }, line: { color: C.hair, width: 0 }, rectRadius: 0.03 });
-  const th = (t, k) => ({ text: t, options: { bold: true, fontSize: 8, color: k ? STEP_C[k] : C.mute, align: k ? "center" : "left", fill: { color: C.wash }, fontFace: FONT, charSpacing: 1 } });
+  const th = (t, k) => ({ text: t, options: { fontSize: 9, color: k ? STEP_C[k] : C.mute, align: k ? "center" : "left", fill: { color: C.white }, fontFace: FONT } });
   const tick = (v, k) => ({ text: v ? "✓" : "", options: { align: "center", fontFace: FONT, fontSize: 10, bold: true, color: C.white, fill: { color: v ? STEP_C[k] : C.white } } });
   const comps = i.comps || [], MAXC = 7;
-  const crow = [[th("COMPOSANT"), th("DESIGN", "des"), th("PO", "cmd"), th("RÉCEPTIONNÉ", "inst")]];
-  comps.slice(0, MAXC).forEach(c => crow.push([{ text: clip(c.label, 30), options: { fontFace: FONT, fontSize: 10, bold: true, color: C.ink } }, tick(c.des, "des"), tick(c.cmd, "cmd"), tick(c.inst, "inst")]));
+  const crow = [[th("Composant"), th("Design", "des"), th("PO", "cmd"), th("Réceptionné", "inst")]];
+  comps.slice(0, MAXC).forEach(c => crow.push([{ text: clip(c.label, 30), options: { fontFace: FONT, fontSize: 10, color: C.ink } }, tick(c.des, "des"), tick(c.cmd, "cmd"), tick(c.inst, "inst")]));
   if (!comps.length) crow.push([{ text: "Aucun composant saisi", options: { fontFace: FONT, fontSize: 9.5, color: C.faint, colspan: 4 } }]);
   s.addTable(crow, { x: RX, y: ry + 0.52, w: RW, colW: [RW - 2.95, 0.7, 0.7, 1.55], rowH: 0.235, border: { type: "solid", pt: 0.5, color: C.hair }, margin: [0.01, 0.06, 0.01, 0.06], valign: "middle" });
   ry += 0.52 + (crow.length) * 0.235 + 0.08;
@@ -407,7 +420,7 @@ function pjSlideFin(pptx, i, ctx) {
     tile(s, x, y + 0.38, tw, 0.95);
     capT(s, lab, x + 0.12, y + 0.47, tw - 0.2);
     s.addText(v, { x: x + 0.12, y: y + 0.7, w: tw - 0.2, h: 0.32, fontFace: FONT, fontSize: 14, bold: true, color: col, margin: 0, fit: "shrink" });
-    s.addText(sub, { x: x + 0.12, y: y + 1.04, w: tw - 0.2, h: 0.2, fontFace: FONT, fontSize: 8, color: C.faint, margin: 0, fit: "shrink" });
+    s.addText(sub, { x: x + 0.12, y: y + 1.04, w: tw - 0.2, h: 0.2, fontFace: FONT, fontSize: 8.5, color: C.faint, margin: 0, fit: "shrink" });
   });
   y += 1.6;
   // Pénalités
@@ -431,7 +444,7 @@ function pjSlideFin(pptx, i, ctx) {
         const x = LX + q * (tw + 0.12);
         tile(s, x, y + 1.32, tw, 1.0); capT(s, lab, x + 0.12, y + 1.4, tw - 0.2);
         s.addText(v, { x: x + 0.12, y: y + 1.62, w: tw - 0.2, h: 0.34, fontFace: FONT, fontSize: q === 0 ? 17 : 13, bold: true, color: col2, margin: 0, fit: "shrink" });
-        s.addText(sub, { x: x + 0.12, y: y + 2.0, w: tw - 0.2, h: 0.24, fontFace: FONT, fontSize: 8, color: C.faint, margin: 0, fit: "shrink" });
+        s.addText(sub, { x: x + 0.12, y: y + 2.0, w: tw - 0.2, h: 0.24, fontFace: FONT, fontSize: 8.5, color: C.faint, margin: 0, fit: "shrink" });
       });
     }
   }
@@ -451,8 +464,8 @@ function pjSlideFin(pptx, i, ctx) {
   if (f.sibs.length) {
     const tot = f.sibs.reduce((a, x) => a + (x.amount || 0), 0), price = f.sibs.reduce((a, x) => a + (x.base || 0), 0);
     sec(s, "Fiches du " + f.sibBase, RX, ry, RW, "prix cumulé " + (price ? eur(price) : "—"));
-    const th = (t, al) => ({ text: t, options: { bold: true, fontSize: 8, color: C.mute, align: al || "left", fill: { color: C.wash }, fontFace: FONT, charSpacing: 1 } });
-    const rows = [[th("FICHE"), th("PRIX", "right"), th("PÉNALITÉS", "right")]];
+    const th = (t, al) => ({ text: t, options: { fontSize: 9, color: C.mute, align: al || "left", fill: { color: C.white }, fontFace: FONT } });
+    const rows = [[th("Fiche"), th("Prix", "right"), th("Pénalités", "right")]];
     f.sibs.slice(0, 9).forEach(x => rows.push([{ text: x.pj, options: { fontFace: FONT, fontSize: 10, bold: true, color: x.current ? C.navy : C.ink } },
       { text: x.base != null ? eur(x.base) : "—", options: { fontFace: FONT, fontSize: 10, align: "right", color: C.ink2 } },
       { text: x.status === "ok" ? (x.amount > 0 ? eur(x.amount) : "0 €") : x.status === "inactive" ? "non activées" : x.status === "incomplete" ? "à compléter" : "—", options: { fontFace: FONT, fontSize: 10, bold: true, align: "right", color: x.amount > 0 ? C.red : C.mute } }]));
@@ -516,7 +529,23 @@ function pjSlide3(pptx, i, ctx) {
     pages[p].forEach(c => { const h = cmH(c) + 0.08; if (yy + h > 7.0 && col === 0) { col = 1; yy = y0 + 0.4; } commentCard(s2, c, MX + col * (colW + 0.35), yy, colW); yy += h; });
   }
 }
-const pjSlides = (pptx, i, ctx) => { pjSlide1(pptx, i, ctx); pjSlide2(pptx, i, ctx); if (needsFin(i)) pjSlideFin(pptx, i, ctx); if (needsThird(i)) pjSlide3(pptx, i, ctx); };
+// v368 : textes de la fiche qui ne tenaient pas sur leur diapositive, en entier (rien n'est abrégé dans le rapport sans être repris ici)
+function pjSlideFull(pptx, i, ctx) {
+  const n = slidesForPj(i), s = pptx.addSlide(); pjHeader(s, i, ctx, n, n);
+  sec(s, "Textes complets de la fiche", MX, 1.42, 12.33, "repris en entier");
+  const blocks = [["Commentaire général", note(i, "gen")], ...FEU_NAMES.map(([k]) => ["Statut · " + FEU_LABEL[k] + (i.feux[k] ? " (" + LEVEL[i.feux[k]].toLowerCase() + ")" : ""), note(i, k)]),
+    ...[["gl", "Avancement global"], ["av", "Avancement production"], ["dr", "Dérive du départ"], ["rt", "Retards déclarés"]].map(([k, l]) => ["Indicateur · " + l, note(i, k)]), ["Contrat & roadmap", note(i, "ct")]].filter(b => b[1]);
+  const colW = (12.33 - 0.4) / 2, top = 1.85, bottom = 7.0; let col = 0, y = top;
+  blocks.forEach(([lab, t]) => {
+    const h = 0.26 + estLines(t, colW - 0.1, 10.5) * LHT(10.5) + 0.12;
+    if (y + h > bottom && col === 0) { col = 1; y = top; }
+    const x = MX + col * (colW + 0.4);
+    s.addText(lab, { x, y, w: colW, h: 0.24, fontFace: FONT, fontSize: 10, bold: true, color: C.navy, margin: 0 });
+    s.addText(t, { x, y: y + 0.26, w: colW, h: h - 0.32, fontFace: FONT, fontSize: 10.5, color: C.ink, margin: 0, valign: "top", fit: "shrink" });
+    y += h + 0.08;
+  });
+}
+const pjSlides = (pptx, i, ctx) => { pjSlide1(pptx, i, ctx); pjSlide2(pptx, i, ctx); if (needsFin(i)) pjSlideFin(pptx, i, ctx); if (needsThird(i)) pjSlide3(pptx, i, ctx); if (needsFull(i)) pjSlideFull(pptx, i, ctx); };
 
 // groups = [{chef, items}] ; une seule entrée pour un rapport individuel.
 export function buildCdpDeck(PptxGenJS, { groups, dateLabel, lastChange, title, assets }) {

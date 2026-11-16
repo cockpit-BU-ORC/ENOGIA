@@ -2666,3 +2666,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - CdpReport.js : `chef` = `orcChefsOf(meta)[0]` (EPC : chef ORC), `epcChef` ; cdpPptx.js : « (chef EPC : …) » dans l'en-tête des fiches.
 - styles.css : `.enogia-cl-in` (fondu 180 ms, coupé si réduire les animations).
 - Aucune clé localStorage ; données et règles Firestore inchangées.
+
+## v368 — rapport chef de projet (apple-design), bancs en deux jaunes
+
+- reports/cdpPptx.js : `cap` / `capT` / en-têtes de tableaux en casse normale sans espacement (11 pt / 9 pt) ; tailles minimales 8,5–9 pt ; `itemRows` réécrit (ouvertes en entier, mitigation = `risk` en gras puis `measure`, échéance à droite, clôturées résumées « ✓ N clôturées · dernière le … ») ; `fitNote` renvoie `cut` ; `layout1(i)` (mise en page de la diapositive 1) ; `needsFull(i)` → diapositive « Textes complets de la fiche » (`pjSlideFull`) comptée dans `slidesForPj`.
+- CdpReport.js : `infoOf` exporté ; mitigations avec `risk`, `measure`, `deadline`.
+- TestsTab.js : `BENCH_C` = jaune des tests (banc 1) / mélange avec `T.amber500` (banc 2, `mixHex`), barres « en cours » et liseré des barres prévues à la couleur du banc, `GridLegend benches`.
+- Fichiers de contrôle (hors dépôt) : maquettes-design/v368-rapport-cdp-avant.pptx, -apres.pptx, -apres-textes-longs.pptx (données fictives). Données et règles Firestore inchangées.

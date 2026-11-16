@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v368",
+    date: "2026-11-16",
+    title: "V368 : rapport chef de projet plus lisible, bancs en deux jaunes",
+    items: [
+      { t: "Rapport chef de projet", d: "Titres en casse normale, textes plus lisibles, mitigations en risque puis mesure comme la fiche, clôturées résumées, commentaires jamais abrégés sans être repris en entier." },
+      { t: "Tests", d: "Planning des bancs : banc 1 en jaune, banc 2 en jaune ambré." },
+    ],
+  },
+  {
     id: "2026-11-v367",
     date: "2026-11-16",
     title: "V367 : fiches projet : dossiers dépliés seuls, projets EPC dans le rapport, clôturées réduites",
