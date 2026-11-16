@@ -73,10 +73,10 @@ function AccueilWidgets() { const [lay, setLay] = useState(WG_DEMO); return <Hom
   profiles={{ byEmail: {}, homeLayouts: { direction: lay } }} owner cash={false} turbineDoc={null} onOpenCash={null} prodDoc={DEMO_PROD} canProdTurb productionExclusions={{}} plan={null} closurePeriods={[]} saveHomeLayout={(r, l) => setLay(l)} />; }
 
 // v364 : gestion des accueils par rôle (liste des rôles, copier, partir de zéro, rétablir) — dispositions gardées en mémoire
-function AccueilRoles() { const [lays, setLays] = useState(() => { try { localStorage.setItem("enogia_home_manage", "1"); } catch (e) { /* galerie */ } return { cdp: { widgets: [{ t: "pjs", z: "m" }, { t: "jalons", z: "m" }] } }; });
+function AccueilRoles() { const [lays, setLays] = useState(() => { setCashinDoc(JSON.parse(JSON.stringify(DEMO_CASHIN))); try { localStorage.setItem("enogia_home_manage", "1"); } catch (e) { /* galerie */ } return { cdp: { widgets: [{ t: "pjs", z: "m" }, { t: "jalons", z: "m" }] } }; });
   useEffect(() => () => { try { localStorage.removeItem("enogia_home_manage"); } catch (e) { /* galerie */ } }, []);
   return <HomeView pinOk testsDoc={DEMO_TESTS} data={DEMO_ROWS} comments={DEMO_COMMENTS} myEmail={DEMO_ME.email} myName={DEMO_ME.name} people={DEMO_PEOPLE} unseenChanges={[]} lastImport={null} onOpenPj={no} onGo={no}
-    profiles={{ byEmail: {}, homeLayouts: lays }} owner cash={false} turbineDoc={null} onOpenCash={null} prodDoc={DEMO_PROD} canProdTurb productionExclusions={{}} plan={null} closurePeriods={[]} saveHomeLayout={(r, l) => setLays(L => ({ ...L, [r]: l }))} />; }
+    profiles={{ byEmail: {}, homeLayouts: lays }} owner cash turbineDoc={null} onOpenCash={null} prodDoc={DEMO_PROD} canProdTurb productionExclusions={{}} plan={null} closurePeriods={[]} saveHomeLayout={(r, l) => setLays(L => ({ ...L, [r]: l }))} />; }
 
 // v356 (audit apple-design « ne manque aucune page ») : pages absentes de la galerie jusque-là
 const shift = (d, n) => { if (!d) return d; const x = new Date(d); x.setDate(x.getDate() + n); return x.toISOString().slice(0, 10); };

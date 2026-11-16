@@ -1111,4 +1111,9 @@ export const RELEASE_CATALOG = [
     ["Cash in", "« Encaissé aujourd'hui » ou une autre date ; « Annuler » 6 s ; « Reçus ces 30 jours » avec « Remettre à encaisser ». Seule la date de paiement change, avec les mêmes recalculs que le tableau."],
     ["Accueil", "Widget « À encaisser » dans le catalogue (Gestion) : total, retards, prochaines factures ; un appui ouvre Cash in › Encaissements."],
   ] },
+  { v: "370", t: "Nouveau rôle DAF", items: [
+    ["Rôles", "Rôle « DAF » dans Personnes et rôles et dans Gestion des accès ; Finance en « Modifier » par défaut pour saisir les encaissements."],
+    ["Accueil", "Accueil du DAF : phrase sur les factures en attente de paiement (en retard, cette semaine), widgets « À encaisser », Cash in, chiffres clés, prochains départs."],
+    ["Gestion des accès", "Un rôle intégré ajouté après l'enregistrement de la liste des rôles y apparaît désormais (à la fin)."],
+  ] },
 ];

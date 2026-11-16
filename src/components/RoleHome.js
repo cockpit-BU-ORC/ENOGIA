@@ -48,6 +48,7 @@ export const HOME_DEFAULTS = {
   atelier: [["charge", 7], ["arrdep", 5], ["montage", 7], ["postes", 5]],
   turbines: [["ptReady", 3], ["ptNoWheel", 3], ["ptPieces", 6], ["ptDates", 12], ["ptRoues", 6], ["ptInj", 6]],
   autre: [["kpis", 12], ["departs", 6], ["parcours", 6], ["benchWeek", 6], ["visites", 6], ["shipped", 6], ["etats", 6], ["fermetures", 6]],
+  daf: [["encaisser", 6], ["cash", 6], ["kpis", 12], ["departs", 6]], // v370
   direction: [["kpis", 12], ["tests", 4], ["turbines", 4], ["cash", 4], ["alertes", 8], ["charge", 4], ["postes", 6], ["departs", 6], ["parcours", 12]],
 };
 
@@ -83,6 +84,12 @@ export function roleLead(role, d) {
       d.pt.next ? " ; prochaine prête le " + d.pt.next : "", d.pt.missing.length ? [" — ", { t: s(d.pt.missing.length, "arbre manquant", "arbres manquants"), c: "late" }, " (" + d.pt.missing.map(t => t.num).join(", ") + ")."] : "."].flat();
   }
   if (role === "direction") return null; // phrase historique de l'accueil
+  if (role === "daf") { // v370 : factures émises en attente de paiement (Cash in)
+    const cd = getCashinDoc(); if (!cd) return [d.hello + ". Le Cash in n'est pas encore chargé sur ce poste."];
+    const L = toCollect(cd.rows, cashToday()), late = L.filter(x => x.group === "late").length, week = L.filter(x => x.group === "week").length;
+    if (!L.length) return [d.hello + ". ", { t: "Aucune facture", c: "ok" }, " en attente de paiement."];
+    return [d.hello + ". ", { t: s(L.length, "facture émise", "factures émises"), c: "production" }, " en attente de paiement" + (late || week ? ", dont " : "."), ...(late ? [{ t: late + " en retard", c: "late" }] : []), ...(late && week ? [" et "] : []), ...(week ? [{ t: week + " prévue" + (week > 1 ? "s" : "") + " cette semaine", c: "warn" }] : []), ...(late || week ? ["."] : [])];
+  }
   return ["Bonjour. ", { t: s(d.inProd, "machine", "machines"), c: "production" }, " " + (d.inProd > 1 ? "sont" : "est") + " en production et ", { t: d.next30 + " " + (d.next30 > 1 ? "partent" : "part"), c: "ok" }, " d'ici un mois."];
 }
 

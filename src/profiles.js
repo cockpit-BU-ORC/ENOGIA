@@ -16,6 +16,7 @@ export const ROLES = [
   ["turbines", "Directeur production turbines", "Turbines prêtes et sans roue, pièces à suivre, dates prévisionnelles, stocks roues et injecteurs"],
   ["achats", "Achats", "Achats et approvisionnements ; accueil commun en attendant le sien"], // v305 : rôles de la page Accès
   ["sav", "SAV / MES", "SAV et mises en service ; accueil commun en attendant le sien"],
+  ["daf", "DAF", "Encaissements : factures émises à encaisser, saisie des paiements reçus, Cash in"], // v370 (demandé : « crée le rôle DAF »)
   ["autre", "Autres personnes","Chiffres clés, prochains départs, où en sont les machines"],
 ];
 // v191 : blocs de l'accueil de chaque rôle, cochés par le super admin pour chaque personne (profile.blocks ; absent = tous).

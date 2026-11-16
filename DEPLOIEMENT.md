@@ -2683,3 +2683,9 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - RoleHome.js : widget `encaisser` (catalogue « Gestion — Turbines et Cash in »).
 - Droits : le DAF doit avoir « Modifier » sur Finance (rôle Direction par défaut, ou un rôle « DAF » à créer). Règles Firestore inchangées ; la restriction « seulement la date de paiement » est assurée par l'écran (les règles donnent Modifier sur tout le document).
 - Galerie : « Cash in · encaissements » (`DEMO_CASHIN`, en mémoire). public/cashin.html inchangé.
+
+## v370 — rôle DAF
+
+- profiles.js : rôle `daf` « DAF » dans `ROLES` ; access.js : `DEFAULT_LEVELS.finance.daf = "w"`, `rolesOf` ajoute à une liste enregistrée les rôles intégrés manquants ; RoleHome.js : `HOME_DEFAULTS.daf` (encaisser, cash, kpis, departs) et phrase d'ouverture `roleLead("daf")` (factures émises à encaisser, en retard, cette semaine) ; test `src/dafRole.test.js`.
+- **À faire par Gabriel** : 1) Gestion des accès › Personnes : donner le rôle « DAF » à la personne ; 2) Gestion des accès › Accès par page : vérifier Finance = Modifier pour DAF puis **Enregistrer** (les règles Firestore lisent les niveaux enregistrés dans `planning/access`, pas les valeurs par défaut du code) ; 3) les accès doivent être activés (« Activer les nouveaux accès ») : avant, le Cash in reste réservé au propriétaire et aux admins. Règles Firestore inchangées.
+- Galerie : « Accueil · gestion par rôle » avec accès Finance et Cash in fictif (accueil DAF complet).

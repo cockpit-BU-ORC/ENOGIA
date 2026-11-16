@@ -53,14 +53,15 @@ export const DEFAULT_LEVELS = {
   achats: D({ direction: "r", achats: "a" }),
   sav: D({ direction: "r", sav: "a", cdp: "r" }), // v326
   projets: D({ direction: "a", cdp: "r" }),
-  finance: D({ direction: "w" }),
+  finance: D({ direction: "w", daf: "w" }), // v370 : le DAF saisit les encaissements (Cash in › Encaissements)
   pilotage: D({ direction: "r" }),
   comments: D({}, "w"),
   calprod: D({ direction: "w", atelier: "r" }),
 };
 
 export const accessOn = doc => !!(doc && doc.on === true);
-export const rolesOf = doc => (doc && Array.isArray(doc.roles) && doc.roles.length ? doc.roles.map(r => [r.id, r.name]) : DEFAULT_ROLES);
+// v370 : un rôle intégré ajouté après l'enregistrement de la liste (ex. « DAF ») y est rajouté à la fin, pour qu'il apparaisse dans Gestion des accès
+export const rolesOf = doc => { if (!(doc && Array.isArray(doc.roles) && doc.roles.length)) return DEFAULT_ROLES; const L = doc.roles.map(r => [r.id, r.name]), have = new Set(L.map(r => r[0])); return [...L, ...DEFAULT_ROLES.filter(r => !have.has(r[0]))]; };
 export const roleOrDefault = role => role || "autre";
 const valid = v => (LEVELS.includes(v) ? v : null);
 // Niveau d'une page ou d'une sous-page (« page.sous-page ») pour un rôle.

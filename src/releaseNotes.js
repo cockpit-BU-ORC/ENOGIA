@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v370",
+    date: "2026-11-16",
+    title: "V370 : nouveau rôle DAF",
+    items: [
+      { t: "Rôles", d: "Nouveau rôle « DAF » : accès Finance en Modifier, accueil centré sur les factures à encaisser (widget « À encaisser », Cash in)." },
+    ],
+  },
+  {
     id: "2026-11-v369",
     date: "2026-11-16",
     title: "V369 : Cash in : sous-page Encaissements pour le DAF",
