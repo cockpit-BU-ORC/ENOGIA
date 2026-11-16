@@ -98,7 +98,9 @@ const savApi = { put: async (c, id, d) => { if (typeof window !== "undefined") w
 function SavDemo({ level, sub0 }) { const [sub, setSub] = useState(sub0); return <SavPage doc={DEMO_SAV} dem={DEMO_SAV_DEM} api={savApi} demApi={savApi} rows={DEMO_ROWS} level={level} canCost={level !== "r"} me={DEMO_ME.email} myName={DEMO_ME.name} myPjs={["PJ901", "PJ902"]} team={[]} sub={sub} onSub={setSub} onOpenPj={no} />; }
 
 // v346 : Manager (KPI, fiche projet, point hebdo) et Planificateur, vus en propriétaire (droits remis à zéro en quittant la page)
-function AsOwner({ children }) { setOwner(true); setSuperAdmin(true); React.useEffect(() => () => { setOwner(false); setSuperAdmin(false); }, []); return children; }
+// v359 : les droits sont aussi remis dans l'effet — en développement React démonte puis remonte la page, et le démontage les retirait
+// pour tous les rendus suivants (le bouton « Rapport CODIR » disparaissait après le premier clic).
+function AsOwner({ children }) { setOwner(true); setSuperAdmin(true); React.useEffect(() => { setOwner(true); setSuperAdmin(true); return () => { setOwner(false); setSuperAdmin(false); }; }, []); return children; }
 function Manager({ tab0 }) { const [tab, setTab] = useState(tab0); return <AsOwner><ManagerPanel tab={tab} setTab={setTab} kpiOk calOk data={DEMO_ROWS} initialData={DEMO_ROWS} progress={DEMO_PROGRESS} setProgress={no} changeLog={[]} profiles={{ byEmail: {} }} saveProfiles={yes}
   comments={DEMO_COMMENTS} delays={[]} delayTypes={[]} setDelayTypes={no} addDelayAllocationMulti={yes} deleteDelayAllocation={yes} managerEmails={[]} setManagerEmails={no} currentUserEmail={DEMO_ME.email} authorName={DEMO_ME.name}
   savePjMetaOverride={yes} savePjMetaMulti={yes} addCommentMulti={yes} addComment={yes} resolveComment={yes} deleteComment={yes} closurePeriods={[]} setClosurePeriods={no} productionExclusions={{}} setProductionExclusionDays={no}

@@ -23,6 +23,25 @@ export const DEMO_META = {
   PJ906: { nomProjet: "Sucrerie Centre", pays: "France", chefProjet: "Sam Petit" },
   PJ907: { nomProjet: "Chimie Rhône", pays: "UK", chefProjet: "Sam Petit" },
 };
+// v359 (audit : « vraies données non vérifiées ») : ?demo&big=1 ajoute 92 machines fictives (100 en tout) pour regarder les pages à la
+// taille du vrai portefeuille — mêmes règles : PJ 9xx, clients et personnes inventés, tirage fixe (les captures se comparent).
+export const DEMO_BIG = (() => { try { return /[?&]big=1/.test(window.location.search); } catch (e) { return false; } })();
+if (DEMO_BIG) {
+  let seed = 7; const rnd = n => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed % n; };
+  const NOMS = ["Scierie", "Laiterie", "Brasserie", "Tuilerie", "Distillerie", "Conserverie", "Aciérie", "Raffinerie", "Malterie", "Serres", "Biométhane", "Incinérateur", "Cogénération", "Verrerie", "Papeterie", "Cimenterie"];
+  const LIEUX = ["du Lac", "des Vosges", "de l'Ouest", "du Rhin", "de la Baie", "des Monts", "du Delta", "de la Plaine", "du Port", "des Landes"];
+  const PAYS = ["France", "France", "France", "Italie", "Espagne", "Allemagne", "UK", "Belgique", "Suisse", "Portugal", "Pologne", "Canada"];
+  const CHEFS = ["Camille Durand", "Lou Martin", "Sam Petit", "Noa Roux", "Ezra Klein"];
+  const GAMMES = ["180LTV3", "180LTV3", "180LTV3", "20LTV3", "20LTV3", "40LTV3", "100MT", "10LTV3"];
+  // état → [nombre, arrivée la plus tôt, étendue] (jours par rapport à aujourd'hui)
+  const PLAN = [["SHIPPED", 24, -330, 250], ["PACKAGING", 4, -75, 20], ["TESTS", 6, -60, 20], ["ELEC", 8, -45, 20], ["MONTAGE", 12, -30, 24], ["STOCKAGE_EXT", 6, -5, 30], ["En fabrication", 18, 8, 110], ["NON_DESIGNEE", 5, 60, 120], ["NOT ORDERED", 9, 90, 160]];
+  let n = 910;
+  PLAN.forEach(([etat, count, a0, span]) => { for (let i = 0; i < count; i++) {
+    const pj = "PJ" + (n++), a = a0 + rnd(span), prod = 22 + rnd(18), dr = rnd(10) < 6 ? 0 : rnd(10) < 7 ? 1 + rnd(24) : -(1 + rnd(6));
+    DEMO_ROWS.push(row(pj, GAMMES[rnd(GAMMES.length)], etat, a, a + 4, a + prod, a + prod + 4, a + prod + 8, a + prod + 11, dr));
+    DEMO_META[pj] = { nomProjet: NOMS[rnd(NOMS.length)] + " " + LIEUX[rnd(LIEUX.length)], pays: PAYS[rnd(PAYS.length)], chefProjet: CHEFS[rnd(CHEFS.length)] };
+  } });
+}
 export const DEMO_ME = { email: "camille.durand@exemple.fr", name: "Camille Durand" };
 export const DEMO_PEOPLE = [DEMO_ME, { email: "lou.martin@exemple.fr", name: "Lou Martin" }, { email: "sam.petit@exemple.fr", name: "Sam Petit" }];
 const at = (d, h) => day(d) + "T" + String(h).padStart(2, "0") + ":15:00.000Z";
@@ -35,6 +54,7 @@ export const DEMO_COMMENTS = {
   PJ906: [{ author: "Sam Petit", text: "Machine livrée, réception signée.", date: at(-20, 11), private: true }],
 };
 export const DEMO_PROGRESS = { PJ901: 40, PJ902: 65, "PJ903-1": 85, "PJ903-2": 95, PJ906: 100 };
+if (DEMO_BIG) DEMO_ROWS.slice(8).forEach((r, i) => { DEMO_PROGRESS[r.pj] = r.etat === "SHIPPED" ? 100 : r.etat === "PACKAGING" ? 92 : r.etat === "TESTS" ? 80 : r.etat === "ELEC" ? 60 : r.etat === "MONTAGE" ? 25 + (i % 5) * 6 : 0; });
 export const DEMO_TESTS = { testers: [{ id: "t1", name: "Lou Martin" }, { id: "t2", name: "Sam Petit" }], catalog: [],
   plans: { "PJ903-2": { assign: [{ tid: "t1" }], st: { interne: { i1: "ok", i2: "ko" } }, tres: { interne: { i2: { pb: "TT-31 lit 0 °C débranché", cause: "Câblage inversé" } } },
     asks: [{ id: "q1", label: "Affichage des pressions en psi sur l'IHM", hint: "Demande du client", by: "Camille Durand", at: "2026-10-28T09:00:00Z" }],
