@@ -1121,4 +1121,9 @@ export const RELEASE_CATALOG = [
     ["Cash in", "Feuille « Jalons » : écarts en jours repliés dans un groupe de colonnes (bouton + d'Excel), projets EPC en gris, commentaires renvoyés à la ligne."],
     ["Cash in", "En-têtes clairs au lieu du bandeau marine, impression en paysage sur une page de large (A3 pour Jalons), en-tête répété et pages numérotées ; bouton « Exporter en Excel » en secondaire, « Préparation… » pendant la création."],
   ] },
+  { v: "372", t: "Besoins turbines : une ligne par turbine, Rouvrir", items: [
+    ["Turbines", "Cartes de besoin compactes : une ligne de 36 px par turbine (turbine · roue · injecteur), libellés des colonnes une seule fois, bouton rond « installée » au bout de la ligne."],
+    ["Turbines", "Pied de carte : marge (ou retard) de la turbine la plus juste, détail de disponibilité dans la bulle, nombre de pièces posées."],
+    ["Turbines", "Besoins validés : « Rouvrir » annule l'installation et remet le besoin dans la liste (confirmé)."],
+  ] },
 ];

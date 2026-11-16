@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v372",
+    date: "2026-11-16",
+    title: "V372 : besoins turbines : une ligne par turbine, Rouvrir",
+    items: [
+      { t: "Turbines", d: "Besoins ORC et SAV : turbine, roue et injecteur sur une ligne de 36 px, marge et pièces posées en bas de carte ; « Rouvrir » sur un besoin validé." },
+    ],
+  },
+  {
     id: "2026-11-v371",
     date: "2026-11-16",
     title: "V371 : export Excel du Cash in plus clair",

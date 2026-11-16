@@ -1,6 +1,6 @@
 // v321 (revue, point 7) : les pages de la galerie ?demo et du test des pages — chaque entrée rend une page avec les données d'exemple.
 // Ajouter ici toute nouvelle page (une ligne) : elle est alors vérifiée à chaque série de tests et visible dans la galerie.
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { DEMO_BOOK, DEMO_SAV, DEMO_SAV_DEM, DEMO_ROWS, DEMO_COMMENTS, DEMO_PROGRESS, DEMO_TESTS, DEMO_PROD, DEMO_ME, DEMO_PEOPLE, demoApi, DEMO_CASHIN } from "./demoData";
 import { useListFilters, filterOptions, filterRows } from "../listFilters";
 import { DashboardSummary } from "../components/DashboardSummary";
@@ -60,7 +60,10 @@ const bookApi = { loadImg: async () => null, save: async () => true };
 function Tests() { const [sub, setSub] = useState("semaine"), [lays, setLays] = useState({}); return <ArrangeCtx.Provider value={{ layouts: lays, save: (id, v) => setLays(l => ({ ...l, [id]: v })) }}><TestsTab doc={DEMO_TESTS} save={yes} data={DEMO_ROWS} benches={{ "PJ903-1": 2, PJ901: 2 }} certifs={{}} canEdit lead sub={sub} onSub={setSub} me={DEMO_ME.email} signApi={null} book={DEMO_BOOK} bookApi={bookApi} askPjs={new Set(["PJ901"])} myName={DEMO_ME.name} /></ArrangeCtx.Provider>; }
 // v337 : la fiche de tests d'un PJ (6 étapes), ouverte directement
 const TestsFiche = () => <TestDialog r={DEMO_ROWS.find(x => x.pj === "PJ903-2")} onClose={no} doc={DEMO_TESTS} testers={testersOf(DEMO_TESTS)} catalog={catalogOf(DEMO_TESTS)} conflicts={[]} commit={yes} certifs={[]} canEdit lead myTester={null} who={DEMO_ME.name} signApi={null} book={DEMO_BOOK} bookApi={bookApi} askPjs={new Set()} />;
-function Turbines({ tab0 = "orc" }) { const [tab, setTab] = useState(tab0); return <TurbinesHub doc={DEMO_PROD} api={demoApi} rows={DEMO_ROWS} canEdit owner tab={tab} onTab={setTab} allowTabs={["prod", "orc"]} savePjMeta={yes} />; }
+// v372 : document de la production en mémoire (attribuer, installer, rouvrir se voient ; jamais écrit en base)
+function Turbines({ tab0 = "orc" }) { const [tab, setTab] = useState(tab0), [doc, setDoc] = useState(DEMO_PROD);
+  const api = useMemo(() => ({ ...demoApi, put: async (c, id, data) => { setDoc(d => ({ ...d, [c]: { ...(d[c] || {}), [id]: data } })); return true; }, del: async (c, id) => { setDoc(d => { const x = { ...(d[c] || {}) }; delete x[id]; return { ...d, [c]: x }; }); return true; } }), []);
+  return <TurbinesHub doc={doc} api={api} rows={DEMO_ROWS} canEdit owner tab={tab} onTab={setTab} allowTabs={["prod", "orc"]} savePjMeta={yes} />; }
 const Accueil = () => <HomeView pinOk testsDoc={DEMO_TESTS} data={DEMO_ROWS} comments={DEMO_COMMENTS} myEmail={DEMO_ME.email} myName={DEMO_ME.name} people={DEMO_PEOPLE} unseenChanges={[]} lastImport={null} onOpenPj={no} onGo={no}
   profiles={{ byEmail: {} }} owner cash={false} turbineDoc={null} onOpenCash={null} prodDoc={DEMO_PROD} canProdTurb productionExclusions={{}} plan={null} closurePeriods={[]} saveHomeLayout={null} />;
 // v352 : cadrans « Ligne d'atelier » et « Fiches suiveuses » (à ajouter dans la disposition d'un poste)

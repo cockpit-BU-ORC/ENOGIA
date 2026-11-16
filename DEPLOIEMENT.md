@@ -2695,3 +2695,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - public/cashin.html (`exportXlsx`) : feuilles Synthèse (titre, date, 5 chiffres clés, tableau à partir de la ligne 7, total, PJ entièrement EPC en gris), Jalons (écarts repliés `outlineLevel` 1, EPC en gris, renvoi à la ligne), Cash par mois, PJ par mois ; en-têtes `C.head` clairs, filets fins, montants `#,##0 "€"` avec « – » pour zéro ; `sheetSetup` (paysage, une page de large, A3 pour Jalons, ligne d'en-tête répétée, pied « Page x / n ») ; bouton « Exporter en Excel » non plein, « Préparation… » pendant la génération ; fichier `Cash-in_AAAA-MM-JJ.xlsx`. `CASHIN_PAGE_VERSION` 371.
 - Piège évité : `outlineProperties` + `fitToPage` sur une même feuille → ExcelJS écrit `sheetPr` dans le désordre et Excel refuse d'ouvrir le fichier (vérifié par ouverture dans Excel) ; `outlineProperties` n'est donc pas utilisé.
 - Fichier de contrôle (hors dépôt) : maquettes-design/v371-cash-in-export.xlsx et .pdf (données fictives).
+
+## v372 — besoins turbines compacts (apple-design)
+
+- TurbinesHub.js : `Sock` sur une ligne de 36 px (icône + référence, libellé et détail dans la bulle), `Piece` sur une ligne ; carte = en-tête sans barre d'avancement, ligne des libellés (Turbine · Roue · Injecteur), une ligne par turbine + bouton rond « Marquer installée / Annuler l'installation », pied (pire écart des turbines non installées avec la disponibilité en bulle, « n / m pièces ») ; besoins validés : `reopen` (« Rouvrir », `installOps(…, false)` sur les turbines installées, confirmé) à la place de « Voir la carte » ; phrase d'aide de la barre retirée (dans la bulle des n° de priorité) ; `ProgBar`, `REF_ST` retirés.
+- Galerie : page Turbines vivante en mémoire (attribuer, installer, rouvrir), jamais écrite en base.
+- Données et règles Firestore inchangées.
+- Test `needsView.test.js` adapté : état et détail des pièces lus dans les bulles (`title`), « Marquer installée » dans le nom du bouton rond, « n / m pièces » dans le pied.
