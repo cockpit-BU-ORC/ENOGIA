@@ -8,7 +8,7 @@ import { presenceDates, PRESENCE_META } from "../pjMeta";
 import { toLocalISO } from "../parsers";
 import { isClosedDay } from "../workDays";
 import { isoWeek } from "../loadWeeks";
-import { getDayStatus } from "./CalendarView";
+import { getDayStatus, MilestoneGlyph } from "./CalendarView";
 
 const MAX_LINES = 4;
 const DAY_NAMES = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"];
@@ -44,6 +44,7 @@ function Plate({ ev, onOpen, note }) {
     : vis ? { background: vis.bg, color: vis.ink, boxShadow: "inset 3px 0 0 " + vis.color } : { background: s.c, color: s.t };
   return <button type="button" onClick={() => onOpen(ev.pj)} title={ev.pj + " · " + label + (note ? " (" + note + ")" : "") + " — ouvrir la fiche"}
     className="enogia-cm-plate" style={{ display: "flex", alignItems: "baseline", gap: 6, width: "100%", minWidth: 0, minHeight: 22, padding: "2px 6px 2px 7px", border: "none", borderRadius: 4, cursor: "pointer", fontFamily: T.font, textAlign: "left", ...style }}>
+    {(ev.kind === "Arrivée" || ev.kind === "Départ") && <span style={{ alignSelf: "center" }}><MilestoneGlyph kind={ev.kind} size={12} onFill /></span>}
     <b className="enogia-cm-pj" style={{ fontFamily: T.fontDisplay, fontSize: FZF.xs, fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0 }}>{/^PJ/.test(ev.pj) ? <><span className="enogia-cm-pfx">PJ</span>{ev.pj.slice(2)}</> : ev.pj}</b>
     <span className="enogia-cm-long" style={{ fontSize: FZF.xs, opacity: ev.quiet ? 0.9 : 0.85, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}{note ? " · " + note : ""}</span>
     <span className="enogia-cm-short" aria-hidden="true" style={{ fontSize: FZF.xs, fontWeight: 600, marginLeft: "auto" }}>{SHORT[label] || (vis ? (ev.who === "nobo" ? "N" : "C") : label[0])}</span>
@@ -97,7 +98,7 @@ export function CalendarMonth({ data, month, closurePeriods, productionExclusion
       })}
     </div>
     <div style={{ display: "flex", gap: 14, flexWrap: "wrap", fontSize: FZF.xs, color: T.ink700, alignItems: "center" }}>
-      {legend.map(([k, l]) => <span key={k} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><i style={{ width: 12, height: 12, borderRadius: 4, background: k === "Production" || k === "Tests" ? T.surfaceAlt : P[k].c, boxShadow: k === "Production" || k === "Tests" ? "inset 3px 0 0 " + P[k].c : "none", border: "1px solid " + T.line }} />{l}<b className="enogia-cm-short" style={{ fontWeight: 600 }}>({k === "Tests" ? "B, T" : SHORT[l] || l[0]})</b></span>)}
+      {legend.map(([k, l]) => <span key={k} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>{k === "Arrivée" || k === "Départ" ? <MilestoneGlyph kind={k} size={12} /> : <i style={{ width: 12, height: 12, borderRadius: 4, background: k === "Production" || k === "Tests" ? T.surfaceAlt : P[k].c, boxShadow: k === "Production" || k === "Tests" ? "inset 3px 0 0 " + P[k].c : "none", border: "1px solid " + T.line }} />}{l}<b className="enogia-cm-short" style={{ fontWeight: 600 }}>({k === "Tests" ? "B, T" : SHORT[l] || l[0]})</b></span>)}
       {["client", "nobo"].map(w => <span key={w} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><i style={{ width: 12, height: 12, borderRadius: 4, background: PRESENCE_META[w].bg, boxShadow: "inset 3px 0 0 " + PRESENCE_META[w].color }} />Visite {PRESENCE_META[w].label}<b className="enogia-cm-short" style={{ fontWeight: 600 }}>({w === "nobo" ? "N" : "C"})</b></span>)}
       <span style={{ color: T.ink500 }}>Plaques pleines = jalons ; plaques claires = chaque jour de production ou de tests. Week-end rangé le vendredi.</span>
     </div>

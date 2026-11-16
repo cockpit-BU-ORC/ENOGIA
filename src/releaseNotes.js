@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v362",
+    date: "2026-11-16",
+    title: "V362 : jalons d'arrivée et de départ au calendrier",
+    items: [
+      { t: "Calendrier", d: "Arrivée (triangle) et départ (losange) sont posés sur leur jour dans les vues Jour, Semaine et Mois ; une machine hors de la partie affichée rappelle sa date au bord." },
+    ],
+  },
+  {
     id: "2026-11-v361",
     date: "2026-11-16",
     title: "V361 : besoins turbines plus compacts",

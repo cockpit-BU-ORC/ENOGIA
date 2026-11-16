@@ -2625,3 +2625,9 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - TurbinesHub.js : logement (`Sock`) 50 → 40 px, 2 lignes (la 3e ligne « prévue / prochaine libre » passe dans la bulle) ; `Piece` : détail sur la ligne du libellé, référence 13 px ; cartes minmax 420 → 340 px, padding 6 / 8 px ; cartes de la galerie 157 → 134 px et 245 → 202 px.
 - « À compléter » décochée par défaut : les besoins complets restent affichés. Clé localStorage **`enogia_nd_open`** (« 1 » = n'afficher que les besoins à compléter).
 - Données et règles Firestore inchangées. Fichiers : components/TurbinesHub.js, versions.
+
+## v362 — jalons d'arrivée et de départ au calendrier
+
+- CalendarView.js : `MilestoneGlyph` (SVG, triangle = arrivée, losange = départ, couleurs `stagePalette`) ; `RowTrack` pose les repères contre le bord du jour (avant la barre / après), reçoit `viewL` / `viewR` / `stickL` : barre hors de la partie visible → rappel collé (sticky) « Arrivée jj/mm → » ou « ← Départ jj/mm » ; légende « Arrivée (réception) · Départ ».
+- CalendarMonth.js : forme dans les plaques Arrivée / Départ (`onFill`) et dans la légende.
+- Aucune clé localStorage ; données et règles Firestore inchangées. Fichiers : components/CalendarView.js, components/CalendarMonth.js, versions.

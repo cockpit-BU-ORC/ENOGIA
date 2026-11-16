@@ -1069,4 +1069,9 @@ export const RELEASE_CATALOG = [
     ["Turbines", "Besoins ORC et SAV : logements sur 2 lignes (40 px au lieu de 50), cartes plus étroites et resserrées."],
     ["Turbines", "Les besoins complets restent affichés par défaut ; la case « À compléter » les masque et se souvient du choix."],
   ] },
+  { v: "362", t: "Jalons d'arrivée et de départ au calendrier", items: [
+    ["Calendrier", "Jour et Semaine : repère d'arrivée (triangle) avant la barre et de départ (losange) après, même quand la barre est très courte."],
+    ["Calendrier", "Machine hors de la partie affichée : « Arrivée jj/mm → » ou « ← Départ jj/mm » reste collé au bord pendant le défilement."],
+    ["Calendrier", "Mois : les plaques Arrivée et Départ portent la même forme ; légendes complétées."],
+  ] },
 ];
