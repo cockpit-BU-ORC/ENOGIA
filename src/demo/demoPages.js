@@ -49,9 +49,9 @@ function Calendrier({ mode0 = "week" }) {
     dayAnchor={dayAnchor} setDayAnchor={setDayAnchor} closurePeriods={[]} productionExclusions={{}} zoomLevel={zoom} setZoomLevel={setZoom} selEtats={f.selEtats} setSelEtats={f.setSelEtats} allPJs={o.allPJs} selPJs={f.selPJs} setSelPJs={f.setSelPJs} />;
 }
 const Commentaires = () => <CommentsView data={DEMO_ROWS} comments={DEMO_COMMENTS} addComment={yes} addCommentMulti={yes} deleteComment={yes} pinOk seeAll myPjs={["PJ901", "PJ902", "PJ905"]} openPj={no} authorName={DEMO_ME.name} resolveComment={yes} />;
-const ATraiter = ({ popup }) => <InboxPage popup={popup} me={DEMO_ME.email} comments={DEMO_COMMENTS} data={DEMO_ROWS} resolveComment={yes} canSeePrivate onOpen={no} assignments={[]} onSeenAssign={no} onOpenTests={no}
+const ATraiter = ({ popup, bell, comments = DEMO_COMMENTS, resolveComment = yes }) => <InboxPage popup={popup} bell={bell} me={DEMO_ME.email} comments={comments} data={DEMO_ROWS} resolveComment={resolveComment} canSeePrivate onOpen={no} assignments={[{ pj: "PJ905", at: BELL_AT, by: "Responsable des tests", from: "2026-11-24", to: "2026-11-28" }]} onSeenAssign={no} onOpenTests={no}
   actions={[{ id: "sn", n: 1, primary: true, title: "1 machine arrivée sans S/N", detail: "S/N prévus d'après l'ordo.", items: [{ pj: "PJ902", text: "2026-041-180", yes: { label: "✓ Oui", title: "Garder", onClick: no } }], cta: { label: "Attribuer les S/N", onClick: no } }]}
-  pjChanges={[{ pj: "PJ901", at: new Date().toISOString(), delta: 4, nom: "Papeterie du Nord" }]} onSeenPjChanges={no} onOpenChanges={no} />;
+  pjChanges={[{ pj: "PJ901", at: BELL_AT, delta: 4, nom: "Papeterie du Nord" }]} onSeenPjChanges={no} onOpenChanges={no} />;
 const bookApi = { loadImg: async () => null, save: async () => true };
 // v357 : cadrans en widgets — disposition gardée en mémoire (comme ArrangeCtx d'App pour le propriétaire)
 function Tests() { const [sub, setSub] = useState("semaine"), [lays, setLays] = useState({}); return <ArrangeCtx.Provider value={{ layouts: lays, save: (id, v) => setLays(l => ({ ...l, [id]: v })) }}><TestsTab doc={DEMO_TESTS} save={yes} data={DEMO_ROWS} certifs={{}} canEdit lead sub={sub} onSub={setSub} me={DEMO_ME.email} signApi={null} book={DEMO_BOOK} bookApi={bookApi} askPjs={new Set(["PJ901"])} myName={DEMO_ME.name} /></ArrangeCtx.Provider>; }
@@ -95,8 +95,13 @@ const AccueilProduit = () => <HomeView produit={DEMO_PRODUIT} pinOk testsDoc={DE
   profiles={{ byEmail: { [userKey(DEMO_ME.email)]: { email: DEMO_ME.email, name: DEMO_ME.name, role: "resptest", pjs: [], chefs: [] } } }} owner={false} cash={false} turbineDoc={null} onOpenCash={null} prodDoc={null} canProdTurb={false} productionExclusions={{}} plan={null} closurePeriods={[]} saveHomeLayout={null} />;
 
 // v324 : la cloche ouvre le pop-up « À traiter » (plus de page dédiée)
-const Cloche = () => <div style={{ display: "flex", justifyContent: "flex-end", minHeight: 420 }}><MentionBell me={DEMO_ME.email} comments={DEMO_COMMENTS} data={DEMO_ROWS} onOpen={no} canSeePrivate assignments={[]} pjChanges={[]} extra={1}
-  panel={<ATraiter popup />} closeKey="x" /></div>;
+const BELL_AT = new Date(Date.now() - 3600000).toISOString(); // v365 : horodatage fixe (clé stable des lignes)
+// v365 : cloche interactive — Vu / Traité d'une mention écrits dans les commentaires en mémoire
+function Cloche() { const [cm, setCm] = useState(DEMO_COMMENTS);
+  const resolve = (pj, idx, email, on, field) => setCm(C => ({ ...C, [pj]: (C[pj] || []).map((c, i) => i !== idx ? c : { ...c, [field]: on ? [...(c[field] || []).filter(x => x.email !== email), { email, at: new Date().toISOString() }] : (c[field] || []).filter(x => x.email !== email) }) }));
+  const asg = [{ pj: "PJ905", at: BELL_AT, by: "Responsable des tests", from: "2026-11-24", to: "2026-11-28" }], chg = [{ pj: "PJ901", at: BELL_AT, delta: 4, nom: "Papeterie du Nord" }];
+  return <div style={{ display: "flex", justifyContent: "flex-end", minHeight: 520 }}><MentionBell me={DEMO_ME.email} comments={cm} data={DEMO_ROWS} onOpen={no} canSeePrivate assignments={asg} pjChanges={chg} extra={1}
+    panel={<ATraiter popup comments={cm} resolveComment={resolve} />} closeKey="x" /></div>; }
 
 // v326 : SAV / MES — équipe SAV (tout) et chef de projet (lecture, planning sur une ligne, demandes)
 // window.__savLast : dernier enregistrement simulé (pour vérifier le glisser à l'écran)

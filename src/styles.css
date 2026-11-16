@@ -767,3 +767,11 @@ tr[data-kbd]:active > td, tr[role="button"]:active > td, li[data-kbd]:active, li
 .enogia-serie-table select { width: 172px !important; min-width: 0 !important; max-width: 172px !important; }
 /* v358 : livret (fiche de tests) au téléphone — couverture au-dessus du suivi, plus côte à côte */
 @media (max-width: 560px) { .enogia-book-cover { grid-template-columns: minmax(0, 1fr) !important; gap: 14px !important; } .enogia-book-cover > button { max-width: 170px; } }
+
+/* v365 : cloche — actions de chaque ligne au survol ou au focus, toujours visibles au doigt ; rappel du glisser au doigt seulement */
+.e-bell-acts { opacity: 0; transition: opacity var(--e-dur-micro) ease; }
+.e-bell-row:hover .e-bell-acts, .e-bell-row:focus-within .e-bell-acts { opacity: 1; }
+.e-bell-swipe { display: none; }
+@media (hover: none) { .e-bell-acts { opacity: 1; } }
+@media (pointer: coarse) { .e-bell-swipe { display: flex; } }
+@media (prefers-reduced-motion: reduce) { .e-bell-acts { transition: none; } }

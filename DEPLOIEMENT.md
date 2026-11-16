@@ -2645,3 +2645,10 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - HomeView.js : bouton « Gérer les accueils par rôle » dans la ligne « Accueil de : » (point ambre = rôle modifié) ; clé localStorage **`enogia_home_manage`** (« 1 » = écran de gestion ouvert).
 - WidgetBoard.js : galerie en choix multiple (`Choisir` / « Ajouter N widgets », `add(picks)`), bouton « ＋ Ajouter des widgets ».
 - Données inchangées (`planning/profiles.homeLayouts[rôle]`, propriétaire) ; règles Firestore inchangées. Galerie : « Accueil · gestion par rôle » (`home-roles`).
+
+## v365 — cloche : Vu, Traité, Plus tard (piste B)
+
+- src/bellFeed.js (nouveau, testé `bellFeed.test.js`) : `buildFeed` (fil, reportés, traités, pastille), `markLocal`, `laterUntil` (lendemain 8 h), `dayLabel`.
+- Mention : « Vu » / « Traité » écrits sur le commentaire (`seen` / `resolved`, via `resolveComment`, visibles de tous) ; une réaction de la personne citée = Traité (V319). Autres lignes et « Plus tard » : sur le poste, clé localStorage **`enogia_bell_<adresse>`** = `{ [clé]: { s: seen | done | later, at, until } }` (ménage après 60 jours).
+- InboxPage.js réécrit (fil par jour, `FeedRow` : glisser au doigt, seuil 80 px) ; MentionBell.js : pastille = `buildFeed().red` + demandes à valider, marques passées au pop-up (`bell`) ; styles.css : `.e-bell-acts` (survol / focus, toujours visible si `hover: none`), `.e-bell-swipe` (au doigt).
+- Règles Firestore inchangées. Galerie : « Cloche » interactive.

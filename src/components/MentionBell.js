@@ -6,6 +6,7 @@ import { gcalUrl } from "../gcal";
 import { NavIcon } from "./SharedUI";
 import { Reactions } from "./Reactions";
 import { useMentions } from "../mentionContext";
+import { buildFeed, markLocal } from "../bellFeed";
 
 // v152 — Cloche de l'en-tête : les demandes où l'on est cité (@) et qu'on n'a pas encore marquées « traitées », tous PJ confondus.
 // v188 : + les nouvelles affectations aux tests (assignments = [{ pj, at, by, from, to }]), « Vu » les retire, lien Google Agenda.
@@ -15,6 +16,13 @@ import { useMentions } from "../mentionContext";
 export function MentionBell({ comments, me, data, onOpen, canSeePrivate, assignments, onSeenAssign, onOpenTests, video, onOpenVideo, pjChanges, onSeenPjChanges, onOpenChanges, panel, closeKey, extra = 0 }) {
   const mctx = useMentions();
   const [open, setOpen] = useState(false);
+  // v365 : marques Vu / Traité / Plus tard propres au poste (bellFeed.js) ; la pastille suit le même calcul que le pop-up
+  const lsKey = "enogia_bell_" + String(me || "").toLowerCase();
+  const readLocal = () => { try { return JSON.parse(localStorage.getItem(lsKey) || "{}") || {}; } catch (e) { return {}; } };
+  const [local, setLocal] = useState(readLocal);
+  useEffect(() => { setLocal(readLocal()); }, [lsKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const markKey = (key, st) => setLocal(L => { const n = markLocal(L, key, st); try { localStorage.setItem(lsKey, JSON.stringify(n)); } catch (e) { /* stockage indisponible */ } return n; });
+  const feed = useMemo(() => buildFeed({ comments, me, canSeePrivate, assignments, pjChanges, video, local }), [comments, me, canSeePrivate, assignments, pjChanges, video, local, open]); // eslint-disable-line react-hooks/exhaustive-deps
   const items = useMemo(() => openMentionsFor(comments, me).filter(x => canSeePrivate || !x.c.private), [comments, me, canSeePrivate]); // un compte sans accès Manager ne voit jamais un message privé
   useEffect(() => {
     if (!open) return;
@@ -24,10 +32,10 @@ export function MentionBell({ comments, me, data, onOpen, canSeePrivate, assignm
   }, [open]);
   // v271 (demandé : « la notification n'est pas assez visible », piste C) : « N à traiter » en toutes lettres, la cloche tinte et s'entoure d'un
   // halo quand le compte augmente, et un aperçu de la nouvelle mention sort de la cloche pendant 6 s (même chemin au retour, sans prendre le focus).
-  const unseen = items.filter(x => !isSeenFor(x.c, me)), seenL = items.filter(x => isSeenFor(x.c, me));
+  const laterK = new Set(feed.later.map(x => x.key)), unseen = items.filter(x => !isSeenFor(x.c, me) && !laterK.has("m:" + x.pj + ":" + x.idx + ":" + (x.c.date || ""))), seenL = items.filter(x => isSeenFor(x.c, me));
   // v285 (audit croisé, lot B) : le rouge et « à traiter » = ce qui attend une action (cité, affecté aux tests) ;
   // les projets modifiés par le planning sont de l'information : compteur gris, sans tintement
-  const asg0 = assignments || [], chg0 = pjChanges || [], red = unseen.length + asg0.length + (extra || 0), info = chg0.length;
+  const asg0 = assignments || [], chg0 = pjChanges || [], red = feed.red + (extra || 0), info = feed.info;
   const [ring, setRing] = useState(0), [peek, setPeek] = useState(null);
   const prev = useRef(null), shown = useRef(new Set());
   useEffect(() => {
@@ -67,7 +75,7 @@ export function MentionBell({ comments, me, data, onOpen, canSeePrivate, assignm
     {open && panel && <>
       <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 9998 }} />
       <div role="dialog" aria-label="À traiter" style={{ position: "absolute", right: 0, top: 38, width: 560, maxWidth: "calc(100vw - 24px)", maxHeight: "min(72vh, 680px)", overflowY: "auto", zIndex: 9999, background: T.surface, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, padding: 10 }}>
-        {panel}
+        {React.cloneElement(panel, { bell: { local, mark: markKey } })}
       </div>
     </>}
     {open && !panel && <>

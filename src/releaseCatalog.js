@@ -1084,4 +1084,9 @@ export const RELEASE_CATALOG = [
     ["Accueil", "Actions « Copier depuis un autre rôle », « Partir de zéro », « Rétablir l'accueil par défaut », « Voir comme » ; chaque action s'annule pendant 6 s."],
     ["Accueil", "Galerie « Ajouter des widgets » : « Choisir » sur plusieurs widgets puis « Ajouter N widgets » (une seule annulation)."],
   ] },
+  { v: "365", t: "Cloche : Vu, Traité et Plus tard sur chaque notification", items: [
+    ["Cloche", "Pop-up en fil par jour : mentions, affectations aux tests, projets modifiés et vidéo, demandes à valider en tête."],
+    ["Cloche", "Sur chaque ligne (au survol, au focus, toujours au doigt) : « Vu », « Traité », « Plus tard » ; « Tout marquer vu » ; au doigt, glisser à droite = Traité, à gauche = Plus tard."],
+    ["Cloche", "« Plus tard » revient le lendemain à 8 h ; « Traités » repliés en bas (30 jours) avec « Rouvrir » ; les réactions émojis restent."],
+  ] },
 ];

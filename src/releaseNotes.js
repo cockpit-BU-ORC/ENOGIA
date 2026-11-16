@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v365",
+    date: "2026-11-16",
+    title: "V365 : cloche : Vu, Traité et Plus tard sur chaque notification",
+    items: [
+      { t: "Cloche", d: "Chaque notification se marque « Vu » (reste grisée, hors pastille), « Traité » (rangée dans « Traités ») ou « Plus tard » (revient le lendemain à 8 h). Fil groupé par jour." },
+    ],
+  },
+  {
     id: "2026-11-v364",
     date: "2026-11-16",
     title: "V364 : gestion des accueils par rôle sur un seul écran",
