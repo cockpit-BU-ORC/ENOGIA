@@ -12,7 +12,7 @@ import { ProdTurbines } from "./ProdTurbines";
 import { usePointerDnD } from "../pointerDrag";
 import { NavIcon } from "./SharedUI";
 import { createPortal } from "react-dom";
-import { allTurbines, monthOf, swapNeedKeys, TURB_CFGS, cfgById, refsOf, buildNeeds, assignOps, unassignOps, installOps, allocOps, unallocOps, stockTiles, injInfo, maxBouches, autoFill, roueConflict, prodState, workDate, pjOfAffaire, closedNeeds } from "../turbineNeeds";
+import { allTurbines, monthOf, swapNeedKeys, placeNeedKey, TURB_CFGS, cfgById, refsOf, buildNeeds, assignOps, unassignOps, installOps, allocOps, unallocOps, stockTiles, injInfo, maxBouches, autoFill, roueConflict, prodState, workDate, pjOfAffaire, closedNeeds } from "../turbineNeeds";
 import { getPjMeta, CountryFlag } from "../pjMeta";
 import { askConfirm } from "../confirm";
 import { AF } from "../autoFocusOk";
@@ -81,10 +81,19 @@ const NEEDS_CSS = `
 .enogia-nd-sock{transition:background var(--e-dur-menu),box-shadow var(--e-dur-menu),transform var(--e-dur-menu) cubic-bezier(.2,.8,.2,1),opacity var(--e-dur-menu)}
 .enogia-nd-sock[role=button]{cursor:pointer}
 .enogia-nd-sock[role=button]:active{transform:scale(.97);transition-duration:var(--e-dur-micro)}
+.enogia-nd-grip{width:20px;height:28px;display:inline-grid;place-items:center;color:var(--nd-mute);border-radius:6px;cursor:grab;touch-action:none;flex-shrink:0}
+.enogia-nd-grip:hover,.enogia-nd-grip:focus-visible{color:var(--nd-ink);background:var(--nd-alt)}
+.enogia-nd-rank{min-width:24px;height:24px;padding:0 6px;border:none;border-radius:999px;background:transparent;color:var(--nd-mute);font:600 12px var(--nd-font);font-variant-numeric:tabular-nums;cursor:pointer}
+.enogia-nd-rank:hover,.enogia-nd-rank[aria-expanded=true]{background:var(--nd-alt);color:var(--nd-ink)}
+.enogia-nd-need{transition:box-shadow var(--e-dur-menu),opacity var(--e-dur-menu)}
+.enogia-nd-need.is-lifted{opacity:.35}
+.enogia-nd-pick{animation:enogiaNdPick var(--e-dur-menu) cubic-bezier(.2,.8,.2,1);transform-origin:top left}
+@keyframes enogiaNdPick{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+.enogia-nd-pick button.slot:hover{background:var(--nd-alt)}
 .enogia-nd-month{position:sticky;z-index:2;border-bottom:1px solid var(--nd-line)}
 .enogia-nd-land{animation:enogiaNdLand 260ms cubic-bezier(.2,.8,.2,1)}
 @keyframes enogiaNdLand{0%{transform:scale(1.06)}100%{transform:scale(1)}}
-@media (prefers-reduced-motion: reduce){.enogia-nd-land{animation:none}.enogia-nd-sock,.enogia-nd-tile{transition:none}}
+@media (prefers-reduced-motion: reduce){.enogia-nd-pick{animation:none}.enogia-nd-land{animation:none}.enogia-nd-sock,.enogia-nd-tile{transition:none}}
 
 @media (max-width: 860px){.enogia-nd-app{grid-template-columns:1fr !important;height:auto !important;overflow:clip !important}.enogia-nd-need{grid-template-columns:1fr !important}.enogia-nd-stock{position:sticky !important;bottom:0;order:2;z-index:6;border-right:none !important;border-top:1px solid var(--nd-line);max-height:50vh;overflow-y:auto}.enogia-nd-stock[data-open="0"]{max-height:52px;overflow:hidden}.enogia-nd-drawer{display:inline-flex !important}}
 /* v333 (audit tablette) : sous 860 px, le stock devient un tiroir collé en bas, replié par défaut (toucher une pièce le referme) */`;
@@ -102,8 +111,33 @@ function Tile({ ctx, p, k, title, sub, q, disabled, tc, subMono }) { const { dnd
 const IC = {
   ok: <svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true" style={{ flexShrink: 0 }}><path d="M2.5 6.5l2.2 2.2L9.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>,
   lock: <svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true" style={{ flexShrink: 0 }}><rect x="2.5" y="5.5" width="7" height="5" rx="1" fill="none" stroke="currentColor" strokeWidth="1.4" /><path d="M4 5.5V4a2 2 0 014 0v1.5" fill="none" stroke="currentColor" strokeWidth="1.4" /></svg>,
+  grip: <svg width="10" height="16" viewBox="0 0 10 16" aria-hidden="true" style={{ flexShrink: 0 }}><g fill="currentColor"><circle cx="2" cy="3" r="1.4" /><circle cx="8" cy="3" r="1.4" /><circle cx="2" cy="8" r="1.4" /><circle cx="8" cy="8" r="1.4" /><circle cx="2" cy="13" r="1.4" /><circle cx="8" cy="13" r="1.4" /></g></svg>,
   plus: <svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true" style={{ flexShrink: 0 }}><path d="M6 2.5v7M2.5 6h7" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>,
 };
+// v373 (piste E) : « Placer PJ… » — la liste du mois, on touche la place voulue ; en bas, le rang global (échange avec le besoin qui l'a)
+function RankPicker({ n, at: anchor, list, rankOf, total, onPlace, onRank, onClose }) {
+  const at = anchor.isConnected ? anchor.getBoundingClientRect() : { left: 8, top: 8, bottom: 8 };
+  const ref = React.useRef(null);
+  React.useEffect(() => { const el = ref.current; const f = el && el.querySelector("button.slot:not([aria-current])"); if (f) f.focus();
+    const k = e => { if (e.key === "Escape") onClose(); }, c = e => { if (el && !el.contains(e.target) && !e.target.closest(".enogia-nd-rank")) onClose(); };
+    window.addEventListener("keydown", k); document.addEventListener("pointerdown", c); return () => { window.removeEventListener("keydown", k); document.removeEventListener("pointerdown", c); }; }, [onClose]);
+  const left = Math.max(8, Math.min(at.left, window.innerWidth - 316)), top = at.bottom + 6 + 360 > window.innerHeight ? Math.max(8, at.top - 6 - Math.min(360, 60 + list.length * 40)) : at.bottom + 6;
+  const me = rankOf.get(n.key), fd = iso => (iso ? String(iso).slice(8, 10) + "/" + String(iso).slice(5, 7) : "—");
+  return <div ref={ref} role="dialog" aria-label={"Placer " + n.label} className="enogia-nd-pick" style={{ position: "fixed", left, top, zIndex: 9000, width: 300, maxHeight: 360, overflowY: "auto", background: T.card, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, padding: 8, fontFamily: T.font }}>
+    <div style={{ fontSize: 13, fontWeight: 600, color: T.ink900, padding: "2px 6px 6px" }}>Placer {n.label}…</div>
+    {list.map(m => { const rk = rankOf.get(m.key), cur = m.key === n.key;
+      return <button key={m.key} type="button" className="slot" aria-current={cur ? "true" : undefined} onClick={() => (cur ? onClose() : onPlace(m))}
+        style={{ display: "grid", gridTemplateColumns: "24px minmax(0,1fr) auto", gap: 8, alignItems: "center", width: "100%", minHeight: 40, padding: "6px 8px", border: "none", borderRadius: 8, background: cur ? T.info100 : "transparent", color: T.ink900, cursor: "pointer", textAlign: "left", fontFamily: T.font }}>
+        <span style={{ fontSize: 12, fontWeight: 600, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{rk}</span>
+        <span style={{ minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontSize: 13 }}><b style={{ fontFamily: T.fontMono, fontWeight: 600 }}>{m.label}</b> <span style={{ color: T.ink500, fontSize: 12 }}>pour le {fd(m.date)}</span></span>
+        <span style={{ fontSize: 12, color: cur ? T.info600 : T.ink500 }}>{cur ? "ici" : rk < me ? "avant" : "après"}</span></button>; })}
+    <form onSubmit={e => { e.preventDefault(); const v = +e.currentTarget.elements.rg.value; if (v >= 1 && v <= total) onRank(v); }} style={{ display: "flex", alignItems: "center", gap: 8, borderTop: "1px solid " + T.line, marginTop: 6, padding: "8px 6px 2px", fontSize: 12, color: T.ink500 }}>
+      <label htmlFor="enogia-nd-rg">Rang global (autre mois)</label>
+      <input id="enogia-nd-rg" name="rg" type="number" min={1} max={total} defaultValue={me} style={{ width: 56, minHeight: 28, borderRadius: 8, border: "1px solid " + T.fieldLine, background: T.card, color: T.ink900, fontFamily: T.font, fontSize: 13, padding: "0 6px" }} />
+      <button type="submit" style={{ ...themeBtn("sec", "sm") }}>Échanger</button>
+    </form>
+  </div>;
+}
 // Couleurs des 4 états d'un logement (jetons du thème, clair et sombre)
 const TONES = () => ({
   roue: { bg: T.accentSoft, bd: T.accentInk, ink: T.accentInk }, inj: { bg: T.violet100, bd: T.violet600, ink: T.violet600 },
@@ -198,7 +232,8 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
   // de 40 px), logements à 4 états, disponibilité sur une ligne fine ; stock : roues et injecteurs d'abord.
   const [fold, setFold] = useState(() => { try { return JSON.parse(localStorage.getItem("enogia_nd_fold") || "null") || { "En fabrication": true }; } catch (e) { return { "En fabrication": true }; } });
   const flipFold = t => setFold(f => { const nx = { ...f, [t]: !f[t] }; try { localStorage.setItem("enogia_nd_fold", JSON.stringify(nx)); } catch (e) { /* stockage indisponible */ } return nx; });
-  const [rankEdit, setRankEdit] = useState(null);
+  // v373 (piste A + E validée) : la carte se glisse par sa poignée ; le rang ouvre « Placer … » (liste du mois, ou rang global)
+  const [rankPick, setRankPick] = useState(null);
   const [kind, setKind0] = useState(() => { try { const v = localStorage.getItem("enogia_nd_kind"); return v === "pj" || v === "sav" ? v : "all"; } catch (e) { return "all"; } });
   const setKind = k => { setKind0(k); try { localStorage.setItem("enogia_nd_kind", k); } catch (e) { /* stockage indisponible */ } };
   const nOrc = needs.filter(n => n.kind === "pj").length, nSav = needs.length - nOrc;
@@ -235,10 +270,10 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
   const shownD = [...shown].sort((a, b) => monthOf(a.date).localeCompare(monthOf(b.date)) || rankOf.get(a.key) - rankOf.get(b.key));
   const neighbor = (n, dir) => { const i = shownD.indexOf(n), m = shownD[i + dir]; return m && monthOf(m.date) === monthOf(n.date) ? m : null; };
   const saveKeys = async (keys, t) => { if (!keys || busy) return; if (await api.put("ordre", "besoins", { keys, at: new Date().toISOString() })) setMsg({ t }); else setMsg({ t: "L'enregistrement a échoué.", bad: true }); };
+  const placeNeed = (n, m) => { setRankPick(null); if (!m || m.key === n.key) return; const a = rankOf.get(n.key), b = rankOf.get(m.key); saveKeys(placeNeedKey(needs, n.key, m.key), n.label + (b < a ? " passe avant " : " passe après ") + m.label + "."); };
   const moveNeed = (n, dir) => { const m = neighbor(n, dir); if (m) saveKeys(swapNeedKeys(needs, n.key, m.key), n.label + (dir < 0 ? " remonte" : " descend") + " d'un cran."); };
-  const setRank = (n, r) => { setRankEdit(null); const m = needs[r - 1]; if (!m || m.key === n.key) return; saveKeys(swapNeedKeys(needs, n.key, m.key), n.label + " passe en priorité n° " + r + " (échangé avec " + m.label + ")."); };
+  const setRank = (n, r) => { setRankPick(null); const m = needs[r - 1]; if (!m || m.key === n.key) return; saveKeys(swapNeedKeys(needs, n.key, m.key), n.label + " passe en priorité n° " + r + " (échangé avec " + m.label + ")."); };
   const monthLab = iso => { if (!iso) return "Sans date"; const d = new Date(String(iso).slice(0, 7) + "-01T12:00:00"); const t = d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" }); return t.charAt(0).toUpperCase() + t.slice(1); };
-  const arrowB = { width: 24, height: 24, borderRadius: 4, border: "1px solid " + T.line, background: T.card, color: T.ink700, cursor: "pointer", fontSize: 12, lineHeight: 1, padding: 0, display: "inline-grid", placeItems: "center" };
   let lastMo = "";
   // v303 (maquette « effets des skills », piste Apple choisie, stock gardé visible) : barre d'outils et titres de mois en verre dépoli,
   // collés en haut de la liste ; les titres se posent juste sous la barre (hauteur mesurée).
@@ -255,23 +290,20 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
   const legend = [["à attribuer", { border: "1.5px dashed " + T.ink300 }], ["roue", { background: TN.roue.bg, border: "1.5px solid " + TN.roue.bd }], ["injecteur", { background: TN.inj.bg, border: "1.5px solid " + TN.inj.bd }],
     ["turbine allouée", { background: TN.turbine.bg, border: "1.5px solid " + TN.turbine.bd }], ["installée (roue et injecteur verrouillés)", { background: TN.inst.bg, border: "1.5px solid " + TN.inst.bd }], ["refusé", { background: TN.bad.bg, border: "1.5px solid " + TN.bad.bd }]];
   const card = n => {
-            const canUp = canEdit && !!neighbor(n, -1), canDown = canEdit && !!neighbor(n, 1);
             const T3 = n.want * 3, G3 = n.slots.filter(x => !x.extra).reduce((q, x) => q + !!x.t + !!x.roueOk + !!x.inj, 0), badI = n.issues.filter(i => i.bad && !/à attribuer$/.test(i.t) && !/après le besoin/.test(i.t));
             const meta = n.kind === "pj" ? getPjMeta(n.pj, n.r) : null, done = allDone(n);
             // v302 (demandé : « plus léger sur ORC (bleu léger) et violet sur SAV ») : bleu information très pâle / violet pâle, mêlés au fond de carte
             const rk = rankOf.get(n.key), bgC = n.kind === "sav" ? "color-mix(in srgb, " + T.violet100 + " 80%, " + T.card + ")" : "color-mix(in srgb, " + T.info100 + " 45%, " + T.card + ")";
     return (
-              <article className="enogia-nd-need" aria-label={"Besoin n° " + rk + ", " + (n.kind === "sav" ? "SAV " : "ORC ") + n.label} style={{ display: "flex", flexDirection: "column", gap: 4, padding: "6px 8px", borderRadius: 12, minWidth: 0, boxSizing: "border-box", background: bgC,
+              <article {...(canEdit ? dnd.dropProps("need:" + n.key, p => !!p && p.kind === "need" && p.key !== n.key, p => placeNeed(needs.find(x => x.key === p.key), n)) : {})} className={"enogia-nd-need" + (dnd.drag && dnd.drag.kind === "need" && dnd.drag.key === n.key ? " is-lifted" : "")} aria-label={"Besoin n° " + rk + ", " + (n.kind === "sav" ? "SAV " : "ORC ") + n.label} style={{ display: "flex", flexDirection: "column", gap: 4, padding: "6px 8px", borderRadius: 12, minWidth: 0, boxSizing: "border-box", background: bgC,
+              outline: dnd.over === "need:" + n.key ? "2px solid " + T.accentInk : "none", outlineOffset: 2,
               boxShadow: "inset 0 0 0 " + (n.late || badI.length ? "1.5px " + T.red600 : "1px " + (done ? T.emerald600 : n.kind === "sav" ? "color-mix(in srgb, " + T.violet500 + " 45%, transparent)" : "color-mix(in srgb, " + T.info600 + " 22%, transparent)")) }}>
               <div style={{ display: "flex", alignItems: "center", gap: "4px 6px", flexWrap: "wrap", minWidth: 0, minHeight: 24 }}>
-                {canEdit && <span style={{ display: "inline-flex", gap: 2 }}>
-                  <button type="button" aria-label={"Monter " + n.label + " d'un cran dans l'ordre de besoin"} disabled={!canUp} onClick={() => moveNeed(n, -1)} style={{ ...arrowB, opacity: canUp ? 1 : 0.35, cursor: canUp ? "pointer" : "default" }}>▲</button>
-                  <button type="button" aria-label={"Descendre " + n.label + " d'un cran dans l'ordre de besoin"} disabled={!canDown} onClick={() => moveNeed(n, 1)} style={{ ...arrowB, opacity: canDown ? 1 : 0.35, cursor: canDown ? "pointer" : "default" }}>▼</button></span>}
-                {rankEdit === n.key ? <input type="number" min={1} max={needs.length} defaultValue={rk} autoFocus={AF} aria-label={"Priorité de " + n.label + " (1 à " + needs.length + ")"}
-                    onKeyDown={e => { if (e.key === "Enter") setRank(n, +e.currentTarget.value); if (e.key === "Escape") setRankEdit(null); }} onBlur={e => setRank(n, +e.currentTarget.value)}
-                    style={{ width: 52, height: 24, borderRadius: 8, border: "1px solid " + T.ink900, background: T.card, color: T.ink900, fontSize: 12, fontWeight: 500, padding: "0 4px", fontFamily: T.font }} />
-                  : <button type="button" disabled={!canEdit} onClick={() => setRankEdit(n.key)} title={canEdit ? "Priorité n° " + rk + " : cliquer pour l'échanger avec un autre besoin, même d'un autre mois" : "Priorité n° " + rk} aria-label={"Priorité n° " + rk + " de " + n.label}
-                    style={{ minWidth: 22, height: 22, padding: "0 5px", boxSizing: "border-box", border: "none", borderRadius: 999, background: T.ink900, color: T.card, display: "inline-grid", placeItems: "center", fontSize: 12, fontWeight: 500, fontVariantNumeric: "tabular-nums", cursor: canEdit ? "pointer" : "default", fontFamily: T.font }}>{rk}</button>}
+                {canEdit && <span {...dnd.dragProps({ kind: "need", key: n.key }, { ghost: el => el.closest(".enogia-nd-need") })} className="enogia-nd-grip" role="button" tabIndex={0} aria-label={"Déplacer " + n.label + " (glisser, ou Alt + flèches haut / bas)"} title="Glisser pour changer l'ordre"
+                  onKeyDown={e => { if (e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) { e.preventDefault(); moveNeed(n, e.key === "ArrowUp" ? -1 : 1); } }}>{IC.grip}</span>}
+                {canEdit ? <button type="button" className="enogia-nd-rank" aria-haspopup="dialog" aria-expanded={!!(rankPick && rankPick.n.key === n.key)} aria-label={"Priorité n° " + rk + " de " + n.label + " : choisir sa place"} title="Choisir sa place dans la liste"
+                    onClick={e => setRankPick(rankPick && rankPick.n.key === n.key ? null : { n, r: e.currentTarget })}>{rk}</button>
+                  : <span style={{ fontSize: 12, fontWeight: 600, color: T.ink500, fontVariantNumeric: "tabular-nums", minWidth: 14, textAlign: "right" }} aria-label={"Priorité n° " + rk}>{rk}</span>}
                 <b style={{ fontFamily: T.fontMono, fontSize: 13, whiteSpace: "nowrap" }}>{n.label}</b>
                 {meta && <CountryFlag pays={meta.pays} size={13} />}
                 <span style={{ ...pill, background: T.card, color: n.kind === "sav" ? T.violet600 : T.ink700 }}>{n.kind === "sav" ? "SAV" : "ORC"}</span>
@@ -279,7 +311,7 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
                 {n.kind === "sav" && canEdit && <button type="button" onClick={() => setSav({ id: n.id, ...n.raw, injB: n.raw.injB == null ? "" : String(n.raw.injB) })} style={{ ...linkB, color: T.ink500, fontWeight: 500 }}>modifier</button>}
                 <span style={{ fontSize: 12, color: T.ink700, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>pour le <b>{fdS(n.date)}</b></span>
                 {canEdit && <button type="button" onClick={() => closeNeed(n)} title="Turbines installées : retirer ce besoin de la liste" aria-label={"Clore le besoin " + n.label} style={{ ...themeBtn(allDone(n) ? "sec" : "ghost", "sm"), minHeight: 26, padding: "0 8px", fontSize: 12 }}>Clore</button>}
-                {canEdit && <button type="button" aria-label={"Configuration des turbines de " + n.label + " (" + n.cfg.l + ")"} title={"Configuration : " + n.cfg.l} onClick={e => setPop({ n, kind: "cfg", el: e.currentTarget })} style={{ ...arrowB, fontSize: 14, border: "none", background: "transparent" }}>⋯</button>}
+                {canEdit && <button type="button" aria-label={"Configuration des turbines de " + n.label + " (" + n.cfg.l + ")"} title={"Configuration : " + n.cfg.l} onClick={e => setPop({ n, kind: "cfg", el: e.currentTarget })} className="enogia-nd-rank" style={{ fontSize: 14 }}>⋯</button>}
               </div>
               {badI.length > 0 && <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>{badI.map((i, q) => <span key={q} style={{ fontSize: 12, fontWeight: 500, color: T.red600 }}>{i.t}</span>)}</div>}
               <div aria-hidden="true" style={{ display: "grid", gridTemplateColumns: "14px repeat(3, minmax(0, 1fr)) 28px", gap: 4, fontSize: 12, color: T.ink500, padding: "2px 0 0" }}><span /><span>Turbine {n.cfg.g} kW</span><span>Roue</span><span>Injecteur</span><span /></div>
@@ -310,7 +342,8 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
                 </div>; })()}
             </article>);
   };
-  return (<div style={{ display: "flex", flexDirection: "column", gap: 10, "--nd-bg": T.card, "--nd-line": T.line }}>
+  return (<div style={{ display: "flex", flexDirection: "column", gap: 10, "--nd-bg": T.card, "--nd-line": T.line, "--nd-mute": T.ink500, "--nd-ink": T.ink900, "--nd-alt": T.surfaceAlt, "--nd-font": T.font }}>
+    {rankPick && <RankPicker n={rankPick.n} at={rankPick.r} list={shownD.filter(x => monthOf(x.date) === monthOf(rankPick.n.date))} rankOf={rankOf} total={needs.length} onPlace={m => placeNeed(rankPick.n, m)} onRank={v => setRank(rankPick.n, v)} onClose={() => setRankPick(null)} />}
     <style>{NEEDS_CSS}</style>
     <div className="enogia-nd-app" style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden", display: "grid", gridTemplateColumns: "260px minmax(0,1fr)", height: "min(80vh, 940px)" }}>
       <aside className="enogia-nd-stock" data-open={drawer ? "1" : "0"} aria-label="Stock de la production turbines" style={{ background: T.surface, borderRight: "1px solid " + T.line, overflowY: "auto" }}>

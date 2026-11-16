@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v373",
+    date: "2026-11-16",
+    title: "V373 : Besoins turbines — ordre des cartes à la poignée, place choisie dans une liste",
+    items: [
+      { t: "Glisser une carte", d: "Dans Turbines › Besoins, chaque carte a une poignée ⋮⋮ : on la glisse sur une autre carte pour la placer avant ou après. Au clavier : Alt + flèche haut / bas." },
+      { t: "Choisir sa place", d: "Le numéro de priorité, plus discret, ouvre la liste des besoins du mois : on touche la place voulue. En bas, « Rang global » pour l'envoyer dans un autre mois." },
+      { t: "Moins de boutons", d: "Les petites flèches ▲ ▼ et la pastille noire du numéro disparaissent des cartes." },
+    ],
+  },
+  {
     id: "2026-11-v372",
     date: "2026-11-16",
     title: "V372 : besoins turbines : une ligne par turbine, Rouvrir",

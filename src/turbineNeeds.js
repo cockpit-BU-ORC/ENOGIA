@@ -98,6 +98,13 @@ export function swapNeedKeys(needs, a, b) {
   if (i < 0 || j < 0 || i === j) return null;
   [list[i], list[j]] = [list[j], list[i]]; return list;
 }
+// v373 (maquette v373-besoins-ordre-5-pistes, piste A + E validée) : déplacer un besoin à la place d'un autre — glisser une carte sur une autre ou
+// choisir sa place dans la liste. En descendant, il passe après la cible ; en montant, avant. Renvoie la liste des clés dans le nouvel ordre.
+export function placeNeedKey(needs, key, target) {
+  const list = (needs || []).map(n => n.key), i = list.indexOf(key), j = list.indexOf(target);
+  if (i < 0 || j < 0 || i === j) return null;
+  list.splice(i, 1); list.splice(list.indexOf(target) + (i < j ? 1 : 0), 0, key); return list;
+}
 // Besoins (PJ en cours + SAV), emplacements, turbines disponibles
 export function buildNeeds(doc, rows, metaOf, today = new Date()) {
   const open = (rows || []).filter(r => r && r.pj && r.etat !== "SHIPPED" && r.etat !== "SLOT_LIBRE");

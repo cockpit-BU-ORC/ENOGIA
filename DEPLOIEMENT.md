@@ -2702,3 +2702,14 @@ Le carré « ORC » est remplacé par le **signe ENOGIA** (les deux feuilles du 
 - Galerie : page Turbines vivante en mémoire (attribuer, installer, rouvrir), jamais écrite en base.
 - Données et règles Firestore inchangées.
 - Test `needsView.test.js` adapté : état et détail des pièces lus dans les bulles (`title`), « Marquer installée » dans le nom du bouton rond, « n / m pièces » dans le pied.
+
+## V373 — Besoins turbines : ordre à la poignée et place choisie dans une liste
+
+Demandé : « le skill apple design peut faire mieux, surtout sur les petites flèches ou les numéros (5 maquettes) » ; maquette `maquettes-design/v373-besoins-ordre-5-pistes.html`, choix **A + E**.
+
+- **A** : poignée ⋮⋮ (`.enogia-nd-grip`, `dnd.dragProps({ kind: "need", key })`, copie = la carte) ; chaque carte reçoit (`dropProps("need:" + key)`, contour `T.accentInk` au survol) → `placeNeed` → `placeNeedKey(needs, clé, cible)` (turbineNeeds.js, testé : avant si on monte, après si on descend) ; Alt + ↑ / ↓ = `moveNeed`.
+- **E** : numéro discret (`.enogia-nd-rank`) → `RankPicker` (besoins du même mois, « avant / ici / après », « Rang global » = `setRank`, échange comme avant), Échap / clic à côté ferment.
+- Retirés : flèches ▲ ▼ (`arrowB`), pastille noire et saisie `rankEdit`.
+- Même document `planning/prodTurbines.ordre.besoins.keys` : règles inchangées.
+- Fichiers : src/components/TurbinesHub.js, src/turbineNeeds.js, src/placeNeed.test.js.
+- Clés localStorage : aucune.

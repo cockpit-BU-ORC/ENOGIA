@@ -1126,4 +1126,8 @@ export const RELEASE_CATALOG = [
     ["Turbines", "Pied de carte : marge (ou retard) de la turbine la plus juste, détail de disponibilité dans la bulle, nombre de pièces posées."],
     ["Turbines", "Besoins validés : « Rouvrir » annule l'installation et remet le besoin dans la liste (confirmé)."],
   ] },
+  { v: "373", t: "Besoins turbines — ordre des cartes à la poignée, place choisie dans une liste", items: [
+    ["Glisser une carte de besoin", "Poignée ⋮⋮ sur chaque carte de Turbines › Besoins, Alt + flèches au clavier."],
+    ["Choisir la place d'un besoin", "Le numéro ouvre la liste du mois ; « Rang global » pour un autre mois."],
+  ] },
 ];
