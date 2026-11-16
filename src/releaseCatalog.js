@@ -1116,4 +1116,9 @@ export const RELEASE_CATALOG = [
     ["Accueil", "Accueil du DAF : phrase sur les factures en attente de paiement (en retard, cette semaine), widgets « À encaisser », Cash in, chiffres clés, prochains départs."],
     ["Gestion des accès", "Un rôle intégré ajouté après l'enregistrement de la liste des rôles y apparaît désormais (à la fin)."],
   ] },
+  { v: "371", t: "Export Excel du Cash in plus clair", items: [
+    ["Cash in", "Export Excel : « Synthèse » en tête (titre, date, encaissé, facturé en attente, en retard, reste à facturer, % encaissé, puis un PJ par ligne et le total)."],
+    ["Cash in", "Feuille « Jalons » : écarts en jours repliés dans un groupe de colonnes (bouton + d'Excel), projets EPC en gris, commentaires renvoyés à la ligne."],
+    ["Cash in", "En-têtes clairs au lieu du bandeau marine, impression en paysage sur une page de large (A3 pour Jalons), en-tête répété et pages numérotées ; bouton « Exporter en Excel » en secondaire, « Préparation… » pendant la création."],
+  ] },
 ];

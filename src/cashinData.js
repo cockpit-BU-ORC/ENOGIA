@@ -24,7 +24,7 @@ export function produitItems(d) {
 // voient les jalons de paiement dans les fiches synthèse (lecture seule). Le document « cashin » complet reste réservé au super admin.
 export const CASHIN_SHARED_ID = (process.env.REACT_APP_BETA === "1" ? "beta_" : "") + "cashinShared";
 export const CASHIN_SHARED_REF = () => doc(db, "planning", CASHIN_SHARED_ID);
-export const CASHIN_PAGE_VERSION = "323"; // change à chaque modification de public/cashin.html (évite le cache du navigateur)
+export const CASHIN_PAGE_VERSION = "371"; // change à chaque modification de public/cashin.html (évite le cache du navigateur)
 export const CASHIN_MAX_BYTES = 900 * 1024;  // limite Firestore : 1 Mo par document
 
 // Le document garde exactement la forme de l'ancien artefact : { rows, labels, totals, owners, updatedAt }.
