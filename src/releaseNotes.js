@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v390",
+    date: "2026-11-17",
+    title: "V390 : Livret de configuration ORC — pas à pas, une étape à la fois, OK ou Problème en un geste",
+    items: [
+      { t: "Une étape à la fois", d: "Le livret s'ouvre en plein écran sur la première étape à faire : le titre et la consigne en grand, l'image du manuel à droite, l'avancement de chaque chapitre en haut." },
+      { t: "Un seul geste", d: "« OK, suivante » valide l'étape et passe à la suivante ; « Problème » la marque et demande ce qui a été constaté. Plus de case « Étape validée » à cocher en plus. Au clavier : O, P, ← →." },
+      { t: "Sommaire", d: "Le bouton « Sommaire » ouvre la liste des étapes, les filtres, la synthèse des problèmes, les exports et la reprise d'une session." },
+    ],
+  },
+  {
     id: "2026-11-v389",
     date: "2026-11-17",
     title: "V389 : Calendrier et Gantt — arrivée et départ en losanges, barre « Tests » juste, départ avant la fin du travail signalé",

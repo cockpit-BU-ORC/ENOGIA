@@ -477,7 +477,7 @@ export function TestDialog({ r, onClose, doc, testers, catalog, conflicts, commi
         <main style={{ overflowY: "auto", padding: "20px 24px 28px", minWidth: 0 }}>
           <StepBigCtx.Provider value={true}>
             {(id === "who" || id === "pres" || id === "debug" || id === "sign") && <FatSheet panel bare only={id} r={r} {...{ doc, testers, catalog, conflicts, commit, certifs, canEdit, lead, myTester, who, signApi }} open onToggle={() => {}} />}
-            {id === "book" && <><StepHead title="Configuration de l'ORC" lead="Le livret de configuration de cette machine, étape par étape : validez chaque étape, donnez son statut (OK ou Problème) et commentez si besoin. Il s'ouvre comme un livre." />
+            {id === "book" && <><StepHead title="Configuration de l'ORC" lead="Le livret de configuration de cette machine, une étape à la fois : OK ou Problème, avec un commentaire si besoin." />
               <BookStep r={r} plan={plan} book={book || { chapters: [] }} bookApi={bookApi} canMark={canMark} saveTests={saveTests} who={who} canAdmin={canEdit} meta={meta} /></>}
             {id === "tests" && <><StepHead title="Checklist de tests" lead="Les tests FAT de la machine, dans le même tableau que la checklist de debug : OK ou NOK, problème, causalité, correctif et temps passé. Le chef de projet ajoute les demandes spécifiques du client dans le FAT interne." />
               <TestsChecklistStep r={r} plan={plan} catalog={catalog} act={act} canMark={canMark} canAsk={canAsk} saveTests={saveTests} who={who} pr={q}

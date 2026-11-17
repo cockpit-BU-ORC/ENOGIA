@@ -116,82 +116,104 @@ function BookImg({ k, src, bookApi }) {
   if (none) return <div style={{ fontSize: 12, color: T.ink500, border: "1px dashed " + T.line, borderRadius: 8, padding: 8, margin: "6px 0" }}>Image non disponible ({src})</div>;
   return url ? <img src={url} alt="" style={{ display: "block", maxWidth: "100%", height: "auto", borderRadius: 4, margin: "8px 0", border: "1px solid " + T.line, background: "#FFFFFF" }} /> : <div aria-hidden="true" style={{ height: 120, borderRadius: 4, background: T.surfaceAlt, margin: "8px 0" }} />;
 }
-function Blocks({ blocks, book, bookApi }) {
+function Blocks({ blocks, book, bookApi, big }) {
   return blocks.map((b, i) => b.t === "img" ? <BookImg key={i} src={b.src} k={(book.images || {})[b.src]} bookApi={bookApi} />
-    : b.t === "table" ? <div key={i} style={{ overflowX: "auto", margin: "8px 0" }}><table style={{ borderCollapse: "collapse", fontSize: 12, width: "100%" }}><tbody>{b.rows.map((rw, j) => <tr key={j}>{(Array.isArray(rw) ? rw : rw.c || []).map((c, k) => <td key={k} style={{ border: "1px solid " + T.line, padding: "4px 6px", fontWeight: j === 0 ? 600 : 400, background: j === 0 ? T.surfaceAlt : "transparent", verticalAlign: "top" }}>{c}</td>)}</tr>)}</tbody></table></div>
-    : <p key={i} style={{ margin: "0 0 7px", fontSize: FZ.sm, lineHeight: 1.5, color: b.cap ? T.ink500 : T.ink900, fontStyle: "normal", paddingLeft: b.list ? 16 : 0, position: "relative", whiteSpace: "pre-line" }}>{b.list && <span aria-hidden="true" style={{ position: "absolute", left: 2 }}>•</span>}{b.text}</p>);
+    : b.t === "table" ? <div key={i} style={{ overflowX: "auto", margin: "8px 0" }}><table style={{ borderCollapse: "collapse", fontSize: big ? 14 : 12, width: "100%" }}><tbody>{b.rows.map((rw, j) => <tr key={j}>{(Array.isArray(rw) ? rw : rw.c || []).map((c, k) => <td key={k} style={{ border: "1px solid " + T.line, padding: "4px 6px", fontWeight: j === 0 ? 600 : 400, background: j === 0 ? T.surfaceAlt : "transparent", verticalAlign: "top" }}>{c}</td>)}</tr>)}</tbody></table></div>
+    : <p key={i} style={{ margin: big ? "0 0 10px" : "0 0 7px", fontSize: big ? 18 : FZ.sm, lineHeight: 1.5, maxWidth: big ? "62ch" : undefined, color: b.cap ? T.ink500 : T.ink900, fontStyle: "normal", paddingLeft: b.list ? 16 : 0, position: "relative", whiteSpace: "pre-line" }}>{b.list && <span aria-hidden="true" style={{ position: "absolute", left: 2 }}>•</span>}{b.text}</p>);
 }
-function StepCtl({ s, row, canMark, io }) {
-  const st = stepStatus(row);
-  return <div style={{ borderTop: "1px solid " + T.line, paddingTop: 10, marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
-    <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-      <label style={{ display: "inline-flex", gap: 8, alignItems: "center", fontSize: FZ.sm, fontWeight: 600, color: T.ink900, minHeight: 32, cursor: canMark ? "pointer" : "default" }}><input type="checkbox" disabled={!canMark} checked={!!(row && row.v)} onChange={e => io.setRow(s.id, { v: e.target.checked })} style={{ width: 20, height: 20 }} />Étape validée</label>
-      <span style={{ flex: 1 }} />
-      <div role="radiogroup" aria-label={"Statut : " + s.title} style={{ display: "inline-flex", gap: 2, background: T.surfaceAlt, borderRadius: 8, padding: 2 }}>
-        {STEP_STATUS.map(([v, l]) => { const on = st === v, [ink, bg] = ST_TONE[v](); return <button key={v} type="button" role="radio" aria-checked={on} disabled={!canMark} onClick={() => io.setRow(s.id, { s: v })}
-          style={{ border: "none", borderRadius: 8, minHeight: 32, padding: "0 12px", fontSize: 12, fontWeight: 500, fontFamily: T.font, cursor: canMark ? "pointer" : "default", background: on ? bg : "transparent", color: on ? ink : T.ink500 }}>{l}</button>; })}
-      </div>
-    </div>
-    <textarea rows={2} disabled={!canMark} key={s.id + ((row && row.c) || "")} defaultValue={(row && row.c) || ""} placeholder={st === "pb" ? "Décrivez le problème" : "Commentaire (facultatif)"} aria-label={"Commentaire : " + s.title}
-      onBlur={e => { const t = e.target.value.trim(); if (t !== ((row && row.c) || "")) io.setRow(s.id, { c: t }); }} style={{ ...field(), fontSize: FZ.sm, resize: "vertical", borderColor: st === "pb" ? T.red500 : T.line }} />
-    {row && row.by && <span style={{ fontSize: 12, color: T.ink500 }}>{row.by}{row.at ? " · " + fdt(row.at) : ""}</span>}
+// v390 (maquette v389-livret-4-pistes.html, piste B « pas à pas » choisie) : une étape à la fois, en plein écran — code et consigne en grand,
+// image du manuel à droite, en bas OK / Problème (un seul geste : statut + validée ; OK passe à la suivante ; touches O / P, ← →) ;
+// bande des chapitres en haut ; « Sommaire » = volet (filtres, liste, problèmes, exports, reprise d'une session).
+function ChapBand({ book, rows, curChap, onPick }) {
+  return <div style={{ display: "flex", gap: 4, padding: "10px 20px 0" }}>
+    {book.chapters.map(c => { const on = c.id === curChap;
+      return <button key={c.id} type="button" onClick={() => onPick(c.id)} aria-current={on ? "step" : undefined} title={c.title} style={{ flex: Math.max(1, c.steps.length), minWidth: 0, border: "none", background: "transparent", padding: "4px 0", cursor: "pointer", textAlign: "left", fontFamily: T.font }}>
+        <span aria-hidden="true" style={{ display: "flex", gap: 1, height: 6 }}>{c.steps.map(s => { const st = stepStatus(rows[s.id]); return <i key={s.id} style={{ flex: 1, borderRadius: 2, background: st === "ok" ? T.emerald500 : st === "pb" ? T.red500 : T.line }} />; })}</span>
+        <span style={{ display: "block", fontSize: 12, marginTop: 3, color: on ? T.ink900 : T.ink500, fontWeight: on ? 600 : 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.title}</span>
+      </button>; })}
   </div>;
 }
 function BookReader({ r, book, bookApi, canMark, io, focus, onClose }) {
-  const [flt, setFlt] = useState({ status: "all", chap: (focus && focus.chap) || "", q: "" }), [showPb, setShowPb] = useState(false);
-  const list = filterSteps(book, io.rows, flt), pr = manualProgress(book, io.rows);
-  const [cur, setCur] = useState(() => { if (focus && focus.id) { const i = bookStepsOf(book).findIndex(s => s.id === focus.id); return Math.max(0, i); } return 0; });
-  const at = Math.min(cur, Math.max(0, list.length - 1)), pg = at - (at % 2), L = list[pg], R2 = list[pg + 1];
-  useEffect(() => { const k = e => { const tag = e.target && e.target.tagName; if (e.key === "Escape") onClose(); else if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return; else if (e.key === "ArrowRight") setCur(c => Math.min(list.length - 1, c - (c % 2) + 2)); else if (e.key === "ArrowLeft") setCur(c => Math.max(0, c - (c % 2) - 2)); };
-    window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose, list.length]);
+  const [flt, setFlt] = useState({ status: "all", chap: (focus && focus.chap) || "", q: "" }), [showPb, setShowPb] = useState(false), [sum, setSum] = useState(false), [msg, setMsg] = useState("");
+  const list = filterSteps(book, io.rows, flt), pr = manualProgress(book, io.rows), all = bookStepsOf(book);
+  const [cur, setCur] = useState(() => { if (focus && focus.id) return Math.max(0, all.findIndex(s => s.id === focus.id)); if (focus && focus.chap) return 0; const i = all.findIndex(s => stepStatus(io.rows[s.id]) === "todo"); return Math.max(0, i); });
+  const at = Math.min(cur, Math.max(0, list.length - 1)), s = list[at], row = s ? io.rows[s.id] || {} : {}, st = stepStatus(row);
+  const cmtRef = useRef(null);
+  const go = i => { setMsg(""); setCur(Math.max(0, Math.min(list.length - 1, i))); };
+  const needNote = () => st === "pb" && !((cmtRef.current && cmtRef.current.value.trim()) || row.c);
+  const next = () => { if (needNote()) { setMsg("Décrivez le problème avant de passer à la suivante."); if (cmtRef.current) cmtRef.current.focus(); return; } if (at < list.length - 1) go(at + 1); else setMsg("Dernière étape de la sélection."); };
+  const saveNote = () => { const t = cmtRef.current ? cmtRef.current.value.trim() : ""; if (s && t !== (row.c || "")) io.setRow(s.id, { c: t }); };
+  const mark = v => { if (!s || !canMark) return; saveNote(); io.setRow(s.id, { s: v, v: true }); setMsg("");
+    if (v === "ok") { if (at < list.length - 1) setCur(at + 1); else setMsg("Dernière étape de la sélection."); } else if (cmtRef.current) cmtRef.current.focus(); };
+  const live = useRef({}); live.current = { mark, next, go, at, sum };
+  useEffect(() => { const k = e => { const tag = e.target && e.target.tagName, L = live.current;
+      if (e.key === "Escape") { if (L.sum) setSum(false); else onClose(); return; }
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === "ArrowRight") { e.preventDefault(); L.next(); } else if (e.key === "ArrowLeft") { e.preventDefault(); L.go(L.at - 1); }
+      else if (canMark && (e.key === "o" || e.key === "O")) { e.preventDefault(); L.mark("ok"); } else if (canMark && (e.key === "p" || e.key === "P")) { e.preventDefault(); L.mark("pb"); } };
+    window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose, canMark]);
   const setF = p => { setFlt(f => ({ ...f, ...p })); setCur(0); };
-  const goId = id => { const i = list.findIndex(s => s.id === id); if (i >= 0) setCur(i); else { setFlt({ status: "all", chap: "", q: "" }); setCur(Math.max(0, bookStepsOf(book).findIndex(s => s.id === id))); } };
-  const paper = "color-mix(in srgb, " + T.card + " 94%, " + T.amber100 + ")";
-  const Page = ({ s, n }) => !s ? <div style={{ padding: 30, color: T.ink500, fontSize: FZ.sm }}>{list.length ? "Fin de la sélection" : "Aucune étape avec ces filtres"}</div>
-    : <article aria-label={s.title} style={{ padding: "26px 30px 40px", position: "relative", minWidth: 0, display: "flex", flexDirection: "column" }}>
-      <div style={{ fontSize: 12, color: T.ink500, marginBottom: 4 }}>{[s.chapTitle, ...s.path.slice(1)].filter((x, i, a) => x && a.indexOf(x) === i).join(" › ")}</div>
-      <h3 style={{ margin: "0 0 10px", fontFamily: T.fontDisplay, fontSize: 20, fontWeight: 600, color: T.ink900, display: "flex", gap: 8, alignItems: "center" }}>{s.title}
-        {stepStatus(io.rows[s.id]) !== "todo" && <span style={{ fontFamily: T.font, fontSize: 12, fontWeight: 500, borderRadius: 999, padding: "1px 8px", color: ST_TONE[stepStatus(io.rows[s.id])]()[0], background: ST_TONE[stepStatus(io.rows[s.id])]()[1] }}>{Object.fromEntries(STEP_STATUS)[stepStatus(io.rows[s.id])]}</span>}</h3>
-      <div style={{ flex: 1 }}><Blocks blocks={s.blocks} book={book} bookApi={bookApi} /></div>
-      <StepCtl s={s} row={io.rows[s.id]} canMark={canMark} io={io} />
-      <span style={{ position: "absolute", bottom: 12, [n % 2 ? "left" : "right"]: 30, fontSize: 12, color: T.ink500 }}>{n} / {list.length}</span>
-    </article>;
+  const goId = id => { const i = list.findIndex(x => x.id === id); if (i >= 0) go(i); else { setFlt({ status: "all", chap: "", q: "" }); setCur(Math.max(0, all.findIndex(x => x.id === id))); } setSum(false); };
+  const goChap = cid => { setFlt({ status: "all", chap: "", q: "" }); setCur(Math.max(0, all.findIndex(x => x.chap === cid))); setMsg(""); };
+  const imgs = s ? s.blocks.filter(b => b.t === "img") : [], txt = s ? s.blocks.filter(b => b.t !== "img") : [];
   const chip = (v, l, n) => { const on = flt.status === v; return <button key={v} type="button" aria-pressed={on} onClick={() => setF({ status: v })} style={{ minHeight: 30, padding: "0 10px", borderRadius: 999, border: "1px solid " + (on ? T.ink900 : T.line), background: on ? T.ink900 : T.card, color: on ? T.card : T.ink700, fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: T.font }}>{l} <span style={{ opacity: 0.7 }}>{n}</span></button>; };
-  return <div onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} className="enogia-book-reader" style={{ position: "fixed", inset: 0, zIndex: 10020, background: "rgba(10,14,22,.58)", display: "grid", gridTemplateColumns: "minmax(250px,300px) minmax(0,1080px)", gap: 14, alignContent: "center", justifyContent: "center", padding: 16 }}>
-    <aside aria-label="Suivi du livret" style={{ background: T.card, borderRadius: 12, boxShadow: T.shadowLg, padding: 14, alignSelf: "stretch", maxHeight: "92dvh", overflow: "auto", display: "flex", flexDirection: "column", gap: 10 }}>
-      <div><div style={{ fontFamily: T.fontDisplay, fontSize: 16, fontWeight: 600, color: T.ink900 }}>{book.title || BOOK_DOC.title} · {r.pj}</div>
-        <div style={{ fontSize: 12, color: T.ink500, marginTop: 2 }}>{pr.valid} / {pr.total} validées · <span style={{ color: T.emerald600 }}>{pr.ok} OK</span> · <span style={{ color: pr.pb ? T.red600 : T.ink500 }}>{pr.pb} problème{pr.pb > 1 ? "s" : ""}</span></div>
-        <div role="progressbar" aria-label="Étapes validées" aria-valuenow={pr.total ? Math.round(pr.valid / pr.total * 100) : 0} aria-valuemin={0} aria-valuemax={100} style={{ height: 8, borderRadius: 4, background: T.surfaceAlt, overflow: "hidden", marginTop: 6 }}><i style={{ display: "block", height: "100%", width: (pr.total ? pr.valid / pr.total * 100 : 0) + "%", background: T.emerald500 }} /></div></div>
-      <div role="group" aria-label="Filtrer par statut" style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>{chip("all", "Toutes", pr.total)}{chip("todo", "À faire", pr.todo)}{chip("ok", "OK", pr.ok)}{chip("pb", "Problème", pr.pb)}{chip("novalid", "Non validées", pr.total - pr.valid)}</div>
-      <select value={flt.chap} onChange={e => setF({ chap: e.target.value })} aria-label="Filtrer par chapitre" style={{ ...field(), fontSize: FZ.sm, minHeight: 34 }}><option value="">Tous les chapitres</option>{book.chapters.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}</select>
-      <input type="search" value={flt.q} onChange={e => setF({ q: e.target.value })} placeholder="Rechercher dans le livret" aria-label="Rechercher dans le livret" style={{ ...field(), fontSize: FZ.sm, minHeight: 34 }} />
-      <ol style={{ listStyle: "none", margin: 0, padding: 0, flex: 1, minHeight: 120, overflow: "auto", borderTop: "1px solid " + T.line }}>
-        {list.map((s, i) => { const st = stepStatus(io.rows[s.id]), on = i === pg || i === pg + 1, head = i === 0 || list[i - 1].chap !== s.chap;
-          return <li key={s.id}>{head && <div style={{ fontSize: 12, fontWeight: 500, color: T.ink500, padding: "8px 4px 2px" }}>{s.chapTitle}</div>}
-            <button type="button" onClick={() => setCur(i)} aria-current={on ? "step" : undefined} style={{ width: "100%", display: "flex", gap: 8, alignItems: "center", padding: "5px 6px", minHeight: 34, border: "none", borderRadius: 8, background: on ? T.surfaceAlt : "transparent", cursor: "pointer", textAlign: "left", fontFamily: T.font, fontSize: 13, color: T.ink900 }}>
-              <span aria-hidden="true" style={{ width: 16, height: 16, borderRadius: 4, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 12, border: "1.5px solid " + ((io.rows[s.id] || {}).v ? T.emerald600 : T.line), background: (io.rows[s.id] || {}).v ? T.emerald600 : "transparent", color: T.card }}>{(io.rows[s.id] || {}).v ? "✓" : ""}</span>
-              <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.title}</span>
-              {st !== "todo" && <i aria-label={Object.fromEntries(STEP_STATUS)[st]} style={{ width: 8, height: 8, borderRadius: "50%", background: st === "pb" ? T.red500 : T.emerald500, flexShrink: 0 }} />}</button></li>; })}
-      </ol>
-      <div style={{ borderTop: "1px solid " + T.line, paddingTop: 8 }}>
-        <button type="button" aria-expanded={showPb} onClick={() => setShowPb(v => !v)} style={{ border: "none", background: "transparent", padding: 0, fontWeight: 500, fontSize: 13, color: pr.pb ? T.red600 : T.ink700, cursor: "pointer", fontFamily: T.font, minHeight: 28 }}>Synthèse des problèmes ({pr.problems.length}) {showPb ? "▾" : "▸"}</button>
-        {showPb && (pr.problems.length ? pr.problems.map(p => <button key={p.id} type="button" onClick={() => goId(p.id)} style={{ display: "block", width: "100%", textAlign: "left", border: "none", borderLeft: "3px solid " + T.red500, background: T.red100, borderRadius: 4, padding: "6px 8px", marginTop: 6, cursor: "pointer", fontFamily: T.font }}>
-          <span style={{ display: "block", fontSize: 12, fontWeight: 500, color: T.ink900 }}>{p.title}</span><span style={{ display: "block", fontSize: 12, color: T.ink700 }}>{p.chap}{p.c ? " · " + p.c : ""}</span></button>) : <div style={{ fontSize: 12, color: T.ink500, marginTop: 4 }}>Aucun problème signalé</div>)}
-      </div>
-      <IoButtons io={io} canMark={canMark} compact />
-    </aside>
-    <div role="dialog" aria-modal="true" aria-label={"Livret de configuration " + r.pj} style={{ position: "relative", minWidth: 0, alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 10, maxHeight: "92dvh" }}>
-      <div key={pg} className="enogia-book-flip" style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "1fr 1fr", background: paper, borderRadius: 8, boxShadow: T.shadowLg, overflow: "auto", position: "relative" }}>
-        <span aria-hidden="true" style={{ position: "absolute", left: "50%", top: 0, bottom: 0, width: 34, transform: "translateX(-50%)", background: "linear-gradient(90deg, transparent, rgba(16,24,40,.08) 45%, rgba(16,24,40,.14) 50%, rgba(16,24,40,.08) 55%, transparent)", pointerEvents: "none" }} />
-        <Page s={L} n={pg + 1} /><Page s={R2} n={pg + 2} />
-      </div>
-      <div style={{ alignSelf: "center", display: "flex", gap: 6, alignItems: "center", background: T.card, borderRadius: 999, padding: 4, boxShadow: T.shadowLg }}>
-        <button type="button" onClick={() => setCur(Math.max(0, pg - 2))} disabled={pg === 0} aria-label="Pages précédentes" style={{ ...B("sec", "md"), borderRadius: 999 }}>‹</button>
-        <span style={{ fontSize: 12, color: T.ink500, padding: "0 8px", fontVariantNumeric: "tabular-nums" }}>{list.length ? "Étapes " + (pg + 1) + (R2 ? "–" + (pg + 2) : "") + " sur " + list.length : "Aucune étape"}</span>
-        <button type="button" onClick={() => setCur(Math.min(list.length - 1, pg + 2))} disabled={pg + 2 >= list.length} aria-label="Pages suivantes" style={{ ...B("sec", "md"), borderRadius: 999 }}>›</button>
-        <button type="button" onClick={onClose} style={{ ...B("pri", "md"), borderRadius: 999 }}>Fermer le livret</button>
-      </div>
+  const stBtn = (v, label, key) => { const on = st === v, ok = v === "ok", c = ok ? T.emerald600 : T.red600, bg = ok ? T.emerald100 : T.red100;
+    return <button type="button" onClick={() => mark(v)} aria-pressed={on} style={{ minHeight: 48, padding: "0 18px", borderRadius: 8, border: "1.5px solid " + c, background: on ? c : bg, color: on ? T.onFill : c, fontFamily: T.font, fontSize: 15, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+      {label}<span aria-hidden="true" style={{ fontSize: 12, fontWeight: 500, border: "1px solid currentColor", borderRadius: 4, padding: "0 4px", opacity: 0.8 }}>{key}</span></button>; };
+  const crumb = s ? [s.chapTitle, ...s.path.slice(1, -1)].filter((x, i, a) => x && a.indexOf(x) === i).join(" › ") : "";
+  return <div role="dialog" aria-modal="true" aria-label={"Livret de configuration " + r.pj} className="enogia-book-reader" style={{ position: "fixed", inset: 0, zIndex: 10020, background: T.surface, display: "flex", flexDirection: "column", fontFamily: T.font }}>
+    <header style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 20px", borderBottom: "1px solid " + T.line, background: T.card, flexWrap: "wrap" }}>
+      <button type="button" onClick={() => setSum(v => !v)} aria-expanded={sum} style={B(sum ? "pri" : "sec", "md")}>Sommaire</button>
+      <div style={{ minWidth: 0 }}><div style={{ fontFamily: T.fontDisplay, fontSize: 16, fontWeight: 600, color: T.ink900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{book.title || BOOK_DOC.title} · {r.pj}</div>
+        <div style={{ fontSize: 12, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{pr.valid} / {pr.total} validées · <span style={{ color: T.emerald600 }}>{pr.ok} OK</span> · <span style={{ color: pr.pb ? T.red600 : T.ink500, fontWeight: pr.pb ? 600 : 400 }}>{pr.pb} problème{pr.pb > 1 ? "s" : ""}</span></div></div>
+      <span style={{ flex: 1 }} />
+      <span style={{ fontSize: 13, color: T.ink700, fontVariantNumeric: "tabular-nums" }}>{list.length ? "Étape " + (at + 1) + " / " + list.length : "Aucune étape"}{list.length !== all.length ? " (filtre)" : ""}</span>
+      <button type="button" onClick={onClose} style={B("sec", "md")}>Quitter</button>
+    </header>
+    <ChapBand book={book} rows={io.rows} curChap={s && s.chap} onPick={goChap} />
+    <div style={{ flex: 1, minHeight: 0, position: "relative", display: "flex" }}>
+      {sum && <aside aria-label="Sommaire du livret" style={{ width: 320, maxWidth: "88vw", flexShrink: 0, borderRight: "1px solid " + T.line, background: T.card, padding: 14, overflow: "auto", display: "flex", flexDirection: "column", gap: 10 }}>
+        <div role="group" aria-label="Filtrer par statut" style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>{chip("all", "Toutes", pr.total)}{chip("todo", "À faire", pr.todo)}{chip("ok", "OK", pr.ok)}{chip("pb", "Problème", pr.pb)}</div>
+        <select value={flt.chap} onChange={e => setF({ chap: e.target.value })} aria-label="Filtrer par chapitre" style={{ ...field(), fontSize: FZ.sm, minHeight: 34 }}><option value="">Tous les chapitres</option>{book.chapters.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}</select>
+        <input type="search" value={flt.q} onChange={e => setF({ q: e.target.value })} placeholder="Rechercher dans le livret" aria-label="Rechercher dans le livret" style={{ ...field(), fontSize: FZ.sm, minHeight: 34 }} />
+        <ol style={{ listStyle: "none", margin: 0, padding: 0, borderTop: "1px solid " + T.line }}>
+          {list.map((x, i) => { const xs = stepStatus(io.rows[x.id]), on = i === at, head = i === 0 || list[i - 1].chap !== x.chap;
+            return <li key={x.id}>{head && <div style={{ fontSize: 12, fontWeight: 500, color: T.ink500, padding: "8px 4px 2px" }}>{x.chapTitle}</div>}
+              <button type="button" onClick={() => { go(i); setSum(false); }} aria-current={on ? "step" : undefined} style={{ width: "100%", display: "flex", gap: 8, alignItems: "center", padding: "5px 6px", minHeight: 36, border: "none", borderRadius: 8, background: on ? T.surfaceAlt : "transparent", cursor: "pointer", textAlign: "left", fontFamily: T.font, fontSize: 13, color: T.ink900 }}>
+                <span aria-label={Object.fromEntries(STEP_STATUS)[xs]} style={{ width: 18, height: 18, borderRadius: 4, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 12, fontWeight: 600, background: xs === "ok" ? T.emerald100 : xs === "pb" ? T.red100 : T.surfaceAlt, color: xs === "ok" ? T.emerald600 : xs === "pb" ? T.red600 : T.ink500 }}>{xs === "ok" ? "✓" : xs === "pb" ? "!" : "·"}</span>
+                <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.title}</span></button></li>; })}
+        </ol>
+        <div style={{ borderTop: "1px solid " + T.line, paddingTop: 8 }}>
+          <button type="button" aria-expanded={showPb} onClick={() => setShowPb(v => !v)} style={{ border: "none", background: "transparent", padding: 0, fontWeight: 500, fontSize: 13, color: pr.pb ? T.red600 : T.ink700, cursor: "pointer", fontFamily: T.font, minHeight: 28 }}>Synthèse des problèmes ({pr.problems.length}) {showPb ? "▾" : "▸"}</button>
+          {showPb && (pr.problems.length ? pr.problems.map(p => <button key={p.id} type="button" onClick={() => goId(p.id)} style={{ display: "block", width: "100%", textAlign: "left", border: "none", borderLeft: "3px solid " + T.red500, background: T.red100, borderRadius: 4, padding: "6px 8px", marginTop: 6, cursor: "pointer", fontFamily: T.font }}>
+            <span style={{ display: "block", fontSize: 12, fontWeight: 500, color: T.ink900 }}>{p.title}</span><span style={{ display: "block", fontSize: 12, color: T.ink700 }}>{p.chap}{p.c ? " · " + p.c : ""}</span></button>) : <div style={{ fontSize: 12, color: T.ink500, marginTop: 4 }}>Aucun problème signalé</div>)}
+        </div>
+        <IoButtons io={io} canMark={canMark} compact />
+      </aside>}
+      {!s ? <div style={{ padding: 40, color: T.ink500, fontSize: FZ.sm }}>Aucune étape avec ces filtres</div>
+        : <article key={s.id} aria-label={s.title} className="enogia-book-step enogia-cl-in" style={{ flex: 1, minWidth: 0, overflow: "auto", padding: "18px 24px 24px", display: "grid", gridTemplateColumns: imgs.length ? "minmax(0,1fr) minmax(0,1fr)" : "minmax(0,1fr)", gap: 28, alignContent: "start" }}>
+          <div style={{ minWidth: 0, maxWidth: 760 }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+              {crumb && <span style={{ fontSize: 13, color: T.ink500 }}>{crumb}</span>}
+              <span style={{ fontSize: 12, fontWeight: 600, borderRadius: 4, padding: "0 6px", lineHeight: "20px", color: ST_TONE[st]()[0], background: ST_TONE[st]()[1] }}>{Object.fromEntries(STEP_STATUS)[st]}</span>
+            </div>
+            <h2 style={{ margin: "8px 0 14px", fontFamily: T.fontDisplay, fontSize: 32, fontWeight: 600, letterSpacing: "-.02em", lineHeight: 1.15, color: T.ink900 }}>{s.title}</h2>
+            <Blocks blocks={txt} book={book} bookApi={bookApi} big />
+            {row.by && <div style={{ fontSize: 12, color: T.ink500, marginTop: 10 }}>{Object.fromEntries(STEP_STATUS)[st]} · {row.by}{row.at ? " · " + fdt(row.at) : ""}</div>}
+          </div>
+          {imgs.length > 0 && <div style={{ minWidth: 0 }}><Blocks blocks={imgs} book={book} bookApi={bookApi} /></div>}
+        </article>}
     </div>
+    {s && <footer className="enogia-book-act" style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 20px", borderTop: "1px solid " + T.line, background: T.card, flexWrap: "wrap" }}>
+      <button type="button" onClick={() => go(at - 1)} disabled={at === 0} style={B("sec", "md")}>‹ Précédente</button>
+      <input ref={cmtRef} key={s.id + "|" + (row.c || "")} defaultValue={row.c || ""} disabled={!canMark} onBlur={saveNote} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); saveNote(); e.currentTarget.blur(); } }}
+        placeholder={st === "pb" ? "Décrivez le problème (obligatoire)" : "Commentaire (facultatif)"} aria-label={"Commentaire : " + s.title}
+        style={{ ...field(), flex: "1 1 240px", minHeight: 48, fontSize: 15, borderColor: st === "pb" && !row.c ? T.red600 : undefined }} />
+      {canMark && stBtn("pb", "Problème", "P")}
+      {canMark && stBtn("ok", at < list.length - 1 ? "OK, suivante" : "OK", "O")}
+      <button type="button" onClick={next} disabled={at >= list.length - 1} aria-label="Étape suivante" style={B("ghost", "md")}>Suivante ›</button>
+      {msg && <span role="status" style={{ flexBasis: "100%", fontSize: 13, fontWeight: 500, color: /avant/.test(msg) ? T.red600 : T.ink700 }}>{msg}</span>}
+    </footer>}
   </div>;
 }
 

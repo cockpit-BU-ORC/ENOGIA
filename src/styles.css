@@ -793,3 +793,6 @@ tr[data-kbd]:active > td, tr[role="button"]:active > td, li[data-kbd]:active, li
 
 /* v378 : rubriques du menu repliables (au clic seulement) ; au téléphone, le menu est une barre d'icônes : tout reste visible */
 @media (min-width: 701px) { .enogia-nav .enogia-grp-closed { display: none !important; } }
+
+/* v390 : livret pas à pas, étroit (téléphone, tablette en portrait) : image sous la consigne, boutons pleine largeur */
+@media (max-width: 760px){.enogia-book-step{grid-template-columns:1fr !important;padding:14px 16px 20px !important}.enogia-book-step h2{font-size:24px !important}.enogia-book-act>button{flex:1 1 auto}}

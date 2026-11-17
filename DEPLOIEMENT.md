@@ -2871,3 +2871,14 @@ Demandé : « pourquoi j'ai des jalons de départ avant la fin des tests ? » ; 
 - GanttView : barre du début de production à max(départ, `testsFin`, `finProd`) ; Tests jusqu'à `testsFin` ; « Packaging → départ » ; losanges d'arrivée et de départ (contour rouge si départ trop tôt) ; départ initial = losange vide ; légende Arrivée · Départ · Départ initial.
 - Maquette `maquettes-design/v389-livret-4-pistes.html` (livret de configuration : A liste de contrôle, B pas à pas, C document annoté, D tableau des réglages) en attente du choix.
 - Fichiers : src/components/CalendarView.js, src/components/GanttView.js.
+
+## V390 — Livret de configuration pas à pas (piste B)
+
+Demandé : « pas fan du livret manuel de configuration ORC et comment il rend en live, propose plusieurs maquettes » ; maquette `maquettes-design/v389-livret-4-pistes.html`, piste **B** choisie : « B, pas à pas ».
+
+- TestFiche (`BookReader` réécrit) : fenêtre plein écran (`role=dialog`, `aria-modal`) — en-tête (Sommaire, titre · PJ, validées / OK / problèmes, « Étape N / M », Quitter), `ChapBand` (un segment par étape, vert OK, rouge problème ; clic = premier pas du chapitre), étape : fil (chapitre › sections), statut, titre 32 px, consigne en 18 px (`Blocks big`), images à droite ; pied : ‹ Précédente, commentaire (Entrée = enregistrer), Problème (P), OK, suivante (O), Suivante ›.
+- Un geste : OK / Problème écrivent `{ s, v: true }` (`setStep`) ; OK passe à l'étape suivante ; Problème garde l'étape et met le focus sur le commentaire, « Suivante » refusée tant que le problème n'est pas décrit.
+- Ouverture sur la première étape « À faire » (ou l'étape / le chapitre demandé). « Sommaire » = volet à gauche (filtres, liste, synthèse des problèmes, exports, reprise d'une session). Échap ferme le volet puis le livret.
+- `StepCtl` (case + statut en 3 choix) et la double page retirés. Sous 760 px : image sous la consigne.
+- Données inchangées (`plans[PJ].book.rows`) ; exports et PV inchangés.
+- Fichiers : src/components/TestFiche.js, src/components/TestsTab.js (phrase), src/styles.css.

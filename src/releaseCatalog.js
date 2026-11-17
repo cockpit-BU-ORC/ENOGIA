@@ -1192,4 +1192,7 @@ export const RELEASE_CATALOG = [
     ["Jalons en losanges", "Arrivée et départ en losanges dans le Calendrier et le Gantt."],
     ["Départ avant la fin des tests", "Signalé en rouge."],
   ] },
+  { v: "390", t: "Livret de configuration ORC — pas à pas, une étape à la fois, OK ou Problème en un geste", items: [
+    ["Livret pas à pas", "Une étape à la fois, OK ou Problème en un geste."],
+  ] },
 ];
