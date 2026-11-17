@@ -1184,4 +1184,8 @@ export const RELEASE_CATALOG = [
     ["Cartes Besoins repliables", "Date en gros, gamme en clair, avancement des pièces ; dépliage au clic."],
     ["Ordre de priorité en pop-up", "Le rang ouvre la liste complète des besoins, à droite."],
   ] },
+  { v: "388", t: "Turbines › Besoins — une ligne pleine largeur par besoin, pièces plus grandes, « Tout réduire »", items: [
+    ["Besoins turbines en lignes", "Une ligne pleine largeur par besoin, date en grand, pièces de 52 px."],
+    ["Tout réduire", "Chaque besoin se réduit, ou tous d'un coup."],
+  ] },
 ];

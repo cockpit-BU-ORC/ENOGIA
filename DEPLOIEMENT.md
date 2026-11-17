@@ -2850,3 +2850,14 @@ Demandé : « les tuiles ne sont pas à mon goût en clair et en sombre ; date d
 - Ouverture : repliée par défaut, ouverte si en retard ou avec un problème ; choix gardé sur le poste (`enogia_nd_open2`).
 - `RankPicker` : pop-up ancré à droite du numéro (à gauche s'il n'y a pas la place), ordre complet de priorité, ligne du besoin surlignée ; plus de « rang global » (toute la liste est là).
 - Fichiers : src/components/TurbinesHub.js, src/needsView.test.js.
+
+## V388 — Besoins turbines en lignes (piste B)
+
+Demandé : « les tuiles des turbines Prod ORC et SAV ne sont pas belles, trop petites » ; maquette `maquettes-design/v388-cartes-besoins-4-pistes.html`, piste **B** choisie : « B avec la possibilité de réduire chaque tuile (mettre un bouton pour réduire tout) ».
+
+- TurbinesHub (`card`) : ligne en grille `minmax(230px, 280px) 150px 1fr` (`.enogia-nd-row`) — colonne qui (poignée, rang, PJ 20 px, drapeau, flèche, client, ORC / SAV, statut SAV, gamme, PJ · ticket · intervention, barre d'avancement), colonne date (« Besoin le », date 28 px, année, « dans N j » / « dépassé de N j », marge), colonne pièces (en-têtes, turbines, pied).
+- `Sock` 52 px sur deux lignes (pièce prévue en 15 px, indication dessous) ; `Piece` : référence 16 px (n° de turbine 15 px mono), détail dessous.
+- Repliée : client, « Besoin le » et année masqués ; pièces résumées « N / M pièces posées » + premier problème (clic = déplier). Dépliée par défaut ; état gardé dans `enogia_nd_closed` (remplace `enogia_nd_open2`).
+- Barre : « Tout réduire » / « Tout déplier » (besoins affichés).
+- Sous 860 px : colonnes empilées.
+- Fichiers : src/components/TurbinesHub.js.

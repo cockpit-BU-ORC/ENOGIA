@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v388",
+    date: "2026-11-17",
+    title: "V388 : Turbines › Besoins — une ligne pleine largeur par besoin, pièces plus grandes, « Tout réduire »",
+    items: [
+      { t: "Une ligne par besoin", d: "Chaque besoin prend toute la largeur : à gauche le rang, le PJ, ORC ou SAV, la gamme et l'avancement ; au milieu la date du besoin en grand ; à droite les pièces en colonnes." },
+      { t: "Pièces plus grandes", d: "Turbine, roue et injecteur passent à 52 px de haut, sur deux lignes : la référence en grand, l'état dessous." },
+      { t: "Réduire", d: "Chaque ligne se réduit avec sa flèche ; « Tout réduire » / « Tout déplier » dans la barre. Le choix est gardé sur le poste." },
+    ],
+  },
+  {
     id: "2026-11-v387",
     date: "2026-11-17",
     title: "V387 : Turbines › Besoins — cartes repliables, date et gamme lisibles, ordre de priorité en pop-up",
