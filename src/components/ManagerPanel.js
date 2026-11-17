@@ -5,7 +5,7 @@ import { T, FZ, stageSoft, btn } from "../theme";
 import { SerieTag, getPjMeta, initials, GAMME_COLORS, ETAT_META, ALL_ETATS, ALL_GAMMES, MONTHS, today, PjPlate } from "../pjMeta";
 import { fmt, toLocalISO, diffDays, weekStartOf } from "../parsers";
 import { workDaysBetween } from "../workDays";
-import { DropFilter, NavIcon, Select, notify, Segmented, Hl } from "./SharedUI";
+import { DropFilter, NavIcon, Select, notify, Segmented, PageHead } from "./SharedUI";
 import { CARD, KpiRow, PieBlock, topSlices, EmptyNote, StatutTab, KpiAvancement, DelayInsights, DelaysTab } from "./ManagerParts";
 import { ProjectFileManager } from "./ManagerFiche";
 import { EtatInfoButton } from "./ProdStagesUI";
@@ -412,17 +412,13 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
          filtres repliés dans un bouton (nombre de filtres actifs). « Planning initial » est passé dans Réglages › Imports. ── */}
     <header className="enogia-mgr-head" style={{display:"flex",flexDirection:"column",gap:8}}>
       {/* v339 (demandé : « mettre les titres sous le bon format ») : même titre que PageHead (surligné, phrase sur la même ligne, trait dessous) */}
-      <div style={{display:"flex",alignItems:"flex-end",gap:10,flexWrap:"wrap",paddingBottom:6,borderBottom:"3px solid "+T.teal500}}>
-        <div style={{flex:"1 1 260px",minWidth:0,display:"flex",alignItems:"baseline",gap:"4px 14px",flexWrap:"wrap"}}>
-          <h1 style={{margin:0,fontFamily:T.fontDisplay,fontSize:"clamp(32px,3.6vw,44px)",fontWeight:600,letterSpacing:"-.02em",color:T.ink900,lineHeight:1.1}}><Hl color={(group==="fiche"||group==="orc")?stageSoft().production.solid:group==="calendrier"?stageSoft().finProd.solid:group==="reglages"||group==="site"?T.amber500:T.dv1}>{(group==="fiche"||group==="orc")?"Projets":activeEntry.label}</Hl></h1>
-          <span style={{fontSize:FZ.sm,color:T.ink500}}>{PAGE_DESC[activeEntry.id]||""}</span>
-        </div>
+      {/* v382 (option B) : titre, phrase (bulle « i »), sous-pages et boutons dans la barre du haut */}
+      <PageHead title={(group==="fiche"||group==="orc")?"Projets":activeEntry.label} accent={(group==="fiche"||group==="orc")?stageSoft().production.solid:group==="calendrier"?stageSoft().finProd.solid:group==="reglages"||group==="site"?T.amber500:T.dv1} sub={PAGE_DESC[activeEntry.id]||""} right={<>{subItems&&<PlanSwitch label={"Sous-pages : "+((group==="fiche"||group==="orc")?"Projets":activeEntry.label)} value={subValue} onGo={onSub} views={subItems.map(([id,l])=>({id,l}))} tools={[]}/>}
         {!phone&&tab==="fiche"&&<button type="button" className="enogia-btn-ind" onClick={()=>setFocusFiche(v=>!v)} aria-pressed={focusFiche} title={focusFiche?"Réafficher le menu complet et la liste des projets":"Replier le menu et la liste pour laisser toute la place à la fiche"}
         style={{display:"inline-flex",alignItems:"center",gap:6,height:30,padding:"0 10px",borderRadius:8,border:"1.5px solid "+T.teal500,background:focusFiche?(T.mode==="dark"?T.teal600:T.teal500):"transparent",color:focusFiche?T.onInd:T.teal600,fontSize:FZ.xs,fontWeight:500,cursor:"pointer",fontFamily:T.font,whiteSpace:"nowrap"}}><NavIcon name="sidepanel" size={15}/>{focusFiche?"Afficher les colonnes":"Fiche plein écran"}</button>}
         {showFilters&&<button type="button" onClick={()=>setFiltersOpen(v=>!v)} aria-expanded={filtersOpen} style={{display:"inline-flex",alignItems:"center",gap:6,height:32,padding:"0 12px",borderRadius:8,border:"1px solid "+(nFilters?T.teal500:T.line),background:nFilters?T.teal100:T.card,color:nFilters?T.teal600:T.ink700,fontSize:FZ.xs,fontWeight:500,cursor:"pointer",fontFamily:T.font}}><NavIcon name="layers" size={14}/>Filtres{nFilters?" · "+nFilters:""}</button>}
         <button type="button" onClick={()=>setPalOpen(true)} aria-label="Aller à… (Ctrl K)" style={{display:"inline-flex",alignItems:"center",gap:8,height:32,padding:"0 12px",borderRadius:8,border:"1px solid "+T.line,background:T.card,color:T.ink500,fontSize:FZ.xs,fontWeight:500,cursor:"pointer",fontFamily:T.font}}><NavIcon name="search" size={14}/>Aller à…<kbd style={{fontFamily:T.fontMono,fontSize:12,color:T.ink500,border:"1px solid "+T.line,borderRadius:4,padding:"0 4px"}}>Ctrl K</kbd></button>
-      </div>
-      {subItems&&<PlanSwitch label={"Sous-pages : "+((group==="fiche"||group==="orc")?"Projets":activeEntry.label)} value={subValue} onGo={onSub} views={subItems.map(([id,l])=>({id,l}))} tools={[]}/>}
+      </>}/>
       {showFilters&&filtersOpen&&<div className="enogia-view-in" style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",padding:"8px 10px",background:T.surface,border:"1px solid "+T.line,borderRadius:12}}>
         <DropFilter label="Statut" options={ALL_ETATS} selected={fEtat} onChange={setFEtat} getLabel={o=>ETAT_META[o]?.label||o}/>
         <EtatInfoButton/>

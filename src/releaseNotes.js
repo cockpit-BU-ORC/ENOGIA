@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v382",
+    date: "2026-11-17",
+    title: "V382 : Le titre de chaque page monte dans la barre du haut",
+    items: [
+      { t: "Plus de place", d: "Le titre de la page, ses sous-pages et ses boutons sont maintenant dans la barre du haut, avec le trait de couleur de la page dessous : le contenu commence environ 90 px plus haut." },
+      { t: "La phrase de la page", d: "L'explication de chaque page passe dans une bulle « i » à côté du titre (survol, clavier ou doigt)." },
+      { t: "Partout", d: "Toutes les pages : Planning, Tests, SAV, Projets, Pilotage, Gestion des accès, Achats, Production turbines… L'accueil garde son « Bonjour »." },
+    ],
+  },
+  {
     id: "2026-11-v381",
     date: "2026-11-17",
     title: "V381 : Menu — rubriques en couleur, sous-pages qui se déplient au clic",

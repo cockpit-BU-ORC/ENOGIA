@@ -6,9 +6,9 @@
 //    change ses sous-pages ; « Copier les accès de… » ; aperçu du menu du rôle. Activation des nouveaux accès en tête.
 // Brouillon commun aux deux sous-pages : « Enregistrer » écrit planning/profiles (rôles des personnes) et planning/access.
 import React, { useMemo, useState } from "react";
-import { T, FZ, btn } from "../theme";
+import { T, btn } from "../theme";
 import { PlanSwitch } from "./PlanSwitch";
-import { Hl } from "./SharedUI";
+import { PageHead } from "./SharedUI";
 import { askConfirm } from "../confirm";
 import { useUnsavedGuard } from "../unsavedGuard";
 import { profileOf, setProfile, isRemoved } from "../profiles";
@@ -167,12 +167,8 @@ export default function AccessPage({ profiles, saveProfiles, accessDoc, saveAcce
     {/* v325 (demandé : « pas de titre en haut à gauche ; nom Gestion des accès ; boutons aux mêmes endroits ») : même en-tête que le Manager
         (titre, phrase, sélecteur dessous) sur Personnes, Rôles et Accès par page */}
     <header style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      {/* v339 : titre au format PageHead (surligné, phrase sur la même ligne, trait dessous) */}
-      <div style={{ minWidth: 0, display: "flex", alignItems: "baseline", gap: "4px 14px", flexWrap: "wrap", paddingBottom: 6, borderBottom: "3px solid " + T.teal500 }}>
-        <h1 style={{margin:0,fontFamily:T.fontDisplay,fontSize:"clamp(32px,3.6vw,44px)",fontWeight:600,letterSpacing:"-.02em",color:T.ink900,lineHeight:1.1}}><Hl color={T.amber500}>Gestion des accès</Hl></h1>
-        <span style={{ fontSize: FZ.sm, color: T.ink500 }}>Personnes, rôles et accès par page</span>
-      </div>
-      <PlanSwitch label="Sous-pages : Gestion des accès" value={sub} onGo={setSub} tools={[]} views={[...(onPeople ? [{ id: "personnes", l: "Personnes" }] : []), { id: "roles", l: "Rôles" }, { id: "acces", l: "Accès par page" }]} />
+      {/* v382 (option B) : titre, phrase (bulle « i ») et sous-pages dans la barre du haut */}
+      <PageHead title="Gestion des accès" accent={T.amber500} sub="Personnes, rôles et accès par page" right={<PlanSwitch label="Sous-pages : Gestion des accès" value={sub} onGo={setSub} tools={[]} views={[...(onPeople ? [{ id: "personnes", l: "Personnes" }] : []), { id: "roles", l: "Rôles" }, { id: "acces", l: "Accès par page" }]} />} />
     </header>
     <div role="status" style={{ ...card, padding: "10px 14px", display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", background: on ? T.emerald100 : T.amber100 }}>
       <span style={{ flex: "1 1 320px", fontSize: 13, color: T.ink900 }}>{on ? <><b>Nouveaux accès activés.</b> Chacun ne voit que ce que permet son rôle.</> : <><b>Pas encore activés.</b> Tout le monde garde ses droits d'avant. Réglez rôles et accès, enregistrez, puis activez.</>}</span>

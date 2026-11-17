@@ -1161,4 +1161,7 @@ export const RELEASE_CATALOG = [
     ["Rubriques du menu en couleur", "Or dans le menu sombre, bleu-vert dans le clair."],
     ["Sous-pages dépliées au clic", "Le menu reste ouvert sur une page à sous-pages pour en choisir une."],
   ] },
+  { v: "382", t: "Le titre de chaque page monte dans la barre du haut", items: [
+    ["Titre dans la barre du haut", "Titre, sous-pages et trait de couleur de la page dans la barre : environ 90 px gagnés en haut de chaque page."],
+  ] },
 ];

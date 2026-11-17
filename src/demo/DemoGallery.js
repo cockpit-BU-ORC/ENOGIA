@@ -33,7 +33,15 @@ export default function DemoGallery() {
         {WIDTHS.map(([id, l]) => <button key={id} type="button" aria-pressed={w === id} onClick={() => setW(id)} style={btn(w === id)}>{l}</button>)}
         <button type="button" aria-pressed={dark} onClick={() => { setDark(d => !d); force(x => x + 1); }} style={btn(dark)}>{dark ? "Sombre" : "Clair"}</button>
       </div>
-      <div style={{ width, maxWidth: "100%", margin: "0 auto", padding: "16px", boxSizing: "border-box", background: T.surface }}>
+      {/* v382 : même barre du haut que le site (le titre des pages y monte, option B) */}
+      <div style={{ width, maxWidth: "100%", margin: "0 auto", boxSizing: "border-box" }}>
+        <div role="banner" id="enogia-bar" className="enogia-bar" style={{ minHeight: 56, display: "flex", alignItems: "center", gap: 12, padding: "8px 16px", background: T.surface, borderBottom: "3px solid var(--page-accent, transparent)", flexWrap: "wrap" }}>
+          <span aria-hidden="true" style={{ width: 34, textAlign: "center", color: T.ink500, fontSize: 18 }}>☰</span>
+          <div id="enogia-bar-title" style={{ display: "flex", alignItems: "center", gap: "6px 12px", flexWrap: "wrap", minWidth: 0, flex: "1 1 auto" }} />
+          <span className="enogia-bar-right" style={{ marginLeft: "auto", fontSize: 13, color: T.ink500 }}>⌕ · cloche · nom</span>
+        </div>
+      </div>
+      <div style={{ width, maxWidth: "100%", margin: "0 auto", padding: "12px 16px 16px", boxSizing: "border-box", background: T.surface }}>
         <Suspense fallback={<div>Chargement…</div>}><P.Render key={P.id + dark} /></Suspense>
       </div>
     </div>

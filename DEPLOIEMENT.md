@@ -2791,3 +2791,13 @@ Demandé : « les titres du panneau à gauche doivent avoir une couleur différe
 - App.js : en-têtes de rubrique en `NAV.group` (or dans le menu sombre) / `T.accentInk` (clair) ; une entrée à sous-pages ne referme plus le menu (`setNavPeek(false)` seulement sans sous-pages).
 - Maquette `maquettes-design/v381-haut-de-page.html` (espace en haut des pages : A resserré, B titre dans la barre, C barre qui s'efface) en attente du choix.
 - Fichiers : src/App.js.
+
+## V382 — Le titre des pages dans la barre du haut
+
+Demandé : « l'espace en haut de chaque page pourrait être réduit » ; maquette `maquettes-design/v381-haut-de-page.html`, option **B** choisie : « B, titre dans la barre ».
+
+- `PageHead` (SharedUI.js) : sur le site, rendu dans la barre (`createPortal` vers `#enogia-bar-title`) — titre 22–28 px surligné, bulle « i » (`title` = phrase de la page, lue au survol, au clavier, au doigt par tips.js), `right` (sous-pages, boutons) ; pose `--page-accent` sur la barre (trait de 3 px de la couleur de la page) ; sans barre (galerie hors site, tests, `inline`) : en-tête sur place comme avant.
+- App.js : barre `#enogia-bar` (56 px, fond plein, collée en haut, trait `--page-accent`), emplacement `#enogia-bar-title` après ☰ ; marge au-dessus du contenu 12 px ; focus sur le h1 de la barre au changement de page.
+- ManagerPanel (Projets, Pilotage, Réglages…) et Gestion des accès : en-têtes faits à la main remplacés par `PageHead` (titre, phrase, sous-pages, boutons dans la barre).
+- Galerie : barre du haut identique (le titre y monte).
+- Fichiers : src/components/SharedUI.js, src/App.js, src/components/ManagerPanel.js, src/components/AccessPage.js, src/demo/DemoGallery.js.

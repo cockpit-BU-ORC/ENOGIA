@@ -441,7 +441,25 @@ export function Hl({children,color,style}){
 }
 // v173 (direction « Éditorial industriel ») : sur-titre en police d'identifiant couleur ocre (marquage d'atelier), titre éditorial plus grand et léger,
 // filet épais marine dessous — même en-tête sur toutes les pages.
-export function PageHead({kicker,title,sub,right,style,accent}){ // v185 : accent = couleur du trait sous le titre (une par page)
+// v382 (maquette v381-haut-de-page.html, option B « le titre monte dans la barre » choisie) : sur le site, le titre de la page, sa phrase
+// (bulle « i ») et ses sous-pages (right) s'affichent dans la barre du haut (#enogia-bar-title, trait de la couleur de la page dessous) ;
+// sans barre (galerie, tests, impression), l'en-tête reste sur place comme avant.
+function BarHead({title,sub,right,accent}){
+  return <>
+    <h1 style={{margin:0,fontFamily:T.fontDisplay,fontSize:"clamp(22px,2vw,28px)",fontWeight:600,letterSpacing:"-.02em",color:T.ink900,lineHeight:1.15,whiteSpace:"nowrap"}}><Hl color={accent}>{title}</Hl></h1>
+    {sub&&<button type="button" title={typeof sub==="string"?sub:undefined} aria-label={"À propos de cette page"+(typeof sub==="string"?" : "+sub:"")} style={{width:24,height:24,flexShrink:0,borderRadius:999,border:"1px solid "+T.line,background:"transparent",color:T.ink500,fontFamily:T.font,fontSize:12,fontWeight:600,cursor:"help",display:"inline-grid",placeItems:"center",padding:0}}>i</button>}
+    {right&&<div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",minWidth:0}}>{right}</div>}
+  </>;
+}
+export function PageHead({kicker,title,sub,right,style,accent,inline}){ // v185 : accent = couleur du trait sous le titre (une par page)
+  const [slot,setSlot]=React.useState(null);
+  React.useLayoutEffect(()=>{
+    const el=!inline&&typeof document!=="undefined"?document.getElementById("enogia-bar-title"):null; setSlot(el||false);
+    const bar=el&&document.getElementById("enogia-bar"); if(bar){bar.style.setProperty("--page-accent",accent||T.teal500);return()=>bar.style.removeProperty("--page-accent");}
+    return undefined;
+  },[accent,inline]);
+  if(slot===null)return null;
+  if(slot)return createPortal(<BarHead title={title} sub={sub} right={right} accent={accent}/>,slot);
   // v178 : en-tête plus bas (demandé : « trop de hauteur à chaque fois ») — sur-titre, titre et sous-titre sur une même ligne de base.
   return(<div className="enogia-view-in" style={{display:"flex",alignItems:"flex-end",gap:12,flexWrap:"wrap",marginBottom:12,paddingBottom:6,borderBottom:"3px solid "+T.teal500,...style}}>
     <div style={{minWidth:0,flex:1,display:"flex",alignItems:"baseline",gap:"4px 14px",flexWrap:"wrap"}}>
