@@ -7,6 +7,17 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v389",
+    date: "2026-11-17",
+    title: "V389 : Calendrier et Gantt — arrivée et départ en losanges, barre « Tests » juste, départ avant la fin du travail signalé",
+    items: [
+      { t: "Arrivée en losange", d: "L'arrivée n'est plus une barre « Réception » : un losange bleu clair sur son jour ; la barre commence au début de la production. Calendrier et Gantt." },
+      { t: "Tests et Packaging justes", d: "La barre « Tests » s'arrête à la fin des tests (elle allait jusqu'à la fin du packaging) ; le packaging a sa propre barre jusqu'au départ." },
+      { t: "Départ trop tôt signalé", d: "Un départ prévu avant la fin des tests ou du packaging a un contour rouge et la mention « avant la fin des tests »." },
+      { t: "Gantt", d: "Losange de départ au bout de la barre ; le départ initial devient un losange vide, pour ne plus le confondre avec l'arrivée." },
+    ],
+  },
+  {
     id: "2026-11-v388",
     date: "2026-11-17",
     title: "V388 : Turbines › Besoins — une ligne pleine largeur par besoin, pièces plus grandes, « Tout réduire »",

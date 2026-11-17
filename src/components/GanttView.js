@@ -211,8 +211,10 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
 
     {/* v184 : légende de la maquette validée — v283 : remontée sous la barre d'outils (toujours visible) */}
     <div style={{padding:"6px 18px",borderBottom:"1px solid "+T.line,display:"flex",gap:"6px 18px",flexWrap:"wrap",alignItems:"center",background:T.surface,fontSize:FZF.sm,color:T.ink700}}>
-      {[["Production",stageSoft().production.solid],["Tests",stageSoft().tests.solid],["Fin de prod → départ",stageSoft().finProd.solid]].map(([l,c])=><span key={l} style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:18,height:10,borderRadius:4,background:c}}/>{l}</span>)}
-      <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:9,height:9,background:T.ink500,transform:"rotate(45deg)"}}/>Départ initial</span>
+      {[["Production",stageSoft().production.solid],["Tests",stageSoft().tests.solid],["Packaging → départ",stageSoft().finProd.solid]].map(([l,c])=><span key={l} style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:18,height:10,borderRadius:4,background:c}}/>{l}</span>)}
+      <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:10,height:10,background:stageSoft().arrivee.solid,transform:"rotate(45deg)"}}/>Arrivée</span>
+      <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:10,height:10,background:stageSoft().depart?stageSoft().depart.solid:stageSoft().finProd.solid,transform:"rotate(45deg)"}}/>Départ</span>
+      <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:10,height:10,boxSizing:"border-box",border:"2px solid "+T.ink500,transform:"rotate(45deg)"}}/>Départ initial</span>
       <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:18,height:0,borderTop:"2px dotted "+T.red500}}/>Glissement</span>
       <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:2,height:12,background:T.red500}}/>Aujourd'hui</span>
       <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:18,height:10,borderRadius:4,border:"1.5px dashed "+T.ink300,boxSizing:"border-box"}}/>Dates prévisionnelles</span>
@@ -264,7 +266,9 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
             {gb&&<div aria-hidden="true" style={{position:"absolute",left:gb.left,width:gb.width,top:"50%",height:6,transform:"translateY(-50%)",borderRadius:4,background:mixHex(T.surfaceAlt,T.ink500,.45)}}/>}
           </div>);}
           const r=it.r;
-          const mb=bpct(r.arrivee,r.depart);
+          // v389 : la barre commence au début de la production (l'arrivée = un losange) et finit au départ, ou à la fin des tests / du packaging s'ils le dépassent
+          const wEnd=[r.depart,r.testsFin,r.finProd].filter(Boolean).sort().pop();
+          const mb=bpct(r.debutProd&&r.arrivee&&r.debutProd>r.arrivee?r.debutProd:r.arrivee,wEnd);
           const isSel=sel===r.pj;
           return(<div key={ri} onClick={()=>setSel(isSel?null:r.pj)} onMouseMove={e=>setTip({r,x:e.clientX,y:e.clientY})} onMouseLeave={()=>setTip(null)} style={{height:rowH,boxSizing:"border-box",position:"relative",borderBottom:"1px solid "+T.surfaceAlt,background:isSel?T.surfaceAlt:"transparent",cursor:"pointer"}}>
             {weekMarks.map((wm,wi)=><div key={wi} style={{position:"absolute",left:xOf(wm),top:0,bottom:0,width:1,background:T.surfaceAlt}}/>)}
@@ -275,9 +279,12 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
             {mb&&(()=>{
               const S=stageSoft(),dOf=v=>v?new Date(v):null,arr=dOf(r.arrivee),dep=dOf(r.depart),tst=dOf(r.tests),fin=dOf(r.finProd),dp=dOf(r.debutProd);
               const prevision=r.etat==="NOT ORDERED";
-              const p0=dp&&dp>arr?dp:arr; // v312 : début de production (planificateur) ; avant = réception
-              const cuts=[[arr,p0,S.arrivee.solid,"Réception (arrivée → début de production)"],[p0,tst||fin||dep,S.production.solid,"Production"],[tst,fin||dep,S.tests.solid,"Tests"],[fin,dep,S.finProd.solid,"Fin de prod → départ"]].filter(([x,y])=>x&&y&&y>x);
-              const total=Math.max(1,dep-arr);
+              const p0=dp&&dp>arr?dp:arr; // v312 : début de production (planificateur)
+              // v389 : plus de barre de réception (losange d'arrivée) ; Tests = jusqu'à la fin des tests (testsFin), puis packaging jusqu'au départ
+              const tE=dOf(r.testsFin)||fin,end=dOf(wEnd),early=!!(dep&&end&&dep<end);
+              const cuts=[[p0,tst||tE||dep,S.production.solid,"Production"],[tst,tE||dep,S.tests.solid,"Tests"],[tE||tst,end,S.finProd.solid,"Packaging → départ"]].filter(([x,y])=>x&&y&&y>x);
+              const total=Math.max(1,end-p0);
+              const dg=(d,col,lab,warn)=>{if(!d)return null;const x=xOf(d);return <div key={lab} title={lab} style={{position:"absolute",left:x-6,top:"50%",marginTop:-10,width:12,height:12,background:col,transform:"rotate(45deg)",zIndex:4,boxShadow:"0 0 0 1.5px "+(warn?T.red600:T.card)}}/>;};
               const ini=r.drift?bpct(r.arrivee,new Date(new Date(r.depart).getTime()-r.drift*86400000)):null;
               const lvl=r.drift==null?null:r.drift>10?"late":r.drift>3?"warn":"ok";
               const pill=lvl==="late"?{bg:T.red100,fg:T.red600}:lvl==="warn"?{bg:T.amber100,fg:T.amber600}:lvl==="ok"?{bg:T.emerald100,fg:T.emerald600}:null;
@@ -288,14 +295,16 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
                     border:prevision?"1.5px dashed "+T.ink300:"none",background:prevision?"transparent":T.ink100,boxSizing:"border-box"}}>
                   {!prevision&&cuts.map(([x,y,col,lab],k)=><div key={k} title={lab} style={{flex:"0 0 "+((y-x)/total*100)+"%",background:col}}/>)}
                 </div>
+                {dg(arr,S.arrivee.solid,"Arrivée le "+fmt(arr))}
+                {dg(dep,S.depart?S.depart.solid:S.finProd.solid,"Départ le "+fmt(dep)+(early?" : avant la fin des tests / du packaging ("+fmt(end)+")":""),early)}
                 {/* v213 : jours non travaillés (fermeture de l'atelier, ou pas de production pour ce PJ) : la barre est coupée */}
                 {!prevision&&gapRanges(r.arrivee,r.depart,closurePeriods,(productionExclusions||{})[r.pj]).filter(g=>g.kind==="closed"||(fin?new Date(g.to+"T12:00:00")<=fin:true)).map(g=>{const x0=xOf(new Date(g.from+"T00:00:00")),x1=xOf(new Date(g.to+"T00:00:00"))+dayW;return <div key={g.from} title={(g.kind==="closed"?"Atelier fermé":"Pas de production")+" : "+g.from.split("-").reverse().join("/")+(g.to!==g.from?" → "+g.to.split("-").reverse().join("/"):"")}
                   style={{position:"absolute",left:x0,width:Math.max(2,x1-x0),top:"50%",transform:"translateY(-50%)",marginTop:-4,height:22,zIndex:2,background:T.surface,backgroundImage:"repeating-linear-gradient(135deg,"+T.line+" 0 2px,transparent 2px 5px)",borderLeft:"1px solid "+T.line,borderRight:"1px solid "+T.line,boxSizing:"border-box"}}/>;})}
                 {/* v251 (maquette A) : le départ prévu au planning initial = losange gris ; un pointillé de la couleur de l'écart le relie
                     au départ actuel (glissement), au lieu de toute la barre initiale en pointillés */}
-                {ini&&(()=>{const xi=ini.left+ini.width,xd=mb.left+mb.width,a=Math.min(xi,xd),w=Math.abs(xd-xi),col=lvl==="late"?T.red500:lvl==="warn"?T.amber600:T.emerald600;return <>
+                {ini&&(()=>{const xi=ini.left+ini.width,xd=dep?xOf(dep):mb.left+mb.width,a=Math.min(xi,xd),w=Math.abs(xd-xi),col=lvl==="late"?T.red500:lvl==="warn"?T.amber600:T.emerald600;return <>
                   {w>2&&<div aria-hidden="true" style={{position:"absolute",left:a,width:w,top:"50%",marginTop:12,height:0,borderTop:"2px dotted "+col,zIndex:2}}/>}
-                  <div title={"Départ prévu au planning initial : "+fmt(new Date(new Date(r.depart).getTime()-r.drift*86400000))} style={{position:"absolute",left:xi-5,top:"50%",marginTop:7,width:10,height:10,background:T.ink500,transform:"rotate(45deg)",zIndex:3,boxShadow:"0 0 0 1.5px "+T.card}}/>
+                  <div title={"Départ prévu au planning initial : "+fmt(new Date(new Date(r.depart).getTime()-r.drift*86400000))} style={{position:"absolute",left:xi-5,top:"50%",marginTop:7,width:10,height:10,boxSizing:"border-box",background:T.card,border:"2px solid "+T.ink500,transform:"rotate(45deg)",zIndex:3}}/>
                 </>;})()}
                 {(txt||prevision)&&<span style={{position:"absolute",left:mb.left+mb.width+8,top:"50%",transform:"translateY(-50%)",marginTop:-4,zIndex:4,whiteSpace:"nowrap",fontSize:FZF.xs,fontWeight:500,padding:"1px 8px",borderRadius:999,fontVariantNumeric:"tabular-nums",
                   background:prevision?"transparent":pill?pill.bg:"transparent",color:prevision?T.ink500:pill?pill.fg:T.ink500}}>{prevision?"dates prévisionnelles":txt}</span>}

@@ -2861,3 +2861,13 @@ Demandé : « les tuiles des turbines Prod ORC et SAV ne sont pas belles, trop p
 - Barre : « Tout réduire » / « Tout déplier » (besoins affichés).
 - Sous 860 px : colonnes empilées.
 - Fichiers : src/components/TurbinesHub.js.
+
+## V389 — Jalons en losanges, Tests / Packaging justes
+
+Demandé : « pourquoi j'ai des jalons de départ avant la fin des tests ? » ; « pourquoi des losanges et des barres pour l'arrivée ? je veux que des losanges ».
+
+- Cause : la barre « Tests » allait jusqu'à `finProd` (fin du Packing) au lieu de `testsFin` ; là où le packing (ou les tests) finit après le départ publié, le losange de départ tombait dans la barre.
+- CalendarView (`RowTrack`) : plus de segment « Réception » ; Tests = `tests` → `testsFin` ; Packaging = lendemain de `testsFin` → max(`finProd`, veille du départ) ; `depEarly` (départ < fin des tests / du packing) : losange au contour rouge + « avant la fin des tests / du packaging » ; losange de départ posé après la barre. `MilestoneGlyph` : arrivée = losange (couleur de l'arrivée), prop `warn`. Légende sans « Réception ».
+- GanttView : barre du début de production à max(départ, `testsFin`, `finProd`) ; Tests jusqu'à `testsFin` ; « Packaging → départ » ; losanges d'arrivée et de départ (contour rouge si départ trop tôt) ; départ initial = losange vide ; légende Arrivée · Départ · Départ initial.
+- Maquette `maquettes-design/v389-livret-4-pistes.html` (livret de configuration : A liste de contrôle, B pas à pas, C document annoté, D tableau des réglages) en attente du choix.
+- Fichiers : src/components/CalendarView.js, src/components/GanttView.js.

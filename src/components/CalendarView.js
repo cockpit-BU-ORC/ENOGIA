@@ -80,11 +80,13 @@ const fdShort=v=>{const d=v?new Date(v):null;return d&&!isNaN(d)?String(d.getDat
 // leurs actions (fiche du PJ, options de production du jour).
 const isoD=v=>{if(!v)return null;const d=new Date(v);return isNaN(d)?null:toLocalISO(d);};
 const addIso=(iso,n)=>{const d=new Date(iso+"T12:00:00");d.setDate(d.getDate()+n);return toLocalISO(d);};
-// v362 : repère de jalon (forme + couleur d'étape) — arrivée = triangle, départ = losange ; commun aux vues Jour, Semaine et Mois.
-export function MilestoneGlyph({kind,size=14,onFill}){
+// v362 : repère de jalon (forme + couleur d'étape), commun aux vues Jour, Semaine et Mois.
+// v389 (demandé : « pourquoi des losanges et des barres pour l'arrivée ? je veux que des losanges ») : arrivée et départ = losanges, la couleur
+// de l'étape les distingue (et le texte « Arrivée » / « Départ » à côté) ; warn = départ prévu avant la fin des tests ou du packaging (contour rouge)
+export function MilestoneGlyph({kind,size=14,onFill,warn}){
   const st=SEGMENT_STYLE[kind==="Départ"?"Départ":"Arrivée"];
-  const pts=kind==="Départ"?"7,0.8 13.2,7 7,13.2 0.8,7":"2,1 13,7 2,13";
-  return <svg aria-hidden="true" width={size} height={size} viewBox="0 0 14 14" style={{flexShrink:0,display:"block"}}><polygon points={pts} fill={onFill?st.t:st.c} stroke={onFill?"none":st.t} strokeOpacity=".55" strokeWidth="1.2" strokeLinejoin="round"/></svg>;
+  const pts="7,0.8 13.2,7 7,13.2 0.8,7";
+  return <svg aria-hidden="true" width={size} height={size} viewBox="0 0 14 14" style={{flexShrink:0,display:"block"}}><polygon points={pts} fill={onFill?st.t:st.c} stroke={warn?T.red600:onFill?"none":st.t} strokeOpacity={warn?1:.55} strokeWidth={warn?2:1.2} strokeLinejoin="round"/></svg>;
 }
 function RowTrack({r,xOf,rowH,showIni,offDates,closedOf,totalW,viewL=0,viewR,stickL=0}){
   const vR=viewR==null?totalW:Math.min(totalW,viewR);
@@ -92,12 +94,15 @@ function RowTrack({r,xOf,rowH,showIni,offDates,closedOf,totalW,viewL=0,viewR,sti
   if(!arr&&!dep)return null;
   const segs=[];
   const push=(a,b,k,label)=>{if(a&&b&&b>=a)segs.push({a,b,k,label});};
-  if(arr&&p0&&p0>arr)push(arr,addIso(p0,-1),"Arrivée","Réception");
+  // v389 : l'arrivée n'est plus une barre (« Réception ») : seulement son losange ; la barre commence au début de la production
   const pEnd=tst?addIso(tst,-1):fin||(dep?addIso(dep,-1):null);
   push(p0,pEnd,"Production","Production"+(pEnd?" · fin "+fdShort(pEnd):""));
-  const tE=fin&&fin>=(tEnd||"")?fin:tEnd;
+  // v389 : la barre « Tests » s'arrêtait à la fin du packing (finProd) et non à la fin des tests (testsFin)
+  const tE=tEnd;
   if(tst)push(tst,tE,"Tests","Tests · fin "+fdShort(tE));
-  if(tE&&dep&&addIso(tE,1)<=addIso(dep,-1))push(addIso(tE,1),addIso(dep,-1),"Fin prod","Packaging");
+  const kEnd=[fin,dep?addIso(dep,-1):null].filter(Boolean).sort().pop();
+  if(tE&&kEnd&&addIso(tE,1)<=kEnd)push(addIso(tE,1),kEnd,"Fin prod","Packaging"+(fin&&fin>tE?" · fin "+fdShort(fin):""));
+  const workEnd=[tE,fin].filter(Boolean).sort().pop(),depEarly=!!(dep&&workEnd&&dep<workEnd);
   const top=Math.round(rowH*0.38),h=Math.max(20,Math.round(rowH*0.4));
   const drift=Number(r.drift)||0,ini=showIni&&dep&&drift?addIso(dep,-drift):null;
   const vis=presenceDates(r.clientPresence);
@@ -112,11 +117,14 @@ function RowTrack({r,xOf,rowH,showIni,offDates,closedOf,totalW,viewL=0,viewR,sti
   const lab={position:"absolute",top,height:h,display:"flex",alignItems:"center",fontSize:FZF.xs,color:T.ink700,whiteSpace:"nowrap"};
   const start=segs[0]&&segs[0].a;
   // v362 : repères d'arrivée (réception) et de départ posés sur leur jour, même si la barre est très courte
-  const pin=(d,kind)=>{if(!d)return null;const x0=xOf(d,false),x1=xOf(d,true);if(x1<=0||x0>=totalW)return null;const cx=kind==="Arrivée"?x0-9:x0+9; // posé contre le bord de son jour : avant la barre (arrivée), après (départ)
-    out.push(<div key={"m"+kind} title={kind+" le "+fdShort(d)} style={{position:"absolute",left:cx-8,top:top+h/2-8,width:16,height:16,display:"flex",alignItems:"center",justifyContent:"center",zIndex:3}}><MilestoneGlyph kind={kind} size={16}/></div>);return kind==="Arrivée"?cx-9:cx+9;};
+  const lastEnd=segs.length?segs[segs.length-1].b:null;
+  const pin=(d,kind)=>{if(!d)return null;const x0=xOf(d,false),x1=xOf(d,true);if(x1<=0||x0>=totalW)return null;
+    // posé contre le bord de son jour : avant la barre (arrivée), après la barre (départ) ; départ avant la fin du travail = sur son jour, contour rouge
+    const w=kind==="Départ"&&depEarly;const cx=kind==="Arrivée"?x0-9:w?x0+9:Math.max(x0,lastEnd&&lastEnd>=d?xOf(lastEnd,true):x0)+9;
+    out.push(<div key={"m"+kind} title={kind+" le "+fdShort(d)+(w?" : avant la fin "+(tE&&tE>dep?"des tests":"du packaging")+" ("+fdShort(workEnd)+")":"")} style={{position:"absolute",left:cx-8,top:top+h/2-8,width:16,height:16,display:"flex",alignItems:"center",justifyContent:"center",zIndex:3}}><MilestoneGlyph kind={kind} size={16} warn={w}/></div>);return kind==="Arrivée"?cx-9:cx+9;};
   const arrPin=pin(arr,"Arrivée"),depPin=pin(dep,"Départ");
   if(start){const x=Math.min(xOf(start,false),arr&&arrPin!=null?arrPin:Infinity);if(x>4&&x<totalW)out.push(<div key="la" style={{...lab,right:totalW-x+6}}>Arrivée&nbsp;<b style={{color:T.ink900}}>{fdShort(arr)}</b></div>);}
-  if(dep){const lastB=segs.length?segs[segs.length-1].b:null,x=Math.max(xOf(addIso(dep,-1),true),lastB?xOf(lastB,true):-1,depPin||-1);if(x>=0&&x<totalW-20)out.push(<div key="ld" style={{...lab,left:x+6}}>Départ&nbsp;<b style={{color:T.ink900}}>{fdShort(dep)}</b>{ini&&drift>0?<span style={{color:T.red600,fontWeight:600,marginLeft:4}}>+{drift} j</span>:null}</div>);}
+  if(dep){const lastB=segs.length?segs[segs.length-1].b:null,x=Math.max(xOf(addIso(dep,-1),true),lastB?xOf(lastB,true):-1,depPin||-1);if(x>=0&&x<totalW-20)out.push(<div key="ld" style={{...lab,left:x+6}}>Départ&nbsp;<b style={{color:T.ink900}}>{fdShort(dep)}</b>{depEarly?<span style={{color:T.red600,fontWeight:600,marginLeft:4}}>avant la fin {tE&&tE>dep?"des tests":"du packaging"}</span>:null}{ini&&drift>0?<span style={{color:T.red600,fontWeight:600,marginLeft:4}}>+{drift} j</span>:null}</div>);}
   // barre entièrement hors de la période affichée : le jalon le plus proche est rappelé au bord, avec sa date
   // (la bande défile : « hors écran » = hors de la partie visible [viewL, vR], pas seulement hors de la bande)
   const inView=(a,b)=>xOf(b,true)>viewL&&xOf(a,false)<vR;
@@ -467,12 +475,12 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
 
     {mode!=="month"&&<div style={{padding:"11px 18px",borderTop:"1px solid "+T.line,display:"flex",gap:16,flexWrap:"wrap",background:T.surface,alignItems:"center"}}>
       <span style={{fontFamily:T.font,fontSize:12,fontWeight:500,color:T.accentInk}}>Étapes</span>
-      {[["Arrivée","Réception"],["Production","Production"],["Tests","Tests"],["Fin prod","Packaging"]].map(([k,label])=><span key={k} style={{display:"flex",alignItems:"center",gap:6,fontSize:FZF.md}}>
+      {[["Production","Production"],["Tests","Tests"],["Fin prod","Packaging"]].map(([k,label])=><span key={k} style={{display:"flex",alignItems:"center",gap:6,fontSize:FZF.md}}>
         <span style={{width:14,height:14,borderRadius:4,background:SEGMENT_STYLE[k].c}}/>
         <span style={{color:T.ink700,fontWeight:500}}>{label}</span>
       </span>)}
       <span style={{display:"flex",alignItems:"center",gap:10,paddingLeft:16,borderLeft:"1px solid "+T.line,fontSize:FZF.md,color:T.ink700}}>
-        <span style={{display:"inline-flex",alignItems:"center",gap:5}}><MilestoneGlyph kind="Arrivée"/>Arrivée (réception)</span>
+        <span style={{display:"inline-flex",alignItems:"center",gap:5}}><MilestoneGlyph kind="Arrivée"/>Arrivée</span>
         <span style={{display:"inline-flex",alignItems:"center",gap:5}}><MilestoneGlyph kind="Départ"/>Départ</span>
       </span>
       <span style={{display:"flex",alignItems:"center",gap:8,paddingLeft:16,borderLeft:"1px solid "+T.line,fontSize:FZF.md,color:T.ink700}}>

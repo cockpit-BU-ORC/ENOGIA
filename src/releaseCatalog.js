@@ -1188,4 +1188,8 @@ export const RELEASE_CATALOG = [
     ["Besoins turbines en lignes", "Une ligne pleine largeur par besoin, date en grand, pièces de 52 px."],
     ["Tout réduire", "Chaque besoin se réduit, ou tous d'un coup."],
   ] },
+  { v: "389", t: "Calendrier et Gantt — arrivée et départ en losanges, barre « Tests » juste, départ avant la fin du travail signalé", items: [
+    ["Jalons en losanges", "Arrivée et départ en losanges dans le Calendrier et le Gantt."],
+    ["Départ avant la fin des tests", "Signalé en rouge."],
+  ] },
 ];
