@@ -38,6 +38,7 @@ export default function DemoGallery() {
         <div role="banner" id="enogia-bar" className="enogia-bar" style={{ minHeight: 56, display: "flex", alignItems: "center", gap: 12, padding: "8px 16px", background: T.surface, borderBottom: "3px solid var(--page-accent, transparent)", flexWrap: "wrap" }}>
           <span aria-hidden="true" style={{ width: 34, textAlign: "center", color: T.ink500, fontSize: 18 }}>☰</span>
           <div id="enogia-bar-title" style={{ display: "flex", alignItems: "center", gap: "6px 12px", flexWrap: "wrap", minWidth: 0, flex: "1 1 auto" }} />
+          <div id="enogia-bar-tools" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }} />
           <span className="enogia-bar-right" style={{ marginLeft: "auto", fontSize: 13, color: T.ink500 }}>⌕ · cloche · nom</span>
         </div>
       </div>

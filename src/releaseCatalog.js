@@ -1173,4 +1173,8 @@ export const RELEASE_CATALOG = [
     ["ORC des turbines côté SAV", "Ticket ou intervention SAV : l'ORC de chaque turbine demandée se choisit sur place."],
     ["Extract des besoins turbines", "Excel : type, nombre, date, SAV ou Prod ORC, roue, injecteur."],
   ] },
+  { v: "385", t: "Moins d'espaces perdus, titre de la page Turbines, fiche du lundi plus lisible", items: [
+    ["Outils de page dans la barre", "Liste : affichage des dates, export Excel et colonnes dans la barre du haut."],
+    ["Fiche du lundi allégée", "Mail : courbe de l'année et chiffres clés des deux mois ; PDF : barres, sommes, sans commentaires."],
+  ] },
 ];

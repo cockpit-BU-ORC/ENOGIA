@@ -67,43 +67,65 @@ function buildPdf(rep, M, now = new Date()) {
       { rh: 12.5, hl: i => i === c.cur, bold: i => i === 12, color: (i, j) => (j >= 3 ? (mrows[i][j][0] === "−" ? C.red : mrows[i][j][0] === "+" ? C.green : C.ink) : null) });
 
     note("Comme l'onglet « Cash par mois » : un mois passé compte les paiements reçus et ceux encore attendus à sa date prévue ; le total de l'année comprend donc les retards.");
-    // v376 (demandé : « sur le mois en cours, voir les factures émises, les encaissements prévus et réels avec les dates ; les commentaires
-    // décrits dans l'outil ; pareil pour le mois prochain ») : des listes, avec le commentaire du jalon sous la ligne
+    // v376 : des listes datées par mois — v385 (demandé : « les sommes en bas de chaque tableau et des graphiques (barres ou camembert) pour
+    // comprendre où nous en sommes sur le mois en cours et le mois prochain ; ne pas mettre les commentaires ») : barres de situation en tête
+    // de page (initial en trait), total sous chaque tableau, plus de commentaires.
     let cont = null; // titre de la page en cours, pour une page « suite »
     const room = h => { if (y + h > 795) { head(cont + " (suite)", "", 2); } };
     const cols = [{ l: "", w: 92 }, { l: "PJ", w: 52 }, { l: "Jalon", w: 132 }, { l: "Client", w: 92 }, { l: "Date", w: 92 }, { l: "Montant", w: W - 460, a: "right" }];
-    const list = (title, items, row, empty) => {
+    const list = (title, items, row, empty, totalOf) => {
       room(40); sub(title + (items.length ? " · " + items.length : ""));
       if (!items.length) { note(empty); return; }
       let x = L; cols.forEach(c => { t(c.l, x + 2, y, { s: 7.5, c: C.ink5, w: c.w - 4, a: c.a }); x += c.w; });
       y += 11; doc.moveTo(L, y).lineTo(R, y).lineWidth(.8).strokeColor(C.ink3).stroke(); y += 2;
       items.forEach(it => {
-        const [tag, tagC, date, dateC, money, moneyC] = row(it), cm = it.comment ? P(it.comment) : "";
-        doc.font("Helvetica-Oblique").fontSize(7.5); const ch = cm ? doc.heightOfString(cm, { width: W - 96 }) + 2 : 0;
-        room(15 + ch);
+        const [tag, tagC, date, dateC, money, moneyC] = row(it);
+        room(15);
         x = L; [[tag, tagC], [it.pj, C.ink, 1], [it.jalon], [it.client, C.ink5], [date, dateC], [money, moneyC, 1]].forEach(([v, c, bd], j) => { t(v, x + 2, y + 2, { s: 8, b: bd, c: c || C.ink, w: cols[j].w - 4, a: cols[j].a }); x += cols[j].w; });
-        y += 13;
-        if (cm) { doc.font("Helvetica-Oblique").fontSize(7.5).fillColor(C.ink7).text(cm, L + 94, y, { width: W - 96 }); y += ch; }
-        doc.moveTo(L, y + 1).lineTo(R, y + 1).lineWidth(.5).strokeColor(C.hair).stroke(); y += 3;
+        y += 13; doc.moveTo(L, y + 1).lineTo(R, y + 1).lineWidth(.5).strokeColor(C.hair).stroke(); y += 3;
       });
-      y += 8;
+      // total du tableau
+      room(16); doc.moveTo(L, y).lineTo(R, y).lineWidth(1).strokeColor(C.ink).stroke();
+      t("Total", L + 2, y + 3, { s: 8.5, b: 1, w: 200 }); t(fk(totalOf ? totalOf(items) : items.reduce((q, it) => q + (+it.montant || 0), 0)), R - 120, y + 3, { s: 8.5, b: 1, w: 118, a: "right" });
+      y += 22;
     };
-    const summary = (m, cur) => { const tt = m.lists.tot;
-      note((cur ? "Factures : " + fk(tt.factDone) + " émises, " + fk(tt.factTodo) + " encore à émettre. Encaissements : " + fk(tt.recus) + " reçus, " + fk(tt.prevus) + " attendus" + (tt.prevusLate ? " dont " + fk(tt.prevusLate) + " en retard" : "") + "."
-        : "Factures : " + fk(tt.factTodo) + " à émettre. Encaissements : " + fk(tt.prevus) + " prévus.") + " Initial du mois : " + fk(m.enc.init) + " d'encaissements (" + fs(m.enc.gap) + ").", C.ink7); y += 2; };
+    // barre de situation : segments [valeur, couleur, libellé] sur une échelle commune, trait = initial du mois
+    const bars = (title, rowsB) => {
+      room(30 + rowsB.length * 26); sub(title);
+      const lw = 110, bw = W - lw - 120, max = Math.max(1, ...rowsB.map(r => Math.max(r.init || 0, r.segs.reduce((q, g) => q + g[0], 0))));
+      rowsB.forEach(r => {
+        const tot = r.segs.reduce((q, g) => q + g[0], 0);
+        t(r.label, L, y + 3, { s: 8.5, b: 1, w: lw - 6 });
+        doc.rect(L + lw, y, bw, 14).fill(C.hair);
+        let x = L + lw; r.segs.forEach(([v, c]) => { const w = bw * v / max; if (w > 0) { doc.rect(x, y, w, 14).fill(c); x += w; } });
+        if (r.init) { const xi = L + lw + bw * r.init / max; doc.moveTo(xi, y - 3).lineTo(xi, y + 17).lineWidth(1.5).strokeColor(C.ink).stroke(); }
+        t(fk(tot) + (r.init ? "  /  initial " + fk(r.init) : ""), L + lw + bw + 6, y + 3, { s: 8, w: 118 });
+        y += 18;
+        t(r.segs.filter(g => g[0] > 0).map(g => g[2] + " " + fk(g[0])).join(" · ") || "rien ce mois-ci", L + lw, y - 1, { s: 7.5, c: C.ink5, w: bw + 120 });
+        y += 10;
+      });
+      t("Trait noir : montant prévu à l'initial pour le mois.", L, y, { s: 7.5, c: C.ink5, w: W }); y += 14;
+    };
+    const LG = "#7DB89C", LB = "#9DB6DA";
 
     // ── 2 · Le mois en cours ──
-    const cu = rep.cur;
+    const cu = rep.cur, ct = cu.lists.tot, lateF = cu.lists.factures.filter(x => !x.done && x.late).reduce((q, x) => q + x.montant, 0);
     cont = "2 · " + cu.label; head("2 · " + cu.label + ", le mois en cours", "au " + ddmm(rep.today) + "/" + rep.year, 2);
-    summary(cu, true);
+    bars("Où en est " + cu.label.toLowerCase(), [
+      { label: "Factures", init: cu.fact.init, segs: [[ct.factDone, C.bill, "émises"], [ct.factTodo - lateF, LB, "à émettre"], [lateF, C.red, "à émettre en retard"]] },
+      { label: "Encaissements", init: cu.enc.init, segs: [[ct.recus, C.green, "reçus"], [ct.prevus - ct.prevusLate, LG, "attendus"], [ct.prevusLate, C.red, "en retard"]] },
+    ]);
     list("Factures du mois", cu.lists.factures, x => [x.done ? "Émise" : x.late ? "À émettre · " + x.late + " j" : "À émettre", x.done ? C.bill : x.late ? C.red : C.ink5, (x.done ? "émise le " : "prévue le ") + ddmm(x.date), x.late && !x.done ? C.red : C.ink, fk(x.montant), C.ink], "Aucune facture ce mois-ci.");
     list("Encaissements prévus", cu.lists.prevus, x => [x.late ? x.late + " j de retard" : x.invoiced ? "Facturé" : "Pas facturé", x.late ? C.red : x.invoiced ? C.bill : C.ink5, "prévu le " + ddmm(x.date), x.late ? C.red : C.ink, fk(x.montant), C.ink], "Plus rien n'est attendu ce mois-ci.");
     list("Encaissements reçus", cu.lists.recus, x => ["Reçu", C.green, "le " + ddmm(x.date) + (x.delay ? " (" + (x.delay > 0 ? "+" : "-") + Math.abs(x.delay) + " j)" : ""), x.delay > 0 ? C.red : C.ink, fk(x.montant) + (x.gap != null ? " / " + fk(x.prevu) : ""), x.gap != null && x.gap < 0 ? C.red : C.green], "Rien n'est encore arrivé ce mois-ci.");
 
     // ── 3 · Le mois qui arrive ──
-    const n = rep.next;
+    const n = rep.next, nt = n.lists.tot, factInv = n.lists.prevus.filter(x => x.invoiced).reduce((q, x) => q + x.montant, 0);
     cont = "3 · " + n.label; head("3 · " + n.label + ", le mois qui arrive", "dates prévues au " + ddmm(rep.today), 3);
-    summary(n, false);
+    bars("Ce qui est prévu en " + n.label.toLowerCase(), [
+      { label: "Factures", init: n.fact.init, segs: [[nt.factTodo, LB, "à émettre"]] },
+      { label: "Encaissements", init: n.enc.init, segs: [[factInv, LG, "déjà facturés"], [nt.prevus - factInv, "#C9E3D5", "pas encore facturés"]] },
+    ]);
     list("Factures à émettre", n.lists.factures, x => ["À émettre", C.bill, "prévue le " + ddmm(x.date), C.ink, fk(x.montant), C.ink], "Aucune facture prévue.");
     list("Encaissements prévus", n.lists.prevus, x => [x.invoiced ? "Facturé" : "Pas facturé", x.invoiced ? C.bill : C.ink5, "prévu le " + ddmm(x.date), C.ink, fk(x.montant), C.ink], "Aucun encaissement prévu.");
 

@@ -185,60 +185,35 @@ export function curveSvg(r, W = 560, H = 210) {
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const F = "font-family:'Segoe UI',Arial,Helvetica,sans-serif;";
 const tone = v => (v < 0 ? COL.red : v > 0 ? COL.green : COL.ink5);
-const worse = (v, upIsBad = true) => (v == null || Math.round(v * 10) === 0 ? COL.ink5 : (v > 0) === upIsBad ? COL.red : COL.green);
-const pill = (txt, bg, fg) => '<span style="display:inline-block;padding:1px 6px;border-radius:4px;background:' + bg + ";color:" + fg + ';font-size:12px;font-weight:600">' + esc(txt) + "</span>";
-const H3 = (t, small, lvl) => '<tr><td style="padding:' + (lvl ? "16px" : "20px") + ' 24px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="' + F + "font-size:" + (lvl ? 15 : 17) + "px;font-weight:700;color:" + COL.ink + ";border-bottom:" + (lvl ? 1 : 2) + "px solid " + COL.ink + ';padding-bottom:4px">' + esc(t) + '</td><td align="right" style="' + F + "font-size:12px;color:" + COL.ink5 + ";border-bottom:" + (lvl ? 1 : 2) + "px solid " + COL.ink + ';padding-bottom:4px">' + esc(small || "") + "</td></tr></table></td></tr>";
-const part = t => '<tr><td style="padding:22px 24px 0;border-top:6px solid ' + COL.alt + ";" + F + "font-size:12px;font-weight:600;color:" + COL.ink5 + '">' + esc(t) + "</td></tr>";
-const kpi = (l, v, d, c, big) => '<td width="50%" valign="top" style="padding:10px 12px;background:#FFFFFF;border:1px solid ' + COL.hair + '"><div style="' + F + "font-size:12px;color:" + COL.ink5 + '">' + esc(l) + '</div><div style="' + F + "font-size:" + (big ? 30 : 24) + "px;font-weight:700;letter-spacing:-0.02em;color:" + (c || COL.ink) + '">' + esc(v) + '</div><div style="' + F + "font-size:12px;color:" + COL.ink5 + '">' + d + "</div></td>";
+const H3 = (t, small) => '<tr><td style="padding:20px 24px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="' + F + "font-size:17px;font-weight:700;color:" + COL.ink + ";border-bottom:2px solid " + COL.ink + ';padding-bottom:4px">' + esc(t) + '</td><td align="right" style="' + F + "font-size:12px;color:" + COL.ink5 + ";border-bottom:2px solid " + COL.ink + ';padding-bottom:4px">' + esc(small || "") + "</td></tr></table></td></tr>";
+// v385 (demandé : « le mail doit être moins chargé : juste la courbe de l'année avec, en gros, encaissements du mois en cours et du mois
+// prochain, et pareil pour les factures ») : un chiffre par case, l'initial et l'écart dessous ; le détail est dans le PDF.
+const big = (label, value, sub, col) => '<td width="50%" valign="top" style="padding:12px 14px;border:1px solid ' + COL.hair + '"><div style="' + F + "font-size:13px;color:" + COL.ink5 + '">' + esc(label) + '</div><div style="' + F + "font-size:30px;font-weight:700;letter-spacing:-0.02em;color:" + (col || COL.ink) + '">' + esc(value) + '</div><div style="' + F + "font-size:12px;color:" + COL.ink5 + ';line-height:1.45">' + sub + "</div></td>";
+const vsInit = (act, init) => (init ? "initial " + fmtK(init) + ' · <span style="color:' + tone(act - init) + '">' + fmtS(act - init) + " (" + fmtPct(act - init, init) + ")</span>" : "pas d'initial ce mois-ci");
+const pair = cells => '<tr><td style="padding:8px 24px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>' + cells.join("") + "</tr></table></td></tr>";
 
-// Une ligne de liste : [étiquette, jalon, détail des dates, montant, couleur du montant] ; commentaire en dessous s'il existe
-function listBlock(title, small, items, empty) {
-  const rowsH = items.map(([tag, x, dates, money, col]) => '<tr><td style="padding:8px 0;border-bottom:1px solid ' + COL.hair + ";" + F + "font-size:14px;color:" + COL.ink + '">' + tag + " <b>" + esc(x.pj) + "</b> · " + esc(x.jalon) + (x.client ? ' <span style="color:' + COL.ink5 + '">· ' + esc(x.client) + "</span>" : "")
-    + '<div style="font-size:12px;color:' + COL.ink5 + '">' + esc(dates) + (x.chef ? " · " + esc(x.chef) : "") + "</div>"
-    + (x.comment ? '<div style="font-size:12px;color:' + COL.ink7 + ";font-style:italic;margin-top:2px;border-left:2px solid " + COL.line + ';padding-left:6px">' + esc(x.comment) + "</div>" : "")
-    + '</td><td align="right" valign="top" style="padding:8px 0 8px 8px;border-bottom:1px solid ' + COL.hair + ";" + F + "font-size:14px;font-weight:700;white-space:nowrap;color:" + col + '">' + esc(money) + "</td></tr>").join("");
-  return H3(title + (items.length ? " · " + items.length : ""), small, 1) + '<tr><td style="padding:0 24px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">' + (rowsH || '<tr><td style="padding:8px 0;' + F + "font-size:13px;color:" + COL.ink5 + '">' + esc(empty) + "</td></tr>") + "</table></td></tr>";
-}
-// Résumé d'un mois en une ligne (face à l'initial)
-function monthSummary(m, cur) {
-  const t = m.lists.tot;
-  return '<div style="' + F + "font-size:13px;color:" + COL.ink7 + ';background:' + COL.alt + ';border-radius:8px;padding:8px 12px;margin-top:8px">'
-    + (cur ? "Factures : <b>" + fmtK(t.factDone) + "</b> émises, " + fmtK(t.factTodo) + " encore à émettre. Encaissements : <b>" + fmtK(t.recus) + "</b> reçus, " + fmtK(t.prevus) + " attendus" + (t.prevusLate ? ' dont <span style="color:' + COL.red + '">' + fmtK(t.prevusLate) + " en retard</span>" : "") + "."
-      : "Factures : <b>" + fmtK(t.factTodo) + "</b> à émettre. Encaissements : <b>" + fmtK(t.prevus) + "</b> prévus.")
-    + ' <span style="color:' + COL.ink5 + '">Initial du mois : ' + fmtK(m.enc.init) + " d'encaissements (" + fmtS(m.enc.gap) + ").</span></div>";
-}
 export function mailHtml(r, { img = "cid:courbe", appUrl = "", beta = false } = {}) {
-  const c = r.cur, n = r.next, d = r.delta || {};
+  const c = r.cur, n = r.next, ct = c.lists.tot, nt = n.lists.tot;
   const months = '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>' + MS.map((m, i) => '<td align="center" style="' + F + "font-size:10px;color:" + (i === r.curve.cur ? COL.ink : COL.ink5) + ";font-weight:" + (i === r.curve.cur ? 700 : 400) + '">' + m + "</td>").join("") + "</tr></table>";
   const legend = '<div style="' + F + "font-size:12px;color:" + COL.ink5 + ';margin-top:4px"><span style="color:' + COL.init + ';font-weight:700">━</span> initial &nbsp; <span style="color:' + COL.green + ';font-weight:700">━</span> encaissé &nbsp; <span style="color:' + COL.green + ';font-weight:700">┅</span> prévu &nbsp; <span style="color:' + COL.ink3 + '">┅</span> si les retards sont payés &nbsp; <span style="color:' + COL.ink + '">│</span> aujourd\'hui</div>';
   const url = appUrl ? esc(appUrl) : "#";
   return '<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + esc(subject(r)) + '</title></head><body style="margin:0;padding:0;background:#F4F5F7">'
-    + '<div style="display:none;max-height:0;overflow:hidden">' + esc(fmtK(r.ytd.paid) + " encaissés au lieu de " + fmtK(r.ytd.initToDate) + " · " + fmtK(r.late.total) + " en retard · " + fmtK(r.thisWeek.filter(x => x.kind === "paiement").reduce((s, x) => s + x.montant, 0)) + " attendus cette semaine") + "</div>"
+    + '<div style="display:none;max-height:0;overflow:hidden">' + esc(c.label + " : " + fmtK(c.enc.act) + " d'encaissements · " + n.label + " : " + fmtK(n.enc.act)) + "</div>"
     + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F4F5F7"><tr><td align="center" style="padding:16px 8px">'
     + '<table role="presentation" width="620" cellpadding="0" cellspacing="0" style="width:100%;max-width:620px;background:#FFFFFF;border-radius:8px">'
-    + '<tr><td style="padding:22px 24px 0;' + F + "font-size:12px;color:" + COL.ink5 + '">' + (beta ? "BÊTA · " : "") + "Semaine " + r.week.w + " · " + esc(ddmm(r.today)) + "/" + r.year + " · hors jalons EPC</td></tr>"
-    + '<tr><td style="padding:4px 24px 14px;' + F + "font-size:21px;line-height:1.3;font-weight:700;color:" + COL.ink + '">' + esc(headline(r)) + "</td></tr>"
-    + '<tr><td style="padding:0 24px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>'
-    + kpi("Encaissé depuis janvier", fmtK(r.ytd.paid), '<span style="color:' + tone(r.ytd.gap) + '">' + fmtS(r.ytd.gap) + " (" + fmtPct(r.ytd.gap, r.ytd.initToDate) + ")</span> face à l'initial à date", null, true)
-    + kpi("Facturé depuis janvier", fmtK(r.ytd.fact), '<span style="color:' + tone(r.ytd.factGap) + '">' + fmtS(r.ytd.factGap) + " (" + fmtPct(r.ytd.factGap, r.ytd.factInit) + ")</span> face à l'initial")
-    + "</tr><tr>"
-    + kpi("En retard aujourd'hui", fmtK(r.late.total), fmtK(r.late.bill) + " à facturer · " + fmtK(r.late.enc) + " à encaisser" + (d.late != null ? ' · <span style="color:' + worse(d.late) + '">' + (Math.round(d.late) === 0 ? "=" : fmtS(d.late)) + "</span> depuis lundi dernier" : ""), r.late.total ? COL.red : null)
-    + kpi("Prévu d'ici le 31 décembre", fmtK(r.yearEnd.toYearEnd), fmtK(r.yearEnd.toYearEnd + r.yearEnd.lateCash) + " si les retards sont payés", COL.green)
-    + "</tr></table></td></tr>"
-    + part("1 · L'année") + H3("Les encaissements de " + r.year, "cumul, face à l'initial")
+    + '<tr><td style="padding:22px 24px 0;' + F + "font-size:12px;color:" + COL.ink5 + '">' + (beta ? "BÊTA · " : "") + "Cash in · semaine " + r.week.w + " · " + esc(ddmm(r.today)) + "/" + r.year + " · hors jalons EPC</td></tr>"
+    + '<tr><td style="padding:4px 24px 6px;' + F + "font-size:20px;line-height:1.3;font-weight:700;color:" + COL.ink + '">' + esc(headline(r)) + "</td></tr>"
+    + H3("Les encaissements de " + r.year, "cumul, face à l'initial")
     + '<tr><td style="padding:4px 24px 0"><img src="' + esc(img) + '" width="572" alt="Encaissements cumulés ' + r.year + " : " + fmtK(r.ytd.paid) + " encaissés au lieu de " + fmtK(r.ytd.initToDate) + '" style="display:block;width:100%;max-width:572px;height:auto;border:0">' + months + legend
-    + '<div style="' + F + "font-size:13px;color:" + COL.ink5 + ';margin-top:6px">Fin d\'année : <b style="color:' + COL.ink + '">' + fmtK(r.yearEnd.forecast) + "</b> prévus au lieu de " + fmtK(r.yearEnd.init) + " à l'initial (" + fmtPct(r.yearEnd.gap, r.yearEnd.init) + ")" + (r.yearEnd.lateCash ? " ; " + fmtK(r.yearEnd.ifLate) + " si les retards sont payés" : "") + ".</div></td></tr>"
-    + part("2 · Le mois en cours") + H3(c.label, "au " + ddmm(r.today))
-    + '<tr><td style="padding:0 24px">' + monthSummary(c, true) + "</td></tr>"
-    + listBlock("Factures du mois", "émises et encore à émettre", c.lists.factures.map(x => [x.done ? pill("Émise", COL.bill1, COL.bill) : x.late ? pill("À émettre · " + x.late + " j de retard", COL.red1, COL.red) : pill("À émettre", COL.alt, COL.ink7), x, x.done ? "émise le " + ddmm(x.date) : "prévue le " + ddmm(x.date), fmtK(x.montant), x.done ? COL.bill : x.late ? COL.red : COL.ink]), "Aucune facture ce mois-ci.")
-    + listBlock("Encaissements prévus", "pas encore reçus", c.lists.prevus.map(x => [x.late ? pill(x.late + " j de retard", COL.red1, COL.red) : pill(x.invoiced ? "Facturé" : "Pas encore facturé", x.invoiced ? COL.bill1 : COL.alt, x.invoiced ? COL.bill : COL.ink7), x, "prévu le " + ddmm(x.date), fmtK(x.montant), x.late ? COL.red : COL.ink]), "Plus rien n'est attendu ce mois-ci.")
-    + listBlock("Encaissements reçus", "", c.lists.recus.map(x => [pill("Reçu", COL.green1, COL.green), x, "reçu le " + ddmm(x.date) + (x.delay ? " · prévu le " + ddmm(x.due) + " (" + (x.delay > 0 ? "+" : "−") + Math.abs(x.delay) + " j)" : "") + (x.gap != null ? " · prévu " + fmtK(x.prevu) : ""), fmtK(x.montant), COL.green]), "Rien n'est encore arrivé ce mois-ci.")
-    + part("3 · Le mois qui arrive") + H3(n.label, "dates prévues au " + ddmm(r.today))
-    + '<tr><td style="padding:0 24px">' + monthSummary(n, false) + "</td></tr>"
-    + listBlock("Factures à émettre", "", n.lists.factures.map(x => [pill("À émettre", COL.bill1, COL.bill), x, "prévue le " + ddmm(x.date), fmtK(x.montant), COL.ink]), "Aucune facture prévue.")
-    + listBlock("Encaissements prévus", "", n.lists.prevus.map(x => [pill(x.invoiced ? "Facturé" : "Pas encore facturé", x.invoiced ? COL.bill1 : COL.alt, x.invoiced ? COL.bill : COL.ink7), x, "prévu le " + ddmm(x.date), fmtK(x.montant), COL.ink]), "Aucun encaissement prévu.")
+    + '<div style="' + F + "font-size:13px;color:" + COL.ink5 + ';margin-top:6px">Fin d\'année : <b style="color:' + COL.ink + '">' + fmtK(r.yearEnd.forecast) + "</b> prévus au lieu de " + fmtK(r.yearEnd.init) + " à l'initial (" + fmtPct(r.yearEnd.gap, r.yearEnd.init) + ").</div></td></tr>"
+    + H3("Encaissements", "")
+    + pair([big(c.label + " (en cours)", fmtK(c.enc.act), fmtK(ct.recus) + " reçus · " + fmtK(ct.prevus) + " attendus" + (ct.prevusLate ? ' dont <span style="color:' + COL.red + '">' + fmtK(ct.prevusLate) + " en retard</span>" : "") + "<br>" + vsInit(c.enc.act, c.enc.init), COL.green),
+      big(n.label + " (à venir)", fmtK(n.enc.act), "prévus<br>" + vsInit(n.enc.act, n.enc.init))])
+    + H3("Factures", "")
+    + pair([big(c.label + " (en cours)", fmtK(c.fact.act), fmtK(c.fact.done) + " émises · " + fmtK(c.fact.todo) + " à émettre<br>" + vsInit(c.fact.act, c.fact.init), COL.bill),
+      big(n.label + " (à venir)", fmtK(nt.factTodo), "à émettre<br>" + vsInit(nt.factTodo, n.fact.init))])
     + '<tr><td style="padding:18px 24px 22px"><a href="' + url + '" style="display:inline-block;background:' + COL.navy + ";color:#FFFFFF;text-decoration:none;" + F + 'font-size:14px;font-weight:600;padding:11px 16px;border-radius:8px">Ouvrir le Cash in</a></td></tr>'
-    + '<tr><td style="padding:12px 24px;background:#FAFBFC;border-top:1px solid ' + COL.hair + ";" + F + "font-size:12px;color:" + COL.ink5 + '">Envoyé chaque lundi à 7 h par le Cockpit BU ORC · « initial » = dates enregistrées au départ dans le Cash in · détail dans le PDF joint (3 pages : année, mois en cours, mois qui arrive).</td></tr>'
+    + '<tr><td style="padding:12px 24px;background:#FAFBFC;border-top:1px solid ' + COL.hair + ";" + F + "font-size:12px;color:" + COL.ink5 + '">Envoyé chaque lundi à 7 h par le Cockpit BU ORC · le détail jalon par jalon, les sommes et les graphiques sont dans le PDF joint.</td></tr>'
     + "</table></td></tr></table></body></html>";
 }
 // Version texte (clients mail sans HTML, aperçu des notifications)

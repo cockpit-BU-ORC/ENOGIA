@@ -46,15 +46,15 @@ test("v374 : phrases, mail et courbe", () => {
   expect(headline(r)).toMatch(/^Vous êtes en retard sur l'initial : −250 k€/);
   expect(subject(r)).toMatch(/^Cash in S47 — année −71 %/);
   const h = mailHtml(r, { appUrl: "https://x.test/?p=cashin" });
-  expect(h).toContain("1 · L&#39;année"); expect(h).toContain("2 · Le mois en cours"); expect(h).toContain("3 · Le mois qui arrive");
-  expect(h).toContain("Novembre"); expect(h).toContain("Décembre"); expect(h).toContain("cid:courbe"); expect(h).toContain("Encaissements prévus"); expect(h).toContain("Factures à émettre");
+  expect(h).toContain("Les encaissements de 2026"); expect(h).toContain(">Encaissements<"); expect(h).toContain(">Factures<"); // v385 : mail allégé
+  expect(h).toContain("Novembre"); expect(h).toContain("Décembre"); expect(h).toContain("cid:courbe"); expect(h).toContain("Novembre (en cours)"); expect(h).toContain("Décembre (à venir)"); expect(h).not.toContain("Causes :");
   expect(h).not.toMatch(/<script/i);
   const s = curveSvg(r); expect(s.startsWith("<svg")).toBe(true); expect(s).not.toContain("NaN"); expect(s).not.toContain("<text");
 });
 test("v374 : le texte des jalons est échappé dans le mail", () => {
   const d = { ...DOC, rows: [...DOC.rows, R("x", "PJ3", 9000, { factInit: "2026-11-01", factPrevue: "2026-11-01", encPrevue: "2026-12-01", jalon: "<img src=x onerror=alert(1)>" })] };
   const h = mailHtml(weeklyReport(d, T0));
-  expect(h).not.toContain("<img src=x"); expect(h).toContain("&lt;img src=x");
+  expect(h).not.toContain("<img src=x"); // v385 : les jalons ne sont plus dans le mail (seulement dans le PDF)
 });
 test("v374 : destinataires et montants", () => {
   expect(cleanRecipients([" A.B@enogia.com", "a.b@enogia.com", "x@gmail.com", ""])).toEqual(["a.b@enogia.com"]);

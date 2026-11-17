@@ -67,7 +67,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-17-v384-turbines-extract";
+const APP_BUILD_VERSION = "2026-11-17-v385-espaces-cashin";
 
 const ReleasePopup = React.lazy(() => import("./components/ReleaseNotes").then(m => ({ default: m.ReleasePopup })));
 function Navigate0({ go }) { useEffect(() => { go(); }, []); return null; } // eslint-disable-line react-hooks/exhaustive-deps
@@ -1204,6 +1204,7 @@ export default function App(){
       <div role="banner" id="enogia-bar" className={"enogia-bar"+(hdrHidden?" is-hidden":"")} style={{flexShrink:0,minHeight:56,display:"flex",alignItems:"center",gap:12,padding:"8px 28px",background:T.surface,borderBottom:"3px solid var(--page-accent, transparent)",flexWrap:"wrap",position:"sticky",top:0,zIndex:25}}>
         {!navPin&&<button type="button" onClick={()=>{clearTimeout(navPeekT.current);setNavPeek(v=>!v);}} aria-label="Menu (Ctrl + B)" title="Menu (Ctrl + B)" aria-expanded={navPeek} style={{border:"none",background:"transparent",width:34,height:34,borderRadius:8,display:"inline-grid",placeItems:"center",color:T.ink700,cursor:"pointer",marginLeft:-10}}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>}
         <div id="enogia-bar-title" style={{display:"flex",alignItems:"center",gap:"6px 12px",flexWrap:"wrap",minWidth:0,flex:"1 1 auto"}}/>{/* v382 : titre de la page (PageHead) */}
+        <div id="enogia-bar-tools" style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}/>{/* v385 : outils de la page (BarTools) */}
         <div className="enogia-bar-right" aria-hidden={hdrHidden?"true":undefined} style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",opacity:hdrHidden?0:1,transform:hdrHidden?"translateY(-6px)":"none",visibility:hdrHidden?"hidden":"visible",transition:"opacity var(--e-dur-in) ease, transform var(--e-dur-in) var(--e-ease), visibility var(--e-dur-micro) linear "+(hdrHidden?".25s":"0s")}}>
           {pinOk&&<div className="enogia-bar-meta" style={{display:"flex",alignItems:"baseline",gap:10,fontSize:FZ.xs}}>
             {/* v233 (demandé : « supprimer ») : plus de « N unités · Mis à jour le … · N PJ modifiés » dans la barre */}

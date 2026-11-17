@@ -4,7 +4,7 @@ import { useMarks, NewMark } from "./ChangesNotice";
 import { EtatInfoButton } from "./ProdStagesUI";
 import { plannedSnOf, getPjMeta, initials, personTint, PresenceChip, presenceKind, presenceDates, presenceFirstDate, CountryFlag, ETAT_META, ALL_ETATS, ALL_GAMMES, GAMME_COLORS, MONTHS, today, EpcTag } from "../pjMeta";
 import { diffDays, fmtMode } from "../parsers";
-import { HoverPop, useSheetJS, Badge, DropFilter, NavIcon, useCloseOnSignal, EmptyState, pressable, PjPlate, notify } from "./SharedUI";
+import { HoverPop, useSheetJS, Badge, DropFilter, NavIcon, useCloseOnSignal, EmptyState, pressable, PjPlate, notify, BarTools } from "./SharedUI";
 import { RowDialog } from "./RowDetail";
 import { RowMenu } from "./RowMenu";
 import { EtatPopBody, DriftPopBody, AvPopBody } from "./RowPops";
@@ -373,21 +373,20 @@ export function TableView({data,onSetDepart,progress,df,setDf,selEtats,setSelEta
   // explicitement ("ça doit être un élément qui suit le défilement vers le bas").
   return(<div style={{display:"flex",gap:16,flexWrap:"wrap",fontFamily:T.font}}>
   <div ref={listRef} style={{flex:"3 1 640px",minWidth:0}}>
-    <div className="e-tb" style={{padding:"12px 4px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-      <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+    {/* v385 (demandé : « cet espace est de trop ») : Affichage, Export Excel et Colonnes montent dans la barre du haut */}
+    <BarTools>
+      {setDf&&<DateFormatPicker df={df} setDf={setDf}/>}
+      <button onClick={exportToExcel} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.card,color:T.ink700,fontSize:FZ.xs,fontWeight:500,cursor:"pointer",display:"flex",alignItems:"center",gap:6,boxShadow:T.outline,transition:"box-shadow var(--e-dur-menu) ease"}}
+        onMouseDown={e=>e.currentTarget.style.boxShadow=T.insetSm} onMouseUp={e=>e.currentTarget.style.boxShadow=T.outline} onMouseLeave={e=>e.currentTarget.style.boxShadow=T.outline}><span style={{color:T.teal500,display:"flex"}}><NavIcon name="download" size={12}/></span><span className="enogia-hide-phone">Export Excel</span></button>
+      <ColumnPicker hidden={hiddenCols} setHidden={setHiddenCols}/>
+    </BarTools>
+    {setOnlyChanged&&marks.size>0&&<div className="e-tb" style={{padding:"4px 4px 8px",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
         {setOnlyChanged&&marks.size>0&&<span style={{display:"inline-flex",alignItems:"center",gap:6}}>
           <button onClick={()=>setOnlyChanged(!onlyChanged)} aria-pressed={!!onlyChanged} title="N'afficher que les PJ touchés par les derniers imports (depuis votre dernière lecture)"
             style={{padding:"6px 12px",borderRadius:8,border:"none",minHeight:28,background:onlyChanged?T.teal100:T.card,color:onlyChanged?T.teal600:T.ink700,fontSize:FZ.xs,fontWeight:500,cursor:"pointer",boxShadow:T.outline,fontFamily:T.font}}>{onlyChanged?"✓ ":""}Modifiés ({marks.size})</button>
           <button onClick={()=>{clearMarks();setOnlyChanged(false);}} title="Retire les repères « modifié » de la Liste et du Calendrier" style={{padding:"4px 8px",borderRadius:8,border:"none",background:"transparent",color:T.ink500,fontSize:FZ.xs,fontWeight:500,cursor:"pointer",fontFamily:T.font,textDecoration:"underline"}}>Tout marquer comme vu</button>
         </span>}
-      </div>
-      <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-      {setDf&&<DateFormatPicker df={df} setDf={setDf}/>}
-      <button onClick={exportToExcel} style={{padding:"6px 12px",borderRadius:8,border:"none",background:T.card,color:T.ink700,fontSize:FZ.xs,fontWeight:500,cursor:"pointer",display:"flex",alignItems:"center",gap:6,boxShadow:T.outline,transition:"box-shadow var(--e-dur-menu) ease"}}
-        onMouseDown={e=>e.currentTarget.style.boxShadow=T.insetSm} onMouseUp={e=>e.currentTarget.style.boxShadow=T.outline} onMouseLeave={e=>e.currentTarget.style.boxShadow=T.outline}><span style={{color:T.teal500,display:"flex"}}><NavIcon name="download" size={12}/></span><span className="enogia-hide-phone">Export Excel</span></button>
-      <ColumnPicker hidden={hiddenCols} setHidden={setHiddenCols}/>
-      </div>
-    </div>
+    </div>}
     {autoHide.size>0&&!phone&&<div role="status" style={{padding:"0 4px 8px",fontSize:FZ.xs,color:T.ink500,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
       <span>{autoHide.size} colonne{autoHide.size>1?"s":""} masquée{autoHide.size>1?"s":""} faute de place ({autoCols.slice(0,nAuto).map(id=>TABLE_COLUMNS.find(c=>c.id===id)?.label||id).join(", ")}).{zoomA?" "+zoomTip(zoomA):""}</span>
     </div>}

@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v385",
+    date: "2026-11-17",
+    title: "V385 : Moins d'espaces perdus, titre de la page Turbines, fiche du lundi plus lisible",
+    items: [
+      { t: "Outils dans la barre", d: "Dans la Liste, « Affichage », « Export Excel » et « Colonnes » montent dans la barre du haut, à droite du titre : la ligne vide au-dessus du tableau disparaît." },
+      { t: "Titre de Turbines", d: "La page Turbines a son titre dans la barre, avec Production / Besoins, les chiffres et l'import." },
+      { t: "Fiche du lundi", d: "Le mail ne garde que la courbe de l'année et, en gros, les encaissements et les factures du mois en cours et du mois prochain. Le PDF ajoute des barres de situation par mois, une somme sous chaque tableau, et n'affiche plus les commentaires." },
+    ],
+  },
+  {
     id: "2026-11-v384",
     date: "2026-11-17",
     title: "V384 : Turbines — ORC indiqués par le SAV, extract Excel des besoins",

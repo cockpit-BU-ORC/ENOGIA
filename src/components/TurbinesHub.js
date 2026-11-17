@@ -10,7 +10,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { T, FZF as FZ, btn as themeBtn } from "../theme";
 import { ProdTurbines } from "./ProdTurbines";
 import { usePointerDnD } from "../pointerDrag";
-import { NavIcon } from "./SharedUI";
+import { NavIcon, PageHead, PageHeadOff } from "./SharedUI";
+import { stageSoft } from "../theme";
 import { createPortal } from "react-dom";
 import { allTurbines, monthOf, swapNeedKeys, placeNeedKey, TURB_CFGS, cfgById, machinesOf, proposeAlloc, SAV_STATUTS, needsExport, refsOf, buildNeeds, assignOps, unassignOps, installOps, allocOps, unallocOps, stockTiles, injInfo, maxBouches, autoFill, roueConflict, prodState, workDate, pjOfAffaire, closedNeeds } from "../turbineNeeds";
 import { getPjMeta, CountryFlag } from "../pjMeta";
@@ -562,16 +563,15 @@ export function TurbinesHub({ doc, api, rows, canEdit, owner, savePjMeta, tab: t
     return { fab: tb.filter(x => !x.dispo).length, ready: tb.filter(x => x.dispo).length, todo: sl.filter(x => !x.t).length, late: sl.filter(x => !x.installee && x.ecart != null && x.ecart < 0).length }; }, [doc, rows]);
   return (<div ref={top}>
     {/* v307 (même sélecteur sur toutes les pages) : remplace les deux grands boutons de la V300 ; les chiffres passent en pastilles */}
-    <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 10 }}>
+    {/* v385 (demandé : « il manque le titre sur l'espace Turbines ») : titre, sous-pages, chiffres et import dans la barre du haut */}
+    <PageHead title="Turbines" accent={stageSoft().tests.solid} sub="Production des turbines et besoins des ORC et du SAV" right={<>
       <PlanSwitch label="Turbines" value={tab} onGo={setTab} tools={[]} views={[{ id: "prod", l: "Production", badge: counts.ready ? counts.ready + " prêtes" : null },
         { id: "orc", l: "Besoins ORC et SAV", badge: counts.todo ? counts.todo + " à attribuer" : null, badgeBad: counts.late > 0 }].filter(v => !allowTabs || allowTabs.includes(v.id))} />
       <span style={{ fontSize: 12, color: T.ink500 }}>{tab === "prod" ? counts.fab + " en fabrication · " + counts.ready + " prêtes, libres" : counts.todo + " à attribuer" + (counts.late ? " · " + counts.late + " en retard" : "")}</span>
-    </div>
-    <div style={{ display: tab === "prod" && canEdit ? "flex" : "none", justifyContent: "flex-end", marginBottom: 8 }}>
       {/* v268 (demandé : « mettre à disposition le bouton importer à Jérémie ») : toute personne qui peut modifier la production (propriétaire + liste d’accès) */}
       {canEdit && tab === "prod" && <button type="button" onClick={() => setImp(true)} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "4px 12px", minHeight: 30, fontSize: FZ.xs, fontWeight: 500, cursor: "pointer", fontFamily: T.font }}>Importer des données (JSON)</button>}
-    </div>
-    {tab === "prod" ? <ProdTurbines doc={doc} api={api} canEdit={canEdit} owner={owner} pjs={pjs} /> : <NeedsView doc={doc} api={api} rows={rows} canEdit={canEdit} savePjMeta={savePjMeta} authorName={authorName} savDoc={savDoc} />}
+    </>} />
+    {tab === "prod" ? <PageHeadOff.Provider value={true}><ProdTurbines doc={doc} api={api} canEdit={canEdit} owner={owner} pjs={pjs} /></PageHeadOff.Provider> : <NeedsView doc={doc} api={api} rows={rows} canEdit={canEdit} savePjMeta={savePjMeta} authorName={authorName} savDoc={savDoc} />}
     {imp && <ImportDialog doc={doc} api={api} onClose={() => setImp(false)} />}
   </div>);
 }

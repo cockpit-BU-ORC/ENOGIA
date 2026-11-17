@@ -2820,3 +2820,14 @@ Demandé : « ajoute la modification des ORC côté SAV (uniquement sur des ORC 
 - **Règles Firestore** : `prodTurbines` modifiable par l'équipe SAV (niveau Modifier sur SAV, ou rôle « SAV / MES » avant l'activation des accès) **seulement** sur le champ `besoins` — **à republier par Gabriel**.
 - **Extract** : `needsExport(besoins)` (turbineNeeds.js, testé) ; `exportTurbineNeedsXlsx` (exportExcel.js, ExcelJS chargé à la demande) : feuille « Besoins turbines » (Type de turbine, Nombre, Date du besoin, SAV ou Prod ORC — « SAV (hypothétique) » pour une demande hypothétique —, Roue, Injecteur avec bouchages), en-tête figé, filtres, totaux par type ; bouton « Exporter les besoins (Excel) » dans la barre de Turbines › Besoins (besoins ouverts, hors clos). Fichier `Besoins_turbines_<date>.xlsx`.
 - Fichiers : src/components/SavPage.js, src/useAppData.js, src/App.js, src/turbineNeeds.js (+ test), src/exportExcel.js, src/components/TurbinesHub.js, firestore.rules, src/demo/demoPages.js.
+
+## V385 — Espaces, titre Turbines, fiche du lundi
+
+Demandé : capture de la ligne « Affichage : Jours · Export Excel · Colonnes » — « pareil sur cet espace qui est de trop (faire la chasse aux espaces inutiles) » ; « il manque le titre sur l'espace Turbines » ; « rapport Cash in : les sommes en bas de chaque tableau et des graphiques (barres ou camembert) pour le mois en cours et le mois prochain, sans les commentaires » ; « le mail moins chargé : juste la courbe de l'année avec en gros encaissements mois en cours et mois prochain, pareil factures ».
+
+- **SharedUI** : `BarTools` (portail vers `#enogia-bar-tools`, à droite du titre dans la barre ; sur place sans barre) ; `PageHeadOff` (contexte : un `PageHead` imbriqué ne s'affiche pas — Turbines › Production). App et galerie : emplacement `#enogia-bar-tools`.
+- **Liste** (TableView) : la ligne d'outils disparaît (outils dans `BarTools`) ; il ne reste que « modifiés » quand il y en a.
+- **Turbines** (TurbinesHub) : `PageHead` « Turbines » (sous-pages, chiffres, import) ; le titre « Production turbines » du kit n'est plus affiché en double.
+- **Mail** (cashWeekly.js) : phrase, courbe de l'année, puis « Encaissements » et « Factures » en gros chiffres pour le mois en cours (reçus / attendus / en retard, émises / à émettre) et le mois prochain, initial et écart dessous ; plus de listes ni de commentaires (détail dans le PDF).
+- **PDF** (functions/weekly.js) : barres de situation en tête des pages 2 et 3 (segments + trait de l'initial), « Total » sous chaque tableau, commentaires retirés. **Fonctions à redéployer** : `firebase deploy --only functions`.
+- Fichiers : src/components/SharedUI.js, src/App.js, src/demo/DemoGallery.js, src/components/TableView.js, src/components/TurbinesHub.js, src/cashWeekly.js (+ test), functions/weekly.js, functions/shared/.

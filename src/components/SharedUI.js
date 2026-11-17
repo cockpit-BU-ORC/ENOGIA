@@ -451,14 +451,27 @@ function BarHead({title,sub,right,accent}){
     {right&&<div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",minWidth:0}}>{right}</div>}
   </>;
 }
+// v385 (demandé : « faire la chasse aux espaces inutiles ») : les boutons d'outils d'une page (export, colonnes, affichage…) montent dans
+// la barre du haut, à droite du titre (#enogia-bar-tools) ; sans barre (galerie, tests), ils restent sur place.
+export function BarTools({children}){
+  const [slot,setSlot]=React.useState(null);
+  React.useLayoutEffect(()=>{setSlot((typeof document!=="undefined"&&document.getElementById("enogia-bar-tools"))||false);},[]);
+  if(slot===null)return null;
+  if(slot)return createPortal(children,slot);
+  return <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",gap:8,flexWrap:"wrap",padding:"4px 4px 8px"}}>{children}</div>;
+}
+// v385 : dans une page qui porte déjà le titre (Turbines › Production), le titre de la sous-page ne s'affiche pas en double
+export const PageHeadOff=React.createContext(false);
 export function PageHead({kicker,title,sub,right,style,accent,inline}){ // v185 : accent = couleur du trait sous le titre (une par page)
+  const off=React.useContext(PageHeadOff);
   const [slot,setSlot]=React.useState(null);
   React.useLayoutEffect(()=>{
+    if(off)return undefined;
     const el=!inline&&typeof document!=="undefined"?document.getElementById("enogia-bar-title"):null; setSlot(el||false);
     const bar=el&&document.getElementById("enogia-bar"); if(bar){bar.style.setProperty("--page-accent",accent||T.teal500);return()=>bar.style.removeProperty("--page-accent");}
     return undefined;
-  },[accent,inline]);
-  if(slot===null)return null;
+  },[accent,inline,off]);
+  if(off||slot===null)return null;
   if(slot)return createPortal(<BarHead title={title} sub={sub} right={right} accent={accent}/>,slot);
   // v178 : en-tête plus bas (demandé : « trop de hauteur à chaque fois ») — sur-titre, titre et sous-titre sur une même ligne de base.
   return(<div className="enogia-view-in" style={{display:"flex",alignItems:"flex-end",gap:12,flexWrap:"wrap",marginBottom:12,paddingBottom:6,borderBottom:"3px solid "+T.teal500,...style}}>
