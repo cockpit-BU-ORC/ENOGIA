@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v386",
+    date: "2026-11-17",
+    title: "V386 : Plus de « i » à côté des titres ; ORC des demandes SAV closes indiqués sans les rouvrir",
+    items: [
+      { t: "Titres", d: "La bulle « i » à côté du titre des pages est retirée ; la phrase de la page reste lisible au survol du titre." },
+      { t: "Demandes closes", d: "Une demande de turbines SAV close reste visible dans son ticket et son intervention SAV : l'équipe SAV y indique l'ORC de chaque turbine après l'intervention, sans rouvrir la demande. Même chose dans Turbines › Besoins clos." },
+    ],
+  },
+  {
     id: "2026-11-v385",
     date: "2026-11-17",
     title: "V385 : Moins d'espaces perdus, titre de la page Turbines, fiche du lundi plus lisible",

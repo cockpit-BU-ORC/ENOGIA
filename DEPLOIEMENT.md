@@ -2831,3 +2831,13 @@ Demandé : capture de la ligne « Affichage : Jours · Export Excel · Colonnes 
 - **Mail** (cashWeekly.js) : phrase, courbe de l'année, puis « Encaissements » et « Factures » en gros chiffres pour le mois en cours (reçus / attendus / en retard, émises / à émettre) et le mois prochain, initial et écart dessous ; plus de listes ni de commentaires (détail dans le PDF).
 - **PDF** (functions/weekly.js) : barres de situation en tête des pages 2 et 3 (segments + trait de l'initial), « Total » sous chaque tableau, commentaires retirés. **Fonctions à redéployer** : `firebase deploy --only functions`.
 - Fichiers : src/components/SharedUI.js, src/App.js, src/demo/DemoGallery.js, src/components/TableView.js, src/components/TurbinesHub.js, src/cashWeekly.js (+ test), functions/weekly.js, functions/shared/.
+
+## V386 — Titres sans « i », demandes SAV closes
+
+Demandé : « enlève le i à côté des titres » ; « la gestion des demandes closes n'est pas claire : le SAV doit juste indiquer après intervention où ils ont mis les turbines mais ne devrait pas rouvrir la tuile ».
+
+- SharedUI (`BarHead`) : plus de bouton « i » ; la phrase de la page passe en `title` du titre.
+- SavPage (`TurbLinks`) : les demandes closes (`done`) restent listées dans le ticket et l'intervention liés, avec la pastille « Close » et les listes « ORC » modifiables par l'équipe SAV (même écriture `setAlloc`).
+- TurbinesHub (« Besoins clos ») : pour une demande SAV, listes « ORC » de chaque turbine (sans rouvrir) ; « Rouvrir » passe en bouton discret.
+- Maquette `maquettes-design/v386-cartes-besoins.html` (cartes Besoins : A cartes repliables neutres, date en gros, gamme en clair, pop-up de priorité à droite ; B liste dépliable) en attente du choix.
+- Fichiers : src/components/SharedUI.js, src/components/SavPage.js, src/components/TurbinesHub.js.

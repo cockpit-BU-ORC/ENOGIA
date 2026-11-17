@@ -246,14 +246,15 @@ function TicketsView({ tickets, inters, canEdit, isAdmin, myName, nomOf, onEdit,
 // chaque turbine de la demande a sa liste d'ORC (ORC choisis dans la demande, sinon ceux du PJ) ; enregistré tout de suite.
 function TurbLinks({ reqs, match, onOpen, rows, onSetAlloc }) {
   const [busy, setBusy] = useState(null);
-  const L = Object.entries(reqs || {}).map(([id, r]) => ({ id, ...r })).filter(r => r && !r.done && match(r));
+  // v386 (demandé : « le SAV doit juste indiquer après intervention où ils ont mis les turbines, sans rouvrir la tuile ») : les demandes closes restent ici, modifiables
+  const L = Object.entries(reqs || {}).map(([id, r]) => ({ id, ...r })).filter(r => r && match(r));
   if (!L.length) return null;
   return <div style={{ background: T.violet100, borderRadius: 8, padding: "8px 12px", display: "flex", flexDirection: "column", gap: 4 }}>
     <div style={{ fontSize: 12, fontWeight: 600, color: T.violet600 }}>Turbines demandées</div>
     {L.map(r => { const q = +r.qty || 0, al = Array.isArray(r.alloc) ? r.alloc.slice(0, q) : [], unk = q - al.filter(Boolean).length;
       return <div key={r.id} style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", fontSize: FZ.sm, color: T.ink900 }}>
         <b style={{ fontFamily: T.fontMono }}>{r.label}</b><span>{q || "?"} turbine{q > 1 ? "s" : ""}{r.pj ? " · " + r.pj : ""}</span>
-        <Pill tone={r.statut === "hypo" ? "warn" : "ok"}>{r.statut === "hypo" ? "Hypothétique" : "Confirmée"}</Pill>
+        <Pill tone={r.statut === "hypo" ? "warn" : "ok"}>{r.statut === "hypo" ? "Hypothétique" : "Confirmée"}</Pill>{r.done && <Pill tone="neutral" title="Demande close dans Turbines › Besoins : les ORC restent à indiquer ici">Close</Pill>}
         {q > 0 && <span style={{ fontSize: 12, color: unk ? T.amber600 : T.ink500 }}>{unk ? unk + " à lier à un ORC" : [...new Set(al)].join(", ")}</span>}
         {onSetAlloc && q > 0 && (() => { const all = machinesOf(rows, r.pj), opts = Array.isArray(r.orcs) && r.orcs.length ? all.filter(m => r.orcs.includes(m.pj)) : all, A = Array.from({ length: q }, (_, k) => al[k] || "");
           return <div role="group" aria-label={"ORC des turbines de " + r.label} style={{ flexBasis: "100%", display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 6 }}>

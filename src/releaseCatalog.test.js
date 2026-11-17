@@ -40,9 +40,9 @@ describe("catalogue des nouveautés (v146.17)", () => {
     expect(pickUnseen(rel, null, false)[0].items.length).toBe(1);
     expect(pickUnseen(rel, null, true)[0].items.length).toBe(2);
   });
-  test("le catalogue couvre de la V146.5 à la V385, sans titre vide", () => {
+  test("le catalogue couvre de la V146.5 à la V386, sans titre vide", () => {
     expect(RELEASE_CATALOG[0].v).toBe("146.5");
-    expect(RELEASE_CATALOG[RELEASE_CATALOG.length - 1].v).toBe("385");
+    expect(RELEASE_CATALOG[RELEASE_CATALOG.length - 1].v).toBe("386");
     RELEASE_CATALOG.forEach(g => g.items.forEach(it => { expect(it[0]).toBeTruthy(); expect(it[1]).toBeTruthy(); }));
   });
 });

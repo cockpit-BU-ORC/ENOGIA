@@ -1177,4 +1177,7 @@ export const RELEASE_CATALOG = [
     ["Outils de page dans la barre", "Liste : affichage des dates, export Excel et colonnes dans la barre du haut."],
     ["Fiche du lundi allégée", "Mail : courbe de l'année et chiffres clés des deux mois ; PDF : barres, sommes, sans commentaires."],
   ] },
+  { v: "386", t: "Plus de « i » à côté des titres ; ORC des demandes SAV closes indiqués sans les rouvrir", items: [
+    ["ORC des demandes closes", "Après l'intervention, l'ORC de chaque turbine s'indique sans rouvrir la demande."],
+  ] },
 ];

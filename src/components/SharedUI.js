@@ -446,8 +446,8 @@ export function Hl({children,color,style}){
 // sans barre (galerie, tests, impression), l'en-tête reste sur place comme avant.
 function BarHead({title,sub,right,accent}){
   return <>
-    <h1 style={{margin:0,fontFamily:T.fontDisplay,fontSize:"clamp(22px,2vw,28px)",fontWeight:600,letterSpacing:"-.02em",color:T.ink900,lineHeight:1.15,whiteSpace:"nowrap"}}><Hl color={accent}>{title}</Hl></h1>
-    {sub&&<button type="button" title={typeof sub==="string"?sub:undefined} aria-label={"À propos de cette page"+(typeof sub==="string"?" : "+sub:"")} style={{width:24,height:24,flexShrink:0,borderRadius:999,border:"1px solid "+T.line,background:"transparent",color:T.ink500,fontFamily:T.font,fontSize:12,fontWeight:600,cursor:"help",display:"inline-grid",placeItems:"center",padding:0}}>i</button>}
+    <h1 title={typeof sub==="string"?sub:undefined} style={{margin:0,fontFamily:T.fontDisplay,fontSize:"clamp(22px,2vw,28px)",fontWeight:600,letterSpacing:"-.02em",color:T.ink900,lineHeight:1.15,whiteSpace:"nowrap"}}><Hl color={accent}>{title}</Hl></h1>
+    {/* v386 (demandé : « enlève le i à côté des titres ») : plus de bulle ; la phrase reste le nom accessible de l'en-tête */}
     {right&&<div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",minWidth:0}}>{right}</div>}
   </>;
 }

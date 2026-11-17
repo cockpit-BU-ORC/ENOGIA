@@ -476,11 +476,17 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName, savDoc }) 
     {closedDlg && <div onMouseDown={e => { if (e.target === e.currentTarget) setClosedDlg(false); }} style={{ position: "fixed", inset: 0, zIndex: 10010, background: "rgba(10,20,30,.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
       <div role="dialog" aria-modal="true" aria-label="Besoins clos" onKeyDown={e => { if (e.key === "Escape") setClosedDlg(false); }} style={{ background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, width: "min(520px,100%)", maxHeight: "80dvh", overflowY: "auto", padding: "16px 18px", fontFamily: T.font, display: "flex", flexDirection: "column", gap: 10 }}>
         <div style={{ fontFamily: T.fontDisplay, fontSize: FZ.lg, fontWeight: 600 }}>Besoins clos ({closedL.length})</div>
-        <div style={{ fontSize: 12, color: T.ink500 }}>Retirés de la liste (turbines installées). « Rouvrir » les remet dans la liste, avec leurs turbines et pièces.</div>
-        {closedL.length === 0 ? <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Aucun besoin clos</div> : closedL.map(c => <div key={c.key} style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 44, borderTop: "1px solid " + T.line }}>
+        <div style={{ fontSize: 12, color: T.ink500 }}>Retirés de la liste (turbines installées). Pour une demande SAV, indiquez ici l'ORC de chaque turbine après l'intervention, sans la rouvrir. « Rouvrir » la remet dans la liste, avec ses turbines et pièces.</div>
+        {closedL.length === 0 ? <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Aucun besoin clos</div> : closedL.map(c => <div key={c.key} style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 44, borderTop: "1px solid " + T.line, flexWrap: "wrap" }}>
           <b style={{ fontFamily: T.fontMono, fontSize: 13 }}>{c.label}</b><span style={{ fontSize: 12, color: c.kind === "sav" ? T.violet600 : T.ink700 }}>{c.kind === "sav" ? "SAV" : "ORC"}</span>
           <span style={{ flex: 1, fontSize: 12, color: T.ink500 }}>{c.at ? "clos le " + new Date(c.at).toLocaleDateString("fr-FR") : ""}{c.by ? " par " + c.by : ""}</span>
-          {canEdit && <button type="button" onClick={() => reopenNeed(c)} style={{ ...themeBtn("sec", "sm") }}>Rouvrir</button>}</div>)}
+          {canEdit && <button type="button" onClick={() => reopenNeed(c)} style={{ ...themeBtn("ghost", "sm") }}>Rouvrir</button>}
+          {c.kind === "sav" && +c.raw.qty > 0 && (() => { const all = machinesOf(rows, c.raw.pj), opts = Array.isArray(c.raw.orcs) && c.raw.orcs.length ? all.filter(m => c.raw.orcs.includes(m.pj)) : all, A = Array.from({ length: +c.raw.qty }, (_, k) => (c.raw.alloc || [])[k] || "");
+            return <div role="group" aria-label={"ORC des turbines de " + c.label} style={{ flexBasis: "100%", display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 6, paddingBottom: 8 }}>
+              {A.map((x, k) => <label key={k} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: T.ink700 }}>T{k + 1}
+                <select value={x} disabled={!canEdit} onChange={e => { const N = A.slice(); N[k] = e.target.value; api.put("besoins", c.id, { ...c.raw, alloc: N }); }} aria-label={"ORC de la turbine " + (k + 1) + " de " + c.label}
+                  style={{ minHeight: 30, borderRadius: 8, border: "1px solid " + T.fieldLine, background: T.card, color: x ? T.ink900 : T.amber600, fontSize: 13, fontFamily: T.font, padding: "0 6px", width: "100%" }}><option value="">À préciser</option>{opts.map(m => <option key={m.pj} value={m.pj}>{m.pj}</option>)}{x && !opts.some(m => m.pj === x) && <option value={x}>{x}</option>}</select></label>)}
+            </div>; })()}</div>)}
         <div style={{ display: "flex", justifyContent: "flex-end" }}><button type="button" onClick={() => setClosedDlg(false)} style={{ ...themeBtn("sec", "md") }}>Fermer</button></div>
       </div></div>}
   </div>);
