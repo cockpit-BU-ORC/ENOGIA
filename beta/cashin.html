@@ -1,4 +1,5 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}.recu{font-size:11.5px;font-weight:600;text-align:right;padding:0 6px 2px;white-space:nowrap;font-variant-numeric:tabular-nums}.recu.neg{color:var(--late)}.recu.pos{color:var(--paid)}
+</style></head><body>
 <title>Cash in PJ</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232b6cb0'/%3E%3Ctext x='32' y='47' font-family='Arial,sans-serif' font-size='42' font-weight='700' text-anchor='middle' fill='white'%3E%E2%82%AC%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -542,12 +543,15 @@ function pctText(r){
   var t=pjTotal(r.pj);if(!r.montant||!t)return '';
   return (Math.round(r.montant/t*1000)/10).toLocaleString('fr-FR')+' %';
 }
+/* v375 : montant reçu différent du montant prévu (saisi dans Cash in › Encaissements) — l'encaissé compte ce qui a été reçu */
+function paidAmt(r){return r.encReelle&&r.montantRecu!=null&&!isNaN(+r.montantRecu)?+r.montantRecu:(r.montant||0)}
+function recuHTML(r){if(!r.encReelle||r.montantRecu==null||isNaN(+r.montantRecu))return '';var g=+r.montantRecu-(r.montant||0);return '<div class="recu '+(g<0?'neg':'pos')+'" title="Montant reçu, saisi dans Encaissements">reçu '+eur(+r.montantRecu)+' ('+(g<0?'−':'+')+eur(Math.abs(g))+')</div>'}
 function groupStats(list){
   var o={n:list.length,epc:0,paidN:0,total:0,paid:0,inv:0,toBill:0,next:null,nextRow:null};
   list.forEach(function(r){
     var a=r.montant||0,s=status(r).k;o.total+=a;
     if(r.epc){o.epc+=a;return}
-    if(s==='paid'){o.paid+=a;o.paidN++}
+    if(s==='paid'){o.paid+=paidAmt(r);o.paidN++}
     else{
       if(s==='invoiced'||s==='chased'||s==='late') o.inv+=a; else o.toBill+=a;
       if(r.encPrevue&&(!o.next||r.encPrevue<o.next)){o.next=r.encPrevue;o.nextRow=r}
@@ -560,7 +564,7 @@ function kpis(){
   rows.forEach(function(r){
     var a=r.montant||0,s=status(r).k;
     if(r.epc)return;
-    if(s==='paid'){paid+=a;return}
+    if(s==='paid'){paid+=paidAmt(r);return}
     rest+=a;
     if(s==='invoiced'||s==='chased'||s==='late'){inv+=a;invN++;if(s==='late'){late+=a;lateN++}}
     else{var bd=billDue(r);if(bd&&bd<=limit){bill30+=a;bill30N++}}
@@ -589,7 +593,7 @@ function monthly(){
   rows.forEach(function(r){
     var mk=monthKeys(r);if(!mk)return;var a=r.montant;
     if(mk.init==='none')nodate.init+=a;else get(mk.init).init+=a;
-    if(mk.act==='none')nodate.fc+=a;else if(mk.paid)get(mk.act).paid+=a;else get(mk.act).fc+=a;
+    if(mk.act==='none')nodate.fc+=a;else if(mk.paid)get(mk.act).paid+=paidAmt(r);else get(mk.act).fc+=a;
     var pu=punctual(r);if(pu&&mk.act!=='none'){var g=get(mk.act);if(pu.k==='ontime'){g.ot+=a;g.otN++}else{g.sh+=a;g.shN++}}
   });
   return {months:Object.keys(M).sort().map(function(k){return M[k]}),nodate:nodate};
@@ -729,7 +733,7 @@ function cellHTML(c,r,sticky,gs){
   if(r.epc&&['jalon','montant','pct','epc','produit','statut','del'].indexOf(c.k)<0)return '<td class="'+cls+' fit"></td>';
   switch(c.k){
     case 'jalon':inner='<div class="jw"><span class="dh" draggable="true" title="Glisser ce jalon vers un autre PJ" aria-hidden="true">⠿</span><input class="in" data-f="jalon" value="'+esc(r.jalon)+'" aria-label="Jalon" placeholder="Nom du jalon"></div>';break;
-    case 'montant':inner='<input class="in n" type="text" inputmode="decimal" data-f="montant" data-money="1" value="'+(r.montant==null?'':eur(r.montant))+'" aria-label="Montant en euros" placeholder="0 €">';break;
+    case 'montant':inner='<input class="in n" type="text" inputmode="decimal" data-f="montant" data-money="1" value="'+(r.montant==null?'':eur(r.montant))+'" aria-label="Montant en euros" placeholder="0 €">'+recuHTML(r);break;
     case 'pct':cls+=' ro';attr=' data-d="pct"';inner=pctText(r);break;
     case 'epc':cls+=' ctr';inner='<input type="checkbox" data-f="epc" '+(r.epc?'checked ':'')+'title="Jalon géré par la BU EPC : grisé, hors suivi des factures et encaissements" aria-label="Jalon géré par la BU EPC">';break;
     case 'produit':cls+=' ctr';inner='<input type="checkbox" data-f="produit" '+(r.produit?'checked ':'')+'title="Livrable à fournir par le Produit (ex. P&amp;ID) : le jalon, son montant et ses dates remontent sur l\'accueil du responsable produit" aria-label="Jalon lié à un livrable du Produit">';break;
