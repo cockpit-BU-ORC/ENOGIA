@@ -1,4 +1,5 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}.recu{font-size:11.5px;font-weight:600;text-align:right;padding:0 6px 2px;white-space:nowrap;font-variant-numeric:tabular-nums}.recu.neg{color:var(--late)}.recu.pos{color:var(--paid)}
+</style></head><body>
 <title>Cash in PJ</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232b6cb0'/%3E%3Ctext x='32' y='47' font-family='Arial,sans-serif' font-size='42' font-weight='700' text-anchor='middle' fill='white'%3E%E2%82%AC%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -351,7 +352,7 @@ input[type=checkbox]{width:16px;height:16px;flex-shrink:0}
       <span class="save" id="save"><i></i><span id="saveTxt">Chargement</span></span>
       <button class="btn gear" id="btnGear" type="button" title="Attribuer les projets" aria-label="Attribuer les projets">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
-      <button class="btn primary" id="btnExport" type="button">Exporter en Excel</button>
+      <button class="btn" id="btnExport" type="button">Exporter en Excel</button>
       <button class="btn" id="btnNewPj" type="button">+ Ajouter un PJ</button>
     </div>
   </div>
@@ -542,12 +543,15 @@ function pctText(r){
   var t=pjTotal(r.pj);if(!r.montant||!t)return '';
   return (Math.round(r.montant/t*1000)/10).toLocaleString('fr-FR')+' %';
 }
+/* v375 : montant reçu différent du montant prévu (saisi dans Cash in › Encaissements) — l'encaissé compte ce qui a été reçu */
+function paidAmt(r){return r.encReelle&&r.montantRecu!=null&&!isNaN(+r.montantRecu)?+r.montantRecu:(r.montant||0)}
+function recuHTML(r){if(!r.encReelle||r.montantRecu==null||isNaN(+r.montantRecu))return '';var g=+r.montantRecu-(r.montant||0);return '<div class="recu '+(g<0?'neg':'pos')+'" title="Montant reçu, saisi dans Encaissements">reçu '+eur(+r.montantRecu)+' ('+(g<0?'−':'+')+eur(Math.abs(g))+')</div>'}
 function groupStats(list){
   var o={n:list.length,epc:0,paidN:0,total:0,paid:0,inv:0,toBill:0,next:null,nextRow:null};
   list.forEach(function(r){
     var a=r.montant||0,s=status(r).k;o.total+=a;
     if(r.epc){o.epc+=a;return}
-    if(s==='paid'){o.paid+=a;o.paidN++}
+    if(s==='paid'){o.paid+=paidAmt(r);o.paidN++}
     else{
       if(s==='invoiced'||s==='chased'||s==='late') o.inv+=a; else o.toBill+=a;
       if(r.encPrevue&&(!o.next||r.encPrevue<o.next)){o.next=r.encPrevue;o.nextRow=r}
@@ -560,7 +564,7 @@ function kpis(){
   rows.forEach(function(r){
     var a=r.montant||0,s=status(r).k;
     if(r.epc)return;
-    if(s==='paid'){paid+=a;return}
+    if(s==='paid'){paid+=paidAmt(r);return}
     rest+=a;
     if(s==='invoiced'||s==='chased'||s==='late'){inv+=a;invN++;if(s==='late'){late+=a;lateN++}}
     else{var bd=billDue(r);if(bd&&bd<=limit){bill30+=a;bill30N++}}
@@ -589,7 +593,7 @@ function monthly(){
   rows.forEach(function(r){
     var mk=monthKeys(r);if(!mk)return;var a=r.montant;
     if(mk.init==='none')nodate.init+=a;else get(mk.init).init+=a;
-    if(mk.act==='none')nodate.fc+=a;else if(mk.paid)get(mk.act).paid+=a;else get(mk.act).fc+=a;
+    if(mk.act==='none')nodate.fc+=a;else if(mk.paid)get(mk.act).paid+=paidAmt(r);else get(mk.act).fc+=a;
     var pu=punctual(r);if(pu&&mk.act!=='none'){var g=get(mk.act);if(pu.k==='ontime'){g.ot+=a;g.otN++}else{g.sh+=a;g.shN++}}
   });
   return {months:Object.keys(M).sort().map(function(k){return M[k]}),nodate:nodate};
@@ -729,7 +733,7 @@ function cellHTML(c,r,sticky,gs){
   if(r.epc&&['jalon','montant','pct','epc','produit','statut','del'].indexOf(c.k)<0)return '<td class="'+cls+' fit"></td>';
   switch(c.k){
     case 'jalon':inner='<div class="jw"><span class="dh" draggable="true" title="Glisser ce jalon vers un autre PJ" aria-hidden="true">⠿</span><input class="in" data-f="jalon" value="'+esc(r.jalon)+'" aria-label="Jalon" placeholder="Nom du jalon"></div>';break;
-    case 'montant':inner='<input class="in n" type="text" inputmode="decimal" data-f="montant" data-money="1" value="'+(r.montant==null?'':eur(r.montant))+'" aria-label="Montant en euros" placeholder="0 €">';break;
+    case 'montant':inner='<input class="in n" type="text" inputmode="decimal" data-f="montant" data-money="1" value="'+(r.montant==null?'':eur(r.montant))+'" aria-label="Montant en euros" placeholder="0 €">'+recuHTML(r);break;
     case 'pct':cls+=' ro';attr=' data-d="pct"';inner=pctText(r);break;
     case 'epc':cls+=' ctr';inner='<input type="checkbox" data-f="epc" '+(r.epc?'checked ':'')+'title="Jalon géré par la BU EPC : grisé, hors suivi des factures et encaissements" aria-label="Jalon géré par la BU EPC">';break;
     case 'produit':cls+=' ctr';inner='<input type="checkbox" data-f="produit" '+(r.produit?'checked ':'')+'title="Livrable à fournir par le Produit (ex. P&amp;ID) : le jalon, son montant et ses dates remontent sur l\'accueil du responsable produit" aria-label="Jalon lié à un livrable du Produit">';break;
@@ -1306,81 +1310,120 @@ function startDb(){
 }
 
 /* ---------- export Excel ---------- */
-var C={navy:'FF142230',line:'FFD3DAE0'};
-var FILL={epc:['FFEDF1F4','FF8190A0'],paid:['FFE6F5EC','FF2E8B5E'],invoiced:['FFE4EEFA','FF2F6FB8'],chased:['FFFDF3D8','FF9A6A00'],late:['FFFBE6E3','FFC0392B'],tobill:['FFF0E8F8','FF7A52AE'],future:['FFEDF1F4','FF627385']};
+/* v371 (passe taste + apple-design + UI/UX Pro Max) : la réponse d'abord (feuille « Synthèse » en tête : titre, date, chiffres clés,
+   un PJ par ligne, total), en-têtes clairs au lieu du bandeau marine, écarts repliés dans un groupe de colonnes (bouton + d'Excel),
+   lignes EPC grisées, texte long renvoyé à la ligne, impression prête (paysage, une page de large, en-tête répété, pages numérotées). */
+var C={ink:'FF1F2A37',mute:'FF5F6B7A',faint:'FF8A95A3',head:'FFF2F4F7',line:'FFE3E7EC',rule:'FF9AA4B1'};
+var FILL={epc:['FFF2F4F7','FF6B7785'],paid:['FFE6F4EC','FF1D7350'],invoiced:['FFE7EEF8','FF2F5E9E'],chased:['FFFBF1DC','FF8A5A00'],late:['FFFBE7E4','FFB3322E'],tobill:['FFF1EAF8','FF6D4AA0'],future:['FFF2F4F7','FF5F6B7A']};
+var EUR='#,##0 "€";-#,##0 "€";"–"',DATE='dd/mm/yyyy',GREEN='FF1D7350',RED='FFB3322E';
 var dObj=function(iso){return iso?new Date(toMs(iso)):null};
-function styleHeader(ws,n){
-  var hr=ws.getRow(1);hr.height=34;
-  for(var i=1;i<=n;i++){var c=hr.getCell(i);c.font={bold:true,color:{argb:'FFFFFFFF'}};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:C.navy}};c.alignment={vertical:'middle',horizontal:'left',wrapText:true}}
+function sheetSetup(ws,head,a3){
+  ws.properties.defaultRowHeight=18;
+  ws.pageSetup={orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0,paperSize:a3?8:9,margins:{left:0.4,right:0.4,top:0.5,bottom:0.5,header:0.25,footer:0.25},printTitlesRow:head+':'+head};
+  ws.headerFooter={oddFooter:'&L&8Cash in · export du '+new Date().toLocaleDateString('fr-FR')+'&R&8Page &P / &N'};
 }
+function styleHeader(ws,n,r,right){
+  var hr=ws.getRow(r||1);hr.height=30;
+  for(var i=1;i<=n;i++){var c=hr.getCell(i);c.font={bold:true,size:10,color:{argb:C.ink}};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:C.head}};c.alignment={vertical:'middle',horizontal:right&&right(i)?'right':'left',wrapText:true};c.border={bottom:{style:'medium',color:{argb:C.rule}}}}
+}
+function bodyRow(row,n){for(var i=1;i<=n;i++){var c=row.getCell(i);c.alignment={vertical:'middle'};c.border={bottom:{style:'thin',color:{argb:C.line}}};c.font={size:10,color:{argb:C.ink}}}}
 async function exportXlsx(){
   if(!rows.length){toast('Rien à exporter pour l’instant');return}
   if(!dl){toast('L’export n’est pas disponible dans cette vue');return}
-  var wb=new ExcelJS.Workbook();wb.creator='Cash in PJ';wb.created=new Date();
-  var ws=wb.addWorksheet('Suivi cash in',{views:[{state:'frozen',xSplit:3,ySplit:1}]});
-  var cols=[['PJ',11],['Nom du projet',22],['Jalon',46],['% du projet',11],['Montant (€)',15],['Statut',15],['Délai (j)',9],['Facture initiale',14],['Encaissement initial',16],['Facture prévue',14],['Encaissement prévu',16],['Facture émise',14],['Paiement client',15],['Facture : écart initiale → prévue (j)',16],['Facture : écart prévue → émise (j)',16],['Facture : écart initiale → émise (j)',16],['Enc. : écart initial → prévu (j)',16],['Enc. : écart prévu → paiement (j)',16],['Enc. : écart initial → paiement (j)',16],['Commentaire',50],['Causes du retard',48]];
+  var bt=$('#btnExport'),bl=bt.textContent;bt.disabled=true;bt.textContent='Préparation…';
+  try{
+  var wb=new ExcelJS.Workbook();wb.creator='Cockpit BU ORC';wb.created=new Date();
+  var today=new Date().toLocaleDateString('fr-FR');
+  /* 1 · Synthèse : la réponse d'abord */
+  var w2=wb.addWorksheet('Synthèse',{views:[{state:'frozen',ySplit:7,showGridLines:false}]});
+  var c2=[['PJ',12],['Nom du projet',26],['Montant du projet',18],['Jalons',9],['Payés',9],['Encaissé',16],['Facturé, en attente',18],['Reste à facturer',17],['% encaissé',12],['Prochain encaissement',19]];
+  c2.forEach(function(c,i){w2.getColumn(i+1).width=c[1]});
+  var T={n:0,p:0,pt:0,a:0,i:0,b:0},late=0;
+  rows.forEach(function(r){if(!r.epc&&status(r).k==='late')late+=r.montant||0});
+  var list=pjList().map(function(pj){var g=groupStats(rows.filter(function(r){return r.pj===pj})),tot=pjTotal(pj);T.n+=g.n;T.p+=g.paidN;T.pt+=tot;T.a+=g.paid;T.i+=g.inv;T.b+=g.toBill;return {pj:pj,g:g,tot:tot}});
+  var t1=w2.getCell('A1');t1.value='Cash in';t1.font={bold:true,size:18,color:{argb:C.ink}};
+  var t2=w2.getCell('A2');t2.value='Export du '+today+' · encaissé, facturé et reste à facturer hors EPC · une ligne par PJ (projets EPC en gris)';t2.font={size:10,color:{argb:C.mute}};
+  var K=[['Encaissé',T.a,GREEN],['Facturé, en attente',T.i,C.ink],['En retard de paiement',late,late?RED:C.ink],['Reste à facturer',T.b,C.ink],['% encaissé',T.pt?T.a/T.pt:null,C.ink]];
+  K.forEach(function(k,q){var col=[1,3,6,8,10][q];
+    var l=w2.getRow(4).getCell(col);l.value=k[0];l.font={size:9,color:{argb:C.mute}};
+    var v=w2.getRow(5).getCell(col);v.value=k[1];v.font={bold:true,size:16,color:{argb:k[2]}};v.numFmt=q===4?'0%':EUR;v.alignment={horizontal:'left'};});
+  w2.getRow(5).height=26;
+  w2.getRow(7).values=c2.map(function(c){return c[0]});
+  styleHeader(w2,c2.length,7,function(i){return i>=3});
+  list.forEach(function(x){var g=x.g;
+    var rw=w2.addRow([x.pj,labels[x.pj]||null,x.tot,g.n,g.paidN,g.paid,g.inv,g.toBill,x.tot?g.paid/x.tot:null,dObj(g.next)]);
+    bodyRow(rw,c2.length);
+    [3,6,7,8].forEach(function(i){rw.getCell(i).numFmt=EUR});rw.getCell(9).numFmt='0%';rw.getCell(10).numFmt=DATE;rw.getCell(1).font={bold:true,size:10,color:{argb:C.ink}};
+    if(g.n&&g.epc>=g.total&&g.total>0)for(var e=1;e<=c2.length;e++)rw.getCell(e).font={italic:true,size:10,color:{argb:C.faint}};});
+  var tr=w2.addRow(['Total',null,T.pt,T.n,T.p,T.a,T.i,T.b,T.pt?T.a/T.pt:null,null]);
+  [3,6,7,8].forEach(function(i){tr.getCell(i).numFmt=EUR});tr.getCell(9).numFmt='0%';
+  tr.eachCell({includeEmpty:true},function(c){c.font={bold:true,size:10,color:{argb:C.ink}};c.border={top:{style:'medium',color:{argb:C.rule}}};c.alignment={vertical:'middle'}});tr.height=22;
+  w2.autoFilter={from:{row:7,column:1},to:{row:7,column:c2.length}};
+  sheetSetup(w2,7);
+  /* 2 · Jalons : le détail, écarts repliés */
+  var ws=wb.addWorksheet('Jalons',{views:[{state:'frozen',xSplit:3,ySplit:1}]});
+  var cols=[['PJ',11],['Nom du projet',22],['Jalon',40],['% du projet',10],['Montant',14],['Statut',14],['Délai (j)',9],['Facture initiale',13],['Encaissement initial',14],['Facture prévue',13],['Encaissement prévu',14],['Facture émise',13],['Paiement client',13],['Écart facture : initiale → prévue (j)',14],['Écart facture : prévue → émise (j)',14],['Écart facture : initiale → émise (j)',14],['Écart encaissement : initial → prévu (j)',14],['Écart encaissement : prévu → paiement (j)',14],['Écart encaissement : initial → paiement (j)',14],['Commentaire',44],['Causes du retard',40]];
   ws.columns=cols.map(function(c){return {header:c[0],width:c[1]}});
+  for(var k=14;k<=19;k++){ws.getColumn(k).outlineLevel=1;ws.getColumn(k).hidden=true}
+  /* pas de outlineProperties ici : combinée à fitToPage, ExcelJS écrit sheetPr dans le désordre et Excel refuse le fichier */
   rows.forEach(function(r){
     var s=status(r).k,t=pjTotal(r.pj);
     var row=ws.addRow([r.pj,labels[r.pj]||null,r.jalon,(r.montant&&t)?r.montant/t:null,r.montant,STATUS_LABEL[s],r.delai,dObj(r.factInit),dObj(r.encInit),dObj(r.factPrevue),dObj(r.encPrevue),dObj(r.factReelle),dObj(r.encReelle)].map(function(x,i){return r.epc&&i>=6?null:x}).concat(['eFactPrev','eFactEm','eFactTot','eEncPrev','eEncReel','eEncTot'].map(function(k){return ECMAP[k].fn(r)})).concat([r.note||null,(r.causes||[]).filter(function(x){return x.c}).map(function(x){return x.c+(x.d?' ('+x.d+' j)':'')}).join(' ; ')||null]));
-    row.getCell(4).numFmt='0.0%';row.getCell(5).numFmt='#,##0 "€"';
-    [8,9,10,11,12,13].forEach(function(i){row.getCell(i).numFmt='dd/mm/yyyy'});
-    [14,15,16,17,18,19].forEach(function(i){var c=row.getCell(i);c.numFmt='+0;-0;0';if(c.value>0)c.font={bold:true,color:{argb:'FFC0392B'}};else if(c.value<0)c.font={bold:true,color:{argb:'FF2E8B5E'}}});
-    var sc=row.getCell(6);sc.fill={type:'pattern',pattern:'solid',fgColor:{argb:FILL[s][0]}};sc.font={bold:true,color:{argb:FILL[s][1]}};
-    row.eachCell({includeEmpty:true},function(c){c.border={bottom:{style:'thin',color:{argb:C.line}}}});
+    bodyRow(row,cols.length);
+    row.getCell(4).numFmt='0%';row.getCell(5).numFmt=EUR;
+    [8,9,10,11,12,13].forEach(function(i){row.getCell(i).numFmt=DATE});
+    [14,15,16,17,18,19].forEach(function(i){var c=row.getCell(i);c.numFmt='+0;-0;0';if(c.value>0)c.font={size:10,color:{argb:RED}};else if(c.value<0)c.font={size:10,color:{argb:GREEN}}});
+    [3,20,21].forEach(function(i){row.getCell(i).alignment={vertical:'middle',wrapText:true}});
+    row.getCell(1).font={bold:true,size:10,color:{argb:C.ink}};
+    var sc=row.getCell(6);sc.fill={type:'pattern',pattern:'solid',fgColor:{argb:FILL[s][0]}};sc.font={size:10,color:{argb:FILL[s][1]}};
+    if(r.epc)[2,3,4,5].forEach(function(i){row.getCell(i).font={italic:true,size:10,color:{argb:C.faint}}});
   });
-  styleHeader(ws,cols.length);
+  styleHeader(ws,cols.length,1,function(i){return i===4||i===5||i===7||(i>=14&&i<=19)});
   ws.autoFilter={from:{row:1,column:1},to:{row:1,column:cols.length}};
-  var w2=wb.addWorksheet('Synthèse PJ',{views:[{state:'frozen',ySplit:1}]});
-  var c2=[['PJ',12],['Nom du projet',22],['Montant du projet (€)',20],['Jalons',9],['Jalons payés',12],['Total des jalons (€)',20],['Encaissé (€)',16],['Facturé, en attente (€)',22],['Reste à facturer (€)',20],['% encaissé',11],['Prochain encaissement',20]];
-  w2.columns=c2.map(function(c){return {header:c[0],width:c[1]}});
-  var T={n:0,p:0,pt:0,t:0,a:0,i:0,b:0};
-  pjList().forEach(function(pj){
-    var g=groupStats(rows.filter(function(r){return r.pj===pj})),tot=pjTotal(pj);
-    T.n+=g.n;T.p+=g.paidN;T.pt+=tot;T.t+=g.total;T.a+=g.paid;T.i+=g.inv;T.b+=g.toBill;
-    var rw=w2.addRow([pj,labels[pj]||null,tot,g.n,g.paidN,g.total,g.paid,g.inv,g.toBill,tot?g.paid/tot:null,dObj(g.next)]);
-    [3,6,7,8,9].forEach(function(i){rw.getCell(i).numFmt='#,##0 "€"'});rw.getCell(10).numFmt='0%';rw.getCell(11).numFmt='dd/mm/yyyy';
-  });
-  var tr=w2.addRow(['Total',null,T.pt,T.n,T.p,T.t,T.a,T.i,T.b,T.pt?T.a/T.pt:null,null]);
-  tr.font={bold:true};[3,6,7,8,9].forEach(function(i){tr.getCell(i).numFmt='#,##0 "€"'});tr.getCell(10).numFmt='0%';
-  tr.eachCell({includeEmpty:true},function(c){c.border={top:{style:'thin',color:{argb:C.navy}}}});
-  w2.addRow([]);var nr=w2.addRow(['Export du '+new Date().toLocaleDateString('fr-FR')]);nr.font={italic:true,color:{argb:'FF74838F'}};
-  styleHeader(w2,c2.length);
+  sheetSetup(ws,1,true); /* A3 : 15 colonnes visibles restent lisibles à l'impression */
+  /* 3 · Cash par mois */
   var w3=wb.addWorksheet('Cash par mois',{views:[{state:'frozen',ySplit:1}]});
-  var c3=[['Mois',18],['Initial (€)',16],['Encaissé réel (€)',18],['Prévu actualisé (€)',20],['Total réel + actualisé (€)',24],['Écart (€)',14],['Cumul initial (€)',18],['Cumul actualisé (€)',20]];
+  var c3=[['Mois',16],['Initial',15],['Encaissé réel',15],['Prévu actualisé',16],['Réel + actualisé',17],['Écart',13],['Cumul initial',15],['Cumul actualisé',16]];
   w3.columns=c3.map(function(c){return {header:c[0],width:c[1]}});
   var m=monthly(),ci=0,ca=0;
   var addM=function(label,init,paid,fc){
     ci+=init;ca+=paid+fc;
-    var rw=w3.addRow([label,init,paid,fc,paid+fc,paid+fc-init,ci,ca]);
-    for(var i=2;i<=8;i++)rw.getCell(i).numFmt='#,##0 "€";-#,##0 "€";–';
+    var rw=w3.addRow([label,init,paid,fc,paid+fc,paid+fc-init,ci,ca]);bodyRow(rw,8);
+    for(var i=2;i<=8;i++)rw.getCell(i).numFmt=EUR;
+    var e=rw.getCell(6);if(e.value<0)e.font={size:10,color:{argb:RED}};else if(e.value>0)e.font={size:10,color:{argb:GREEN}};
   };
   m.months.forEach(function(x){var l=monthLabel(x.key);addM(l.charAt(0).toUpperCase()+l.slice(1),x.init,x.paid,x.fc)});
   if(m.nodate.init||m.nodate.fc)addM('Sans date',m.nodate.init,0,m.nodate.fc);
-  styleHeader(w3,c3.length);
-  var w4=wb.addWorksheet('PJ par mois',{views:[{state:'frozen',xSplit:1,ySplit:1}]});
+  styleHeader(w3,c3.length,1,function(i){return i>=2});
+  sheetSetup(w3,1);
+  /* 4 · PJ par mois */
+  var w4=wb.addWorksheet('PJ par mois',{views:[{state:'frozen',xSplit:2,ySplit:1}]});
   var it4=[];
   rows.forEach(function(r){if(r.epc||!r.montant)return;var pd=status(r).k==='paid'&&!!r.encReelle,d=pd?r.encReelle:r.encPrevue;it4.push({r:r,paid:pd,key:d?d.slice(0,7):'none'})});
   var ks4={};it4.forEach(function(x){ks4[x.key]=1});ks4[TODAY.slice(0,7)]=1;
   var mo4=monthRange(Object.keys(ks4).filter(function(k){return k!=='none'}).sort());if(ks4.none)mo4.push('none');
-  w4.columns=[{header:'PJ',width:14},{header:'Nom du projet',width:22}].concat(mo4.map(function(k){var l=k==='none'?'Sans date':monthLabel(k);return {header:l.charAt(0).toUpperCase()+l.slice(1),width:16}})).concat([{header:'Total',width:16}]);
+  w4.columns=[{header:'PJ',width:12},{header:'Nom du projet',width:22}].concat(mo4.map(function(k){var l=k==='none'?'Sans date':monthLabel(k);return {header:l.charAt(0).toUpperCase()+l.slice(1),width:14}})).concat([{header:'Total',width:15}]);
   pjList().forEach(function(pj){
     var mine=it4.filter(function(x){return x.r.pj===pj});if(!mine.length)return;
     var vals=mo4.map(function(k){var l=mine.filter(function(x){return x.key===k});return l.length?l.reduce(function(s,x){return s+x.r.montant},0):null});
-    var rw=w4.addRow([pj,labels[pj]||null].concat(vals).concat([mine.reduce(function(s,x){return s+x.r.montant},0)]));
+    var rw=w4.addRow([pj,labels[pj]||null].concat(vals).concat([mine.reduce(function(s,x){return s+x.r.montant},0)]));bodyRow(rw,3+mo4.length);
+    rw.getCell(1).font={bold:true,size:10,color:{argb:C.ink}};
     mo4.forEach(function(k,i){
-      var c=rw.getCell(3+i);c.numFmt='#,##0 "€"';
+      var c=rw.getCell(3+i);c.numFmt=EUR;
       var l=mine.filter(function(x){return x.key===k});
-      if(l.length)c.note=l.map(function(x){return (x.paid?'[Payé] ':'[Prévu] ')+(x.r.jalon||'Jalon')+' : '+eur(x.r.montant)+(pctText(x.r)?' ('+pctText(x.r)+')':'')}).join('\n');
+      if(l.length){c.note=l.map(function(x){return (x.paid?'Payé · ':'Prévu · ')+(x.r.jalon||'Jalon')+' : '+eur(x.r.montant)+(pctText(x.r)?' ('+pctText(x.r)+')':'')}).join('\n');
+        if(l.every(function(x){return x.paid}))c.font={size:10,color:{argb:GREEN}};}
     });
-    rw.getCell(3+mo4.length).numFmt='#,##0 "€"';
+    var tc=rw.getCell(3+mo4.length);tc.numFmt=EUR;tc.font={bold:true,size:10,color:{argb:C.ink}};
   });
-  styleHeader(w4,3+mo4.length);
+  styleHeader(w4,3+mo4.length,1,function(i){return i>=3});
+  w4.addRow([]);var nb=w4.addRow(['En vert : montants déjà encaissés. Survol d’une case : détail des jalons.']);nb.getCell(1).font={italic:true,size:9,color:{argb:C.mute}};
+  sheetSetup(w4,1);
   var buf=await wb.xlsx.writeBuffer();
-  try{
-    var res=await dl.save({filename:'Cash-in-PJ_'+TODAY+'.xlsx',data:new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'})});
-    toast(res&&res.status==='saved'?'Fichier Excel enregistré':'Fichier Excel prêt');
+  var res=await dl.save({filename:'Cash-in_'+TODAY+'.xlsx',data:new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'})});
+  toast(res&&res.status==='saved'?'Fichier Excel enregistré : Synthèse, Jalons, Cash par mois, PJ par mois':'Fichier Excel prêt');
   }catch(e){if(!e||e.code!=='declined')toast('L’export a échoué, réessayez')}
+  finally{bt.disabled=false;bt.textContent=bl}
 }
 
 /* ---------- toast ---------- */
