@@ -14,6 +14,8 @@ test("Besoins v2 : rendu avec stock, turbines attribuées, roues et injecteurs",
   const el = document.createElement("div"); document.body.appendChild(el);
   const root = createRoot(el);
   act(() => { root.render(<TurbinesHub doc={doc} api={{ put: async () => true, del: async () => true }} rows={rows} canEdit owner />); });
+  // v387 : cartes repliées par défaut (sauf retard) : on les déplie pour lire les turbines
+  act(() => { el.querySelectorAll("button[aria-label^=\"Déplier \"]").forEach(b => b.click()); });
   const t = el.textContent;
   // v300 : une seule feuille ORC + SAV, bascule Production / Besoins, logements à 4 états, stock roues / injecteurs d'abord
   // v372 : une ligne de 36 px par turbine — l'état et le détail d'une pièce sont dans la bulle (title), « Marquer installée » dans le nom du bouton rond

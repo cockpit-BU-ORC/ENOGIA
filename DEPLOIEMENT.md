@@ -2841,3 +2841,12 @@ Demandé : « enlève le i à côté des titres » ; « la gestion des demandes 
 - TurbinesHub (« Besoins clos ») : pour une demande SAV, listes « ORC » de chaque turbine (sans rouvrir) ; « Rouvrir » passe en bouton discret.
 - Maquette `maquettes-design/v386-cartes-besoins.html` (cartes Besoins : A cartes repliables neutres, date en gros, gamme en clair, pop-up de priorité à droite ; B liste dépliable) en attente du choix.
 - Fichiers : src/components/SharedUI.js, src/components/SavPage.js, src/components/TurbinesHub.js.
+
+## V387 — Cartes Besoins turbines (piste A)
+
+Demandé : « les tuiles ne sont pas à mon goût en clair et en sombre ; date de besoin pas assez claire, la gamme non plus ; le chiffre de la liste d'importance : un petit pop-up à droite pour montrer l'ordre ; les tuiles ne se déplient pas » ; maquette `maquettes-design/v386-cartes-besoins.html`, piste **A** choisie : « A, cartes ».
+
+- TurbinesHub (`card`) : carte `T.card`, filet `T.line` (rouge si retard / problème), liseré gauche 4 px (`T.info600` ORC, `T.violet600` SAV) ; en-tête : poignée, rang (`.enogia-nd-rk`), bouton nom (PJ, nom, drapeau ; ORC / SAV, Hypothétique / Confirmée, gamme `cfg.l · gamme`, PJ · ticket · intervention), date 18 px + « dans N j » / « dépassé de N j » + marge turbine, chevron ; barre d'avancement (un segment par pièce : posée bleu, installée verte) ; corps déplié en fondu (`.enogia-cl-in`) : problèmes, turbines (inchangé), pied « N / M pièces posées » + Modifier la demande, Configuration, Clore.
+- Ouverture : repliée par défaut, ouverte si en retard ou avec un problème ; choix gardé sur le poste (`enogia_nd_open2`).
+- `RankPicker` : pop-up ancré à droite du numéro (à gauche s'il n'y a pas la place), ordre complet de priorité, ligne du besoin surlignée ; plus de « rang global » (toute la liste est là).
+- Fichiers : src/components/TurbinesHub.js, src/needsView.test.js.

@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v387",
+    date: "2026-11-17",
+    title: "V387 : Turbines › Besoins — cartes repliables, date et gamme lisibles, ordre de priorité en pop-up",
+    items: [
+      { t: "Cartes repliables", d: "Chaque carte de besoin se replie : en tête, le rang, le PJ, ORC ou SAV, la gamme en clair (« 2 × 100 kW · 180LT »), la date du besoin en gros avec « dans N j » ou « dépassé de N j », et une barre d'avancement des pièces. Un clic déplie les turbines ; les cartes en retard s'ouvrent seules." },
+      { t: "Clair et sombre", d: "Fond de carte neutre avec un liseré à gauche (bleu ORC, violet SAV) au lieu des fonds teintés." },
+      { t: "Ordre de priorité", d: "Le numéro de rang ouvre un pop-up à droite avec tout l'ordre de priorité : on touche la ligne où placer le besoin." },
+    ],
+  },
+  {
     id: "2026-11-v386",
     date: "2026-11-17",
     title: "V386 : Plus de « i » à côté des titres ; ORC des demandes SAV closes indiqués sans les rouvrir",

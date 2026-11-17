@@ -1180,4 +1180,8 @@ export const RELEASE_CATALOG = [
   { v: "386", t: "Plus de « i » à côté des titres ; ORC des demandes SAV closes indiqués sans les rouvrir", items: [
     ["ORC des demandes closes", "Après l'intervention, l'ORC de chaque turbine s'indique sans rouvrir la demande."],
   ] },
+  { v: "387", t: "Turbines › Besoins — cartes repliables, date et gamme lisibles, ordre de priorité en pop-up", items: [
+    ["Cartes Besoins repliables", "Date en gros, gamme en clair, avancement des pièces ; dépliage au clic."],
+    ["Ordre de priorité en pop-up", "Le rang ouvre la liste complète des besoins, à droite."],
+  ] },
 ];

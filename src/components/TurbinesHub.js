@@ -133,6 +133,12 @@ const NEEDS_CSS = `
 .enogia-nd-pick{animation:enogiaNdPick var(--e-dur-menu) cubic-bezier(.2,.8,.2,1);transform-origin:top left}
 @keyframes enogiaNdPick{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
 .enogia-nd-pick button.slot:hover{background:var(--nd-alt)}
+.enogia-nd-rk{min-width:30px;height:30px;padding:0 6px;border-radius:8px;border:1px solid var(--nd-line);background:var(--nd-alt);color:var(--nd-ink);font:600 13px var(--nd-font);font-variant-numeric:tabular-nums;display:inline-grid;place-items:center;flex-shrink:0;cursor:pointer}
+span.enogia-nd-rk{cursor:default}
+.enogia-nd-rk[aria-expanded=true]{border-color:var(--nd-ink)}
+.enogia-nd-chev>*{transition:transform var(--e-dur-menu) var(--e-ease)}
+.enogia-nd-chev[data-open="1"]>*{transform:rotate(180deg)}
+@media (hover:hover){.enogia-nd-chev:hover,.enogia-nd-rk:hover{background:var(--nd-alt)}}
 .enogia-nd-month{position:sticky;z-index:2;border-bottom:1px solid var(--nd-line)}
 .enogia-nd-land{animation:enogiaNdLand 260ms cubic-bezier(.2,.8,.2,1)}
 @keyframes enogiaNdLand{0%{transform:scale(1.06)}100%{transform:scale(1)}}
@@ -157,28 +163,24 @@ const IC = {
   grip: <svg width="10" height="16" viewBox="0 0 10 16" aria-hidden="true" style={{ flexShrink: 0 }}><g fill="currentColor"><circle cx="2" cy="3" r="1.4" /><circle cx="8" cy="3" r="1.4" /><circle cx="2" cy="8" r="1.4" /><circle cx="8" cy="8" r="1.4" /><circle cx="2" cy="13" r="1.4" /><circle cx="8" cy="13" r="1.4" /></g></svg>,
   plus: <svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true" style={{ flexShrink: 0 }}><path d="M6 2.5v7M2.5 6h7" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>,
 };
-// v373 (piste E) : « Placer PJ… » — la liste du mois, on touche la place voulue ; en bas, le rang global (échange avec le besoin qui l'a)
-function RankPicker({ n, at: anchor, list, rankOf, total, onPlace, onRank, onClose }) {
-  const at = anchor.isConnected ? anchor.getBoundingClientRect() : { left: 8, top: 8, bottom: 8 };
+// v373 (piste E) puis v387 (piste A de v386-cartes-besoins : « le chiffre dans la liste d'importance, ouvrir un petit pop-up à droite pour montrer l'ordre
+// en priorité ») : pop-up ancré à droite du numéro, tout l'ordre de priorité ; on touche la ligne où placer le besoin.
+function RankPicker({ n, at: anchor, list, rankOf, onPlace, onClose }) {
+  const at = anchor.isConnected ? anchor.getBoundingClientRect() : { left: 8, right: 8, top: 8, bottom: 8 };
   const ref = React.useRef(null);
-  React.useEffect(() => { const el = ref.current; const f = el && el.querySelector("button.slot:not([aria-current])"); if (f) f.focus();
-    const k = e => { if (e.key === "Escape") onClose(); }, c = e => { if (el && !el.contains(e.target) && !e.target.closest(".enogia-nd-rank")) onClose(); };
+  React.useEffect(() => { const el = ref.current; const me = el && el.querySelector("button.slot[aria-current]"); if (me) me.scrollIntoView({ block: "center" }); const f = el && el.querySelector("button.slot:not([aria-current])"); if (f) f.focus({ preventScroll: true });
+    const k = e => { if (e.key === "Escape") onClose(); }, c = e => { if (el && !el.contains(e.target) && !e.target.closest(".enogia-nd-rk")) onClose(); };
     window.addEventListener("keydown", k); document.addEventListener("pointerdown", c); return () => { window.removeEventListener("keydown", k); document.removeEventListener("pointerdown", c); }; }, [onClose]);
-  const left = Math.max(8, Math.min(at.left, window.innerWidth - 316)), top = at.bottom + 6 + 360 > window.innerHeight ? Math.max(8, at.top - 6 - Math.min(360, 60 + list.length * 40)) : at.bottom + 6;
-  const me = rankOf.get(n.key), fd = iso => (iso ? String(iso).slice(8, 10) + "/" + String(iso).slice(5, 7) : "—");
-  return <div ref={ref} role="dialog" aria-label={"Placer " + n.label} className="enogia-nd-pick" style={{ position: "fixed", left, top, zIndex: 9000, width: 300, maxHeight: 360, overflowY: "auto", background: T.card, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, padding: 8, fontFamily: T.font }}>
-    <div style={{ fontSize: 13, fontWeight: 600, color: T.ink900, padding: "2px 6px 6px" }}>Placer {n.label}…</div>
+  const W = 300, H = Math.min(420, 70 + list.length * 40), left = at.right + 8 + W <= window.innerWidth - 8 ? at.right + 8 : Math.max(8, at.left - 8 - W), top = Math.max(8, Math.min(at.top - 10, window.innerHeight - H - 8));
+  return <div ref={ref} role="dialog" aria-label={"Ordre de priorité · placer " + n.label} className="enogia-nd-pick" style={{ position: "fixed", left, top, zIndex: 9000, width: W, maxHeight: H, overflowY: "auto", background: T.card, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, padding: 8, fontFamily: T.font }}>
+    <div style={{ fontSize: 14, fontWeight: 600, color: T.ink900, padding: "2px 6px 2px" }}>Ordre de priorité</div>
+    <div style={{ fontSize: 12, color: T.ink500, padding: "0 6px 6px" }}>Touchez une ligne pour y placer {n.label}</div>
     {list.map(m => { const rk = rankOf.get(m.key), cur = m.key === n.key;
       return <button key={m.key} type="button" className="slot" aria-current={cur ? "true" : undefined} onClick={() => (cur ? onClose() : onPlace(m))}
-        style={{ display: "grid", gridTemplateColumns: "24px minmax(0,1fr) auto", gap: 8, alignItems: "center", width: "100%", minHeight: 40, padding: "6px 8px", border: "none", borderRadius: 8, background: cur ? T.info100 : "transparent", color: T.ink900, cursor: "pointer", textAlign: "left", fontFamily: T.font }}>
-        <span style={{ fontSize: 12, fontWeight: 600, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{rk}</span>
-        <span style={{ minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontSize: 13 }}><b style={{ fontFamily: T.fontMono, fontWeight: 600 }}>{m.label}</b> <span style={{ color: T.ink500, fontSize: 12 }}>pour le {fd(m.date)}</span></span>
-        <span style={{ fontSize: 12, color: cur ? T.info600 : T.ink500 }}>{cur ? "ici" : rk < me ? "avant" : "après"}</span></button>; })}
-    <form onSubmit={e => { e.preventDefault(); const v = +e.currentTarget.elements.rg.value; if (v >= 1 && v <= total) onRank(v); }} style={{ display: "flex", alignItems: "center", gap: 8, borderTop: "1px solid " + T.line, marginTop: 6, padding: "8px 6px 2px", fontSize: 12, color: T.ink500 }}>
-      <label htmlFor="enogia-nd-rg">Rang global (autre mois)</label>
-      <input id="enogia-nd-rg" name="rg" type="number" min={1} max={total} defaultValue={me} style={{ width: 56, minHeight: 28, borderRadius: 8, border: "1px solid " + T.fieldLine, background: T.card, color: T.ink900, fontFamily: T.font, fontSize: 13, padding: "0 6px" }} />
-      <button type="submit" style={{ ...themeBtn("sec", "sm") }}>Échanger</button>
-    </form>
+        style={{ display: "grid", gridTemplateColumns: "26px minmax(0,1fr) auto", gap: 8, alignItems: "center", width: "100%", minHeight: 38, padding: "4px 8px", border: "none", borderRadius: 8, background: cur ? T.amber100 : "transparent", boxShadow: cur ? "inset 0 0 0 1px " + T.amber600 : "none", color: T.ink900, cursor: "pointer", textAlign: "left", fontFamily: T.font }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{rk}</span>
+        <span style={{ minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontSize: 13 }}><b style={{ fontWeight: 600 }}>{m.label}</b> <span style={{ color: T.ink500, fontSize: 12 }}>{fdS(m.date)}</span></span>
+        <span style={{ fontSize: 12, color: cur ? T.amber600 : m.kind === "sav" ? T.violet600 : T.info600, fontWeight: 600 }}>{cur ? "ici" : m.kind === "sav" ? "SAV" : "ORC"}</span></button>; })}
   </div>;
 }
 // Couleurs des 4 états d'un logement (jetons du thème, clair et sombre)
@@ -277,6 +279,10 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName, savDoc }) 
   const flipFold = t => setFold(f => { const nx = { ...f, [t]: !f[t] }; try { localStorage.setItem("enogia_nd_fold", JSON.stringify(nx)); } catch (e) { /* stockage indisponible */ } return nx; });
   // v373 (piste A + E validée) : la carte se glisse par sa poignée ; le rang ouvre « Placer … » (liste du mois, ou rang global)
   const [rankPick, setRankPick] = useState(null);
+  // v387 (maquette v386-cartes-besoins.html, piste A « cartes repliables » choisie) : carte repliée par défaut, ouverte d'elle-même si en retard
+  // ou avec un problème ; le choix ouvert / replié de chaque carte est gardé sur ce poste (enogia_nd_open2)
+  const [openC, setOpenC] = useState(() => { try { return JSON.parse(localStorage.getItem("enogia_nd_open2") || "{}") || {}; } catch (e) { return {}; } });
+  const togC = (k, def) => setOpenC(o => { const nx = { ...o, [k]: !(k in o ? o[k] : def) }; try { localStorage.setItem("enogia_nd_open2", JSON.stringify(nx)); } catch (e) { /* stockage indisponible */ } return nx; });
   const [kind, setKind0] = useState(() => { try { const v = localStorage.getItem("enogia_nd_kind"); return v === "pj" || v === "sav" ? v : "all"; } catch (e) { return "all"; } });
   const setKind = k => { setKind0(k); try { localStorage.setItem("enogia_nd_kind", k); } catch (e) { /* stockage indisponible */ } };
   const nOrc = needs.filter(n => n.kind === "pj").length, nSav = needs.length - nOrc;
@@ -315,7 +321,6 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName, savDoc }) 
   const saveKeys = async (keys, t) => { if (!keys || busy) return; if (await api.put("ordre", "besoins", { keys, at: new Date().toISOString() })) setMsg({ t }); else setMsg({ t: "L'enregistrement a échoué.", bad: true }); };
   const placeNeed = (n, m) => { setRankPick(null); if (!m || m.key === n.key) return; const a = rankOf.get(n.key), b = rankOf.get(m.key); saveKeys(placeNeedKey(needs, n.key, m.key), n.label + (b < a ? " passe avant " : " passe après ") + m.label + "."); };
   const moveNeed = (n, dir) => { const m = neighbor(n, dir); if (m) saveKeys(swapNeedKeys(needs, n.key, m.key), n.label + (dir < 0 ? " remonte" : " descend") + " d'un cran."); };
-  const setRank = (n, r) => { setRankPick(null); const m = needs[r - 1]; if (!m || m.key === n.key) return; saveKeys(swapNeedKeys(needs, n.key, m.key), n.label + " passe en priorité n° " + r + " (échangé avec " + m.label + ")."); };
   const monthLab = iso => { if (!iso) return "Sans date"; const d = new Date(String(iso).slice(0, 7) + "-01T12:00:00"); const t = d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" }); return t.charAt(0).toUpperCase() + t.slice(1); };
   let lastMo = "";
   // v303 (maquette « effets des skills », piste Apple choisie, stock gardé visible) : barre d'outils et titres de mois en verre dépoli,
@@ -328,36 +333,55 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName, savDoc }) 
       if (!(await askConfirm({ title: "Marquer " + (x.t.num || "la turbine") + " installée ?", message: "Il manque " + miss.join(" et ") + " pour " + n.label + ". La turbine sera quand même marquée installée.", confirmLabel: "Marquer installée" }))) return; }
     run(installOps(doc, x.t, !x.installee)); };
   const pill = { display: "inline-flex", alignItems: "center", borderRadius: 999, padding: "1px 7px", fontSize: 12, fontWeight: 500, whiteSpace: "nowrap" };
-  const linkB = { border: "none", background: "transparent", padding: 0, fontSize: 12, fontWeight: 500, cursor: canEdit ? "pointer" : "default", textDecoration: "underline", textUnderlineOffset: 2, fontFamily: T.font, whiteSpace: "nowrap" };
-  const gapEl = x => x.ecart == null ? null : <span style={{ fontWeight: 600, color: x.ecart < 0 ? T.red600 : x.ecart < 5 ? T.amber600 : T.emerald600 }}>{x.ecart < 0 ? -x.ecart + " j de retard" : x.ecart === 0 ? "juste à temps" : x.ecart + " j de marge"}</span>;
   const legend = [["à attribuer", { border: "1.5px dashed " + T.ink300 }], ["roue", { background: TN.roue.bg, border: "1.5px solid " + TN.roue.bd }], ["injecteur", { background: TN.inj.bg, border: "1.5px solid " + TN.inj.bd }],
     ["turbine allouée", { background: TN.turbine.bg, border: "1.5px solid " + TN.turbine.bd }], ["installée (roue et injecteur verrouillés)", { background: TN.inst.bg, border: "1.5px solid " + TN.inst.bd }], ["refusé", { background: TN.bad.bg, border: "1.5px solid " + TN.bad.bd }]];
   const card = n => {
-            const T3 = n.want * 3, G3 = n.slots.filter(x => !x.extra).reduce((q, x) => q + !!x.t + !!x.roueOk + !!x.inj, 0), badI = n.issues.filter(i => i.bad && !/à attribuer$/.test(i.t) && !/après le besoin/.test(i.t));
-            const meta = n.kind === "pj" ? getPjMeta(n.pj, n.r) : null, done = allDone(n);
-            // v302 (demandé : « plus léger sur ORC (bleu léger) et violet sur SAV ») : bleu information très pâle / violet pâle, mêlés au fond de carte
-            const rk = rankOf.get(n.key), bgC = n.kind === "sav" ? "color-mix(in srgb, " + T.violet100 + " 80%, " + T.card + ")" : "color-mix(in srgb, " + T.info100 + " 45%, " + T.card + ")";
+    const T3 = n.want * 3, G3 = n.slots.filter(x => !x.extra).reduce((q, x) => q + !!x.t + !!x.roueOk + !!x.inj, 0), badI = n.issues.filter(i => i.bad && !/à attribuer$/.test(i.t) && !/après le besoin/.test(i.t));
+    const meta = n.kind === "pj" ? getPjMeta(n.pj, n.r) : null, done = allDone(n), rk = rankOf.get(n.key);
+    const kindC = n.kind === "sav" ? T.violet600 : T.info600, def = !!(n.late || badI.length), isOpen = n.key in openC ? openC[n.key] : def;
+    // date du besoin : en gros, avec le nombre de jours ; marge = pire écart entre la disponibilité des turbines et le besoin
+    const live = n.slots.filter(x => !x.extra && !x.installee && x.ecart != null), worst = live.length ? live.reduce((p, q) => (q.ecart < p.ecart ? q : p)) : null;
+    const dd = n.date ? Math.round((new Date(n.date + "T12:00:00") - new Date(new Date().toISOString().slice(0, 10) + "T12:00:00")) / 864e5) : null;
+    const rel = dd == null ? "sans date" : dd < 0 ? "dépassé de " + -dd + " j" : dd === 0 ? "aujourd'hui" : "dans " + dd + " j";
+    const marg = done ? "installée" + (n.want > 1 ? "s" : "") : worst ? (worst.ecart < 0 ? "turbine : " + -worst.ecart + " j de retard" : worst.ecart === 0 ? "juste à temps" : "marge " + worst.ecart + " j") : "";
+    const relC = done ? T.emerald600 : (dd != null && dd < 0) || (worst && worst.ecart < 0) ? T.red600 : worst && worst.ecart < 5 ? T.amber600 : T.emerald600;
+    const gam = n.cfg.l + (n.r && n.r.gamme ? " · " + n.r.gamme : "");
+    const segs = n.slots.filter(x => !x.extra).flatMap(x => [[!!x.t, x.installee], [!!x.roueOk, x.installee], [!!x.inj, x.installee]]);
+    const tag = (txt, bg, fg, extra) => <span style={{ display: "inline-block", borderRadius: 4, padding: "0 6px", fontSize: 12, fontWeight: 600, lineHeight: "20px", background: bg, color: fg, whiteSpace: "nowrap", ...extra }}>{txt}</span>;
     return (
-              <article {...(canEdit ? dnd.dropProps("need:" + n.key, p => !!p && p.kind === "need" && p.key !== n.key, p => placeNeed(needs.find(x => x.key === p.key), n)) : {})} className={"enogia-nd-need" + (dnd.drag && dnd.drag.kind === "need" && dnd.drag.key === n.key ? " is-lifted" : "")} aria-label={"Besoin n° " + rk + ", " + (n.kind === "sav" ? "SAV " : "ORC ") + n.label} style={{ display: "flex", flexDirection: "column", gap: 4, padding: "6px 8px", borderRadius: 12, minWidth: 0, boxSizing: "border-box", background: bgC,
-              outline: dnd.over === "need:" + n.key ? "2px solid " + T.accentInk : "none", outlineOffset: 2,
-              boxShadow: "inset 0 0 0 " + (n.late || badI.length ? "1.5px " + T.red600 : "1px " + (done ? T.emerald600 : n.kind === "sav" ? "color-mix(in srgb, " + T.violet500 + " 45%, transparent)" : "color-mix(in srgb, " + T.info600 + " 22%, transparent)")) }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "4px 6px", flexWrap: "wrap", minWidth: 0, minHeight: 24 }}>
-                {canEdit && <span {...dnd.dragProps({ kind: "need", key: n.key }, { ghost: el => el.closest(".enogia-nd-need") })} className="enogia-nd-grip" role="button" tabIndex={0} aria-label={"Déplacer " + n.label + " (glisser, ou Alt + flèches haut / bas)"} title="Glisser pour changer l'ordre"
-                  onKeyDown={e => { if (e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) { e.preventDefault(); moveNeed(n, e.key === "ArrowUp" ? -1 : 1); } }}>{IC.grip}</span>}
-                {canEdit ? <button type="button" className="enogia-nd-rank" aria-haspopup="dialog" aria-expanded={!!(rankPick && rankPick.n.key === n.key)} aria-label={"Priorité n° " + rk + " de " + n.label + " : choisir sa place"} title="Choisir sa place dans la liste"
-                    onClick={e => setRankPick(rankPick && rankPick.n.key === n.key ? null : { n, r: e.currentTarget })}>{rk}</button>
-                  : <span style={{ fontSize: 12, fontWeight: 600, color: T.ink500, fontVariantNumeric: "tabular-nums", minWidth: 14, textAlign: "right" }} aria-label={"Priorité n° " + rk}>{rk}</span>}
-                <b style={{ fontFamily: T.fontMono, fontSize: 13, whiteSpace: "nowrap" }}>{n.label}</b>
-                {meta && <CountryFlag pays={meta.pays} size={13} />}
-                <span style={{ ...pill, background: T.card, color: n.kind === "sav" ? T.violet600 : T.ink700 }}>{n.kind === "sav" ? "SAV" : "ORC"}</span>
-                <span title={n.sub} style={{ flex: "1 1 80px", minWidth: 0, fontSize: 12, color: T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{n.sub}{meta && meta.pays && meta.pays !== "—" ? " · " + meta.pays : ""}</span>
-                {n.kind === "sav" && <span title={n.statut === "hypo" ? "Demande hypothétique : pas servie par « Remplir automatiquement », pas d'alerte de retard" : "Demande confirmée"} style={{ ...pill, background: n.statut === "hypo" ? "transparent" : T.emerald100, color: n.statut === "hypo" ? T.amber600 : T.emerald600, border: n.statut === "hypo" ? "1px dashed " + T.amber600 : "1px solid transparent" }}>{SAV_STATUTS[n.statut]}</span>}
-                {n.kind === "sav" && (n.pj || n.ticket || n.inter) && <span style={{ fontSize: 12, color: T.ink700, fontFamily: T.fontMono, whiteSpace: "nowrap" }}>{[n.pj, n.ticket, n.inter].filter(Boolean).join(" · ")}</span>}
-                {n.kind === "sav" && canEdit && <button type="button" onClick={() => setSav({ id: n.id, ...n.raw, injB: n.raw.injB == null ? "" : String(n.raw.injB) })} style={{ ...linkB, color: T.ink500, fontWeight: 500 }}>modifier</button>}
-                <span style={{ fontSize: 12, color: T.ink700, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>pour le <b>{fdS(n.date)}</b></span>
-                {canEdit && <button type="button" onClick={() => closeNeed(n)} title="Turbines installées : retirer ce besoin de la liste" aria-label={"Clore le besoin " + n.label} style={{ ...themeBtn(allDone(n) ? "sec" : "ghost", "sm"), minHeight: 26, padding: "0 8px", fontSize: 12 }}>Clore</button>}
-                {canEdit && <button type="button" aria-label={"Configuration des turbines de " + n.label + " (" + n.cfg.l + ")"} title={"Configuration : " + n.cfg.l} onClick={e => setPop({ n, kind: "cfg", el: e.currentTarget })} className="enogia-nd-rank" style={{ fontSize: 14 }}>⋯</button>}
-              </div>
+      <article {...(canEdit ? dnd.dropProps("need:" + n.key, p => !!p && p.kind === "need" && p.key !== n.key, p => placeNeed(needs.find(x => x.key === p.key), n)) : {})} className={"enogia-nd-need" + (dnd.drag && dnd.drag.kind === "need" && dnd.drag.key === n.key ? " is-lifted" : "")} aria-label={"Besoin n° " + rk + ", " + (n.kind === "sav" ? "SAV " : "ORC ") + n.label}
+        style={{ display: "flex", flexDirection: "column", borderRadius: 12, minWidth: 0, boxSizing: "border-box", background: T.card, border: "1px solid " + (n.late || badI.length ? T.red600 : T.line), boxShadow: "inset 4px 0 0 " + kindC, overflow: "hidden",
+          outline: dnd.over === "need:" + n.key ? "2px solid " + T.accentInk : "none", outlineOffset: 2 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 10px 6px 14px", minWidth: 0 }}>
+          {canEdit && <span {...dnd.dragProps({ kind: "need", key: n.key }, { ghost: el => el.closest(".enogia-nd-need") })} className="enogia-nd-grip" role="button" tabIndex={0} aria-label={"Déplacer " + n.label + " (glisser, ou Alt + flèches haut / bas)"} title="Glisser pour changer l'ordre"
+            onKeyDown={e => { if (e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) { e.preventDefault(); moveNeed(n, e.key === "ArrowUp" ? -1 : 1); } }}>{IC.grip}</span>}
+          {canEdit ? <button type="button" className="enogia-nd-rk" aria-haspopup="dialog" aria-expanded={!!(rankPick && rankPick.n.key === n.key)} aria-label={"Priorité n° " + rk + " de " + n.label + " : voir l'ordre et choisir sa place"} title="Ordre de priorité"
+              onClick={e => setRankPick(rankPick && rankPick.n.key === n.key ? null : { n, r: e.currentTarget })}>{rk}</button>
+            : <span className="enogia-nd-rk" aria-label={"Priorité n° " + rk}>{rk}</span>}
+          <button type="button" onClick={() => togC(n.key, def)} aria-expanded={isOpen} aria-label={(isOpen ? "Replier " : "Déplier ") + n.label}
+            style={{ flex: "1 1 auto", minWidth: 110, border: "none", background: "transparent", padding: 0, textAlign: "left", cursor: "pointer", color: T.ink900, fontFamily: T.font }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+              <b style={{ fontFamily: T.fontDisplay, fontSize: 15, fontWeight: 600, letterSpacing: "-.01em", whiteSpace: "nowrap" }}>{n.label}</b>
+              {meta && <CountryFlag pays={meta.pays} size={13} />}
+              <span style={{ minWidth: 0, fontSize: 13, color: T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{n.sub}</span></div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginTop: 3 }}>
+              {tag(n.kind === "sav" ? "SAV" : "ORC", n.kind === "sav" ? T.violet100 : T.info100, kindC)}
+              {n.kind === "sav" && tag(SAV_STATUTS[n.statut], n.statut === "hypo" ? "transparent" : T.emerald100, n.statut === "hypo" ? T.amber600 : T.emerald600, n.statut === "hypo" ? { border: "1px dashed " + T.amber600, lineHeight: "18px" } : null)}
+              <span title="Gamme de turbine" style={{ fontSize: 12, fontWeight: 600, color: T.ink900, background: T.surfaceAlt, border: "1px solid " + T.line, borderRadius: 999, padding: "0 8px", lineHeight: "20px", whiteSpace: "nowrap" }}>{gam}</span>
+              {n.kind === "sav" && (n.pj || n.ticket || n.inter) && <span style={{ fontSize: 12, color: T.ink500, fontFamily: T.fontMono, whiteSpace: "nowrap" }}>{[n.pj, n.ticket, n.inter].filter(Boolean).join(" · ")}</span>}
+            </div>
+          </button>
+          <div style={{ textAlign: "right", lineHeight: 1.15, flexShrink: 0 }}>
+            <div style={{ fontFamily: T.fontDisplay, fontSize: 18, fontWeight: 600, letterSpacing: "-.01em", color: T.ink900, fontVariantNumeric: "tabular-nums" }}>{n.date ? fdS(n.date) + "/" + n.date.slice(0, 4) : "—"}</div>
+            <div title={worst && worst.dispo ? (worst.t ? "Turbine disponible le " : "Prochaine turbine libre le ") + fdS(worst.dispo) + (worst.estimee ? " (estimée)" : "") : undefined} style={{ fontSize: 12, fontWeight: 500, color: relC, whiteSpace: "nowrap" }}>{done ? marg : rel}</div>
+            {!done && marg && <div style={{ fontSize: 12, color: worst && worst.ecart < 0 ? T.red600 : T.ink500, whiteSpace: "nowrap" }}>{marg}</div>}
+          </div>
+          <button type="button" onClick={() => togC(n.key, def)} aria-hidden="true" tabIndex={-1} className="enogia-nd-chev" data-open={isOpen ? "1" : "0"} style={{ width: 28, height: 28, border: "none", borderRadius: 8, background: "transparent", color: T.ink500, cursor: "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}><NavIcon name="chevronDown" size={16} /></button>
+        </div>
+        <div aria-label={G3 + " pièces sur " + T3} title={G3 + " / " + T3 + " pièces posées"} style={{ display: "flex", gap: 2, padding: "0 12px 10px 14px" }}>
+          {segs.map(([on, inst], i) => <i key={i} style={{ flex: 1, height: 5, borderRadius: 2, background: inst ? T.emerald600 : on ? T.info600 : T.line }} />)}
+        </div>
+        {isOpen && <div className="enogia-cl-in" style={{ borderTop: "1px solid " + T.line, padding: "8px 10px 10px 14px", display: "flex", flexDirection: "column", gap: 4 }}>
               {badI.length > 0 && <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>{badI.map((i, q) => <span key={q} style={{ fontSize: 12, fontWeight: 500, color: T.red600 }}>{i.t}</span>)}</div>}
               <div aria-hidden="true" style={{ display: "grid", gridTemplateColumns: (n.kind === "sav" ? "68px" : "14px") + " repeat(3, minmax(0, 1fr)) 28px", gap: 4, fontSize: 12, color: T.ink500, padding: "2px 0 0" }}><span>{n.kind === "sav" ? "ORC" : ""}</span><span>Turbine {n.cfg.g} kW</span><span>Roue</span><span>Injecteur</span><span /></div>
               {n.slots.map(x => {
@@ -377,19 +401,18 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName, savDoc }) 
                     {canEdit && x.t ? <button type="button" disabled={busy} onClick={() => install(n, x, full)} aria-pressed={!!x.installee} aria-label={(x.installee ? "Annuler l'installation de " : "Marquer installée : ") + (x.t.num || "la turbine")} title={x.installee ? "Installée le " + fdS(x.installee) + " · annuler l'installation" : "Marquer installée"}
                       style={{ width: 28, height: 28, borderRadius: 999, border: "1.5px solid " + (x.installee || full ? T.emerald600 : T.line), background: x.installee ? T.emerald600 : T.card, color: x.installee ? T.onFill : full ? T.emerald600 : T.ink500, display: "grid", placeItems: "center", cursor: "pointer", padding: 0 }}>{IC.ok}</button> : <span />}
                   </div>; })}
-              {(() => { // pied : marge (pire écart des turbines pas encore installées) et pièces posées
-                const open = n.slots.filter(x => !x.extra && !x.installee && x.ecart != null), worst = open.length ? open.reduce((p, q) => (q.ecart < p.ecart ? q : p)) : null, inst = n.slots.filter(x => !x.extra && x.installee).length;
-                const dispoT = worst && worst.dispo ? (worst.t ? "Turbine disponible le " : "Prochaine turbine libre le ") + fdS(worst.dispo) + (worst.estimee ? " (estimée)" : "") + ", besoin le " + fdS(n.date) : "";
-                return <div style={{ display: "flex", alignItems: "center", gap: 8, minHeight: 24, paddingTop: 2, fontSize: 12, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>
-                  {worst ? <span title={dispoT} style={{ ...pill, padding: "2px 8px", background: worst.ecart < 0 ? T.red100 : worst.ecart < 5 ? T.amber100 : T.emerald100 }}>{gapEl(worst)}</span>
-                    : inst ? <span style={{ ...pill, padding: "2px 8px", background: T.emerald100, color: T.emerald600, fontWeight: 600 }}>{inst === n.want ? "installée" + (n.want > 1 ? "s" : "") : inst + " / " + n.want + " installée" + (inst > 1 ? "s" : "")}</span>
-                    : <span>pas de date de turbine</span>}
-                  <span style={{ marginLeft: "auto" }}>{G3} / {T3} pièce{T3 > 1 ? "s" : ""}</span>
-                </div>; })()}
-            </article>);
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", paddingTop: 4, fontSize: 12, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>
+                <span>{G3} / {T3} pièce{T3 > 1 ? "s" : ""} posée{G3 > 1 ? "s" : ""}</span>
+                <span style={{ flex: 1 }} />
+                {n.kind === "sav" && canEdit && <button type="button" onClick={() => setSav({ id: n.id, ...n.raw, injB: n.raw.injB == null ? "" : String(n.raw.injB) })} style={{ ...themeBtn("ghost", "sm"), minHeight: 26 }}>Modifier la demande</button>}
+                {canEdit && <button type="button" aria-label={"Configuration des turbines de " + n.label + " (" + n.cfg.l + ")"} title={"Configuration : " + n.cfg.l} onClick={e => setPop({ n, kind: "cfg", el: e.currentTarget })} style={{ ...themeBtn("ghost", "sm"), minHeight: 26 }}>Configuration</button>}
+                {canEdit && <button type="button" onClick={() => closeNeed(n)} title="Turbines installées : retirer ce besoin de la liste" aria-label={"Clore le besoin " + n.label} style={{ ...themeBtn(done ? "sec" : "ghost", "sm"), minHeight: 26 }}>Clore</button>}
+              </div>
+        </div>}
+      </article>);
   };
   return (<div style={{ display: "flex", flexDirection: "column", gap: 10, "--nd-bg": T.card, "--nd-line": T.line, "--nd-mute": T.ink500, "--nd-ink": T.ink900, "--nd-alt": T.surfaceAlt, "--nd-font": T.font }}>
-    {rankPick && <RankPicker n={rankPick.n} at={rankPick.r} list={shownD.filter(x => monthOf(x.date) === monthOf(rankPick.n.date))} rankOf={rankOf} total={needs.length} onPlace={m => placeNeed(rankPick.n, m)} onRank={v => setRank(rankPick.n, v)} onClose={() => setRankPick(null)} />}
+    {rankPick && <RankPicker n={rankPick.n} at={rankPick.r} list={[...needs].sort((p, q) => rankOf.get(p.key) - rankOf.get(q.key))} rankOf={rankOf} onPlace={m => placeNeed(rankPick.n, m)} onClose={() => setRankPick(null)} />}
     <style>{NEEDS_CSS}</style>
     <div className="enogia-nd-app" style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden", display: "grid", gridTemplateColumns: "260px minmax(0,1fr)", height: "min(80vh, 940px)" }}>
       <aside className="enogia-nd-stock" data-open={drawer ? "1" : "0"} aria-label="Stock de la production turbines" style={{ background: T.surface, borderRight: "1px solid " + T.line, overflowY: "auto" }}>
