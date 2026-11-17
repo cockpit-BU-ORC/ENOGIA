@@ -790,3 +790,6 @@ tr[data-kbd]:active > td, tr[role="button"]:active > td, li[data-kbd]:active, li
 .e-sav-slot .e-sav-plus { opacity: .55; }
 .e-sav-slot:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
 @media (hover: hover) { .e-sav-slot:hover { background: color-mix(in srgb, currentColor 12%, transparent) !important; } .e-sav-slot:hover .e-sav-plus { opacity: 1; } }
+
+/* v378 : rubriques du menu repliables (au clic seulement) ; au téléphone, le menu est une barre d'icônes : tout reste visible */
+@media (min-width: 701px) { .enogia-nav .enogia-grp-closed { display: none !important; } }

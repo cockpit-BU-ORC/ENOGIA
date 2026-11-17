@@ -1146,4 +1146,8 @@ export const RELEASE_CATALOG = [
     ["Planning SAV des chefs de projet", "Une seule ligne : complet en bleu, de la place en pointillé, libre = proposer sa date."],
     ["Règle des créneaux SAV", "Ressources disponibles par jour et périodes particulières, réglées en direct par le responsable SAV."],
   ] },
+  { v: "378", t: "Menu — rubriques repliables au clic, plus lisibles, bouton « Apparence » nommé", items: [
+    ["Rubriques du menu repliables", "Clic sur Opérations, Gestion ou Administration ; la rubrique de la page ouverte se déplie seule."],
+    ["Bouton Apparence nommé", "Le bouton palette du menu affiche « Apparence »."],
+  ] },
 ];

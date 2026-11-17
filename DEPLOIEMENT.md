@@ -2756,3 +2756,11 @@ Demandé : « en tant que chef de projet, uniquement une ligne pour le SAV avec 
 - **Responsable SAV** : bouton « Règle des créneaux · N ressources » → `CapaPanel` (− / + enregistré après 0,35 s, « Revenir au nombre de techniciens », périodes particulières du / au / ressources, Retirer) ; sélecteur « Équipe / Vue chef de projet ».
 - Même document `planning/sav` (écrit par l'équipe SAV) : règles Firestore inchangées. Galerie : SAV · planning (réglage en mémoire), SAV · chef de projet.
 - Fichiers : src/savModel.js (+ test), src/components/SavPage.js, src/styles.css, src/demo/demoPages.js.
+
+## V378 — Menu : rubriques repliables au clic
+
+Demandé : « pouvoir déplier et replier dans le panneau à gauche les gros dossiers (police plus grosse) ; j'aimais bien le dépliage automatique et smooth mais pas un truc qui s'ouvre et se ferme quand je passe la souris dessus » + capture du bouton palette « il n'y a pas de texte ».
+
+- App.js : en-têtes de rubrique (`NAV_TREE`) = boutons 14 px demi-gras (`aria-expanded`, chevron qui tourne), clic seulement ; état replié gardé sur le poste (`enogia_nav_grp_closed`) ; la rubrique de la page ouverte se déplie seule quand on y arrive (`activeGrp`) ; contenu qui apparaît en fondu (`.enogia-cl-in`, 180 ms, coupé si réduire les animations), aussi pour les sous-pages ; pastille rouge de la rubrique repliée = somme des pastilles de ses pages. Au téléphone (barre d'icônes), rien n'est masqué.
+- ThemePicker : `withLabel` (icône + « Apparence », même style qu'« Écran atelier »), panneau ouvert à droite du menu large.
+- Clé localStorage : `enogia_nav_grp_closed`. Fichiers : src/App.js, src/components/ThemePicker.js, src/styles.css.

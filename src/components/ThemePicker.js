@@ -5,7 +5,8 @@ import { useDetailMode } from "../detailMode";
 
 // ── Choix du thème (v139) : bouton « palette » dans la barre latérale + petit panneau avec les 5 thèmes. ──
 // Le choix est mémorisé par personne et par poste (navigateur) ; il se combine avec le mode clair / sombre.
-export function ThemePicker({ ink, themeId, onPick, density = "comfortable", onDensity, presentation = false, onPresentation, darkMode = false, darkPref, onDarkMode }) {
+// v378 (« il n'y a pas de texte ») : withLabel = bouton du menu large, icône + « Apparence », comme « Écran atelier »
+export function ThemePicker({ withLabel, hoverBg, ink, themeId, onPick, density = "comfortable", onDensity, presentation = false, onPresentation, darkMode = false, darkPref, onDarkMode }) {
   const [open, setOpen] = useState(false);
   const [detailMode, setDetailMode] = useDetailMode();
   const ref = useRef(null);
@@ -17,10 +18,10 @@ export function ThemePicker({ ink, themeId, onPick, density = "comfortable", onD
     return () => document.removeEventListener("keydown", esc);
   }, [open]);
   const toggle = () => { if (!open) closeAllMenus(); setOpen(v => !v); }; // on ferme d'abord les autres menus
-  return (<div ref={ref} style={{ position: "relative", marginTop: 4 }}>
-    <button onClick={toggle} title="Apparence : thème, mode clair / sombre, densité, présentation" aria-label="Apparence : thème, mode clair ou sombre, densité, présentation" aria-expanded={open} aria-haspopup="dialog" style={{ width: 40, height: 36, borderRadius: 12, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", background: open ? T.teal100 : "transparent", color: open ? T.teal600 : (ink || T.ink300) }}><NavIcon name="palette" size={17} /></button>
+  return (<div ref={ref} style={{ position: "relative", marginTop: 4, width: withLabel ? "100%" : undefined }}>
+    <button onClick={toggle} title="Apparence : thème, mode clair / sombre, densité, présentation" aria-label="Apparence : thème, mode clair ou sombre, densité, présentation" aria-expanded={open} aria-haspopup="dialog" className={withLabel ? "enogia-nav-btn e-hov" : undefined} style={{ width: withLabel ? "100%" : 40, height: 36, borderRadius: 12, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: withLabel ? "flex-start" : "center", gap: 12, padding: withLabel ? "0 12px" : 0, fontFamily: T.font, fontSize: FZ.sm, fontWeight: 500, whiteSpace: "nowrap", background: open ? T.teal100 : "transparent", color: open ? T.teal600 : (ink || T.ink300), "--e-hov-bg": hoverBg }}><NavIcon name="palette" size={18} />{withLabel && <span className="enogia-nav-lab">Apparence</span>}</button>
     {open && <div aria-hidden="true" onMouseDown={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 10019 }} />}
-    {open && <div role="dialog" aria-label="Affichage" className="enogia-float-in enogia-theme-pop" style={{ position: "fixed", left: 72, bottom: 14, zIndex: 10020, width: 262, maxHeight: "calc(100dvh - 28px)", overflowY: "auto", background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, padding: "12px 12px 8px", fontFamily: T.font }}>
+    {open && <div role="dialog" aria-label="Affichage" className="enogia-float-in enogia-theme-pop" style={{ position: "fixed", left: withLabel ? 226 : 72, bottom: 14, zIndex: 10020, width: 262, maxHeight: "calc(100dvh - 28px)", overflowY: "auto", background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, padding: "12px 12px 8px", fontFamily: T.font }}>
       {onDarkMode && <>
         <div style={{ fontSize: FZ.sm, fontWeight: 600, marginBottom: 6 }}>Mode</div>
         <div role="radiogroup" aria-label="Mode clair ou sombre" style={{ display: "flex", gap: 4, background: T.surfaceAlt, borderRadius: 12, padding: 4, marginBottom: 12 }}>

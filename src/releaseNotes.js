@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v378",
+    date: "2026-11-17",
+    title: "V378 : Menu — rubriques repliables au clic, plus lisibles, bouton « Apparence » nommé",
+    items: [
+      { t: "Rubriques repliables", d: "Opérations, Gestion et Administration se replient et se déplient d'un clic sur leur nom, écrit plus grand. Rien ne s'ouvre ni ne se ferme au simple passage de la souris." },
+      { t: "Dépliage automatique", d: "En allant sur une page dont la rubrique est repliée, elle se rouvre d'elle-même, en douceur. Une rubrique repliée garde ses pastilles de nouveautés." },
+      { t: "Apparence", d: "Le bouton palette en bas du menu porte maintenant son nom : « Apparence »." },
+    ],
+  },
+  {
     id: "2026-11-v377",
     date: "2026-11-17",
     title: "V377 : SAV — une seule ligne pour les chefs de projet, créneaux réglés en direct par le responsable SAV",

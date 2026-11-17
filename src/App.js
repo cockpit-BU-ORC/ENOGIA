@@ -67,7 +67,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-17-v377-sav-creneaux";
+const APP_BUILD_VERSION = "2026-11-17-v378-menu-rubriques";
 
 const ReleasePopup = React.lazy(() => import("./components/ReleaseNotes").then(m => ({ default: m.ReleasePopup })));
 function Navigate0({ go }) { useEffect(() => { go(); }, []); return null; } // eslint-disable-line react-hooks/exhaustive-deps
@@ -1062,6 +1062,8 @@ export default function App(){
       ...(isOwner||calOk?[{id:"site",l:"Réglages",icon:"settings",on:mgrOn(["nouveautes","acces","vacances","production"]),go:goMgr(isOwner?"nouveautes":"vacances"),
         subs:[...(isOwner?[{id:"nouveautes",l:"Nouveautés",on:mgrOn(["nouveautes"]),go:goMgr("nouveautes")}]:[]),{id:"vacances",l:"Fermetures de l'atelier",on:mgrOn(["vacances","production"]),go:goMgr("vacances")},...(isOwner?[{id:"acces",l:"Version",on:mgrOn(["acces"]),go:goMgr("acces")}]:[])]}]:[])]},
   ].filter(g=>g.items.length);
+  const activeGrp=(NAV_TREE.find(g=>g.items.some(it=>it.on))||{}).g||"";
+  useEffect(()=>{if(activeGrp&&grpClosed.has(activeGrp)){setGrpAnim(a=>({...a,[activeGrp]:(a[activeGrp]||0)+1}));setGrpClosed(s0=>{const n=new Set(s0);n.delete(activeGrp);return n;});}},[activeGrp]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // v159 : menu principal libellé (réductible, mémorisé) + recherche « Aller à… » (Ctrl K) sur toutes les pages
   // v191 (demandé : « l'onglet à gauche doit se masquer automatiquement ») : menu réduit par défaut, il s'ouvre par-dessus la page au survol
@@ -1115,6 +1117,13 @@ export default function App(){
   // entrées sous la souris) ; les sous-pages s'ouvrent au clic sur le chevron (subsOpen), l'entrée active reste dépliée.
   const [subsOpen,setSubsOpen]=useState(()=>new Set()),navHoverT=useRef(0);
   const togSubs=id=>setSubsOpen(s0=>{const n=new Set(s0);if(n.has(id))n.delete(id);else n.add(id);return n;});
+  // v378 (demandé : « déplier et replier les gros dossiers du panneau de gauche, police plus grosse ; garder le dépliage automatique et smooth,
+  // mais pas un truc qui s'ouvre et se ferme au passage de la souris ») : rubriques repliables au clic seulement (gardé sur ce poste) ;
+  // la rubrique de la page ouverte se déplie d'elle-même (fondu 180 ms) quand on y arrive.
+  const [grpClosed,setGrpClosed0]=useState(()=>{try{return new Set(JSON.parse(localStorage.getItem("enogia_nav_grp_closed")||"[]"));}catch(e){return new Set();}});
+  const setGrpClosed=f=>setGrpClosed0(s0=>{const n=f(s0);try{localStorage.setItem("enogia_nav_grp_closed",JSON.stringify([...n]));}catch(e){}return n;});
+  const [grpAnim,setGrpAnim]=useState({});
+  const togGrp=g=>{setGrpAnim(a=>({...a,[g]:(a[g]||0)+1}));setGrpClosed(s0=>{const n=new Set(s0);if(n.has(g))n.delete(g);else n.add(g);return n;});};
   const navOverlay=!navPin;
   const navCompact=false; // dans l'espace Manager, un seul menu large : celui du Manager
   const [navPal,setNavPal]=useState(false);
@@ -1153,9 +1162,13 @@ export default function App(){
         {!navCompact&&<span style={{textAlign:"left",lineHeight:1.25}}><span style={{display:"block",fontFamily:T.fontDisplay,fontWeight:600,fontSize:14,letterSpacing:".02em",color:NAV.industrial?T.onFill:T.ink900}}>{SITE_NAME} <Hl color={NAV.industrial?NAV.mark:T.amber500} style={{fontWeight:600,whiteSpace:"nowrap"}}>{SITE_SCOPE}</Hl></span><span style={{display:"block",fontSize:12,color:NAV.ink,marginTop:2,whiteSpace:"normal"}}>{SITE_SUB}</span></span>}
         </span>
       </button>
-      {NAV_TREE.map(({g,items})=><React.Fragment key={g}>
-        {!navCompact&&<div className="enogia-nav-grp" style={{fontSize:12,fontWeight:500,color:NAV.group,fontFamily:T.font,padding:"12px 10px 4px",whiteSpace:"nowrap"}}>{g}</div>}
+      {NAV_TREE.map(({g,items})=>{const closed=grpClosed.has(g),badges=items.reduce((t,it)=>t+(it.badge||0),0);return <React.Fragment key={g}>
+        {!navCompact&&<button type="button" className="enogia-nav-grp e-hov" onClick={()=>togGrp(g)} aria-expanded={!closed} aria-controls={"enogia-grp-"+g} title={(closed?"Déplier":"Replier")+" « "+g+" »"}
+          style={{display:"flex",alignItems:"center",gap:8,width:"100%",minHeight:36,marginTop:8,padding:"0 10px",border:"none",borderRadius:8,background:"transparent",cursor:"pointer",fontFamily:T.font,fontSize:14,fontWeight:600,color:NAV.industrial?NAV.inkOn:T.ink900,textAlign:"left",whiteSpace:"nowrap","--e-hov-bg":NAV.hover}}>
+          <span style={{flex:1}}>{g}</span>{closed&&badges>0&&<span aria-label={badges+" nouveauté"+(badges>1?"s":"")} style={{minWidth:18,height:18,padding:"0 5px",borderRadius:999,background:T.red600,color:T.onFill,fontSize:12,fontWeight:600,lineHeight:"18px",textAlign:"center"}}>{badges}</span>}
+          <span aria-hidden="true" style={{display:"inline-flex",opacity:.7,transform:closed?"rotate(-90deg)":"none",transition:"transform var(--e-dur-menu) var(--e-ease)"}}><NavIcon name="chevronDown" size={14}/></span></button>}
         {navCompact&&<div className="enogia-nav-grp" style={{width:18,height:1,background:NAV.industrial?"rgba(255,255,255,.18)":T.line,margin:"4px 0"}}/>}
+        <div id={"enogia-grp-"+g} key={g+"-"+(grpAnim[g]||0)} role="group" aria-label={g} className={(closed?"enogia-grp-closed":"")+(grpAnim[g]?" enogia-cl-in":"")} style={{display:"flex",flexDirection:"column",gap:4}}>
         {items.map(it=>{const on=it.on,hasSubs=it.subs&&it.subs.length>1,showSubs=(on||subsOpen.has(it.id))&&hasSubs;return(<React.Fragment key={it.id}>
           <div style={{position:"relative"}}>
           <button className="enogia-nav-btn e-hov e-hov-ink" data-on={on?"1":"0"} onClick={()=>{if(coarse&&!on&&hasSubs&&!subsOpen.has(it.id)){togSubs(it.id);return;}it.go();setNavPeek(false);}} title={it.l} aria-label={it.badge?it.l+", "+it.badge+" nouvelle"+(it.badge>1?"s":"")+" mise"+(it.badge>1?"s":"")+" à jour":it.l} aria-current={on?"page":undefined}
@@ -1167,15 +1180,16 @@ export default function App(){
             <span style={{display:"inline-flex",transform:showSubs?"rotate(0deg)":"rotate(-90deg)",transition:"transform var(--e-dur-menu) var(--e-ease)"}}><NavIcon name="chevronDown" size={13}/></span></button>}
           {hasSubs&&!navCompact&&on&&<span aria-hidden="true" style={{position:"absolute",right:12,top:13,display:"inline-flex",opacity:.6,color:NAV.inkOn,pointerEvents:"none"}}><NavIcon name="chevronDown" size={13}/></span>}
           </div>
-          {showSubs&&<div role="group" aria-label={"Pages de "+it.l} className="enogia-nav-subs" style={{display:"flex",flexDirection:"column",margin:"0 0 4px 30px",paddingLeft:8,borderLeft:"1px solid "+(NAV.industrial?"rgba(255,255,255,.16)":T.line)}}>
+          {showSubs&&<div role="group" aria-label={"Pages de "+it.l} className="enogia-nav-subs enogia-cl-in" style={{display:"flex",flexDirection:"column",margin:"0 0 4px 30px",paddingLeft:8,borderLeft:"1px solid "+(NAV.industrial?"rgba(255,255,255,.16)":T.line)}}>
             {it.subs.map(sb=><button key={sb.id} type="button" className="enogia-nav-sub" onClick={()=>{sb.go();setNavPeek(false);}} aria-current={sb.on?"page":undefined}
               style={{border:"none",background:"transparent",textAlign:"left",cursor:"pointer",padding:"6px 8px",minHeight:30,borderRadius:8,fontFamily:T.font,fontSize:FZ.sm,fontWeight:sb.on?600:500,color:sb.on?NAV.inkOn:NAV.ink,whiteSpace:"nowrap"}}>{sb.l}</button>)}
           </div>}
         </React.Fragment>);})}
-      </React.Fragment>)}
+        </div>
+      </React.Fragment>;})}
       <div style={{flex:1}}/>
       <button className="enogia-nav-btn e-hov" onClick={()=>setScreenOpen(true)} title="Écran atelier : diaporama plein écran pour un téléviseur" aria-label="Écran atelier" style={{width:navCompact?40:"100%",height:36,borderRadius:12,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:navCompact?"center":"flex-start",gap:12,padding:navCompact?0:"0 12px",background:"transparent",color:NAV.ink,fontFamily:T.font,fontSize:FZ.sm,fontWeight:500,whiteSpace:"nowrap","--e-hov-bg":NAV.hover}}><NavIcon name="screen" size={18}/>{!navCompact&&<span className="enogia-nav-lab">Écran atelier</span>}</button>
-      <div style={{display:"flex",justifyContent:navCompact?"center":"flex-start",paddingLeft:navCompact?0:2}}><ThemePicker ink={NAV.industrial?NAV.ink:undefined} darkMode={darkMode} darkPref={darkPref} onDarkMode={setDarkMode} themeId={themeId} onPick={setThemeId} density={density} onDensity={setDensityState} presentation={presentation} onPresentation={setPresentation}/></div>
+      <div style={{display:"flex",justifyContent:navCompact?"center":"flex-start"}}><ThemePicker withLabel={!navCompact} hoverBg={NAV.hover} ink={NAV.industrial?NAV.ink:undefined} darkMode={darkMode} darkPref={darkPref} onDarkMode={setDarkMode} themeId={themeId} onPick={setThemeId} density={density} onDensity={setDensityState} presentation={presentation} onPresentation={setPresentation}/></div>
       <button type="button" className="enogia-nav-toggle" onClick={()=>{setNavPin(!navPin);setNavPeek(false);}} aria-pressed={navPin} title={navPin?"Masquer le menu au bord gauche":"Garder le menu ouvert"} style={{width:"100%",minHeight:32,marginTop:4,border:"1px solid "+(navPin?NAV.mark==="currentColor"?T.accent:NAV.mark:(NAV.industrial?"rgba(255,255,255,.18)":T.line)),background:navPin?(NAV.industrial?"rgba(244,211,94,.14)":T.accentSoft):(NAV.industrial?"transparent":T.card),borderRadius:8,display:"flex",justifyContent:"center",alignItems:"center",gap:8,color:navPin?NAV.inkOn:NAV.ink,cursor:"pointer",fontFamily:T.font,fontSize:FZ.xs,fontWeight:500}}><NavIcon name="pin" size={14}/>{navPin?"Détacher le menu":"Épingler le menu"}</button>
     </nav>
     </div>
