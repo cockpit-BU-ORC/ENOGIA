@@ -2801,3 +2801,13 @@ Demandé : « l'espace en haut de chaque page pourrait être réduit » ; maquet
 - ManagerPanel (Projets, Pilotage, Réglages…) et Gestion des accès : en-têtes faits à la main remplacés par `PageHead` (titre, phrase, sous-pages, boutons dans la barre).
 - Galerie : barre du haut identique (le titre y monte).
 - Fichiers : src/components/SharedUI.js, src/App.js, src/components/ManagerPanel.js, src/components/AccessPage.js, src/demo/DemoGallery.js.
+
+## V383 — Demande de turbines SAV refaite
+
+Demandé : « pouvoir mettre un nombre de turbines et dire sur quel PJ c'est associé ; hypothétique ou confirmée ; exemple PJ406 (3 ORC 180LT, 2 turbines par ORC), SAV406 demande 5 turbines sans savoir encore sur quelle machine : lier les turbines à un ORC ou laisser vide, à marquer par le SAV après l'intervention ; lier aux ticket et intervention SAV ; pouvoir revenir sur la demande ».
+
+- **Données** : `planning/prodTurbines.besoins[id] = { label, pj, scope: "one" | "multi", orcs, qty, gamme, alloc: [ORC | ""], statut: "hypo" | "conf", ticket, inter, roue, inj, injB, date, note }` — l'ancien format `{ cfg }` reste lu.
+- **Modèle** (turbineNeeds.js, testé) : `machinesOf(rows, pj)` (PJ406, PJ406-1…, pas PJ4061 ; turbines par ORC d'après la gamme), `proposeAlloc`, `savCfg`, `SAV_STATUTS` ; `buildNeeds` : besoin SAV avec `pj`, `statut`, `ticket`, `inter`, `slots[].machine` ; estimation des dates : les demandes confirmées d'abord ; `autoFill` ignore les hypothétiques.
+- **Fenêtre** (`SavDialog`, TurbinesHub.js) : statut, PJ (liste du planning), n° SAV, date, un ORC / plusieurs ORC (cases), nombre et turbine 100 / 20 kW, « Proposer la répartition », ORC de chaque turbine (« À préciser »), ticket et intervention SAV (listes du SAV, filtrées sur le PJ ; saisie libre sans accès au SAV), roue, injecteur, bouchages, note. Carte : pastille Hypothétique (pointillé) / Confirmée, PJ · ticket · intervention, colonne « ORC » de chaque turbine (« à préciser » en ambre).
+- **SAV** : `TurbLinks` dans le ticket et l'intervention (demandes liées : nombre, statut, ORC ou « N à lier »), « Ouvrir dans Turbines › Besoins ». Cloche : pas d'alerte de retard pour une demande hypothétique.
+- Même document `planning/prodTurbines` : règles Firestore inchangées. Fichiers : src/turbineNeeds.js (+ test), src/components/TurbinesHub.js, src/components/SavPage.js, src/App.js.

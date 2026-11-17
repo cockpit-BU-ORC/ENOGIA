@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v383",
+    date: "2026-11-17",
+    title: "V383 : Turbines › Besoins — nouvelle demande de turbines SAV (ORC, nombre, liaison, ticket, hypothétique ou confirmée)",
+    items: [
+      { t: "Demande de turbines SAV", d: "« ＋ Demande de turbines SAV » : le PJ, un ORC ou plusieurs ORC du même PJ, le nombre de turbines, puis l'ORC de chaque turbine (proposé automatiquement) ou « à préciser » si on ne le sait pas encore." },
+      { t: "Hypothétique ou confirmée", d: "Chaque demande est hypothétique ou confirmée, et se modifie à tout moment (« modifier » sur la carte), comme la liaison des turbines aux ORC après l'intervention. Une demande hypothétique n'est pas servie par « Remplir automatiquement » et ne déclenche pas d'alerte de retard." },
+      { t: "Lien avec le SAV", d: "La demande se lie à un ticket et à une intervention SAV ; le ticket et l'intervention affichent les turbines demandées." },
+    ],
+  },
+  {
     id: "2026-11-v382",
     date: "2026-11-17",
     title: "V382 : Le titre de chaque page monte dans la barre du haut",

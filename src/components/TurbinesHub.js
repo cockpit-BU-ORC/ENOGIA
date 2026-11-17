@@ -12,7 +12,7 @@ import { ProdTurbines } from "./ProdTurbines";
 import { usePointerDnD } from "../pointerDrag";
 import { NavIcon } from "./SharedUI";
 import { createPortal } from "react-dom";
-import { allTurbines, monthOf, swapNeedKeys, placeNeedKey, TURB_CFGS, cfgById, refsOf, buildNeeds, assignOps, unassignOps, installOps, allocOps, unallocOps, stockTiles, injInfo, maxBouches, autoFill, roueConflict, prodState, workDate, pjOfAffaire, closedNeeds } from "../turbineNeeds";
+import { allTurbines, monthOf, swapNeedKeys, placeNeedKey, TURB_CFGS, cfgById, machinesOf, proposeAlloc, SAV_STATUTS, refsOf, buildNeeds, assignOps, unassignOps, installOps, allocOps, unallocOps, stockTiles, injInfo, maxBouches, autoFill, roueConflict, prodState, workDate, pjOfAffaire, closedNeeds } from "../turbineNeeds";
 import { getPjMeta, CountryFlag } from "../pjMeta";
 import { askConfirm } from "../confirm";
 import { AF } from "../autoFocusOk";
@@ -22,29 +22,71 @@ export { prodState, workDate, pjOfAffaire };
 
 // v270 : fenêtre d'un besoin SAV (création / modification) — L hors du composant (sinon le champ perd le focus à chaque frappe)
 const L = ({ l, children }) => <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 12, color: T.ink500 }}>{l}{children}</label>;
-function SavDialog({ doc, init, onSave, onDelete, onClose }) {
-  const [v, setV] = useState(() => ({ label: "", cfg: "100", roue: "", inj: "", injB: "", date: "", note: "", ...(init || {}) }));
+// v383 (demandé : « revoir la demande de turbines SAV ») : statut hypothétique / confirmée, PJ, un ORC ou plusieurs du même PJ, nombre de turbines,
+// chaque turbine liée à un ORC ou « à préciser après l'intervention » (proposition automatique), ticket et intervention SAV liés. Rouvrable.
+const PJ_BASE = pj => String(pj || "").replace(/-\d+$/, "");
+function SavDialog({ doc, init, rows, sav, onSave, onDelete, onClose }) {
+  const [v, setV] = useState(() => { const i = init || {}, legacy = !i.qty && i.cfg ? cfgById(i.cfg) : null;
+    return { label: "", pj: "", scope: "one", orcs: [], qty: legacy ? legacy.n : 2, gamme: legacy ? legacy.g : "100", alloc: [], statut: "hypo", ticket: "", inter: "", roue: "", inj: "", injB: "", date: "", note: "", ...i, ...(legacy ? { qty: legacy.n, gamme: legacy.g } : {}) }; });
   useEffect(() => { const k = e => { if (e.key === "Escape") onClose(); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose]);
-  const g = (cfgById(v.cfg) || TURB_CFGS[1]).g, roues = refsOf(doc, "roues", g), injs = refsOf(doc, "injecteurs", g), ii = v.inj ? injInfo(doc, v.inj) : null, mx = ii ? maxBouches(ii.ouv) : 99;
-  const f = { minHeight: 32, borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, padding: "0 8px", width: "100%", boxSizing: "border-box" };
-  const btn = p => themeBtn(p ? "pri" : "sec", "md"); // v292 : bouton commun
+  const set = patch => setV(x => ({ ...x, ...patch }));
+  const pjs = useMemo(() => [...new Set((rows || []).filter(r => r && r.pj && r.etat !== "SLOT_LIBRE").map(r => PJ_BASE(r.pj)))].sort((p, q) => p.localeCompare(q, "fr", { numeric: true })), [rows]);
+  const M = machinesOf(rows, v.pj), chosen = v.scope === "one" ? M.filter(m => m.pj === (v.orcs || [])[0]) : M.filter(m => (v.orcs || []).includes(m.pj));
+  const qty = Math.max(1, Math.min(30, Math.round(+v.qty || 1))), alloc = Array.from({ length: qty }, (_, i) => (v.alloc || [])[i] || "");
+  const choosePj = pj => { const L = machinesOf(rows, pj), num = String(pj).replace(/\D/g, "");
+    set({ pj, orcs: L.length === 1 ? [L[0].pj] : [], scope: L.length > 1 ? v.scope : "one", gamme: L[0] ? L[0].g : v.gamme, label: v.label && !/^SAV\d*$/.test(v.label) ? v.label : (num ? "SAV" + num : v.label), alloc: [] }); };
+  const setOrcs = orcs => { const L = M.filter(m => orcs.includes(m.pj)), q = L.reduce((t, m) => t + (m.per || 1), 0) || qty; set({ orcs, qty: q, alloc: v.scope === "one" ? proposeAlloc(L, q) : alloc.map(x => (orcs.includes(x) ? x : "")) }); };
+  const g = v.gamme === "20" ? "20" : "100", roues = refsOf(doc, "roues", g), injs = refsOf(doc, "injecteurs", g), ii = v.inj ? injInfo(doc, v.inj) : null, mx = ii ? maxBouches(ii.ouv) : 99;
+  const tickets = Object.entries((sav && sav.tickets) || {}).filter(([, t]) => t && (!v.pj || PJ_BASE(t.pj) === PJ_BASE(v.pj))).sort((p, q) => q[0].localeCompare(p[0]));
+  const inters = Object.entries((sav && sav.inters) || {}).filter(([, i]) => i && (!v.pj || PJ_BASE(i.pj) === PJ_BASE(v.pj)) && (!v.ticket || !i.tk || i.tk === v.ticket)).sort((p, q) => q[0].localeCompare(p[0]));
+  const f = { minHeight: 34, borderRadius: 8, border: "1px solid " + T.fieldLine, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, padding: "0 8px", width: "100%", boxSizing: "border-box" };
+  const seg = (on, onClick, label, tone) => <button type="button" role="radio" aria-checked={on} onClick={onClick} style={{ flex: 1, minHeight: 34, borderRadius: 8, border: "1px solid " + (on ? (tone || T.ink900) : T.line), background: on ? (tone ? "color-mix(in srgb, " + tone + " 14%, " + T.card + ")" : T.surfaceAlt) : T.card, color: on ? (tone || T.ink900) : T.ink700, fontWeight: on ? 600 : 500, fontSize: FZ.sm, cursor: "pointer", fontFamily: T.font }}>{label}</button>;
+  const unknown = alloc.filter(x => !x).length;
+  const ok = v.label.trim() && v.pj;
   return (<div onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 10010, background: "rgba(10,20,30,.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-    <div role="dialog" aria-modal="true" aria-label={init ? "Besoin SAV " + (init.label || "") : "Nouveau besoin SAV"} style={{ background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, width: "min(520px,100%)", padding: "16px 18px", fontFamily: T.font, display: "flex", flexDirection: "column", gap: 10 }}>
-      <div style={{ fontFamily: T.fontDisplay, fontSize: FZ.lg, fontWeight: 600 }}>{init ? "Besoin SAV" : "Nouveau besoin SAV"}</div>
-      <L l="Client / n° SAV"><input autoFocus={AF} value={v.label} onChange={e => setV({ ...v, label: e.target.value })} placeholder="Par exemple : SAV411 - Client" style={f} /></L>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        <L l="Turbine"><select value={v.cfg} onChange={e => setV({ ...v, cfg: e.target.value })} style={f}>{TURB_CFGS.map(c => <option key={c.id} value={c.id}>{c.l}</option>)}</select></L>
-        <L l="Pour le"><input type="date" value={v.date} onChange={e => setV({ ...v, date: e.target.value })} style={f} /></L>
-        <L l="Roue"><select value={v.roue} onChange={e => setV({ ...v, roue: e.target.value })} style={f}><option value="">À choisir</option>{[...new Set([...roues, ...(v.roue ? [v.roue] : [])])].map(r => <option key={r} value={r}>{r}</option>)}</select></L>
-        <L l="Injecteur"><select value={v.inj} onChange={e => setV({ ...v, inj: e.target.value })} style={f}><option value="">À choisir</option>{[...new Set([...injs, ...(v.inj ? [v.inj] : [])])].map(r => <option key={r} value={r}>{r}</option>)}</select></L>
-        <L l={"Bouchages" + (ii && ii.ouv ? " (sur " + ii.ouv + " ouvertures)" : "")}><input type="number" min={0} max={mx} value={v.injB} onChange={e => setV({ ...v, injB: e.target.value === "" ? "" : String(Math.max(0, Math.min(mx, Math.round(+e.target.value || 0)))) })} placeholder="aucun" style={f} /></L>
+    <div role="dialog" aria-modal="true" aria-label={init && init.id ? "Demande de turbines " + (init.label || "") : "Nouvelle demande de turbines SAV"} style={{ background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, width: "min(640px,100%)", maxHeight: "calc(100dvh - 32px)", overflowY: "auto", padding: 18, display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ fontFamily: T.fontDisplay, fontSize: FZ.lg, fontWeight: 600 }}>{init && init.id ? "Demande de turbines · " + (init.label || "SAV") : "Nouvelle demande de turbines SAV"}</div>
+      <div role="radiogroup" aria-label="Statut de la demande" style={{ display: "flex", gap: 6 }}>{seg(v.statut === "hypo", () => set({ statut: "hypo" }), "Hypothétique", T.amber600)}{seg(v.statut === "conf", () => set({ statut: "conf" }), "Confirmée", T.emerald600)}</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
+        <L l="PJ concerné"><input list="enogia-sav-pjs" value={v.pj} onChange={e => choosePj(e.target.value.trim().toUpperCase())} placeholder="PJ406" autoFocus={AF} style={f} /><datalist id="enogia-sav-pjs">{pjs.map(p => <option key={p} value={p} />)}</datalist></L>
+        <L l="N° SAV / client"><input value={v.label} onChange={e => set({ label: e.target.value })} placeholder="SAV406" style={f} /></L>
+        <L l="Pour le"><input type="date" value={v.date} onChange={e => set({ date: e.target.value })} style={f} /></L>
       </div>
-      <L l="Note"><input value={v.note} onChange={e => setV({ ...v, note: e.target.value })} style={f} /></L>
+      {v.pj && <div style={{ display: "flex", flexDirection: "column", gap: 8, background: T.surfaceAlt, borderRadius: 8, padding: "10px 12px" }}>
+        <div role="radiogroup" aria-label="Pour un ORC ou plusieurs" style={{ display: "flex", gap: 6 }}>{seg(v.scope === "one", () => set({ scope: "one", orcs: (v.orcs || []).slice(0, 1) }), "Un ORC")}{seg(v.scope === "multi", () => set({ scope: "multi" }), "Plusieurs ORC de " + v.pj)}</div>
+        {M.length === 0 ? <div style={{ fontSize: 12, color: T.ink500 }}>Aucun ORC de {v.pj} dans le planning : les turbines resteront « à préciser ».</div>
+        : v.scope === "one" ? <L l="ORC"><select value={(v.orcs || [])[0] || ""} onChange={e => setOrcs(e.target.value ? [e.target.value] : [])} style={f}><option value="">À préciser après l'intervention</option>{M.map(m => <option key={m.pj} value={m.pj}>{m.pj}{m.gamme ? " · " + m.gamme : ""} · {m.per} turbine{m.per > 1 ? "s" : ""}</option>)}</select></L>
+        : <div role="group" aria-label="ORC concernés" style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>{M.map(m => { const on = (v.orcs || []).includes(m.pj); return <label key={m.pj} style={{ display: "inline-flex", alignItems: "center", gap: 6, minHeight: 32, padding: "0 10px", borderRadius: 8, border: "1px solid " + (on ? T.accentInk : T.line), background: on ? T.card : "transparent", fontSize: FZ.sm, cursor: "pointer" }}>
+            <input type="checkbox" checked={on} onChange={() => setOrcs(on ? v.orcs.filter(x => x !== m.pj) : [...(v.orcs || []), m.pj])} />{m.pj}<span style={{ fontSize: 12, color: T.ink500 }}>{m.per} t.</span></label>; })}</div>}
+        <div style={{ display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>
+          <L l="Nombre de turbines"><input type="number" min={1} max={30} value={v.qty} onChange={e => set({ qty: e.target.value })} style={{ ...f, width: 110 }} /></L>
+          <L l="Turbine"><select value={g} onChange={e => set({ gamme: e.target.value })} style={{ ...f, width: 130 }}><option value="100">100 kW</option><option value="20">20 kW</option></select></L>
+          {(v.scope === "multi" ? chosen.length > 0 : chosen.length === 1) && <button type="button" onClick={() => set({ alloc: proposeAlloc(chosen, qty) })} style={{ ...themeBtn("sec", "sm"), minHeight: 34 }}>Proposer la répartition</button>}
+        </div>
+        <div role="group" aria-label="ORC de chaque turbine" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: 6 }}>
+          {alloc.map((x, i) => <label key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: T.ink500 }}>T{i + 1}
+            <select value={x} onChange={e => { const A = alloc.slice(); A[i] = e.target.value; set({ alloc: A }); }} aria-label={"ORC de la turbine " + (i + 1)} style={{ ...f, minHeight: 30, color: x ? T.ink900 : T.ink500 }}><option value="">À préciser</option>{(chosen.length ? chosen : M).map(m => <option key={m.pj} value={m.pj}>{m.pj}</option>)}</select></label>)}
+        </div>
+        <div style={{ fontSize: 12, color: T.ink500 }}>{unknown ? unknown + " turbine" + (unknown > 1 ? "s" : "") + " à préciser : le SAV indiquera l'ORC après son intervention (« modifier » sur la carte)." : "Chaque turbine est liée à un ORC."}</div>
+      </div>}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
+        <L l="Ticket SAV lié">{sav ? <select value={v.ticket} onChange={e => set({ ticket: e.target.value, inter: "" })} style={f}><option value="">Aucun</option>{tickets.map(([id, t]) => <option key={id} value={id}>{id} · {t.pj}{t.det ? " · " + String(t.det).slice(0, 40) : ""}</option>)}{v.ticket && !tickets.some(([id]) => id === v.ticket) && <option value={v.ticket}>{v.ticket}</option>}</select>
+          : <input value={v.ticket} onChange={e => set({ ticket: e.target.value.trim() })} placeholder="TC-26-03" style={f} />}</L>
+        <L l="Intervention liée">{sav ? <select value={v.inter} onChange={e => set({ inter: e.target.value })} style={f}><option value="">Aucune</option>{inters.map(([id, i]) => <option key={id} value={id}>{id} · {i.pj}{i.a ? " · " + i.a.slice(8, 10) + "/" + i.a.slice(5, 7) : ""}</option>)}{v.inter && !inters.some(([id]) => id === v.inter) && <option value={v.inter}>{v.inter}</option>}</select>
+          : <input value={v.inter} onChange={e => set({ inter: e.target.value.trim() })} placeholder="INT-012" style={f} />}</L>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
+        <L l="Roue"><select value={v.roue} onChange={e => set({ roue: e.target.value })} style={f}><option value="">À choisir</option>{[...new Set([...roues, ...(v.roue ? [v.roue] : [])])].map(r => <option key={r} value={r}>{r}</option>)}</select></L>
+        <L l="Injecteur"><select value={v.inj} onChange={e => set({ inj: e.target.value })} style={f}><option value="">À choisir</option>{[...new Set([...injs, ...(v.inj ? [v.inj] : [])])].map(r => <option key={r} value={r}>{r}</option>)}</select></L>
+        <L l={"Bouchages" + (ii && ii.ouv ? " (sur " + ii.ouv + ")" : "")}><input type="number" min={0} max={mx} value={v.injB} onChange={e => set({ injB: e.target.value === "" ? "" : String(Math.max(0, Math.min(mx, Math.round(+e.target.value)))) })} style={f} /></L>
+      </div>
+      <L l="Note"><input value={v.note} onChange={e => set({ note: e.target.value })} style={f} /></L>
       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
-        {onDelete && <button type="button" style={{ ...btn(false), color: T.red600, marginRight: "auto" }} onClick={onDelete}>Supprimer</button>}
-        <button type="button" style={btn(false)} onClick={onClose}>Annuler</button>
-        <button type="button" style={btn(true)} disabled={!v.label.trim()} onClick={() => onSave({ ...v, label: v.label.trim() })}>Enregistrer</button>
+        {onDelete && <button type="button" style={{ ...themeBtn("dan", "md"), marginRight: "auto" }} onClick={onDelete}>Supprimer</button>}
+        <button type="button" style={themeBtn("sec", "md")} onClick={onClose}>Annuler</button>
+        <button type="button" style={themeBtn("pri", "md")} disabled={!ok} onClick={() => onSave({ ...v, label: v.label.trim(), qty, gamme: g, alloc, orcs: v.scope === "one" ? (v.orcs || []).slice(0, 1) : (v.orcs || []) })}>Enregistrer</button>
       </div>
+      {!ok && <div style={{ fontSize: 12, color: T.ink500, textAlign: "right" }}>Indiquez le PJ et le n° SAV</div>}
     </div>
   </div>);
 }
@@ -176,7 +218,7 @@ function Piece({ tone, icon, label, val, mono, detail, x }) {
 }
 // v350 (audit de performance) : défini hors du composant (sinon recréé et remonté à chaque rendu)
 const Sub = ({ t, n, children }) => <div style={{ display: "flex", flexDirection: "column", gap: 3 }}><div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 500, color: T.ink500, padding: "0 2px" }}><span>{t}</span><span style={{ fontVariantNumeric: "tabular-nums" }}>{n}</span></div>{children}</div>;
-function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
+function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName, savDoc }) {
   const [tick, setTick] = useState(0); // la fiche PJ (pjMetaOverrides) change sans changer rows : recalcul après une modification ici
   const { needs, free } = useMemo(() => buildNeeds(doc, rows, r => getPjMeta(r.pj, r)), [doc, rows, tick]); // eslint-disable-line react-hooks/exhaustive-deps
   const dnd = usePointerDnD();
@@ -223,8 +265,8 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
       for (const id of plan.turbs) { const t = ((docRef.current || {}).turbines || {})[id]; if (t) { const o = unassignOps(docRef.current, { id, num: t.num, raw: { ...t, id } }); for (const w of o.writes) await api.put(w.c, w.id, w.data); } }
       setMsg({ t: "Remplissage annulé : tout est revenu dans le stock." }); });
     return ok; };
-  const saveSav = async v => { const id = (sav && sav.id) || "s" + Date.now().toString(36); const data = { label: v.label, cfg: v.cfg, roue: v.roue, inj: v.inj, injB: v.injB === "" ? null : +v.injB, date: v.date, note: v.note, at: new Date().toISOString() };
-    if (await api.put("besoins", id, data)) { setSav(null); setMsg({ t: "Besoin SAV « " + v.label + " » enregistré." }); } };
+  const saveSav = async v => { const id = (sav && sav.id) || "s" + Date.now().toString(36); const data = { label: v.label, pj: v.pj, scope: v.scope, orcs: v.orcs || [], qty: v.qty, gamme: v.gamme, alloc: v.alloc || [], statut: v.statut, ticket: v.ticket || "", inter: v.inter || "", roue: v.roue, inj: v.inj, injB: v.injB === "" || v.injB == null ? null : +v.injB, date: v.date, note: v.note, at: new Date().toISOString(), by: authorName || "" };
+    if (await api.put("besoins", id, data)) { setSav(null); setMsg({ t: "Demande « " + v.label + " » enregistrée (" + v.qty + " turbine" + (v.qty > 1 ? "s" : "") + ", " + SAV_STATUTS[v.statut].toLowerCase() + ")." }); } };
   const delSav = async () => { if (!sav || !(await askConfirm({ title: "Supprimer le besoin SAV « " + sav.label + " » ?", message: "Turbines, roues et injecteurs attribués retournent dans le stock.", confirmLabel: "Supprimer le besoin", danger: true }))) return;
     const n = needs.find(x => x.key === "sav:" + sav.id); if (n) { for (const s of n.slots) { if (s.roue) await run(unallocOps(doc, s.roue)); if (s.inj) await run(unallocOps(doc, s.inj)); if (s.t) await run(unassignOps(doc, s.t)); } }
     await api.del("besoins", sav.id); setSav(null); };
@@ -308,20 +350,23 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
                 {meta && <CountryFlag pays={meta.pays} size={13} />}
                 <span style={{ ...pill, background: T.card, color: n.kind === "sav" ? T.violet600 : T.ink700 }}>{n.kind === "sav" ? "SAV" : "ORC"}</span>
                 <span title={n.sub} style={{ flex: "1 1 80px", minWidth: 0, fontSize: 12, color: T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{n.sub}{meta && meta.pays && meta.pays !== "—" ? " · " + meta.pays : ""}</span>
+                {n.kind === "sav" && <span title={n.statut === "hypo" ? "Demande hypothétique : pas servie par « Remplir automatiquement », pas d'alerte de retard" : "Demande confirmée"} style={{ ...pill, background: n.statut === "hypo" ? "transparent" : T.emerald100, color: n.statut === "hypo" ? T.amber600 : T.emerald600, border: n.statut === "hypo" ? "1px dashed " + T.amber600 : "1px solid transparent" }}>{SAV_STATUTS[n.statut]}</span>}
+                {n.kind === "sav" && (n.pj || n.ticket || n.inter) && <span style={{ fontSize: 12, color: T.ink700, fontFamily: T.fontMono, whiteSpace: "nowrap" }}>{[n.pj, n.ticket, n.inter].filter(Boolean).join(" · ")}</span>}
                 {n.kind === "sav" && canEdit && <button type="button" onClick={() => setSav({ id: n.id, ...n.raw, injB: n.raw.injB == null ? "" : String(n.raw.injB) })} style={{ ...linkB, color: T.ink500, fontWeight: 500 }}>modifier</button>}
                 <span style={{ fontSize: 12, color: T.ink700, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>pour le <b>{fdS(n.date)}</b></span>
                 {canEdit && <button type="button" onClick={() => closeNeed(n)} title="Turbines installées : retirer ce besoin de la liste" aria-label={"Clore le besoin " + n.label} style={{ ...themeBtn(allDone(n) ? "sec" : "ghost", "sm"), minHeight: 26, padding: "0 8px", fontSize: 12 }}>Clore</button>}
                 {canEdit && <button type="button" aria-label={"Configuration des turbines de " + n.label + " (" + n.cfg.l + ")"} title={"Configuration : " + n.cfg.l} onClick={e => setPop({ n, kind: "cfg", el: e.currentTarget })} className="enogia-nd-rank" style={{ fontSize: 14 }}>⋯</button>}
               </div>
               {badI.length > 0 && <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>{badI.map((i, q) => <span key={q} style={{ fontSize: 12, fontWeight: 500, color: T.red600 }}>{i.t}</span>)}</div>}
-              <div aria-hidden="true" style={{ display: "grid", gridTemplateColumns: "14px repeat(3, minmax(0, 1fr)) 28px", gap: 4, fontSize: 12, color: T.ink500, padding: "2px 0 0" }}><span /><span>Turbine {n.cfg.g} kW</span><span>Roue</span><span>Injecteur</span><span /></div>
+              <div aria-hidden="true" style={{ display: "grid", gridTemplateColumns: (n.kind === "sav" ? "68px" : "14px") + " repeat(3, minmax(0, 1fr)) 28px", gap: 4, fontSize: 12, color: T.ink500, padding: "2px 0 0" }}><span>{n.kind === "sav" ? "ORC" : ""}</span><span>Turbine {n.cfg.g} kW</span><span>Roue</span><span>Injecteur</span><span /></div>
               {n.slots.map(x => {
                 const rr = x.roue ? x.roue.ref : x.roueMontee, roueBad = !!(n.roue && rr && U2(rr) !== U2(n.roue)), injBad = !!(n.inj && x.inj && U2(x.inj.ref) !== U2(n.inj));
                 const full = !!(x.t && x.roueOk && x.inj), tT = x.installee ? TN.inst : TN.turbine;
                 const tDet = x.installee ? "installée le " + fdS(x.installee) : x.t ? (x.t.livree ? "sortie du stock" : x.t.sansRoue || (x.t.dispo && !x.t.roue) ? "sans roue" : x.t.dispo ? "prête" : x.t.end ? "fin " + fdS(x.t.end) : "sans date") : "";
                 const injDet = x.inj ? (x.inj.bouches == null ? (n.injB ? "vierge · " + n.injB + " à boucher" : "vierge") : x.inj.bouches + " bouchage" + (x.inj.bouches > 1 ? "s" : "") + (n.injB != null && +x.inj.bouches !== n.injB ? " (prévu " + n.injB + ")" : "")) : "";
-                return <div key={x.i} style={{ display: "grid", gridTemplateColumns: "14px repeat(3, minmax(0, 1fr)) 28px", gap: 4, alignItems: "center" }}>
-                    <span aria-hidden="true" style={{ fontSize: 12, fontWeight: 500, color: T.ink300, textAlign: "center" }}>{n.want > 1 || x.extra ? x.i + 1 : ""}</span>
+                return <div key={x.i} style={{ display: "grid", gridTemplateColumns: (n.kind === "sav" ? "68px" : "14px") + " repeat(3, minmax(0, 1fr)) 28px", gap: 4, alignItems: "center" }}>
+                    {n.kind === "sav" ? <span title={x.machine ? "Turbine pour " + x.machine : "ORC à préciser après l'intervention (« modifier »)"} style={{ fontSize: 12, fontWeight: 600, fontFamily: T.fontMono, color: x.machine ? T.ink700 : T.amber600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.machine || "à préciser"}</span>
+                      : <span aria-hidden="true" style={{ fontSize: 12, fontWeight: 500, color: T.ink300, textAlign: "center" }}>{n.want > 1 || x.extra ? x.i + 1 : ""}</span>}
                     <Sock ctx={ctx} n={n} s={x} kind="turbine" label={"Turbine " + n.cfg.g + " kW"} want={x.estNum} hint={x.estNum ? "prochaine libre" : ""} empty={x.estNum ? "" : "à glisser"} tone={x.t ? tT : null}>
                       {x.t && <Piece tone={tT} icon={x.installee ? IC.lock : IC.ok} label={x.installee ? "Turbine installée" : "Turbine allouée"} val={x.t.num || "sans n°"} mono detail={tDet} x={!x.installee && xBtn("Retirer " + (x.t.num || "la turbine"), () => outTurbine(x.t))} />}</Sock>
                     <Sock ctx={ctx} n={n} s={x} kind="roue" label={x.t && !x.roueOk ? "Roue à poser" : "Roue"} want={n.roue} hint={n.roue ? "prévue" : ""} tone={x.roueOk ? (roueBad ? TN.bad : TN.roue) : null}>
@@ -384,7 +429,7 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
           <span style={{ flex: 1 }} />
           {canEdit && <button type="button" disabled={busy} onClick={auto} title="Propose une affectation du stock (par date de besoin, pièces prévues), annulable" style={{ ...themeBtn("sec", "sm") }}>Remplir automatiquement</button>}
           {closedL.length > 0 && <button type="button" onClick={() => setClosedDlg(true)} style={{ ...themeBtn("ghost", "sm") }}>Besoins clos ({closedL.length})</button>}
-          {canEdit && <button type="button" onClick={() => setSav({})} style={{ ...themeBtn("pri", "sm") }}>＋ Besoin SAV</button>}
+          {canEdit && <button type="button" onClick={() => setSav({})} style={{ ...themeBtn("pri", "sm") }}>＋ Demande de turbines SAV</button>}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 310px), 1fr))", gap: 8, padding: "8px 12px 16px", alignItems: "start" }}>
           {shownD.map(n => { const mo = monthOf(n.date), head = mo !== lastMo; lastMo = mo;
@@ -425,7 +470,7 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName }) {
             <b style={{ minWidth: 28, textAlign: "center", fontVariantNumeric: "tabular-nums" }}>{n.injB || 0}</b>
             <button type="button" aria-label="Un bouchage de plus" disabled={(n.injB || 0) >= mx} onClick={() => setNeed(n, { turbInjB: Math.min(mx, (n.injB || 0) + 1) })} style={{ width: 32, height: 32, borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, cursor: "pointer" }}>+</button>
           </div></div>} />; })()}
-    {sav && <SavDialog doc={doc} init={sav.id ? sav : null} onSave={saveSav} onDelete={sav.id ? delSav : null} onClose={() => setSav(null)} />}
+    {sav && <SavDialog doc={doc} rows={rows} sav={savDoc} init={sav.id ? sav : null} onSave={saveSav} onDelete={sav.id ? delSav : null} onClose={() => setSav(null)} />}
     {closedDlg && <div onMouseDown={e => { if (e.target === e.currentTarget) setClosedDlg(false); }} style={{ position: "fixed", inset: 0, zIndex: 10010, background: "rgba(10,20,30,.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
       <div role="dialog" aria-modal="true" aria-label="Besoins clos" onKeyDown={e => { if (e.key === "Escape") setClosedDlg(false); }} style={{ background: T.card, color: T.ink900, border: "1px solid " + T.line, borderRadius: 12, boxShadow: T.shadowLg, width: "min(520px,100%)", maxHeight: "80dvh", overflowY: "auto", padding: "16px 18px", fontFamily: T.font, display: "flex", flexDirection: "column", gap: 10 }}>
         <div style={{ fontFamily: T.fontDisplay, fontSize: FZ.lg, fontWeight: 600 }}>Besoins clos ({closedL.length})</div>
@@ -504,7 +549,7 @@ function ImportDialog({ doc, api, onClose }) {
 }
 
 const TABS = [["prod", "Production"], ["orc", "Besoins ORC et SAV"]]; // identifiants gardés (clé enogia_turbines_tab)
-export function TurbinesHub({ doc, api, rows, canEdit, owner, savePjMeta, tab: tabP, onTab, allowTabs, authorName }) {
+export function TurbinesHub({ doc, api, rows, canEdit, owner, savePjMeta, tab: tabP, onTab, allowTabs, authorName, savDoc }) {
   const [tab0, setTab0] = useState(() => { try { const v = localStorage.getItem("enogia_turbines_tab"); return TABS.some(t => t[0] === v) ? v : "prod"; } catch (e) { return "prod"; } });
   const tab = tabP || tab0, setTab = onTab || setTab0; // v307 : sous-page choisie aussi depuis le menu (App)
   useEffect(() => { try { localStorage.setItem("enogia_turbines_tab", tab); } catch (e) { /* stockage indisponible */ } }, [tab]);
@@ -525,7 +570,7 @@ export function TurbinesHub({ doc, api, rows, canEdit, owner, savePjMeta, tab: t
       {/* v268 (demandé : « mettre à disposition le bouton importer à Jérémie ») : toute personne qui peut modifier la production (propriétaire + liste d’accès) */}
       {canEdit && tab === "prod" && <button type="button" onClick={() => setImp(true)} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink700, borderRadius: 8, padding: "4px 12px", minHeight: 30, fontSize: FZ.xs, fontWeight: 500, cursor: "pointer", fontFamily: T.font }}>Importer des données (JSON)</button>}
     </div>
-    {tab === "prod" ? <ProdTurbines doc={doc} api={api} canEdit={canEdit} owner={owner} pjs={pjs} /> : <NeedsView doc={doc} api={api} rows={rows} canEdit={canEdit} savePjMeta={savePjMeta} authorName={authorName} />}
+    {tab === "prod" ? <ProdTurbines doc={doc} api={api} canEdit={canEdit} owner={owner} pjs={pjs} /> : <NeedsView doc={doc} api={api} rows={rows} canEdit={canEdit} savePjMeta={savePjMeta} authorName={authorName} savDoc={savDoc} />}
     {imp && <ImportDialog doc={doc} api={api} onClose={() => setImp(false)} />}
   </div>);
 }

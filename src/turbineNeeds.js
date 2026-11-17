@@ -20,6 +20,31 @@ export const TURB_CFGS = [
   { id: "2x40", l: "2 × 40 kW", n: 2, g: "20" }, // les ORC 40 kW reçoivent des turbines de la ligne 20 kW
 ];
 export const cfgById = id => TURB_CFGS.find(c => c.id === id) || null;
+// v383 (demandé : « revoir la demande de turbines SAV : un ORC ou plusieurs du même PJ, le nombre de turbines, lier chaque turbine à un ORC
+// ou laisser vide (à marquer par le SAV après l'intervention), le ticket / l'intervention SAV liés, hypothétique ou confirmée, modifiable ») :
+// besoin SAV = planning/prodTurbines.besoins[id] = { label, pj, scope: "one" | "multi", orcs: [machines], qty, gamme, alloc: [machine | ""],
+// statut: "hypo" | "conf", ticket, inter, roue, inj, injB, date, note } (ancien format { cfg } encore lu).
+export const SAV_STATUTS = { hypo: "Hypothétique", conf: "Confirmée" };
+// ORC d'un PJ dans le planning : le PJ lui-même ou ses machines (PJ406-1, PJ406-2…), avec le nombre de turbines par ORC d'après la gamme
+export function machinesOf(rows, pj) {
+  const p = String(pj || "").trim().toUpperCase(); if (!p) return [];
+  const seen = new Set();
+  return (rows || []).filter(r => { const x = String((r && r.pj) || "").toUpperCase(); return x === p || (x.startsWith(p) && !/\d/.test(x.charAt(p.length))); })
+    .filter(r => !seen.has(r.pj) && seen.add(r.pj))
+    .map(r => { const c = cfgById(defaultCfg(r.gamme)); return { pj: r.pj, gamme: r.gamme || "", per: c ? c.n : 1, g: c ? c.g : "100" }; })
+    .sort((a, b) => a.pj.localeCompare(b.pj, "fr", { numeric: true }));
+}
+// Répartition proposée : chaque ORC choisi reçoit au plus ses turbines (2 pour une 180LT), dans l'ordre ; le reste « à préciser »
+export function proposeAlloc(machines, qty) {
+  const out = []; (machines || []).forEach(m => { for (let k = 0; k < (m.per || 1) && out.length < qty; k++) out.push(m.pj); });
+  while (out.length < qty) out.push(""); return out;
+}
+// Configuration d'un besoin SAV : le nombre de turbines demandé (nouveau format) ou l'ancienne configuration
+export function savCfg(b) {
+  const q = Math.max(0, Math.round(Number(b && b.qty) || 0));
+  if (q) { const g = (b && b.gamme) === "20" ? "20" : "100"; return { id: "sav", l: q + " × " + (g === "20" ? "20" : "100") + " kW", n: q, g }; }
+  return cfgById(b && b.cfg) || TURB_CFGS[1];
+}
 export function defaultCfg(gamme) {
   const n = turbinesNeeded(gamme); if (!n) return null;
   return n.type === "20LT" ? (n.n > 1 ? "2x40" : "20") : (n.n > 1 ? "2x100" : "100");
@@ -116,7 +141,7 @@ export function buildNeeds(doc, rows, metaOf, today = new Date()) {
   open.forEach(r => { if (clos[r.pj]) return; const m = (metaOf && metaOf(r)) || {}, cfg = pjCfg(m, r.gamme); if (!cfg) return;
     needs.push({ key: "pj:" + r.pj, kind: "pj", pj: r.pj, label: r.pj, sub: m.nomProjet && m.nomProjet !== "—" ? m.nomProjet : "", r, cfg, cfgSet: !!m.turbCfg, roue: m.turbRoue || "", inj: m.turbInj || "", injB: m.turbInjB == null ? null : +m.turbInjB, date: isoOf(r.arrivee) }); });
   Object.entries((doc && doc.besoins) || {}).forEach(([id, b]) => { if (!b || b.done) return;
-    needs.push({ key: "sav:" + id, kind: "sav", id, label: b.label || "SAV", sub: b.note || "", raw: b, cfg: cfgById(b.cfg) || TURB_CFGS[1], cfgSet: true, roue: b.roue || "", inj: b.inj || "", injB: b.injB == null || b.injB === "" ? null : +b.injB, date: isoOf(b.date) }); });
+    needs.push({ key: "sav:" + id, kind: "sav", id, label: b.label || "SAV", sub: b.note || "", raw: b, cfg: savCfg(b), cfgSet: true, pj: b.pj || "", statut: b.statut === "hypo" ? "hypo" : "conf", ticket: b.ticket || "", inter: b.inter || "", alloc: Array.isArray(b.alloc) ? b.alloc : [], roue: b.roue || "", inj: b.inj || "", injB: b.injB == null || b.injB === "" ? null : +b.injB, date: isoOf(b.date) }); });
   const keys = new Set(needs.map(n => n.key));
   const turbs = allTurbines(doc, today), by = {}, free = [];
   turbs.forEach(x => {
@@ -136,7 +161,7 @@ export function buildNeeds(doc, rows, metaOf, today = new Date()) {
       // v299 : installée (montée sur la machine, date) ; disponibilité de la turbine attribuée (prête = aujourd'hui, sinon fin prévue)
       const installee = t && t.raw && t.raw.installee ? String(t.raw.installee) : "";
       const dispo = !t || installee ? null : t.livree || t.dispo ? isoDay(today) : t.end || null;
-      slots.push({ i, t, roue, inj, roueMontee, roueOk: !!(roue || roueMontee), extra: i >= want, installee, dispo, estimee: false, estNum: "" });
+      slots.push({ i, t, roue, inj, roueMontee, roueOk: !!(roue || roueMontee), extra: i >= want, installee, dispo, estimee: false, estNum: "", machine: n.alloc ? n.alloc[i] || "" : "" });
     }
     if (want > got.length) issues.push({ bad: true, t: (want - got.length) + " turbine" + (want - got.length > 1 ? "s" : "") + " à attribuer" });
     slots.forEach(s => {
@@ -167,7 +192,7 @@ export function buildNeeds(doc, rows, metaOf, today = new Date()) {
   // v299 (demandé : « date estimative de mise à disposition de la turbine par rapport à notre besoin ») : emplacement vide =
   // prochaine turbine libre de la gamme (prête d'abord, puis la plus tôt finie), dans l'ordre des besoins ; écart = besoin − disponibilité.
   const pool = free.filter(x => !x.livree).sort((a, b) => (b.dispo - a.dispo) || String(a.end || "9").localeCompare(String(b.end || "9")));
-  needs.forEach(n => {
+  [...needs.filter(n => n.statut !== "hypo"), ...needs.filter(n => n.statut === "hypo")].forEach(n => { // v383 : hypothétiques après les confirmés
     n.slots.forEach(sl => {
       if (!sl.t && !sl.extra) { const k = pool.findIndex(x => x.gamme === n.cfg.g && !roueConflict(x, n));
         if (k >= 0) { const x = pool.splice(k, 1)[0]; sl.dispo = x.dispo ? isoDay(today) : x.end || null; sl.estNum = x.num || ""; }
@@ -267,7 +292,7 @@ export function autoFill(doc, needs, free, today = new Date(), newId) {
   const take = ops => { (ops.writes || []).forEach(w => { d = put(d, w); writes.set(w.c + "/" + w.id, w); }); };
   const pool = (free || []).filter(x => !x.livree).slice();
   const rank = (x, n) => (x.ready && n.roue && U(x.roue) === U(n.roue) ? 0 : x.ready ? 1 : x.sansRoue ? 2 : 3);
-  [...(needs || [])].forEach(n0 => { // v302 : dans l'ordre de priorité (buildNeeds : mois, ordre choisi, date)
+  [...(needs || [])].filter(n => n.statut !== "hypo").forEach(n0 => { // v302 : dans l'ordre de priorité ; v383 : pas les besoins hypothétiques
     const n = { ...n0, slots: n0.slots.map(s => ({ ...s })) };
     n.slots.forEach((s, i) => {
       if (s.extra) return;

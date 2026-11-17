@@ -1164,4 +1164,9 @@ export const RELEASE_CATALOG = [
   { v: "382", t: "Le titre de chaque page monte dans la barre du haut", items: [
     ["Titre dans la barre du haut", "Titre, sous-pages et trait de couleur de la page dans la barre : environ 90 px gagnés en haut de chaque page."],
   ] },
+  { v: "383", t: "Turbines › Besoins — nouvelle demande de turbines SAV (ORC, nombre, liaison, ticket, hypothétique ou confirmée)", items: [
+    ["Demande de turbines SAV", "Un ou plusieurs ORC du même PJ, nombre de turbines, ORC de chaque turbine ou à préciser."],
+    ["Hypothétique ou confirmée", "Statut modifiable ; les hypothétiques ne sont ni servies automatiquement ni signalées en retard."],
+    ["Turbines liées au SAV", "Ticket et intervention SAV liés à la demande, visibles des deux côtés."],
+  ] },
 ];

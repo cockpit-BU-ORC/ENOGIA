@@ -121,7 +121,7 @@ function Checks({ items, value, onChange, disabled }) {
       style={{ minHeight: 28, padding: "0 10px", borderRadius: 8, border: "1px solid " + (v ? "transparent" : T.line), background: v ? T.emerald100 : T.card, color: v ? T.emerald600 : T.ink700, fontSize: 12, fontWeight: 500, cursor: disabled ? "default" : "pointer", fontFamily: T.font }}>{v ? "✓ " : ""}{x}</button>; })}</div>;
 }
 
-export function SavPage({ doc, dem, api, demApi, rows, level = "r", canCost, me, myName, myPjs, team, sub: subP, onSub, allowSubs, onOpenPj, focusPj }) {
+export function SavPage({ turbReqs, onOpenTurb, doc, dem, api, demApi, rows, level = "r", canCost, me, myName, myPjs, team, sub: subP, onSub, allowSubs, onOpenPj, focusPj }) {
   const canEdit = level === "w" || level === "a", isAdmin = level === "a";
   const D = doc || {}, tickets = D.tickets || {}, inters = D.inters || {}, demandes = (dem && dem.items) || {};
   const techs = (Array.isArray(D.techs) && D.techs.length ? D.techs : team) || [];
@@ -180,9 +180,9 @@ export function SavPage({ doc, dem, api, demApi, rows, level = "r", canCost, me,
     {sub === "kpi" && <SavKpiView doc={D} techs={techs} canCost={canCost} nomOf={nomOf} />}
     {typesDlg && <TypesDialog types={fournTypesOf(D)} onClose={() => setTypesDlg(false)} onSave={async L => { if (await api.setField("fournTypes", L)) setTypesDlg(false); }} />}
 
-    {ticketDlg && <TicketDialog {...ticketDlg} {...{ pjList, nomOf, techs, canEdit, isAdmin, inters }} onClose={() => setTicketDlg(null)} onSave={saveTicket}
+    {ticketDlg && <TicketDialog {...ticketDlg} {...{ pjList, nomOf, techs, canEdit, isAdmin, inters, turbReqs, onOpenTurb }} onClose={() => setTicketDlg(null)} onSave={saveTicket}
       onDelete={async id => { if (await askConfirm({ title: "Supprimer le ticket " + id + " ?", message: "Ses interventions restent ; le ticket disparaît pour tout le monde.", confirmLabel: "Supprimer", danger: true })) { await api.del("tickets", id); setTicketDlg(null); } }} />}
-    {interDlg && <InterDialog {...interDlg} {...{ pjList, nomOf, techs, canEdit, isAdmin, canCost, tickets }} onClose={() => setInterDlg(null)} onSave={saveInter}
+    {interDlg && <InterDialog {...interDlg} {...{ pjList, nomOf, techs, canEdit, isAdmin, canCost, tickets, turbReqs, onOpenTurb }} onClose={() => setInterDlg(null)} onSave={saveInter}
       onDelete={async id => { if (await askConfirm({ title: "Supprimer l'intervention " + id + " ?", message: "Elle disparaît du planning et du ticket.", confirmLabel: "Supprimer", danger: true })) { await api.del("inters", id); setInterDlg(null); } }} />}
     {parcDlg && <ParcDialog {...parcDlg} canEdit={canEdit} fournTypes={fournTypesOf(D)} onClose={() => setParcDlg(null)} onSave={async (pj, p) => { if (await api.put("parc", pj, p)) setParcDlg(null); }} />}
     {demDlg && <DemandeDialog init={demDlg} pjs={(myPjs && myPjs.length ? myPjs : pjList)} nomOf={nomOf} onClose={() => setDemDlg(null)}
@@ -239,10 +239,27 @@ function TicketsView({ tickets, inters, canEdit, isAdmin, myName, nomOf, onEdit,
           </Panel> : <span />}
   </div>;
 }
-function TicketDialog({ id, t: t0, pjList, nomOf, techs, canEdit, isAdmin, onClose, onSave, onDelete }) {
+// v383 : demandes de turbines (Turbines › Besoins) liées à ce ticket ou à cette intervention — lecture ; la liaison des turbines aux ORC
+// se complète dans Turbines › Besoins (« modifier » sur la carte de la demande)
+function TurbLinks({ reqs, match, onOpen }) {
+  const L = Object.entries(reqs || {}).map(([id, r]) => ({ id, ...r })).filter(r => r && !r.done && match(r));
+  if (!L.length) return null;
+  return <div style={{ background: T.violet100, borderRadius: 8, padding: "8px 12px", display: "flex", flexDirection: "column", gap: 4 }}>
+    <div style={{ fontSize: 12, fontWeight: 600, color: T.violet600 }}>Turbines demandées</div>
+    {L.map(r => { const q = +r.qty || 0, al = Array.isArray(r.alloc) ? r.alloc.slice(0, q) : [], unk = q - al.filter(Boolean).length;
+      return <div key={r.id} style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", fontSize: FZ.sm, color: T.ink900 }}>
+        <b style={{ fontFamily: T.fontMono }}>{r.label}</b><span>{q || "?"} turbine{q > 1 ? "s" : ""}{r.pj ? " · " + r.pj : ""}</span>
+        <Pill tone={r.statut === "hypo" ? "warn" : "ok"}>{r.statut === "hypo" ? "Hypothétique" : "Confirmée"}</Pill>
+        {q > 0 && <span style={{ fontSize: 12, color: unk ? T.amber600 : T.ink500 }}>{unk ? unk + " à lier à un ORC" : [...new Set(al)].join(", ")}</span>}
+      </div>; })}
+    {onOpen && <div><Btn size="sm" onClick={onOpen}>Ouvrir dans Turbines › Besoins</Btn></div>}
+  </div>;
+}
+function TicketDialog({ id, t: t0, pjList, nomOf, techs, canEdit, isAdmin, onClose, onSave, onDelete, turbReqs, onOpenTurb }) {
   const [t, setT] = useState({ ...t0 }); const set = (k, v) => setT(x => ({ ...x, [k]: v }));
   const F = flowOf(t.type), ok = t.pj && t.det && t.det.trim();
   return <Modal title={id ? "Ticket " + id : "Nouveau ticket"} onClose={onClose} width={560}>
+    {id && <TurbLinks reqs={turbReqs} match={r => r.ticket === id} onOpen={onOpenTurb} />}
     {!id && <div style={{ fontSize: 12, color: T.ink500 }}>Le ticket décrit la demande. Les interventions sur site, leur préparation, leur clôture et leurs coûts s'ajoutent ensuite depuis le ticket.</div>}
     <div style={grid2}>
       <Field l="PJ"><PjInput id="sav-pj-t" value={t.pj} onChange={v => set("pj", v)} pjList={pjList} nomOf={nomOf} disabled={!canEdit} /></Field>
@@ -290,11 +307,12 @@ function IntersView({ inters, canCost, nomOf, onOpen }) {
           {canCost && <td style={tableTd({ num: true })}>{eur(interCost(i))}</td>}</tr>; })}</tbody></table></div>}
   </Panel>;
 }
-function InterDialog({ id, i: i0, pjList, nomOf, techs, canEdit, isAdmin, canCost, tickets, onClose, onSave, onDelete }) {
+function InterDialog({ id, i: i0, pjList, nomOf, techs, canEdit, isAdmin, canCost, tickets, onClose, onSave, onDelete, turbReqs, onOpenTurb }) {
   const [i, setI] = useState({ who: [], prep: [], clo: [], costs: {}, ...i0 }); const set = (k, v) => setI(x => ({ ...x, [k]: v }));
   const tkList = Object.keys(tickets).filter(t => !i.pj || tickets[t].pj === i.pj);
   const ok = i.pj && (i.obj || "").trim() && (!i.a || !i.b || i.a <= i.b);
   return <Modal title={id ? "Intervention " + id : "Nouvelle intervention sur site"} onClose={onClose} width={620}>
+    {id && <TurbLinks reqs={turbReqs} match={r => r.inter === id || (!r.inter && i.tk && r.ticket === i.tk)} onOpen={onOpenTurb} />}
     <div style={grid2}>
       {!i0.tk && <Field l="PJ"><PjInput id="sav-pj-i" value={i.pj} onChange={v => set("pj", v)} pjList={pjList} nomOf={nomOf} disabled={!canEdit} /></Field>}
       <Field l="Objectif" span><input value={i.obj || ""} onChange={e => set("obj", e.target.value)} disabled={!canEdit} style={inp()} /></Field>

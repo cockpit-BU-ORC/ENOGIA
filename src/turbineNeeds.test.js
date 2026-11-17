@@ -145,3 +145,23 @@ test("v334 : un PJ clos sort des besoins, ses turbines ne redeviennent pas libre
   expect(free.map(x => x.num).sort()).toEqual(["100N1", "20N1"]); // 100N2 (Affaire PJ1) n'est pas remise dans le stock
   expect(closedNeeds(d).map(c => c.key)).toEqual(["sav:s2", "pj:PJ1"]);
 });
+
+// v383 : demande de turbines SAV — ORC du PJ, nombre, répartition, hypothétique / confirmée
+test("v383 : ORC d'un PJ, répartition proposée, configuration", () => {
+  const { machinesOf, proposeAlloc, savCfg } = require("./turbineNeeds");
+  const rows = [{ pj: "PJ406-1", gamme: "180LTV3" }, { pj: "PJ406-2", gamme: "180LTV3" }, { pj: "PJ406-3", gamme: "180LTV3" }, { pj: "PJ4061", gamme: "180LTV3" }, { pj: "PJ407", gamme: "20LTV3" }];
+  const M = machinesOf(rows, "PJ406");
+  expect(M.map(m => m.pj)).toEqual(["PJ406-1", "PJ406-2", "PJ406-3"]); // PJ4061 n'est pas une machine de PJ406
+  expect(M[0].per).toBe(2);
+  expect(proposeAlloc(M, 5)).toEqual(["PJ406-1", "PJ406-1", "PJ406-2", "PJ406-2", "PJ406-3"]);
+  expect(proposeAlloc(M.slice(0, 1), 3)).toEqual(["PJ406-1", "PJ406-1", ""]);
+  expect(savCfg({ qty: 5, gamme: "100" })).toMatchObject({ n: 5, g: "100" });
+  expect(savCfg({ cfg: "2x100" }).n).toBe(2); // ancien format
+});
+test("v383 : besoin SAV dans les besoins (ORC de chaque turbine, statut, ticket)", () => {
+  const { buildNeeds } = require("./turbineNeeds");
+  const doc = { besoins: { s1: { label: "SAV406", pj: "PJ406", qty: 3, gamme: "100", alloc: ["PJ406-1", "", "PJ406-2"], statut: "hypo", ticket: "TC-26-03", inter: "INT-012", date: "2026-12-10" } } };
+  const n = buildNeeds(doc, [], () => ({}), new Date("2026-11-17T10:00:00")).needs.find(x => x.key === "sav:s1");
+  expect(n.want).toBe(3); expect(n.statut).toBe("hypo"); expect(n.ticket).toBe("TC-26-03");
+  expect(n.slots.map(s => s.machine)).toEqual(["PJ406-1", "", "PJ406-2"]);
+});
