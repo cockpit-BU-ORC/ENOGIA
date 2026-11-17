@@ -67,7 +67,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-17-v378-menu-rubriques";
+const APP_BUILD_VERSION = "2026-11-17-v379-sav-disponibilites";
 
 const ReleasePopup = React.lazy(() => import("./components/ReleaseNotes").then(m => ({ default: m.ReleasePopup })));
 function Navigate0({ go }) { useEffect(() => { go(); }, []); return null; } // eslint-disable-line react-hooks/exhaustive-deps
@@ -1006,7 +1006,7 @@ export default function App(){
     import("./components/GanttView");import("./components/CalendarView");}catch(e){}};
     id=window.requestIdleCallback?window.requestIdleCallback(run,{timeout:4000}):setTimeout(run,0);},2000);
     return()=>{clearTimeout(t);if(window.cancelIdleCallback&&id)window.cancelIdleCallback(id);};},[loggedIn,canProdTurb,canSeeTests,canSav]);
-  const savAllowed=["tickets","inters","planning","parc","kpi"].filter(s=>subOk("sav."+s));
+  const savAllowed=["tickets","inters","planning","dispo","parc","kpi"].filter(s=>subOk("sav."+s)&&(s!=="dispo"||savLvl==="w"||savLvl==="a"));
   const savTeam=useMemo(()=>Object.values((profiles&&profiles.byEmail)||{}).filter(p=>p&&!p.removed&&p.role==="sav").map(p=>p.name||String(p.email||"").split("@")[0]).filter(Boolean).sort(),[profiles]);
   // v342 (audit Web Interface Guidelines, lot 6) : page, sous-page et fiche ouverte dans l'adresse ; Précédent / Suivant du navigateur
   const urlSubs={manager:[managerTab,setManagerTab],tests:[testsSub,setTestsSub],turbines:[turbTab,setTurbTab],sav:[savSub,setSavSub],access:[accSub,setAccSub]};
@@ -1045,7 +1045,7 @@ export default function App(){
         subs:[["prod","Production"],["orc","Besoins ORC et SAV"]].filter(([id])=>turbAllowed.includes(id)).map(([id,l])=>({id,l,on:view==="turbines"&&turbTab===id,go:()=>{setTurbTab(id);setView("turbines");}}))}]:[]),
       ...(canAchats?[{id:"achats",l:"Achats / Appro",icon:"inbox",on:view==="achats",go:()=>setView("achats")}]:[]),
       ...(canSav&&savAllowed.length?[{id:"sav",l:"SAV / MES",icon:"wrench",on:view==="sav",go:()=>openSav(savAllowed.includes(savSub)?savSub:savAllowed[0]),
-        subs:[["tickets","Tickets"],["inters","Interventions"],["planning","Planning des équipes"],["parc","Parc"],["kpi","KPI"]].filter(([id])=>savAllowed.includes(id)).map(([id,l])=>({id,l,on:view==="sav"&&savSub===id,go:()=>openSav(id)}))}]:[]),
+        subs:[["tickets","Tickets"],["inters","Interventions"],["planning","Planning des équipes"],["dispo","Disponibilités"],["parc","Parc"],["kpi","KPI"]].filter(([id])=>savAllowed.includes(id)).map(([id,l])=>({id,l,on:view==="sav"&&savSub===id,go:()=>openSav(id)}))}]:[]),
       ...(comOk?[{id:"comments",l:"Commentaires",icon:"comments",on:view==="comments",go:()=>setView("comments")}]:[])]}, // v316 : Commentaires dans Opérations
     {g:"Gestion",items:[
       ...(projOk?[{id:"projets",l:"Projets",icon:"manager",on:mgrOn(["fiche","hebdo","serie","orc"]),go:goMgr(["fiche","hebdo","serie"].find(t=>!mgrHidden.includes(t))||"fiche"),

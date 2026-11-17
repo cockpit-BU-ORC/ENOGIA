@@ -2764,3 +2764,13 @@ Demandé : « pouvoir déplier et replier dans le panneau à gauche les gros dos
 - App.js : en-têtes de rubrique (`NAV_TREE`) = boutons 14 px demi-gras (`aria-expanded`, chevron qui tourne), clic seulement ; état replié gardé sur le poste (`enogia_nav_grp_closed`) ; la rubrique de la page ouverte se déplie seule quand on y arrive (`activeGrp`) ; contenu qui apparaît en fondu (`.enogia-cl-in`, 180 ms, coupé si réduire les animations), aussi pour les sous-pages ; pastille rouge de la rubrique repliée = somme des pastilles de ses pages. Au téléphone (barre d'icônes), rien n'est masqué.
 - ThemePicker : `withLabel` (icône + « Apparence », même style qu'« Écran atelier »), panneau ouvert à droite du menu large.
 - Clé localStorage : `enogia_nav_grp_closed`. Fichiers : src/App.js, src/components/ThemePicker.js, src/styles.css.
+
+## V379 — SAV : disponibilités de l'équipe
+
+Demandé : « le système de ressources n'est pas complètement opérationnel : dans l'équipe, sélectionner ou non les personnes et avoir leur calendrier pour indiquer leurs jours off et leurs congés (un onglet) ; pour la vue chef de projet, pas le nombre de places ; les pointillés = MES possible sous réserve du type, de l'emplacement et de ce qu'il y a à faire ».
+
+- **Données** : `planning/sav.dispo = { [nom]: { exclu, weekOff: [1–5], days: { AAAA-MM-JJ: "off" | "conge" } } }` — remplace la règle `capa` de la V377 (plus lue).
+- **Modèle** (savModel.js, testé) : `unavailableWhy`, `isAvailable`, `availTechs`, `setAbsence` (jours ouvrés d'une période) ; `slotDays(inters, techs, demandes, jours, dispo)` : capacité = personnes sélectionnées et disponibles ; occupé = personnes disponibles en intervention + interventions sans personne disponible + demandes en attente.
+- **Page** : sous-page « Disponibilités » (`DispoView`, équipe SAV seulement — Modifier / Admin ; jamais aux chefs de projet) : équipe (case « compte dans les ressources », jours off chaque semaine Lu–Ve, « ＋ Congés ou absence » du / au), calendrier 12 semaines (clic = off → congés → disponible, « • » = en intervention), ligne « Disponibles ». Planning (équipe) : jours d'absence rayés sur la ligne de chaque technicien ; bouton « Disponibilités · N aujourd'hui ». Vue chef de projet : « Complet » / « Possible sous réserve », sans nombre.
+- access.js : sous-page `sav.dispo` ; App : menu SAV › Disponibilités. Même document `planning/sav` : règles Firestore inchangées. Galerie : « SAV · disponibilités ».
+- Fichiers : src/savModel.js (+ test), src/components/SavPage.js, src/App.js, src/access.js, src/demo/demoPages.js.

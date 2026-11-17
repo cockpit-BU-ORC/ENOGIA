@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v379",
+    date: "2026-11-17",
+    title: "V379 : SAV — disponibilités de l'équipe (ressources, jours off, congés) ; « possible sous réserve » pour les chefs de projet",
+    items: [
+      { t: "Disponibilités", d: "Nouvel onglet SAV / MES › Disponibilités (équipe SAV) : cocher qui compte dans les ressources, ses jours off de chaque semaine, et poser des congés ou absences. Calendrier de 12 semaines : un clic sur un jour = jour off, puis congés, puis disponible." },
+      { t: "Capacité réelle", d: "Le planning des chefs de projet suit le nombre de personnes réellement disponibles chaque jour, mis à jour tout de suite." },
+      { t: "Chefs de projet", d: "Plus de nombre de places : bleu = complet, pointillé = intervention possible sous réserve du type, du lieu et de ce qu'il y a à faire, rien = libre." },
+    ],
+  },
+  {
     id: "2026-11-v378",
     date: "2026-11-17",
     title: "V378 : Menu — rubriques repliables au clic, plus lisibles, bouton « Apparence » nommé",

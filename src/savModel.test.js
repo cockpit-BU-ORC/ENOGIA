@@ -79,19 +79,25 @@ test("v332 : fournitures et commentaires d'étape", () => {
   expect(delStepNote(delStepNote(t, 1, 0), 1, 0).stepNotes[1]).toBeUndefined();
 });
 
-// v377 : règle des créneaux pour les chefs de projet (ressources disponibles réglées par le responsable SAV)
-test("v377 : capacité du jour — nombre de techniciens, réglage, période particulière", () => {
-  const { capacityOn } = require("./savModel");
-  expect(capacityOn(null, 3, "2026-11-20")).toBe(3);
-  expect(capacityOn({ n: 2 }, 3, "2026-11-20")).toBe(2);
-  expect(capacityOn({ n: 2, periods: [{ from: "2026-12-21", to: "2027-01-01", n: 0 }] }, 3, "2026-12-24")).toBe(0);
+// v379 : capacité = personnes de l'équipe sélectionnées et disponibles ce jour-là (jours off, congés)
+test("v379 : disponibilités — hors ressources, jour off chaque semaine, congés", () => {
+  const { isAvailable, unavailableWhy, setAbsence } = require("./savModel");
+  let D = { Léo: { exclu: true }, Sam: { weekOff: [3] } };
+  expect(isAvailable(D, "Léo", "2026-11-23")).toBe(false);
+  expect(unavailableWhy(D, "Sam", "2026-11-25")).toBe("jour off chaque semaine"); // mercredi
+  expect(isAvailable(D, "Sam", "2026-11-26")).toBe(true);
+  D = setAbsence(D, "Max", "2026-11-27", "2026-12-01", "conge");
+  expect(Object.keys(D.Max.days)).toEqual(["2026-11-27", "2026-11-30", "2026-12-01"]); // week-end sauté
+  expect(unavailableWhy(D, "Max", "2026-11-30")).toBe("Congés");
+  expect(setAbsence(D, "Max", "2026-11-30", "2026-11-30", "").Max.days["2026-11-30"]).toBeUndefined();
 });
-test("v377 : état des jours — complet, places possibles, libre", () => {
+test("v379 : état des jours d'après les personnes disponibles", () => {
   const { slotDays } = require("./savModel");
+  const techs = ["Léo", "Sam", "Max"], dispo = { Max: { exclu: true } };
   const inters = { a: { a: "2026-11-23", b: "2026-11-24", resp: "Léo", who: ["Sam"], st: "Planifiée" }, b: { a: "2026-11-25", b: "2026-11-25", resp: "", st: "À planifier" }, c: { a: "2026-11-26", b: "2026-11-26", st: "Annulée" } };
-  const pend = [{ date: "2026-11-25", days: 1 }];
-  const S = slotDays(inters, ["Léo", "Sam", "Max"], pend, ["2026-11-23", "2026-11-25", "2026-11-26"], { n: 2 });
-  expect(S.map(x => x.state)).toEqual(["full", "full", "free"]); // 2 techniciens sur 2 ; intervention à planifier + demande = 2 ; annulée ignorée
-  const S3 = slotDays(inters, ["Léo", "Sam", "Max"], [], ["2026-11-25"], null);
-  expect(S3[0]).toMatchObject({ cap: 3, used: 1, left: 2, state: "some" });
+  const S = slotDays(inters, techs, [{ date: "2026-11-26", days: 1 }], ["2026-11-23", "2026-11-25", "2026-11-26", "2026-11-27"], dispo);
+  expect(S.map(x => x.state)).toEqual(["full", "some", "some", "free"]); // Léo + Sam occupés ; 1 intervention sans personne ; 1 demande ; rien
+  expect(S[1]).toMatchObject({ cap: 2, used: 1, left: 1 });
+  const off = slotDays({}, techs, [], ["2026-11-27"], { Léo: { days: { "2026-11-27": "conge" } }, Sam: { days: { "2026-11-27": "off" } }, Max: { exclu: true } });
+  expect(off[0].state).toBe("full"); // personne de disponible
 });

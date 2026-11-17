@@ -189,23 +189,38 @@ export function addStepNote(t, step, text, by, at = new Date().toISOString()) {
 }
 export function delStepNote(t, step, k) { const n = { ...((t && t.stepNotes) || {}) }; n[step] = (n[step] || []).filter((_, j) => j !== k); if (!n[step].length) delete n[step]; return { ...t, stepNotes: n }; }
 
-// v377 (demandé : « en tant que chef de projet, une seule ligne pour le SAV : créneaux réservés en bleu (plus de MES possible), en
-// pointillé ceux où une intervention est encore possible suivant une règle du responsable SAV, rien = le CdP met sa date ; la règle est
-// liée au nombre de ressources disponibles, avec un réglage en direct »). Règle = planning/sav.capa = { n, periods: [{ id, from, to, n }] } :
-// n = ressources disponibles chaque jour (absent = nombre de techniciens) ; une période particulière (congés, salon…) la remplace.
-export function capacityOn(capa, techsN, d) {
-  const per = ((capa && capa.periods) || []).filter(p => p && p.from && p.to && p.from <= d && p.to >= d);
-  if (per.length) return Math.max(0, Math.min(...per.map(p => Number(p.n) || 0)));
-  return capa && capa.n != null && !isNaN(Number(capa.n)) ? Math.max(0, Number(capa.n)) : (techsN || 0);
+// v377 (demandé : « une seule ligne pour le chef de projet : réservé en bleu, possible en pointillé, libre = il met sa date ; règle liée au
+// nombre de ressources disponibles ») — v379 (demandé : « dans l'équipe, sélectionner ou non les personnes et avoir leur calendrier pour
+// indiquer leurs jours off et leurs congés ») : la capacité d'un jour = les personnes de l'équipe qui comptent dans les ressources et sont
+// disponibles ce jour-là. planning/sav.dispo = { [nom]: { exclu, weekOff: [jours 1–5], days: { AAAA-MM-JJ: "off" | "conge" } } }.
+export const DISPO_KINDS = { off: "Jour off", conge: "Congés" };
+export function unavailableWhy(dispo, name, d) {
+  const p = (dispo && dispo[name]) || {};
+  if (p.exclu) return "hors ressources";
+  if ((p.weekOff || []).includes(new Date(d + "T12:00:00").getDay())) return "jour off chaque semaine";
+  return p.days && p.days[d] ? DISPO_KINDS[p.days[d]] || "indisponible" : "";
 }
-// Occupation d'un jour : chaque intervention datée (hors annulée) prend autant de ressources que de techniciens (au moins 1) ;
-// chaque demande d'un chef de projet en attente en prend 1. État : full (plus de place), some (réservé mais encore de la place), free.
-export function slotDays(inters, techs, pend, days, capa) {
+export const isAvailable = (dispo, name, d) => !unavailableWhy(dispo, name, d);
+export const availTechs = (techs, dispo, d) => (techs || []).filter(t => isAvailable(dispo, t, d));
+// Pose (ou retire, kind vide) un type d'absence sur les jours ouvrés d'une période ; renvoie un nouveau dispo
+export function setAbsence(dispo, name, from, to, kind) {
+  const p = { ...((dispo && dispo[name]) || {}) }, days = { ...(p.days || {}) };
+  for (let d = from; d && d <= to; d = addD(d, 1)) { const w = new Date(d + "T12:00:00").getDay(); if (w === 0 || w === 6) continue; if (kind) days[d] = kind; else delete days[d]; }
+  return { ...(dispo || {}), [name]: { ...p, days } };
+}
+const addD = (d, n) => { const x = new Date(d + "T12:00:00"); x.setDate(x.getDate() + n); const p = v => String(v).padStart(2, "0"); return x.getFullYear() + "-" + p(x.getMonth() + 1) + "-" + p(x.getDate()); };
+// État d'un jour pour les chefs de projet : les personnes disponibles occupées par une intervention, les interventions sans personne
+// disponible (une ressource chacune) et les demandes en attente (une chacune) prennent la place. full = plus rien de libre ;
+// some = déjà des réservations mais encore de la place (« possible sous réserve ») ; free = rien de réservé.
+export function slotDays(inters, techs, pend, days, dispo) {
   const list = Object.values(inters || {}).filter(i => i && i.a && i.b && i.st !== "Annulée");
   const dems = (pend || []).map(p => { const L = workDaysFrom(p.date, Math.max(1, Number(p.days) || 1)); return { from: L[0], to: L[L.length - 1] }; });
   return days.map(d => {
-    const used = list.filter(i => i.a <= d && i.b >= d).reduce((s, i) => s + Math.max(1, interTeam(i).length), 0) + dems.filter(p => p.from <= d && p.to >= d).length;
-    const cap = capacityOn(capa, (techs || []).length, d), left = Math.max(0, cap - used);
+    const av = availTechs(techs, dispo, d), on = list.filter(i => i.a <= d && i.b >= d), busy = new Set();
+    let extra = 0;
+    on.forEach(i => { const t = interTeam(i).filter(x => av.includes(x)); if (t.length) t.forEach(x => busy.add(x)); else extra++; });
+    extra += dems.filter(p => p.from <= d && p.to >= d).length;
+    const cap = av.length, used = busy.size + extra, left = Math.max(0, cap - used);
     return { d, cap, used, left, state: cap <= 0 || used >= cap ? "full" : used > 0 ? "some" : "free" };
   });
 }

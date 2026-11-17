@@ -26,7 +26,7 @@ export const ACCESS_PAGES = [
     subs: [["prod", "Production"], ["orc", "Besoins ORC et SAV"]] },
   { id: "achats", g: "Opérations", l: "Achats / Appro", d: "projets, PO, fournisseurs", adm: "réglages, synchronisation Odoo" },
   { id: "sav", g: "Opérations", l: "SAV / MES", d: "tickets, interventions, planning des équipes, parc ; en lecture : demander une intervention", adm: "techniciens de l'équipe, suppressions",
-    subs: [["tickets", "Tickets"], ["inters", "Interventions"], ["planning", "Planning des équipes"], ["parc", "Parc"], ["kpi", "KPI"]] },
+    subs: [["tickets", "Tickets"], ["inters", "Interventions"], ["planning", "Planning des équipes"], ["dispo", "Disponibilités"], ["parc", "Parc"], ["kpi", "KPI"]] },
   { id: "projets", g: "Gestion", l: "Projets", d: "fiches projet, point hebdo, machines", adm: "gérer les états, machines ORC",
     subs: [["fiche", "Fiches projet"], ["hebdo", "Point hebdo"], ["serie", "Machines ORC"]] },
   { id: "finance", g: "Gestion", l: "Finance", d: "Cash in, montants", adm: "" },

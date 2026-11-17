@@ -1150,4 +1150,8 @@ export const RELEASE_CATALOG = [
     ["Rubriques du menu repliables", "Clic sur Opérations, Gestion ou Administration ; la rubrique de la page ouverte se déplie seule."],
     ["Bouton Apparence nommé", "Le bouton palette du menu affiche « Apparence »."],
   ] },
+  { v: "379", t: "SAV — disponibilités de l'équipe (ressources, jours off, congés) ; « possible sous réserve » pour les chefs de projet", items: [
+    ["Disponibilités de l'équipe SAV", "Ressources sélectionnées, jours off chaque semaine, congés : calendrier de 12 semaines."],
+    ["Planning SAV des chefs de projet", "Complet, possible sous réserve, libre — sans nombre de places."],
+  ] },
 ];
