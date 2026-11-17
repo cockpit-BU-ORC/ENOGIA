@@ -61,6 +61,6 @@ test("v374 : destinataires et montants", () => {
   expect(fmtK(1024000)).toBe("1,02 M€"); expect(fmtK(436200)).toBe("436 k€"); expect(fmtS(-614000)).toBe("−614 k€"); expect(fmtS(0)).toBe("0 €");
 });
 test("v374 : les copies pour la fonction serveur sont à jour (node scripts/sync-functions.js)", () => {
-  const fs = require("fs"), path = require("path"), { FILES, OUT, build } = require("../scripts/sync-functions.js");
-  FILES.forEach(f => { const p = path.join(OUT, f + ".mjs"); expect(fs.existsSync(p)).toBe(true); expect(fs.readFileSync(p, "utf8")).toBe(build(f)); });
+  const fs = require("fs"), path = require("path"), { FILES, OUT, build, lf } = require("../scripts/sync-functions.js");
+  FILES.forEach(f => { const p = path.join(OUT, f + ".mjs"); expect(fs.existsSync(p)).toBe(true); expect(lf(fs.readFileSync(p, "utf8"))).toBe(build(f)); });
 });
