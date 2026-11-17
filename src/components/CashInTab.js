@@ -9,18 +9,19 @@ import { todayISO, anchorShifts } from "../cashinLink";
 import { applyEdit } from "../cashinModel";
 import { CashAnchorsDialog } from "./CashAnchors";
 import { CashInEncaissements } from "./CashInEncaissements";
+import { CashInWeekly } from "./CashInWeekly";
 import { Segmented } from "./SharedUI";
 import { useCashin } from "../useCashin";
 import { CASHIN_DOC_REF, CASHIN_PAGE_VERSION, CASHIN_MAX_BYTES, cashinTheme, validateCashin, CASHIN_PRODUIT_REF, produitItems } from "../cashinData";
 
 const btn = (primary) => ({ padding: "6px 12px", borderRadius: 8, border: "1px solid " + (primary ? T.teal600 : T.line), background: primary ? T.teal600 : T.card, color: primary ? T.card : T.ink900, fontSize: FZ.sm, fontWeight: 600, cursor: "pointer" });
 
-export function CashInTab({ authorName, focus, planRows, sub = "table", onSub, canEdit }) {
+export function CashInTab({ authorName, focus, planRows, sub = "table", onSub, canEdit, canWeekly, me }) {
   // v257 (demandé : « enlever le Cash in du site ») : le format artefact est le seul Cash in.
   // v369 : sous-page « Encaissements » (saisie des paiements reçus par le DAF) à côté du tableau complet
   return (<div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-    {onSub && <div><Segmented label="Vue du Cash in" value={sub} onChange={onSub} options={[["table", "Tableau complet"], ["enc", "Encaissements"]]} /></div>}
-    {sub === "enc" ? <CashInEncaissements authorName={authorName} canEdit={canEdit} /> : <CashInLegacy authorName={authorName} focus={focus} planRows={planRows} />}
+    {onSub && <div><Segmented label="Vue du Cash in" value={sub} onChange={onSub} options={[["table", "Tableau complet"], ["enc", "Encaissements"], ...(canWeekly ? [["lundi", "Fiche du lundi"]] : [])]} /></div>}
+    {sub === "lundi" && canWeekly ? <CashInWeekly me={me} canEdit={canWeekly} appUrl={window.location.origin + window.location.pathname + "?p=cashin"} /> : sub === "enc" ? <CashInEncaissements authorName={authorName} canEdit={canEdit} /> : <CashInLegacy authorName={authorName} focus={focus} planRows={planRows} />}
   </div>);
 }
 function CashInLegacy({ authorName, focus, planRows }) {

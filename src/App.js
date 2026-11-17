@@ -67,7 +67,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-16-v373-besoins-ordre";
+const APP_BUILD_VERSION = "2026-11-17-v374-fiche-lundi";
 
 const ReleasePopup = React.lazy(() => import("./components/ReleaseNotes").then(m => ({ default: m.ReleasePopup })));
 function Navigate0({ go }) { useEffect(() => { go(); }, []); return null; } // eslint-disable-line react-hooks/exhaustive-deps
@@ -266,7 +266,9 @@ export default function App(){
   const canCash=accMe?accAt("finance","r"):(isOwner||(CASH_FOR_ADMINS&&pinOk));
   // v369 : Cash in › Encaissements — saisie des paiements reçus (DAF) : Modifier sur Finance, sinon les droits d'avant ; sous-page gardée sur ce poste
   const cashEdit=accMe?accAt("finance","w"):(isOwner||(CASH_FOR_ADMINS&&pinOk));
-  const [cashSub,setCashSub0]=useState(()=>{try{return localStorage.getItem("enogia_cash_sub")==="enc"?"enc":"table";}catch(e){return "table";}});
+  // v374 : Cash in › Fiche du lundi (destinataires, envoi) : Admin sur Finance, sinon les droits d'avant
+  const cashAdmin=accMe?accAt("finance","a"):(isOwner||(CASH_FOR_ADMINS&&pinOk));
+  const [cashSub,setCashSub0]=useState(()=>{try{const v=localStorage.getItem("enogia_cash_sub");return v==="enc"||v==="lundi"?v:"table";}catch(e){return "table";}});
   const setCashSub=v=>{setCashSub0(v);try{localStorage.setItem("enogia_cash_sub",v);}catch(e){}};
   setSuperAdmin(canEditMeta); // pose le rôle avant que les composants ne le lisent (src/roles.js)
   const [progress,setProgress]=useState({});
@@ -1281,7 +1283,7 @@ export default function App(){
             {/* v204 (demandé : « un onglet uniquement pour moi, sous Tests ») : le module de planification (src/planner), brouillon séparé du planning ;
                 « Publier » seul modifie le planning lu par tous. Liens entre PJ, dates imposées, une production / un banc à la fois, charge par semaine. */}
             {view==="access"&&isOwner&&<AccessPage sub={accSub} onSub={setAccSub} onPeople={goMgr("personnes")} profiles={profiles} saveProfiles={saveProfiles} accessDoc={accessDoc} saveAccess={saveAccess} people={peopleAll} ownerEmails={OWNER_EMAILS}/>}
-            {view==="cashin"&&canCash&&<CashInTab authorName={authorName} focus={cashFocusApp} planRows={dataWithOverrides} sub={cashSub} onSub={setCashSub} canEdit={cashEdit}/>}
+            {view==="cashin"&&canCash&&<CashInTab authorName={authorName} focus={cashFocusApp} planRows={dataWithOverrides} sub={cashSub==="lundi"&&!cashAdmin?"table":cashSub} onSub={setCashSub} canEdit={cashEdit} canWeekly={cashAdmin} me={{email:currentUser&&currentUser.email,name:authorName}}/>}
             {view==="sav"&&canSav&&<PageGuard name="SAV / MES"><SavPage doc={savDoc} dem={demDoc} api={savApi} demApi={demApi} rows={dataWithOverrides} level={savLvl} canCost={savCost} me={currentUser&&currentUser.email} myName={authorName} myPjs={myPjList} team={savTeam} sub={savSub} onSub={setSavSub} allowSubs={savAllowed} onOpenPj={pj=>{setCalDay(null);setCalTab("resume");setCalSel(pj);}} focusPj={savFocus}/></PageGuard>}
             {view==="achats"&&canAchats&&<PageGuard name="Achats / Appro"><Achats doc={achatsDoc} api={achatsApi} rows={dataWithOverrides.map(r=>({pj:r.pj,nomProjet:getPjMeta(r.pj,r).nomProjet||"",gamme:r.gamme||"",etat:r.etat,arrivee:r.arrivee||null,depart:r.depart||null}))} canEdit={achEdit} owner={isOwner}/></PageGuard>}
             {/* v267 (demandé : « un seul onglet Turbines ») : production (seule saisie) + besoins des ORC (calculés) ; l'ancien pool n'est plus affiché */}

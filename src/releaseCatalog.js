@@ -1130,4 +1130,8 @@ export const RELEASE_CATALOG = [
     ["Glisser une carte de besoin", "Poignée ⋮⋮ sur chaque carte de Turbines › Besoins, Alt + flèches au clavier."],
     ["Choisir la place d'un besoin", "Le numéro ouvre la liste du mois ; « Rang global » pour un autre mois."],
   ] },
+  { v: "374", t: "Cash in — la fiche du lundi part du site : l'année, le mois en cours, le mois qui arrive", items: [
+    ["Fiche du lundi du Cash in", "Envoyée par le site chaque lundi à 7 h, avec un PDF : année, mois en cours, mois qui arrive."],
+    ["Réglages de l'envoi", "Destinataires, test, envoi immédiat annulable et historique dans Cash in › Fiche du lundi."],
+  ] },
 ];

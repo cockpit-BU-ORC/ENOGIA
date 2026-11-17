@@ -87,3 +87,32 @@ ODOO_ALLOWED_HOSTS=erp.enogia.com
 ```
 
 puis redéployer les fonctions (`firebase deploy --only functions`). Plusieurs domaines : séparés par des virgules.
+
+## Fiche du lundi du Cash in (v374)
+
+Le site envoie lui-même la synthèse du Cash in, chaque lundi à 7 h (heure de Paris), par mail avec un PDF de 3 pages
+(l'année, le mois en cours avec les retards, le mois qui arrive). L'artefact « Cash in PJ » n'est plus utilisé pour cet envoi.
+Réglages dans le Cockpit : Cash in › Fiche du lundi (destinataires, envoi automatique, test, envoi immédiat, historique).
+
+Fonctions : `cashWeeklyLundi` (lundi 7 h, production seulement, si « Envoi automatique » est coché),
+`cashWeeklyDemandeProd` / `cashWeeklyDemandeBeta` (boutons « M'envoyer un test » et « Envoyer maintenant »).
+
+### Une seule fois
+
+1. **Compte d'envoi** : une adresse Google Workspace d'ENOGIA (par exemple une adresse dédiée au Cockpit) avec la validation en deux étapes activée.
+   Dans ce compte : Gestion du compte Google › Sécurité › **Mots de passe des applications** › créer un mot de passe (16 caractères).
+   Si l'option n'apparaît pas, l'administrateur Google Workspace doit l'autoriser pour ce compte.
+2. **Secrets** (jamais dans le dépôt ni dans Firestore) :
+   ```
+   firebase functions:secrets:set MAIL_USER     (l'adresse d'envoi)
+   firebase functions:secrets:set MAIL_PASS     (le mot de passe d'application, sans espaces)
+   ```
+3. **Dépendances** : `cd functions && npm install` (nodemailer, pdfkit, @resvg/resvg-js).
+4. **Règles Firestore** : publier `firestore.rules` (document `cashinWeekly`, lu et écrit par la Finance « Admin » ou les admins).
+5. **Déploiement** : `firebase deploy --only functions`. Avant chaque déploiement, `scripts/sync-functions.js` recopie
+   `src/cashinLink.js`, `src/cashinModel.js` et `src/cashWeekly.js` dans `functions/shared` (mêmes calculs que l'aperçu du site).
+
+### Premier essai
+
+Sur la bêta : Cash in › Fiche du lundi › « M'envoyer un test ». Le mail arrive avec « [Test] [Bêta] » dans l'objet.
+En cas d'erreur, le message s'affiche sous les boutons et dans « Derniers envois ».

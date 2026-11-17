@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v374",
+    date: "2026-11-17",
+    title: "V374 : Cash in — la fiche du lundi part du site : l'année, le mois en cours, le mois qui arrive",
+    items: [
+      { t: "Fiche du lundi", d: "Cash in › Fiche du lundi : chaque lundi à 7 h, le site envoie lui-même la synthèse du Cash in par mail, avec un PDF de 3 pages. L'artefact n'est plus nécessaire." },
+      { t: "Ce qu'on y lit", d: "L'année (courbe des encaissements face à l'initial), le mois en cours avec les retards et ce qui a bougé depuis lundi dernier, puis le mois qui arrive, semaine par semaine." },
+      { t: "Destinataires et essais", d: "Liste des destinataires, « M'envoyer un test », « Envoyer maintenant » (annulable 10 s) et l'historique des envois. L'aperçu montre exactement le mail de la semaine." },
+    ],
+  },
+  {
     id: "2026-11-v373",
     date: "2026-11-16",
     title: "V373 : Besoins turbines — ordre des cartes à la poignée, place choisie dans une liste",

@@ -2713,3 +2713,15 @@ Demandé : « le skill apple design peut faire mieux, surtout sur les petites fl
 - Même document `planning/prodTurbines.ordre.besoins.keys` : règles inchangées.
 - Fichiers : src/components/TurbinesHub.js, src/turbineNeeds.js, src/placeNeed.test.js.
 - Clés localStorage : aucune.
+
+## V374 — Cash in › Fiche du lundi, envoyée par le site
+
+Demandé : « il part de l'artefact, je veux qu'il parte directement du site » ; maquette `maquettes-design/v375-fiche-lundi-G.html` (piste G : « une page sur l'année, une sur le mois en cours avec les retards, une sur le mois qui arrive »), « Oui, code G ».
+
+- **Calculs** `src/cashWeekly.js` (testé) : `weeklyReport(cashin, aujourd'hui, envoi précédent)` — année (encaissé / facturé depuis janvier face à l'initial, fin d'année prévue, si les retards sont payés, courbe cumulée `curveGeom` / `curveSvg`), mois en cours (`monthView` : comme l'onglet « Cash par mois »), retards (onglet « Écarts » : `ecartKpis`, jalons en retard, comparaison avec lundi dernier `snapshotOf`), mois qui arrive (par semaine, jalons partis plus tard, à surveiller) ; `mailHtml` (tableaux, styles en ligne, texte échappé), `mailText`, `subject`, `cleanRecipients` (@enogia.com seulement).
+- **Page** `src/components/CashInWeekly.js` : sous-page « Fiche du lundi » du Cash in (Admin sur Finance, sinon propriétaire / admins) — aperçu exact du mail, envoi automatique, destinataires, « M'envoyer un test », « Envoyer maintenant » (10 s pour annuler), état de la demande (« sans réponse du serveur » après 5 min), derniers envois. Galerie : « Cash in · fiche du lundi ».
+- **Serveur** `functions/` : `cashWeeklyLundi` (lundi 7 h, Europe/Paris, production, si « on »), `cashWeeklyDemandeProd` / `cashWeeklyDemandeBeta` (à chaque nouvelle demande `ask`) ; `functions/weekly.js` : PDF A4 de 3 pages (pdfkit), courbe en PNG (resvg, sans texte), envoi SMTP Google Workspace (nodemailer) ; `functions/shared/*.mjs` recopiés par `node scripts/sync-functions.js` (lancé avant chaque déploiement, `firebase.json › predeploy` ; un test vérifie que les copies sont à jour). Tests `cd functions && npm test` (11).
+- **Données** : `planning/cashinWeekly` (beta_ en bêta) = `{ on, recipients, ask, sent, history, last }`.
+- **À faire par Gabriel** : 1) compte d'envoi Google Workspace + mot de passe d'application ; 2) `firebase functions:secrets:set MAIL_USER` et `MAIL_PASS` ; 3) `cd functions && npm install` ; 4) publier `firestore.rules` (document `cashinWeekly`) ; 5) `firebase deploy --only functions` ; 6) essai sur la bêta avec « M'envoyer un test ». Mode d'emploi : `functions/LISEZMOI.md`.
+- Clés localStorage : `enogia_cash_sub` accepte « lundi ».
+- Fichiers : src/cashWeekly.js (+ test), src/components/CashInWeekly.js, CashInTab.js, App.js, cashinData.js, demo/, scripts/sync-functions.js, functions/index.js, functions/weekly.js, functions/shared/, functions/package.json, functions/test/weekly.test.js, functions/LISEZMOI.md, firestore.rules, firebase.json.

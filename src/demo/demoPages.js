@@ -1,7 +1,7 @@
 // v321 (revue, point 7) : les pages de la galerie ?demo et du test des pages — chaque entrée rend une page avec les données d'exemple.
 // Ajouter ici toute nouvelle page (une ligne) : elle est alors vérifiée à chaque série de tests et visible dans la galerie.
 import React, { useState, useEffect, useMemo } from "react";
-import { DEMO_BOOK, DEMO_SAV, DEMO_SAV_DEM, DEMO_ROWS, DEMO_COMMENTS, DEMO_PROGRESS, DEMO_TESTS, DEMO_PROD, DEMO_ME, DEMO_PEOPLE, demoApi, DEMO_CASHIN } from "./demoData";
+import { DEMO_BOOK, DEMO_SAV, DEMO_SAV_DEM, DEMO_ROWS, DEMO_COMMENTS, DEMO_PROGRESS, DEMO_TESTS, DEMO_PROD, DEMO_ME, DEMO_PEOPLE, demoApi, DEMO_CASHIN, demoWeeklyCash } from "./demoData";
 import { useListFilters, filterOptions, filterRows } from "../listFilters";
 import { DashboardSummary } from "../components/DashboardSummary";
 import { TableView } from "../components/TableView";
@@ -26,6 +26,7 @@ import AccessPage from "../components/AccessPage";
 import { Achats } from "../components/Achats";
 import { ArrangeCtx } from "../components/Arrange";
 import { CashInEncaissements } from "../components/CashInEncaissements";
+import { CashInWeekly } from "../components/CashInWeekly";
 import { setCashinDoc, getCashinDoc } from "../cashinLink";
 import { setEncReelle } from "../cashinModel";
 import { PjDialog, PjDialogCtx } from "../components/RowDetail";
@@ -105,6 +106,9 @@ const AccueilProduit = () => <HomeView produit={DEMO_PRODUIT} pinOk testsDoc={DE
 function Encaissements() { useState(() => { setCashinDoc(JSON.parse(JSON.stringify(DEMO_CASHIN))); return 0; });
   const save = async (id, iso) => { const d = getCashinDoc(); setCashinDoc({ ...d, rows: setEncReelle(d.rows, id, iso) }); };
   return <CashInEncaissements authorName={DEMO_ME.name} canEdit save={save} />; }
+// v374 : Cash in › Fiche du lundi — Cash in fictif et réglages en mémoire (aucun envoi, rien en base)
+function FicheLundi() { const [cash] = useState(demoWeeklyCash), [w, setW] = useState({ on: true, recipients: ["direction@enogia.com", "daf@enogia.com", "camille.durand@enogia.com"], history: [{ at: new Date(Date.now() - 7 * 864e5).toISOString(), kind: "auto", n: 3, ok: true }] });
+  return <CashInWeekly cashDoc={cash} weekly={w} onPatch={async p => setW(o => ({ ...o, ...p }))} me={DEMO_ME} canEdit />; }
 const BELL_AT = new Date(Date.now() - 3600000).toISOString(); // v365 : horodatage fixe (clé stable des lignes)
 // v365 : cloche interactive — Vu / Traité d'une mention écrits dans les commentaires en mémoire
 function Cloche() { const [cm, setCm] = useState(DEMO_COMMENTS);
@@ -133,6 +137,7 @@ export const DEMO_PAGES = [
   { id: "home-widgets", label: "Accueil · widgets", Render: AccueilWidgets, expect: ["Modifier l'accueil", "Prochain départ", "En retard sur l'initial", "Ligne d'atelier", "Tableau des départs"] },
   { id: "home-atelier", label: "Accueil · ligne d'atelier", Render: AccueilAtelier, expect: ["Ligne d'atelier", "Fiches suiveuses", "Montage méca", "Tableau des départs", "Écarts au planning initial", "Machines par gamme"] },
   { id: "home-roles", label: "Accueil · gestion par rôle", Render: AccueilRoles, expect: ["Accueils par rôle", "Copier depuis un autre rôle…", "Partir de zéro", "Rétablir l'accueil par défaut", "modifié"] },
+  { id: "cash-lundi", label: "Cash in · fiche du lundi", Render: FicheLundi, expect: ["Destinataires", "Envoi automatique chaque lundi", "M'envoyer un test"] },
   { id: "cash-enc", label: "Cash in · encaissements", Render: Encaissements, expect: ["À encaisser", "En retard", "Fonderie Est", "Encaissé aujourd'hui"] },
   { id: "home-produit", label: "Accueil · resp. produit", Render: AccueilProduit, expect: ["Livrables Produit", "P&ID validé", "Papeterie du Nord"] },
   { id: "sav", label: "SAV · équipe", Render: () => <SavDemo level="w" sub0="tickets" />, expect: ["SAV / MES", "TC-26-41", "Sucrerie Centre"] },

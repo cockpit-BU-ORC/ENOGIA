@@ -6,7 +6,7 @@
 
 const { setGlobalOptions } = require("firebase-functions/v2");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
-const { onDocumentUpdated } = require("firebase-functions/v2/firestore");
+const { onDocumentUpdated, onDocumentWritten } = require("firebase-functions/v2/firestore");
 const { defineSecret } = require("firebase-functions/params");
 const logger = require("firebase-functions/logger");
 const { initializeApp } = require("firebase-admin/app");
@@ -82,3 +82,62 @@ exports.odooSyncNuit = onSchedule({ schedule: "0 2 * * *", timeZone: "Europe/Par
     if (odoo && odoo.auto !== false && odoo.domaine) await syncDoc(id, "nuit");
   }
 });
+
+// ── v374 : fiche du lundi du Cash in ─────────────────────────────────────────────────────────────────────────
+// Chaque lundi à 7 h (heure de Paris) si « Envoi automatique » est coché, et à la demande (« M'envoyer un test », « Envoyer maintenant »).
+// Lit planning/cashin et planning/cashinWeekly (beta_ en bêta), calcule la fiche avec functions/shared/cashWeekly.mjs (copie de
+// src/cashWeekly.js : mêmes chiffres que l'aperçu du site), envoie le mail (Google Workspace, SMTP) avec la courbe et le PDF de 3 pages.
+// Secrets : MAIL_USER (adresse d'envoi @enogia.com) et MAIL_PASS (mot de passe d'application de ce compte) — jamais dans le dépôt.
+const MAIL_USER = defineSecret("MAIL_USER"), MAIL_PASS = defineSecret("MAIL_PASS");
+const APP_URL = "https://cockpit-bu-orc.github.io/ENOGIA";
+const { buildPdf, curvePng, sendMail } = require("./weekly");
+const parisToday = () => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Paris" }).format(new Date());
+const hideSecrets = (m, ...keys) => keys.reduce((s, k) => (k ? s.split(k).join("•••") : s), String(m || "Erreur inconnue")).slice(0, 300);
+
+async function sendWeekly(pfx, kind, ask) {
+  const wref = db.collection("planning").doc(pfx + "cashinWeekly"), at = ask ? ask.at : new Date().toISOString(), debut = new Date().toISOString();
+  const w = await db.runTransaction(async tx => {
+    const s = await tx.get(wref); const d = s.exists ? s.data() : {}; const cur = d.sent || {};
+    if (cur.etat === "en_cours" && cur.debut && Date.now() - Date.parse(cur.debut) < LOCK_MS) return null;
+    tx.set(wref, { sent: { ask: at, etat: "en_cours", debut } }, { merge: true }); return d;
+  });
+  if (!w) { logger.info("Fiche du lundi : envoi déjà en cours", { pfx, kind }); return; }
+  const user = MAIL_USER.value(), pass = MAIL_PASS.value(), test = kind === "test";
+  const M = await import("./shared/cashWeekly.mjs");
+  const to = M.cleanRecipients(test ? (ask && ask.to) : w.recipients);
+  const finish = async (ok, message, extra = {}) => {
+    const history = (Array.isArray(w.history) ? w.history : []).concat([{ at: new Date().toISOString(), kind, n: to.length, ok, ...(ok ? {} : { err: message }) }]).slice(-30);
+    await wref.set({ sent: { ask: at, etat: ok ? "ok" : "erreur", debut, fin: new Date().toISOString(), message, n: to.length }, history, ...extra }, { merge: true });
+  };
+  try {
+    if (!user || !pass) return await finish(false, "Secrets MAIL_USER / MAIL_PASS absents du serveur.");
+    if (!to.length) return await finish(false, "Aucun destinataire @enogia.com.");
+    const cs = await db.collection("planning").doc(pfx + "cashin").get();
+    if (!cs.exists) return await finish(false, "Cash in introuvable.");
+    const rep = M.weeklyReport(cs.data(), parisToday(), w.last);
+    const html = M.mailHtml(rep, { img: "cid:courbe", appUrl: APP_URL + (pfx ? "/beta" : "") + "/?p=cashin", beta: !!pfx });
+    const pdf = await buildPdf(rep, M), png = curvePng(rep, M);
+    await sendMail({ user, pass, to, subject: (test ? "[Test] " : "") + (pfx ? "[Bêta] " : "") + M.subject(rep), html, text: M.mailText(rep), png, pdf, pdfName: "Cash-in_S" + rep.week.w + "_" + rep.year + ".pdf" });
+    await finish(true, "Envoyé à " + to.length + " destinataire" + (to.length > 1 ? "s" : ""), test ? {} : { last: M.snapshotOf(rep) });
+    logger.info("Fiche du lundi envoyée", { pfx, kind, n: to.length });
+  } catch (e) {
+    const message = hideSecrets(e && e.message, pass);
+    logger.error("Fiche du lundi en erreur", { pfx, kind, message });
+    await finish(false, message);
+  }
+}
+// Lundi 7 h : production seulement (la bêta s'essaie avec « M'envoyer un test »)
+exports.cashWeeklyLundi = onSchedule({ schedule: "0 7 * * 1", timeZone: "Europe/Paris", memory: "512MiB", secrets: [MAIL_USER, MAIL_PASS] }, async () => {
+  const s = await db.collection("planning").doc("cashinWeekly").get();
+  if (s.exists && s.data().on) await sendWeekly("", "auto", null);
+});
+// À la demande : la page écrit ask = { at, by, test, to } ; on envoie si la demande est nouvelle et pas encore traitée
+const weeklyOnDemand = pfx => onDocumentWritten({ document: "planning/" + pfx + "cashinWeekly", memory: "512MiB", secrets: [MAIL_USER, MAIL_PASS] }, async ev => {
+  const before = ev.data.before && ev.data.before.exists ? ev.data.before.data() : {}, after = ev.data.after && ev.data.after.exists ? ev.data.after.data() : null;
+  const ask = after && after.ask; if (!ask || !ask.at) return;
+  if (before.ask && before.ask.at === ask.at) return;
+  if (after.sent && after.sent.ask === ask.at) return;
+  await sendWeekly(pfx, ask.test ? "test" : "manuel", ask);
+});
+exports.cashWeeklyDemandeProd = weeklyOnDemand("");
+exports.cashWeeklyDemandeBeta = weeklyOnDemand("beta_");

@@ -104,3 +104,21 @@ export const DEMO_CASHIN = { labels: { PJ902: "Verrerie Alpes", PJ905: "Fonderie
   { id: "c5", pj: "PJ898", jalon: "Solde", pct: 10, montant: 21000, delai: 30, statut: "paid", factReelle: day(-40), encPrevue: day(-10), encReelle: day(-8) },
   { id: "c6", pj: "PJ903", jalon: "À la commande", pct: 30, montant: 63000, delai: 30, statut: "future", factPrevue: day(12), encPrevue: day(42), encReelle: null },
 ] };
+
+// v374 : Cash in fictif sur toute l'année (dates initiales, paiements à l'heure ou en retard, jalons repoussés) pour la fiche du lundi
+export function demoWeeklyCash() {
+  const t = day(0), Y = +t.slice(0, 4), M = +t.slice(5, 7) - 1, iso = (m, d) => { const x = new Date(Date.UTC(Y, m, d, 12)); return x.toISOString().slice(0, 10); };
+  const add = (s, n) => { const x = new Date(s + "T12:00:00Z"); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
+  const PJS = ["PJ901", "PJ902", "PJ905", "PJ909", "PJ898", "PJ903"], JAL = ["À la commande", "FAT", "Livraison", "Mise en service", "Solde"];
+  const rows = []; let k = 0;
+  for (let m = 0; m < 12; m++) for (let j = 0; j < 3; j++) {
+    k++; const pj = PJS[(m + j) % PJS.length], montant = [42000, 68000, 95000, 120000, 57000, 138000, 81000][(m * 3 + j) % 7], d = 4 + j * 9;
+    const encInit = iso(m, d), factInit = add(encInit, -30), slip = [0, 6, 14, 22, 35, 0, 9][(m + j * 2) % 7], encPrevue = add(encInit, slip), factPrevue = add(factInit, slip);
+    const r = { id: "w" + k, pj, jalon: JAL[(m + j) % JAL.length], montant, delai: 30, factInit, encInit, factPrevue, encPrevue, factReelle: null, encReelle: null };
+    if (factPrevue < t && (m < M || j !== 1)) r.factReelle = factPrevue;
+    if (r.factReelle && encPrevue < t && (m < M - 1 || j === 0)) r.encReelle = add(encPrevue, (m + j) % 3 ? 3 : -2);
+    rows.push(r);
+  }
+  return { labels: { PJ901: "Chimie Rhône", PJ902: "Verrerie Alpes", PJ905: "Fonderie Est", PJ909: "Papeterie du Nord", PJ898: "Brasserie Loire", PJ903: "Sucrerie Ouest" },
+    owners: { PJ901: "Camille Durand", PJ902: "Léo Martin", PJ905: "Camille Durand", PJ909: "Léo Martin", PJ898: "Camille Durand", PJ903: "Léo Martin" }, rows };
+}

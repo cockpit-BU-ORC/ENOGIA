@@ -6,7 +6,16 @@
     {
       "source": "functions",
       "codebase": "default",
-      "ignore": ["node_modules", "test", "LISEZMOI.md", ".git", "*.log"]
+      "ignore": [
+        "node_modules",
+        "test",
+        "LISEZMOI.md",
+        ".git",
+        "*.log"
+      ],
+      "predeploy": [
+        "node \"$PROJECT_DIR/scripts/sync-functions.js\""
+      ]
     }
   ]
 }
