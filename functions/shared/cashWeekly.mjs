@@ -5,7 +5,7 @@
 // Cash in › Fiche du lundi et à la fonction serveur qui envoie le mail (copié dans functions/shared par scripts/sync-functions.js).
 // Mêmes règles que les onglets du Cash in : statut (cashinLink), Cash par mois et Écarts (cashinModel). Jalons EPC exclus.
 import { statusOf, addDays, diffDays } from "./cashinLink.mjs";
-import { monthly, ecartKpis, paidAmount } from "./cashinModel.mjs";
+import { monthly, ecartKpis, paidAmount, paidGap } from "./cashinModel.mjs";
 
 export const MONTHS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
 const MS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
@@ -31,7 +31,6 @@ export function fmtK(v) {
 export const fmtS = v => (Math.round(v || 0) === 0 ? "0 €" : (v < 0 ? "−" : "+") + fmtK(v));
 export const pct = (v, base) => (base ? Math.round(v / base * 100) : null);
 const fmtPct = (v, base) => { const p = pct(v, base); return p == null ? "" : (p > 0 ? "+" : p < 0 ? "−" : "") + Math.abs(p) + " %"; };
-const days1 = v => (v == null ? "–" : (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(Math.round(v * 10) / 10).toLocaleString("fr-FR") + " j");
 
 // Un mois (« Cash par mois ») : encaissements initial → réel + actualisé, factures initial → émis + à émettre, jalons repoussés
 export function monthView(rows, key, today) {
@@ -51,6 +50,30 @@ export function monthView(rows, key, today) {
     ontime: m.ot + m.sh ? Math.round(m.ot / (m.ot + m.sh) * 100) : null };
 }
 
+// v376 (demandé : « sur le mois en cours, voir les factures émises, les encaissements prévus et les encaissements réels, avec les dates ;
+// mettre les commentaires décrits dans l'outil ; pareil pour le mois prochain ») : commentaire d'un jalon = « Explication des écarts »
+// (note) + « Causes du retard » (causes : [{ c, d }]) saisis dans le Cash in.
+export function commentOf(r) {
+  const causes = (Array.isArray(r && r.causes) ? r.causes : []).filter(x => x && x.c).map(x => x.c + (x.d ? " (" + x.d + " j)" : ""));
+  return [String((r && r.note) || "").trim(), causes.length ? "Causes : " + causes.join(", ") : ""].filter(Boolean).join(" · ");
+}
+// Les trois listes d'un mois (key = AAAA-MM). Mois en cours (withLate) : les factures et paiements déjà dépassés des mois précédents
+// sont repris en tête, marqués en retard.
+export function monthLists(doc, key, today, withLate) {
+  const rows = live(doc && doc.rows), lab = (doc && doc.labels) || {}, own = (doc && doc.owners) || {}, start = key + "-01";
+  const base = (r, date) => ({ id: r.id, pj: r.pj, jalon: r.jalon || "Jalon", client: lab[r.pj] || "", chef: own[r.pj] || "", date, montant: amt(r), comment: commentOf(r), late: date && date < today ? diffDays(date, today) : 0 });
+  const factures = [], prevus = [], recus = [];
+  rows.forEach(r => {
+    if (r.factReelle && ym(r.factReelle) === key) factures.push({ ...base(r, r.factReelle), done: true, late: 0 });
+    else if (!r.factReelle && !r.encReelle) { const d = r.factPrevue || r.factInit; if (d && (ym(d) === key || (withLate && d < start))) factures.push({ ...base(r, d), done: false }); }
+    if (!r.encReelle && r.encPrevue && (ym(r.encPrevue) === key || (withLate && r.encPrevue < start))) prevus.push({ ...base(r, r.encPrevue), invoiced: !!r.factReelle });
+    if (r.encReelle && ym(r.encReelle) === key) recus.push({ ...base(r, r.encReelle), late: 0, montant: paidAmount(r), prevu: amt(r), gap: paidGap(r), due: r.encPrevue || null, delay: r.encPrevue ? diffDays(r.encPrevue, r.encReelle) : null });
+  });
+  const byDate = (a, b) => String(a.date).localeCompare(String(b.date)) || b.montant - a.montant;
+  factures.sort((a, b) => (a.done === b.done ? 0 : a.done ? -1 : 1) || byDate(a, b)); prevus.sort(byDate); recus.sort(byDate);
+  const sum = l => l.reduce((t, x) => t + x.montant, 0);
+  return { factures, prevus, recus, tot: { factDone: sum(factures.filter(x => x.done)), factTodo: sum(factures.filter(x => !x.done)), prevus: sum(prevus), prevusLate: sum(prevus.filter(x => x.late > 0)), recus: sum(recus) } };
+}
 // Jalon décrit pour la fiche (une ligne)
 const item = (r, kind, date, doc, today) => ({ id: r.id, pj: r.pj, jalon: r.jalon || "Jalon", client: (doc.labels || {})[r.pj] || "", chef: (doc.owners || {})[r.pj] || "", kind, date, days: date && date < today ? diffDays(date, today) : 0, montant: amt(r) });
 
@@ -102,7 +125,7 @@ export function weeklyReport(doc, today, prev) {
     yearEnd: { init: initYear, forecast: forecastYear, gap: forecastYear - initYear, toYearEnd, ifLate: forecastYear + lateCash, lateCash },
     months, curve: { initM, paidM, fcM, cur: +cur.slice(5, 7) - 1, dayFrac: (+today.slice(8, 10)) / 30.5 },
     late: { bill: lateBill, billN: lateBillN, enc: lateEnc, encN: lateEncN, total: lateAmt, items: late },
-    retards: ret, cur: monthView(rows, cur, today), next: { ...nextM, items: nextItems, byWeek, watch, endDays },
+    retards: ret, cur: { ...monthView(rows, cur, today), lists: monthLists(doc, cur, today, true) }, next: { ...nextM, items: nextItems, byWeek, watch, endDays, lists: monthLists(doc, nxt, today, false) },
     thisWeek: week, actions: late.slice(0, 3),
   };
   r.delta = prev && prev.week !== r.week.y + "-" + r.week.w ? {
@@ -167,24 +190,27 @@ const pill = (txt, bg, fg) => '<span style="display:inline-block;padding:1px 6px
 const H3 = (t, small, lvl) => '<tr><td style="padding:' + (lvl ? "16px" : "20px") + ' 24px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="' + F + "font-size:" + (lvl ? 15 : 17) + "px;font-weight:700;color:" + COL.ink + ";border-bottom:" + (lvl ? 1 : 2) + "px solid " + COL.ink + ';padding-bottom:4px">' + esc(t) + '</td><td align="right" style="' + F + "font-size:12px;color:" + COL.ink5 + ";border-bottom:" + (lvl ? 1 : 2) + "px solid " + COL.ink + ';padding-bottom:4px">' + esc(small || "") + "</td></tr></table></td></tr>";
 const part = t => '<tr><td style="padding:22px 24px 0;border-top:6px solid ' + COL.alt + ";" + F + "font-size:12px;font-weight:600;color:" + COL.ink5 + '">' + esc(t) + "</td></tr>";
 const kpi = (l, v, d, c, big) => '<td width="50%" valign="top" style="padding:10px 12px;background:#FFFFFF;border:1px solid ' + COL.hair + '"><div style="' + F + "font-size:12px;color:" + COL.ink5 + '">' + esc(l) + '</div><div style="' + F + "font-size:" + (big ? 30 : 24) + "px;font-weight:700;letter-spacing:-0.02em;color:" + (c || COL.ink) + '">' + esc(v) + '</div><div style="' + F + "font-size:12px;color:" + COL.ink5 + '">' + d + "</div></td>";
-function flow(title, a, b, bSub, c, cSub, cColor) {
-  const cell = (l, v, s, col) => '<td valign="top" style="padding:8px 10px;' + F + '"><div style="font-size:12px;color:' + COL.ink5 + '">' + l + '</div><div style="font-size:19px;font-weight:700;color:' + (col || COL.ink) + '">' + v + '</div><div style="font-size:12px;color:' + (col || COL.ink5) + '">' + s + "</div></td>";
-  return '<div style="' + F + "font-size:12px;color:" + COL.ink5 + ';margin:10px 0 4px">' + title + '</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:' + COL.alt + ';border-radius:8px"><tr>' + cell("Initial", a[0], a[1]) + cell(b[0], b[1], bSub) + cell("Écart", c, cSub, cColor) + "</tr></table>";
-}
-const row = (left, right, rc) => '<tr><td style="padding:7px 0;border-bottom:1px solid ' + COL.hair + ";" + F + "font-size:14px;color:" + COL.ink + '">' + left + '</td><td align="right" style="padding:7px 0 7px 8px;border-bottom:1px solid ' + COL.hair + ";" + F + "font-size:14px;font-weight:700;white-space:nowrap;color:" + (rc || COL.ink) + '">' + right + "</td></tr>";
-const sub = s => '<div style="font-size:12px;color:' + COL.ink5 + '">' + s + "</div>";
-const plural = (n, one, many) => n + " " + (n > 1 ? many : one);
-const who = x => esc([x.client, x.chef].filter(Boolean).join(" · "));
 
+// Une ligne de liste : [étiquette, jalon, détail des dates, montant, couleur du montant] ; commentaire en dessous s'il existe
+function listBlock(title, small, items, empty) {
+  const rowsH = items.map(([tag, x, dates, money, col]) => '<tr><td style="padding:8px 0;border-bottom:1px solid ' + COL.hair + ";" + F + "font-size:14px;color:" + COL.ink + '">' + tag + " <b>" + esc(x.pj) + "</b> · " + esc(x.jalon) + (x.client ? ' <span style="color:' + COL.ink5 + '">· ' + esc(x.client) + "</span>" : "")
+    + '<div style="font-size:12px;color:' + COL.ink5 + '">' + esc(dates) + (x.chef ? " · " + esc(x.chef) : "") + "</div>"
+    + (x.comment ? '<div style="font-size:12px;color:' + COL.ink7 + ";font-style:italic;margin-top:2px;border-left:2px solid " + COL.line + ';padding-left:6px">' + esc(x.comment) + "</div>" : "")
+    + '</td><td align="right" valign="top" style="padding:8px 0 8px 8px;border-bottom:1px solid ' + COL.hair + ";" + F + "font-size:14px;font-weight:700;white-space:nowrap;color:" + col + '">' + esc(money) + "</td></tr>").join("");
+  return H3(title + (items.length ? " · " + items.length : ""), small, 1) + '<tr><td style="padding:0 24px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">' + (rowsH || '<tr><td style="padding:8px 0;' + F + "font-size:13px;color:" + COL.ink5 + '">' + esc(empty) + "</td></tr>") + "</table></td></tr>";
+}
+// Résumé d'un mois en une ligne (face à l'initial)
+function monthSummary(m, cur) {
+  const t = m.lists.tot;
+  return '<div style="' + F + "font-size:13px;color:" + COL.ink7 + ';background:' + COL.alt + ';border-radius:8px;padding:8px 12px;margin-top:8px">'
+    + (cur ? "Factures : <b>" + fmtK(t.factDone) + "</b> émises, " + fmtK(t.factTodo) + " encore à émettre. Encaissements : <b>" + fmtK(t.recus) + "</b> reçus, " + fmtK(t.prevus) + " attendus" + (t.prevusLate ? ' dont <span style="color:' + COL.red + '">' + fmtK(t.prevusLate) + " en retard</span>" : "") + "."
+      : "Factures : <b>" + fmtK(t.factTodo) + "</b> à émettre. Encaissements : <b>" + fmtK(t.prevus) + "</b> prévus.")
+    + ' <span style="color:' + COL.ink5 + '">Initial du mois : ' + fmtK(m.enc.init) + " d'encaissements (" + fmtS(m.enc.gap) + ").</span></div>";
+}
 export function mailHtml(r, { img = "cid:courbe", appUrl = "", beta = false } = {}) {
-  const c = r.cur, n = r.next, d = r.delta || {}, ret = r.retards;
-  const dl = (v, fmt, upBad = true) => (v == null ? "" : ' <span style="color:' + worse(v, upBad) + '">' + (Math.round(v * 10) === 0 ? "=" : fmt(v)) + "</span>");
+  const c = r.cur, n = r.next, d = r.delta || {};
   const months = '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>' + MS.map((m, i) => '<td align="center" style="' + F + "font-size:10px;color:" + (i === r.curve.cur ? COL.ink : COL.ink5) + ";font-weight:" + (i === r.curve.cur ? 700 : 400) + '">' + m + "</td>").join("") + "</tr></table>";
   const legend = '<div style="' + F + "font-size:12px;color:" + COL.ink5 + ';margin-top:4px"><span style="color:' + COL.init + ';font-weight:700">━</span> initial &nbsp; <span style="color:' + COL.green + ';font-weight:700">━</span> encaissé &nbsp; <span style="color:' + COL.green + ';font-weight:700">┅</span> prévu &nbsp; <span style="color:' + COL.ink3 + '">┅</span> si les retards sont payés &nbsp; <span style="color:' + COL.ink + '">│</span> aujourd\'hui</div>';
-  const lateRows = r.actions.map(x => row(pill(x.kind === "facture" ? "Facturer" : "Relancer", x.kind === "facture" ? COL.bill1 : COL.red1, x.kind === "facture" ? COL.bill : COL.red) + " <b>" + esc(x.pj) + "</b> · " + esc(x.jalon) + sub((x.kind === "facture" ? "à émettre depuis le " : "échu le ") + ddmm(x.date) + " · " + x.days + " j" + (who(x) ? " · " + who(x) : "")), fmtK(x.montant), x.kind === "facture" ? COL.bill : COL.red)).join("");
-  const weekTxt = r.thisWeek.length ? "Attendus cette semaine : " + r.thisWeek.slice(0, 4).map(x => esc(x.pj) + " " + esc(x.jalon) + " le " + ddmm(x.date) + " (" + fmtK(x.montant) + (x.kind === "facture" ? ", facture" : "") + ")").join(", ") + (r.thisWeek.length > 4 ? "…" : "") + "." : "Rien n'est attendu cette semaine.";
-  const wk = n.byWeek.map(g => '<tr><td valign="top" style="padding:6px 6px 6px 0;border-bottom:1px solid ' + COL.hair + ";" + F + 'font-size:13px;font-weight:600;white-space:nowrap">S' + g.w + " · " + ddmm(g.mon) + '</td><td valign="top" style="padding:6px 6px;border-bottom:1px solid ' + COL.hair + ";" + F + "font-size:12px;color:" + COL.bill + '">' + (g.fact.map(x => esc(x.pj) + " " + esc(x.jalon) + " " + fmtK(x.montant)).join(" · ") || "—") + '</td><td valign="top" style="padding:6px 6px;border-bottom:1px solid ' + COL.hair + ";" + F + "font-size:12px;color:" + COL.green + '">' + (g.enc.map(x => esc(x.pj) + " " + esc(x.jalon) + " " + fmtK(x.montant)).join(" · ") || "—") + '</td><td align="right" valign="top" style="padding:6px 0;border-bottom:1px solid ' + COL.hair + ";" + F + 'font-size:13px;white-space:nowrap">' + fmtK(g.total) + "</td></tr>").join("");
-  const watch = n.watch.length || n.endDays.length ? '<div style="margin-top:12px;border-left:3px solid ' + COL.amber + ";background:" + COL.amber1 + ";padding:8px 12px;" + F + 'font-size:13px;color:' + COL.ink + '"><b>À surveiller</b><br>' + [n.watch.length ? n.watch.map(x => esc(x.pj) + " · " + esc(x.jalon) + " (" + fmtK(x.montant) + ", le " + ddmm(x.date) + ")").join(" et ") + " port" + (n.watch.length > 1 ? "ent" : "e") + " " + pct(n.watch.reduce((s, x) => s + x.montant, 0), n.enc.act) + " % des paiements du mois." : "", n.endDays.length ? n.endDays.length + " paiement" + (n.endDays.length > 1 ? "s tombent" : " tombe") + " dans les deux derniers jours du mois." : ""].filter(Boolean).join("<br>") + "</div>" : "";
   const url = appUrl ? esc(appUrl) : "#";
   return '<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + esc(subject(r)) + '</title></head><body style="margin:0;padding:0;background:#F4F5F7">'
     + '<div style="display:none;max-height:0;overflow:hidden">' + esc(fmtK(r.ytd.paid) + " encaissés au lieu de " + fmtK(r.ytd.initToDate) + " · " + fmtK(r.late.total) + " en retard · " + fmtK(r.thisWeek.filter(x => x.kind === "paiement").reduce((s, x) => s + x.montant, 0)) + " attendus cette semaine") + "</div>"
@@ -202,27 +228,17 @@ export function mailHtml(r, { img = "cid:courbe", appUrl = "", beta = false } = 
     + part("1 · L'année") + H3("Les encaissements de " + r.year, "cumul, face à l'initial")
     + '<tr><td style="padding:4px 24px 0"><img src="' + esc(img) + '" width="572" alt="Encaissements cumulés ' + r.year + " : " + fmtK(r.ytd.paid) + " encaissés au lieu de " + fmtK(r.ytd.initToDate) + '" style="display:block;width:100%;max-width:572px;height:auto;border:0">' + months + legend
     + '<div style="' + F + "font-size:13px;color:" + COL.ink5 + ';margin-top:6px">Fin d\'année : <b style="color:' + COL.ink + '">' + fmtK(r.yearEnd.forecast) + "</b> prévus au lieu de " + fmtK(r.yearEnd.init) + " à l'initial (" + fmtPct(r.yearEnd.gap, r.yearEnd.init) + ")" + (r.yearEnd.lateCash ? " ; " + fmtK(r.yearEnd.ifLate) + " si les retards sont payés" : "") + ".</div></td></tr>"
-    + part("2 · Le mois en cours") + H3(c.label, "au " + ddmm(r.today) + " · onglet « Cash par mois »")
-    + '<tr><td style="padding:0 24px">' + flow("Encaissements", [fmtK(c.enc.init), c.enc.initN + " jalon" + (c.enc.initN > 1 ? "s" : "")], ["Réel + actualisé", fmtK(c.enc.act)], fmtK(c.enc.paid) + " reçus · " + fmtK(c.enc.fc) + " attendus", fmtS(c.enc.gap), fmtPct(c.enc.gap, c.enc.init) + (c.enc.pushedN ? " · " + c.enc.pushedN + " jalon" + (c.enc.pushedN > 1 ? "s repoussés" : " repoussé") : ""), tone(c.enc.gap))
-    + flow("Factures", [fmtK(c.fact.init), c.fact.initN + " jalon" + (c.fact.initN > 1 ? "s" : "")], ["Émis + à émettre", fmtK(c.fact.act)], fmtK(c.fact.done) + " émis · " + fmtK(c.fact.todo) + " à émettre", fmtS(c.fact.gap), fmtPct(c.fact.gap, c.fact.init), tone(c.fact.gap))
-    + (c.ontime != null ? '<div style="' + F + "font-size:12px;color:" + COL.ink5 + ';margin-top:8px">Dates tenues ce mois-ci : <b style="color:' + COL.ink + '">' + c.ontime + " %</b> des montants payés à l'heure (pas plus tard que l'initial).</div>" : "") + "</td></tr>"
-    + H3("Retards et décalages", "onglet « Écarts » · face à lundi dernier", 1)
-    + '<tr><td style="padding:0 24px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">'
-    + row("Retard moyen de paiement" + sub("réel face au prévu, " + plural(ret.paidN, "jalon payé", "jalons payés")), days1(ret.avgRet) + dl(d.avgRet, v => days1(v)))
-    + row("Payés en retard" + sub(plural(ret.lateN, "jalon", "jalons") + " sur " + ret.paidN), (ret.latePct == null ? "–" : ret.latePct + " %") + dl(d.latePct, v => (v > 0 ? "+" : "−") + Math.abs(v) + " pt"))
-    + row("Glissement des encaissements" + sub("prévu face à l'initial, " + plural(ret.glN, "jalon", "jalons")), days1(ret.avgGl) + dl(d.avgGl, v => days1(v)))
-    + (ret.worst ? row("Plus gros retard" + sub(esc(ret.worst.pj + " · " + ret.worst.jalon) + (ret.worst.chef ? " · " + esc(ret.worst.chef) : "")), days1(ret.worst.v)) : "")
-    + "</table></td></tr>"
-    + H3("Cette semaine", r.actions.length ? r.actions.length + " action" + (r.actions.length > 1 ? "s" : "") + " qui rapprochent de l'initial" : "", 1)
-    + '<tr><td style="padding:0 24px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">' + (lateRows || row("Aucun retard.", "")) + "</table>"
-    + '<div style="' + F + "font-size:12px;color:" + COL.ink5 + ';margin-top:6px">' + weekTxt + (r.late.items.length > 3 ? " " + (r.late.items.length - 3) + " autre" + (r.late.items.length > 4 ? "s retards" : " retard") + " dans le PDF." : "") + "</div></td></tr>"
-    + part("3 · Le mois qui arrive") + H3(n.label, "d'après les dates prévues du Cash in")
-    + '<tr><td style="padding:0 24px">' + flow("Encaissements", [fmtK(n.enc.init), n.enc.initN + " jalon" + (n.enc.initN > 1 ? "s" : "")], ["Prévu aujourd'hui", fmtK(n.enc.act)], n.enc.actN + " jalon" + (n.enc.actN > 1 ? "s" : ""), fmtS(n.enc.gap), fmtPct(n.enc.gap, n.enc.init) + (n.enc.pushedN ? " · " + n.enc.pushedN + " jalon" + (n.enc.pushedN > 1 ? "s partis" : " parti") + " plus tard" : ""), tone(n.enc.gap))
-    + flow("Factures à émettre", [fmtK(n.fact.init), n.fact.initN + " jalon" + (n.fact.initN > 1 ? "s" : "")], ["Prévu aujourd'hui", fmtK(n.fact.act)], n.fact.actN + " facture" + (n.fact.actN > 1 ? "s" : ""), fmtS(n.fact.gap), fmtPct(n.fact.gap, n.fact.init), tone(n.fact.gap))
-    + (wk ? '<div style="' + F + "font-size:12px;color:" + COL.ink5 + ';margin:12px 0 4px">Par semaine</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="' + F + "font-size:12px;color:" + COL.ink5 + '">Semaine</td><td style="' + F + "font-size:12px;color:" + COL.ink5 + '">Factures à émettre</td><td style="' + F + "font-size:12px;color:" + COL.ink5 + '">Paiements attendus</td><td align="right" style="' + F + "font-size:12px;color:" + COL.ink5 + '">Total</td></tr>' + wk + "</table>" : "")
-    + watch
-    + '<div style="padding:18px 0 22px"><a href="' + url + '" style="display:inline-block;background:' + COL.navy + ";color:#FFFFFF;text-decoration:none;" + F + 'font-size:14px;font-weight:600;padding:11px 16px;border-radius:8px">Ouvrir le Cash in</a></div></td></tr>'
-    + '<tr><td style="padding:12px 24px;background:#FAFBFC;border-top:1px solid ' + COL.hair + ";" + F + "font-size:12px;color:" + COL.ink5 + '">Envoyé chaque lundi à 7 h par le Cockpit BU ORC · « initial » = dates enregistrées au départ dans le Cash in · détail dans le PDF joint.</td></tr>'
+    + part("2 · Le mois en cours") + H3(c.label, "au " + ddmm(r.today))
+    + '<tr><td style="padding:0 24px">' + monthSummary(c, true) + "</td></tr>"
+    + listBlock("Factures du mois", "émises et encore à émettre", c.lists.factures.map(x => [x.done ? pill("Émise", COL.bill1, COL.bill) : x.late ? pill("À émettre · " + x.late + " j de retard", COL.red1, COL.red) : pill("À émettre", COL.alt, COL.ink7), x, x.done ? "émise le " + ddmm(x.date) : "prévue le " + ddmm(x.date), fmtK(x.montant), x.done ? COL.bill : x.late ? COL.red : COL.ink]), "Aucune facture ce mois-ci.")
+    + listBlock("Encaissements prévus", "pas encore reçus", c.lists.prevus.map(x => [x.late ? pill(x.late + " j de retard", COL.red1, COL.red) : pill(x.invoiced ? "Facturé" : "Pas encore facturé", x.invoiced ? COL.bill1 : COL.alt, x.invoiced ? COL.bill : COL.ink7), x, "prévu le " + ddmm(x.date), fmtK(x.montant), x.late ? COL.red : COL.ink]), "Plus rien n'est attendu ce mois-ci.")
+    + listBlock("Encaissements reçus", "", c.lists.recus.map(x => [pill("Reçu", COL.green1, COL.green), x, "reçu le " + ddmm(x.date) + (x.delay ? " · prévu le " + ddmm(x.due) + " (" + (x.delay > 0 ? "+" : "−") + Math.abs(x.delay) + " j)" : "") + (x.gap != null ? " · prévu " + fmtK(x.prevu) : ""), fmtK(x.montant), COL.green]), "Rien n'est encore arrivé ce mois-ci.")
+    + part("3 · Le mois qui arrive") + H3(n.label, "dates prévues au " + ddmm(r.today))
+    + '<tr><td style="padding:0 24px">' + monthSummary(n, false) + "</td></tr>"
+    + listBlock("Factures à émettre", "", n.lists.factures.map(x => [pill("À émettre", COL.bill1, COL.bill), x, "prévue le " + ddmm(x.date), fmtK(x.montant), COL.ink]), "Aucune facture prévue.")
+    + listBlock("Encaissements prévus", "", n.lists.prevus.map(x => [pill(x.invoiced ? "Facturé" : "Pas encore facturé", x.invoiced ? COL.bill1 : COL.alt, x.invoiced ? COL.bill : COL.ink7), x, "prévu le " + ddmm(x.date), fmtK(x.montant), COL.ink]), "Aucun encaissement prévu.")
+    + '<tr><td style="padding:18px 24px 22px"><a href="' + url + '" style="display:inline-block;background:' + COL.navy + ";color:#FFFFFF;text-decoration:none;" + F + 'font-size:14px;font-weight:600;padding:11px 16px;border-radius:8px">Ouvrir le Cash in</a></td></tr>'
+    + '<tr><td style="padding:12px 24px;background:#FAFBFC;border-top:1px solid ' + COL.hair + ";" + F + "font-size:12px;color:" + COL.ink5 + '">Envoyé chaque lundi à 7 h par le Cockpit BU ORC · « initial » = dates enregistrées au départ dans le Cash in · détail dans le PDF joint (3 pages : année, mois en cours, mois qui arrive).</td></tr>'
     + "</table></td></tr></table></body></html>";
 }
 // Version texte (clients mail sans HTML, aperçu des notifications)
@@ -234,7 +250,8 @@ export function mailText(r) {
     "En retard aujourd'hui : " + fmtK(r.late.total), "Prévu d'ici le 31 décembre : " + fmtK(r.yearEnd.toYearEnd), "",
     c.label + " : encaissements " + fmtK(c.enc.act) + " au lieu de " + fmtK(c.enc.init) + " (" + fmtS(c.enc.gap) + ")",
     n.label + " : encaissements prévus " + fmtK(n.enc.act) + " au lieu de " + fmtK(n.enc.init) + " (" + fmtS(n.enc.gap) + ")", "",
-    "Cette semaine :", ...r.actions.map(x => "- " + (x.kind === "facture" ? "Facturer " : "Relancer ") + x.pj + " · " + x.jalon + " : " + fmtK(x.montant) + " (" + x.days + " j)")].join("\n");
+    c.label + " — encaissements prévus :", ...c.lists.prevus.map(x => "- " + x.pj + " · " + x.jalon + " : " + fmtK(x.montant) + " le " + ddmm(x.date) + (x.late ? " (" + x.late + " j de retard)" : "") + (x.comment ? " — " + x.comment : "")),
+    c.label + " — encaissements reçus :", ...c.lists.recus.map(x => "- " + x.pj + " · " + x.jalon + " : " + fmtK(x.montant) + " le " + ddmm(x.date))].join("\n");
 }
 // Liste de destinataires : adresses @enogia.com seulement, sans doublon
 export const cleanRecipients = list => [...new Set((list || []).map(s => String(s || "").trim().toLowerCase()).filter(s => /^[a-z0-9._%+-]+@enogia\.com$/.test(s)))];

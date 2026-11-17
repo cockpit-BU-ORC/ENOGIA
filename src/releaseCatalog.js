@@ -1138,4 +1138,8 @@ export const RELEASE_CATALOG = [
     ["Montant reçu différent", "Cash in › Encaissements : « Montant différent ? » pour noter la somme réellement reçue."],
     ["Encaissé réel", "Les totaux encaissés du Cash in et de la fiche du lundi comptent la somme reçue."],
   ] },
+  { v: "376", t: "Fiche du lundi — mois en cours et mois prochain en listes pratiques, avec les commentaires du Cash in", items: [
+    ["Fiche du lundi en listes", "Factures, encaissements prévus et reçus, datés, pour le mois en cours et le mois prochain."],
+    ["Commentaires dans la fiche", "L'explication des écarts et les causes du retard du Cash in sous chaque jalon."],
+  ] },
 ];

@@ -1,4 +1,4 @@
-import { weeklyReport, snapshotOf, headline, subject, mailHtml, curveSvg, cleanRecipients, fmtK, fmtS, monthView } from "./cashWeekly";
+import { monthLists, commentOf, weeklyReport, snapshotOf, headline, subject, mailHtml, curveSvg, cleanRecipients, fmtK, fmtS, monthView } from "./cashWeekly";
 
 // Jeu d'essai : aujourd'hui lundi 16/11/2026
 const T0 = "2026-11-16";
@@ -47,7 +47,7 @@ test("v374 : phrases, mail et courbe", () => {
   expect(subject(r)).toMatch(/^Cash in S47 — année −71 %/);
   const h = mailHtml(r, { appUrl: "https://x.test/?p=cashin" });
   expect(h).toContain("1 · L&#39;année"); expect(h).toContain("2 · Le mois en cours"); expect(h).toContain("3 · Le mois qui arrive");
-  expect(h).toContain("Novembre"); expect(h).toContain("Décembre"); expect(h).toContain("cid:courbe"); expect(h).toContain("Relancer");
+  expect(h).toContain("Novembre"); expect(h).toContain("Décembre"); expect(h).toContain("cid:courbe"); expect(h).toContain("Encaissements prévus"); expect(h).toContain("Factures à émettre");
   expect(h).not.toMatch(/<script/i);
   const s = curveSvg(r); expect(s.startsWith("<svg")).toBe(true); expect(s).not.toContain("NaN"); expect(s).not.toContain("<text");
 });
@@ -63,4 +63,22 @@ test("v374 : destinataires et montants", () => {
 test("v374 : les copies pour la fonction serveur sont à jour (node scripts/sync-functions.js)", () => {
   const fs = require("fs"), path = require("path"), { FILES, OUT, build, lf } = require("../scripts/sync-functions.js");
   FILES.forEach(f => { const p = path.join(OUT, f + ".mjs"); expect(fs.existsSync(p)).toBe(true); expect(lf(fs.readFileSync(p, "utf8"))).toBe(build(f)); });
+});
+
+test("v376 : listes du mois — factures émises / à émettre, encaissements prévus (retards repris) et reçus, avec commentaires", () => {
+  const d = { ...DOC, rows: DOC.rows.map(r => (r.id === "b" ? { ...r, note: "Client relancé le 10/11", causes: [{ c: "Client", d: 12 }] } : r)) };
+  const L = monthLists(d, "2026-11", T0, true);
+  expect(L.factures.map(x => x.id + (x.done ? "+" : "-"))).toEqual(["c-", "e-"]); // c : à émettre depuis le 15/10 (en retard), e : prévue le 25/11
+  expect(L.factures[0].late).toBe(32);
+  expect(L.prevus.map(x => x.id)).toEqual(["b", "c", "d"]); // b et c en retard (mois précédents / passé), d le 19/11
+  expect(L.prevus[0].comment).toBe("Client relancé le 10/11 · Causes : Client (12 j)");
+  expect(L.recus).toEqual([]);
+  const N = monthLists(d, "2026-12", T0, false);
+  expect(N.factures.map(x => x.id)).toEqual(["f"]); expect(N.prevus.map(x => x.id)).toEqual(["e"]);
+  expect(commentOf({})).toBe("");
+});
+test("v376 : encaissement reçu avec écart de date et de montant", () => {
+  const rows = [{ id: "p", pj: "PJ9", jalon: "Solde", montant: 50000, factReelle: "2026-10-01", encPrevue: "2026-11-02", encReelle: "2026-11-09", montantRecu: 48000 }];
+  const x = monthLists({ rows }, "2026-11", T0, true).recus[0];
+  expect(x.montant).toBe(48000); expect(x.prevu).toBe(50000); expect(x.gap).toBe(-2000); expect(x.delay).toBe(7);
 });

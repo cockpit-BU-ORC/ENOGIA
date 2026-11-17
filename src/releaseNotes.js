@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v376",
+    date: "2026-11-17",
+    title: "V376 : Fiche du lundi — mois en cours et mois prochain en listes pratiques, avec les commentaires du Cash in",
+    items: [
+      { t: "Mois en cours", d: "Trois listes datées : les factures du mois (émises, ou à émettre avec leur retard), les encaissements prévus (les retards en tête) et les encaissements reçus (date, écart de date, montant reçu)." },
+      { t: "Mois prochain", d: "Les factures à émettre et les encaissements prévus, avec leur date et s'ils sont déjà facturés." },
+      { t: "Commentaires", d: "Sous chaque jalon, l'explication des écarts et les causes du retard saisies dans le Cash in. La première page (l'année) ne change pas." },
+    ],
+  },
+  {
     id: "2026-11-v375",
     date: "2026-11-17",
     title: "V375 : Encaissements — noter un montant reçu différent du montant prévu",

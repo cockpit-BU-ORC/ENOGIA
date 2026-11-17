@@ -6,13 +6,14 @@
 const PDFDocument = require("pdfkit");
 
 // Helvetica (polices de base du PDF) : jeu de caractères WinAnsi — on remplace ce qu'il n'a pas
-const P = s => String(s == null ? "" : s).replace(/[−–]/g, "-").replace(/[  ]/g, " ").replace(/→/g, "->");
+const WIN = "€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•—˜™š›œžŸ"; // caractères de WinAnsi au-delà de Latin-1
+const P = s => String(s == null ? "" : s).replace(/[\u2212\u2013]/g, "-").replace(/[\u202F\u00A0]/g, " ").replace(/\u2192/g, "->").replace(/[\r\n\t]+/g, " ").replace(/[^\u0020-\u00FF]/gu, c => (WIN.includes(c) ? c : ""));
 const C = { ink: "#18202E", ink7: "#3D4757", ink5: "#5F6979", ink3: "#9AA3B0", line: "#DCE1E8", hair: "#ECEFF3", alt: "#F5F7F9", init: "#B7BFCB", green: "#1D7350", red: "#B3322E", bill: "#2F5A9E", amber: "#8A5A00", amber1: "#FFF1D6" };
 const ddmm = iso => (iso ? String(iso).slice(8, 10) + "/" + String(iso).slice(5, 7) : "-");
 
 function buildPdf(rep, M, now = new Date()) {
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ size: "A4", margins: { top: 40, bottom: 0, left: 40, right: 40 }, info: { Title: P(M.subject(rep)), Author: "Cockpit BU ORC" } });
+    const doc = new PDFDocument({ size: "A4", margins: { top: 40, bottom: 0, left: 40, right: 40 }, bufferPages: true, info: { Title: P(M.subject(rep)), Author: "Cockpit BU ORC" } });
     const out = []; doc.on("data", b => out.push(b)); doc.on("end", () => resolve(Buffer.concat(out))); doc.on("error", reject);
     const L = 40, R = 555, W = R - L, gen = "Cockpit BU ORC · généré le " + now.toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" }) + " à " + now.toLocaleTimeString("fr-FR", { timeZone: "Europe/Paris", hour: "2-digit", minute: "2-digit" });
     let y = 40;
@@ -21,7 +22,6 @@ function buildPdf(rep, M, now = new Date()) {
       if (n > 1) doc.addPage(); y = 40;
       t(title, L, y, { b: 1, s: 12, w: 360 }); t(right, L + 300, y + 3, { s: 8, c: C.ink5, w: W - 300, a: "right" });
       y += 18; doc.moveTo(L, y).lineTo(R, y).lineWidth(1.5).strokeColor(C.ink).stroke(); y += 8;
-      t(gen, L, 812, { s: 7, c: C.ink3, w: 300 }); t(n + " / 3", R - 60, 812, { s: 7, c: C.ink3, w: 60, a: "right" });
     };
     const sentence = s => { doc.font("Helvetica-Bold").fontSize(12).fillColor(C.ink); const h = doc.heightOfString(P(s), { width: W }); doc.text(P(s), L, y, { width: W }); y += h + 8; };
     const kpis = list => { const cw = W / list.length; list.forEach(([l, v, d, col, dc], i) => { const x = L + i * cw; doc.moveTo(x, y).lineTo(x + cw - 8, y).lineWidth(1.5).strokeColor(C.line).stroke(); t(l, x, y + 4, { s: 7.5, c: C.ink5, w: cw - 8 }); t(v, x, y + 14, { b: 1, s: 14, c: col || C.ink, w: cw - 8 }); t(d || "", x, y + 32, { s: 7.5, c: dc || (d && d[0] === "−" ? C.red : C.ink5), w: cw - 8 }); }); y += 48; };
@@ -67,43 +67,49 @@ function buildPdf(rep, M, now = new Date()) {
       { rh: 12.5, hl: i => i === c.cur, bold: i => i === 12, color: (i, j) => (j >= 3 ? (mrows[i][j][0] === "−" ? C.red : mrows[i][j][0] === "+" ? C.green : C.ink) : null) });
 
     note("Comme l'onglet « Cash par mois » : un mois passé compte les paiements reçus et ceux encore attendus à sa date prévue ; le total de l'année comprend donc les retards.");
+    // v376 (demandé : « sur le mois en cours, voir les factures émises, les encaissements prévus et réels avec les dates ; les commentaires
+    // décrits dans l'outil ; pareil pour le mois prochain ») : des listes, avec le commentaire du jalon sous la ligne
+    let cont = null; // titre de la page en cours, pour une page « suite »
+    const room = h => { if (y + h > 795) { head(cont + " (suite)", "", 2); } };
+    const cols = [{ l: "", w: 92 }, { l: "PJ", w: 52 }, { l: "Jalon", w: 132 }, { l: "Client", w: 92 }, { l: "Date", w: 92 }, { l: "Montant", w: W - 460, a: "right" }];
+    const list = (title, items, row, empty) => {
+      room(40); sub(title + (items.length ? " · " + items.length : ""));
+      if (!items.length) { note(empty); return; }
+      let x = L; cols.forEach(c => { t(c.l, x + 2, y, { s: 7.5, c: C.ink5, w: c.w - 4, a: c.a }); x += c.w; });
+      y += 11; doc.moveTo(L, y).lineTo(R, y).lineWidth(.8).strokeColor(C.ink3).stroke(); y += 2;
+      items.forEach(it => {
+        const [tag, tagC, date, dateC, money, moneyC] = row(it), cm = it.comment ? P(it.comment) : "";
+        doc.font("Helvetica-Oblique").fontSize(7.5); const ch = cm ? doc.heightOfString(cm, { width: W - 96 }) + 2 : 0;
+        room(15 + ch);
+        x = L; [[tag, tagC], [it.pj, C.ink, 1], [it.jalon], [it.client, C.ink5], [date, dateC], [money, moneyC, 1]].forEach(([v, c, bd], j) => { t(v, x + 2, y + 2, { s: 8, b: bd, c: c || C.ink, w: cols[j].w - 4, a: cols[j].a }); x += cols[j].w; });
+        y += 13;
+        if (cm) { doc.font("Helvetica-Oblique").fontSize(7.5).fillColor(C.ink7).text(cm, L + 94, y, { width: W - 96 }); y += ch; }
+        doc.moveTo(L, y + 1).lineTo(R, y + 1).lineWidth(.5).strokeColor(C.hair).stroke(); y += 3;
+      });
+      y += 8;
+    };
+    const summary = (m, cur) => { const tt = m.lists.tot;
+      note((cur ? "Factures : " + fk(tt.factDone) + " émises, " + fk(tt.factTodo) + " encore à émettre. Encaissements : " + fk(tt.recus) + " reçus, " + fk(tt.prevus) + " attendus" + (tt.prevusLate ? " dont " + fk(tt.prevusLate) + " en retard" : "") + "."
+        : "Factures : " + fk(tt.factTodo) + " à émettre. Encaissements : " + fk(tt.prevus) + " prévus.") + " Initial du mois : " + fk(m.enc.init) + " d'encaissements (" + fs(m.enc.gap) + ").", C.ink7); y += 2; };
+
     // ── 2 · Le mois en cours ──
-    const cu = rep.cur, rt = rep.retards, d = rep.delta || {};
-    head("2 · " + cu.label + ", le mois en cours", "au " + ddmm(rep.today) + "/" + rep.year, 2);
-    sentence(cu.label + " finira vers " + fk(cu.enc.act) + " encaissés au lieu de " + fk(cu.enc.init) + " ; " + fk(rep.late.total) + " sont en retard.");
-    table([{ l: "", w: 120 }, { l: "Initial", w: 100, a: "right" }, { l: "Réel + actualisé", w: 160, a: "right" }, { l: "Écart", w: 80, a: "right" }, { l: "%", w: W - 460, a: "right" }],
-      [["Encaissements", fk(cu.enc.init), fk(cu.enc.act) + " (" + fk(cu.enc.paid) + " reçus)", fs(cu.enc.gap), pc(cu.enc.gap, cu.enc.init)], ["Factures", fk(cu.fact.init), fk(cu.fact.act) + " (" + fk(cu.fact.done) + " émis)", fs(cu.fact.gap), pc(cu.fact.gap, cu.fact.init)]],
-      { color: (i, j) => (j >= 3 ? red(i ? cu.fact.gap : cu.enc.gap) : null) });
-    if (cu.ontime != null) note("Dates tenues ce mois-ci : " + cu.ontime + " % des montants payés à l'heure (pas plus tard que l'initial).");
-    sub("Retards et décalages (face à lundi dernier)");
-    const dd = (v, f) => (v == null ? "" : Math.round(v * 10) === 0 ? "=" : f(v));
-    const dj = v => (v == null ? "–" : (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(Math.round(v * 10) / 10).toLocaleString("fr-FR") + " j");
-    const wc = v => (v == null || Math.round(v * 10) === 0 ? C.ink5 : v > 0 ? C.red : C.green); // plus de retard = pire
-    kpis([["Retard moyen de paiement", dj(rt.avgRet), dd(d.avgRet, dj), null, wc(d.avgRet)], ["Payés en retard", rt.latePct == null ? "–" : rt.latePct + " %", dd(d.latePct, v => (v > 0 ? "+" : "−") + Math.abs(v) + " pt"), null, wc(d.latePct)],
-      ["Glissement face à l'initial", dj(rt.avgGl), dd(d.avgGl, dj), null, wc(d.avgGl)], ["En retard aujourd'hui", fk(rep.late.total), dd(d.late, fs), C.red, wc(d.late)]]);
-    sub("Jalons en retard · " + rep.late.items.length + " · " + fk(rep.late.total));
-    table([{ l: "", w: 50 }, { l: "PJ", w: 60 }, { l: "Jalon", w: 120 }, { l: "Client", w: 85 }, { l: "Chef", w: 70 }, { l: "Échu le", w: 40 }, { l: "Retard", w: 35, a: "right" }, { l: "Montant", w: W - 460, a: "right" }],
-      rep.late.items.map(x => [x.kind === "facture" ? "Facture" : "Paiement", x.pj, x.jalon, x.client, x.chef, ddmm(x.date), x.days + " j", fk(x.montant)]), { max: 24, bold: (i, j) => j === 1, color: (i, j) => (j === 6 ? C.red : j === 0 ? (rep.late.items[i].kind === "facture" ? C.bill : C.green) : null) });
-    sub("Cette semaine");
-    if (rep.thisWeek.length) table([{ l: "", w: 70 }, { l: "PJ", w: 70 }, { l: "Jalon", w: 210 }, { l: "Date", w: 70 }, { l: "Montant", w: W - 420, a: "right" }], rep.thisWeek.map(x => [x.kind === "facture" ? "Facture" : "Paiement", x.pj, x.jalon, ddmm(x.date), fk(x.montant)]), { max: 8 });
-    else note("Rien n'est attendu cette semaine.");
+    const cu = rep.cur;
+    cont = "2 · " + cu.label; head("2 · " + cu.label + ", le mois en cours", "au " + ddmm(rep.today) + "/" + rep.year, 2);
+    summary(cu, true);
+    list("Factures du mois", cu.lists.factures, x => [x.done ? "Émise" : x.late ? "À émettre · " + x.late + " j" : "À émettre", x.done ? C.bill : x.late ? C.red : C.ink5, (x.done ? "émise le " : "prévue le ") + ddmm(x.date), x.late && !x.done ? C.red : C.ink, fk(x.montant), C.ink], "Aucune facture ce mois-ci.");
+    list("Encaissements prévus", cu.lists.prevus, x => [x.late ? x.late + " j de retard" : x.invoiced ? "Facturé" : "Pas facturé", x.late ? C.red : x.invoiced ? C.bill : C.ink5, "prévu le " + ddmm(x.date), x.late ? C.red : C.ink, fk(x.montant), C.ink], "Plus rien n'est attendu ce mois-ci.");
+    list("Encaissements reçus", cu.lists.recus, x => ["Reçu", C.green, "le " + ddmm(x.date) + (x.delay ? " (" + (x.delay > 0 ? "+" : "-") + Math.abs(x.delay) + " j)" : ""), x.delay > 0 ? C.red : C.ink, fk(x.montant) + (x.gap != null ? " / " + fk(x.prevu) : ""), x.gap != null && x.gap < 0 ? C.red : C.green], "Rien n'est encore arrivé ce mois-ci.");
 
     // ── 3 · Le mois qui arrive ──
     const n = rep.next;
-    head("3 · " + n.label + ", le mois qui arrive", "dates prévues au " + ddmm(rep.today), 3);
-    sentence(n.label + " est prévu à " + fk(n.enc.act) + " encaissés au lieu de " + fk(n.enc.init) + " ; " + fk(n.fact.act) + " de factures à émettre.");
-    table([{ l: "", w: 120 }, { l: "Initial", w: 100, a: "right" }, { l: "Prévu", w: 160, a: "right" }, { l: "Écart", w: 80, a: "right" }, { l: "%", w: W - 460, a: "right" }],
-      [["Encaissements", fk(n.enc.init), fk(n.enc.act), fs(n.enc.gap), pc(n.enc.gap, n.enc.init)], ["Factures", fk(n.fact.init), fk(n.fact.act), fs(n.fact.gap), pc(n.fact.gap, n.fact.init)]],
-      { color: (i, j) => (j >= 3 ? red(i ? n.fact.gap : n.enc.gap) : null) });
-    if (n.enc.pushedN) note(n.enc.pushedN + " jalon" + (n.enc.pushedN > 1 ? "s prévus" : " prévu") + " ce mois-ci à l'initial " + (n.enc.pushedN > 1 ? "sont partis" : "est parti") + " plus tard (" + fk(n.enc.pushed) + ").");
-    sub("Jalons du mois, par date");
-    table([{ l: "", w: 60 }, { l: "Date", w: 45 }, { l: "PJ", w: 65 }, { l: "Jalon", w: 150 }, { l: "Client", w: 95 }, { l: "Chef", w: 60 }, { l: "Montant", w: W - 475, a: "right" }],
-      n.items.map(x => [x.kind === "facture" ? "Facture" : "Paiement", ddmm(x.date), x.pj, x.jalon, x.client, x.chef, fk(x.montant)]), { max: 34, bold: (i, j) => j === 2, color: (i, j) => (j === 0 ? (n.items[i].kind === "facture" ? C.bill : C.green) : null) });
-    if (n.watch.length || n.endDays.length) {
-      const txt = "À surveiller · " + [n.watch.length ? n.watch.map(x => x.pj + " " + x.jalon + " (" + fk(x.montant) + ", le " + ddmm(x.date) + ")").join(" et ") + " port" + (n.watch.length > 1 ? "ent" : "e") + " " + M.pct(n.watch.reduce((s, x) => s + x.montant, 0), n.enc.act) + " % des paiements du mois." : "", n.endDays.length ? n.endDays.length + " paiement(s) dans les deux derniers jours du mois." : ""].filter(Boolean).join(" ");
-      doc.font("Helvetica").fontSize(8.5); const h = doc.heightOfString(P(txt), { width: W - 16 }) + 10;
-      doc.rect(L, y, W, h).fill(C.amber1); doc.rect(L, y, 2, h).fill(C.amber); doc.fillColor(C.ink).text(P(txt), L + 10, y + 5, { width: W - 16 }); y += h + 6;
-    }
+    cont = "3 · " + n.label; head("3 · " + n.label + ", le mois qui arrive", "dates prévues au " + ddmm(rep.today), 3);
+    summary(n, false);
+    list("Factures à émettre", n.lists.factures, x => ["À émettre", C.bill, "prévue le " + ddmm(x.date), C.ink, fk(x.montant), C.ink], "Aucune facture prévue.");
+    list("Encaissements prévus", n.lists.prevus, x => [x.invoiced ? "Facturé" : "Pas facturé", x.invoiced ? C.bill : C.ink5, "prévu le " + ddmm(x.date), C.ink, fk(x.montant), C.ink], "Aucun encaissement prévu.");
+
+    // pied de chaque page : n / total
+    const range = doc.bufferedPageRange();
+    for (let i = 0; i < range.count; i++) { doc.switchToPage(range.start + i); t(gen, L, 812, { s: 7, c: C.ink3, w: 300 }); t((i + 1) + " / " + range.count, R - 60, 812, { s: 7, c: C.ink3, w: 60, a: "right" }); }
     doc.end();
   });
 }

@@ -2736,3 +2736,13 @@ Demandé : « indiquer si on a reçu la somme mais différente de la somme prév
 - **Cash in (cashin.html, `CASHIN_PAGE_VERSION` 375)** : `paidAmt` dans les chiffres (Encaissé), Projets et Cash par mois ; mention « reçu … (écart) » sous le montant du jalon.
 - **Fonctions** : `functions/shared` recopié (`node scripts/sync-functions.js`) — redéployer les fonctions (`firebase deploy --only functions`) pour que la fiche du lundi compte la somme reçue.
 - Règles Firestore inchangées. Fichiers : src/cashinModel.js, src/cashWeekly.js, src/components/CashInEncaissements.js, public/cashin.html, src/cashinData.js, src/demo/demoPages.js, functions/shared/, src/montantRecu.test.js.
+
+## V376 — Fiche du lundi : listes pratiques et commentaires
+
+Demandé : « garder la première page ; sur le mois en cours, voir les factures émises, les encaissements prévus et les encaissements réels (avec les dates) ; mettre les commentaires si décrits dans l'outil ; pareil pour le mois prochain ».
+
+- **Modèle** (`src/cashWeekly.js`, testé) : `monthLists(doc, mois, aujourd'hui, avecRetards)` → `factures` (émises dans le mois / à émettre, retards des mois précédents repris pour le mois en cours), `prevus` (paiements non reçus, retards en tête), `recus` (date, écart de date au prévu, montant reçu V375), totaux ; `commentOf(r)` = « Explication des écarts » (`note`) + « Causes du retard » (`causes`) du Cash in. `rep.cur.lists`, `rep.next.lists`.
+- **Mail** : partie 1 inchangée ; parties 2 et 3 = une ligne de résumé (émis, à émettre, reçus, attendus, initial du mois) puis les listes, commentaire en italique sous le jalon. Les blocs Retards / Cette semaine / Par semaine / À surveiller sont retirés.
+- **PDF** (`functions/weekly.js`) : page 1 inchangée ; pages 2 et 3 en listes (statut, PJ, jalon, client, date, montant, commentaire dessous) ; une liste trop longue continue sur une page « (suite) », pages numérotées à la fin ; caractères absents de la police du PDF retirés des commentaires (émojis).
+- **Fonctions à redéployer** : `firebase deploy --only functions`.
+- Fichiers : src/cashWeekly.js (+ test), functions/weekly.js, functions/shared/.
