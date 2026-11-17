@@ -162,7 +162,7 @@ export const DEMO_PAGES = [
   { id: "tests", label: "Tests", Render: Tests, expect: [] },
   { id: "tests-fiche", label: "Tests · fiche", Render: TestsFiche, expect: ["Qui teste ?", "Configuration ORC", "Checklist de tests", "Signature"] },
   { id: "turb-orc", label: "Turbines · besoins", Render: () => <Turbines tab0="orc" />, expect: ["Turbines prêtes · avec roue", "SAV-12"] },
-  { id: "turb-prod", label: "Turbines · production", Render: () => <Turbines tab0="prod" />, expect: ["Production turbines"] },
+  { id: "turb-prod", label: "Turbines · production", Render: () => <Turbines tab0="prod" />, expect: ["Turbines", "Charge de l'équipe"] },
   { id: "kpi", label: "Manager · KPI", Render: () => <Manager tab0="derives" />, expect: [] },
   { id: "fiche", label: "Manager · fiche projet", Render: () => <Manager tab0="fiche" />, expect: ["Cette semaine", "Contrat et dates", "Actions de la semaine", "Statut global"] },
   { id: "retards", label: "Manager · retards", Render: () => <Manager tab0="retards" />, expect: [] },
