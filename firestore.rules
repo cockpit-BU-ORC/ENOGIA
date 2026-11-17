@@ -65,6 +65,9 @@ service cloud.firestore {
 
       // Production turbines : propriétaire et adresses de sa liste « access » (v305 : ou rôle « Modifier » / « Admin » sur Turbines)
       allow write: if base(id) == 'prodTurbines' && (prodTurbAccess(id) || canWrite(id, 'turbines'));
+      // v384 : l'équipe SAV indique l'ORC des turbines demandées (champ besoins seulement)
+      allow update: if base(id) == 'prodTurbines' && (canWrite(id, 'sav') || (signedIn() && !accOn(id) && myRole(id) == 'sav'))
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['besoins', 'updatedAt', 'updatedBy']);
       // v262 : Achats / Appro, même principe (liste « access » du document planning/achats ; v305 : ou rôle sur Achats)
       allow write: if base(id) == 'achats' && (prodTurbAccess(id) || canWrite(id, 'achats'));
 

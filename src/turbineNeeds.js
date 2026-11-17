@@ -314,3 +314,16 @@ export function closedNeeds(doc) {
   Object.entries((doc && doc.besoins) || {}).forEach(([id, b]) => { if (b && b.done) out.push({ key: "sav:" + id, kind: "sav", id, label: b.label || "SAV", at: b.doneAt || "", by: b.doneBy || "", raw: b }); });
   return out.sort((a, b) => String(b.at).localeCompare(String(a.at)));
 }
+
+// v384 (demandé : « pour aider le responsable des turbines, un extract des besoins ORC / SAV facile : uniquement le type de turbine, le
+// nombre, la date, SAV ou Prod ORC, la roue et l'injecteur ») : une ligne par besoin ouvert (hors besoins clos), triée par date.
+export function needsExport(needs) {
+  return (needs || []).map(n => ({
+    type: (n.cfg && n.cfg.g === "20" ? "20" : "100") + " kW",
+    nombre: n.want || (n.cfg && n.cfg.n) || 0,
+    date: n.date || "",
+    origine: n.kind === "sav" ? (n.statut === "hypo" ? "SAV (hypothétique)" : "SAV") : "Prod ORC",
+    roue: n.roue || "",
+    injecteur: (n.inj || "") + (n.inj && n.injB != null ? " · " + n.injB + " bouchage" + (n.injB > 1 ? "s" : "") : ""),
+  })).sort((a, b) => String(a.date || "9").localeCompare(String(b.date || "9")));
+}

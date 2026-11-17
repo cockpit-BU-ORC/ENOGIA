@@ -75,6 +75,8 @@ export function useProdTurbines(currentUser, authorName) {
       put:async(c,id,data)=>{try{await setDoc(PRODTURB_DOC_REF(),{[c]:{[id]:data},...stamp()},{merge:true});const cur=(prodDoc&&prodDoc[c]&&prodDoc[c][id])||{};const gone=Object.keys(cur).filter(k=>!(k in data));if(gone.length)await updateDoc(PRODTURB_DOC_REF(),Object.fromEntries(gone.map(k=>[c+"."+id+"."+k,deleteField()])));return true;}catch(e){return fail(e);}},
       del:async(c,id)=>{try{await updateDoc(PRODTURB_DOC_REF(),{[c+"."+id]:deleteField(),...stamp()});return true;}catch(e){return fail(e);}},
       setParams:async p=>{try{return await setField("params",p);}catch(e){return fail(e);}},
+      // v384 : l'équipe SAV indique l'ORC de chaque turbine d'une demande liée à son ticket / intervention (seul ce champ change)
+      setAlloc:async(id,alloc)=>{try{await updateDoc(PRODTURB_DOC_REF(),{["besoins."+id+".alloc"]:alloc,["besoins."+id+".allocAt"]:new Date().toISOString(),["besoins."+id+".allocBy"]:authorName||"",...stamp()});return true;}catch(e){return fail(e);}},
       setAccess:async list=>{try{return await setField("access",list);}catch(e){return fail(e);}},
     };
   },[authorName,prodDoc]); // eslint-disable-line react-hooks/exhaustive-deps

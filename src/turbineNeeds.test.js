@@ -165,3 +165,15 @@ test("v383 : besoin SAV dans les besoins (ORC de chaque turbine, statut, ticket)
   expect(n.want).toBe(3); expect(n.statut).toBe("hypo"); expect(n.ticket).toBe("TC-26-03");
   expect(n.slots.map(s => s.machine)).toEqual(["PJ406-1", "", "PJ406-2"]);
 });
+
+test("v384 : extract des besoins (type, nombre, date, origine, roue, injecteur)", () => {
+  const { needsExport } = require("./turbineNeeds");
+  const L = needsExport([
+    { kind: "sav", statut: "hypo", cfg: { g: "100", n: 5 }, want: 5, date: "2026-12-10", roue: "R12", inj: "MT11", injB: 3 },
+    { kind: "pj", cfg: { g: "20", n: 1 }, want: 1, date: "2026-11-30", roue: "", inj: "" },
+  ]);
+  expect(L).toEqual([
+    { type: "20 kW", nombre: 1, date: "2026-11-30", origine: "Prod ORC", roue: "", injecteur: "" },
+    { type: "100 kW", nombre: 5, date: "2026-12-10", origine: "SAV (hypothétique)", roue: "R12", injecteur: "MT11 · 3 bouchages" },
+  ]);
+});

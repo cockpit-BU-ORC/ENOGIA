@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v384",
+    date: "2026-11-17",
+    title: "V384 : Turbines — ORC indiqués par le SAV, extract Excel des besoins",
+    items: [
+      { t: "ORC côté SAV", d: "Dans un ticket ou une intervention SAV, l'équipe SAV indique l'ORC de chaque turbine des demandes liées (ou laisse « À préciser ») : c'est enregistré tout de suite dans Turbines › Besoins." },
+      { t: "Extract des besoins", d: "Turbines › Besoins : « Exporter les besoins (Excel) » donne une ligne par besoin ouvert — type de turbine, nombre, date, SAV ou Prod ORC, roue et injecteur — avec filtres et totaux par type, pour préparer les approvisionnements." },
+    ],
+  },
+  {
     id: "2026-11-v383",
     date: "2026-11-17",
     title: "V383 : Turbines › Besoins — nouvelle demande de turbines SAV (ORC, nombre, liaison, ticket, hypothétique ou confirmée)",

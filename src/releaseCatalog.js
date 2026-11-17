@@ -1169,4 +1169,8 @@ export const RELEASE_CATALOG = [
     ["Hypothétique ou confirmée", "Statut modifiable ; les hypothétiques ne sont ni servies automatiquement ni signalées en retard."],
     ["Turbines liées au SAV", "Ticket et intervention SAV liés à la demande, visibles des deux côtés."],
   ] },
+  { v: "384", t: "Turbines — ORC indiqués par le SAV, extract Excel des besoins", items: [
+    ["ORC des turbines côté SAV", "Ticket ou intervention SAV : l'ORC de chaque turbine demandée se choisit sur place."],
+    ["Extract des besoins turbines", "Excel : type, nombre, date, SAV ou Prod ORC, roue, injecteur."],
+  ] },
 ];

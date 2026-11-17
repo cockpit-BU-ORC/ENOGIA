@@ -12,7 +12,7 @@ import { ProdTurbines } from "./ProdTurbines";
 import { usePointerDnD } from "../pointerDrag";
 import { NavIcon } from "./SharedUI";
 import { createPortal } from "react-dom";
-import { allTurbines, monthOf, swapNeedKeys, placeNeedKey, TURB_CFGS, cfgById, machinesOf, proposeAlloc, SAV_STATUTS, refsOf, buildNeeds, assignOps, unassignOps, installOps, allocOps, unallocOps, stockTiles, injInfo, maxBouches, autoFill, roueConflict, prodState, workDate, pjOfAffaire, closedNeeds } from "../turbineNeeds";
+import { allTurbines, monthOf, swapNeedKeys, placeNeedKey, TURB_CFGS, cfgById, machinesOf, proposeAlloc, SAV_STATUTS, needsExport, refsOf, buildNeeds, assignOps, unassignOps, installOps, allocOps, unallocOps, stockTiles, injInfo, maxBouches, autoFill, roueConflict, prodState, workDate, pjOfAffaire, closedNeeds } from "../turbineNeeds";
 import { getPjMeta, CountryFlag } from "../pjMeta";
 import { askConfirm } from "../confirm";
 import { AF } from "../autoFocusOk";
@@ -428,6 +428,7 @@ function NeedsView({ doc, api, rows, canEdit, savePjMeta, authorName, savDoc }) 
           <span aria-label="Légende" style={{ display: "inline-flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: T.ink500 }}>{legend.map(([l, st]) => <span key={l} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><i aria-hidden="true" style={{ width: 16, height: 12, borderRadius: 4, boxSizing: "border-box", display: "inline-block", ...st }} />{l}</span>)}</span>
           <span style={{ flex: 1 }} />
           {canEdit && <button type="button" disabled={busy} onClick={auto} title="Propose une affectation du stock (par date de besoin, pièces prévues), annulable" style={{ ...themeBtn("sec", "sm") }}>Remplir automatiquement</button>}
+          <button type="button" onClick={async () => { try { const { exportTurbineNeedsXlsx } = await import("../exportExcel"); await exportTurbineNeedsXlsx(needsExport(needs)); setMsg({ t: "Extract des besoins téléchargé (" + needs.length + " ligne" + (needs.length > 1 ? "s" : "") + ")." }); } catch (e) { setMsg({ t: "Export impossible : " + (e && e.message), bad: true }); } }} title="Type de turbine, nombre, date, SAV ou Prod ORC, roue et injecteur de chaque besoin ouvert" style={{ ...themeBtn("sec", "sm") }}>Exporter les besoins (Excel)</button>
           {closedL.length > 0 && <button type="button" onClick={() => setClosedDlg(true)} style={{ ...themeBtn("ghost", "sm") }}>Besoins clos ({closedL.length})</button>}
           {canEdit && <button type="button" onClick={() => setSav({})} style={{ ...themeBtn("pri", "sm") }}>＋ Demande de turbines SAV</button>}
         </div>
