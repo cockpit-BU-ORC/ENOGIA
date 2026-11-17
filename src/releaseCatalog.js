@@ -1157,4 +1157,8 @@ export const RELEASE_CATALOG = [
   { v: "380", t: "Cloche — les demandes à valider se marquent vues, se masquent ou se reportent", items: [
     ["Demandes de la cloche marquables", "Vu, Masquer et Plus tard sur les demandes à valider ; une demande masquée revient si elle change."],
   ] },
+  { v: "381", t: "Menu — rubriques en couleur, sous-pages qui se déplient au clic", items: [
+    ["Rubriques du menu en couleur", "Or dans le menu sombre, bleu-vert dans le clair."],
+    ["Sous-pages dépliées au clic", "Le menu reste ouvert sur une page à sous-pages pour en choisir une."],
+  ] },
 ];

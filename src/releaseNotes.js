@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v381",
+    date: "2026-11-17",
+    title: "V381 : Menu — rubriques en couleur, sous-pages qui se déplient au clic",
+    items: [
+      { t: "Rubriques en couleur", d: "Opérations, Gestion et Administration s'écrivent en or dans le menu sombre (bleu-vert dans le clair) : on les distingue des pages." },
+      { t: "Sous-pages visibles", d: "Un clic sur une page qui a des sous-pages (Planning, Tests, SAV…) l'ouvre et garde le menu ouvert : ses sous-pages se déplient dessous. Le menu se referme quand on choisit une sous-page ou qu'on le quitte." },
+    ],
+  },
+  {
     id: "2026-11-v380",
     date: "2026-11-17",
     title: "V380 : Cloche — les demandes à valider se marquent vues, se masquent ou se reportent",

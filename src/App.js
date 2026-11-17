@@ -67,7 +67,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-17-v380-cloche-demandes";
+const APP_BUILD_VERSION = "2026-11-17-v381-menu-sous-pages";
 
 const ReleasePopup = React.lazy(() => import("./components/ReleaseNotes").then(m => ({ default: m.ReleasePopup })));
 function Navigate0({ go }) { useEffect(() => { go(); }, []); return null; } // eslint-disable-line react-hooks/exhaustive-deps
@@ -1164,14 +1164,14 @@ export default function App(){
       </button>
       {NAV_TREE.map(({g,items})=>{const closed=grpClosed.has(g),badges=items.reduce((t,it)=>t+(it.badge||0),0);return <React.Fragment key={g}>
         {!navCompact&&<button type="button" className="enogia-nav-grp e-hov" onClick={()=>togGrp(g)} aria-expanded={!closed} aria-controls={"enogia-grp-"+g} title={(closed?"Déplier":"Replier")+" « "+g+" »"}
-          style={{display:"flex",alignItems:"center",gap:8,width:"100%",minHeight:36,marginTop:8,padding:"0 10px",border:"none",borderRadius:8,background:"transparent",cursor:"pointer",fontFamily:T.font,fontSize:14,fontWeight:600,color:NAV.industrial?NAV.inkOn:T.ink900,textAlign:"left",whiteSpace:"nowrap","--e-hov-bg":NAV.hover}}>
+          style={{display:"flex",alignItems:"center",gap:8,width:"100%",minHeight:36,marginTop:8,padding:"0 10px",border:"none",borderRadius:8,background:"transparent",cursor:"pointer",fontFamily:T.font,fontSize:14,fontWeight:600,color:NAV.industrial?NAV.group:T.accentInk,textAlign:"left",whiteSpace:"nowrap","--e-hov-bg":NAV.hover}}>
           <span style={{flex:1}}>{g}</span>{closed&&badges>0&&<span aria-label={badges+" nouveauté"+(badges>1?"s":"")} style={{minWidth:18,height:18,padding:"0 5px",borderRadius:999,background:T.red600,color:T.onFill,fontSize:12,fontWeight:600,lineHeight:"18px",textAlign:"center"}}>{badges}</span>}
           <span aria-hidden="true" style={{display:"inline-flex",opacity:.7,transform:closed?"rotate(-90deg)":"none",transition:"transform var(--e-dur-menu) var(--e-ease)"}}><NavIcon name="chevronDown" size={14}/></span></button>}
         {navCompact&&<div className="enogia-nav-grp" style={{width:18,height:1,background:NAV.industrial?"rgba(255,255,255,.18)":T.line,margin:"4px 0"}}/>}
         <div id={"enogia-grp-"+g} key={g+"-"+(grpAnim[g]||0)} role="group" aria-label={g} className={(closed?"enogia-grp-closed":"")+(grpAnim[g]?" enogia-cl-in":"")} style={{display:"flex",flexDirection:"column",gap:4}}>
         {items.map(it=>{const on=it.on,hasSubs=it.subs&&it.subs.length>1,showSubs=(on||subsOpen.has(it.id))&&hasSubs;return(<React.Fragment key={it.id}>
           <div style={{position:"relative"}}>
-          <button className="enogia-nav-btn e-hov e-hov-ink" data-on={on?"1":"0"} onClick={()=>{if(coarse&&!on&&hasSubs&&!subsOpen.has(it.id)){togSubs(it.id);return;}it.go();setNavPeek(false);}} title={it.l} aria-label={it.badge?it.l+", "+it.badge+" nouvelle"+(it.badge>1?"s":"")+" mise"+(it.badge>1?"s":"")+" à jour":it.l} aria-current={on?"page":undefined}
+          <button className="enogia-nav-btn e-hov e-hov-ink" data-on={on?"1":"0"} onClick={()=>{if(coarse&&!on&&hasSubs&&!subsOpen.has(it.id)){togSubs(it.id);return;}it.go();if(!hasSubs)setNavPeek(false);}} /* v381 : une entrée à sous-pages garde le menu ouvert : ses sous-pages se déplient sous elle */ title={it.l} aria-label={it.badge?it.l+", "+it.badge+" nouvelle"+(it.badge>1?"s":"")+" mise"+(it.badge>1?"s":"")+" à jour":it.l} aria-current={on?"page":undefined}
             style={{position:"relative",width:navCompact?40:"100%",height:40,borderRadius:navCompact?12:12,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:navCompact?"center":"flex-start",gap:12,padding:navCompact?0:"0 12px",background:on?NAV.bgOn:"transparent",color:on?NAV.inkOn:NAV.ink,fontFamily:T.font,fontSize:FZ.sm,fontWeight:on?600:500,whiteSpace:"nowrap",transition:"background var(--e-dur-menu) ease, color var(--e-dur-menu) ease","--nav-mark":NAV.mark,"--e-hov-bg":NAV.hover,"--e-hov-ink":NAV.hoverInk}}
             aria-expanded={hasSubs?!!showSubs:undefined}>
             <NavIcon name={it.icon} size={19}/>{!navCompact&&<span className="enogia-nav-lab" style={{flex:1,textAlign:"left"}}>{it.l}</span>}{hasSubs&&!navCompact&&<span aria-hidden="true" style={{width:28,flexShrink:0}}/>}{it.id==="planning"&&<ChangesBadge n={unseenChanges.length}/>}</button>

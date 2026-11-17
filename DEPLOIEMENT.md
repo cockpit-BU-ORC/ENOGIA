@@ -2783,3 +2783,11 @@ Demandé (capture de la cloche, 278 demandes) : « je ne peux toujours pas suppr
 - InboxPage : sous chaque demande, « ✓ Vu » (grisée, hors compte ; « Non vu » pour annuler), « Masquer » (jusqu'à ce que le contenu change), « Plus tard » (demain 8 h) ; « N masquées ou reportées · Afficher » → « Remettre ».
 - MentionBell : prop `actions` (App lui passe `inboxActions`) → pastille rouge sans les demandes vues, masquées ou reportées.
 - Fichiers : src/bellFeed.js (+ test), src/components/InboxPage.js, src/components/MentionBell.js, src/App.js, src/demo/demoPages.js.
+
+## V381 — Menu : rubriques en couleur, sous-pages au clic
+
+Demandé : « les titres du panneau à gauche doivent avoir une couleur différente ; le déploiement automatique des sous-dossiers ne fonctionne pas, est-ce normal ? » — non : en menu non épinglé, un clic sur une page à sous-pages l'ouvrait et refermait aussitôt le menu, on ne voyait jamais les sous-pages.
+
+- App.js : en-têtes de rubrique en `NAV.group` (or dans le menu sombre) / `T.accentInk` (clair) ; une entrée à sous-pages ne referme plus le menu (`setNavPeek(false)` seulement sans sous-pages).
+- Maquette `maquettes-design/v381-haut-de-page.html` (espace en haut des pages : A resserré, B titre dans la barre, C barre qui s'efface) en attente du choix.
+- Fichiers : src/App.js.
