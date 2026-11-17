@@ -9,19 +9,22 @@ import { db } from "../firebase";
 import { T, FZF as FZ, btn } from "../theme";
 import { useCashin } from "../useCashin";
 import { getCashinDoc, todayISO } from "../cashinLink";
-import { toCollect, recentlyPaid, setEncReelle, groupInfo } from "../cashinModel";
+import { toCollect, recentlyPaid, setEncReelle, groupInfo, paidAmount, paidGap } from "../cashinModel";
 import { CASHIN_DOC_REF, validateCashin } from "../cashinData";
 import { PjPlate } from "./SharedUI";
 
 const eur = v => new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(Math.round(v || 0)) + " €";
+// « 95 000 », « 95000,50 », « 95 000 € » → 95000 / 95000.5 ; vide ou illisible → null
+const parseEur = s => { const t = String(s == null ? "" : s).replace(/[\s\u00A0\u202F€]/g, "").replace(",", "."); if (!t) return null; const n = Number(t); return isNaN(n) || n < 0 ? null : n; };
 const fdm = iso => (iso ? String(iso).slice(8, 10) + "/" + String(iso).slice(5, 7) : "—");
 
 // Écriture par défaut : transaction sur planning/cashin (seul encReelle du jalon change)
-export async function saveEncReelle(id, iso, by) {
+// v375 : recu = montant reçu s'il diffère du montant prévu (facultatif)
+export async function saveEncReelle(id, iso, by, recu) {
   await runTransaction(db, async tx => {
     const ref = CASHIN_DOC_REF(), snap = await tx.get(ref);
     if (!snap.exists()) throw new Error("Cash in introuvable");
-    const d = snap.data(), rows = setEncReelle(d.rows, id, iso), body = { ...d, rows, updatedAt: new Date().toISOString() };
+    const d = snap.data(), rows = setEncReelle(d.rows, id, iso, todayISO(), recu), body = { ...d, rows, updatedAt: new Date().toISOString() };
     const err = validateCashin(body); if (err) throw new Error(err);
     tx.set(ref, { ...body, updatedBy: by || "" });
   });
@@ -33,6 +36,7 @@ const GROUPS = [["late", "En retard", "encaissement prévu dépassé"], ["week",
 export function CashInEncaissements({ authorName, canEdit, save = saveEncReelle }) {
   useCashin(); // relu à chaque changement du Cash in
   const doc = getCashinDoc(), rows = (doc && doc.rows) || [], labels = (doc && doc.labels) || {}, today = todayISO();
+  const [amts, setAmts] = useState({}), [openAmt, setOpenAmt] = useState({}); // v375 : montant reçu différent (case ouverte à la demande)
   const [dates, setDates] = useState({}), [busy, setBusy] = useState(null), [toast, setToast] = useState(null), [err, setErr] = useState("");
   const tRef = useRef(null);
   useEffect(() => () => clearTimeout(tRef.current), []);
@@ -40,13 +44,13 @@ export function CashInEncaissements({ authorName, canEdit, save = saveEncReelle 
   const L = toCollect(rows, today), paid = recentlyPaid(rows, today);
   const sum = list => list.reduce((a, x) => a + amountOf(x.r || x), 0);
   const late = L.filter(x => x.group === "late"), monthPaid = rows.filter(r => r && !r.epc && r.encReelle && r.encReelle.slice(0, 7) === today.slice(0, 7));
-  const run = async (r, iso, undoOf) => {
+  const run = async (r, iso, undoOf, recu) => {
     setBusy(r.id); setErr("");
-    try { await save(r.id, iso, authorName);
+    try { await save(r.id, iso, authorName, recu);
       clearTimeout(tRef.current);
-      if (undoOf === undefined) { setToast({ text: r.pj + " · " + eur(amountOf(r)) + " encaissé le " + fdm(iso), r }); tRef.current = setTimeout(() => setToast(null), 6000); }
+      if (undoOf === undefined) { setToast({ text: r.pj + " · " + eur(recu != null ? recu : amountOf(r)) + " encaissé le " + fdm(iso) + (recu != null ? " (prévu " + eur(amountOf(r)) + ")" : ""), r }); tRef.current = setTimeout(() => setToast(null), 6000); }
       else setToast(null);
-      setDates(d => { const n = { ...d }; delete n[r.id]; return n; });
+      setDates(d => { const n = { ...d }; delete n[r.id]; return n; }); setAmts(d => { const n = { ...d }; delete n[r.id]; return n; }); setOpenAmt(d => { const n = { ...d }; delete n[r.id]; return n; });
     } catch (e) { setErr("Enregistrement impossible : " + ((e && e.code === "permission-denied") ? "il faut le niveau « Modifier » sur Finance." : (e && e.message) || e)); }
     setBusy(null);
   };
@@ -56,7 +60,7 @@ export function CashInEncaissements({ authorName, canEdit, save = saveEncReelle 
     <div style={{ display: "flex", gap: 28, flexWrap: "wrap" }}>
       <Kpi l="À encaisser" v={L.length + " · " + eur(sum(L))} />
       <Kpi l="En retard" v={late.length + " · " + eur(sum(late))} c={late.length ? T.red600 : undefined} />
-      <Kpi l="Reçus ce mois" v={monthPaid.length + " · " + eur(monthPaid.reduce((a, r) => a + amountOf(r), 0))} c={T.emerald600} />
+      <Kpi l="Reçus ce mois" v={monthPaid.length + " · " + eur(monthPaid.reduce((a, r) => a + (r.montantRecu != null ? paidAmount(r) : amountOf(r)), 0))} c={T.emerald600} />
     </div>
     {err && <div role="alert" style={{ padding: "8px 12px", borderRadius: 8, background: T.red100, color: T.red600, fontSize: FZ.sm, fontWeight: 500 }}>{err}</div>}
     {!L.length && <div style={{ padding: "28px 16px", textAlign: "center", color: T.ink500, background: T.card, borderRadius: 12, border: "1px solid " + T.line }}>Aucune facture en attente de paiement.</div>}
@@ -67,6 +71,7 @@ export function CashInEncaissements({ authorName, canEdit, save = saveEncReelle 
           <span style={{ background: tone.bg, color: tone.ink, borderRadius: 999, padding: "1px 8px", fontSize: 12, fontWeight: 500 }}>{title}</span>{sub}<span style={{ marginLeft: "auto", fontVariantNumeric: "tabular-nums" }}>{G.length} · {eur(sum(G))}</span></h3>
         <ol style={{ listStyle: "none", margin: 0, padding: 0, background: T.card, border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden" }}>
           {G.map(({ r, due, days }, i) => { const d = dates[r.id] || today, other = d !== today, lab = labels[r.pj] || "";
+            const op = !!openAmt[r.id], recu = op ? parseEur(amts[r.id]) : null, diff = recu != null && Math.round(recu * 100) !== Math.round(amountOf(r) * 100) ? recu : null, badAmt = op && amts[r.id] != null && String(amts[r.id]).trim() !== "" && recu == null;
             // éléments qui passent à la ligne selon la place (le cadre peut être étroit sans que l'écran le soit)
             return <li key={r.id} style={{ display: "flex", flexWrap: "wrap", gap: "8px 14px", alignItems: "center", padding: "12px 14px", minHeight: 64, borderTop: i ? "1px solid " + T.line : "none" }} className="enogia-enc-row">
               <div style={{ flex: "1 1 220px", minWidth: 0, display: "flex", alignItems: "center", gap: 12 }}><PjPlate pj={r.pj} />
@@ -74,10 +79,17 @@ export function CashInEncaissements({ authorName, canEdit, save = saveEncReelle 
                 <div style={{ fontSize: 12, color: T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{[r.jalon, r.pct != null ? r.pct + " %" : "", r.ref].filter(Boolean).join(" · ")}</div></div></div>
               <div style={{ flex: "0 1 170px", fontSize: 12, color: T.ink500, lineHeight: 1.45, fontVariantNumeric: "tabular-nums" }}>Facture <b style={{ color: T.ink900, fontWeight: 600 }}>{fdm(r.factReelle)}</b><br />Prévu <b style={{ color: g === "late" ? T.red600 : T.ink900, fontWeight: 600 }}>{fdm(due)}{g === "late" && days != null ? " · " + -days + " j de retard" : ""}</b></div>
               <div className="enogia-enc-act" style={{ flex: "1 1 300px", display: "flex", alignItems: "center", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
-                <b style={{ fontFamily: T.fontDisplay, fontSize: 16, fontWeight: 600, fontVariantNumeric: "tabular-nums", marginRight: 4 }}>{eur(amountOf(r))}</b>
+                <b style={{ fontFamily: T.fontDisplay, fontSize: 16, fontWeight: 600, fontVariantNumeric: "tabular-nums", marginRight: 4, textDecoration: diff != null ? "line-through" : "none", color: diff != null ? T.ink500 : T.ink900 }}>{eur(amountOf(r))}</b>
+                {canEdit && (op ? <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <label htmlFor={"enc-recu-" + r.id} style={{ fontSize: 12, color: T.ink500 }}>Reçu</label>
+                  <input id={"enc-recu-" + r.id} type="text" inputMode="decimal" autoComplete="off" value={amts[r.id] != null ? amts[r.id] : String(amountOf(r))} onChange={e => setAmts(x => ({ ...x, [r.id]: e.target.value }))} onKeyDown={e => { if (e.key === "Escape") setOpenAmt(x => ({ ...x, [r.id]: false })); }}
+                    aria-invalid={badAmt || undefined} aria-describedby={"enc-recu-h-" + r.id} style={{ width: 120, minHeight: 36, borderRadius: 8, border: "1px solid " + (badAmt ? T.red600 : T.fieldLine), background: T.card, color: T.ink900, fontFamily: T.font, fontSize: 14, padding: "0 8px", textAlign: "right", fontVariantNumeric: "tabular-nums" }} />
+                  <span id={"enc-recu-h-" + r.id} style={{ fontSize: 12, color: badAmt ? T.red600 : diff != null ? (diff < amountOf(r) ? T.red600 : T.emerald600) : T.ink500, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{badAmt ? "montant illisible" : diff != null ? (diff < amountOf(r) ? "−" : "+") + eur(Math.abs(diff - amountOf(r))) : "€"}</span>
+                  <button type="button" onClick={() => { setOpenAmt(x => ({ ...x, [r.id]: false })); setAmts(x => { const n = { ...x }; delete n[r.id]; return n; }); }} aria-label={"Garder le montant prévu pour " + r.pj} style={{ ...btn("ghost", "sm"), minHeight: 28, padding: "0 6px" }}>×</button></span>
+                  : <button type="button" onClick={() => setOpenAmt(x => ({ ...x, [r.id]: true }))} aria-expanded="false" style={{ ...btn("ghost", "sm"), fontWeight: 500, color: T.ink500 }}>Montant différent ?</button>)}
                 {canEdit && <><input type="date" value={d} max={today} onChange={e => setDates(x => ({ ...x, [r.id]: e.target.value || today }))} aria-label={"Date de paiement de " + r.pj + " " + (r.jalon || "")}
                   style={{ minHeight: 36, borderRadius: 8, border: "1px solid " + T.fieldLine, background: T.card, color: T.ink900, fontFamily: T.font, fontSize: 13, padding: "0 8px", colorScheme: T.mode === "dark" ? "dark" : "light" }} />
-                <button type="button" disabled={busy === r.id} onClick={() => run(r, d)} style={{ ...btn("sec", "md"), minHeight: 36, whiteSpace: "nowrap" }}>{busy === r.id ? "Enregistrement…" : other ? "Encaissé le " + fdm(d) : "Encaissé aujourd'hui"}</button></>}
+                <button type="button" onClick={() => run(r, d, undefined, diff)} disabled={busy === r.id || badAmt} style={{ ...btn("sec", "md"), minHeight: 36, whiteSpace: "nowrap" }}>{busy === r.id ? "Enregistrement…" : (other ? "Encaissé le " + fdm(d) : "Encaissé aujourd'hui") + (diff != null ? " · " + eur(diff) : "")}</button></>}
               </div>
             </li>; })}
         </ol></div>); })}
@@ -85,7 +97,7 @@ export function CashInEncaissements({ authorName, canEdit, save = saveEncReelle 
       <summary style={{ cursor: "pointer", padding: "10px 14px", fontSize: 14, fontWeight: 600, color: T.ink900, minHeight: 44, boxSizing: "border-box", display: "flex", alignItems: "center", gap: 8 }}>Reçus ces 30 jours <span style={{ fontWeight: 500, fontSize: 13, color: T.ink500 }}>· {paid.length}</span></summary>
       {paid.map(r => <div key={r.id} style={{ display: "grid", gridTemplateColumns: "auto minmax(0,1fr) auto auto", gap: 12, alignItems: "center", padding: "8px 14px", borderTop: "1px solid " + T.line, minHeight: 44 }}>
         <PjPlate pj={r.pj} /><span style={{ minWidth: 0, fontSize: 13, color: T.ink700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{[labels[r.pj], r.jalon].filter(Boolean).join(" · ")}</span>
-        <span style={{ fontSize: 13, fontWeight: 600, color: T.emerald600, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>✓ {eur(amountOf(r))} le {fdm(r.encReelle)}</span>
+        <span style={{ fontSize: 13, fontWeight: 600, color: T.emerald600, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>✓ {eur(r.montantRecu != null ? paidAmount(r) : amountOf(r))} le {fdm(r.encReelle)}{paidGap(r) != null && <span style={{ fontWeight: 500, color: paidGap(r) < 0 ? T.red600 : T.ink500 }}> · prévu {eur(amountOf(r))} ({paidGap(r) < 0 ? "−" : "+"}{eur(Math.abs(paidGap(r)))})</span>}</span>
         {canEdit ? <button type="button" disabled={busy === r.id} onClick={() => run(r, null, true)} style={{ ...btn("ghost", "sm") }}>Remettre à encaisser</button> : <span />}
       </div>)}
     </details>}

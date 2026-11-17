@@ -104,7 +104,7 @@ const AccueilProduit = () => <HomeView produit={DEMO_PRODUIT} pinOk testsDoc={DE
 // v324 : la cloche ouvre le pop-up « À traiter » (plus de page dédiée)
 // v369 : Cash in › Encaissements — Cash in fictif en mémoire (jamais écrit en base)
 function Encaissements() { useState(() => { setCashinDoc(JSON.parse(JSON.stringify(DEMO_CASHIN))); return 0; });
-  const save = async (id, iso) => { const d = getCashinDoc(); setCashinDoc({ ...d, rows: setEncReelle(d.rows, id, iso) }); };
+  const save = async (id, iso, by, recu) => { const d = getCashinDoc(); setCashinDoc({ ...d, rows: setEncReelle(d.rows, id, iso, undefined, recu) }); };
   return <CashInEncaissements authorName={DEMO_ME.name} canEdit save={save} />; }
 // v374 : Cash in › Fiche du lundi — Cash in fictif et réglages en mémoire (aucun envoi, rien en base)
 function FicheLundi() { const [cash] = useState(demoWeeklyCash), [w, setW] = useState({ on: true, recipients: ["direction@enogia.com", "daf@enogia.com", "camille.durand@enogia.com"], history: [{ at: new Date(Date.now() - 7 * 864e5).toISOString(), kind: "auto", n: 3, ok: true }] });

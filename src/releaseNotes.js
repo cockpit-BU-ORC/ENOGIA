@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v375",
+    date: "2026-11-17",
+    title: "V375 : Encaissements — noter un montant reçu différent du montant prévu",
+    items: [
+      { t: "Montant différent", d: "Dans Cash in › Encaissements, « Montant différent ? » à côté du montant ouvre une case pour noter la somme réellement reçue. Sans y toucher, rien ne change : le jalon est payé au montant prévu." },
+      { t: "Écart visible", d: "L'écart s'affiche avant de valider, sur le bouton, dans « Reçus ces 30 jours » et sous le montant dans le tableau complet du Cash in. Le montant de la facture n'est pas modifié." },
+      { t: "Totaux justes", d: "L'encaissé du Cash in et de la fiche du lundi compte la somme reçue. « Remettre à encaisser » efface aussi le montant noté." },
+    ],
+  },
+  {
     id: "2026-11-v374",
     date: "2026-11-17",
     title: "V374 : Cash in — la fiche du lundi part du site : l'année, le mois en cours, le mois qui arrive",

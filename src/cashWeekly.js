@@ -4,7 +4,7 @@
 // Cash in › Fiche du lundi et à la fonction serveur qui envoie le mail (copié dans functions/shared par scripts/sync-functions.js).
 // Mêmes règles que les onglets du Cash in : statut (cashinLink), Cash par mois et Écarts (cashinModel). Jalons EPC exclus.
 import { statusOf, addDays, diffDays } from "./cashinLink";
-import { monthly, ecartKpis } from "./cashinModel";
+import { monthly, ecartKpis, paidAmount } from "./cashinModel";
 
 export const MONTHS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
 const MS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
@@ -62,7 +62,7 @@ export function weeklyReport(doc, today, prev) {
   rows.forEach(r => {
     const a = amt(r), ie = initEnc(r), st = statusOf(r, today);
     if (ie && ie.slice(0, 4) === Y) { initM[+ie.slice(5, 7) - 1] += a; if (ie <= today) initToDate += a; }
-    if (r.encReelle) { if (r.encReelle.slice(0, 4) === Y && r.encReelle <= today) { paidM[+r.encReelle.slice(5, 7) - 1] += a; paidYtd += a; } }
+    if (r.encReelle) { if (r.encReelle.slice(0, 4) === Y && r.encReelle <= today) { const p = paidAmount(r); paidM[+r.encReelle.slice(5, 7) - 1] += p; paidYtd += p; } }
     else if (r.encPrevue) { if (r.encPrevue < today) lateCash += a; else if (r.encPrevue.slice(0, 4) === Y) fcM[+r.encPrevue.slice(5, 7) - 1] += a; }
     if (r.factReelle && r.factReelle.slice(0, 4) === Y && r.factReelle <= today) factYtd += a;
     const fi = initFact(r); if (fi && fi.slice(0, 4) === Y && fi <= today) factInitToDate += a;

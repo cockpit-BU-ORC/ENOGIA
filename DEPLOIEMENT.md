@@ -2725,3 +2725,14 @@ Demandé : « il part de l'artefact, je veux qu'il parte directement du site » 
 - **À faire par Gabriel** : 1) compte d'envoi Google Workspace + mot de passe d'application ; 2) `firebase functions:secrets:set MAIL_USER` et `MAIL_PASS` ; 3) `cd functions && npm install` ; 4) publier `firestore.rules` (document `cashinWeekly`) ; 5) `firebase deploy --only functions` ; 6) essai sur la bêta avec « M'envoyer un test ». Mode d'emploi : `functions/LISEZMOI.md`.
 - Clés localStorage : `enogia_cash_sub` accepte « lundi ».
 - Fichiers : src/cashWeekly.js (+ test), src/components/CashInWeekly.js, CashInTab.js, App.js, cashinData.js, demo/, scripts/sync-functions.js, functions/index.js, functions/weekly.js, functions/shared/, functions/package.json, functions/test/weekly.test.js, functions/LISEZMOI.md, firestore.rules, firebase.json.
+
+## V375 — Encaissements : montant reçu différent du montant prévu
+
+Demandé : « indiquer si on a reçu la somme mais différente de la somme prévue ; une case à côté pour mettre à jour une somme (de base ne rien changer) ».
+
+- **Données** : nouveau champ facultatif `montantRecu` sur un jalon de `planning/cashin.rows` (absent = payé au montant prévu ; le champ `montant`, montant de la facture, n'est jamais modifié). La page Cash in (public/cashin.html) garde les champs qu'elle ne connaît pas : rien n'est perdu à l'enregistrement.
+- **Modèle** (cashinModel.js, testé `montantRecu.test.js`) : `setEncReelle(rows, id, iso, today, recu)` (noté seulement s'il diffère du montant, effacé quand on remet à encaisser), `paidAmount(r)`, `paidGap(r)` ; l'encaissé de `groupStats` et de `monthly` (onglets Projets et Cash par mois du site) et de la fiche du lundi (`cashWeekly.js`) compte la somme reçue.
+- **Page** (CashInEncaissements.js) : bouton discret « Montant différent ? » → case « Reçu » (montant prévu pré-rempli, écart en direct, « montant illisible » refusé, × ou Échap = garder le montant prévu), bouton « Encaissé aujourd'hui · 45 500 € », message et « Reçus ces 30 jours » avec l'écart.
+- **Cash in (cashin.html, `CASHIN_PAGE_VERSION` 375)** : `paidAmt` dans les chiffres (Encaissé), Projets et Cash par mois ; mention « reçu … (écart) » sous le montant du jalon.
+- **Fonctions** : `functions/shared` recopié (`node scripts/sync-functions.js`) — redéployer les fonctions (`firebase deploy --only functions`) pour que la fiche du lundi compte la somme reçue.
+- Règles Firestore inchangées. Fichiers : src/cashinModel.js, src/cashWeekly.js, src/components/CashInEncaissements.js, public/cashin.html, src/cashinData.js, src/demo/demoPages.js, functions/shared/, src/montantRecu.test.js.

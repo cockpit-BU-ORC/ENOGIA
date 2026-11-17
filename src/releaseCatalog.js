@@ -1134,4 +1134,8 @@ export const RELEASE_CATALOG = [
     ["Fiche du lundi du Cash in", "Envoyée par le site chaque lundi à 7 h, avec un PDF : année, mois en cours, mois qui arrive."],
     ["Réglages de l'envoi", "Destinataires, test, envoi immédiat annulable et historique dans Cash in › Fiche du lundi."],
   ] },
+  { v: "375", t: "Encaissements — noter un montant reçu différent du montant prévu", items: [
+    ["Montant reçu différent", "Cash in › Encaissements : « Montant différent ? » pour noter la somme réellement reçue."],
+    ["Encaissé réel", "Les totaux encaissés du Cash in et de la fiche du lundi comptent la somme reçue."],
+  ] },
 ];

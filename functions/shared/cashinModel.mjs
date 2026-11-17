@@ -85,7 +85,7 @@ export function groupStats(list, today = todayISO()) {
   list.forEach(r => {
     const a = Number(r.montant) || 0, s = kOf(r, today); o.total += a;
     if (r.epc) { o.epc += a; return; }
-    if (s === "paid") { o.paid += a; o.paidN++; }
+    if (s === "paid") { o.paid += paidAmount(r); o.paidN++; }
     else {
       if (s === "invoiced" || s === "late") o.inv += a; else o.toBill += a;
       if (r.encPrevue && (!o.next || r.encPrevue < o.next)) { o.next = r.encPrevue; o.nextRow = r; }
@@ -115,7 +115,7 @@ export function monthly(rows, today = todayISO()) {
   (rows || []).forEach(r => {
     const mk = monthKeys(r, today); if (!mk) return; const a = Number(r.montant);
     if (mk.init === "none") nodate.init += a; else get(mk.init).init += a;
-    if (mk.act === "none") nodate.fc += a; else if (mk.paid) get(mk.act).paid += a; else get(mk.act).fc += a;
+    if (mk.act === "none") nodate.fc += a; else if (mk.paid) get(mk.act).paid += paidAmount(r); else get(mk.act).fc += a;
     const pu = punctual(r, today);
     if (pu && mk.act !== "none") { const g = get(mk.act); if (pu.k === "ontime") { g.ot += a; g.otN++; } else { g.sh += a; g.shN++; } }
   });
@@ -198,4 +198,18 @@ export function toCollect(rows, today = todayISO()) {
 // Paiements reçus depuis `days` jours (pour « Remettre à encaisser » en cas d'erreur), du plus récent
 export const recentlyPaid = (rows, today = todayISO(), days = 30) => (rows || []).filter(r => r && !r.epc && r.encReelle && r.encReelle >= addDays(today, -days)).sort((a, b) => b.encReelle.localeCompare(a.encReelle));
 // Seul champ que le DAF modifie : date de paiement reçu (ou vide) ; statut et dates liées recalculés comme dans la page Cash in
-export const setEncReelle = (rows, id, iso, today = todayISO()) => (rows || []).map(r => (r && r.id === id ? applyEdit(r, "encReelle", iso || null, today).row : r));
+// v375 (demandé : « indiquer si on a reçu la somme mais différente de la somme prévue ; de base ne rien changer ») : montant reçu,
+// facultatif, gardé à part (montantRecu) — le montant de la facture (montant) ne change pas. Absent ou égal au montant = rien de noté.
+// Remettre à encaisser (iso vide) efface aussi le montant reçu.
+export function setEncReelle(rows, id, iso, today = todayISO(), recu) {
+  return (rows || []).map(r => {
+    if (!r || r.id !== id) return r;
+    const row = applyEdit(r, "encReelle", iso || null, today).row, n = recu === "" || recu == null ? null : Number(recu);
+    if (iso && n != null && !isNaN(n) && n >= 0 && Math.round(n * 100) !== Math.round((Number(r.montant) || 0) * 100)) row.montantRecu = Math.round(n * 100) / 100; else delete row.montantRecu;
+    return row;
+  });
+}
+// Montant réellement encaissé d'un jalon payé : le montant reçu s'il a été noté, sinon le montant du jalon
+export const paidAmount = r => (r && r.encReelle && r.montantRecu != null && !isNaN(Number(r.montantRecu)) ? Number(r.montantRecu) : Number(r && r.montant) || 0);
+// Écart reçu − prévu (null si rien de noté)
+export const paidGap = r => (r && r.encReelle && r.montantRecu != null && !isNaN(Number(r.montantRecu)) ? Number(r.montantRecu) - (Number(r.montant) || 0) : null);
