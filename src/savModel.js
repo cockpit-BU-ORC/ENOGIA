@@ -188,3 +188,24 @@ export function addStepNote(t, step, text, by, at = new Date().toISOString()) {
   const n = { ...((t && t.stepNotes) || {}) }; n[step] = [...(n[step] || []), { t: String(text).trim(), by: by || "", at }]; return { ...t, stepNotes: n };
 }
 export function delStepNote(t, step, k) { const n = { ...((t && t.stepNotes) || {}) }; n[step] = (n[step] || []).filter((_, j) => j !== k); if (!n[step].length) delete n[step]; return { ...t, stepNotes: n }; }
+
+// v377 (demandé : « en tant que chef de projet, une seule ligne pour le SAV : créneaux réservés en bleu (plus de MES possible), en
+// pointillé ceux où une intervention est encore possible suivant une règle du responsable SAV, rien = le CdP met sa date ; la règle est
+// liée au nombre de ressources disponibles, avec un réglage en direct »). Règle = planning/sav.capa = { n, periods: [{ id, from, to, n }] } :
+// n = ressources disponibles chaque jour (absent = nombre de techniciens) ; une période particulière (congés, salon…) la remplace.
+export function capacityOn(capa, techsN, d) {
+  const per = ((capa && capa.periods) || []).filter(p => p && p.from && p.to && p.from <= d && p.to >= d);
+  if (per.length) return Math.max(0, Math.min(...per.map(p => Number(p.n) || 0)));
+  return capa && capa.n != null && !isNaN(Number(capa.n)) ? Math.max(0, Number(capa.n)) : (techsN || 0);
+}
+// Occupation d'un jour : chaque intervention datée (hors annulée) prend autant de ressources que de techniciens (au moins 1) ;
+// chaque demande d'un chef de projet en attente en prend 1. État : full (plus de place), some (réservé mais encore de la place), free.
+export function slotDays(inters, techs, pend, days, capa) {
+  const list = Object.values(inters || {}).filter(i => i && i.a && i.b && i.st !== "Annulée");
+  const dems = (pend || []).map(p => { const L = workDaysFrom(p.date, Math.max(1, Number(p.days) || 1)); return { from: L[0], to: L[L.length - 1] }; });
+  return days.map(d => {
+    const used = list.filter(i => i.a <= d && i.b >= d).reduce((s, i) => s + Math.max(1, interTeam(i).length), 0) + dems.filter(p => p.from <= d && p.to >= d).length;
+    const cap = capacityOn(capa, (techs || []).length, d), left = Math.max(0, cap - used);
+    return { d, cap, used, left, state: cap <= 0 || used >= cap ? "full" : used > 0 ? "some" : "free" };
+  });
+}

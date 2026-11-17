@@ -120,7 +120,8 @@ function Cloche() { const [cm, setCm] = useState(DEMO_COMMENTS);
 // v326 : SAV / MES — équipe SAV (tout) et chef de projet (lecture, planning sur une ligne, demandes)
 // window.__savLast : dernier enregistrement simulé (pour vérifier le glisser à l'écran)
 const savApi = { put: async (c, id, d) => { if (typeof window !== "undefined") window.__savLast = { c, id, d }; return true; }, del: async () => true, setField: async () => true };
-function SavDemo({ level, sub0 }) { const [sub, setSub] = useState(sub0); return <SavPage doc={DEMO_SAV} dem={DEMO_SAV_DEM} api={savApi} demApi={savApi} rows={DEMO_ROWS} level={level} canCost={level !== "r"} me={DEMO_ME.email} myName={DEMO_ME.name} myPjs={["PJ901", "PJ902"]} team={[]} sub={sub} onSub={setSub} onOpenPj={no} />; }
+// v377 : la règle des créneaux se règle en mémoire (le planning des chefs de projet suit en direct)
+function SavDemo({ level, sub0 }) { const [sub, setSub] = useState(sub0), [doc, setDoc] = useState(DEMO_SAV); const api = useMemo(() => ({ ...savApi, setField: async (k, v) => { setDoc(d => ({ ...d, [k]: v })); return true; } }), []); return <SavPage doc={doc} dem={DEMO_SAV_DEM} api={api} demApi={savApi} rows={DEMO_ROWS} level={level} canCost={level !== "r"} me={DEMO_ME.email} myName={DEMO_ME.name} myPjs={["PJ901", "PJ902"]} team={[]} sub={sub} onSub={setSub} onOpenPj={no} />; }
 
 // v346 : Manager (KPI, fiche projet, point hebdo) et Planificateur, vus en propriétaire (droits remis à zéro en quittant la page)
 // v359 : les droits sont aussi remis dans l'effet — en développement React démonte puis remonte la page, et le démontage les retirait
@@ -142,7 +143,7 @@ export const DEMO_PAGES = [
   { id: "home-produit", label: "Accueil · resp. produit", Render: AccueilProduit, expect: ["Livrables Produit", "P&ID validé", "Papeterie du Nord"] },
   { id: "sav", label: "SAV · équipe", Render: () => <SavDemo level="w" sub0="tickets" />, expect: ["SAV / MES", "TC-26-41", "Sucrerie Centre"] },
   { id: "sav-plan", label: "SAV · planning", Render: () => <SavDemo level="w" sub0="planning" />, expect: ["Lou Martin", "Demandes des chefs de projet", "Aujourd'hui"] },
-  { id: "sav-cdp", label: "SAV · chef de projet", Render: () => <SavDemo level="r" sub0="planning" />, expect: ["Demandes", "Mes demandes", "Lou Martin"] },
+  { id: "sav-cdp", label: "SAV · chef de projet", Render: () => <SavDemo level="r" sub0="planning" />, expect: ["SAV / MES", "Mes demandes", "Complet"] },
   { id: "sav-kpi", label: "SAV · KPI", Render: () => <SavDemo level="w" sub0="kpi" />, expect: ["Affectation de l'équipe", "Interventions", "Finance"] },
   { id: "sav-parc", label: "SAV · parc", Render: () => <SavDemo level="w" sub0="parc" />, expect: ["PJ214", "Premium"] },
   { id: "bell", label: "Cloche", Render: Cloche, expect: [] },

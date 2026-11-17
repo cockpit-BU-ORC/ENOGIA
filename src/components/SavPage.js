@@ -15,7 +15,7 @@ import { askConfirm } from "../confirm";
 import { smooth } from "../scrollMode";
 import { TICKET_TYPES, typeOf, flowOf, PRIOS, ORIGINS, INTER_TYPES, INTER_STATUS, PREP_ITEMS, CLO_ITEMS, COST_FIELDS, CONTRACTS, DEM_STATUS,
   nextTicketId, nextInterId, isClosed, ticketAge, interCost, interTeam, interDays, planBars, dayLoad, workDaysFrom, mondayOf,
-  acceptDemande, parcOf, savKpis, savStats, fournTypesOf, fournLabel, addStepNote, delStepNote } from "../savModel";
+  acceptDemande, slotDays, capacityOn, parcOf, savKpis, savStats, fournTypesOf, fournLabel, addStepNote, delStepNote } from "../savModel";
 
 const iso = d => { const x = new Date(d); return isNaN(x) ? "" : x.toISOString().slice(0, 10); };
 const todayIso = () => iso(new Date());
@@ -166,7 +166,7 @@ export function SavPage({ doc, dem, api, demApi, rows, level = "r", canCost, me,
       onNewInter={(id, t) => setInterDlg({ id: null, i: { tk: id, pj: t.pj, obj: t.det || "", st: "À planifier", type: t.type === "mes" ? "Mise en service" : t.type === "prev" ? "Maintenance préventive" : "Maintenance curative", resp: t.resp || "", who: [], prep: [], clo: [], costs: {} } })}
       onOpenInter={id => setInterDlg({ id, i: inters[id] })} />}
     {sub === "inters" && <IntersView {...{ inters, canCost, nomOf }} onOpen={id => setInterDlg({ id, i: inters[id] })} />}
-    {sub === "planning" && <PlanningView {...{ inters, demandes, techs, canEdit, nomOf, me, myName, myPjs, pjList }} onOpenInter={id => setInterDlg({ id, i: inters[id] })} onTeam={() => setTeamDlg(true)}
+    {sub === "planning" && <PlanningView {...{ inters, demandes, techs, canEdit, nomOf, me, myName, myPjs, pjList }} capa={D.capa} onCapa={c => api.setField("capa", c)} onOpenInter={id => setInterDlg({ id, i: inters[id] })} onTeam={() => setTeamDlg(true)}
       onMove={(id, patch) => api.put("inters", id, { ...inters[id], ...patch })}
       onRequest={day => setDemDlg({ date: day, days: 1, pj: focusPj && pjList.includes(focusPj) ? focusPj : (myPjs || [])[0] || "", obj: "", type: "cur" })}
       onAnswer={async (id, d, ok, note) => {
@@ -376,7 +376,37 @@ function SRow({ label, sub, children, h = 40, ink, labW, width, grey }) {
 // v335 (demandé : « les demandes des CdP ne sont pas assez claires : au lieu de répéter la case chaque jour, un long trait sur le nombre de jours ») :
 // une barre par demande en attente, rangée sur des pistes sans chevauchement (première piste libre).
 const laneUp = items => { const ends = []; return items.map(it => { let k = ends.findIndex(e => e < it.from); if (k < 0) { k = ends.length; ends.push(it.to); } else ends[k] = it.to; return { ...it, lane: k }; }); };
-function PlanningView({ inters, demandes, techs, canEdit, nomOf, me, myPjs, onOpenInter, onTeam, onRequest, onAnswer, onCancel, onMove }) {
+// v377 : règle des créneaux pour les chefs de projet, réglée en direct par le responsable SAV (chaque changement est enregistré tout de suite)
+function CapaPanel({ capa, techsN, onCapa }) {
+  const c = capa || {}, n = c.n != null ? Number(c.n) : techsN, periods = Array.isArray(c.periods) ? c.periods : [];
+  const [nn, setNn] = useState(n), tm = useRef(null);
+  useEffect(() => setNn(n), [n]);
+  useEffect(() => () => clearTimeout(tm.current), []);
+  const setN = v => { const x = Math.max(0, Math.min(50, v)); setNn(x); clearTimeout(tm.current); tm.current = setTimeout(() => onCapa({ ...c, n: x }), 350); };
+  const setP = (i, patch) => onCapa({ ...c, periods: periods.map((p, k) => (k === i ? { ...p, ...patch } : p)) });
+  const small = { minWidth: 32, minHeight: 32, borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: 16, fontWeight: 600, cursor: "pointer", fontFamily: T.font };
+  return <div role="group" aria-label="Règle des créneaux" style={{ padding: "12px 14px", borderBottom: "1px solid " + T.line, background: T.card, display: "flex", flexDirection: "column", gap: 10 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+      <span style={{ fontSize: FZ.sm, fontWeight: 600, color: T.ink900 }}>Ressources disponibles chaque jour</span>
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+        <button type="button" onClick={() => setN(nn - 1)} disabled={nn <= 0} aria-label="Une ressource de moins" style={small}>−</button>
+        <output aria-live="polite" style={{ minWidth: 28, textAlign: "center", fontFamily: T.fontDisplay, fontSize: 20, fontWeight: 600, color: T.ink900, fontVariantNumeric: "tabular-nums" }}>{nn}</output>
+        <button type="button" onClick={() => setN(nn + 1)} aria-label="Une ressource de plus" style={small}>+</button></span>
+      <span style={{ fontSize: 12, color: T.ink500 }}>{c.n == null ? "= nombre de techniciens (" + techsN + ")" : <button type="button" onClick={() => onCapa({ ...c, n: null })} style={{ ...btn("ghost", "sm"), padding: "0 4px" }}>Revenir au nombre de techniciens ({techsN})</button>}</span>
+    </div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <span style={{ fontSize: 12, color: T.ink500 }}>Périodes particulières (congés, salon, formation…) : elles remplacent le nombre ci-dessus</span>
+      {periods.map((p, i) => <div key={p.id || i} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", fontSize: FZ.sm, color: T.ink700 }}>
+        du <input type="date" value={p.from || ""} onChange={e => setP(i, { from: e.target.value, to: p.to && p.to < e.target.value ? e.target.value : p.to })} aria-label="Début de la période" style={{ ...inp(), width: 150 }} />
+        au <input type="date" value={p.to || ""} min={p.from || undefined} onChange={e => setP(i, { to: e.target.value })} aria-label="Fin de la période" style={{ ...inp(), width: 150 }} />
+        <input type="number" min={0} max={50} value={p.n == null ? "" : p.n} onChange={e => setP(i, { n: Math.max(0, +e.target.value || 0) })} aria-label="Ressources disponibles pendant la période" style={{ ...inp(), width: 70 }} /> ressource{(+p.n || 0) > 1 ? "s" : ""}{+p.n === 0 ? " (fermé)" : ""}
+        <button type="button" onClick={() => onCapa({ ...c, periods: periods.filter((x, k) => k !== i) })} aria-label="Retirer la période" style={{ ...btn("ghost", "sm") }}>Retirer</button></div>)}
+      <div><Btn size="sm" onClick={() => { const t = todayIso(); onCapa({ ...c, periods: [...periods, { id: "p" + Date.now().toString(36), from: t, to: t, n: Math.max(0, nn - 1) }] }); }}>＋ Ajouter une période</Btn></div>
+    </div>
+    <div style={{ fontSize: 12, color: T.ink500, maxWidth: "75ch" }}>Pour les chefs de projet, un jour est complet quand les interventions (une ressource par technicien) et les demandes en attente occupent toutes les ressources. C'est enregistré tout de suite : leur planning se met à jour sans recharger.</div>
+  </div>;
+}
+function PlanningView({ inters, demandes, techs, canEdit, nomOf, me, myPjs, onOpenInter, onTeam, onRequest, onAnswer, onCancel, onMove, capa, onCapa }) {
   const t0 = todayIso();
   const [z, setZ0] = useState(() => { try { const v = localStorage.getItem("enogia_sav_zoom"); return v != null && ZOOMS[+v] ? +v : 3; } catch (e) { return 3; } });
   const setZ = n => { const v = Math.max(0, Math.min(ZOOMS.length - 1, n)); setZ0(v); try { localStorage.setItem("enogia_sav_zoom", String(v)); } catch (e) { /* stockage indisponible */ } };
@@ -402,6 +432,11 @@ function PlanningView({ inters, demandes, techs, canEdit, nomOf, me, myPjs, onOp
   const pendBars = laneUp(pend.map(p => { const L = workDaysFrom(p.date, Math.max(1, +p.days || 1)); return { ...p, from: L[0], to: L[L.length - 1], n: L.length }; }).sort((a, b) => a.from.localeCompare(b.from)));
   const lanes = pendBars.reduce((m, b) => Math.max(m, b.lane + 1), 0), LANE = 24, demH = 8 + lanes * LANE + 30;
   const pendOn = d => pendBars.filter(p => p.from <= d && p.to >= d);
+  // v377 : vue chef de projet = une seule ligne « SAV / MES » ; le responsable SAV peut la voir (« Vue chef de projet ») et régler la règle
+  const [asCdp, setAsCdp] = useState(false), [ruleOpen, setRuleOpen] = useState(false), cdpMode = !canEdit || asCdp;
+  const slots = slotDays(inters, techs, pend, days, capa), capToday = capacityOn(capa, techs.length, t0);
+  const segs = []; slots.forEach((x, i) => { const st = isWE(x.d) ? "we" : x.state, last = segs[segs.length - 1];
+    if (last && last.st === st && last.i1 === i - 1) { last.i1 = i; last.left = Math.min(last.left, x.left); } else segs.push({ st, i0: i, i1: i, left: x.left }); });
   // v335 : « Planifiée » = dates validées avec le client (barre pleine) ; « À planifier » avec dates = pas encore validée (barre en pointillés hachurée)
   const tentative = st => st === "À planifier";
   const barColor = st => st === "Réalisée" || st === "Validée" ? [T.emerald100, T.emerald600] : st === "En cours" ? [T.accentSoft || T.teal100, T.accentInk || T.teal600] : [T.info100, T.info600];
@@ -424,6 +459,8 @@ function PlanningView({ inters, demandes, techs, canEdit, nomOf, me, myPjs, onOp
     <span aria-live="polite" style={{ fontFamily: T.fontDisplay, fontWeight: 300, fontSize: 20, letterSpacing: "-.01em", color: T.ink900, minWidth: 230, fontVariantNumeric: "tabular-nums" }}>{title}</span>
     <div style={{ display: "flex", gap: 4 }}><button type="button" onClick={() => page(-1)} title="Période précédente" aria-label="Période précédente" style={navBtn}>‹</button><button type="button" onClick={() => page(1)} title="Période suivante" aria-label="Période suivante" style={navBtn}>›</button></div>
     <span style={{ flex: 1 }} />
+    {canEdit && <Segmented label="Vue du planning" value={asCdp ? "cdp" : "team"} onChange={v => setAsCdp(v === "cdp")} options={[["team", "Équipe"], ["cdp", "Vue chef de projet"]]} />}
+    {canEdit && <Btn size="sm" aria-expanded={ruleOpen} onClick={() => setRuleOpen(o => !o)}>Règle des créneaux · {capToday} ressource{capToday > 1 ? "s" : ""}</Btn>}
     {canEdit && <Btn size="sm" onClick={onTeam}>Équipe ({techs.length})</Btn>}
     <div style={{ display: "flex", gap: 4 }}><button type="button" onClick={() => setZ(z - 1)} disabled={z <= 0} aria-label="Dézoomer" title="Voir plus de jours" style={{ ...navBtn, color: z <= 0 ? T.ink300 : T.ink700, cursor: z <= 0 ? "default" : "pointer" }}>−</button>
       <button type="button" onClick={() => setZ(z + 1)} disabled={z >= ZOOMS.length - 1} aria-label="Zoomer" title="Agrandir les jours" style={{ ...navBtn, color: z >= ZOOMS.length - 1 ? T.ink300 : T.ink700, cursor: z >= ZOOMS.length - 1 ? "default" : "pointer" }}>+</button></div>
@@ -431,23 +468,36 @@ function PlanningView({ inters, demandes, techs, canEdit, nomOf, me, myPjs, onOp
   </div>;
   const sw = (bg, extra) => <i aria-hidden="true" style={{ display: "inline-block", width: 22, height: 12, borderRadius: 4, background: bg, ...extra }} />;
   const legend = <div style={{ padding: "8px 14px", fontSize: 12, color: T.ink500, borderTop: "1px solid " + T.line, display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center" }}>
-    {canEdit ? <>
+    {!cdpMode ? <>
       <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw(T.info100, { borderLeft: "3px solid " + T.info600 })}Planifiée (validée avec le client)</span>
       <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw(hatch(T.info100, T.card), { border: "1.5px dashed " + T.info600 })}À planifier (dates à confirmer)</span>
       <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw(hatch(T.amber100, T.card), { border: "1px dashed " + T.amber500 })}Demande d'un chef de projet en attente</span>
       <span>Glisser une barre : autre jour = autres dates, autre ligne = autre technicien ; un clic l'ouvre</span></>
     : <>
-      <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw(hatch(T.ink300, T.surfaceAlt))}Équipe occupée</span>
-      <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw(hatch(T.amber100, T.card), { border: "1px dashed " + T.amber500 })}Demande en attente</span>
-      <span>« + » sur la ligne Demandes pour demander un jour ouvré libre</span></>}
+      <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw(T.info100, { borderLeft: "3px solid " + T.info600 })}Complet : plus d'intervention possible</span>
+      <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw("transparent", { border: "1.5px dashed " + T.info600 })}Déjà réservé, encore de la place</span>
+      <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw("transparent", { border: "1px solid " + T.line })}Libre : cliquez le jour pour proposer votre date</span></>}
     <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw(hatch("color-mix(in srgb, " + T.ink300 + " 18%, transparent)", T.card), { border: "1px solid " + T.line })}Samedi, dimanche</span>
   </div>;
   return <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
     <div style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden" }}>
       {tools}
+      {canEdit && ruleOpen && <CapaPanel capa={capa} techsN={techs.length} onCapa={onCapa} />}
       <div ref={scRef} onScroll={onScroll} style={{ overflowX: "auto", overflowY: "hidden" }}>
         <div style={{ width: W }}>
           <DayHeader days={days} X={X} WD={WD} labW={labW} W={W} t0={t0} />
+          {cdpMode ? <SRow labW={labW} width={W} label="SAV / MES" sub="cliquez un jour pour proposer" h={52}>
+            {days.map(d => <div key={d} style={{ ...cellLine(d), background: dayBg(d) }} />)}
+            {segs.filter(g => g.st === "full" || g.st === "some").map(g => { const pos = pxOf(g.i0, g.i1), full = g.st === "full";
+              return <span key={g.i0} aria-hidden="true" style={{ position: "absolute", top: 8, bottom: 8, ...pos, boxSizing: "border-box", borderRadius: 4, pointerEvents: "none",
+                background: full ? T.info100 : "transparent", border: full ? "none" : "1.5px dashed " + T.info600, borderLeft: full ? "3px solid " + T.info600 : "1.5px dashed " + T.info600,
+                color: T.info600, fontSize: 12, fontWeight: 500, lineHeight: "32px", padding: "0 6px", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>{pos.width >= 56 ? (full ? "Complet" : g.left + " place" + (g.left > 1 ? "s" : "")) : ""}</span>; })}
+            {slots.map(x => { const d = x.d; if (d < t0 || isWE(d) || x.state === "full") return null; const i = idxOf[d];
+              const lab = (x.state === "free" ? "Libre" : x.left + " place" + (x.left > 1 ? "s" : "") + " sur " + x.cap) + " le " + fdd(d) + " : proposer une intervention";
+              return <button key={d} type="button" className="e-sav-slot" onClick={() => onRequest(d)} title={lab} aria-label={lab}
+                style={{ position: "absolute", top: 4, bottom: 4, left: X[i] + 1, width: WD[i] - 2, border: "none", borderRadius: 4, background: "transparent", cursor: "pointer", padding: 0, color: T.emerald600, fontSize: 14, fontWeight: 600, fontFamily: T.font }}>
+                {x.state === "free" && WD[i] >= 20 ? <span className="e-sav-plus">+</span> : null}</button>; })}
+          </SRow> : <>
           {/* ligne Demandes : une barre par demande en attente ; « + » sur un jour ouvré non passé où un technicien est libre (jamais le week-end) */}
           <SRow labW={labW} width={W} label="Demandes" sub={pend.length ? pend.length + " en attente" : "« + » = demander"} h={demH}>
             {days.map(d => { const L = loadOf[d] || { free: 1, team: 0 }, waits = pendOn(d).length, past = d < t0, we = isWE(d), full = L.team > 0 && L.free - waits <= 0;
@@ -472,6 +522,7 @@ function PlanningView({ inters, demandes, techs, canEdit, nomOf, me, myPjs, onOp
                 style={{ ...base, border: tent ? "1.5px dashed " + ink : "none", borderLeft: tent ? "1.5px dashed " + ink : "3px solid " + ink, background: tent ? hatch(bg, T.card) : bg, color: ink, fontSize: 12, fontWeight: 500, textAlign: "left", padding: "0 6px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "grab", fontFamily: T.font, opacity: b.lead ? 1 : 0.8, pointerEvents: dnd.drag ? "none" : "auto" }}>{b.pj}{pos.width > 120 ? " · " + (nomOf(b.pj) || b.id) : ""}{tent && pos.width > 200 ? " · à confirmer" : ""}{b.lead ? "" : " (appui)"}</button>; })}
           </SRow>)
           : <div style={{ padding: 12, position: "sticky", left: 0, width: "min(100%, 600px)" }}><EmptyState compact icon="manager" title="Aucun technicien enregistré" hint={canEdit ? "« Équipe » pour ajouter les techniciens SAV." : "Les demandes restent possibles : le responsable SAV répond."} /></div>}
+          </>}
         </div>
       </div>
       {legend}

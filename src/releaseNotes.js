@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v377",
+    date: "2026-11-17",
+    title: "V377 : SAV — une seule ligne pour les chefs de projet, créneaux réglés en direct par le responsable SAV",
+    items: [
+      { t: "Une ligne SAV / MES", d: "Les chefs de projet ne voient plus qu'une ligne : en bleu plein les jours complets, en pointillé les jours déjà réservés où il reste de la place (« 1 place »), et rien quand le jour est libre." },
+      { t: "Proposer sa date", d: "Un clic sur un jour libre ou avec de la place ouvre la demande d'intervention ; les jours complets ne sont pas proposés." },
+      { t: "Règle des créneaux", d: "Le responsable SAV règle le nombre de ressources disponibles par jour (et des périodes particulières : congés, salon…). C'est enregistré tout de suite ; « Vue chef de projet » montre ce que voient les chefs de projet." },
+    ],
+  },
+  {
     id: "2026-11-v376",
     date: "2026-11-17",
     title: "V376 : Fiche du lundi — mois en cours et mois prochain en listes pratiques, avec les commentaires du Cash in",

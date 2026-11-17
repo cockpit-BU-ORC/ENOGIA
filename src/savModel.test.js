@@ -78,3 +78,20 @@ test("v332 : fournitures et commentaires d'étape", () => {
   expect(t.stepNotes[1].map(n => n.t)).toEqual(["Pièce commandée", "Reçue"]);
   expect(delStepNote(delStepNote(t, 1, 0), 1, 0).stepNotes[1]).toBeUndefined();
 });
+
+// v377 : règle des créneaux pour les chefs de projet (ressources disponibles réglées par le responsable SAV)
+test("v377 : capacité du jour — nombre de techniciens, réglage, période particulière", () => {
+  const { capacityOn } = require("./savModel");
+  expect(capacityOn(null, 3, "2026-11-20")).toBe(3);
+  expect(capacityOn({ n: 2 }, 3, "2026-11-20")).toBe(2);
+  expect(capacityOn({ n: 2, periods: [{ from: "2026-12-21", to: "2027-01-01", n: 0 }] }, 3, "2026-12-24")).toBe(0);
+});
+test("v377 : état des jours — complet, places possibles, libre", () => {
+  const { slotDays } = require("./savModel");
+  const inters = { a: { a: "2026-11-23", b: "2026-11-24", resp: "Léo", who: ["Sam"], st: "Planifiée" }, b: { a: "2026-11-25", b: "2026-11-25", resp: "", st: "À planifier" }, c: { a: "2026-11-26", b: "2026-11-26", st: "Annulée" } };
+  const pend = [{ date: "2026-11-25", days: 1 }];
+  const S = slotDays(inters, ["Léo", "Sam", "Max"], pend, ["2026-11-23", "2026-11-25", "2026-11-26"], { n: 2 });
+  expect(S.map(x => x.state)).toEqual(["full", "full", "free"]); // 2 techniciens sur 2 ; intervention à planifier + demande = 2 ; annulée ignorée
+  const S3 = slotDays(inters, ["Léo", "Sam", "Max"], [], ["2026-11-25"], null);
+  expect(S3[0]).toMatchObject({ cap: 3, used: 1, left: 2, state: "some" });
+});

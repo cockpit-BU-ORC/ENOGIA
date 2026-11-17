@@ -2746,3 +2746,13 @@ Demandé : « garder la première page ; sur le mois en cours, voir les factures
 - **PDF** (`functions/weekly.js`) : page 1 inchangée ; pages 2 et 3 en listes (statut, PJ, jalon, client, date, montant, commentaire dessous) ; une liste trop longue continue sur une page « (suite) », pages numérotées à la fin ; caractères absents de la police du PDF retirés des commentaires (émojis).
 - **Fonctions à redéployer** : `firebase deploy --only functions`.
 - Fichiers : src/cashWeekly.js (+ test), functions/weekly.js, functions/shared/.
+
+## V377 — SAV : une seule ligne pour les chefs de projet, règle des créneaux en direct
+
+Demandé : « en tant que chef de projet, uniquement une ligne pour le SAV avec les créneaux déjà réservés (en bleu, plus de MES possible), en pointillé ceux où une intervention est possible suivant une règle définie par le responsable SAV, et quand il n'y a rien le CdP met sa date ; la règle liée au nombre de ressources disponibles, avec un réglage en direct ».
+
+- **Règle** (`src/savModel.js`, testé) : `planning/sav.capa = { n, periods: [{ id, from, to, n }] }` — `capacityOn` (n absent = nombre de techniciens ; une période particulière le remplace, la plus basse si plusieurs) ; `slotDays` : une intervention datée (hors annulée) prend une ressource par technicien (au moins 1), une demande en attente en prend 1 ; état `full` / `some` / `free`.
+- **Vue chef de projet** (`PlanningView`, SavPage.js) : une ligne « SAV / MES » — bleu plein « Complet », pointillé « N places », libre = rien ; clic sur un jour ouvré à venir non complet = demande d'intervention (`DemandeDialog` inchangé) ; « + » discret sur les jours libres ; légende. Les lignes par technicien et la ligne Demandes ne sont plus montrées aux chefs de projet.
+- **Responsable SAV** : bouton « Règle des créneaux · N ressources » → `CapaPanel` (− / + enregistré après 0,35 s, « Revenir au nombre de techniciens », périodes particulières du / au / ressources, Retirer) ; sélecteur « Équipe / Vue chef de projet ».
+- Même document `planning/sav` (écrit par l'équipe SAV) : règles Firestore inchangées. Galerie : SAV · planning (réglage en mémoire), SAV · chef de projet.
+- Fichiers : src/savModel.js (+ test), src/components/SavPage.js, src/styles.css, src/demo/demoPages.js.

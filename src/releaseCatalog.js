@@ -1142,4 +1142,8 @@ export const RELEASE_CATALOG = [
     ["Fiche du lundi en listes", "Factures, encaissements prévus et reçus, datés, pour le mois en cours et le mois prochain."],
     ["Commentaires dans la fiche", "L'explication des écarts et les causes du retard du Cash in sous chaque jalon."],
   ] },
+  { v: "377", t: "SAV — une seule ligne pour les chefs de projet, créneaux réglés en direct par le responsable SAV", items: [
+    ["Planning SAV des chefs de projet", "Une seule ligne : complet en bleu, de la place en pointillé, libre = proposer sa date."],
+    ["Règle des créneaux SAV", "Ressources disponibles par jour et périodes particulières, réglées en direct par le responsable SAV."],
+  ] },
 ];
