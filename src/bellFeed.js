@@ -62,3 +62,16 @@ export function markLocal(local, key, s, now = new Date()) {
   Object.keys(n).forEach(k => { const x = n[k]; if (!x || (x.s === "later" && x.until && new Date(x.until) <= now) || (x.at && now - new Date(x.at) > 60 * 86400000)) delete n[k]; });
   return n;
 }
+
+// v380 (demandé : « dans les notifications, je ne peux pas supprimer les infos ni les marquer vues ») : les « Demandes à valider » (S/N,
+// PO en retard, besoins turbine, demandes SAV…) ont aussi Vu / Masquer / Plus tard, gardés sur ce poste. La clé suit le contenu de la
+// demande : si la liste change (un nouveau PO en retard, une nouvelle réponse), la demande revient d'elle-même.
+const hash = s => { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); };
+export const actionKey = a => "q:" + a.id + ":" + hash(JSON.stringify([a.n || 1, a.title || "", a.detail || "", (a.items || []).map(x => (x.pj || "") + "|" + (x.text || ""))]));
+export function splitActions(actions, local = {}, now = new Date()) {
+  const out = { open: [], seen: [], later: [], done: [] };
+  (actions || []).forEach(a => { const key = actionKey(a), s = stateOf(local, key, now) || "new"; out[s === "new" ? "open" : s].push({ ...a, key, s }); });
+  return out;
+}
+// ce qui compte dans la pastille rouge : les demandes ni vues, ni masquées, ni reportées
+export const actionsRed = (actions, local, now) => splitActions(actions, local, now).open.reduce((t, a) => t + (a.n || 1), 0);

@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v380",
+    date: "2026-11-17",
+    title: "V380 : Cloche — les demandes à valider se marquent vues, se masquent ou se reportent",
+    items: [
+      { t: "Vu, Masquer, Plus tard", d: "Chaque demande à valider de la cloche (PO en retard, besoins turbine, S/N, réponses SAV…) a maintenant ses boutons : « Vu » la grise, « Masquer » la retire, « Plus tard » la fait revenir demain à 8 h." },
+      { t: "Retour automatique", d: "Une demande masquée revient d'elle-même si son contenu change (un nouveau PO en retard, une nouvelle réponse)." },
+      { t: "Compte juste", d: "Le nombre rouge de la cloche ne compte plus ce qui a été vu, masqué ou reporté ; « N masquées ou reportées · Afficher » permet de les remettre." },
+    ],
+  },
+  {
     id: "2026-11-v379",
     date: "2026-11-17",
     title: "V379 : SAV — disponibilités de l'équipe (ressources, jours off, congés) ; « possible sous réserve » pour les chefs de projet",

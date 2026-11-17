@@ -1154,4 +1154,7 @@ export const RELEASE_CATALOG = [
     ["Disponibilités de l'équipe SAV", "Ressources sélectionnées, jours off chaque semaine, congés : calendrier de 12 semaines."],
     ["Planning SAV des chefs de projet", "Complet, possible sous réserve, libre — sans nombre de places."],
   ] },
+  { v: "380", t: "Cloche — les demandes à valider se marquent vues, se masquent ou se reportent", items: [
+    ["Demandes de la cloche marquables", "Vu, Masquer et Plus tard sur les demandes à valider ; une demande masquée revient si elle change."],
+  ] },
 ];

@@ -53,8 +53,11 @@ function Calendrier({ mode0 = "week" }) {
     dayAnchor={dayAnchor} setDayAnchor={setDayAnchor} closurePeriods={[]} productionExclusions={{}} zoomLevel={zoom} setZoomLevel={setZoom} selEtats={f.selEtats} setSelEtats={f.setSelEtats} allPJs={o.allPJs} selPJs={f.selPJs} setSelPJs={f.setSelPJs} />;
 }
 const Commentaires = () => <CommentsView data={DEMO_ROWS} comments={DEMO_COMMENTS} addComment={yes} addCommentMulti={yes} deleteComment={yes} pinOk seeAll myPjs={["PJ901", "PJ902", "PJ905"]} openPj={no} authorName={DEMO_ME.name} resolveComment={yes} />;
+// v380 : demandes à valider de la galerie (Vu / Masquer / Plus tard en mémoire du poste)
+const DEMO_ACTS = [{ id: "sn", n: 1, primary: true, title: "1 machine arrivée sans S/N", detail: "S/N prévus d'après l'ordo.", items: [{ pj: "PJ902", text: "2026-041-180", yes: { label: "✓ Oui", title: "Garder", onClick: no } }], cta: { label: "Attribuer les S/N", onClick: no } },
+  { id: "po", n: 3, tone: "warn", title: "3 commandes (PO) en retard de livraison", detail: "2026-1179 · prévue le 26/10 · 2026-1130 · prévue le 14/10 · 2026-1002 · prévue le 30/09", cta: { label: "Ouvrir Achats / Appro", onClick: no } }];
 const ATraiter = ({ popup, bell, comments = DEMO_COMMENTS, resolveComment = yes }) => <InboxPage popup={popup} bell={bell} me={DEMO_ME.email} comments={comments} data={DEMO_ROWS} resolveComment={resolveComment} canSeePrivate onOpen={no} assignments={[{ pj: "PJ905", at: BELL_AT, by: "Responsable des tests", from: "2026-11-24", to: "2026-11-28" }]} onSeenAssign={no} onOpenTests={no}
-  actions={[{ id: "sn", n: 1, primary: true, title: "1 machine arrivée sans S/N", detail: "S/N prévus d'après l'ordo.", items: [{ pj: "PJ902", text: "2026-041-180", yes: { label: "✓ Oui", title: "Garder", onClick: no } }], cta: { label: "Attribuer les S/N", onClick: no } }]}
+  actions={DEMO_ACTS}
   pjChanges={[{ pj: "PJ901", at: BELL_AT, delta: 4, nom: "Papeterie du Nord" }]} onSeenPjChanges={no} onOpenChanges={no} />;
 const bookApi = { loadImg: async () => null, save: async () => true };
 // v357 : cadrans en widgets — disposition gardée en mémoire (comme ArrangeCtx d'App pour le propriétaire)
@@ -114,7 +117,7 @@ const BELL_AT = new Date(Date.now() - 3600000).toISOString(); // v365 : horodata
 function Cloche() { const [cm, setCm] = useState(DEMO_COMMENTS);
   const resolve = (pj, idx, email, on, field) => setCm(C => ({ ...C, [pj]: (C[pj] || []).map((c, i) => i !== idx ? c : { ...c, [field]: on ? [...(c[field] || []).filter(x => x.email !== email), { email, at: new Date().toISOString() }] : (c[field] || []).filter(x => x.email !== email) }) }));
   const asg = [{ pj: "PJ905", at: BELL_AT, by: "Responsable des tests", from: "2026-11-24", to: "2026-11-28" }], chg = [{ pj: "PJ901", at: BELL_AT, delta: 4, nom: "Papeterie du Nord" }];
-  return <div style={{ display: "flex", justifyContent: "flex-end", minHeight: 520 }}><MentionBell me={DEMO_ME.email} comments={cm} data={DEMO_ROWS} onOpen={no} canSeePrivate assignments={asg} pjChanges={chg} extra={1}
+  return <div style={{ display: "flex", justifyContent: "flex-end", minHeight: 520 }}><MentionBell me={DEMO_ME.email} comments={cm} data={DEMO_ROWS} onOpen={no} canSeePrivate assignments={asg} pjChanges={chg} actions={DEMO_ACTS}
     panel={<ATraiter popup comments={cm} resolveComment={resolve} />} closeKey="x" /></div>; }
 
 // v326 : SAV / MES — équipe SAV (tout) et chef de projet (lecture, planning sur une ligne, demandes)

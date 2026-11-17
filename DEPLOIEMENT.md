@@ -2774,3 +2774,12 @@ Demandé : « le système de ressources n'est pas complètement opérationnel : 
 - **Page** : sous-page « Disponibilités » (`DispoView`, équipe SAV seulement — Modifier / Admin ; jamais aux chefs de projet) : équipe (case « compte dans les ressources », jours off chaque semaine Lu–Ve, « ＋ Congés ou absence » du / au), calendrier 12 semaines (clic = off → congés → disponible, « • » = en intervention), ligne « Disponibles ». Planning (équipe) : jours d'absence rayés sur la ligne de chaque technicien ; bouton « Disponibilités · N aujourd'hui ». Vue chef de projet : « Complet » / « Possible sous réserve », sans nombre.
 - access.js : sous-page `sav.dispo` ; App : menu SAV › Disponibilités. Même document `planning/sav` : règles Firestore inchangées. Galerie : « SAV · disponibilités ».
 - Fichiers : src/savModel.js (+ test), src/components/SavPage.js, src/App.js, src/access.js, src/demo/demoPages.js.
+
+## V380 — Cloche : Vu / Masquer / Plus tard sur les demandes à valider
+
+Demandé (capture de la cloche, 278 demandes) : « je ne peux toujours pas supprimer les infos ni les marquer vues ».
+
+- `src/bellFeed.js` (testé) : `actionKey(demande)` = identifiant + empreinte du contenu (nombre, titre, détail, éléments) ; `splitActions(demandes, marques)` → `open` / `seen` / `later` / `done` ; `actionsRed` = ce qui compte dans la pastille. Marques sur ce poste (`enogia_bell_<adresse>`, comme le fil de la V365).
+- InboxPage : sous chaque demande, « ✓ Vu » (grisée, hors compte ; « Non vu » pour annuler), « Masquer » (jusqu'à ce que le contenu change), « Plus tard » (demain 8 h) ; « N masquées ou reportées · Afficher » → « Remettre ».
+- MentionBell : prop `actions` (App lui passe `inboxActions`) → pastille rouge sans les demandes vues, masquées ou reportées.
+- Fichiers : src/bellFeed.js (+ test), src/components/InboxPage.js, src/components/MentionBell.js, src/App.js, src/demo/demoPages.js.

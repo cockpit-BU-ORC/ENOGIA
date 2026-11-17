@@ -53,3 +53,22 @@ describe("cloche : Vu / Traité / Plus tard (v365)", () => {
     expect(markLocal({ k: { s: "seen", at: "2026-11-16T09:00:00" } }, "k", null, now)).toEqual({});
   });
 });
+
+// v380 : demandes à valider — Vu / Masquer / Plus tard, et retour quand le contenu change
+test("v380 : demandes à valider marquées sur ce poste", () => {
+  const { actionKey, splitActions, actionsRed, markLocal } = require("./bellFeed");
+  const now = new Date("2026-11-17T10:00:00");
+  const po = { id: "po", n: 2, title: "2 commandes (PO) en retard", detail: "A · B" }, turb = { id: "turb", n: 1, title: "1 besoin turbine", items: [{ pj: "PJ1", text: "besoin le 30/10" }] };
+  let L = {};
+  expect(actionsRed([po, turb], L, now)).toBe(3);
+  L = markLocal(L, actionKey(po), "seen", now);
+  L = markLocal(L, actionKey(turb), "done", now);
+  const S = splitActions([po, turb], L, now);
+  expect(S.open).toEqual([]); expect(S.seen.map(a => a.id)).toEqual(["po"]); expect(S.done.map(a => a.id)).toEqual(["turb"]);
+  expect(actionsRed([po, turb], L, now)).toBe(0);
+  const po3 = { ...po, n: 3, title: "3 commandes (PO) en retard", detail: "A · B · C" }; // un PO de plus : la demande revient
+  expect(splitActions([po3, turb], L, now).open.map(a => a.id)).toEqual(["po"]);
+  L = markLocal(L, actionKey(po3), "later", now);
+  expect(splitActions([po3], L, now).later.length).toBe(1);
+  expect(splitActions([po3], L, new Date("2026-11-18T09:00:00")).open.length).toBe(1); // revient le lendemain à 8 h
+});

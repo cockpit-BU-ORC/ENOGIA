@@ -6,14 +6,14 @@ import { gcalUrl } from "../gcal";
 import { NavIcon } from "./SharedUI";
 import { Reactions } from "./Reactions";
 import { useMentions } from "../mentionContext";
-import { buildFeed, markLocal } from "../bellFeed";
+import { buildFeed, markLocal, actionsRed } from "../bellFeed";
 
 // v152 — Cloche de l'en-tête : les demandes où l'on est cité (@) et qu'on n'a pas encore marquées « traitées », tous PJ confondus.
 // v188 : + les nouvelles affectations aux tests (assignments = [{ pj, at, by, from, to }]), « Vu » les retire, lien Google Agenda.
 // v315 (revue, point 6) : avec onGoInbox, la cloche mène à la page « À traiter » (plus de liste déroulante) et compte aussi les demandes à valider (extra).
 // v324 (demandé : « quand je clique sur la cloche, le pop-up s'ouvre avec les informations à traiter ; pas de page spécifique ni de message
 // « 245 à traiter » à côté de la cloche ») : panel = contenu de « À traiter » (InboxPage popup), fermé quand closeKey change (navigation).
-export function MentionBell({ comments, me, data, onOpen, canSeePrivate, assignments, onSeenAssign, onOpenTests, video, onOpenVideo, pjChanges, onSeenPjChanges, onOpenChanges, panel, closeKey, extra = 0 }) {
+export function MentionBell({ comments, me, data, onOpen, canSeePrivate, assignments, onSeenAssign, onOpenTests, video, onOpenVideo, pjChanges, onSeenPjChanges, onOpenChanges, panel, closeKey, extra = 0, actions }) {
   const mctx = useMentions();
   const [open, setOpen] = useState(false);
   // v365 : marques Vu / Traité / Plus tard propres au poste (bellFeed.js) ; la pastille suit le même calcul que le pop-up
@@ -35,7 +35,8 @@ export function MentionBell({ comments, me, data, onOpen, canSeePrivate, assignm
   const laterK = new Set(feed.later.map(x => x.key)), unseen = items.filter(x => !isSeenFor(x.c, me) && !laterK.has("m:" + x.pj + ":" + x.idx + ":" + (x.c.date || ""))), seenL = items.filter(x => isSeenFor(x.c, me));
   // v285 (audit croisé, lot B) : le rouge et « à traiter » = ce qui attend une action (cité, affecté aux tests) ;
   // les projets modifiés par le planning sont de l'information : compteur gris, sans tintement
-  const asg0 = assignments || [], chg0 = pjChanges || [], red = feed.red + (extra || 0), info = feed.info;
+  const asg0 = assignments || [], chg0 = pjChanges || [], red = feed.red + (actions ? actionsRed(actions, local) : (extra || 0)), // v380 : demandes vues, masquées ou reportées hors pastille
+    info = feed.info;
   const [ring, setRing] = useState(0), [peek, setPeek] = useState(null);
   const prev = useRef(null), shown = useRef(new Set());
   useEffect(() => {

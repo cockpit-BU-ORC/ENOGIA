@@ -7,7 +7,7 @@ import React, { useRef, useState } from "react";
 import { T, FZF as FZ, btn } from "../theme";
 import { getPjMeta, relTime } from "../pjMeta";
 import { gcalUrl } from "../gcal";
-import { buildFeed, dayLabel } from "../bellFeed";
+import { splitActions, buildFeed, dayLabel } from "../bellFeed";
 import { Pill, Btn, PjPlate, EmptyState, NavIcon } from "./SharedUI";
 import { Reactions } from "./Reactions";
 
@@ -38,7 +38,12 @@ export function InboxPage({ me, comments, data, resolveComment, canSeePrivate, o
   const local = (bell && bell.local) || {}, setMark = (bell && bell.mark) || (() => {});
   const [showLater, setShowLater] = useState(false);
   const f = buildFeed({ comments, me, canSeePrivate, assignments, pjChanges, video, local });
-  const acts = actions || [], nAct = acts.reduce((a, x) => a + (x.n || 1), 0);
+  // v380 : demandes à valider avec Vu / Masquer / Plus tard (sur ce poste ; une demande dont le contenu change revient)
+  const AS = splitActions(actions, local), acts = [...AS.open, ...AS.seen], nAct = AS.open.reduce((a, x) => a + (x.n || 1), 0), hidden = [...AS.later, ...AS.done];
+  const [showHidden, setShowHidden] = useState(false);
+  const markA = (a, s) => setMark(a.key, s === "seen" && a.s === "seen" ? null : s);
+  const AA = (a, s, label, tone, title) => <button type="button" onClick={() => markA(a, s)} title={title} aria-label={label + " : " + a.title}
+    style={{ ...btn("sec", "sm"), minHeight: 28, padding: "0 8px", fontSize: 12, color: tone || T.ink700, borderColor: tone || T.line }}>{label}</button>;
   const nameOf = pj => { const r = (data || []).find(x => x.pj === pj); return r ? getPjMeta(pj, r).nomProjet || "" : ""; };
   const rowOf = pj => (data || []).find(x => x.pj === pj) || {};
   // Vu / Traité d'une mention : enregistrés sur le commentaire (visibles de tous) ; le reste et « Plus tard » : sur ce poste
@@ -82,14 +87,15 @@ export function InboxPage({ me, comments, data, resolveComment, canSeePrivate, o
       {nNew > 0 && <Btn size="sm" onClick={allSeen}>Tout marquer vu</Btn>}
     </div>
 
-    {acts.length > 0 && <section aria-label="Demandes à valider" style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "10px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
-      <div style={{ fontSize: FZ.xs, fontWeight: 500, color: T.ink500, display: "flex", gap: 8, alignItems: "center" }}>Demandes à valider <Pill tone="bad">{nAct}</Pill></div>
-      {acts.map((a, i) => <div key={a.id} style={{ borderTop: i ? "1px solid " + T.line : "none", paddingTop: i ? 8 : 0, display: "flex", flexDirection: "column", gap: 6 }}>
+    {(acts.length > 0 || hidden.length > 0) && <section aria-label="Demandes à valider" style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, padding: "10px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{ fontSize: FZ.xs, fontWeight: 500, color: T.ink500, display: "flex", gap: 8, alignItems: "center" }}>Demandes à valider {nAct > 0 && <Pill tone="bad">{nAct}</Pill>}</div>
+      {acts.map((a, i) => <div key={a.id} style={{ borderTop: i ? "1px solid " + T.line : "none", paddingTop: i ? 8 : 0, display: "flex", flexDirection: "column", gap: 6, opacity: a.s === "seen" ? 0.6 : 1 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           <span aria-hidden="true" style={{ width: 4, alignSelf: "stretch", minHeight: 20, borderRadius: 4, background: a.tone === "warn" ? T.amber500 : T.red500 }} />
           <div style={{ flex: "1 1 220px", minWidth: 0 }}><div style={{ fontSize: FZ.sm, fontWeight: 600, color: T.ink900 }}>{a.title}</div>{a.detail && <div style={{ fontSize: FZ.xs, color: T.ink500 }}>{a.detail}</div>}</div>
-          {a.cta && <Btn v={a.primary ? "pri" : "sec"} size="sm" onClick={a.cta.onClick}>{a.cta.label}</Btn>}
+          {a.cta && <Btn v={a.primary && a.s !== "seen" ? "pri" : "sec"} size="sm" onClick={a.cta.onClick}>{a.cta.label}</Btn>}
         </div>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", paddingLeft: 14 }}>{AA(a, "seen", a.s === "seen" ? "Non vu" : "✓ Vu", null, a.s === "seen" ? "Remettre en évidence" : "Garder la demande, grisée, hors du compte rouge")}{AA(a, "done", "Masquer", T.emerald600, "Masquer jusqu'à ce que son contenu change")}{AA(a, "later", "Plus tard", T.amber600, "Revient demain à 8 h")}</div>
         {a.items && a.items.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", gap: 6, paddingLeft: 14 }}>
           {a.items.slice(0, 12).map(x => <span key={x.pj + (x.text || "")} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: T.surface, borderRadius: 8, padding: "3px 8px 3px 4px", fontSize: FZ.xs, color: T.ink700 }}>
             <PjBtn pj={x.pj} onClick={() => onOpen(x.pj, "resume")} />{x.text}
@@ -97,6 +103,13 @@ export function InboxPage({ me, comments, data, resolveComment, canSeePrivate, o
           {a.items.length > 12 && <span style={{ fontSize: FZ.xs, color: T.ink500, alignSelf: "center" }}>et {a.items.length - 12} autres</span>}
         </div>}
       </div>)}
+      {!acts.length && <div style={{ fontSize: FZ.xs, color: T.ink500 }}>Toutes les demandes sont masquées ou reportées</div>}
+      {hidden.length > 0 && <div style={{ borderTop: "1px solid " + T.line, paddingTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+        <button type="button" aria-expanded={showHidden} onClick={() => setShowHidden(v => !v)} style={{ ...btn("ghost", "sm"), alignSelf: "flex-start", fontWeight: 500 }}>{hidden.length} masquée{hidden.length > 1 ? "s" : ""} ou reportée{hidden.length > 1 ? "s" : ""} · {showHidden ? "Cacher" : "Afficher"}</button>
+        {showHidden && hidden.map(a => <div key={a.key} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", fontSize: FZ.xs, color: T.ink500 }}>
+          <span style={{ flex: "1 1 200px", minWidth: 0 }}>{a.title}{a.s === "later" ? " · revient demain à 8 h" : ""}</span>
+          <button type="button" onClick={() => setMark(a.key, null)} style={{ ...btn("sec", "sm"), minHeight: 28, fontSize: 12 }}>Remettre</button></div>)}
+      </div>}
     </section>}
 
     <section aria-label="Notifications" style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden" }}>
