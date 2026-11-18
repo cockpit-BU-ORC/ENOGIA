@@ -31,6 +31,8 @@ import { setCashinDoc, getCashinDoc } from "../cashinLink";
 import { setEncReelle } from "../cashinModel";
 import { PjDialog, PjDialogCtx } from "../components/RowDetail";
 import { MachinesDemoCtx } from "../components/MachinePassport";
+import { setRaiDoc } from "../raiStatus";
+import { RAI_SIGNERS } from "../rai";
 
 const no = () => {}, yes = async () => true;
 const common = { comments: DEMO_COMMENTS, addComment: yes, deleteComment: yes, pinOk: true, delays: [], delayTypes: [], setDelayTypes: no, addDelayAllocation: yes, deleteDelayAllocation: yes, addDelayComment: yes, deleteDelayComment: yes, authorName: DEMO_ME.name, savePjMetaOverride: yes, canEditMeta: true };
@@ -148,6 +150,8 @@ function MachinesDemo({ children }) { const [d, setD] = useState(DEMO_MACHINES);
     deletePhoto: async (pj, p) => { setD(x => ({ ...x, photos: { ...(x.photos || {}), [pj]: (((x.photos || {})[pj]) || []).filter(q => q.id !== p.id) } })); return true; }, saveStandards: async S => { setD(x => ({ ...x, standards: S })); return true; },
     saveElements: async L => { setD(x => ({ ...x, elements: L })); return true; }, saveImport: async (pass, standards) => { setD(x => ({ ...x, pass, standards })); return true; } }), []);
   return <MachinesDemoCtx.Provider value={{ machinesDoc: d, machinesApi: api, prodDoc: DEMO_MACH_PROD, achatsDoc: DEMO_MACH_ACHATS }}>{children}</MachinesDemoCtx.Provider>; }
+// v398 : RAI fictifs (PJ902 accepté, PJ901 en cours avec une action bloquante) — Liste, fiche d’un PJ, accueil
+setRaiDoc({ rai: { PJ902: { rows: { "c-evap": { ok: "OK" } }, signs: Object.fromEntries(RAI_SIGNERS.map(([sv]) => [sv, { by: "Sam Petit", at: "2026-11-10" }])) }, PJ901: { rows: { "v-ce": { ok: "NOK" } }, actions: [{ id: "a1", t: "Plaque CE absente", bloq: true, pole: "PROD", at: "2026-11-12", done: "" }], signs: {} } } });
 function Manager({ tab0 }) { const [tab, setTab] = useState(tab0); return <AsOwner><ManagerPanel tab={tab} setTab={setTab} kpiOk calOk data={DEMO_ROWS} initialData={DEMO_ROWS} progress={DEMO_PROGRESS} setProgress={no} changeLog={[]} profiles={{ byEmail: {} }} saveProfiles={yes}
   comments={DEMO_COMMENTS} delays={[]} delayTypes={[]} setDelayTypes={no} addDelayAllocationMulti={yes} deleteDelayAllocation={yes} managerEmails={[]} setManagerEmails={no} currentUserEmail={DEMO_ME.email} authorName={DEMO_ME.name}
   savePjMetaOverride={yes} savePjMetaMulti={yes} addCommentMulti={yes} addComment={yes} resolveComment={yes} deleteComment={yes} closurePeriods={[]} setClosurePeriods={no} productionExclusions={{}} setProductionExclusionDays={no}

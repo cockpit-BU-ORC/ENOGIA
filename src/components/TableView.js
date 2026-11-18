@@ -14,6 +14,7 @@ import { useIsPhone } from "../useIsPhone";
 import { useZoomAdvice, zoomTip } from "./ZoomHint";
 import { AF } from "../autoFocusOk";
 import { smooth } from "../scrollMode";
+import { useRai, raiGate } from "../raiStatus";
 
 export const TABLE_COLUMNS=[
   {id:"serie",label:"N° de série (sous le PJ)"},
@@ -182,6 +183,11 @@ function PresenceCell({r,tight,onChange}){
 }
 
 // v312 : départ modifiable dans la Liste (admins) — crayon au survol de la cellule, champ date, Entrée ou sortie du champ = enregistrer, Échap = annuler.
+// v398 : le RAI, feu vert du départ — affiché quand il est accepté, ou quand le départ approche sans RAI accepté
+function RaiMark({r}){const g=raiGate(r.pj,r.depart,r.etat);if(!g||r.etat==="SHIPPED")return null;
+  if(!(g.k==="ok"||g.k==="reserve"||g.alert))return null;
+  const c=g.k==="ok"?T.emerald600:g.k==="reserve"?T.amber600:T.red600;
+  return <span title={g.label+(g.alert?" — départ dans "+Math.max(0,g.left)+" j":"")} style={{marginLeft:6,fontSize:FZ.xs,fontWeight:600,color:c,border:"1px solid "+c,borderRadius:4,padding:"0 4px",whiteSpace:"nowrap"}}>{g.k==="ok"?"RAI ✓":g.k==="reserve"?"RAI ~":"RAI !"}</span>;}
 function DepartEdit({r,onSet,children}){
   const [ed,setEd]=useState(false),[v,setV]=useState("");
   const iso=r.depart?String(r.depart).slice(0,10):"";
@@ -191,7 +197,8 @@ function DepartEdit({r,onSet,children}){
     onBlur={()=>{setEd(false);if(v&&v!==iso)onSet(r.pj,v);}} style={{font:"inherit",fontSize:FZ.sm,padding:"2px 4px",border:"1px solid "+T.teal500,borderRadius:8,background:T.card,color:T.ink900,maxWidth:140}}/>;
   return <span className="e-editcell" style={{display:"inline-flex",alignItems:"center",gap:4}}>{children}<button type="button" className="e-editbtn" aria-label={"Changer la date de départ de "+r.pj} title="Changer la date de départ (admins)" onClick={e=>{e.stopPropagation();setV(iso);setEd(true);}} style={{border:"none",background:"transparent",color:T.ink500,cursor:"pointer",padding:2,borderRadius:4,display:"inline-flex"}}><NavIcon name="edit" size={13}/></button></span>;
 }
-export function TableView({data,onSetDepart,progress,df,setDf,selEtats,setSelEtats,selGammes,setSelGammes,allPJs,selPJs,setSelPJs,allProjets,selProjets,setSelProjets,allPays,selPays,setSelPays,allChefs,selChefs,setSelChefs,selMoisArrivee,setSelMoisArrivee,selMoisTests,setSelMoisTests,selMoisFinProd,setSelMoisFinProd,selMoisDepart,setSelMoisDepart,comments,addComment,deleteComment,pinOk,delays,delayTypes,setDelayTypes,addDelayAllocation,deleteDelayAllocation,addDelayComment,deleteDelayComment,externalSel,setExternalSel,authorName,savePjMetaOverride,canEditMeta,onlyDrift,setOnlyDrift,onlyChanged,setOnlyChanged,setEtatFor,setClientPresenceFor}){
+export function TableView(props){useRai();return <TableViewIn {...props}/>;}
+function TableViewIn({data,onSetDepart,progress,df,setDf,selEtats,setSelEtats,selGammes,setSelGammes,allPJs,selPJs,setSelPJs,allProjets,selProjets,setSelProjets,allPays,selPays,setSelPays,allChefs,selChefs,setSelChefs,selMoisArrivee,setSelMoisArrivee,selMoisTests,setSelMoisTests,selMoisFinProd,setSelMoisFinProd,selMoisDepart,setSelMoisDepart,comments,addComment,deleteComment,pinOk,delays,delayTypes,setDelayTypes,addDelayAllocation,deleteDelayAllocation,addDelayComment,deleteDelayComment,externalSel,setExternalSel,authorName,savePjMetaOverride,canEditMeta,onlyDrift,setOnlyDrift,onlyChanged,setOnlyChanged,setEtatFor,setClientPresenceFor}){
   const {marks,clear:clearMarks}=useMarks();
   const [selInternal,setSelInternal]=useState(null);
   const sel=externalSel!==undefined?externalSel:selInternal;
@@ -474,7 +481,7 @@ export function TableView({data,onSetDepart,progress,df,setDf,selEtats,setSelEta
             </div>
           </td>}
           {show("finprod")&&<td style={{padding:D.cellY+"px "+PX+"px",color:T.ink700,fontSize:FS,whiteSpace:"nowrap"}}>{fmtMode(r.finProd?new Date(r.finProd):null,df)}</td>}
-          {show("depart")&&<td style={{padding:D.cellY+"px "+PX+"px",fontWeight:600,color:done?T.emerald600:urgent?T.amber600:T.ink900,fontSize:FS,whiteSpace:"nowrap"}}><DepartEdit r={r} onSet={onSetDepart}>{r.drift!=null&&r.drift!==0?<HoverPop width={250} render={()=><DriftPopBody r={r} df={df}/>}><span>{fmtMode(r.depart?new Date(r.depart):null,df)}<span style={{marginLeft:6,fontSize:FZ.xs,fontWeight:500,color:r.drift>0?T.red500:T.emerald600}}>{r.drift>0?"+":""}{r.drift} j</span></span></HoverPop>:fmtMode(r.depart?new Date(r.depart):null,df)}</DepartEdit></td>}
+          {show("depart")&&<td style={{padding:D.cellY+"px "+PX+"px",fontWeight:600,color:done?T.emerald600:urgent?T.amber600:T.ink900,fontSize:FS,whiteSpace:"nowrap"}}><DepartEdit r={r} onSet={onSetDepart}>{r.drift!=null&&r.drift!==0?<HoverPop width={250} render={()=><DriftPopBody r={r} df={df}/>}><span>{fmtMode(r.depart?new Date(r.depart):null,df)}<span style={{marginLeft:6,fontSize:FZ.xs,fontWeight:500,color:r.drift>0?T.red500:T.emerald600}}>{r.drift>0?"+":""}{r.drift} j</span></span></HoverPop>:fmtMode(r.depart?new Date(r.depart):null,df)}<RaiMark r={r}/></DepartEdit></td>}
           {show("avancement")&&<td style={{padding:D.cellY+"px "+PX+"px",whiteSpace:"nowrap",overflow:"hidden"}}>
             {/* Même gabarit sur chaque ligne (piste + valeur à largeur fixe), avec ou sans valeur saisie :
                 sinon les lignes sans avancement ("—") n'ont pas la même hauteur/alignement que les autres. */}

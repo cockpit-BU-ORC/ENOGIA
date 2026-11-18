@@ -20,6 +20,7 @@ import { fmtEur } from "../pjProgress";
 import { turbineOf, achatsOf, ACHAT_ST } from "../pjDossier";
 import { useProdModel } from "../prodModel";
 import { AF } from "../autoFocusOk";
+import { useRai, raiGate } from "../raiStatus";
 
 // Données de contexte fournies par App (tests, turbines) pour les pastilles, sans les faire passer par chaque vue.
 export const PjDialogCtx = createContext({ testsDoc: null, turbineDoc: null });
@@ -60,6 +61,7 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
   const ctx = useContext(PjDialogCtx);
   const [tab, setTab] = useState(initialTab || "resume"), [open, setOpen] = useState(null), [focus0, setFocus] = useState(null); // v270 : initialTab (notification d’échange → Commentaires) // open : "delays" | "edit"
   const meta = getPjMeta(r.pj, r), shipped = r.etat === "SHIPPED";
+  useRai(); const rg = raiGate(r.pj, r.depart, r.etat); // v398 : RAI = feu vert du départ
   const cur = Math.max(0, RIBBON.findIndex(s => s.etats.includes(r.etat)));
   const em = ETAT_META[r.etat] || ETAT_META["NOT ORDERED"], bar = em.bar;
   const focus = focus0 || RIBBON[cur].id; // v270 (demandé : « les sous-étapes doivent être toujours visibles ») : l’étape en cours par défaut
@@ -150,6 +152,10 @@ export function RowDetail({ resolveComment, initialTab, r, onClose, comments, ad
               style={{ position: "absolute", top: 6, right: 6, width: 28, height: 28, border: "none", borderRadius: 8, background: "transparent", color: T.ink500, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }} className="e-hov" ><NavIcon name="edit" size={14} /></button>}</div>}
           {dateTile("Livraison prévue", dmy(livr), livr ? "sur site client, transport compris" : "transport non renseigné")}
         </div>
+        {rg && !shipped && <div role="status" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginTop: 8, fontSize: 13, color: T.ink700 }}>
+          <Pill tone={rg.k === "ok" ? "ok" : rg.k === "reserve" ? "warn" : rg.alert ? "bad" : "neutral"}>{rg.label}</Pill>
+          <span>{rg.k === "ok" ? "feu vert pour le départ" : rg.k === "reserve" ? "départ possible, réserves à lever" : rg.k === "no" ? rg.verdict.signed + " / " + rg.verdict.signers + " signatures" + (rg.verdict.blocking ? " · " + rg.verdict.blocking + " action" + (rg.verdict.blocking > 1 ? "s" : "") + " bloquante" + (rg.verdict.blocking > 1 ? "s" : "") : "") : "rapport d'acceptation interne à faire avant le départ"}{rg.alert ? " · départ dans " + Math.max(0, rg.left) + " j" : ""}</span>
+        </div>}
         {(tq || ct || cash || turb || ach) && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 8 }}>
           {tq && <button type="button" onClick={() => (ctx.testsOk ? openPage("tests", r.pj) : setTab("tests"))} title={ctx.testsOk ? "Ouvrir la fiche de tests dans la page Tests" : undefined} style={tile}>
             <span style={{ display: "flex", alignItems: "center", gap: 8 }}><b style={{ fontSize: FZ.sm }}>Tests</b>{tq.total ? pill(tq.ko ? tq.ko + " échec" + (tq.ko > 1 ? "s" : "") : tq.done === tq.total ? "terminés" : "en cours", tq.ko ? T.red600 : tq.done === tq.total ? T.emerald600 : T.amber600, tq.ko ? T.red100 : tq.done === tq.total ? T.emerald100 : T.amber100, "s") : null}</span>

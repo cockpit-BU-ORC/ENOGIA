@@ -2959,3 +2959,15 @@ Demandé : « on peut reprendre le passeport et RAI ? ».
 - Rien n'est écrit dans Turbines ni dans Achats ; les pages et les kits restent inchangés.
 - Galerie : une fiche d'achats fictive (PJ902) et une turbine allouée au PJ901.
 - Fichiers : src/passport.js, src/passport.test.js, src/rai.js, src/components/MachinePassport.js, src/demo/demoPages.js.
+
+## V398 — Le RAI, feu vert du départ
+
+Demandé : « Oui, feu vert » (idée 1 de la maquette v393-rai-photos).
+
+- `src/raiStatus.js` (testé, raiStatus.test.js) : `setRaiDoc` / `useRai` (état partagé, App y dépose `planning/machines`), `raiGate(pj, départ, état)` → k ok / reserve / no / none, libellé, jours avant le départ, `alert` (départ dans ≤ 14 jours, `RAI_SOON`, sans RAI accepté ni avec réserves).
+- App : `useMachines` lit le passeport ; `setEtatFor` → « Expédiée » sans RAI accepté (ou avec réserves) = `askConfirm` (« Expédiée quand même »).
+- Liste (TableView) : `RaiMark` après la date de départ ; `TableView` = enveloppe qui se redessine avec `useRai`.
+- Fiche d'un PJ (RowDetail) : ligne RAI sous les dates (hors expédiées).
+- Accueil (RoleHome) : widget `raiDue` « RAI avant départ » (21 jours, triés par départ) ; ajouté aux accueils `cdp` et `direction` par défaut.
+- Galerie : RAI fictifs (PJ902 avec réserves, PJ901 en cours).
+- Fichiers : src/raiStatus.js, src/raiStatus.test.js, src/App.js, src/components/TableView.js, src/components/RowDetail.js, src/components/RoleHome.js, src/demo/demoPages.js.

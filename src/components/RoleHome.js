@@ -10,6 +10,7 @@ import { getCashinDoc, cashOverview, todayISO as cashToday } from "../cashinLink
 import { toCollect } from "../cashinModel";
 import { useCashin } from "../useCashin";
 import { weeklyReport, curveGeom, fmtS } from "../cashWeekly";
+import { useRai, raiGate } from "../raiStatus";
 import { fmtEur } from "../pjProgress";
 import { useProdModel } from "../prodModel"; // v324 : makeModel chargé à la demande
 import { planWeeks, atelierCap, CAPA_DEFAUT } from "../loadWeeks"; // v289 : sans les graphiques du Manager
@@ -43,14 +44,14 @@ const etatBar = etat => (ETAT_META[etat] || {}).bar || T.ink300;
 
 // Cadrans par défaut de chaque poste (id, largeur sur 12)
 export const HOME_DEFAULTS = {
-  cdp: [["pjs", 7], ["jalons", 5], ["todo", 4], ["fat", 4], ["avance", 4]],
+  cdp: [["pjs", 7], ["jalons", 5], ["raiDue", 6], ["todo", 4], ["fat", 4], ["avance", 4]],
   testeur: [["today", 8], ["sign", 4], ["week", 12], ["arrivees", 6], ["results", 6]],
   resptest: [["today", 8], ["sign", 4], ["produit", 12], ["week", 12], ["arrivees", 6], ["results", 6], ["postes", 6], ["tests", 6]], // v238 ; v323 : livrables Produit
   atelier: [["charge", 7], ["arrdep", 5], ["montage", 7], ["postes", 5]],
   turbines: [["ptReady", 3], ["ptNoWheel", 3], ["ptPieces", 6], ["ptDates", 12], ["ptRoues", 6], ["ptInj", 6]],
   autre: [["kpis", 12], ["departs", 6], ["parcours", 6], ["benchWeek", 6], ["visites", 6], ["shipped", 6], ["etats", 6], ["fermetures", 6]],
   daf: [["encaisser", 6], ["cash", 6], ["cashCurve", 12], ["cashLate", 6], ["cashMonth", 6], ["kpis", 12], ["departs", 6]], // v370
-  direction: [["kpis", 12], ["cashCurve", 12], ["depQuarter", 6], ["onTime", 6], ["tests", 4], ["turbines", 4], ["cash", 4], ["alertes", 8], ["charge", 4], ["postes", 6], ["departs", 6], ["parcours", 12]],
+  direction: [["kpis", 12], ["cashCurve", 12], ["depQuarter", 6], ["onTime", 6], ["raiDue", 6], ["tests", 4], ["turbines", 4], ["cash", 4], ["alertes", 8], ["charge", 4], ["postes", 6], ["departs", 6], ["parcours", 12]],
 };
 
 // Phrase d'ouverture selon le poste (lien direct avec le travail de la personne) → [segments], un segment = texte ou { t, c } surligné
@@ -135,6 +136,7 @@ export function RoleHome({ produit, scope, role, profile, ui, kpiEl, depEl, parc
   const today = iso(new Date());
   const on = id => blockOn(profile, id);
   useCashin(); // se met à jour quand le Cash in change
+  useRai(); // v398 : et quand un RAI change
   const catalog = useMemo(() => catalogOf(testsDoc || {}), [testsDoc]);
   const prog = r => progressOf(planOf(testsDoc || {}, r.pj), catalog, activeSections(presenceKind(r.clientPresence || null)));
   const tStart = r => dIso(r.tests), tEnd = r => dIso(r.testsFin) || dIso(r.tests);
@@ -384,6 +386,14 @@ export function RoleHome({ produit, scope, role, profile, ui, kpiEl, depEl, parc
         <div style={{ display: "flex", alignItems: "baseline", gap: 8, margin: "2px 0 4px" }}><span style={{ fontFamily: T.fontDisplay, fontSize: 36, fontWeight: 600, letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums", color: pct >= 80 ? T.emerald600 : T.red600 }}>{pct} %</span><span style={{ fontSize: 14, color: T.ink500 }}>{ok} sur {L.length} à la date promise</span></div>
         <div style={{ fontSize: 12, color: T.ink500 }}>Retard moyen {avg} j · objectif 80 %</div>
         {z !== "s" && worst.slice(0, z === "xl" ? 5 : 3).map((r, i) => <Row key={r.pj} first={i === 0} pj={r.pj} main={nomOf(r) || ""} right={"+" + r.drift + " j"} />)}</>}</>); } };
+  // v398 : le RAI, feu vert du départ — machines qui partent dans les 21 jours (ou dont le départ est passé) sans RAI accepté
+  W.raiDue = { label: "RAI avant départ", span: 6, sizes: ["m", "xl"], render: z => {
+    const L = open.map(r => ({ r, g: raiGate(r.pj, r.depart, r.etat) })).filter(x => x.g && x.g.left != null && x.g.left <= 21 && x.g.k !== "ok").sort((a, b) => a.g.left - b.g.left);
+    if (!L.length && open.every(r => !raiGate(r.pj, r.depart, r.etat))) return null; // passeport pas encore lu
+    return sec("raiDue", "RAI avant départ", S.depart.ring, <><Head title="RAI avant départ" sub="départs des 21 jours sans RAI accepté" count={L.length} />
+      {L.length === 0 ? empty("check", "Tout est prêt", "Les départs des 3 prochaines semaines ont leur RAI accepté.") : L.slice(0, z === "xl" ? 8 : 5).map((x, i) => <Row key={x.r.pj} first={i === 0} pj={x.r.pj}
+        pill={<Pill tone={x.g.k === "reserve" ? A.orange : x.g.k === "no" ? A.red : { bg: T.surfaceAlt, ink: T.ink700 }}>{x.g.k === "reserve" ? "Réserves" : x.g.k === "no" ? "En cours" : "À faire"}</Pill>}
+        main={nomOf(x.r) || ""} right={(x.g.left < 0 ? "départ passé" : "dans " + x.g.left + " j") + " · " + fmtD(x.r.depart)} rightColor={x.g.left <= 7 ? T.red500 : undefined} />)}</>); } };
   W.alertes = { label: "Alertes", span: 8, render: () => { const bigLate = late.filter(r => r.drift > 10);
     return sec("alertes", "Alertes", A.orange.ring, <><Head title="Alertes" sub="dérives de plus de 10 j" count={bigLate.length} />
       {bigLate.length === 0 ? empty("check", "Aucune alerte", "Pas de grosse dérive.") : bigLate.slice(0, 6).map((r, i) => <Row key={r.pj} first={i === 0} pj={r.pj} pill={<Pill tone={A.orange}>Dérive</Pill>} main={nomOf(r) || "Départ " + fmtD(r.depart)} right={"+" + r.drift + " j"} />)}</>); } };
@@ -578,7 +588,7 @@ export function RoleHome({ produit, scope, role, profile, ui, kpiEl, depEl, parc
   // v231 (demandé : « Ajouter un cadran n'est pas clair : des thèmes ou des liens avec les onglets ») : chaque cadran est rangé sous
   // la page du site d'où viennent ses données, avec une phrase qui dit ce qu'il montre.
   const THEMES = [
-    ["Vue d'ensemble — Liste et Gantt", { ligne: "les sept postes de l'atelier, chaque machine sur son poste", suiveuses: "une fiche suiveuse par machine en cours, étapes et départ", depBoard: "compte à rebours des départs des 60 jours", ecarts: "machines en avance, à l'heure ou en retard sur l'initial", parChef: "machines en cours par chef de projet", parPays: "machines en cours par pays", parGamme: "machines en cours par gamme", finProd: "fins de production des 30 jours", arrivees30: "arrivées à l'atelier des 45 jours", kpis: "les grands chiffres du portefeuille", depQuarter: "départs du trimestre : expédiés, prévus, initial", onTime: "part des départs tenus sur 90 jours", departs: "les 5 prochains départs", parcours: "combien de machines à chaque étape", alertes: "les dérives fortes et les retards à déclarer", etats: "nombre de machines dans chaque état", depMois: "départs prévus sur les 6 prochains mois", shipped: "les dernières machines parties", raccourcis: "boutons vers les pages du site" }],
+    ["Vue d'ensemble — Liste et Gantt", { ligne: "les sept postes de l'atelier, chaque machine sur son poste", suiveuses: "une fiche suiveuse par machine en cours, étapes et départ", depBoard: "compte à rebours des départs des 60 jours", ecarts: "machines en avance, à l'heure ou en retard sur l'initial", parChef: "machines en cours par chef de projet", parPays: "machines en cours par pays", parGamme: "machines en cours par gamme", finProd: "fins de production des 30 jours", arrivees30: "arrivées à l'atelier des 45 jours", kpis: "les grands chiffres du portefeuille", raiDue: "départs des 3 semaines sans RAI accepté", depQuarter: "départs du trimestre : expédiés, prévus, initial", onTime: "part des départs tenus sur 90 jours", departs: "les 5 prochains départs", parcours: "combien de machines à chaque étape", alertes: "les dérives fortes et les retards à déclarer", etats: "nombre de machines dans chaque état", depMois: "départs prévus sur les 6 prochains mois", shipped: "les dernières machines parties", raccourcis: "boutons vers les pages du site" }],
     ["Projets — Fiches projet", { pjs: "les PJ d'un chef de projet, triés par départ", jalons: "arrivées, tests et départs des 3 semaines", todo: "retards à déclarer et mentions", fat: "FAT client et NOBO à venir (mes PJ)", visites: "visites client et NOBO à venir, toutes machines", avance: "avancement moyen et PJ en avance / en retard" }],
     ["Tests — page Tests", { tests: "machines au banc et tests des 3 semaines", today: "machines au banc aujourd'hui (jour N / M)", sign: "fiches de test à signer", week: "la semaine de tests d'un testeur", arrivees: "machines qui arrivent au banc", results: "réussis et échecs des 14 derniers jours", postes: "occupation des postes de test", benchWeek: "toutes les machines au banc cette semaine" }],
     ["Atelier — Planificateur et Calendrier", { charge: "heures atelier sur 4 semaines face à la capacité", arrdep: "arrivées et départs de la semaine", montage: "machines en montage méca / élec", fermetures: "fermetures de l’atelier à venir" }],

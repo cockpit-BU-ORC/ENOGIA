@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v398",
+    date: "2026-11-18",
+    title: "V398 : Le RAI, feu vert du départ — Liste, fiche d'un PJ, accueil, passage à « Expédiée »",
+    items: [
+      { t: "Liste", d: "À côté de la date de départ : « RAI ✓ » quand le RAI est accepté, « RAI ~ » avec réserves, et « RAI ! » en rouge quand le départ est dans moins de 14 jours sans RAI accepté." },
+      { t: "Fiche d'un PJ", d: "Sous les dates : l'état du RAI (à faire, non accepté avec les signatures et actions bloquantes, avec réserves, accepté)." },
+      { t: "Accueil et Expédiée", d: "Nouveau widget « RAI avant départ » (départs des 3 semaines sans RAI accepté), sur les accueils chef de projet et direction. Passer une machine en « Expédiée » sans RAI accepté demande une confirmation." },
+    ],
+  },
+  {
     id: "2026-11-v397",
     date: "2026-11-18",
     title: "V397 : Passeport machine — le réel se remplit tout seul depuis Turbines et Achats / Appro (lots 2 et 3)",

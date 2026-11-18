@@ -48,7 +48,9 @@ import { listenChangeLog } from "./changeLog";
 // v260 : documents Firestore, bandeau bêta et identité du compte sortis de ce fichier (appDocs.js, components/AppChrome.js)
 import { IS_BETA, DOC_PFX, DOC_REF, INITIAL_DOC_REF, OVERRIDES_DOC_REF, COMMENTS_DOC_REF, PJ_META_SYNC_DOC_REF, PJ_META_OVERRIDES_DOC_REF, DELAYS_DOC_REF, DELAY_TYPES_DOC_REF, MANAGER_EMAILS_DOC_REF, PROFILES_DOC_REF, DEFAULT_DELAY_TYPES } from "./appDocs";
 import { BetaBanner, UserChip } from "./components/AppChrome";
-import { useTestBook, useAccessDoc, useTurbineDoc, useTestsDoc, useProdTurbines, useCashinProduit, useSav, useDelays, useCashinSync, useAchats } from "./useAppData";
+import { useTestBook, useAccessDoc, useTurbineDoc, useTestsDoc, useProdTurbines, useCashinProduit, useSav, useDelays, useCashinSync, useAchats, useMachines } from "./useAppData";
+import { setRaiDoc, raiGate } from "./raiStatus"; // v398 : RAI = feu vert du départ
+import { askConfirm as askConfirmRai } from "./confirm";
 import { useListFilters, filterOptions, filterRows } from "./listFilters";
 // v289 (lot G « rapidité ») : les grandes pages ne sont chargées qu'à leur première ouverture (paquet de départ allégé) ;
 // en attendant, un squelette s'affiche dans la zone principale (Suspense).
@@ -67,7 +69,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-18-v397-passeport-liens";
+const APP_BUILD_VERSION = "2026-11-18-v398-rai-feu-vert";
 
 const ReleasePopup = React.lazy(() => import("./components/ReleaseNotes").then(m => ({ default: m.ReleasePopup })));
 function Navigate0({ go }) { useEffect(() => { go(); }, []); return null; } // eslint-disable-line react-hooks/exhaustive-deps
@@ -696,6 +698,9 @@ export default function App(){
   const subOk=id=>!accMe||atLeast(accMe[id]||"n","r");
   const canProdTurb=accMe?accAt("turbines","r"):canProdTurbL;
   const {achatsDoc,achatsApi}=useAchats(currentUser,authorName);
+  // v398 : RAI de chaque machine (planning/machines) — partagé par la Liste, la fiche d'un PJ, l'accueil et le passage à « Expédiée »
+  const {machinesDoc}=useMachines(authUid?true:null,authorName);
+  useEffect(()=>{if(machinesDoc)setRaiDoc(machinesDoc);},[machinesDoc]);
   const {savDoc,demDoc,savApi,demApi}=useSav(currentUser,authorName); // v326 : SAV / MES
   const canAchatsL=!!(isOwner||(achatsDoc&&Array.isArray(achatsDoc.access)&&achatsDoc.access.map(x=>String(x).toLowerCase()).includes(myMail)));
   const canAchats=accMe?accAt("achats","r"):canAchatsL,achEdit=accMe?accAt("achats","w"):canAchatsL;
@@ -848,6 +853,8 @@ export default function App(){
   // d'après l'avancement saisi (< 40 % Montage, < 80 % Élec, < 90 % Tests, sinon Packaging).
   const etatChoiceEff=useMemo(()=>{const o={};Object.keys(etatChoice).forEach(k=>{o[k]=normalizeEtat(etatChoice[k],progress[k]);});return o;},[etatChoice,progress]);
   const setEtatFor=useCallback(async (pj,etat)=>{
+    // v398 : « Expédiée » sans RAI accepté (ou avec réserves) demande une confirmation
+    if(etat==="SHIPPED"){const g=raiGate(pj,null,null);if(g&&g.k!=="ok"&&g.k!=="reserve"&&!(await askConfirmRai({title:"Passer "+pj+" en Expédiée sans RAI accepté ?",message:g.label+(g.k==="no"?" : "+g.verdict.signed+" / "+g.verdict.signers+" signatures"+(g.verdict.blocking?", "+g.verdict.blocking+" action(s) bloquante(s) ouverte(s)":""):"")+". Le RAI est le feu vert du départ (Manager › Projets › Machines ORC › Passeport › RAI).",confirmLabel:"Expédiée quand même",danger:true})))return false;}
     const next={...etatChoice,[pj]:etat};
     try{
       await setDoc(OVERRIDES_DOC_REF(), { etatChoice:next }, { merge:true });

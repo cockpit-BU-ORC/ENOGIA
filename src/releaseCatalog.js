@@ -1218,4 +1218,7 @@ export const RELEASE_CATALOG = [
   { v: "397", t: "Passeport machine — le réel se remplit tout seul depuis Turbines et Achats / Appro (lots 2 et 3)", items: [
     ["Passeport relié", "Turbines et achats remplissent le réel du passeport."],
   ] },
+  { v: "398", t: "Le RAI, feu vert du départ — Liste, fiche d'un PJ, accueil, passage à « Expédiée »", items: [
+    ["RAI = feu vert du départ", "Signalé dans la Liste, la fiche d'un PJ et l'accueil ; confirmation avant « Expédiée »."],
+  ] },
 ];
