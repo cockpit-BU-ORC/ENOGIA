@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v399",
+    date: "2026-11-18",
+    title: "V399 : Passeport machine allégé — « À traiter » en tête, groupes repliés, une ligne par élément",
+    items: [
+      { t: "À traiter d'abord", d: "En tête du passeport, seulement ce qui cloche : réel différent du prévu, achats en retard ou à commander, valeurs du design à définir." },
+      { t: "Plus léger", d: "Les sous-ensembles (Identité, Turbines, Skid, Électrique…) sont repliés avec leur avancement et leurs alertes ; une ligne par élément (prévu, réel, état), la source au survol ; les phases tiennent sur une ligne." },
+      { t: "Navigation", d: "Passeport, RAI, Photos et Historique en onglets à droite du nom de la machine ; la liste des machines montre la phase en cours et un point rouge en cas d'alerte." },
+    ],
+  },
+  {
     id: "2026-11-v398",
     date: "2026-11-18",
     title: "V398 : Le RAI, feu vert du départ — Liste, fiche d'un PJ, accueil, passage à « Expédiée »",

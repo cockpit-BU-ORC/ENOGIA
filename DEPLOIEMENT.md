@@ -2971,3 +2971,11 @@ Demandé : « Oui, feu vert » (idée 1 de la maquette v393-rai-photos).
 - Accueil (RoleHome) : widget `raiDue` « RAI avant départ » (21 jours, triés par départ) ; ajouté aux accueils `cdp` et `direction` par défaut.
 - Galerie : RAI fictifs (PJ902 avec réserves, PJ901 en cours).
 - Fichiers : src/raiStatus.js, src/raiStatus.test.js, src/App.js, src/components/TableView.js, src/components/RowDetail.js, src/components/RoleHome.js, src/demo/demoPages.js.
+
+## V399 — Passeport allégé (piste A)
+
+Demandé : « la page passeport est beaucoup trop lourde et pas assez design pour l'utilisation (reprendre les 3 skills principaux) » ; maquette `maquettes-design/v399-passeport-allege.html` (constats : 2 395 px, 51 lignes ouvertes, 70 textes gris « renseigné en … », 7 cartes de phases, 3 niveaux de navigation), piste **A** choisie : « A, à traiter ».
+
+- passport.js (testé) : `rowIssue` (rouge : réel ≠ prévu, non conforme, achat en retard ; ambre : design à définir — sauf élément facultatif `opt`, ex. « Autres modifications à faire » —, à commander) et `rowState` (livré, commandé, turbines allouées, conforme).
+- MachinePassport.js : `Passport` réécrit — titre 28 px + identité sur une ligne + onglets (Passeport · RAI · Photos · Historique) ; fil des phases sur une ligne (cercles reliés, phase en cours, clic sur RAI = onglet RAI ; plus de filtre par phase) ; bloc « À traiter » (rouges d'abord) ; groupes repliés (avancement, nombre d'alertes, `enogia-cl-in`) ; `PassRow` en grille sur une ligne de 44 px (élément · prévu + « écart » · réel · état), valeur absente = « — », source et phase au survol ; export CSV en pied ; liste des machines : plaque, point rouge, phase en cours ; filtre En cours / Expédiées (la recherche couvre tout). Page de démonstration : 2 395 → ~1 090 px.
+- Fichiers : src/passport.js, src/passport.test.js, src/components/MachinePassport.js.

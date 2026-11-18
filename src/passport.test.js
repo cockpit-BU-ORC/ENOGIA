@@ -76,3 +76,15 @@ test("v397 : achats par scope (statut d'après le PO, livré sans PO, retard) et
   expect(by("choke").achatSt).toMatchObject({ livre: 1 });
   expect(elementsOf({}).find(e => e.id === "choke").scope).toBe("CHOKE");
 });
+
+test("v399 : « à traiter » — réel ≠ prévu, achat en retard, à définir (sauf facultatif), à commander ; sinon état", () => {
+  const { rowIssue, rowState } = require("./passport");
+  const el = (id, x) => ({ id, label: id, phase: "appro", scope: "S", ...(x || {}) });
+  expect(rowIssue({ el: el("a"), planned: "IFM", real: { v: "Wago" }, gap: true })).toMatchObject({ tone: "bad", t: "Réel ≠ prévu" });
+  expect(rowIssue({ el: el("a"), planned: "A2V", achatSt: { late: 1, pos: ["PO 2"], apasser: 0 } })).toMatchObject({ tone: "bad" });
+  expect(rowIssue({ el: el("n", { phase: "design" }), planned: "" })).toMatchObject({ tone: "warn" });
+  expect(rowIssue({ el: el("autres", { phase: "design", opt: true }), planned: "" })).toBeNull();
+  expect(rowIssue({ el: el("c"), planned: "Oui", achatSt: { apasser: 1, late: 0, pos: [] } })).toMatchObject({ t: "À commander" });
+  expect(rowState({ el: el("c"), planned: "Oui", achatSt: { lines: 1, livre: 1, pos: ["PO 1"] } })).toMatchObject({ t: "Livré · PO 1", tone: "ok" });
+  expect(rowState({ el: el("r"), planned: "W0400", real: { v: "W0400" } })).toMatchObject({ t: "Conforme" });
+});

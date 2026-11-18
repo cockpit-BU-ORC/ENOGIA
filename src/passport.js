@@ -61,7 +61,7 @@ export const DEFAULT_ELEMENTS = [
   E("Auxiliaires", "bypassVannes", "Vannes bypass ORC", [], { achat: true }),
   E("Auxiliaires", "bypassAct", "Actionneurs de vanne bypass", [], { achat: true }),
   E("Auxiliaires", "pompeBF", "Pompe BF", [], { achat: true }),
-  E("Auxiliaires", "autres", "Autres modifications à faire", [], { phase: "design" }),
+  E("Auxiliaires", "autres", "Autres modifications à faire", [], { phase: "design", opt: true }),
 ];
 
 // v397 (lot 3) : scope Achats / Appro de chaque élément acheté (liste de départ des scopes d'Achats) — modifiable dans Standards par gamme
@@ -135,6 +135,27 @@ export function liveRows(rows, live) {
     const gap = !!(r && r.v && planned && !String(r.v).toLowerCase().includes(String(planned).toLowerCase()) && !String(r.v).toLowerCase().startsWith(String(planned).toLowerCase()));
     return { ...x, real: r, achatSt: a, gap: x.real && x.real.v ? x.gap : gap };
   });
+}
+
+// v399 (piste A « à traiter ») : ce qui cloche sur une ligne (null si rien) — rouge = réel ≠ prévu, non conforme, achat en retard ;
+// ambre = valeur de design à définir (élément non facultatif), achat à commander
+export function rowIssue(x) {
+  const a = x.achatSt;
+  if (x.gap) return { t: "Réel ≠ prévu", tone: "bad", title: "prévu " + x.planned };
+  if (a && a.nc) return { t: a.nc + " non conforme" + (a.nc > 1 ? "s" : ""), tone: "bad" };
+  if (a && a.late) return { t: "Achat en retard" + (a.pos.length ? " · " + a.pos[0] : ""), tone: "bad", title: "scope " + x.el.scope };
+  if (!x.planned && x.el.phase === "design" && !x.el.opt) return { t: "À définir (design)", tone: "warn" };
+  if (a && a.apasser && !(x.real && x.real.v)) return { t: "À commander", tone: "warn", title: "scope " + x.el.scope };
+  return null;
+}
+// état d'une ligne sans problème : livré, commandé, turbines allouées, conforme
+export function rowState(x) {
+  const a = x.achatSt, r = x.real;
+  if (a && a.lines && a.livre === a.lines) return { t: "Livré" + (a.pos.length ? " · " + a.pos[0] : ""), tone: "ok", title: "scope " + x.el.scope };
+  if (a && a.cmd) return { t: "Commandé" + (a.pos.length ? " · " + a.pos[0] : ""), tone: "mute", title: "scope " + x.el.scope };
+  if (r && r.v && r.live && /allou/.test(r.src || "")) return { t: String(r.src).split(" · ").pop(), tone: "mute" };
+  if (r && r.v && x.planned) return { t: "Conforme", tone: "ok" };
+  return null;
 }
 
 // Avancement par phase : part des éléments de la phase qui ont une valeur (design : prévu ; autres : réel)

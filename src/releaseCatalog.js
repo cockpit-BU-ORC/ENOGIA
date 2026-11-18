@@ -1221,4 +1221,7 @@ export const RELEASE_CATALOG = [
   { v: "398", t: "Le RAI, feu vert du départ — Liste, fiche d'un PJ, accueil, passage à « Expédiée »", items: [
     ["RAI = feu vert du départ", "Signalé dans la Liste, la fiche d'un PJ et l'accueil ; confirmation avant « Expédiée »."],
   ] },
+  { v: "399", t: "Passeport machine allégé — « À traiter » en tête, groupes repliés, une ligne par élément", items: [
+    ["Passeport allégé", "« À traiter » en tête, sous-ensembles repliés, une ligne par élément."],
+  ] },
 ];

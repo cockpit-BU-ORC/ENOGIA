@@ -4,8 +4,8 @@
 // machines »). Données : planning/machines (passport.js). Lot 1 : le réel se saisit à la main ; Turbines, Achats, Tests et SAV l'écriront ensuite.
 import React, { createContext, useContext, useMemo, useRef, useState } from "react";
 import { T, FZ, btn } from "../theme";
-import { getPjMeta, PjPlate, ETAT_META } from "../pjMeta";
-import { Segmented, tableTh, tableTd, useSheetJS, Pill } from "./SharedUI";
+import { getPjMeta, PjPlate } from "../pjMeta";
+import { Segmented, tableTh, tableTd, useSheetJS, Pill, NavIcon } from "./SharedUI";
 import { askConfirm } from "../confirm";
 import { AF } from "../autoFocusOk";
 import { useMachines, useProdTurbines, useAchats } from "../useAppData";
@@ -14,7 +14,7 @@ import { turbineOf } from "../pjDossier";
 import { RaiView } from "./RaiView";
 import { PhotosView } from "./PhotosView";
 import { raiVerdict, RAI_SECTIONS, raiSection } from "../rai";
-import { PHASES, PHASE_LABEL, GROUPS, elementsOf, passportRows, phaseProgress, setCfg, setReal, gammeKey, achatScopes, turbLive, liveRows, parseConfigTable, parseReference, importPlan } from "../passport";
+import { PHASES, PHASE_LABEL, GROUPS, elementsOf, passportRows, phaseProgress, setCfg, setReal, gammeKey, achatScopes, turbLive, liveRows, rowIssue, rowState, parseConfigTable, parseReference, importPlan } from "../passport";
 
 const field = () => ({ padding: "4px 8px", minHeight: 32, borderRadius: 8, border: "1px solid " + T.fieldLine, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, boxSizing: "border-box" });
 const fdt = iso => (iso ? new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "2-digit" }) + " " + new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) : "");
@@ -44,32 +44,36 @@ export function MachinesHub({ data, canEdit, authorName, serie }) {
 }
 
 // ── Passeport ───────────────────────────────────────────────────────────────────────────────────────
+// v399 (maquette v399-passeport-allege.html, piste A « à traiter » choisie ; audit UI/UX Pro Max, frontend-design, taste) :
+// en tête ce qui cloche (réel ≠ prévu, achats en retard ou à commander, valeurs à définir), puis un groupe replié par sous-ensemble
+// (avancement + alertes) ; une ligne = élément · prévu · réel · état ; le fil des phases sur une ligne ; liste des machines resserrée.
+const curPhase = pp => { const c = pp.find(p => p.total && p.done < p.total); return c ? c.l : "Complet"; };
 function PassportView({ data, doc, api, canEdit, authorName, prodDoc, achatsDoc }) {
   const rows = useMemo(() => (data || []).filter(r => r && r.pj && r.etat !== "SLOT_LIBRE" && !/X{2,}/i.test(r.pj)), [data]);
-  const [q, setQ] = useState(""), [scope, setScope] = useState("open"), [sel, setSel] = useState(null), [phase, setPhase] = useState(null), [view, setView] = useState("pp"), [edit, setEdit] = useState(null);
-  const list = rows.filter(r => (scope === "all" || (scope === "open" ? r.etat !== "SHIPPED" : r.etat === "SHIPPED"))
+  const [q, setQ] = useState(""), [scope, setScope] = useState("open"), [sel, setSel] = useState(null), [view, setView] = useState("pp"), [edit, setEdit] = useState(null);
+  const list = rows.filter(r => ((scope === "open" ? r.etat !== "SHIPPED" : r.etat === "SHIPPED") || !!q)
     && (!q || (r.pj + " " + (getPjMeta(r.pj, r).nomProjet || "") + " " + (getPjMeta(r.pj, r).numSerie || "")).toLowerCase().includes(q.toLowerCase())))
     .sort((a, b) => String(a.pj).localeCompare(String(b.pj), "fr", { numeric: true }));
   const r = list.find(x => x.pj === sel) || list[0] || null;
   if (!rows.length) return <div style={{ color: T.ink500 }}>Aucune machine dans le planning.</div>;
-  return <div className="enogia-pp" style={{ display: "grid", gridTemplateColumns: "minmax(220px, 250px) minmax(0, 1fr)", gap: 0, background: T.card, border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden", minHeight: 560 }}>
-    <nav aria-label="Machines" style={{ borderRight: "1px solid " + T.line, padding: 8, display: "flex", flexDirection: "column", gap: 6, maxHeight: "calc(100dvh - 220px)", overflow: "auto" }}>
-      <input type="search" value={q} onChange={e => setQ(e.target.value)} placeholder="PJ, client, S/N" aria-label="Rechercher une machine" style={{ ...field(), width: "100%" }} />
-      <Segmented label="Machines" value={scope} onChange={setScope} options={[["open", "En cours"], ["ship", "Expédiées"], ["all", "Toutes"]]} />
-      {list.map(x => { const pp = phaseProgress(doc, x.pj, x.gamme), on = r && x.pj === r.pj, meta = getPjMeta(x.pj, x);
-        return <button key={x.pj} type="button" onClick={() => { setSel(x.pj); setEdit(null); }} aria-current={on ? "true" : undefined}
-          style={{ all: "unset", boxSizing: "border-box", cursor: "pointer", borderRadius: 8, padding: "6px 6px", background: on ? T.surfaceAlt : "transparent", display: "grid", gridTemplateColumns: "auto minmax(0,1fr)", gap: "3px 8px", alignItems: "center", minHeight: 44 }}>
+  return <div className="enogia-pp" style={{ display: "grid", gridTemplateColumns: "minmax(190px, 210px) minmax(0, 1fr)", gap: 0, background: T.card, border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden", minHeight: 480 }}>
+    <nav aria-label="Machines" style={{ borderRight: "1px solid " + T.line, padding: 8, display: "flex", flexDirection: "column", gap: 2, maxHeight: "calc(100dvh - 220px)", overflow: "auto" }}>
+      <input type="search" value={q} onChange={e => setQ(e.target.value)} placeholder="PJ, client, S/N" aria-label="Rechercher une machine" style={{ ...field(), width: "100%", marginBottom: 4 }} />
+      <div style={{ marginBottom: 4 }}><Segmented label="Machines" value={scope} onChange={setScope} options={[["open", "En cours"], ["ship", "Expédiées"]]} /></div>
+      {list.map(x => { const on = r && x.pj === r.pj, pp = phaseProgress(doc, x.pj, x.gamme), alert = passportRows(doc, x.pj, x.gamme).some(y => rowIssue(y) && rowIssue(y).tone === "bad");
+        return <button key={x.pj} type="button" onClick={() => { setSel(x.pj); setEdit(null); }} aria-current={on ? "true" : undefined} title={getPjMeta(x.pj, x).nomProjet || undefined}
+          style={{ all: "unset", boxSizing: "border-box", cursor: "pointer", borderRadius: 8, padding: "6px", background: on ? T.surfaceAlt : "transparent", display: "flex", alignItems: "center", gap: 8, minHeight: 40 }}>
           <PjPlate pj={x.pj} />
-          <span style={{ fontSize: 13, color: T.ink700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : x.gamme}</span>
-          <span aria-label={pp.map(p => p.l + " " + p.done + "/" + p.total).join(", ")} style={{ gridColumn: 2, display: "flex", gap: 2 }}>{pp.map(p => <i key={p.k} style={{ flex: 1, height: 4, borderRadius: 2, background: p.total && p.done >= p.total ? T.emerald600 : p.done ? T.info600 : T.line }} />)}</span>
+          {alert && <span aria-label="alerte" style={{ width: 8, height: 8, borderRadius: 999, background: T.red600, flexShrink: 0 }} />}
+          <span style={{ marginLeft: "auto", fontSize: 12, color: T.ink500, whiteSpace: "nowrap" }}>{curPhase(pp)}</span>
         </button>; })}
       {!list.length && <span style={{ fontSize: 13, color: T.ink500, padding: 8 }}>Aucune machine</span>}
     </nav>
-    {r && <Passport key={r.pj} data={data} prodDoc={prodDoc} achatsDoc={achatsDoc} r={r} doc={doc} api={api} canEdit={canEdit} authorName={authorName} phase={phase} setPhase={setPhase} view={view} setView={setView} edit={edit} setEdit={setEdit} />}
+    {r && <Passport key={r.pj} data={data} prodDoc={prodDoc} achatsDoc={achatsDoc} r={r} doc={doc} api={api} canEdit={canEdit} authorName={authorName} view={view} setView={setView} edit={edit} setEdit={setEdit} />}
   </div>;
 }
 
-function Passport({ r, doc, api, canEdit, authorName, phase, setPhase, view, setView, edit, setEdit, data, prodDoc, achatsDoc }) {
+function Passport({ r, doc, api, canEdit, authorName, view, setView, edit, setEdit, data, prodDoc, achatsDoc }) {
   const meta = getPjMeta(r.pj, r), mp = metaPlanned(meta), P0 = ((doc.pass || {})[r.pj]) || {};
   // v397 : réel « vivant » — turbines allouées / installées (Turbines › Besoins), état des achats par scope (Achats / Appro)
   const prodM = useProdModel(!!prodDoc);
@@ -80,8 +84,9 @@ function Passport({ r, doc, api, canEdit, authorName, phase, setPhase, view, set
   const R = ((doc.rai || {})[r.pj]) || null, rv = raiVerdict(R), photos = ((doc.photos || {})[r.pj]) || [];
   // v394 : le RAI s'insère entre les tests et la MES : contrôles faits + signatures
   const raiTot = RAI_SECTIONS.reduce((n, s) => n + raiSection(R, s).total, 0) + rv.signers, raiDone = RAI_SECTIONS.reduce((n, s) => n + raiSection(R, s).done, 0) + rv.signed;
-  const pp0 = phaseProgress(doc, r.pj, r.gamme, live), pp = [...pp0.slice(0, 4), { k: "rai", l: "RAI", total: raiTot, done: raiDone, rai: rv }, ...pp0.slice(4)], shown = phase && phase !== "rai" ? rows.filter(x => (phase === "design" ? true : x.el.phase === phase)) : rows;
-  const devN = rows.filter(x => x.dev).length, gapN = rows.filter(x => x.gap).length;
+  const pp0 = phaseProgress(doc, r.pj, r.gamme, live), pp = [...pp0.slice(0, 4), { k: "rai", l: "RAI", total: raiTot, done: raiDone, rai: rv }, ...pp0.slice(4)];
+  const todo = rows.map(x => ({ x, i: rowIssue(x) })).filter(y => y.i).sort((a, b) => (a.i.tone === "bad" ? 0 : 1) - (b.i.tone === "bad" ? 0 : 1));
+  const [open, setOpen] = useState({});
   const save = async next => { const ok = await api.savePass(r.pj, next); if (ok) setEdit(null); };
   const exportCsv = () => {
     const q = v => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
@@ -89,76 +94,81 @@ function Passport({ r, doc, api, canEdit, authorName, phase, setPhase, view, set
       .concat(rows.map(x => [x.el.group, x.el.label, x.std, x.planned, x.real ? x.real.v : "", x.real ? PHASE_LABEL[x.real.phase] || "" : "", x.real ? x.real.src : "", x.real ? x.real.by : "", x.real ? (x.real.at || "").slice(0, 10) : ""].map(q).join(";")));
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" })); a.download = "Passeport " + r.pj + ".csv"; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
   };
-  const em = ETAT_META[r.etat] || {};
-  return <section aria-label={"Passeport de " + r.pj} style={{ padding: "14px 18px", minWidth: 0 }}>
-    <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-      <h2 style={{ margin: 0, fontFamily: T.fontDisplay, fontSize: 24, fontWeight: 600, letterSpacing: "-0.02em", color: T.ink900 }}>{r.pj}</h2>
-      <span style={{ fontSize: 14, color: T.ink500 }}>{meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : ""}{meta.pays ? " · " + meta.pays : ""}</span>
-      <Pill tone="info">{r.gamme || "gamme ?"}</Pill>
-      {meta.numSerie && <span style={{ fontFamily: T.fontMono, fontSize: 13, color: T.ink500 }}>S/N {meta.numSerie}</span>}
-      {em.label && <Pill tone="neutral">{em.label}</Pill>}
+  const rowProps = { r, doc, canEdit, authorName, edit, setEdit, save };
+  const ident = [meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : "", meta.pays, r.gamme, meta.numSerie ? "S/N " + meta.numSerie : ""].filter(Boolean).join(" · ");
+  return <section aria-label={"Passeport de " + r.pj} style={{ padding: "16px 20px", minWidth: 0 }}>
+    <div style={{ display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap" }}>
+      <h2 style={{ margin: 0, fontFamily: T.fontDisplay, fontSize: 28, fontWeight: 600, letterSpacing: "-0.02em", color: T.ink900 }}>{r.pj}</h2>
+      <span style={{ fontSize: 13, color: T.ink500 }}>{ident}</span>
       <span style={{ flex: 1 }} />
-      {devN > 0 && <span style={{ fontSize: 12, color: T.amber600, fontWeight: 500 }}>{devN} écart{devN > 1 ? "s" : ""} au standard</span>}
-      {gapN > 0 && <span style={{ fontSize: 12, color: T.red600, fontWeight: 500 }}>{gapN} réel{gapN > 1 ? "s" : ""} ≠ prévu</span>}
-      <button type="button" onClick={exportCsv} style={btn("sec", "sm")}>Exporter (CSV)</button>
+      <Segmented label="Contenu du passeport" value={view} onChange={v => { setView(v); setEdit(null); }} options={[["pp", "Passeport"], ["rai", "RAI"], ["photos", "Photos" + (photos.length ? " · " + photos.length : "")], ["hist", "Historique"]]} />
     </div>
-    <div role="group" aria-label="Phases du passeport" style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0,1fr))", gap: 4, margin: "14px 0 8px" }} className="enogia-pp-phases">
-      {pp.map(p => { const on = phase === p.k, full = p.total && p.done >= p.total, pct = p.total ? Math.round(p.done / p.total * 100) : 0;
-        return <button key={p.k} type="button" aria-pressed={on} onClick={() => { if (p.k === "rai") { setView("rai"); setPhase(null); return; } setPhase(on ? null : p.k); if (view === "rai") setView("pp"); }}
-          style={{ all: "unset", boxSizing: "border-box", cursor: "pointer", display: "flex", flexDirection: "column", gap: 3, padding: "8px 10px", borderRadius: 8, minWidth: 0, minHeight: 44,
-            border: on ? "2px solid " + T.ink900 : "1px solid " + (full ? "transparent" : T.line), background: full ? T.emerald100 : T.card }}>
-          <b style={{ fontFamily: T.fontDisplay, fontSize: 14, fontWeight: 600, color: T.ink900 }}>{p.l}</b>
-          {p.rai ? <span style={{ fontSize: 12, fontWeight: 500, color: p.rai.k === "ok" ? T.emerald600 : p.rai.k === "reserve" ? T.amber600 : T.ink500 }}>{p.rai.k === "ok" ? "acceptée" : p.rai.k === "reserve" ? "avec réserves" : p.done ? "en cours · " + p.rai.signed + "/" + p.rai.signers + " sign." : "à faire"}</span> : <span style={{ fontSize: 12, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{p.total ? p.done + " / " + p.total + (p.k === "design" ? " définis" : " renseignés") : "rien à renseigner"}</span>}
-          <span aria-hidden="true" style={{ height: 5, borderRadius: 2, background: T.surfaceAlt, overflow: "hidden" }}><i style={{ display: "block", height: "100%", width: pct + "%", background: T.emerald600 }} /></span>
-        </button>; })}
-    </div>
-    <div style={{ display: "flex", gap: 10, alignItems: "center", margin: "6px 0 10px", flexWrap: "wrap" }}>
-      <Segmented label="Contenu" value={view} onChange={setView} options={[["pp", "Passeport · " + rows.length], ["rai", "RAI · " + rv.label.toLowerCase()], ["photos", "Photos · " + photos.length], ["hist", "Historique · " + (P.hist || []).length]]} />
-      {phase && <span style={{ fontSize: 12, color: T.ink500 }}>Éléments renseignés à la phase {PHASE_LABEL[phase]} · <button type="button" onClick={() => setPhase(null)} style={{ ...btn("ghost", "sm"), minHeight: 24 }}>Tout afficher</button></span>}
-    </div>
-    {view === "photos" ? <PhotosView pj={r.pj} list={photos} api={api} who={authorName} canEdit={canEdit} />
-      : view === "rai" ? <RaiView photos={photos} r={r} meta={meta} doc={doc} P={P} R={R} saveRai={next => api.saveRai(r.pj, next)} savePass={next => api.savePass(r.pj, next)} canEdit={canEdit} who={authorName} />
-      : view === "hist" ? <History P={P} doc={doc} />
-      : <table style={{ borderCollapse: "collapse", width: "100%" }}>
-        <thead><tr><th style={{ ...tableTh(), width: 200 }}>Élément</th><th style={tableTh()}>Prévu (design)</th><th style={tableTh()}>Réel sur la machine</th></tr></thead>
-        <tbody>{GROUPS.concat([...new Set(shown.map(x => x.el.group))].filter(g => !GROUPS.includes(g))).map(g => { const G = shown.filter(x => x.el.group === g); if (!G.length) return null;
-          return <React.Fragment key={g}><tr><td colSpan={3} style={{ ...tableTd({ h: 30 }), background: T.surfaceAlt, fontSize: 12, fontWeight: 600, color: T.ink700 }}>{g}</td></tr>
-            {G.map(x => <PassRow key={x.el.id} x={x} r={r} doc={doc} P={P} canEdit={canEdit} authorName={authorName} edit={edit} setEdit={setEdit} save={save} />)}</React.Fragment>; })}</tbody>
-      </table>}
-    {view === "pp" && <div style={{ display: "flex", gap: 14, flexWrap: "wrap", fontSize: 12, color: T.ink500, marginTop: 10 }}>
-      <span><span style={{ background: T.amber100, color: T.amber600, fontWeight: 600, borderRadius: 4, padding: "0 4px" }}>surligné</span> écart au standard de la gamme</span>
-      <span><span style={{ color: T.red600, fontWeight: 600 }}>réel ≠ prévu</span> en rouge</span>
-      <span>Chaque valeur réelle porte sa phase, sa source et son auteur</span>
-    </div>}
+    <ol aria-label="Phases" style={{ listStyle: "none", margin: "14px 0 4px", padding: 0, display: "flex", alignItems: "center", flexWrap: "wrap", rowGap: 6 }}>
+      {pp.map((p, i) => { const full = p.k === "rai" ? p.rai.k === "ok" : !!(p.total && p.done >= p.total), cur = !full && pp.slice(0, i).every(o => (o.k === "rai" ? o.rai.k === "ok" : !o.total || o.done >= o.total));
+        const sub = p.k === "rai" ? (p.rai.k === "ok" ? "" : p.rai.k === "reserve" ? "réserves" : p.done ? p.rai.signed + "/" + p.rai.signers : "") : cur && p.total ? p.done + " / " + p.total : "";
+        return <li key={p.k} style={{ display: "flex", alignItems: "center", flex: i < pp.length - 1 ? "1 1 auto" : "0 0 auto", minWidth: 0 }}>
+          <button type="button" onClick={p.k === "rai" ? () => setView("rai") : undefined} aria-current={cur ? "step" : undefined} title={p.total ? p.done + " / " + p.total + (p.k === "design" ? " définis" : " renseignés") : "rien à renseigner"}
+            style={{ all: "unset", cursor: p.k === "rai" ? "pointer" : "default", display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: full || cur ? T.ink900 : T.ink500, fontWeight: cur ? 600 : 500, whiteSpace: "nowrap" }}>
+            <span aria-hidden="true" style={{ width: 16, height: 16, borderRadius: 999, boxSizing: "border-box", display: "inline-grid", placeItems: "center", fontSize: 10, color: T.onFill, background: full ? T.emerald600 : "transparent", border: "2px solid " + (full ? T.emerald600 : cur ? T.ink900 : T.line) }}>{full ? "✓" : ""}</span>
+            {p.l}{sub && <span style={{ fontWeight: 500, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{sub}</span>}
+          </button>
+          {i < pp.length - 1 && <span aria-hidden="true" style={{ flex: 1, height: 2, minWidth: 12, margin: "0 10px", background: full ? T.emerald600 : T.line }} />}
+        </li>; })}
+    </ol>
+    {view === "photos" ? <div style={{ marginTop: 14 }}><PhotosView pj={r.pj} list={photos} api={api} who={authorName} canEdit={canEdit} /></div>
+      : view === "rai" ? <div style={{ marginTop: 14 }}><RaiView photos={photos} r={r} meta={meta} doc={doc} P={P} R={R} saveRai={next => api.saveRai(r.pj, next)} savePass={next => api.savePass(r.pj, next)} canEdit={canEdit} who={authorName} /></div>
+      : view === "hist" ? <div style={{ marginTop: 14 }}><History P={P} doc={doc} /></div>
+      : <>
+        <section aria-label="À traiter" style={{ border: "1px solid " + T.line, borderRadius: 12, margin: "16px 0 12px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderBottom: todo.length ? "1px solid " + T.line : "none" }}>
+            <h3 style={{ margin: 0, fontFamily: T.fontDisplay, fontSize: 16, fontWeight: 600, color: T.ink900 }}>À traiter</h3>
+            {todo.length ? <Pill tone={todo.some(y => y.i.tone === "bad") ? "bad" : "warn"}>{todo.length}</Pill> : <Pill tone="ok">rien</Pill>}
+            <span style={{ fontSize: 12, color: T.ink500 }}>{todo.length ? "réel ≠ prévu, achats en retard ou à commander, valeurs à définir" : "pas d'écart ni de retard sur cette machine"}</span>
+          </div>
+          {todo.map(({ x }) => <PassRow key={x.el.id} x={x} {...rowProps} />)}
+        </section>
+        {GROUPS.concat([...new Set(rows.map(x => x.el.group))].filter(g => !GROUPS.includes(g))).map(g => { const G = rows.filter(x => x.el.group === g); if (!G.length) return null;
+          const done = G.filter(x => (x.el.phase === "design" ? !!x.planned : (x.real && x.real.v) || (x.achatSt && x.achatSt.lines && x.achatSt.livre === x.achatSt.lines))).length, nAl = G.filter(x => rowIssue(x)).length, isOpen = !!open[g];
+          return <div key={g} style={{ border: "1px solid " + T.line, borderRadius: 12, marginTop: 8, overflow: "hidden" }}>
+            <button type="button" aria-expanded={isOpen} onClick={() => setOpen(o => ({ ...o, [g]: !o[g] }))} style={{ all: "unset", boxSizing: "border-box", cursor: "pointer", width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", minHeight: 44 }}>
+              <b style={{ fontFamily: T.fontDisplay, fontSize: 15, fontWeight: 600, color: T.ink900 }}>{g}</b>
+              <span aria-hidden="true" style={{ width: 90, height: 4, borderRadius: 2, background: T.surfaceAlt, overflow: "hidden" }}><i style={{ display: "block", height: "100%", width: Math.round(done / G.length * 100) + "%", background: T.emerald600 }} /></span>
+              <span style={{ fontSize: 12, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{done} / {G.length}</span>
+              {nAl > 0 && <Pill tone={G.some(x => rowIssue(x) && rowIssue(x).tone === "bad") ? "bad" : "warn"}>{nAl}</Pill>}
+              <span className="enogia-nd-chev" data-open={isOpen ? "1" : "0"} style={{ marginLeft: "auto", color: T.ink500, display: "inline-grid" }}><NavIcon name="chevronDown" size={16} /></span>
+            </button>
+            {isOpen && <div className="enogia-cl-in" style={{ borderTop: "1px solid " + T.line }}>{G.map(x => <PassRow key={x.el.id} x={x} {...rowProps} />)}</div>}
+          </div>; })}
+        <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 12, fontSize: 12, color: T.ink500, flexWrap: "wrap" }}>
+          <span>Un clic sur une valeur la modifie ; la source d'une valeur réelle s'affiche au survol.</span><span style={{ flex: 1 }} />
+          <button type="button" onClick={exportCsv} style={btn("ghost", "sm")}>Exporter (CSV)</button>
+        </div>
+      </>}
   </section>;
 }
 
-function PassRow({ x, r, doc, P, canEdit, authorName, edit, setEdit, save }) {
+// une ligne : élément · prévu · réel · état (44 px, une seule ligne ; détails au survol)
+function PassRow({ x, r, doc, canEdit, authorName, edit, setEdit, save }) {
   const k = x.el.id, onP = edit && edit.el === k && edit.what === "p", onR = edit && edit.el === k && edit.what === "r";
-  const cell = { ...tableTd({ h: 40 }), verticalAlign: "top" };
   const click = what => canEdit ? () => setEdit(onP && what === "p" ? null : onR && what === "r" ? null : { el: k, what }) : undefined;
-  const lid = "pp-opts-" + k;
-  return <tr>
-    <td style={{ ...cell, color: T.ink900, fontWeight: 500 }}>{x.el.label}{x.el.turb && <span style={{ marginLeft: 6, fontSize: 11, color: T.info600 }}>turbines</span>}{x.el.achat && <span style={{ marginLeft: 6, fontSize: 11, color: T.violet600 }}>achat</span>}</td>
-    <td style={cell}>{onP ? <EditBox kind="p" x={x} lid={lid} onCancel={() => setEdit(null)} onSave={v => save(setCfg(doc, r.pj, r.gamme, k, v, authorName))} />
-      : <button type="button" onClick={click("p")} disabled={!canEdit} aria-label={"Prévu : " + x.el.label + (canEdit ? ", modifier" : "")} style={{ all: "unset", cursor: canEdit ? "pointer" : "default", display: "flex", flexDirection: "column", gap: 1, minWidth: 0, minHeight: 28 }}>
-        {x.planned ? <span><b style={{ fontWeight: 600, color: T.ink900, ...(x.dev ? { background: T.amber100, color: T.amber600, borderRadius: 4, padding: "0 4px" } : null) }}>{x.planned}</b></span> : <span style={{ color: T.ink500 }}>{canEdit ? "à définir" : "—"}</span>}
-        <span style={{ fontSize: 11, color: T.ink500 }}>{x.fromFiche ? "fiche projet" : x.dev ? "standard : " + x.std : x.own ? "propre à la machine" : x.std ? "standard " + (gammeKey(doc, r.gamme) || "") : ""}</span></button>}</td>
-    <td style={cell}>{onR ? <EditBox kind="r" x={x} lid={lid} onCancel={() => setEdit(null)} onSave={(v, ph, src) => save(setReal(doc, r.pj, k, v, ph, src, authorName))} />
-      : <button type="button" onClick={click("r")} disabled={!canEdit} aria-label={"Réel : " + x.el.label + (canEdit ? ", renseigner" : "")} style={{ all: "unset", cursor: canEdit ? "pointer" : "default", display: "flex", flexDirection: "column", gap: 1, minWidth: 0, minHeight: 28 }}>
-        {x.real && x.real.v ? <span><b style={{ fontWeight: 600, color: x.gap ? T.red600 : T.ink900 }}>{x.real.v}</b>{x.gap && <span style={{ fontSize: 12, color: T.red600, marginLeft: 6 }}>≠ prévu</span>}</span>
-          : <span style={{ color: T.ink500 }}>{x.el.phase === "design" ? "fixé au design" : "renseigné en " + (PHASE_LABEL[x.el.phase] || "fabrication").toLowerCase()}</span>}
-        {x.real && x.real.v && <span style={{ fontSize: 11, color: T.ink500 }}>{[PHASE_LABEL[x.real.phase], x.real.src, x.real.by, x.real.at ? x.real.at.slice(8, 10) + "/" + x.real.at.slice(5, 7) : ""].filter(Boolean).join(" · ")}</span>}
-        {x.achatSt && <AchatChip a={x.achatSt} scope={x.el.scope} />}</button>}</td>
-  </tr>;
+  const lid = "pp-opts-" + k, iss = rowIssue(x), st = iss || rowState(x);
+  const pTitle = x.fromFiche ? "repris de la fiche projet" : x.dev ? "écart au standard (" + x.std + ")" : x.own ? "propre à la machine" : x.std ? "standard " + (gammeKey(doc, r.gamme) || "") : "";
+  const rTitle = x.real && x.real.v ? [PHASE_LABEL[x.real.phase], x.real.src, x.real.by, x.real.at ? x.real.at.slice(8, 10) + "/" + x.real.at.slice(5, 7) : ""].filter(Boolean).join(" · ") : x.el.phase === "design" ? "fixé au design" : "renseigné en " + (PHASE_LABEL[x.el.phase] || "fabrication").toLowerCase();
+  const cellBtn = { all: "unset", cursor: canEdit ? "pointer" : "default", minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minHeight: 28, display: "flex", alignItems: "center", gap: 6 };
+  const toneC = t => (t === "bad" ? T.red600 : t === "warn" ? T.amber600 : t === "ok" ? T.emerald600 : T.ink500);
+  return <div className="enogia-pp-row" style={{ display: "grid", gridTemplateColumns: "minmax(140px, 200px) minmax(0, 1fr) minmax(0, 1fr) minmax(120px, auto)", gap: 12, alignItems: "center", padding: "6px 14px", minHeight: 44, borderTop: "1px solid " + T.line, fontSize: 13 }}>
+    <span style={{ color: T.ink700 }}>{x.el.label}</span>
+    {onP ? <EditBox kind="p" x={x} lid={lid} onCancel={() => setEdit(null)} onSave={v => save(setCfg(doc, r.pj, r.gamme, k, v, authorName))} />
+      : <button type="button" onClick={click("p")} disabled={!canEdit} title={pTitle || undefined} aria-label={"Prévu : " + x.el.label + " = " + (x.planned || "non défini") + (canEdit ? ", modifier" : "")} style={cellBtn}>
+        {x.planned ? <b style={{ fontWeight: 600, color: T.ink900 }}>{x.planned}</b> : <span style={{ color: T.ink500 }}>—</span>}
+        {x.dev && <span style={{ fontSize: 11, fontWeight: 600, color: T.amber600, background: T.amber100, borderRadius: 4, padding: "0 4px" }}>écart</span>}</button>}
+    {onR ? <EditBox kind="r" x={x} lid={lid} onCancel={() => setEdit(null)} onSave={(v, ph, src) => save(setReal(doc, r.pj, k, v, ph, src, authorName))} />
+      : <button type="button" onClick={click("r")} disabled={!canEdit} title={rTitle} aria-label={"Réel : " + x.el.label + " = " + ((x.real && x.real.v) || "non renseigné") + (canEdit ? ", renseigner" : "")} style={cellBtn}>
+        {x.real && x.real.v ? <b style={{ fontWeight: 600, color: x.gap ? T.red600 : T.ink900 }}>{x.real.v}</b> : <span style={{ color: T.ink500 }}>—</span>}</button>}
+    <span title={st && st.title ? st.title : undefined} style={{ fontSize: 12, fontWeight: st && st.tone !== "mute" ? 500 : 400, color: st ? toneC(st.tone) : T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{st ? st.t : ""}</span>
+  </div>;
 }
 
-// v397 (lot 3) : état des lignes du scope dans la fiche machine d'Achats / Appro
-function AchatChip({ a, scope }) {
-  const all = a.lines && a.livre === a.lines, tone = a.nc || a.late ? T.red600 : all ? T.emerald600 : a.cmd ? T.info600 : T.amber600;
-  const txt = all ? "livré" : a.nc ? a.nc + " non conforme" + (a.nc > 1 ? "s" : "") : a.late ? a.late + " livraison" + (a.late > 1 ? "s" : "") + " en retard" : a.cmd ? a.cmd + " commandé" + (a.cmd > 1 ? "s" : "") : "à commander";
-  return <span style={{ fontSize: 11, color: T.ink500 }}><span style={{ color: tone, fontWeight: 600 }}>Achats {scope} : {txt}</span> · {a.livre} / {a.lines} ligne{a.lines > 1 ? "s" : ""} livrée{a.livre > 1 ? "s" : ""}{a.pos.length ? " · " + a.pos.slice(0, 3).join(", ") : ""}</span>;
-}
 function EditBox({ kind, x, lid, onSave, onCancel }) {
   const [v, setV] = useState(kind === "p" ? x.planned || "" : (x.real && x.real.v) || ""), [ph, setPh] = useState((x.real && x.real.phase) || x.el.phase || "fab"), [src, setSrc] = useState((x.real && x.real.src) || "");
   const ok = () => (kind === "p" ? onSave(v) : onSave(v, ph, src));
