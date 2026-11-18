@@ -24,6 +24,7 @@ export const DEFAULT_ELEMENTS = [
   E("Identité", "neutre", "Régime de neutre", [], { phase: "design" }),
   E("Identité", "software", "Version software", [], { phase: "tests" }),
   E("Turbines", "nbTurb", "Nombre de turbines / volutes", ["1", "2"], { phase: "design", turb: true }),
+  E("Turbines", "turbines", "Turbines montées (n°)", [], { turb: true }),
   E("Turbines", "injecteur", "Injecteur", ["I0250", "I0282", "I0338", "I0350", "I0400", "I1100"], { turb: true }),
   E("Turbines", "bouchages", "Nombre de bouchages", [], { turb: true }),
   E("Turbines", "roue", "Roue", ["W0250", "W0350", "W0400", "W0800", "W1100"], { turb: true }),
@@ -63,6 +64,12 @@ export const DEFAULT_ELEMENTS = [
   E("Auxiliaires", "autres", "Autres modifications à faire", [], { phase: "design" }),
 ];
 
+// v397 (lot 3) : scope Achats / Appro de chaque élément acheté (liste de départ des scopes d'Achats) — modifiable dans Standards par gamme
+const SCOPE_OF = { volute: "VOLUTE", jacket: "VOLUTE", evaporateur: "SKID", condenseur: "SKID", vanneFlush: "SKID", reservoir: "SKID", chassis: "SKID", presseEtoupe: "SKID",
+  bypassVannes: "SKID", bypassAct: "SKID", pompeCycle: "POMPE CYCLE", pompeCooling: "POMPE DE COOLING", pompeLub: "POMPE DE LUB", flexibleLub: "POMPE DE LUB", coolingLub: "POMPE DE LUB",
+  armoire: "ARMOIRE", elecPuissance: "ARMOIRE", drive: "ARMOIRE", afe: "ARMOIRE", schaffner: "ARMOIRE", plc: "ELEC CTRL", connecteurs: "ELEC CTRL",
+  capteursVib: "ELEC PROTECTION TURBINE", choke: "CHOKE", aerotherme: "AIR COOLER", tt03: "FLUIDE", mitrFluide: "FLUIDE", mitrEau: "FLUIDE" };
+DEFAULT_ELEMENTS.forEach(e => { if (e.achat && !e.scope && SCOPE_OF[e.id]) e.scope = SCOPE_OF[e.id]; });
 export const elementsOf = doc => (doc && Array.isArray(doc.elements) && doc.elements.length ? doc.elements : DEFAULT_ELEMENTS);
 // gamme de la ligne de planning (« 180LTV3 » → standard « 180LT » s'il n'y a pas de standard au nom exact)
 export const gammeKey = (doc, gamme) => {
@@ -86,12 +93,56 @@ export function rowOf(doc, pj, gamme, el) {
 }
 export function passportRows(doc, pj, gamme) { return elementsOf(doc).map(el => rowOf(doc, pj, gamme, el)); }
 
+// ── v397 : valeurs réelles venues des autres pages (jamais enregistrées : recalculées à l'affichage)
+// Achats / Appro : lignes de la fiche machine du PJ, regroupées par scope, statut d'après le PO (comme la page Achats)
+const LEGACY = { besoin: "apasser", consult: "apasser", commande: "envoyee", confirme: "attente", expedie: "attente", recu: "livre" };
+export function achatScopes(achatsDoc, pj, todayIso = new Date().toISOString().slice(0, 10)) {
+  if (!achatsDoc || !pj) return {};
+  const P = String(pj).trim(), fiches = Object.entries(achatsDoc.projets || {}).filter(([, f]) => f && String(f.machine || "").trim() === P).map(([id, f]) => f.id || id), ids = new Set(fiches);
+  const po = achatsDoc.po || {}, comp = achatsDoc.composants || {}, out = {};
+  Object.values(achatsDoc.lignes || {}).forEach(l => {
+    if (!l || !ids.has(l.projetId)) return;
+    const art = comp[l.composantId] || Object.values(comp).find(c => c && l.ref && String(c.ref || "").toLowerCase() === String(l.ref).toLowerCase()) || null;
+    const sc = String(l.famille || (art && art.famille) || "").trim().toUpperCase(); if (!sc) return;
+    const p = l.poId && po[l.poId] && !po[l.poId].annule ? po[l.poId] : null;
+    const st = p ? (p.statut || "envoyee") : l.statut === "nc" ? "nc" : l.livreSansPo ? "livre" : (LEGACY[l.statut] || l.statut || "apasser");
+    const o = out[sc] || (out[sc] = { lines: 0, livre: 0, cmd: 0, apasser: 0, nc: 0, late: 0, pos: [], refs: [] });
+    o.lines++; if (st === "livre") o.livre++; else if (st === "nc") o.nc++; else if (st === "apasser") o.apasser++; else o.cmd++;
+    if (p && st !== "livre" && p.dateLivraison && String(p.dateLivraison).slice(0, 10) < todayIso) o.late++;
+    if (p && p.numero && !o.pos.includes(p.numero)) o.pos.push(p.numero);
+    const ref = (art && art.ref) || l.ref || l.designation || ""; if (ref && !o.refs.includes(ref)) o.refs.push(ref);
+  });
+  return out;
+}
+// Turbines › Besoins (turbineOf de pjDossier) : turbines allouées / installées, roue et injecteur réellement posés
+export function turbLive(t) {
+  if (!t || !t.slots) return {};
+  const S = t.slots, src = "Turbines › Besoins", out = {};
+  const nums = S.filter(x => x.allouee).map(x => x.num + (x.installee ? " (installée)" : ""));
+  if (nums.length) out.turbines = { v: nums.join(", "), phase: "fab", src: src + " · " + nums.length + " / " + S.length + " allouée" + (nums.length > 1 ? "s" : ""), live: true };
+  const roues = [...new Set(S.map(x => x.roue).filter(Boolean))]; if (roues.length) out.roue = { v: roues.join(", "), phase: "fab", src, live: true };
+  const injs = S.map(x => x.inj).filter(Boolean);
+  if (injs.length) { const refs = [...new Set(injs.map(x => x.split(" · ")[0]))], bou = [...new Set(injs.map(x => (x.split(" · ")[1] || "").replace(/\D+/g, "") || "0"))];
+    out.injecteur = { v: refs.join(", "), phase: "fab", src, live: true }; out.bouchages = { v: bou.join(", "), phase: "fab", src, live: true }; }
+  return out;
+}
+// Lignes du passeport + valeurs vivantes : un réel saisi à la main l'emporte ; un élément acheté porte l'état de son scope
+export function liveRows(rows, live) {
+  const L = live || {}, real = L.real || {}, sc = L.scopes || {};
+  return rows.map(x => {
+    const r = x.real && x.real.v ? x.real : real[x.el.id] || null, a = x.el.achat && x.el.scope ? sc[String(x.el.scope).toUpperCase()] || null : null;
+    const planned = x.planned;
+    const gap = !!(r && r.v && planned && !String(r.v).toLowerCase().includes(String(planned).toLowerCase()) && !String(r.v).toLowerCase().startsWith(String(planned).toLowerCase()));
+    return { ...x, real: r, achatSt: a, gap: x.real && x.real.v ? x.gap : gap };
+  });
+}
+
 // Avancement par phase : part des éléments de la phase qui ont une valeur (design : prévu ; autres : réel)
-export function phaseProgress(doc, pj, gamme) {
-  const rows = passportRows(doc, pj, gamme);
+export function phaseProgress(doc, pj, gamme, live) {
+  const rows = live ? liveRows(passportRows(doc, pj, gamme), live) : passportRows(doc, pj, gamme);
   return PHASES.map(([k, l]) => {
     const R = k === "design" ? rows : rows.filter(r => r.el.phase === k);
-    const done = k === "design" ? R.filter(r => has(r.planned)).length : R.filter(r => r.real && has(r.real.v)).length;
+    const done = k === "design" ? R.filter(r => has(r.planned)).length : R.filter(r => (r.real && has(r.real.v)) || (r.achatSt && r.achatSt.lines && r.achatSt.livre === r.achatSt.lines)).length;
     return { k, l, total: R.length, done };
   });
 }

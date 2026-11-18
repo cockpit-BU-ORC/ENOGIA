@@ -12,7 +12,7 @@ export const RAI_SECTIONS = [
   { id: "comps", title: "Identification des composants", kind: "sn", groups: [
     ["Skid", [it("c-evap", "Évaporateur", "PROD / RPI", "RPI", { el: "evaporateur" }), it("c-cond", "Condenseur", "PROD / RPI", "RPI", { el: "condenseur" }), it("c-pcyc", "Pompe cycle", "PROD / RPI", "RPI", { el: "pompeCycle" }),
       it("c-pcool", "Pompe cooling", "PROD / RPI", "RPI", { el: "pompeCooling" }), it("c-flush", "Vanne « flush »", "PROD / RPI", "RPI", { el: "vanneFlush" }), it("c-plub", "Pompe lub", "PROD / RPI", "RPI", { el: "pompeLub" }),
-      it("c-turb", "Turbine", "PROD / RPI", "RPI"), it("c-aero", "Aérotherme ORC", "PROD / RPI", "RPI", { el: "aerotherme" }), it("c-res", "Réservoir", "PROD / RPI", "RPI", { el: "reservoir" }), it("c-chassis", "Châssis", "PROD / RPI", "RPI", { el: "chassis" })]],
+      it("c-turb", "Turbine", "PROD / RPI", "RPI", { el: "turbines" }), it("c-aero", "Aérotherme ORC", "PROD / RPI", "RPI", { el: "aerotherme" }), it("c-res", "Réservoir", "PROD / RPI", "RPI", { el: "reservoir" }), it("c-chassis", "Châssis", "PROD / RPI", "RPI", { el: "chassis" })]],
     ["Bypass", [it("c-bpact", "Actionneurs de vanne bypass ORC", "PROD / RPI", "RPI", { el: "bypassAct" }), it("c-bpv", "Vannes bypass ORC", "PROD / RPI", "RPI", { el: "bypassVannes" })]],
     ["Électricité", [it("c-arm", "Armoire électrique", "PROD / RPI", "RPI", { el: "armoire" }), it("c-plc", "PLC (automate)", "PROD / RPI", "RPI", { el: "plc" }), it("c-sim", "Carte SIM", "PRODUIT", "RPI", { el: "sim" }),
       it("c-afe", "AFE", "PROD / RPI", "RPI", { el: "afe" }), it("c-dpc", "Drive pompe cycle", "PROD / RPI", "RPI"), it("c-dturb", "Drive turbine", "PROD / RPI", "RPI", { el: "drive" })]],

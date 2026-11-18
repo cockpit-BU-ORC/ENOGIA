@@ -55,3 +55,24 @@ test("v393 : import du Tableau configuration machines (TARGET = prévu, ACTUEL =
   expect(plan.pass.PJ901.real.injecteur).toMatchObject({ v: "DF045", phase: "fab" });
   expect(plan.standards["180LT"]).toMatchObject({ choke: "Aucun", volute: "100-V2" });
 });
+
+test("v397 : achats par scope (statut d'après le PO, livré sans PO, retard) et réel des turbines", () => {
+  const { achatScopes, turbLive, liveRows, passportRows, elementsOf } = require("./passport");
+  const A = { projets: { f1: { id: "f1", projet: "PJ900", machine: "PJ900" }, f2: { id: "f2", machine: "PJ901" } },
+    po: { o1: { numero: "PO 1", statut: "livre" }, o2: { numero: "PO 2", statut: "attente", dateLivraison: "2026-11-01" } },
+    lignes: { a: { projetId: "f1", famille: "armoire", ref: "MD500", poId: "o1" }, b: { projetId: "f1", famille: "ARMOIRE", designation: "AFE", poId: "o2" }, c: { projetId: "f1", famille: "CHOKE", livreSansPo: true }, d: { projetId: "f2", famille: "CHOKE" } } };
+  const sc = achatScopes(A, "PJ900", "2026-11-18");
+  expect(sc.ARMOIRE).toMatchObject({ lines: 2, livre: 1, cmd: 1, late: 1, pos: ["PO 1", "PO 2"] });
+  expect(sc.CHOKE).toMatchObject({ lines: 1, livre: 1 });
+  const t = turbLive({ slots: [{ num: "T-1", allouee: true, installee: "2026-11-10", roue: "W0400", inj: "I0350 · 2 bouchages" }, { num: "", allouee: false, roue: "", inj: "" }] });
+  expect(t.turbines.v).toBe("T-1 (installée)");
+  expect(t.roue.v).toBe("W0400");
+  expect(t.bouchages.v).toBe("2");
+  const doc = { standards: { "180LT": { roue: "W0400" } } };
+  const rows = liveRows(passportRows(doc, "PJ900", "180LT"), { real: t, scopes: sc });
+  const by = id => rows.find(x => x.el.id === id);
+  expect(by("roue")).toMatchObject({ gap: false });
+  expect(by("roue").real.src).toMatch(/Turbines/);
+  expect(by("choke").achatSt).toMatchObject({ livre: 1 });
+  expect(elementsOf({}).find(e => e.id === "choke").scope).toBe("CHOKE");
+});

@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v397",
+    date: "2026-11-18",
+    title: "V397 : Passeport machine — le réel se remplit tout seul depuis Turbines et Achats / Appro (lots 2 et 3)",
+    items: [
+      { t: "Turbines", d: "Le passeport reprend les turbines allouées et installées, la roue et l'injecteur réellement posés depuis Turbines › Besoins ; une roue différente de la roue prévue est signalée." },
+      { t: "Achats", d: "Chaque élément acheté montre l'état de son scope dans la fiche machine d'Achats / Appro : à commander, commandé, livraison en retard, livré, avec les PO." },
+      { t: "RAI", d: "Le composant « Turbine » du RAI reprend les n° des turbines du passeport. Une valeur saisie à la main dans le passeport l'emporte toujours." },
+    ],
+  },
+  {
     id: "2026-11-v396",
     date: "2026-11-18",
     title: "V396 : Achats / Appro — retour du kit du responsable achats (fiches reliées à l'ordo par la machine, vue par scope, livré sans PO, fournisseur par défaut du scope)",

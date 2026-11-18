@@ -8,11 +8,13 @@ import { getPjMeta, PjPlate, ETAT_META } from "../pjMeta";
 import { Segmented, tableTh, tableTd, useSheetJS, Pill } from "./SharedUI";
 import { askConfirm } from "../confirm";
 import { AF } from "../autoFocusOk";
-import { useMachines } from "../useAppData";
+import { useMachines, useProdTurbines, useAchats } from "../useAppData";
+import { useProdModel } from "../prodModel";
+import { turbineOf } from "../pjDossier";
 import { RaiView } from "./RaiView";
 import { PhotosView } from "./PhotosView";
 import { raiVerdict, RAI_SECTIONS, raiSection } from "../rai";
-import { PHASES, PHASE_LABEL, GROUPS, elementsOf, passportRows, phaseProgress, setCfg, setReal, gammeKey, parseConfigTable, parseReference, importPlan } from "../passport";
+import { PHASES, PHASE_LABEL, GROUPS, elementsOf, passportRows, phaseProgress, setCfg, setReal, gammeKey, achatScopes, turbLive, liveRows, parseConfigTable, parseReference, importPlan } from "../passport";
 
 const field = () => ({ padding: "4px 8px", minHeight: 32, borderRadius: 8, border: "1px solid " + T.fieldLine, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, boxSizing: "border-box" });
 const fdt = iso => (iso ? new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "2-digit" }) + " " + new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) : "");
@@ -27,19 +29,22 @@ export function MachinesHub({ data, canEdit, authorName, serie }) {
   const setSub = v => { setSubS(v); try { localStorage.setItem(LS, v); } catch (e) { /* stockage indisponible */ } };
   const demo = useContext(MachinesDemoCtx), live = useMachines(sub !== "liste" && !demo, authorName);
   const { machinesDoc, machinesApi } = demo || live;
+  // v397 (lots 2 et 3) : Turbines › Besoins et Achats / Appro sont lus pour remplir le réel du passeport (lecture seule)
+  const liveOn = sub === "pass" && !demo, prod = useProdTurbines(liveOn ? true : null, authorName), ach = useAchats(liveOn ? true : null, authorName);
+  const prodDoc = demo ? demo.prodDoc : prod.prodDoc, achatsDoc = demo ? demo.achatsDoc : ach.achatsDoc;
   return <div>
     <div className="e-tb" style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 12 }}>
       <Segmented label="Vue" size="md" value={sub} onChange={setSub} options={[["pass", "Passeport"], ["liste", "S/N et états"], ["std", "Standards par gamme"]]} />
       {sub !== "liste" && machinesDoc && <span style={{ fontSize: 12, color: T.ink500 }}>Le passeport se remplit à chaque phase : design, appro, fabrication, tests, MES, SAV</span>}
     </div>
     {sub === "liste" ? serie : !machinesDoc ? <div style={{ color: T.ink500, fontSize: FZ.sm, padding: 20 }}>Chargement du passeport…</div>
-      : sub === "pass" ? <PassportView data={data} doc={machinesDoc} api={machinesApi} canEdit={canEdit} authorName={authorName} />
+      : sub === "pass" ? <PassportView prodDoc={prodDoc} achatsDoc={achatsDoc} data={data} doc={machinesDoc} api={machinesApi} canEdit={canEdit} authorName={authorName} />
       : <StandardsView data={data} doc={machinesDoc} api={machinesApi} canEdit={canEdit} authorName={authorName} />}
   </div>;
 }
 
 // ── Passeport ───────────────────────────────────────────────────────────────────────────────────────
-function PassportView({ data, doc, api, canEdit, authorName }) {
+function PassportView({ data, doc, api, canEdit, authorName, prodDoc, achatsDoc }) {
   const rows = useMemo(() => (data || []).filter(r => r && r.pj && r.etat !== "SLOT_LIBRE" && !/X{2,}/i.test(r.pj)), [data]);
   const [q, setQ] = useState(""), [scope, setScope] = useState("open"), [sel, setSel] = useState(null), [phase, setPhase] = useState(null), [view, setView] = useState("pp"), [edit, setEdit] = useState(null);
   const list = rows.filter(r => (scope === "all" || (scope === "open" ? r.etat !== "SHIPPED" : r.etat === "SHIPPED"))
@@ -60,17 +65,22 @@ function PassportView({ data, doc, api, canEdit, authorName }) {
         </button>; })}
       {!list.length && <span style={{ fontSize: 13, color: T.ink500, padding: 8 }}>Aucune machine</span>}
     </nav>
-    {r && <Passport key={r.pj} r={r} doc={doc} api={api} canEdit={canEdit} authorName={authorName} phase={phase} setPhase={setPhase} view={view} setView={setView} edit={edit} setEdit={setEdit} />}
+    {r && <Passport key={r.pj} data={data} prodDoc={prodDoc} achatsDoc={achatsDoc} r={r} doc={doc} api={api} canEdit={canEdit} authorName={authorName} phase={phase} setPhase={setPhase} view={view} setView={setView} edit={edit} setEdit={setEdit} />}
   </div>;
 }
 
-function Passport({ r, doc, api, canEdit, authorName, phase, setPhase, view, setView, edit, setEdit }) {
-  const meta = getPjMeta(r.pj, r), mp = metaPlanned(meta), P = ((doc.pass || {})[r.pj]) || {};
-  const rows = passportRows(doc, r.pj, r.gamme).map(x => (!x.planned && mp[x.el.id] ? { ...x, planned: mp[x.el.id], fromFiche: true } : x));
+function Passport({ r, doc, api, canEdit, authorName, phase, setPhase, view, setView, edit, setEdit, data, prodDoc, achatsDoc }) {
+  const meta = getPjMeta(r.pj, r), mp = metaPlanned(meta), P0 = ((doc.pass || {})[r.pj]) || {};
+  // v397 : réel « vivant » — turbines allouées / installées (Turbines › Besoins), état des achats par scope (Achats / Appro)
+  const prodM = useProdModel(!!prodDoc);
+  const turb = useMemo(() => (prodDoc && prodM ? turbineOf(prodDoc, data || [r], r.pj, x => getPjMeta(x.pj, x), prodM.buildNeeds) : null), [prodDoc, prodM, data, r]);
+  const live = useMemo(() => ({ real: turbLive(turb), scopes: achatScopes(achatsDoc, r.pj) }), [turb, achatsDoc, r.pj]);
+  const P = { ...P0, real: { ...live.real, ...(P0.real || {}) } }; // pour le RAI : n° des turbines et autres réels vivants
+  const rows = liveRows(passportRows(doc, r.pj, r.gamme).map(x => (!x.planned && mp[x.el.id] ? { ...x, planned: mp[x.el.id], fromFiche: true } : x)), live);
   const R = ((doc.rai || {})[r.pj]) || null, rv = raiVerdict(R), photos = ((doc.photos || {})[r.pj]) || [];
   // v394 : le RAI s'insère entre les tests et la MES : contrôles faits + signatures
   const raiTot = RAI_SECTIONS.reduce((n, s) => n + raiSection(R, s).total, 0) + rv.signers, raiDone = RAI_SECTIONS.reduce((n, s) => n + raiSection(R, s).done, 0) + rv.signed;
-  const pp0 = phaseProgress(doc, r.pj, r.gamme), pp = [...pp0.slice(0, 4), { k: "rai", l: "RAI", total: raiTot, done: raiDone, rai: rv }, ...pp0.slice(4)], shown = phase && phase !== "rai" ? rows.filter(x => (phase === "design" ? true : x.el.phase === phase)) : rows;
+  const pp0 = phaseProgress(doc, r.pj, r.gamme, live), pp = [...pp0.slice(0, 4), { k: "rai", l: "RAI", total: raiTot, done: raiDone, rai: rv }, ...pp0.slice(4)], shown = phase && phase !== "rai" ? rows.filter(x => (phase === "design" ? true : x.el.phase === phase)) : rows;
   const devN = rows.filter(x => x.dev).length, gapN = rows.filter(x => x.gap).length;
   const save = async next => { const ok = await api.savePass(r.pj, next); if (ok) setEdit(null); };
   const exportCsv = () => {
@@ -138,10 +148,17 @@ function PassRow({ x, r, doc, P, canEdit, authorName, edit, setEdit, save }) {
       : <button type="button" onClick={click("r")} disabled={!canEdit} aria-label={"Réel : " + x.el.label + (canEdit ? ", renseigner" : "")} style={{ all: "unset", cursor: canEdit ? "pointer" : "default", display: "flex", flexDirection: "column", gap: 1, minWidth: 0, minHeight: 28 }}>
         {x.real && x.real.v ? <span><b style={{ fontWeight: 600, color: x.gap ? T.red600 : T.ink900 }}>{x.real.v}</b>{x.gap && <span style={{ fontSize: 12, color: T.red600, marginLeft: 6 }}>≠ prévu</span>}</span>
           : <span style={{ color: T.ink500 }}>{x.el.phase === "design" ? "fixé au design" : "renseigné en " + (PHASE_LABEL[x.el.phase] || "fabrication").toLowerCase()}</span>}
-        {x.real && x.real.v && <span style={{ fontSize: 11, color: T.ink500 }}>{[PHASE_LABEL[x.real.phase], x.real.src, x.real.by, x.real.at ? x.real.at.slice(8, 10) + "/" + x.real.at.slice(5, 7) : ""].filter(Boolean).join(" · ")}</span>}</button>}</td>
+        {x.real && x.real.v && <span style={{ fontSize: 11, color: T.ink500 }}>{[PHASE_LABEL[x.real.phase], x.real.src, x.real.by, x.real.at ? x.real.at.slice(8, 10) + "/" + x.real.at.slice(5, 7) : ""].filter(Boolean).join(" · ")}</span>}
+        {x.achatSt && <AchatChip a={x.achatSt} scope={x.el.scope} />}</button>}</td>
   </tr>;
 }
 
+// v397 (lot 3) : état des lignes du scope dans la fiche machine d'Achats / Appro
+function AchatChip({ a, scope }) {
+  const all = a.lines && a.livre === a.lines, tone = a.nc || a.late ? T.red600 : all ? T.emerald600 : a.cmd ? T.info600 : T.amber600;
+  const txt = all ? "livré" : a.nc ? a.nc + " non conforme" + (a.nc > 1 ? "s" : "") : a.late ? a.late + " livraison" + (a.late > 1 ? "s" : "") + " en retard" : a.cmd ? a.cmd + " commandé" + (a.cmd > 1 ? "s" : "") : "à commander";
+  return <span style={{ fontSize: 11, color: T.ink500 }}><span style={{ color: tone, fontWeight: 600 }}>Achats {scope} : {txt}</span> · {a.livre} / {a.lines} ligne{a.lines > 1 ? "s" : ""} livrée{a.livre > 1 ? "s" : ""}{a.pos.length ? " · " + a.pos.slice(0, 3).join(", ") : ""}</span>;
+}
 function EditBox({ kind, x, lid, onSave, onCancel }) {
   const [v, setV] = useState(kind === "p" ? x.planned || "" : (x.real && x.real.v) || ""), [ph, setPh] = useState((x.real && x.real.phase) || x.el.phase || "fab"), [src, setSrc] = useState((x.real && x.real.src) || "");
   const ok = () => (kind === "p" ? onSave(v) : onSave(v, ph, src));

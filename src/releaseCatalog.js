@@ -1215,4 +1215,7 @@ export const RELEASE_CATALOG = [
   { v: "396", t: "Achats / Appro — retour du kit du responsable achats (fiches reliées à l'ordo par la machine, vue par scope, livré sans PO, fournisseur par défaut du scope)", items: [
     ["Achats : vue par scope", "Fiches reliées à la machine de l'ordo, vue par scope, livré sans PO, fournisseur par défaut du scope."],
   ] },
+  { v: "397", t: "Passeport machine — le réel se remplit tout seul depuis Turbines et Achats / Appro (lots 2 et 3)", items: [
+    ["Passeport relié", "Turbines et achats remplissent le réel du passeport."],
+  ] },
 ];

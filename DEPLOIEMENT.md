@@ -2948,3 +2948,14 @@ Demandé : « avant de continuer sur cette partie, intègre le nouveau kit achat
 - Lignes : `livreSansPo` / `livreSansPoLe` (« Marquer livré sans PO », propriétaire de la page ; verrouille la ligne, affecter un PO l'efface) ; `params.scopeFournisseurs` (fournisseur par défaut d'un scope : LT et rétro-planning avant le choix de l'article) ; « Retirer le choix » d'une option (redevient à définir).
 - Même document `planning/achats` : règles Firestore inchangées. Kit régénéré (`npm run kit:achats`).
 - Fichiers : src/components/Achats.js.
+
+## V397 — Passeport : liens Turbines et Achats (lots 2 et 3)
+
+Demandé : « on peut reprendre le passeport et RAI ? ».
+
+- passport.js (testé) : `SCOPE_OF` = scope Achats par défaut des éléments achetés (liste de départ des scopes d'Achats) ; élément « Turbines montées (n°) » ; `achatScopes(achatsDoc, pj)` (lignes de la fiche machine dont `machine` = PJ, par scope, statut d'après le PO — livré sans PO compris —, retards, n° de PO) ; `turbLive(turbineOf…)` (n° des turbines allouées / installées, roue, injecteur, bouchages) ; `liveRows` (réel saisi à la main d'abord, sinon réel « vivant » ; état d'achat par scope) ; `phaseProgress(…, live)` (un élément acheté dont toutes les lignes du scope sont livrées compte pour l'appro).
+- MachinePassport.js : `MachinesHub` lit `planning/prodTurbines` et `planning/achats` (lecture seule, seulement sur la vue Passport) ; `turbineOf` (pjDossier) avec le calcul chargé à la demande (`useProdModel`) ; `AchatChip` sous le réel ; le RAI reçoit les réels vivants.
+- rai.js : composant « Turbine » relié à l'élément `turbines`.
+- Rien n'est écrit dans Turbines ni dans Achats ; les pages et les kits restent inchangés.
+- Galerie : une fiche d'achats fictive (PJ902) et une turbine allouée au PJ901.
+- Fichiers : src/passport.js, src/passport.test.js, src/rai.js, src/components/MachinePassport.js, src/demo/demoPages.js.
