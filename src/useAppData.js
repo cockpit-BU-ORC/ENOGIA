@@ -1,8 +1,8 @@
 // v261 : sorti de App.js — lectures Firestore temps réel et enregistrements de quelques documents (turbines, tests, Production
 // turbines, retards, Cash in). Même code qu'avant, regroupé par document ; App.js n'appelle plus que ces crochets.
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { onSnapshot, setDoc, updateDoc, deleteField, getDoc } from "firebase/firestore";
-import { TESTBOOK_DOC_REF, TESTBOOK_IMG_REF, TURBINES_DOC_REF, TESTS_DOC_REF, PRODTURB_DOC_REF, DELAYS_DOC_REF, ACHATS_DOC_REF, ACCESS_DOC_REF, SAV_DOC_REF, SAV_DEM_DOC_REF } from "./appDocs";
+import { onSnapshot, setDoc, updateDoc, deleteField, getDoc, FieldPath } from "firebase/firestore";
+import { TESTBOOK_DOC_REF, TESTBOOK_IMG_REF, TURBINES_DOC_REF, TESTS_DOC_REF, PRODTURB_DOC_REF, DELAYS_DOC_REF, ACHATS_DOC_REF, ACCESS_DOC_REF, SAV_DOC_REF, SAV_DEM_DOC_REF, MACHINES_DOC_REF } from "./appDocs";
 import { notify } from "./components/SharedUI";
 import { setCashinDoc, setCashinLinks, getCashinDoc, getCashinLinks, getOrdoPjs, cashGroupsFor } from "./cashinLink";
 import { CASHIN_DOC_REF, CASHIN_LINKS_REF, CASHIN_SHARED_REF, CASHIN_PRODUIT_REF, buildSharedCashin } from "./cashinData";
@@ -101,6 +101,26 @@ export function useDelays(authUid) {
 // Cash in : magasin partagé (cashinLink) alimenté en temps réel pour le propriétaire et les admins, copie réduite publiée pour les autres
 // v326 : SAV / MES — deux documents lus en temps réel par les comptes connectés ; écritures élément par élément (fusion)
 //   planning/sav : tickets, inters, parc (+ techs) — équipe SAV ; planning/savDemandes : items (demandes des chefs de projet)
+// v393 : passeport machine — planning/machines. Chaque PJ s'écrit en entier (une valeur retirée disparaît vraiment) ;
+// éléments et standards aussi, d'un bloc.
+export function useMachines(on, authorName) {
+  const [doc, setDocS] = useState(null);
+  useEffect(() => { if (!on) return undefined;
+    return onSnapshot(MACHINES_DOC_REF(), s => setDocS(s.exists() ? s.data() : {}), e => { console.warn("machines (lecture) :", e && e.message); setDocS({}); }); }, [on]);
+  const api = useMemo(() => {
+    const stamp = () => ({ updatedAt: new Date().toISOString(), updatedBy: authorName || "" });
+    const fail = e => { console.error(e); notify("Erreur lors de l'enregistrement du passeport : " + e.message); return false; };
+    const write = async (pairs, mergeObj) => { try { const st = stamp(); const args = []; pairs.forEach(([p, v]) => args.push(p, v)); await updateDoc(MACHINES_DOC_REF(), ...args, "updatedAt", st.updatedAt, "updatedBy", st.updatedBy); return true; }
+      catch (e) { if (e && e.code === "not-found") { try { await setDoc(MACHINES_DOC_REF(), { ...mergeObj, ...stamp() }, { merge: true }); return true; } catch (e2) { return fail(e2); } } return fail(e); } };
+    return {
+      savePass: (pj, P) => write([[new FieldPath("pass", pj), P]], { pass: { [pj]: P } }),
+      saveStandards: S => write([["standards", S]], { standards: S }),
+      saveElements: L => write([["elements", L]], { elements: L }),
+      saveImport: (pass, standards) => write([["pass", pass], ["standards", standards]], { pass, standards }),
+    };
+  }, [authorName]);
+  return { machinesDoc: doc, machinesApi: api };
+}
 export function useSav(currentUser, authorName) {
   const [savDoc, setSavDoc] = useState(null), [demDoc, setDemDoc] = useState(null);
   useEffect(() => { if (!currentUser) return undefined;

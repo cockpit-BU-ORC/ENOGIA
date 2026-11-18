@@ -9,7 +9,7 @@ import { db } from "./firebase";
 export const IS_BETA=process.env.REACT_APP_BETA==="1";
 export const DOC_PFX=IS_BETA?"beta_":"";
 if(IS_BETA&&typeof document!=="undefined")document.title="[BÊTA] Cockpit BU ORC";
-export const BETA_DOCS=["access","testbook","current","initial","overrides","comments","pjMetaSync","pjMetaOverrides","delays","delayTypes","managerEmails","changeLog","cashin","cashinLinks","turbines","tests","profiles","prodTurbines","achats","sav","savDemandes"];
+export const BETA_DOCS=["access","testbook","current","initial","overrides","comments","pjMetaSync","pjMetaOverrides","delays","delayTypes","managerEmails","changeLog","cashin","cashinLinks","turbines","tests","profiles","prodTurbines","achats","sav","savDemandes","machines"];
 export const DOC_REF=()=>doc(db,"planning",DOC_PFX+"current");
 export const INITIAL_DOC_REF=()=>doc(db,"planning",DOC_PFX+"initial");
 export const OVERRIDES_DOC_REF=()=>doc(db,"planning",DOC_PFX+"overrides");
@@ -27,6 +27,7 @@ export const MANAGER_EMAILS_DOC_REF=()=>doc(db,"planning",DOC_PFX+"managerEmails
 export const ACHATS_DOC_REF=()=>doc(db,"planning",DOC_PFX+"achats");
 export const SAV_DOC_REF=()=>doc(db,"planning",DOC_PFX+"sav"); // v326 : SAV / MES (tickets, interventions, parc, techniciens) — équipe SAV
 export const SAV_DEM_DOC_REF=()=>doc(db,"planning",DOC_PFX+"savDemandes"); // v326 : demandes d'intervention des chefs de projet // v262 : Achats / Appro (responsable achats + propriétaire)
+export const MACHINES_DOC_REF=()=>doc(db,"planning",DOC_PFX+"machines"); // v393 : passeport machine (éléments, standards par gamme, configuration et réel par PJ)
 export const ACCESS_DOC_REF=()=>doc(db,"planning",DOC_PFX+"access"); // v305 : niveaux d'accès par rôle et par page (Régler › Accès, super admin)
 export const PROFILES_DOC_REF=()=>doc(db,"planning",DOC_PFX+"profiles"); // v188 : rôle et PJ de chaque compte (Manager › Réglages › Personnes et rôles)
 

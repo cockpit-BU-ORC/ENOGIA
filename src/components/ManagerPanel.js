@@ -16,6 +16,7 @@ import { PointHebdo } from "./PointHebdo";
 import { InitialAddReview } from "./InitialAdd";
 import { SanteTab } from "./Feux";
 import { SerieTab } from "./Series";
+import { MachinesHub } from "./MachinePassport";
 import { planWeeks, loadWeeks, atelierCap } from "./KpiPilotage";
 import { monthLab } from "./KpiHead";
 import { KpiStory } from "./KpiStory";
@@ -876,7 +877,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
         </div>
       </div>
       </div>}
-    {tab==="serie"&&<SerieTab data={data} savePjMetaOverride={savePjMetaOverride} etatChoice={etatChoice} setEtatFor={setEtatFor} clientPresence={clientPresence} setClientPresenceFor={setClientPresenceFor} customEtats={customEtats||[]} setCustomEtats={superAdmin?setCustomEtats:null} etatEdits={etatEdits||{}} setEtatEdits={superAdmin?setEtatEdits:null}/>}
+    {tab==="serie"&&<MachinesHub data={data} canEdit={superAdmin} authorName={authorName} serie={<SerieTab data={data} savePjMetaOverride={savePjMetaOverride} etatChoice={etatChoice} setEtatFor={setEtatFor} clientPresence={clientPresence} setClientPresenceFor={setClientPresenceFor} customEtats={customEtats||[]} setCustomEtats={superAdmin?setCustomEtats:null} etatEdits={etatEdits||{}} setEtatEdits={superAdmin?setEtatEdits:null}/>}/>}
     {cal&&(tab==="vacances"||tab==="production")&&<ClosurePeriodsManager closurePeriods={closurePeriods} setClosurePeriods={setClosurePeriods}/>}
     </div>
     </div>

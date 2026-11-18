@@ -2900,3 +2900,15 @@ Demandé : « les widgets doivent prendre en compte les PJ des chefs de projet �
 - RoleHome : prop `scope` ; `cashDoc()` = Cash in limité aux jalons d'un PJ du périmètre (un jalon « PJ401/PJ402 » compte s'il touche l'un d'eux) pour Cash in, À encaisser, Cash in de l'année / du mois, Retards.
 - Maquette `maquettes-design/v392-machines-orc-4-pistes.html` (Machines ORC : A tableau comme le Google Sheets, B fiche en onglets, C standards par gamme, D machine en blocs ; liens Turbines / Achats, kits extractibles) en attente du choix.
 - Fichiers : src/components/HomeView.js, src/components/RoleHome.js.
+
+## V393 — Passeport machine (lot 1)
+
+Demandé : « La B est bien… à prendre comme un passeport qui vit et se remplit lors des phases de design, d'appro, de fab, tests, MES et SAV » puis « Oui lot 1 » ; maquette `maquettes-design/v393-passeport-machine.html`.
+
+- `src/passport.js` (testé, passport.test.js) : `DEFAULT_ELEMENTS` (colonnes du « Tableau configuration machines » + composants du RAI ; groupe, choix, phase du réel — appro pour un élément acheté —, suivi achat / scope, suivi turbines), `elementsOf`, `gammeKey` (180LTV3 → 180LT), `stdOf`, `rowOf` / `passportRows` (prévu = cfg sinon standard ; `dev` = écart au standard ; réel { v, phase, src, by, at } ; `gap` = réel ≠ prévu, un réel plus précis n'en est pas un), `phaseProgress`, `setCfg` (valeur égale au standard = retirée), `setReal`, historique (300 lignes), `parseConfigTable` (onglet Tableau : TARGET = prévu, ACTUEL = réel fabrication), `parseReference` (onglet Référence), `importPlan` (n'écrase rien).
+- Document `planning/machines` = { elements, standards, pass: { PJ: { cfg, real, hist } } } (`MACHINES_DOC_REF`, `BETA_DOCS`) ; `useMachines(on, auteur)` (useAppData.js : chaque PJ écrit en entier par `FieldPath`).
+- `components/MachinePassport.js` : `MachinesHub` (Manager › Projets › Machines ORC : Passeport · S/N et états (ancien tableau) · Standards par gamme, `enogia_mach_sub`) ; passeport : liste (recherche, en cours / expédiées, fil des phases), en-tête, six phases cliquables, tableau par groupe (prévu / réel, édition sur place, source), historique, export CSV ; injecteur / roue / bouchages prévus repris de la fiche projet tant qu'ils n'y sont pas ; standards : gamme, standard, choix, phase, suivi achat + scope, suivi turbines, machines en écart, « ＋ Élément », import Excel (aperçu + confirmation). Écriture : admins (et Modifier / Admin sur Projets une fois les accès activés).
+- **Règles Firestore** : `machines` écrit par les admins ou Modifier / Admin sur Projets — **à republier par Gabriel**.
+- Galerie : Machines ORC avec un passeport en mémoire (`MachinesDemoCtx`).
+- Maquette `maquettes-design/v393-rai-photos.html` (RAI d'après le modèle Excel, plan d'actions, validation par service, photos aux étapes clés, idées) en attente.
+- Fichiers : src/passport.js, src/passport.test.js, src/components/MachinePassport.js, src/components/ManagerPanel.js, src/useAppData.js, src/appDocs.js, src/demo/demoPages.js, firestore.rules.

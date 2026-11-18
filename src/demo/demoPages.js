@@ -30,6 +30,7 @@ import { CashInWeekly } from "../components/CashInWeekly";
 import { setCashinDoc, getCashinDoc } from "../cashinLink";
 import { setEncReelle } from "../cashinModel";
 import { PjDialog, PjDialogCtx } from "../components/RowDetail";
+import { MachinesDemoCtx } from "../components/MachinePassport";
 
 const no = () => {}, yes = async () => true;
 const common = { comments: DEMO_COMMENTS, addComment: yes, deleteComment: yes, pinOk: true, delays: [], delayTypes: [], setDelayTypes: no, addDelayAllocation: yes, deleteDelayAllocation: yes, addDelayComment: yes, deleteDelayComment: yes, authorName: DEMO_ME.name, savePjMetaOverride: yes, canEditMeta: true };
@@ -131,6 +132,15 @@ function SavDemo({ level, sub0 }) { const [sub, setSub] = useState(sub0), [doc, 
 // v359 : les droits sont aussi remis dans l'effet — en développement React démonte puis remonte la page, et le démontage les retirait
 // pour tous les rendus suivants (le bouton « Rapport CODIR » disparaissait après le premier clic).
 function AsOwner({ children }) { setOwner(true); setSuperAdmin(true); React.useEffect(() => { setOwner(true); setSuperAdmin(true); return () => { setOwner(false); setSuperAdmin(false); }; }, []); return children; }
+// v393 : passeport machine en mémoire (standards fictifs, une machine avec écarts et réels)
+const DEMO_MACHINES = { standards: { "180LT": { nbTurb: "2", roue: "W0400", injecteur: "I0350", volute: "100-V2", jacket: "100-V2", connecteurs: "WAGO", capteursVib: "IFM", elecPuissance: "Inovance", choke: "Aucun", flexibleLub: "Inox - Flexible", pompeLub: "A2V", aerotherme: "Stefani", application: "Terrestre", integration: "Intérieur", multiOrc: "Non" },
+  "20LT": { nbTurb: "1", roue: "W0250", injecteur: "I0282", volute: "20-V1", jacket: "20-V1", connecteurs: "WAGO", capteursVib: "IFM", elecPuissance: "Inovance", pompeLub: "A2V", application: "Terrestre", integration: "Intérieur" } },
+  pass: { PJ902: { cfg: { integration: "Extérieur", choke: "Oui", bouchages: "2" }, real: { elecPuissance: { v: "Inovance MD500", phase: "appro", src: "PO 2611 reçue", by: "Alex Moreau", at: "2026-11-04T10:00:00Z" }, capteursVib: { v: "Wago", phase: "appro", src: "substitution (rupture IFM)", by: "Alex Moreau", at: "2026-11-06T09:41:00Z" } },
+    hist: [{ at: "2026-11-06T09:41:00Z", by: "Alex Moreau", phase: "appro", el: "capteursVib", k: "réel", from: "", to: "Wago" }, { at: "2026-09-02T18:30:00Z", by: "Camille Durand", phase: "design", el: "choke", k: "prévu", from: "Aucun", to: "Oui" }] } } };
+function MachinesDemo({ children }) { const [d, setD] = useState(DEMO_MACHINES);
+  const api = useMemo(() => ({ savePass: async (pj, P) => { setD(x => ({ ...x, pass: { ...(x.pass || {}), [pj]: P } })); return true; }, saveStandards: async S => { setD(x => ({ ...x, standards: S })); return true; },
+    saveElements: async L => { setD(x => ({ ...x, elements: L })); return true; }, saveImport: async (pass, standards) => { setD(x => ({ ...x, pass, standards })); return true; } }), []);
+  return <MachinesDemoCtx.Provider value={{ machinesDoc: d, machinesApi: api }}>{children}</MachinesDemoCtx.Provider>; }
 function Manager({ tab0 }) { const [tab, setTab] = useState(tab0); return <AsOwner><ManagerPanel tab={tab} setTab={setTab} kpiOk calOk data={DEMO_ROWS} initialData={DEMO_ROWS} progress={DEMO_PROGRESS} setProgress={no} changeLog={[]} profiles={{ byEmail: {} }} saveProfiles={yes}
   comments={DEMO_COMMENTS} delays={[]} delayTypes={[]} setDelayTypes={no} addDelayAllocationMulti={yes} deleteDelayAllocation={yes} managerEmails={[]} setManagerEmails={no} currentUserEmail={DEMO_ME.email} authorName={DEMO_ME.name}
   savePjMetaOverride={yes} savePjMetaMulti={yes} addCommentMulti={yes} addComment={yes} resolveComment={yes} deleteComment={yes} closurePeriods={[]} setClosurePeriods={no} productionExclusions={{}} setProductionExclusionDays={no}
@@ -166,7 +176,7 @@ export const DEMO_PAGES = [
   { id: "kpi", label: "Manager · KPI", Render: () => <Manager tab0="derives" />, expect: [] },
   { id: "fiche", label: "Manager · fiche projet", Render: () => <Manager tab0="fiche" />, expect: ["Cette semaine", "Contrat et dates", "Actions de la semaine", "Statut global"] },
   { id: "retards", label: "Manager · retards", Render: () => <Manager tab0="retards" />, expect: [] },
-  { id: "serie", label: "Machines ORC", Render: () => <Manager tab0="serie" />, expect: [] },
+  { id: "serie", label: "Machines ORC", Render: () => <MachinesDemo><Manager tab0="serie" /></MachinesDemo>, expect: [] },
   { id: "fermetures", label: "Réglages · fermetures", Render: () => <Manager tab0="vacances" />, expect: [] },
   { id: "personnes", label: "Personnes", Render: () => <Manager tab0="personnes" />, expect: [] },
   { id: "nouveautes", label: "Réglages · nouveautés", Render: () => <Manager tab0="nouveautes" />, expect: [] },

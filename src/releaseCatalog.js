@@ -1202,4 +1202,8 @@ export const RELEASE_CATALOG = [
   { v: "392", t: "Accueil d'un chef de projet — tous les widgets ne comptent que ses PJ", items: [
     ["Accueil chef de projet", "Les widgets ne comptent que les PJ du chef de projet."],
   ] },
+  { v: "393", t: "Machines ORC — passeport machine (configuration prévue et réelle, six phases, historique) et standards par gamme", items: [
+    ["Passeport machine", "Configuration prévue et réelle de chaque machine, phase par phase, avec l'historique."],
+    ["Standards par gamme", "Éléments suivis et valeurs standard ; import du tableau de configuration."],
+  ] },
 ];

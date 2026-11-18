@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v393",
+    date: "2026-11-18",
+    title: "V393 : Machines ORC — passeport machine (configuration prévue et réelle, six phases, historique) et standards par gamme",
+    items: [
+      { t: "Passeport machine", d: "Manager › Projets › Machines ORC › Passeport : pour chaque machine, la configuration prévue (standard de la gamme et écarts) et ce qui est réellement sur la machine, avec la phase, la source et l'auteur de chaque valeur, et l'historique." },
+      { t: "Six phases", d: "En tête du passeport, l'avancement du design, de l'appro, de la fabrication, des tests, de la MES et du SAV ; un clic sur une phase montre ce qu'elle renseigne." },
+      { t: "Standards par gamme", d: "La valeur standard de chaque élément par gamme, ses choix possibles, la phase qui renseigne le réel et le suivi achat / turbines. Import du « Tableau configuration machines » (Excel), sans écraser ce qui est déjà saisi." },
+    ],
+  },
+  {
     id: "2026-11-v392",
     date: "2026-11-18",
     title: "V392 : Accueil d'un chef de projet — tous les widgets ne comptent que ses PJ",
