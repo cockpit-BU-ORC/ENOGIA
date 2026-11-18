@@ -2989,3 +2989,16 @@ Demandé (retours du responsable achats) : « remettre le warning Options à pr�
 - Tests : achats.test.js (rétro-planning en jours ouvrés, livraison prévue d'une PO avec transport).
 - Kit : consignes (signature `admin`, jours ouvrés, `config.retires`), aperçu avec `admin` ; kit régénéré.
 - Fichiers : src/components/Achats.js, src/App.js, src/achats.test.js, scripts/achats-consignes.md, scripts/achats-kit.js.
+
+## V401 — Passeport : Tests, MES / SAV, RAI dans la fiche de tests, dossier machine
+
+Demandé : « reprendre le passeport et toutes les étapes liées » — choix : « utilisation des bons skills design pour rendre le passeport léger et facile », « Tests → passeport », « MES et SAV → passeport », « Dossier machine PDF ».
+
+- `src/passportLive.js` (testé) : `testsLive(testsDoc, pj)` (livret ok / problèmes, checklist de debug, fréquences par vitesse, vibrations, tests FAT interne ; `bad` = à traiter) et `savLive(savDoc, pj)` (interventions réalisées / validées : mise en service, dernière intervention, `changes` = pièces changées → réel de l'élément, la plus récente l'emporte ; tickets ouverts).
+- passport.js : groupes « Tests » et « MES et SAV » (éléments facultatifs, ajoutés aussi à une liste d'éléments enregistrée) ; `liveRows` — une pièce changée par le SAV après la saisie à la main l'emporte ; `rowIssue` reprend les `bad` ; `rowState` affiche la source d'un réel vivant.
+- MachinePassport.js : lit aussi `planning/tests` et `planning/sav` (lecture seule) ; « À traiter » regroupé (`todoGroups` : un achat par scope, le design à compléter en une ligne, chaque ligne se déplie) ; pied de chaque groupe = sources (`groupSource`) ; bouton « Dossier machine (PDF) ».
+- `src/dossierMachine.js` (testé) : `dossierHtml` — couverture, identité, configuration prévu / réel / source par sous-ensemble, RAI (verdict, plan d'actions, signatures), photos par étape ; valeurs échappées, images `safeImgUrl`.
+- SavPage : section « Pièces changées (passeport) » de l'intervention (`PassChanges` : élément du passeport, nouvelle pièce, note) → `inters[id].changes` (même document `planning/sav`).
+- TestsTab : étape 7 « RAI » de la fiche de tests (`RaiView`, même `planning/machines.rai`).
+- `src/machinesCtx.js` : `MachinesDemoCtx` (galerie : passeport, RAI, tests et SAV en mémoire pour toutes les pages).
+- Fichiers : src/passportLive.js, src/passportLive.test.js, src/dossierMachine.js, src/machinesCtx.js, src/passport.js, src/components/MachinePassport.js, src/components/SavPage.js, src/components/TestsTab.js, src/demo/demoPages.js, src/demo/DemoGallery.js.

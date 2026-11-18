@@ -30,7 +30,7 @@ import { CashInWeekly } from "../components/CashInWeekly";
 import { setCashinDoc, getCashinDoc } from "../cashinLink";
 import { setEncReelle } from "../cashinModel";
 import { PjDialog, PjDialogCtx } from "../components/RowDetail";
-import { MachinesDemoCtx } from "../components/MachinePassport";
+import { MachinesDemoCtx } from "../machinesCtx";
 import { setRaiDoc } from "../raiStatus";
 import { RAI_SIGNERS } from "../rai";
 
@@ -144,12 +144,12 @@ const DEMO_MACH_ACHATS = { projets: { f1: { id: "f1", projet: "PJ902", machine: 
   lignes: { l1: { projetId: "f1", famille: "ARMOIRE", ref: "MD500", poId: "o1" }, l2: { projetId: "f1", famille: "POMPE DE LUB", designation: "Pompe A2V", poId: "o2" }, l3: { projetId: "f1", famille: "CHOKE", designation: "Choke" } } };
 // turbine 100N1 allouée au PJ901 (le passeport en reprend le n° et la roue)
 const DEMO_MACH_PROD = { ...DEMO_PROD, turbines: { ...DEMO_PROD.turbines, a: { ...DEMO_PROD.turbines.a, besoin: "pj:PJ901", affaire: "PJ901" } } };
-function MachinesDemo({ children }) { const [d, setD] = useState(DEMO_MACHINES);
+export function MachinesDemo({ children }) { const [d, setD] = useState(DEMO_MACHINES);
   const api = useMemo(() => ({ savePass: async (pj, P) => { setD(x => ({ ...x, pass: { ...(x.pass || {}), [pj]: P } })); return true; }, saveRai: async (pj, R) => { setD(x => ({ ...x, rai: { ...(x.rai || {}), [pj]: R } })); return true; },
     uploadPhoto: async (pj, full, thumb, meta) => { const p = { ...meta, url: URL.createObjectURL(full.blob), turl: URL.createObjectURL(thumb.blob), w: full.w, h: full.h, at: new Date().toISOString(), by: "Camille Durand" }; setD(x => ({ ...x, photos: { ...(x.photos || {}), [pj]: [...(((x.photos || {})[pj]) || []), p] } })); return p; },
     deletePhoto: async (pj, p) => { setD(x => ({ ...x, photos: { ...(x.photos || {}), [pj]: (((x.photos || {})[pj]) || []).filter(q => q.id !== p.id) } })); return true; }, saveStandards: async S => { setD(x => ({ ...x, standards: S })); return true; },
     saveElements: async L => { setD(x => ({ ...x, elements: L })); return true; }, saveImport: async (pass, standards) => { setD(x => ({ ...x, pass, standards })); return true; } }), []);
-  return <MachinesDemoCtx.Provider value={{ machinesDoc: d, machinesApi: api, prodDoc: DEMO_MACH_PROD, achatsDoc: DEMO_MACH_ACHATS }}>{children}</MachinesDemoCtx.Provider>; }
+  return <MachinesDemoCtx.Provider value={{ machinesDoc: d, machinesApi: api, prodDoc: DEMO_MACH_PROD, achatsDoc: DEMO_MACH_ACHATS, testsDoc: DEMO_TESTS, savDoc: DEMO_SAV }}>{children}</MachinesDemoCtx.Provider>; }
 // v398 : RAI fictifs (PJ902 accepté, PJ901 en cours avec une action bloquante) — Liste, fiche d’un PJ, accueil
 setRaiDoc({ rai: { PJ902: { rows: { "c-evap": { ok: "OK" } }, signs: Object.fromEntries(RAI_SIGNERS.map(([sv]) => [sv, { by: "Sam Petit", at: "2026-11-10" }])) }, PJ901: { rows: { "v-ce": { ok: "NOK" } }, actions: [{ id: "a1", t: "Plaque CE absente", bloq: true, pole: "PROD", at: "2026-11-12", done: "" }], signs: {} } } });
 function Manager({ tab0 }) { const [tab, setTab] = useState(tab0); return <AsOwner><ManagerPanel tab={tab} setTab={setTab} kpiOk calOk data={DEMO_ROWS} initialData={DEMO_ROWS} progress={DEMO_PROGRESS} setProgress={no} changeLog={[]} profiles={{ byEmail: {} }} saveProfiles={yes}

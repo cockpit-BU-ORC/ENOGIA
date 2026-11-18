@@ -27,6 +27,11 @@ import { openTestReport } from "../testReport";
 import { makeCalendar } from "../planner/engine";
 import { WidgetArrange } from "./WidgetBoard"; // v357 : cadrans en widgets
 import { smooth } from "../scrollMode";
+import { useContext } from "react";
+import { MachinesDemoCtx } from "../machinesCtx";
+import { useMachines } from "../useAppData";
+import { RaiView } from "./RaiView";
+import { raiVerdict } from "../rai";
 
 const field = () => ({ padding: "5px 9px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, minWidth: 0 });
 // v291 (lot H) : branché sur le bouton commun (theme.js) — principal encre, secondaire bordé, désactivé gris
@@ -446,6 +451,9 @@ export function TestDialog({ r, onClose, doc, testers, catalog, conflicts, commi
   const saveTests = p => commit({ plans: { ...(doc.plans || {}), [r.pj]: { ...p, asks: (p.asks || []).filter(a => !a.fiche) } } });
   const dsec = debugSections(doc.debugModel), dpr = debugProgress(plan.debug, dsec), vRows = vibRows(doc.vibModel), vpr = vibProgress(plan.debug, vRows), spr = speedProgress(plan.debug, doc.vibModel);
   const bpr = manualProgress(book, plan.book && plan.book.rows), hasBook = bookStepsOf(book).length > 0;
+  // v401 : le RAI (rapport d'acceptation interne) conclut la fiche de tests — même RAI que dans le passeport de la machine
+  const mdemo = useContext(MachinesDemoCtx), mlive = useMachines(mdemo ? null : true, who), mach = mdemo || mlive;
+  const mDoc = mach.machinesDoc || {}, rai = (mDoc.rai || {})[r.pj] || null, rv = raiVerdict(rai);
   const steps = [
     { id: "who", t: "Qui teste ?", s: assigned.length ? assigned.map(t => t.name).join(", ") : "à affecter", st: assigned.length ? "done" : "todo" },
     { id: "pres", t: "Présence", s: kind === "both" ? "client et NOBO" : kind === "client" ? "client" + (pd.client ? " le " + fdm(dIso(pd.client)) : "") : kind === "nobo" ? "NOBO" + (pd.nobo ? " le " + fdm(dIso(pd.nobo)) : "") : "tests internes seuls", st: "done" },
@@ -453,6 +461,7 @@ export function TestDialog({ r, onClose, doc, testers, catalog, conflicts, commi
     { id: "debug", t: "Checklist de debug", s: dpr.done + " / " + dpr.total + (dpr.nok ? " · " + dpr.nok + " NOK" : "") + (vpr.over ? " · vibrations hautes" : "") + (spr.out ? " · fréquences hors plage" : ""), st: dpr.nok || vpr.over || spr.out ? "bad" : dpr.signed ? "done" : "todo" },
     { id: "tests", t: "Checklist de tests", s: q.done + " / " + q.total + (q.ko ? " · " + q.ko + " NOK" : "") + (plan.asks.length ? " · " + plan.asks.length + " demande" + (plan.asks.length > 1 ? "s" : "") + " client" : ""), st: q.ko ? "bad" : q.total && q.done === q.total ? "done" : "todo" },
     { id: "sign", t: "Signature", s: signsDone + " / " + assigned.length + " testeur" + (assigned.length > 1 ? "s" : ""), st: assigned.length && signsDone === assigned.length ? "done" : "todo" },
+    { id: "rai", t: "RAI", s: rv.label + (rv.signed ? " · " + rv.signed + " / " + rv.signers + " sign." : ""), st: rv.k === "ok" ? "done" : rv.blocking ? "bad" : "todo" },
   ];
   const [cur, setCur] = useState(() => { const i = steps.findIndex((x, k) => k >= 2 && x.st !== "done"); return i < 0 ? 0 : i; });
   const id = steps[cur].id, nDone = steps.filter(x => x.st === "done").length;
@@ -477,6 +486,9 @@ export function TestDialog({ r, onClose, doc, testers, catalog, conflicts, commi
         <main style={{ overflowY: "auto", padding: "20px 24px 28px", minWidth: 0 }}>
           <StepBigCtx.Provider value={true}>
             {(id === "who" || id === "pres" || id === "debug" || id === "sign") && <FatSheet panel bare only={id} r={r} {...{ doc, testers, catalog, conflicts, commit, certifs, canEdit, lead, myTester, who, signApi }} open onToggle={() => {}} />}
+            {id === "rai" && <><StepHead title="Rapport d'acceptation interne" lead="La conclusion de la fabrication et des tests avant le départ : composants, documentation, dossier qualité, inspection visuelle, plan d'actions et signatures. C'est le feu vert du départ." />
+              {mach.machinesDoc ? <RaiView r={r} meta={meta} doc={mDoc} P={((mDoc.pass || {})[r.pj]) || {}} R={rai} photos={((mDoc.photos || {})[r.pj]) || []} saveRai={next => mach.machinesApi.saveRai(r.pj, next)} savePass={next => mach.machinesApi.savePass(r.pj, next)} canEdit={canEdit} who={who} />
+                : <div style={{ color: T.ink500, fontSize: FZ.sm }}>Chargement du RAI…</div>}</>}
             {id === "book" && <><StepHead title="Configuration de l'ORC" lead="Le livret de configuration de cette machine, une étape à la fois : OK ou Problème, avec un commentaire si besoin." />
               <BookStep r={r} plan={plan} book={book || { chapters: [] }} bookApi={bookApi} canMark={canMark} saveTests={saveTests} who={who} canAdmin={canEdit} meta={meta} /></>}
             {id === "tests" && <><StepHead title="Checklist de tests" lead="Les tests FAT de la machine, dans le même tableau que la checklist de debug : OK ou NOK, problème, causalité, correctif et temps passé. Le chef de projet ajoute les demandes spécifiques du client dans le FAT interne." />

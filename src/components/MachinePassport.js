@@ -2,13 +2,16 @@
 // Machines (tableau S/N, chef, pays, état, présence : inchangé), Passeport (une fiche par machine : fil des six phases, prévu / réel /
 // écarts, historique), Standards par gamme (éléments suivis, valeur standard, suivi achat / turbines, import du « Tableau configuration
 // machines »). Données : planning/machines (passport.js). Lot 1 : le réel se saisit à la main ; Turbines, Achats, Tests et SAV l'écriront ensuite.
-import React, { createContext, useContext, useMemo, useRef, useState } from "react";
+import React, { useContext, useMemo, useRef, useState } from "react";
+import { MachinesDemoCtx } from "../machinesCtx";
 import { T, FZ, btn } from "../theme";
 import { getPjMeta, PjPlate } from "../pjMeta";
 import { Segmented, tableTh, tableTd, useSheetJS, Pill, NavIcon } from "./SharedUI";
 import { askConfirm } from "../confirm";
 import { AF } from "../autoFocusOk";
-import { useMachines, useProdTurbines, useAchats } from "../useAppData";
+import { useMachines, useProdTurbines, useAchats, useTestsDoc, useSav } from "../useAppData";
+import { testsLive, savLive } from "../passportLive";
+import { dossierHtml } from "../dossierMachine";
 import { useProdModel } from "../prodModel";
 import { turbineOf } from "../pjDossier";
 import { RaiView } from "./RaiView";
@@ -22,8 +25,8 @@ const LS = "enogia_mach_sub";
 // Valeurs prévues des turbines encore saisies dans la fiche projet (lot 2 : elles passent dans le passeport)
 const metaPlanned = meta => ({ injecteur: meta.turbInj || "", roue: meta.turbRoue || "", bouchages: meta.turbInjB != null && meta.turbInjB !== "" ? String(meta.turbInjB) : "" });
 
-// galerie ?demo : passeport en mémoire, jamais lu ni écrit dans Firestore
-export const MachinesDemoCtx = createContext(null);
+// galerie ?demo : passeport en mémoire, jamais lu ni écrit dans Firestore (contexte dans machinesCtx.js)
+export { MachinesDemoCtx };
 export function MachinesHub({ data, canEdit, authorName, serie }) {
   const [sub, setSubS] = useState(() => { try { return localStorage.getItem(LS) || "pass"; } catch (e) { return "pass"; } });
   const setSub = v => { setSubS(v); try { localStorage.setItem(LS, v); } catch (e) { /* stockage indisponible */ } };
@@ -31,14 +34,15 @@ export function MachinesHub({ data, canEdit, authorName, serie }) {
   const { machinesDoc, machinesApi } = demo || live;
   // v397 (lots 2 et 3) : Turbines › Besoins et Achats / Appro sont lus pour remplir le réel du passeport (lecture seule)
   const liveOn = sub === "pass" && !demo, prod = useProdTurbines(liveOn ? true : null, authorName), ach = useAchats(liveOn ? true : null, authorName);
-  const prodDoc = demo ? demo.prodDoc : prod.prodDoc, achatsDoc = demo ? demo.achatsDoc : ach.achatsDoc;
+  const tst = useTestsDoc(liveOn ? true : null, authorName), sv = useSav(liveOn ? true : null, authorName); // v401 : Tests et SAV / MES
+  const prodDoc = demo ? demo.prodDoc : prod.prodDoc, achatsDoc = demo ? demo.achatsDoc : ach.achatsDoc, testsDoc = demo ? demo.testsDoc : tst.testsDoc, savDoc = demo ? demo.savDoc : sv.savDoc;
   return <div>
     <div className="e-tb" style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 12 }}>
       <Segmented label="Vue" size="md" value={sub} onChange={setSub} options={[["pass", "Passeport"], ["liste", "S/N et états"], ["std", "Standards par gamme"]]} />
       {sub !== "liste" && machinesDoc && <span style={{ fontSize: 12, color: T.ink500 }}>Le passeport se remplit à chaque phase : design, appro, fabrication, tests, MES, SAV</span>}
     </div>
     {sub === "liste" ? serie : !machinesDoc ? <div style={{ color: T.ink500, fontSize: FZ.sm, padding: 20 }}>Chargement du passeport…</div>
-      : sub === "pass" ? <PassportView prodDoc={prodDoc} achatsDoc={achatsDoc} data={data} doc={machinesDoc} api={machinesApi} canEdit={canEdit} authorName={authorName} />
+      : sub === "pass" ? <PassportView prodDoc={prodDoc} achatsDoc={achatsDoc} testsDoc={testsDoc} savDoc={savDoc} data={data} doc={machinesDoc} api={machinesApi} canEdit={canEdit} authorName={authorName} />
       : <StandardsView data={data} doc={machinesDoc} api={machinesApi} canEdit={canEdit} authorName={authorName} />}
   </div>;
 }
@@ -47,8 +51,24 @@ export function MachinesHub({ data, canEdit, authorName, serie }) {
 // v399 (maquette v399-passeport-allege.html, piste A « à traiter » choisie ; audit UI/UX Pro Max, frontend-design, taste) :
 // en tête ce qui cloche (réel ≠ prévu, achats en retard ou à commander, valeurs à définir), puis un groupe replié par sous-ensemble
 // (avancement + alertes) ; une ligne = élément · prévu · réel · état ; le fil des phases sur une ligne ; liste des machines resserrée.
+// v401 : « À traiter » regroupé — une ligne par problème distinct (achats par scope, design à définir ensemble, réels ≠ prévu un par un)
+function todoGroups(rows) {
+  const out = [], by = new Map();
+  rows.forEach(x => { const i = rowIssue(x); if (!i) return;
+    const key = /^Achat|^À commander|non conforme/.test(i.t) && x.el.scope ? "a:" + x.el.scope + ":" + i.t : i.t === "À définir (design)" ? "design" : "x:" + x.el.id;
+    if (!by.has(key)) { const g = { key, tone: i.tone, label: i.t, title: key === "design" ? "Design à compléter" : key.startsWith("a:") ? "Achats " + x.el.scope : x.el.label, rows: [] }; by.set(key, g); out.push(g); }
+    by.get(key).rows.push(x); });
+  return out.sort((a, b) => (a.tone === "bad" ? 0 : 1) - (b.tone === "bad" ? 0 : 1));
+}
+// pied d'un groupe : sources des valeurs (Achats par scope, Turbines, Tests, SAV)
+function groupSource(G) {
+  const sc = {}; G.forEach(x => { if (x.achatSt && x.el.scope) sc[x.el.scope] = x.achatSt; });
+  const parts = Object.entries(sc).map(([k, a]) => k + " " + (a.lines && a.livre === a.lines ? "livré" : a.late ? "en retard" : a.cmd ? "commandé" : "à commander"));
+  const live = G.filter(x => x.real && x.real.live).map(x => String(x.real.src || "").split(" · ")[0]);
+  return [...(parts.length ? ["Achats : " + parts.join(", ")] : []), ...[...new Set(live)]].join(" · ");
+}
 const curPhase = pp => { const c = pp.find(p => p.total && p.done < p.total); return c ? c.l : "Complet"; };
-function PassportView({ data, doc, api, canEdit, authorName, prodDoc, achatsDoc }) {
+function PassportView({ data, doc, api, canEdit, authorName, prodDoc, achatsDoc, testsDoc, savDoc }) {
   const rows = useMemo(() => (data || []).filter(r => r && r.pj && r.etat !== "SLOT_LIBRE" && !/X{2,}/i.test(r.pj)), [data]);
   const [q, setQ] = useState(""), [scope, setScope] = useState("open"), [sel, setSel] = useState(null), [view, setView] = useState("pp"), [edit, setEdit] = useState(null);
   const list = rows.filter(r => ((scope === "open" ? r.etat !== "SHIPPED" : r.etat === "SHIPPED") || !!q)
@@ -69,24 +89,24 @@ function PassportView({ data, doc, api, canEdit, authorName, prodDoc, achatsDoc 
         </button>; })}
       {!list.length && <span style={{ fontSize: 13, color: T.ink500, padding: 8 }}>Aucune machine</span>}
     </nav>
-    {r && <Passport key={r.pj} data={data} prodDoc={prodDoc} achatsDoc={achatsDoc} r={r} doc={doc} api={api} canEdit={canEdit} authorName={authorName} view={view} setView={setView} edit={edit} setEdit={setEdit} />}
+    {r && <Passport key={r.pj} data={data} prodDoc={prodDoc} achatsDoc={achatsDoc} testsDoc={testsDoc} savDoc={savDoc} r={r} doc={doc} api={api} canEdit={canEdit} authorName={authorName} view={view} setView={setView} edit={edit} setEdit={setEdit} />}
   </div>;
 }
 
-function Passport({ r, doc, api, canEdit, authorName, view, setView, edit, setEdit, data, prodDoc, achatsDoc }) {
+function Passport({ r, doc, api, canEdit, authorName, view, setView, edit, setEdit, data, prodDoc, achatsDoc, testsDoc, savDoc }) {
   const meta = getPjMeta(r.pj, r), mp = metaPlanned(meta), P0 = ((doc.pass || {})[r.pj]) || {};
   // v397 : réel « vivant » — turbines allouées / installées (Turbines › Besoins), état des achats par scope (Achats / Appro)
   const prodM = useProdModel(!!prodDoc);
   const turb = useMemo(() => (prodDoc && prodM ? turbineOf(prodDoc, data || [r], r.pj, x => getPjMeta(x.pj, x), prodM.buildNeeds) : null), [prodDoc, prodM, data, r]);
-  const live = useMemo(() => ({ real: turbLive(turb), scopes: achatScopes(achatsDoc, r.pj) }), [turb, achatsDoc, r.pj]);
+  const live = useMemo(() => ({ real: { ...turbLive(turb), ...testsLive(testsDoc, r.pj), ...savLive(savDoc, r.pj) }, scopes: achatScopes(achatsDoc, r.pj) }), [turb, achatsDoc, testsDoc, savDoc, r.pj]);
   const P = { ...P0, real: { ...live.real, ...(P0.real || {}) } }; // pour le RAI : n° des turbines et autres réels vivants
   const rows = liveRows(passportRows(doc, r.pj, r.gamme).map(x => (!x.planned && mp[x.el.id] ? { ...x, planned: mp[x.el.id], fromFiche: true } : x)), live);
   const R = ((doc.rai || {})[r.pj]) || null, rv = raiVerdict(R), photos = ((doc.photos || {})[r.pj]) || [];
   // v394 : le RAI s'insère entre les tests et la MES : contrôles faits + signatures
   const raiTot = RAI_SECTIONS.reduce((n, s) => n + raiSection(R, s).total, 0) + rv.signers, raiDone = RAI_SECTIONS.reduce((n, s) => n + raiSection(R, s).done, 0) + rv.signed;
   const pp0 = phaseProgress(doc, r.pj, r.gamme, live), pp = [...pp0.slice(0, 4), { k: "rai", l: "RAI", total: raiTot, done: raiDone, rai: rv }, ...pp0.slice(4)];
-  const todo = rows.map(x => ({ x, i: rowIssue(x) })).filter(y => y.i).sort((a, b) => (a.i.tone === "bad" ? 0 : 1) - (b.i.tone === "bad" ? 0 : 1));
-  const [open, setOpen] = useState({});
+  const todo = todoGroups(rows);
+  const [open, setOpen] = useState({}), [tOpen, setTOpen] = useState({});
   const save = async next => { const ok = await api.savePass(r.pj, next); if (ok) setEdit(null); };
   const exportCsv = () => {
     const q = v => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
@@ -122,10 +142,19 @@ function Passport({ r, doc, api, canEdit, authorName, view, setView, edit, setEd
         <section aria-label="À traiter" style={{ border: "1px solid " + T.line, borderRadius: 12, margin: "16px 0 12px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderBottom: todo.length ? "1px solid " + T.line : "none" }}>
             <h3 style={{ margin: 0, fontFamily: T.fontDisplay, fontSize: 16, fontWeight: 600, color: T.ink900 }}>À traiter</h3>
-            {todo.length ? <Pill tone={todo.some(y => y.i.tone === "bad") ? "bad" : "warn"}>{todo.length}</Pill> : <Pill tone="ok">rien</Pill>}
+            {todo.length ? <Pill tone={todo.some(y => y.tone === "bad") ? "bad" : "warn"}>{todo.length}</Pill> : <Pill tone="ok">rien</Pill>}
             <span style={{ fontSize: 12, color: T.ink500 }}>{todo.length ? "réel ≠ prévu, achats en retard ou à commander, valeurs à définir" : "pas d'écart ni de retard sur cette machine"}</span>
           </div>
-          {todo.map(({ x }) => <PassRow key={x.el.id} x={x} {...rowProps} />)}
+          {todo.map(t => t.rows.length === 1 ? <PassRow key={t.key} x={t.rows[0]} {...rowProps} />
+            : <div key={t.key} style={{ borderTop: "1px solid " + T.line }}>
+              <button type="button" aria-expanded={!!tOpen[t.key]} onClick={() => setTOpen(o => ({ ...o, [t.key]: !o[t.key] }))} style={{ all: "unset", boxSizing: "border-box", cursor: "pointer", width: "100%", display: "grid", gridTemplateColumns: "minmax(140px, 200px) minmax(0, 1fr) minmax(120px, auto) 20px", gap: 12, alignItems: "center", padding: "6px 14px", minHeight: 44, fontSize: 13 }}>
+                <span style={{ color: T.ink700 }}>{t.title}</span>
+                <span style={{ color: T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.rows.map(x => x.el.label).join(", ")}</span>
+                <span style={{ fontSize: 12, fontWeight: 500, color: t.tone === "bad" ? T.red600 : T.amber600, whiteSpace: "nowrap" }}>{t.label}</span>
+                <span className="enogia-nd-chev" data-open={tOpen[t.key] ? "1" : "0"} style={{ color: T.ink500, display: "inline-grid" }}><NavIcon name="chevronDown" size={14} /></span>
+              </button>
+              {tOpen[t.key] && <div className="enogia-cl-in" style={{ background: T.surface }}>{t.rows.map(x => <PassRow key={x.el.id} x={x} {...rowProps} />)}</div>}
+            </div>)}
         </section>
         {GROUPS.concat([...new Set(rows.map(x => x.el.group))].filter(g => !GROUPS.includes(g))).map(g => { const G = rows.filter(x => x.el.group === g); if (!G.length) return null;
           const done = G.filter(x => (x.el.phase === "design" ? !!x.planned : (x.real && x.real.v) || (x.achatSt && x.achatSt.lines && x.achatSt.livre === x.achatSt.lines))).length, nAl = G.filter(x => rowIssue(x)).length, isOpen = !!open[g];
@@ -135,12 +164,14 @@ function Passport({ r, doc, api, canEdit, authorName, view, setView, edit, setEd
               <span aria-hidden="true" style={{ width: 90, height: 4, borderRadius: 2, background: T.surfaceAlt, overflow: "hidden" }}><i style={{ display: "block", height: "100%", width: Math.round(done / G.length * 100) + "%", background: T.emerald600 }} /></span>
               <span style={{ fontSize: 12, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{done} / {G.length}</span>
               {nAl > 0 && <Pill tone={G.some(x => rowIssue(x) && rowIssue(x).tone === "bad") ? "bad" : "warn"}>{nAl}</Pill>}
+              <span style={{ fontSize: 12, color: T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>{groupSource(G)}</span>
               <span className="enogia-nd-chev" data-open={isOpen ? "1" : "0"} style={{ marginLeft: "auto", color: T.ink500, display: "inline-grid" }}><NavIcon name="chevronDown" size={16} /></span>
             </button>
             {isOpen && <div className="enogia-cl-in" style={{ borderTop: "1px solid " + T.line }}>{G.map(x => <PassRow key={x.el.id} x={x} {...rowProps} />)}</div>}
           </div>; })}
         <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 12, fontSize: 12, color: T.ink500, flexWrap: "wrap" }}>
           <span>Un clic sur une valeur la modifie ; la source d'une valeur réelle s'affiche au survol.</span><span style={{ flex: 1 }} />
+          <button type="button" onClick={() => { const w = window.open("", "_blank"); if (!w) return; w.document.open(); w.document.write(dossierHtml({ r, meta, rows, R, photos, std: gammeKey(doc, r.gamme) })); w.document.close(); }} style={btn("sec", "sm")}>Dossier machine (PDF)</button>
           <button type="button" onClick={exportCsv} style={btn("ghost", "sm")}>Exporter (CSV)</button>
         </div>
       </>}

@@ -6,7 +6,7 @@ import React, { Suspense, useState } from "react";
 import { T, setThemeMode } from "../theme";
 import { MentionCtx } from "../mentionContext";
 import { setPjMetaOverrides } from "../pjMeta";
-import { DEMO_PAGES } from "./demoPages";
+import { DEMO_PAGES, MachinesDemo } from "./demoPages";
 import { DEMO_META, DEMO_ME, DEMO_PEOPLE } from "./demoData";
 
 setPjMetaOverrides(DEMO_META);
@@ -43,7 +43,7 @@ export default function DemoGallery() {
         </div>
       </div>
       <div style={{ width, maxWidth: "100%", margin: "0 auto", padding: "12px 16px 16px", boxSizing: "border-box", background: T.surface }}>
-        <Suspense fallback={<div>Chargement…</div>}><P.Render key={P.id + dark} /></Suspense>
+        <Suspense fallback={<div>Chargement…</div>}><MachinesDemo><P.Render key={P.id + dark} /></MachinesDemo></Suspense>
       </div>
     </div>
   </MentionCtx.Provider>);

@@ -1227,4 +1227,7 @@ export const RELEASE_CATALOG = [
   { v: "400", t: "Achats / Appro — transport en jours ouvrés (PO et rétro-planning), « Livré sans PO » pour le responsable achats, option retirée = à préciser", items: [
     ["Achats : transport en jours ouvrés", "Livraison prévue des PO = date fournisseur + transport ; « Livré sans PO » pour le responsable achats ; option retirée à préciser."],
   ] },
+  { v: "401", t: "Passeport machine — Tests et SAV / MES y écrivent, RAI dans la fiche de tests, dossier machine en PDF, « À traiter » regroupé", items: [
+    ["Passeport complet", "Tests et SAV / MES remplissent le passeport ; RAI dans la fiche de tests ; dossier machine en PDF."],
+  ] },
 ];

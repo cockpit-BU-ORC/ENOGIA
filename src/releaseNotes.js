@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v401",
+    date: "2026-11-18",
+    title: "V401 : Passeport machine — Tests et SAV / MES y écrivent, RAI dans la fiche de tests, dossier machine en PDF, « À traiter » regroupé",
+    items: [
+      { t: "Tests → passeport", d: "Le livret de configuration, la checklist de debug, les fréquences, les vibrations et les tests FAT remontent dans le passeport ; un problème, une fréquence hors plage ou un test en échec passe dans « À traiter »." },
+      { t: "MES et SAV → passeport", d: "Date de mise en service, dernière intervention et tickets ouverts ; dans une intervention SAV, « Pièces changées (passeport) » : une fois l'intervention réalisée, la nouvelle pièce devient la valeur réelle de la machine." },
+      { t: "RAI et dossier", d: "Le RAI est la 7e étape de la fiche de tests (le même que dans le passeport). « Dossier machine (PDF) » assemble la configuration, le RAI et les photos. « À traiter » regroupe les achats par scope et les valeurs de design à compléter." },
+    ],
+  },
+  {
     id: "2026-11-v400",
     date: "2026-11-18",
     title: "V400 : Achats / Appro — transport en jours ouvrés (PO et rétro-planning), « Livré sans PO » pour le responsable achats, option retirée = à préciser",

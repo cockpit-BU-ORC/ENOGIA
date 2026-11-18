@@ -11,7 +11,7 @@
 
 export const PHASES = [["design", "Design"], ["appro", "Appro"], ["fab", "Fabrication"], ["tests", "Tests"], ["mes", "MES"], ["sav", "SAV"]];
 export const PHASE_LABEL = Object.fromEntries(PHASES);
-export const GROUPS = ["Identité", "Turbines", "Skid", "Électrique", "Lubrification", "Fluides et refroidissement", "Auxiliaires"];
+export const GROUPS = ["Identité", "Turbines", "Skid", "Électrique", "Lubrification", "Fluides et refroidissement", "Auxiliaires", "Tests", "MES et SAV"];
 
 // Éléments de départ : colonnes du « Tableau configuration machines » (onglets Tableau et Référence) + composants identifiés dans le RAI.
 // phase = la phase qui renseigne la valeur réelle ; achat / scope = suivi en Achats / Appro (scope de params.scopes) ; turb = suivi en Turbines.
@@ -62,6 +62,15 @@ export const DEFAULT_ELEMENTS = [
   E("Auxiliaires", "bypassAct", "Actionneurs de vanne bypass", [], { achat: true }),
   E("Auxiliaires", "pompeBF", "Pompe BF", [], { achat: true }),
   E("Auxiliaires", "autres", "Autres modifications à faire", [], { phase: "design", opt: true }),
+  // v401 : remplis par la fiche de tests et le SAV (passportLive.js) — rien de prévu, une saisie à la main reste possible
+  E("Tests", "livret", "Livret de configuration", [], { phase: "tests", opt: true }),
+  E("Tests", "debugCk", "Checklist de debug", [], { phase: "tests", opt: true }),
+  E("Tests", "freqs", "Fréquences turbines", [], { phase: "tests", opt: true }),
+  E("Tests", "vibs", "Vibrations", [], { phase: "tests", opt: true }),
+  E("Tests", "fat", "Tests FAT", [], { phase: "tests", opt: true }),
+  E("MES et SAV", "mesDate", "Mise en service", [], { phase: "mes", opt: true }),
+  E("MES et SAV", "lastInter", "Dernière intervention", [], { phase: "sav", opt: true }),
+  E("MES et SAV", "ticketsOpen", "Tickets SAV ouverts", [], { phase: "sav", opt: true }),
 ];
 
 // v397 (lot 3) : scope Achats / Appro de chaque élément acheté (liste de départ des scopes d'Achats) — modifiable dans Standards par gamme
@@ -70,7 +79,8 @@ const SCOPE_OF = { volute: "VOLUTE", jacket: "VOLUTE", evaporateur: "SKID", cond
   armoire: "ARMOIRE", elecPuissance: "ARMOIRE", drive: "ARMOIRE", afe: "ARMOIRE", schaffner: "ARMOIRE", plc: "ELEC CTRL", connecteurs: "ELEC CTRL",
   capteursVib: "ELEC PROTECTION TURBINE", choke: "CHOKE", aerotherme: "AIR COOLER", tt03: "FLUIDE", mitrFluide: "FLUIDE", mitrEau: "FLUIDE" };
 DEFAULT_ELEMENTS.forEach(e => { if (e.achat && !e.scope && SCOPE_OF[e.id]) e.scope = SCOPE_OF[e.id]; });
-export const elementsOf = doc => (doc && Array.isArray(doc.elements) && doc.elements.length ? doc.elements : DEFAULT_ELEMENTS);
+export const elementsOf = doc => { if (!(doc && Array.isArray(doc.elements) && doc.elements.length)) return DEFAULT_ELEMENTS;
+  const ids = new Set(doc.elements.map(e => e.id)); return [...doc.elements, ...DEFAULT_ELEMENTS.filter(e => (e.group === "Tests" || e.group === "MES et SAV") && !ids.has(e.id))]; };
 // gamme de la ligne de planning (« 180LTV3 » → standard « 180LT » s'il n'y a pas de standard au nom exact)
 export const gammeKey = (doc, gamme) => {
   const g = String(gamme || "").trim(), S = (doc && doc.standards) || {};
@@ -130,7 +140,8 @@ export function turbLive(t) {
 export function liveRows(rows, live) {
   const L = live || {}, real = L.real || {}, sc = L.scopes || {};
   return rows.map(x => {
-    const r = x.real && x.real.v ? x.real : real[x.el.id] || null, a = x.el.achat && x.el.scope ? sc[String(x.el.scope).toUpperCase()] || null : null;
+    const lv = real[x.el.id] || null, newer = lv && lv.sav && x.real && x.real.v && String(lv.at || "") > String(x.real.at || "").slice(0, 10);
+    const r = x.real && x.real.v && !newer ? x.real : lv || null, a = x.el.achat && x.el.scope ? sc[String(x.el.scope).toUpperCase()] || null : null;
     const planned = x.planned;
     const gap = !!(r && r.v && planned && !String(r.v).toLowerCase().includes(String(planned).toLowerCase()) && !String(r.v).toLowerCase().startsWith(String(planned).toLowerCase()));
     return { ...x, real: r, achatSt: a, gap: x.real && x.real.v ? x.gap : gap };
@@ -142,6 +153,7 @@ export function liveRows(rows, live) {
 export function rowIssue(x) {
   const a = x.achatSt;
   if (x.gap) return { t: "Réel ≠ prévu", tone: "bad", title: "prévu " + x.planned };
+  if (x.real && x.real.bad) return { t: x.real.badT || "À vérifier", tone: "bad", title: x.real.src };
   if (a && a.nc) return { t: a.nc + " non conforme" + (a.nc > 1 ? "s" : ""), tone: "bad" };
   if (a && a.late) return { t: "Achat en retard" + (a.pos.length ? " · " + a.pos[0] : ""), tone: "bad", title: "scope " + x.el.scope };
   if (!x.planned && x.el.phase === "design" && !x.el.opt) return { t: "À définir (design)", tone: "warn" };
@@ -154,6 +166,7 @@ export function rowState(x) {
   if (a && a.lines && a.livre === a.lines) return { t: "Livré" + (a.pos.length ? " · " + a.pos[0] : ""), tone: "ok", title: "scope " + x.el.scope };
   if (a && a.cmd) return { t: "Commandé" + (a.pos.length ? " · " + a.pos[0] : ""), tone: "mute", title: "scope " + x.el.scope };
   if (r && r.v && r.live && /allou/.test(r.src || "")) return { t: String(r.src).split(" · ").pop(), tone: "mute" };
+  if (r && r.v && r.live) return { t: String(r.src || "").split(" · ")[0], tone: "mute", title: r.src };
   if (r && r.v && x.planned) return { t: "Conforme", tone: "ok" };
   return null;
 }

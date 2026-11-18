@@ -17,6 +17,7 @@ import { TICKET_TYPES, typeOf, flowOf, PRIOS, ORIGINS, INTER_TYPES, INTER_STATUS
   nextTicketId, nextInterId, isClosed, ticketAge, interCost, interTeam, interDays, planBars, dayLoad, workDaysFrom, mondayOf,
   acceptDemande, slotDays, availTechs, unavailableWhy, setAbsence, parcOf, savKpis, savStats, fournTypesOf, fournLabel, addStepNote, delStepNote } from "../savModel";
 import { machinesOf } from "../turbineNeeds";
+import { elementsOf } from "../passport";
 
 const iso = d => { const x = new Date(d); return isNaN(x) ? "" : x.toISOString().slice(0, 10); };
 const todayIso = () => iso(new Date());
@@ -97,6 +98,23 @@ function Modal({ title, onClose, children, width = 640 }) {
     </div></div>;
 }
 // v327 (demandé : « préparation, clôture, pièces de rechange… pas dans le ticket mais en listes déroulantes après la création ») : section repliée
+// v401 (demandé : « MES et SAV → passeport ») : pièces changées pendant l'intervention — une fois l'intervention réalisée,
+// elles deviennent la valeur réelle de l'élément dans le passeport de la machine (passportLive.js, lecture seule ; rien n'est écrit ailleurs)
+function PassChanges({ value, onChange, disabled }) {
+  const els = elementsOf({}).filter(e => e.group !== "Tests" && e.group !== "MES et SAV");
+  const set = (k, patch) => onChange(value.map((c, j) => (j === k ? { ...c, ...patch } : c)));
+  const cell = { padding: "4px 8px", minHeight: 32, borderRadius: 8, border: "1px solid " + T.fieldLine, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, boxSizing: "border-box" };
+  return <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+    <span style={{ fontSize: 12, color: T.ink500 }}>Une fois l'intervention réalisée, chaque pièce devient la valeur réelle de la machine dans son passeport (l'ancienne reste dans l'historique de l'intervention).</span>
+    {value.map((c, k) => <div key={k} style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+      <select value={c.el || ""} onChange={e => set(k, { el: e.target.value })} disabled={disabled} aria-label={"Élément du passeport, pièce " + (k + 1)} style={{ ...cell, minWidth: 200 }}><option value="">Élément…</option>{els.map(e => <option key={e.id} value={e.id}>{e.group} · {e.label}</option>)}</select>
+      <input value={c.v || ""} onChange={e => set(k, { v: e.target.value })} disabled={disabled} placeholder="Nouvelle pièce (réf., S/N)" aria-label={"Nouvelle pièce " + (k + 1)} style={{ ...cell, flex: "1 1 160px" }} />
+      <input value={c.note || ""} onChange={e => set(k, { note: e.target.value })} disabled={disabled} placeholder="Note (ancienne pièce…)" aria-label={"Note " + (k + 1)} style={{ ...cell, flex: "1 1 160px" }} />
+      {!disabled && <button type="button" onClick={() => onChange(value.filter((_, j) => j !== k))} aria-label={"Retirer la pièce " + (k + 1)} style={{ ...btn("ghost", "sm") }}>Retirer</button>}
+    </div>)}
+    {!disabled && <button type="button" onClick={() => onChange([...value, { el: "", v: "", note: "" }])} style={{ ...btn("sec", "sm"), alignSelf: "flex-start" }}>＋ Pièce changée</button>}
+  </div>;
+}
 function Fold({ title, info, open: open0 = false, children }) {
   const [open, setOpen] = useState(open0);
   return <div style={{ border: "1px solid " + T.line, borderRadius: 8, overflow: "hidden" }}>
@@ -343,6 +361,9 @@ function InterDialog({ id, i: i0, pjList, nomOf, techs, canEdit, isAdmin, canCos
         <Checks items={CLO_ITEMS} value={i.clo} onChange={v => set("clo", v)} disabled={!canEdit} />
         <Field l="Réussite de l'intervention"><select value={i.reussite || ""} onChange={e => set("reussite", e.target.value)} disabled={!canEdit} style={{ ...inp(), maxWidth: 240 }}><option value="">—</option><option>Succès</option><option>Partielle</option><option>Échec</option></select></Field></Fold>
       {canCost && <Fold title="Pièces de rechange et coûts" info={eur(interCost(i))}><div style={grid2}>{COST_FIELDS.map(([k, l]) => <label key={k} style={lab}>{l}<input type="number" min={0} step={10} value={(i.costs || {})[k] ?? ""} onChange={e => set("costs", { ...(i.costs || {}), [k]: e.target.value === "" ? null : +e.target.value })} disabled={!canEdit} style={inp()} /></label>)}</div></Fold>}
+      <Fold title="Pièces changées (passeport)" info={(i.changes || []).length ? (i.changes || []).length + " pièce" + ((i.changes || []).length > 1 ? "s" : "") : ""}>
+        <PassChanges value={i.changes || []} onChange={v => set("changes", v)} disabled={!canEdit} />
+      </Fold>
       <Fold title="Autres informations">
         <div style={grid2}>
           <Field l="Type d'intervention"><select value={i.type || ""} onChange={e => set("type", e.target.value)} disabled={!canEdit} style={inp()}>{INTER_TYPES.map(x => <option key={x}>{x}</option>)}</select></Field>
