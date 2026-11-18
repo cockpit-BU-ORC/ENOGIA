@@ -1245,4 +1245,7 @@ export const RELEASE_CATALOG = [
   { v: "406", t: "Passeport : les clics marchent de nouveau ; Compétences SAV au format du site", items: [
     ["Passeport et compétences", "Passeport de nouveau cliquable ; Compétences SAV au format du site."],
   ] },
+  { v: "407", t: "Menu de gauche : sous-pages d'Achats / Appro et Compétences dans SAV / MES", items: [
+    ["Sous-pages dans le menu", "Achats / Appro et SAV / MES (Compétences) dans le menu de gauche."],
+  ] },
 ];

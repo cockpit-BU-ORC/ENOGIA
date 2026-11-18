@@ -3053,3 +3053,11 @@ Demandé : « le passeport a le même bug que tout à l'heure (rien ne fonctionn
 - `src/a11yFallback.js` : pas de zone élargie si la **position calculée** du bouton reste `static` (classe CSS comprise) ; sonde `hitRuleOn` (la règle `[data-hit]` de styles.css est-elle chargée ?) pour que le contrôle ne joue pas dans les tests. styles.css : `position: relative` sur `.pp2-lhead`, `.pp2-x`, `.pp2-link`, `.pp2-tags span button`.
 - Compétences SAV : `public/competences-sav.html` — polices du site (Cabinet Grotesk, Satoshi, JetBrains Mono via Fontshare / Google Fonts à la place de Barlow / IBM Plex), bloc `#cockpit-format` (casse normale, tailles 13–22 px, rayons 4 / 8 / 12, onglet actif et bouton principal en encre) ; `SavSkills.js` pose les couleurs du thème du site (`T.surface`, `T.card`, `T.ink900`, `T.accentInk`…) sur `<html>` du cadre, en clair et en sombre.
 - Fichiers : src/a11yFallback.js, src/styles.css, public/competences-sav.html, src/components/SavSkills.js.
+
+## V407 — Sous-pages d'Achats / Appro et de SAV / MES dans le menu
+
+Demandé : « mettre bien les sous-pages dans le panel à gauche pour les achats et pour les SAV / MES (rajouter compétences) ».
+
+- App.js : entrée **Achats / Appro** avec ses sous-pages (Projets, Synthèse Appro, PO, Fournisseurs, Articles, Nomenclatures, Configuration, Réglages — Réglages pour ceux qui modifient la page ou le propriétaire), état `achTab` (même clé `enogia_achats_tab` que la page), sous-page dans l'adresse (`&s=`) ; **SAV / MES** : sous-page Compétences ajoutée au menu.
+- Achats.js (page du kit) : props facultatives `tab` / `onTab` (onglet piloté par le menu ; sans elles, la page garde son propre onglet). Consignes du kit mises à jour, **kit achats régénéré** (`kit-achats/`, à renvoyer au responsable achats).
+- Fichiers : src/App.js, src/components/Achats.js, scripts/achats-consignes.md.

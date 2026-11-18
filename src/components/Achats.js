@@ -511,14 +511,16 @@ const COLS_NOM = [
 /* ---------- Page ---------- */
 // doc : document planning/achats ; api : put(collection, id, data), del(collection, id), setParams(p), setAccess(liste)
 // rows : lignes du planning (pj, nomProjet, gamme, etat, arrivee, depart), en lecture seule ; canEdit : modifier ; owner : propriétaire
-export function Achats({ doc, api, rows, canEdit, owner, admin }) {
+// v407 : tab / onTab (facultatifs) = onglet piloté par le menu de gauche du site ; sans eux, la page garde son propre onglet
+export function Achats({ doc, api, rows, canEdit, owner, admin, tab: tabP, onTab }) {
   const regulOk = !!(owner || admin); // v400 : « Livré sans PO » réservé au propriétaire et aux admins de la page (rôle du responsable achats)
   const S = useMemo(() => { const d = doc || {}, o = { ...EMPTY_ACHATS, ...d, params: { ...EMPTY_ACHATS.params, ...(d.params || {}) }, access: Array.isArray(d.access) ? d.access : [] };
     ["composants", "lignes", "fournisseurs", "projets", "po"].forEach(c => { o[c] = Object.fromEntries(Object.entries(d[c] || {}).map(([k, v]) => [k, { ...v, id: k }])); }); return o; }, [doc]);
   const byPj = useMemo(() => { const m = {}; (rows || []).forEach(r => { if (r && r.pj) m[r.pj] = r; }); return m; }, [rows]);
   const tIso = iso(today0());
   const pref = (k, ok, def) => { try { const v = localStorage.getItem(k); return ok.includes(v) ? v : def; } catch (e) { return def; } };
-  const [tab, setTab] = useState(() => pref("enogia_achats_tab", TABS.map(t => t[0]), "projets"));
+  const [tabS, setTabS] = useState(() => pref("enogia_achats_tab", TABS.map(t => t[0]), "projets"));
+  const tab = TABS.some(t => t[0] === tabP) ? tabP : tabS, setTab = v => { setTabS(v); if (onTab) onTab(v); };
   const [vue, setVue] = useState(() => pref("enogia_achats_vue", ["tableau", "cartes", "scopes", "gantt"], "tableau"));
   // Vue tableau : sous-lignes N2 affichées par défaut (réglage global) ; chaque N1 peut être replié ou déplié (n2Ouv, non enregistré)
   const [n2Vis, setN2Vis] = useState(() => pref("enogia_achats_n2", ["oui", "non"], "oui") === "oui"), [n2Ouv, setN2Ouv] = useState({});

@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v407",
+    date: "2026-11-18",
+    title: "V407 : Menu de gauche : sous-pages d'Achats / Appro et Compétences dans SAV / MES",
+    items: [
+      { t: "Menu", d: "Achats / Appro montre ses sous-pages dans le menu de gauche (Projets, Synthèse Appro, PO, Fournisseurs, Articles, Nomenclatures, Configuration, Réglages) ; SAV / MES y gagne Compétences." },
+    ],
+  },
+  {
     id: "2026-11-v406",
     date: "2026-11-18",
     title: "V406 : Passeport : les clics marchent de nouveau ; Compétences SAV au format du site",

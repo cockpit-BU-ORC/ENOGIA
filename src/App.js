@@ -69,7 +69,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-18-v406-passeport-clics-competences-format";
+const APP_BUILD_VERSION = "2026-11-18-v407-menu-sous-pages-achats-sav";
 
 const ReleasePopup = React.lazy(() => import("./components/ReleaseNotes").then(m => ({ default: m.ReleasePopup })));
 function Navigate0({ go }) { useEffect(() => { go(); }, []); return null; } // eslint-disable-line react-hooks/exhaustive-deps
@@ -977,6 +977,8 @@ export default function App(){
   const [savSub,setSavSub]=useState(()=>urlSub("sav","tickets")),[savFocus,setSavFocus]=useState(null); // v326 : sous-page SAV / MES, PJ cherché // v320 : sous-page de « Personnes et accès » (Rôles / Accès par page)
   const [testsFocus,setTestsFocus]=useState(null);
   const [pendingDeparts,setPendingDeparts]=useState({}); // v312 // v310 : PJ à ouvrir dans Tests depuis sa fiche
+  // v407 : sous-page d'Achats / Appro pilotée par le menu de gauche (même clé que la page)
+  const [achTab,setAchTab]=useState(()=>{try{return localStorage.getItem("enogia_achats_tab")||"projets";}catch(e){return "projets";}});
   const [turbTab,setTurbTab]=useState(()=>{const s0=urlSub("turbines","");if(s0)return s0;try{const v=localStorage.getItem("enogia_turbines_tab");return v==="orc"?"orc":"prod";}catch(e){return "prod";}});
   const lastPlanRef=useRef("table");/* v305 */if(PLANNING_VIEWS.includes(view))lastPlanRef.current=view;
   const firstPlanView=()=>["table","gantt","calendar","changes"].find(planViewOk)||"home";
@@ -1018,7 +1020,7 @@ export default function App(){
   const skillPeople=useMemo(()=>Object.values((profiles&&profiles.byEmail)||{}).filter(p=>p&&!p.removed&&p.email).map(p=>({email:p.email,name:p.name||""})),[profiles]);
   const savTeam=useMemo(()=>Object.values((profiles&&profiles.byEmail)||{}).filter(p=>p&&!p.removed&&p.role==="sav").map(p=>p.name||String(p.email||"").split("@")[0]).filter(Boolean).sort(),[profiles]);
   // v342 (audit Web Interface Guidelines, lot 6) : page, sous-page et fiche ouverte dans l'adresse ; Précédent / Suivant du navigateur
-  const urlSubs={manager:[managerTab,setManagerTab],tests:[testsSub,setTestsSub],turbines:[turbTab,setTurbTab],sav:[savSub,setSavSub],access:[accSub,setAccSub]};
+  const urlSubs={manager:[managerTab,setManagerTab],tests:[testsSub,setTestsSub],turbines:[turbTab,setTurbTab],achats:[achTab,setAchTab],sav:[savSub,setSavSub],access:[accSub,setAccSub]};
   const curSub=urlSubs[view]?urlSubs[view][0]:"";
   const urlReady=useRef(false);
   useEffect(()=>{writeUrlState({p:view,s:curSub,pj:calSel||""},urlReady.current);urlReady.current=true;},[view,curSub,calSel]);
@@ -1052,9 +1054,10 @@ export default function App(){
         subs:[["semaine","Par semaine"],["testers","Par testeur"],["catalog","Catalogue"],["checklists","Checklists"]].filter(([id])=>testsAllowed.includes(id)).map(([id,l])=>({id,l,on:view==="tests"&&testsSub===id,go:()=>{setTestsSub(id);setView("tests");}}))}]:[]),
       ...(canProdTurb?[{id:"turbines",l:"Turbines",icon:"gauge",on:view==="turbines",go:()=>setView("turbines"),
         subs:[["prod","Production"],["orc","Besoins ORC et SAV"]].filter(([id])=>turbAllowed.includes(id)).map(([id,l])=>({id,l,on:view==="turbines"&&turbTab===id,go:()=>{setTurbTab(id);setView("turbines");}}))}]:[]),
-      ...(canAchats?[{id:"achats",l:"Achats / Appro",icon:"inbox",on:view==="achats",go:()=>setView("achats")}]:[]),
+      ...(canAchats?[{id:"achats",l:"Achats / Appro",icon:"inbox",on:view==="achats",go:()=>setView("achats"),
+        subs:[["projets","Projets"],["synthese","Synthèse Appro"],["po","PO"],["fournisseurs","Fournisseurs"],["articles","Articles"],["nomenclatures","Nomenclatures"],["configuration","Configuration"],["reglages","Réglages"]].filter(([id])=>id!=="reglages"||achEdit||isOwner).map(([id,l])=>({id,l,on:view==="achats"&&achTab===id,go:()=>{setAchTab(id);setView("achats");}}))}]:[]),
       ...(canSav&&savAllowed.length?[{id:"sav",l:"SAV / MES",icon:"wrench",on:view==="sav",go:()=>openSav(savAllowed.includes(savSub)?savSub:savAllowed[0]),
-        subs:[["tickets","Tickets"],["inters","Interventions"],["planning","Planning des équipes"],["dispo","Disponibilités"],["parc","Parc"],["kpi","KPI"]].filter(([id])=>savAllowed.includes(id)).map(([id,l])=>({id,l,on:view==="sav"&&savSub===id,go:()=>openSav(id)}))}]:[]),
+        subs:[["tickets","Tickets"],["inters","Interventions"],["planning","Planning des équipes"],["dispo","Disponibilités"],["parc","Parc"],["kpi","KPI"],["competences","Compétences"]].filter(([id])=>savAllowed.includes(id)).map(([id,l])=>({id,l,on:view==="sav"&&savSub===id,go:()=>openSav(id)}))}]:[]),
       ...(comOk?[{id:"comments",l:"Commentaires",icon:"comments",on:view==="comments",go:()=>setView("comments")}]:[])]}, // v316 : Commentaires dans Opérations
     {g:"Gestion",items:[
       ...(projOk?[{id:"projets",l:"Projets",icon:"manager",on:mgrOn(["fiche","hebdo","serie","orc"]),go:goMgr(["fiche","hebdo","serie"].find(t=>!mgrHidden.includes(t))||"fiche"),
@@ -1310,7 +1313,7 @@ export default function App(){
             {view==="access"&&isOwner&&<AccessPage sub={accSub} onSub={setAccSub} onPeople={goMgr("personnes")} profiles={profiles} saveProfiles={saveProfiles} accessDoc={accessDoc} saveAccess={saveAccess} people={peopleAll} ownerEmails={OWNER_EMAILS}/>}
             {view==="cashin"&&canCash&&<CashInTab authorName={authorName} focus={cashFocusApp} planRows={dataWithOverrides} sub={cashSub==="lundi"&&!cashAdmin?"table":cashSub} onSub={setCashSub} canEdit={cashEdit} canWeekly={cashAdmin} me={{email:currentUser&&currentUser.email,name:authorName}}/>}
             {view==="sav"&&canSav&&<PageGuard name="SAV / MES"><SavPage doc={savDoc} dem={demDoc} turbReqs={prodDoc&&prodDoc.besoins} onSetAlloc={savEdit?(id,alloc)=>prodApi.setAlloc(id,alloc):null} onOpenTurb={canProdTurb&&turbAllowed.includes("orc")?()=>{setTurbTab("orc");setView("turbines");}:null} api={savApi} demApi={demApi} rows={dataWithOverrides} level={savLvl} canCost={savCost} me={currentUser&&currentUser.email} myName={authorName} myPjs={myPjList} team={savTeam} skills={{me:currentUser&&currentUser.email,name:authorName,admin:savLvl==="a",owner:isOwner,people:skillPeople}} sub={savSub} onSub={setSavSub} allowSubs={savAllowed} onOpenPj={pj=>{setCalDay(null);setCalTab("resume");setCalSel(pj);}} focusPj={savFocus}/></PageGuard>}
-            {view==="achats"&&canAchats&&<PageGuard name="Achats / Appro"><Achats doc={achatsDoc} api={achatsApi} rows={dataWithOverrides.map(r=>({pj:r.pj,nomProjet:getPjMeta(r.pj,r).nomProjet||"",gamme:r.gamme||"",etat:r.etat,arrivee:r.arrivee||null,depart:r.depart||null}))} canEdit={achEdit} owner={isOwner} admin={accMe?accAt("achats","a"):canAchatsL}/></PageGuard>}
+            {view==="achats"&&canAchats&&<PageGuard name="Achats / Appro"><Achats doc={achatsDoc} api={achatsApi} rows={dataWithOverrides.map(r=>({pj:r.pj,nomProjet:getPjMeta(r.pj,r).nomProjet||"",gamme:r.gamme||"",etat:r.etat,arrivee:r.arrivee||null,depart:r.depart||null}))} canEdit={achEdit} owner={isOwner} admin={accMe?accAt("achats","a"):canAchatsL} tab={achTab} onTab={setAchTab}/></PageGuard>}
             {/* v267 (demandé : « un seul onglet Turbines ») : production (seule saisie) + besoins des ORC (calculés) ; l'ancien pool n'est plus affiché */}
             {view==="turbines"&&canProdTurb&&<PageGuard name="Turbines"><TurbinesHub doc={prodDoc} api={prodApi} authorName={authorName} savDoc={canSav?savDoc:null} rows={dataWithOverrides} canEdit={turbEdit} owner={isOwner} tab={turbTab} onTab={setTurbTab} allowTabs={turbAllowed} savePjMeta={savePjMetaOverride}/></PageGuard>}
             {view==="planner"&&isOwner&&<PlannerView productionExclusions={productionExclusions} testers={testsDoc&&Array.isArray(testsDoc.testers)?testsDoc.testers:[]} planLoaded={planLoaded} planDoc={planDoc} rows={dataWithOverrides} closurePeriods={closurePeriods} authorName={authorName} pendingDeparts={pendingDeparts} onPendingApplied={clearPendingDeparts}
