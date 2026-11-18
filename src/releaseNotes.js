@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v396",
+    date: "2026-11-18",
+    title: "V396 : Achats / Appro — retour du kit du responsable achats (fiches reliées à l'ordo par la machine, vue par scope, livré sans PO, fournisseur par défaut du scope)",
+    items: [
+      { t: "Machine de l'ordo", d: "Le n° de machine d'une fiche se choisit dans l'ordo (une fiche par machine) ; une machine qui disparaît de l'ordo est signalée, la fiche est gardée. Les modèles proposés sont ceux de la famille ORC de la machine." },
+      { t: "Vue par scope", d: "Nouvelle vue « Par scope » d'une fiche machine, avec les scopes N2 masquables." },
+      { t: "Régularisations", d: "« Marquer livré sans PO » (propriétaire de la page) ; fournisseur par défaut d'un scope pour une ligne sans article ; un choix d'option peut être retiré." },
+    ],
+  },
+  {
     id: "2026-11-v395",
     date: "2026-11-18",
     title: "V395 : Photos des machines aux étapes clés (passeport et RAI), rangées dans Firebase Storage",

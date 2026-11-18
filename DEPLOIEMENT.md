@@ -2937,3 +2937,14 @@ Demandé : « il y a bien sûr plein de photos à prendre : intégrer des photos
 - `storage.rules` : comptes @enogia.com vérifiés ; dossier `machines/` ; JPEG < 4 Mo ; `firebase.json` : entrée `storage`.
 - Galerie : photos en mémoire (adresses locales), aucun envoi.
 - Fichiers : src/photos.js, src/photos.test.js, src/components/PhotosView.js, src/components/MachinePassport.js, src/components/RaiView.js, src/rai.js, src/useAppData.js, src/firebase.js, src/demo/demoPages.js, storage.rules, firestore.rules, firebase.json.
+
+## V396 — Retour du kit achats (Achats-kit (7).jsx)
+
+Demandé : « avant de continuer sur cette partie, intègre le nouveau kit achats ».
+
+- `npm run import:achats` (kit parti de la page actuelle : import direct) — `Achats.js` 1 512 → 1 660 lignes.
+- Fiches machine (`projets`) : `machine` = n° de machine choisi dans l'ordo (liste des machines du projet, une fiche par machine) ; plus de repli sur le n° de projet ; machine absente de l'ordo = erreur affichée, fiche conservée ; `familleOrc` des articles ORC (180LT, 180MT…) : seuls les modèles de la famille de la machine sont proposés.
+- Vue « Par scope » (lecture seule, scopes N2 masquables, `enogia_achats_scn2`) ; `enogia_achats_vue` accepte « scopes ».
+- Lignes : `livreSansPo` / `livreSansPoLe` (« Marquer livré sans PO », propriétaire de la page ; verrouille la ligne, affecter un PO l'efface) ; `params.scopeFournisseurs` (fournisseur par défaut d'un scope : LT et rétro-planning avant le choix de l'article) ; « Retirer le choix » d'une option (redevient à définir).
+- Même document `planning/achats` : règles Firestore inchangées. Kit régénéré (`npm run kit:achats`).
+- Fichiers : src/components/Achats.js.

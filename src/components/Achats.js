@@ -17,6 +17,8 @@ import { PageHead, NavIcon } from "./SharedUI";
                 (anciens champs contact, email, tel conservés s'ils existent, plus affichés : doublon avec l'ERP)
    composants   { [id]: { ref, designation, type, famille, fournisseurId, delaiJ, actif, scopes, enfants: [{ ref, qte }], note } }   = articles
                 type = "achat" (défaut) ou "orc" (machine produite : pas de fournisseur, LT ni scope) ; ancien champ orc (true/false) encore lu
+                familleOrc (machine ORC) = famille de la machine (180LT, 180MT…) = début de la gamme de l'ordo ; à la création d'une fiche, seuls
+                les modèles de la famille de la machine sont proposés (aucune famille ne correspond : tous)
                 famille = scope de l'article d'achat (nom d'un scope de params.scopes)
                 scopes (machine ORC) = { [scope]: { actif, decalJ } } : actif = ligne vide créée dans chaque nouvelle fiche si la nomenclature
                 n'a aucun composant dans ce scope ; decalJ = arrivée souhaitée du scope par rapport à l'arrivée machine (− avant, + après)
@@ -27,7 +29,7 @@ import { PageHead, NavIcon } from "./SharedUI";
                 option = nom d'un groupe d'options (vide = composant standard, toujours ajouté). Les composants d'un même groupe sont des
                 alternatives : un seul est retenu à la configuration de la machine. Groupe d'un seul composant = facultatif (inclure ou non).
    projets      { [id]: { projet, machine, modele, marge, dateDebut, note } }       une fiche par machine ; projet = n° de projet de l'ordo (figé) ;
-                machine = « projet-texte libre », unique ; modele = réf d'un article ORC ; note = commentaire libre ;
+                machine = n° de machine choisi dans l'ordo (pj du planning), unique ; absent de l'ordo : erreur affichée, la fiche n'est jamais supprimée ; modele = réf d'un article ORC ; note = commentaire libre ;
                 dateDebut = date d'arrivée retenue, figée sur la fiche (reprise de l'ordo à la création, mise à jour manuelle, modifiable pour simuler).
                 Ancienne fiche sans dateDebut : arrivée de l'ordo (machine, sinon projet) jusqu'à ce qu'elle soit figée.
                 scopesDecal = { [scope]: decalJ } : décalages des scopes copiés du modèle ORC à la création, puis figés
@@ -46,6 +48,8 @@ import { PageHead, NavIcon } from "./SharedUI";
                 lieuLiv : plus affiché ni exigé (sujet à revoir côté nomenclatures pour les N2 expédiés chez les sous-traitants), conservé s'il existe.
                 optKey = clé du groupe d'options dont la ligne est issue (vide = composant standard ou ajout manuel)
                 famille = scope ; decalJ = décalage propre à cette machine, en jours, toujours modifiable (même verrouillée).
+                livreSansPo = true : ligne livrée sans PO (régularisation, propriétaire de la page seulement) ; livreSansPoLe = date AAAA-MM-JJ.
+                Verrouille la ligne comme un PO ; affecter un PO l'efface.
                 (anciens champs encore lus s'ils existent : po, statut, datePrevue, dateRecue)
    po           { [id]: { numero, ligne, ref, designation, qte, dateCommande, dateLivraison, statut, projet, fournisseur, fournisseurOdooId,
                           source, odooId, qteRecue, annule, majOdoo } }
@@ -57,7 +61,9 @@ import { PageHead, NavIcon } from "./SharedUI";
                 scopeNiveaux = { [scope]: "N1" | "N2" } (absent = N1). Scope N1 : suivi par les chefs de projet, créé par défaut dans les fiches,
                 réglé sur les machines ORC. Scope N2 : classement des composants N2, suivi par les achats uniquement ;   marge par défaut des nouvelles fiches (jours) ;
                 odoo = { domaine, base, login, protocole, champProjet, depuis, seulementFiches, auto } : connexion Odoo SANS la clé API ;
-                odooDemande = date ISO écrite par le bouton « Synchroniser maintenant »
+                odooDemande = date ISO écrite par le bouton « Synchroniser maintenant » ;
+                scopeFournisseurs = { [scope]: id de fournisseur } : fournisseur par défaut du scope, pris pour une ligne sans article ni fournisseur
+                (son LT donne le rétro-planning théorique et le Gantt avant le choix de l'article)
    odooSync     { etat, debut, fin, nb, ajoutees, maj, annulees, message, cle }   compte rendu écrit UNIQUEMENT par le serveur (jamais par la page)
    access       [ e-mails ]     qui voit et modifie la page (en plus du propriétaire)
    Date de besoin (si non saisie) : N1 = arrivée machine + décalage du scope (fiche) + décalage de la ligne ;
@@ -155,10 +161,10 @@ export function lineState(line, row, params, todayIso, ext) {
   const lt = ltSrc === "article" ? la : num(x.four && x.four.ltJ), ltT = num(x.four && x.four.ltTransportJ);
   const auPlusTard = cible && lt != null ? addDays(cible, -lt - (ltT || 0)) : "";
   const p = x.poLine || null;
-  const statut = p ? (p.statut || "envoyee") : l.statut === "nc" ? "nc" : (LEGACY_ST[l.statut] || "apasser");
+  const statut = p ? (p.statut || "envoyee") : l.statut === "nc" ? "nc" : l.livreSansPo ? "livre" : (LEGACY_ST[l.statut] || "apasser");
   const prevue = p ? (p.dateLivraison || "") : (l.datePrevue || "");
   const base = { besoin, cible, auPlusTard, lt, ltSrc, ltT, marge, prevue, statut, retardJ: 0 };
-  if (statut === "livre") return { ...base, k: "done", l: "Livré" };
+  if (statut === "livre") return { ...base, k: "done", l: !p && l.livreSansPo ? "Livré sans PO" : "Livré" };
   if (statut === "nc") return { ...base, k: "nc", l: "Non conforme" };
   if (statut === "apasser") {
     if (!besoin) return { ...base, k: "todo", l: "Date de besoin manquante" };
@@ -225,6 +231,7 @@ function ConfigDialog({ titre, sousTitre, plan, initial, brouillon, onDraft, onA
                 <span style={{ color: T.ink700, flex: 1, minWidth: 0 }}>{i.art ? i.art.designation : "absent des articles"}</span>
                 <span style={{ color: T.ink500, fontVariantNumeric: "tabular-nums" }}>× {i.qte}</span>
               </label>); })}
+            {g.multi && g.val && <button type="button" style={{ ...sbtn(), marginTop: 4 }} onClick={() => setC(o => ({ ...o, [g.key]: "" }))}>Retirer le choix (option à définir)</button>}
           </fieldset>); })}
         {!P.groups.length && <div style={{ fontSize: FZF.sm, color: T.ink500 }}>Ce modèle n'a pas d'options.</div>}
       </div>
@@ -240,7 +247,7 @@ function ConfigDialog({ titre, sousTitre, plan, initial, brouillon, onDraft, onA
         <button type="button" style={btn(true)} disabled={busy} onClick={() => run(onApply)}>{P.manquants.length ? (brouillon ? "Créer, options à préciser" : "Appliquer, options à préciser") : brouillon ? "Créer la nomenclature" : "Appliquer les changements"}</button>
       </div>
       {P.manquants.length > 0 && <div role="note" style={{ fontSize: FZF.sm, color: T.amber600, background: T.amber100, borderRadius: 8, padding: "6px 10px", marginTop: 10 }}>Version pas encore connue ? Vous pouvez {brouillon ? "créer la nomenclature" : "appliquer"} sans ces choix : chaque option non choisie devient une ligne vide de son scope, en alerte, et la fiche est marquée « Options à préciser » jusqu'à ce que vous les choisissiez ici.</div>}
-      <div style={{ fontSize: FZF.xs, color: T.ink500, marginTop: 8 }}>{brouillon ? "Le brouillon garde vos choix sans créer la nomenclature." : "Seules les lignes des options modifiées sont remplacées. Impossible pour une option dont la ligne a un PO attribué."}</div>
+      <div style={{ fontSize: FZF.xs, color: T.ink500, marginTop: 8 }}>{brouillon ? "Le brouillon garde vos choix sans créer la nomenclature." : "Seules les lignes des options modifiées sont remplacées. Une option décochée ou un choix retiré redevient à définir. Impossible pour une option dont la ligne a un PO attribué : retirez d'abord le PO."}</div>
     </div>
   </div>);
 }
@@ -354,7 +361,8 @@ function ImportDialog({ title, intro, cols, exemple, fichier, analyze, onClose }
 // fournisseur de la ligne, lignes affectées à 100 % masquées), chacun désactivable ou modifiable ; recherche par n° de PO en plus.
 // fourOfPo(p) → { id, nom, src, relie } : fournisseur de la commande, sinon celui de l'article (anciennes lignes sans fournisseur).
 // Une ligne de PO entièrement affectée est grisée et ne peut plus être choisie ; ses affectations peuvent être retirées ici.
-function PoPicker({ line, po, affects, fours, fourOfPo, onPick, onClear, onUnassign, canEdit, onClose }) {
+// owner : bouton « Marquer livré sans PO » (régularisation), propriétaire de la page seulement.
+function PoPicker({ line, po, affects, fours, fourOfPo, onPick, onClear, onUnassign, canEdit, owner, onRegul, onClose }) {
   const projDef = (line.fiche && line.fiche.projet) || projOf(line.pj), refDef = line.refEff || "", fourDef = line.four ? line.four.id : "";
   const [q, setQ] = useState(""); const inRef = useRef(null);
   const [f, setF] = useState({ proj: !!projDef, projV: projDef, ref: !!refDef, refV: refDef, four: !!fourDef, fourV: fourDef, plein: true });
@@ -383,6 +391,7 @@ function PoPicker({ line, po, affects, fours, fourOfPo, onPick, onClear, onUnass
     <div role="dialog" aria-modal="true" aria-label="Affecter une ligne de PO" style={{ ...CARD(), width: "min(1060px,100%)", maxHeight: "90vh", overflow: "auto", boxShadow: T.shadowLg, padding: "16px 18px" }}>
       <div style={{ fontFamily: T.fontDisplay, fontSize: FZF.lg, fontWeight: 600, color: T.ink900 }}>Affecter une ligne de PO</div>
       <div style={{ fontSize: FZF.sm, color: T.ink500, marginBottom: 10 }}><span style={{ fontFamily: T.fontMono }}>{line.refEff || "—"}</span> {line.desEff}, quantité {line.qte || "—"}{line.fiche ? ", machine " + line.fiche.machine : ""}</div>
+      {line.livreSansPo && <div role="note" style={{ fontSize: FZF.sm, color: T.ink700, background: T.surfaceAlt, borderRadius: 8, padding: "6px 10px", marginBottom: 10 }}>Ligne marquée livrée sans PO{line.livreSansPoLe ? " le " + fd(line.livreSansPoLe) : ""} (régularisation). Affecter une ligne de PO annule ce marquage.</div>}
       <div role="group" aria-label="Filtres des lignes de PO" style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 8 }}>
         {chip("proj", "N° projet", <select value={f.projV} aria-label="N° de projet filtré" onChange={e => setF(o => ({ ...o, projV: e.target.value, proj: true }))} style={{ ...ctlS, fontFamily: T.fontMono }}>{projets.map(x => <option key={x} value={x}>{x}</option>)}{!projets.length && <option value="">—</option>}</select>)}
         {chip("ref", "Code article", <input type="text" value={f.refV} aria-label="Code article filtré" onChange={e => setF(o => ({ ...o, refV: e.target.value, ref: true }))} style={{ ...ctlS, width: 130, fontFamily: T.fontMono }} />)}
@@ -428,6 +437,8 @@ function PoPicker({ line, po, affects, fours, fourOfPo, onPick, onClear, onUnass
       {res.length > shown.length && <div style={{ fontSize: FZF.xs, color: T.ink500, marginTop: 6 }}>{shown.length} premières lignes sur {res.length} : ajoutez un filtre ou précisez le n° de PO.</div>}
       <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
         {line.poId && <button type="button" style={{ ...btn(false), color: T.red600 }} onClick={onClear}>Retirer le PO de cette ligne</button>}
+        {owner && !line.poId && (line.livreSansPo ? <button type="button" style={btn(false)} onClick={() => onRegul(false)}>Annuler « Livré sans PO »</button>
+          : <button type="button" style={btn(false)} title="Régularisation, réservée au propriétaire de la page : la ligne passe au statut Livré sans numéro de PO." onClick={() => onRegul(true)}>Marquer livré sans PO</button>)}
         <span style={{ flex: 1 }} />
         <button type="button" style={btn(false)} onClick={onClose}>Fermer</button>
       </div>
@@ -483,6 +494,7 @@ const COLS_ART = [
   { k: "lt", l: "LT", alias: ["lt", "leadtime", "ltarticle", "ltjours", "delai"] },
   { k: "orc", l: "ORC", alias: ["orc"] },
   { k: "actif", l: "ACTIF", alias: ["actif", "active"] },
+  { k: "familleOrc", l: "FAMILLE ORC", alias: ["familleorc", "famorc", "famillemachine"] },
 ];
 const COLS_NOM = [
   { k: "compose", l: "COMPOSE", req: true, alias: ["compose", "refcompose", "refenogiacompose", "parent"] },
@@ -501,12 +513,14 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
   const tIso = iso(today0());
   const pref = (k, ok, def) => { try { const v = localStorage.getItem(k); return ok.includes(v) ? v : def; } catch (e) { return def; } };
   const [tab, setTab] = useState(() => pref("enogia_achats_tab", TABS.map(t => t[0]), "projets"));
-  const [vue, setVue] = useState(() => pref("enogia_achats_vue", ["tableau", "cartes", "gantt"], "tableau"));
+  const [vue, setVue] = useState(() => pref("enogia_achats_vue", ["tableau", "cartes", "scopes", "gantt"], "tableau"));
   // Vue tableau : sous-lignes N2 affichées par défaut (réglage global) ; chaque N1 peut être replié ou déplié (n2Ouv, non enregistré)
   const [n2Vis, setN2Vis] = useState(() => pref("enogia_achats_n2", ["oui", "non"], "oui") === "oui"), [n2Ouv, setN2Ouv] = useState({});
+  // Vue par scope : scopes N2 affichés (réglage enregistré) ; scope ouvert et références dépliées (non enregistrés)
+  const [scN2, setScN2] = useState(() => pref("enogia_achats_scn2", ["oui", "non"], "oui") === "oui"), [scSel, setScSel] = useState(""), [scRefOuv, setScRefOuv] = useState({});
   // Synthèse Appro : filtre de statut, recherche, scope sélectionné
   const [synF, setSynF] = useState(() => pref("enogia_achats_synth", ["tout", "commander", "livrer"], "tout")), [synQ, setSynQ] = useState(""), [synScope, setSynScope] = useState("");
-  useEffect(() => { try { localStorage.setItem("enogia_achats_tab", tab); localStorage.setItem("enogia_achats_vue", vue); localStorage.setItem("enogia_achats_n2", n2Vis ? "oui" : "non"); localStorage.setItem("enogia_achats_synth", synF); } catch (e) { /* stockage indisponible */ } }, [tab, vue, n2Vis, synF]);
+  useEffect(() => { try { localStorage.setItem("enogia_achats_tab", tab); localStorage.setItem("enogia_achats_vue", vue); localStorage.setItem("enogia_achats_n2", n2Vis ? "oui" : "non"); localStorage.setItem("enogia_achats_synth", synF); localStorage.setItem("enogia_achats_scn2", scN2 ? "oui" : "non"); } catch (e) { /* stockage indisponible */ } }, [tab, vue, n2Vis, synF, scN2]);
   const [cfg, setCfg] = useState(null);
   const [seulDiff, setSeulDiff] = useState(false), [deverr, setDeverr] = useState(false);
   const [ficheSel, setFicheSel] = useState(null), [qFiche, setQFiche] = useState(""), [qFour, setQFour] = useState(""), [qPo, setQPo] = useState(""), [poLimit, setPoLimit] = useState(PAGE);
@@ -527,6 +541,8 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
   const scIdx = f => { const i = scopeList.indexOf(up(f)); return i < 0 ? 99 : i; };
   const niveauOf = s => ((S.params.scopeNiveaux || {})[up(s)] === "N2" ? "N2" : "N1");
   const scopesN1 = scopeList.filter(s => niveauOf(s) === "N1");
+  // Fournisseur par défaut d'un scope (Configuration) : pris pour une ligne sans article ni fournisseur
+  const fourDefOf = fam => S.fournisseurs[(S.params.scopeFournisseurs || {})[up(fam)]] || null;
   // Choix de scope : niv = "N1" ou "N2" pour ne proposer que ce niveau (plus la valeur actuelle) ; sans niv, tous, avec leur niveau
   const scOpts = (cur, niv) => [["", "—"], ...uniq([...scopeList.filter(s => !niv || niveauOf(s) === niv), up(cur)]).map(x => [x, niv ? x : x + " (" + niveauOf(x) + ")"])];
   const isOrc = a => !!a && (a.type ? a.type === "orc" : !!a.orc);
@@ -552,9 +568,10 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
   const orcArts = actifs.filter(isOrc);
 
   /* ---- fiches machine (dates reprises de l'ordo à chaque affichage) ---- */
-  const ordoOf = (machine, projet) => byPj[String(machine || "").trim()] || byPj[String(projet || "").trim()] || null;
-  const fiches = useMemo(() => Object.values(S.projets).map(f => { const r = ordoOf(f.machine, f.projet), m = num(f.marge), ordoDate = r ? isoOf(r.arrivee) : "", fige = isoOf(f.dateDebut);
-    return { ...f, row: r, ordoDate, fige: !!fige, dateDebutEff: fige || ordoDate, ecartOrdo: fige && ordoDate && fige !== ordoDate ? daysBetween(ordoDate, fige) : 0, modeleEff: f.modele || (r && r.gamme) || "", margeEff: m != null ? m : (num(S.params.marge) || 0),
+  // Une fiche n'est reliée à l'ordo que par son n° de machine (DEV #12 : plus de repli sur le n° de projet)
+  const ordoOf = machine => byPj[String(machine || "").trim()] || null;
+  const fiches = useMemo(() => Object.values(S.projets).map(f => { const r = ordoOf(f.machine), m = num(f.marge), ordoDate = r ? isoOf(r.arrivee) : "", fige = isoOf(f.dateDebut);
+    return { ...f, row: r, horsOrdo: !r, ordoDate, fige: !!fige, dateDebutEff: fige || ordoDate, ecartOrdo: fige && ordoDate && fige !== ordoDate ? daysBetween(ordoDate, fige) : 0, modeleEff: f.modele || (r && r.gamme) || "", margeEff: m != null ? m : (num(S.params.marge) || 0),
       decal: f.scopesDecal && typeof f.scopesDecal === "object" ? f.scopesDecal : decalsOf(artByRef[low(f.modele)]) }; })
     // eslint-disable-next-line react-hooks/exhaustive-deps -- ordoOf / decalsOf dépendent de byPj, artByRef, scopeList (déjà listés)
     .sort((a, b) => cmpNat(a.projet, b.projet) || cmpNat(a.machine, b.machine)), [S, byPj, artByRef, scopeList]);
@@ -569,14 +586,15 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
       const pRaw = depth < 2 && l.parentId && l.parentId !== l.id ? S.lignes[l.parentId] : null;
       const parent = pRaw ? one(pRaw, depth + 1) : null;
       const fi = (l.projetId && ficheById[l.projetId]) || (!l.projetId && l.pj && ficheByMachine[l.pj]) || (parent && parent.fiche) || null;
-      const art = artOf(l), four = (art && S.fournisseurs[art.fournisseurId]) || S.fournisseurs[l.fournisseurId] || null;
+      const art = artOf(l), four0 = (art && S.fournisseurs[art.fournisseurId]) || S.fournisseurs[l.fournisseurId] || null;
       const poRaw = (l.poId && S.po[l.poId]) || null, poAnnule = !!(poRaw && poRaw.annule), poLine = poAnnule ? null : poRaw;
       const famEff = l.famille || (art && art.famille) || "", dLigne = num(l.decalJ) || 0, dScope = !parent && fi ? (num(fi.decal[up(famEff)]) || 0) : 0;
+      const four = four0 || fourDefOf(famEff), regul = !poRaw && !!l.livreSansPo;   // sans fournisseur : celui du scope ; regul = livrée sans PO
       const besoin = l.dateBesoin || (parent ? (parent.st.auPlusTard ? addDays(parent.st.auPlusTard, dLigne) : "") : fi && fi.dateDebutEff ? addDays(fi.dateDebutEff, dScope + dLigne) : "");
       const st = lineState(l, fi ? { dateDebut: fi.dateDebutEff, marge: fi.margeEff } : null, S.params, tIso, { four, poLine, besoin, ltArticle: art && art.delaiJ, sansMarge: !!parent });
       const refEff = l.ref || (art && art.ref) || "";
       const manque = [!refEff && "référence", !four && "fournisseur", four && st.lt == null && "LT", !st.besoin && "date de besoin", !(num(l.qte) > 0) && "quantité", poAnnule && "PO annulé dans Odoo"].filter(Boolean);
-      const r = { ...l, fiche: fi, art, four, poLine, poAnnule, poVerrou: !!poRaw && !poAnnule, parent, st, manque, refEff, desEff: (art && art.designation) || l.designation || "",
+      const r = { ...l, fiche: fi, art, four, fourScope: !four0 && !!four, regul, poLine, poAnnule, poVerrou: (!!poRaw && !poAnnule) || regul, parent, st, manque, refEff, desEff: (art && art.designation) || l.designation || "",
         famEff, avJ: avanceOf(st), decScope: dScope, decLigne: dLigne, poNum: poRaw ? poRaw.numero : (l.po || ""), poLig: poRaw ? poRaw.ligne : "" };
       out[l.id] = r; return r;
     };
@@ -646,48 +664,59 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
     const live = (rows || []).filter(r => r && r.pj && r.etat !== "SHIPPED" && r.etat !== "SLOT_LIBRE");
     const projList = uniq([...live.map(r => projOf(r.pj)), ...(isNew ? [] : [raw.projet])]).sort(cmpNat);
     const taken = fiches.filter(x => x.id !== raw.id).map(x => low(x.machine));
-    const machinesOf = pr => live.filter(r => projOf(r.pj) === pr && r.pj !== pr && !taken.includes(low(r.pj))).map(r => r.pj).sort(cmpNat);
-    const modOpts = orcArts.length ? orcArts.map(a => [a.ref, a.ref + (a.designation ? " · " + a.designation : "")])
-      : uniq([...(rows || []).map(r => r && r.gamme), ...fiches.map(x => x.modele)]).sort(cmpNat).map(x => [x, x]);
-    if (raw.modele && !modOpts.some(o => o[0] === raw.modele)) modOpts.push([raw.modele, raw.modele]);
-    const modeleFromOrdo = r => { if (!r || !r.gamme) return ""; if (!orcArts.length) return r.gamme; const a = orcArts.find(a => low(a.ref) === low(r.gamme) || low(a.designation) === low(r.gamme)); return a ? a.ref : ""; };
-    const autoModele = (n, o) => { const mO = modeleFromOrdo(ordoOf(o.machine, o.projet)), mN = modeleFromOrdo(ordoOf(n.machine, n.projet)); return mN && (!o.modele || o.modele === mO) ? mN : n.modele; };
+    // N° machine : uniquement une machine de l'ordo (planning) du projet, pas déjà prise par une autre fiche
+    const machinesOf = pr => live.filter(r => projOf(r.pj) === pr && !taken.includes(low(r.pj))).map(r => r.pj).sort(cmpNat);
+    const machOpts = v => { const L = machinesOf(v.projet), m = String(v.machine || "").trim(), o = [["", L.length ? "— choisir" : "— aucune machine libre dans l'ordo"], ...L.map(x => [x, x])];
+      if (m && !L.includes(m)) o.push([m, m + (byPj[m] ? "" : " (absente de l'ordo)")]); return o; };
+    // Famille ORC de la machine : la plus longue famille par laquelle commence la gamme de l'ordo (180LT pour 180LTV3) ; null sans gamme
+    const famDe = v => { const r = ordoOf(v.machine), g = normH(r && r.gamme); if (!g || !orcArts.length) return null;
+      const m = orcArts.filter(a => normH(a.familleOrc) && g.startsWith(normH(a.familleOrc))); if (!m.length) return { gamme: r.gamme, fam: "", list: [] };
+      const n = Math.max(...m.map(a => normH(a.familleOrc).length)), list = m.filter(a => normH(a.familleOrc).length === n); return { gamme: r.gamme, fam: up(list[0].familleOrc), list }; };
+    const modOptsOf = v => { const F = famDe(v), base = !orcArts.length ? uniq([...(rows || []).map(r => r && r.gamme), ...fiches.map(x => x.modele)]).sort(cmpNat).map(x => [x, x])
+      : (F && F.list.length ? F.list : orcArts).map(a => [a.ref, a.ref + (a.designation ? " · " + a.designation : "")]);
+      const o = [["", "—"], ...base]; if (v.modele && !o.some(x => x[0] === v.modele)) o.push([v.modele, v.modele + (F && F.fam ? " (hors famille " + F.fam + ")" : "")]); return o; };
+    const modeleFromOrdo = r => { if (!r || !r.gamme) return ""; if (!orcArts.length) return r.gamme; const a = orcArts.find(a => low(a.ref) === low(r.gamme) || low(a.designation) === low(r.gamme));
+      if (a) return a.ref; const F = famDe({ machine: r.pj }); return F && F.list.length === 1 ? F.list[0].ref : ""; };
+    const autoModele = (n, o) => { const mO = modeleFromOrdo(ordoOf(o.machine)), mN = modeleFromOrdo(ordoOf(n.machine)); return mN && (!o.modele || o.modele === mO) ? mN : n.modele; };
     const machineErr = v => { const m = String(v.machine || "").trim(), pr = String(v.projet || "").trim();
-      if (!pr || !m || low(m) === low(pr + "-")) return "";
-      if (!low(m).startsWith(low(pr) + "-")) return "Le n° de machine doit commencer par « " + pr + "- ».";
+      if (!m) return "";
+      if (!byPj[m]) return "N° machine absent de l'ordo : choisissez une machine présente dans le planning. La fiche et ses lignes sont conservées.";
+      if (pr && projOf(m) !== pr) return "Cette machine n'appartient pas au projet " + pr + ".";
       return taken.includes(low(m)) ? "« " + m + " » est déjà utilisé par une autre fiche." : ""; };
-    const ordoD = v => { const r = ordoOf(v.machine, v.projet); return r ? isoOf(r.arrivee) : ""; };
+    const ordoD = v => { const r = ordoOf(v.machine); return r ? isoOf(r.arrivee) : ""; };
     const withDate = (n, o) => (!o.dateDebut || o.dateDebut === ordoD(o) ? { ...n, dateDebut: ordoD(n) || n.dateDebut } : n);
     const lines = linesByFiche[raw.id] || [];
     setForm({ title: isNew ? "Nouvelle fiche machine" : "Fiche " + raw.machine, vals: raw,
       derive: (n0, o, k) => {
         const n = k === "projet" || k === "machine" ? withDate(n0, o) : n0;
-        if (k === "projet") { const suf = o.projet && low(o.machine).startsWith(low(o.projet) + "-") ? o.machine.slice(o.projet.length + 1) : "";
-          const m = !n.projet ? "" : suf ? n.projet + "-" + suf : (machinesOf(n.projet)[0] || n.projet + "-"); const x = withDate({ ...n, machine: m }, o); return { ...x, modele: autoModele(x, o) }; }
+        if (k === "projet") { const x = withDate({ ...n, machine: machinesOf(n.projet)[0] || "" }, o); return { ...x, modele: autoModele(x, o) }; }
         if (k === "machine") return { ...n, modele: autoModele(n, o) };
         return n; },
       fields: [
         { k: "projet", l: "N° projet", type: "select", req: true, ro: !isNew, opts: [["", "— choisir"], ...projList.map(x => [x, x])], hint: isNew ? "Projets présents dans l'ordo. Figé après création." : "Figé." },
-        { k: "machine", l: "N° machine", req: true, mono: true, suggest: v => machinesOf(v.projet), warn: machineErr, hint: v => "Forme " + (v.projet || "PJXXX") + "-texte libre, unique." },
-        { k: "modele", l: "Modèle machine", type: "select", opts: [["", "—"], ...modOpts],
-          hint: v => { if (!isNew) return "Changer le modèle ne modifie pas la nomenclature déjà créée."; const k = kidsOf(artByRef[low(v.modele)]).length;
+        { k: "machine", l: "N° machine", type: "select", req: true, opts: machOpts, warn: machineErr,
+          hint: v => { const r = ordoOf(v.machine); return r ? "Ordo : " + [r.nomProjet, r.gamme, "arrivée " + fd(isoOf(r.arrivee))].filter(Boolean).join(", ") + "." : "Machines du projet présentes dans l'ordo (hors expédiées), une seule fiche par machine."; } },
+        { k: "modele", l: "Modèle machine", type: "select", opts: modOptsOf,
+          hint: v => { const F = famDe(v), fam = !F ? "" : F.fam ? "Famille ORC " + F.fam + " (gamme " + F.gamme + " dans l'ordo) : seuls ses modèles sont proposés. "
+              : "Gamme " + F.gamme + " : aucune famille ORC ne correspond, tous les modèles sont proposés (famille ORC à renseigner dans Articles). ";
+            if (!isNew) return fam + "Changer le modèle ne modifie pas la nomenclature déjà créée."; const k = kidsOf(artByRef[low(v.modele)]).length;
             const sc = scopeList.filter(s => cfgOf(artByRef[low(v.modele)])[s].actif).length;
             const mo = artByRef[low(v.modele)], op = isOrc(mo) && hasOptions(mo);
-            return (orcArts.length ? "Machines ORC actives. " : "Aucune machine ORC : liste tirée de l'ordo. ") + (op ? "Ce modèle a des options : la configuration machine s'ouvrira après l'enregistrement pour les choisir. " : k ? "Sa nomenclature (" + k + " article(s)) sera copiée" : "Pas de nomenclature") + (op ? "" : ", plus les scopes actifs sans composant (" + sc + " scope(s) actif(s)).") + " Décalages d'arrivée par scope copiés et figés."; } },
+            return fam + (orcArts.length ? "Machines ORC actives. " : "Aucune machine ORC : liste tirée de l'ordo. ") + (op ? "Ce modèle a des options : la configuration machine s'ouvrira après l'enregistrement pour les choisir. " : k ? "Sa nomenclature (" + k + " article(s)) sera copiée" : "Pas de nomenclature") + (op ? "" : ", plus les scopes actifs sans composant (" + sc + " scope(s) actif(s)).") + " Décalages d'arrivée par scope copiés et figés."; } },
         { k: "marge", l: "Marge (jours)", type: "number", hint: "Lignes N1 : livraison cible = date de besoin moins la marge." },
         { k: "dateDebut", l: "Date d'arrivée (fiche)", type: "date", req: true,
-          hint: v => { const r = ordoOf(v.machine, v.projet); if (!r) return "Absente de l'ordo : saisissez la date.";
+          hint: v => { const r = ordoOf(v.machine); if (!r) return "Absente de l'ordo : saisissez la date.";
             const od = isoOf(r.arrivee); return "Ordo (" + r.pj + ") : " + fd(od) + (v.dateDebut && v.dateDebut !== od ? ", écart de " + daysBetween(od, v.dateDebut) + " j." : ".") + " Figée sur la fiche, mise à jour manuelle."; } },
         { k: "note", l: "Commentaire", type: "textarea" },
       ],
-      note: isNew ? null : raw.verrou ? "Configuration verrouillée : suppression de la fiche impossible." : lines.some(l => l.poVerrou) ? "Des PO sont attribués : retirez-les avant de pouvoir supprimer la fiche." : null,
+      note: isNew ? null : raw.verrou ? "Configuration verrouillée : suppression de la fiche impossible." : lines.some(l => l.poVerrou) ? "Des PO sont attribués (ou des lignes livrées sans PO) : retirez-les avant de pouvoir supprimer la fiche." : null,
       deleteLabel: lines.length ? "Supprimer la fiche et ses " + lines.length + " ligne(s)" : "Supprimer la fiche",
       onDelete: isNew || raw.verrou || lines.some(l => l.poVerrou) ? null : async () => { for (const l of lines) await api.del("lignes", l.id); if (await del("projets", raw.id)) { setFicheSel(null); setForm(null); } },
       onSave: async v => {
-        const pr = String(v.projet || "").trim(), m0 = String(v.machine || "").trim();
-        const e = machineErr(v); if (e) return e;
-        if (m0.length <= pr.length + 1) return "Complétez le n° de machine après « " + pr + "- ».";
-        const machine = pr + m0.slice(pr.length);
+        const pr = String(v.projet || "").trim(), machine = String(v.machine || "").trim();
+        if (!machine) return "Choisissez le n° de machine dans la liste de l'ordo.";
+        // fiche existante dont la machine a disparu de l'ordo : erreur affichée, mais ses autres champs restent modifiables
+        const e = machineErr(v), garde = !isNew && machine === raw.machine && !byPj[machine]; if (e && !garde) return e;
         const d = { projet: pr, machine, modele: v.modele || "", marge: num(v.marge) == null ? "" : num(v.marge), dateDebut: v.dateDebut, note: v.note || "" };
         if (!isNew) { if (await put("projets", v.id, d)) setForm(null); return; }
         d.scopesDecal = decalsOf(artByRef[low(d.modele)]);
@@ -713,15 +742,17 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
       for (const g of P.manquants.filter(g => !g.parent)) { const v = videOf(fi, g, 1); if (await write("lignes", newId(), v)) n++; if (v.famille) fams.add(v.famille); }
       n += await addStd(fi, fiche.modele, fams);
     } else {
-      const lock = l => l.poVerrou || L.some(k => k.parentId === l.id && k.poVerrou), changes = [];
+      const lock = l => l.poVerrou || L.some(k => k.parentId === l.id && k.poVerrou), changes = [], avant = (raw.config && raw.config.choix) || {};
       for (const g of P.groups) {
         const par = g.parent ? L.find(l => !l.parentId && low(l.refEff) === low(g.parent.ref)) : null;
         if (g.parent && !par) continue;
         const cur = L.filter(l => l.optKey === g.key && (g.parent ? l.parentId === par.id : !l.parentId)), cible = g.items.find(i => i.art && low(i.ref) === low(g.val)) || null;
+        // DEV #12 : choix retiré (« Retirer le choix ») ou option facultative décochée : la ligne retenue est enlevée, l'option redevient à définir
+        const retire = !cible && !!avant[g.key] && cur.some(l => l.refEff);
         // sans choix : une ligne déjà là (vide ou complétée à la main) est gardée ; groupe « choisir 1 » sans ligne : ligne vide à préciser
-        if (!cible && (cur.length || !g.multi)) continue;
+        if (!cible && !retire && (cur.length || !g.multi)) continue;
         if (cible && cur.length === 1 && low(cur[0].refEff) === low(cible.ref)) continue;
-        if (cur.some(lock)) return "Option « " + g.nom + " » : un PO est attribué à la ligne actuelle. Retirez-le avant de changer cette option.";
+        if (cur.some(lock)) return "Option « " + g.nom + " » : un PO est attribué à sa ligne (ou elle est livrée sans PO). Retirez-le d'abord pour changer ou retirer cette option.";
         changes.push({ g, par, cur, cible });
       }
       const supprimes = new Set();
@@ -730,10 +761,11 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
         for (const l of cur) { for (const k of L.filter(k => k.parentId === l.id)) { await api.del("lignes", k.id); supprimes.add(k.id); } await api.del("lignes", l.id); supprimes.add(l.id); s++; }
         if (cible && !g.parent) n += await addN1(fi, cible.art, cible.qte, g.key, choix);
         if (cible && g.parent && await write("lignes", newId(), lineFrom(fi, cible.art, cible.qte * (num(par.qte) || 1), { parentId: par.id, optKey: g.key }))) n++;
-        if (!cible && await write("lignes", newId(), videOf(fi, g, g.parent ? (num(par.qte) || 1) : 1, g.parent ? { parentId: par.id } : {}))) n++;
+        if (!cible && g.multi && await write("lignes", newId(), videOf(fi, g, g.parent ? (num(par.qte) || 1) : 1, g.parent ? { parentId: par.id } : {}))) n++;
       }
     }
-    const ok = await write("projets", fiche.id, { ...raw, config: { statut: "finalisee", choix } }), reste = P.manquants.length ? " " + P.manquants.length + " option(s) à préciser." : "";
+    const choixOk = Object.fromEntries(P.groups.filter(g => g.val).map(g => [g.key, g.val]));   // les choix d'options qui ne s'appliquent plus (N1 retiré) sont effacés
+    const ok = await write("projets", fiche.id, { ...raw, config: { statut: "finalisee", choix: choixOk } }), reste = P.manquants.length ? " " + P.manquants.length + " option(s) à préciser." : "";
     notify(!ok ? "Enregistrement impossible, réessayez dans un instant." : (brouillon ? "Nomenclature créée : " + n + " ligne(s)." : n || s ? "Options appliquées : " + s + " ligne(s) retirée(s), " + n + " ajoutée(s)." : "Aucun changement.") + reste, !ok);
     return ok;
   };
@@ -756,7 +788,8 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
     const kidsPo = kids.filter(k => k.poId && S.po[k.poId] && !S.po[k.poId].annule).length;
     setForm({ lecture,
       note: lockFiche ? "Configuration de la machine verrouillée le " + fdt(fiche.verrouLe) + ". Seule l'attribution du PO reste possible."
-        : lockPo ? "PO " + l.poNum + (l.poLig ? " ligne " + l.poLig : "") + " attribué : ligne verrouillée. Retirez le PO pour la modifier."
+        : lockPo ? (l.regul ? "Ligne livrée sans PO (régularisation) : verrouillée. Le propriétaire de la page peut annuler ce marquage depuis « Attribuer PO »."
+          : "PO " + l.poNum + (l.poLig ? " ligne " + l.poLig : "") + " attribué : ligne verrouillée. Retirez le PO pour la modifier.")
           : kidsPo ? kidsPo + " sous-ligne(s) ont un PO attribué : suppression impossible tant qu'ils ne sont pas retirés." : null,
       extra: isNew ? null : [[l.poId ? "Changer ou retirer le PO" : "Attribuer PO", () => { setForm(null); setPick(l.id); }],
         ...(!lecture && !kidsPo && l.refEff ? [["Retirer l'article, garder le scope", () => retirerArticle(l, fiche, kids), kids.length ? "Confirmer : retirer l'article et ses " + kids.length + " sous-ligne(s)" : null]] : [])],
@@ -770,11 +803,11 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
             const k = kidsOf(a).length; return (isActif(a) ? "Article du catalogue." : "Article inactif.") + (!parent && k ? " Sa nomenclature (" + k + ") sera ajoutée en niveau 2." : ""); } },
         { k: "designation", l: "Désignation", ro: v => !!A(v), hint: v => (A(v) ? "Suit l'article." : "") },
         { k: "famille", l: "Scope", type: "select", opts: v => scOpts(v.famille, parent ? "N2" : "N1") },
-        { k: "fournisseurId", l: "Fournisseur", type: "select", opts: fourOpts, ro: v => { const a = A(v); return !!(a && a.fournisseurId); }, hint: v => { const a = A(v); return a && a.fournisseurId ? "Fournisseur de l'article." : ""; } },
+        { k: "fournisseurId", l: "Fournisseur", type: "select", opts: fourOpts, ro: v => { const a = A(v); return !!(a && a.fournisseurId); }, hint: v => { const a = A(v); if (a && a.fournisseurId) return "Fournisseur de l'article."; const d = fourDefOf(v.famille || (a && a.famille)); return d && !v.fournisseurId ? "Vide : fournisseur par défaut du scope (" + d.nom + ")." : ""; } },
         { k: "qte", l: "Quantité", type: "number", req: true },
         { k: "decalJ", l: "Décalage propre à cette machine (j)", type: "number", hint: v => (parent ? "S'ajoute à la date de commande au plus tard du N1." : "S'ajoute au décalage du scope (" + fmtJ(dScopeOf(v)) + ").") + " Négatif = plus tôt, positif = plus tard." },
         { k: "dateBesoin", l: "Date de besoin", type: "date", hint: v => "Vide : " + (parent ? "commande au plus tard du N1" : "arrivée machine") + " + décalages = " + fd(autoB(v)) + ", suivie automatiquement. Une date saisie est fixe et ignore les décalages." + (parent ? " Composant à envoyer chez le fournisseur du N1 au passage de sa commande : pas de marge en plus." : "") },
-        { k: "_calc", l: "Rétro-planning", type: "static", val: v => { const a = A(v), four = (a && S.fournisseurs[a.fournisseurId]) || S.fournisseurs[v.fournisseurId] || null;
+        { k: "_calc", l: "Rétro-planning", type: "static", val: v => { const a = A(v), four = (a && S.fournisseurs[a.fournisseurId]) || S.fournisseurs[v.fournisseurId] || fourDefOf(v.famille || (a && a.famille)) || null;
           const s = lineState(v, { dateDebut: fiche.dateDebutEff, marge: fiche.margeEff }, S.params, tIso, { four, poLine: (v.poId && S.po[v.poId]) || null, besoin: v.dateBesoin || autoB(v), ltArticle: a && a.delaiJ, sansMarge: !!parent });
           return "Besoin " + fd(s.besoin) + ", livraison cible " + fd(s.cible) + ", commande au plus tard " + fd(s.auPlusTard) + (s.lt == null ? " (LT inconnu)" : " (LT " + s.ltSrc + " " + s.lt + " j + transport " + (s.ltT || 0) + " j)"); } },
         { k: "note", l: "Note", type: "textarea" },
@@ -783,7 +816,7 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
       onDelete: isNew || lecture || kidsPo ? null : async () => { for (const k of kids) await api.del("lignes", k.id); if (await del("lignes", raw.id)) setForm(null); },
       onSave: async v => {
         const a = A(v);
-        if (!(a && a.fournisseurId) && !v.fournisseurId) return a ? "L'article n'a pas de fournisseur : choisissez-en un." : "Choisissez un fournisseur.";
+        if (!(a && a.fournisseurId) && !v.fournisseurId && !fourDefOf(v.famille || (a && a.famille))) return a ? "L'article n'a pas de fournisseur : choisissez-en un." : "Choisissez un fournisseur.";
         const d = { ...v, decalJ: num(v.decalJ) == null ? "" : Math.round(num(v.decalJ)), projetId: fiche.id, pj: fiche.machine, ref: a ? a.ref : String(v.ref).trim(), composantId: a ? a.id : "", famille: v.famille || (a ? String(a.famille || "").toUpperCase() : "") };
         delete d._calc;
         if (!(await write("lignes", d.id, d))) { notify("Enregistrement impossible, réessayez dans un instant.", true); return; }
@@ -809,20 +842,27 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
   // Décalage propre à une ligne : modifiable même si la ligne ou la fiche est verrouillée (planification, pas configuration)
   const saveDecal = async (l, val) => { const v = String(val).trim() === "" ? "" : Math.round(Number(val)); if (v !== "" && isNaN(v)) return;
     const raw = S.lignes[l.id]; if (!raw || String(v) === String(raw.decalJ == null ? "" : raw.decalJ)) return; await put("lignes", l.id, { ...raw, decalJ: v }); };
-  const assignPo = async (lineId, poId) => { const raw = S.lignes[lineId]; if (!raw) return; if (await put("lignes", lineId, { ...raw, poId })) setPick(null); };
+  const assignPo = async (lineId, poId) => { const raw = S.lignes[lineId]; if (!raw) return;
+    if (await put("lignes", lineId, { ...raw, poId, ...(poId && raw.livreSansPo ? { livreSansPo: false, livreSansPoLe: "" } : {}) })) setPick(null); };
+  // Régularisation (propriétaire seulement) : ligne livrée sans n° de PO, ou retour à l'état précédent
+  const setRegul = async (lineId, on) => { const raw = S.lignes[lineId]; if (!owner || !raw || (on && raw.poId)) return;
+    const ok = await write("lignes", lineId, { ...raw, livreSansPo: on, livreSansPoLe: on ? tIso : "" });
+    notify(ok ? (on ? "Ligne marquée livrée sans PO." : "Marquage « Livré sans PO » annulé.") : "Enregistrement impossible, réessayez dans un instant.", !ok); if (ok) setPick(null); };
   const unassign = async lineId => { const raw = S.lignes[lineId]; if (!raw) return; const ok = await write("lignes", lineId, { ...raw, poId: "" }); notify(ok ? "Affectation retirée." : "Enregistrement impossible, réessayez dans un instant.", !ok); };
 
   /* ---- article ---- */
   const openComp = (c, copy) => {
     const isNew = !c, src = c ? S.composants[c.id] : copy;
     const raw = c ? { ...src } : { id: newId(), ref: "", designation: copy ? copy.designation || "" : "", type: copy && isOrc(copy) ? "orc" : "achat", famille: copy ? up(copy.famille) : "", fournisseurId: copy ? copy.fournisseurId || "" : "",
-      delaiJ: copy ? copy.delaiJ : "", actif: true, scopes: copy && copy.scopes ? copy.scopes : null, enfants: copy ? kidsOf(copy).map(e => ({ ref: e.ref, qte: e.qte })) : [], note: "" };
+      delaiJ: copy ? copy.delaiJ : "", familleOrc: copy ? copy.familleOrc || "" : "", actif: true, scopes: copy && copy.scopes ? copy.scopes : null, enfants: copy ? kidsOf(copy).map(e => ({ ref: e.ref, qte: e.qte })) : [], note: "" };
     const used = isNew ? 0 : Object.values(S.lignes).filter(l => (l.ref && low(l.ref) === low(raw.ref)) || l.composantId === raw.id).length;
     const nk = kidsOf(raw).length, ORC = v => v.type === "orc", ACH = v => v.type !== "orc";
     setForm({ title: copy ? "Copie de " + copy.ref : isNew ? "Nouvel article" : "Article " + (raw.ref || raw.designation),
       vals: { ...raw, type: isOrc(raw) ? "orc" : "achat", actif: raw.actif === false ? "non" : "oui", scopes: cfgOf({ ...raw, type: "orc" }) },
       fields: [{ k: "ref", l: "Réf Enogia", req: true, mono: true, ro: !isNew, hint: isNew ? "Code article : unique, non modifiable ensuite." : "Code article, non modifiable." },
         { k: "type", l: "Type d'article", type: "select", opts: [["achat", "Achat"], ["orc", "Machine ORC"]], hint: v => (ORC(v) ? "Machine produite par Enogia : modèle des fiches machine." : "Composant acheté, placé dans un scope.") },
+        { k: "familleOrc", l: "Famille ORC", mono: true, show: ORC, suggest: uniq(arts.filter(isOrc).map(a => up(a.familleOrc))).sort(cmpNat),
+          hint: "Début de la gamme de l'ordo (180LT pour 180LTV3, 180MT…). À la création d'une fiche, seuls les modèles de la famille de la machine sont proposés." },
         { k: "designation", l: "Désignation", req: true, wide: true },
         { k: "famille", l: "Scope", type: "select", opts: v => scOpts(v.famille), show: ACH, hint: "N1 : suivi projet ; N2 : classement achats des sous-composants." },
         { k: "fournisseurId", l: "Fournisseur", type: "select", opts: fourOpts, show: ACH },
@@ -832,21 +872,24 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
           hint: "Créé par défaut : une ligne vide est créée dans chaque nouvelle fiche si la nomenclature n'a aucun composant dans ce scope. Arrivée : jours par rapport à l'arrivée machine (−5 = 5 jours avant)." },
         { k: "_nom", l: "Nomenclature", type: "static", val: () => (nk ? nk + " composant(s)" + (groupsOf(raw).length ? ", dont " + groupsOf(raw).length + " groupe(s) d'options" : "") + (copy ? ", copiée avec l'article" : "") + ". Modifiable dans l'onglet Nomenclatures." : "Aucune. À définir dans l'onglet Nomenclatures.") },
         { k: "note", l: "Note", type: "textarea" }],
-      extra: isNew ? null : [["Dupliquer", v => openComp(null, { ...src, designation: v.designation, type: v.type, famille: v.famille, fournisseurId: v.fournisseurId, delaiJ: v.delaiJ, scopes: v.scopes })]],
+      extra: isNew ? null : [["Dupliquer", v => openComp(null, { ...src, designation: v.designation, type: v.type, familleOrc: v.familleOrc, famille: v.famille, fournisseurId: v.fournisseurId, delaiJ: v.delaiJ, scopes: v.scopes })]],
       deleteLabel: used ? "Supprimer (utilisé sur " + used + " ligne(s), préférez Inactif)" : "Supprimer",
       onDelete: isNew ? null : async () => { if (await del("composants", raw.id)) setForm(null); },
       onSave: async v => { const ref = String(v.ref).trim();
         if (arts.some(x => x.id !== v.id && low(x.ref) === low(ref))) return "La référence " + ref + " existe déjà.";
         const orc = v.type === "orc";
         const sc = orc ? Object.fromEntries(scopesN1.map(s => { const x = (v.scopes || {})[s] || {}; return [s, { actif: !!x.actif, decalJ: Math.round(num(x.decalJ) || 0) }]; })) : null;
-        const d = { ...v, ref, type: orc ? "orc" : "achat", famille: orc ? "" : up(v.famille), fournisseurId: orc ? "" : v.fournisseurId || "", delaiJ: orc || num(v.delaiJ) == null ? "" : Math.max(0, num(v.delaiJ)), actif: v.actif !== "non", scopes: sc };
+        const d = { ...v, ref, type: orc ? "orc" : "achat", familleOrc: orc ? up(v.familleOrc).replace(/\s+/g, "") : "", famille: orc ? "" : up(v.famille), fournisseurId: orc ? "" : v.fournisseurId || "", delaiJ: orc || num(v.delaiJ) == null ? "" : Math.max(0, num(v.delaiJ)), actif: v.actif !== "non", scopes: sc };
         delete d._nom; delete d.orc;
         if (await put("composants", v.id, d)) setForm(null); } });
   };
 
   /* ---- scopes (Configuration) ---- */
   const setScopes = async (list, niveaux) => { const nv = { ...(S.params.scopeNiveaux || {}), ...(niveaux || {}) }; Object.keys(nv).forEach(k => { if (!list.includes(k) || nv[k] !== "N2") delete nv[k]; });
-    const ok = await api.setParams({ ...S.params, scopes: list, scopeNiveaux: nv }); notify(ok ? "Scopes enregistrés." : "Enregistrement impossible, réessayez dans un instant.", !ok); return ok; };
+    const sf = { ...(S.params.scopeFournisseurs || {}) }; Object.keys(sf).forEach(k => { if (!list.includes(k)) delete sf[k]; });
+    const ok = await api.setParams({ ...S.params, scopes: list, scopeNiveaux: nv, scopeFournisseurs: sf }); notify(ok ? "Scopes enregistrés." : "Enregistrement impossible, réessayez dans un instant.", !ok); return ok; };
+  const setScopeFour = async (scope, fid) => { const sf = { ...(S.params.scopeFournisseurs || {}) }; if (fid) sf[scope] = fid; else delete sf[scope];
+    const ok = await api.setParams({ ...S.params, scopeFournisseurs: sf }); notify(ok ? "Fournisseur par défaut enregistré." : "Enregistrement impossible, réessayez dans un instant.", !ok); };
   // Renommer un scope met à jour articles, lignes de fiches, paramètres des machines ORC et décalages figés des fiches
   const openScope = old => setForm({ title: "Renommer le scope " + old, vals: { id: "scope-" + old, nom: old },
     fields: [{ k: "nom", l: "Nouveau nom", req: true, hint: "Mis à jour partout : articles, fiches machine (même verrouillées) et paramètres des machines ORC." }],
@@ -860,7 +903,8 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
       for (const f of Object.values(S.projets)) if (f.scopesDecal && Object.prototype.hasOwnProperty.call(f.scopesDecal, old)) {
         const sc = { ...f.scopesDecal }; sc[nouv] = sc[old]; delete sc[old]; n++; if (!(await write("projets", f.id, { ...f, scopesDecal: sc }))) ko++; }
       const nv = { ...(S.params.scopeNiveaux || {}) }; if (nv[old]) { nv[nouv] = nv[old]; delete nv[old]; }
-      const ok = await api.setParams({ ...S.params, scopes: scopeList.map(s => (s === old ? nouv : s)), scopeNiveaux: nv });
+      const sf = { ...(S.params.scopeFournisseurs || {}) }; if (sf[old]) { sf[nouv] = sf[old]; delete sf[old]; }
+      const ok = await api.setParams({ ...S.params, scopes: scopeList.map(s => (s === old ? nouv : s)), scopeNiveaux: nv, scopeFournisseurs: sf });
       notify(ko || !ok ? "Renommage incomplet : relancez-le." : "Scope renommé (" + n + " élément(s) mis à jour).", !!(ko || !ok)); setForm(null); } });
 
   /* ---- fournisseur ---- */
@@ -937,12 +981,13 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
       if (fid) d.fournisseurId = fid;
       if (lt != null && lt !== undefined) d.delaiJ = Math.max(0, Math.round(lt));
       if (typ) d.type = typ; else if (orc === true || orc === false) d.type = orc ? "orc" : "achat";
-      if (d.type === "orc") { d.famille = ""; d.fournisseurId = ""; d.delaiJ = ""; }
+      if (r.familleOrc) d.familleOrc = up(r.familleOrc).replace(/\s+/g, "");
+      if (d.type === "orc") { d.famille = ""; d.fournisseurId = ""; d.delaiJ = ""; } else if (d.familleOrc) d.familleOrc = "";
       delete d.orc;
       if (act === true || act === false) d.actif = act;
       seen[key] = d;
     });
-    const F = ["designation", "type", "famille", "fournisseurId", "delaiJ", "actif"];
+    const F = ["designation", "type", "famille", "fournisseurId", "delaiJ", "actif", "familleOrc"];
     const all = Object.entries(seen), nouveaux = all.filter(([k]) => !artByRef[k]).map(e => e[1]);
     const modifs = all.filter(([k, d]) => artByRef[k] && F.some(f => String(artByRef[k][f] == null ? "" : artByRef[k][f]) !== String(d[f] == null ? "" : d[f]))).map(e => e[1]);
     const nf = Object.values(newFours), ops = [...nouveaux, ...modifs];
@@ -981,8 +1026,8 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
   };
   const IMPORTS = {
     articles: { title: "Importer des articles", cols: COLS_ART, fichier: "trame-articles.csv", analyze: analyzeArticles,
-      exemple: [["ART-001", "Exemple de désignation", "Achat", "SKID", "Fournisseur exemple", "60", "", "T"]],
-      intro: "Crée les références nouvelles et met à jour les existantes (même REF). TYPE : Achat ou ORC. Fournisseur reconnu par son nom, créé s'il n'existe pas. ACTIF : T/F ou oui/non (ancienne colonne ORC encore acceptée)." },
+      exemple: [["ART-001", "Exemple de désignation", "Achat", "SKID", "Fournisseur exemple", "60", "", "T", ""], ["ORC-EXEMPLE", "Machine ORC exemple", "ORC", "", "", "", "", "T", "180LT"]],
+      intro: "Crée les références nouvelles et met à jour les existantes (même REF). TYPE : Achat ou ORC. Fournisseur reconnu par son nom, créé s'il n'existe pas. ACTIF : T/F ou oui/non (ancienne colonne ORC encore acceptée). FAMILLE ORC : pour les machines ORC (180LT, 180MT…), début de la gamme de l'ordo." },
     nomenclatures: { title: "Importer des nomenclatures", cols: COLS_NOM, fichier: "trame-nomenclatures.csv", analyze: analyzeNomenclatures,
       exemple: [["ORC-EXEMPLE", "SKID-EXEMPLE", "1", ""], ["ORC-EXEMPLE", "POMPE-A", "1", "POMPE CYCLE"], ["ORC-EXEMPLE", "POMPE-B", "1", "POMPE CYCLE"]],
       intro: "Une ligne par composant. OPTION (facultative) : même nom de groupe = alternatives, un seul composant retenu à la configuration de la machine ; vide = composant standard. Chaque composé présent dans le fichier voit sa nomenclature remplacée en entier. Composés et composants doivent exister dans les articles." },
@@ -998,15 +1043,23 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
   const dateCell = (s, color) => <td style={{ ...td(), whiteSpace: "nowrap", color: color || T.ink900 }}>{fd(s)}</td>;
   const toolbar = { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 8 };
 
-  const renderTableau = (fiche, all) => { const kids = {}; all.forEach(l => { if (l.niv === 2) (kids[l.parentId] = kids[l.parentId] || []).push(l); });
+  // Sous-lignes N2 repliables, vues Tableau et Gantt : réglage global (n2Vis, enregistré), puis chaque N1 (n2Ouv, non enregistré)
+  const n2Of = all => { const kids = {}; all.forEach(l => { if (l.niv === 2) (kids[l.parentId] = kids[l.parentId] || []).push(l); });
     const ouvert = id => (n2Ouv[id] == null ? n2Vis : n2Ouv[id]), list = all.filter(l => l.niv !== 2 || ouvert(l.parentId)), nN2 = all.length - all.filter(l => l.niv === 1).length;
     const tout = v => { setN2Vis(v); setN2Ouv({}); };
-    return (<div>
-    {nN2 > 0 && <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", fontSize: FZF.sm, color: T.ink700, marginBottom: 6 }}>
+    const barre = nN2 > 0 ? <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", fontSize: FZF.sm, color: T.ink700, marginBottom: 6 }}>
       <span>Sous-lignes N2 ({nN2}) :</span>
       <button type="button" aria-pressed={n2Vis && !Object.values(n2Ouv).includes(false)} style={sbtn()} onClick={() => tout(true)}>Tout déplier</button>
       <button type="button" aria-pressed={!n2Vis && !Object.values(n2Ouv).includes(true)} style={sbtn()} onClick={() => tout(false)}>Tout replier</button>
-      <span style={{ fontSize: FZF.xs, color: T.ink500 }}>Ou la flèche devant chaque article N1.</span></div>}
+      <span style={{ fontSize: FZF.xs, color: T.ink500 }}>Ou la flèche devant chaque article N1.</span></div> : null;
+    const fleche = (l, k, ouv) => (k.length ? <button type="button" aria-expanded={ouv} aria-label={(ouv ? "Masquer" : "Afficher") + " les " + k.length + " sous-ligne(s) de " + (l.refEff || l.famEff || "cette ligne")}
+      onClick={e => { e.stopPropagation(); setN2Ouv(o => ({ ...o, [l.id]: !ouv })); }} style={{ width: 24, height: 24, flex: "0 0 24px", marginRight: 4, padding: 0, border: "none", borderRadius: 4, background: "transparent", color: T.ink700, cursor: "pointer", fontFamily: T.font, fontSize: FZF.sm, verticalAlign: "middle" }}>{ouv ? "▾" : "▸"}</button>
+      : <span style={{ display: "inline-block", width: 28, flex: "0 0 28px" }} />);
+    return { kids, ouvert, list, barre, fleche }; };
+
+  const renderTableau = (fiche, all) => { const { kids, ouvert, list, barre, fleche } = n2Of(all);
+    return (<div>
+    {barre}
     <div style={{ overflowX: "auto" }}>
     <table style={{ width: "100%", borderCollapse: "collapse", fontVariantNumeric: "tabular-nums" }}>
       <thead><tr>
@@ -1019,13 +1072,11 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
         {list.map(l => { const s = l.st, n2 = l.niv === 2, k = !n2 ? kids[l.id] || [] : [], ouv = ouvert(l.id), kBad = !ouv ? k.filter(x => x.st.k === "late" || x.st.k === "nc").length : 0; return (
           <tr key={l.id} onClick={canEdit ? () => openLine(l, fiche, l.parent) : undefined} style={{ cursor: canEdit ? "pointer" : "default", height: 36, background: n2 ? T.surface : "transparent" }}>
             <td style={{ ...td(), fontFamily: T.fontMono, fontWeight: n2 ? 500 : 700, whiteSpace: "nowrap", paddingLeft: n2 ? 40 : 6 }}>
-              {!n2 && (k.length ? <button type="button" aria-expanded={ouv} aria-label={(ouv ? "Masquer" : "Afficher") + " les " + k.length + " sous-ligne(s) de " + (l.refEff || l.famEff || "cette ligne")}
-                onClick={e => { e.stopPropagation(); setN2Ouv(o => ({ ...o, [l.id]: !ouv })); }} style={{ width: 24, height: 24, marginRight: 4, padding: 0, border: "none", borderRadius: 4, background: "transparent", color: T.ink700, cursor: "pointer", fontFamily: T.font, fontSize: FZF.sm, verticalAlign: "middle" }}>{ouv ? "▾" : "▸"}</button>
-                : <span style={{ display: "inline-block", width: 28 }} />)}
+              {!n2 && fleche(l, k, ouv)}
               {l.refEff || <span style={{ fontFamily: T.font, fontWeight: 700, color: T.red600 }}>À attribuer</span>}
               {!n2 && !ouv && k.length > 0 && <span style={{ marginLeft: 6, fontFamily: T.font, fontSize: FZF.xs, fontWeight: 600, color: kBad ? T.red600 : T.ink500 }}>{k.length} N2{kBad ? ", " + kBad + " en retard" : ""}</span>}</td>
             <td style={{ ...td(), color: n2 ? T.ink700 : T.ink900 }}>{l.desEff || "—"}</td>
-            <td style={{ ...td(), color: l.four ? T.ink700 : T.red600, minWidth: 90, maxWidth: 150, lineHeight: 1.25, overflowWrap: "anywhere" }}>{l.four ? l.four.nom : "—"}</td>
+            <td style={{ ...td(), color: l.four ? T.ink700 : T.red600, minWidth: 90, maxWidth: 150, lineHeight: 1.25, overflowWrap: "anywhere" }}>{l.four ? <>{l.four.nom}{l.fourScope && <span style={{ display: "block", fontSize: FZF.xs, color: T.ink500 }}>défaut du scope</span>}</> : "—"}</td>
             <td style={{ ...td(), color: T.ink700, whiteSpace: "nowrap" }}>{l.famEff || "—"}</td>
             <td style={{ ...td(), textAlign: "right" }}>{l.qte === "" || l.qte == null ? "—" : l.qte}</td>
             <td style={{ ...td(), whiteSpace: "nowrap", color: T.ink700 }} onClick={e => e.stopPropagation()} title={l.dateBesoin ? "Date de besoin fixée : décalages ignorés." : undefined}>
@@ -1038,7 +1089,7 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
             <td style={{ ...td(), textAlign: "right", color: T.ink700 }}>{s.ltT == null ? "—" : s.ltT + " j"}</td>
             {dateCell(s.cible)}
             {dateCell(s.auPlusTard, s.statut === "apasser" ? (s.k === "late" ? T.red600 : s.k === "soon" ? T.amber600 : null) : T.ink500)}
-            <td style={{ ...td(), fontFamily: T.fontMono, color: l.poAnnule ? T.red600 : T.ink700, whiteSpace: "nowrap" }}>{l.poNum || "—"}{l.poAnnule && <span style={{ fontFamily: T.font, fontSize: FZF.xs, fontWeight: 700, marginLeft: 6 }}>annulé</span>}</td>
+            <td style={{ ...td(), fontFamily: T.fontMono, color: l.poAnnule ? T.red600 : T.ink700, whiteSpace: "nowrap" }}>{l.poNum || (l.regul ? <span style={{ fontFamily: T.font, fontSize: FZF.xs, fontWeight: 700 }}>Sans PO</span> : "—")}{l.poAnnule && <span style={{ fontFamily: T.font, fontSize: FZF.xs, fontWeight: 700, marginLeft: 6 }}>annulé</span>}</td>
             <td style={{ ...td(), fontFamily: T.fontMono, color: T.ink700 }}>{l.poLig || "—"}</td>
             <td style={{ ...td(), whiteSpace: "nowrap" }}><Pill k={s.k} l={s.l} /><Ecart l={l} /></td>
             {dateCell(s.prevue, s.k === "late" && s.statut !== "apasser" ? T.red600 : null)}
@@ -1074,7 +1125,7 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
   //   théorique (en haut, pastel) : commande au plus tard → production (LT fournisseur, info) → transport (violet) → livraison cible ;
   //   réel (barre pleine, en bas) : date de commande du PO → livraison prévue du PO, verte si à temps, rouge si après la livraison cible.
   // Trait vertical = arrivée de la machine ; pointillé = aujourd'hui.
-  const renderGantt = (fiche, list) => {
+  const renderGantt = (fiche, all) => { const { kids, ouvert, list, barre, fleche } = n2Of(all);
     const G = list.map(l => { const s = l.st, th = !!(s.auPlusTard && s.cible && s.lt != null), dep = th ? addDays(s.cible, -(s.ltT || 0)) : "", p = l.poLine;
       return { l, s, th, deb: s.auPlusTard, dep, fin: s.cible, cde: p ? isoOf(p.dateCommande) : "", liv: s.prevue || "" }; });
     if (!G.some(g => g.th || g.liv)) return <div style={{ color: T.ink500, fontSize: FZF.sm, padding: 18, textAlign: "center" }}>Aucune ligne datée : il manque la date d'arrivée, le fournisseur ou le LT.</div>;
@@ -1090,6 +1141,7 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
     const pt = (left, top, color, title) => <span title={title} style={{ position: "absolute", left: left - 4, top, width: 8, height: 8, borderRadius: 999, background: color, border: "1px solid " + T.card, zIndex: 1 }} />;
     const lab = (style, color, txt) => <span style={{ position: "absolute", top: 23, fontSize: FZF.xs, lineHeight: "12px", color, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums", ...style }}>{txt}</span>;
     return (<div>
+      {barre}
       <div style={{ display: "flex", gap: 14, flexWrap: "wrap", fontSize: FZF.xs, color: T.ink700, marginBottom: 8, alignItems: "center" }}>
         <b style={{ color: T.ink900 }}>Théorique</b>
         {sw({ background: T.info100, border: "1px solid " + T.info500 }, "Production (LT fournisseur)")}{sw({ background: T.violet100, border: "1px solid " + T.violet500 }, "Transport")}
@@ -1109,14 +1161,21 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
           </div>
           {G.map(({ l, s, th, deb, dep, fin, cde, liv }) => {
             const n2 = l.niv === 2, enRetard = liv && fin && liv > fin, done = s.k === "done", reelCol = done ? T.ink500 : enRetard ? T.red600 : T.emerald600;
+            const k = !n2 ? kids[l.id] || [] : [], ouv = ouvert(l.id), kBad = !ouv ? k.filter(x => x.st.k === "late" || x.st.k === "nc").length : 0;
             const cdeRetard = s.statut === "apasser" && deb && deb < tIso;
             return (<div key={l.id} style={{ display: "flex", height: 44, borderTop: "1px solid " + T.line }}>
-              <LabelTag {...(canEdit ? { type: "button", onClick: () => openLine(l, fiche, l.parent), "aria-label": "Ouvrir " + (l.refEff || l.famEff) } : {})}
-                style={{ width: LW, flex: "0 0 " + LW + "px", position: "sticky", left: 0, zIndex: 2, background: n2 ? T.surface : T.card, border: "none", borderRight: "1px solid " + T.line, padding: "0 8px 0 " + (n2 ? 24 : 8) + "px",
-                  display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "flex-start", textAlign: "left", cursor: canEdit ? "pointer" : "default", fontFamily: T.font, minWidth: 0 }}>
-                <span style={{ maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: FZF.xs, fontWeight: n2 ? 500 : 700, fontFamily: l.refEff ? T.fontMono : T.font, color: l.refEff ? T.ink900 : T.red600 }}>{l.refEff || l.famEff + " · à attribuer"}</span>
-                <span style={{ maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: FZF.xs, color: T.ink500 }}>{[l.famEff, l.desEff, l.poNum && "PO " + l.poNum].filter(Boolean).join(" · ")}</span>
-              </LabelTag>
+              <div style={{ width: LW, flex: "0 0 " + LW + "px", position: "sticky", left: 0, zIndex: 2, background: n2 ? T.surface : T.card, borderRight: "1px solid " + T.line, boxSizing: "border-box",
+                display: "flex", alignItems: "center", paddingLeft: n2 ? 36 : 4, minWidth: 0 }}>
+                {!n2 && fleche(l, k, ouv)}
+                <LabelTag {...(canEdit ? { type: "button", onClick: () => openLine(l, fiche, l.parent), "aria-label": "Ouvrir " + (l.refEff ? l.refEff + " - " + (l.desEff || "") : l.famEff) } : {})}
+                  style={{ flex: 1, alignSelf: "stretch", minWidth: 0, background: "transparent", border: "none", padding: "0 8px 0 2px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "flex-start",
+                    textAlign: "left", cursor: canEdit ? "pointer" : "default", fontFamily: T.font, color: T.ink900 }}>
+                  <span style={{ maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: FZF.xs, fontWeight: n2 ? 500 : 700, color: l.refEff ? T.ink900 : T.red600 }}>
+                    {l.refEff ? <><span style={{ fontFamily: T.fontMono }}>{l.refEff}</span> - {l.desEff || "—"}</> : (l.famEff || "Sans scope") + " · à attribuer"}</span>
+                  <span style={{ maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: FZF.xs, color: kBad ? T.red600 : T.ink500 }}>
+                    {[l.famEff, l.poNum ? "PO " + l.poNum : l.regul ? "livrée sans PO" : "", l.fourScope && "frs du scope : " + l.four.nom, k.length && !ouv ? k.length + " N2 masquée(s)" + (kBad ? ", " + kBad + " en retard" : "") : ""].filter(Boolean).join(" · ")}</span>
+                </LabelTag>
+              </div>
               <div style={{ position: "relative", width: W, flex: "0 0 " + W + "px" }}>
                 {th ? <>
                   <div title={"Production (LT fournisseur) : commande au plus tard " + fd(deb) + ", départ " + fd(dep) + " (" + s.lt + " j)"} style={{ position: "absolute", top: 7, height: 11, left: x(deb), width: Math.max(2, x(dep) - x(deb)), boxSizing: "border-box", background: T.info100, border: "1px solid " + T.info500, borderRadius: s.ltT ? "3px 0 0 3px" : 3 }} />
@@ -1128,7 +1187,8 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
                   {lab({ right: W - x(cde) + 4 }, T.ink700, dm(cde))}{lab({ left: x(liv) + 4, fontWeight: 700 }, reelCol, dm(liv) + (enRetard && !done ? " +" + daysBetween(fin, liv) + " j" : l.avJ > 0 ? " −" + l.avJ + " j" : ""))}
                 </> : liv ? <>
                   {pt(x(liv), 25, reelCol, "Livraison prévue " + fd(liv) + " (date de commande inconnue)")}{lab({ left: x(liv) + 6, fontWeight: 700 }, reelCol, dm(liv) + (enRetard && !done ? " +" + daysBetween(fin, liv) + " j" : l.avJ > 0 ? " −" + l.avJ + " j" : ""))}
-                </> : th ? lab({ left: x(deb) + 2 }, cdeRetard ? T.red600 : T.ink500, cdeRetard ? "Non commandé, en retard" : "Non commandé") : null}
+                </> : l.regul ? lab({ left: th ? x(fin) + 8 : 8 }, T.ink500, "Livrée sans PO (régularisation)")
+                  : th ? lab({ left: x(deb) + 2 }, cdeRetard ? T.red600 : T.ink500, cdeRetard ? "Non commandé, en retard" : "Non commandé") : null}
               </div>
             </div>); })}
           {arr && <div aria-hidden="true" style={{ position: "absolute", top: 0, bottom: 0, left: LW + x(arr) - 1, width: 2, background: T.ink900, zIndex: 1 }}>
@@ -1136,6 +1196,84 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
           <div aria-hidden="true" style={{ position: "absolute", top: 28, bottom: 0, left: LW + x(tIso), borderLeft: "1px dashed " + T.ink500, zIndex: 1 }} />
         </div>
       </div>
+    </div>);
+  };
+
+  // Vue par scope (DEV #12), en lecture seule : une carte par scope de la fiche, scopes N2 masquables. Livraison au plus tard = la plus
+  // tardive des lignes du scope (livraison prévue du PO, sinon livraison cible). Au clic : références du scope, puis les lignes de chacune.
+  const RANG = { late: 0, nc: 0, soon: 1, todo: 2, ok: 3, done: 4 }, rang = k => (RANG[k] == null ? 2 : RANG[k]);
+  const renderScopes = (fiche, all) => {
+    if (!all.length) return <div style={{ color: T.ink500, fontSize: FZF.sm, padding: 18, textAlign: "center" }}>Nomenclature vide. Ajoutez les lignes de niveau 1 avec « ＋ Ligne ».</div>;
+    const livOf = l => (l.st.prevue ? [l.st.prevue, "prévue"] : l.st.cible ? [l.st.cible, "cible"] : ["", ""]);
+    const resume = L => { let d = "", src = "", pire = L[0];
+      L.forEach(l => { const [x, w] = livOf(l); if (x && x > d) { d = x; src = w; } if (rang(l.st.k) < rang(pire.st.k)) pire = l; });
+      return { d, src, pire, retard: L.filter(l => l.st.k === "late" || l.st.k === "nc").length, livre: L.filter(l => l.st.k === "done").length, vide: L.filter(l => !l.refEff).length }; };
+    const parScope = {}; all.forEach(l => { const k = up(l.famEff) || "SANS SCOPE"; (parScope[k] = parScope[k] || []).push(l); });
+    const nivOf = k => (k === "SANS SCOPE" ? "N1" : niveauOf(k)), tous = Object.keys(parScope).sort((a, b) => scIdx(a) - scIdx(b) || cmpNat(a, b));
+    const nN2 = tous.filter(k => nivOf(k) === "N2").length, scopes = tous.filter(k => scN2 || nivOf(k) !== "N2"), sel = scopes.includes(scSel) ? scSel : "";
+    const refsOf = L => { const m = {}; L.forEach(l => { const k = low(l.refEff); (m[k] = m[k] || []).push(l); });
+      return Object.keys(m).sort((a, b) => (!a) - (!b) || cmpNat(a, b)).map(k => ({ k, ref: m[k][0].refEff, des: m[k][0].desEff, L: m[k], r: resume(m[k]) })); };
+    const dateTxt = r => (r.d ? <><b style={{ fontFamily: T.fontDisplay, fontVariantNumeric: "tabular-nums", color: r.retard ? T.red600 : T.ink900 }}>{fd(r.d)}</b>{r.src === "cible" && <span style={{ fontSize: FZF.xs, color: T.ink500 }}> (cible)</span>}</> : <span style={{ color: T.ink500 }}>—</span>);
+    const detail = sel ? refsOf(parScope[sel]) : [], thS = right => ({ ...th(right), background: T.surfaceAlt, position: "static" });
+    const flecheRef = (x, ouv) => <button type="button" aria-expanded={ouv} aria-label={(ouv ? "Masquer" : "Afficher") + " les lignes de " + (x.ref || "la référence à attribuer")}
+      onClick={e => { e.stopPropagation(); setScRefOuv(o => ({ ...o, [x.k]: !ouv })); }} style={{ width: 24, height: 24, marginRight: 4, padding: 0, border: "none", borderRadius: 4, background: "transparent", color: T.ink700, cursor: "pointer", fontFamily: T.font, fontSize: FZF.sm, verticalAlign: "middle" }}>{ouv ? "▾" : "▸"}</button>;
+    return (<div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", fontSize: FZF.sm, color: T.ink700, marginBottom: 8 }}>
+        {nN2 > 0 && <label style={{ display: "flex", alignItems: "center", gap: 6, minHeight: 28, cursor: "pointer" }}>
+          <input type="checkbox" checked={scN2} onChange={e => setScN2(e.target.checked)} style={{ width: 16, height: 16, margin: 0 }} />Afficher les scopes N2 ({nN2})</label>}
+        <span style={{ fontSize: FZF.xs, color: T.ink500 }}>Lecture seule. Livraison au plus tard : livraison prévue du PO, sinon livraison cible. Cliquez sur un scope pour voir ses références.</span>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(210px,1fr))", gap: 10 }}>
+        {scopes.map(k => { const L = parScope[k], r = resume(L), refs = refsOf(L), on = sel === k, bad = r.retard > 0 || r.vide > 0;
+          return (<button key={k} type="button" aria-expanded={on} aria-controls="achats-scope-detail" onClick={() => { setScSel(on ? "" : k); setScRefOuv({}); }}
+            style={{ textAlign: "left", display: "flex", flexDirection: "column", gap: 6, padding: "12px 14px", borderRadius: 12, minHeight: 128, boxSizing: "border-box",
+              border: "1px solid " + (on ? T.ink900 : bad ? T.red600 : T.line), background: on ? T.surfaceAlt : T.card, cursor: "pointer", fontFamily: T.font, color: T.ink900 }}>
+            <span style={{ display: "flex", alignItems: "baseline", gap: 8, width: "100%" }}>
+              <span style={{ flex: 1, minWidth: 0, fontFamily: T.fontDisplay, fontSize: FZF.md, fontWeight: 700, lineHeight: 1.2 }}>{k}</span>
+              <span style={{ fontSize: FZF.xs, fontWeight: 600, color: T.ink500 }}>{nivOf(k)}</span></span>
+            <span style={{ fontSize: FZF.xs, color: T.ink500, lineHeight: 1.35 }}>{refs.length === 1 ? (refs[0].ref ? refs[0].ref + " - " + (refs[0].des || "—") : "Référence non attribuée") : refs.length + " références"} · {L.length} ligne(s)</span>
+            <span style={{ flex: 1 }} />
+            <span style={{ fontSize: FZF.sm, color: T.ink700 }}>Livraison au plus tard {dateTxt(r)}</span>
+            <span style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}><Pill k={r.pire.st.k} l={r.pire.st.l} />
+              {r.retard > 0 && <span style={{ fontSize: FZF.xs, fontWeight: 700, color: T.red600 }}>{r.retard} en retard</span>}
+              <span style={{ fontSize: FZF.xs, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{r.livre}/{L.length} livrée(s)</span></span>
+            {r.vide > 0 && <span style={{ fontSize: FZF.xs, fontWeight: 700, color: T.red600 }}>{r.vide} ligne(s) à attribuer</span>}
+          </button>); })}
+      </div>
+      {!scopes.length && <div style={{ color: T.ink500, fontSize: FZF.sm, padding: 18, textAlign: "center" }}>Cette fiche n'a que des scopes N2 : cochez « Afficher les scopes N2 ».</div>}
+      {sel && <section id="achats-scope-detail" aria-label={"Détail du scope " + sel} style={{ ...CARD(), marginTop: 12 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap", marginBottom: 6 }}>
+          <span style={{ fontFamily: T.fontDisplay, fontSize: FZF.md, fontWeight: 600, color: T.ink900 }}>{sel}</span>
+          <span style={{ fontSize: FZF.sm, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{nivOf(sel)} · {detail.length} référence(s) · {parScope[sel].length} ligne(s)</span>
+          <span style={{ flex: 1 }} />
+          <button type="button" style={sbtn()} onClick={() => setScSel("")}>Fermer le détail</button></div>
+        <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", fontVariantNumeric: "tabular-nums" }}>
+          <thead><tr><th style={th()}>Réf Enogia</th><th style={th()}>Désignation</th><th style={th(true)}>Lignes</th><th style={th(true)}>Qté</th><th style={th()}>Livraison au plus tard</th><th style={th()}>Statut</th></tr></thead>
+          <tbody>{detail.map(x => { const ouv = !!scRefOuv[x.k], q = x.L.reduce((a, l) => a + (num(l.qte) || 0), 0); return (<React.Fragment key={x.k || "_vide"}>
+            <tr onClick={() => setScRefOuv(o => ({ ...o, [x.k]: !ouv }))} style={{ cursor: "pointer", height: 36, background: ouv ? T.surfaceAlt : "transparent" }}>
+              <td style={{ ...td(), whiteSpace: "nowrap" }}>{flecheRef(x, ouv)}{x.ref ? <span style={{ fontFamily: T.fontMono, fontWeight: 700 }}>{x.ref}</span> : <span style={{ fontWeight: 700, color: T.red600 }}>À attribuer</span>}</td>
+              <td style={{ ...td(), color: T.ink700 }}>{x.des || "—"}</td>
+              <td style={{ ...td(), textAlign: "right" }}>{x.L.length}</td>
+              <td style={{ ...td(), textAlign: "right" }}>{q || "—"}</td>
+              <td style={{ ...td(), whiteSpace: "nowrap" }}>{dateTxt(x.r)}</td>
+              <td style={{ ...td(), whiteSpace: "nowrap" }}><Pill k={x.r.pire.st.k} l={x.r.pire.st.l} />{x.r.retard > 0 && x.L.length > 1 && <span style={{ marginLeft: 6, fontSize: FZF.xs, fontWeight: 700, color: T.red600 }}>{x.r.retard} en retard</span>}</td>
+            </tr>
+            {ouv && <tr><td colSpan={6} style={{ ...td(), padding: "0 10px 10px 38px", background: T.surfaceAlt }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontVariantNumeric: "tabular-nums" }}>
+                <thead><tr><th style={thS()}>Niveau</th><th style={thS(true)}>Qté</th><th style={thS()}>Fournisseur</th><th style={thS()}>PO</th><th style={thS()}>Liv. cible</th><th style={thS()}>Liv. prévue</th><th style={thS()}>Statut appro</th></tr></thead>
+                <tbody>{x.L.map(l => (<tr key={l.id} style={{ height: 36 }}>
+                  <td style={{ ...td(), whiteSpace: "nowrap", color: T.ink700 }}>{l.niv === 2 ? <>N2 de <span style={{ fontFamily: T.fontMono }}>{(l.parent && l.parent.refEff) || "—"}</span></> : "N1"}</td>
+                  <td style={{ ...td(), textAlign: "right" }}>{l.qte === "" || l.qte == null ? "—" : l.qte}</td>
+                  <td style={{ ...td(), color: l.four ? T.ink700 : T.red600 }}>{l.four ? l.four.nom + (l.fourScope ? " (défaut du scope)" : "") : "—"}</td>
+                  <td style={{ ...td(), fontFamily: l.poNum ? T.fontMono : T.font, whiteSpace: "nowrap", color: l.poAnnule ? T.red600 : T.ink700 }}>{l.poNum ? l.poNum + (l.poLig ? " / " + l.poLig : "") : l.regul ? "Sans PO" : "—"}</td>
+                  {dateCell(l.st.cible)}
+                  {dateCell(l.st.prevue, l.st.k === "late" && l.st.statut !== "apasser" ? T.red600 : l.avJ > 0 ? T.emerald600 : null)}
+                  <td style={{ ...td(), whiteSpace: "nowrap" }}><Pill k={l.st.k} l={l.st.l} /><Ecart l={l} /></td>
+                </tr>))}</tbody>
+              </table></td></tr>}
+          </React.Fragment>); })}</tbody>
+        </table></div>
+      </section>}
     </div>);
   };
 
@@ -1157,6 +1295,7 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
           <button key={f.id} type="button" onClick={() => { setFicheSel(f.id); setDeverr(false); }} aria-current={on ? "true" : undefined} style={{ display: "flex", width: "100%", alignItems: "center", gap: 8, border: "none", borderRadius: 8, padding: "6px 8px", minHeight: 36, background: on ? T.surfaceAlt : "transparent", cursor: "pointer", textAlign: "left", fontFamily: T.font, color: T.ink900 }}>
             <span style={{ flex: 1, minWidth: 0 }}><b style={{ fontFamily: T.fontMono, fontSize: FZF.sm }}>{f.machine}</b>
               <span style={{ display: "block", fontSize: FZF.xs, color: T.ink500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{[f.modeleEff, "arrivée " + fd(f.dateDebutEff), f.verrou && "verrouillée"].filter(Boolean).join(" · ")}</span>
+              {f.horsOrdo && <span style={{ display: "block", fontSize: FZF.xs, color: T.red600, fontWeight: 700 }}>N° machine absent de l'ordo</span>}
               {f.config && f.config.statut !== "finalisee" && <span style={{ display: "block", fontSize: FZF.xs, color: T.amber600, fontWeight: 700 }}>Configuration en brouillon</span>}
               {aPreciser(f).length > 0 && <span style={{ display: "block", fontSize: FZF.xs, color: T.amber600, fontWeight: 700 }}>Options à préciser ({aPreciser(f).length})</span>}
               {f.ecartOrdo !== 0 && <span style={{ display: "block", fontSize: FZF.xs, color: T.amber600, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>≠ ordo ({(f.ecartOrdo > 0 ? "+" : "") + f.ecartOrdo} j)</span>}</span>
@@ -1175,6 +1314,7 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
             <div role="group" aria-label="Affichage de la nomenclature" style={{ display: "inline-flex", border: "1px solid " + T.line, borderRadius: 8, overflow: "hidden" }}>
               <button type="button" aria-pressed={vue === "tableau"} style={segBtn(vue === "tableau")} onClick={() => setVue("tableau")}>Tableau</button>
               <button type="button" aria-pressed={vue === "cartes"} style={{ ...segBtn(vue === "cartes"), borderLeft: "1px solid " + T.line }} onClick={() => setVue("cartes")}>Cartes</button>
+              <button type="button" aria-pressed={vue === "scopes"} style={{ ...segBtn(vue === "scopes"), borderLeft: "1px solid " + T.line }} onClick={() => setVue("scopes")}>Par scope</button>
               <button type="button" aria-pressed={vue === "gantt"} style={{ ...segBtn(vue === "gantt"), borderLeft: "1px solid " + T.line }} onClick={() => setVue("gantt")}>Gantt</button>
             </div>
             {canEdit && <button type="button" style={sbtn()} onClick={() => openFiche(cur)}>Modifier la fiche</button>}
@@ -1185,6 +1325,9 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
           {canEdit ? <textarea key={"n" + cur.id + ":" + (cur.note || "")} rows={1} defaultValue={cur.note || ""} placeholder="Commentaire libre" aria-label={"Commentaire de la fiche " + cur.machine}
               onBlur={e => { if (e.target.value !== (cur.note || "")) saveFiche(cur, { note: e.target.value }); }} style={{ ...field(), resize: "vertical", margin: "4px 0 8px", color: T.ink700 }} />
             : cur.note ? <div style={{ fontSize: FZF.sm, color: T.ink700, margin: "2px 0 8px", whiteSpace: "pre-wrap" }}>{cur.note}</div> : null}
+          {cur.horsOrdo && <div role="alert" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", background: T.red100, color: T.red600, borderRadius: 8, padding: "6px 10px", fontSize: FZF.sm, fontWeight: 600, margin: "6px 0" }}>
+            <NavIcon name="warning" size={14} />N° machine {cur.machine} absent de l'ordo : la machine a été supprimée ou renommée dans le planning. La fiche et ses lignes sont conservées, les calculs utilisent la date d'arrivée de la fiche.
+            {canEdit && <button type="button" style={sbtn()} onClick={() => openFiche(cur)}>Choisir la machine de l'ordo</button>}</div>}
           <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap", fontSize: FZF.sm, color: T.ink700, marginBottom: 6, fontVariantNumeric: "tabular-nums" }}>
             <label style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 600 }}>Arrivée retenue (fiche)
               {canEdit ? <input type="date" key={"d" + cur.id + ":" + cur.dateDebutEff} defaultValue={cur.dateDebutEff} onBlur={e => { const v = e.target.value; if (v && v !== isoOf(cur.dateDebut)) saveFiche(cur, { dateDebut: v }); }}
@@ -1219,7 +1362,7 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
           <div style={{ fontSize: FZF.sm, color: T.ink700, margin: "2px 0 10px", fontVariantNumeric: "tabular-nums" }}>
             {L.length ? <>{L.length} ligne(s) · {done} livrée(s) · {todo} commande(s) à passer{soon ? <>, dont <b style={{ color: T.amber600 }}>{soon} sous 14 j</b></> : null}{late ? <> · <b style={{ color: T.red600 }}>{late} en retard</b></> : null}{cfg ? <> · <b style={{ color: T.red600 }}>{cfg} à configurer</b></> : null}</> : "Aucune ligne pour l'instant."}
           </div>
-          {vue === "cartes" ? renderCartes(cur, tree(L)) : vue === "gantt" ? renderGantt(cur, tree(L)) : renderTableau(cur, tree(L))}
+          {vue === "cartes" ? renderCartes(cur, tree(L)) : vue === "scopes" ? renderScopes(cur, tree(L)) : vue === "gantt" ? renderGantt(cur, tree(L)) : renderTableau(cur, tree(L))}
         </section>); })()
         : <section style={{ ...CARD(), color: T.ink500, fontSize: FZF.sm }}>Sélectionnez ou créez une fiche machine.</section>}
     </div>}
@@ -1278,11 +1421,11 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
                 <td style={{ ...td(), fontFamily: T.fontMono, fontWeight: 700, whiteSpace: "nowrap" }}>{l.fiche.machine}</td>
                 <td style={{ ...td(), fontFamily: T.fontMono, whiteSpace: "nowrap" }}>{l.refEff || <span style={{ fontFamily: T.font, fontWeight: 700, color: T.red600 }}>À attribuer</span>}{l.parent && <span style={{ marginLeft: 6, fontFamily: T.font, fontSize: FZF.xs, color: T.ink500 }}>N2</span>}</td>
                 <td style={{ ...td(), color: T.ink700 }}>{l.desEff || "—"}</td>
-                <td style={{ ...td(), color: l.four ? T.ink700 : T.red600, minWidth: 90, maxWidth: 150, lineHeight: 1.25, overflowWrap: "anywhere" }}>{l.four ? l.four.nom : "—"}</td>
+                <td style={{ ...td(), color: l.four ? T.ink700 : T.red600, minWidth: 90, maxWidth: 150, lineHeight: 1.25, overflowWrap: "anywhere" }}>{l.four ? <>{l.four.nom}{l.fourScope && <span style={{ display: "block", fontSize: FZF.xs, color: T.ink500 }}>défaut du scope</span>}</> : "—"}</td>
                 <td style={{ ...td(), textAlign: "right" }}>{l.qte === "" || l.qte == null ? "—" : l.qte}</td>
                 {dateCell(s2.auPlusTard, s2.statut === "apasser" ? (s2.k === "late" ? T.red600 : s2.k === "soon" ? T.amber600 : null) : T.ink500)}
                 {dateCell(s2.cible)}
-                <td style={{ ...td(), fontFamily: T.fontMono, color: l.poAnnule ? T.red600 : T.ink700, whiteSpace: "nowrap" }}>{l.poNum || "—"}{l.poLig ? " / " + l.poLig : ""}</td>
+                <td style={{ ...td(), fontFamily: T.fontMono, color: l.poAnnule ? T.red600 : T.ink700, whiteSpace: "nowrap" }}>{l.poNum || (l.regul ? "Sans PO" : "—")}{l.poLig ? " / " + l.poLig : ""}</td>
                 {dateCell(s2.prevue, s2.k === "late" && s2.statut !== "apasser" ? T.red600 : l.avJ > 0 ? T.emerald600 : null)}
                 <td style={{ ...td(), whiteSpace: "nowrap" }}><Pill k={s2.k} l={s2.l} /><Ecart l={l} /></td>
               </tr>); })}</tbody>
@@ -1356,7 +1499,7 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
       </section>); })()}
 
     {tab === "articles" && (() => { const s = low(qArt);
-      const list = arts.filter(a => (voirInactifs || isActif(a)) && (!s || low(a.ref).includes(s) || low(a.designation).includes(s)))
+      const list = arts.filter(a => (voirInactifs || isActif(a)) && (!s || low(a.ref).includes(s) || low(a.designation).includes(s) || low(a.familleOrc).includes(s)))
         .filter(a => typeArt === "tous" || (typeArt === "orc") === isOrc(a))
         .sort((a, b) => (isOrc(b) ? 1 : 0) - (isOrc(a) ? 1 : 0) || scIdx(a.famille) - scIdx(b.famille) || cmpNat(a.famille, b.famille) || cmpNat(a.ref, b.ref));
       const shown = list.slice(0, artLimit), nIn = arts.filter(a => !isActif(a)).length;
@@ -1372,17 +1515,18 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
           {canEdit && <button type="button" style={btn(false)} onClick={() => setImp("articles")}>Importer depuis Excel</button>}
         </div>
         <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", fontVariantNumeric: "tabular-nums" }}>
-          <thead><tr><th style={th()}>Réf Enogia</th><th style={th()}>Désignation</th><th style={th()}>Type</th><th style={th()}>Scope</th><th style={th()}>Fournisseur</th><th style={th(true)}>LT article</th><th style={th()}>Actif</th><th style={th(true)}>Nomenclature</th></tr></thead>
+          <thead><tr><th style={th()}>Réf Enogia</th><th style={th()}>Désignation</th><th style={th()}>Type</th><th style={th()}>Famille ORC</th><th style={th()}>Scope</th><th style={th()}>Fournisseur</th><th style={th(true)}>LT article</th><th style={th()}>Actif</th><th style={th(true)}>Nomenclature</th></tr></thead>
           <tbody>{shown.map(c => { const off = !isActif(c), k = kidsOf(c).length; return (
             <tr key={c.id} onClick={canEdit ? () => openComp(c) : undefined} style={{ cursor: canEdit ? "pointer" : "default", height: 36 }}>
               <td style={{ ...td(), fontFamily: T.fontMono, fontWeight: 700, color: off ? T.ink500 : T.ink900 }}>{c.ref || "—"}</td><td style={{ ...td(), color: off ? T.ink500 : T.ink900 }}>{c.designation}</td>
               <td style={{ ...td(), whiteSpace: "nowrap", color: isOrc(c) ? T.ink900 : T.ink700, fontWeight: isOrc(c) ? 700 : 400 }}>{isOrc(c) ? "Machine ORC" : "Achat"}</td>
+              <td style={{ ...td(), whiteSpace: "nowrap", fontFamily: c.familleOrc ? T.fontMono : T.font, color: isOrc(c) && !c.familleOrc ? T.amber600 : T.ink700, fontWeight: isOrc(c) && !c.familleOrc ? 700 : 400 }}>{!isOrc(c) ? "—" : c.familleOrc || "À renseigner"}</td>
               <td style={{ ...td(), color: T.ink700 }}>{isOrc(c) ? "—" : c.famille || "—"}</td><td style={{ ...td(), color: T.ink700 }}>{isOrc(c) ? "—" : (S.fournisseurs[c.fournisseurId] || {}).nom || "—"}</td>
               <td style={{ ...td(), textAlign: "right", color: num(c.delaiJ) > 1 ? T.ink900 : T.ink500 }}>{isOrc(c) ? "—" : num(c.delaiJ) > 1 ? c.delaiJ + " j" : "frs"}</td>
               <td style={{ ...td(), color: off ? T.ink500 : T.ink700 }}>{off ? "Non" : "Oui"}</td>
               <td style={{ ...td(), textAlign: "right", color: T.ink700 }}>{k ? k + " comp." : "—"}</td>
             </tr>); })}
-            {!list.length && <tr><td colSpan={8} style={empty()}>{arts.length ? "Aucun article ne correspond." : "Aucun article. Ajoutez-les avec « ＋ Article » ou importez-les depuis Excel."}</td></tr>}</tbody>
+            {!list.length && <tr><td colSpan={9} style={empty()}>{arts.length ? "Aucun article ne correspond." : "Aucun article. Ajoutez-les avec « ＋ Article » ou importez-les depuis Excel."}</td></tr>}</tbody>
         </table></div>
         {list.length > shown.length && <div style={{ marginTop: 10 }}><button type="button" style={btn(false)} onClick={() => setArtLimit(n => n + 50)}>Afficher {Math.min(50, list.length - shown.length)} de plus</button></div>}
       </section>); })()}
@@ -1466,9 +1610,9 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
       const bouger = (i, d) => { const l = [...scopeList], j = i + d; if (j < 0 || j >= l.length) return; [l[i], l[j]] = [l[j], l[i]]; setScopes(l); };
       return (<section aria-label="Configuration des scopes" style={{ ...CARD(), maxWidth: 900 }}>
         <div style={{ fontFamily: T.fontDisplay, fontSize: FZF.md, fontWeight: 600, color: T.ink900, marginBottom: 4 }}>Scopes</div>
-        <div style={{ fontSize: FZF.sm, color: T.ink500, marginBottom: 10 }}>Un scope est un composant ou un lot de composants de la machine. Chaque article d'achat appartient à un scope. Scope N1 : suivi par les chefs de projet, créé par défaut dans les fiches ; sa création et son arrivée (en jours par rapport à l'arrivée machine) se règlent sur chaque machine ORC, dans l'onglet Articles. Scope N2 : classement des sous-composants, suivi par les achats uniquement, jamais créé par défaut. L'ordre ci-dessous est celui des fiches.</div>
+        <div style={{ fontSize: FZF.sm, color: T.ink500, marginBottom: 10 }}>Un scope est un composant ou un lot de composants de la machine. Chaque article d'achat appartient à un scope. Scope N1 : suivi par les chefs de projet, créé par défaut dans les fiches ; sa création et son arrivée (en jours par rapport à l'arrivée machine) se règlent sur chaque machine ORC, dans l'onglet Articles. Scope N2 : classement des sous-composants, suivi par les achats uniquement, jamais créé par défaut. L'ordre ci-dessous est celui des fiches. Fournisseur par défaut : pris pour une ligne du scope sans article ni fournisseur, son LT donne le délai théorique (Gantt) avant le choix de l'article.</div>
         <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", fontVariantNumeric: "tabular-nums" }}>
-          <thead><tr><th style={th()}>Ordre</th><th style={th()}>Scope</th><th style={th()}>Niveau</th><th style={th(true)}>Articles</th><th style={th(true)}>Lignes en fiches</th><th style={th(true)}>Actif sur ORC</th><th style={th()}><span style={SR}>Actions</span></th></tr></thead>
+          <thead><tr><th style={th()}>Ordre</th><th style={th()}>Scope</th><th style={th()}>Niveau</th><th style={th()}>Fournisseur par défaut</th><th style={th(true)}>Articles</th><th style={th(true)}>Lignes en fiches</th><th style={th(true)}>Actif sur ORC</th><th style={th()}><span style={SR}>Actions</span></th></tr></thead>
           <tbody>{scopeList.map((s, i) => { const na = nArt(s), nl = nLig(s), used = na + nl; return (<tr key={s} style={{ height: 36 }}>
             <td style={{ ...td(), whiteSpace: "nowrap" }}>{canEdit ? <>
               <button type="button" aria-label={"Monter " + s} disabled={!i} style={{ ...sbtn(), width: 28, padding: 0, marginRight: 4 }} onClick={() => bouger(i, -1)}>↑</button>
@@ -1476,6 +1620,10 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
             <td style={{ ...td(), fontWeight: 700 }}>{s}</td>
             <td style={td()}>{canEdit ? <select aria-label={"Niveau du scope " + s} value={niveauOf(s)} onChange={e => setScopes(scopeList, { [s]: e.target.value })} style={{ ...field(), width: 76, minHeight: 28, padding: "2px 6px" }}>
               <option value="N1">N1</option><option value="N2">N2</option></select> : niveauOf(s)}</td>
+            <td style={td()}>{(() => { const fid = (S.params.scopeFournisseurs || {})[s] || "", f = S.fournisseurs[fid];
+              return canEdit ? <select aria-label={"Fournisseur par défaut du scope " + s} value={f ? fid : ""} onChange={e => setScopeFour(s, e.target.value)} style={{ ...field(), width: 190, minHeight: 28, padding: "2px 6px" }}>
+                {fourOpts.map(([o, l]) => <option key={o} value={o}>{l}</option>)}</select> : f ? f.nom : <span style={{ color: T.ink500 }}>—</span>; })()}
+              {(() => { const f = S.fournisseurs[(S.params.scopeFournisseurs || {})[s]]; return f ? <span style={{ display: "block", fontSize: FZF.xs, color: num(f.ltJ) == null ? T.amber600 : T.ink500, fontVariantNumeric: "tabular-nums" }}>{num(f.ltJ) == null ? "LT fournisseur manquant" : "LT " + f.ltJ + " j + transport " + (num(f.ltTransportJ) || 0) + " j"}</span> : null; })()}</td>
             <td style={{ ...td(), textAlign: "right", color: T.ink700 }}>{na || "—"}</td><td style={{ ...td(), textAlign: "right", color: T.ink700 }}>{nl || "—"}</td>
             <td style={{ ...td(), textAlign: "right", color: T.ink700 }}>{niveauOf(s) === "N2" ? "—" : nOrc(s) + " / " + arts.filter(isOrc).length}</td>
             <td style={{ ...td(), textAlign: "right", whiteSpace: "nowrap" }}>{canEdit && <>
@@ -1517,7 +1665,7 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
         onDraft={async c => { const ok = await write("projets", f.id, { ...S.projets[f.id], config: { statut: "brouillon", choix: c } }); notify(ok ? "Brouillon enregistré." : "Enregistrement impossible, réessayez dans un instant.", !ok); if (ok) setCfg(null); }}
         onApply={async c => { const r = await appliquerConfig(f, c); if (typeof r === "string") return r; if (r) setCfg(null); }} />; })()}
     {imp && <ImportDialog {...IMPORTS[imp]} onClose={() => setImp(null)} />}
-    {pick && calc[pick] && <PoPicker line={calc[pick]} po={poList.filter(p => !p.annule)} affects={affects} fours={Object.values(S.fournisseurs).sort((a, b) => cmpNat(a.nom, b.nom))} fourOfPo={fourOfPo} onUnassign={unassign} canEdit={canEdit} onPick={id => assignPo(pick, id)} onClear={() => assignPo(pick, "")} onClose={() => setPick(null)} />}
+    {pick && calc[pick] && <PoPicker line={calc[pick]} po={poList.filter(p => !p.annule)} affects={affects} fours={Object.values(S.fournisseurs).sort((a, b) => cmpNat(a.nom, b.nom))} fourOfPo={fourOfPo} onUnassign={unassign} canEdit={canEdit} owner={owner} onRegul={on => setRegul(pick, on)} onPick={id => assignPo(pick, id)} onClear={() => assignPo(pick, "")} onClose={() => setPick(null)} />}
     {toast && <div role="status" style={{ position: "fixed", bottom: 18, left: "50%", transform: "translateX(-50%)", zIndex: 10020, background: toast.err ? T.red600 : T.ink900, color: T.card, padding: "8px 14px", borderRadius: 8, fontSize: FZF.sm, fontWeight: 600, display: "flex", gap: 6, alignItems: "center" }}><NavIcon name={toast.err ? "warning" : "check"} size={15} />{toast.msg}</div>}
   </div>);
 }

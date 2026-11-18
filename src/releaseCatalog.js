@@ -1212,4 +1212,7 @@ export const RELEASE_CATALOG = [
   { v: "395", t: "Photos des machines aux étapes clés (passeport et RAI), rangées dans Firebase Storage", items: [
     ["Photos des machines", "Photos attendues à chaque étape, prises depuis la tablette, reprises dans le RAI."],
   ] },
+  { v: "396", t: "Achats / Appro — retour du kit du responsable achats (fiches reliées à l'ordo par la machine, vue par scope, livré sans PO, fournisseur par défaut du scope)", items: [
+    ["Achats : vue par scope", "Fiches reliées à la machine de l'ordo, vue par scope, livré sans PO, fournisseur par défaut du scope."],
+  ] },
 ];
