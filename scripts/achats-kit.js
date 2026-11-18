@@ -91,7 +91,7 @@ export default function KitPreview() {
       <button type="button" style={tb} onClick={() => setOwner(v => !v)}>{owner ? "Voir comme le responsable achats" : "Voir comme le propriétaire"}</button>
       <button type="button" style={tb} onClick={() => setDoc(DEMO)}>Réinitialiser les données</button>
     </div>
-    <Achats key={dark ? "d" : "l"} doc={doc} api={api} rows={DEMO_ROWS} canEdit owner={owner} />
+    <Achats key={dark ? "d" : "l"} doc={doc} api={api} rows={DEMO_ROWS} canEdit owner={owner} admin />
   </div>);
 }
 `;

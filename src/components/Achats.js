@@ -12,7 +12,8 @@ import { PageHead, NavIcon } from "./SharedUI";
 // ===== DÉBUT PAGE (kit Achats : tout ce qui suit jusqu’à FIN PAGE est échangé avec le Claude du responsable achats — scripts/achats-kit.js / achats-import.js) =====
 
 /* ---------- Modèle de données ----------
-   fournisseurs { [id]: { nom, nomOdoo, ltJ, ltTransportJ, note } }      LT en jours calendaires ; LT transport toujours appliqué (transport géré par Enogia)
+   fournisseurs { [id]: { nom, nomOdoo, ltJ, ltTransportJ, note } }      LT fournisseur en jours calendaires ; LT transport en jours ouvrés, toujours appliqué
+                (transport géré par Enogia) : ajouté à la date de livraison d'une PO (date chez le fournisseur), retiré pour le rétro-planning
                 nomOdoo = nom du fournisseur dans Odoo s'il diffère de nom (facultatif) : sert à relier le fournisseur des PO
                 (anciens champs contact, email, tel conservés s'ils existent, plus affichés : doublon avec l'ERP)
    composants   { [id]: { ref, designation, type, famille, fournisseurId, delaiJ, actif, scopes, enfants: [{ ref, qte }], note } }   = articles
@@ -110,6 +111,9 @@ const today0 = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }
 const iso = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 const isoOf = v => { if (!v) return ""; const s = String(v); if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10); const d = new Date(s); return isNaN(d) ? "" : iso(d); };
 const addDays = (s, n) => { const d = new Date(s + "T12:00:00"); d.setDate(d.getDate() + n); return iso(d); };
+// v400 (demandé par le responsable achats) : le transport se compte en jours ouvrés (lundi → vendredi), n négatif = vers le passé
+export const addWorkDays = (s, n) => { if (!s || !n) return s; const d = new Date(s + "T12:00:00"), k = n > 0 ? 1 : -1; let r = Math.abs(n);
+  while (r > 0) { d.setDate(d.getDate() + k); if (d.getDay() !== 0 && d.getDay() !== 6) r--; } return iso(d); };
 const daysBetween = (a, b) => Math.round((new Date(b + "T12:00:00") - new Date(a + "T12:00:00")) / 864e5);
 const fd = s => (s ? s.slice(8, 10) + "/" + s.slice(5, 7) + "/" + s.slice(2, 4) : "—");
 const newId = () => "a" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -149,7 +153,8 @@ export function besoinOf(line, row, params) {
   return row ? isoOf(row.dateDebut || row.arrivee) : "";
 }
 // Calculs d'une ligne de nomenclature (jours calendaires) :
-//   livraison cible = besoin − marge ; commande au plus tard = livraison cible − LT fournisseur − LT transport
+//   livraison cible = besoin − marge ; commande au plus tard = livraison cible − LT transport (jours ouvrés) − LT fournisseur
+//   v400 : livraison prévue d'une PO = date de livraison Odoo (chez le fournisseur) + LT transport du fournisseur en jours ouvrés
 // ext = { four (fournisseur), poLine (ligne de PO affectée), besoin (date déjà résolue), ltArticle (LT de l'article), sansMarge (ligne N2 : cible = besoin) }
 // k : done (livré), nc, late (commande ou livraison en retard), soon (commande à passer sous 14 j), todo (à passer), ok (commandé, dans les temps)
 export function lineState(line, row, params, todayIso, ext) {
@@ -159,11 +164,11 @@ export function lineState(line, row, params, todayIso, ext) {
   const cible = besoin ? addDays(besoin, -marge) : "";
   const la = num(x.ltArticle), ltSrc = la != null && la > 1 ? "article" : "fournisseur";
   const lt = ltSrc === "article" ? la : num(x.four && x.four.ltJ), ltT = num(x.four && x.four.ltTransportJ);
-  const auPlusTard = cible && lt != null ? addDays(cible, -lt - (ltT || 0)) : "";
+  const auPlusTard = cible && lt != null ? addDays(addWorkDays(cible, -(ltT || 0)), -lt) : "";
   const p = x.poLine || null;
   const statut = p ? (p.statut || "envoyee") : l.statut === "nc" ? "nc" : l.livreSansPo ? "livre" : (LEGACY_ST[l.statut] || "apasser");
-  const prevue = p ? (p.dateLivraison || "") : (l.datePrevue || "");
-  const base = { besoin, cible, auPlusTard, lt, ltSrc, ltT, marge, prevue, statut, retardJ: 0 };
+  const prevueFour = p ? (p.dateLivraison || "") : "", prevue = p ? (prevueFour ? addWorkDays(prevueFour, ltT || 0) : "") : (l.datePrevue || "");
+  const base = { besoin, cible, auPlusTard, lt, ltSrc, ltT, marge, prevue, prevueFour, statut, retardJ: 0 };
   if (statut === "livre") return { ...base, k: "done", l: !p && l.livreSansPo ? "Livré sans PO" : "Livré" };
   if (statut === "nc") return { ...base, k: "nc", l: "Non conforme" };
   if (statut === "apasser") {
@@ -361,7 +366,7 @@ function ImportDialog({ title, intro, cols, exemple, fichier, analyze, onClose }
 // fournisseur de la ligne, lignes affectées à 100 % masquées), chacun désactivable ou modifiable ; recherche par n° de PO en plus.
 // fourOfPo(p) → { id, nom, src, relie } : fournisseur de la commande, sinon celui de l'article (anciennes lignes sans fournisseur).
 // Une ligne de PO entièrement affectée est grisée et ne peut plus être choisie ; ses affectations peuvent être retirées ici.
-// owner : bouton « Marquer livré sans PO » (régularisation), propriétaire de la page seulement.
+// owner : bouton « Marquer livré sans PO » (régularisation) — v400 : propriétaire ou admin de la page (responsable achats), prop admin de la page.
 function PoPicker({ line, po, affects, fours, fourOfPo, onPick, onClear, onUnassign, canEdit, owner, onRegul, onClose }) {
   const projDef = (line.fiche && line.fiche.projet) || projOf(line.pj), refDef = line.refEff || "", fourDef = line.four ? line.four.id : "";
   const [q, setQ] = useState(""); const inRef = useRef(null);
@@ -438,7 +443,7 @@ function PoPicker({ line, po, affects, fours, fourOfPo, onPick, onClear, onUnass
       <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
         {line.poId && <button type="button" style={{ ...btn(false), color: T.red600 }} onClick={onClear}>Retirer le PO de cette ligne</button>}
         {owner && !line.poId && (line.livreSansPo ? <button type="button" style={btn(false)} onClick={() => onRegul(false)}>Annuler « Livré sans PO »</button>
-          : <button type="button" style={btn(false)} title="Régularisation, réservée au propriétaire de la page : la ligne passe au statut Livré sans numéro de PO." onClick={() => onRegul(true)}>Marquer livré sans PO</button>)}
+          : <button type="button" style={btn(false)} title="Régularisation, réservée au propriétaire et aux admins de la page : la ligne passe au statut Livré sans numéro de PO." onClick={() => onRegul(true)}>Marquer livré sans PO</button>)}
         <span style={{ flex: 1 }} />
         <button type="button" style={btn(false)} onClick={onClose}>Fermer</button>
       </div>
@@ -506,7 +511,8 @@ const COLS_NOM = [
 /* ---------- Page ---------- */
 // doc : document planning/achats ; api : put(collection, id, data), del(collection, id), setParams(p), setAccess(liste)
 // rows : lignes du planning (pj, nomProjet, gamme, etat, arrivee, depart), en lecture seule ; canEdit : modifier ; owner : propriétaire
-export function Achats({ doc, api, rows, canEdit, owner }) {
+export function Achats({ doc, api, rows, canEdit, owner, admin }) {
+  const regulOk = !!(owner || admin); // v400 : « Livré sans PO » réservé au propriétaire et aux admins de la page (rôle du responsable achats)
   const S = useMemo(() => { const d = doc || {}, o = { ...EMPTY_ACHATS, ...d, params: { ...EMPTY_ACHATS.params, ...(d.params || {}) }, access: Array.isArray(d.access) ? d.access : [] };
     ["composants", "lignes", "fournisseurs", "projets", "po"].forEach(c => { o[c] = Object.fromEntries(Object.entries(d[c] || {}).map(([k, v]) => [k, { ...v, id: k }])); }); return o; }, [doc]);
   const byPj = useMemo(() => { const m = {}; (rows || []).forEach(r => { if (r && r.pj) m[r.pj] = r; }); return m; }, [rows]);
@@ -556,12 +562,13 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
     return Object.keys(m).sort(cmpNat).map(nom => ({ nom, items: m[nom], multi: m[nom].length > 1 })); };
   const hasOptions = a => groupsOf(a).length > 0 || kidsOf(a).some(k => k.art && groupsOf(k.art).length > 0);
   // Plan de configuration d'une machine : lignes N1 retenues (standard + options choisies) et groupes à choisir (modèle, puis N1)
-  const planOf = (mArt, choix) => { const c = choix || {}, groups = [], n1 = [];
+  // v400 : retires = groupes dont le choix a été retiré (facultatif décoché compris) : « à préciser » tant qu'ils n'ont pas de choix
+  const planOf = (mArt, choix, retires) => { const c = choix || {}, groups = [], n1 = [], R = retires || [];
     kidsOf(mArt).filter(k => !k.option).forEach(k => n1.push({ k, optKey: "" }));
     groupsOf(mArt).forEach(g => { const v = c[g.nom] || ""; groups.push({ key: g.nom, nom: g.nom, parent: null, items: g.items, multi: g.multi, val: v });
       const it = g.items.find(i => low(i.ref) === low(v)); if (it) n1.push({ k: it, optKey: g.nom }); });
     n1.forEach(x => { if (x.k.art) groupsOf(x.k.art).forEach(g => { const key = x.k.art.ref + " › " + g.nom; groups.push({ key, nom: g.nom, parent: x.k.art, items: g.items, multi: g.multi, val: c[key] || "" }); }); });
-    return { n1, groups, manquants: groups.filter(g => g.multi && !g.items.some(i => i.art && low(i.ref) === low(g.val))) }; };
+    return { n1, groups, manquants: groups.filter(g => (g.multi || R.includes(g.key)) && !g.items.some(i => i.art && low(i.ref) === low(g.val))) }; };
   const artOf = l => (l.ref && artByRef[low(l.ref)]) || (!l.ref && l.composantId && S.composants[l.composantId]) || null;
   const actifs = useMemo(() => arts.filter(isActif).sort((a, b) => cmpNat(a.ref, b.ref)), [arts]);
   const refSugg = actifs.filter(a => !isOrc(a)).map(a => [a.ref, a.designation || ""]);
@@ -653,7 +660,7 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
     return n; };
   const addN1 = async (fiche, art, qte, optKey, choix) => { const id = newId(); if (!(await write("lignes", id, lineFrom(fiche, art, qte, { optKey: optKey || "" })))) return 0; return 1 + await addKids(fiche, id, art, qte, "", choix, true); };
   // Fiche « Options à préciser » : configuration finalisée mais groupes « choisir 1 » encore sans choix
-  const aPreciser = f => { if (!f || !f.config || f.config.statut !== "finalisee") return []; const m = artByRef[low(f.modele)]; return m ? planOf(m, f.config.choix).manquants : []; };
+  const aPreciser = f => { if (!f || !f.config || f.config.statut !== "finalisee") return []; const m = artByRef[low(f.modele)]; return m ? planOf(m, f.config.choix, f.config.retires).manquants : []; };
   const scopesManquants = (modele, fams) => { const c = cfgOf(artByRef[low(modele)]); return scopeList.filter(s => c[s].actif && !fams.has(s)); };
   const addStd = async (fiche, modele, fams) => { let n = 0; for (const s of scopesManquants(modele, fams)) if (await write("lignes", newId(), lineFrom(fiche, null, 1, { famille: s }))) n++; return n; };
   const famsN1 = L => new Set(L.filter(l => !l.parentId).map(l => String(l.famEff || "").toUpperCase()));
@@ -733,7 +740,10 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
   // Configuration machine : en brouillon, crée la nomenclature (standard + options retenues + scopes vides) ;
   // fiche déjà créée, remplace seulement les lignes des groupes dont le choix a changé (refusé si un PO y est attribué).
   const appliquerConfig = async (fiche, choix) => {
-    const raw = S.projets[fiche.id], brouillon = !raw.config || raw.config.statut !== "finalisee", mArt = artByRef[low(fiche.modele)], P = planOf(mArt, choix);
+    const raw = S.projets[fiche.id], brouillon = !raw.config || raw.config.statut !== "finalisee", mArt = artByRef[low(fiche.modele)], avant0 = (raw.config && raw.config.choix) || {};
+    // v400 : un choix retiré (facultatif décoché compris) reste « à préciser » jusqu'à un nouveau choix
+    const retires = [...new Set([...((raw.config && raw.config.retires) || []), ...Object.keys(avant0).filter(k => avant0[k] && !(choix || {})[k])])].filter(k => !(choix || {})[k]);
+    const P = planOf(mArt, choix, retires);
     const fi = { id: fiche.id, machine: fiche.machine }, L = linesByFiche[fiche.id] || [];
     let n = 0, s = 0;
     if (brouillon) {
@@ -765,7 +775,7 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
       }
     }
     const choixOk = Object.fromEntries(P.groups.filter(g => g.val).map(g => [g.key, g.val]));   // les choix d'options qui ne s'appliquent plus (N1 retiré) sont effacés
-    const ok = await write("projets", fiche.id, { ...raw, config: { statut: "finalisee", choix: choixOk } }), reste = P.manquants.length ? " " + P.manquants.length + " option(s) à préciser." : "";
+    const ok = await write("projets", fiche.id, { ...raw, config: { statut: "finalisee", choix: choixOk, retires: retires.filter(k => P.groups.some(g => g.key === k)) } }), reste = P.manquants.length ? " " + P.manquants.length + " option(s) à préciser." : "";
     notify(!ok ? "Enregistrement impossible, réessayez dans un instant." : (brouillon ? "Nomenclature créée : " + n + " ligne(s)." : n || s ? "Options appliquées : " + s + " ligne(s) retirée(s), " + n + " ajoutée(s)." : "Aucun changement.") + reste, !ok);
     return ok;
   };
@@ -809,7 +819,7 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
         { k: "dateBesoin", l: "Date de besoin", type: "date", hint: v => "Vide : " + (parent ? "commande au plus tard du N1" : "arrivée machine") + " + décalages = " + fd(autoB(v)) + ", suivie automatiquement. Une date saisie est fixe et ignore les décalages." + (parent ? " Composant à envoyer chez le fournisseur du N1 au passage de sa commande : pas de marge en plus." : "") },
         { k: "_calc", l: "Rétro-planning", type: "static", val: v => { const a = A(v), four = (a && S.fournisseurs[a.fournisseurId]) || S.fournisseurs[v.fournisseurId] || fourDefOf(v.famille || (a && a.famille)) || null;
           const s = lineState(v, { dateDebut: fiche.dateDebutEff, marge: fiche.margeEff }, S.params, tIso, { four, poLine: (v.poId && S.po[v.poId]) || null, besoin: v.dateBesoin || autoB(v), ltArticle: a && a.delaiJ, sansMarge: !!parent });
-          return "Besoin " + fd(s.besoin) + ", livraison cible " + fd(s.cible) + ", commande au plus tard " + fd(s.auPlusTard) + (s.lt == null ? " (LT inconnu)" : " (LT " + s.ltSrc + " " + s.lt + " j + transport " + (s.ltT || 0) + " j)"); } },
+          return "Besoin " + fd(s.besoin) + ", livraison cible " + fd(s.cible) + ", commande au plus tard " + fd(s.auPlusTard) + (s.lt == null ? " (LT inconnu)" : " (LT " + s.ltSrc + " " + s.lt + " j + transport " + (s.ltT || 0) + " j ouvrés)"); } },
         { k: "note", l: "Note", type: "textarea" },
       ],
       deleteLabel: kids.length ? "Supprimer avec ses " + kids.length + " sous-ligne(s)" : "Supprimer",
@@ -845,7 +855,7 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
   const assignPo = async (lineId, poId) => { const raw = S.lignes[lineId]; if (!raw) return;
     if (await put("lignes", lineId, { ...raw, poId, ...(poId && raw.livreSansPo ? { livreSansPo: false, livreSansPoLe: "" } : {}) })) setPick(null); };
   // Régularisation (propriétaire seulement) : ligne livrée sans n° de PO, ou retour à l'état précédent
-  const setRegul = async (lineId, on) => { const raw = S.lignes[lineId]; if (!owner || !raw || (on && raw.poId)) return;
+  const setRegul = async (lineId, on) => { const raw = S.lignes[lineId]; if (!regulOk || !raw || (on && raw.poId)) return;
     const ok = await write("lignes", lineId, { ...raw, livreSansPo: on, livreSansPoLe: on ? tIso : "" });
     notify(ok ? (on ? "Ligne marquée livrée sans PO." : "Marquage « Livré sans PO » annulé.") : "Enregistrement impossible, réessayez dans un instant.", !ok); if (ok) setPick(null); };
   const unassign = async lineId => { const raw = S.lignes[lineId]; if (!raw) return; const ok = await write("lignes", lineId, { ...raw, poId: "" }); notify(ok ? "Affectation retirée." : "Enregistrement impossible, réessayez dans un instant.", !ok); };
@@ -916,7 +926,7 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
       fields: [{ k: "nom", l: "Nom", req: true, wide: true },
         { k: "nomOdoo", l: "Nom dans Odoo", wide: true, suggest: nomsPo, hint: v => { const n = poList.filter(p => p.fournisseur && [v.nom, v.nomOdoo].some(x => normH(x) && normH(x) === normH(p.fournisseur))).length;
           return "À remplir si le nom des PO diffère du nom ci-dessus. Liste : noms de PO pas encore reliés. " + n + " ligne(s) de PO reliée(s)."; } },
-        { k: "ltJ", l: "LT fournisseur (jours)", type: "number", hint: "Remplacé par le LT de l'article s'il est défini." }, { k: "ltTransportJ", l: "LT transport (jours)", type: "number", hint: "Toujours appliqué (transport géré par Enogia)." },
+        { k: "ltJ", l: "LT fournisseur (jours)", type: "number", hint: "Remplacé par le LT de l'article s'il est défini." }, { k: "ltTransportJ", l: "LT transport (jours ouvrés)", type: "number", hint: "Toujours appliqué (transport géré par Enogia), en jours ouvrés : ajouté à la date de livraison des PO (date chez le fournisseur) et retiré pour la commande au plus tard." },
         { k: "note", l: "Note", type: "textarea" }],
       deleteLabel: used ? "Supprimer (utilisé sur " + used + " ligne(s))" : "Supprimer",
       onDelete: isNew ? null : async () => { if (await del("fournisseurs", raw.id)) setForm(null); },
@@ -1661,11 +1671,11 @@ export function Achats({ doc, api, rows, canEdit, owner }) {
     {form && <FormDialog key={form.vals.id || form.title} {...form} onClose={() => setForm(null)} />}
     {cfg && ficheById[cfg] && (() => { const f = ficheById[cfg], mArt = artByRef[low(f.modele)], br = !f.config || f.config.statut !== "finalisee";
       return <ConfigDialog key={cfg} titre={"Configuration machine · " + f.machine} sousTitre={"Modèle " + (f.modele || "—") + (br ? ", brouillon : nomenclature pas encore créée." : ", nomenclature déjà créée.")}
-        plan={c => planOf(mArt, c)} initial={(f.config && f.config.choix) || {}} brouillon={br} onClose={() => setCfg(null)}
+        plan={c => planOf(mArt, c, [...new Set([...((f.config && f.config.retires) || []), ...Object.keys((f.config && f.config.choix) || {}).filter(k => !c[k])])])} initial={(f.config && f.config.choix) || {}} brouillon={br} onClose={() => setCfg(null)}
         onDraft={async c => { const ok = await write("projets", f.id, { ...S.projets[f.id], config: { statut: "brouillon", choix: c } }); notify(ok ? "Brouillon enregistré." : "Enregistrement impossible, réessayez dans un instant.", !ok); if (ok) setCfg(null); }}
         onApply={async c => { const r = await appliquerConfig(f, c); if (typeof r === "string") return r; if (r) setCfg(null); }} />; })()}
     {imp && <ImportDialog {...IMPORTS[imp]} onClose={() => setImp(null)} />}
-    {pick && calc[pick] && <PoPicker line={calc[pick]} po={poList.filter(p => !p.annule)} affects={affects} fours={Object.values(S.fournisseurs).sort((a, b) => cmpNat(a.nom, b.nom))} fourOfPo={fourOfPo} onUnassign={unassign} canEdit={canEdit} owner={owner} onRegul={on => setRegul(pick, on)} onPick={id => assignPo(pick, id)} onClear={() => assignPo(pick, "")} onClose={() => setPick(null)} />}
+    {pick && calc[pick] && <PoPicker line={calc[pick]} po={poList.filter(p => !p.annule)} affects={affects} fours={Object.values(S.fournisseurs).sort((a, b) => cmpNat(a.nom, b.nom))} fourOfPo={fourOfPo} onUnassign={unassign} canEdit={canEdit} owner={regulOk} onRegul={on => setRegul(pick, on)} onPick={id => assignPo(pick, id)} onClear={() => assignPo(pick, "")} onClose={() => setPick(null)} />}
     {toast && <div role="status" style={{ position: "fixed", bottom: 18, left: "50%", transform: "translateX(-50%)", zIndex: 10020, background: toast.err ? T.red600 : T.ink900, color: T.card, padding: "8px 14px", borderRadius: 8, fontSize: FZF.sm, fontWeight: 600, display: "flex", gap: 6, alignItems: "center" }}><NavIcon name={toast.err ? "warning" : "check"} size={15} />{toast.msg}</div>}
   </div>);
 }

@@ -1224,4 +1224,7 @@ export const RELEASE_CATALOG = [
   { v: "399", t: "Passeport machine allégé — « À traiter » en tête, groupes repliés, une ligne par élément", items: [
     ["Passeport allégé", "« À traiter » en tête, sous-ensembles repliés, une ligne par élément."],
   ] },
+  { v: "400", t: "Achats / Appro — transport en jours ouvrés (PO et rétro-planning), « Livré sans PO » pour le responsable achats, option retirée = à préciser", items: [
+    ["Achats : transport en jours ouvrés", "Livraison prévue des PO = date fournisseur + transport ; « Livré sans PO » pour le responsable achats ; option retirée à préciser."],
+  ] },
 ];

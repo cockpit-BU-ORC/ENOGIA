@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v400",
+    date: "2026-11-18",
+    title: "V400 : Achats / Appro — transport en jours ouvrés (PO et rétro-planning), « Livré sans PO » pour le responsable achats, option retirée = à préciser",
+    items: [
+      { t: "Transport en jours ouvrés", d: "Le LT transport d'un fournisseur s'ajoute en jours ouvrés à la date de livraison d'une PO (date chez le fournisseur) : la livraison prévue tient compte du transport. Sans PO, le rétro-planning retire aussi le transport en jours ouvrés." },
+      { t: "Livré sans PO", d: "« Marquer livré sans PO » est ouvert au responsable achats (admin de la page Achats), plus seulement au propriétaire." },
+      { t: "Options à préciser", d: "Une option retirée après la configuration (choix retiré ou option facultative décochée) remet la fiche en « Options à préciser » jusqu'à un nouveau choix." },
+    ],
+  },
+  {
     id: "2026-11-v399",
     date: "2026-11-18",
     title: "V399 : Passeport machine allégé — « À traiter » en tête, groupes repliés, une ligne par élément",

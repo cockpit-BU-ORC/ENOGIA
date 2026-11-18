@@ -2979,3 +2979,13 @@ Demandé : « la page passeport est beaucoup trop lourde et pas assez design pou
 - passport.js (testé) : `rowIssue` (rouge : réel ≠ prévu, non conforme, achat en retard ; ambre : design à définir — sauf élément facultatif `opt`, ex. « Autres modifications à faire » —, à commander) et `rowState` (livré, commandé, turbines allouées, conforme).
 - MachinePassport.js : `Passport` réécrit — titre 28 px + identité sur une ligne + onglets (Passeport · RAI · Photos · Historique) ; fil des phases sur une ligne (cercles reliés, phase en cours, clic sur RAI = onglet RAI ; plus de filtre par phase) ; bloc « À traiter » (rouges d'abord) ; groupes repliés (avancement, nombre d'alertes, `enogia-cl-in`) ; `PassRow` en grille sur une ligne de 44 px (élément · prévu + « écart » · réel · état), valeur absente = « — », source et phase au survol ; export CSV en pied ; liste des machines : plaque, point rouge, phase en cours ; filtre En cours / Expédiées (la recherche couvre tout). Page de démonstration : 2 395 → ~1 090 px.
 - Fichiers : src/passport.js, src/passport.test.js, src/components/MachinePassport.js.
+
+## V400 — Achats / Appro : transport, livré sans PO, options retirées
+
+Demandé (retours du responsable achats) : « remettre le warning Options à préciser quand une option est retirée » ; « déclarer une ligne livrée sans PO : c'est pour mon rôle dans le Cockpit » ; « pour les fournisseurs avec un LT transport, ajouter le transport à la PO (ex. date de livraison Odoo 29/01 + 5 jours ouvrés) ; idem pour le théorique, en jours ouvrés ».
+
+- Achats.js : `addWorkDays` (exporté) ; `lineState` — `prevue` d'une PO = `dateLivraison` + `ltTransportJ` jours ouvrés (`prevueFour` = date chez le fournisseur), `auPlusTard` = cible − transport (jours ouvrés) − LT fournisseur ; libellés « jours ouvrés » (fiche fournisseur, rétro-planning) ; prop `admin` → `regulOk` (« Marquer livré sans PO » : propriétaire ou admin de la page) ; `planOf(…, retires)` + `config.retires` (choix retirés, facultatifs compris, « à préciser » jusqu'à un nouveau choix) dans `aPreciser`, la configuration et `appliquerConfig`.
+- App : `admin` = Admin sur Achats (accès par rôle), sinon la liste d'accès de la page (responsable achats).
+- Tests : achats.test.js (rétro-planning en jours ouvrés, livraison prévue d'une PO avec transport).
+- Kit : consignes (signature `admin`, jours ouvrés, `config.retires`), aperçu avec `admin` ; kit régénéré.
+- Fichiers : src/components/Achats.js, src/App.js, src/achats.test.js, scripts/achats-consignes.md, scripts/achats-kit.js.
