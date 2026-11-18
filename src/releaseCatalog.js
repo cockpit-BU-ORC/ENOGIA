@@ -1199,4 +1199,7 @@ export const RELEASE_CATALOG = [
     ["Courbe annuelle du Cash in", "Widget d'accueil : cumul de l'année face à l'initial."],
     ["Widgets direction", "Cash in du mois, retards du Cash in, départs du trimestre, départs à l'heure."],
   ] },
+  { v: "392", t: "Accueil d'un chef de projet — tous les widgets ne comptent que ses PJ", items: [
+    ["Accueil chef de projet", "Les widgets ne comptent que les PJ du chef de projet."],
+  ] },
 ];

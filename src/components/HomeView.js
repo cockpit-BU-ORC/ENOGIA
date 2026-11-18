@@ -38,41 +38,34 @@ const prefKey = email => "enogia_home_" + String(email || "anon").toLowerCase();
 const loadPrefs = email => { try { return JSON.parse(localStorage.getItem(prefKey(email)) || "{}") || {}; } catch (e) { return {}; } };
 
 export function HomeView({ produit, data, comments, myEmail, myName, people, unseenChanges, lastImport, onOpenPj, onGo, pinOk, testsDoc, profiles, owner, cash, turbineDoc, onOpenCash, prodDoc, canProdTurb, plan, closurePeriods, productionExclusions, saveHomeLayout }) {
-  const rows = useMemo(() => (data || []).filter(r => r && r.pj && r.etat !== "SLOT_LIBRE"), [data]);
+  // v392 (demandé : « les widgets doivent prendre en compte les PJ des chefs de projet ») : sur l'accueil d'un chef de projet, toutes les données
+  // (chiffres clés, départs, parcours, widgets, Cash in) sont limitées à ses PJ — en cours et expédiés ; les autres accueils gardent tout le parc.
+  const rowsAll = useMemo(() => (data || []).filter(r => r && r.pj && r.etat !== "SLOT_LIBRE"), [data]);
   const today0 = startOfToday();
-
-  const open = useMemo(() => rows.filter(r => r.etat !== "SHIPPED"), [rows]);
-  const shipped = useMemo(() => countShippedYTD(rows), [rows]);
-  const notShipped = useMemo(() => departedNotShipped(rows), [rows]); // v243 : départ passé mais pas « Expédiée »
-  const shipped28 = useMemo(() => rows.filter(r => { if (!r.depart) return false; const n = inDays(r.depart); return n != null && n <= 0 && n >= -28; }).length, [rows]); // eslint-disable-line
-  const departs = useMemo(() => open.filter(r => r.depart && !isNaN(new Date(r.depart)) && new Date(r.depart) >= today0).sort((a, b) => new Date(a.depart) - new Date(b.depart)), [open]); // eslint-disable-line
-  const next30 = departs.filter(r => inDays(r.depart) <= 30).length;
-  const late = useMemo(() => open.filter(r => r.drift > 0).sort((a, b) => b.drift - a.drift), [open]);
+  const openAll = useMemo(() => rowsAll.filter(r => r.etat !== "SHIPPED"), [rowsAll]);
   const mentions = useMemo(() => openMentionsFor(comments, myEmail), [comments, myEmail]);
-  const STAGE_IDS = ["MONTAGE", "ELEC", "TESTS", "PACKAGING"];
-  const inProd = open.filter(r => STAGE_IDS.includes(r.etat)).length;
 
   const meAcc = (people || []).find(p => String(p.email || "").toLowerCase() === String(myEmail || "").toLowerCase());
   const fullName = (meAcc && meAcc.name) || (String(myName || "").includes("@") ? nameFromEmail(myEmail) : myName) || "";
   const firstName = String(fullName).split(" ")[0] || "";
+  const isMine = r => chefsOf(getPjMeta(r.pj, r)).some(c => !!chefAccount(c, [{ name: fullName, email: myEmail }]));
 
-  const mine = useMemo(() => {
+  const mineAll = useMemo(() => {
     if (!fullName) return [];
-    return open.filter(r => chefsOf(getPjMeta(r.pj, r)).some(c => !!chefAccount(c, [{ name: fullName, email: myEmail }])))
-      .sort((a, b) => (a.depart ? new Date(a.depart) : 9e15) - (b.depart ? new Date(b.depart) : 9e15));
-  }, [open, fullName, myEmail]);
+    return openAll.filter(isMine).sort((a, b) => (a.depart ? new Date(a.depart) : 9e15) - (b.depart ? new Date(b.depart) : 9e15));
+  }, [openAll, fullName, myEmail]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const myTester = useMemo(() => (testsDoc ? testerOfEmail(testsDoc, myEmail) : null), [testsDoc, myEmail]);
   const myTests = useMemo(() => {
     if (!myTester || !testsDoc) return [];
     const todayIso = today0.getFullYear() + "-" + String(today0.getMonth() + 1).padStart(2, "0") + "-" + String(today0.getDate()).padStart(2, "0");
-    return open.filter(r => r.tests && String(r.testsFin || r.tests).slice(0, 10) >= todayIso && planOf(testsDoc, r.pj).assign.some(a => a.tid === myTester.id))
+    return openAll.filter(r => r.tests && String(r.testsFin || r.tests).slice(0, 10) >= todayIso && planOf(testsDoc, r.pj).assign.some(a => a.tid === myTester.id))
       .sort((a, b) => String(a.tests).localeCompare(String(b.tests)));
-  }, [open, myTester, testsDoc]); // eslint-disable-line
+  }, [openAll, myTester, testsDoc]); // eslint-disable-line
 
   // v188 : accueil selon le rôle (Manager › Réglages › Personnes et rôles, sinon déduit) ; les admins peuvent afficher chaque accueil.
   const profile = useMemo(() => profileOf(profiles, myEmail), [profiles, myEmail]);
-  const myPjs = useMemo(() => [...new Set([...pjsOfProfile(profile, rows), ...mine.map(r => r.pj)])], [profile, rows, mine]);
+  const myPjs = useMemo(() => [...new Set([...pjsOfProfile(profile, rowsAll), ...mineAll.map(r => r.pj)])], [profile, rowsAll, mineAll]);
   const autoRole = effectiveRole(profile, { owner, tester: !!myTester, hasProjects: myPjs.length > 0, prodTurb: !!canProdTurb && !owner });
   // v231 (demandé : « je dois avoir la vision de chaque onglet même si je ne suis pas indiqué testeur ») : le propriétaire choisit
   // l'accueil de n'importe quel poste, et la personne vue (chef de projet, testeur) ; les autres gardent l'accueil de leur poste.
@@ -82,10 +75,26 @@ export function HomeView({ produit, data, comments, myEmail, myName, people, uns
   // v364 : écran de gestion des accueils par rôle (propriétaire), mémorisé sur le poste
   const [manage, setManageS] = useState(() => { try { return localStorage.getItem("enogia_home_manage") === "1"; } catch (e) { return false; } });
   const setManage = v => { setManageS(v); try { localStorage.setItem("enogia_home_manage", v ? "1" : "0"); } catch (e) { /* stockage indisponible */ } };
-  const chefList = useMemo(() => owner ? [...new Set(open.flatMap(r => chefsOf(getPjMeta(r.pj, r))).filter(Boolean))].sort((a, b) => a.localeCompare(b, "fr")) : [], [owner, open]);
+  const chefList = useMemo(() => owner ? [...new Set(openAll.flatMap(r => chefsOf(getPjMeta(r.pj, r))).filter(Boolean))].sort((a, b) => a.localeCompare(b, "fr")) : [], [owner, openAll]);
   const testerList = useMemo(() => owner && testsDoc ? testersOf(testsDoc) : [], [owner, testsDoc]);
   const asChef = owner && role === "cdp" ? (chefList.includes(viewAs.chef) ? viewAs.chef : chefList[0] || "") : "";
   const asTester = owner && role === "testeur" ? (testerList.find(t => t.id === viewAs.tester) || testerList[0] || null) : null;
+  // PJ de l'accueil « chef de projet » : ceux du chef affiché (propriétaire) ou les miens (fiche, profil, chef du PJ), expédiés compris
+  const scope = useMemo(() => {
+    if (role !== "cdp") return null;
+    return new Set(rowsAll.filter(r => (asChef ? chefsOf(getPjMeta(r.pj, r)).includes(asChef) : myPjs.includes(r.pj) || (!!fullName && isMine(r)))).map(r => r.pj));
+  }, [role, rowsAll, asChef, myPjs, fullName, myEmail]); // eslint-disable-line react-hooks/exhaustive-deps
+  const rows = useMemo(() => (scope ? rowsAll.filter(r => scope.has(r.pj)) : rowsAll), [rowsAll, scope]);
+  const open = useMemo(() => rows.filter(r => r.etat !== "SHIPPED"), [rows]);
+  const mine = useMemo(() => (fullName ? open.filter(isMine) : []), [open, fullName, myEmail]); // eslint-disable-line react-hooks/exhaustive-deps
+  const shipped = useMemo(() => countShippedYTD(rows), [rows]);
+  const notShipped = useMemo(() => departedNotShipped(rows), [rows]); // v243 : départ passé mais pas « Expédiée »
+  const shipped28 = useMemo(() => rows.filter(r => { if (!r.depart) return false; const n = inDays(r.depart); return n != null && n <= 0 && n >= -28; }).length, [rows]); // eslint-disable-line
+  const departs = useMemo(() => open.filter(r => r.depart && !isNaN(new Date(r.depart)) && new Date(r.depart) >= today0).sort((a, b) => new Date(a.depart) - new Date(b.depart)), [open]); // eslint-disable-line
+  const next30 = departs.filter(r => inDays(r.depart) <= 30).length;
+  const late = useMemo(() => open.filter(r => r.drift > 0).sort((a, b) => b.drift - a.drift), [open]);
+  const STAGE_IDS = ["MONTAGE", "ELEC", "TESTS", "PACKAGING"];
+  const inProd = open.filter(r => STAGE_IDS.includes(r.etat)).length;
   const homePjs = asChef ? open.filter(r => chefsOf(getPjMeta(r.pj, r)).includes(asChef)).map(r => r.pj) : myPjs;
   const homeTester = owner && role === "testeur" ? asTester : myTester;
   const homeName = asChef ? asChef.split(" ")[0] : asTester ? String(asTester.name || "").split(" ")[0] : firstName;
@@ -246,12 +255,12 @@ export function HomeView({ produit, data, comments, myEmail, myName, people, uns
       {role && (owner && manage
         ? <HomeRoles roles={ROLES} role={role} layouts={layouts} onPick={k => setViewAs({ role: k })} onClose={() => setManage(false)} onSave={(k, lay) => saveHomeLayout && saveHomeLayout(k, lay)}
             viewAsEl={<span style={{ display: "inline-flex", gap: 6, alignItems: "center", fontSize: FZ.xs, color: T.ink500 }}>{(role === "cdp" && chefList.length > 0) || (role === "testeur" && testerList.length > 0) ? "Voir comme" : null}{role === "cdp" && chefList.length > 0 && <select aria-label="Chef de projet affiché" value={asChef} onChange={e => setViewAs({ chef: e.target.value })} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink900, borderRadius: 8, minHeight: 28, padding: "0 8px", fontSize: FZ.xs, fontFamily: T.font }}>{chefList.map(c => <option key={c} value={c}>{c}</option>)}</select>}{role === "testeur" && testerList.length > 0 && <select aria-label="Testeur affiché" value={asTester ? asTester.id : ""} onChange={e => setViewAs({ tester: e.target.value })} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink900, borderRadius: 8, minHeight: 28, padding: "0 8px", fontSize: FZ.xs, fontFamily: T.font }}>{testerList.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select>}</span>}>
-            <RoleHome produit={produit} key={role} kpiEl={kpiEl} depEl={depEl} parcoursEl={parcoursEl} role={role} profile={profile} rows={rows} open={open} late={late} mentions={mentions} myPjs={homePjs} testsDoc={testsDoc} myTester={homeTester} turbineDoc={turbineDoc} owner={owner} cash={cash} onOpenPj={onOpenPj} onGo={onGo} onOpenCash={onOpenCash}
+            <RoleHome produit={produit} key={role} kpiEl={kpiEl} depEl={depEl} parcoursEl={parcoursEl} role={role} profile={profile} rows={rows} open={open} late={late} mentions={mentions} myPjs={homePjs} scope={scope} testsDoc={testsDoc} myTester={homeTester} turbineDoc={turbineDoc} owner={owner} cash={cash} onOpenPj={onOpenPj} onGo={onGo} onOpenCash={onOpenCash}
         prodDoc={canProdTurb ? prodDoc : null} plan={plan} closurePeriods={closurePeriods} productionExclusions={productionExclusions} hello={hello() + (homeName ? " " + homeName : "")} renderLead={renderLead}
         layout={layouts[role] || {}} onLayout={owner && saveHomeLayout ? lay => saveHomeLayout(role, lay) : undefined}
         ui={{ Row, Head, cardS, Pill, presenceOf, nomOf, empty, grey, link, S, H, A }} />
           </HomeRoles>
-        : <RoleHome produit={produit} key={role} kpiEl={kpiEl} depEl={depEl} parcoursEl={parcoursEl} role={role} profile={profile} rows={rows} open={open} late={late} mentions={mentions} myPjs={homePjs} testsDoc={testsDoc} myTester={homeTester} turbineDoc={turbineDoc} owner={owner} cash={cash} onOpenPj={onOpenPj} onGo={onGo} onOpenCash={onOpenCash}
+        : <RoleHome produit={produit} key={role} kpiEl={kpiEl} depEl={depEl} parcoursEl={parcoursEl} role={role} profile={profile} rows={rows} open={open} late={late} mentions={mentions} myPjs={homePjs} scope={scope} testsDoc={testsDoc} myTester={homeTester} turbineDoc={turbineDoc} owner={owner} cash={cash} onOpenPj={onOpenPj} onGo={onGo} onOpenCash={onOpenCash}
         prodDoc={canProdTurb ? prodDoc : null} plan={plan} closurePeriods={closurePeriods} productionExclusions={productionExclusions} hello={hello() + (homeName ? " " + homeName : "")} renderLead={renderLead}
         layout={layouts[role] || {}} onLayout={owner && saveHomeLayout ? lay => saveHomeLayout(role, lay) : undefined}
         ui={{ Row, Head, cardS, Pill, presenceOf, nomOf, empty, grey, link, S, H, A }} />)}

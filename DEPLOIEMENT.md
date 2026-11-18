@@ -2891,3 +2891,12 @@ Demandé : « je n'arrive pas à fermer certains widgets sur la home page ; rajo
 - WidgetBoard : le brouillon est remis à zéro sur le contenu de la disposition (`JSON.stringify`), plus sur l'identité du tableau (la disposition par défaut est recalculée à chaque rendu).
 - RoleHome : `CashCurve` (courbe de `curveGeom` de cashWeekly.js aux couleurs du thème, légende, mois) ; widgets `cashCurve` (Large / Moyen), `cashMonth`, `cashLate` (Cash in : visibles avec le droit Finance), `depQuarter`, `onTime` ; calculs `weeklyReport` (même chiffres que la fiche du lundi, hors EPC) ; catalogue « Gestion — Turbines et Cash in » et « Vue d'ensemble » ; `HOME_DEFAULTS.direction` (+ cashCurve, depQuarter, onTime) et `daf` (+ cashCurve, cashLate, cashMonth) — seulement pour un accueil jamais modifié.
 - Fichiers : src/styles.css, src/components/WidgetBoard.js, src/components/RoleHome.js.
+
+## V392 — Accueil chef de projet limité à ses PJ
+
+Demandé : « les widgets doivent prendre en compte les PJ des chefs de projet ».
+
+- HomeView : `rowsAll` / `openAll` (tout le parc) pour reconnaître la personne et son rôle ; puis `scope` (rôle `cdp` : PJ du chef affiché par le propriétaire, sinon mes PJ — profil, chef du PJ —, en cours et expédiés) → `rows`, `open`, `late`, `departs`, chiffres clés, parcours et widgets calculés sur ce périmètre ; les autres accueils inchangés.
+- RoleHome : prop `scope` ; `cashDoc()` = Cash in limité aux jalons d'un PJ du périmètre (un jalon « PJ401/PJ402 » compte s'il touche l'un d'eux) pour Cash in, À encaisser, Cash in de l'année / du mois, Retards.
+- Maquette `maquettes-design/v392-machines-orc-4-pistes.html` (Machines ORC : A tableau comme le Google Sheets, B fiche en onglets, C standards par gamme, D machine en blocs ; liens Turbines / Achats, kits extractibles) en attente du choix.
+- Fichiers : src/components/HomeView.js, src/components/RoleHome.js.

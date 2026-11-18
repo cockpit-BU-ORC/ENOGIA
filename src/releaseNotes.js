@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v392",
+    date: "2026-11-18",
+    title: "V392 : Accueil d'un chef de projet — tous les widgets ne comptent que ses PJ",
+    items: [
+      { t: "Mes PJ seulement", d: "Sur l'accueil d'un chef de projet, les chiffres clés, les départs, le parcours et tous les widgets (Cash in compris) ne comptent que ses PJ, en cours et expédiés." },
+    ],
+  },
+  {
     id: "2026-11-v391",
     date: "2026-11-18",
     title: "V391 : Accueil — le « − » ferme tous les widgets ; courbe annuelle du Cash in et widgets pour la direction",

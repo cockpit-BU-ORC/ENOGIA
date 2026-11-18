@@ -130,7 +130,7 @@ const StatLine = ({ items }) => <div style={{ display: "flex", flexWrap: "wrap",
       <b style={{ fontFamily: T.fontDisplay, fontSize: "clamp(18px,1.5vw,22px)", fontWeight: 600, color: tone || T.ink900, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{value}</b>
       <span style={{ fontSize: FZ.sm, color: T.ink500, whiteSpace: "nowrap" }}>{label}</span></C>; })}
   </div>;
-export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl, rows, open, late, mentions, myPjs, testsDoc, myTester, turbineDoc, prodDoc, plan, closurePeriods, productionExclusions, owner, cash, onOpenPj, onGo, onOpenCash, layout, onLayout, hello, renderLead }) {
+export function RoleHome({ produit, scope, role, profile, ui, kpiEl, depEl, parcoursEl, rows, open, late, mentions, myPjs, testsDoc, myTester, turbineDoc, prodDoc, plan, closurePeriods, productionExclusions, owner, cash, onOpenPj, onGo, onOpenCash, layout, onLayout, hello, renderLead }) {
   const { Row, Head, cardS, Pill, presenceOf, nomOf, empty, grey, link, S, H, A } = ui;
   const today = iso(new Date());
   const on = id => blockOn(profile, id);
@@ -315,14 +315,16 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
     const nCrit = tst.filter(x => x === "Critique").length, nLateT = tst.filter(x => x === "En retard").length;
     return sec("turbines", "Turbines", H.brand, <><Head title="Turbines" count={turb.length} />
       <div style={grid}><Stat label="critiques" value={nCrit} tone={nCrit ? T.red500 : undefined} /><Stat label="en retard" value={nLateT} tone={nLateT ? T.amber600 : undefined} /></div></>); } };
-  W.cash = { label: "Cash in", span: 4, only: () => !!cash, render: () => { const c = cashOverview(getCashinDoc(), today); return sec("cash", "Cash in", S.finProd.ring, <>
+  // v392 : sur l'accueil d'un chef de projet, le Cash in ne compte que ses PJ (jalon « PJ401/PJ402 » : compté s'il touche l'un d'eux)
+  const cashDoc = () => { const d = getCashinDoc(); if (!d || !scope) return d; const hit = pj => String(pj || "").split(/[^A-Za-z0-9]+/).some(p => scope.has(p)); return { ...d, rows: (d.rows || []).filter(x => hit(x.pj)) }; };
+  W.cash = { label: "Cash in", span: 4, only: () => !!cash, render: () => { const c = cashOverview(cashDoc(), today); return sec("cash", "Cash in", S.finProd.ring, <>
     <Head title="Cash in" sub={c ? "hors EPC" : ""} />
     {!c ? <div style={{ ...grey, margin: "4px 0 6px" }}>Données du Cash in pas encore chargées : ouvrez une fois l'onglet Cash in, ou importez le fichier.</div> : <>
       <div style={{ ...grid, gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))" }}><Stat label="encaissé" value={fmtEur(c.paid)} /><Stat label="facturé, en attente" value={fmtEur(c.invoiced)} /><Stat label="en retard de paiement" value={fmtEur(c.late)} tone={c.late ? T.red500 : undefined} /><Stat label="à facturer" value={fmtEur(c.toBill)} tone={c.toBill ? T.amber600 : undefined} /><Stat label="attendu sous 30 j" value={fmtEur(c.next30)} /></div>
     </>}
     {onOpenCash && more("Ouvrir le Cash in", onOpenCash)}</>); } };
   // v369 (raccourci de la proposition B) : factures émises en attente de paiement ; un appui ouvre Cash in › Encaissements
-  W.encaisser = { label: "À encaisser", span: 4, sizes: ["m", "s", "xl"], only: () => !!cash, render: z => { const d = getCashinDoc(); if (!d) return null;
+  W.encaisser = { label: "À encaisser", span: 4, sizes: ["m", "s", "xl"], only: () => !!cash, render: z => { const d = cashDoc(); if (!d) return null;
     const L = toCollect(d.rows, cashToday()), amt = x => Number(x.r.montant) || 0, tot = L.reduce((a, x) => a + amt(x), 0), lateN = L.filter(x => x.group === "late").length;
     const go = () => onOpenCash && onOpenCash("enc"), fd = iso => (iso ? iso.slice(8, 10) + "/" + iso.slice(5, 7) : "—");
     return sec("encaisser", "À encaisser", S.finProd.ring, <><Head title="À encaisser" sub={L.length ? L.length + " facture" + (L.length > 1 ? "s" : "") + " émise" + (L.length > 1 ? "s" : "") + (lateN ? " · " + lateN + " en retard" : "") : "rien en attente"} />
@@ -333,7 +335,7 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
         <b style={{ fontSize: 13, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{fmtEur(amt(x))}</b></button>)}
       {onOpenCash && more("Saisir les encaissements", go)}</>); } };
   // v391 (demandé : « la courbe annuelle du Cash in en widget, et des widgets pour la direction ») — calculs de la fiche du lundi (cashWeekly.js)
-  const cashRep = () => { const d = getCashinDoc(); if (!d) return null; try { return weeklyReport(d, cashToday()); } catch (e) { return null; } };
+  const cashRep = () => { const d = cashDoc(); if (!d) return null; try { return weeklyReport(d, cashToday()); } catch (e) { return null; } };
   W.cashCurve = { label: "Cash in de l'année", span: 12, sizes: ["xl", "m"], only: () => !!cash, render: z => { const r = cashRep(); if (!r) return null;
     return sec("cashCurve", "Cash in de l'année", S.finProd.ring, <><Head title={"Cash in " + r.year} sub="cumul face à l'initial, hors EPC" />
       <div style={{ display: "grid", gridTemplateColumns: z === "xl" ? "repeat(3, minmax(0,1fr))" : "repeat(2, minmax(0,1fr))", gap: 8, margin: "2px 0 10px" }}>
