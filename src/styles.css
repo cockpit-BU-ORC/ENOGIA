@@ -797,3 +797,10 @@ tr[data-kbd]:active > td, tr[role="button"]:active > td, li[data-kbd]:active, li
 
 /* v390 : livret pas à pas, étroit (téléphone, tablette en portrait) : image sous la consigne, boutons pleine largeur */
 @media (max-width: 760px){.enogia-book-step{grid-template-columns:1fr !important;padding:14px 16px 20px !important}.enogia-book-step h2{font-size:24px !important}.enogia-book-act>button{flex:1 1 auto}}
+
+/* v402 : passeport — cellules modifiables : fond et crayon au survol / au focus (toujours visibles au doigt) */
+.enogia-pp-cell .pp-pen { opacity: 0; transition: opacity var(--e-dur-micro) ease; }
+@media (hover: hover) { .enogia-pp-cell:hover { background: var(--e-pp-hov, rgba(127,127,127,.10)); } .enogia-pp-cell:hover .pp-pen { opacity: 1; } }
+.enogia-pp-cell:focus-visible { outline: 2px solid currentColor; outline-offset: 1px; }
+.enogia-pp-cell:focus-visible .pp-pen { opacity: 1; }
+@media (pointer: coarse) { .enogia-pp-cell .pp-pen { opacity: .7; } .enogia-pp-cell { min-height: 44px !important; } }

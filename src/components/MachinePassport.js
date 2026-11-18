@@ -6,7 +6,8 @@ import React, { useContext, useMemo, useRef, useState } from "react";
 import { MachinesDemoCtx } from "../machinesCtx";
 import { T, FZ, btn } from "../theme";
 import { getPjMeta, PjPlate } from "../pjMeta";
-import { Segmented, tableTh, tableTd, useSheetJS, Pill, NavIcon } from "./SharedUI";
+import { Segmented, tableTh, tableTd, useSheetJS, Pill, NavIcon, notify } from "./SharedUI";
+import { PageGuard } from "./PageGuard";
 import { askConfirm } from "../confirm";
 import { AF } from "../autoFocusOk";
 import { useMachines, useProdTurbines, useAchats, useTestsDoc, useSav } from "../useAppData";
@@ -89,7 +90,7 @@ function PassportView({ data, doc, api, canEdit, authorName, prodDoc, achatsDoc,
         </button>; })}
       {!list.length && <span style={{ fontSize: 13, color: T.ink500, padding: 8 }}>Aucune machine</span>}
     </nav>
-    {r && <Passport key={r.pj} data={data} prodDoc={prodDoc} achatsDoc={achatsDoc} testsDoc={testsDoc} savDoc={savDoc} r={r} doc={doc} api={api} canEdit={canEdit} authorName={authorName} view={view} setView={setView} edit={edit} setEdit={setEdit} />}
+    {r && <PageGuard key={r.pj} name={"Passeport " + r.pj}><Passport data={data} prodDoc={prodDoc} achatsDoc={achatsDoc} testsDoc={testsDoc} savDoc={savDoc} r={r} doc={doc} api={api} canEdit={canEdit} authorName={authorName} view={view} setView={setView} edit={edit} setEdit={setEdit} /></PageGuard>}
   </div>;
 }
 
@@ -97,8 +98,10 @@ function Passport({ r, doc, api, canEdit, authorName, view, setView, edit, setEd
   const meta = getPjMeta(r.pj, r), mp = metaPlanned(meta), P0 = ((doc.pass || {})[r.pj]) || {};
   // v397 : réel « vivant » — turbines allouées / installées (Turbines › Besoins), état des achats par scope (Achats / Appro)
   const prodM = useProdModel(!!prodDoc);
-  const turb = useMemo(() => (prodDoc && prodM ? turbineOf(prodDoc, data || [r], r.pj, x => getPjMeta(x.pj, x), prodM.buildNeeds) : null), [prodDoc, prodM, data, r]);
-  const live = useMemo(() => ({ real: { ...turbLive(turb), ...testsLive(testsDoc, r.pj), ...savLive(savDoc, r.pj) }, scopes: achatScopes(achatsDoc, r.pj) }), [turb, achatsDoc, testsDoc, savDoc, r.pj]);
+  // v402 : chaque source est protégée — une donnée inattendue d'une autre page (turbines, tests, SAV, achats) ne bloque plus le passeport
+  const safe = (fn, d, what) => { try { return fn() || d; } catch (e) { console.warn("Passeport : " + what + " ignoré(s)", e); return d; } };
+  const turb = useMemo(() => safe(() => (prodDoc && prodM ? turbineOf(prodDoc, data || [r], r.pj, x => getPjMeta(x.pj, x), prodM.buildNeeds) : null), null, "turbines"), [prodDoc, prodM, data, r]); // eslint-disable-line react-hooks/exhaustive-deps
+  const live = useMemo(() => ({ real: { ...safe(() => turbLive(turb), {}, "turbines"), ...safe(() => testsLive(testsDoc, r.pj), {}, "tests"), ...safe(() => savLive(savDoc, r.pj), {}, "SAV") }, scopes: safe(() => achatScopes(achatsDoc, r.pj), {}, "achats") }), [turb, achatsDoc, testsDoc, savDoc, r.pj]); // eslint-disable-line react-hooks/exhaustive-deps
   const P = { ...P0, real: { ...live.real, ...(P0.real || {}) } }; // pour le RAI : n° des turbines et autres réels vivants
   const rows = liveRows(passportRows(doc, r.pj, r.gamme).map(x => (!x.planned && mp[x.el.id] ? { ...x, planned: mp[x.el.id], fromFiche: true } : x)), live);
   const R = ((doc.rai || {})[r.pj]) || null, rv = raiVerdict(R), photos = ((doc.photos || {})[r.pj]) || [];
@@ -107,7 +110,7 @@ function Passport({ r, doc, api, canEdit, authorName, view, setView, edit, setEd
   const pp0 = phaseProgress(doc, r.pj, r.gamme, live), pp = [...pp0.slice(0, 4), { k: "rai", l: "RAI", total: raiTot, done: raiDone, rai: rv }, ...pp0.slice(4)];
   const todo = todoGroups(rows);
   const [open, setOpen] = useState({}), [tOpen, setTOpen] = useState({});
-  const save = async next => { const ok = await api.savePass(r.pj, next); if (ok) setEdit(null); };
+  const save = async next => { const ok = await api.savePass(r.pj, next); return ok; };
   const exportCsv = () => {
     const q = v => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
     const lines = [["Groupe", "Élément", "Standard " + (gammeKey(doc, r.gamme) || ""), "Prévu", "Réel", "Phase", "Source", "Saisi par", "Le"].map(q).join(";")]
@@ -120,6 +123,7 @@ function Passport({ r, doc, api, canEdit, authorName, view, setView, edit, setEd
     <div style={{ display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap" }}>
       <h2 style={{ margin: 0, fontFamily: T.fontDisplay, fontSize: 28, fontWeight: 600, letterSpacing: "-0.02em", color: T.ink900 }}>{r.pj}</h2>
       <span style={{ fontSize: 13, color: T.ink500 }}>{ident}</span>
+      {!canEdit && <Pill tone="neutral">Lecture seule</Pill>}
       <span style={{ flex: 1 }} />
       <Segmented label="Contenu du passeport" value={view} onChange={v => { setView(v); setEdit(null); }} options={[["pp", "Passeport"], ["rai", "RAI"], ["photos", "Photos" + (photos.length ? " · " + photos.length : "")], ["hist", "Historique"]]} />
     </div>
@@ -170,7 +174,7 @@ function Passport({ r, doc, api, canEdit, authorName, view, setView, edit, setEd
             {isOpen && <div className="enogia-cl-in" style={{ borderTop: "1px solid " + T.line }}>{G.map(x => <PassRow key={x.el.id} x={x} {...rowProps} />)}</div>}
           </div>; })}
         <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 12, fontSize: 12, color: T.ink500, flexWrap: "wrap" }}>
-          <span>Un clic sur une valeur la modifie ; la source d'une valeur réelle s'affiche au survol.</span><span style={{ flex: 1 }} />
+          <span>{canEdit ? "Un clic sur une valeur (crayon) l'ouvre en modification ; la source d'une valeur réelle s'affiche au survol." : "Lecture seule : la source d'une valeur s'affiche au survol."}</span><span style={{ flex: 1 }} />
           <button type="button" onClick={() => { const w = window.open("", "_blank"); if (!w) return; w.document.open(); w.document.write(dossierHtml({ r, meta, rows, R, photos, std: gammeKey(doc, r.gamme) })); w.document.close(); }} style={btn("sec", "sm")}>Dossier machine (PDF)</button>
           <button type="button" onClick={exportCsv} style={btn("ghost", "sm")}>Exporter (CSV)</button>
         </div>
@@ -178,40 +182,63 @@ function Passport({ r, doc, api, canEdit, authorName, view, setView, edit, setEd
   </section>;
 }
 
-// une ligne : élément · prévu · réel · état (44 px, une seule ligne ; détails au survol)
+// une ligne : élément · prévu · réel · état (44 px) — v402 : chaque valeur est un vrai bouton avec un crayon au survol / au focus ;
+// l'édition s'ouvre dans un panneau sous la ligne (libellés visibles, Échap ferme et rend le focus) ; en lecture seule, un clic dit pourquoi
 function PassRow({ x, r, doc, canEdit, authorName, edit, setEdit, save }) {
   const k = x.el.id, onP = edit && edit.el === k && edit.what === "p", onR = edit && edit.el === k && edit.what === "r";
-  const click = what => canEdit ? () => setEdit(onP && what === "p" ? null : onR && what === "r" ? null : { el: k, what }) : undefined;
+  const back = useRef(null);
+  const click = what => e => {
+    if (!canEdit) { notify("Lecture seule : le passeport se modifie par les admins (ou « Modifier » sur Projets).", "info"); return; }
+    back.current = e.currentTarget; setEdit((what === "p" ? onP : onR) ? null : { el: k, what });
+  };
+  const close = () => { setEdit(null); const b = back.current; if (b) setTimeout(() => { try { b.focus(); } catch (er) { /* rien */ } }, 0); };
   const lid = "pp-opts-" + k, iss = rowIssue(x), st = iss || rowState(x);
-  const pTitle = x.fromFiche ? "repris de la fiche projet" : x.dev ? "écart au standard (" + x.std + ")" : x.own ? "propre à la machine" : x.std ? "standard " + (gammeKey(doc, r.gamme) || "") : "";
-  const rTitle = x.real && x.real.v ? [PHASE_LABEL[x.real.phase], x.real.src, x.real.by, x.real.at ? x.real.at.slice(8, 10) + "/" + x.real.at.slice(5, 7) : ""].filter(Boolean).join(" · ") : x.el.phase === "design" ? "fixé au design" : "renseigné en " + (PHASE_LABEL[x.el.phase] || "fabrication").toLowerCase();
-  const cellBtn = { all: "unset", cursor: canEdit ? "pointer" : "default", minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minHeight: 28, display: "flex", alignItems: "center", gap: 6 };
+  const pTitle = x.fromFiche ? "repris de la fiche projet" : x.dev ? "écart au standard (" + x.std + ")" : x.own ? "propre à la machine" : x.std ? "standard " + (gammeKey(doc, r.gamme) || "") : "pas encore défini";
+  const rTitle = x.real && x.real.v ? [PHASE_LABEL[x.real.phase], x.real.src, x.real.by, x.real.at ? String(x.real.at).slice(8, 10) + "/" + String(x.real.at).slice(5, 7) : ""].filter(Boolean).join(" · ") : x.el.phase === "design" ? "fixé au design" : "renseigné en " + (PHASE_LABEL[x.el.phase] || "fabrication").toLowerCase();
   const toneC = t => (t === "bad" ? T.red600 : t === "warn" ? T.amber600 : t === "ok" ? T.emerald600 : T.ink500);
-  return <div className="enogia-pp-row" style={{ display: "grid", gridTemplateColumns: "minmax(140px, 200px) minmax(0, 1fr) minmax(0, 1fr) minmax(120px, auto)", gap: 12, alignItems: "center", padding: "6px 14px", minHeight: 44, borderTop: "1px solid " + T.line, fontSize: 13 }}>
-    <span style={{ color: T.ink700 }}>{x.el.label}</span>
-    {onP ? <EditBox kind="p" x={x} lid={lid} onCancel={() => setEdit(null)} onSave={v => save(setCfg(doc, r.pj, r.gamme, k, v, authorName))} />
-      : <button type="button" onClick={click("p")} disabled={!canEdit} title={pTitle || undefined} aria-label={"Prévu : " + x.el.label + " = " + (x.planned || "non défini") + (canEdit ? ", modifier" : "")} style={cellBtn}>
-        {x.planned ? <b style={{ fontWeight: 600, color: T.ink900 }}>{x.planned}</b> : <span style={{ color: T.ink500 }}>—</span>}
-        {x.dev && <span style={{ fontSize: 11, fontWeight: 600, color: T.amber600, background: T.amber100, borderRadius: 4, padding: "0 4px" }}>écart</span>}</button>}
-    {onR ? <EditBox kind="r" x={x} lid={lid} onCancel={() => setEdit(null)} onSave={(v, ph, src) => save(setReal(doc, r.pj, k, v, ph, src, authorName))} />
-      : <button type="button" onClick={click("r")} disabled={!canEdit} title={rTitle} aria-label={"Réel : " + x.el.label + " = " + ((x.real && x.real.v) || "non renseigné") + (canEdit ? ", renseigner" : "")} style={cellBtn}>
-        {x.real && x.real.v ? <b style={{ fontWeight: 600, color: x.gap ? T.red600 : T.ink900 }}>{x.real.v}</b> : <span style={{ color: T.ink500 }}>—</span>}</button>}
-    <span title={st && st.title ? st.title : undefined} style={{ fontSize: 12, fontWeight: st && st.tone !== "mute" ? 500 : 400, color: st ? toneC(st.tone) : T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{st ? st.t : ""}</span>
+  const pen = <span className="pp-pen" aria-hidden="true" style={{ display: "inline-flex", color: T.ink500, flexShrink: 0 }}><NavIcon name="edit" size={13} /></span>;
+  return <div style={{ borderTop: "1px solid " + T.line }}>
+    <div className="enogia-pp-row" style={{ display: "grid", gridTemplateColumns: "minmax(140px, 200px) minmax(0, 1fr) minmax(0, 1fr) minmax(120px, auto)", gap: 12, alignItems: "center", padding: "4px 14px", minHeight: 44, fontSize: 13, background: onP || onR ? T.surfaceAlt : "transparent" }}>
+      <span style={{ color: T.ink700 }}>{x.el.label}</span>
+      <button type="button" className="enogia-pp-cell" onClick={click("p")} aria-expanded={onP} title={pTitle} aria-label={"Prévu, " + x.el.label + " : " + (x.planned || "non défini") + (x.dev ? " (écart au standard)" : "") + (canEdit ? ". Modifier" : ". Lecture seule")}
+        style={{ all: "unset", boxSizing: "border-box", cursor: "pointer", minWidth: 0, minHeight: 36, display: "flex", alignItems: "center", gap: 6, padding: "0 6px", margin: "0 -6px", borderRadius: 8 }}>
+        <span style={{ minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.planned ? <b style={{ fontWeight: 600, color: T.ink900 }}>{x.planned}</b> : <span style={{ color: T.ink500 }}>—</span>}</span>
+        {x.dev && <span style={{ fontSize: 11, fontWeight: 600, color: T.amber600, background: T.amber100, borderRadius: 4, padding: "0 4px", flexShrink: 0 }}>écart</span>}
+        {canEdit && pen}</button>
+      <button type="button" className="enogia-pp-cell" onClick={click("r")} aria-expanded={onR} title={rTitle} aria-label={"Réel, " + x.el.label + " : " + ((x.real && x.real.v) || "non renseigné") + (x.gap ? " (différent du prévu)" : "") + (canEdit ? ". Renseigner" : ". Lecture seule")}
+        style={{ all: "unset", boxSizing: "border-box", cursor: "pointer", minWidth: 0, minHeight: 36, display: "flex", alignItems: "center", gap: 6, padding: "0 6px", margin: "0 -6px", borderRadius: 8 }}>
+        <span style={{ minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.real && x.real.v ? <b style={{ fontWeight: 600, color: x.gap ? T.red600 : T.ink900 }}>{x.real.v}</b> : <span style={{ color: T.ink500 }}>—</span>}</span>
+        {canEdit && pen}</button>
+      <span title={st && st.title ? st.title : undefined} style={{ fontSize: 12, fontWeight: st && st.tone !== "mute" ? 500 : 400, color: st ? toneC(st.tone) : T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{st ? st.t : ""}</span>
+    </div>
+    {(onP || onR) && <EditPanel kind={onP ? "p" : "r"} x={x} lid={lid} rTitle={rTitle} onCancel={close}
+      onSave={(v, ph, src) => save(onP ? setCfg(doc, r.pj, r.gamme, k, v, authorName) : setReal(doc, r.pj, k, v, ph, src, authorName)).then(ok => { if (ok !== false) close(); })} />}
   </div>;
 }
 
-function EditBox({ kind, x, lid, onSave, onCancel }) {
-  const [v, setV] = useState(kind === "p" ? x.planned || "" : (x.real && x.real.v) || ""), [ph, setPh] = useState((x.real && x.real.phase) || x.el.phase || "fab"), [src, setSrc] = useState((x.real && x.real.src) || "");
-  const ok = () => (kind === "p" ? onSave(v) : onSave(v, ph, src));
-  const key = e => { if (e.key === "Enter") { e.preventDefault(); ok(); } else if (e.key === "Escape") onCancel(); };
-  return <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-    <input autoFocus={AF} list={lid} value={v} onChange={e => setV(e.target.value)} onKeyDown={key} aria-label={(kind === "p" ? "Prévu" : "Réel") + " : " + x.el.label} style={{ ...field(), width: 170 }} />
-    <datalist id={lid}>{[...new Set([x.std, ...(x.el.opts || [])].filter(Boolean))].map(o => <option key={o} value={o} />)}</datalist>
-    {kind === "r" && <><select value={ph} onChange={e => setPh(e.target.value)} aria-label="Phase" style={field()}>{PHASES.filter(p => p[0] !== "design").map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
-      <input value={src} onChange={e => setSrc(e.target.value)} onKeyDown={key} placeholder="Source : PO, S/N, intervention…" aria-label="Source" style={{ ...field(), width: 200 }} /></>}
-    <button type="button" onClick={ok} style={btn("pri", "sm")}>Enregistrer</button>
-    <button type="button" onClick={onCancel} style={btn("ghost", "sm")}>Annuler</button>
-    {kind === "p" && x.std && <span style={{ fontSize: 11, color: T.ink500 }}>vide = standard ({x.std})</span>}
+function EditPanel({ kind, x, lid, rTitle, onSave, onCancel }) {
+  const [v, setV] = useState(kind === "p" ? x.planned || "" : (x.real && !x.real.live && x.real.v) || ""), [ph, setPh] = useState((x.real && x.real.phase) || (x.el.phase === "design" ? "fab" : x.el.phase) || "fab"), [src, setSrc] = useState((x.real && !x.real.live && x.real.src) || "");
+  const [busy, setBusy] = useState(false);
+  const ok = async val => { setBusy(true); await onSave(val === undefined ? v : val, ph, src); setBusy(false); };
+  const key = e => { if (e.key === "Enter" && e.target.tagName !== "SELECT") { e.preventDefault(); ok(); } else if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); onCancel(); } };
+  const lab = { display: "flex", flexDirection: "column", gap: 4, fontSize: 12, fontWeight: 500, color: T.ink700 };
+  const opts = [...new Set([x.std, ...(x.el.opts || [])].filter(Boolean))];
+  return <div role="group" aria-label={(kind === "p" ? "Modifier le prévu : " : "Renseigner le réel : ") + x.el.label} onKeyDown={key} className="enogia-cl-in"
+    style={{ background: T.surfaceAlt, padding: "10px 14px 14px", display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-end" }}>
+    <label style={{ ...lab, flex: "1 1 220px" }}>{kind === "p" ? "Valeur prévue (design)" : "Valeur réelle sur la machine"}
+      <input autoFocus={AF} list={lid} value={v} onChange={e => setV(e.target.value)} placeholder={kind === "p" && x.std ? "vide = standard (" + x.std + ")" : "référence, modèle, n° de série…"} style={{ ...field(), width: "100%", minHeight: 40 }} /></label>
+    <datalist id={lid}>{opts.map(o => <option key={o} value={o} />)}</datalist>
+    {kind === "r" && <>
+      <label style={{ ...lab, flex: "0 1 170px" }}>Phase<select value={ph} onChange={e => setPh(e.target.value)} style={{ ...field(), minHeight: 40 }}>{PHASES.filter(p => p[0] !== "design").map(([kk, l]) => <option key={kk} value={kk}>{l}</option>)}</select></label>
+      <label style={{ ...lab, flex: "1 1 220px" }}>Source<input value={src} onChange={e => setSrc(e.target.value)} placeholder="PO, n° de série, intervention…" style={{ ...field(), width: "100%", minHeight: 40 }} /></label></>}
+    <span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      <button type="button" disabled={busy} onClick={() => ok()} style={{ ...btn("pri", "md"), minHeight: 40 }}>{busy ? "Enregistrement…" : "Enregistrer"}</button>
+      {kind === "p" && x.own && <button type="button" disabled={busy} onClick={() => ok("")} style={{ ...btn("sec", "md"), minHeight: 40 }}>Revenir au standard</button>}
+      {kind === "r" && x.real && !x.real.live && x.real.v && <button type="button" disabled={busy} onClick={() => ok("")} style={{ ...btn("sec", "md"), minHeight: 40 }}>Effacer</button>}
+      <button type="button" disabled={busy} onClick={onCancel} style={{ ...btn("ghost", "md"), minHeight: 40 }}>Annuler</button>
+    </span>
+    <span style={{ flexBasis: "100%", fontSize: 12, color: T.ink500 }}>{kind === "p" ? (x.std ? "Standard " + x.std + " : une valeur différente est marquée « écart »." : "Pas de standard pour cet élément dans la gamme.")
+      : x.real && x.real.live ? "Valeur actuelle reprise automatiquement (" + rTitle + ") : une saisie ici la remplace." : "Entrée pour enregistrer, Échap pour annuler."}</span>
   </div>;
 }
 

@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v402",
+    date: "2026-11-18",
+    title: "V402 : Passeport machine — plus de page figée, panneau de modification clair, lecture seule annoncée",
+    items: [
+      { t: "Passeport fiable", d: "Une donnée inattendue des turbines, des tests, du SAV ou des achats n'empêche plus le passeport de s'afficher ; en cas d'erreur, seul le passeport de la machine affiche le message et un bouton « Réessayer »." },
+      { t: "Modifier une valeur", d: "Un clic sur une valeur (crayon au survol) ouvre un panneau sous la ligne : libellés visibles, propositions, « Revenir au standard » ou « Effacer » ; Entrée enregistre, Échap annule." },
+      { t: "Lecture seule", d: "Sans droit de modification, la pastille « Lecture seule » s'affiche et un clic explique pourquoi, au lieu de ne rien faire." },
+    ],
+  },
+  {
     id: "2026-11-v401",
     date: "2026-11-18",
     title: "V401 : Passeport machine — Tests et SAV / MES y écrivent, RAI dans la fiche de tests, dossier machine en PDF, « À traiter » regroupé",

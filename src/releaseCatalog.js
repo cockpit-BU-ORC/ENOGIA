@@ -1230,4 +1230,7 @@ export const RELEASE_CATALOG = [
   { v: "401", t: "Passeport machine — Tests et SAV / MES y écrivent, RAI dans la fiche de tests, dossier machine en PDF, « À traiter » regroupé", items: [
     ["Passeport complet", "Tests et SAV / MES remplissent le passeport ; RAI dans la fiche de tests ; dossier machine en PDF."],
   ] },
+  { v: "402", t: "Passeport machine — plus de page figée, panneau de modification clair, lecture seule annoncée", items: [
+    ["Passeport plus simple à remplir", "Panneau de modification sous la ligne, lecture seule annoncée, page protégée des erreurs."],
+  ] },
 ];

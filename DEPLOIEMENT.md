@@ -3002,3 +3002,14 @@ Demandé : « reprendre le passeport et toutes les étapes liées » — choix :
 - TestsTab : étape 7 « RAI » de la fiche de tests (`RaiView`, même `planning/machines.rai`).
 - `src/machinesCtx.js` : `MachinesDemoCtx` (galerie : passeport, RAI, tests et SAV en mémoire pour toutes les pages).
 - Fichiers : src/passportLive.js, src/passportLive.test.js, src/dossierMachine.js, src/machinesCtx.js, src/passport.js, src/components/MachinePassport.js, src/components/SavPage.js, src/components/TestsTab.js, src/demo/demoPages.js, src/demo/DemoGallery.js.
+
+## V402 — Passeport : page protégée, panneau de modification, lecture seule annoncée
+
+Demandé : « quand je clique sur la page il ne se passe rien, tout est buggué (page passeport) ; aller plus loin dans le design, l'accessibilité et l'utilisation ».
+
+- MachinePassport.js : `Passport` dans `PageGuard` (erreur limitée au passeport de la machine, « Réessayer ») ; calculs vivants protégés (`safe` autour de `turbineOf`, `turbLive`, `testsLive`, `savLive`, `achatScopes` : une source en erreur est ignorée avec un avertissement en console).
+- `PassRow` : valeurs prévue / réelle = vrais boutons (`.enogia-pp-cell`, ≥ 36 px, 44 px au doigt, crayon au survol / focus, `aria-expanded`, nom accessible complet) ; plus de boutons désactivés en silence : en lecture seule, `notify` explique pourquoi ; pastille « Lecture seule » dans l'en-tête.
+- `EditPanel` (remplace `EditBox`) : panneau pleine largeur sous la ligne, libellés visibles (valeur, phase, source), propositions (`datalist`), « Revenir au standard » / « Effacer », Entrée = enregistrer, Échap = annuler, focus rendu à la cellule ; le panneau reste ouvert si l'enregistrement échoue.
+- styles.css : `.enogia-pp-cell` (survol, focus visible, doigt).
+- Rappel : les règles Firestore V393–V395 (document `machines`) doivent être publiées, sinon l'enregistrement échoue sur le site.
+- Fichiers : src/components/MachinePassport.js, src/styles.css.
