@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/ENOGIA/beta/static/css/main.2ba885a9.css",
-    "main.js": "/ENOGIA/beta/static/js/main.f82e8c78.js",
+    "main.css": "/ENOGIA/beta/static/css/main.5052beee.css",
+    "main.js": "/ENOGIA/beta/static/js/main.18508dd8.js",
     "static/js/23.6dc7b2d3.chunk.js": "/ENOGIA/beta/static/js/23.6dc7b2d3.chunk.js",
     "static/js/149.a41b3c80.chunk.js": "/ENOGIA/beta/static/js/149.a41b3c80.chunk.js",
     "static/js/907.4b237511.chunk.js": "/ENOGIA/beta/static/js/907.4b237511.chunk.js",
@@ -11,12 +11,12 @@
     "static/js/574.4f38bb2b.chunk.js": "/ENOGIA/beta/static/js/574.4f38bb2b.chunk.js",
     "static/js/784.2bd3bf60.chunk.js": "/ENOGIA/beta/static/js/784.2bd3bf60.chunk.js",
     "static/js/456.10ca5f05.chunk.js": "/ENOGIA/beta/static/js/456.10ca5f05.chunk.js",
-    "static/js/911.3531f424.chunk.js": "/ENOGIA/beta/static/js/911.3531f424.chunk.js",
+    "static/js/911.bc930245.chunk.js": "/ENOGIA/beta/static/js/911.bc930245.chunk.js",
     "static/js/269.2c4bcb79.chunk.js": "/ENOGIA/beta/static/js/269.2c4bcb79.chunk.js",
     "static/js/557.3ca513d0.chunk.js": "/ENOGIA/beta/static/js/557.3ca513d0.chunk.js",
     "static/js/113.d8b0e94c.chunk.js": "/ENOGIA/beta/static/js/113.d8b0e94c.chunk.js",
-    "static/js/214.3a1c7684.chunk.js": "/ENOGIA/beta/static/js/214.3a1c7684.chunk.js",
-    "static/js/151.15d51f24.chunk.js": "/ENOGIA/beta/static/js/151.15d51f24.chunk.js",
+    "static/js/214.d7c040dc.chunk.js": "/ENOGIA/beta/static/js/214.d7c040dc.chunk.js",
+    "static/js/151.49997c13.chunk.js": "/ENOGIA/beta/static/js/151.49997c13.chunk.js",
     "static/js/481.27f4e3e0.chunk.js": "/ENOGIA/beta/static/js/481.27f4e3e0.chunk.js",
     "static/js/649.5385c925.chunk.js": "/ENOGIA/beta/static/js/649.5385c925.chunk.js",
     "static/js/751.aefa4b6d.chunk.js": "/ENOGIA/beta/static/js/751.aefa4b6d.chunk.js",
@@ -27,7 +27,7 @@
     "index.html": "/ENOGIA/beta/index.html"
   },
   "entrypoints": [
-    "static/css/main.2ba885a9.css",
-    "static/js/main.f82e8c78.js"
+    "static/css/main.5052beee.css",
+    "static/js/main.18508dd8.js"
   ]
 }
