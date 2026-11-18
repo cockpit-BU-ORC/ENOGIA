@@ -1239,4 +1239,7 @@ export const RELEASE_CATALOG = [
   { v: "404", t: "Passeport complet de la machine, fiche de lancement de fab et réglages du passeport", items: [
     ["Passeport complet et fiche de lancement de fab", "Une page de haut en bas pour toute la vie de la machine ; fiche de lancement de fab remplie par le CdP ; réglages en cartes."],
   ] },
+  { v: "405", t: "SAV / MES › Compétences : la matrice des compétences de l'équipe SAV dans le Cockpit", items: [
+    ["Compétences SAV", "Matrice des compétences de l'équipe SAV, fiche par personne et auto-évaluation, dans SAV / MES."],
+  ] },
 ];

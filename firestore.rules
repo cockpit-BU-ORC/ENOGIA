@@ -58,7 +58,13 @@ service cloud.firestore {
       allow write: if base(id) == 'cashinProduit' && (isAdmin(id) || canWrite(id, 'finance'));
 
       // Tout le reste se lit dès qu'on est connecté avec un compte ENOGIA
-      allow read: if signedIn() && !(base(id) in ['cashin', 'cashinLinks', 'cashinShared', 'cashinWeekly']);
+      allow read: if signedIn() && !(base(id) in ['cashin', 'cashinLinks', 'cashinShared', 'cashinWeekly', 'savSkills']) && !base(id).matches('^savSkillsMe_.*');
+      // v405 : compétences SAV — évaluations lues et écrites par le responsable SAV (Admin sur SAV) et le propriétaire ; chaque personne lit
+      // sa fiche (savSkillsMe_<son adresse>) et n'y écrit que son auto-évaluation ; les catégories (savSkillsCat) se lisent par tous
+      allow read, write: if (base(id) == 'savSkills' || base(id) == 'savSkillsCat' || base(id).matches('^savSkillsMe_.*')) && (isOwner() || lvl(id, 'sav') == 'a');
+      allow read: if signedIn() && base(id) == 'savSkillsMe_' + mail();
+      allow update: if signedIn() && base(id) == 'savSkillsMe_' + mail() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['selfeval']);
+      allow create: if signedIn() && base(id) == 'savSkillsMe_' + mail() && request.resource.data.keys().hasOnly(['selfeval']);
 
       // Réglages du propriétaire : rôles, dispositions des cadrans, accès Manager, planificateur
       allow write: if isOwner() && base(id) in ['profiles', 'managerEmails', 'plan', 'planHistory', 'access'];

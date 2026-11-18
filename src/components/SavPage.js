@@ -29,7 +29,8 @@ const PRIO_TONE = { h: "bad", m: "warn", b: "muted" };
 const ST_TONE = { "À planifier": "warn", Planifiée: "info", "En cours": "accent", Réalisée: "ok", Validée: "ok", "Non validée": "bad", Annulée: "muted" };
 const lab = { display: "flex", flexDirection: "column", gap: 4, fontSize: 12, get color() { return T.ink500; }, fontWeight: 600, minWidth: 0  }; // v346 : accesseurs (suivent le clair / sombre)
 const inp = () => ({ minHeight: 32, padding: "0 10px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, boxSizing: "border-box", width: "100%" });
-const SUBS = [["tickets", "Tickets"], ["inters", "Interventions"], ["planning", "Planning des équipes"], ["dispo", "Disponibilités"], ["parc", "Parc"], ["kpi", "KPI"]];
+const SUBS = [["tickets", "Tickets"], ["inters", "Interventions"], ["planning", "Planning des équipes"], ["dispo", "Disponibilités"], ["parc", "Parc"], ["kpi", "KPI"], ["competences", "Compétences"]];
+const SavSkills = React.lazy(() => import("./SavSkills")); // v405 : page « Compétences SAV » (cadre public/competences-sav.html)
 const DESC = { dispo: "Qui compte dans les ressources, jours off et congés : le planning des chefs de projet en tient compte tout de suite", tickets: "Le ticket est la demande (le problème à régler) ; une intervention est un déplacement sur site pour le traiter", inters: "Interventions sur site : équipe, dates, préparation, clôture et coûts",
   planning: "Qui est où, à la semaine ou au mois ; demandes d'intervention des chefs de projet", parc: "Machines en service, fournitures ENOGIA, contrats de maintenance et tickets ouverts", kpi: "Affectation de l'équipe, interventions, tickets et coûts sur 12 mois glissants" };
 
@@ -140,7 +141,7 @@ function Checks({ items, value, onChange, disabled }) {
       style={{ minHeight: 28, padding: "0 10px", borderRadius: 8, border: "1px solid " + (v ? "transparent" : T.line), background: v ? T.emerald100 : T.card, color: v ? T.emerald600 : T.ink700, fontSize: 12, fontWeight: 500, cursor: disabled ? "default" : "pointer", fontFamily: T.font }}>{v ? "✓ " : ""}{x}</button>; })}</div>;
 }
 
-export function SavPage({ turbReqs, onOpenTurb, onSetAlloc, doc, dem, api, demApi, rows, level = "r", canCost, me, myName, myPjs, team, sub: subP, onSub, allowSubs, onOpenPj, focusPj }) {
+export function SavPage({ turbReqs, onOpenTurb, onSetAlloc, doc, dem, api, demApi, rows, level = "r", canCost, me, myName, myPjs, team, sub: subP, onSub, allowSubs, onOpenPj, focusPj, skills }) {
   const canEdit = level === "w" || level === "a", isAdmin = level === "a";
   const D = doc || {}, tickets = D.tickets || {}, inters = D.inters || {}, demandes = (dem && dem.items) || {};
   const techs = (Array.isArray(D.techs) && D.techs.length ? D.techs : team) || [];
@@ -194,6 +195,7 @@ export function SavPage({ turbReqs, onOpenTurb, onSetAlloc, doc, dem, api, demAp
         else await demApi.put("items", id, { ...d, st: "ko", answeredBy: myName || "", answeredAt: new Date().toISOString(), ...(note ? { note } : {}) });
       }}
       onCancel={async id => { if (await askConfirm({ title: "Retirer cette demande ?", message: "Le responsable SAV ne la verra plus.", confirmLabel: "Retirer la demande" })) demApi.del("items", id); }} />}
+    {sub === "competences" && skills && <React.Suspense fallback={<div style={{ color: T.ink500, padding: 20 }}>Chargement des compétences…</div>}><SavSkills {...skills} /></React.Suspense>}
     {sub === "dispo" && canEdit && <DispoView techs={techs} dispo={D.dispo || {}} inters={inters} onSave={d => api.setField("dispo", d)} onTeam={() => setTeamDlg(true)} />}
     {sub === "parc" && <ParcView {...{ rows, metaOf, parc: D.parc, tickets, canEdit, onOpenPj }} fournTypes={fournTypesOf(D)} onTypes={() => setTypesDlg(true)} onEdit={(pj, p) => setParcDlg({ pj, p })} />}
     {sub === "kpi" && <SavKpiView doc={D} techs={techs} canCost={canCost} nomOf={nomOf} />}

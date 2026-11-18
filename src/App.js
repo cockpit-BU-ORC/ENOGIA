@@ -69,7 +69,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-18-v404-passeport-complet-fiche-lancement-fab";
+const APP_BUILD_VERSION = "2026-11-18-v405-competences-sav";
 
 const ReleasePopup = React.lazy(() => import("./components/ReleaseNotes").then(m => ({ default: m.ReleasePopup })));
 function Navigate0({ go }) { useEffect(() => { go(); }, []); return null; } // eslint-disable-line react-hooks/exhaustive-deps
@@ -1013,7 +1013,9 @@ export default function App(){
     import("./components/GanttView");import("./components/CalendarView");}catch(e){}};
     id=window.requestIdleCallback?window.requestIdleCallback(run,{timeout:4000}):setTimeout(run,0);},2000);
     return()=>{clearTimeout(t);if(window.cancelIdleCallback&&id)window.cancelIdleCallback(id);};},[loggedIn,canProdTurb,canSeeTests,canSav]);
-  const savAllowed=["tickets","inters","planning","dispo","parc","kpi"].filter(s=>subOk("sav."+s)&&(s!=="dispo"||savLvl==="w"||savLvl==="a"));
+  const savAllowed=["tickets","inters","planning","dispo","parc","kpi","competences"].filter(s=>(s==="competences"?(savLvl==="w"||savLvl==="a"):subOk("sav."+s))&&(s!=="dispo"||savLvl==="w"||savLvl==="a"));
+  // v405 : compétences SAV — équipe SAV (sa propre fiche) ; le responsable (Admin sur SAV) et le propriétaire gèrent toute l'équipe
+  const skillPeople=useMemo(()=>Object.values((profiles&&profiles.byEmail)||{}).filter(p=>p&&!p.removed&&p.email).map(p=>({email:p.email,name:p.name||""})),[profiles]);
   const savTeam=useMemo(()=>Object.values((profiles&&profiles.byEmail)||{}).filter(p=>p&&!p.removed&&p.role==="sav").map(p=>p.name||String(p.email||"").split("@")[0]).filter(Boolean).sort(),[profiles]);
   // v342 (audit Web Interface Guidelines, lot 6) : page, sous-page et fiche ouverte dans l'adresse ; Précédent / Suivant du navigateur
   const urlSubs={manager:[managerTab,setManagerTab],tests:[testsSub,setTestsSub],turbines:[turbTab,setTurbTab],sav:[savSub,setSavSub],access:[accSub,setAccSub]};
@@ -1307,7 +1309,7 @@ export default function App(){
                 « Publier » seul modifie le planning lu par tous. Liens entre PJ, dates imposées, une production / un banc à la fois, charge par semaine. */}
             {view==="access"&&isOwner&&<AccessPage sub={accSub} onSub={setAccSub} onPeople={goMgr("personnes")} profiles={profiles} saveProfiles={saveProfiles} accessDoc={accessDoc} saveAccess={saveAccess} people={peopleAll} ownerEmails={OWNER_EMAILS}/>}
             {view==="cashin"&&canCash&&<CashInTab authorName={authorName} focus={cashFocusApp} planRows={dataWithOverrides} sub={cashSub==="lundi"&&!cashAdmin?"table":cashSub} onSub={setCashSub} canEdit={cashEdit} canWeekly={cashAdmin} me={{email:currentUser&&currentUser.email,name:authorName}}/>}
-            {view==="sav"&&canSav&&<PageGuard name="SAV / MES"><SavPage doc={savDoc} dem={demDoc} turbReqs={prodDoc&&prodDoc.besoins} onSetAlloc={savEdit?(id,alloc)=>prodApi.setAlloc(id,alloc):null} onOpenTurb={canProdTurb&&turbAllowed.includes("orc")?()=>{setTurbTab("orc");setView("turbines");}:null} api={savApi} demApi={demApi} rows={dataWithOverrides} level={savLvl} canCost={savCost} me={currentUser&&currentUser.email} myName={authorName} myPjs={myPjList} team={savTeam} sub={savSub} onSub={setSavSub} allowSubs={savAllowed} onOpenPj={pj=>{setCalDay(null);setCalTab("resume");setCalSel(pj);}} focusPj={savFocus}/></PageGuard>}
+            {view==="sav"&&canSav&&<PageGuard name="SAV / MES"><SavPage doc={savDoc} dem={demDoc} turbReqs={prodDoc&&prodDoc.besoins} onSetAlloc={savEdit?(id,alloc)=>prodApi.setAlloc(id,alloc):null} onOpenTurb={canProdTurb&&turbAllowed.includes("orc")?()=>{setTurbTab("orc");setView("turbines");}:null} api={savApi} demApi={demApi} rows={dataWithOverrides} level={savLvl} canCost={savCost} me={currentUser&&currentUser.email} myName={authorName} myPjs={myPjList} team={savTeam} skills={{me:currentUser&&currentUser.email,name:authorName,admin:savLvl==="a",owner:isOwner,people:skillPeople}} sub={savSub} onSub={setSavSub} allowSubs={savAllowed} onOpenPj={pj=>{setCalDay(null);setCalTab("resume");setCalSel(pj);}} focusPj={savFocus}/></PageGuard>}
             {view==="achats"&&canAchats&&<PageGuard name="Achats / Appro"><Achats doc={achatsDoc} api={achatsApi} rows={dataWithOverrides.map(r=>({pj:r.pj,nomProjet:getPjMeta(r.pj,r).nomProjet||"",gamme:r.gamme||"",etat:r.etat,arrivee:r.arrivee||null,depart:r.depart||null}))} canEdit={achEdit} owner={isOwner} admin={accMe?accAt("achats","a"):canAchatsL}/></PageGuard>}
             {/* v267 (demandé : « un seul onglet Turbines ») : production (seule saisie) + besoins des ORC (calculés) ; l'ancien pool n'est plus affiché */}
             {view==="turbines"&&canProdTurb&&<PageGuard name="Turbines"><TurbinesHub doc={prodDoc} api={prodApi} authorName={authorName} savDoc={canSav?savDoc:null} rows={dataWithOverrides} canEdit={turbEdit} owner={isOwner} tab={turbTab} onTab={setTurbTab} allowTabs={turbAllowed} savePjMeta={savePjMetaOverride}/></PageGuard>}

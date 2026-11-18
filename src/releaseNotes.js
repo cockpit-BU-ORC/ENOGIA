@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v405",
+    date: "2026-11-18",
+    title: "V405 : SAV / MES › Compétences : la matrice des compétences de l'équipe SAV dans le Cockpit",
+    items: [
+      { t: "Compétences SAV", d: "Nouvel onglet Compétences dans SAV / MES : matrice équipe × catégories, fiche de chacun (radar, niveaux, objectifs par trimestre), référentiel modifiable." },
+      { t: "Qui voit quoi", d: "Le responsable SAV gère toute l'équipe ; chaque technicien relié à son compte voit sa fiche et fait son auto-évaluation. Les évaluations ne sont pas visibles des autres comptes." },
+    ],
+  },
+  {
     id: "2026-11-v404",
     date: "2026-11-18",
     title: "V404 : Passeport complet de la machine, fiche de lancement de fab et réglages du passeport",

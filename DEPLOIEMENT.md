@@ -3033,3 +3033,14 @@ Maquette `maquettes-design/v407-passeport-complet.html` validée (« Go, code-la
 - Droits : la fiche de lancement de fab et les valeurs du passeport sont remplies par le CdP du PJ (chef de projet ou chef ORC) et les admins ; les signatures par tout compte. **Règle Firestore** : champ `launch` du document `machines` écrit par tout compte ENOGIA (avec `rai` et `photos`) — **à republier par Gabriel**.
 - Données : `planning/machines.launch`, `.components`, `.dims`, `.elecLists` (les dimensions et choix électriques sont à remplir une fois dans les Réglages du passeport).
 - Fichiers : src/launchFab.js, src/launchFab.test.js, src/components/PassportFull.js, src/components/PassportSettings.js, src/components/MachinePassport.js, src/components/ManagerPanel.js, src/useAppData.js, src/demo/demoPages.js, src/styles.css, firestore.rules.
+
+## V405 — SAV / MES › Compétences
+
+Demandé : « je souhaite que tu rajoutes ces compétences SAV dans l'onglet SAV / MES » (page `competences-sav.html` fournie, faite comme artefact Claude).
+
+- `public/competences-sav.html` : la page reprise telle quelle (doctype et encodage ajoutés) + un petit pont : `window.claude.use("db" | "user")` est fourni par la page parente.
+- `src/savSkills.js` (testé) : `makeSkillsBridge` traduit les chemins de la page (`people/…`, `assess/…`, `objectives/…`, `snapshots/…`, `categories/…`, `view/<adresse>`, `selfeval/<adresse>`) vers trois sortes de documents Firestore — `planning/savSkills` (équipe, évaluations, objectifs, trimestres figés), `planning/savSkillsCat` (référentiel), `planning/savSkillsMe_<adresse>` (fiche visible par la personne + son auto-évaluation) ; `memoryBackend` pour la galerie et les tests ; compte = adresse ENOGIA, recherche d'un compte dans les profils.
+- `src/components/SavSkills.js` : le cadre (clair / sombre transmis à la page), chargé à la demande ; SavPage : sous-page « Compétences » (`competences`) ; App : visible par l'équipe SAV (Modifier / Admin sur SAV) et le propriétaire ; gestion de toute l'équipe = Admin sur SAV ou propriétaire.
+- **Données reprises** : rien n'est importé de l'artefact d'origine (sa base reste sur claude.ai) : équipe et référentiel à ressaisir, ou à importer plus tard.
+- **Règles Firestore** (à republier par Gabriel) : `savSkills` et toutes les fiches `savSkillsMe_*` exclues de la lecture générale ; lecture / écriture par le propriétaire ou Admin sur SAV ; chacun lit `savSkillsMe_<son adresse>` et n'y écrit que `selfeval`. Avant l'activation des nouveaux accès, seul le propriétaire gère l'équipe.
+- Fichiers : public/competences-sav.html, src/savSkills.js, src/savSkills.test.js, src/components/SavSkills.js, src/components/SavPage.js, src/App.js, src/demo/demoPages.js, firestore.rules.
