@@ -1242,4 +1242,7 @@ export const RELEASE_CATALOG = [
   { v: "405", t: "SAV / MES › Compétences : la matrice des compétences de l'équipe SAV dans le Cockpit", items: [
     ["Compétences SAV", "Matrice des compétences de l'équipe SAV, fiche par personne et auto-évaluation, dans SAV / MES."],
   ] },
+  { v: "406", t: "Passeport : les clics marchent de nouveau ; Compétences SAV au format du site", items: [
+    ["Passeport et compétences", "Passeport de nouveau cliquable ; Compétences SAV au format du site."],
+  ] },
 ];

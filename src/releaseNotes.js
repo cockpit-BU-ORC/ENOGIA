@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v406",
+    date: "2026-11-18",
+    title: "V406 : Passeport : les clics marchent de nouveau ; Compétences SAV au format du site",
+    items: [
+      { t: "Passeport", d: "Plus aucun clic ne répondait (vu sur la bêta) : les petits boutons « Retirer » des choix électriques des Réglages du passeport avaient une zone de clic invisible qui couvrait toute la page. C'est corrigé partout sur le site." },
+      { t: "Compétences SAV", d: "La page reprend le format du Cockpit : polices, couleurs (clair et sombre), boutons et rayons du site, sans majuscules." },
+    ],
+  },
+  {
     id: "2026-11-v405",
     date: "2026-11-18",
     title: "V405 : SAV / MES › Compétences : la matrice des compétences de l'équipe SAV dans le Cockpit",

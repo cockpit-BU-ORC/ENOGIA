@@ -33,7 +33,11 @@ export default function SavSkills({ me, name, admin, owner, people }) {
     return () => { br.stop(); if (window.__enogiaSkills === use) delete window.__enogiaSkills; };
   }, [me, name, admin, owner]);
   const theme = T.mode === "dark" ? "dark" : "light";
-  const applyTheme = () => { try { const d = frame.current && frame.current.contentDocument; if (d && d.documentElement) d.documentElement.setAttribute("data-theme", theme); } catch (e) { /* cadre pas encore prêt */ } };
+  // v406 : la page prend les couleurs du site (jetons du thème, clair / sombre), posées sur <html> du cadre
+  const applyTheme = () => { try { const d = frame.current && frame.current.contentDocument; if (!(d && d.documentElement)) return; const h = d.documentElement; h.setAttribute("data-theme", theme);
+    const v = { "--bg": T.surface, "--surface": T.card, "--surface2": T.surfaceAlt, "--ink": T.ink900, "--muted": T.ink500, "--line": T.line, "--accent": T.accentInk, "--accent-ink": T.onFill,
+      "--target": T.amber600, "--good": T.emerald600, "--warn": T.amber600 };
+    Object.entries(v).forEach(([k, x]) => h.style.setProperty(k, x)); h.style.colorScheme = theme; } catch (e) { /* cadre pas encore prêt */ } };
   useEffect(applyTheme); // clair / sombre suivi à chaque rendu
   return <iframe ref={frame} title="Compétences SAV" src={(process.env.PUBLIC_URL || "") + "/competences-sav.html"} onLoad={applyTheme}
     style={{ width: "100%", height: "calc(100dvh - 190px)", minHeight: 520, border: "1px solid " + T.line, borderRadius: 12, background: T.card, display: "block" }} />;

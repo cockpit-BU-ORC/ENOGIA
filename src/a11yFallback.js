@@ -80,13 +80,18 @@ function pass(root) {
           // v403 : un bouton dont le style en ligne annule la position (all: unset, position: static) ne porte pas la zone élargie —
           // sa pseudo-zone se calerait sur un parent lointain et couvrirait toute la page (passeport : plus aucun clic)
           const ip = b.style.position;
-          if (ip && !/^(relative|absolute|fixed|sticky)$/.test(ip)) { delete b.dataset.hit; b.style.removeProperty("--hx"); b.style.removeProperty("--hy"); }
+          // v406 : et quand une classe CSS (all: unset…) annule la position : on vérifie la position calculée
+          let cs = ""; try { if (hitRuleOn()) cs = window.getComputedStyle(b).position; } catch (e) { /* rien */ }
+          if ((ip && !/^(relative|absolute|fixed|sticky)$/.test(ip)) || cs === "static") { delete b.dataset.hit; b.style.removeProperty("--hx"); b.style.removeProperty("--hy"); }
         }
       }
     }
   });
 }
 
+// v406 : la règle [data-hit] { position: relative } de styles.css est-elle chargée ? (sonde mise en cache ; absente dans les tests)
+let HIT_RULE = null;
+const hitRuleOn = () => { if (HIT_RULE != null) return HIT_RULE; try { const p = document.createElement("span"); p.setAttribute("data-hit", "1"); p.style.display = "none"; document.body.appendChild(p); HIT_RULE = window.getComputedStyle(p).position === "relative"; p.remove(); } catch (e) { HIT_RULE = false; } return HIT_RULE; };
 const COARSE = () => { try { return window.matchMedia("(pointer: coarse)").matches; } catch (e) { return false; } };
 export function useA11yFallback() {
   useEffect(() => {

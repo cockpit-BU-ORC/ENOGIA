@@ -3044,3 +3044,12 @@ Demandé : « je souhaite que tu rajoutes ces compétences SAV dans l'onglet SAV
 - **Données reprises** : rien n'est importé de l'artefact d'origine (sa base reste sur claude.ai) : équipe et référentiel à ressaisir, ou à importer plus tard.
 - **Règles Firestore** (à republier par Gabriel) : `savSkills` et toutes les fiches `savSkillsMe_*` exclues de la lecture générale ; lecture / écriture par le propriétaire ou Admin sur SAV ; chacun lit `savSkillsMe_<son adresse>` et n'y écrit que `selfeval`. Avant l'activation des nouveaux accès, seul le propriétaire gère l'équipe.
 - Fichiers : public/competences-sav.html, src/savSkills.js, src/savSkills.test.js, src/components/SavSkills.js, src/components/SavPage.js, src/App.js, src/demo/demoPages.js, firestore.rules.
+
+## V406 — Passeport cliquable, Compétences SAV au format du site
+
+Demandé : « le passeport a le même bug que tout à l'heure (rien ne fonctionne) et le système de compétences doit reprendre le même format que le site ».
+
+- **Cause constatée sur la bêta** (`elementFromPoint`) : les boutons « Retirer » des pastilles (`.pp2-tags span button`, 22 px) recevaient la zone de clic élargie de `a11yFallback` (`data-hit` + `::after` absolu) alors que leur classe CSS (`all: unset`) annulait `position: relative` : la zone se calait sur un parent lointain et couvrait la page. La V403 ne regardait que le style en ligne.
+- `src/a11yFallback.js` : pas de zone élargie si la **position calculée** du bouton reste `static` (classe CSS comprise) ; sonde `hitRuleOn` (la règle `[data-hit]` de styles.css est-elle chargée ?) pour que le contrôle ne joue pas dans les tests. styles.css : `position: relative` sur `.pp2-lhead`, `.pp2-x`, `.pp2-link`, `.pp2-tags span button`.
+- Compétences SAV : `public/competences-sav.html` — polices du site (Cabinet Grotesk, Satoshi, JetBrains Mono via Fontshare / Google Fonts à la place de Barlow / IBM Plex), bloc `#cockpit-format` (casse normale, tailles 13–22 px, rayons 4 / 8 / 12, onglet actif et bouton principal en encre) ; `SavSkills.js` pose les couleurs du thème du site (`T.surface`, `T.card`, `T.ink900`, `T.accentInk`…) sur `<html>` du cadre, en clair et en sombre.
+- Fichiers : src/a11yFallback.js, src/styles.css, public/competences-sav.html, src/components/SavSkills.js.
