@@ -9,6 +9,8 @@ import { Segmented, tableTh, tableTd, useSheetJS, Pill } from "./SharedUI";
 import { askConfirm } from "../confirm";
 import { AF } from "../autoFocusOk";
 import { useMachines } from "../useAppData";
+import { RaiView } from "./RaiView";
+import { raiVerdict, RAI_SECTIONS, raiSection } from "../rai";
 import { PHASES, PHASE_LABEL, GROUPS, elementsOf, passportRows, phaseProgress, setCfg, setReal, gammeKey, parseConfigTable, parseReference, importPlan } from "../passport";
 
 const field = () => ({ padding: "4px 8px", minHeight: 32, borderRadius: 8, border: "1px solid " + T.fieldLine, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, boxSizing: "border-box" });
@@ -64,7 +66,10 @@ function PassportView({ data, doc, api, canEdit, authorName }) {
 function Passport({ r, doc, api, canEdit, authorName, phase, setPhase, view, setView, edit, setEdit }) {
   const meta = getPjMeta(r.pj, r), mp = metaPlanned(meta), P = ((doc.pass || {})[r.pj]) || {};
   const rows = passportRows(doc, r.pj, r.gamme).map(x => (!x.planned && mp[x.el.id] ? { ...x, planned: mp[x.el.id], fromFiche: true } : x));
-  const pp = phaseProgress(doc, r.pj, r.gamme), shown = phase ? rows.filter(x => (phase === "design" ? true : x.el.phase === phase)) : rows;
+  const R = ((doc.rai || {})[r.pj]) || null, rv = raiVerdict(R);
+  // v394 : le RAI s'insère entre les tests et la MES : contrôles faits + signatures
+  const raiTot = RAI_SECTIONS.reduce((n, s) => n + raiSection(R, s).total, 0) + rv.signers, raiDone = RAI_SECTIONS.reduce((n, s) => n + raiSection(R, s).done, 0) + rv.signed;
+  const pp0 = phaseProgress(doc, r.pj, r.gamme), pp = [...pp0.slice(0, 4), { k: "rai", l: "RAI", total: raiTot, done: raiDone, rai: rv }, ...pp0.slice(4)], shown = phase && phase !== "rai" ? rows.filter(x => (phase === "design" ? true : x.el.phase === phase)) : rows;
   const devN = rows.filter(x => x.dev).length, gapN = rows.filter(x => x.gap).length;
   const save = async next => { const ok = await api.savePass(r.pj, next); if (ok) setEdit(null); };
   const exportCsv = () => {
@@ -86,32 +91,33 @@ function Passport({ r, doc, api, canEdit, authorName, phase, setPhase, view, set
       {gapN > 0 && <span style={{ fontSize: 12, color: T.red600, fontWeight: 500 }}>{gapN} réel{gapN > 1 ? "s" : ""} ≠ prévu</span>}
       <button type="button" onClick={exportCsv} style={btn("sec", "sm")}>Exporter (CSV)</button>
     </div>
-    <div role="group" aria-label="Phases du passeport" style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0,1fr))", gap: 4, margin: "14px 0 8px" }} className="enogia-pp-phases">
+    <div role="group" aria-label="Phases du passeport" style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0,1fr))", gap: 4, margin: "14px 0 8px" }} className="enogia-pp-phases">
       {pp.map(p => { const on = phase === p.k, full = p.total && p.done >= p.total, pct = p.total ? Math.round(p.done / p.total * 100) : 0;
-        return <button key={p.k} type="button" aria-pressed={on} onClick={() => setPhase(on ? null : p.k)}
+        return <button key={p.k} type="button" aria-pressed={on} onClick={() => { if (p.k === "rai") { setView("rai"); setPhase(null); return; } setPhase(on ? null : p.k); if (view === "rai") setView("pp"); }}
           style={{ all: "unset", boxSizing: "border-box", cursor: "pointer", display: "flex", flexDirection: "column", gap: 3, padding: "8px 10px", borderRadius: 8, minWidth: 0, minHeight: 44,
             border: on ? "2px solid " + T.ink900 : "1px solid " + (full ? "transparent" : T.line), background: full ? T.emerald100 : T.card }}>
           <b style={{ fontFamily: T.fontDisplay, fontSize: 14, fontWeight: 600, color: T.ink900 }}>{p.l}</b>
-          <span style={{ fontSize: 12, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{p.total ? p.done + " / " + p.total + (p.k === "design" ? " définis" : " renseignés") : "rien à renseigner"}</span>
+          {p.rai ? <span style={{ fontSize: 12, fontWeight: 500, color: p.rai.k === "ok" ? T.emerald600 : p.rai.k === "reserve" ? T.amber600 : T.ink500 }}>{p.rai.k === "ok" ? "acceptée" : p.rai.k === "reserve" ? "avec réserves" : p.done ? "en cours · " + p.rai.signed + "/" + p.rai.signers + " sign." : "à faire"}</span> : <span style={{ fontSize: 12, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{p.total ? p.done + " / " + p.total + (p.k === "design" ? " définis" : " renseignés") : "rien à renseigner"}</span>}
           <span aria-hidden="true" style={{ height: 5, borderRadius: 2, background: T.surfaceAlt, overflow: "hidden" }}><i style={{ display: "block", height: "100%", width: pct + "%", background: T.emerald600 }} /></span>
         </button>; })}
     </div>
     <div style={{ display: "flex", gap: 10, alignItems: "center", margin: "6px 0 10px", flexWrap: "wrap" }}>
-      <Segmented label="Contenu" value={view} onChange={setView} options={[["pp", "Passeport · " + rows.length], ["hist", "Historique · " + (P.hist || []).length]]} />
+      <Segmented label="Contenu" value={view} onChange={setView} options={[["pp", "Passeport · " + rows.length], ["rai", "RAI · " + rv.label.toLowerCase()], ["hist", "Historique · " + (P.hist || []).length]]} />
       {phase && <span style={{ fontSize: 12, color: T.ink500 }}>Éléments renseignés à la phase {PHASE_LABEL[phase]} · <button type="button" onClick={() => setPhase(null)} style={{ ...btn("ghost", "sm"), minHeight: 24 }}>Tout afficher</button></span>}
     </div>
-    {view === "hist" ? <History P={P} doc={doc} />
+    {view === "rai" ? <RaiView r={r} meta={meta} doc={doc} P={P} R={R} saveRai={next => api.saveRai(r.pj, next)} savePass={next => api.savePass(r.pj, next)} canEdit={canEdit} who={authorName} />
+      : view === "hist" ? <History P={P} doc={doc} />
       : <table style={{ borderCollapse: "collapse", width: "100%" }}>
         <thead><tr><th style={{ ...tableTh(), width: 200 }}>Élément</th><th style={tableTh()}>Prévu (design)</th><th style={tableTh()}>Réel sur la machine</th></tr></thead>
         <tbody>{GROUPS.concat([...new Set(shown.map(x => x.el.group))].filter(g => !GROUPS.includes(g))).map(g => { const G = shown.filter(x => x.el.group === g); if (!G.length) return null;
           return <React.Fragment key={g}><tr><td colSpan={3} style={{ ...tableTd({ h: 30 }), background: T.surfaceAlt, fontSize: 12, fontWeight: 600, color: T.ink700 }}>{g}</td></tr>
             {G.map(x => <PassRow key={x.el.id} x={x} r={r} doc={doc} P={P} canEdit={canEdit} authorName={authorName} edit={edit} setEdit={setEdit} save={save} />)}</React.Fragment>; })}</tbody>
       </table>}
-    <div style={{ display: "flex", gap: 14, flexWrap: "wrap", fontSize: 12, color: T.ink500, marginTop: 10 }}>
+    {view === "pp" && <div style={{ display: "flex", gap: 14, flexWrap: "wrap", fontSize: 12, color: T.ink500, marginTop: 10 }}>
       <span><span style={{ background: T.amber100, color: T.amber600, fontWeight: 600, borderRadius: 4, padding: "0 4px" }}>surligné</span> écart au standard de la gamme</span>
       <span><span style={{ color: T.red600, fontWeight: 600 }}>réel ≠ prévu</span> en rouge</span>
       <span>Chaque valeur réelle porte sa phase, sa source et son auteur</span>
-    </div>
+    </div>}
   </section>;
 }
 

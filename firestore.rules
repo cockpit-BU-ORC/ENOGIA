@@ -73,6 +73,9 @@ service cloud.firestore {
 
       // v393 : passeport machine (Manager › Projets › Machines ORC) : admins, ou Modifier / Admin sur Projets
       allow write: if base(id) == 'machines' && (isAdmin(id) || canWrite(id, 'projets'));
+      // v394 : RAI (rapport d'acceptation interne) rempli et signé par tout compte ENOGIA : champ « rai » seulement
+      allow update: if signedIn() && base(id) == 'machines' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rai', 'updatedAt', 'updatedBy']);
+      allow create: if signedIn() && base(id) == 'machines' && request.resource.data.keys().hasOnly(['rai', 'updatedAt', 'updatedBy']);
 
       // v326 : SAV / MES — équipe SAV (rôle « SAV / MES » avant l'activation des accès, puis niveau Modifier / Admin sur la page SAV)
       allow write: if base(id) == 'sav' && (isOwner() || canWrite(id, 'sav') || (signedIn() && !accOn(id) && myRole(id) == 'sav'));

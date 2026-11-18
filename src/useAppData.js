@@ -114,6 +114,7 @@ export function useMachines(on, authorName) {
       catch (e) { if (e && e.code === "not-found") { try { await setDoc(MACHINES_DOC_REF(), { ...mergeObj, ...stamp() }, { merge: true }); return true; } catch (e2) { return fail(e2); } } return fail(e); } };
     return {
       savePass: (pj, P) => write([[new FieldPath("pass", pj), P]], { pass: { [pj]: P } }),
+      saveRai: (pj, R) => write([[new FieldPath("rai", pj), R]], { rai: { [pj]: R } }), // v394 : RAI (tout compte ENOGIA, champ « rai » seulement)
       saveStandards: S => write([["standards", S]], { standards: S }),
       saveElements: L => write([["elements", L]], { elements: L }),
       saveImport: (pass, standards) => write([["pass", pass], ["standards", standards]], { pass, standards }),

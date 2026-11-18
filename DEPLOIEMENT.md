@@ -2912,3 +2912,15 @@ Demandé : « La B est bien… à prendre comme un passeport qui vit et se rempl
 - Galerie : Machines ORC avec un passeport en mémoire (`MachinesDemoCtx`).
 - Maquette `maquettes-design/v393-rai-photos.html` (RAI d'après le modèle Excel, plan d'actions, validation par service, photos aux étapes clés, idées) en attente.
 - Fichiers : src/passport.js, src/passport.test.js, src/components/MachinePassport.js, src/components/ManagerPanel.js, src/useAppData.js, src/appDocs.js, src/demo/demoPages.js, firestore.rules.
+
+## V394 — Rapport d'acceptation interne (RAI)
+
+Demandé : « après les tests on aura une RAI à rajouter avec le modèle suivant » (modèle Excel PJXXX-74X-RA001) puis « Oui, le RAI » ; maquette `maquettes-design/v393-rai-photos.html`.
+
+- `src/rai.js` (testé, rai.test.js) : `RAI_SECTIONS` (composants reliés aux éléments du passeport, documentation, dossier qualité, inspection visuelle), `RAI_SIGNERS` (service + fonction, jamais de nom dans le code), `RAI_POLES`, `raiSection`, `raiVerdict` (non acceptée / avec réserves / acceptée), `compSn` (S/N du passeport d'abord), `setRow`, `addAction` / `setAction` / `delAction`, `sign`, `raiHtml` (PDF imprimable, valeurs échappées).
+- Données : `planning/machines.rai[PJ] = { rows, actions, signs, config, ref, created }` (`saveRai` de `useMachines`).
+- `components/RaiView.js` : sections à gauche (avancement, NOK, actions bloquantes, signatures), verdict en tête, informations (planning + passeport ; configuration du produit et référence saisissables), tableaux OK / NOK / S.O. avec S/N, emplacement réseau ou commentaire, « ＋ action » sur un NOK, plan d'actions (bloquant, pôle, valider / rouvrir, NC ClickUp, suppression confirmée), validation (signer depuis son compte : nom + date, remarque, retirer), « Exporter le RAI (PDF) ».
+- Passeport (MachinePassport.js) : phase RAI entre Tests et MES (contrôles + signatures), vue « RAI » ; un S/N saisi dans le RAI est écrit dans le passeport par un admin (phase fabrication, source « RAI »), sinon gardé dans le RAI.
+- **Règles Firestore** : `machines` — mise à jour du seul champ `rai` par tout compte ENOGIA — **à republier par Gabriel** (avec la règle V393).
+- Photos : pas encore (choix du stockage à faire : Firebase Storage conseillé).
+- Fichiers : src/rai.js, src/rai.test.js, src/components/RaiView.js, src/components/MachinePassport.js, src/useAppData.js, src/demo/demoPages.js, firestore.rules.

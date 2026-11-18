@@ -1206,4 +1206,7 @@ export const RELEASE_CATALOG = [
     ["Passeport machine", "Configuration prévue et réelle de chaque machine, phase par phase, avec l'historique."],
     ["Standards par gamme", "Éléments suivis et valeurs standard ; import du tableau de configuration."],
   ] },
+  { v: "394", t: "Rapport d'acceptation interne (RAI) dans le passeport machine", items: [
+    ["RAI", "Rapport d'acceptation interne avant le départ, avec verdict, plan d'actions et signatures."],
+  ] },
 ];

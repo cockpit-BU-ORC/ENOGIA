@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v394",
+    date: "2026-11-18",
+    title: "V394 : Rapport d'acceptation interne (RAI) dans le passeport machine",
+    items: [
+      { t: "RAI", d: "Le passeport a une phase RAI entre les tests et la MES : identification des composants, documentation, dossier qualité, inspection visuelle (OK / NOK / S.O.), plan d'actions et validation par service, comme le modèle Excel." },
+      { t: "Verdict", d: "En tête : « Non acceptée pour départ » tant qu'une action bloquante est ouverte ou qu'un service n'a pas signé, puis « Acceptée avec réserves » ou « Acceptée pour départ »." },
+      { t: "Rien à ressaisir", d: "Projet, client, gamme, S/N, version software et numéros de série des composants viennent du planning et du passeport ; un S/N saisi dans le RAI retourne dans le passeport. Un NOK crée une action en un clic. Export PDF." },
+    ],
+  },
+  {
     id: "2026-11-v393",
     date: "2026-11-18",
     title: "V393 : Machines ORC — passeport machine (configuration prévue et réelle, six phases, historique) et standards par gamme",
