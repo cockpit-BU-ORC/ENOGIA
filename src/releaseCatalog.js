@@ -1248,4 +1248,7 @@ export const RELEASE_CATALOG = [
   { v: "407", t: "Menu de gauche : sous-pages d'Achats / Appro et Compétences dans SAV / MES", items: [
     ["Sous-pages dans le menu", "Achats / Appro et SAV / MES (Compétences) dans le menu de gauche."],
   ] },
+  { v: "408", t: "Passeport machine en livre : on tourne les pages de gauche à droite", items: [
+    ["Passeport en livre", "Pages tournées de gauche à droite ; fiche de lancement de fab et RAI à ouvrir, RAI pré-rempli."],
+  ] },
 ];

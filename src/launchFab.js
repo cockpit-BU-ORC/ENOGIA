@@ -111,3 +111,15 @@ export function launchHtml({ pj, gamme, info, L, comps, dims, ready }) {
   h += sec("Validation du lancement") + SIGN_ROLES.map(r => row("Signature " + r, L.signs && L.signs[r] ? L.signs[r].by + " · " + String(L.signs[r].at).slice(0, 10) : "")).join("");
   return h + "</table></body></html>";
 }
+
+// v408 : RAI pré-rempli — pour chaque élément du passeport, la valeur connue avant la vérification sur la machine :
+// commande Achats (référence · n° de PO, via les lignes du passeport et leur scope), choix du CdP dans la fiche de lancement de fab, roue / injecteur.
+const COMP_EL = { pompe: "pompeCycle" };
+export function raiPrefill(L, comps, rows) {
+  const out = {}, put = (el, v, src) => { if (el && has(v) && !out[el]) out[el] = { v: String(v), src, live: true }; };
+  (rows || []).forEach(x => { const a = x && x.achatSt; if (a && ((a.refs || []).length || (a.pos || []).length)) put(x.el.id, [(a.refs || [])[0], (a.pos || []).join(", ")].filter(Boolean).join(" · "), "Achats"); });
+  const cv = (L && L.comps) || {};
+  (comps || []).forEach(c => { const v = cv[c.id]; if (c.kind !== "achat" && has(v) && v !== NR) put(COMP_EL[c.id] || c.id, v, "Fiche de lancement de fab"); });
+  const inj = (L && L.inj) || {}; put("roue", inj.roue, "Fiche de lancement de fab"); put("injecteur", inj.injecteur, "Fiche de lancement de fab");
+  return out;
+}

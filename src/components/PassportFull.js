@@ -29,7 +29,7 @@ const ACH_LABEL = Object.fromEntries(ACHAT_ST);
 // pastilles de source (d'où vient la valeur)
 const SRC = () => ({ fp: [T.amber100, T.amber600], fl: [T.emerald100, T.emerald600], cdp: [T.surfaceAlt, T.ink700], ach: [T.accentSoft, T.accentInk],
   tur: [T.violet100, T.violet600], ts: [T.info100, T.info600], sav: [T.surfaceAlt, T.ink700], plan: [T.surfaceAlt, T.ink700] });
-function Src({ k, children }) { const [bg, ink] = SRC()[k] || SRC().plan; return <Pill bg={bg} ink={ink}>{children}</Pill>; }
+export function Src({ k, children }) { const [bg, ink] = SRC()[k] || SRC().plan; return <Pill bg={bg} ink={ink}>{children}</Pill>; }
 
 // ── briques ────────────────────────────────────────────────────────────────────────────────────────
 function Grid({ children }) { return <div className="pp2-grid">{children}</div>; }
@@ -104,7 +104,9 @@ function Section({ id, title, sub, right, children }) {
 }
 
 // ── fiche de lancement de fab (dans la phase Fabrication, rubriques l'une sous l'autre) ──────────────────────────
-function LaunchSheet({ L, saveL, canL, ro, gk, doc, info, ready, comps, scopes, authorName }) {
+// v408 : only = une rubrique seule (feuillet ouvert du passeport en livre : gen, desc, fab, tur, comp, qual, log, val)
+export function LaunchSheet({ L, saveL, canL, ro, gk, doc, info, ready, comps, scopes, authorName, only }) {
+  const show = k => !only || only === k;
   const st = launchState(L), [open, setOpen] = useState(!st.launched);
   const lists = elecListsOf(doc), dims = dimsOf(doc, gk), std = stdOf(doc, info.gamme), els = Object.fromEntries(elementsOf(doc).map(e => [e.id, e]));
   const t = L.txt || {}, ok = L.ok || {}, design = L.design || {}, elec = L.elec || {}, inj = L.inj || {}, cv = L.comps || {}, plugs = plugsOf(L), n = plugCount(L);
@@ -114,26 +116,26 @@ function LaunchSheet({ L, saveL, canL, ro, gk, doc, info, ready, comps, scopes, 
   const pdf = () => { const w = window.open("", "_blank"); if (!w) return; w.document.open(); w.document.write(launchHtml({ pj: info.pj, gamme: info.gamme, info, L, dims, ready,
     comps: comps.map(c => ({ id: c.id, label: c.label, v: c.kind === "achat" ? (achatOfComp(c, scopes) || {}).st || "" : cv[c.id] === NR ? "Non requis" : cv[c.id] || "" })) })); w.document.close(); };
   return <div className="pp2-launch">
-    <button type="button" className="pp2-lhead" aria-expanded={open} onClick={() => setOpen(o => !o)}>
+    {!only && <button type="button" className="pp2-lhead" aria-expanded={open} onClick={() => setOpen(o => !o)}>
       <b>{FAB}</b>
       {st.launched ? <Pill tone="ok">Lancée le {fd(st.at)}</Pill> : <Pill tone="warn">Brouillon · {st.signed} / {st.total} signatures</Pill>}
       {ready && <span className="pp2-sub">pièces arrivées {ready.pct} %</span>}
       <span style={{ flex: 1 }} />
       <span className="enogia-nd-chev" data-open={open ? "1" : "0"} style={{ display: "inline-grid", color: T.ink500 }}><NavIcon name="chevronDown" size={16} /></span>
-    </button>
-    {open && <div className="pp2-lbody enogia-cl-in">
-      {ready && <div className="pp2-ready">
+    </button>}
+    {(open || only) && <div className="pp2-lbody enogia-cl-in">
+      {ready && show("comp") && <div className="pp2-ready">
         <div><span className="pp2-k">Pièces arrivées</span><b className="pp2-big">{ready.pct} %</b></div>
         <div style={{ flex: 1, minWidth: 220 }}><span className="pp2-bar" aria-hidden="true"><i style={{ transform: "scaleX(" + ready.n / ready.t + ")", background: ready.ready ? T.emerald600 : T.amber600 }} /></span>
           <span style={{ fontSize: 13 }}>{ready.n} / {ready.t} lignes de commande livrées{ready.waiting.length ? <> · <span style={{ color: T.amber600 }}>attendu : {ready.waiting.slice(0, 4).map(w => w.numero + (w.livraison ? " (" + fd(w.livraison).slice(0, 5) + ")" : "")).join(", ")}{ready.waiting.length > 4 ? "…" : ""}</span></> : null}</span></div>
         <Pill tone={ready.ready ? "ok" : "warn"}>{ready.ready ? "Prêt à lancer" : "Lancement à risque"}</Pill><Src k="ach">Achats / Appro</Src>
       </div>}
-      {sub("Informations générales")}
+      {show("gen") && <>{!only && sub("Informations générales")}
       <LRow label="Numéro de projet"><span className="pp2-v">{info.pj}</span></LRow>
       <LRow label="Gamme"><span className="pp2-v">{info.gamme || "—"}</span></LRow>
       <LRow label="Date du lancement" ok={okN("date", "date du lancement")}><TextField label="Date du lancement" type="date" value={L.date} canEdit={canL} ro={ro} onSave={v => saveL("date", v)} /></LRow>
       <LRow label="Responsable du lancement"><span className="pp2-v">{info.chef || "—"}</span> <Src k="fp">fiche projet</Src></LRow>
-      {sub("Description de la machine")}
+      </>}{show("desc") && <>{!only && sub("Description de la machine")}
       <LRow label="Numéro de série"><span className="pp2-v">{info.sn || "—"}</span></LRow>
       <LRow label="Certification"><span className="pp2-v">{info.certif || "—"}</span> <Src k="fp">fiche projet</Src></LRow>
       <LRow label="Dimensions et poids" sub={"gamme " + (gk || "—")}>{dims ? <div className="pp2-dims">{[["Longueur", dims.L], ["Largeur", dims.l], ["Hauteur", dims.H], ["Poids", dims.P]].map(([k, v]) => <div key={k}><span className="pp2-k">{k}</span><b>{v || "—"}</b></div>)}</div>
@@ -142,13 +144,13 @@ function LaunchSheet({ L, saveL, canL, ro, gk, doc, info, ready, comps, scopes, 
       {["neutre", "freq", "tension"].map(k => <LRow key={k} label={ELEC_LABEL[k]} ok={k === "neutre" ? okN("elec", "spécifications électriques") : null}><Choice label={ELEC_LABEL[k]} value={elec[k]} opts={lists[k]} canEdit={canL} ro={ro} onPick={v => saveL("elec." + k, v)} /></LRow>)}
       {DESIGN_FIELDS.filter(f => f.opts.length).map(f => <LRow key={f.id} label={f.label}><Choice label={f.label} value={design[f.id]} opts={f.opts} other={false} canEdit={canL} ro={ro} onPick={v => saveL("design." + f.id, v)} /></LRow>)}
       <LRow label="Autre">{txt("descAutre", "Autre (description)", true)}</LRow>
-      {sub("Données de fabrication")}
+      </>}{show("fab") && <>{!only && sub("Données de fabrication")}
       <LRow label="Plan / nomenclature validée (BOM)" ok={okN("bom", "BOM")}>{txt("bom", "Plan / nomenclature validée (BOM)", true, "plan châssis, schéma électrique…")}</LRow>
       <LRow label="P&ID" ok={okN("pid", "P&ID")}><TextField label="P&ID" value={design.pid} canEdit={canL} ro={ro} onSave={v => saveL("design.pid", v)} /></LRow>
       <LRow label="Autres modifications" ok={okN("mods", "autres modifications")}>{txt("mods", "Autres modifications", true)}</LRow>
       <LRow label="Délais de fabrication"><span className="pp2-v">{info.delais || "—"}</span> <Src k="plan">planning</Src></LRow>
       <LRow label="Fichiers à imprimer" ok={okN("print", "fichiers à imprimer")}>{txt("print", "Fichiers à imprimer", true, "sizer, checklist de montage…")}</LRow>
-      {sub("Turbine")}
+      </>}{show("tur") && <>{!only && sub("Turbine")}
       <LRow label="Roue" sub={std.roue ? "référence " + gk + " : " + std.roue : ""} ok={okN("roue", "roue")}><Choice label="Roue" value={inj.roue} opts={(els.roue || {}).opts} refV={std.roue} canEdit={canL} ro={ro} onPick={v => saveL("inj.roue", v)} />{offRef(inj.roue, std.roue) && <span className="pp2-warn">≠ référence {gk} : {std.roue}</span>}</LRow>
       <LRow label="Injecteur" sub={std.injecteur ? "référence " + gk + " : " + std.injecteur : ""} ok={okN("injecteur", "injecteur")}><Choice label="Injecteur" value={inj.injecteur} opts={(els.injecteur || {}).opts} refV={std.injecteur} canEdit={canL} ro={ro} onPick={v => saveL("inj.injecteur", v)} />{offRef(inj.injecteur, std.injecteur) && <span className="pp2-warn">≠ référence {gk} : {std.injecteur}</span>}</LRow>
       <LRow label="Bouchages de l'injecteur" sub="touchez un trou pour le boucher" ok={okN("bouchages", "bouchages")}>
@@ -157,7 +159,7 @@ function LaunchSheet({ L, saveL, canL, ro, gk, doc, info, ready, comps, scopes, 
           <div className="pp2-dims" style={{ flex: 1, minWidth: 200 }}><div><span className="pp2-k">Bouchages</span><b>{n} / {HOLES}</b>{has(std.bouchages) && String(std.bouchages) !== String(n) ? <span className="pp2-warn">≠ référence {gk} : {std.bouchages}</span> : null}</div>
             <div><span className="pp2-k">Ouvertures</span><b>{HOLES - n}</b><span className="pp2-sub">calculé</span></div></div>
         </div></LRow>
-      {sub("Composants installés")}
+      </>}{show("comp") && <>{!only && sub("Composants installés")}
       <div className="pp2-cards">{comps.map(c => { const a = c.kind === "achat" ? achatOfComp(c, scopes) : null, v = cv[c.id], ref = refOf(c, gk);
         if (c.kind === "achat") return <div key={c.id} className="pp2-card" data-set="1"><div className="pp2-ch"><b>{c.label}</b><span style={{ flex: 1 }} /><Src k="ach">Achats{c.scope ? " · " + c.scope : ""}</Src></div>
           {!a ? <span className="pp2-sub">scope Achats à préciser dans les Réglages du passeport</span> : a.none ? <span className="pp2-sub">rien dans Achats / Appro pour ce scope</span>
@@ -168,25 +170,26 @@ function LaunchSheet({ L, saveL, canL, ro, gk, doc, info, ready, comps, scopes, 
           <div className="pp2-ch"><b>{c.label}</b><span style={{ flex: 1 }} />{offRef(v, ref) ? <span className="pp2-warn">≠ réf. {ref}</span> : has(v) ? <Pill tone={v === NR ? "neutral" : "ok"}>{v === NR ? "non requis" : "choisi"}</Pill> : <Pill tone="neutral">à choisir</Pill>}</div>
           <Choice label={c.label} value={v} opts={c.opts} refV={ref} nr={c.kind === "option"} canEdit={canL} ro={ro} onPick={x => saveL("comps." + c.id, x)} />
           {okN("c-" + c.id, c.label)}</div>; })}</div>
-      {sub("Qualité et contrôles")}
+      </>}{show("qual") && <>{!only && sub("Qualité et contrôles")}
       {QUALITY.map(([id, l]) => <LRow key={id} label={l} ok={okN(id, l)}>{txt(id, l, false, "contrôle, remarque")}</LRow>)}
-      {sub("Logistique et organisation")}
+      </>}{show("log") && <>{!only && sub("Logistique et organisation")}
       <LRow label="Planning"><span className="pp2-v">{info.planning || "—"}</span> <Src k="plan">planning publié</Src></LRow>
       <LRow label="Ressources" ok={okN("res", "ressources")}>{txt("res", "Ressources", false, "monteurs, électricien…")}</LRow>
       <LRow label="Risques identifiés et plans de mitigation" ok={okN("risk", "risques")}>{txt("risk", "Risques identifiés et plans de mitigation", true)}</LRow>
       <LRow label="Autre">{txt("logAutre", "Autre (logistique)", true)}</LRow>
-      {sub("Validation du lancement")}
+      </>}{show("val") && <>{!only && sub("Validation du lancement")}
       <p className="pp2-sub" style={{ margin: "0 0 8px" }}>Chaque rôle signe depuis son compte ; la fiche est lancée quand les quatre ont signé.</p>
       <div className="pp2-sigs">{SIGN_ROLES.map(role => { const s = (L.signs || {})[role];
         return <div key={role} className="pp2-sig" data-done={s ? "1" : undefined}><b>{role}</b>
           {s ? <><span className="pp2-sub">{s.by} · {fd(s.at)}</span><button type="button" style={btn("ghost", "sm")} onClick={() => saveL("signs." + role, null, cur => signLaunch(cur, role, authorName, false), true)}>Retirer</button></>
             : <button type="button" style={btn("sec", "sm")} onClick={() => saveL("signs." + role, null, cur => signLaunch(cur, role, authorName, true), true)}>Signer</button>}</div>; })}</div>
+      </>}
       <div style={{ display: "flex", gap: 8, marginTop: 12, alignItems: "center", flexWrap: "wrap" }}><span className="pp2-sub">Enregistré à chaque modification</span><span style={{ flex: 1 }} /><button type="button" onClick={pdf} style={btn("sec", "sm")}>Exporter la fiche (PDF)</button></div>
     </div>}
   </div>;
 }
 
-function History({ P, doc, L }) {
+export function History({ P, doc, L }) {
   const lab = Object.fromEntries(elementsOf(doc).map(e => [e.id, e.label]));
   const list = [...(P.hist || [])];
   if (L && L.at) list.unshift({ at: L.at, by: L.by, phase: "fab", el: "*", to: FAB + " modifiée" });

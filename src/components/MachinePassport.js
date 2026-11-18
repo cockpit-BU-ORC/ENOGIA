@@ -12,7 +12,7 @@ import { askConfirm } from "../confirm";
 import { useMachines, useProdTurbines, useAchats, useTestsDoc, useSav } from "../useAppData";
 import { parseConfigTable, parseReference, importPlan } from "../passport";
 import { PASS_PHASES, phaseOfEtat } from "../launchFab";
-import { PassportFull } from "./PassportFull";
+import { PassportBook } from "./PassportBook";
 import { PassportSettings } from "./PassportSettings";
 
 const field = () => ({ padding: "4px 8px", minHeight: 32, borderRadius: 8, border: "1px solid " + T.fieldLine, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, boxSizing: "border-box" });
@@ -70,7 +70,7 @@ function PassportView({ data, doc, api, canEdit, authorName, prodDoc, achatsDoc,
         </button>; })}
       {!list.length && <span style={{ fontSize: 13, color: T.ink500, padding: 8 }}>Aucune machine</span>}
     </nav>
-    {r && <PageGuard key={r.pj} name={"Passeport " + r.pj}><PassportFull data={data} prodDoc={prodDoc} achatsDoc={achatsDoc} testsDoc={testsDoc} savDoc={savDoc} r={r} doc={doc} api={api} canEdit={canEdit} authorName={authorName} certifs={certifs} /></PageGuard>}
+    {r && <PageGuard key={r.pj} name={"Passeport " + r.pj}><PassportBook data={data} prodDoc={prodDoc} achatsDoc={achatsDoc} testsDoc={testsDoc} savDoc={savDoc} r={r} doc={doc} api={api} canEdit={canEdit} authorName={authorName} certifs={certifs} /></PageGuard>}
   </div>;
 }
 

@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v408",
+    date: "2026-11-18",
+    title: "V408 : Passeport machine en livre : on tourne les pages de gauche à droite",
+    items: [
+      { t: "Un livre", d: "Le passeport se feuillette : une couverture puis une page par phase. On tourne les pages au doigt ou à la souris (la page suit le geste), au pavé tactile, avec ‹ › ou les flèches du clavier ; les puces emmènent directement à une page." },
+      { t: "Modifier", d: "Chaque page est une liste : un appui ouvre une feuille par le bas avec les choix ; on la tire vers le bas pour la fermer." },
+      { t: "Fiche de lancement de fab et RAI", d: "Ce sont des pages qui s'ouvrent : la fiche de lancement de fab en 8 rubriques, le RAI avec ses photos et ses composants déjà remplis par Achats, Turbines et la fiche du chef de projet." },
+    ],
+  },
+  {
     id: "2026-11-v407",
     date: "2026-11-18",
     title: "V407 : Menu de gauche : sous-pages d'Achats / Appro et Compétences dans SAV / MES",

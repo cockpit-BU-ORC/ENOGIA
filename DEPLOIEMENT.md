@@ -3061,3 +3061,13 @@ Demandé : « mettre bien les sous-pages dans le panel à gauche pour les achats
 - App.js : entrée **Achats / Appro** avec ses sous-pages (Projets, Synthèse Appro, PO, Fournisseurs, Articles, Nomenclatures, Configuration, Réglages — Réglages pour ceux qui modifient la page ou le propriétaire), état `achTab` (même clé `enogia_achats_tab` que la page), sous-page dans l'adresse (`&s=`) ; **SAV / MES** : sous-page Compétences ajoutée au menu.
 - Achats.js (page du kit) : props facultatives `tab` / `onTab` (onglet piloté par le menu ; sans elles, la page garde son propre onglet). Consignes du kit mises à jour, **kit achats régénéré** (`kit-achats/`, à renvoyer au responsable achats).
 - Fichiers : src/App.js, src/components/Achats.js, scripts/achats-consignes.md.
+
+## V408 — Passeport machine en livre
+
+Maquette `maquettes-design/v410-passeport-pages.html` validée (« Go, code-la » ; « c'est ça que je voulais : le défilement de gauche à droite »).
+
+- `src/components/PassportBook.js` : couverture (identité, phase, départ, pièces arrivées, à traiter avec liens vers la page) puis une page par phase (Arrivée, Design, Appro / Achats, Fiche de lancement de fab, Fabrication et turbine, Tests, RAI, Départ, MES et SAV, Historique). **Tourner les pages** : position continue en pages, la page qui part pivote sur sa reliure (`rotateY`), la suivante arrive de droite ; glisser au doigt / à la souris (suivi 1:1 au-delà de 8 px horizontaux, le défilement vertical d'une page reste libre, élan projeté, une page par geste, résistance aux deux bouts, ressort amorti sans rebond), pavé tactile (deltaX), ‹ ›, ← →, puces ; pages cachées `inert` ; « réduire les animations » = changement net.
+- Lignes groupées (`Row`) et **feuille par le bas** (`Sheet`, `aria-modal`, tirée vers le bas pour fermer) pour les valeurs du CdP (design, électrique, roue, injecteur, composants, version software).
+- **Feuillets** (`Insert`) : fiche de lancement de fab par rubrique (`LaunchSheet only=…`, PassportFull.js) et RAI (`RaiView` + `PhotosView`). **RAI pré-rempli** : `raiPrefill` (launchFab.js) — référence · n° de PO d'Achats (par le scope des lignes du passeport), choix du CdP dans la fiche de lancement de fab, roue / injecteur ; puis Turbines, tests, SAV ; ce qui est saisi à la main l'emporte.
+- MachinePassport.js : la vue Passeport affiche `PassportBook`. styles.css : bloc `.pb-*` (tous les boutons `all: unset` gardent `position: relative`).
+- Fichiers : src/components/PassportBook.js, src/components/PassportFull.js, src/components/MachinePassport.js, src/launchFab.js, src/styles.css.
