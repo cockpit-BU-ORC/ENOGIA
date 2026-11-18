@@ -5,9 +5,10 @@
 // on la tire vers le bas pour fermer). La fiche de lancement de fab (page 5) et le RAI (avec ses photos et ses valeurs pré-remplies par Achats,
 // Turbines et la fiche du CdP) sont des feuillets qui s'ouvrent depuis leur page.
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { T } from "../theme";
 import { getPjMeta, chefsOf, orcChefsOf, plannedSnOf } from "../pjMeta";
-import { Pill, notify } from "./SharedUI";
+import { Pill, notify, NavIcon } from "./SharedUI";
 import { btn } from "../theme";
 import { AF } from "../autoFocusOk";
 import { contractDatesOf, livrPrevueOf } from "../penalties";
@@ -70,12 +71,24 @@ function Sheet({ s, onClose }) {
 }
 
 // feuillet qui s'ouvre (fiche de lancement de fab, RAI) : prend toute la place du livre, « ‹ Passeport » le referme
-function Insert({ title, badge, onClose, tabs, tab, setTab, children }) {
-  return <div className="pb-insert" role="dialog" aria-modal="true" aria-label={title} onKeyDown={e => { if (e.key === "Escape") { e.stopPropagation(); onClose(); } }}>
-    <div className="pb-ih"><button type="button" className="pb-back" onClick={onClose} autoFocus={AF}>‹ Passeport</button><b>{title}</b><span style={{ flex: 1 }} />{badge}</div>
-    {tabs && <nav className="pb-itabs" aria-label="Rubriques">{tabs.map(([k, l]) => <button key={k} type="button" className="pb-itab" aria-current={tab === k ? "true" : undefined} onClick={() => setTab(k)}>{l}</button>)}</nav>}
-    <div className="pb-ibody">{children}</div>
-  </div>;
+// v410 (demandé : « quand j'ouvre un doc comme la fiche de lancement de fab, ça doit m'ouvrir sur la première page et je dois voir que
+// c'est un pop-up ») : fenêtre centrée sur un fond voilé (aria-modal, rendue dans <body>), ×, Échap ou clic à côté pour fermer ;
+// les rubriques se lisent comme des pages : « 1 / 8 », rubrique précédente / suivante en bas.
+function Insert({ title, badge, onClose, tabs, tab, setTab, children, vars }) {
+  const i = tabs ? Math.max(0, tabs.findIndex(t => t[0] === tab)) : 0, body = useRef(null);
+  useEffect(() => { if (body.current) body.current.scrollTop = 0; }, [tab]);
+  return createPortal(<div className="pb-pop-bg" role="dialog" aria-modal="true" aria-label={title} style={{ position: "fixed", inset: 0, ...vars }}
+    onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }} onKeyDown={e => { if (e.key === "Escape") { e.stopPropagation(); onClose(); } }}>
+    <div className="pp2 pb-pop">
+      <div className="pb-ih"><b className="pb-pop-t">{title}</b>{badge}<span style={{ flex: 1 }} />{tabs && <span className="pb-pg">{i + 1} / {tabs.length}</span>}
+        <button type="button" className="pb-x" onClick={onClose} aria-label="Fermer" autoFocus={AF}><NavIcon name="close" size={18} /></button></div>
+      {tabs && <nav className="pb-itabs" aria-label="Rubriques">{tabs.map(([k, l], j) => <button key={k} type="button" className="pb-itab" aria-current={tab === k ? "true" : undefined} onClick={() => setTab(k)}><small>{j + 1}</small>{l}</button>)}</nav>}
+      <div className="pb-ibody" ref={body}>{children}</div>
+      {tabs && <div className="pb-ifoot">
+        <button type="button" className="pb-chip" disabled={i === 0} onClick={() => setTab(tabs[i - 1][0])}>‹ {i > 0 ? tabs[i - 1][1] : ""}</button><span style={{ flex: 1 }} />
+        {i < tabs.length - 1 ? <button type="button" className="pb-chip" data-pri="1" onClick={() => setTab(tabs[i + 1][0])}>{tabs[i + 1][1]} ›</button> : <button type="button" className="pb-chip" data-pri="1" onClick={onClose}>Terminer</button>}</div>}
+    </div>
+  </div>, document.body);
 }
 
 export function PassportBook({ r, data, doc, api, canEdit, authorName, prodDoc, achatsDoc, testsDoc, savDoc, certifs }) {
@@ -167,7 +180,7 @@ export function PassportBook({ r, data, doc, api, canEdit, authorName, prodDoc, 
         <span className="pb-rub-h"><b>{c.l}</b><span className="pp2-sub">{c.d} / {c.n}</span></span>
         <span className="pb-bar2" aria-hidden="true"><i style={{ transform: "scaleX(" + (c.n ? c.d / c.n : 0) + ")" }} /></span>
         <span className="pb-rub-v">{c.v}</span></button>)}</div>
-      <button type="button" className="pb-open" onClick={() => setIns("launch")}>Ouvrir la fiche de lancement de fab <span aria-hidden="true">↗</span></button></> },
+      <button type="button" className="pb-open" onClick={() => { setFabTab("gen"); setIns("launch"); }}>Ouvrir la fiche de lancement de fab <span aria-hidden="true">↗</span></button></> },
     { k: "fab", l: "Fabrication et turbine", sub: [r.debutProd && "production à partir du " + fd(r.debutProd), r.tests && "tests le " + fd(r.tests)].filter(Boolean).join(" · "), node: <>
       <Group><Row k={FAB} v={st.launched ? "Lancée le " + fd(st.at) : "Brouillon · " + st.signed + " / " + st.total + " signatures"} src="page précédente" srcK="fl" onGo={() => go("launch")} /></Group>
       <h4 className="pb-h4">Turbine</h4>
@@ -204,6 +217,17 @@ export function PassportBook({ r, data, doc, api, canEdit, authorName, prodDoc, 
       {Object.entries(sav).filter(([, x]) => x && x.sav).map(([k, x]) => <Row key={k} k={"Pièce changée : " + (((elementsOf(doc).find(e => e.id === k)) || {}).label || k)} v={x.v} src={x.src} srcK="sav" />)}</Group> },
     { k: "hist", l: "Historique", node: <History P={P0} doc={doc} L={L} /> },
   ];
+  const cntV = a => a.filter(has).length;
+  const STAT = {
+    arr: { d: cntV([meta.nomProjet !== "—" ? meta.nomProjet : "", meta.pays, info.chef, r.gamme, sn, meta.contratT0, certifTxt, cd.deadline || cd.mad, r.arrivee]), n: 9, l: "informations connues" },
+    design: { d: cntV([...DESIGN_FIELDS.map(x => design[x.id]), elec.neutre, elec.freq, elec.tension]), n: DESIGN_FIELDS.length + 3, l: "points renseignés" },
+    appro: ready ? { d: ready.n, n: ready.t, l: "lignes de commande livrées" } : null,
+    launch: { d: fabCards.filter(c => c.n && c.d >= c.n).length, n: fabCards.length, l: "rubriques complètes" },
+    fab: { d: chooseC.filter(c => has(cv[c.id])).length + cntV([inj.roue, inj.injecteur]), n: chooseC.length + 2, l: "turbine et composants renseignés" },
+    tests: { d: ["livret", "debugCk", "freqs", "vibs", "fat"].filter(k => tests[k]).length, n: 5, l: "étapes de la fiche de tests" },
+    rai: (() => { const t = RAI_SECTIONS.reduce((m, sec) => { const x = safe(() => raiSection(R, sec), { done: 0, total: 0 }, "RAI"); return { d: m.d + x.done, n: m.n + x.total }; }, { d: 0, n: 0 }); return { ...t, l: "contrôles du RAI" }; })(),
+  };
+  pages.forEach(p => { if (STAT[p.k]) p.stat = STAT[p.k]; });
   const N = pages.length;
   // ── tourner les pages (positions en pages ; 0 = couverture)
   const bookRef = useRef(null), pageRefs = useRef([]), pos = useRef(0), anim = useRef(0), drag = useRef(null);
@@ -249,7 +273,7 @@ export function PassportBook({ r, data, doc, api, canEdit, authorName, prodDoc, 
   const onKey = e => { if (ins || sheet || e.target.closest("input,textarea,select")) return; if (e.key === "ArrowRight") { e.preventDefault(); goI(Math.round(pos.current) + 1, 0); } if (e.key === "ArrowLeft") { e.preventDefault(); goI(Math.round(pos.current) - 1, 0); } };
   const pdfDossier = () => { const w = window.open("", "_blank"); if (!w) return; w.document.open(); w.document.write(dossierHtml({ r, meta, rows, R, photos, std: gk })); w.document.close(); };
   const vars = { "--pp-ink": T.ink900, "--pp-ink7": T.ink700, "--pp-ink5": T.ink500, "--pp-line": T.line, "--pp-card": T.card, "--pp-alt": T.surfaceAlt, "--pp-surf": T.surface,
-    "--pp-field": T.fieldLine, "--pp-acc": T.accentInk, "--pp-ok": T.emerald600, "--pp-okbg": T.emerald100, "--pp-bad": T.red600, "--pp-warn": T.amber600, "--pp-on": T.onFill };
+    "--pp-field": T.fieldLine, "--pp-acc": T.accentInk, "--pp-ok": T.emerald600, "--pp-okbg": T.emerald100, "--pp-bad": T.red600, "--pp-warn": T.amber600, "--pp-on": T.onFill, "--pp-font": T.font };
   return <section aria-label={"Passeport de " + pj} className="pp2 pb" style={vars}>
     <div className="pb-bar e-tb">
       <b className="pb-bt">{pj}</b>
@@ -265,20 +289,26 @@ export function PassportBook({ r, data, doc, api, canEdit, authorName, prodDoc, 
       <div ref={bookRef} className="pb-book" tabIndex={0} aria-roledescription="livre" aria-label="Passeport, une page par phase : glisser à gauche ou à droite, ou flèches du clavier"
         onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} onKeyDown={onKey}>
         {pages.map((p, i) => <article key={p.k} ref={el => { pageRefs.current[i] = el; }} className={"pb-page" + (p.k === "cover" ? " pb-cover" : "")} aria-roledescription="page" aria-label={p.l + ", page " + (i + 1) + " sur " + N}>
-          <div className="pb-pin">
-            {p.k !== "cover" && <><div className="pb-run"><b>{pj} · Passeport machine</b><span>{stOf(p.k) === "done" ? "terminée" : stOf(p.k) === "now" ? "en cours" : ""}</span></div>
-              <h3 className="pb-h3">{p.l}</h3>{p.sub && <div className="pp2-sub" style={{ margin: "2px 0 12px" }}>{p.sub}</div>}</>}
-            {p.node}
-            <div className="pb-foot">{i + 1} / {N}</div>
-          </div>
+          {p.k === "cover" ? <div className="pb-pin pb-pin-cover">{p.node}<div className="pb-foot">{i + 1} / {N}</div></div>
+            : <div className="pb-pin">
+              <aside className="pb-aside">
+                <span className="pb-num" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
+                <h3 className="pb-h3">{p.l}</h3>{p.sub && <div className="pb-asub">{p.sub}</div>}
+                {stOf(p.k) && <Pill tone={stOf(p.k) === "done" ? "ok" : "accent"}>{stOf(p.k) === "done" ? "terminée" : "en cours"}</Pill>}
+                {p.stat && p.stat.n > 0 && <div className="pb-astat"><b>{p.stat.d} / {p.stat.n}</b><span>{p.stat.l}</span><span className="pb-bar2" aria-hidden="true"><i style={{ transform: "scaleX(" + p.stat.d / p.stat.n + ")" }} /></span></div>}
+                {p.aside}
+                <div className="pb-ahint">{pj} · page {i + 1} / {N}</div>
+              </aside>
+              <div className="pb-main">{p.node}</div>
+            </div>}
         </article>)}
       </div>
       {cur > 0 && <button type="button" className="pb-edge" data-side="l" onClick={() => goI(cur - 1, 0)} aria-label={"Page précédente : " + pages[cur - 1].l}><span aria-hidden="true">‹</span></button>}
       {cur < N - 1 && <button type="button" className="pb-edge" data-side="r" onClick={() => goI(cur + 1, 0)} aria-label={"Page suivante : " + pages[cur + 1].l}><span aria-hidden="true">›</span></button>}
       {sheet && <Sheet s={sheet} onClose={() => setSheet(null)} />}
-      {ins === "launch" && <Insert title={FAB + " · " + pj} badge={st.launched ? <Pill tone="ok">Lancée</Pill> : <Pill tone="warn">{st.signed} / {st.total} signatures</Pill>} onClose={() => setIns(null)} tabs={FAB_TABS} tab={fabTab} setTab={setFabTab}>
+      {ins === "launch" && <Insert title={FAB + " · " + pj} badge={st.launched ? <Pill tone="ok">Lancée</Pill> : <Pill tone="warn">{st.signed} / {st.total} signatures</Pill>} onClose={() => setIns(null)} tabs={FAB_TABS} tab={fabTab} setTab={setFabTab} vars={vars}>
         <LaunchSheet L={L} saveL={saveL} canL={canL} ro={ro} gk={gk} doc={doc} info={info} ready={ready} comps={comps} scopes={scopes} authorName={authorName} only={fabTab} /></Insert>}
-      {ins === "rai" && <Insert title={"RAI · " + pj} badge={<Pill tone={rv.k === "ok" ? "ok" : rv.blocking ? "bad" : "neutral"}>{rv.label}</Pill>} onClose={() => setIns(null)}>
+      {ins === "rai" && <Insert title={"RAI · " + pj} badge={<Pill tone={rv.k === "ok" ? "ok" : rv.blocking ? "bad" : "neutral"}>{rv.label}</Pill>} onClose={() => setIns(null)} vars={vars}>
         <RaiView photos={photos} r={r} meta={meta} doc={doc} P={P} R={R} saveRai={next => api.saveRai(pj, next)} savePass={next => api.savePass(pj, next)} canEdit={canEdit} who={authorName} />
         <h4 className="pb-h4" style={{ marginTop: 20 }}>Photos</h4>
         <PhotosView pj={pj} list={photos} api={api} who={authorName} canEdit={canEdit} /></Insert>}

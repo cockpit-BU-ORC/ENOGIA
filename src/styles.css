@@ -963,7 +963,7 @@ tr[data-kbd]:active > td, tr[role="button"]:active > td, li[data-kbd]:active, li
 .pb-todo { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
 .pb-todoi { all: unset; position: relative; cursor: pointer; font-size: 13px; font-weight: 500; padding: 6px 12px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--pp-card) 35%, transparent); color: var(--pp-card); }
 .pb-hint { margin-top: 36px; font-size: 13px; }
-.pb-group { background: var(--pp-card); border: 1px solid var(--pp-line); border-radius: 12px; overflow: hidden; display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); }
+.pb-group { background: var(--pp-card); border: 1px solid var(--pp-line); border-radius: 12px; overflow: hidden; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
 .pb-group > .pb-row { box-shadow: 0 0 0 .5px var(--pp-line); }
 .pb-row { all: unset; position: relative; box-sizing: border-box; width: 100%; display: grid; grid-template-columns: minmax(120px, 1fr) auto 16px; gap: 12px; align-items: center; min-height: 48px; padding: 8px 14px; cursor: pointer; transition: background var(--e-dur-micro) ease; }
 
@@ -1024,3 +1024,35 @@ tr[data-kbd]:active > td, tr[role="button"]:active > td, li[data-kbd]:active, li
 .pb-bar2 { display: block; height: 4px; border-radius: 2px; background: var(--pp-alt); overflow: hidden; }
 .pb-bar2 i { display: block; height: 100%; background: var(--pp-ok); transform-origin: left; transition: transform var(--e-dur-in) ease; }
 @media (max-width: 1000px) { .pb-edge { display: none; } .pb-pin { padding: 14px 16px; } .pb-group { grid-template-columns: 1fr; } }
+
+/* v410 (demandé : « encore trop vide sur les côtés ; plus premium ; un doc doit s'ouvrir en pop-up sur sa première page ») */
+.pb-pin { max-width: none; padding: 28px 92px 18px; display: grid; grid-template-columns: minmax(230px, 290px) minmax(0, 1fr); gap: 44px; align-items: start; }
+.pb-pin-cover { display: block; padding: 40px 92px 24px; }
+.pb-pin .pb-foot { grid-column: 1 / -1; }
+.pb-aside { position: sticky; top: 0; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; padding-top: 4px; }
+.pb-num { font-family: "Cabinet Grotesk", Satoshi, sans-serif; font-size: 64px; line-height: .9; font-weight: 700; letter-spacing: -0.04em; color: var(--pp-line); font-variant-numeric: tabular-nums; }
+.pb-aside .pb-h3 { font-size: 30px; line-height: 1.05; letter-spacing: -0.025em; }
+.pb-asub { font-size: 14px; color: var(--pp-ink5); line-height: 1.4; }
+.pb-astat { width: 100%; display: flex; flex-direction: column; gap: 4px; margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--pp-line); }
+.pb-astat b { font-family: "Cabinet Grotesk", Satoshi, sans-serif; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.pb-astat span:not(.pb-bar2) { font-size: 13px; color: var(--pp-ink5); }
+.pb-ahint { font-size: 12px; color: var(--pp-ink5); margin-top: 8px; }
+.pb-main { min-width: 0; padding-top: 6px; }
+.pb-main > .pb-h4:first-child { margin-top: 0; }
+.pb-title { font-size: clamp(56px, 6vw, 96px); letter-spacing: -0.04em; }
+.pb-pin-cover .pb-facts { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; margin-top: 40px; }
+.pb-pin-cover .pb-facts b { font-size: 22px; }
+/* pop-up des documents (fiche de lancement de fab, RAI) */
+.pb-pop-bg { z-index: 1200; background: rgba(10, 14, 22, .5); display: flex; align-items: center; justify-content: center; padding: 24px; }
+.pb-pop { font-family: var(--pp-font, Satoshi, system-ui, sans-serif); font-size: 14px; line-height: 1.5; color: var(--pp-ink); width: min(1180px, 100%); height: min(880px, 100%); display: flex; flex-direction: column; background: var(--pp-surf); border: 1px solid var(--pp-line); border-radius: 20px; overflow: hidden; box-shadow: 0 24px 64px rgba(0, 0, 0, .28); }
+.pb-pop .pb-ih { min-height: 60px; padding: 0 12px 0 20px; border-radius: 0; gap: 12px; }
+.pb-pop-t { font-family: "Cabinet Grotesk", Satoshi, sans-serif; font-size: 20px; font-weight: 700; letter-spacing: -0.015em; }
+.pb-x { all: unset; position: relative; cursor: pointer; width: 40px; height: 40px; border-radius: 999px; display: grid; place-items: center; color: var(--pp-ink7); transition: background var(--e-dur-micro) ease; }
+.pb-x:hover { background: var(--pp-alt); } .pb-x:focus-visible { outline: 2px solid var(--pp-acc); outline-offset: 2px; }
+.pb-itab small { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 999px; margin-right: 6px; font-size: 11px; font-weight: 600; background: var(--pp-alt); color: var(--pp-ink7); }
+.pb-itab[aria-current="true"] small { background: var(--pp-card); color: var(--pp-ink); }
+.pb-pop .pb-ibody { padding: 20px 28px 28px; }
+.pb-ifoot { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--pp-line); background: var(--pp-card); }
+.pb-chip[data-pri] { background: var(--pp-ink); color: var(--pp-card); border-color: var(--pp-ink); }
+.pb-chip:disabled { opacity: .35; cursor: default; }
+@media (max-width: 1000px) { .pb-pin, .pb-pin-cover { display: block; padding: 16px; } .pb-aside { position: static; margin-bottom: 14px; } .pb-num { display: none; } .pb-pin-cover .pb-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } .pb-pop-bg { padding: 0; } .pb-pop { height: 100%; border-radius: 0; } }

@@ -103,10 +103,12 @@ export function useDelays(authUid) {
 //   planning/sav : tickets, inters, parc (+ techs) — équipe SAV ; planning/savDemandes : items (demandes des chefs de projet)
 // v393 : passeport machine — planning/machines. Chaque PJ s'écrit en entier (une valeur retirée disparaît vraiment) ;
 // éléments et standards aussi, d'un bloc.
+// v410 : dernière lecture gardée pour tous les abonnés (App lit déjà le document au démarrage) : Machines ORC s'ouvre sans chargement
+let MACH_CACHE = null;
 export function useMachines(on, authorName) {
-  const [doc, setDocS] = useState(null);
+  const [doc, setDocS] = useState(() => MACH_CACHE);
   useEffect(() => { if (!on) return undefined;
-    return onSnapshot(MACHINES_DOC_REF(), s => setDocS(s.exists() ? s.data() : {}), e => { console.warn("machines (lecture) :", e && e.message); setDocS({}); }); }, [on]);
+    return onSnapshot(MACHINES_DOC_REF(), s => { const d = s.exists() ? s.data() : {}; MACH_CACHE = d; setDocS(d); }, e => { console.warn("machines (lecture) :", e && e.message); setDocS(x => x || {}); }); }, [on]);
   const api = useMemo(() => {
     const stamp = () => ({ updatedAt: new Date().toISOString(), updatedBy: authorName || "" });
     const fail = e => { console.error(e); notify("Erreur lors de l'enregistrement du passeport : " + e.message); return false; };

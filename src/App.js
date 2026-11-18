@@ -69,7 +69,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-18-v409-passeport-livre-largeur";
+const APP_BUILD_VERSION = "2026-11-18-v410-passeport-premium-popups";
 
 const ReleasePopup = React.lazy(() => import("./components/ReleaseNotes").then(m => ({ default: m.ReleasePopup })));
 function Navigate0({ go }) { useEffect(() => { go(); }, []); return null; } // eslint-disable-line react-hooks/exhaustive-deps
@@ -249,6 +249,8 @@ export default function App(){
     }catch(e){}
   },[calMode,calAnchor,calDayAnchor,calZoom]);
   const [managerTab,setManagerTab]=useState(()=>urlSub("manager","derives"));
+  // v410 (demandé : « quand j'arrive sur Machines ORC je dois arriver en haut de la page ») : retour en haut à chaque page / sous-page
+  useEffect(()=>{try{window.scrollTo(0,0);const m=document.getElementById("enogia-main");if(m)m.scrollTop=0;}catch(e){}},[view,managerTab]);
   const [managerJump,setManagerJump]=useState(null); // v152 : PJ à ouvrir dans la fiche Manager depuis la cloche @
   // v261 : filtres de la Liste (listFilters.js)
   const {selEtats,setSelEtats,selGammes,setSelGammes,selMoisArrivee,setSelMoisArrivee,selMoisTests,setSelMoisTests,selMoisFinProd,setSelMoisFinProd,selMoisDepart,setSelMoisDepart,selPJs,setSelPJs,selProjets,setSelProjets,selPays,setSelPays,selChefs,setSelChefs,onlyDrift,setOnlyDrift}=useListFilters();
@@ -1012,7 +1014,7 @@ export default function App(){
   // Calendrier) n'est téléchargé qu'au premier clic ; on le précharge 2 s après la connexion, quand le navigateur est inactif.
   useEffect(()=>{if(!loggedIn)return undefined;let id=0;const t=setTimeout(()=>{const run=()=>{try{
     if(canProdTurb)import("./components/TurbinesHub");if(canSeeTests)import("./components/TestsTab");if(canSav)import("./components/SavPage");
-    import("./components/GanttView");import("./components/CalendarView");}catch(e){}};
+    import("./components/GanttView");import("./components/CalendarView");import("./components/ManagerPanel");}catch(e){}};
     id=window.requestIdleCallback?window.requestIdleCallback(run,{timeout:4000}):setTimeout(run,0);},2000);
     return()=>{clearTimeout(t);if(window.cancelIdleCallback&&id)window.cancelIdleCallback(id);};},[loggedIn,canProdTurb,canSeeTests,canSav]);
   const savAllowed=["tickets","inters","planning","dispo","parc","kpi","competences"].filter(s=>(s==="competences"?(savLvl==="w"||savLvl==="a"):subOk("sav."+s))&&(s!=="dispo"||savLvl==="w"||savLvl==="a"));

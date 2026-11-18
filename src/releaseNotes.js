@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v410",
+    date: "2026-11-18",
+    title: "V410 : Passeport en livre plus premium, documents en pop-up, Machines ORC sans chargement",
+    items: [
+      { t: "Pages", d: "Chaque page a sa colonne de gauche (grand numéro, titre, état, avancement) et son contenu sur le reste de la largeur ; la couverture est en grand." },
+      { t: "Documents en pop-up", d: "La fiche de lancement de fab et le RAI s'ouvrent dans une fenêtre au-dessus du passeport, sur la première rubrique ; on passe à la rubrique suivante en bas, × ou Échap pour fermer." },
+      { t: "Machines ORC", d: "On arrive en haut de la page, sans « Chargement du passeport »." },
+    ],
+  },
+  {
     id: "2026-11-v409",
     date: "2026-11-18",
     title: "V409 : Passeport en livre : flèches à portée, pages sur toute la largeur",

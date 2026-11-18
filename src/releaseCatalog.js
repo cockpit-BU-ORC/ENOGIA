@@ -1254,4 +1254,7 @@ export const RELEASE_CATALOG = [
   { v: "409", t: "Passeport en livre : flèches à portée, pages sur toute la largeur", items: [
     ["Passeport plus lisible", "Flèches à côté du titre et au bord de la page, pages sur toute la largeur, rubriques en cartes."],
   ] },
+  { v: "410", t: "Passeport en livre plus premium, documents en pop-up, Machines ORC sans chargement", items: [
+    ["Passeport premium", "Pages en deux colonnes, documents en pop-up ouverts sur la première rubrique, Machines ORC sans chargement."],
+  ] },
 ];

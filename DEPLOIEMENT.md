@@ -3080,3 +3080,13 @@ Retour bêta : « les flèches en haut sont trop loin, l'info au centre est perd
 - styles.css : contenu des pages jusqu'à 1 120 px, listes groupées sur deux colonnes (`minmax(380px, 1fr)`, une colonne sous 1 000 px).
 - MachinePassport.js : le passeport ne déborde plus de sa colonne (bouton Dossier coupé à droite).
 - Fichiers : src/components/PassportBook.js, src/components/MachinePassport.js, src/styles.css.
+
+## V410 — Passeport premium, documents en pop-up, Machines ORC sans chargement
+
+Demandé : « encore trop vide sur les côtés, retravailler le positionnement pour faire moins vide et plus premium ; quand j'ouvre un doc comme la fiche de lancement de fab, ça doit m'ouvrir sur la première page et je dois voir que c'est un pop-up ; quand j'arrive sur Machines ORC, je dois arriver en haut de la page sans chargement ».
+
+- PassportBook.js : pages en deux colonnes — à gauche (`.pb-aside`, collée) grand n° de page, titre, état, avancement de la page (`STAT` : informations connues, points renseignés, lignes livrées, rubriques complètes, turbine et composants, étapes des tests, contrôles du RAI) ; à droite le contenu ; couverture en grand (titre jusqu'à 96 px, 4 chiffres). `Insert` = **pop-up** rendu dans `<body>` (fond voilé, fenêtre centrée 1 180 × 880 px, rayon 20, ×, Échap, clic à côté), rubriques numérotées « 1 / 8 », rubrique précédente / suivante et « Terminer » en bas ; « Ouvrir la fiche de lancement de fab » ouvre toujours la rubrique 1.
+- useAppData.js : `useMachines` garde la dernière lecture (`MACH_CACHE`) — App lit déjà le document au démarrage, Machines ORC s'affiche sans « Chargement du passeport ».
+- App.js : retour en haut de la page à chaque changement de page ou de sous-page du Manager ; Manager préchargé avec les autres pages lourdes.
+- styles.css : `.pb-pin` en grille 290 px + contenu, listes sur deux colonnes dès 300 px, styles du pop-up (`.pb-pop*`, police du site transmise par `--pp-font`).
+- Fichiers : src/components/PassportBook.js, src/useAppData.js, src/App.js, src/styles.css.
