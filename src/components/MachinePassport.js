@@ -1,300 +1,77 @@
-// v393 (maquette v393-passeport-machine.html, piste B « passeport » validée : « Oui lot 1 ») : Manager › Projets › Machines ORC en trois vues —
-// Machines (tableau S/N, chef, pays, état, présence : inchangé), Passeport (une fiche par machine : fil des six phases, prévu / réel /
-// écarts, historique), Standards par gamme (éléments suivis, valeur standard, suivi achat / turbines, import du « Tableau configuration
-// machines »). Données : planning/machines (passport.js). Lot 1 : le réel se saisit à la main ; Turbines, Achats, Tests et SAV l'écriront ensuite.
+// v393 (maquette v393-passeport-machine.html, piste B « passeport » validée : « Oui lot 1 ») : Manager › Projets › Machines ORC en trois vues.
+// v404 (maquette v407-passeport-complet.html validée : « Go, code-la ») : Passeport = le passeport complet d'une machine (PassportFull.js, une
+// seule page qui se lit de haut en bas, avec la fiche de lancement de fab) · S/N et états · Réglages du passeport (PassportSettings.js :
+// composants, références turbine, dimensions et poids par gamme, choix électriques) — remplace « Standards par gamme ».
 import React, { useContext, useMemo, useRef, useState } from "react";
 import { MachinesDemoCtx } from "../machinesCtx";
 import { T, FZ, btn } from "../theme";
 import { getPjMeta, PjPlate } from "../pjMeta";
-import { Segmented, tableTh, tableTd, useSheetJS, Pill, NavIcon, notify } from "./SharedUI";
+import { Segmented, useSheetJS } from "./SharedUI";
 import { PageGuard } from "./PageGuard";
 import { askConfirm } from "../confirm";
-import { AF } from "../autoFocusOk";
 import { useMachines, useProdTurbines, useAchats, useTestsDoc, useSav } from "../useAppData";
-import { testsLive, savLive } from "../passportLive";
-import { dossierHtml } from "../dossierMachine";
-import { useProdModel } from "../prodModel";
-import { turbineOf } from "../pjDossier";
-import { RaiView } from "./RaiView";
-import { PhotosView } from "./PhotosView";
-import { raiVerdict, RAI_SECTIONS, raiSection } from "../rai";
-import { PHASES, PHASE_LABEL, GROUPS, elementsOf, passportRows, phaseProgress, setCfg, setReal, gammeKey, achatScopes, turbLive, liveRows, rowIssue, rowState, parseConfigTable, parseReference, importPlan } from "../passport";
+import { parseConfigTable, parseReference, importPlan } from "../passport";
+import { PASS_PHASES, phaseOfEtat } from "../launchFab";
+import { PassportFull } from "./PassportFull";
+import { PassportSettings } from "./PassportSettings";
 
 const field = () => ({ padding: "4px 8px", minHeight: 32, borderRadius: 8, border: "1px solid " + T.fieldLine, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, boxSizing: "border-box" });
-const fdt = iso => (iso ? new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "2-digit" }) + " " + new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) : "");
 const LS = "enogia_mach_sub";
-// Valeurs prévues des turbines encore saisies dans la fiche projet (lot 2 : elles passent dans le passeport)
-const metaPlanned = meta => ({ injecteur: meta.turbInj || "", roue: meta.turbRoue || "", bouchages: meta.turbInjB != null && meta.turbInjB !== "" ? String(meta.turbInjB) : "" });
+const PH_LABEL = Object.fromEntries(PASS_PHASES);
 
 // galerie ?demo : passeport en mémoire, jamais lu ni écrit dans Firestore (contexte dans machinesCtx.js)
 export { MachinesDemoCtx };
-export function MachinesHub({ data, canEdit, authorName, serie }) {
-  const [sub, setSubS] = useState(() => { try { return localStorage.getItem(LS) || "pass"; } catch (e) { return "pass"; } });
+export function MachinesHub({ data, canEdit, authorName, serie, certifs }) {
+  const [sub, setSubS] = useState(() => { try { const v = localStorage.getItem(LS); return v === "liste" || v === "std" ? v : "pass"; } catch (e) { return "pass"; } });
   const setSub = v => { setSubS(v); try { localStorage.setItem(LS, v); } catch (e) { /* stockage indisponible */ } };
   const demo = useContext(MachinesDemoCtx), live = useMachines(sub !== "liste" && !demo, authorName);
   const { machinesDoc, machinesApi } = demo || live;
-  // v397 (lots 2 et 3) : Turbines › Besoins et Achats / Appro sont lus pour remplir le réel du passeport (lecture seule)
-  const liveOn = sub === "pass" && !demo, prod = useProdTurbines(liveOn ? true : null, authorName), ach = useAchats(liveOn ? true : null, authorName);
-  const tst = useTestsDoc(liveOn ? true : null, authorName), sv = useSav(liveOn ? true : null, authorName); // v401 : Tests et SAV / MES
+  // Turbines, Achats / Appro, Tests et SAV sont lus (lecture seule) pour remplir le passeport
+  const liveOn = sub === "pass" && !demo, prod = useProdTurbines(liveOn ? true : null, authorName), ach = useAchats(sub !== "liste" && !demo ? true : null, authorName);
+  const tst = useTestsDoc(liveOn ? true : null, authorName), sv = useSav(liveOn ? true : null, authorName);
   const prodDoc = demo ? demo.prodDoc : prod.prodDoc, achatsDoc = demo ? demo.achatsDoc : ach.achatsDoc, testsDoc = demo ? demo.testsDoc : tst.testsDoc, savDoc = demo ? demo.savDoc : sv.savDoc;
   return <div>
     <div className="e-tb" style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 12 }}>
-      <Segmented label="Vue" size="md" value={sub} onChange={setSub} options={[["pass", "Passeport"], ["liste", "S/N et états"], ["std", "Standards par gamme"]]} />
-      {sub !== "liste" && machinesDoc && <span style={{ fontSize: 12, color: T.ink500 }}>Le passeport se remplit à chaque phase : design, appro, fabrication, tests, MES, SAV</span>}
+      <Segmented label="Vue" size="md" value={sub} onChange={setSub} options={[["pass", "Passeport"], ["liste", "S/N et états"], ["std", "Réglages du passeport"]]} />
+      {sub === "pass" && machinesDoc && <span style={{ fontSize: 12, color: T.ink500 }}>Toute la vie de la machine, de l'arrivée dans l'outil au SAV</span>}
     </div>
     {sub === "liste" ? serie : !machinesDoc ? <div style={{ color: T.ink500, fontSize: FZ.sm, padding: 20 }}>Chargement du passeport…</div>
-      : sub === "pass" ? <PassportView prodDoc={prodDoc} achatsDoc={achatsDoc} testsDoc={testsDoc} savDoc={savDoc} data={data} doc={machinesDoc} api={machinesApi} canEdit={canEdit} authorName={authorName} />
-      : <StandardsView data={data} doc={machinesDoc} api={machinesApi} canEdit={canEdit} authorName={authorName} />}
+      : sub === "pass" ? <PassportView prodDoc={prodDoc} achatsDoc={achatsDoc} testsDoc={testsDoc} savDoc={savDoc} data={data} doc={machinesDoc} api={machinesApi} canEdit={canEdit} authorName={authorName} certifs={certifs} />
+      : <PassportSettings data={data} doc={machinesDoc} api={machinesApi} canEdit={canEdit} achatsDoc={achatsDoc} importer={<ConfigImport doc={machinesDoc} api={machinesApi} authorName={authorName} />} />}
   </div>;
 }
 
-// ── Passeport ───────────────────────────────────────────────────────────────────────────────────────
-// v399 (maquette v399-passeport-allege.html, piste A « à traiter » choisie ; audit UI/UX Pro Max, frontend-design, taste) :
-// en tête ce qui cloche (réel ≠ prévu, achats en retard ou à commander, valeurs à définir), puis un groupe replié par sous-ensemble
-// (avancement + alertes) ; une ligne = élément · prévu · réel · état ; le fil des phases sur une ligne ; liste des machines resserrée.
-// v401 : « À traiter » regroupé — une ligne par problème distinct (achats par scope, design à définir ensemble, réels ≠ prévu un par un)
-function todoGroups(rows) {
-  const out = [], by = new Map();
-  rows.forEach(x => { const i = rowIssue(x); if (!i) return;
-    const key = /^Achat|^À commander|non conforme/.test(i.t) && x.el.scope ? "a:" + x.el.scope + ":" + i.t : i.t === "À définir (design)" ? "design" : "x:" + x.el.id;
-    if (!by.has(key)) { const g = { key, tone: i.tone, label: i.t, title: key === "design" ? "Design à compléter" : key.startsWith("a:") ? "Achats " + x.el.scope : x.el.label, rows: [] }; by.set(key, g); out.push(g); }
-    by.get(key).rows.push(x); });
-  return out.sort((a, b) => (a.tone === "bad" ? 0 : 1) - (b.tone === "bad" ? 0 : 1));
+// liste des machines (plaque, point rouge = achat en retard, phase en cours) + passeport de la machine choisie
+function lateAchat(achatsDoc, pj) {
+  if (!achatsDoc) return false;
+  const t = new Date().toISOString().slice(0, 10), ids = new Set(Object.values(achatsDoc.projets || {}).filter(f => f && String(f.machine || "").trim() === pj).map(f => f.id));
+  if (!ids.size) return false; const po = achatsDoc.po || {};
+  return Object.values(achatsDoc.lignes || {}).some(l => { const p = l && ids.has(l.projetId) && l.poId && po[l.poId]; return p && !p.annule && p.statut !== "livre" && p.dateLivraison && String(p.dateLivraison).slice(0, 10) < t; });
 }
-// pied d'un groupe : sources des valeurs (Achats par scope, Turbines, Tests, SAV)
-function groupSource(G) {
-  const sc = {}; G.forEach(x => { if (x.achatSt && x.el.scope) sc[x.el.scope] = x.achatSt; });
-  const parts = Object.entries(sc).map(([k, a]) => k + " " + (a.lines && a.livre === a.lines ? "livré" : a.late ? "en retard" : a.cmd ? "commandé" : "à commander"));
-  const live = G.filter(x => x.real && x.real.live).map(x => String(x.real.src || "").split(" · ")[0]);
-  return [...(parts.length ? ["Achats : " + parts.join(", ")] : []), ...[...new Set(live)]].join(" · ");
-}
-const curPhase = pp => { const c = pp.find(p => p.total && p.done < p.total); return c ? c.l : "Complet"; };
-function PassportView({ data, doc, api, canEdit, authorName, prodDoc, achatsDoc, testsDoc, savDoc }) {
+function PassportView({ data, doc, api, canEdit, authorName, prodDoc, achatsDoc, testsDoc, savDoc, certifs }) {
   const rows = useMemo(() => (data || []).filter(r => r && r.pj && r.etat !== "SLOT_LIBRE" && !/X{2,}/i.test(r.pj)), [data]);
-  const [q, setQ] = useState(""), [scope, setScope] = useState("open"), [sel, setSel] = useState(null), [view, setView] = useState("pp"), [edit, setEdit] = useState(null);
+  const [q, setQ] = useState(""), [scope, setScope] = useState("open"), [sel, setSel] = useState(null);
   const list = rows.filter(r => ((scope === "open" ? r.etat !== "SHIPPED" : r.etat === "SHIPPED") || !!q)
     && (!q || (r.pj + " " + (getPjMeta(r.pj, r).nomProjet || "") + " " + (getPjMeta(r.pj, r).numSerie || "")).toLowerCase().includes(q.toLowerCase())))
     .sort((a, b) => String(a.pj).localeCompare(String(b.pj), "fr", { numeric: true }));
+  const late = useMemo(() => { const m = new Set(); rows.forEach(r => { try { if (lateAchat(achatsDoc, r.pj)) m.add(r.pj); } catch (e) { /* donnée inattendue : ignorée */ } }); return m; }, [rows, achatsDoc]);
   const r = list.find(x => x.pj === sel) || list[0] || null;
   if (!rows.length) return <div style={{ color: T.ink500 }}>Aucune machine dans le planning.</div>;
-  return <div className="enogia-pp" style={{ display: "grid", gridTemplateColumns: "minmax(190px, 210px) minmax(0, 1fr)", gap: 0, background: T.card, border: "1px solid " + T.line, borderRadius: 12, overflow: "hidden", minHeight: 480 }}>
-    <nav aria-label="Machines" style={{ borderRight: "1px solid " + T.line, padding: 8, display: "flex", flexDirection: "column", gap: 2, maxHeight: "calc(100dvh - 220px)", overflow: "auto" }}>
+  return <div className="enogia-pp" style={{ display: "grid", gridTemplateColumns: "minmax(190px, 210px) minmax(0, 1fr)", gap: 0, background: T.card, border: "1px solid " + T.line, borderRadius: 12, minHeight: 480 }}>
+    <nav aria-label="Machines" style={{ borderRight: "1px solid " + T.line, padding: 8, display: "flex", flexDirection: "column", gap: 2, maxHeight: "calc(100dvh - 160px)", overflow: "auto", position: "sticky", top: 64, alignSelf: "start" }}>
       <input type="search" value={q} onChange={e => setQ(e.target.value)} placeholder="PJ, client, S/N" aria-label="Rechercher une machine" style={{ ...field(), width: "100%", marginBottom: 4 }} />
       <div style={{ marginBottom: 4 }}><Segmented label="Machines" value={scope} onChange={setScope} options={[["open", "En cours"], ["ship", "Expédiées"]]} /></div>
-      {list.map(x => { const on = r && x.pj === r.pj, pp = phaseProgress(doc, x.pj, x.gamme), alert = passportRows(doc, x.pj, x.gamme).some(y => rowIssue(y) && rowIssue(y).tone === "bad");
-        return <button key={x.pj} type="button" onClick={() => { setSel(x.pj); setEdit(null); }} aria-current={on ? "true" : undefined} title={getPjMeta(x.pj, x).nomProjet || undefined}
-          style={{ all: "unset", boxSizing: "border-box", cursor: "pointer", borderRadius: 8, padding: "6px", background: on ? T.surfaceAlt : "transparent", display: "flex", alignItems: "center", gap: 8, minHeight: 40 }}>
+      {list.map(x => { const on = r && x.pj === r.pj;
+        return <button key={x.pj} type="button" onClick={() => { setSel(x.pj); try { window.scrollTo({ top: 0 }); } catch (e) { /* rien */ } }} aria-current={on ? "true" : undefined} title={getPjMeta(x.pj, x).nomProjet || undefined}
+          style={{ all: "unset", position: "relative", boxSizing: "border-box", cursor: "pointer", borderRadius: 8, padding: "6px", background: on ? T.surfaceAlt : "transparent", display: "flex", alignItems: "center", gap: 8, minHeight: 40 }}>
           <PjPlate pj={x.pj} />
-          {alert && <span aria-label="alerte" style={{ width: 8, height: 8, borderRadius: 999, background: T.red600, flexShrink: 0 }} />}
-          <span style={{ marginLeft: "auto", fontSize: 12, color: T.ink500, whiteSpace: "nowrap" }}>{curPhase(pp)}</span>
+          {late.has(x.pj) && <span aria-label="achat en retard" style={{ width: 8, height: 8, borderRadius: 999, background: T.red600, flexShrink: 0 }} />}
+          <span style={{ marginLeft: "auto", fontSize: 12, color: T.ink500, whiteSpace: "nowrap" }}>{PH_LABEL[phaseOfEtat(x.etat)]}</span>
         </button>; })}
       {!list.length && <span style={{ fontSize: 13, color: T.ink500, padding: 8 }}>Aucune machine</span>}
     </nav>
-    {r && <PageGuard key={r.pj} name={"Passeport " + r.pj}><Passport data={data} prodDoc={prodDoc} achatsDoc={achatsDoc} testsDoc={testsDoc} savDoc={savDoc} r={r} doc={doc} api={api} canEdit={canEdit} authorName={authorName} view={view} setView={setView} edit={edit} setEdit={setEdit} /></PageGuard>}
+    {r && <PageGuard key={r.pj} name={"Passeport " + r.pj}><PassportFull data={data} prodDoc={prodDoc} achatsDoc={achatsDoc} testsDoc={testsDoc} savDoc={savDoc} r={r} doc={doc} api={api} canEdit={canEdit} authorName={authorName} certifs={certifs} /></PageGuard>}
   </div>;
-}
-
-function Passport({ r, doc, api, canEdit, authorName, view, setView, edit, setEdit, data, prodDoc, achatsDoc, testsDoc, savDoc }) {
-  const meta = getPjMeta(r.pj, r), mp = metaPlanned(meta), P0 = ((doc.pass || {})[r.pj]) || {};
-  // v397 : réel « vivant » — turbines allouées / installées (Turbines › Besoins), état des achats par scope (Achats / Appro)
-  const prodM = useProdModel(!!prodDoc);
-  // v402 : chaque source est protégée — une donnée inattendue d'une autre page (turbines, tests, SAV, achats) ne bloque plus le passeport
-  const safe = (fn, d, what) => { try { return fn() || d; } catch (e) { console.warn("Passeport : " + what + " ignoré(s)", e); return d; } };
-  const turb = useMemo(() => safe(() => (prodDoc && prodM ? turbineOf(prodDoc, data || [r], r.pj, x => getPjMeta(x.pj, x), prodM.buildNeeds) : null), null, "turbines"), [prodDoc, prodM, data, r]); // eslint-disable-line react-hooks/exhaustive-deps
-  const live = useMemo(() => ({ real: { ...safe(() => turbLive(turb), {}, "turbines"), ...safe(() => testsLive(testsDoc, r.pj), {}, "tests"), ...safe(() => savLive(savDoc, r.pj), {}, "SAV") }, scopes: safe(() => achatScopes(achatsDoc, r.pj), {}, "achats") }), [turb, achatsDoc, testsDoc, savDoc, r.pj]); // eslint-disable-line react-hooks/exhaustive-deps
-  const P = { ...P0, real: { ...live.real, ...(P0.real || {}) } }; // pour le RAI : n° des turbines et autres réels vivants
-  const rows = liveRows(passportRows(doc, r.pj, r.gamme).map(x => (!x.planned && mp[x.el.id] ? { ...x, planned: mp[x.el.id], fromFiche: true } : x)), live);
-  const R = ((doc.rai || {})[r.pj]) || null, rv = raiVerdict(R), photos = ((doc.photos || {})[r.pj]) || [];
-  // v394 : le RAI s'insère entre les tests et la MES : contrôles faits + signatures
-  const raiTot = RAI_SECTIONS.reduce((n, s) => n + raiSection(R, s).total, 0) + rv.signers, raiDone = RAI_SECTIONS.reduce((n, s) => n + raiSection(R, s).done, 0) + rv.signed;
-  const pp0 = phaseProgress(doc, r.pj, r.gamme, live), pp = [...pp0.slice(0, 4), { k: "rai", l: "RAI", total: raiTot, done: raiDone, rai: rv }, ...pp0.slice(4)];
-  const todo = todoGroups(rows);
-  const [open, setOpen] = useState({}), [tOpen, setTOpen] = useState({});
-  const save = async next => { const ok = await api.savePass(r.pj, next); return ok; };
-  const exportCsv = () => {
-    const q = v => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
-    const lines = [["Groupe", "Élément", "Standard " + (gammeKey(doc, r.gamme) || ""), "Prévu", "Réel", "Phase", "Source", "Saisi par", "Le"].map(q).join(";")]
-      .concat(rows.map(x => [x.el.group, x.el.label, x.std, x.planned, x.real ? x.real.v : "", x.real ? PHASE_LABEL[x.real.phase] || "" : "", x.real ? x.real.src : "", x.real ? x.real.by : "", x.real ? (x.real.at || "").slice(0, 10) : ""].map(q).join(";")));
-    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" })); a.download = "Passeport " + r.pj + ".csv"; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
-  };
-  const rowProps = { r, doc, canEdit, authorName, edit, setEdit, save };
-  const ident = [meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : "", meta.pays, r.gamme, meta.numSerie ? "S/N " + meta.numSerie : ""].filter(Boolean).join(" · ");
-  return <section aria-label={"Passeport de " + r.pj} style={{ padding: "16px 20px", minWidth: 0 }}>
-    <div style={{ display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap" }}>
-      <h2 style={{ margin: 0, fontFamily: T.fontDisplay, fontSize: 28, fontWeight: 600, letterSpacing: "-0.02em", color: T.ink900 }}>{r.pj}</h2>
-      <span style={{ fontSize: 13, color: T.ink500 }}>{ident}</span>
-      {!canEdit && <Pill tone="neutral">Lecture seule</Pill>}
-      <span style={{ flex: 1 }} />
-      <Segmented label="Contenu du passeport" value={view} onChange={v => { setView(v); setEdit(null); }} options={[["pp", "Passeport"], ["rai", "RAI"], ["photos", "Photos" + (photos.length ? " · " + photos.length : "")], ["hist", "Historique"]]} />
-    </div>
-    <ol aria-label="Phases" style={{ listStyle: "none", margin: "14px 0 4px", padding: 0, display: "flex", alignItems: "center", flexWrap: "wrap", rowGap: 6 }}>
-      {pp.map((p, i) => { const full = p.k === "rai" ? p.rai.k === "ok" : !!(p.total && p.done >= p.total), cur = !full && pp.slice(0, i).every(o => (o.k === "rai" ? o.rai.k === "ok" : !o.total || o.done >= o.total));
-        const sub = p.k === "rai" ? (p.rai.k === "ok" ? "" : p.rai.k === "reserve" ? "réserves" : p.done ? p.rai.signed + "/" + p.rai.signers : "") : cur && p.total ? p.done + " / " + p.total : "";
-        return <li key={p.k} style={{ display: "flex", alignItems: "center", flex: i < pp.length - 1 ? "1 1 auto" : "0 0 auto", minWidth: 0 }}>
-          <button type="button" onClick={p.k === "rai" ? () => setView("rai") : undefined} aria-current={cur ? "step" : undefined} title={p.total ? p.done + " / " + p.total + (p.k === "design" ? " définis" : " renseignés") : "rien à renseigner"}
-            style={{ all: "unset", cursor: p.k === "rai" ? "pointer" : "default", display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: full || cur ? T.ink900 : T.ink500, fontWeight: cur ? 600 : 500, whiteSpace: "nowrap" }}>
-            <span aria-hidden="true" style={{ width: 16, height: 16, borderRadius: 999, boxSizing: "border-box", display: "inline-grid", placeItems: "center", fontSize: 10, color: T.onFill, background: full ? T.emerald600 : "transparent", border: "2px solid " + (full ? T.emerald600 : cur ? T.ink900 : T.line) }}>{full ? "✓" : ""}</span>
-            {p.l}{sub && <span style={{ fontWeight: 500, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{sub}</span>}
-          </button>
-          {i < pp.length - 1 && <span aria-hidden="true" style={{ flex: 1, height: 2, minWidth: 12, margin: "0 10px", background: full ? T.emerald600 : T.line }} />}
-        </li>; })}
-    </ol>
-    {view === "photos" ? <div style={{ marginTop: 14 }}><PhotosView pj={r.pj} list={photos} api={api} who={authorName} canEdit={canEdit} /></div>
-      : view === "rai" ? <div style={{ marginTop: 14 }}><RaiView photos={photos} r={r} meta={meta} doc={doc} P={P} R={R} saveRai={next => api.saveRai(r.pj, next)} savePass={next => api.savePass(r.pj, next)} canEdit={canEdit} who={authorName} /></div>
-      : view === "hist" ? <div style={{ marginTop: 14 }}><History P={P} doc={doc} /></div>
-      : <>
-        <section aria-label="À traiter" style={{ border: "1px solid " + T.line, borderRadius: 12, margin: "16px 0 12px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderBottom: todo.length ? "1px solid " + T.line : "none" }}>
-            <h3 style={{ margin: 0, fontFamily: T.fontDisplay, fontSize: 16, fontWeight: 600, color: T.ink900 }}>À traiter</h3>
-            {todo.length ? <Pill tone={todo.some(y => y.tone === "bad") ? "bad" : "warn"}>{todo.length}</Pill> : <Pill tone="ok">rien</Pill>}
-            <span style={{ fontSize: 12, color: T.ink500 }}>{todo.length ? "réel ≠ prévu, achats en retard ou à commander, valeurs à définir" : "pas d'écart ni de retard sur cette machine"}</span>
-          </div>
-          {todo.map(t => t.rows.length === 1 ? <PassRow key={t.key} x={t.rows[0]} {...rowProps} />
-            : <div key={t.key} style={{ borderTop: "1px solid " + T.line }}>
-              <button type="button" aria-expanded={!!tOpen[t.key]} onClick={() => setTOpen(o => ({ ...o, [t.key]: !o[t.key] }))} style={{ all: "unset", boxSizing: "border-box", cursor: "pointer", width: "100%", display: "grid", gridTemplateColumns: "minmax(140px, 200px) minmax(0, 1fr) minmax(120px, auto) 20px", gap: 12, alignItems: "center", padding: "6px 14px", minHeight: 44, fontSize: 13 }}>
-                <span style={{ color: T.ink700 }}>{t.title}</span>
-                <span style={{ color: T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.rows.map(x => x.el.label).join(", ")}</span>
-                <span style={{ fontSize: 12, fontWeight: 500, color: t.tone === "bad" ? T.red600 : T.amber600, whiteSpace: "nowrap" }}>{t.label}</span>
-                <span className="enogia-nd-chev" data-open={tOpen[t.key] ? "1" : "0"} style={{ color: T.ink500, display: "inline-grid" }}><NavIcon name="chevronDown" size={14} /></span>
-              </button>
-              {tOpen[t.key] && <div className="enogia-cl-in" style={{ background: T.surface }}>{t.rows.map(x => <PassRow key={x.el.id} x={x} {...rowProps} />)}</div>}
-            </div>)}
-        </section>
-        {GROUPS.concat([...new Set(rows.map(x => x.el.group))].filter(g => !GROUPS.includes(g))).map(g => { const G = rows.filter(x => x.el.group === g); if (!G.length) return null;
-          const done = G.filter(x => (x.el.phase === "design" ? !!x.planned : (x.real && x.real.v) || (x.achatSt && x.achatSt.lines && x.achatSt.livre === x.achatSt.lines))).length, nAl = G.filter(x => rowIssue(x)).length, isOpen = !!open[g];
-          return <div key={g} style={{ border: "1px solid " + T.line, borderRadius: 12, marginTop: 8, overflow: "hidden" }}>
-            <button type="button" aria-expanded={isOpen} onClick={() => setOpen(o => ({ ...o, [g]: !o[g] }))} style={{ all: "unset", boxSizing: "border-box", cursor: "pointer", width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", minHeight: 44 }}>
-              <b style={{ fontFamily: T.fontDisplay, fontSize: 15, fontWeight: 600, color: T.ink900 }}>{g}</b>
-              <span aria-hidden="true" style={{ width: 90, height: 4, borderRadius: 2, background: T.surfaceAlt, overflow: "hidden" }}><i style={{ display: "block", height: "100%", width: Math.round(done / G.length * 100) + "%", background: T.emerald600 }} /></span>
-              <span style={{ fontSize: 12, color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{done} / {G.length}</span>
-              {nAl > 0 && <Pill tone={G.some(x => rowIssue(x) && rowIssue(x).tone === "bad") ? "bad" : "warn"}>{nAl}</Pill>}
-              <span style={{ fontSize: 12, color: T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>{groupSource(G)}</span>
-              <span className="enogia-nd-chev" data-open={isOpen ? "1" : "0"} style={{ marginLeft: "auto", color: T.ink500, display: "inline-grid" }}><NavIcon name="chevronDown" size={16} /></span>
-            </button>
-            {isOpen && <div className="enogia-cl-in" style={{ borderTop: "1px solid " + T.line }}>{G.map(x => <PassRow key={x.el.id} x={x} {...rowProps} />)}</div>}
-          </div>; })}
-        <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 12, fontSize: 12, color: T.ink500, flexWrap: "wrap" }}>
-          <span>{canEdit ? "Un clic sur une valeur (crayon) l'ouvre en modification ; la source d'une valeur réelle s'affiche au survol." : "Lecture seule : la source d'une valeur s'affiche au survol."}</span><span style={{ flex: 1 }} />
-          <button type="button" onClick={() => { const w = window.open("", "_blank"); if (!w) return; w.document.open(); w.document.write(dossierHtml({ r, meta, rows, R, photos, std: gammeKey(doc, r.gamme) })); w.document.close(); }} style={btn("sec", "sm")}>Dossier machine (PDF)</button>
-          <button type="button" onClick={exportCsv} style={btn("ghost", "sm")}>Exporter (CSV)</button>
-        </div>
-      </>}
-  </section>;
-}
-
-// une ligne : élément · prévu · réel · état (44 px) — v402 : chaque valeur est un vrai bouton avec un crayon au survol / au focus ;
-// l'édition s'ouvre dans un panneau sous la ligne (libellés visibles, Échap ferme et rend le focus) ; en lecture seule, un clic dit pourquoi
-function PassRow({ x, r, doc, canEdit, authorName, edit, setEdit, save }) {
-  const k = x.el.id, onP = edit && edit.el === k && edit.what === "p", onR = edit && edit.el === k && edit.what === "r";
-  const back = useRef(null);
-  const click = what => e => {
-    if (!canEdit) { notify("Lecture seule : le passeport se modifie par les admins (ou « Modifier » sur Projets).", "info"); return; }
-    back.current = e.currentTarget; setEdit((what === "p" ? onP : onR) ? null : { el: k, what });
-  };
-  const close = () => { setEdit(null); const b = back.current; if (b) setTimeout(() => { try { b.focus(); } catch (er) { /* rien */ } }, 0); };
-  const lid = "pp-opts-" + k, iss = rowIssue(x), st = iss || rowState(x);
-  const pTitle = x.fromFiche ? "repris de la fiche projet" : x.dev ? "écart au standard (" + x.std + ")" : x.own ? "propre à la machine" : x.std ? "standard " + (gammeKey(doc, r.gamme) || "") : "pas encore défini";
-  const rTitle = x.real && x.real.v ? [PHASE_LABEL[x.real.phase], x.real.src, x.real.by, x.real.at ? String(x.real.at).slice(8, 10) + "/" + String(x.real.at).slice(5, 7) : ""].filter(Boolean).join(" · ") : x.el.phase === "design" ? "fixé au design" : "renseigné en " + (PHASE_LABEL[x.el.phase] || "fabrication").toLowerCase();
-  const toneC = t => (t === "bad" ? T.red600 : t === "warn" ? T.amber600 : t === "ok" ? T.emerald600 : T.ink500);
-  const pen = <span className="pp-pen" aria-hidden="true" style={{ display: "inline-flex", color: T.ink500, flexShrink: 0 }}><NavIcon name="edit" size={13} /></span>;
-  return <div style={{ borderTop: "1px solid " + T.line }}>
-    <div className="enogia-pp-row" style={{ display: "grid", gridTemplateColumns: "minmax(140px, 200px) minmax(0, 1fr) minmax(0, 1fr) minmax(120px, auto)", gap: 12, alignItems: "center", padding: "4px 14px", minHeight: 44, fontSize: 13, background: onP || onR ? T.surfaceAlt : "transparent" }}>
-      <span style={{ color: T.ink700 }}>{x.el.label}</span>
-      <button type="button" className="enogia-pp-cell" onClick={click("p")} aria-expanded={onP} title={pTitle} aria-label={"Prévu, " + x.el.label + " : " + (x.planned || "non défini") + (x.dev ? " (écart au standard)" : "") + (canEdit ? ". Modifier" : ". Lecture seule")}
-        style={{ all: "unset", boxSizing: "border-box", cursor: "pointer", minWidth: 0, minHeight: 36, display: "flex", alignItems: "center", gap: 6, padding: "0 6px", margin: "0 -6px", borderRadius: 8 }}>
-        <span style={{ minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.planned ? <b style={{ fontWeight: 600, color: T.ink900 }}>{x.planned}</b> : <span style={{ color: T.ink500 }}>—</span>}</span>
-        {x.dev && <span style={{ fontSize: 11, fontWeight: 600, color: T.amber600, background: T.amber100, borderRadius: 4, padding: "0 4px", flexShrink: 0 }}>écart</span>}
-        {canEdit && pen}</button>
-      <button type="button" className="enogia-pp-cell" onClick={click("r")} aria-expanded={onR} title={rTitle} aria-label={"Réel, " + x.el.label + " : " + ((x.real && x.real.v) || "non renseigné") + (x.gap ? " (différent du prévu)" : "") + (canEdit ? ". Renseigner" : ". Lecture seule")}
-        style={{ all: "unset", boxSizing: "border-box", cursor: "pointer", minWidth: 0, minHeight: 36, display: "flex", alignItems: "center", gap: 6, padding: "0 6px", margin: "0 -6px", borderRadius: 8 }}>
-        <span style={{ minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.real && x.real.v ? <b style={{ fontWeight: 600, color: x.gap ? T.red600 : T.ink900 }}>{x.real.v}</b> : <span style={{ color: T.ink500 }}>—</span>}</span>
-        {canEdit && pen}</button>
-      <span title={st && st.title ? st.title : undefined} style={{ fontSize: 12, fontWeight: st && st.tone !== "mute" ? 500 : 400, color: st ? toneC(st.tone) : T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{st ? st.t : ""}</span>
-    </div>
-    {(onP || onR) && <EditPanel kind={onP ? "p" : "r"} x={x} lid={lid} rTitle={rTitle} onCancel={close}
-      onSave={(v, ph, src) => save(onP ? setCfg(doc, r.pj, r.gamme, k, v, authorName) : setReal(doc, r.pj, k, v, ph, src, authorName)).then(ok => { if (ok !== false) close(); })} />}
-  </div>;
-}
-
-function EditPanel({ kind, x, lid, rTitle, onSave, onCancel }) {
-  const [v, setV] = useState(kind === "p" ? x.planned || "" : (x.real && !x.real.live && x.real.v) || ""), [ph, setPh] = useState((x.real && x.real.phase) || (x.el.phase === "design" ? "fab" : x.el.phase) || "fab"), [src, setSrc] = useState((x.real && !x.real.live && x.real.src) || "");
-  const [busy, setBusy] = useState(false);
-  const ok = async val => { setBusy(true); await onSave(val === undefined ? v : val, ph, src); setBusy(false); };
-  const key = e => { if (e.key === "Enter" && e.target.tagName !== "SELECT") { e.preventDefault(); ok(); } else if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); onCancel(); } };
-  const lab = { display: "flex", flexDirection: "column", gap: 4, fontSize: 12, fontWeight: 500, color: T.ink700 };
-  const opts = [...new Set([x.std, ...(x.el.opts || [])].filter(Boolean))];
-  return <div role="group" aria-label={(kind === "p" ? "Modifier le prévu : " : "Renseigner le réel : ") + x.el.label} onKeyDown={key} className="enogia-cl-in"
-    style={{ background: T.surfaceAlt, padding: "10px 14px 14px", display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-end" }}>
-    <label style={{ ...lab, flex: "1 1 220px" }}>{kind === "p" ? "Valeur prévue (design)" : "Valeur réelle sur la machine"}
-      <input autoFocus={AF} list={lid} value={v} onChange={e => setV(e.target.value)} placeholder={kind === "p" && x.std ? "vide = standard (" + x.std + ")" : "référence, modèle, n° de série…"} style={{ ...field(), width: "100%", minHeight: 40 }} /></label>
-    <datalist id={lid}>{opts.map(o => <option key={o} value={o} />)}</datalist>
-    {kind === "r" && <>
-      <label style={{ ...lab, flex: "0 1 170px" }}>Phase<select value={ph} onChange={e => setPh(e.target.value)} style={{ ...field(), minHeight: 40 }}>{PHASES.filter(p => p[0] !== "design").map(([kk, l]) => <option key={kk} value={kk}>{l}</option>)}</select></label>
-      <label style={{ ...lab, flex: "1 1 220px" }}>Source<input value={src} onChange={e => setSrc(e.target.value)} placeholder="PO, n° de série, intervention…" style={{ ...field(), width: "100%", minHeight: 40 }} /></label></>}
-    <span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-      <button type="button" disabled={busy} onClick={() => ok()} style={{ ...btn("pri", "md"), minHeight: 40 }}>{busy ? "Enregistrement…" : "Enregistrer"}</button>
-      {kind === "p" && x.own && <button type="button" disabled={busy} onClick={() => ok("")} style={{ ...btn("sec", "md"), minHeight: 40 }}>Revenir au standard</button>}
-      {kind === "r" && x.real && !x.real.live && x.real.v && <button type="button" disabled={busy} onClick={() => ok("")} style={{ ...btn("sec", "md"), minHeight: 40 }}>Effacer</button>}
-      <button type="button" disabled={busy} onClick={onCancel} style={{ ...btn("ghost", "md"), minHeight: 40 }}>Annuler</button>
-    </span>
-    <span style={{ flexBasis: "100%", fontSize: 12, color: T.ink500 }}>{kind === "p" ? (x.std ? "Standard " + x.std + " : une valeur différente est marquée « écart »." : "Pas de standard pour cet élément dans la gamme.")
-      : x.real && x.real.live ? "Valeur actuelle reprise automatiquement (" + rTitle + ") : une saisie ici la remplace." : "Entrée pour enregistrer, Échap pour annuler."}</span>
-  </div>;
-}
-
-function History({ P, doc }) {
-  const L = P.hist || [], lab = Object.fromEntries(elementsOf(doc).map(e => [e.id, e.label]));
-  if (!L.length) return <div style={{ color: T.ink500, fontSize: FZ.sm, padding: "10px 0" }}>Rien d'écrit pour l'instant : chaque modification du passeport s'ajoute ici, avec sa phase et son auteur.</div>;
-  return <ol style={{ listStyle: "none", margin: 0, padding: 0 }}>{L.map((h, i) => <li key={i} style={{ display: "grid", gridTemplateColumns: "120px 100px minmax(0,1fr)", gap: 10, padding: "8px 0", borderBottom: "1px solid " + T.line, fontSize: 13, alignItems: "baseline" }}>
-    <span style={{ color: T.ink500, fontVariantNumeric: "tabular-nums" }}>{fdt(h.at)}</span>
-    <span><Pill tone={h.phase === "design" ? "ok" : h.phase === "appro" ? "warn" : h.phase === "sav" ? "bad" : "info"}>{PHASE_LABEL[h.phase] || h.phase}</Pill></span>
-    <span style={{ color: T.ink900 }}>{h.el === "*" ? h.to : <><b style={{ fontWeight: 600 }}>{lab[h.el] || h.el}</b> ({h.k}) : {h.from ? <span style={{ color: T.ink500 }}>{h.from} → </span> : null}{h.to || <span style={{ color: T.ink500 }}>effacé</span>}</>}{h.by ? <span style={{ color: T.ink500 }}> · {h.by}</span> : null}</span>
-  </li>)}</ol>;
-}
-
-// ── Standards par gamme ──────────────────────────────────────────────────────────────────────────────
-function StandardsView({ data, doc, api, canEdit, authorName }) {
-  const els = elementsOf(doc), S = doc.standards || {};
-  const gammes = [...new Set([...Object.keys(S), ...(data || []).map(r => r.gamme).filter(Boolean).map(g => gammeKey(doc, g))])].sort((a, b) => a.localeCompare(b, "fr", { numeric: true }));
-  const [g, setG] = useState(() => gammes[0] || ""), cur = S[g] || {};
-  const rows = (data || []).filter(r => r && r.pj && gammeKey(doc, r.gamme) === g);
-  const devCount = id => rows.filter(r => { const c = (((doc.pass || {})[r.pj] || {}).cfg || {})[id]; return c != null && c !== "" && String(c) !== String(cur[id] || ""); }).length;
-  const setStd = async (id, v) => { const nx = { ...S, [g]: { ...cur } }; if (String(v || "").trim()) nx[g][id] = String(v).trim(); else delete nx[g][id]; await api.saveStandards(nx); };
-  const setEl = async (id, patch) => { await api.saveElements(els.map(e => (e.id === id ? { ...e, ...patch } : e))); };
-  const addEl = async () => { const id = "el" + Date.now().toString(36); await api.saveElements([...els, { id, group: "Auxiliaires", label: "Nouvel élément", opts: [], phase: "fab", achat: false, scope: "", turb: false }]); };
-  return <div>
-    <div className="e-tb" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
-      <span style={{ fontSize: 12, color: T.ink500 }}>Gamme</span>
-      <div role="group" aria-label="Gamme" style={{ display: "inline-flex", flexWrap: "wrap", background: T.surfaceAlt, borderRadius: 8, padding: 2, gap: 2 }}>
-        <Segmented bare label="Gamme" value={g} onChange={setG} options={gammes.map(x => [x, x])} /></div>
-      <span style={{ flex: 1 }} />
-      {canEdit && <button type="button" onClick={addEl} style={btn("sec", "sm")}>＋ Élément</button>}
-      {canEdit && <ConfigImport doc={doc} api={api} authorName={authorName} />}
-    </div>
-    <div style={{ background: T.card, border: "1px solid " + T.line, borderRadius: 12, overflow: "auto" }}>
-      <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 900 }}>
-        <thead><tr><th style={tableTh()}>Élément</th><th style={tableTh()}>Standard {g}</th><th style={tableTh()}>Choix possibles</th><th style={tableTh()}>Phase du réel</th><th style={tableTh()}>Suivi achat · scope</th><th style={tableTh()}>Suivi turbines</th><th style={tableTh({ num: true })}>Machines en écart</th></tr></thead>
-        <tbody>{GROUPS.concat([...new Set(els.map(e => e.group))].filter(x => !GROUPS.includes(x))).map(grp => { const G = els.filter(e => e.group === grp); if (!G.length) return null;
-          return <React.Fragment key={grp}><tr><td colSpan={7} style={{ ...tableTd({ h: 30 }), background: T.surfaceAlt, fontSize: 12, fontWeight: 600, color: T.ink700 }}>{grp}</td></tr>
-            {G.map(e => <tr key={e.id}>
-              <td style={tableTd()}>{canEdit ? <TextCell value={e.label} onSave={v => v && setEl(e.id, { label: v })} label={"Nom de l'élément " + e.label} w={190} /> : e.label}</td>
-              <td style={tableTd()}>{canEdit ? <TextCell value={cur[e.id] || ""} list={"std-" + e.id} opts={e.opts} onSave={v => setStd(e.id, v)} label={"Standard " + g + " : " + e.label} w={150} placeholder="—" /> : cur[e.id] || "—"}</td>
-              <td style={tableTd()}>{canEdit ? <TextCell value={(e.opts || []).join(", ")} onSave={v => setEl(e.id, { opts: v.split(",").map(s => s.trim()).filter(Boolean) })} label={"Choix possibles : " + e.label} w={220} placeholder="séparés par des virgules" /> : (e.opts || []).join(", ")}</td>
-              <td style={tableTd()}><select disabled={!canEdit} value={e.phase} onChange={ev => setEl(e.id, { phase: ev.target.value })} aria-label={"Phase du réel : " + e.label} style={field()}>{PHASES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></td>
-              <td style={tableTd()}><label style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><input type="checkbox" disabled={!canEdit} checked={!!e.achat} onChange={ev => setEl(e.id, { achat: ev.target.checked })} aria-label={"Suivi achat : " + e.label} />{e.achat && (canEdit ? <TextCell value={e.scope || ""} onSave={v => setEl(e.id, { scope: v })} label={"Scope Achats : " + e.label} w={150} placeholder="scope Achats" /> : <span>{e.scope}</span>)}</label></td>
-              <td style={tableTd()}><input type="checkbox" disabled={!canEdit} checked={!!e.turb} onChange={ev => setEl(e.id, { turb: ev.target.checked })} aria-label={"Suivi turbines : " + e.label} /></td>
-              <td style={tableTd({ num: true })}>{devCount(e.id) || <span style={{ color: T.ink500 }}>0</span>}</td>
-            </tr>)}</React.Fragment>; })}</tbody>
-      </table>
-    </div>
-    <p style={{ fontSize: 12, color: T.ink500, maxWidth: "90ch" }}>Le standard s'applique à toutes les machines de la gamme ; une machine n'enregistre que ses écarts. « Suivi achat » et « Suivi turbines » préparent les liens avec Achats / Appro et Turbines (lots suivants).</p>
-  </div>;
-}
-function TextCell({ value, onSave, label, w, list, opts, placeholder }) {
-  const [v, setV] = useState(value), last = useRef(value);
-  if (last.current !== value) { last.current = value; if (v !== value) setV(value); }
-  return <><input value={v} list={list} placeholder={placeholder} onChange={e => setV(e.target.value)} onBlur={() => { if (v !== value) onSave(v); }} onKeyDown={e => { if (e.key === "Enter") e.currentTarget.blur(); else if (e.key === "Escape") { setV(value); e.currentTarget.blur(); } }} aria-label={label} style={{ ...field(), width: w }} />
-    {list && <datalist id={list}>{(opts || []).map(o => <option key={o} value={o} />)}</datalist>}</>;
 }
 
 // Import du « Tableau configuration machines » (export Excel, onglets Tableau et Référence) : aperçu, puis enregistrement.

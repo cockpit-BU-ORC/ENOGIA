@@ -138,6 +138,11 @@ export function useMachines(on, authorName) {
         } catch (e) { return fail(e); }
       },
       saveStandards: S => write([["standards", S]], { standards: S }),
+      // v404 : fiche de lancement de fab (CdP du PJ et admins ; champ « launch » ouvert à tout compte ENOGIA) et réglages du passeport (admins)
+      saveLaunch: (pj, L) => write([[new FieldPath("launch", pj), L]], { launch: { [pj]: L } }),
+      saveComponents: L => write([["components", L]], { components: L }),
+      saveDims: D => write([["dims", D]], { dims: D }),
+      saveElecLists: E => write([["elecLists", E]], { elecLists: E }),
       saveElements: L => write([["elements", L]], { elements: L }),
       saveImport: (pass, standards) => write([["pass", pass], ["standards", standards]], { pass, standards }),
     };

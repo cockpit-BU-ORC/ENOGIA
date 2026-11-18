@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v404",
+    date: "2026-11-18",
+    title: "V404 : Passeport complet de la machine, fiche de lancement de fab et réglages du passeport",
+    items: [
+      { t: "Passeport complet", d: "Toute la vie de la machine sur une seule page qui se lit de haut en bas : arrivée dans l'outil, design (infos client), appro / achats, fabrication et turbine, tests, RAI, départ, MES et SAV, photos, historique. Chaque valeur dit d'où elle vient." },
+      { t: "Fiche de lancement de fab", d: "Dans la phase Fabrication : vos rubriques habituelles avec OK / NOK, ce que le Cockpit sait déjà rempli tout seul (certification, dimensions et poids de la gamme, dates), choix électriques et composants à toucher, injecteur à 8 trous à boucher d'un clic, part des pièces arrivées, quatre signatures, export PDF." },
+      { t: "Réglages du passeport", d: "Remplace « Standards par gamme » : composants en cartes (ajouter, retirer, optionnels « Non requis », suivis par Achats), référence turbine, dimensions et poids par gamme, choix électriques. La référence d'une gamme n'est plus qu'un avertissement." },
+    ],
+  },
+  {
     id: "2026-11-v403",
     date: "2026-11-18",
     title: "V403 : Passeport machine — les clics marchent de nouveau",

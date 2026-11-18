@@ -1236,4 +1236,7 @@ export const RELEASE_CATALOG = [
   { v: "403", t: "Passeport machine — les clics marchent de nouveau", items: [
     ["Passeport cliquable", "Correction de la zone invisible qui bloquait tous les clics du passeport."],
   ] },
+  { v: "404", t: "Passeport complet de la machine, fiche de lancement de fab et réglages du passeport", items: [
+    ["Passeport complet et fiche de lancement de fab", "Une page de haut en bas pour toute la vie de la machine ; fiche de lancement de fab remplie par le CdP ; réglages en cartes."],
+  ] },
 ];

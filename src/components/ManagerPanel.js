@@ -877,7 +877,7 @@ const PAGE_DESC={derives:"Synthèse, semaines à venir, dérives, charge et avan
         </div>
       </div>
       </div>}
-    {tab==="serie"&&<MachinesHub data={data} canEdit={superAdmin} authorName={authorName} serie={<SerieTab data={data} savePjMetaOverride={savePjMetaOverride} etatChoice={etatChoice} setEtatFor={setEtatFor} clientPresence={clientPresence} setClientPresenceFor={setClientPresenceFor} customEtats={customEtats||[]} setCustomEtats={superAdmin?setCustomEtats:null} etatEdits={etatEdits||{}} setEtatEdits={superAdmin?setEtatEdits:null}/>}/>}
+    {tab==="serie"&&<MachinesHub data={data} canEdit={superAdmin} authorName={authorName} certifs={certifs} serie={<SerieTab data={data} savePjMetaOverride={savePjMetaOverride} etatChoice={etatChoice} setEtatFor={setEtatFor} clientPresence={clientPresence} setClientPresenceFor={setClientPresenceFor} customEtats={customEtats||[]} setCustomEtats={superAdmin?setCustomEtats:null} etatEdits={etatEdits||{}} setEtatEdits={superAdmin?setEtatEdits:null}/>}/>}
     {cal&&(tab==="vacances"||tab==="production")&&<ClosurePeriodsManager closurePeriods={closurePeriods} setClosurePeriods={setClosurePeriods}/>}
     </div>
     </div>
