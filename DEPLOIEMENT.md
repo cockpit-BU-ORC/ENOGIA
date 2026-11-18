@@ -3013,3 +3013,11 @@ Demandé : « quand je clique sur la page il ne se passe rien, tout est buggué 
 - styles.css : `.enogia-pp-cell` (survol, focus visible, doigt).
 - Rappel : les règles Firestore V393–V395 (document `machines`) doivent être publiées, sinon l'enregistrement échoue sur le site.
 - Fichiers : src/components/MachinePassport.js, src/styles.css.
+
+## V403 — Passeport : les clics marchent de nouveau
+
+Demandé : « la page bug toujours, aucun clic ne marche » (passeport, en bêta).
+
+- Cause (constatée sur la bêta, `elementFromPoint`) : `a11yFallback` élargit la zone de clic des petits boutons (`data-hit` + `::after` en position absolue). Les boutons du fil des phases du passeport sont en `all: unset` : la position en ligne (`unset`) l'emporte sur `[data-hit] { position: relative }`, la pseudo-zone se calait sur un parent lointain et le dernier bouton (« SAV ») recouvrait toute la fiche.
+- Correction : src/a11yFallback.js — pas de zone élargie sur un bouton dont le style en ligne donne une position autre que relative / absolute / fixed / sticky (test v403 dans src/a11yFallback.test.js). Seuls les 7 boutons des phases du passeport étaient touchés sur la bêta.
+- Fichiers : src/a11yFallback.js, src/a11yFallback.test.js.

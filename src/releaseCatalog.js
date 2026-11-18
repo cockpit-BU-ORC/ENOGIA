@@ -1233,4 +1233,7 @@ export const RELEASE_CATALOG = [
   { v: "402", t: "Passeport machine — plus de page figée, panneau de modification clair, lecture seule annoncée", items: [
     ["Passeport plus simple à remplir", "Panneau de modification sous la ligne, lecture seule annoncée, page protégée des erreurs."],
   ] },
+  { v: "403", t: "Passeport machine — les clics marchent de nouveau", items: [
+    ["Passeport cliquable", "Correction de la zone invisible qui bloquait tous les clics du passeport."],
+  ] },
 ];

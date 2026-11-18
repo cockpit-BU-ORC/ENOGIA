@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v403",
+    date: "2026-11-18",
+    title: "V403 : Passeport machine — les clics marchent de nouveau",
+    items: [
+      { t: "Passeport", d: "Plus aucun clic ne répondait dans le passeport d'une machine : une zone de clic invisible du bouton « SAV » des phases couvrait toute la page. C'est corrigé." },
+    ],
+  },
+  {
     id: "2026-11-v402",
     date: "2026-11-18",
     title: "V402 : Passeport machine — plus de page figée, panneau de modification clair, lecture seule annoncée",

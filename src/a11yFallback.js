@@ -77,6 +77,10 @@ function pass(root) {
           const pad = v => Math.min(MAXP, Math.max(0, Math.ceil((MIN - v) / 2)));
           b.style.setProperty("--hx", pad(r.width) + "px");
           b.style.setProperty("--hy", pad(r.height) + "px");
+          // v403 : un bouton dont le style en ligne annule la position (all: unset, position: static) ne porte pas la zone élargie —
+          // sa pseudo-zone se calerait sur un parent lointain et couvrirait toute la page (passeport : plus aucun clic)
+          const ip = b.style.position;
+          if (ip && !/^(relative|absolute|fixed|sticky)$/.test(ip)) { delete b.dataset.hit; b.style.removeProperty("--hx"); b.style.removeProperty("--hy"); }
         }
       }
     }
