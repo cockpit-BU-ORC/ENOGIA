@@ -682,7 +682,8 @@ b, strong { font-weight: 600; }
 /* frémissement sur le contenu : le widget lui-même reste libre pour les glissements (FLIP) */
 .e-wg-edit .e-wg-cell > .e-wg-body, .e-wg-edit .e-wg-cell > .e-wg-pane { animation: eWgJiggle .3s ease-in-out infinite alternate; }
 .e-wg-edit .e-wg-cell:nth-child(2n) > * { animation-delay: -.15s; }
-.e-wg-edit .e-wg-cell:active { transform: scale(.97); }
+/* v391 : pas de rétrécissement quand on appuie sur un bouton de la tuile — sur une tuile large, le « − » se déplaçait de ~15 px sous le pointeur et le clic se perdait */
+.e-wg-edit .e-wg-cell:active:not(:has([data-wg-act]:active)) { transform: scale(.97); }
 .e-wg-edit .e-wg-body > *, .e-wg-edit .e-wg-pane { pointer-events: none; user-select: none; }
 @keyframes eWgJiggle { from { transform: rotate(-.35deg); } to { transform: rotate(.35deg); } }
 .e-wg-rm, .e-wg-size, .e-wg-out { position: absolute; z-index: 2; border: 1px solid var(--wg-line); background: var(--wg-card); color: var(--wg-ink); font: inherit; cursor: pointer; }

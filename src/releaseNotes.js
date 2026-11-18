@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v391",
+    date: "2026-11-18",
+    title: "V391 : Accueil — le « − » ferme tous les widgets ; courbe annuelle du Cash in et widgets pour la direction",
+    items: [
+      { t: "Fermer un widget", d: "Le « − » ferme maintenant aussi les grands widgets : à l'appui, la tuile rétrécissait et le bouton glissait sous le doigt ou la souris." },
+      { t: "Courbe du Cash in", d: "Nouveau widget « Cash in de l'année » : encaissements cumulés face à l'initial, prévu jusqu'à la fin de l'année, retards de paiement." },
+      { t: "Pour la direction", d: "Nouveaux widgets « Cash in du mois » (encaissements et factures face à l'initial, mois en cours et suivant), « Retards du Cash in », « Départs du trimestre » (expédiés, prévus, initial) et « Départs à l'heure » (90 derniers jours). Ajoutés aux accueils Direction et DAF par défaut." },
+    ],
+  },
+  {
     id: "2026-11-v390",
     date: "2026-11-17",
     title: "V390 : Livret de configuration ORC — pas à pas, une étape à la fois, OK ou Problème en un geste",

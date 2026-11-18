@@ -1195,4 +1195,8 @@ export const RELEASE_CATALOG = [
   { v: "390", t: "Livret de configuration ORC — pas à pas, une étape à la fois, OK ou Problème en un geste", items: [
     ["Livret pas à pas", "Une étape à la fois, OK ou Problème en un geste."],
   ] },
+  { v: "391", t: "Accueil — le « − » ferme tous les widgets ; courbe annuelle du Cash in et widgets pour la direction", items: [
+    ["Courbe annuelle du Cash in", "Widget d'accueil : cumul de l'année face à l'initial."],
+    ["Widgets direction", "Cash in du mois, retards du Cash in, départs du trimestre, départs à l'heure."],
+  ] },
 ];

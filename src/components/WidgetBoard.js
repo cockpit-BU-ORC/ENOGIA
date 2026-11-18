@@ -39,7 +39,9 @@ export function WidgetBoard({ items, widgets, onChange, onReset, canEdit, catalo
   const undoNow = () => { if (!undo || !onChange) return; const prev = undo; snap(); setDraft(prev); onChange(prev); setUndo(null); setMsg("Modification annulée"); clearTimeout(msgT.current); msgT.current = setTimeout(() => setMsg(""), 4000); };
   const reset = async () => { if (!onReset) return; if (!(await askConfirm({ title: "Revenir à la disposition d'origine ?", message: "Les widgets, leur ordre et leurs tailles reviennent à ceux prévus pour cette page. La disposition actuelle est perdue.", confirmLabel: "Réinitialiser", danger: true }))) return; snap(); setDraft(null); onReset(); say("Disposition d'origine rétablie"); };
   const base = () => (items || []).slice();
-  useEffect(() => { setDraft(null); }, [items]); // la disposition enregistrée est revenue : plus besoin du brouillon
+  // v391 : comparé sur le contenu — la disposition par défaut est recalculée à chaque rendu (nouveau tableau) et faisait revenir un widget retiré
+  const itemsSig = JSON.stringify(items || []);
+  useEffect(() => { setDraft(null); }, [itemsSig]); // la disposition enregistrée est revenue : plus besoin du brouillon
   // FLIP : on relève les places affichées avant le changement, puis chaque widget glisse de là vers sa nouvelle place
   const snap = () => { const m = {}; if (grid.current) grid.current.querySelectorAll("[data-wg]").forEach(el => { m[el.dataset.wg] = el.getBoundingClientRect(); }); before.current = m; };
   // v359 : hauteur de chaque tuile = celle de son contenu (le plus haut des widgets d'une pile), arrondie au cran supérieur

@@ -9,6 +9,7 @@ import { blockOn } from "../profiles";
 import { getCashinDoc, cashOverview, todayISO as cashToday } from "../cashinLink";
 import { toCollect } from "../cashinModel";
 import { useCashin } from "../useCashin";
+import { weeklyReport, curveGeom, fmtS } from "../cashWeekly";
 import { fmtEur } from "../pjProgress";
 import { useProdModel } from "../prodModel"; // v324 : makeModel chargé à la demande
 import { planWeeks, atelierCap, CAPA_DEFAUT } from "../loadWeeks"; // v289 : sans les graphiques du Manager
@@ -48,8 +49,8 @@ export const HOME_DEFAULTS = {
   atelier: [["charge", 7], ["arrdep", 5], ["montage", 7], ["postes", 5]],
   turbines: [["ptReady", 3], ["ptNoWheel", 3], ["ptPieces", 6], ["ptDates", 12], ["ptRoues", 6], ["ptInj", 6]],
   autre: [["kpis", 12], ["departs", 6], ["parcours", 6], ["benchWeek", 6], ["visites", 6], ["shipped", 6], ["etats", 6], ["fermetures", 6]],
-  daf: [["encaisser", 6], ["cash", 6], ["kpis", 12], ["departs", 6]], // v370
-  direction: [["kpis", 12], ["tests", 4], ["turbines", 4], ["cash", 4], ["alertes", 8], ["charge", 4], ["postes", 6], ["departs", 6], ["parcours", 12]],
+  daf: [["encaisser", 6], ["cash", 6], ["cashCurve", 12], ["cashLate", 6], ["cashMonth", 6], ["kpis", 12], ["departs", 6]], // v370
+  direction: [["kpis", 12], ["cashCurve", 12], ["depQuarter", 6], ["onTime", 6], ["tests", 4], ["turbines", 4], ["cash", 4], ["alertes", 8], ["charge", 4], ["postes", 6], ["departs", 6], ["parcours", 12]],
 };
 
 // Phrase d'ouverture selon le poste (lien direct avec le travail de la personne) → [segments], un segment = texte ou { t, c } surligné
@@ -96,6 +97,33 @@ export function roleLead(role, d) {
 // v350 (audit de performance) : défini hors du composant (sinon recréé et remonté à chaque rendu)
 const Stat = ({ label, value, tone, onClick }) => <button type="button" onClick={onClick} disabled={!onClick} style={{ border: "none", background: T.surface, borderRadius: 8, padding: "8px 10px", textAlign: "left", cursor: onClick ? "pointer" : "default", fontFamily: T.font, minWidth: 0 }}><div style={{ fontFamily: T.fontDisplay, fontSize: "clamp(18px,1.5vw,24px)", fontWeight: 600, lineHeight: 1.1, color: tone || T.ink900, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{value}</div><div style={{ fontSize: FZ.xs, color: T.ink500, fontFamily: T.fontLabel }}>{label}</div></button>;
 // v350 (audit de performance) : défini hors du composant (sinon recréé et remonté à chaque rendu)
+// v391 (demandé : « rajouter en widget la courbe annuelle du Cash in ») : la courbe de la fiche du lundi (cashWeekly.curveGeom), aux couleurs
+// du thème ; trait plein = initial (gris) et encaissé (vert), tirets = prévu, pointillés gris = si les retards sont payés ; mois écrits dessous.
+const MS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
+function CashCurve({ r, h = 170 }) {
+  const g = curveGeom(r, 560, h), P = l => l.map((p, i) => (i ? "L" : "M") + p[0] + " " + p[1]).join(" "), ns = { vectorEffect: "non-scaling-stroke", fill: "none", strokeLinejoin: "round" };
+  const up = g.today.yReal <= g.today.yIni;
+  return <div>
+    <svg viewBox={"0 0 560 " + h} preserveAspectRatio="none" role="img" aria-label={"Encaissements cumulés de l'année face à l'initial : " + fmtEur(r.ytd.paid) + " encaissés, initial à date " + fmtEur(r.ytd.initToDate)} style={{ display: "block", width: "100%", height: h }}>
+      {g.grid.map((t, i) => <line key={i} x1={g.x0} x2={g.x1} y1={t.y} y2={t.y} stroke={T.line} strokeWidth="1" style={{ vectorEffect: "non-scaling-stroke" }} />)}
+      <line x1={g.x0} x2={g.x1} y1={g.y1} y2={g.y1} stroke={T.ink300} strokeWidth="1" style={{ vectorEffect: "non-scaling-stroke" }} />
+      <line x1={g.today.x} x2={g.today.x} y1={g.y0} y2={g.y1} stroke={T.ink500} strokeWidth="1" style={{ vectorEffect: "non-scaling-stroke" }} />
+      <path d={P(g.ini)} stroke={T.ink300} strokeWidth="2.5" style={ns} />
+      <path d={P(g.late)} stroke={T.ink500} strokeWidth="1.5" strokeDasharray="3 4" style={ns} />
+      <path d={P(g.fc)} stroke={T.emerald600} strokeWidth="2.5" strokeDasharray="6 5" style={ns} />
+      <path d={P(g.real)} stroke={T.emerald600} strokeWidth="2.5" style={ns} />
+      {Math.abs(g.today.yIni - g.today.yReal) > 2 && <line x1={g.today.x} x2={g.today.x} y1={g.today.yIni} y2={g.today.yReal} stroke={up ? T.emerald600 : T.red600} strokeWidth="4" style={{ vectorEffect: "non-scaling-stroke" }} />}
+    </svg>
+    <div aria-hidden="true" style={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", fontSize: 12, color: T.ink500, textAlign: "center", margin: "2px 0 0" }}>{MS.map((m, i) => <span key={i} style={i === r.curve.cur ? { color: T.ink900, fontWeight: 600 } : null}>{m}</span>)}</div>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 14px", fontSize: 12, color: T.ink500, marginTop: 6 }}>
+      <span><i aria-hidden="true" style={{ display: "inline-block", width: 16, borderTop: "2.5px solid " + T.ink300, verticalAlign: "middle", marginRight: 5 }} />initial</span>
+      <span><i aria-hidden="true" style={{ display: "inline-block", width: 16, borderTop: "2.5px solid " + T.emerald600, verticalAlign: "middle", marginRight: 5 }} />encaissé</span>
+      <span><i aria-hidden="true" style={{ display: "inline-block", width: 16, borderTop: "2.5px dashed " + T.emerald600, verticalAlign: "middle", marginRight: 5 }} />prévu</span>
+      <span><i aria-hidden="true" style={{ display: "inline-block", width: 16, borderTop: "1.5px dotted " + T.ink500, verticalAlign: "middle", marginRight: 5 }} />si les retards sont payés</span>
+    </div>
+  </div>;
+}
+const gapTone = v => (Math.abs(v) < 1000 ? T.ink500 : v < 0 ? T.red600 : T.emerald600);
 const StatLine = ({ items }) => <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "6px 0", marginTop: 8 }}>
     {items.map(({ label, value, tone, onClick }, i) => { const C = onClick ? "button" : "span"; return <C key={label} type={onClick ? "button" : undefined} onClick={onClick}
       style={{ display: "inline-flex", alignItems: "baseline", gap: 5, border: "none", background: "transparent", padding: "2px 12px", minHeight: 28, borderLeft: i ? "1px solid " + T.line : "none", paddingLeft: i ? 12 : 0, cursor: onClick ? "pointer" : "default", fontFamily: T.font }}>
@@ -304,6 +332,56 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
         <span style={{ fontSize: 12, color: x.group === "late" ? T.red600 : T.ink500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.group === "late" ? -x.days + " j de retard" : "prévu le " + fd(x.due)}</span>
         <b style={{ fontSize: 13, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{fmtEur(amt(x))}</b></button>)}
       {onOpenCash && more("Saisir les encaissements", go)}</>); } };
+  // v391 (demandé : « la courbe annuelle du Cash in en widget, et des widgets pour la direction ») — calculs de la fiche du lundi (cashWeekly.js)
+  const cashRep = () => { const d = getCashinDoc(); if (!d) return null; try { return weeklyReport(d, cashToday()); } catch (e) { return null; } };
+  W.cashCurve = { label: "Cash in de l'année", span: 12, sizes: ["xl", "m"], only: () => !!cash, render: z => { const r = cashRep(); if (!r) return null;
+    return sec("cashCurve", "Cash in de l'année", S.finProd.ring, <><Head title={"Cash in " + r.year} sub="cumul face à l'initial, hors EPC" />
+      <div style={{ display: "grid", gridTemplateColumns: z === "xl" ? "repeat(3, minmax(0,1fr))" : "repeat(2, minmax(0,1fr))", gap: 8, margin: "2px 0 10px" }}>
+        <Stat label={"encaissé · " + fmtS(r.ytd.gap) + " sur l'initial"} value={fmtEur(r.ytd.paid)} tone={gapTone(r.ytd.gap) === T.ink500 ? undefined : gapTone(r.ytd.gap)} />
+        <Stat label={"prévu fin d'année · initial " + fmtEur(r.yearEnd.init)} value={fmtEur(r.yearEnd.forecast)} />
+        {z === "xl" && <Stat label="en retard de paiement" value={fmtEur(r.yearEnd.lateCash)} tone={r.yearEnd.lateCash ? T.red600 : undefined} />}
+      </div>
+      <CashCurve r={r} h={z === "xl" ? 190 : 140} />
+      {onOpenCash && more("Ouvrir le Cash in", () => onOpenCash())}</>); } };
+  W.cashMonth = { label: "Cash in du mois", span: 6, sizes: ["m", "xl"], only: () => !!cash, render: z => { const r = cashRep(); if (!r) return null;
+    const col = (m, k) => { const e = m.enc, f = m.fact, pct = e.act ? Math.min(100, Math.round(e.paid / e.act * 100)) : 0;
+      return <div key={k} style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: T.ink900 }}>{m.label}{k === "cur" ? " (en cours)" : ""}</div>
+        <div style={{ fontSize: 12, color: T.ink500, marginTop: 6 }}>Encaissements</div>
+        <div style={{ fontFamily: T.fontDisplay, fontSize: 28, fontWeight: 600, letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums", color: T.ink900, lineHeight: 1.1 }}>{fmtEur(e.act)}</div>
+        <div role="img" aria-label={fmtEur(e.paid) + " déjà reçus sur " + fmtEur(e.act)} style={{ height: 6, borderRadius: 2, background: T.surfaceAlt, overflow: "hidden", margin: "6px 0 4px" }}><i style={{ display: "block", height: "100%", width: pct + "%", background: T.emerald600 }} /></div>
+        <div style={{ fontSize: 12, color: T.ink500 }}>{fmtEur(e.paid)} reçus · initial {fmtEur(e.init)} · <span style={{ color: gapTone(e.gap), fontWeight: 500 }}>{fmtS(e.gap)}</span></div>
+        <div style={{ fontSize: 12, color: T.ink500, marginTop: 10 }}>Factures</div>
+        <div style={{ fontFamily: T.fontDisplay, fontSize: 20, fontWeight: 600, fontVariantNumeric: "tabular-nums", color: T.ink900 }}>{fmtEur(f.act)}</div>
+        <div style={{ fontSize: 12, color: T.ink500 }}>{fmtEur(f.done)} émises · initial {fmtEur(f.init)} · <span style={{ color: gapTone(f.gap), fontWeight: 500 }}>{fmtS(f.gap)}</span></div>
+      </div>; };
+    return sec("cashMonth", "Cash in du mois", S.finProd.ring, <><Head title="Cash in du mois" sub="encaissements et factures face à l'initial" />
+      <div style={{ display: "grid", gridTemplateColumns: z === "xl" ? "repeat(2, minmax(0,1fr))" : "minmax(0,1fr)", gap: 18 }}>{col(r.cur, "cur")}{z === "xl" && col(r.next, "next")}</div>
+      {onOpenCash && more("Ouvrir le Cash in", () => onOpenCash())}</>); } };
+  W.cashLate = { label: "Retards de paiement", span: 6, sizes: ["m", "xl"], only: () => !!cash, render: z => { const r = cashRep(); if (!r) return null; const L = r.late.items;
+    return sec("cashLate", "Retards de paiement", A.orange.ring, <><Head title="Retards du Cash in" sub={L.length ? r.late.encN + " paiement" + (r.late.encN > 1 ? "s" : "") + " · " + r.late.billN + " facture" + (r.late.billN > 1 ? "s" : "") + " à émettre" : "aucun retard"} />
+      <div style={{ fontFamily: T.fontDisplay, fontSize: 28, fontWeight: 600, letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums", color: r.late.total ? T.red600 : T.ink900, margin: "2px 0 4px" }}>{fmtEur(r.late.total)}</div>
+      {L.length === 0 ? empty("check", "Aucun retard", "Factures et paiements sont à l'heure.") : L.slice(0, z === "xl" ? 6 : 4).map((x, i) => <Row key={x.id + x.kind} first={i === 0} pj={x.pj} pill={<Pill tone={x.kind === "paiement" ? A.orange : { bg: T.surfaceAlt, ink: T.ink700 }}>{x.kind === "paiement" ? "Paiement" : "Facture"}</Pill>} main={x.jalon + (x.client ? " · " + x.client : "")} right={fmtEur(x.montant) + " · " + x.days + " j"} />)}
+      {onOpenCash && more("Ouvrir le Cash in", () => onOpenCash())}</>); } };
+  W.depQuarter = { label: "Départs du trimestre", span: 6, sizes: ["m", "s", "xl"], render: z => {
+    const y = +today.slice(0, 4), q = Math.floor((+today.slice(5, 7) - 1) / 3), from = y + "-" + String(q * 3 + 1).padStart(2, "0") + "-01", to = (q === 3 ? (y + 1) + "-01" : y + "-" + String(q * 3 + 4).padStart(2, "0")) + "-01";
+    const inQ = d => d && d >= from && d < to, ini = r => (dIso(r.depart) && Number(r.drift) ? iso(new Date(new Date(dIso(r.depart)).getTime() - Number(r.drift) * 864e5)) : dIso(r.depart));
+    const plan = rows.filter(r => r.etat !== "A_DEFINIR" && inQ(dIso(r.depart))), done = plan.filter(r => r.etat === "SHIPPED"), initN = rows.filter(r => r.etat !== "A_DEFINIR" && inQ(ini(r))).length;
+    const lateL = plan.filter(r => r.etat !== "SHIPPED" && dIso(r.depart) < today);
+    return sec("depQuarter", "Départs du trimestre", S.depart.ring, <><Head title={"Départs T" + (q + 1) + " " + y} sub={"initial : " + initN + " départ" + (initN > 1 ? "s" : "") + " prévu" + (initN > 1 ? "s" : "")} />
+      <div style={{ display: "flex", alignItems: "baseline", gap: 8, margin: "2px 0 6px" }}><span style={{ fontFamily: T.fontDisplay, fontSize: 36, fontWeight: 600, letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums", color: T.ink900 }}>{done.length}</span><span style={{ fontSize: 14, color: T.ink500 }}>expédiée{done.length > 1 ? "s" : ""} sur {plan.length} prévue{plan.length > 1 ? "s" : ""}</span></div>
+      <div role="img" aria-label={done.length + " expédiées sur " + plan.length} style={{ display: "flex", gap: 2, height: 8, marginBottom: 6 }}>{plan.sort((a, b) => dIso(a.depart).localeCompare(dIso(b.depart))).map(r => <i key={r.pj} style={{ flex: 1, borderRadius: 2, background: r.etat === "SHIPPED" ? T.emerald600 : dIso(r.depart) < today ? T.red500 : T.line }} />)}</div>
+      {plan.length !== initN && <div style={{ fontSize: 12, color: plan.length < initN ? T.red600 : T.ink500 }}>{plan.length < initN ? initN - plan.length + " départ" + (initN - plan.length > 1 ? "s" : "") + " de l'initial glissé" + (initN - plan.length > 1 ? "s" : "") + " après le trimestre" : plan.length - initN + " de plus que l'initial"}</div>}
+      {z !== "s" && lateL.slice(0, 4).map((r, i) => <Row key={r.pj} first={i === 0} pj={r.pj} pill={<Pill tone={A.orange}>Départ passé</Pill>} main={nomOf(r) || ""} right={fmtD(r.depart)} />)}</>); } };
+  W.onTime = { label: "Départs à l'heure", span: 6, sizes: ["m", "s", "xl"], render: z => {
+    const since = iso(new Date(Date.now() - 90 * 864e5)), L = rows.filter(r => r.etat === "SHIPPED" && dIso(r.depart) && dIso(r.depart) <= today && dIso(r.depart) >= since);
+    const ok = L.filter(r => (Number(r.drift) || 0) <= 0).length, pct = L.length ? Math.round(ok / L.length * 100) : null, avg = L.length ? Math.round(L.reduce((t, r) => t + Math.max(0, Number(r.drift) || 0), 0) / L.length) : 0;
+    const worst = L.filter(r => (Number(r.drift) || 0) > 0).sort((a, b) => b.drift - a.drift);
+    return sec("onTime", "Départs à l'heure", S.depart.ring, <><Head title="Départs à l'heure" sub="expédiées des 90 derniers jours, face au planning initial" />
+      {pct == null ? empty("inbox", "Aucune expédition", "Rien n'est parti ces 90 derniers jours.") : <>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8, margin: "2px 0 4px" }}><span style={{ fontFamily: T.fontDisplay, fontSize: 36, fontWeight: 600, letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums", color: pct >= 80 ? T.emerald600 : T.red600 }}>{pct} %</span><span style={{ fontSize: 14, color: T.ink500 }}>{ok} sur {L.length} à la date promise</span></div>
+        <div style={{ fontSize: 12, color: T.ink500 }}>Retard moyen {avg} j · objectif 80 %</div>
+        {z !== "s" && worst.slice(0, z === "xl" ? 5 : 3).map((r, i) => <Row key={r.pj} first={i === 0} pj={r.pj} main={nomOf(r) || ""} right={"+" + r.drift + " j"} />)}</>}</>); } };
   W.alertes = { label: "Alertes", span: 8, render: () => { const bigLate = late.filter(r => r.drift > 10);
     return sec("alertes", "Alertes", A.orange.ring, <><Head title="Alertes" sub="dérives de plus de 10 j" count={bigLate.length} />
       {bigLate.length === 0 ? empty("check", "Aucune alerte", "Pas de grosse dérive.") : bigLate.slice(0, 6).map((r, i) => <Row key={r.pj} first={i === 0} pj={r.pj} pill={<Pill tone={A.orange}>Dérive</Pill>} main={nomOf(r) || "Départ " + fmtD(r.depart)} right={"+" + r.drift + " j"} />)}</>); } };
@@ -498,12 +576,12 @@ export function RoleHome({ produit, role, profile, ui, kpiEl, depEl, parcoursEl,
   // v231 (demandé : « Ajouter un cadran n'est pas clair : des thèmes ou des liens avec les onglets ») : chaque cadran est rangé sous
   // la page du site d'où viennent ses données, avec une phrase qui dit ce qu'il montre.
   const THEMES = [
-    ["Vue d'ensemble — Liste et Gantt", { ligne: "les sept postes de l'atelier, chaque machine sur son poste", suiveuses: "une fiche suiveuse par machine en cours, étapes et départ", depBoard: "compte à rebours des départs des 60 jours", ecarts: "machines en avance, à l'heure ou en retard sur l'initial", parChef: "machines en cours par chef de projet", parPays: "machines en cours par pays", parGamme: "machines en cours par gamme", finProd: "fins de production des 30 jours", arrivees30: "arrivées à l'atelier des 45 jours", kpis: "les grands chiffres du portefeuille", departs: "les 5 prochains départs", parcours: "combien de machines à chaque étape", alertes: "les dérives fortes et les retards à déclarer", etats: "nombre de machines dans chaque état", depMois: "départs prévus sur les 6 prochains mois", shipped: "les dernières machines parties", raccourcis: "boutons vers les pages du site" }],
+    ["Vue d'ensemble — Liste et Gantt", { ligne: "les sept postes de l'atelier, chaque machine sur son poste", suiveuses: "une fiche suiveuse par machine en cours, étapes et départ", depBoard: "compte à rebours des départs des 60 jours", ecarts: "machines en avance, à l'heure ou en retard sur l'initial", parChef: "machines en cours par chef de projet", parPays: "machines en cours par pays", parGamme: "machines en cours par gamme", finProd: "fins de production des 30 jours", arrivees30: "arrivées à l'atelier des 45 jours", kpis: "les grands chiffres du portefeuille", depQuarter: "départs du trimestre : expédiés, prévus, initial", onTime: "part des départs tenus sur 90 jours", departs: "les 5 prochains départs", parcours: "combien de machines à chaque étape", alertes: "les dérives fortes et les retards à déclarer", etats: "nombre de machines dans chaque état", depMois: "départs prévus sur les 6 prochains mois", shipped: "les dernières machines parties", raccourcis: "boutons vers les pages du site" }],
     ["Projets — Fiches projet", { pjs: "les PJ d'un chef de projet, triés par départ", jalons: "arrivées, tests et départs des 3 semaines", todo: "retards à déclarer et mentions", fat: "FAT client et NOBO à venir (mes PJ)", visites: "visites client et NOBO à venir, toutes machines", avance: "avancement moyen et PJ en avance / en retard" }],
     ["Tests — page Tests", { tests: "machines au banc et tests des 3 semaines", today: "machines au banc aujourd'hui (jour N / M)", sign: "fiches de test à signer", week: "la semaine de tests d'un testeur", arrivees: "machines qui arrivent au banc", results: "réussis et échecs des 14 derniers jours", postes: "occupation des postes de test", benchWeek: "toutes les machines au banc cette semaine" }],
     ["Atelier — Planificateur et Calendrier", { charge: "heures atelier sur 4 semaines face à la capacité", arrdep: "arrivées et départs de la semaine", montage: "machines en montage méca / élec", fermetures: "fermetures de l’atelier à venir" }],
     ["Production turbines", { ptReady: "turbines prêtes", ptNoWheel: "turbines testées sans roue", ptPieces: "pièces à suivre", ptDates: "dates prévisionnelles des turbines", ptRoues: "stock de roues équilibrées", ptInj: "stock d'injecteurs" }],
-    ["Gestion — Turbines et Cash in", { turbines: "pool de turbines", cash: "encaissements à venir", encaisser: "factures émises en attente de paiement, saisie par le DAF", produit: "jalons cash liés à un livrable du Produit" }],
+    ["Gestion — Turbines et Cash in", { turbines: "pool de turbines", cash: "encaissements à venir", cashCurve: "encaissements cumulés de l'année face à l'initial", cashMonth: "encaissements et factures du mois face à l'initial", cashLate: "factures et paiements en retard", encaisser: "factures émises en attente de paiement, saisie par le DAF", produit: "jalons cash liés à un livrable du Produit" }],
     ["Échanges — Commentaires", { mentions: "les mentions qui vous attendent" }],
   ];
   // v355 : widgets à tailles fixes (WidgetBoard). Tailles permises : chiffres = Petit / Moyen ; cadrans larges = Bandeau ; autres = Moyen, Grand, Bandeau.

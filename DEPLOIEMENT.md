@@ -2882,3 +2882,12 @@ Demandé : « pas fan du livret manuel de configuration ORC et comment il rend e
 - `StepCtl` (case + statut en 3 choix) et la double page retirés. Sous 760 px : image sous la consigne.
 - Données inchangées (`plans[PJ].book.rows`) ; exports et PV inchangés.
 - Fichiers : src/components/TestFiche.js, src/components/TestsTab.js (phrase), src/styles.css.
+
+## V391 — Widgets : fermeture, Cash in, direction
+
+Demandé : « je n'arrive pas à fermer certains widgets sur la home page ; rajouter en widget la courbe annuelle du Cash in et des widgets pour la direction ».
+
+- Cause : `.e-wg-edit .e-wg-cell:active { transform: scale(.97) }` — à l'appui sur le « − », la tuile rétrécissait ; sur une tuile large, le bouton (au coin) se déplaçait d'environ 15 px et le relâcher tombait à côté : pas de clic. Corrigé par `:not(:has([data-wg-act]:active))` (styles.css).
+- WidgetBoard : le brouillon est remis à zéro sur le contenu de la disposition (`JSON.stringify`), plus sur l'identité du tableau (la disposition par défaut est recalculée à chaque rendu).
+- RoleHome : `CashCurve` (courbe de `curveGeom` de cashWeekly.js aux couleurs du thème, légende, mois) ; widgets `cashCurve` (Large / Moyen), `cashMonth`, `cashLate` (Cash in : visibles avec le droit Finance), `depQuarter`, `onTime` ; calculs `weeklyReport` (même chiffres que la fiche du lundi, hors EPC) ; catalogue « Gestion — Turbines et Cash in » et « Vue d'ensemble » ; `HOME_DEFAULTS.direction` (+ cashCurve, depQuarter, onTime) et `daf` (+ cashCurve, cashLate, cashMonth) — seulement pour un accueil jamais modifié.
+- Fichiers : src/styles.css, src/components/WidgetBoard.js, src/components/RoleHome.js.
