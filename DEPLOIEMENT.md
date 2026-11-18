@@ -3071,3 +3071,12 @@ Maquette `maquettes-design/v410-passeport-pages.html` validée (« Go, code-la �
 - **Feuillets** (`Insert`) : fiche de lancement de fab par rubrique (`LaunchSheet only=…`, PassportFull.js) et RAI (`RaiView` + `PhotosView`). **RAI pré-rempli** : `raiPrefill` (launchFab.js) — référence · n° de PO d'Achats (par le scope des lignes du passeport), choix du CdP dans la fiche de lancement de fab, roue / injecteur ; puis Turbines, tests, SAV ; ce qui est saisi à la main l'emporte.
 - MachinePassport.js : la vue Passeport affiche `PassportBook`. styles.css : bloc `.pb-*` (tous les boutons `all: unset` gardent `position: relative`).
 - Fichiers : src/components/PassportBook.js, src/components/PassportFull.js, src/components/MachinePassport.js, src/launchFab.js, src/styles.css.
+
+## V409 — Passeport en livre : flèches à portée, pages pleines
+
+Retour bêta : « les flèches en haut sont trop loin, l'info au centre est perdue dans le vide ».
+
+- PassportBook.js : flèches ‹ › et « n / N » groupées à côté du n° de PJ (`.pb-navg`), « Dossier machine (PDF) » en bouton secondaire à droite ; grandes flèches au bord de la page (`.pb-edge`, 64 px, au-delà de 1 000 px de large) ; page Fiche de lancement de fab = 8 cartes de rubrique (avancement + valeur clé ; un appui ouvre la rubrique) ; page RAI = cartes des sections (avancement).
+- styles.css : contenu des pages jusqu'à 1 120 px, listes groupées sur deux colonnes (`minmax(380px, 1fr)`, une colonne sous 1 000 px).
+- MachinePassport.js : le passeport ne déborde plus de sa colonne (bouton Dossier coupé à droite).
+- Fichiers : src/components/PassportBook.js, src/components/MachinePassport.js, src/styles.css.

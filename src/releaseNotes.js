@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v409",
+    date: "2026-11-18",
+    title: "V409 : Passeport en livre : flèches à portée, pages sur toute la largeur",
+    items: [
+      { t: "Navigation", d: "Les flèches et le numéro de page sont à côté du n° de PJ, et deux grandes flèches se tiennent au bord de la page." },
+      { t: "Pages pleines", d: "Les pages occupent toute la largeur : listes sur deux colonnes, rubriques de la fiche de lancement de fab et sections du RAI en cartes qui ouvrent directement la bonne rubrique." },
+    ],
+  },
+  {
     id: "2026-11-v408",
     date: "2026-11-18",
     title: "V408 : Passeport machine en livre : on tourne les pages de gauche à droite",

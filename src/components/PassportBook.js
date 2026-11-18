@@ -8,13 +8,14 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { T } from "../theme";
 import { getPjMeta, chefsOf, orcChefsOf, plannedSnOf } from "../pjMeta";
 import { Pill, notify } from "./SharedUI";
+import { btn } from "../theme";
 import { AF } from "../autoFocusOk";
 import { contractDatesOf, livrPrevueOf } from "../penalties";
 import { useProdModel } from "../prodModel";
 import { turbineOf, achatsOf, ACHAT_ST } from "../pjDossier";
 import { testsLive, savLive } from "../passportLive";
 import { achatScopes, turbLive, gammeKey, stdOf, elementsOf, passportRows, liveRows } from "../passport";
-import { raiVerdict } from "../rai";
+import { raiVerdict, RAI_SECTIONS, raiSection } from "../rai";
 import { safeImgUrl } from "../photos";
 import { RaiView } from "./RaiView";
 import { PhotosView } from "./PhotosView";
@@ -112,6 +113,18 @@ export function PassportBook({ r, data, doc, api, canEdit, authorName, prodDoc, 
   const curPh = phaseOfEtat(r.etat), curPhI = PASS_PHASES.findIndex(p => p[0] === curPh);
   const [sheet, setSheet] = useState(null), [ins, setIns] = useState(null), [fabTab, setFabTab] = useState("gen");
   const edit = (title, path, opts, extra) => () => { if (!canL) { ro(); return; } const val = path.split(".").reduce((o, k) => (o || {})[k], L); setSheet({ title, sub: (extra && extra.sub) || FAB, value: val || "", opts, refV: extra && extra.refV, nr: extra && extra.nr, free: extra && extra.free, onPick: v => saveL(path, v) }); };
+  // avancement des rubriques de la fiche de lancement de fab (page 5)
+  const okL = L.ok || {}, txL = L.txt || {}, cnt = a => a.filter(Boolean).length, chooseC = comps.filter(c => c.kind !== "achat");
+  const fabCards = [
+    { k: "gen", l: "Informations générales", n: 1, d: cnt([L.date]), v: L.date ? "lancement le " + fd(L.date) : "date du lancement à saisir" },
+    { k: "desc", l: "Description", n: 3, d: cnt([elec.neutre, elec.freq, elec.tension]), v: [elec.neutre, elec.freq, elec.tension].filter(Boolean).join(" · ") || "régime, fréquence, tension" },
+    { k: "fab", l: "Données de fabrication", n: 4, d: cnt([txL.bom, design.pid, txL.mods, txL.print]), v: design.pid || "BOM, P&ID, fichiers à imprimer" },
+    { k: "tur", l: "Turbine", n: 3, d: cnt([inj.roue, inj.injecteur, plugCount(L) || okL.bouchages]), v: [inj.roue, inj.injecteur, plugCount(L) + " / " + HOLES + " bouchés"].filter(Boolean).join(" · ") },
+    { k: "comp", l: "Composants", n: chooseC.length, d: cnt(chooseC.map(c => has(cv[c.id]))), v: ready ? ready.pct + " % des pièces arrivées" : "choix du CdP et commandes Achats" },
+    { k: "qual", l: "Qualité et contrôles", n: 4, d: cnt(["qChassis", "qTuyau", "qPeinture", "qTank"].map(k => okL[k])), v: "châssis, tuyauterie, peinture, tank" },
+    { k: "log", l: "Logistique", n: 2, d: cnt([txL.res, txL.risk]), v: txL.risk ? String(txL.risk).slice(0, 60) : "ressources, risques" },
+    { k: "val", l: "Validation", n: st.total, d: st.signed, v: st.launched ? "lancée le " + fd(st.at) : st.signed + " / " + st.total + " signatures" },
+  ];
   // ce qui demande une action
   const todo = [];
   if (achats && achats.retards) todo.push({ t: achats.retards + " commande" + (achats.retards > 1 ? "s" : "") + " en retard", go: "appro" });
@@ -149,8 +162,11 @@ export function PassportBook({ r, data, doc, api, canEdit, authorName, prodDoc, 
         {st.launched ? <Pill tone="ok">Lancée le {fd(st.at)} · 4 / 4 signatures</Pill> : <Pill tone="warn">Brouillon · {st.signed} / {st.total} signatures</Pill>}
         <span className="pp2-sub">{canL ? "vous pouvez la remplir" : "lecture seule"}</span></div>
         {ready && <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginTop: 10 }}><b className="pb-big">{ready.pct} %</b><span style={{ fontSize: 13 }}>des pièces arrivées{ready.waiting.length ? " · attendu : " + ready.waiting.slice(0, 3).map(w => w.numero).join(", ") : ""}</span><Src k="ach">Achats</Src></div>}
-        <div className="pb-mini">{[["Régime de neutre", elec.neutre], ["Roue", inj.roue], ["Injecteur", inj.injecteur], ["Bouchages", plugCount(L) + " / " + HOLES], ["Composants choisis", comps.filter(c => c.kind !== "achat" && has(cv[c.id])).length + " / " + comps.filter(c => c.kind !== "achat").length]].map(([k, v]) => <div key={k}><span>{k}</span><b>{has(v) ? v : "—"}</b></div>)}</div>
       </div>
+      <div className="pb-cards">{fabCards.map(c => <button key={c.k} type="button" className="pb-rub" onClick={() => { setFabTab(c.k); setIns("launch"); }} aria-label={c.l + " : " + c.d + " sur " + c.n + ". Ouvrir"}>
+        <span className="pb-rub-h"><b>{c.l}</b><span className="pp2-sub">{c.d} / {c.n}</span></span>
+        <span className="pb-bar2" aria-hidden="true"><i style={{ transform: "scaleX(" + (c.n ? c.d / c.n : 0) + ")" }} /></span>
+        <span className="pb-rub-v">{c.v}</span></button>)}</div>
       <button type="button" className="pb-open" onClick={() => setIns("launch")}>Ouvrir la fiche de lancement de fab <span aria-hidden="true">↗</span></button></> },
     { k: "fab", l: "Fabrication et turbine", sub: [r.debutProd && "production à partir du " + fd(r.debutProd), r.tests && "tests le " + fd(r.tests)].filter(Boolean).join(" · "), node: <>
       <Group><Row k={FAB} v={st.launched ? "Lancée le " + fd(st.at) : "Brouillon · " + st.signed + " / " + st.total + " signatures"} src="page précédente" srcK="fl" onGo={() => go("launch")} /></Group>
@@ -173,6 +189,10 @@ export function PassportBook({ r, data, doc, api, canEdit, authorName, prodDoc, 
       <div className="pb-card"><div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}><Pill tone={rv.k === "ok" ? "ok" : rv.blocking ? "bad" : rv.k === "reserve" ? "warn" : "neutral"}>{rv.label}</Pill>
         <span className="pp2-sub">{rv.signed} / {rv.signers} signatures · {photos.length} photo{photos.length > 1 ? "s" : ""} · composants pré-remplis par Achats, Turbines et la fiche de lancement de fab</span></div>
         {photos.length > 0 && <div className="pb-thumbs">{photos.slice(0, 6).map(p => { const u = safeImgUrl(p.turl || p.url); return u ? <img key={p.id} src={u} alt={p.shot || "photo"} /> : null; })}</div>}</div>
+      <div className="pb-cards">{RAI_SECTIONS.map(sec => { const x = safe(() => raiSection(R, sec), { done: 0, total: 0 }, "RAI");
+        return <button key={sec.id} type="button" className="pb-rub" onClick={() => setIns("rai")} aria-label={sec.title + " : " + x.done + " sur " + x.total + ". Ouvrir le RAI"}>
+          <span className="pb-rub-h"><b>{sec.title}</b><span className="pp2-sub">{x.done} / {x.total}</span></span>
+          <span className="pb-bar2" aria-hidden="true"><i style={{ transform: "scaleX(" + (x.total ? x.done / x.total : 0) + ")" }} /></span></button>; })}</div>
       <button type="button" className="pb-open" onClick={() => setIns("rai")}>Ouvrir le RAI <span aria-hidden="true">↗</span></button></> },
     { k: "depart", l: "Départ", sub: r.depart ? "prévu le " + fd(r.depart) : "", node: <Group>
       <Row k="Départ prévu" v={fd(r.depart)} src="planning" srcK="plan" /><Row k="Feu vert du départ (RAI)" v={rv.label} bad={rv.blocking} src="RAI" srcK="ts" onGo={() => go("rai")} />
@@ -232,11 +252,12 @@ export function PassportBook({ r, data, doc, api, canEdit, authorName, prodDoc, 
     "--pp-field": T.fieldLine, "--pp-acc": T.accentInk, "--pp-ok": T.emerald600, "--pp-okbg": T.emerald100, "--pp-bad": T.red600, "--pp-warn": T.amber600, "--pp-on": T.onFill };
   return <section aria-label={"Passeport de " + pj} className="pp2 pb" style={vars}>
     <div className="pb-bar e-tb">
-      <b className="pb-bt">{pj}</b>{!canL && <Pill tone="neutral">Lecture seule</Pill>}<span style={{ flex: 1 }} />
-      <button type="button" className="pb-nav" onClick={() => goI(cur - 1, 0)} disabled={cur === 0} aria-label="Page précédente">‹</button>
-      <span className="pb-pg" aria-live="polite">{cur === 0 ? "Couverture" : "Page " + (cur + 1)} · {cur + 1} / {N}</span>
-      <button type="button" className="pb-nav" onClick={() => goI(cur + 1, 0)} disabled={cur === N - 1} aria-label="Page suivante">›</button>
-      <button type="button" className="pb-chip" onClick={pdfDossier}>Dossier machine (PDF)</button>
+      <b className="pb-bt">{pj}</b>
+      <span className="pb-navg"><button type="button" className="pb-nav" onClick={() => goI(cur - 1, 0)} disabled={cur === 0} aria-label="Page précédente">‹</button>
+        <span className="pb-pg" aria-live="polite">{cur + 1} / {N}</span>
+        <button type="button" className="pb-nav" onClick={() => goI(cur + 1, 0)} disabled={cur === N - 1} aria-label="Page suivante">›</button></span>
+      {!canL && <Pill tone="neutral">Lecture seule</Pill>}<span style={{ flex: 1 }} />
+      <button type="button" onClick={pdfDossier} style={btn("sec", "sm")}>Dossier machine (PDF)</button>
     </div>
     <nav className="pb-chips" aria-label="Pages du passeport">{pages.map((p, i) => <button key={p.k} type="button" className="pb-chip" aria-current={cur === i ? "true" : undefined} onClick={() => goI(i, 0)}>
       <span className="pb-dot" data-st={i === 0 ? "done" : stOf(p.k)} aria-hidden="true" />{p.l}</button>)}</nav>
@@ -252,6 +273,8 @@ export function PassportBook({ r, data, doc, api, canEdit, authorName, prodDoc, 
           </div>
         </article>)}
       </div>
+      {cur > 0 && <button type="button" className="pb-edge" data-side="l" onClick={() => goI(cur - 1, 0)} aria-label={"Page précédente : " + pages[cur - 1].l}><span aria-hidden="true">‹</span></button>}
+      {cur < N - 1 && <button type="button" className="pb-edge" data-side="r" onClick={() => goI(cur + 1, 0)} aria-label={"Page suivante : " + pages[cur + 1].l}><span aria-hidden="true">›</span></button>}
       {sheet && <Sheet s={sheet} onClose={() => setSheet(null)} />}
       {ins === "launch" && <Insert title={FAB + " · " + pj} badge={st.launched ? <Pill tone="ok">Lancée</Pill> : <Pill tone="warn">{st.signed} / {st.total} signatures</Pill>} onClose={() => setIns(null)} tabs={FAB_TABS} tab={fabTab} setTab={setFabTab}>
         <LaunchSheet L={L} saveL={saveL} canL={canL} ro={ro} gk={gk} doc={doc} info={info} ready={ready} comps={comps} scopes={scopes} authorName={authorName} only={fabTab} /></Insert>}

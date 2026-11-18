@@ -1251,4 +1251,7 @@ export const RELEASE_CATALOG = [
   { v: "408", t: "Passeport machine en livre : on tourne les pages de gauche à droite", items: [
     ["Passeport en livre", "Pages tournées de gauche à droite ; fiche de lancement de fab et RAI à ouvrir, RAI pré-rempli."],
   ] },
+  { v: "409", t: "Passeport en livre : flèches à portée, pages sur toute la largeur", items: [
+    ["Passeport plus lisible", "Flèches à côté du titre et au bord de la page, pages sur toute la largeur, rubriques en cartes."],
+  ] },
 ];

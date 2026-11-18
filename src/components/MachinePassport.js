@@ -70,7 +70,7 @@ function PassportView({ data, doc, api, canEdit, authorName, prodDoc, achatsDoc,
         </button>; })}
       {!list.length && <span style={{ fontSize: 13, color: T.ink500, padding: 8 }}>Aucune machine</span>}
     </nav>
-    {r && <PageGuard key={r.pj} name={"Passeport " + r.pj}><PassportBook data={data} prodDoc={prodDoc} achatsDoc={achatsDoc} testsDoc={testsDoc} savDoc={savDoc} r={r} doc={doc} api={api} canEdit={canEdit} authorName={authorName} certifs={certifs} /></PageGuard>}
+    {r && <div style={{ minWidth: 0 }}><PageGuard key={r.pj} name={"Passeport " + r.pj}><PassportBook data={data} prodDoc={prodDoc} achatsDoc={achatsDoc} testsDoc={testsDoc} savDoc={savDoc} r={r} doc={doc} api={api} canEdit={canEdit} authorName={authorName} certifs={certifs} /></PageGuard></div>}
   </div>;
 }
 
