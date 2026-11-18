@@ -21,13 +21,13 @@ function Blur({ value, onSave, label, w, placeholder }) {
     onKeyDown={e => { if (e.key === "Enter") e.currentTarget.blur(); else if (e.key === "Escape") { setV(value || ""); e.currentTarget.blur(); } }} style={{ ...field(), width: w || "100%" }} />;
 }
 
-export function RaiView({ r, meta, doc, P, R, saveRai, savePass, canEdit, who }) {
+export function RaiView({ r, meta, doc, P, R, saveRai, savePass, canEdit, who, photos }) {
   const [sec, setSec] = useState("info"), [msg, setMsg] = useState("");
   const v = raiVerdict(R), info = { ref: (R && R.ref) || r.pj + "-741-RA001-A", date: (R && R.created) || "", pj: r.pj, client: meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : "", gamme: r.gamme || "",
     config: (R && R.config) || "", sn: meta.numSerie || "", software: (((P || {}).real || {}).software || {}).v || "", chef: meta.chefProjet || "" };
   const put = next => saveRai({ ...next, created: (R && R.created) || today() });
   const tone = v.k === "ok" ? "ok" : v.k === "reserve" ? "warn" : "bad";
-  const pdf = () => { const w = window.open("", "_blank"); if (!w) { setMsg("Le navigateur a bloqué la fenêtre : autorisez les fenêtres pour ce site."); return; } w.document.open(); w.document.write(raiHtml({ R: R || {}, pass: P || {}, info })); w.document.close(); };
+  const pdf = () => { const w = window.open("", "_blank"); if (!w) { setMsg("Le navigateur a bloqué la fenêtre : autorisez les fenêtres pour ce site."); return; } w.document.open(); w.document.write(raiHtml({ R: R || {}, pass: P || {}, info, photos: photos || [] })); w.document.close(); };
   const NAV = [["info", "Informations", null], ...RAI_SECTIONS.map(s => [s.id, s.title, raiSection(R, s)]), ["actions", "Plan d'actions", null], ["valid", "Validation", null]];
   const navNote = id => { if (id === "info") return "auto"; if (id === "actions") return v.blocking ? v.blocking + " bloquante" + (v.blocking > 1 ? "s" : "") : ((R && R.actions) || []).length + " action" + (((R && R.actions) || []).length > 1 ? "s" : ""); if (id === "valid") return v.signed + " / " + v.signers; const s = raiSection(R, RAI_SECTIONS.find(x => x.id === id)); return s.nok ? s.nok + " NOK" : s.done + " / " + s.total; };
   const navBad = id => (id === "actions" ? v.blocking > 0 : id === "valid" ? false : id !== "info" && raiSection(R, RAI_SECTIONS.find(x => x.id === id)).nok > 0);

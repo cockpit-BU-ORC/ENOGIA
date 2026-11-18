@@ -5,6 +5,8 @@
 // Données : planning/machines.rai[PJ] = { rows: { [id]: { ok: "OK" | "NOK" | "SO", c, loc, sn, by, at } },
 //   actions: [{ id, t, bloq, pole, at, done, nc, by }], signs: { [service]: { by, at, rem } }, at }
 
+import { safeImgUrl, STEP_LABEL } from "./photos";
+
 const it = (id, label, svc, verif, x) => ({ id, label, svc, verif, ...(x || {}) });
 export const RAI_SECTIONS = [
   { id: "comps", title: "Identification des composants", kind: "sn", groups: [
@@ -84,9 +86,14 @@ export function sign(R, svc, by, rem, on = true, at = new Date().toISOString()) 
   return { ...(R || {}), signs, at };
 }
 
+// v395 : photos de la machine dans le PDF (vignettes par étape ; adresses vérifiées, légendes échappées)
+const photoBlock = photos => { const L = (photos || []).filter(p => safeImgUrl(p.turl || p.url)); if (!L.length) return "";
+  const steps = [...new Set(L.map(p => p.step))];
+  return "<h2>Photos</h2>" + steps.map(st => '<div style="margin:6px 0 2px;font-weight:600">' + x(STEP_LABEL[st] || st) + '</div><div style="display:flex;flex-wrap:wrap;gap:6px">'
+    + L.filter(p => p.step === st).map(p => '<figure style="margin:0;width:150px"><img src="' + x(safeImgUrl(p.turl || p.url)) + '" alt="" style="width:150px;height:110px;object-fit:cover;border:1px solid #BFBFBF"><figcaption style="font-size:9px;color:#5F6979">' + x(p.shot || "Photo") + " · " + x(p.by || "") + "</figcaption></figure>").join("") + "</div>").join(""); };
 // ── PDF imprimable (même principe que le PV de debug : fenêtre + impression) ; chaque valeur est échappée (règle V354)
 const x = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-export function raiHtml({ R, pass, info }) {
+export function raiHtml({ R, pass, info, photos }) {
   const rows = (R && R.rows) || {}, v = raiVerdict(R), fd = iso => (iso ? String(iso).slice(8, 10) + "/" + String(iso).slice(5, 7) + "/" + String(iso).slice(0, 4) : "");
   const okCell = o => '<td class="ok ' + (o === "OK" ? "g" : o === "NOK" ? "r" : "") + '">' + x(o || "—") + "</td>";
   const sec = s => '<h2>' + x(s.title) + '</h2><table><thead><tr><th>' + (s.kind === "sn" ? "Composant" : s.kind === "visu" ? "Désignation · point de vérification" : "Catégorie · nom") + "</th><th>" + (s.kind === "sn" ? "N° de série et référence" : s.kind === "doc" ? "Emplacement réseau" : "Commentaire") + "</th><th>Service</th><th>Vérificateur</th><th>Validation</th></tr></thead><tbody>"
@@ -101,6 +108,7 @@ export function raiHtml({ R, pass, info }) {
     + RAI_SECTIONS.map(sec).join("")
     + "<h2>Plan d'actions</h2><table><thead><tr><th>N°</th><th>Action</th><th>Bloquant</th><th>Pôle</th><th>Créée</th><th>Validée</th><th>NC ClickUp</th></tr></thead><tbody>"
     + (acts.length ? acts.map((a, i) => "<tr><td>" + (i + 1) + "</td><td>" + x(a.t) + "</td><td>" + (a.bloq ? "Oui" : "Non") + "</td><td>" + x(a.pole) + "</td><td>" + x(fd(a.at)) + "</td><td>" + x(fd(a.done)) + "</td><td>" + x(a.nc) + "</td></tr>").join("") : '<tr><td colspan="7">Aucune action</td></tr>') + "</tbody></table>"
+    + photoBlock(photos)
     + "<h2>Validation</h2><table><thead><tr><th>Service</th><th>Fonction</th><th>Nom</th><th>Date</th><th>Remarques</th></tr></thead><tbody>"
     + RAI_SIGNERS.map(([s, f]) => { const g = ((R && R.signs) || {})[s] || {}; return "<tr><td>" + x(s) + "</td><td>" + x(f) + "</td><td>" + x(g.by || "") + "</td><td>" + x(fd(g.at)) + "</td><td>" + x(g.rem || "") + "</td></tr>"; }).join("") + "</tbody></table>"
     + "<script>window.onload=function(){setTimeout(function(){window.print()},300)}" + ["</", "script>"].join("") + "</body></html>";

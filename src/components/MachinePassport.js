@@ -10,6 +10,7 @@ import { askConfirm } from "../confirm";
 import { AF } from "../autoFocusOk";
 import { useMachines } from "../useAppData";
 import { RaiView } from "./RaiView";
+import { PhotosView } from "./PhotosView";
 import { raiVerdict, RAI_SECTIONS, raiSection } from "../rai";
 import { PHASES, PHASE_LABEL, GROUPS, elementsOf, passportRows, phaseProgress, setCfg, setReal, gammeKey, parseConfigTable, parseReference, importPlan } from "../passport";
 
@@ -66,7 +67,7 @@ function PassportView({ data, doc, api, canEdit, authorName }) {
 function Passport({ r, doc, api, canEdit, authorName, phase, setPhase, view, setView, edit, setEdit }) {
   const meta = getPjMeta(r.pj, r), mp = metaPlanned(meta), P = ((doc.pass || {})[r.pj]) || {};
   const rows = passportRows(doc, r.pj, r.gamme).map(x => (!x.planned && mp[x.el.id] ? { ...x, planned: mp[x.el.id], fromFiche: true } : x));
-  const R = ((doc.rai || {})[r.pj]) || null, rv = raiVerdict(R);
+  const R = ((doc.rai || {})[r.pj]) || null, rv = raiVerdict(R), photos = ((doc.photos || {})[r.pj]) || [];
   // v394 : le RAI s'insère entre les tests et la MES : contrôles faits + signatures
   const raiTot = RAI_SECTIONS.reduce((n, s) => n + raiSection(R, s).total, 0) + rv.signers, raiDone = RAI_SECTIONS.reduce((n, s) => n + raiSection(R, s).done, 0) + rv.signed;
   const pp0 = phaseProgress(doc, r.pj, r.gamme), pp = [...pp0.slice(0, 4), { k: "rai", l: "RAI", total: raiTot, done: raiDone, rai: rv }, ...pp0.slice(4)], shown = phase && phase !== "rai" ? rows.filter(x => (phase === "design" ? true : x.el.phase === phase)) : rows;
@@ -102,10 +103,11 @@ function Passport({ r, doc, api, canEdit, authorName, phase, setPhase, view, set
         </button>; })}
     </div>
     <div style={{ display: "flex", gap: 10, alignItems: "center", margin: "6px 0 10px", flexWrap: "wrap" }}>
-      <Segmented label="Contenu" value={view} onChange={setView} options={[["pp", "Passeport · " + rows.length], ["rai", "RAI · " + rv.label.toLowerCase()], ["hist", "Historique · " + (P.hist || []).length]]} />
+      <Segmented label="Contenu" value={view} onChange={setView} options={[["pp", "Passeport · " + rows.length], ["rai", "RAI · " + rv.label.toLowerCase()], ["photos", "Photos · " + photos.length], ["hist", "Historique · " + (P.hist || []).length]]} />
       {phase && <span style={{ fontSize: 12, color: T.ink500 }}>Éléments renseignés à la phase {PHASE_LABEL[phase]} · <button type="button" onClick={() => setPhase(null)} style={{ ...btn("ghost", "sm"), minHeight: 24 }}>Tout afficher</button></span>}
     </div>
-    {view === "rai" ? <RaiView r={r} meta={meta} doc={doc} P={P} R={R} saveRai={next => api.saveRai(r.pj, next)} savePass={next => api.savePass(r.pj, next)} canEdit={canEdit} who={authorName} />
+    {view === "photos" ? <PhotosView pj={r.pj} list={photos} api={api} who={authorName} canEdit={canEdit} />
+      : view === "rai" ? <RaiView photos={photos} r={r} meta={meta} doc={doc} P={P} R={R} saveRai={next => api.saveRai(r.pj, next)} savePass={next => api.savePass(r.pj, next)} canEdit={canEdit} who={authorName} />
       : view === "hist" ? <History P={P} doc={doc} />
       : <table style={{ borderCollapse: "collapse", width: "100%" }}>
         <thead><tr><th style={{ ...tableTh(), width: 200 }}>Élément</th><th style={tableTh()}>Prévu (design)</th><th style={tableTh()}>Réel sur la machine</th></tr></thead>

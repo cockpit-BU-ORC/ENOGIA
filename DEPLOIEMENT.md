@@ -2924,3 +2924,16 @@ Demandé : « après les tests on aura une RAI à rajouter avec le modèle suiva
 - **Règles Firestore** : `machines` — mise à jour du seul champ `rai` par tout compte ENOGIA — **à republier par Gabriel** (avec la règle V393).
 - Photos : pas encore (choix du stockage à faire : Firebase Storage conseillé).
 - Fichiers : src/rai.js, src/rai.test.js, src/components/RaiView.js, src/components/MachinePassport.js, src/useAppData.js, src/demo/demoPages.js, firestore.rules.
+
+## V395 — Photos des machines (Firebase Storage)
+
+Demandé : « il y a bien sûr plein de photos à prendre : intégrer des photos aux étapes clés » puis « Oui, Storage ».
+
+- `src/photos.js` (testé, photos.test.js) : `PHOTO_STEPS` (étapes et photos attendues), `photoProgress`, `photosOfShot`, `freePhotos`, `safeImgUrl` (seules les adresses Firebase Storage entrent dans un document HTML), `shrinkImage` (JPEG 1 600 px / vignette 360 px dans le navigateur).
+- Fichiers : Firebase Storage `machines/<beta_><PJ>/<id>.jpg` et `<id>_t.jpg` ; liste `planning/machines.photos[PJ]` (ajout / retrait atomiques `arrayUnion` / `arrayRemove`) — `uploadPhoto` / `deletePhoto` de `useMachines` (module `firebase/storage` chargé à la demande ; `app` exporté par firebase.js).
+- `components/PhotosView.js` : onglet « Photos » du passeport — étapes à gauche (attendues prises), cases « ＋ Prendre la photo » (appareil photo de la tablette, `capture=environment`, plusieurs à la fois), photos libres, agrandissement (ouvrir l'original, supprimer avec confirmation : auteur ou admin).
+- RAI : section « Photos » dans le PDF (`raiHtml({ photos })`, vignettes par étape, légendes échappées).
+- **À faire par Gabriel** : activer Storage dans la console Firebase (projet enogia-planning, emplacement europe-west1), puis publier `storage.rules` (`firebase deploy --only storage`) et `firestore.rules` (champ `photos` du document machines écrit par tout compte ENOGIA, avec `rai`).
+- `storage.rules` : comptes @enogia.com vérifiés ; dossier `machines/` ; JPEG < 4 Mo ; `firebase.json` : entrée `storage`.
+- Galerie : photos en mémoire (adresses locales), aucun envoi.
+- Fichiers : src/photos.js, src/photos.test.js, src/components/PhotosView.js, src/components/MachinePassport.js, src/components/RaiView.js, src/rai.js, src/useAppData.js, src/firebase.js, src/demo/demoPages.js, storage.rules, firestore.rules, firebase.json.

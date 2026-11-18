@@ -1209,4 +1209,7 @@ export const RELEASE_CATALOG = [
   { v: "394", t: "Rapport d'acceptation interne (RAI) dans le passeport machine", items: [
     ["RAI", "Rapport d'acceptation interne avant le départ, avec verdict, plan d'actions et signatures."],
   ] },
+  { v: "395", t: "Photos des machines aux étapes clés (passeport et RAI), rangées dans Firebase Storage", items: [
+    ["Photos des machines", "Photos attendues à chaque étape, prises depuis la tablette, reprises dans le RAI."],
+  ] },
 ];

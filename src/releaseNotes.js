@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v395",
+    date: "2026-11-18",
+    title: "V395 : Photos des machines aux étapes clés (passeport et RAI), rangées dans Firebase Storage",
+    items: [
+      { t: "Photos aux étapes clés", d: "Passeport › Photos : pour chaque étape (réception du skid, montage mécanique et électrique, tests, RAI, packaging, MES, SAV), les photos attendues, à prendre depuis la tablette ; « ＋ Autre photo » pour le reste." },
+      { t: "Dans le RAI", d: "Les photos sont reprises dans le PDF du RAI, par étape." },
+      { t: "Légères", d: "Chaque photo est réduite dans le navigateur avant l'envoi (1 600 px), avec une vignette pour l'affichage. Son auteur ou un admin peut la supprimer." },
+    ],
+  },
+  {
     id: "2026-11-v394",
     date: "2026-11-18",
     title: "V394 : Rapport d'acceptation interne (RAI) dans le passeport machine",

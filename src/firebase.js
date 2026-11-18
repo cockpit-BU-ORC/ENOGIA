@@ -12,7 +12,7 @@ const firebaseConfig = {
   measurementId: "G-8195RSYM8B"
 };
 
-const app = initializeApp(firebaseConfig);
+export const app = initializeApp(firebaseConfig); // v395 : exporté pour Firebase Storage (photos, chargé à la demande)
 // ignoreUndefinedProperties : un champ « undefined » (ex. groupPjs d'un retard sur un seul PJ) est ignoré au lieu de faire échouer l'enregistrement.
 export const db = initializeFirestore(app, { ignoreUndefinedProperties: true });
 

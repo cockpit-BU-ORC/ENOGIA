@@ -1,8 +1,8 @@
 // v261 : sorti de App.js — lectures Firestore temps réel et enregistrements de quelques documents (turbines, tests, Production
 // turbines, retards, Cash in). Même code qu'avant, regroupé par document ; App.js n'appelle plus que ces crochets.
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { onSnapshot, setDoc, updateDoc, deleteField, getDoc, FieldPath } from "firebase/firestore";
-import { TESTBOOK_DOC_REF, TESTBOOK_IMG_REF, TURBINES_DOC_REF, TESTS_DOC_REF, PRODTURB_DOC_REF, DELAYS_DOC_REF, ACHATS_DOC_REF, ACCESS_DOC_REF, SAV_DOC_REF, SAV_DEM_DOC_REF, MACHINES_DOC_REF } from "./appDocs";
+import { onSnapshot, setDoc, updateDoc, deleteField, getDoc, FieldPath, arrayUnion, arrayRemove } from "firebase/firestore";
+import { TESTBOOK_DOC_REF, TESTBOOK_IMG_REF, TURBINES_DOC_REF, TESTS_DOC_REF, PRODTURB_DOC_REF, DELAYS_DOC_REF, ACHATS_DOC_REF, ACCESS_DOC_REF, SAV_DOC_REF, SAV_DEM_DOC_REF, MACHINES_DOC_REF, DOC_PFX } from "./appDocs";
 import { notify } from "./components/SharedUI";
 import { setCashinDoc, setCashinLinks, getCashinDoc, getCashinLinks, getOrdoPjs, cashGroupsFor } from "./cashinLink";
 import { CASHIN_DOC_REF, CASHIN_LINKS_REF, CASHIN_SHARED_REF, CASHIN_PRODUIT_REF, buildSharedCashin } from "./cashinData";
@@ -115,6 +115,28 @@ export function useMachines(on, authorName) {
     return {
       savePass: (pj, P) => write([[new FieldPath("pass", pj), P]], { pass: { [pj]: P } }),
       saveRai: (pj, R) => write([[new FieldPath("rai", pj), R]], { rai: { [pj]: R } }), // v394 : RAI (tout compte ENOGIA, champ « rai » seulement)
+      // v395 : photos — fichier et vignette dans Firebase Storage (chargé à la demande), puis ajout atomique à la liste du PJ
+      uploadPhoto: async (pj, full, thumb, meta) => {
+        try {
+          const { getStorage, ref, uploadBytes, getDownloadURL } = await import("firebase/storage");
+          const { app } = await import("./firebase");
+          const st = getStorage(app), id = meta.id, base = "machines/" + DOC_PFX + pj + "/" + id;
+          const md = { contentType: "image/jpeg", customMetadata: { pj, step: meta.step || "", by: authorName || "" } };
+          await uploadBytes(ref(st, base + ".jpg"), full.blob, md); await uploadBytes(ref(st, base + "_t.jpg"), thumb.blob, md);
+          const photo = { ...meta, url: await getDownloadURL(ref(st, base + ".jpg")), turl: await getDownloadURL(ref(st, base + "_t.jpg")), path: base + ".jpg", tpath: base + "_t.jpg", w: full.w, h: full.h, at: new Date().toISOString(), by: authorName || "" };
+          const ok = await write([[new FieldPath("photos", pj), arrayUnion(photo)]], { photos: { [pj]: [photo] } });
+          return ok ? photo : null;
+        } catch (e) { fail(e); return null; }
+      },
+      deletePhoto: async (pj, photo) => {
+        try {
+          const ok = await write([[new FieldPath("photos", pj), arrayRemove(photo)]], {});
+          if (!ok) return false;
+          const { getStorage, ref, deleteObject } = await import("firebase/storage"); const { app } = await import("./firebase"); const st = getStorage(app);
+          await Promise.all([photo.path, photo.tpath].filter(Boolean).map(p => deleteObject(ref(st, p)).catch(e => console.warn("photo (suppression du fichier) :", e && e.message))));
+          return true;
+        } catch (e) { return fail(e); }
+      },
       saveStandards: S => write([["standards", S]], { standards: S }),
       saveElements: L => write([["elements", L]], { elements: L }),
       saveImport: (pass, standards) => write([["pass", pass], ["standards", standards]], { pass, standards }),
