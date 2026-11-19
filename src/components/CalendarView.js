@@ -100,7 +100,7 @@ function RowTrack({r,xOf,rowH,showIni,offDates,closedOf,totalW,viewL=0,viewR,sti
   // v389 : la barre « Tests » s'arrêtait à la fin du packing (finProd) et non à la fin des tests (testsFin)
   const tE=tEnd;
   if(tst)push(tst,tE,"Tests","Tests · fin "+fdShort(tE));
-  const kEnd=[fin,dep?addIso(dep,-1):null].filter(Boolean).sort().pop();
+  const kEnd=fin&&tE&&fin>tE?fin:[fin,dep?addIso(dep,-1):null].filter(Boolean).sort().pop(); // v420 : le packing s'arrête à sa fin, même si le départ recule
   if(tE&&kEnd&&addIso(tE,1)<=kEnd)push(addIso(tE,1),kEnd,"Fin prod","Packaging"+(fin&&fin>tE?" · fin "+fdShort(fin):""));
   const workEnd=[tE,fin].filter(Boolean).sort().pop(),depEarly=!!(dep&&workEnd&&dep<workEnd);
   const top=Math.round(rowH*0.38),h=Math.max(20,Math.round(rowH*0.4));

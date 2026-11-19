@@ -69,7 +69,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-19-v419-achats-gantt-transport";
+const APP_BUILD_VERSION = "2026-11-19-v420-pages-cash-planificateur";
 
 const ReleasePopup = React.lazy(() => import("./components/ReleaseNotes").then(m => ({ default: m.ReleasePopup })));
 function Navigate0({ go }) { useEffect(() => { go(); }, []); return null; } // eslint-disable-line react-hooks/exhaustive-deps
@@ -1051,21 +1051,21 @@ export default function App(){
   const NAV_TREE=[
     {g:"",items:[{id:"home",l:"Accueil",icon:"home",on:view==="home",go:()=>setView("home")}]}, // v417 : l'accueil hors des rubriques
     {g:"Opérations",items:[
-      ...(planOk?[{id:"planning",l:"Planning",icon:"gantt",on:PLANNING_VIEWS.includes(view),go:()=>setView(planViewOk(lastPlanRef.current)?lastPlanRef.current:firstPlanView()),badge:unseenChanges.length,
+      ...(planOk?[{id:"planning",l:"Planning",icon:"gantt",on:PLANNING_VIEWS.includes(view),go:()=>setView(firstPlanView()),badge:unseenChanges.length,
         subs:[["table","Liste"],["gantt","Gantt"],["calendar","Calendrier"],...(isOwner?[["planner","Planificateur"]]:[]),["changes","Modifications"]].filter(([id])=>planViewOk(id)).map(([id,l])=>({id,l,on:view===id,go:()=>setView(id)}))}]:[]),
-      ...(canSeeTests?[{id:"tests",l:"Tests",icon:"check",on:view==="tests",go:()=>setView("tests"),
+      ...(canSeeTests?[{id:"tests",l:"Tests",icon:"check",on:view==="tests",go:()=>{setTestsSub(testsAllowed[0]||"semaine");setView("tests");},
         subs:[["semaine","Par semaine"],["testers","Par testeur"],["catalog","Catalogue"],["checklists","Checklists"]].filter(([id])=>testsAllowed.includes(id)).map(([id,l])=>({id,l,on:view==="tests"&&testsSub===id,go:()=>{setTestsSub(id);setView("tests");}}))}]:[]),
-      ...(canProdTurb?[{id:"turbines",l:"Turbines",icon:"gauge",on:view==="turbines",go:()=>setView("turbines"),
+      ...(canProdTurb?[{id:"turbines",l:"Turbines",icon:"gauge",on:view==="turbines",go:()=>{setTurbTab(turbAllowed[0]||"prod");setView("turbines");},
         subs:[["prod","Production"],["orc","Besoins ORC et SAV"]].filter(([id])=>turbAllowed.includes(id)).map(([id,l])=>({id,l,on:view==="turbines"&&turbTab===id,go:()=>{setTurbTab(id);setView("turbines");}}))}]:[]),
-      ...(canAchats?[{id:"achats",l:"Achats / Appro",icon:"inbox",on:view==="achats",go:()=>setView("achats"),
+      ...(canAchats?[{id:"achats",l:"Achats / Appro",icon:"inbox",on:view==="achats",go:()=>{setAchTab("projets");setView("achats");},
         subs:[["projets","Projets"],["synthese","Synthèse Appro"],["po","PO"],["fournisseurs","Fournisseurs"],["articles","Articles"],["nomenclatures","Nomenclatures"],["configuration","Configuration"],["reglages","Réglages"]].filter(([id])=>id!=="reglages"||achEdit||isOwner).map(([id,l])=>({id,l,on:view==="achats"&&achTab===id,go:()=>{setAchTab(id);setView("achats");}}))}]:[]),
-      ...(canSav&&savAllowed.length?[{id:"sav",l:"SAV / MES",icon:"wrench",on:view==="sav",go:()=>openSav(savAllowed.includes(savSub)?savSub:savAllowed[0]),
+      ...(canSav&&savAllowed.length?[{id:"sav",l:"SAV / MES",icon:"wrench",on:view==="sav",go:()=>openSav(savAllowed[0]),
         subs:[["tickets","Tickets"],["inters","Interventions"],["planning","Planning des équipes"],["dispo","Disponibilités"],["parc","Parc"],["kpi","KPI"],["competences","Compétences"]].filter(([id])=>savAllowed.includes(id)).map(([id,l])=>({id,l,on:view==="sav"&&savSub===id,go:()=>openSav(id)}))}]:[]),
       ...(comOk?[{id:"comments",l:"Commentaires",icon:"comments",on:view==="comments",go:()=>setView("comments")}]:[])]}, // v316 : Commentaires dans Opérations
     {g:"Gestion",items:[
       ...(projOk?[{id:"projets",l:"Projets",icon:"manager",on:mgrOn(["fiche","hebdo","serie","orc"]),go:goMgr(["fiche","hebdo","serie"].find(t=>!mgrHidden.includes(t))||"fiche"),
         subs:[["fiche","Fiches projet"],["hebdo","Point hebdo"],["serie","Machines ORC"]].filter(([id])=>!mgrHidden.includes(id)).map(([id,l])=>({id,l,on:mgrOn(id==="serie"?["serie","orc"]:[id]),go:goMgr(id)}))}]:[]),
-      ...(canCash?[{id:"cashin",l:"Finance",icon:"euro",on:view==="cashin",go:()=>setView("cashin")}]:[]),
+      ...(canCash?[{id:"cashin",l:"Finance",icon:"euro",on:view==="cashin",go:()=>{setCashSub("table");setView("cashin");}}]:[]),
       ...(pilOk?[{id:"pilotage",l:"Pilotage",icon:"chart",on:mgrOn(["derives","retards","retardsKpi"]),go:goMgr((isOwner||accMe)&&!mgrHidden.includes("derives")?"derives":"retards"),
         subs:[...(isOwner||accMe?[["derives","KPI"]]:[]),["retards","Retards"]].filter(([id])=>!mgrHidden.includes(id)).map(([id,l])=>({id,l,on:mgrOn(id==="retards"?["retards","retardsKpi"]:[id]),go:goMgr(id)}))}]:[])]},
     {g:"Administration",items:[
@@ -1186,7 +1186,7 @@ export default function App(){
         <div id={"enogia-grp-"+g} key={g+"-"+(grpAnim[g]||0)} role="group" aria-label={g||"Accueil"} className={(closed?"enogia-grp-closed":"")+(grpAnim[g]?" enogia-cl-in":"")} style={{display:"flex",flexDirection:"column",gap:4}}>
         {items.map(it=>{const on=it.on,hasSubs=it.subs&&it.subs.length>1,showSubs=(on||subsOpen.has(it.id))&&hasSubs;return(<React.Fragment key={it.id}>
           <div style={{position:"relative"}}>
-          <button className="enogia-nav-btn e-hov e-hov-ink" data-on={on?"1":"0"} onClick={()=>{if(coarse&&!on&&hasSubs&&!subsOpen.has(it.id)){togSubs(it.id);return;}it.go();if(!hasSubs)setNavPeek(false);}} /* v381 : une entrée à sous-pages garde le menu ouvert : ses sous-pages se déplient sous elle */ title={it.l} aria-label={it.badge?it.l+", "+it.badge+" nouvelle"+(it.badge>1?"s":"")+" mise"+(it.badge>1?"s":"")+" à jour":it.l} aria-current={on?"page":undefined}
+          <button className="enogia-nav-btn e-hov e-hov-ink" data-on={on?"1":"0"} onClick={()=>{if(coarse&&!on&&hasSubs&&!subsOpen.has(it.id)){togSubs(it.id);return;}it.go();try{window.scrollTo({top:0});}catch(e){}if(!hasSubs)setNavPeek(false);}} /* v381 : une entrée à sous-pages garde le menu ouvert : ses sous-pages se déplient sous elle */ title={it.l} aria-label={it.badge?it.l+", "+it.badge+" nouvelle"+(it.badge>1?"s":"")+" mise"+(it.badge>1?"s":"")+" à jour":it.l} aria-current={on?"page":undefined}
             style={{position:"relative",width:navCompact?40:"100%",height:40,borderRadius:navCompact?12:12,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:navCompact?"center":"flex-start",gap:12,padding:navCompact?0:"0 12px",background:on?NAV.bgOn:"transparent",color:on?NAV.inkOn:NAV.ink,fontFamily:T.font,fontSize:FZ.sm,fontWeight:on?600:500,whiteSpace:"nowrap",transition:"background var(--e-dur-menu) ease, color var(--e-dur-menu) ease","--nav-mark":NAV.mark,"--e-hov-bg":NAV.hover,"--e-hov-ink":NAV.hoverInk}}
             aria-expanded={hasSubs?!!showSubs:undefined}>
             <NavIcon name={it.icon} size={19}/>{!navCompact&&<span className="enogia-nav-lab" style={{flex:1,textAlign:"left"}}>{it.l}</span>}{hasSubs&&!navCompact&&<span aria-hidden="true" style={{width:28,flexShrink:0}}/>}{it.id==="planning"&&<ChangesBadge n={unseenChanges.length}/>}</button>
@@ -1196,7 +1196,7 @@ export default function App(){
           {hasSubs&&!navCompact&&on&&<span aria-hidden="true" style={{position:"absolute",right:12,top:13,display:"inline-flex",opacity:.6,color:NAV.inkOn,pointerEvents:"none"}}><NavIcon name="chevronDown" size={13}/></span>}
           </div>
           {showSubs&&<div role="group" aria-label={"Pages de "+it.l} className="enogia-nav-subs enogia-cl-in" style={{display:"flex",flexDirection:"column",margin:"0 0 4px 30px",paddingLeft:8,borderLeft:"1px solid "+(NAV.industrial?"rgba(255,255,255,.16)":T.line)}}>
-            {it.subs.map(sb=><button key={sb.id} type="button" className="enogia-nav-sub" onClick={()=>{sb.go();setNavPeek(false);}} aria-current={sb.on?"page":undefined}
+            {it.subs.map(sb=><button key={sb.id} type="button" className="enogia-nav-sub" onClick={()=>{sb.go();try{window.scrollTo({top:0});}catch(e){}setNavPeek(false);}} aria-current={sb.on?"page":undefined}
               style={{border:"none",background:"transparent",textAlign:"left",cursor:"pointer",padding:"6px 8px",minHeight:30,borderRadius:8,fontFamily:T.font,fontSize:FZ.sm,fontWeight:sb.on?600:500,color:sb.on?NAV.inkOn:NAV.ink,whiteSpace:"nowrap"}}>{sb.l}</button>)}
           </div>}
         </React.Fragment>);})}

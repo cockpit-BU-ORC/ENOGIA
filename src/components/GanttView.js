@@ -211,7 +211,7 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
 
     {/* v184 : légende de la maquette validée — v283 : remontée sous la barre d'outils (toujours visible) */}
     <div style={{padding:"6px 18px",borderBottom:"1px solid "+T.line,display:"flex",gap:"6px 18px",flexWrap:"wrap",alignItems:"center",background:T.surface,fontSize:FZF.sm,color:T.ink700}}>
-      {[["Production",stageSoft().production.solid],["Tests",stageSoft().tests.solid],["Packaging → départ",stageSoft().finProd.solid]].map(([l,c])=><span key={l} style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:18,height:10,borderRadius:4,background:c}}/>{l}</span>)}
+      {[["Production",stageSoft().production.solid],["Tests",stageSoft().tests.solid],["Packaging",stageSoft().finProd.solid],["Attente du départ","repeating-linear-gradient(135deg,"+T.ink300+" 0 2px,transparent 2px 6px)"]].map(([l,c])=><span key={l} style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:18,height:10,borderRadius:4,background:c}}/>{l}</span>)}
       <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:10,height:10,background:stageSoft().arrivee.solid,transform:"rotate(45deg)"}}/>Arrivée</span>
       <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:10,height:10,background:stageSoft().depart?stageSoft().depart.solid:stageSoft().finProd.solid,transform:"rotate(45deg)"}}/>Départ</span>
       <span style={{display:"inline-flex",alignItems:"center",gap:6}}><span aria-hidden="true" style={{width:10,height:10,boxSizing:"border-box",border:"2px solid "+T.ink500,transform:"rotate(45deg)"}}/>Départ initial</span>
@@ -282,7 +282,8 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
               const p0=dp&&dp>arr?dp:arr; // v312 : début de production (planificateur)
               // v389 : plus de barre de réception (losange d'arrivée) ; Tests = jusqu'à la fin des tests (testsFin), puis packaging jusqu'au départ
               const tE=dOf(r.testsFin)||fin,end=dOf(wEnd),early=!!(dep&&end&&dep<end);
-              const cuts=[[p0,tst||tE||dep,S.production.solid,"Production"],[tst,tE||dep,S.tests.solid,"Tests"],[tE||tst,end,S.finProd.solid,"Packaging → départ"]].filter(([x,y])=>x&&y&&y>x);
+              const packEnd=fin&&tE&&fin>tE?fin:end,waitCol="repeating-linear-gradient(135deg,"+T.ink300+" 0 2px,transparent 2px 6px)";
+              const cuts=[[p0,tst||tE||dep,S.production.solid,"Production"],[tst,tE||dep,S.tests.solid,"Tests"],[tE||tst,packEnd,S.finProd.solid,"Packaging"],[packEnd,end,waitCol,"Attente du départ"]].filter(([x,y])=>x&&y&&y>x);
               const total=Math.max(1,end-p0);
               const dg=(d,col,lab,warn)=>{if(!d)return null;const x=xOf(d);return <div key={lab} title={lab} style={{position:"absolute",left:x-6,top:"50%",marginTop:-10,width:12,height:12,background:col,transform:"rotate(45deg)",zIndex:4,boxShadow:"0 0 0 1.5px "+(warn?T.red600:T.card)}}/>;};
               const ini=r.drift?bpct(r.arrivee,new Date(new Date(r.depart).getTime()-r.drift*86400000)):null;

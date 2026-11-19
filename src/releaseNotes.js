@@ -7,6 +7,19 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v420",
+    date: "2026-11-19",
+    title: "V420 : Retour en haut de la première sous-page, Cash par PJ et par mois, paiements mensuels, planificateur allégé et buffers",
+    items: [
+      { t: "Navigation", d: "Quand on revient sur une page par le menu, elle s'ouvre sur sa première sous-page, tout en haut." },
+      { t: "Cash par PJ et par mois", d: "Les cases en retard (encaissement prévu dépassé, non reçu) sont en rouge ; le survol et les fenêtres de détail donnent le nom du projet à côté du n° de PJ." },
+      { t: "Paiements mensuels", d: "Nouvelle colonne « Mensualités » dans les jalons : un jalon payé chaque mois (ex. loyer sur 2 ans) se répartit, à parts égales, un mois après l'autre à partir de son encaissement prévu, dans Cash par mois et Cash par PJ et par mois." },
+      { t: "Planificateur", d: "La ressource (atelier, testeur) n'est plus affichée ; l'ajout de tâche tient sur une ligne fine « ＋ tâche »." },
+      { t: "Packing", d: "Décaler un départ n'allonge plus le packing dans le Gantt ni le Calendrier : le packing s'arrête à sa fin, l'attente jusqu'au départ est hachurée." },
+      { t: "Buffers", d: "Modèles par gamme : un buffer (jours ouvrés) pour la production et pour les tests. Il est dessiné en hachuré après la tâche ; « Buffers pris en compte » (menu Affichage) allonge les tâches et décale les dates suivantes." },
+    ],
+  },
+  {
     id: "2026-11-v419",
     date: "2026-11-19",
     title: "V419 : Achats / Appro : délai de commande et délai de transport séparés dans le Gantt",

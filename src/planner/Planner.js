@@ -83,6 +83,7 @@ function Modal({ title, onClose, children, width = 720 }) {
 // durée (jours ouvrés) et travail (heures) des phases Production, Tests et Fin de production. « Proposer » part de la moyenne
 // des PJ de la gamme dans le plan ; « Appliquer » écrit ces durées sur les PJ de la gamme (les dates imposées sont gardées).
 const TPL_STEPS = [["production", "Production"], ["tests", "Tests"], ["finProd", "Packing"]];
+const BUF_STEPS = [["production", "Production"], ["tests", "Tests"]]; // v420 : buffers par gamme
 function gammeOfPj(pj, rows) { const r = (rows || []).find(x => x.pj === pj); return (r && r.gamme) || "Sans gamme"; }
 // v258 (demandé : « quand j'applique les modèles par gamme, ils ne s'appliquent qu'aux PJ non commencés en production ») :
 // started = PJ dont la production a commencé (début ≤ aujourd'hui, ou état Montage, Élec, Tests, Packaging, Expédiée) : jamais touchés.
@@ -91,23 +92,30 @@ function TemplatesDialog({ plan, rows, started, onClose, onApply }) {
   const avg = g => { const L = (plan.pjs || []).filter(x => gammeOfPj(x.pj, rows) === g), o = {}; TPL_STEPS.forEach(([k]) => { const v = L.map(x => x.steps && x.steps[k]).filter(Boolean); o[k] = { dur: v.length ? Math.round(v.reduce((a, b) => a + (Number(b.dur) || 0), 0) / v.length) : 0, work: v.some(b => b.work != null) ? Math.round(v.reduce((a, b) => a + (Number(b.work) || 0), 0) / v.length) : null }; }); return o; };
   const [tpl, setTpl] = useState(() => { const t = { ...(plan.templates || {}) }; gammes.forEach(g => { if (!t[g]) t[g] = avg(g); }); return t; });
   const set = (g, k, f, v) => setTpl(t => ({ ...t, [g]: { ...t[g], [k]: { ...(t[g] && t[g][k]), [f]: v === "" ? null : Math.max(0, Number(v) || 0) } } }));
-  const applyG = (g, np) => { let out = np; (out.pjs || []).filter(x => gammeOfPj(x.pj, rows) === g && !started.has(x.pj)).forEach(x => TPL_STEPS.forEach(([k]) => { const m = tpl[g] && tpl[g][k]; if (!m || !x.steps || !x.steps[k]) return; const patch = { dur: m.dur }; if (m.work != null) patch.work = m.work; out = setStep(out, x.pj, k, patch); })); return out; };
-  const save = (all, g) => { let np = { ...plan, templates: tpl }; if (all) gammes.forEach(x => { np = applyG(x, np); }); else if (g) np = applyG(g, np); onApply(np); };
+  const applyG = (g, np) => { let out = np; (out.pjs || []).filter(x => gammeOfPj(x.pj, rows) === g && !started.has(x.pj)).forEach(x => TPL_STEPS.forEach(([k]) => { const m = tpl[g] && tpl[g][k]; if (!m || !x.steps || !x.steps[k]) return; const patch = { dur: m.dur }; if (m.work != null) patch.work = m.work; out = setStep(out, x.pj, k, patch); }));
+    // v420 : les buffers valent pour tous les PJ de la gamme (même commencés) ; ils ne changent les dates que si « pris en compte »
+    (out.pjs || []).filter(x => gammeOfPj(x.pj, rows) === g).forEach(x => BUF_STEPS.forEach(([k]) => { const b = tpl[g] && tpl[g][k] && tpl[g][k].buf; if (x.steps && x.steps[k] && (Number(x.steps[k].buf) || 0) !== (Number(b) || 0)) out = setStep(out, x.pj, k, { buf: Number(b) || 0 }); }));
+    return out; };
+  const [bufOn, setBufOn] = useState(!!plan.bufOn);
+  const save = (all, g) => { let np = { ...plan, templates: tpl, bufOn }; if (all) gammes.forEach(x => { np = applyG(x, np); }); else if (g) np = applyG(g, np); onApply(np); };
   const n = g => (plan.pjs || []).filter(x => gammeOfPj(x.pj, rows) === g).length;
   const nTodo = g => (plan.pjs || []).filter(x => gammeOfPj(x.pj, rows) === g && !started.has(x.pj)).length;
   return (<Modal title="Modèles par gamme" onClose={onClose} width={860}>
     <div style={{ fontSize: 13, color: T.ink500, lineHeight: 1.5, marginBottom: 10 }}>Durée habituelle (jours ouvrés) et travail (heures atelier) de chaque phase, par gamme. « Appliquer » recalcule seulement les PJ de la gamme <b>dont la production n'a pas commencé</b> ; les PJ en cours ne changent pas, les dates imposées restent.</div>
     <div style={{ overflowX: "auto" }}><table style={{ borderCollapse: "collapse", width: "100%", fontSize: 13 }}>
-      <thead><tr><th style={{ textAlign: "left", padding: "6px 8px", color: T.ink500, fontWeight: 600 }}>Gamme</th>{TPL_STEPS.map(([k, l]) => <th key={k} colSpan={2} style={{ textAlign: "left", padding: "6px 8px", color: T.ink500, fontWeight: 600 }}>{l} <span style={{ fontWeight: 400 }}>(j · h)</span></th>)}<th /></tr></thead>
+      <thead><tr><th style={{ textAlign: "left", padding: "6px 8px", color: T.ink500, fontWeight: 600 }}>Gamme</th>{TPL_STEPS.map(([k, l]) => <th key={k} colSpan={2} style={{ textAlign: "left", padding: "6px 8px", color: T.ink500, fontWeight: 600 }}>{l} <span style={{ fontWeight: 400 }}>(j · h)</span></th>)}{BUF_STEPS.map(([k, l]) => <th key={"b" + k} style={{ textAlign: "left", padding: "6px 8px", color: T.ink500, fontWeight: 600 }} title="Jours ouvrés de marge après la tâche">Buffer {l.toLowerCase()} <span style={{ fontWeight: 400 }}>(j)</span></th>)}<th /></tr></thead>
       <tbody>{gammes.map(g => <tr key={g} style={{ borderTop: "1px solid " + T.line }}>
         <td style={{ padding: "6px 8px", fontWeight: 600, whiteSpace: "nowrap" }}>{g} <span style={{ fontWeight: 400, color: T.ink500 }}>· {nTodo(g)} / {n(g)} PJ à venir</span></td>
         {TPL_STEPS.map(([k]) => <React.Fragment key={k}>
           <td style={{ padding: "4px 4px" }}><input type="number" min={0} aria-label={g + " " + k + " durée"} value={(tpl[g] && tpl[g][k] && tpl[g][k].dur != null) ? tpl[g][k].dur : ""} onChange={e => set(g, k, "dur", e.target.value)} style={{ ...INP, width: 64 }} /></td>
           <td style={{ padding: "4px 4px" }}><input type="number" min={0} aria-label={g + " " + k + " travail"} value={(tpl[g] && tpl[g][k] && tpl[g][k].work != null) ? tpl[g][k].work : ""} placeholder="h" onChange={e => set(g, k, "work", e.target.value)} style={{ ...INP, width: 64 }} /></td>
         </React.Fragment>)}
-        <td style={{ padding: "4px 4px", whiteSpace: "nowrap" }}><button style={{ ...BTN }} onClick={() => setTpl(t => ({ ...t, [g]: avg(g) }))} title="Reprendre la moyenne des PJ de cette gamme dans le plan">Proposer</button> <button style={{ ...BTN }} onClick={() => { save(false, g); }}>Appliquer</button></td>
+        {BUF_STEPS.map(([k]) => <td key={"b" + k} style={{ padding: "4px 4px" }}><input type="number" min={0} aria-label={g + " buffer " + k} value={(tpl[g] && tpl[g][k] && tpl[g][k].buf != null) ? tpl[g][k].buf : ""} placeholder="0" onChange={e => set(g, k, "buf", e.target.value)} style={{ ...INP, width: 56, borderStyle: "dashed" }} /></td>)}
+        <td style={{ padding: "4px 4px", whiteSpace: "nowrap" }}><button style={{ ...BTN }} onClick={() => setTpl(t => ({ ...t, [g]: { ...avg(g), ...Object.fromEntries(BUF_STEPS.map(([k]) => [k, { ...avg(g)[k], buf: t[g] && t[g][k] ? t[g][k].buf : null }])) } }))} title="Reprendre la moyenne des PJ de cette gamme dans le plan">Proposer</button> <button style={{ ...BTN }} onClick={() => { save(false, g); }}>Appliquer</button></td>
       </tr>)}</tbody>
     </table></div>
+    <label style={{ display: "flex", alignItems: "flex-start", gap: 8, marginTop: 12, fontSize: 13, color: T.ink700, cursor: "pointer", maxWidth: "75ch" }}><input type="checkbox" checked={bufOn} onChange={e => setBufOn(e.target.checked)} style={{ marginTop: 2 }} />
+      <span><b style={{ fontWeight: 600, color: T.ink900 }}>Prendre en compte les buffers dans les dates</b> — décoché, ils sont seulement dessinés en hachuré après la production et les tests ; coché, les tâches s'allongent de leur buffer et les dates suivantes reculent (la charge atelier ne compte pas les jours de buffer).</span></label>
     <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 14 }}>
       <button style={{ ...BTN }} onClick={onClose}>Fermer</button>
       <button style={{ ...BTN }} onClick={() => { save(false); onClose(); }}>Enregistrer les modèles</button>
@@ -648,6 +656,7 @@ export function PlannerView({ planLoaded, planDoc, rows, closurePeriods, product
       <Pop width={270} align="left" trigger={(o, t) => <button className="pg-tb" aria-haspopup="menu" aria-expanded={o} onClick={t}>Affichage ▾</button>}>
         {close => (<div style={{ display: "flex", flexDirection: "column" }}>
           <div style={{ fontSize: 12, fontWeight: 500, color: T.ink500, padding: "2px 8px" }}>Afficher</div>
+          <label title="Buffers réglés dans « Modèles par gamme » : coché, ils allongent la production et les tests ; décoché, ils sont seulement dessinés" style={{ display: "flex", alignItems: "center", gap: 8, minHeight: 32, padding: "0 8px", cursor: "pointer", fontWeight: 600, color: T.ink900 }}><input type="checkbox" checked={!!plan.bufOn} onChange={() => apply({ ...plan, bufOn: !plan.bufOn })} />Buffers pris en compte</label>
           <label title="Masquer la charge atelier pour agrandir le Gantt" style={{ display: "flex", alignItems: "center", gap: 8, minHeight: 32, padding: "0 8px", cursor: "pointer", fontWeight: 600, color: T.ink900 }}><input type="checkbox" checked={!ui.loadHide} onChange={() => setUi({ loadHide: !ui.loadHide })} />Charge atelier en bas</label>
           <label title="Toutes les flèches de liens (sinon seulement celles du PJ sélectionné)" style={{ display: "flex", alignItems: "center", gap: 8, minHeight: 32, padding: "0 8px", cursor: "pointer", fontWeight: 600, color: T.ink900 }}><input type="checkbox" checked={!!ui.links} onChange={() => setUi({ links: !ui.links })} />Tous les liens</label>
           {ui.view !== "lanes" && ui.view !== "changes" && <>

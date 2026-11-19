@@ -134,7 +134,10 @@ export function schedule(plan, cal) {
       const st = p.steps && p.steps[step];
       if (!st) return;
       const ms = !!STEP_IS_MS[step];
-      nodes[nodeKey(p.pj, step)] = { pj: p.pj, step, ms, dur: ms ? 0 : Math.max(1, st.dur || 1), noDur: !ms && !(st.dur > 0), snet: st.snet || null, lvl: st.lvl || null, s: null, f: null, start: null, finish: null, driver: null, snetIgnored: false };
+      // v420 (demandé : « des temps de buffer par gamme pour la prod et les tests, visibles et pris en compte ou non ») : buf = jours ouvrés ;
+      // plan.bufOn = la tâche s'allonge de son buffer (dates et liens suivent) ; sinon le buffer est seulement dessiné après la tâche
+      const buf = ms ? 0 : Math.max(0, Math.round(Number(st.buf) || 0)), bufIn = !!plan.bufOn && buf > 0;
+      nodes[nodeKey(p.pj, step)] = { pj: p.pj, step, ms, buf, bufIn, dur: ms ? 0 : Math.max(1, st.dur || 1) + (bufIn ? buf : 0), noDur: !ms && !(st.dur > 0), snet: st.snet || null, lvl: st.lvl || null, s: null, f: null, start: null, finish: null, driver: null, snetIgnored: false };
     });
   });
   const incoming = {}; const outCount = {}; const indeg = {};
@@ -239,7 +242,8 @@ function atelierStep(plan, pj, step) {
   return !!st && (st.res || "atelier") === "atelier" && st.phase !== "tests";
 }
 // v292 : jours réellement travaillés d'une tâche (f − s + 1 jours ouvrés, moins ses jours sans production), au moins 1
-const workedDays = n => Math.max(1, (n.f - n.s + 1) - (n.off ? n.off.size : 0));
+const workedDays = n => Math.max(1, (n.f - n.s + 1) - (n.off ? n.off.size : 0) - (n.bufIn ? n.buf : 0)); // v420 : jours de buffer sans charge
+const workEnd = n => n.f - (n.bufIn ? n.buf : 0);
 export function atelierPhases(plan, sched) {
   const out = []; const ord = orderOf(plan, "prod");
   (plan.pjs || []).forEach((p, pi) => {
@@ -248,7 +252,7 @@ export function atelierPhases(plan, sched) {
     ["production", "finProd"].forEach(step => {
       const n = sched.nodes[nodeKey(p.pj, step)]; if (!n || n.s === null || !h[step]) return;
       const pos = ord.indexOf(p.pj);
-      out.push({ key: nodeKey(p.pj, step), pj: p.pj, step, s: n.s, f: n.f, dur: n.dur, hours: h[step], daily: h[step] / workedDays(n), prio: pos >= 0 ? pos : 1000 + pi, off: n.off || null });
+      out.push({ key: nodeKey(p.pj, step), pj: p.pj, step, s: n.s, f: workEnd(n), dur: n.dur, hours: h[step], daily: h[step] / workedDays(n), prio: pos >= 0 ? pos : 1000 + pi, off: n.off || null });
     });
     // v211 : une tâche libre affectée à l'atelier compte dans la charge avec ses heures
     Object.keys(p.steps || {}).filter(isCustomKey).forEach(k => {

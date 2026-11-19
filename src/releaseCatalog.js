@@ -1287,4 +1287,9 @@ export const RELEASE_CATALOG = [
   { v: "419", t: "Achats / Appro : délai de commande et délai de transport séparés dans le Gantt", items: [
     ["Gantt achats : commande + transport", "Barre réelle des PO coupée entre délai de commande et délai de transport."],
   ] },
+  { v: "420", t: "Retour en haut de la première sous-page, Cash par PJ et par mois, paiements mensuels, planificateur allégé et buffers", items: [
+    ["Navigation : première sous-page", "Une page rouverte par le menu revient sur sa première sous-page, en haut."],
+    ["Cash in : retards et mensualités", "Cash par PJ et par mois : retards en rouge, nom du projet ; jalons payés chaque mois."],
+    ["Planificateur : buffers par gamme", "Buffers de production et de tests, affichés ou pris en compte ; ressource masquée ; packing non allongé."],
+  ] },
 ];

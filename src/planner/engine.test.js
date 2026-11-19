@@ -1,4 +1,4 @@
-import { makeCalendar, initPlanFromRows, schedule, loadModel, levelPlan, shiftPj, pjDates, refreshPlanFromRows, planToRows, diffRows, setCapWeek, newPjPlan, splitBenches, benchOf, allLinks, moveStepOrder, stepKeysOf, addPhaseTask, nodeKey, startAtKeepLinks, startReason } from "./engine";
+import { setStep, makeCalendar, initPlanFromRows, schedule, loadModel, levelPlan, shiftPj, pjDates, refreshPlanFromRows, planToRows, diffRows, setCapWeek, newPjPlan, splitBenches, benchOf, allLinks, moveStepOrder, stepKeysOf, addPhaseTask, nodeKey, startAtKeepLinks, startReason } from "./engine";
 
 // v204 : le module de planification est rebranché (onglet Planificateur) — vérifie le calcul de base.
 const rows = [
@@ -110,4 +110,15 @@ test("v312 : départ changé hors planificateur reporté dans le plan, début de
   expect(a.applied).toEqual(["PJ1"]); expect(pjDates(schedule(a.plan, cal), "PJ1").depart).toBe(later);
   const b = applyPendingDeparts(plan, cal, { PJ1: { date: earlier }, PJ999: { date: later } });
   expect(pjDates(schedule(b.plan, cal), "PJ1").depart).toBe(earlier); expect(b.applied).toEqual(["PJ1"]);
+});
+
+test("v420 : buffer par gamme — dessiné seulement, ou pris en compte (la tâche s'allonge, la charge ne le compte pas)", () => {
+  const cal = makeCalendar({ closurePeriods: [] });
+  const base = initPlanFromRows(rows, cal), nk = nodeKey("PJ1", "production");
+  const withBuf = setStep(base, "PJ1", "production", { buf: 3 });
+  const off = schedule(withBuf, cal).nodes[nk], ref = schedule(base, cal).nodes[nk];
+  expect(off).toMatchObject({ buf: 3, bufIn: false, dur: ref.dur, finish: ref.finish });
+  const on = schedule({ ...withBuf, bufOn: true }, cal).nodes[nk];
+  expect(on).toMatchObject({ buf: 3, bufIn: true, dur: ref.dur + 3 });
+  expect(on.f).toBe(ref.f + 3);
 });
