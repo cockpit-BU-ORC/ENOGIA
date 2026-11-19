@@ -3098,3 +3098,13 @@ Signalé : « Enregistrement impossible : Function updateDoc() called with inval
 - Cause : la page Compétences tourne dans un cadre (`public/competences-sav.html`) ; ses objets viennent d'une autre fenêtre JavaScript, leur prototype n'est pas `Object.prototype` de la page du Cockpit, et Firestore les refuse.
 - `src/savSkills.js` : `plain` (recopie par JSON) avant chaque écriture du pont (`doc(…).set`) ; test v411 (`savSkills.test.js`).
 - Fichiers : src/savSkills.js, src/savSkills.test.js.
+
+## V412 — Compétences SAV : une vraie page du Cockpit
+
+Demandé : « je veux que ça fonctionne comme les autres cadres et pages du Cockpit ».
+
+- `src/savSkillsModel.js` (testé) : calculs repris de la page d'origine (niveau d'une catégorie d'après les compétences du manager, trimestres, objectifs par pas de 0,5, pré-remplissage depuis un score importé, trimestre figé, fiche miroir de la personne, écarts auto / manager).
+- `src/useSavSkills.js` : lecture temps réel des mêmes documents que la V405 (`planning/savSkills`, `savSkillsCat`, `savSkillsMe_<adresse>`), écritures champ par champ (`updateDoc` + `FieldPath`, valeurs recopiées par JSON), base en mémoire pour la galerie.
+- `src/components/SavSkillsPage.js` : vues Équipe · Fiche · Référentiel (`Segmented`, `btn`, `Pill`, `tableTh` / `tableTd`, `askConfirm`, `notify`), radars et courbes en SVG, pastilles 44 × 36 px avec `aria-label` ; fiche de la personne recalculée et réécrite seulement si elle change ; vue mémorisée `enogia_skills_view`.
+- Retirés : `public/competences-sav.html`, `src/components/SavSkills.js`, `src/savSkills.js` (+ test). Règles Firestore inchangées (V405, toujours à publier).
+- Fichiers : src/savSkillsModel.js (+ test), src/useSavSkills.js, src/components/SavSkillsPage.js, src/components/SavPage.js, src/styles.css.

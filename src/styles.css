@@ -1056,3 +1056,14 @@ tr[data-kbd]:active > td, tr[role="button"]:active > td, li[data-kbd]:active, li
 .pb-chip[data-pri] { background: var(--pp-ink); color: var(--pp-card); border-color: var(--pp-ink); }
 .pb-chip:disabled { opacity: .35; cursor: default; }
 @media (max-width: 1000px) { .pb-pin, .pb-pin-cover { display: block; padding: 16px; } .pb-aside { position: static; margin-bottom: 14px; } .pb-num { display: none; } .pb-pin-cover .pb-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } .pb-pop-bg { padding: 0; } .pb-pop { height: 100%; border-radius: 0; } }
+
+/* v412 : SAV / MES › Compétences (page du site) */
+.sk-root { --sk-field: var(--e-field-line, #7E8796); }
+.sk-in { min-height: 34px; box-sizing: border-box; border: 1px solid var(--sk-field); border-radius: 8px; padding: 4px 10px; background: var(--sk-card); color: var(--sk-ink); font: inherit; font-size: 14px; }
+.sk-in:focus { outline: 2px solid var(--sk-acc); outline-offset: 1px; }
+.sk-card { all: unset; position: relative; box-sizing: border-box; cursor: pointer; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 12px 14px; border: 1px solid var(--sk-line); border-radius: 12px; background: var(--sk-card); color: var(--sk-ink); transition: border-color var(--e-dur-micro) ease-out, transform var(--e-dur-micro) ease-out; }
+.sk-card:active { transform: scale(0.98); }
+.sk-card:focus-visible { outline: 2px solid var(--sk-acc); outline-offset: 2px; }
+@media (hover: hover) { .sk-card:hover { border-color: var(--sk-acc); } }
+.sk-fiche { display: grid; grid-template-columns: minmax(300px, 420px) minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (max-width: 980px) { .sk-fiche { grid-template-columns: minmax(0, 1fr); } }

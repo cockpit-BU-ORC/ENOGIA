@@ -30,7 +30,7 @@ const ST_TONE = { "À planifier": "warn", Planifiée: "info", "En cours": "accen
 const lab = { display: "flex", flexDirection: "column", gap: 4, fontSize: 12, get color() { return T.ink500; }, fontWeight: 600, minWidth: 0  }; // v346 : accesseurs (suivent le clair / sombre)
 const inp = () => ({ minHeight: 32, padding: "0 10px", borderRadius: 8, border: "1px solid " + T.line, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, boxSizing: "border-box", width: "100%" });
 const SUBS = [["tickets", "Tickets"], ["inters", "Interventions"], ["planning", "Planning des équipes"], ["dispo", "Disponibilités"], ["parc", "Parc"], ["kpi", "KPI"], ["competences", "Compétences"]];
-const SavSkills = React.lazy(() => import("./SavSkills")); // v405 : page « Compétences SAV » (cadre public/competences-sav.html)
+const SavSkills = React.lazy(() => import("./SavSkillsPage")); // v412 : Compétences SAV en page du site (plus de cadre)
 const DESC = { dispo: "Qui compte dans les ressources, jours off et congés : le planning des chefs de projet en tient compte tout de suite", tickets: "Le ticket est la demande (le problème à régler) ; une intervention est un déplacement sur site pour le traiter", inters: "Interventions sur site : équipe, dates, préparation, clôture et coûts",
   planning: "Qui est où, à la semaine ou au mois ; demandes d'intervention des chefs de projet", parc: "Machines en service, fournitures ENOGIA, contrats de maintenance et tickets ouverts", kpi: "Affectation de l'équipe, interventions, tickets et coûts sur 12 mois glissants" };
 

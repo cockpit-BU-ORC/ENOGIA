@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v412",
+    date: "2026-11-19",
+    title: "V412 : Compétences SAV : une vraie page du Cockpit",
+    items: [
+      { t: "Compétences SAV", d: "La page Compétences de SAV / MES fonctionne désormais comme les autres pages du Cockpit : mêmes boutons, mêmes tableaux, clair et sombre, plus de cadre à part." },
+      { t: "Trois vues", d: "Équipe (un radar par personne, situation par catégorie, tableau détaillé, « Figer le trimestre »), Fiche (radar, catégories, compétences niveau par niveau : auto-évaluation et manager, objectifs − / +) et Référentiel (personnes, comptes reliés, catégories, niveaux, compétences)." },
+      { t: "Chacun sa fiche", d: "Une personne reliée à son compte voit sa fiche et fait son auto-évaluation ; le responsable SAV voit toute l'équipe." },
+    ],
+  },
+  {
     id: "2026-11-v411",
     date: "2026-11-19",
     title: "V411 : Compétences SAV : l'enregistrement fonctionne",

@@ -1260,4 +1260,7 @@ export const RELEASE_CATALOG = [
   { v: "411", t: "Compétences SAV : l'enregistrement fonctionne", items: [
     ["Compétences SAV enregistrées", "Correction de l'enregistrement des compétences SAV."],
   ] },
+  { v: "412", t: "Compétences SAV : une vraie page du Cockpit", items: [
+    ["Compétences SAV en page du site", "SAV / MES › Compétences au format du Cockpit (équipe, fiche, référentiel), sans cadre."],
+  ] },
 ];
