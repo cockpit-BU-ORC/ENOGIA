@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { WidgetBoard, widgetsFromSpans } from "./WidgetBoard";
-import { T, FZ } from "../theme";
+import { T, FZ, btn } from "../theme";
 import { presenceKind, presenceDates, ETAT_META, PjPlate, getPjMeta, chefsOf, CountryFlag, SHIPPED_SINCE, countShippedYTD } from "../pjMeta";
 import { NavIcon } from "./SharedUI";
 import { planOf, catalogOf, activeSections, progressOf, effRange, isForced, testersOf, findConflicts } from "../testPlan";
@@ -12,7 +12,7 @@ import { useCashin } from "../useCashin";
 import { weeklyReport, curveGeom, fmtS } from "../cashWeekly";
 import { useRai, raiGate } from "../raiStatus";
 import { fmtEur } from "../pjProgress";
-import { transportList, CLICKUP_LIST_URL, trackOf, whenOf, TRACK } from "../transports"; // v413 : demandes de transport ClickUp
+import { transportList, CLICKUP_LIST_URL, trackOf, whenOf, TRACK, MODE_LABEL, vehicleOf, gapOf, metaOf, weightTxt, summaryOf } from "../transports"; // v413 : demandes de transport ClickUp
 import { useProdModel } from "../prodModel"; // v324 : makeModel chargé à la demande
 import { planWeeks, atelierCap, CAPA_DEFAUT } from "../loadWeeks"; // v289 : sans les graphiques du Manager
 
@@ -102,32 +102,60 @@ const Stat = ({ label, value, tone, onClick }) => <button type="button" onClick=
 // v391 (demandé : « rajouter en widget la courbe annuelle du Cash in ») : la courbe de la fiche du lundi (cashWeekly.curveGeom), aux couleurs
 // du thème ; trait plein = initial (gris) et encaissé (vert), tirets = prévu, pointillés gris = si les retards sont payés ; mois écrits dessous.
 const MS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
-// v414 : demande de transport en « suivi colis » (frise de 5 points) — lien vers ClickUp
+// v414 / v416 : demande de transport en « suivi colis » — frise de 5 points, véhicule (camion / avion / bateau), infos, détail au clic
 function TrackSteps({ x }) {
-  const t = trackOf(x);
-  return <span role="img" aria-label={"Avancement : " + TRACK[t.k] + (t.bad ? ", infos demandées au demandeur" : "")} style={{ display: "flex", alignItems: "flex-start", minWidth: 0 }}>
-    {TRACK.map((l, i) => { const done = i < t.k, now = i === t.k, line = i > 0 && i <= t.k ? T.accentInk : T.line;
-      const dot = now && t.bad ? { background: T.red600, borderColor: T.red600 } : done || (now && t.k === 4) ? { background: T.accentInk, borderColor: T.accentInk } : now ? { background: T.card, borderColor: T.accentInk, boxShadow: "0 0 0 3px " + T.accentSoft } : { background: T.card, borderColor: T.line };
-      return <span key={l} aria-hidden="true" style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, position: "relative" }}>
-        {i > 0 && <i style={{ position: "absolute", top: 5, right: "50%", width: "100%", height: 2, background: line }} />}
-        <i style={{ position: "relative", width: 12, height: 12, borderRadius: 999, border: "2px solid", boxSizing: "border-box", ...dot }} />
-        <small style={{ fontSize: 11, lineHeight: 1.2, color: now ? T.ink900 : T.ink500, fontWeight: now ? 600 : 400, whiteSpace: "nowrap" }}>{l}</small></span>; })}
+  const t = trackOf(x), v = vehicleOf(x), col = v.parked ? T.ink500 : T.accentInk;
+  return <span role="img" aria-label={"Avancement : " + TRACK[t.k] + (t.bad ? ", infos demandées au demandeur" : "") + " · " + MODE_LABEL[v.mode] + (x.modeEst ? " (estimé)" : "")} style={{ position: "relative", display: "block", paddingTop: 20, minWidth: 0 }}>
+    <span className={"enogia-veh" + (v.moving ? " enogia-veh-go" : "")} aria-hidden="true" title={MODE_LABEL[v.mode] + (x.modeEst ? " (estimé d'après la demande)" : "")}
+      style={{ position: "absolute", top: 0, left: v.pos + "%", marginLeft: -11, color: col, display: "inline-grid", lineHeight: 0 }}><NavIcon name={v.mode} size={22} /></span>
+    <span style={{ display: "flex", alignItems: "flex-start" }}>
+      {TRACK.map((l, i) => { const done = i < t.k, now = i === t.k, line = i > 0 && i <= t.k ? T.accentInk : T.line, next = t.k === 3 && i === 4;
+        const dot = now && t.bad ? { background: T.red600, borderColor: T.red600 } : done || (now && t.k === 4) ? { background: T.accentInk, borderColor: T.accentInk } : now ? { background: T.card, borderColor: T.accentInk, boxShadow: "0 0 0 3px " + T.accentSoft } : { background: T.card, borderColor: T.line };
+        return <span key={l} aria-hidden="true" style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, position: "relative" }}>
+          {i > 0 && <i style={{ position: "absolute", top: 5, right: "50%", width: "100%", height: 2, background: next ? "repeating-linear-gradient(90deg," + T.accentInk + " 0 4px,transparent 4px 8px)" : line }} />}
+          <i style={{ position: "relative", width: 12, height: 12, borderRadius: 999, border: "2px solid", boxSizing: "border-box", ...dot }} />
+          <small style={{ fontSize: 11, lineHeight: 1.2, color: now ? T.ink900 : T.ink500, fontWeight: now ? 600 : 400, whiteSpace: "nowrap" }}>{l}</small></span>; })}
+    </span>
   </span>;
 }
-function TransportTrack({ x, first, wide, when }) {
-  const t = trackOf(x), who = <span style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
-    <span style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>{x.pj ? <PjPlate pj={x.pj} /> : x.ref ? <span style={{ fontFamily: T.fontMono, fontSize: 12, fontWeight: 600, color: T.ink900 }}>{x.ref}</span> : null}
+const TAG = (bg, ink) => ({ display: "inline-flex", alignItems: "center", gap: 4, height: 20, padding: "0 7px", borderRadius: 999, fontSize: 12, fontWeight: 500, background: bg, color: ink, whiteSpace: "nowrap" });
+const TFMT = s => { if (!s) return "—"; const d = new Date(String(s).slice(0, 10) + "T12:00:00"); return isNaN(d) ? "—" : d.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" }).replace(".", ""); };
+function TransportTrack({ x, first, wide, when, gap, onOpenPj }) {
+  const [open, setOpen] = React.useState(false), t = trackOf(x), meta = metaOf(x), v = vehicleOf(x);
+  const who = <span style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}>
+    <span style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>{x.pj ? <PjPlate pj={x.pj} /> : x.ref ? <span style={{ fontFamily: T.fontMono, fontSize: 12, fontWeight: 600, color: T.ink900 }}>{x.ref}</span> : null}
       {x.urgent && <span style={{ fontSize: 12, fontWeight: 600, color: T.red600 }}>urgent</span>}
-      {t.bad && <span style={{ fontSize: 12, fontWeight: 500, padding: "1px 8px", borderRadius: 999, background: T.red100, color: T.red600 }}>Infos demandées</span>}</span>
-    <span style={{ fontSize: FZ.sm, color: T.ink700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.from || x.to ? <><b style={{ fontWeight: 500, color: T.ink900 }}>{x.from || "?"}</b> → {x.to || "?"}</> : x.name || "Demande sans titre"}{x.colis > 1 ? " · " + x.colis + " colis" : ""}</span></span>;
-  const date = <span style={{ fontSize: FZ.xs, fontWeight: 500, color: /passé/.test(when) ? T.amber600 : T.ink500, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", textAlign: "right" }}>{when} <span aria-hidden="true">↗</span></span>;
-  return <a href={x.url} target="_blank" rel="noopener noreferrer" className="enogia-homeline" title={(x.name || "") + " · ouvrir dans ClickUp"}
-    style={{ display: "grid", gridTemplateColumns: wide ? "minmax(0, 1fr) 380px 170px" : "minmax(0, 1fr) auto", gap: wide ? 14 : "6px 10px", alignItems: "center", padding: "10px 6px", borderTop: first ? "none" : "1px solid " + T.line, textDecoration: "none", color: T.ink900, fontFamily: T.font }}>
-    {who}{wide ? <><TrackSteps x={x} />{date}</> : <>{date}<span style={{ gridColumn: "1 / -1" }}><TrackSteps x={x} /></span></>}
-  </a>;
+      {t.bad && <span style={TAG(T.red100, T.red600)}>Infos demandées</span>}
+      {x.horsUE && <span style={TAG(T.info100, T.info600)}>hors UE</span>}
+      {x.dangereux && <span style={TAG(T.amber100, T.amber600)} title="Matière dangereuse"><NavIcon name="warning" size={12} />{(x.un || []).join(", ") || "matière dangereuse"}</span>}</span>
+    <span style={{ fontSize: FZ.sm, color: T.ink700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.from || x.to ? <><b style={{ fontWeight: 500, color: T.ink900 }}>{x.from || "?"}</b> → {x.to || "?"}</> : x.name || "Demande sans titre"}</span>
+    {meta.length > 0 && <span style={{ display: "flex", gap: "2px 10px", flexWrap: "wrap", fontSize: 12, color: T.ink500 }}>{meta.map(m => <span key={m}>{m}</span>)}</span>}</span>;
+  const date = <span style={{ fontSize: FZ.xs, fontWeight: 500, color: T.ink500, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", textAlign: "right" }}>{when}
+    {gap && <span style={{ display: "block", color: gap.tone === "late" ? T.amber600 : T.emerald600 }}>{gap.t}</span>}</span>;
+  const cells = [["Mode", MODE_LABEL[v.mode] + (x.modeEst ? " (estimé)" : "")], ["Transporteur", x.transporteur || "à choisir"], ["Colis", [x.colis, x.cond].filter(Boolean).join(" · ") || "—"], ["Poids total", weightTxt(x.poids) || "—"], ["Incoterm", x.incoterm || "—"], ["Demandeur", x.demandeur || "—"]];
+  const th = { textAlign: "left", fontSize: 12, fontWeight: 500, color: T.ink500, padding: "4px 8px", borderBottom: "1px solid " + T.line }, td = { padding: "6px 8px", borderBottom: "1px solid " + T.line, fontSize: 13, fontVariantNumeric: "tabular-nums" };
+  return <div style={{ borderTop: first ? "none" : "1px solid " + T.line }}>
+    <button type="button" className="enogia-homeline" aria-expanded={open} onClick={() => setOpen(o => !o)} title={(x.name || "") + " · détail"}
+      style={{ all: "unset", position: "relative", boxSizing: "border-box", width: "100%", cursor: "pointer", display: "grid", gridTemplateColumns: wide ? "minmax(0, 1fr) 380px 170px" : "minmax(0, 1fr) auto", gap: wide ? 14 : "6px 10px", alignItems: "center", padding: "10px 6px", borderRadius: 8, color: T.ink900, fontFamily: T.font }}>
+      {who}{wide ? <><TrackSteps x={x} />{date}</> : <>{date}<span style={{ gridColumn: "1 / -1" }}><TrackSteps x={x} /></span></>}
+    </button>
+    {open && <div className="enogia-cl-in" style={{ padding: "2px 6px 14px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10 }}>{cells.map(([k, val]) => <div key={k} style={{ borderTop: "1px solid " + T.line, paddingTop: 6 }}><span style={{ display: "block", fontSize: 12, color: T.ink500 }}>{k}</span><b style={{ fontWeight: 500, fontSize: 13 }}>{val}</b></div>)}</div>
+      <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 10 }}><thead><tr><th style={th}><span className="enogia-sr">Étape</span></th><th style={th}>Souhaité</th><th style={th}>Prévu</th><th style={th}>Réel</th></tr></thead>
+        <tbody><tr><td style={td}>Enlèvement</td><td style={td}>{TFMT(x.enlSouhaitee)}</td><td style={td}>{TFMT(x.enlPrevue)}</td><td style={td}>{TFMT(x.enlReelle)}</td></tr>
+          <tr><td style={td}>Livraison</td><td style={td}>{TFMT(x.livSouhaitee)}</td><td style={td}>{TFMT(x.livPrevue)}</td><td style={td}>{TFMT(x.livReelle)}</td></tr></tbody></table>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+        <a href={x.url} target="_blank" rel="noopener noreferrer" style={{ ...btn("sec", "sm"), textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>Ouvrir dans ClickUp <span aria-hidden="true">↗</span></a>
+        {x.pj && onOpenPj && <button type="button" style={btn("ghost", "sm")} onClick={() => onOpenPj(x.pj)}>Fiche du {x.pj}</button>}</div>
+    </div>}
+  </div>;
 }
 const TransportCounts = ({ items }) => <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "2px 10px", alignItems: "baseline", marginTop: 4 }}>
   {items.map(([v, l, c]) => <React.Fragment key={l}><b style={{ fontFamily: T.fontDisplay, fontSize: 20, fontWeight: 600, color: c, fontVariantNumeric: "tabular-nums" }}>{v}</b><span style={{ fontSize: 13, color: T.ink500 }}>{l}</span></React.Fragment>)}</div>;
+const TransportSummary = ({ s }) => <div style={{ display: "flex", gap: 6, flexWrap: "wrap", margin: "2px 0 6px" }}>
+  {[[s.route, "en route", null, "truck"], [s.prog, "programmé" + (s.prog > 1 ? "s" : "")], [s.consult, "en consultation"], [s.infos, "infos demandées", "bad"], [s.horsUE, "hors UE"]].filter(([n, , k]) => k !== "bad" || n > 0).map(([n, l, k, ic]) =>
+    <span key={l} style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 26, padding: "0 10px", borderRadius: 999, background: k === "bad" ? T.red100 : T.surfaceAlt, color: k === "bad" ? T.red600 : T.ink700, fontSize: 12, fontWeight: 500 }}>
+      {ic && <NavIcon name={ic} size={15} />}<b style={{ fontFamily: T.fontDisplay, fontSize: 13, fontWeight: 600, color: k === "bad" ? T.red600 : T.ink900, fontVariantNumeric: "tabular-nums" }}>{n}</b>{l}</span>)}</div>;
 function CashCurve({ r, h = 170 }) {
   const g = curveGeom(r, 560, h), P = l => l.map((p, i) => (i ? "L" : "M") + p[0] + " " + p[1]).join(" "), ns = { vectorEffect: "non-scaling-stroke", fill: "none", strokeLinejoin: "round" };
   const up = g.today.yReal <= g.today.yIni;
@@ -426,16 +454,17 @@ export function RoleHome({ transports, produit, scope, role, profile, ui, kpiEl,
     // v414 : piste C « suivi colis » — une ligne par demande avec sa frise Demande · Consultation · Programmé · En route · Livré ; clic = la demande dans ClickUp
     const L = transportList(transports, role === "cdp" ? scope : null), wide = z === "xl", n = z === "l" ? 8 : wide ? 6 : 4;
     const sub = "ClickUp · " + (role === "cdp" && scope ? "mes PJ" : "toutes") + (L.waiting ? " · " + L.waiting + " en attente d'infos" : "") + (transports.etat === "erreur" ? " · lecture ClickUp en échec" : "");
-    const date = x => { const w = whenOf(x, today); return w.replace(/\d{4}-\d{2}-\d{2}/, d => fmtD(d)); };
+    const date = x => { const w = whenOf(x, today).replace(" · passé", "") /* v416 : le retard est écrit dessous (gapOf) */; return w.replace(/\d{4}-\d{2}-\d{2}/, d => fmtD(d)); };
     if (z === "s") { const c = f => L.open.filter(f).length, k = x => trackOf(x).k;
       return sec("transports", "Demandes de transport", S.depart.ring, <><Head title="Transports" sub="ClickUp" />
         <div style={{ fontFamily: T.fontDisplay, fontSize: 28, fontWeight: 600, letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums", color: T.ink900 }}>{L.open.length}<span style={{ fontFamily: T.font, fontSize: FZ.sm, fontWeight: 500, color: T.ink500 }}> en cours</span></div>
         <TransportCounts items={[[c(x => trackOf(x).bad), "infos demandées", L.waiting ? T.red600 : T.ink900], [c(x => k(x) === 2), "départs programmés", T.ink900], [c(x => k(x) === 3), "en route", T.ink900]]} />
         <a href={(transports && transports.liste) || CLICKUP_LIST_URL} target="_blank" rel="noopener noreferrer" className="enogia-homelink" style={{ ...link, marginTop: 2, textDecoration: "none" }}>ClickUp <span aria-hidden="true">↗</span></a></>); }
     const recent = L.done.slice(0, Math.max(0, Math.min(2, n - L.open.length)));
-    const row = (x, i) => <TransportTrack key={x.id} x={x} first={i === 0} wide={wide} when={date(x)} />;
+    const row = (x, i) => <TransportTrack key={x.id} x={x} first={i === 0} wide={wide} when={date(x)} gap={gapOf(x, today)} onOpenPj={onOpenPj} />;
     return sec("transports", "Demandes de transport", S.depart.ring, <>
       <Head title="Demandes de transport" sub={sub} count={L.open.length} />
+      {L.open.length > 0 && <TransportSummary s={summaryOf(L)} />}
       {L.open.length + L.done.length === 0 ? empty("inbox", "Aucune demande en cours", "Les demandes de transport faites dans ClickUp apparaissent ici, avec leur avancement.") : <>
         {L.open.slice(0, n).map(row)}
         {L.open.length > n && <div style={{ fontSize: 12, color: T.ink500, marginTop: 4 }}>+ {L.open.length - n} autre{L.open.length - n > 1 ? "s" : ""} en cours dans ClickUp</div>}

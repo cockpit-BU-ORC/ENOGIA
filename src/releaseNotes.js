@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v416",
+    date: "2026-11-19",
+    title: "V416 : Demandes de transport : camion, avion ou bateau, infos d'envoi et détail au clic",
+    items: [
+      { t: "Un véhicule sur la frise", d: "Chaque demande de transport montre un camion, un avion ou un bateau : garé en gris à l'étape en cours tant que le colis n'est pas parti, en couleur sur la route, arrivé au bout une fois livré." },
+      { t: "Plus d'infos", d: "Sous le trajet : transporteur, colis et conditionnement, poids, incoterm ; étiquettes « hors UE » et « matière dangereuse » avec le code UN ; retard ou avance sur la date souhaitée. En tête : en route, programmés, en consultation, infos demandées, hors UE." },
+      { t: "Détail au clic", d: "Un clic sur une demande la déplie : mode, transporteur, colis, poids, incoterm, demandeur et dates souhaitées / prévues / réelles, avec « Ouvrir dans ClickUp » et la fiche du PJ." },
+    ],
+  },
+  {
     id: "2026-11-v415",
     date: "2026-11-19",
     title: "V415 : Passeport : choix rangés par grandeur, plus de référence turbine par gamme",

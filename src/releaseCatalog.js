@@ -1274,4 +1274,7 @@ export const RELEASE_CATALOG = [
   { v: "415", t: "Passeport : choix rangés par grandeur, plus de référence turbine par gamme", items: [
     ["Choix rangés, pas de standard turbine", "Listes de choix triées par grandeur ; plus de référence turbine par gamme."],
   ] },
+  { v: "416", t: "Demandes de transport : camion, avion ou bateau, infos d'envoi et détail au clic", items: [
+    ["Transports : véhicules et détail", "Camion / avion / bateau sur la frise, infos d'envoi, résumé et détail au clic."],
+  ] },
 ];

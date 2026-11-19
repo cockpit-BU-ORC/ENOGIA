@@ -1067,3 +1067,8 @@ tr[data-kbd]:active > td, tr[role="button"]:active > td, li[data-kbd]:active, li
 @media (hover: hover) { .sk-card:hover { border-color: var(--sk-acc); } }
 .sk-fiche { display: grid; grid-template-columns: minmax(300px, 420px) minmax(0, 1fr); gap: 14px; align-items: start; }
 @media (max-width: 980px) { .sk-fiche { grid-template-columns: minmax(0, 1fr); } }
+
+/* v416 : véhicule des demandes de transport (camion / avion / bateau) */
+@keyframes enogiaVehIn { from { transform: translateX(-24px); opacity: 0; } to { transform: none; opacity: 1; } }
+.enogia-veh-go { animation: enogiaVehIn var(--e-dur-long, .3s) cubic-bezier(.16,1,.3,1) both; }
+@media (prefers-reduced-motion: reduce) { .enogia-veh-go { animation: none; } }

@@ -3139,3 +3139,14 @@ Demandé : « classer par grandeur ou par alphabet les éléments » (capture : 
 - `PassportBook.js` (volet de choix), `PassportFull.js` (`Choice` de la fiche de lancement de fab) : choix triés.
 - `src/passport.js` : `TURB_STD_OFF` (éléments Turbines + turbine) — `stdOf` ne renvoie plus de référence turbine : plus d'avertissement « ≠ référence » sur roue / injecteur / bouchages, ni de « prévu » tiré d'un standard (données `standards` existantes gardées, non lues). Test v415 (launchFab.test.js).
 - Fichiers : src/launchFab.js, src/passport.js, src/components/PassportSettings.js, src/components/PassportBook.js, src/components/PassportFull.js, src/launchFab.test.js.
+
+## V416 — Demandes de transport : camion, avion ou bateau, infos d'envoi et détail au clic
+
+Maquette `maquettes-design/v416-transports-plus.html` (« Go, code it »).
+
+- `functions/clickup.js` : `modeOf` (liste « Mode de transport » si elle existe dans ClickUp, sinon déduit du nom, de la description et du commentaire : maritime / navire / conteneur / port / booking → bateau ; avion / aérien → avion ; sinon camion, `modeEst`) — le texte n'est pas recopié ; champs Export hors EU, Incoterm, Conditionnement, Poids total, Matière dangereuse, Code UN (`un`, libellé court). Test v416.
+- `src/transports.js` : `MODE_LABEL`, `vehicleOf`, `gapOf` (dépassé de N j, +N j / −N j sur le souhaité), `metaOf`, `weightTxt`, `summaryOf`. Test v416.
+- Icônes `truck`, `plane`, `boat` (Phosphor Truck, AirplaneTilt, Boat ; `node scripts/gen-icons.js`).
+- `RoleHome.js` : `TrackSteps` (véhicule, pointillé vers « Livré » en route), `TransportTrack` (ligne d'infos, étiquettes, détail repliable, « Ouvrir dans ClickUp », fiche du PJ), `TransportSummary` ; styles.css `.enogia-veh-go` (300 ms, coupé si réduire les animations).
+- **À faire** : ajouter une liste « Mode de transport » (Route / Aérien / Maritime / Express) au formulaire ClickUp LOGISTIQUE V2 pour un mode exact ; redéployer les fonctions (`firebase deploy --only functions`).
+- Fichiers : functions/clickup.js, functions/test/clickup.test.js, scripts/gen-icons.js, src/iconPaths.js, src/transports.js (+ test), src/components/RoleHome.js, src/styles.css, src/demo/demoPages.js.

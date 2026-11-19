@@ -24,3 +24,15 @@ test("v414 : frise de suivi et texte de date", () => {
   expect(whenOf({ status: "depart programme", enlPrevue: "2026-11-24", enlSouhaitee: "2026-11-20" }, "2026-11-19")).toBe("enlèvement prévu 2026-11-24");
   expect(whenOf({ status: "colis livre", livReelle: "2026-11-12" })).toBe("livré le 2026-11-12");
 });
+
+test("v416 : véhicule, écarts au souhaité, ligne d'infos, résumé", () => {
+  const { vehicleOf, gapOf, metaOf, summaryOf, transportList } = require("./transports");
+  expect(vehicleOf({ status: "colis ramasse", mode: "boat" })).toMatchObject({ mode: "boat", pos: 80, moving: true });
+  expect(vehicleOf({ status: "en consultation" })).toMatchObject({ mode: "truck", pos: 30, parked: true });
+  expect(gapOf({ status: "en consultation", enlSouhaitee: "2026-09-10" }, "2026-11-19")).toEqual({ t: "dépassé de 70 j", tone: "late" });
+  expect(gapOf({ status: "colis livre", livSouhaitee: "2026-11-17", livReelle: "2026-11-16" })).toEqual({ t: "-1 j sur le souhaité", tone: "early" });
+  expect(gapOf({ status: "colis ramasse", livSouhaitee: "2026-10-20", livPrevue: "2026-10-21" })).toEqual({ t: "+1 j sur le souhaité", tone: "late" });
+  expect(metaOf({ transporteur: "HEPPNER", colis: 1, cond: "Palette", poids: 4850, incoterm: "DAP" })).toEqual(["HEPPNER", "1 colis · palette", "4,9 t", "DAP"]);
+  const L = transportList({ items: { a: { status: "colis ramasse", statusType: "done" }, b: { status: "en consultation", horsUE: true }, c: { status: "en attente infos demandeur" } } });
+  expect(summaryOf(L)).toEqual({ route: 1, prog: 0, consult: 1, infos: 1, horsUE: 1 });
+});

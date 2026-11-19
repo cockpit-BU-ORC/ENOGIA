@@ -29,3 +29,21 @@ test("en cours gardées (colis ramassé compris), livrées depuis plus de 60 jou
   assert.strictEqual(T.a.from, "ALLIA"); assert.strictEqual(T.a.to, "ENOGIA");
   const s = JSON.stringify(T); assert.ok(!s.includes("@") && !s.includes("12345") && !s.includes("Secrète"));
 });
+
+test("v416 : mode de transport (champ, sinon texte), infos d'envoi, code UN court, rien de sensible", () => {
+  const { toItem, modeOf } = require("../clickup");
+  assert.deepStrictEqual(modeOf({ name: "473 | DRI > BUSAN", text_content: "Expédition maritime sur flat rack 40'" }), { mode: "boat", modeEst: true });
+  assert.strictEqual(modeOf({ name: "x", custom_fields: [{ id: "c", name: "Commentaire", type: "text", value: "on fait une expédition avion" }].map(f => ({ ...f, id: "5c4f529d-3ec7-4ae4-96d8-8156a696de32" })) }).mode, "plane");
+  assert.deepStrictEqual(modeOf({ name: "PJ1 | A > B", custom_fields: [{ id: "m", name: "Mode de transport", type: "drop_down", value: "r", type_config: { options: [{ id: "r", name: "Maritime" }] } }] }), { mode: "boat", modeEst: false });
+  assert.strictEqual(modeOf({ name: "PJ426 | ALLSLOGISTIQUE > JSI | 3 colis" }).mode, "truck");
+  const it = toItem({ id: "z", name: "473 | DRI > BUSAN Corée | 2 colis", status: { status: "en consultation", type: "custom" }, text_content: "Expédition maritime",
+    custom_fields: [
+      { id: "05dea813-b510-4d98-9960-2face8dd3898", type: "drop_down", value: "o", type_config: { options: [{ id: "o", name: "OUI" }] } },
+      { id: "d6ca9e9b-9f1d-4774-92b2-897d0d0efec8", type: "drop_down", value: "i", type_config: { options: [{ id: "i", name: "DDP (nous consulter)" }] } },
+      { id: "e6ed684c-afc8-4aa3-a6a8-39e3f2e878eb", type: "number", value: "5400" },
+      { id: "69e5ea09-800f-4d7e-931b-b017641faa47", type: "drop_down", value: "d", type_config: { options: [{ id: "d", name: "OUI" }] } },
+      { id: "870048f1-71b8-4883-92fe-c28cc59f3cda", type: "labels", value: [{ id: "u", label: "UN3536 - Batterie au litihum installée dans un engin de transport" }] }] });
+  assert.strictEqual(it.mode, "boat"); assert.strictEqual(it.horsUE, true); assert.strictEqual(it.incoterm, "DDP"); assert.strictEqual(it.poids, 5400);
+  assert.strictEqual(it.dangereux, true); assert.deepStrictEqual(it.un, ["UN3536 batterie lithium"]);
+  assert.ok(!JSON.stringify(it).includes("Expédition"));
+});

@@ -37,3 +37,25 @@ export function transportList(doc, scope) {
   const done = all.filter(x => isDone(x)).sort((a, b) => String(b.livReelle || b.closed || b.updated || "").localeCompare(String(a.livReelle || a.closed || a.updated || "")));
   return { open, done, waiting: open.filter(x => stepOf(x.status).tone === "bad").length };
 }
+
+// v416 (maquette v416-transports-plus.html : « Go, code it ») : véhicule, retards, ligne d'infos, résumé
+export const MODE_LABEL = { truck: "Route", plane: "Aérien", boat: "Maritime" };
+// position du véhicule sur la frise (en % : points à 10 / 30 / 50 / 70 / 90) ; garé à l'étape en cours tant que le colis n'est pas parti
+export const vehicleOf = x => { const t = trackOf(x); return { mode: MODE_LABEL[x && x.mode] ? x.mode : "truck", pos: t.k === 3 ? 80 : [10, 30, 50, 70, 90][t.k], moving: t.k === 3, arrived: t.k === 4, parked: t.k < 3 }; };
+const dd = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 864e5);
+// écart à la date souhaitée : { t, tone: "late" | "early" } ou null
+export function gapOf(x, today) {
+  const t = trackOf(x);
+  if (t.k === 4) { const d = x.livReelle || x.livPrevue; if (!d || !x.livSouhaitee) return null; const e = dd(x.livSouhaitee, d); return e > 0 ? { t: "+" + e + " j sur le souhaité", tone: "late" } : e < 0 ? { t: e + " j sur le souhaité", tone: "early" } : null; }
+  if (t.k === 3) { if (!x.livPrevue || !x.livSouhaitee) return null; const e = dd(x.livSouhaitee, x.livPrevue); return e > 0 ? { t: "+" + e + " j sur le souhaité", tone: "late" } : null; }
+  if (!x.enlPrevue && x.enlSouhaitee && today && x.enlSouhaitee < today) return { t: "dépassé de " + dd(x.enlSouhaitee, today) + " j", tone: "late" };
+  if (x.enlPrevue && x.enlSouhaitee && x.enlPrevue > x.enlSouhaitee) return { t: "+" + dd(x.enlSouhaitee, x.enlPrevue) + " j sur le souhaité", tone: "late" };
+  return null;
+}
+export const weightTxt = n => (!n ? "" : n >= 1000 ? (n / 1000).toLocaleString("fr-FR", { maximumFractionDigits: 1 }) + " t" : n + " kg");
+// ligne d'infos : transporteur · N colis · conditionnement · poids · incoterm
+export const metaOf = x => [x.transporteur, x.colis ? x.colis + " colis" + (x.cond && !/colis/i.test(x.cond) ? " · " + x.cond.toLowerCase() : "") : x.cond ? x.cond.toLowerCase() : "", weightTxt(x.poids), x.incoterm].filter(Boolean);
+export function summaryOf(L) {
+  const c = f => L.open.filter(f).length;
+  return { route: c(x => trackOf(x).k === 3), prog: c(x => trackOf(x).k === 2), consult: c(x => x.status === "en consultation"), infos: L.waiting, horsUE: c(x => x.horsUE) };
+}
