@@ -2,7 +2,7 @@
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert");
-const { buildTransports, pjOf, routeOf } = require("../clickup");
+const { buildTransports, pjOf, routeOf, toItem } = require("../clickup");
 
 const now = "2026-11-19T10:00:00.000Z", ms = d => String(Date.parse(d));
 const fld = (id, type, value, extra) => ({ id, type, value, ...(extra || {}) });
@@ -46,4 +46,10 @@ test("v416 : mode de transport (champ, sinon texte), infos d'envoi, code UN cour
   assert.strictEqual(it.mode, "boat"); assert.strictEqual(it.horsUE, true); assert.strictEqual(it.incoterm, "DDP"); assert.strictEqual(it.poids, 5400);
   assert.strictEqual(it.dangereux, true); assert.deepStrictEqual(it.un, ["UN3536 batterie lithium"]);
   assert.ok(!JSON.stringify(it).includes("Expédition"));
+});
+
+test("v418 : date de clôture et heure exacte de mise à jour lues", () => {
+  const it = toItem({ id: "z", name: "PJ500 | ENOGIA > Client", status: { status: "colis livre", type: "closed" }, date_closed: ms("2026-11-10"), date_updated: ms("2026-11-10T09:30:00Z") });
+  assert.strictEqual(it.closed, "2026-11-10");
+  assert.strictEqual(it.updatedAt, "2026-11-10T09:30:00.000Z");
 });
