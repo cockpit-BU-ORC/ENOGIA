@@ -3129,3 +3129,13 @@ Demandé : lien de la liste « https://app.clickup.com/2618431/v/li/901524181433
 - `RoleHome.js` : `TrackSteps`, `TransportTrack`, `TransportCounts` (niveau du fichier) ; cadran `transports` tailles m / xl / l / s.
 - **À faire par Gabriel** : jeton ClickUp (`firebase functions:secrets:set CLICKUP_TOKEN`), puis `firebase deploy --only functions` (Cloud Scheduler à accepter au premier déploiement).
 - Fichiers : functions/clickup.js, functions/index.js, functions/test/clickup.test.js, src/transports.js (+ test), src/components/RoleHome.js, src/demo/demoPages.js.
+
+## V415 — Passeport : choix rangés par grandeur, plus de référence turbine par gamme
+
+Demandé : « classer par grandeur ou par alphabet les éléments » (capture : Tension 400 V, 415 V, 480 V, 690 V, 440 V) ; « il n'y a pas de standard par gamme de machine pour les turbines ».
+
+- `src/launchFab.js` : `sortOpts` (tri naturel `localeCompare` numérique, doublons retirés) ; `elecListsOf` renvoie les listes triées.
+- `PassportSettings.js` : `Tags` range à l'ajout et à l'affichage ; résumé et suggestions des composants triés ; section « Turbine : référence par gamme » et `setStd` retirés.
+- `PassportBook.js` (volet de choix), `PassportFull.js` (`Choice` de la fiche de lancement de fab) : choix triés.
+- `src/passport.js` : `TURB_STD_OFF` (éléments Turbines + turbine) — `stdOf` ne renvoie plus de référence turbine : plus d'avertissement « ≠ référence » sur roue / injecteur / bouchages, ni de « prévu » tiré d'un standard (données `standards` existantes gardées, non lues). Test v415 (launchFab.test.js).
+- Fichiers : src/launchFab.js, src/passport.js, src/components/PassportSettings.js, src/components/PassportBook.js, src/components/PassportFull.js, src/launchFab.test.js.

@@ -1271,4 +1271,7 @@ export const RELEASE_CATALOG = [
   { v: "414", t: "Demandes de transport en suivi colis (ClickUp LOGISTIQUE V2)", items: [
     ["Transports en suivi colis", "Cadran « Demandes de transport » relié à ClickUp LOGISTIQUE V2, frise de suivi par demande."],
   ] },
+  { v: "415", t: "Passeport : choix rangés par grandeur, plus de référence turbine par gamme", items: [
+    ["Choix rangés, pas de standard turbine", "Listes de choix triées par grandeur ; plus de référence turbine par gamme."],
+  ] },
 ];

@@ -7,7 +7,7 @@ import { Pill, NavIcon, notify } from "./SharedUI";
 import { askConfirm } from "../confirm";
 import { AF } from "../autoFocusOk";
 import { gammeKey } from "../passport";
-import { componentsOf, elecListsOf, ELEC_LABEL } from "../launchFab";
+import { componentsOf, elecListsOf, ELEC_LABEL, sortOpts } from "../launchFab";
 
 const KIND = { choix: ["Choisi par le CdP", "un bouton par choix ; référence par gamme possible"], achat: ["Suivi par Achats", "commande et livraison lues dans Achats / Appro ; pas de référence"], option: ["Optionnel", "comme « choisi », avec « Non requis »"] };
 const ro = () => notify("Lecture seule : les réglages du passeport se modifient par le propriétaire et les admins de la page", "info");
@@ -15,9 +15,9 @@ const ro = () => notify("Lecture seule : les réglages du passeport se modifient
 // pastilles + champ « Entrée pour ajouter »
 function Tags({ list, onChange, label, canEdit }) {
   const [t, setT] = useState("");
-  const add = () => { const v = t.trim(); if (!v || list.includes(v)) { setT(""); return; } onChange([...list, v]); setT(""); };
+  const add = () => { const v = t.trim(); if (!v || list.includes(v)) { setT(""); return; } onChange(sortOpts([...list, v])); setT(""); }; // v415 : rangés par grandeur puis alphabet
   return <div className="pp2-tags" role="group" aria-label={label}>
-    {list.map((o, i) => <span key={o}>{o}{canEdit && <button type="button" aria-label={"Retirer " + o} onClick={() => onChange(list.filter((_, j) => j !== i))}><NavIcon name="close" size={12} /></button>}</span>)}
+    {sortOpts(list).map(o => <span key={o}>{o}{canEdit && <button type="button" aria-label={"Retirer " + o} onClick={() => onChange(sortOpts(list.filter(x => x !== o)))}><NavIcon name="close" size={12} /></button>}</span>)}
     {canEdit && <input value={t} onChange={e => setT(e.target.value)} placeholder="Ajouter, Entrée" aria-label={label + " : ajouter"} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); add(); } }} onBlur={add} />}
   </div>;
 }
@@ -40,7 +40,7 @@ function CompSheet({ c, gammes, scopes, onSave, onRemove, onClose }) {
           <div className="pp2-fl">Choix proposés<Tags list={d.opts} onChange={opts => set({ opts })} label="Choix proposés" canEdit /></div>
           <div className="pp2-fl">Référence par gamme <small className="pp2-sub">facultatif · vide = pas d'avertissement</small>
             <div className="pp2-refs">{gammes.map(g => <label key={g}>{g}<input className="pp2-in" list="pp2-refopts" value={d.refs[g] || ""} placeholder="—" onChange={e => set({ refs: { ...d.refs, [g]: e.target.value } })} /></label>)}</div>
-            <datalist id="pp2-refopts">{d.opts.map(o => <option key={o} value={o} />)}</datalist></div>
+            <datalist id="pp2-refopts">{sortOpts(d.opts).map(o => <option key={o} value={o} />)}</datalist></div>
         </>}
       <div style={{ display: "flex", gap: 8, marginTop: "auto", flexWrap: "wrap" }}>
         <button type="button" style={btn("pri", "md")} onClick={() => { if (!String(d.label || "").trim()) { notify("Donnez un nom au composant", "info"); return; }
@@ -74,7 +74,6 @@ export function PassportSettings({ data, doc, api, canEdit, achatsDoc, importer 
   const onRemove = async () => { const c = sheet; if (!(await askConfirm({ title: "Retirer « " + c.label + " » ?", message: "Il n'apparaîtra plus dans les nouvelles fiches de lancement de fab. Les passeports déjà remplis gardent leur valeur ; vous pourrez le rétablir.", confirmLabel: "Retirer", danger: true }))) return;
     await saveComps(comps.map(x => (x.id === c.id ? { ...x, off: true } : x)), "« " + c.label + " » retiré"); setSheet(null); };
   const restore = c => saveComps(comps.map(x => (x.id === c.id ? { ...x, off: false } : x)), "« " + c.label + " » rétabli");
-  const setStd = async (g, k, v) => { const nx = { ...S, [g]: { ...(S[g] || {}) } }; if (v) nx[g][k] = v; else delete nx[g][k]; await api.saveStandards(nx); };
   const setDim = async (g, k, v) => { const nx = { ...dims, [g]: { ...(dims[g] || {}) } }; if (v) nx[g][k] = v; else delete nx[g][k]; await api.saveDims(nx); };
   const live = comps.filter(c => !c.off), off = comps.filter(c => c.off);
   return <div className="pp2" style={{ "--pp-ink": T.ink900, "--pp-ink7": T.ink700, "--pp-ink5": T.ink500, "--pp-line": T.line, "--pp-card": T.card, "--pp-alt": T.surfaceAlt, "--pp-surf": T.surface, "--pp-field": T.fieldLine, "--pp-acc": T.accentInk, "--pp-ok": T.emerald600, "--pp-okbg": T.emerald100, "--pp-bad": T.red600, "--pp-warn": T.amber600, "--pp-on": T.onFill, display: "flex", flexDirection: "column", gap: 16 }}>
@@ -83,18 +82,14 @@ export function PassportSettings({ data, doc, api, canEdit, achatsDoc, importer 
       <div className="pp2-sh"><h3 id="pp2-s-comp">Composants installés</h3><span className="pp2-sub">{live.length} composants · proposés dans chaque fiche de lancement de fab</span></div>
       <div className="pp2-catg">{live.map(c => <button key={c.id} type="button" className={"pp2-catc" + (fresh === c.id ? " enogia-cl-in" : "")} onClick={() => (canEdit ? setSheet(c) : ro())}>
           <b>{c.label}</b><Pill tone={c.kind === "achat" ? "info" : "neutral"}>{KIND[c.kind] ? KIND[c.kind][0] : c.kind}{c.kind === "achat" && c.scope ? " · " + c.scope : ""}</Pill>
-          <span className="pp2-sub">{c.kind === "achat" ? (c.scope ? "valeur = commande Achats" : "scope à préciser") : (c.opts || []).join(" · ") || "choix libre"}</span>
+          <span className="pp2-sub">{c.kind === "achat" ? (c.scope ? "valeur = commande Achats" : "scope à préciser") : sortOpts(c.opts).join(" · ") || "choix libre"}</span>
           {c.kind !== "achat" && Object.keys(c.refs || {}).length > 0 && <span className="pp2-sub">réf. {Object.entries(c.refs).map(([g, v]) => g + " " + v).join(" · ")}</span>}
         </button>)}
         {canEdit && <button type="button" className="pp2-catc" data-add="1" onClick={() => setSheet({ kind: "option" })}>＋ Composant</button>}
       </div>
       {off.length > 0 && <div className="pp2-sub" style={{ marginTop: 8 }}>Retirés : {off.map((c, i) => <span key={c.id}>{i ? ", " : ""}{c.label}{canEdit && <> (<button type="button" className="pp2-link" onClick={() => restore(c)}>rétablir</button>)</>}</span>)}</div>}
     </section>
-    <section className="pp2-box" aria-labelledby="pp2-s-tur">
-      <div className="pp2-sh"><h3 id="pp2-s-tur">Turbine : référence par gamme</h3><span className="pp2-sub">proposée dans la fiche ; un écart n'est qu'un avertissement</span></div>
-      <div style={{ overflowX: "auto" }}><table className="pp2-tab"><thead><tr><th>Gamme</th><th>Roue</th><th>Injecteur</th><th>Bouchages</th></tr></thead>
-        <tbody>{gammes.map(g => <tr key={g}><th scope="row">{g}</th>{["roue", "injecteur", "bouchages"].map(k => <td key={k}><Num value={(S[g] || {})[k]} label={k + " " + g} canEdit={canEdit} onSave={v => setStd(g, k, v)} /></td>)}</tr>)}</tbody></table></div>
-    </section>
+    {/* v415 : plus de « Turbine : référence par gamme » (pas de standard turbine par gamme) */}
     <section className="pp2-box" aria-labelledby="pp2-s-dim">
       <div className="pp2-sh"><h3 id="pp2-s-dim">Dimensions et poids par gamme</h3><span className="pp2-sub">repris tout seuls dans la fiche de lancement de fab et le passeport</span></div>
       <div style={{ overflowX: "auto" }}><table className="pp2-tab"><thead><tr><th>Gamme</th><th>Longueur</th><th>Largeur</th><th>Hauteur</th><th>Poids</th></tr></thead>

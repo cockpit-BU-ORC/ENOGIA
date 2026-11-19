@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v415",
+    date: "2026-11-19",
+    title: "V415 : Passeport : choix rangés par grandeur, plus de référence turbine par gamme",
+    items: [
+      { t: "Choix rangés", d: "Dans les réglages du passeport et dans la fiche de lancement de fab, les choix (tension, fréquence, régime de neutre, composants) sont rangés par grandeur puis par ordre alphabétique : 400 V, 415 V, 440 V, 480 V, 690 V." },
+      { t: "Turbines", d: "Il n'y a plus de référence de roue, d'injecteur ou de bouchages par gamme : le tableau « Turbine : référence par gamme » est retiré et aucun avertissement d'écart n'apparaît plus sur la turbine." },
+    ],
+  },
+  {
     id: "2026-11-v414",
     date: "2026-11-19",
     title: "V414 : Demandes de transport en suivi colis (ClickUp LOGISTIQUE V2)",

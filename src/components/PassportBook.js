@@ -23,7 +23,7 @@ import { PhotosView } from "./PhotosView";
 import { dossierHtml } from "../dossierMachine";
 import { LaunchSheet, Src, History } from "./PassportFull";
 import { NR, HOLES, ELEC_LABEL, DESIGN_FIELDS, activeComponents, elecListsOf, dimsOf, launchOf, plugCount, refOf, offRef, setLaunch, launchState,
-  piecesArrived, achatOfComp, PASS_PHASES, phaseOfEtat, raiPrefill } from "../launchFab";
+  piecesArrived, achatOfComp, PASS_PHASES, phaseOfEtat, sortOpts, raiPrefill } from "../launchFab";
 
 const fd = iso => (iso ? String(iso).slice(8, 10) + "/" + String(iso).slice(5, 7) + "/" + String(iso).slice(0, 4) : "");
 const has = v => v != null && String(v).trim() !== "";
@@ -52,7 +52,7 @@ function Sheet({ s, onClose }) {
   const move = e => { const d = drag.current; if (!d) return; const dy = e.clientY - d.y0; ref.current.style.transform = "translateY(" + (dy < 0 ? dy * 0.25 : dy) + "px)"; d.h.push([e.clientY, e.timeStamp]); if (d.h.length > 5) d.h.shift(); };
   const up = () => { const d = drag.current; if (!d) return; drag.current = null; const a = d.h[0], b = d.h[d.h.length - 1], dy = b[0] - d.y0, v = (b[0] - a[0]) / Math.max(1, b[1] - a[1]) * 1000;
     if (dy > ref.current.offsetHeight * 0.3 || v > 700) onClose(); else { ref.current.style.transition = "transform var(--e-dur-in) cubic-bezier(.16,1,.3,1)"; ref.current.style.transform = ""; setTimeout(() => { if (ref.current) ref.current.style.transition = ""; }, 260); } };
-  const opts = [...new Set([...(s.opts || []), ...(s.refV ? [s.refV] : [])])];
+  const opts = sortOpts([...(s.opts || []), ...(s.refV ? [s.refV] : [])]); // v415 : par grandeur puis alphabet
   return <div className="pb-veil" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
     <div ref={ref} className="pb-sheet" role="dialog" aria-modal="true" aria-labelledby="pb-sh-t" onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
       onKeyDown={e => { if (e.key === "Escape") { e.stopPropagation(); onClose(); } }}>

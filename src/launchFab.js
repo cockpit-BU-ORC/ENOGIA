@@ -39,7 +39,9 @@ export const DEFAULT_COMPONENTS = [
 const has = v => v != null && String(v).trim() !== "";
 export const componentsOf = doc => (doc && Array.isArray(doc.components) && doc.components.length ? doc.components : DEFAULT_COMPONENTS);
 export const activeComponents = doc => componentsOf(doc).filter(c => c && !c.off);
-export const elecListsOf = doc => ({ ...ELEC_DEFAULT, ...(((doc && doc.elecLists) || {})) });
+// v415 (demandé : « classer par grandeur ou par alphabet les éléments ») : tri naturel, nombres compris
+export const sortOpts = list => [...new Set((list || []).map(x => String(x == null ? "" : x).trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, "fr", { numeric: true, sensitivity: "base" }));
+export const elecListsOf = doc => Object.fromEntries(Object.entries({ ...ELEC_DEFAULT, ...(((doc && doc.elecLists) || {})) }).map(([k, v]) => [k, Array.isArray(v) ? sortOpts(v) : v]));
 export const dimsOf = (doc, gk) => (((doc && doc.dims) || {})[gk]) || null;
 export const launchOf = (doc, pj) => (((doc && doc.launch) || {})[pj]) || {};
 export const plugsOf = L => { const p = (L && L.inj && Array.isArray(L.inj.plugs)) ? L.inj.plugs : []; return Array.from({ length: HOLES }, (_, i) => !!p[i]); };

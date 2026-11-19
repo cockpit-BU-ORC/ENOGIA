@@ -88,7 +88,9 @@ export const gammeKey = (doc, gamme) => {
   const keys = Object.keys(S).sort((a, b) => b.length - a.length);
   return keys.find(k => g.toUpperCase().startsWith(k.toUpperCase())) || g;
 };
-export const stdOf = (doc, gamme) => ((doc && doc.standards) || {})[gammeKey(doc, gamme)] || {};
+// v415 (demandé : « il n'y a pas de standard par gamme de machine pour les turbines ») : les éléments Turbines n'ont pas de référence par gamme
+export const TURB_STD_OFF = new Set(DEFAULT_ELEMENTS.filter(e => e.turb).map(e => e.id).concat(["turbine"]));
+export const stdOf = (doc, gamme) => Object.fromEntries(Object.entries(((doc && doc.standards) || {})[gammeKey(doc, gamme)] || {}).filter(([k]) => !TURB_STD_OFF.has(k)));
 const pOf = (doc, pj) => ((doc && doc.pass) || {})[pj] || {};
 const has = v => v != null && String(v).trim() !== "";
 

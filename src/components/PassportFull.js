@@ -19,7 +19,7 @@ import { RaiView } from "./RaiView";
 import { PhotosView } from "./PhotosView";
 import { dossierHtml } from "../dossierMachine";
 import { NR, HOLES, SIGN_ROLES, ELEC_LABEL, DESIGN_FIELDS, QUALITY, activeComponents, elecListsOf, dimsOf, launchOf, plugsOf, plugCount, refOf, offRef,
-  setLaunch, signLaunch, launchState, piecesArrived, achatOfComp, PASS_PHASES, phaseOfEtat, launchHtml } from "../launchFab";
+  setLaunch, signLaunch, sortOpts, launchState, piecesArrived, achatOfComp, PASS_PHASES, phaseOfEtat, launchHtml } from "../launchFab";
 
 const fd = iso => (iso ? String(iso).slice(8, 10) + "/" + String(iso).slice(5, 7) + "/" + String(iso).slice(0, 4) : "");
 const fdt = iso => (iso ? new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "2-digit" }) + " " + new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) : "");
@@ -51,7 +51,7 @@ function CellEdit({ v, opts, onSave, canEdit, label, ro }) {
     <span className="pp2-v" data-empty={has(v) ? undefined : "1"}>{has(v) ? v : "À renseigner"}</span>{canEdit && <span className="pp2-pen" aria-hidden="true"><NavIcon name="edit" size={13} /></span>}
   </button>;
   return <div className="pp2-inl enogia-cl-in" role="group" aria-label={"Modifier : " + label} onKeyDown={e => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(); } }}>
-    {(opts || []).length ? <div className="pp2-opts">{opts.map((o, i) => <button key={o} type="button" className="pp2-opt" aria-pressed={v === o} autoFocus={i === 0 ? AF : undefined} onClick={() => pick(v === o ? "" : o)}>{o}</button>)}</div>
+    {(opts || []).length ? <div className="pp2-opts">{sortOpts(opts).map((o, i) => <button key={o} type="button" className="pp2-opt" aria-pressed={v === o} autoFocus={i === 0 ? AF : undefined} onClick={() => pick(v === o ? "" : o)}>{o}</button>)}</div>
       : <input className="pp2-in" autoFocus={AF} value={t} onChange={e => setT(e.target.value)} aria-label={label} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); pick(t.trim()); } }} onBlur={() => { if (t.trim() !== (v || "")) pick(t.trim()); else close(); }} />}
     <button type="button" className="pp2-x" onClick={close} aria-label="Annuler">Annuler</button>
   </div>;

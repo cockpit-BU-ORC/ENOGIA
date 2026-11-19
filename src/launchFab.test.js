@@ -36,3 +36,11 @@ test("v404 : phase du passeport d'après l'état ; fiche imprimable échappée",
   const h = launchHtml({ pj: "PJ<1>", gamme: "100LTV3", info: { chef: "<b>x</b>" }, L: { txt: { bom: "<script>" } }, comps: [{ id: "c", label: "Drive", v: "MD<5>" }], dims: null, ready: null });
   expect(h).not.toMatch(/<script>|<b>x<\/b>|MD<5>/); expect(h).toContain("PJ&lt;1&gt;");
 });
+
+test("v415 : choix rangés par grandeur puis alphabet ; pas de référence turbine par gamme", () => {
+  const { sortOpts } = require("./launchFab"), { stdOf } = require("./passport");
+  expect(sortOpts(["690 V", "400 V", "1000 V", "415 V", "400 V"])).toEqual(["400 V", "415 V", "690 V", "1000 V"]);
+  expect(sortOpts(["TT", "IT", "TN-S"])).toEqual(["IT", "TN-S", "TT"]);
+  const doc = { standards: { "100LTV3": { roue: "W0400", injecteur: "I0350", bouchages: "2", cuve: "C1" } } };
+  expect(stdOf(doc, "100LTV3")).toEqual({ cuve: "C1" });
+});
