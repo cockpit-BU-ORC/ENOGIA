@@ -1,5 +1,5 @@
 import React, { useContext, useState, useMemo, useEffect, useLayoutEffect, useRef } from "react";
-import { AdvanceCtx, exportAdvanceXlsx } from "../advanceCtx"; // v423
+import { AdvanceCtx } from "../advanceCtx"; // v423
 import { smooth } from "../scrollMode";
 import { T, FZF as FZ, D, statusSoft, stripeBg, stripeHues, btn } from "../theme";
 import { SerieTag, getPjMeta, PJ_META_OVERRIDES, CountryFlag, Avatar, GAMME_COLORS, ETAT_META, etatInk, PresenceChip, PRESENCE_META, presenceKind, presenceDates, presenceFirstDate, today, PjPlate, orcChefsOf, epcChefOf, EpcTag } from "../pjMeta";
@@ -695,7 +695,6 @@ function GlobalTile({pj}){
     <div style={{minWidth:0,display:"flex",flexDirection:"column",gap:3}}>
       <span style={{fontSize:FZ.xs,color:T.ink500}}>signature → mise en service</span>
       <span aria-label={"Phases : "+a.phases.map(p=>p.label+" "+Math.round(p.done*100)+" %").join(", ")} style={{display:"flex",gap:2}}>{a.phases.map(p=><i key={p.k} title={p.label+" : "+Math.round(p.done*100)+" %"} style={{display:"block",width:Math.max(6,p.w*1.1),height:6,borderRadius:2,background:p.done>=1?T.emerald600:p.done>0?"color-mix(in srgb, "+T.emerald600+" "+Math.round(25+p.done*60)+"%, "+T.surfaceAlt+")":T.surfaceAlt}}/>)}</span>
-      <button type="button" onClick={()=>exportAdvanceXlsx(ctx.rows)} style={{all:"unset",position:"relative",cursor:"pointer",fontSize:FZ.xs,color:T.accentInk,fontWeight:500}}>Exporter l'avancement de tous les PJ (Excel)</button>
     </div>
   </div>);
 }

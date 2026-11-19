@@ -1308,4 +1308,7 @@ export const RELEASE_CATALOG = [
   { v: "425", t: "SAV / MES : une personne ne peut plus être sur 2 interventions en même temps", items: [
     ["SAV : pas de double affectation", "Conflits de personnes en rouge ; enregistrement et déplacement refusés."],
   ] },
+  { v: "426", t: "Export de l'avancement : un bouton sur l'accueil du DAF", items: [
+    ["Export avancement sur l'accueil DAF", "Bouton d'export de l'avancement sur l'accueil du DAF seulement."],
+  ] },
 ];

@@ -32,6 +32,8 @@ import { setEncReelle } from "../cashinModel";
 import { PjDialog, PjDialogCtx } from "../components/RowDetail";
 import { MachinesDemoCtx } from "../machinesCtx";
 import { setRaiDoc } from "../raiStatus";
+import { AdvanceCtx } from "../advanceCtx";
+import { orcAdvance } from "../orcAdvance";
 import { RAI_SIGNERS } from "../rai";
 
 const no = () => {}, yes = async () => true;
@@ -78,8 +80,10 @@ const DEMO_TRANSPORTS = { at: new Date().toISOString(), etat: "ok", items: { // 
   t3: { name: "PJ901 | ENOGIA > Client Nord | 1 colis", url: "https://app.clickup.com", pj: "PJ901", from: "ENOGIA", to: "Client Nord", colis: 1, cond: "Palette", poids: 180, incoterm: "DAP", transporteur: "DACHSER", mode: "truck", modeEst: true, status: "depart programme", statusType: "custom", enlSouhaitee: "2026-11-21", enlPrevue: "2026-11-21", livPrevue: "2026-11-25" },
   t4: { name: "PJ905 | Emballeur > Client Corée | 1 colis", url: "https://app.clickup.com", pj: "PJ905", from: "Emballeur", to: "Client Corée", colis: 1, cond: "ORC sur fond bois", poids: 4850, incoterm: "DAP", transporteur: "HEPPNER", mode: "boat", modeEst: true, status: "colis ramasse", statusType: "done", enlReelle: "2026-11-07", livSouhaitee: "2026-12-20", livPrevue: "2026-12-21" },
   t5: { name: "PJ903 | ENOGIA > Client Sud | 3 colis", url: "https://app.clickup.com", pj: "PJ903", from: "ENOGIA", to: "Client Sud", colis: 3, cond: "Palette", poids: 400, incoterm: "DAP", transporteur: "ALL SOLUTIONS", mode: "truck", modeEst: true, urgent: true, status: "colis livre", statusType: "closed", livSouhaitee: "2026-11-17", livReelle: "2026-11-16" } } };
-const Accueil = () => <HomeView transports={DEMO_TRANSPORTS} pinOk testsDoc={DEMO_TESTS} data={DEMO_ROWS} comments={DEMO_COMMENTS} myEmail={DEMO_ME.email} myName={DEMO_ME.name} people={DEMO_PEOPLE} unseenChanges={[]} lastImport={null} onOpenPj={no} onGo={no}
-  profiles={{ byEmail: {} }} owner cash={false} turbineDoc={null} onOpenCash={null} prodDoc={DEMO_PROD} canProdTurb productionExclusions={{}} plan={null} closurePeriods={[]} saveHomeLayout={null} />;
+// v426 : avancement des machines (export du DAF)
+const DEMO_ADV = { map: {}, rows: DEMO_ROWS.map(r => ({ pj: r.pj, nom: r.nomProjet || "", etat: r.etat, ...orcAdvance(r, {}, {}) })) };
+const Accueil = () => <AdvanceCtx.Provider value={DEMO_ADV}><HomeView transports={DEMO_TRANSPORTS} pinOk testsDoc={DEMO_TESTS} data={DEMO_ROWS} comments={DEMO_COMMENTS} myEmail={DEMO_ME.email} myName={DEMO_ME.name} people={DEMO_PEOPLE} unseenChanges={[]} lastImport={null} onOpenPj={no} onGo={no}
+  profiles={{ byEmail: {} }} owner cash={false} turbineDoc={null} onOpenCash={null} prodDoc={DEMO_PROD} canProdTurb productionExclusions={{}} plan={null} closurePeriods={[]} saveHomeLayout={null} /></AdvanceCtx.Provider>;
 // v352 : cadrans « Ligne d'atelier » et « Fiches suiveuses » (à ajouter dans la disposition d'un poste)
 const AccueilAtelier = () => <HomeView pinOk testsDoc={DEMO_TESTS} data={DEMO_ROWS} comments={DEMO_COMMENTS} myEmail={DEMO_ME.email} myName={DEMO_ME.name} people={DEMO_PEOPLE} unseenChanges={[]} lastImport={null} onOpenPj={no} onGo={no}
   profiles={{ byEmail: {}, homeLayouts: { moi: { extra: ["ligne", "suiveuses", "depBoard", "ecarts", "parChef", "parPays", "parGamme", "finProd", "arrivees30"] } } }} owner cash={false} turbineDoc={null} onOpenCash={null} prodDoc={DEMO_PROD} canProdTurb productionExclusions={{}} plan={null} closurePeriods={[]} saveHomeLayout={null} />;

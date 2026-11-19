@@ -3,6 +3,7 @@ import { WidgetBoard, widgetsFromSpans } from "./WidgetBoard";
 import { T, FZ, btn } from "../theme";
 import { presenceKind, presenceDates, ETAT_META, PjPlate, getPjMeta, chefsOf, CountryFlag, SHIPPED_SINCE, countShippedYTD, Avatar } from "../pjMeta";
 import { buildFeed, whenTxt } from "../liveFeed"; // v418 : fil « En direct »
+import { AdvanceCtx, exportAdvanceXlsx } from "../advanceCtx"; // v426 : export de l'avancement pour le DAF
 import { NavIcon } from "./SharedUI";
 import { planOf, catalogOf, activeSections, progressOf, effRange, isForced, testersOf, findConflicts } from "../testPlan";
 import { turbineStatus } from "../turbines";
@@ -52,7 +53,7 @@ export const HOME_DEFAULTS = {
   atelier: [["charge", 7], ["arrdep", 5], ["montage", 7], ["postes", 5]],
   turbines: [["ptReady", 3], ["ptNoWheel", 3], ["ptPieces", 6], ["ptDates", 12], ["ptRoues", 6], ["ptInj", 6]],
   autre: [["kpis", 12], ["departs", 6], ["parcours", 6], ["transports", 6], ["benchWeek", 6], ["visites", 6], ["shipped", 6], ["etats", 6], ["fermetures", 6]],
-  daf: [["encaisser", 6], ["cash", 6], ["cashCurve", 12], ["cashLate", 6], ["cashMonth", 6], ["kpis", 12], ["departs", 6]], // v370
+  daf: [["avExport", 3], ["encaisser", 6], ["cash", 6], ["cashCurve", 12], ["cashLate", 6], ["cashMonth", 6], ["kpis", 12], ["departs", 6]], // v370
   // v417 : vue réservée au propriétaire (« Ma vue »), jamais attribuée à une autre personne
   moi: [["direct", 6], ["journee", 6], ["kpis", 12], ["equipe", 6], ["surveiller", 6], ["transports", 12], ["raiDue", 6], ["cashCurve", 12], ["cashLate", 6], ["depQuarter", 6], ["onTime", 6], ["tests", 4], ["turbines", 4], ["charge", 4], ["mentions", 6], ["departs", 6]],
   direction: [["direct", 6], ["journee", 6], ["kpis", 12], ["surveiller", 6], ["equipe", 6], ["cashCurve", 12], ["depQuarter", 6], ["onTime", 6], ["raiDue", 6], ["transports", 6], ["tests", 4], ["turbines", 4], ["cash", 4], ["alertes", 8], ["charge", 4], ["postes", 6], ["departs", 6], ["parcours", 12]],
@@ -216,6 +217,7 @@ const StatLine = ({ items }) => <div style={{ display: "flex", flexWrap: "wrap",
 export function RoleHome({ comments, changeLog, transports, produit, scope, role, profile, ui, kpiEl, depEl, parcoursEl, rows, open, late, mentions, myPjs, testsDoc, myTester, turbineDoc, prodDoc, plan, closurePeriods, productionExclusions, owner, cash, onOpenPj, onGo, onOpenCash, layout, onLayout, hello, renderLead }) {
   const { Row, Head, cardS, Pill, presenceOf, nomOf, empty, grey, link, S, H, A } = ui;
   const today = iso(new Date());
+  const adv = React.useContext(AdvanceCtx); // v426
   const on = id => blockOn(profile, id);
   useCashin(); // se met à jour quand le Cash in change
   useRai(); // v398 : et quand un RAI change
@@ -554,6 +556,14 @@ export function RoleHome({ comments, changeLog, transports, produit, scope, role
           style={{ all: "unset", position: "relative", boxSizing: "border-box", width: "100%", cursor: "pointer", display: "flex", alignItems: "center", gap: 10, minHeight: 40, borderTop: i === 0 ? "none" : "1px solid " + T.line, padding: "6px 2px", fontFamily: T.font }}>
           <Face name={x.who || "?"} />{x.pj && <PjPlate pj={x.pj} />}<span style={{ fontSize: 13, color: x.bad ? T.red600 : T.ink700, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.txt}</span>
           <span style={{ marginLeft: "auto", fontSize: 12, color: T.ink500, whiteSpace: "nowrap" }}>{x.who}</span></button>)}</>); } };
+  // v426 (demandé : « l'export de l'avancement doit être juste un bouton pour le DAF, sur sa page d'accueil »)
+  W.avExport = { label: "Avancement des projets (Excel)", span: 3, sizes: ["s", "m"], only: () => !!(adv && adv.rows && adv.rows.length), render: () => {
+    const n = adv.rows.length, avg = Math.round(adv.rows.reduce((s, x) => s + x.pct, 0) / Math.max(1, n));
+    return sec("avExport", "Avancement des projets", S.depart.ring, <div style={{ display: "flex", flexDirection: "column", gap: 8, height: "100%" }}>
+      <span style={{ fontSize: 13, fontWeight: 500, color: T.ink500 }}>Avancement des projets</span>
+      <span style={{ fontSize: 13, color: T.ink700 }}>{n} machine{n > 1 ? "s" : ""} · moyenne {avg} %</span>
+      <button type="button" onClick={() => exportAdvanceXlsx(adv.rows)} style={{ ...btn("pri", "md"), marginTop: "auto", alignSelf: "flex-start" }}>Exporter (Excel)</button>
+    </div>); } };
   W.alertes = { label: "Alertes", span: 8, render: () => { const bigLate = late.filter(r => r.drift > 10);
     return sec("alertes", "Alertes", A.orange.ring, <><Head title="Alertes" sub="dérives de plus de 10 j" count={bigLate.length} />
       {bigLate.length === 0 ? empty("check", "Aucune alerte", "Pas de grosse dérive.") : bigLate.slice(0, 6).map((r, i) => <Row key={r.pj} first={i === 0} pj={r.pj} pill={<Pill tone={A.orange}>Dérive</Pill>} main={nomOf(r) || "Départ " + fmtD(r.depart)} right={"+" + r.drift + " j"} />)}</>); } };
@@ -755,6 +765,7 @@ export function RoleHome({ comments, changeLog, transports, produit, scope, role
     ["Production turbines", { ptReady: "turbines prêtes", ptNoWheel: "turbines testées sans roue", ptPieces: "pièces à suivre", ptDates: "dates prévisionnelles des turbines", ptRoues: "stock de roues équilibrées", ptInj: "stock d'injecteurs" }],
     ["Gestion — Turbines et Cash in", { turbines: "pool de turbines", cash: "encaissements à venir", cashCurve: "encaissements cumulés de l'année face à l'initial", cashMonth: "encaissements et factures du mois face à l'initial", cashLate: "factures et paiements en retard", encaisser: "factures émises en attente de paiement, saisie par le DAF", produit: "jalons cash liés à un livrable du Produit" }],
     ["En direct — la journée", { direct: "ce qui vient de se passer : tests, commentaires, publications, transports", journee: "aujourd'hui, demain et après-demain : bancs, arrivées, départs, visites, enlèvements", equipe: "les testeurs avec leur machine au banc et leur semaine", surveiller: "retards sur l'initial et transports en attente, avec leur responsable" }],
+    ["Finance — DAF", { avExport: "export Excel de l'avancement global des projets (PJ, nom, avancement)" }],
     ["Logistique — ClickUp", { transports: "demandes de transport ClickUp et leur avancement, un clic ouvre la demande" }],
     ["Échanges — Commentaires", { mentions: "les mentions qui vous attendent" }],
   ];

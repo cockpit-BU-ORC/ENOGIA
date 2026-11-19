@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v426",
+    date: "2026-11-19",
+    title: "V426 : Export de l'avancement : un bouton sur l'accueil du DAF",
+    items: [
+      { t: "Accueil du DAF", d: "L'export Excel de l'avancement des projets (PJ, nom, avancement global et les 7 phases) est maintenant un seul bouton, sur l'accueil du DAF : tuile « Avancement des projets » avec le nombre de machines et la moyenne." },
+      { t: "Retiré ailleurs", d: "Le bouton n'est plus sur la page Finance ni dans la fiche projet." },
+    ],
+  },
+  {
     id: "2026-11-v425",
     date: "2026-11-19",
     title: "V425 : SAV / MES : une personne ne peut plus être sur 2 interventions en même temps",

@@ -3233,3 +3233,12 @@ Demandé : « mettre en rouge quand 2 interventions se superposent avec la même
 - `src/savModel.js` (testé) : `techClashes(inters, id, i)` (responsable + appui déjà sur une autre intervention non annulée qui chevauche), `clashSet(inters)` (barres en conflit).
 - `SavPage.js` : barres en conflit en rouge (`clash`, info-bulle « CONFLIT ») ; `InterDialog` : message rouge et bouton désactivé ; `saveInter` et `onMove` (glisser une barre) refusés avec un message (`notify`).
 - Fichiers : src/savModel.js (+ test), src/components/SavPage.js.
+
+## V426 — Export de l'avancement : un bouton sur l'accueil du DAF
+
+Demandé : « l'export pour l'avancement doit être juste un bouton pour le DAF (à mettre sur sa home page) ».
+
+- `RoleHome.js` : widget `avExport` « Avancement des projets (Excel) » (Petit / Moyen : nombre de machines, moyenne, bouton « Exporter (Excel) » → `exportAdvanceXlsx`, données `AdvanceCtx`), en tête de `HOME_DEFAULTS.daf`, thème « Finance — DAF » de la galerie de widgets.
+- Retiré : bouton de la page Finance (`CashInTab`) et lien de la tuile « Avancement global » de la fiche projet.
+- Galerie : accueil avec `AdvanceCtx` (données d'exemple).
+- Fichiers : src/components/RoleHome.js, src/components/CashInTab.js, src/components/ManagerFiche.js, src/demo/demoPages.js.
