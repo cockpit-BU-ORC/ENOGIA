@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v428",
+    date: "2026-11-19",
+    title: "V428 : Cash in : plus de mensualités",
+    items: [
+      { t: "Cash in", d: "Plus aucune mensualité : le loyer du PJ457 n'est plus réparti mois par mois, chaque jalon compte en une fois dans le Cash in et dans les tableaux Cash par mois et Cash par PJ et par mois." },
+    ],
+  },
+  {
     id: "2026-11-v427",
     date: "2026-11-19",
     title: "V427 : Cash in : mensualités retirées, loyer du PJ457 seulement",

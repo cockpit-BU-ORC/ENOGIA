@@ -27,7 +27,7 @@ export const CASHIN_SHARED_REF = () => doc(db, "planning", CASHIN_SHARED_ID);
 // v374 : fiche du lundi (destinataires, envoi automatique, demandes d'envoi, historique) — lue et écrite par la Finance (Admin), envoyée par la fonction serveur
 export const CASHIN_WEEKLY_ID = (process.env.REACT_APP_BETA === "1" ? "beta_" : "") + "cashinWeekly";
 export const CASHIN_WEEKLY_REF = () => doc(db, "planning", CASHIN_WEEKLY_ID);
-export const CASHIN_PAGE_VERSION = "427"; // change à chaque modification de public/cashin.html (évite le cache du navigateur)
+export const CASHIN_PAGE_VERSION = "428"; // change à chaque modification de public/cashin.html (évite le cache du navigateur)
 export const CASHIN_MAX_BYTES = 900 * 1024;  // limite Firestore : 1 Mo par document
 
 // Le document garde exactement la forme de l'ancien artefact : { rows, labels, totals, owners, updatedAt }.

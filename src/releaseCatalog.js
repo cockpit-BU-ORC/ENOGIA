@@ -1314,4 +1314,7 @@ export const RELEASE_CATALOG = [
   { v: "427", t: "Cash in : mensualités retirées, loyer du PJ457 seulement", items: [
     ["Cash in : loyer PJ457", "Mensualités génériques retirées ; loyer de 11 200 € × 24 sur le jalon 4 du PJ457."],
   ] },
+  { v: "428", t: "Cash in : plus de mensualités", items: [
+    ["Cash in sans mensualités", "Loyer réparti retiré, chaque jalon compte en une fois."],
+  ] },
 ];

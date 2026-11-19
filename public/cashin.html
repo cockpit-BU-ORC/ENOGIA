@@ -416,12 +416,7 @@ var toMs=function(iso){var p=iso.split('-').map(Number);return Date.UTC(p[0],p[1
 var fromMs=function(ms){var d=new Date(ms);return d.getUTCFullYear()+'-'+pad(d.getUTCMonth()+1)+'-'+pad(d.getUTCDate())};
 var diff=function(a,b){return Math.round((toMs(b)-toMs(a))/864e5)};
 var addDays=function(iso,n){return fromMs(toMs(iso)+n*864e5)};
-/* v427 (demandé : « le système de mensualités casse tout : l'enlever, et le mettre uniquement pour le jalon 4 du PJ457 — 11 200 € par mois dès le mois
-   après la MES, pendant 2 ans ») : seul ce jalon est réparti ; sa date « Enc. prévu » = date de MES, 1re mensualité le mois suivant. */
-var RENT={pj:'PJ457',n:4,monthly:11200,months:24};
-function isRent(r){if(!r||String(r.pj||'').toUpperCase()!==RENT.pj)return false;var mine=rows.filter(function(x){return String(x.pj||'').toUpperCase()===RENT.pj});return mine.indexOf(r)===RENT.n-1}
 var addMonths=function(iso,n){if(!iso)return iso;var y=+iso.slice(0,4),m=+iso.slice(5,7)-1+n,d=+iso.slice(8,10);y+=Math.floor(m/12);m=((m%12)+12)%12;var last=new Date(y,m+1,0).getDate();return y+'-'+pad(m+1)+'-'+pad(Math.min(d,last))};
-function parts(r){if(!isRent(r))return null;var out=[],base=r.encPrevue,bi=r.encInit||r.encPrevue;for(var k=0;k<RENT.months;k++)out.push({i:k,amt:RENT.monthly,enc:base?addMonths(base,k+1):null,init:bi?addMonths(bi,k+1):null});return out}
 var eurF=new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0});
 var eur=function(n){return eurF.format(n||0).replace(/ | /g,' ')};
 var fdate=function(iso){return iso?iso.slice(8,10)+'/'+iso.slice(5,7)+'/'+iso.slice(2,4):''};
@@ -604,7 +599,6 @@ function monthly(){
   var M={},nodate={init:0,fc:0};
   var get=function(k){return M[k]||(M[k]={key:k,init:0,paid:0,fc:0,ot:0,sh:0,otN:0,shN:0})};
   rows.forEach(function(r){
-    var P=!r.epc&&!r.payeForce&&parts(r);if(P){P.forEach(function(p){if(p.init)get(p.init.slice(0,7)).init+=p.amt;else nodate.init+=p.amt;if(p.enc)get(p.enc.slice(0,7)).fc+=p.amt;else nodate.fc+=p.amt});return}
     var mk=monthKeys(r);if(!mk)return;var a=r.montant;
     if(mk.init==='none')nodate.init+=a;else get(mk.init).init+=a;
     if(mk.act==='none')nodate.fc+=a;else if(mk.paid)get(mk.act).paid+=paidAmt(r);else get(mk.act).fc+=a;
@@ -630,7 +624,7 @@ function alertItems(){
   var when=function(d){var n=diff(TODAY,d);return n===0?'aujourd’hui':'dans '+n+' j (le '+fdate(d)+')'};
   rows.forEach(function(r){
     var s=status(r),k=s.k;
-    if(k==='paid'||isRent(r))return;
+    if(k==='paid')return;
     if(k==='late'){if(!lo) items.push({r:r,w:r.encPrevue?diff(TODAY,r.encPrevue)-1:-9999,kind:'late',txt:'Paiement en retard'+(s.days?' de '+s.days+' j (prévu '+fdate(r.encPrevue)+')':''),bad:true})}
     else if(k==='invoiced'||k==='chased'){
       if(r.encPrevue&&r.encPrevue<TODAY){if(!lo) items.push({r:r,w:diff(TODAY,r.encPrevue),kind:'late',txt:'Paiement dépassé de '+s.days+' j : passez-le en retard ou notez le paiement',bad:true})}
@@ -889,7 +883,7 @@ function popTable(list,extraLabel,extraFn){
   list.forEach(function(r){
     var k=status(r).k,ex='';
     if(extraFn){var f=fmtDays(extraFn(r));ex='<td class="r d '+f.c+'">'+f.t+'</td>'}
-    h+='<tr><td><b>'+esc(r.pj)+'</b>'+(labels[r.pj]?'<div class="pjn">'+esc(labels[r.pj])+'</div>':'')+'</td><td>'+esc(r.jalon||'Jalon sans nom')+(isRent(r)?'<div class="pjn">loyer : '+RENT.months+' mensualités de '+eur(RENT.monthly)+' après la MES</div>':'')+'</td><td class="r">'+eur(r.montant)+'</td><td><span class="pill k-'+k+'">'+STATUS_LABEL[k]+'</span></td><td class="r">'+esc(fmtD(r.encInit))+'</td><td class="r">'+esc(fmtD(r.encPrevue))+'</td><td class="r">'+esc(fmtD(r.encReelle))+'</td><td>'+puPill(r)+'</td>'+ex+'<td><button type="button" class="mini" data-goto="'+r.id+'">Voir</button></td></tr>';
+    h+='<tr><td><b>'+esc(r.pj)+'</b>'+(labels[r.pj]?'<div class="pjn">'+esc(labels[r.pj])+'</div>':'')+'</td><td>'+esc(r.jalon||'Jalon sans nom')+'</td><td class="r">'+eur(r.montant)+'</td><td><span class="pill k-'+k+'">'+STATUS_LABEL[k]+'</span></td><td class="r">'+esc(fmtD(r.encInit))+'</td><td class="r">'+esc(fmtD(r.encPrevue))+'</td><td class="r">'+esc(fmtD(r.encReelle))+'</td><td>'+puPill(r)+'</td>'+ex+'<td><button type="button" class="mini" data-goto="'+r.id+'">Voir</button></td></tr>';
   });
   return h+'</tbody></table>';
 }
@@ -959,9 +953,7 @@ function fmtK(n){
 function matrixItems(){
   var items=[];
   rows.forEach(function(r){
-    if(r.epc||r.payeForce)return;
-    var P=parts(r);if(P){P.forEach(function(p){items.push({r:r,paid:false,amt:p.amt,mens:p.i+1,key:p.enc?p.enc.slice(0,7):'none',late:false})});return}
-    if(!r.montant)return;
+    if(r.epc||!r.montant||r.payeForce)return;
     var st=status(r),paid=st.k==='paid'&&!!r.encReelle,d=paid?r.encReelle:r.encPrevue;
     /* v420 : en retard = paiement non reçu dont l'encaissement prévu (ou la facture à émettre) est dépassé */
     items.push({r:r,paid:paid,key:d?d.slice(0,7):'none',late:!paid&&(st.k==='late'||!!st.days||(!!r.encPrevue&&r.encPrevue<TODAY))});
@@ -976,8 +968,8 @@ function matrixHTML(){
   var months=monthRange(Object.keys(ks).filter(function(k){return k!=='none'}).sort());
   if(ks.none)months.push('none');
   var pjs=pjList().filter(function(pj){return items.some(function(x){return x.r.pj===pj})});
-  var sum=function(l){return l.reduce(function(s,x){return s+(x.amt!=null?x.amt:x.r.montant)},0)};
-  var tip=function(l){return l.map(function(x){return (x.paid?'Reçu : ':x.late?'En retard : ':'Prévu : ')+x.r.pj+(labels[x.r.pj]?' ('+labels[x.r.pj]+')':'')+' · '+(x.r.jalon||'Jalon')+(x.mens?' · loyer, mensualité '+x.mens+' / '+RENT.months:'')+' · '+eur(x.amt!=null?x.amt:x.r.montant)+(!x.mens&&pctText(x.r)?' · '+pctText(x.r):'')}).join('\n')};
+  var sum=function(l){return l.reduce(function(s,x){return s+x.r.montant},0)};
+  var tip=function(l){return l.map(function(x){return (x.paid?'Reçu : ':x.late?'En retard : ':'Prévu : ')+x.r.pj+(labels[x.r.pj]?' ('+labels[x.r.pj]+')':'')+' · '+(x.r.jalon||'Jalon')+' · '+eur(x.r.montant)+(pctText(x.r)?' · '+pctText(x.r):'')}).join('\n')};
   var cell=function(l,key,pj,extra){
     var t=sum(l),allPaid=l.every(function(x){return x.paid}),anyLate=l.some(function(x){return x.late});
     return '<td class="mxc '+(allPaid?'p':anyLate?'f l':'f')+(key===cur?' cur':'')+(extra||'')+'" data-mx="'+esc(pj)+'|'+key+'" title="'+esc(eur(t)+'\n'+tip(l))+'">'+fmtK(t)+(l.length>1?'<sup>'+l.length+'</sup>':'')+'</td>';

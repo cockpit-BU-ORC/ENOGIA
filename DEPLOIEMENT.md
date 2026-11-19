@@ -3249,3 +3249,10 @@ Demandé : « dans le Cash in, le système de mensualités casse tout : l'enleve
 
 - `public/cashin.html` (`CASHIN_PAGE_VERSION` 427) : colonne et saisie « Mensualités » retirées ; l'ancien champ `mens` est effacé à la lecture (`normalize`) ; `RENT = { pj: PJ457, n: 4, monthly: 11 200, months: 24 }`, `isRent(r)` = 4e jalon du PJ457 dans l'ordre du tableau ; `parts(r)` = 24 mensualités de 11 200 € à partir du mois qui suit « Enc. prévu » du jalon (date de MES) — Cash par mois, Cash par PJ et par mois (même sans montant saisi sur le jalon) ; pas d'alerte « encaissement dépassé » sur ce jalon ; mention « loyer » dans les fenêtres et le survol.
 - Fichiers : public/cashin.html, src/cashinData.js.
+
+## V428 — Cash in : plus de mensualités
+
+Demandé : « enlève la mensualité du Cash in et des tableaux car c'est trop lourd ».
+
+- `public/cashin.html` (`CASHIN_PAGE_VERSION` 428) : `RENT`, `isRent`, `parts` retirés ; `monthly()`, `matrixItems()`, alertes, fenêtres et survol reviennent à un jalon = un paiement. L'effacement de l'ancien champ `mens` à la lecture est gardé.
+- Fichiers : public/cashin.html, src/cashinData.js.
