@@ -448,7 +448,8 @@ function ResaPanel({ resa, onResa, n }) {
   </Panel>;
 }
 function DispoView({ techs, dispo, inters, onSave, onTeam, resa, onResa }) {
-  const t0 = todayIso(), days = useMemo(() => { const out = []; let d = mondayOf(t0); while (out.length < 60) { if (!isWE(d)) out.push(d); d = addDaysIso(d, 1); } return out; }, [t0]);
+  const t0 = todayIso(), days = useMemo(() => { const out = []; let d = addDaysIso(mondayOf(t0), -56); while (out.length < 100) { if (!isWE(d)) out.push(d); d = addDaysIso(d, 1); } return out; }, [t0]); // v423 : 8 semaines de passé
+  const dispoSc = useRef(null); useEffect(() => { const el = dispoSc.current; if (el) el.scrollLeft = 40 * 26; }, []); // ouverture sur la semaine en cours
   const [form, setForm] = useState(null); // { name, from, to, kind }
   const P = n => dispo[n] || {};
   const setP = (n, patch) => onSave({ ...dispo, [n]: { ...P(n), ...patch } });
@@ -474,8 +475,8 @@ function DispoView({ techs, dispo, inters, onSave, onTeam, resa, onResa }) {
         <span style={{ fontSize: 12, color: T.ink500 }}>Samedis et dimanches ignorés</span></form>}
     </Panel>
     <ResaPanel resa={resa} onResa={onResa} n={techs.filter(n => !P(n).exclu).length} />
-    <Panel level={2} title="Calendrier des 12 prochaines semaines" pad={0} right={<span style={{ fontSize: 12, color: T.ink500, padding: "12px 14px 0 0" }}>Clic sur un jour : non dispo, puis congés, puis disponible</span>}>
-      <div style={{ overflowX: "auto" }}><div style={{ width: LW + days.length * CW }}>
+    <Panel level={2} title="Calendrier des disponibilités" pad={0} right={<span style={{ fontSize: 12, color: T.ink500, padding: "12px 14px 0 0" }}>Clic sur un jour : non dispo, puis congés, puis disponible</span>}>
+      <div ref={dispoSc} style={{ overflowX: "auto" }}><div style={{ width: LW + days.length * CW }}>
         <div style={{ display: "flex", position: "sticky", top: 0, background: T.surface, borderBottom: "1px solid " + T.line }}>
           <div style={{ width: LW, flexShrink: 0, position: "sticky", left: 0, background: T.surface, zIndex: 2 }} />
           {days.map(d => { const w = new Date(d + "T12:00:00").getDay(); return <div key={d} style={{ width: CW, flexShrink: 0, textAlign: "center", fontSize: 12, padding: "3px 0", borderLeft: (w === 1 ? "2px solid " : "1px solid ") + T.line, background: d === t0 ? T.amber100 : undefined }}>
@@ -504,7 +505,7 @@ function PlanningView({ resa, inters, demandes, techs, canEdit, isAdmin, nomOf, 
   const [z, setZ0] = useState(() => { try { const v = localStorage.getItem("enogia_sav_zoom"); return v != null && ZOOMS[+v] ? +v : 3; } catch (e) { return 3; } });
   const setZ = n => { const v = Math.max(0, Math.min(ZOOMS.length - 1, n)); setZ0(v); try { localStorage.setItem("enogia_sav_zoom", String(v)); } catch (e) { /* stockage indisponible */ } };
   const colPx = ZOOMS[z], labW = 170;
-  const days = useMemo(() => { const out = []; let d = mondayOf(addDaysIso(t0, -56)); for (let k = 0; k < 7 * 36; k++) { out.push(d); d = addDaysIso(d, 1); } return out; }, [t0]);
+  const days = useMemo(() => { const out = []; let d = mondayOf(addDaysIso(t0, -182)); for (let k = 0; k < 7 * 54; k++) { out.push(d); d = addDaysIso(d, 1); } return out; }, [t0]); // v423 : 6 mois de passé
   const N = days.length;
   const { X, WD, idxOf, W } = useMemo(() => { const X = [], WD = [], idxOf = {}; let x = 0; days.forEach((d, i) => { const w = isWE(d) ? Math.round(colPx * 0.55) : colPx; X.push(x); WD.push(w); idxOf[d] = i; x += w; }); return { X, WD, idxOf, W: labW + x }; }, [days, colPx]);
   const idxAt = px => { let lo = 0, hi = N - 1; while (lo < hi) { const m = (lo + hi + 1) >> 1; if (X[m] <= px) lo = m; else hi = m - 1; } return lo; };

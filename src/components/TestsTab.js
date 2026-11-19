@@ -318,7 +318,8 @@ function GridNav({ off, setOff, step = 1 }) {
 // créneaux (sous-lignes si deux périodes se chevauchent, contour orange = testeur en conflit), trait « aujourd'hui », zoom 2 sem. / 6 sem. /
 // 3 mois (enogia_bg_zoom), bande continue (4 semaines avant, 100 jours ouvrés), ‹ › = un écran. Dessous : PJ sans période, puis
 // « Tests validés » repliable (historique par mois : tous les tests faits ou validés à la main, expédiées comprises). Remplace la grille V338.
-const BG_WEEKS_BEFORE = 4, BG_DAYS = 100, BG_ZOOM = { "2w": 56, "6w": 30, "3m": 16 }, BG_LW = "min(180px, 34vw)";
+const BG_WEEKS_BEFORE = 26, BG_DAYS = 210, // v423 : 6 mois de passé
+  BG_ZOOM = { "2w": 56, "6w": 30, "3m": 16 }, BG_LW = "min(180px, 34vw)";
 function BenchGrid({ rows, allRows, doc, catalog, testers, conflicts, on, onPick, benches }) {
   const todayIso = toLocalISO(new Date());
   const [zoom, setZoomS] = useState(() => { try { const z = localStorage.getItem("enogia_bg_zoom"); return BG_ZOOM[z] ? z : "6w"; } catch (e) { return "6w"; } });

@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useEffect, useLayoutEffect, useRef } from "react";
+import React, { useContext, useState, useMemo, useEffect, useLayoutEffect, useRef } from "react";
+import { AdvanceCtx, exportAdvanceXlsx } from "../advanceCtx"; // v423
 import { smooth } from "../scrollMode";
 import { T, FZF as FZ, D, statusSoft, stripeBg, stripeHues, btn } from "../theme";
 import { SerieTag, getPjMeta, PJ_META_OVERRIDES, CountryFlag, Avatar, GAMME_COLORS, ETAT_META, etatInk, PresenceChip, PRESENCE_META, presenceKind, presenceDates, presenceFirstDate, today, PjPlate, orcChefsOf, epcChefOf, EpcTag } from "../pjMeta";
@@ -18,7 +19,7 @@ import { typedMentions, mentionsOf, isOpenFor, countOpenFor, nameFromEmail, lc }
 import { CodirDialog } from "./CodirReport";
 import { CashLinksDialog } from "./CashLinks";
 import { MultiApplyDialog } from "./MultiApply";
-import { ITEM_STATUS, itemStatus, statusPatch, mitText, mitParts, COMP_STEPS, itemsOf, sortedItems, composantsOf, getDefaultComposants, paiementsOf, compPct, payPct, globalProgress, montantOf, fmtEur } from "../pjProgress";
+import { ITEM_STATUS, itemStatus, statusPatch, mitText, mitParts, COMP_STEPS, itemsOf, sortedItems, composantsOf, getDefaultComposants, paiementsOf, compPct, payPct, montantOf, fmtEur } from "../pjProgress";
 import { FicheContratPanel, CertifTag } from "./FicheContrat";
 import { CommentMarks } from "./CommentMarks";
 import { Reactions } from "./Reactions";
@@ -684,24 +685,17 @@ function PaiementsManual({meta,onSave,extra}){
   </Section>);
 }
 
-// Avancement global : avancement du projet de la signature à la mise en service, saisi à la main (pas de formule).
-function GlobalTile({gp,onSave}){
-  const [v,setV]=useState(gp.set?String(gp.global):"");
-  useEffect(()=>{setV(gp.set?String(gp.global):"");},[gp.global,gp.set]);
-  const commit=()=>{
-    if(v===""){if(gp.set&&onSave)onSave({avGlobal:null});return;}
-    const n=Math.max(0,Math.min(100,Math.round(Number(v))));
-    if(isNaN(n)){setV(gp.set?String(gp.global):"");return;}
-    setV(String(n));if((!gp.set||n!==gp.global)&&onSave)onSave({avGlobal:n});
-  };
-  return(<div style={{display:"flex",alignItems:"center",gap:8}} title={"Volets : "+gp.parts.map(x=>x.label+" "+x.v+"%").join(" · ")}>
-    <Donut v={gp.global}/>
-    <div style={{minWidth:0}}>
-      {onSave?<span style={{display:"inline-flex",alignItems:"center",gap:3}}>
-        <input type="number" min={0} max={100} step={5} value={v} placeholder="—" onChange={e=>setV(e.target.value)} onBlur={commit} onKeyDown={e=>{if(e.key==="Enter")e.currentTarget.blur();}} aria-label="Avancement global (%)" style={{width:58,padding:"3px 6px",borderRadius:8,border:"1.5px solid "+(gp.set?T.teal500:T.line),background:T.card,color:T.ink900,fontSize:FZ.sm,fontWeight:600,fontFamily:T.font,textAlign:"right"}}/>
-        <span style={{fontSize:FZ.xs,color:T.ink500,fontWeight:500}}>%</span>
-      </span>:null}
-      <div style={{fontSize:FZ.xs,color:T.ink300,marginTop:3,lineHeight:1.3}}>{gp.set?"signature → mise en service":"à saisir : signature → MES"}</div>
+// v423 (demandé : « pour l'avancement global ORC, voici les règles ») : avancement calculé (orcAdvance) — KOM 5, Design 20, Achats 20,
+// Fabrication 25, FAT 10, Livraison 15, MES 5 — plus de saisie à la main ; le détail des phases s'affiche au survol et sous le chiffre
+function GlobalTile({pj}){
+  const ctx=useContext(AdvanceCtx),a=ctx&&ctx.map&&ctx.map[pj];
+  if(!a)return <div style={{fontSize:FZ.xs,color:T.ink500}}>—</div>;
+  return(<div style={{display:"flex",alignItems:"center",gap:10}} title={a.phases.map(p=>p.label+" ("+p.w+" %) : "+Math.round(p.done*100)+" % · "+p.how).join("\n")}>
+    <Donut v={a.pct}/>
+    <div style={{minWidth:0,display:"flex",flexDirection:"column",gap:3}}>
+      <span style={{fontSize:FZ.xs,color:T.ink500}}>signature → mise en service</span>
+      <span aria-label={"Phases : "+a.phases.map(p=>p.label+" "+Math.round(p.done*100)+" %").join(", ")} style={{display:"flex",gap:2}}>{a.phases.map(p=><i key={p.k} title={p.label+" : "+Math.round(p.done*100)+" %"} style={{display:"block",width:Math.max(6,p.w*1.1),height:6,borderRadius:2,background:p.done>=1?T.emerald600:p.done>0?"color-mix(in srgb, "+T.emerald600+" "+Math.round(25+p.done*60)+"%, "+T.surfaceAlt+")":T.surfaceAlt}}/>)}</span>
+      <button type="button" onClick={()=>exportAdvanceXlsx(ctx.rows)} style={{all:"unset",position:"relative",cursor:"pointer",fontSize:FZ.xs,color:T.accentInk,fontWeight:500}}>Exporter l'avancement de tous les PJ (Excel)</button>
     </div>
   </div>);
 }
@@ -985,7 +979,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
     finally{setTimeout(()=>{if(pendingNotes.current[r.pj]===next)delete pendingNotes.current[r.pj];},1200);}
   };
   const notes=(meta&&meta.notes)||{};
-  const gp=r&&meta?globalProgress(r,meta,progress):null;
+
   const worst=meta?worstFeu(feuxOf(meta)):null;
   const kind=r?presenceKind(r.clientPresence):null;
   const gc=r?(GAMME_COLORS[r.gamme]||T.teal500):T.teal500;
@@ -1168,7 +1162,7 @@ export function ProjectFileManager({profiles,focus,compCatalog,setCompCatalog,ma
         <Section style={{columnSpan:"all",WebkitColumnSpan:"all"}} title="Indicateurs clés" right={<span style={{fontSize:FZ.xs,color:T.ink300,whiteSpace:"nowrap"}}>{kpi.toDepart==null?"":(kpi.toDepart>=0?"J-"+kpi.toDepart+" avant départ":"départ dépassé de "+Math.abs(kpi.toDepart)+" j")}{kpi.atelier!=null?" · séjour atelier "+kpi.atelier+" j":""}{kpi.tests!=null?" · fenêtre tests "+kpi.tests+" j":""}</span>}>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:8,alignItems:"stretch"}}> {/* v276 : une seule rangée sur toute la largeur */}
             {[
-              ["gl","Avancement global",<GlobalTile gp={gp} onSave={savePjMetaOverride?f=>savePjMetaOverride(r.pj,f):null}/>,null],
+              ["gl","Avancement global",<GlobalTile pj={r.pj}/>,null],
               ["av","Avancement production",<div style={{display:"flex",alignItems:"center",gap:8}}><Donut v={kpi.pv}/><span style={{fontSize:FZ.xs,color:T.ink300,lineHeight:1.35}}>{r.etat==="SHIPPED"?"expédié":"production chez ENOGIA"}</span></div>,null],
               ["dr","Dérive du départ",<Big color={kpi.driftDepart>0?T.red500:kpi.driftDepart<0?T.emerald600:T.ink900}>{ini?signed(kpi.driftDepart):"—"}</Big>,ini?(kpi.driftDepart===0?"conforme au planning initial":"initial : "+fmtLong(dOf(ini.depart))):"pas de planning initial"],
               ["rt","Retards déclarés",<Big color={totalDelayDays>0?T.red500:T.ink900}>{totalDelayDays>0?totalDelayDays+" j":"0"}</Big>,totalDelayDays>0?pjDelays.length+" cause"+(pjDelays.length>1?"s":"")+" consignée"+(pjDelays.length>1?"s":""):"aucun retard consigné"],

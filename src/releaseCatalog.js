@@ -1298,4 +1298,8 @@ export const RELEASE_CATALOG = [
   { v: "422", t: "SAV / MES : non dispo et congés, règle des équipes, réservations fermées à T0 + X semaines", items: [
     ["SAV : équipes et réservations", "Non dispo et congés, règle des équipes de 2, réservations des chefs de projet fermées à T0 + X semaines."],
   ] },
+  { v: "423", t: "Avancement global ORC pondéré, export Excel pour le DAF, retour vers le passé dans les calendriers", items: [
+    ["Avancement global pondéré", "7 phases pondérées (KOM à MES), export Excel pour le DAF."],
+    ["Calendriers : le passé", "Défilement vers le passé dans tous les calendriers, Gantt et plannings."],
+  ] },
 ];

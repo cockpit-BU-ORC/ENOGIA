@@ -50,7 +50,7 @@ export function makeTimeline(sched, zoomIn) {
   let lo = Infinity, hi = -Infinity;
   Object.values(sched.nodes).forEach(n => { if (n.s === null) return; lo = Math.min(lo, dayNum(n.start)); hi = Math.max(hi, dayNum(n.finish)); });
   if (!isFinite(lo)) { lo = today - 14; hi = today + 120; }
-  lo = Math.min(lo, today - 14) - 14; lo -= dow(lo); hi = Math.max(hi, today + 60) + 28; hi = Math.max(hi, lo + Math.ceil(1500 / px));
+  lo = Math.min(lo, today - 182) - 14; lo -= dow(lo); // v423 : 6 mois de passé (l'ouverture se cale sur aujourd'hui) hi = Math.max(hi, today + 60) + 28; hi = Math.max(hi, lo + Math.ceil(1500 / px));
   return { lo, hi, px, today, W: (hi - lo + 1) * px, X: iso => (dayNum(iso) - lo) * px, zoom };
 }
 

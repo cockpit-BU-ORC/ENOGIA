@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useLayoutEffect, useRef } from "react";
 import { isPhone } from "../useIsPhone";
 import { EtatInfoButton } from "./ProdStagesUI";
 import { T, FZF, stagePalette, stripeBg } from "../theme";
@@ -186,7 +186,9 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
   // flexible (1fr) — elles remplissaient donc toujours exactement l'écran, sans rien à faire défiler.
   // Désormais le niveau de zoom fixe le nombre de colonnes VISIBLES à l'écran (donc leur largeur en
   // px), et on génère une plage bien plus longue à défiler vers la droite.
-  const TOTAL_WEEKS=60, TOTAL_DAYS=300;
+  const PAST_W=26, PAST_D=120; // v423 : passé accessible en défilant
+  const TOTAL_WEEKS=60+PAST_W, TOTAL_DAYS=300+PAST_D;
+  const pendScroll=useRef(null);
   const [viewW,setViewW]=useState(1100);
   const [viewMeasured,setViewMeasured]=useState(false);
   const zoomIn=()=>setZoomLevel(Math.max(0,Math.min(maxZoomLevel,zoomLevel)-1));
@@ -295,10 +297,8 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
   // l'ouverture (une fois la largeur mesurée), au changement Semaine/Jour et sur « Aujourd'hui ».
   const centerOnToday=()=>{
     setZoomLevel(HOME_ZOOM);
-    if(mode==="week"){const w=weekStartOf(today);w.setDate(w.getDate()-7);setAnchor(w);}
-    else{const d=new Date(today);d.setHours(0,0,0,0);d.setDate(d.getDate()-7);setDayAnchor(d);}
-    if(scrollRef.current)scrollRef.current.scrollLeft=0;
-    setScrollPos(p=>p.x===0?p:{x:0,y:p.y});
+    if(mode==="week"){const w=weekStartOf(today);w.setDate(w.getDate()-7*(PAST_W+1));setAnchor(w);pendScroll.current=PAST_W;}
+    else{const d=new Date(today);d.setHours(0,0,0,0);d.setDate(d.getDate()-7-PAST_D);setDayAnchor(d);pendScroll.current=PAST_D;}
   };
   const goToday=()=>{if(mode==="month"){const d=new Date();setMonthD(new Date(d.getFullYear(),d.getMonth(),1));return;}centerOnToday();};
   const goTodayRef=useRef(goToday);goTodayRef.current=goToday;
@@ -312,6 +312,9 @@ export function CalendarView({canEditDays,setClosurePeriods,setProductionExclusi
   // Plage de colonnes à dessiner [lo, hi] d'après le défilement horizontal.
   const colW=cols.map(c=>mode==="week"?colPx:((c.getDay()===0||c.getDay()===6)?wePx:colPx));
   const colX=[];colW.reduce((acc,w)=>{colX.push(acc);return acc+w;},0);
+  // v423 : après « Aujourd'hui » (ou l'ouverture), la vue se cale sur J-7 ; le passé reste à gauche, accessible en défilant
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useLayoutEffect(()=>{const i=pendScroll.current,el=scrollRef.current;if(i==null||!el||colX[i]==null)return;pendScroll.current=null;el.scrollLeft=colX[i];const x=Math.floor(el.scrollLeft/SCROLL_Q)*SCROLL_Q;setScrollPos(p=>p.x===x?p:{x,y:p.y});});
   const totalW=colX.length?colX[colX.length-1]+colW[colW.length-1]:0;
   const base0=cols.length?toLocalISO(cols[0]):null;
   const dayN=iso=>Math.round((new Date(iso+"T12:00:00")-new Date(base0+"T12:00:00"))/864e5);

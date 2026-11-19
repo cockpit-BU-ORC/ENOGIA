@@ -1,6 +1,7 @@
 // V146 — Manager › Cash in (super admin). La page elle-même est public/cashin.html (reprise de l'artefact « Cash in PJ »),
 // affichée dans un cadre ; ce composant fait le pont avec Firestore (planning/cashin) et fournit les couleurs du site.
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useContext, useEffect, useRef, useState } from "react";
+import { AdvanceCtx, exportAdvanceXlsx } from "../advanceCtx"; // v423
 import { onSnapshot, setDoc } from "firebase/firestore";
 import { T, FZ, R } from "../theme";
 import { CashLinksDialog } from "./CashLinks";
@@ -10,17 +11,18 @@ import { applyEdit } from "../cashinModel";
 import { CashAnchorsDialog } from "./CashAnchors";
 import { CashInEncaissements } from "./CashInEncaissements";
 import { CashInWeekly } from "./CashInWeekly";
-import { Segmented } from "./SharedUI";
+import { Segmented, Btn } from "./SharedUI";
 import { useCashin } from "../useCashin";
 import { CASHIN_DOC_REF, CASHIN_PAGE_VERSION, CASHIN_MAX_BYTES, cashinTheme, validateCashin, CASHIN_PRODUIT_REF, produitItems } from "../cashinData";
 
 const btn = (primary) => ({ padding: "6px 12px", borderRadius: 8, border: "1px solid " + (primary ? T.teal600 : T.line), background: primary ? T.teal600 : T.card, color: primary ? T.card : T.ink900, fontSize: FZ.sm, fontWeight: 600, cursor: "pointer" });
 
 export function CashInTab({ authorName, focus, planRows, sub = "table", onSub, canEdit, canWeekly, me }) {
+  const adv = useContext(AdvanceCtx); // v423 : export de l'avancement global pour le DAF
   // v257 (demandé : « enlever le Cash in du site ») : le format artefact est le seul Cash in.
   // v369 : sous-page « Encaissements » (saisie des paiements reçus par le DAF) à côté du tableau complet
   return (<div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-    {onSub && <div><Segmented label="Vue du Cash in" value={sub} onChange={onSub} options={[["table", "Tableau complet"], ["enc", "Encaissements"], ...(canWeekly ? [["lundi", "Fiche du lundi"]] : [])]} /></div>}
+    {onSub && <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}><Segmented label="Vue du Cash in" value={sub} onChange={onSub} options={[["table", "Tableau complet"], ["enc", "Encaissements"], ...(canWeekly ? [["lundi", "Fiche du lundi"]] : [])]} /><span style={{ flex: 1 }} />{adv && adv.rows && adv.rows.length > 0 && <Btn size="sm" onClick={() => exportAdvanceXlsx(adv.rows)} title="PJ, nom du projet et avancement global (KOM, Design, Achats, Fabrication, FAT, Livraison, MES)">Avancement des projets (Excel)</Btn>}</div>}
     {sub === "lundi" && canWeekly ? <CashInWeekly me={me} canEdit={canWeekly} appUrl={window.location.origin + window.location.pathname + "?p=cashin"} /> : sub === "enc" ? <CashInEncaissements authorName={authorName} canEdit={canEdit} /> : <CashInLegacy authorName={authorName} focus={focus} planRows={planRows} />}
   </div>);
 }

@@ -8,6 +8,7 @@ const SOURCES = [
   "https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js",
   "https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js",
 ];
+export const loadExcel = () => loadExcelJS(); // v423 : réutilisé par l'export de l'avancement
 function loadExcelJS() {
   if (window.ExcelJS) return Promise.resolve(window.ExcelJS);
   const tryLoad = i => new Promise((resolve, reject) => {

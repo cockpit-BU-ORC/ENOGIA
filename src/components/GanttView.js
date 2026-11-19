@@ -47,7 +47,7 @@ export function GanttView({data,progress,df,selEtats,setSelEtats,allPJs,selPJs,s
     });
     let s=min?new Date(min.getFullYear(),0,1):new Date(todayYear,0,1);
     let e=max?new Date(max.getFullYear(),11,31):new Date(todayYear,11,31);
-    if(s>new Date(todayYear,0,1))s=new Date(todayYear,0,1);
+    if(s>new Date(todayYear-1,0,1))s=new Date(todayYear-1,0,1); // v423 : on peut remonter à l'an dernier
     if(e<new Date(todayYear,11,31))e=new Date(todayYear,11,31);
     return{yearStart:s,yearEnd:e};
   },[data,todayYear]);

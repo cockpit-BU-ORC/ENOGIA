@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v423",
+    date: "2026-11-19",
+    title: "V423 : Avancement global ORC pondéré, export Excel pour le DAF, retour vers le passé dans les calendriers",
+    items: [
+      { t: "Avancement global", d: "L'avancement global d'une machine est calculé : KOM 5 %, Design 20 %, Achats et approvisionnements 20 %, Fabrication et assemblage atelier 25 %, FAT 10 %, Livraison et expédition 15 %, MES 5 %. Dans la fiche projet, le détail des 7 phases s'affiche sous le chiffre et au survol." },
+      { t: "Export pour le DAF", d: "« Avancement des projets (Excel) » sur la page Finance (et dans la fiche projet) : PJ, nom du projet, avancement global, puis le détail des 7 phases et l'état de l'ordo." },
+      { t: "Passé", d: "Calendrier (Jour, Semaine), Gantt, Planificateur, planning des bancs, planning SAV et disponibilités : on peut maintenant défiler vers le passé (environ 6 mois) ; l'ouverture reste calée sur aujourd'hui." },
+    ],
+  },
+  {
     id: "2026-11-v422",
     date: "2026-11-19",
     title: "V422 : SAV / MES : non dispo et congés, règle des équipes, réservations fermées à T0 + X semaines",

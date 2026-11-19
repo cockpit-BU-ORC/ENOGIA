@@ -8,7 +8,10 @@ import { TutoVideoModal, tutoActive, tutoSeen, markTutoSeen } from "./components
 import { isEstimatePj } from "./changeDiff";
 import { MentionCtx } from "./mentionContext";
 import { MentionBell } from "./components/MentionBell";
-import { testerOfEmail, assignmentsSince } from "./testPlan";
+import { testerOfEmail, assignmentsSince, planOf, catalogOf, progressOf, activeSections } from "./testPlan";
+import { orcAdvance, mesDoneOf } from "./orcAdvance"; // v423 : avancement global pondéré
+import { AdvanceCtx } from "./advanceCtx";
+import { piecesArrived } from "./launchFab";
 import { setDefaultComposants } from "./pjProgress";
 import { doc, setDoc, getDoc, onSnapshot, updateDoc, FieldPath, deleteField } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -18,7 +21,7 @@ import { T, setThemeMode, setDensity, D, mixHex, FZ, R, THEMES, DEFAULT_THEME, T
 import { ThemePicker } from "./components/ThemePicker";
 import { setSuperAdmin, isSuperAdmin, setOwner, CASH_FOR_ADMINS } from "./roles";
 import { setOrdoPjs } from "./cashinLink";
-import { getPjMeta, chefsOf, orcChefsOf, ALL_ETATS, ETAT_META, registerCustomEtats, registerEtatEdits, today, setSyncedPjMeta, setPjMetaOverrides, GAMME_OVERRIDE } from "./pjMeta";
+import { presenceKind, getPjMeta, chefsOf, orcChefsOf, ALL_ETATS, ETAT_META, registerCustomEtats, registerEtatEdits, today, setSyncedPjMeta, setPjMetaOverrides, GAMME_OVERRIDE } from "./pjMeta";
 import { weekStartOf } from "./parsers";
 import { HomeView } from "./components/HomeView";
 import { ProdDocCtx } from "./prodDocCtx";
@@ -69,7 +72,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-19-v422-sav-dispo-equipes";
+const APP_BUILD_VERSION = "2026-11-19-v423-avancement-global-passe";
 
 const ReleasePopup = React.lazy(() => import("./components/ReleaseNotes").then(m => ({ default: m.ReleasePopup })));
 function Navigate0({ go }) { useEffect(() => { go(); }, []); return null; } // eslint-disable-line react-hooks/exhaustive-deps
@@ -1115,6 +1118,14 @@ export default function App(){
   const testsView=useMemo(()=>{const plans={...((testsDoc&&testsDoc.plans)||{})};(dataWithOverrides||[]).forEach(r=>{if(!r||r.etat!=="SHIPPED")return;const p=plans[r.pj]||{};if(p.forced&&p.forced.at)return;plans[r.pj]={...p,forced:{at:String(r.depart||r.testsFin||r.tests||new Date().toISOString()).slice(0,10),by:"Machine expédiée",auto:true}};});return{...testsDoc,plans};},[testsDoc,dataWithOverrides]);
   // v312 (demandé : « changer les dates de départ directement sur Liste, Gantt ou Calendrier ; accès aux admins ») : admins du planning (pinOk)
   const onSetDepart=pinOk?(async(pj,iso)=>{try{await setDepartDate(pj,iso,authorName);notify("Départ de "+pj+" : "+iso.split("-").reverse().join("/")+". Il sera repris dans le planificateur.","ok");}catch(e){notify("Départ non enregistré : "+e.message);}}):null;
+  // v423 : avancement global de chaque machine (KOM 5, Design 20, Achats 20, Fabrication 25, FAT 10, Livraison 15, MES 5)
+  const advance=useMemo(()=>{const cat=catalogOf(testsView||{}),map={},rows=[],t0=new Date().toISOString().slice(0,10);
+    (dataWithOverrides||[]).forEach(r=>{if(!r||!r.pj||r.etat==="SLOT_LIBRE"||/X{2,}/i.test(r.pj))return;const m=getPjMeta(r.pj,r)||{};
+      let testsPct=null;try{const q=progressOf(planOf(testsView||{},r.pj),cat,activeSections(presenceKind(r.clientPresence||null)));if(q.total)testsPct=q.done/q.total;}catch(e){}
+      let achatsPct=null;try{const a=achatsDoc&&piecesArrived(achatsDoc,r.pj,t0);if(a&&a.t)achatsPct=a.pct;}catch(e){}
+      const v=orcAdvance(r,m,{today:t0,testsPct,achatsPct,mesDone:mesDoneOf(savDoc,r.pj,t0)});map[r.pj]=v;
+      rows.push({pj:r.pj,nom:m.nomProjet&&m.nomProjet!=="—"?m.nomProjet:"",etat:(ETAT_META[r.etat]||{}).label||r.etat||"",...v});});
+    rows.sort((a,b)=>a.pj.localeCompare(b.pj,"fr",{numeric:true}));return {map,rows};},[dataWithOverrides,testsView,achatsDoc,savDoc]);
   const pjCtxTests=canSeeTests?testsView:null,pjCtx=useMemo(()=>({setDepart:onSetDepart,testsDoc:pjCtxTests,turbineDoc,prodDoc:canProdTurb&&subOk("turbines.orc")?prodDoc:null,achatsDoc:canAchats?achatsDoc:null,rows:dataWithOverrides,savDoc:canSav?savDoc:null,demDoc:canSav?demDoc:null,SavTab:canSav?SavPjTab:null,openSav,
     testsOk:canSeeTests&&testsAllowed.includes("semaine"),
     openPage:(v,sub)=>{if(v==="turbines"&&sub)setTurbTab(sub);if(v==="tests"){setTestsSub("semaine");if(sub)setTestsFocus({pj:sub,n:Date.now()});}setCalSel(null);setView(v);}}),[pjCtxTests,turbineDoc,canProdTurb,prodDoc,canAchats,achatsDoc,dataWithOverrides,accMe,canSeeTests,pinOk,authorName,canSav,savDoc,demDoc]); // eslint-disable-line react-hooks/exhaustive-deps -- v309 : turbine et achats dans la fiche d'un PJ // v203 : pastilles de la fiche d'un PJ // v196 : entrées du Manager affichées dans ce menu (fournies par ManagerPanel)
@@ -1232,7 +1243,7 @@ export default function App(){
         </div>
       </div>
 
-      <PjDialogCtx.Provider value={pjCtx}><ProdDocCtx.Provider value={prodDoc}>
+      <PjDialogCtx.Provider value={pjCtx}><ProdDocCtx.Provider value={prodDoc}><AdvanceCtx.Provider value={advance}>
       <main id="enogia-main" tabIndex={-1} className="enogia-main" style={{padding:D.main,paddingTop:12,flex:1,outline:"none",...backdropStyle(view)}}><ArrangeCtx.Provider value={arrangeCtx}><React.Suspense fallback={<LoadingSkeleton/>}>
         {newVsInitial&&pinOk&&<div role="status" style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",marginBottom:12,padding:"10px 14px",borderRadius:12,background:T.teal100,color:T.teal600,fontFamily:T.font,fontSize:FZ.sm,fontWeight:600}}>
           <NavIcon name="pin" size={16}/>
@@ -1334,7 +1345,7 @@ export default function App(){
       pinOk={pinOk} delays={delays} delayTypes={delayTypes} setDelayTypes={setDelayTypesAndSave} addDelayAllocation={addDelayAllocation} deleteDelayAllocation={deleteDelayAllocation}
       addDelayComment={addDelayComment} deleteDelayComment={deleteDelayComment} authorName={authorName} savePjMetaOverride={savePjMetaOverride} canEditMeta={canEditMeta}/>}
       </React.Suspense></ArrangeCtx.Provider></main>
-      </ProdDocCtx.Provider></PjDialogCtx.Provider>
+      </AdvanceCtx.Provider></ProdDocCtx.Provider></PjDialogCtx.Provider>
     </div>
   </div></ChangeMarksContext.Provider></MentionCtx.Provider>);
 }
