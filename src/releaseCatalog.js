@@ -1281,4 +1281,7 @@ export const RELEASE_CATALOG = [
     ["Accueil chaque matin", "Première ouverture du jour sur l'accueil, renommé « Accueil », hors des rubriques."],
     ["Transports des PJ suivis", "Demandes de transport limitées aux PJ de l'ordo et du parc SAV."],
   ] },
+  { v: "418", t: "Accueil plus vivant : fil « En direct », la journée, visages et tuiles colorées", items: [
+    ["Accueil vivant", "Fil « En direct », « La journée », testeurs et responsables en visages, tuiles teintées."],
+  ] },
 ];

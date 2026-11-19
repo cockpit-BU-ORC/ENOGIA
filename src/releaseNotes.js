@@ -7,6 +7,17 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v418",
+    date: "2026-11-19",
+    title: "V418 : Accueil plus vivant : fil « En direct », la journée, visages et tuiles colorées",
+    items: [
+      { t: "En direct", d: "Nouveau cadran : ce qui vient de se passer, mis à jour en temps réel — tests réussis ou en échec, commentaires, publications du planning, transports. Ce qui arrive pendant qu'on regarde s'éclaire un instant ; un clic ouvre la fiche du PJ (ou la demande ClickUp)." },
+      { t: "La journée", d: "Aujourd'hui, demain et le jour ouvré suivant : machines au banc, arrivées, fins de production, départs, visites client et NOBO, enlèvements et livraisons." },
+      { t: "Visages", d: "« Au banc et cette semaine » montre chaque testeur avec sa machine et l'avancement de ses tests ; « À surveiller » montre les retards sur l'initial et les transports en attente avec leur responsable." },
+      { t: "Tuiles colorées", d: "Chaque tuile de l'accueil prend la teinte pâle de son étape ; le prochain départ a un anneau de compte à rebours ; « Aujourd'hui » montre en production, au banc et en retard." },
+    ],
+  },
+  {
     id: "2026-11-v417",
     date: "2026-11-19",
     title: "V417 : Accueil chaque matin, « Ma vue », transports des PJ suivis, chiffres SAV allégés",

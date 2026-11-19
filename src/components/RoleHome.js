@@ -1,7 +1,8 @@
 import React, { useMemo } from "react";
 import { WidgetBoard, widgetsFromSpans } from "./WidgetBoard";
 import { T, FZ, btn } from "../theme";
-import { presenceKind, presenceDates, ETAT_META, PjPlate, getPjMeta, chefsOf, CountryFlag, SHIPPED_SINCE, countShippedYTD } from "../pjMeta";
+import { presenceKind, presenceDates, ETAT_META, PjPlate, getPjMeta, chefsOf, CountryFlag, SHIPPED_SINCE, countShippedYTD, Avatar } from "../pjMeta";
+import { buildFeed, whenTxt } from "../liveFeed"; // v418 : fil « En direct »
 import { NavIcon } from "./SharedUI";
 import { planOf, catalogOf, activeSections, progressOf, effRange, isForced, testersOf, findConflicts } from "../testPlan";
 import { turbineStatus } from "../turbines";
@@ -12,7 +13,7 @@ import { useCashin } from "../useCashin";
 import { weeklyReport, curveGeom, fmtS } from "../cashWeekly";
 import { useRai, raiGate } from "../raiStatus";
 import { fmtEur } from "../pjProgress";
-import { transportList, CLICKUP_LIST_URL, trackOf, whenOf, TRACK, MODE_LABEL, vehicleOf, gapOf, metaOf, weightTxt, summaryOf } from "../transports"; // v413 : demandes de transport ClickUp
+import { transportList, CLICKUP_LIST_URL, trackOf, whenOf, TRACK, MODE_LABEL, vehicleOf, gapOf, metaOf, weightTxt, summaryOf, pickupOf, deliveryOf, stepOf } from "../transports"; // v413 : demandes de transport ClickUp
 import { useProdModel } from "../prodModel"; // v324 : makeModel chargé à la demande
 import { planWeeks, atelierCap, CAPA_DEFAUT } from "../loadWeeks"; // v289 : sans les graphiques du Manager
 
@@ -45,7 +46,7 @@ const etatBar = etat => (ETAT_META[etat] || {}).bar || T.ink300;
 
 // Cadrans par défaut de chaque poste (id, largeur sur 12)
 export const HOME_DEFAULTS = {
-  cdp: [["pjs", 7], ["jalons", 5], ["raiDue", 6], ["transports", 6], ["todo", 4], ["fat", 4], ["avance", 4]],
+  cdp: [["direct", 6], ["journee", 6], ["pjs", 7], ["jalons", 5], ["raiDue", 6], ["transports", 6], ["todo", 4], ["fat", 4], ["avance", 4]],
   testeur: [["today", 8], ["sign", 4], ["week", 12], ["arrivees", 6], ["results", 6]],
   resptest: [["today", 8], ["sign", 4], ["produit", 12], ["week", 12], ["arrivees", 6], ["results", 6], ["postes", 6], ["tests", 6]], // v238 ; v323 : livrables Produit
   atelier: [["charge", 7], ["arrdep", 5], ["montage", 7], ["postes", 5]],
@@ -53,8 +54,8 @@ export const HOME_DEFAULTS = {
   autre: [["kpis", 12], ["departs", 6], ["parcours", 6], ["transports", 6], ["benchWeek", 6], ["visites", 6], ["shipped", 6], ["etats", 6], ["fermetures", 6]],
   daf: [["encaisser", 6], ["cash", 6], ["cashCurve", 12], ["cashLate", 6], ["cashMonth", 6], ["kpis", 12], ["departs", 6]], // v370
   // v417 : vue réservée au propriétaire (« Ma vue »), jamais attribuée à une autre personne
-  moi: [["kpis", 12], ["transports", 12], ["alertes", 6], ["raiDue", 6], ["cashCurve", 12], ["cashLate", 6], ["depQuarter", 6], ["onTime", 6], ["tests", 4], ["turbines", 4], ["charge", 4], ["mentions", 6], ["departs", 6]],
-  direction: [["kpis", 12], ["cashCurve", 12], ["depQuarter", 6], ["onTime", 6], ["raiDue", 6], ["transports", 6], ["tests", 4], ["turbines", 4], ["cash", 4], ["alertes", 8], ["charge", 4], ["postes", 6], ["departs", 6], ["parcours", 12]],
+  moi: [["direct", 6], ["journee", 6], ["kpis", 12], ["equipe", 6], ["surveiller", 6], ["transports", 12], ["raiDue", 6], ["cashCurve", 12], ["cashLate", 6], ["depQuarter", 6], ["onTime", 6], ["tests", 4], ["turbines", 4], ["charge", 4], ["mentions", 6], ["departs", 6]],
+  direction: [["direct", 6], ["journee", 6], ["kpis", 12], ["surveiller", 6], ["equipe", 6], ["cashCurve", 12], ["depQuarter", 6], ["onTime", 6], ["raiDue", 6], ["transports", 6], ["tests", 4], ["turbines", 4], ["cash", 4], ["alertes", 8], ["charge", 4], ["postes", 6], ["departs", 6], ["parcours", 12]],
 };
 
 // Phrase d'ouverture selon le poste (lien direct avec le travail de la personne) → [segments], un segment = texte ou { t, c } surligné
@@ -158,6 +159,30 @@ const TransportSummary = ({ s }) => <div style={{ display: "flex", gap: 6, flexW
   {[[s.route, "en route", null, "truck"], [s.prog, "programmé" + (s.prog > 1 ? "s" : "")], [s.consult, "en consultation"], [s.infos, "infos demandées", "bad"], [s.horsUE, "hors UE"]].filter(([n, , k]) => k !== "bad" || n > 0).map(([n, l, k, ic]) =>
     <span key={l} style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 26, padding: "0 10px", borderRadius: 999, background: k === "bad" ? T.red100 : T.surfaceAlt, color: k === "bad" ? T.red600 : T.ink700, fontSize: 12, fontWeight: 500 }}>
       {ic && <NavIcon name={ic} size={15} />}<b style={{ fontFamily: T.fontDisplay, fontSize: 13, fontWeight: 600, color: k === "bad" ? T.red600 : T.ink900, fontVariantNumeric: "tabular-nums" }}>{n}</b>{l}</span>)}</div>;
+// v418 (maquette v419-accueil-vivant.html, pistes A + C) : visages, jauge, fil en direct
+const FACE = ["#4E79A7", "#F28E2B", "#E15759", "#76B7B2", "#59A14F", "#B07AA1", "#EDC948", "#9C755F"]; // palette de données (pastilles des personnes)
+const faceOf = name => { let h = 0; String(name || "?").split("").forEach(c => { h = (h * 31 + c.charCodeAt(0)) >>> 0; }); return FACE[h % FACE.length]; };
+const Face = ({ name, size = 26 }) => <span title={name} style={{ display: "inline-flex", flexShrink: 0 }}><Avatar name={name || "?"} tint={faceOf(name)} size={size} /></span>;
+// anneau d'avancement (p de 0 à 1) avec un texte au centre
+const Ring = ({ p, color, label, size = 84 }) => <span aria-hidden="true" style={{ width: size, height: size, borderRadius: "50%", flexShrink: 0, display: "grid", placeItems: "center",
+  background: "conic-gradient(" + color + " " + Math.round(Math.max(0, Math.min(1, p)) * 360) + "deg, " + T.line + " 0)" }}>
+  <span style={{ width: size - 16, height: size - 16, borderRadius: "50%", background: T.card, display: "grid", placeItems: "center", fontFamily: T.fontDisplay, fontSize: 20, fontWeight: 600, letterSpacing: "-0.02em", color: T.ink900 }}>{label}</span></span>;
+const FEED_IC = { test: "check", assign: "manager", comment: "comments", publish: "gantt", transport: "truck" };
+const feedTone = tone => ({ ok: [T.emerald100, T.emerald600], bad: [T.red100, T.red600], warn: [T.amber100, T.amber600], info: [T.info100, T.info600] }[tone] || [T.surfaceAlt, T.ink700]);
+// fil en direct : un événement arrivé pendant qu'on regarde s'éclaire une fois (300 ms)
+function LiveFeed({ events, onOpenPj, max }) {
+  const seen = React.useRef(null); if (seen.current == null) seen.current = new Set(events.map(e => e.id));
+  const fresh = id => !seen.current.has(id);
+  React.useEffect(() => { const t = setTimeout(() => { events.forEach(e => seen.current.add(e.id)); }, 400); return () => clearTimeout(t); }, [events]);
+  return <div style={{ display: "flex", flexDirection: "column" }}>{events.slice(0, max).map((e, i) => { const [bg, ink] = feedTone(e.tone);
+    const go = () => { if (e.url) window.open(e.url, "_blank", "noopener"); else if (e.pj && onOpenPj) onOpenPj(e.pj); };
+    return <button key={e.id} type="button" onClick={go} className={"enogia-homeline" + (fresh(e.id) ? " enogia-feed-new" : "")} title={e.url ? "Ouvrir dans ClickUp" : e.pj ? "Ouvrir la fiche du " + e.pj : undefined}
+      style={{ all: "unset", position: "relative", boxSizing: "border-box", cursor: e.url || e.pj ? "pointer" : "default", display: "grid", gridTemplateColumns: "64px 26px minmax(0, 1fr)", gap: 10, alignItems: "start", padding: "8px 6px", borderTop: i === 0 ? "none" : "1px solid " + T.line, borderRadius: 8, fontFamily: T.font }}>
+      <time style={{ fontSize: 12, color: T.ink500, fontVariantNumeric: "tabular-nums", paddingTop: 3 }}>{whenTxt(e.at)}</time>
+      <span aria-hidden="true" style={{ width: 26, height: 26, borderRadius: 8, background: bg, color: ink, display: "grid", placeItems: "center" }}><NavIcon name={FEED_IC[e.kind] || "bell"} size={15} /></span>
+      <span style={{ fontSize: 13, color: T.ink700, minWidth: 0 }}>{e.pj && <span style={{ marginRight: 6 }}><PjPlate pj={e.pj} /></span>}{e.text}{e.by ? <span style={{ color: T.ink500 }}> · {e.by}</span> : null}</span>
+    </button>; })}</div>;
+}
 function CashCurve({ r, h = 170 }) {
   const g = curveGeom(r, 560, h), P = l => l.map((p, i) => (i ? "L" : "M") + p[0] + " " + p[1]).join(" "), ns = { vectorEffect: "non-scaling-stroke", fill: "none", strokeLinejoin: "round" };
   const up = g.today.yReal <= g.today.yIni;
@@ -188,7 +213,7 @@ const StatLine = ({ items }) => <div style={{ display: "flex", flexWrap: "wrap",
       <b style={{ fontFamily: T.fontDisplay, fontSize: "clamp(18px,1.5vw,22px)", fontWeight: 600, color: tone || T.ink900, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{value}</b>
       <span style={{ fontSize: FZ.sm, color: T.ink500, whiteSpace: "nowrap" }}>{label}</span></C>; })}
   </div>;
-export function RoleHome({ transports, produit, scope, role, profile, ui, kpiEl, depEl, parcoursEl, rows, open, late, mentions, myPjs, testsDoc, myTester, turbineDoc, prodDoc, plan, closurePeriods, productionExclusions, owner, cash, onOpenPj, onGo, onOpenCash, layout, onLayout, hello, renderLead }) {
+export function RoleHome({ comments, changeLog, transports, produit, scope, role, profile, ui, kpiEl, depEl, parcoursEl, rows, open, late, mentions, myPjs, testsDoc, myTester, turbineDoc, prodDoc, plan, closurePeriods, productionExclusions, owner, cash, onOpenPj, onGo, onOpenCash, layout, onLayout, hello, renderLead }) {
   const { Row, Head, cardS, Pill, presenceOf, nomOf, empty, grey, link, S, H, A } = ui;
   const today = iso(new Date());
   const on = id => blockOn(profile, id);
@@ -474,6 +499,61 @@ export function RoleHome({ transports, produit, scope, role, profile, ui, kpiEl,
         {recent.map(row)}</>}
       <a href={(transports && transports.liste) || CLICKUP_LIST_URL} target="_blank" rel="noopener noreferrer" className="enogia-homelink" style={{ ...link, marginTop: 2, textDecoration: "none" }}>Ouvrir la liste dans ClickUp <span aria-hidden="true">↗</span></a>
       {transports.at && <div style={{ fontSize: 12, color: T.ink500, marginTop: 2 }}>mis à jour à {new Date(transports.at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</div>}</>); } };
+  // v418 : fil en direct, la journée, l'équipe au banc, à surveiller (visages)
+  const feed = useMemo(() => { const all = buildFeed({ testsDoc, catalog, comments, changeLog, transports, isPrivateHidden: true }), sc = role === "cdp" && scope ? scope : null;
+    const base = p => String(p || "").toUpperCase().replace(/-\d+[A-Z]*$/, "");
+    return sc ? all.filter(e => e.pj && [...sc].some(p => base(p) === base(e.pj))) : all; }, [testsDoc, catalog, comments, changeLog, transports, role, scope]);
+  W.direct = { label: "En direct", span: 6, sizes: ["m", "l", "xl"], render: z => { const nToday = feed.filter(e => String(e.at).slice(0, 10) === today).length;
+    return sec("direct", "En direct", H.brand, <><div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
+      <h2 style={{ margin: 0, fontSize: FZ.md, fontWeight: 600, color: T.ink900 }}>En direct</h2>
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 500, color: T.emerald600 }}><i aria-hidden="true" style={{ width: 8, height: 8, borderRadius: 99, background: T.emerald600 }} />à jour</span>
+      <span style={{ marginLeft: "auto", fontSize: 12, color: T.ink500 }}>{nToday ? nToday + " aujourd'hui" : "7 derniers jours"}</span></div>
+      {feed.length === 0 ? empty("inbox", "Rien de nouveau depuis 7 jours", "Tests, commentaires, publications du planning et transports apparaissent ici dès qu'ils arrivent.")
+        : <LiveFeed events={feed} onOpenPj={onOpenPj} max={z === "l" ? 12 : z === "xl" ? 7 : 6} />}</>); } };
+  const nextWork = (d, n) => { let x = d, k = 0; while (k < n) { x = addD(x, 1); const g = new Date(x + "T12:00:00").getDay(); if (g !== 0 && g !== 6) k++; } return x; };
+  const dayItems = d => { const out = [];
+    open.forEach(r => { const pd = presenceDates(r.clientPresence || null);
+      if (inTest(r, d)) out.push({ k: "t" + r.pj, pj: r.pj, l: "au banc", tone: S.tests });
+      if (dIso(r.arrivee) === d) out.push({ k: "a" + r.pj, pj: r.pj, l: "arrivée", tone: S.arrivee });
+      if (dIso(r.finProd) === d) out.push({ k: "f" + r.pj, pj: r.pj, l: "fin de prod", tone: S.finProd });
+      if (dIso(r.depart) === d) out.push({ k: "d" + r.pj, pj: r.pj, l: "départ", tone: S.depart });
+      if (pd.client && dIso(pd.client) === d) out.push({ k: "c" + r.pj, pj: r.pj, l: "visite client", tone: A.orange });
+      if (pd.nobo && dIso(pd.nobo) === d) out.push({ k: "n" + r.pj, pj: r.pj, l: "visite NOBO", tone: A.orange }); });
+    transportList(transports, role === "cdp" ? scope : null).open.forEach(x => { if (x.pj && pickupOf(x) === d) out.push({ k: "x" + x.id, pj: x.pj, l: "enlèvement", tone: { bg: T.info100, ink: T.info600 } });
+      else if (x.pj && deliveryOf(x) === d && trackOf(x).k === 3) out.push({ k: "y" + x.id, pj: x.pj, l: "livraison", tone: { bg: T.info100, ink: T.info600 } }); });
+    return out; };
+  W.journee = { label: "La journée", span: 6, sizes: ["m", "xl"], render: z => { const days = [today, nextWork(today, 1), nextWork(today, 2)], labs = ["Aujourd'hui", "Demain", new Date(days[2] + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "long" })];
+    const g = new Date(today + "T12:00:00").getDay(); if (g === 0 || g === 6) labs[1] = new Date(days[1] + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "long" });
+    return sec("journee", "La journée", S.production.ring, <><Head title="La journée" sub="bancs, arrivées, départs, visites et enlèvements" />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8 }}>{days.map((d, i) => { const L = dayItems(d), n = z === "xl" ? 6 : 4;
+        return <div key={d} style={{ border: "1px solid " + (i === 0 ? T.accentInk : T.line), boxShadow: i === 0 ? "inset 0 3px 0 " + T.accentInk : "none", borderRadius: 8, padding: 8, display: "flex", flexDirection: "column", gap: 6, minWidth: 0, background: T.card }}>
+          <span style={{ fontSize: 12, fontWeight: 600, color: i === 0 ? T.ink900 : T.ink500, textTransform: "capitalize" }}>{labs[i]} <span style={{ fontWeight: 400 }}>{fmtD(d)}</span></span>
+          {L.length === 0 ? <span style={{ fontSize: 12, color: T.ink500 }}>rien de prévu</span> : L.slice(0, n).map(x => <button key={x.k} type="button" onClick={() => onOpenPj && onOpenPj(x.pj)} aria-label={x.l + " " + x.pj}
+            style={{ all: "unset", position: "relative", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 2 }}><PjPlate pj={x.pj} /><span style={{ fontSize: 12, color: x.tone.ink || T.ink700 }}>{x.l}</span></button>)}
+          {L.length > n && <span style={{ fontSize: 12, color: T.ink500 }}>+ {L.length - n} autre{L.length - n > 1 ? "s" : ""}</span>}</div>; })}</div></>); } };
+  W.equipe = { label: "Au banc et cette semaine", span: 6, sizes: ["m", "xl"], only: () => !!testsDoc, render: () => { const TS = testersOf(testsDoc), wEnd = addD(w0, 6);
+    const L = TS.map(t => { const mine = open.filter(r => r.tests && planOf(testsDoc, r.pj).assign.some(a => a.tid === t.id)), eff = r => effRange(planOf(testsDoc, r.pj).assign.find(a => a.tid === t.id), r);
+      const now = mine.find(r => { const e = eff(r); return e.from <= today && e.to >= today; }), next = mine.filter(r => eff(r).from > today && eff(r).from <= wEnd).sort((a, b) => eff(a).from.localeCompare(eff(b).from))[0];
+      return { t, now, next, e: now ? eff(now) : next ? eff(next) : null }; }).sort((a, b) => (!!b.now - !!a.now) || (!!b.next - !!a.next));
+    return sec("equipe", "Au banc et cette semaine", S.tests.ring, <><Head title="Au banc et cette semaine" sub={nowTest.length + " machine" + (nowTest.length > 1 ? "s" : "") + " au banc aujourd'hui"} count={L.filter(x => x.now).length} />
+      {L.length === 0 ? empty("manager", "Aucun testeur enregistré", "Les testeurs se règlent dans la page Tests.") : L.slice(0, 6).map(({ t, now, next, e }, i) => { const r = now || next, q = r ? prog(r) : null;
+        return <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 40, borderTop: i === 0 ? "none" : "1px solid " + T.line, padding: "6px 2px" }}>
+          <Face name={t.name} /><b style={{ fontWeight: 500, fontSize: 13, width: 110, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name}</b>
+          {r ? <><button type="button" onClick={() => onOpenPj && onOpenPj(r.pj)} aria-label={"Ouvrir " + r.pj} style={{ all: "unset", position: "relative", cursor: "pointer" }}><PjPlate pj={r.pj} /></button>
+            {now ? <><span aria-hidden="true" style={{ flex: 1, minWidth: 40, height: 6, borderRadius: 3, background: T.surfaceAlt, overflow: "hidden" }}><i style={{ display: "block", height: "100%", width: (q && q.total ? q.done / q.total * 100 : 0) + "%", background: S.tests.ring }} /></span>
+              <span style={{ fontSize: 12, color: T.ink500, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{q ? q.done + " / " + q.total : ""} · j {workDays(e.from, today)} / {workDays(e.from, e.to)}</span></>
+              : <span style={{ fontSize: 12, color: T.ink500, marginLeft: "auto" }}>au banc le {fmtD(e.from)}</span>}</>
+            : <span style={{ fontSize: 12, color: T.ink500 }}>libre cette semaine</span>}</div>; })}</>); } };
+  W.surveiller = { label: "À surveiller", span: 6, sizes: ["m", "xl"], render: z => { const lateM = open.filter(r => r.drift > 0).sort((a, b) => b.drift - a.drift);
+    const waitT = transportList(transports, role === "cdp" ? scope : null).open.filter(x => stepOf(x.status).tone === "bad");
+    const items = [...lateM.map(r => ({ k: "l" + r.pj, who: (chefsOf(getPjMeta(r.pj, r)).filter(c => c && c !== "—")[0]) || "", pj: r.pj, txt: "+" + r.drift + " j sur l'initial · " + ((ETAT_META[r.etat] || {}).label || r.etat), bad: r.drift > 10 })),
+      ...waitT.map(x => ({ k: "x" + x.id, who: x.demandeur || "Logistique", pj: x.pj, txt: "transport : infos demandées", bad: true, url: x.url }))];
+    return sec("surveiller", "À surveiller", T.red600, <><Head title="À surveiller" sub="retards sur l'initial et transports en attente" count={items.length} />
+      {items.length === 0 ? empty("check", "Rien à surveiller", "Aucune machine en retard sur l'initial, aucun transport en attente.") : items.slice(0, z === "xl" ? 8 : 5).map((x, i) =>
+        <button key={x.k} type="button" onClick={() => (x.url ? window.open(x.url, "_blank", "noopener") : onOpenPj && onOpenPj(x.pj))} className="enogia-homeline"
+          style={{ all: "unset", position: "relative", boxSizing: "border-box", width: "100%", cursor: "pointer", display: "flex", alignItems: "center", gap: 10, minHeight: 40, borderTop: i === 0 ? "none" : "1px solid " + T.line, padding: "6px 2px", fontFamily: T.font }}>
+          <Face name={x.who || "?"} />{x.pj && <PjPlate pj={x.pj} />}<span style={{ fontSize: 13, color: x.bad ? T.red600 : T.ink700, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.txt}</span>
+          <span style={{ marginLeft: "auto", fontSize: 12, color: T.ink500, whiteSpace: "nowrap" }}>{x.who}</span></button>)}</>); } };
   W.alertes = { label: "Alertes", span: 8, render: () => { const bigLate = late.filter(r => r.drift > 10);
     return sec("alertes", "Alertes", A.orange.ring, <><Head title="Alertes" sub="dérives de plus de 10 j" count={bigLate.length} />
       {bigLate.length === 0 ? empty("check", "Aucune alerte", "Pas de grosse dérive.") : bigLate.slice(0, 6).map((r, i) => <Row key={r.pj} first={i === 0} pj={r.pj} pill={<Pill tone={A.orange}>Dérive</Pill>} main={nomOf(r) || "Départ " + fmtD(r.depart)} right={"+" + r.drift + " j"} />)}</>); } };
@@ -646,9 +726,9 @@ export function RoleHome({ transports, produit, scope, role, profile, ui, kpiEl,
     return sec("nextDep", "Prochain départ", S.depart.ring, <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: 6 }}>
       <span style={{ fontSize: 13, fontWeight: 500, color: T.ink500 }}>Prochain départ</span>
       {!r ? <span style={{ fontSize: 13, color: T.ink700 }}>Aucun départ prévu</span> : <>
-        <b style={{ fontFamily: T.fontDisplay, fontSize: FZ.xxl, letterSpacing: "-0.02em", fontWeight: 600, lineHeight: 1.05, color: r.drift > 0 ? T.red600 : T.ink900 }}>{jIn(dIso(r.depart))}</b>
-        <button type="button" onClick={() => onOpenPj && onOpenPj(r.pj)} style={{ alignSelf: "flex-start", border: "none", background: "transparent", padding: 0, cursor: "pointer" }} aria-label={"Ouvrir " + r.pj}><PjPlate pj={r.pj} style={{ boxShadow: "inset 3px 0 0 " + etatBar(r.etat) }} /></button>
-        <span style={{ fontSize: 13, color: T.ink700 }}>{fmtDay(r.depart)}{z !== "s" ? " · " + (nomOf(r) || r.gamme || "") + " · " + (m.label || r.etat) : ""}</span></>}
+        <div style={{ display: "flex", gap: 12, alignItems: "center" }}><Ring p={1 - Math.min(30, Math.max(0, Math.round((new Date(dIso(r.depart) + "T12:00:00") - new Date(today + "T12:00:00")) / 864e5))) / 30} color={r.drift > 0 ? T.red600 : S.depart.ring} label={jIn(dIso(r.depart)).replace("aujourd'hui", "J0")} size={z === "s" ? 72 : 84} />
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}><button type="button" onClick={() => onOpenPj && onOpenPj(r.pj)} style={{ alignSelf: "flex-start", border: "none", background: "transparent", padding: 0, cursor: "pointer" }} aria-label={"Ouvrir " + r.pj}><PjPlate pj={r.pj} style={{ boxShadow: "inset 3px 0 0 " + etatBar(r.etat) }} /></button>
+        <span style={{ fontSize: 13, color: T.ink700 }}>{fmtDay(r.depart)}{z !== "s" ? " · " + (nomOf(r) || r.gamme || "") : ""}</span>{z !== "s" && <span style={{ fontSize: 12, color: T.ink500 }}>{m.label || r.etat}{r.drift > 0 ? " · +" + r.drift + " j sur l'initial" : ""}</span>}</div></div></>}
     </div>); } };
   W.jour = { label: "Aujourd'hui", sizes: SMALL, render: z => { const d = new Date(today + "T12:00:00"), th = new Date(d); th.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7)); const y1 = new Date(th.getFullYear(), 0, 4);
     const wk = 1 + Math.round(((th - y1) / 864e5 - 3 + ((y1.getDay() + 6) % 7)) / 7);
@@ -656,7 +736,7 @@ export function RoleHome({ transports, produit, scope, role, profile, ui, kpiEl,
       <span style={{ fontSize: 13, fontWeight: 500, color: T.red600, textTransform: "capitalize" }}>{d.toLocaleDateString("fr-FR", { weekday: "long" })}</span>
       <b style={{ fontFamily: T.fontDisplay, fontSize: FZ.hero, letterSpacing: "-0.02em", fontWeight: 600, lineHeight: 1, color: T.ink900 }}>{d.getDate()}</b>
       <span style={{ fontSize: 13, color: T.ink700 }}>{d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" })} · semaine {wk}</span>
-      {z !== "s" && <span style={{ fontSize: 13, color: T.ink700, marginTop: "auto" }}>{nowTest.length} au banc · {arrDep.filter(x => x.l === "Arrivée").length} arrivée(s) et {arrDep.filter(x => x.l === "Départ").length} départ(s) cette semaine</span>}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 6, marginTop: "auto" }}>{[[prodL.length, "en prod", T.ink900], [nowTest.length, "au banc", T.ink900], [lateL.length, "en retard", lateL.length ? T.red600 : T.ink900]].map(([n, l, c]) => <div key={l} style={{ background: T.card, borderRadius: 8, padding: "6px 4px", textAlign: "center" }}><b style={{ display: "block", fontFamily: T.fontDisplay, fontSize: 20, fontWeight: 600, color: c, fontVariantNumeric: "tabular-nums" }}>{n}</b><span style={{ fontSize: 12, color: T.ink500 }}>{l}</span></div>)}</div>
     </div>); } };
 
   /* ── disposition du poste ── */
@@ -674,6 +754,7 @@ export function RoleHome({ transports, produit, scope, role, profile, ui, kpiEl,
     ["Atelier — Planificateur et Calendrier", { charge: "heures atelier sur 4 semaines face à la capacité", arrdep: "arrivées et départs de la semaine", montage: "machines en montage méca / élec", fermetures: "fermetures de l’atelier à venir" }],
     ["Production turbines", { ptReady: "turbines prêtes", ptNoWheel: "turbines testées sans roue", ptPieces: "pièces à suivre", ptDates: "dates prévisionnelles des turbines", ptRoues: "stock de roues équilibrées", ptInj: "stock d'injecteurs" }],
     ["Gestion — Turbines et Cash in", { turbines: "pool de turbines", cash: "encaissements à venir", cashCurve: "encaissements cumulés de l'année face à l'initial", cashMonth: "encaissements et factures du mois face à l'initial", cashLate: "factures et paiements en retard", encaisser: "factures émises en attente de paiement, saisie par le DAF", produit: "jalons cash liés à un livrable du Produit" }],
+    ["En direct — la journée", { direct: "ce qui vient de se passer : tests, commentaires, publications, transports", journee: "aujourd'hui, demain et après-demain : bancs, arrivées, départs, visites, enlèvements", equipe: "les testeurs avec leur machine au banc et leur semaine", surveiller: "retards sur l'initial et transports en attente, avec leur responsable" }],
     ["Logistique — ClickUp", { transports: "demandes de transport ClickUp et leur avancement, un clic ouvre la demande" }],
     ["Échanges — Commentaires", { mentions: "les mentions qui vous attendent" }],
   ];

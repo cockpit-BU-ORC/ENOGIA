@@ -37,7 +37,7 @@ const BLOCKS = [
 const prefKey = email => "enogia_home_" + String(email || "anon").toLowerCase();
 const loadPrefs = email => { try { return JSON.parse(localStorage.getItem(prefKey(email)) || "{}") || {}; } catch (e) { return {}; } };
 
-export function HomeView({ parcPjs, transports: transportsAll, produit, data, comments, myEmail, myName, people, unseenChanges, lastImport, onOpenPj, onGo, pinOk, testsDoc, profiles, owner, cash, turbineDoc, onOpenCash, prodDoc, canProdTurb, plan, closurePeriods, productionExclusions, saveHomeLayout }) {
+export function HomeView({ changeLog, parcPjs, transports: transportsAll, produit, data, comments, myEmail, myName, people, unseenChanges, lastImport, onOpenPj, onGo, pinOk, testsDoc, profiles, owner, cash, turbineDoc, onOpenCash, prodDoc, canProdTurb, plan, closurePeriods, productionExclusions, saveHomeLayout }) {
   // v392 (demandé : « les widgets doivent prendre en compte les PJ des chefs de projet ») : sur l'accueil d'un chef de projet, toutes les données
   // (chiffres clés, départs, parcours, widgets, Cash in) sont limitées à ses PJ — en cours et expédiés ; les autres accueils gardent tout le parc.
   const rowsAll = useMemo(() => (data || []).filter(r => r && r.pj && r.etat !== "SLOT_LIBRE"), [data]);
@@ -117,7 +117,7 @@ export function HomeView({ parcPjs, transports: transportsAll, produit, data, co
   // v169 (maquette validée) : cartes plates — bordure fine, pas d'ombre (l'ombre est réservée à ce qui flotte), liseré de 4 px conservé.
   const card = { background: T.card, borderRadius: R.lg, border: "1px solid " + T.line, padding: "14px 16px", minWidth: 0, boxSizing: "border-box" };
   const S = stageSoft(), H = stripeHues(), A = alertSoft();
-  const cardS = color => ({ ...card, background: stripeBg(color, T.card, 4), paddingTop: 18 });
+  const cardS = color => ({ ...card, background: stripeBg(color, "color-mix(in srgb, " + color + " 7%, " + T.card + ")", 4), paddingTop: 18 }); // v418 : teinte pâle de l'étape (accueil plus vivant)
   const grey = { fontSize: FZ.xs, color: T.ink500 };
   const link = { border: "none", background: "transparent", color: T.accentInk /* v285 : 3,2:1 → ≥ 4,5:1 */, fontWeight: 600, fontSize: FZ.sm, cursor: "pointer", padding: "4px 0", minHeight: 24, display: "inline-flex", alignItems: "center", gap: 6, fontFamily: T.font };
   const etatOf = useMemo(() => { const m = new Map(); rows.forEach(r => m.set(r.pj, r.etat)); return m; }, [rows]);
@@ -260,12 +260,12 @@ export function HomeView({ parcPjs, transports: transportsAll, produit, data, co
       {role && (owner && manage
         ? <HomeRoles roles={HOME_ROLES} role={role} layouts={layouts} onPick={k => setViewAs({ role: k })} onClose={() => setManage(false)} onSave={(k, lay) => saveHomeLayout && saveHomeLayout(k, lay)}
             viewAsEl={<span style={{ display: "inline-flex", gap: 6, alignItems: "center", fontSize: FZ.xs, color: T.ink500 }}>{(role === "cdp" && chefList.length > 0) || (role === "testeur" && testerList.length > 0) ? "Voir comme" : null}{role === "cdp" && chefList.length > 0 && <select aria-label="Chef de projet affiché" value={asChef} onChange={e => setViewAs({ chef: e.target.value })} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink900, borderRadius: 8, minHeight: 28, padding: "0 8px", fontSize: FZ.xs, fontFamily: T.font }}>{chefList.map(c => <option key={c} value={c}>{c}</option>)}</select>}{role === "testeur" && testerList.length > 0 && <select aria-label="Testeur affiché" value={asTester ? asTester.id : ""} onChange={e => setViewAs({ tester: e.target.value })} style={{ border: "1px solid " + T.line, background: T.card, color: T.ink900, borderRadius: 8, minHeight: 28, padding: "0 8px", fontSize: FZ.xs, fontFamily: T.font }}>{testerList.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select>}</span>}>
-            <RoleHome transports={transports} produit={produit} key={role} kpiEl={kpiEl} depEl={depEl} parcoursEl={parcoursEl} role={role} profile={profile} rows={rows} open={open} late={late} mentions={mentions} myPjs={homePjs} scope={scope} testsDoc={testsDoc} myTester={homeTester} turbineDoc={turbineDoc} owner={owner} cash={cash} onOpenPj={onOpenPj} onGo={onGo} onOpenCash={onOpenCash}
+            <RoleHome comments={comments} changeLog={changeLog} transports={transports} produit={produit} key={role} kpiEl={kpiEl} depEl={depEl} parcoursEl={parcoursEl} role={role} profile={profile} rows={rows} open={open} late={late} mentions={mentions} myPjs={homePjs} scope={scope} testsDoc={testsDoc} myTester={homeTester} turbineDoc={turbineDoc} owner={owner} cash={cash} onOpenPj={onOpenPj} onGo={onGo} onOpenCash={onOpenCash}
         prodDoc={canProdTurb ? prodDoc : null} plan={plan} closurePeriods={closurePeriods} productionExclusions={productionExclusions} hello={hello() + (homeName ? " " + homeName : "")} renderLead={renderLead}
         layout={layouts[role] || {}} onLayout={owner && saveHomeLayout ? lay => saveHomeLayout(role, lay) : undefined}
         ui={{ Row, Head, cardS, Pill, presenceOf, nomOf, empty, grey, link, S, H, A }} />
           </HomeRoles>
-        : <RoleHome transports={transports} produit={produit} key={role} kpiEl={kpiEl} depEl={depEl} parcoursEl={parcoursEl} role={role} profile={profile} rows={rows} open={open} late={late} mentions={mentions} myPjs={homePjs} scope={scope} testsDoc={testsDoc} myTester={homeTester} turbineDoc={turbineDoc} owner={owner} cash={cash} onOpenPj={onOpenPj} onGo={onGo} onOpenCash={onOpenCash}
+        : <RoleHome comments={comments} changeLog={changeLog} transports={transports} produit={produit} key={role} kpiEl={kpiEl} depEl={depEl} parcoursEl={parcoursEl} role={role} profile={profile} rows={rows} open={open} late={late} mentions={mentions} myPjs={homePjs} scope={scope} testsDoc={testsDoc} myTester={homeTester} turbineDoc={turbineDoc} owner={owner} cash={cash} onOpenPj={onOpenPj} onGo={onGo} onOpenCash={onOpenCash}
         prodDoc={canProdTurb ? prodDoc : null} plan={plan} closurePeriods={closurePeriods} productionExclusions={productionExclusions} hello={hello() + (homeName ? " " + homeName : "")} renderLead={renderLead}
         layout={layouts[role] || {}} onLayout={owner && saveHomeLayout ? lay => saveHomeLayout(role, lay) : undefined}
         ui={{ Row, Head, cardS, Pill, presenceOf, nomOf, empty, grey, link, S, H, A }} />)}

@@ -67,7 +67,7 @@ function toItem(t) {
     ...modeOf(t), horsUE: String(fieldVal(t, F.horsUE) || "").toUpperCase() === "OUI", incoterm: cut(String(fieldVal(t, F.incoterm) || "").replace(/\s*\(.*\)$/, ""), 12),
     cond: cut(String(fieldVal(t, F.cond) || "").replace(/\s*\(.*\)$/, ""), 40), poids: Number(fieldVal(t, F.poids)) > 0 ? Number(fieldVal(t, F.poids)) : null,
     dangereux: String(fieldVal(t, F.dangereux) || "").toUpperCase() === "OUI", un: labelsOf(t, F.codeUN).map(unShort).slice(0, 3),
-    created: iso(t.date_created), updated: iso(t.date_updated), closed: iso(t.date_closed || t.date_done),
+    created: iso(t.date_created), updated: iso(t.date_updated), updatedAt: Number(t.date_updated) > 0 ? new Date(Number(t.date_updated)).toISOString() : "", // v418 : heure exacte (fil « En direct ») closed: iso(t.date_closed || t.date_done),
   };
 }
 // garder : tout ce qui est en cours, et ce qui a été livré / clos depuis moins de KEEP_DAYS jours

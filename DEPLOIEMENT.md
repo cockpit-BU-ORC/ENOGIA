@@ -3161,3 +3161,13 @@ Demandé : « quand les gens se connectent chaque jour, ça doit ouvrir sur la h
 - `SavPage.js` : grille des chiffres seulement si `sub` = tickets ou inters.
 - Galerie : accueils du propriétaire sur `homeLayouts.moi`.
 - Fichiers : src/App.js, src/access.js, src/components/HomeView.js, src/components/RoleHome.js, src/components/SavPage.js, src/demo/demoPages.js.
+
+## V418 — Accueil plus vivant : fil « En direct », la journée, visages et tuiles colorées
+
+Maquette `maquettes-design/v419-accueil-vivant.html`, pistes A + C (« A + C »).
+
+- `src/liveFeed.js` (testé) : `buildFeed` — statuts de tests (`plans[PJ].stBy`, libellés du catalogue), affectations de testeurs, commentaires (hors privés), publications du planning (`changeLog`, plus gros décalage de départ), demandes de transport (`updatedAt`) ; 7 derniers jours ; `whenTxt` (« 10:42 », « hier 16:05 », « 17 nov »). Rien n'est écrit.
+- `RoleHome.js` : cadrans `direct` (« En direct », `LiveFeed` : un événement arrivé pendant qu'on regarde s'éclaire 300 ms, `.enogia-feed-new`), `journee` (« La journée » : 3 jours ouvrés), `equipe` (« Au banc et cette semaine », `Face` = initiales en couleur), `surveiller` (« À surveiller ») ; `Ring` (anneau) sur « Prochain départ » ; trois compteurs dans « Aujourd'hui » ; chef de projet : fil limité à ses PJ. Par défaut en tête de « Ma vue », de la direction et du chef de projet ; thème « En direct — la journée » dans la galerie de widgets.
+- `HomeView.js` : `cardS` = teinte pâle de l'étape (`color-mix` 7 % dans le fond de carte, liseré gardé) ; passe `comments` et `changeLog` (App).
+- `functions/clickup.js` : `updatedAt` (heure exacte de la dernière mise à jour) — fonctions à redéployer.
+- Fichiers : src/liveFeed.js (+ test), src/components/RoleHome.js, src/components/HomeView.js, src/App.js, src/styles.css, functions/clickup.js.

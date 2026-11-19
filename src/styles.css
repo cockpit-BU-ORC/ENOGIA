@@ -1072,3 +1072,8 @@ tr[data-kbd]:active > td, tr[role="button"]:active > td, li[data-kbd]:active, li
 @keyframes enogiaVehIn { from { transform: translateX(-24px); opacity: 0; } to { transform: none; opacity: 1; } }
 .enogia-veh-go { animation: enogiaVehIn var(--e-dur-long, .3s) cubic-bezier(.16,1,.3,1) both; }
 @media (prefers-reduced-motion: reduce) { .enogia-veh-go { animation: none; } }
+
+/* v418 : fil « En direct » — un événement arrivé pendant qu'on regarde s'éclaire une fois */
+@keyframes enogiaFeedNew { from { background-color: var(--e-feed-new, rgba(7,100,119,.16)); } to { background-color: transparent; } }
+.enogia-feed-new { animation: enogiaFeedNew var(--e-dur-long, .3s) ease-out both; }
+@media (prefers-reduced-motion: reduce) { .enogia-feed-new { animation: none; } }
