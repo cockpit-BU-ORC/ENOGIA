@@ -416,9 +416,7 @@ var toMs=function(iso){var p=iso.split('-').map(Number);return Date.UTC(p[0],p[1
 var fromMs=function(ms){var d=new Date(ms);return d.getUTCFullYear()+'-'+pad(d.getUTCMonth()+1)+'-'+pad(d.getUTCDate())};
 var diff=function(a,b){return Math.round((toMs(b)-toMs(a))/864e5)};
 var addDays=function(iso,n){return fromMs(toMs(iso)+n*864e5)};
-/* v420 : jalon payé chaque mois (loyer) — r.mens = nombre de mensualités, montant ÷ mens chaque mois à partir de l'encaissement prévu */
 var addMonths=function(iso,n){if(!iso)return iso;var y=+iso.slice(0,4),m=+iso.slice(5,7)-1+n,d=+iso.slice(8,10);y+=Math.floor(m/12);m=((m%12)+12)%12;var last=new Date(y,m+1,0).getDate();return y+'-'+pad(m+1)+'-'+pad(Math.min(d,last))};
-function parts(r){var n=r.mens>1?Math.round(r.mens):0;if(!n)return null;var out=[];for(var i=0;i<n;i++)out.push({i:i,amt:(r.montant||0)/n,enc:r.encPrevue?addMonths(r.encPrevue,i):null,init:(r.encInit||r.encPrevue)?addMonths(r.encInit||r.encPrevue,i):null});return out}
 var eurF=new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0});
 var eur=function(n){return eurF.format(n||0).replace(/ | /g,' ')};
 var fdate=function(iso){return iso?iso.slice(8,10)+'/'+iso.slice(5,7)+'/'+iso.slice(2,4):''};
@@ -492,6 +490,7 @@ function normalize(list){
     var oi=r.encInit,op=r.encPrevue;recalcInit(r);if(followInit(r)&&!r.encPrevue)r.encPrevue=r.encInit;if(r.encInit!==oi||r.encPrevue!==op)ch=true;
     if(r.factInit===undefined){r.factInit=r.factPrevue||null;ch=true}
     if(!r.statut||!STATUS_LABEL[r.statut]){r.statut=deriveStatus(r);ch=true}
+    if(r.mens!=null){delete r.mens;ch=true} /* v427 : mensualités génériques retirées */
   });
   return ch;
 }
@@ -600,7 +599,6 @@ function monthly(){
   var M={},nodate={init:0,fc:0};
   var get=function(k){return M[k]||(M[k]={key:k,init:0,paid:0,fc:0,ot:0,sh:0,otN:0,shN:0})};
   rows.forEach(function(r){
-    var P=!r.epc&&!r.payeForce&&parts(r);if(P){P.forEach(function(p){if(p.init)get(p.init.slice(0,7)).init+=p.amt;else nodate.init+=p.amt;if(p.enc)get(p.enc.slice(0,7)).fc+=p.amt;else nodate.fc+=p.amt});return}
     var mk=monthKeys(r);if(!mk)return;var a=r.montant;
     if(mk.init==='none')nodate.init+=a;else get(mk.init).init+=a;
     if(mk.act==='none')nodate.fc+=a;else if(mk.paid)get(mk.act).paid+=paidAmt(r);else get(mk.act).fc+=a;
@@ -626,7 +624,7 @@ function alertItems(){
   var when=function(d){var n=diff(TODAY,d);return n===0?'aujourd’hui':'dans '+n+' j (le '+fdate(d)+')'};
   rows.forEach(function(r){
     var s=status(r),k=s.k;
-    if(k==='paid'||r.mens>1)return;
+    if(k==='paid')return;
     if(k==='late'){if(!lo) items.push({r:r,w:r.encPrevue?diff(TODAY,r.encPrevue)-1:-9999,kind:'late',txt:'Paiement en retard'+(s.days?' de '+s.days+' j (prévu '+fdate(r.encPrevue)+')':''),bad:true})}
     else if(k==='invoiced'||k==='chased'){
       if(r.encPrevue&&r.encPrevue<TODAY){if(!lo) items.push({r:r,w:diff(TODAY,r.encPrevue),kind:'late',txt:'Paiement dépassé de '+s.days+' j : passez-le en retard ou notez le paiement',bad:true})}
@@ -672,7 +670,6 @@ var COLS=[
   {k:'pct',label:'%',grp:'base',cls:'r'},
   {k:'epc',label:'EPC',grp:'base'},
   {k:'produit',label:'Produit',grp:'base'},
-  {k:'mens',label:'Mensualités',iw:64,grp:'base',cls:'r'},
   {k:'factInit',label:'Facture initiale',iw:118,grp:'init',date:1},
   {k:'delai',label:'Délai (j)',iw:56,grp:'init',cls:'r'},
   {k:'encInit',label:'Enc. initial',iw:118,grp:'init',date:1},
@@ -750,7 +747,6 @@ function cellHTML(c,r,sticky,gs){
     case 'produit':cls+=' ctr';inner='<input type="checkbox" data-f="produit" '+(r.produit?'checked ':'')+'title="Livrable à fournir par le Produit (ex. P&amp;ID) : le jalon, son montant et ses dates remontent sur l\'accueil du responsable produit" aria-label="Jalon lié à un livrable du Produit">';break;
     case 'cm':attr=' data-d="cm"';inner=cmHTML(r);break;
     case 'statut':cls+=' ro';attr=' data-d="stat"';inner='<span class="stw">'+pillHTML(r)+'<label class="pf" title="Forcer « payé » sans montant ni date (ex. projet EPC) : le jalon sort des suivis, du prévisionnel et du widget Livrables Produit"><input type="checkbox" data-f="payeForce" '+(r.payeForce?'checked ':'')+'aria-label="Forcer le statut payé">payé</label></span>';break;
-    case 'mens':inner='<input class="in n" type="number" min="2" step="1" data-f="mens" value="'+(r.mens>1?Math.round(r.mens):'')+'" aria-label="Nombre de mensualités" title="Paiement chaque mois (ex. loyer) : nombre de mois. Le montant est réparti à parts égales, une mensualité par mois à partir de l’encaissement prévu. Vide = paiement en une fois." placeholder="–">';break;
     case 'delai':inner='<input class="in n" type="number" step="1" data-f="delai" value="'+(r.delai==null?'':r.delai)+'" aria-label="Délai de paiement en jours" placeholder="j">';break;
     case 'ref':inner='<input class="in mono" data-f="ref" value="'+esc(r.ref)+'" aria-label="Numéro de facture" placeholder="FA…">';break;
     case 'note':inner='<input class="in" data-f="note" value="'+esc(r.note)+'" aria-label="Commentaire" placeholder="Commentaire">';break;
@@ -887,7 +883,7 @@ function popTable(list,extraLabel,extraFn){
   list.forEach(function(r){
     var k=status(r).k,ex='';
     if(extraFn){var f=fmtDays(extraFn(r));ex='<td class="r d '+f.c+'">'+f.t+'</td>'}
-    h+='<tr><td><b>'+esc(r.pj)+'</b>'+(labels[r.pj]?'<div class="pjn">'+esc(labels[r.pj])+'</div>':'')+'</td><td>'+esc(r.jalon||'Jalon sans nom')+(r.mens>1?'<div class="pjn">'+Math.round(r.mens)+' mensualités de '+eur((r.montant||0)/Math.round(r.mens))+'</div>':'')+'</td><td class="r">'+eur(r.montant)+'</td><td><span class="pill k-'+k+'">'+STATUS_LABEL[k]+'</span></td><td class="r">'+esc(fmtD(r.encInit))+'</td><td class="r">'+esc(fmtD(r.encPrevue))+'</td><td class="r">'+esc(fmtD(r.encReelle))+'</td><td>'+puPill(r)+'</td>'+ex+'<td><button type="button" class="mini" data-goto="'+r.id+'">Voir</button></td></tr>';
+    h+='<tr><td><b>'+esc(r.pj)+'</b>'+(labels[r.pj]?'<div class="pjn">'+esc(labels[r.pj])+'</div>':'')+'</td><td>'+esc(r.jalon||'Jalon sans nom')+'</td><td class="r">'+eur(r.montant)+'</td><td><span class="pill k-'+k+'">'+STATUS_LABEL[k]+'</span></td><td class="r">'+esc(fmtD(r.encInit))+'</td><td class="r">'+esc(fmtD(r.encPrevue))+'</td><td class="r">'+esc(fmtD(r.encReelle))+'</td><td>'+puPill(r)+'</td>'+ex+'<td><button type="button" class="mini" data-goto="'+r.id+'">Voir</button></td></tr>';
   });
   return h+'</tbody></table>';
 }
@@ -958,7 +954,6 @@ function matrixItems(){
   var items=[];
   rows.forEach(function(r){
     if(r.epc||!r.montant||r.payeForce)return;
-    var P=parts(r);if(P){P.forEach(function(p){items.push({r:r,paid:false,amt:p.amt,mens:p.i+1,key:p.enc?p.enc.slice(0,7):'none',late:false})});return}
     var st=status(r),paid=st.k==='paid'&&!!r.encReelle,d=paid?r.encReelle:r.encPrevue;
     /* v420 : en retard = paiement non reçu dont l'encaissement prévu (ou la facture à émettre) est dépassé */
     items.push({r:r,paid:paid,key:d?d.slice(0,7):'none',late:!paid&&(st.k==='late'||!!st.days||(!!r.encPrevue&&r.encPrevue<TODAY))});
@@ -973,8 +968,8 @@ function matrixHTML(){
   var months=monthRange(Object.keys(ks).filter(function(k){return k!=='none'}).sort());
   if(ks.none)months.push('none');
   var pjs=pjList().filter(function(pj){return items.some(function(x){return x.r.pj===pj})});
-  var sum=function(l){return l.reduce(function(s,x){return s+(x.amt!=null?x.amt:x.r.montant)},0)};
-  var tip=function(l){return l.map(function(x){return (x.paid?'Reçu : ':x.late?'En retard : ':'Prévu : ')+x.r.pj+(labels[x.r.pj]?' ('+labels[x.r.pj]+')':'')+' · '+(x.r.jalon||'Jalon')+(x.mens?' · mensualité '+x.mens+' / '+Math.round(x.r.mens):'')+' · '+eur(x.amt!=null?x.amt:x.r.montant)+(!x.mens&&pctText(x.r)?' · '+pctText(x.r):'')}).join('\n')};
+  var sum=function(l){return l.reduce(function(s,x){return s+x.r.montant},0)};
+  var tip=function(l){return l.map(function(x){return (x.paid?'Reçu : ':x.late?'En retard : ':'Prévu : ')+x.r.pj+(labels[x.r.pj]?' ('+labels[x.r.pj]+')':'')+' · '+(x.r.jalon||'Jalon')+' · '+eur(x.r.montant)+(pctText(x.r)?' · '+pctText(x.r):'')}).join('\n')};
   var cell=function(l,key,pj,extra){
     var t=sum(l),allPaid=l.every(function(x){return x.paid}),anyLate=l.some(function(x){return x.late});
     return '<td class="mxc '+(allPaid?'p':anyLate?'f l':'f')+(key===cur?' cur':'')+(extra||'')+'" data-mx="'+esc(pj)+'|'+key+'" title="'+esc(eur(t)+'\n'+tip(l))+'">'+fmtK(t)+(l.length>1?'<sup>'+l.length+'</sup>':'')+'</td>';
@@ -1152,7 +1147,6 @@ function applyEdit(r,f,v){
   if(f==='epc'){r.epc=!!v;return}
   if(f==='produit'){if(v)r.produit=true;else delete r.produit;return}
   if(f==='payeForce'){if(v)r.payeForce=true;else delete r.payeForce;return}
-  if(f==='mens'){var nm=Math.round(Number(v));if(nm>1)r.mens=nm;else delete r.mens;return}
   var prevInit=r.encInit,prevFI=r.factInit;
   if(f==='montant'||f==='delai'){
     var n=v===''?null:Number(v);r[f]=(n==null||isNaN(n))?null:n;
@@ -1181,7 +1175,6 @@ function onEdit(id,f,val){
   if(JSON.stringify(r)===before)return;
   if(f==='produit'){scheduleSave();render();toast(r.produit?'Jalon Produit : il remonte sur l\'accueil du responsable produit':'Jalon retiré de l\'accueil du responsable produit');return}
   if(f==='payeForce'){scheduleSave();render();toast(r.payeForce?'Jalon marqué payé (forcé) : il sort des suivis et du widget Livrables Produit':'Statut forcé retiré');return}
-  if(f==='mens'){scheduleSave();render();toast(r.mens>1?'Paiement réparti sur '+r.mens+' mois : '+eur((r.montant||0)/r.mens)+' par mois à partir du '+fdate(r.encPrevue):'Paiement en une fois');return}
   if(f==='epc'){scheduleSave();render();toast(r.epc?'Jalon EPC : grisé, hors suivi des factures et encaissements':'Jalon réintégré dans le suivi');return}
   if(autoDelai&&f!=='delai') toast('Délai de paiement de 30 j appliqué, modifiable dans la colonne Délai. Encaissements calculés.');
   else if(f==='encReelle'&&val) toast('Jalon payé le '+fdate(val));
