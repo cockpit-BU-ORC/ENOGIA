@@ -1284,4 +1284,7 @@ export const RELEASE_CATALOG = [
   { v: "418", t: "Accueil plus vivant : fil « En direct », la journée, visages et tuiles colorées", items: [
     ["Accueil vivant", "Fil « En direct », « La journée », testeurs et responsables en visages, tuiles teintées."],
   ] },
+  { v: "419", t: "Achats / Appro : délai de commande et délai de transport séparés dans le Gantt", items: [
+    ["Gantt achats : commande + transport", "Barre réelle des PO coupée entre délai de commande et délai de transport."],
+  ] },
 ];

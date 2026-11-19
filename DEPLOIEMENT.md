@@ -3171,3 +3171,11 @@ Maquette `maquettes-design/v419-accueil-vivant.html`, pistes A + C (« A + C »)
 - `HomeView.js` : `cardS` = teinte pâle de l'étape (`color-mix` 7 % dans le fond de carte, liseré gardé) ; passe `comments` et `changeLog` (App).
 - `functions/clickup.js` : `updatedAt` (heure exacte de la dernière mise à jour) — fonctions à redéployer.
 - Fichiers : src/liveFeed.js (+ test), src/components/RoleHome.js, src/components/HomeView.js, src/App.js, src/styles.css, functions/clickup.js.
+
+## V419 — Achats / Appro : délai de commande et délai de transport séparés dans le Gantt
+
+Demandé (responsable achats) : « dans la vue Gantt, distinguer le LT transport et le LT commande pour les PO concernées — la PO finie le 29/01, puis 5 jours ouvrés de transport ; voir le délai de commande et le délai de transport ; garder le vert et le rouge ».
+
+- `Achats.js` `renderGantt` : `four` = fin de la PO chez le fournisseur (`lineState().prevueFour`, date Odoo / saisie) ; si commande, fin de PO et livraison prévue sont connues : barre pleine `cde → four` (« Commande ») puis barre hachurée `four → liv` (« Transport », `ltT` jours ouvrés), même couleur (vert / rouge / gris si livrée) ; étiquette sous la jonction « PO jj/mm · +N j transport » ; ligne de 54 px ; légende mise à jour. Sans fin de PO : barre unique comme avant. Partie théorique inchangée.
+- Galerie « Achats / Appro » : fiche PJ902 avec un fournisseur à 5 j ouvrés de transport, une PO à temps et une en retard.
+- Fichiers : src/components/Achats.js, src/demo/demoPages.js. **Kit achats à régénérer** (`npm run kit:achats`) avant le prochain échange avec le responsable achats.

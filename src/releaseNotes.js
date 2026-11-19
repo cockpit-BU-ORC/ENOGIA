@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v419",
+    date: "2026-11-19",
+    title: "V419 : Achats / Appro : délai de commande et délai de transport séparés dans le Gantt",
+    items: [
+      { t: "Gantt des achats", d: "Pour chaque PO, la barre réelle est coupée en deux : la commande (barre pleine, de la date de commande à la fin de la PO chez le fournisseur), puis le transport (barre hachurée, les jours ouvrés de transport du fournisseur jusqu'à la livraison prévue). Sous la jonction : « PO 29/01 · +5 j transport »." },
+      { t: "Couleurs", d: "Vert si la livraison arrive à temps, rouge si elle arrive après la livraison cible, comme avant ; au survol, chaque partie donne ses dates et sa durée." },
+    ],
+  },
+  {
     id: "2026-11-v418",
     date: "2026-11-19",
     title: "V418 : Accueil plus vivant : fil « En direct », la journée, visages et tuiles colorées",

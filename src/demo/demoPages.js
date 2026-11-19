@@ -104,7 +104,15 @@ function Acces() { const [sub, setSub] = useState("people"); return <AccessPage 
 // la fiche d'un PJ (pop-up commun à la Liste, au Gantt, au Calendrier et à l'accueil)
 function FichePj() { const [pj, setPj] = useState("PJ903-2"); return <PjDialogCtx.Provider value={{ testsDoc: DEMO_TESTS, turbineDoc: null, prodDoc: DEMO_PROD, rows: DEMO_ROWS, setDepart: yes, savDoc: DEMO_SAV, demDoc: DEMO_SAV_DEM, openPage: no, testsOk: true }}>
   {pj ? <PjDialog pj={pj} data={DEMO_ROWS} df="date" onClose={() => setPj(null)} {...common} resolveComment={yes} /> : <button type="button" onClick={() => setPj("PJ903-2")}>Rouvrir la fiche</button>}</PjDialogCtx.Provider>; }
-const AchatsDemo = () => <Achats doc={{}} api={demoApi} rows={DEMO_ROWS.map(r => ({ pj: r.pj, nomProjet: "", gamme: r.gamme || "", etat: r.etat, arrivee: r.arrivee || null, depart: r.depart || null }))} canEdit owner />;
+// v419 : une fiche machine, un fournisseur à 5 j ouvrés de transport, une PO à temps et une en retard (vue Gantt : commande puis transport)
+const DEMO_ACHATS_G = { fournisseurs: { fr1: { id: "fr1", nom: "Fournisseur A", ltJ: 30, ltTransportJ: 5 } },
+  projets: { f1: { id: "f1", projet: "PJ902", machine: "PJ902", marge: 7, dateDebut: "2027-01-20" } },
+  po: { o1: { numero: "PO2611", ligne: "1", ref: "MD500", designation: "Armoire", qte: 1, dateCommande: "2026-11-02", dateLivraison: "2026-12-04", statut: "attente" },
+    o2: { numero: "PO2640", ligne: "1", ref: "A2V", designation: "Pompe de lubrification", qte: 1, dateCommande: "2026-11-16", dateLivraison: "2027-01-08", statut: "attente" } },
+  lignes: { l1: { projetId: "f1", famille: "ARMOIRE", ref: "MD500", designation: "Armoire électrique", fournisseurId: "fr1", poId: "o1" },
+    l2: { projetId: "f1", famille: "POMPE DE LUB", ref: "A2V", designation: "Pompe A2V", fournisseurId: "fr1", poId: "o2" },
+    l3: { projetId: "f1", famille: "CHOKE", designation: "Choke", fournisseurId: "fr1" } } };
+const AchatsDemo = () => <Achats doc={DEMO_ACHATS_G} api={demoApi} rows={DEMO_ROWS.map(r => ({ pj: r.pj, nomProjet: "", gamme: r.gamme || "", etat: r.etat, arrivee: r.arrivee || null, depart: r.depart || null }))} canEdit owner />;
 
 // v323 : accueil du responsable produit (responsable des testeurs) avec les jalons cash « Produit »
 const DEMO_PRODUIT = { items: [

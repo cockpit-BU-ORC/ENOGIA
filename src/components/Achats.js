@@ -1137,11 +1137,12 @@ export function Achats({ doc, api, rows, canEdit, owner, admin, tab: tabP, onTab
 
   // Vue Gantt, deux pistes par ligne (N1 et N2) :
   //   théorique (en haut, pastel) : commande au plus tard → production (LT fournisseur, info) → transport (violet) → livraison cible ;
-  //   réel (barre pleine, en bas) : date de commande du PO → livraison prévue du PO, verte si à temps, rouge si après la livraison cible.
+  //   réel (en bas) : v419 (demandé : « distinguer le LT commande et le LT transport ») — barre pleine = commande (date de commande → fin de la PO
+  //   chez le fournisseur), puis barre hachurée = transport (N jours ouvrés → livraison prévue) ; verte si à temps, rouge si après la livraison cible.
   // Trait vertical = arrivée de la machine ; pointillé = aujourd'hui.
   const renderGantt = (fiche, all) => { const { kids, ouvert, list, barre, fleche } = n2Of(all);
     const G = list.map(l => { const s = l.st, th = !!(s.auPlusTard && s.cible && s.lt != null), dep = th ? addDays(s.cible, -(s.ltT || 0)) : "", p = l.poLine;
-      return { l, s, th, deb: s.auPlusTard, dep, fin: s.cible, cde: p ? isoOf(p.dateCommande) : "", liv: s.prevue || "" }; });
+      return { l, s, th, deb: s.auPlusTard, dep, fin: s.cible, cde: p ? isoOf(p.dateCommande) : "", four: p && s.prevueFour ? isoOf(s.prevueFour) : "", liv: s.prevue || "" }; });
     if (!G.some(g => g.th || g.liv)) return <div style={{ color: T.ink500, fontSize: FZF.sm, padding: 18, textAlign: "center" }}>Aucune ligne datée : il manque la date d'arrivée, le fournisseur ou le LT.</div>;
     const ds = [tIso, fiche.dateDebutEff, ...G.flatMap(g => [g.th && g.deb, g.th && g.fin, g.cde, g.liv])].filter(Boolean).sort();
     const d0 = addDays(ds[0], -21), d1 = addDays(ds[ds.length - 1], 21), nj = Math.max(1, daysBetween(d0, d1));
@@ -1161,7 +1162,7 @@ export function Achats({ doc, api, rows, canEdit, owner, admin, tab: tabP, onTab
         {sw({ background: T.info100, border: "1px solid " + T.info500 }, "Production (LT fournisseur)")}{sw({ background: T.violet100, border: "1px solid " + T.violet500 }, "Transport")}
         <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><span style={{ width: 8, height: 8, borderRadius: 999, background: T.ink700 }} />Cde au plus tard / livraison cible</span>
         <b style={{ color: T.ink900, marginLeft: 6 }}>Réel (PO)</b>
-        {sw({ background: T.emerald600 }, "Commande → livraison prévue, à temps")}{sw({ background: T.red600 }, "en retard")}
+        {sw({ background: T.emerald600 }, "Commande (PO)")}{sw({ background: "repeating-linear-gradient(135deg," + T.emerald600 + " 0 3px," + T.emerald100 + " 3px 6px)", border: "1px solid " + T.emerald600 }, "Transport")}<span>vert = à temps, rouge = après la livraison cible</span>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><span style={{ width: 2, height: 12, background: T.ink900 }} />Arrivée {fd(arr)}</span>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><span style={{ width: 0, height: 12, borderLeft: "1px dashed " + T.ink500 }} />Aujourd'hui</span>
       </div>
@@ -1173,11 +1174,13 @@ export function Achats({ doc, api, rows, canEdit, owner, admin, tab: tabP, onTab
               {mois.map(s => <span key={s} style={{ position: "absolute", left: x(s), top: 0, bottom: 0, borderLeft: "1px solid " + T.line, paddingLeft: 4, fontSize: FZF.xs, color: T.ink500, lineHeight: "28px", whiteSpace: "nowrap" }}>{nomMois(s)}</span>)}
             </div>
           </div>
-          {G.map(({ l, s, th, deb, dep, fin, cde, liv }) => {
+          {G.map(({ l, s, th, deb, dep, fin, cde, four, liv }) => {
             const n2 = l.niv === 2, enRetard = liv && fin && liv > fin, done = s.k === "done", reelCol = done ? T.ink500 : enRetard ? T.red600 : T.emerald600;
             const k = !n2 ? kids[l.id] || [] : [], ouv = ouvert(l.id), kBad = !ouv ? k.filter(x => x.st.k === "late" || x.st.k === "nc").length : 0;
             const cdeRetard = s.statut === "apasser" && deb && deb < tIso;
-            return (<div key={l.id} style={{ display: "flex", height: 44, borderTop: "1px solid " + T.line }}>
+            const tr = !!(cde && four && liv && four >= cde && liv > four); // v419 : commande puis transport
+            const soft = done ? T.surfaceAlt : enRetard ? T.red100 : T.emerald100, hatch = "repeating-linear-gradient(135deg," + reelCol + " 0 3px," + soft + " 3px 6px)";
+            return (<div key={l.id} style={{ display: "flex", height: tr ? 54 : 44, borderTop: "1px solid " + T.line }}>
               <div style={{ width: LW, flex: "0 0 " + LW + "px", position: "sticky", left: 0, zIndex: 2, background: n2 ? T.surface : T.card, borderRight: "1px solid " + T.line, boxSizing: "border-box",
                 display: "flex", alignItems: "center", paddingLeft: n2 ? 36 : 4, minWidth: 0 }}>
                 {!n2 && fleche(l, k, ouv)}
@@ -1196,7 +1199,13 @@ export function Achats({ doc, api, rows, canEdit, owner, admin, tab: tabP, onTab
                   {s.ltT > 0 && <div title={"Transport : départ " + fd(dep) + ", livraison cible " + fd(fin) + " (" + s.ltT + " j)"} style={{ position: "absolute", top: 7, height: 11, left: x(dep), width: Math.max(2, x(fin) - x(dep)), boxSizing: "border-box", background: T.violet100, border: "1px solid " + T.violet500, borderLeft: "none", borderRadius: "0 3px 3px 0" }} />}
                   {pt(x(deb), 8.5, cdeRetard ? T.red600 : T.ink700, "Commande au plus tard " + fd(deb))}{pt(x(fin), 8.5, T.ink700, "Livraison cible " + fd(fin))}
                 </> : <span style={{ position: "absolute", left: 8, top: 4, fontSize: FZF.xs, color: T.ink500, whiteSpace: "nowrap" }}>Théorique incomplet{l.manque.length ? " : " + l.manque.join(", ") : ""}</span>}
-                {cde && liv ? <>
+                {tr ? <>
+                  <div title={"Commande : du " + fd(cde) + " au " + fd(four) + " (" + daysBetween(cde, four) + " j, fin de la PO chez le fournisseur)"} style={{ position: "absolute", top: 23, height: 12, left: x(cde), width: Math.max(3, x(four) - x(cde)), background: reelCol, borderRadius: "4px 0 0 4px" }} />
+                  <div title={"Transport : " + (s.ltT || daysBetween(four, liv)) + " j ouvrés, du " + fd(four) + " au " + fd(liv) + (enRetard ? ", " + daysBetween(fin, liv) + " j après la cible" : "")} style={{ position: "absolute", top: 23, height: 12, left: x(four), width: Math.max(3, x(liv) - x(four)), boxSizing: "border-box", background: hatch, border: "1px solid " + reelCol, borderLeft: "2px solid " + T.card, borderRadius: "0 4px 4px 0" }} />
+                  {lab({ right: W - x(cde) + 4 }, T.ink700, dm(cde))}
+                  <span style={{ position: "absolute", top: 37, left: x(four), transform: "translateX(-50%)", fontSize: 11, lineHeight: "13px", color: T.ink700, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>PO {dm(four)} · +{s.ltT || daysBetween(four, liv)} j transport</span>
+                  {lab({ left: x(liv) + 4, fontWeight: 700 }, reelCol, dm(liv) + (enRetard && !done ? " +" + daysBetween(fin, liv) + " j" : l.avJ > 0 ? " −" + l.avJ + " j" : ""))}
+                </> : cde && liv ? <>
                   <div title={"Réel : commandé le " + fd(cde) + ", livraison prévue " + fd(liv) + (enRetard ? ", " + daysBetween(fin, liv) + " j après la cible" : "")} style={{ position: "absolute", top: 23, height: 12, left: x(cde), width: Math.max(3, x(liv) - x(cde)), background: reelCol, borderRadius: 4 }} />
                   {lab({ right: W - x(cde) + 4 }, T.ink700, dm(cde))}{lab({ left: x(liv) + 4, fontWeight: 700 }, reelCol, dm(liv) + (enRetard && !done ? " +" + daysBetween(fin, liv) + " j" : l.avJ > 0 ? " −" + l.avJ + " j" : ""))}
                 </> : liv ? <>
