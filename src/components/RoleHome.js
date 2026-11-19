@@ -12,7 +12,7 @@ import { useCashin } from "../useCashin";
 import { weeklyReport, curveGeom, fmtS } from "../cashWeekly";
 import { useRai, raiGate } from "../raiStatus";
 import { fmtEur } from "../pjProgress";
-import { transportList, stepOf, CLICKUP_LIST_URL } from "../transports"; // v413 : demandes de transport ClickUp
+import { transportList, CLICKUP_LIST_URL, trackOf, whenOf, TRACK } from "../transports"; // v413 : demandes de transport ClickUp
 import { useProdModel } from "../prodModel"; // v324 : makeModel chargé à la demande
 import { planWeeks, atelierCap, CAPA_DEFAUT } from "../loadWeeks"; // v289 : sans les graphiques du Manager
 
@@ -102,6 +102,32 @@ const Stat = ({ label, value, tone, onClick }) => <button type="button" onClick=
 // v391 (demandé : « rajouter en widget la courbe annuelle du Cash in ») : la courbe de la fiche du lundi (cashWeekly.curveGeom), aux couleurs
 // du thème ; trait plein = initial (gris) et encaissé (vert), tirets = prévu, pointillés gris = si les retards sont payés ; mois écrits dessous.
 const MS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
+// v414 : demande de transport en « suivi colis » (frise de 5 points) — lien vers ClickUp
+function TrackSteps({ x }) {
+  const t = trackOf(x);
+  return <span role="img" aria-label={"Avancement : " + TRACK[t.k] + (t.bad ? ", infos demandées au demandeur" : "")} style={{ display: "flex", alignItems: "flex-start", minWidth: 0 }}>
+    {TRACK.map((l, i) => { const done = i < t.k, now = i === t.k, line = i > 0 && i <= t.k ? T.accentInk : T.line;
+      const dot = now && t.bad ? { background: T.red600, borderColor: T.red600 } : done || (now && t.k === 4) ? { background: T.accentInk, borderColor: T.accentInk } : now ? { background: T.card, borderColor: T.accentInk, boxShadow: "0 0 0 3px " + T.accentSoft } : { background: T.card, borderColor: T.line };
+      return <span key={l} aria-hidden="true" style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, position: "relative" }}>
+        {i > 0 && <i style={{ position: "absolute", top: 5, right: "50%", width: "100%", height: 2, background: line }} />}
+        <i style={{ position: "relative", width: 12, height: 12, borderRadius: 999, border: "2px solid", boxSizing: "border-box", ...dot }} />
+        <small style={{ fontSize: 11, lineHeight: 1.2, color: now ? T.ink900 : T.ink500, fontWeight: now ? 600 : 400, whiteSpace: "nowrap" }}>{l}</small></span>; })}
+  </span>;
+}
+function TransportTrack({ x, first, wide, when }) {
+  const t = trackOf(x), who = <span style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
+    <span style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>{x.pj ? <PjPlate pj={x.pj} /> : x.ref ? <span style={{ fontFamily: T.fontMono, fontSize: 12, fontWeight: 600, color: T.ink900 }}>{x.ref}</span> : null}
+      {x.urgent && <span style={{ fontSize: 12, fontWeight: 600, color: T.red600 }}>urgent</span>}
+      {t.bad && <span style={{ fontSize: 12, fontWeight: 500, padding: "1px 8px", borderRadius: 999, background: T.red100, color: T.red600 }}>Infos demandées</span>}</span>
+    <span style={{ fontSize: FZ.sm, color: T.ink700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.from || x.to ? <><b style={{ fontWeight: 500, color: T.ink900 }}>{x.from || "?"}</b> → {x.to || "?"}</> : x.name || "Demande sans titre"}{x.colis > 1 ? " · " + x.colis + " colis" : ""}</span></span>;
+  const date = <span style={{ fontSize: FZ.xs, fontWeight: 500, color: /passé/.test(when) ? T.amber600 : T.ink500, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", textAlign: "right" }}>{when} <span aria-hidden="true">↗</span></span>;
+  return <a href={x.url} target="_blank" rel="noopener noreferrer" className="enogia-homeline" title={(x.name || "") + " · ouvrir dans ClickUp"}
+    style={{ display: "grid", gridTemplateColumns: wide ? "minmax(0, 1fr) 380px 170px" : "minmax(0, 1fr) auto", gap: wide ? 14 : "6px 10px", alignItems: "center", padding: "10px 6px", borderTop: first ? "none" : "1px solid " + T.line, textDecoration: "none", color: T.ink900, fontFamily: T.font }}>
+    {who}{wide ? <><TrackSteps x={x} />{date}</> : <>{date}<span style={{ gridColumn: "1 / -1" }}><TrackSteps x={x} /></span></>}
+  </a>;
+}
+const TransportCounts = ({ items }) => <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "2px 10px", alignItems: "baseline", marginTop: 4 }}>
+  {items.map(([v, l, c]) => <React.Fragment key={l}><b style={{ fontFamily: T.fontDisplay, fontSize: 20, fontWeight: 600, color: c, fontVariantNumeric: "tabular-nums" }}>{v}</b><span style={{ fontSize: 13, color: T.ink500 }}>{l}</span></React.Fragment>)}</div>;
 function CashCurve({ r, h = 170 }) {
   const g = curveGeom(r, 560, h), P = l => l.map((p, i) => (i ? "L" : "M") + p[0] + " " + p[1]).join(" "), ns = { vectorEffect: "non-scaling-stroke", fill: "none", strokeLinejoin: "round" };
   const up = g.today.yReal <= g.today.yIni;
@@ -396,25 +422,25 @@ export function RoleHome({ transports, produit, scope, role, profile, ui, kpiEl,
         pill={<Pill tone={x.g.k === "reserve" ? A.orange : x.g.k === "no" ? A.red : { bg: T.surfaceAlt, ink: T.ink700 }}>{x.g.k === "reserve" ? "Réserves" : x.g.k === "no" ? "En cours" : "À faire"}</Pill>}
         main={nomOf(x.r) || ""} right={(x.g.left < 0 ? "départ passé" : "dans " + x.g.left + " j") + " · " + fmtD(x.r.depart)} rightColor={x.g.left <= 7 ? T.red500 : undefined} />)}</>); } };
   // v413 (demandé : « l'avancement des demandes de transport ClickUp sur les accueils, et cliquer pour aller sur ClickUp ») — chef de projet : ses PJ
-  W.transports = { label: "Demandes de transport", span: 6, sizes: ["m", "l", "xl"], only: () => !!transports, render: z => {
-    const L = transportList(transports, role === "cdp" ? scope : null), n = z === "l" ? 9 : z === "xl" ? 6 : 4;
-    const TONE = { warn: A.orange, bad: A.red, ok: { bg: T.emerald100, ink: T.emerald600 }, info: { bg: T.info100, ink: T.info600 }, accent: { bg: T.accentSoft, ink: T.accentInk }, neutral: { bg: T.surfaceAlt, ink: T.ink700 } };
-    const line = (x, i) => { const st = stepOf(x.status);
-      return <a key={x.id} href={x.url} target="_blank" rel="noopener noreferrer" className="enogia-homeline" title={x.name + " · ouvrir dans ClickUp"}
-        style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 40, borderTop: i === 0 ? "none" : "1px solid " + T.line, padding: "8px 6px", textDecoration: "none", color: T.ink900, fontFamily: T.font }}>
-        <Pill tone={TONE[st.tone]}>{st.label}</Pill>
-        {x.pj && <PjPlate pj={x.pj} />}
-        <span style={{ fontSize: FZ.sm, color: T.ink700, minWidth: 0, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.name || "Demande sans titre"}</span>
-        <span style={{ fontSize: FZ.xs, fontWeight: 500, color: T.ink500, flexShrink: 0, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{x.livraison && st.i >= 2 ? "livraison " + fmtD(x.livraison) : x.enlevement ? "enlèvement " + fmtD(x.enlevement) : x.updated ? "maj " + fmtD(x.updated) : ""}</span>
-        <span aria-hidden="true" style={{ color: T.ink500, flexShrink: 0 }}>↗</span></a>; };
-    const recent = L.done.slice(0, Math.max(0, n - L.open.length));
+  W.transports = { label: "Demandes de transport", span: 6, sizes: ["m", "xl", "l", "s"], only: () => !!transports, render: z => {
+    // v414 : piste C « suivi colis » — une ligne par demande avec sa frise Demande · Consultation · Programmé · En route · Livré ; clic = la demande dans ClickUp
+    const L = transportList(transports, role === "cdp" ? scope : null), wide = z === "xl", n = z === "l" ? 8 : wide ? 6 : 4;
+    const sub = "ClickUp · " + (role === "cdp" && scope ? "mes PJ" : "toutes") + (L.waiting ? " · " + L.waiting + " en attente d'infos" : "") + (transports.etat === "erreur" ? " · lecture ClickUp en échec" : "");
+    const date = x => { const w = whenOf(x, today); return w.replace(/\d{4}-\d{2}-\d{2}/, d => fmtD(d)); };
+    if (z === "s") { const c = f => L.open.filter(f).length, k = x => trackOf(x).k;
+      return sec("transports", "Demandes de transport", S.depart.ring, <><Head title="Transports" sub="ClickUp" />
+        <div style={{ fontFamily: T.fontDisplay, fontSize: 28, fontWeight: 600, letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums", color: T.ink900 }}>{L.open.length}<span style={{ fontFamily: T.font, fontSize: FZ.sm, fontWeight: 500, color: T.ink500 }}> en cours</span></div>
+        <TransportCounts items={[[c(x => trackOf(x).bad), "infos demandées", L.waiting ? T.red600 : T.ink900], [c(x => k(x) === 2), "départs programmés", T.ink900], [c(x => k(x) === 3), "en route", T.ink900]]} />
+        <a href={(transports && transports.liste) || CLICKUP_LIST_URL} target="_blank" rel="noopener noreferrer" className="enogia-homelink" style={{ ...link, marginTop: 2, textDecoration: "none" }}>ClickUp <span aria-hidden="true">↗</span></a></>); }
+    const recent = L.done.slice(0, Math.max(0, Math.min(2, n - L.open.length)));
+    const row = (x, i) => <TransportTrack key={x.id} x={x} first={i === 0} wide={wide} when={date(x)} />;
     return sec("transports", "Demandes de transport", S.depart.ring, <>
-      <Head title="Demandes de transport" sub={"ClickUp · " + (role === "cdp" && scope ? "mes PJ" : "toutes") + (L.waiting ? " · " + L.waiting + " en attente d'infos" : "") + (transports.etat === "erreur" ? " · lecture ClickUp en échec" : "")} count={L.open.length} />
+      <Head title="Demandes de transport" sub={sub} count={L.open.length} />
       {L.open.length + L.done.length === 0 ? empty("inbox", "Aucune demande en cours", "Les demandes de transport faites dans ClickUp apparaissent ici, avec leur avancement.") : <>
-        {L.open.slice(0, n).map(line)}
-        {recent.length > 0 && <div style={{ fontSize: 12, color: T.ink500, margin: "8px 0 0" }}>Livrées ou ramassées récemment</div>}
-        {recent.map((x, i) => line(x, i))}
-        {L.open.length > n && <div style={{ fontSize: 12, color: T.ink500, marginTop: 4 }}>+ {L.open.length - n} autre{L.open.length - n > 1 ? "s" : ""} en cours dans ClickUp</div>}</>}
+        {L.open.slice(0, n).map(row)}
+        {L.open.length > n && <div style={{ fontSize: 12, color: T.ink500, marginTop: 4 }}>+ {L.open.length - n} autre{L.open.length - n > 1 ? "s" : ""} en cours dans ClickUp</div>}
+        {recent.length > 0 && <div style={{ fontSize: 12, color: T.ink500, margin: "8px 0 0" }}>Livrées récemment</div>}
+        {recent.map(row)}</>}
       <a href={(transports && transports.liste) || CLICKUP_LIST_URL} target="_blank" rel="noopener noreferrer" className="enogia-homelink" style={{ ...link, marginTop: 2, textDecoration: "none" }}>Ouvrir la liste dans ClickUp <span aria-hidden="true">↗</span></a>
       {transports.at && <div style={{ fontSize: 12, color: T.ink500, marginTop: 2 }}>mis à jour à {new Date(transports.at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</div>}</>); } };
   W.alertes = { label: "Alertes", span: 8, render: () => { const bigLate = late.filter(r => r.drift > 10);

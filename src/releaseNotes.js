@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v414",
+    date: "2026-11-19",
+    title: "V414 : Demandes de transport en suivi colis (ClickUp LOGISTIQUE V2)",
+    items: [
+      { t: "Demandes de transport", d: "Le cadran d'accueil montre chaque demande ClickUp avec sa frise Demande · Consultation · Programmé · En route · Livré, comme un suivi de colis : PJ, trajet, nombre de colis, urgent, date d'enlèvement ou de livraison. Un clic ouvre la demande dans ClickUp." },
+      { t: "En tête", d: "Les demandes où la logistique attend des informations du demandeur passent en premier, en rouge, puis les urgentes." },
+      { t: "Trois tailles", d: "Moyen (frise sous le trajet), Bandeau (frise sur la ligne) et Petit (chiffres : en cours, infos demandées, départs programmés, en route)." },
+    ],
+  },
+  {
     id: "2026-11-v413",
     date: "2026-11-19",
     title: "V413 : Suppressions par les admins, transports ClickUp sur l'accueil, machines d'avant l'ordo dans le passeport",

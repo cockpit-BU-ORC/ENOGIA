@@ -72,11 +72,12 @@ function Turbines({ tab0 = "orc" }) { const [tab, setTab] = useState(tab0), [doc
   const api = useMemo(() => ({ ...demoApi, put: async (c, id, data) => { setDoc(d => ({ ...d, [c]: { ...(d[c] || {}), [id]: data } })); return true; }, del: async (c, id) => { setDoc(d => { const x = { ...(d[c] || {}) }; delete x[id]; return { ...d, [c]: x }; }); return true; } }), []);
   return <TurbinesHub doc={doc} api={api} rows={DEMO_ROWS} canEdit owner tab={tab} onTab={setTab} allowTabs={["prod", "orc"]} savePjMeta={yes} />; }
 // v413 : demandes de transport ClickUp fictives (accueil)
-const DEMO_TRANSPORTS = { at: new Date().toISOString(), etat: "ok", items: {
-  t1: { name: "Atelier Marseille → client PJ903 (2 colis)", url: "https://app.clickup.com", pj: "PJ903", status: "en attente infos demandeur", statusType: "custom", enlevement: "2026-11-24" },
-  t2: { name: "Fournisseur armoire → atelier", url: "https://app.clickup.com", pj: "PJ906", status: "depart programme", statusType: "custom", enlevement: "2026-11-21", livraison: "2026-11-26" },
-  t3: { name: "Retour pièce fournisseur", url: "https://app.clickup.com", pj: "", status: "en consultation", statusType: "custom", enlevement: "2026-11-28" },
-  t4: { name: "Turbine vers le site PJ901", url: "https://app.clickup.com", pj: "PJ901", status: "colis livre", statusType: "closed", closed: "2026-11-12" } } };
+const DEMO_TRANSPORTS = { at: new Date().toISOString(), etat: "ok", items: { // v414 : format LOGISTIQUE V2 (fictif)
+  t1: { name: "PJ903 | Fournisseur A > ENOGIA | 1 colis", url: "https://app.clickup.com", pj: "PJ903", from: "Fournisseur A", to: "ENOGIA", colis: 1, status: "en attente infos demandeur", statusType: "custom", enlSouhaitee: "2026-11-10" },
+  t2: { name: "PJ906 | ENOGIA > Emballeur | 2 colis", url: "https://app.clickup.com", pj: "PJ906", from: "ENOGIA", to: "Emballeur", colis: 2, status: "en consultation", statusType: "custom", enlSouhaitee: "2026-11-24", urgent: true },
+  t3: { name: "PJ901 | ENOGIA > Client Nord | 1 colis", url: "https://app.clickup.com", pj: "PJ901", from: "ENOGIA", to: "Client Nord", colis: 1, status: "depart programme", statusType: "custom", enlPrevue: "2026-11-21" },
+  t4: { name: "STOCK | Fournisseur B > ENOGIA | 2 colis", url: "https://app.clickup.com", pj: "", ref: "STOCK", from: "Fournisseur B", to: "ENOGIA", colis: 2, status: "colis ramasse", statusType: "done", enlReelle: "2026-11-17", livPrevue: "2026-11-22" },
+  t5: { name: "PJ903 | ENOGIA > Client Sud | 1 colis", url: "https://app.clickup.com", pj: "PJ903", from: "ENOGIA", to: "Client Sud", colis: 1, status: "colis livre", statusType: "closed", livReelle: "2026-11-12" } } };
 const Accueil = () => <HomeView transports={DEMO_TRANSPORTS} pinOk testsDoc={DEMO_TESTS} data={DEMO_ROWS} comments={DEMO_COMMENTS} myEmail={DEMO_ME.email} myName={DEMO_ME.name} people={DEMO_PEOPLE} unseenChanges={[]} lastImport={null} onOpenPj={no} onGo={no}
   profiles={{ byEmail: {} }} owner cash={false} turbineDoc={null} onOpenCash={null} prodDoc={DEMO_PROD} canProdTurb productionExclusions={{}} plan={null} closurePeriods={[]} saveHomeLayout={null} />;
 // v352 : cadrans « Ligne d'atelier » et « Fiches suiveuses » (à ajouter dans la disposition d'un poste)
@@ -84,8 +85,8 @@ const AccueilAtelier = () => <HomeView pinOk testsDoc={DEMO_TESTS} data={DEMO_RO
   profiles={{ byEmail: {}, homeLayouts: { direction: { extra: ["ligne", "suiveuses", "depBoard", "ecarts", "parChef", "parPays", "parGamme", "finProd", "arrivees30"] } } }} owner cash={false} turbineDoc={null} onOpenCash={null} prodDoc={DEMO_PROD} canProdTurb productionExclusions={{}} plan={null} closurePeriods={[]} saveHomeLayout={null} />;
 
 // v355 : accueil en widgets (tailles fixes, une pile, petits widgets) ; « Modifier l'accueil » marche ici (disposition gardée en mémoire)
-const WG_DEMO = { widgets: [{ t: "jour", z: "s" }, { t: "nextDep", z: "s" }, { t: "nLate", z: "m" }, { t: "kpis", z: "xl" }, { stack: ["nProd", "nDep30", "nShipped"], z: "m" }, { t: "nBanc", z: "s" }, { t: "ecarts", z: "s" }, { t: "depBoard", z: "l" }, { t: "parcours", z: "l" }, { t: "ligne", z: "xl" }] };
-function AccueilWidgets() { const [lay, setLay] = useState(WG_DEMO); return <HomeView pinOk testsDoc={DEMO_TESTS} data={DEMO_ROWS} comments={DEMO_COMMENTS} myEmail={DEMO_ME.email} myName={DEMO_ME.name} people={DEMO_PEOPLE} unseenChanges={[]} lastImport={null} onOpenPj={no} onGo={no}
+const WG_DEMO = { widgets: [{ t: "jour", z: "s" }, { t: "nextDep", z: "s" }, { t: "nLate", z: "m" }, { t: "kpis", z: "xl" }, { stack: ["nProd", "nDep30", "nShipped"], z: "m" }, { t: "nBanc", z: "s" }, { t: "ecarts", z: "s" }, { t: "depBoard", z: "l" }, { t: "transports", z: "xl" }, { t: "parcours", z: "l" }, { t: "ligne", z: "xl" }] };
+function AccueilWidgets() { const [lay, setLay] = useState(WG_DEMO); return <HomeView transports={DEMO_TRANSPORTS} pinOk testsDoc={DEMO_TESTS} data={DEMO_ROWS} comments={DEMO_COMMENTS} myEmail={DEMO_ME.email} myName={DEMO_ME.name} people={DEMO_PEOPLE} unseenChanges={[]} lastImport={null} onOpenPj={no} onGo={no}
   profiles={{ byEmail: {}, homeLayouts: { direction: lay } }} owner cash={false} turbineDoc={null} onOpenCash={null} prodDoc={DEMO_PROD} canProdTurb productionExclusions={{}} plan={null} closurePeriods={[]} saveHomeLayout={(r, l) => setLay(l)} />; }
 
 // v364 : gestion des accueils par rôle (liste des rôles, copier, partir de zéro, rétablir) — dispositions gardées en mémoire

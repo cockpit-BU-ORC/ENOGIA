@@ -3119,3 +3119,13 @@ Demandé : « donner la possibilité aux admins de supprimer des éléments dans
 - **Passeport** : `src/legacyMachines.js` (testé : `legacyRows`) — machines de `planning/sav.parc` absentes du planning ; `MachinePassport.js` choix « Avant l'ordo » ; `PassportBook.js` `LEGACY_PAGES` (couverture, identité depuis le parc, design, turbine et composants, MES et SAV, historique).
 - **À faire par Gabriel** : créer un jeton personnel ClickUp (Paramètres › Apps › API Token) puis `firebase functions:secrets:set CLICKUP_TOKEN` et `firebase deploy --only functions` (déploie aussi le filtre `poIgnores` de la synchro Odoo).
 - Fichiers : src/components/SavPage.js, src/components/Achats.js, functions/convert.js, functions/clickup.js, functions/index.js, functions/package.json, functions/test/*, src/transports.js (+ test), src/useAppData.js, src/appDocs.js, src/components/RoleHome.js, src/components/HomeView.js, src/App.js, src/legacyMachines.js (+ test), src/components/MachinePassport.js, src/components/PassportBook.js, src/demo/demoPages.js.
+
+## V414 — Demandes de transport en suivi colis (ClickUp LOGISTIQUE V2)
+
+Demandé : lien de la liste « https://app.clickup.com/2618431/v/li/901524181433 », maquette avant déploiement (`maquettes-design/v414-transports-clickup.html`), choix « C, parcel tracking ».
+
+- `functions/clickup.js` : liste SCCM › LOGISTIQUE V2 (`901524181433`), champs Projet(s) / Stock, Type de demande (Urgent), dates d'enlèvement et de livraison souhaitées / prévues / réelles, Transporteur, Nombre de colis, Demandeur ; trajet lu dans le nom (`routeOf` : « PJ | origine > destination | N colis ») ; terminé = colis livré ou clôture doc frn (`isDone`) ; jamais d'adresse, de contact, de valeur, de prix ni de détail douanier (test v414).
+- `src/transports.js` : `TRACK`, `trackOf` (point 0–4, `bad` = infos demandées), `whenOf`, `pickupOf` / `deliveryOf`, tri : infos demandées, urgent, date d'enlèvement (test v414).
+- `RoleHome.js` : `TrackSteps`, `TransportTrack`, `TransportCounts` (niveau du fichier) ; cadran `transports` tailles m / xl / l / s.
+- **À faire par Gabriel** : jeton ClickUp (`firebase functions:secrets:set CLICKUP_TOKEN`), puis `firebase deploy --only functions` (Cloud Scheduler à accepter au premier déploiement).
+- Fichiers : functions/clickup.js, functions/index.js, functions/test/clickup.test.js, src/transports.js (+ test), src/components/RoleHome.js, src/demo/demoPages.js.

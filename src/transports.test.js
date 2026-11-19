@@ -15,3 +15,12 @@ test("v413 : demandes de transport — en cours (attente du demandeur en tête),
   expect(stepOf("Colis livre").label).toBe("Colis livré"); expect(stepOf("autre").i).toBe(-1);
   expect(transportList(null).open).toEqual([]);
 });
+
+test("v414 : frise de suivi et texte de date", () => {
+  const { trackOf, whenOf } = require("./transports");
+  expect(trackOf({ status: "en attente infos demandeur" })).toEqual({ k: 1, bad: true });
+  expect(trackOf({ status: "colis ramasse" }).k).toBe(3); expect(trackOf({ status: "cloture doc frn" }).k).toBe(4);
+  expect(whenOf({ status: "en consultation", enlSouhaitee: "2026-10-14" }, "2026-11-19")).toBe("souhaité 2026-10-14 · passé");
+  expect(whenOf({ status: "depart programme", enlPrevue: "2026-11-24", enlSouhaitee: "2026-11-20" }, "2026-11-19")).toBe("enlèvement prévu 2026-11-24");
+  expect(whenOf({ status: "colis livre", livReelle: "2026-11-12" })).toBe("livré le 2026-11-12");
+});

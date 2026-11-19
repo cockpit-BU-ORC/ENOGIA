@@ -1268,4 +1268,7 @@ export const RELEASE_CATALOG = [
     ["Transports ClickUp sur l'accueil", "Cadran « Demandes de transport » relié à la liste ClickUp Logistique."],
     ["Machines d'avant l'ordo", "Passeport des machines du parc SAV absentes du planning."],
   ] },
+  { v: "414", t: "Demandes de transport en suivi colis (ClickUp LOGISTIQUE V2)", items: [
+    ["Transports en suivi colis", "Cadran « Demandes de transport » relié à ClickUp LOGISTIQUE V2, frise de suivi par demande."],
+  ] },
 ];
