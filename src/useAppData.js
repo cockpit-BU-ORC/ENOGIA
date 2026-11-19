@@ -2,7 +2,7 @@
 // turbines, retards, Cash in). Même code qu'avant, regroupé par document ; App.js n'appelle plus que ces crochets.
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { onSnapshot, setDoc, updateDoc, deleteField, getDoc, FieldPath, arrayUnion, arrayRemove } from "firebase/firestore";
-import { TESTBOOK_DOC_REF, TESTBOOK_IMG_REF, TURBINES_DOC_REF, TESTS_DOC_REF, PRODTURB_DOC_REF, DELAYS_DOC_REF, ACHATS_DOC_REF, ACCESS_DOC_REF, SAV_DOC_REF, SAV_DEM_DOC_REF, MACHINES_DOC_REF, DOC_PFX } from "./appDocs";
+import { TESTBOOK_DOC_REF, TESTBOOK_IMG_REF, TURBINES_DOC_REF, TESTS_DOC_REF, PRODTURB_DOC_REF, DELAYS_DOC_REF, ACHATS_DOC_REF, ACCESS_DOC_REF, SAV_DOC_REF, SAV_DEM_DOC_REF, MACHINES_DOC_REF, TRANSPORTS_DOC_REF, DOC_PFX } from "./appDocs";
 import { notify } from "./components/SharedUI";
 import { setCashinDoc, setCashinLinks, getCashinDoc, getCashinLinks, getOrdoPjs, cashGroupsFor } from "./cashinLink";
 import { CASHIN_DOC_REF, CASHIN_LINKS_REF, CASHIN_SHARED_REF, CASHIN_PRODUIT_REF, buildSharedCashin } from "./cashinData";
@@ -189,6 +189,13 @@ export function useTestBook(currentUser, authorName) {
       catch (e) { console.error(e); notify("Enregistrement du livret impossible : " + (e && e.message), "warn"); return false; } },
   }), [authorName]);
   return { book, bookApi: api };
+}
+// v413 : demandes de transport ClickUp (copie écrite par la fonction clickupTransports ; lecture seule pour le site)
+export function useTransports(currentUser) {
+  const [doc, setDoc0] = useState(null);
+  useEffect(() => { if (!currentUser) return undefined;
+    return onSnapshot(TRANSPORTS_DOC_REF(), s => setDoc0(s.exists() ? s.data() : null), e => { console.warn("transports (lecture) :", e && e.message); setDoc0(null); }); }, [currentUser]);
+  return doc;
 }
 export function useCashinProduit(currentUser) {
   const [doc, setDoc0] = useState(null);

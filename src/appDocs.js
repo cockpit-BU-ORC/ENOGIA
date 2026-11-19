@@ -28,6 +28,7 @@ export const ACHATS_DOC_REF=()=>doc(db,"planning",DOC_PFX+"achats");
 export const SAV_DOC_REF=()=>doc(db,"planning",DOC_PFX+"sav"); // v326 : SAV / MES (tickets, interventions, parc, techniciens) — équipe SAV
 export const SAV_DEM_DOC_REF=()=>doc(db,"planning",DOC_PFX+"savDemandes"); // v326 : demandes d'intervention des chefs de projet // v262 : Achats / Appro (responsable achats + propriétaire)
 export const MACHINES_DOC_REF=()=>doc(db,"planning",DOC_PFX+"machines"); // v393 : passeport machine (éléments, standards par gamme, configuration et réel par PJ)
+export const TRANSPORTS_DOC_REF=()=>doc(db,"planning",DOC_PFX+"transports"); // v413 : demandes de transport ClickUp (écrit par la fonction clickupTransports)
 export const ACCESS_DOC_REF=()=>doc(db,"planning",DOC_PFX+"access"); // v305 : niveaux d'accès par rôle et par page (Régler › Accès, super admin)
 export const PROFILES_DOC_REF=()=>doc(db,"planning",DOC_PFX+"profiles"); // v188 : rôle et PJ de chaque compte (Manager › Réglages › Personnes et rôles)
 

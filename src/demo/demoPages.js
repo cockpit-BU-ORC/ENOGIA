@@ -71,7 +71,13 @@ const TestsFiche = () => <TestDialog r={DEMO_ROWS.find(x => x.pj === "PJ903-2")}
 function Turbines({ tab0 = "orc" }) { const [tab, setTab] = useState(tab0), [doc, setDoc] = useState(DEMO_PROD);
   const api = useMemo(() => ({ ...demoApi, put: async (c, id, data) => { setDoc(d => ({ ...d, [c]: { ...(d[c] || {}), [id]: data } })); return true; }, del: async (c, id) => { setDoc(d => { const x = { ...(d[c] || {}) }; delete x[id]; return { ...d, [c]: x }; }); return true; } }), []);
   return <TurbinesHub doc={doc} api={api} rows={DEMO_ROWS} canEdit owner tab={tab} onTab={setTab} allowTabs={["prod", "orc"]} savePjMeta={yes} />; }
-const Accueil = () => <HomeView pinOk testsDoc={DEMO_TESTS} data={DEMO_ROWS} comments={DEMO_COMMENTS} myEmail={DEMO_ME.email} myName={DEMO_ME.name} people={DEMO_PEOPLE} unseenChanges={[]} lastImport={null} onOpenPj={no} onGo={no}
+// v413 : demandes de transport ClickUp fictives (accueil)
+const DEMO_TRANSPORTS = { at: new Date().toISOString(), etat: "ok", items: {
+  t1: { name: "Atelier Marseille → client PJ903 (2 colis)", url: "https://app.clickup.com", pj: "PJ903", status: "en attente infos demandeur", statusType: "custom", enlevement: "2026-11-24" },
+  t2: { name: "Fournisseur armoire → atelier", url: "https://app.clickup.com", pj: "PJ906", status: "depart programme", statusType: "custom", enlevement: "2026-11-21", livraison: "2026-11-26" },
+  t3: { name: "Retour pièce fournisseur", url: "https://app.clickup.com", pj: "", status: "en consultation", statusType: "custom", enlevement: "2026-11-28" },
+  t4: { name: "Turbine vers le site PJ901", url: "https://app.clickup.com", pj: "PJ901", status: "colis livre", statusType: "closed", closed: "2026-11-12" } } };
+const Accueil = () => <HomeView transports={DEMO_TRANSPORTS} pinOk testsDoc={DEMO_TESTS} data={DEMO_ROWS} comments={DEMO_COMMENTS} myEmail={DEMO_ME.email} myName={DEMO_ME.name} people={DEMO_PEOPLE} unseenChanges={[]} lastImport={null} onOpenPj={no} onGo={no}
   profiles={{ byEmail: {} }} owner cash={false} turbineDoc={null} onOpenCash={null} prodDoc={DEMO_PROD} canProdTurb productionExclusions={{}} plan={null} closurePeriods={[]} saveHomeLayout={null} />;
 // v352 : cadrans « Ligne d'atelier » et « Fiches suiveuses » (à ajouter dans la disposition d'un poste)
 const AccueilAtelier = () => <HomeView pinOk testsDoc={DEMO_TESTS} data={DEMO_ROWS} comments={DEMO_COMMENTS} myEmail={DEMO_ME.email} myName={DEMO_ME.name} people={DEMO_PEOPLE} unseenChanges={[]} lastImport={null} onOpenPj={no} onGo={no}

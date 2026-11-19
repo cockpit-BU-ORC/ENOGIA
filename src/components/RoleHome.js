@@ -12,6 +12,7 @@ import { useCashin } from "../useCashin";
 import { weeklyReport, curveGeom, fmtS } from "../cashWeekly";
 import { useRai, raiGate } from "../raiStatus";
 import { fmtEur } from "../pjProgress";
+import { transportList, stepOf, CLICKUP_LIST_URL } from "../transports"; // v413 : demandes de transport ClickUp
 import { useProdModel } from "../prodModel"; // v324 : makeModel chargé à la demande
 import { planWeeks, atelierCap, CAPA_DEFAUT } from "../loadWeeks"; // v289 : sans les graphiques du Manager
 
@@ -44,14 +45,14 @@ const etatBar = etat => (ETAT_META[etat] || {}).bar || T.ink300;
 
 // Cadrans par défaut de chaque poste (id, largeur sur 12)
 export const HOME_DEFAULTS = {
-  cdp: [["pjs", 7], ["jalons", 5], ["raiDue", 6], ["todo", 4], ["fat", 4], ["avance", 4]],
+  cdp: [["pjs", 7], ["jalons", 5], ["raiDue", 6], ["transports", 6], ["todo", 4], ["fat", 4], ["avance", 4]],
   testeur: [["today", 8], ["sign", 4], ["week", 12], ["arrivees", 6], ["results", 6]],
   resptest: [["today", 8], ["sign", 4], ["produit", 12], ["week", 12], ["arrivees", 6], ["results", 6], ["postes", 6], ["tests", 6]], // v238 ; v323 : livrables Produit
   atelier: [["charge", 7], ["arrdep", 5], ["montage", 7], ["postes", 5]],
   turbines: [["ptReady", 3], ["ptNoWheel", 3], ["ptPieces", 6], ["ptDates", 12], ["ptRoues", 6], ["ptInj", 6]],
-  autre: [["kpis", 12], ["departs", 6], ["parcours", 6], ["benchWeek", 6], ["visites", 6], ["shipped", 6], ["etats", 6], ["fermetures", 6]],
+  autre: [["kpis", 12], ["departs", 6], ["parcours", 6], ["transports", 6], ["benchWeek", 6], ["visites", 6], ["shipped", 6], ["etats", 6], ["fermetures", 6]],
   daf: [["encaisser", 6], ["cash", 6], ["cashCurve", 12], ["cashLate", 6], ["cashMonth", 6], ["kpis", 12], ["departs", 6]], // v370
-  direction: [["kpis", 12], ["cashCurve", 12], ["depQuarter", 6], ["onTime", 6], ["raiDue", 6], ["tests", 4], ["turbines", 4], ["cash", 4], ["alertes", 8], ["charge", 4], ["postes", 6], ["departs", 6], ["parcours", 12]],
+  direction: [["kpis", 12], ["cashCurve", 12], ["depQuarter", 6], ["onTime", 6], ["raiDue", 6], ["transports", 6], ["tests", 4], ["turbines", 4], ["cash", 4], ["alertes", 8], ["charge", 4], ["postes", 6], ["departs", 6], ["parcours", 12]],
 };
 
 // Phrase d'ouverture selon le poste (lien direct avec le travail de la personne) → [segments], un segment = texte ou { t, c } surligné
@@ -131,7 +132,7 @@ const StatLine = ({ items }) => <div style={{ display: "flex", flexWrap: "wrap",
       <b style={{ fontFamily: T.fontDisplay, fontSize: "clamp(18px,1.5vw,22px)", fontWeight: 600, color: tone || T.ink900, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{value}</b>
       <span style={{ fontSize: FZ.sm, color: T.ink500, whiteSpace: "nowrap" }}>{label}</span></C>; })}
   </div>;
-export function RoleHome({ produit, scope, role, profile, ui, kpiEl, depEl, parcoursEl, rows, open, late, mentions, myPjs, testsDoc, myTester, turbineDoc, prodDoc, plan, closurePeriods, productionExclusions, owner, cash, onOpenPj, onGo, onOpenCash, layout, onLayout, hello, renderLead }) {
+export function RoleHome({ transports, produit, scope, role, profile, ui, kpiEl, depEl, parcoursEl, rows, open, late, mentions, myPjs, testsDoc, myTester, turbineDoc, prodDoc, plan, closurePeriods, productionExclusions, owner, cash, onOpenPj, onGo, onOpenCash, layout, onLayout, hello, renderLead }) {
   const { Row, Head, cardS, Pill, presenceOf, nomOf, empty, grey, link, S, H, A } = ui;
   const today = iso(new Date());
   const on = id => blockOn(profile, id);
@@ -394,6 +395,28 @@ export function RoleHome({ produit, scope, role, profile, ui, kpiEl, depEl, parc
       {L.length === 0 ? empty("check", "Tout est prêt", "Les départs des 3 prochaines semaines ont leur RAI accepté.") : L.slice(0, z === "xl" ? 8 : 5).map((x, i) => <Row key={x.r.pj} first={i === 0} pj={x.r.pj}
         pill={<Pill tone={x.g.k === "reserve" ? A.orange : x.g.k === "no" ? A.red : { bg: T.surfaceAlt, ink: T.ink700 }}>{x.g.k === "reserve" ? "Réserves" : x.g.k === "no" ? "En cours" : "À faire"}</Pill>}
         main={nomOf(x.r) || ""} right={(x.g.left < 0 ? "départ passé" : "dans " + x.g.left + " j") + " · " + fmtD(x.r.depart)} rightColor={x.g.left <= 7 ? T.red500 : undefined} />)}</>); } };
+  // v413 (demandé : « l'avancement des demandes de transport ClickUp sur les accueils, et cliquer pour aller sur ClickUp ») — chef de projet : ses PJ
+  W.transports = { label: "Demandes de transport", span: 6, sizes: ["m", "l", "xl"], only: () => !!transports, render: z => {
+    const L = transportList(transports, role === "cdp" ? scope : null), n = z === "l" ? 9 : z === "xl" ? 6 : 4;
+    const TONE = { warn: A.orange, bad: A.red, ok: { bg: T.emerald100, ink: T.emerald600 }, info: { bg: T.info100, ink: T.info600 }, accent: { bg: T.accentSoft, ink: T.accentInk }, neutral: { bg: T.surfaceAlt, ink: T.ink700 } };
+    const line = (x, i) => { const st = stepOf(x.status);
+      return <a key={x.id} href={x.url} target="_blank" rel="noopener noreferrer" className="enogia-homeline" title={x.name + " · ouvrir dans ClickUp"}
+        style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 40, borderTop: i === 0 ? "none" : "1px solid " + T.line, padding: "8px 6px", textDecoration: "none", color: T.ink900, fontFamily: T.font }}>
+        <Pill tone={TONE[st.tone]}>{st.label}</Pill>
+        {x.pj && <PjPlate pj={x.pj} />}
+        <span style={{ fontSize: FZ.sm, color: T.ink700, minWidth: 0, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.name || "Demande sans titre"}</span>
+        <span style={{ fontSize: FZ.xs, fontWeight: 500, color: T.ink500, flexShrink: 0, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{x.livraison && st.i >= 2 ? "livraison " + fmtD(x.livraison) : x.enlevement ? "enlèvement " + fmtD(x.enlevement) : x.updated ? "maj " + fmtD(x.updated) : ""}</span>
+        <span aria-hidden="true" style={{ color: T.ink500, flexShrink: 0 }}>↗</span></a>; };
+    const recent = L.done.slice(0, Math.max(0, n - L.open.length));
+    return sec("transports", "Demandes de transport", S.depart.ring, <>
+      <Head title="Demandes de transport" sub={"ClickUp · " + (role === "cdp" && scope ? "mes PJ" : "toutes") + (L.waiting ? " · " + L.waiting + " en attente d'infos" : "") + (transports.etat === "erreur" ? " · lecture ClickUp en échec" : "")} count={L.open.length} />
+      {L.open.length + L.done.length === 0 ? empty("inbox", "Aucune demande en cours", "Les demandes de transport faites dans ClickUp apparaissent ici, avec leur avancement.") : <>
+        {L.open.slice(0, n).map(line)}
+        {recent.length > 0 && <div style={{ fontSize: 12, color: T.ink500, margin: "8px 0 0" }}>Livrées ou ramassées récemment</div>}
+        {recent.map((x, i) => line(x, i))}
+        {L.open.length > n && <div style={{ fontSize: 12, color: T.ink500, marginTop: 4 }}>+ {L.open.length - n} autre{L.open.length - n > 1 ? "s" : ""} en cours dans ClickUp</div>}</>}
+      <a href={(transports && transports.liste) || CLICKUP_LIST_URL} target="_blank" rel="noopener noreferrer" className="enogia-homelink" style={{ ...link, marginTop: 2, textDecoration: "none" }}>Ouvrir la liste dans ClickUp <span aria-hidden="true">↗</span></a>
+      {transports.at && <div style={{ fontSize: 12, color: T.ink500, marginTop: 2 }}>mis à jour à {new Date(transports.at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</div>}</>); } };
   W.alertes = { label: "Alertes", span: 8, render: () => { const bigLate = late.filter(r => r.drift > 10);
     return sec("alertes", "Alertes", A.orange.ring, <><Head title="Alertes" sub="dérives de plus de 10 j" count={bigLate.length} />
       {bigLate.length === 0 ? empty("check", "Aucune alerte", "Pas de grosse dérive.") : bigLate.slice(0, 6).map((r, i) => <Row key={r.pj} first={i === 0} pj={r.pj} pill={<Pill tone={A.orange}>Dérive</Pill>} main={nomOf(r) || "Départ " + fmtD(r.depart)} right={"+" + r.drift + " j"} />)}</>); } };
@@ -594,6 +617,7 @@ export function RoleHome({ produit, scope, role, profile, ui, kpiEl, depEl, parc
     ["Atelier — Planificateur et Calendrier", { charge: "heures atelier sur 4 semaines face à la capacité", arrdep: "arrivées et départs de la semaine", montage: "machines en montage méca / élec", fermetures: "fermetures de l’atelier à venir" }],
     ["Production turbines", { ptReady: "turbines prêtes", ptNoWheel: "turbines testées sans roue", ptPieces: "pièces à suivre", ptDates: "dates prévisionnelles des turbines", ptRoues: "stock de roues équilibrées", ptInj: "stock d'injecteurs" }],
     ["Gestion — Turbines et Cash in", { turbines: "pool de turbines", cash: "encaissements à venir", cashCurve: "encaissements cumulés de l'année face à l'initial", cashMonth: "encaissements et factures du mois face à l'initial", cashLate: "factures et paiements en retard", encaisser: "factures émises en attente de paiement, saisie par le DAF", produit: "jalons cash liés à un livrable du Produit" }],
+    ["Logistique — ClickUp", { transports: "demandes de transport ClickUp et leur avancement, un clic ouvre la demande" }],
     ["Échanges — Commentaires", { mentions: "les mentions qui vous attendent" }],
   ];
   // v355 : widgets à tailles fixes (WidgetBoard). Tailles permises : chiffres = Petit / Moyen ; cadrans larges = Bandeau ; autres = Moyen, Grand, Bandeau.

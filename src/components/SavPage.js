@@ -186,7 +186,7 @@ export function SavPage({ turbReqs, onOpenTurb, onSetAlloc, doc, dem, api, demAp
       onNewInter={(id, t) => setInterDlg({ id: null, i: { tk: id, pj: t.pj, obj: t.det || "", st: "À planifier", type: t.type === "mes" ? "Mise en service" : t.type === "prev" ? "Maintenance préventive" : "Maintenance curative", resp: t.resp || "", who: [], prep: [], clo: [], costs: {} } })}
       onOpenInter={id => setInterDlg({ id, i: inters[id] })} />}
     {sub === "inters" && <IntersView {...{ inters, canCost, nomOf }} onOpen={id => setInterDlg({ id, i: inters[id] })} />}
-    {sub === "planning" && <PlanningView {...{ inters, demandes, techs, canEdit, nomOf, me, myName, myPjs, pjList }} dispo={D.dispo || {}} onDispo={() => go("dispo")} onOpenInter={id => setInterDlg({ id, i: inters[id] })} onTeam={() => setTeamDlg(true)}
+    {sub === "planning" && <PlanningView {...{ inters, demandes, techs, canEdit, isAdmin, nomOf, me, myName, myPjs, pjList }} dispo={D.dispo || {}} onDispo={() => go("dispo")} onOpenInter={id => setInterDlg({ id, i: inters[id] })} onTeam={() => setTeamDlg(true)}
       onMove={(id, patch) => api.put("inters", id, { ...inters[id], ...patch })}
       onRequest={day => setDemDlg({ date: day, days: 1, pj: focusPj && pjList.includes(focusPj) ? focusPj : (myPjs || [])[0] || "", obj: "", type: "cur" })}
       onAnswer={async (id, d, ok, note) => {
@@ -194,6 +194,7 @@ export function SavPage({ turbReqs, onOpenTurb, onSetAlloc, doc, dem, api, demAp
           await demApi.put("items", id, { ...d, st: "ok", answeredBy: myName || "", answeredAt: new Date().toISOString(), tid: r.tid, iid: r.iid, ...(note ? { note } : {}) }); setInterDlg({ id: r.iid, i: r.inter }); }
         else await demApi.put("items", id, { ...d, st: "ko", answeredBy: myName || "", answeredAt: new Date().toISOString(), ...(note ? { note } : {}) });
       }}
+      onDelete={async (id, d) => { if (await askConfirm({ title: "Supprimer la demande de " + (d.by || "—") + " (" + d.pj + ") ?", message: "Elle disparaît pour tout le monde" + (d.st === "ok" ? ". Le ticket et l'intervention créés à l'acceptation restent." : "."), confirmLabel: "Supprimer", danger: true })) demApi.del("items", id); }}
       onCancel={async id => { if (await askConfirm({ title: "Retirer cette demande ?", message: "Le responsable SAV ne la verra plus.", confirmLabel: "Retirer la demande" })) demApi.del("items", id); }} />}
     {sub === "competences" && skills && <React.Suspense fallback={<div style={{ color: T.ink500, padding: 20 }}>Chargement des compétences…</div>}><SavSkills {...skills} /></React.Suspense>}
     {sub === "dispo" && canEdit && <DispoView techs={techs} dispo={D.dispo || {}} inters={inters} onSave={d => api.setField("dispo", d)} onTeam={() => setTeamDlg(true)} />}
@@ -205,7 +206,8 @@ export function SavPage({ turbReqs, onOpenTurb, onSetAlloc, doc, dem, api, demAp
       onDelete={async id => { if (await askConfirm({ title: "Supprimer le ticket " + id + " ?", message: "Ses interventions restent ; le ticket disparaît pour tout le monde.", confirmLabel: "Supprimer", danger: true })) { await api.del("tickets", id); setTicketDlg(null); } }} />}
     {interDlg && <InterDialog {...interDlg} {...{ pjList, nomOf, techs, canEdit, isAdmin, canCost, tickets, turbReqs, onOpenTurb, rows }} onSetAlloc={canEdit ? onSetAlloc : null} onClose={() => setInterDlg(null)} onSave={saveInter}
       onDelete={async id => { if (await askConfirm({ title: "Supprimer l'intervention " + id + " ?", message: "Elle disparaît du planning et du ticket.", confirmLabel: "Supprimer", danger: true })) { await api.del("inters", id); setInterDlg(null); } }} />}
-    {parcDlg && <ParcDialog {...parcDlg} canEdit={canEdit} fournTypes={fournTypesOf(D)} onClose={() => setParcDlg(null)} onSave={async (pj, p) => { if (await api.put("parc", pj, p)) setParcDlg(null); }} />}
+    {parcDlg && <ParcDialog {...parcDlg} canEdit={canEdit} fournTypes={fournTypesOf(D)} onClose={() => setParcDlg(null)} onSave={async (pj, p) => { if (await api.put("parc", pj, p)) setParcDlg(null); }}
+      onDelete={isAdmin ? async pj => { if (await askConfirm({ title: "Supprimer " + pj + " du parc ?", message: "Les informations saisies (contrat, lieu, fournitures…) sont effacées. Une machine expédiée du planning reste dans la liste, sans ces informations.", confirmLabel: "Supprimer", danger: true })) { await api.del("parc", pj); setParcDlg(null); } } : null} />}
     {demDlg && <DemandeDialog init={demDlg} pjs={(myPjs && myPjs.length ? myPjs : pjList)} nomOf={nomOf} onClose={() => setDemDlg(null)}
       onSave={async d => { const id = "d" + Date.now().toString(36); if (await demApi.put("items", id, { ...d, by: myName || "", byEmail: me || "", at: new Date().toISOString(), st: "attente" })) setDemDlg(null); }} />}
     {teamDlg && <TeamDialog techs={techs} onClose={() => setTeamDlg(false)} onSave={async L => { if (await api.setField("techs", L)) setTeamDlg(false); }} />}
@@ -487,7 +489,7 @@ function DispoView({ techs, dispo, inters, onSave, onTeam }) {
     </Panel>
   </div>;
 }
-function PlanningView({ inters, demandes, techs, canEdit, nomOf, me, myPjs, onOpenInter, onTeam, onRequest, onAnswer, onCancel, onMove, dispo, onDispo }) {
+function PlanningView({ inters, demandes, techs, canEdit, isAdmin, nomOf, me, myPjs, onOpenInter, onTeam, onRequest, onAnswer, onCancel, onDelete, onMove, dispo, onDispo }) {
   const t0 = todayIso();
   const [z, setZ0] = useState(() => { try { const v = localStorage.getItem("enogia_sav_zoom"); return v != null && ZOOMS[+v] ? +v : 3; } catch (e) { return 3; } });
   const setZ = n => { const v = Math.max(0, Math.min(ZOOMS.length - 1, n)); setZ0(v); try { localStorage.setItem("enogia_sav_zoom", String(v)); } catch (e) { /* stockage indisponible */ } };
@@ -614,7 +616,8 @@ function PlanningView({ inters, demandes, techs, canEdit, nomOf, me, myPjs, onOp
           {d.st === "attente" ? <>
             <input value={notes[d.id] || ""} onChange={e => setNotes(n => ({ ...n, [d.id]: e.target.value }))} placeholder="Réponse (facultative)" aria-label={"Réponse à la demande " + d.pj} style={{ ...inp(), width: 200 }} />
             <Btn size="sm" onClick={() => onAnswer(d.id, d, false, notes[d.id])}>Refuser</Btn><Btn v="pri" size="sm" onClick={() => onAnswer(d.id, d, true, notes[d.id])}>Accepter</Btn></>
-            : <Pill tone={d.st === "ok" ? "ok" : "bad"}>{d.st === "ok" ? "Acceptée" + (d.iid ? " · " + d.iid : "") : "Refusée"}</Pill>}</div>)}
+            : <Pill tone={d.st === "ok" ? "ok" : "bad"}>{d.st === "ok" ? "Acceptée" + (d.iid ? " · " + d.iid : "") : "Refusée"}</Pill>}
+          {isAdmin && <button type="button" onClick={() => onDelete(d.id, d)} aria-label={"Supprimer la demande " + d.pj} title="Supprimer la demande" style={{ ...btn("ghost", "sm"), color: T.red600, minWidth: 32, padding: 0 }}><NavIcon name="trash" size={15} /></button>}</div>)}
         {pend.length > 0 && <div style={{ fontSize: 12, color: T.ink500, maxWidth: "75ch" }}>Accepter crée le ticket et une intervention « à planifier » aux dates demandées ; cochez « Dates validées avec le client » dans l'intervention quand c'est confirmé</div>}
       </Panel>
       <Panel level={2} title={<span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>À planifier {toPlan.length > 0 && <Pill tone="warn">{toPlan.length}</Pill>}</span>}>
@@ -913,7 +916,7 @@ function TypesDialog({ types, onClose, onSave }) {
     <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}><Btn size="sm" onClick={onClose}>Annuler</Btn><Btn v="pri" size="sm" onClick={() => onSave([...new Set(txt.split(/\r?\n/).map(s => s.trim()).filter(Boolean))])}>Enregistrer</Btn></div>
   </Modal>;
 }
-function ParcDialog({ pj: pj0, p: p0, isNew, canEdit, fournTypes, onClose, onSave }) {
+function ParcDialog({ pj: pj0, p: p0, isNew, canEdit, fournTypes, onClose, onSave, onDelete }) { // v413 : onDelete = admins de la page
   const [pj, setPj] = useState(pj0), [p, setP] = useState({ ...p0, sn: Array.isArray(p0.sn) ? p0.sn.join(", ") : p0.sn || "" }), [busy, setBusy] = useState(""); const set = (k, v) => setP(x => ({ ...x, [k]: v }));
   const save = async () => {
     const out = { ...p, sn: String(p.sn || "").split(",").map(s => s.trim()).filter(Boolean), ville: String(p.ville || "").trim(), pays: String(p.pays || "").trim() };
@@ -946,7 +949,7 @@ function ParcDialog({ pj: pj0, p: p0, isNew, canEdit, fournTypes, onClose, onSav
       <FournEditor list={p.fourn} types={fournTypes} canEdit={canEdit} onChange={v => set("fourn", v)} />
     </Fold>
     {busy && <div role="status" style={{ fontSize: 12, color: T.ink700 }}>{busy}</div>}
-    {canEdit && <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}><Btn size="sm" onClick={onClose}>Annuler</Btn>
+    {canEdit && <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>{!isNew && onDelete && <Btn v="dan" size="sm" onClick={() => onDelete(pj0)}>Supprimer du parc</Btn>}<span style={{ flex: 1 }} /><Btn size="sm" onClick={onClose}>Annuler</Btn>
       <Btn v="pri" size="sm" disabled={!/^PJ\w+/i.test(pj || "") || !!busy} onClick={save}>Enregistrer</Btn></div>}
   </Modal>;
 }

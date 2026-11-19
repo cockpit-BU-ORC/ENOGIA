@@ -13,6 +13,7 @@ import { useMachines, useProdTurbines, useAchats, useTestsDoc, useSav } from "..
 import { parseConfigTable, parseReference, importPlan } from "../passport";
 import { PASS_PHASES, phaseOfEtat } from "../launchFab";
 import { PassportBook } from "./PassportBook";
+import { legacyRows } from "../legacyMachines";
 import { PassportSettings } from "./PassportSettings";
 
 const field = () => ({ padding: "4px 8px", minHeight: 32, borderRadius: 8, border: "1px solid " + T.fieldLine, background: T.card, color: T.ink900, fontSize: FZ.sm, fontFamily: T.font, boxSizing: "border-box" });
@@ -49,10 +50,13 @@ function lateAchat(achatsDoc, pj) {
   return Object.values(achatsDoc.lignes || {}).some(l => { const p = l && ids.has(l.projetId) && l.poId && po[l.poId]; return p && !p.annule && p.statut !== "livre" && p.dateLivraison && String(p.dateLivraison).slice(0, 10) < t; });
 }
 function PassportView({ data, doc, api, canEdit, authorName, prodDoc, achatsDoc, testsDoc, savDoc, certifs }) {
-  const rows = useMemo(() => (data || []).filter(r => r && r.pj && r.etat !== "SLOT_LIBRE" && !/X{2,}/i.test(r.pj)), [data]);
+  // v413 : + machines du parc SAV sorties avant l'ordo (legacy : pas d'infos d'ordo ni de tests)
+  const old = useMemo(() => legacyRows(data, savDoc && savDoc.parc), [data, savDoc]);
+  const rows = useMemo(() => [...(data || []).filter(r => r && r.pj && r.etat !== "SLOT_LIBRE" && !/X{2,}/i.test(r.pj)), ...old], [data, old]);
   const [q, setQ] = useState(""), [scope, setScope] = useState("open"), [sel, setSel] = useState(null);
-  const list = rows.filter(r => ((scope === "open" ? r.etat !== "SHIPPED" : r.etat === "SHIPPED") || !!q)
-    && (!q || (r.pj + " " + (getPjMeta(r.pj, r).nomProjet || "") + " " + (getPjMeta(r.pj, r).numSerie || "")).toLowerCase().includes(q.toLowerCase())))
+  const label = r => r.legacy ? r.pj + " " + r.nomProjet + " " + r.sn.join(" ") : r.pj + " " + (getPjMeta(r.pj, r).nomProjet || "") + " " + (getPjMeta(r.pj, r).numSerie || "");
+  const inScope = r => (scope === "old" ? !!r.legacy : scope === "open" ? r.etat !== "SHIPPED" : r.etat === "SHIPPED" && !r.legacy);
+  const list = rows.filter(r => (inScope(r) || !!q) && (!q || label(r).toLowerCase().includes(q.toLowerCase())))
     .sort((a, b) => String(a.pj).localeCompare(String(b.pj), "fr", { numeric: true }));
   const late = useMemo(() => { const m = new Set(); rows.forEach(r => { try { if (lateAchat(achatsDoc, r.pj)) m.add(r.pj); } catch (e) { /* donnée inattendue : ignorée */ } }); return m; }, [rows, achatsDoc]);
   const r = list.find(x => x.pj === sel) || list[0] || null;
@@ -60,13 +64,13 @@ function PassportView({ data, doc, api, canEdit, authorName, prodDoc, achatsDoc,
   return <div className="enogia-pp" style={{ display: "grid", gridTemplateColumns: "minmax(190px, 210px) minmax(0, 1fr)", gap: 0, background: T.card, border: "1px solid " + T.line, borderRadius: 12, minHeight: 480 }}>
     <nav aria-label="Machines" style={{ borderRight: "1px solid " + T.line, padding: 8, display: "flex", flexDirection: "column", gap: 2, maxHeight: "calc(100dvh - 160px)", overflow: "auto", position: "sticky", top: 64, alignSelf: "start" }}>
       <input type="search" value={q} onChange={e => setQ(e.target.value)} placeholder="PJ, client, S/N" aria-label="Rechercher une machine" style={{ ...field(), width: "100%", marginBottom: 4 }} />
-      <div style={{ marginBottom: 4 }}><Segmented label="Machines" value={scope} onChange={setScope} options={[["open", "En cours"], ["ship", "Expédiées"]]} /></div>
+      <div style={{ marginBottom: 4 }}><Segmented label="Machines" value={scope} onChange={setScope} options={[["open", "En cours"], ["ship", "Expédiées"], ...(old.length ? [["old", "Avant l'ordo"]] : [])]} /></div>
       {list.map(x => { const on = r && x.pj === r.pj;
-        return <button key={x.pj} type="button" onClick={() => { setSel(x.pj); try { window.scrollTo({ top: 0 }); } catch (e) { /* rien */ } }} aria-current={on ? "true" : undefined} title={getPjMeta(x.pj, x).nomProjet || undefined}
+        return <button key={x.pj} type="button" onClick={() => { setSel(x.pj); try { window.scrollTo({ top: 0 }); } catch (e) { /* rien */ } }} aria-current={on ? "true" : undefined} title={(x.legacy ? x.nomProjet : getPjMeta(x.pj, x).nomProjet) || undefined}
           style={{ all: "unset", position: "relative", boxSizing: "border-box", cursor: "pointer", borderRadius: 8, padding: "6px", background: on ? T.surfaceAlt : "transparent", display: "flex", alignItems: "center", gap: 8, minHeight: 40 }}>
           <PjPlate pj={x.pj} />
           {late.has(x.pj) && <span aria-label="achat en retard" style={{ width: 8, height: 8, borderRadius: 999, background: T.red600, flexShrink: 0 }} />}
-          <span style={{ marginLeft: "auto", fontSize: 12, color: T.ink500, whiteSpace: "nowrap" }}>{PH_LABEL[phaseOfEtat(x.etat)]}</span>
+          <span style={{ marginLeft: "auto", fontSize: 12, color: T.ink500, whiteSpace: "nowrap" }}>{x.legacy ? "parc SAV" : PH_LABEL[phaseOfEtat(x.etat)]}</span>
         </button>; })}
       {!list.length && <span style={{ fontSize: 13, color: T.ink500, padding: 8 }}>Aucune machine</span>}
     </nav>

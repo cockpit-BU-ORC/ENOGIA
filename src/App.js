@@ -48,7 +48,7 @@ import { listenChangeLog } from "./changeLog";
 // v260 : documents Firestore, bandeau bêta et identité du compte sortis de ce fichier (appDocs.js, components/AppChrome.js)
 import { IS_BETA, DOC_PFX, DOC_REF, INITIAL_DOC_REF, OVERRIDES_DOC_REF, COMMENTS_DOC_REF, PJ_META_SYNC_DOC_REF, PJ_META_OVERRIDES_DOC_REF, DELAYS_DOC_REF, DELAY_TYPES_DOC_REF, MANAGER_EMAILS_DOC_REF, PROFILES_DOC_REF, DEFAULT_DELAY_TYPES } from "./appDocs";
 import { BetaBanner, UserChip } from "./components/AppChrome";
-import { useTestBook, useAccessDoc, useTurbineDoc, useTestsDoc, useProdTurbines, useCashinProduit, useSav, useDelays, useCashinSync, useAchats, useMachines } from "./useAppData";
+import { useTestBook, useAccessDoc, useTurbineDoc, useTestsDoc, useProdTurbines, useCashinProduit, useTransports, useSav, useDelays, useCashinSync, useAchats, useMachines } from "./useAppData";
 import { setRaiDoc, raiGate } from "./raiStatus"; // v398 : RAI = feu vert du départ
 import { askConfirm as askConfirmRai } from "./confirm";
 import { useListFilters, filterOptions, filterRows } from "./listFilters";
@@ -69,7 +69,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-19-v412-competences-page-site";
+const APP_BUILD_VERSION = "2026-11-19-v413-suppressions-transports-parc";
 
 const ReleasePopup = React.lazy(() => import("./components/ReleaseNotes").then(m => ({ default: m.ReleasePopup })));
 function Navigate0({ go }) { useEffect(() => { go(); }, []); return null; } // eslint-disable-line react-hooks/exhaustive-deps
@@ -693,6 +693,7 @@ export default function App(){
   // v226 : Production turbines — v261 : useAppData.js
   const {prodDoc,prodApi}=useProdTurbines(currentUser,authorName);
   const produitDoc=useCashinProduit(currentUser);
+  const transportsDoc=useTransports(currentUser); // v413 : demandes de transport ClickUp
   const myMail=String((currentUser&&currentUser.email)||"").toLowerCase();
   const canProdTurbL=!!(isOwner||(prodDoc&&Array.isArray(prodDoc.access)&&prodDoc.access.map(x=>String(x).toLowerCase()).includes(myMail)));
   // v262 : Achats / Appro — propriétaire et adresses de sa liste « access » (Achats › Réglages)
@@ -1276,7 +1277,7 @@ export default function App(){
                 views={[{id:"table",l:"Liste",icon:"list",key:"1"},{id:"gantt",l:"Gantt",icon:"gantt",key:"2"},{id:"calendar",l:"Calendrier",icon:"calendar",key:"3"}].filter(x=>planViewOk(x.id))}
                 tools={[...(isOwner?[{id:"planner",l:"Planificateur",icon:"edit",hint:"Brouillon, puis « Publier »"}]:[]),...(planViewOk("changes")?[{id:"changes",l:"Modifications",icon:"changes",badge:unseenChanges.length,hint:"Ce qui a changé à chaque publication"}]:[])]}/>:undefined}/>;})()}
             {view==="inbox"&&<Navigate0 go={()=>setView("home")}/>}{/* v324 : plus de page « À traiter » (la cloche ouvre le pop-up) */}
-            {view==="home"&&<HomeView produit={produitDoc} pinOk={pinOk} testsDoc={canSeeTests?testsView:null} data={dataWithOverrides} comments={comments} myEmail={currentUser&&currentUser.email} myName={authorName} people={peopleAll} unseenChanges={unseenChanges} lastImport={lastImport} onOpenPj={setCalSel} onGo={setView} profiles={profiles} owner={isOwner} cash={canCash} turbineDoc={turbineDoc} onOpenCash={canCash?(s=>{if(s==="enc")setCashSub("enc");setView("cashin");}):null} prodDoc={prodDoc} canProdTurb={canProdTurb} productionExclusions={productionExclusions} plan={planDoc&&planDoc.plan} closurePeriods={closurePeriods} saveHomeLayout={isOwner?saveHomeLayout:null}/>}
+            {view==="home"&&<HomeView transports={transportsDoc} produit={produitDoc} pinOk={pinOk} testsDoc={canSeeTests?testsView:null} data={dataWithOverrides} comments={comments} myEmail={currentUser&&currentUser.email} myName={authorName} people={peopleAll} unseenChanges={unseenChanges} lastImport={lastImport} onOpenPj={setCalSel} onGo={setView} profiles={profiles} owner={isOwner} cash={canCash} turbineDoc={turbineDoc} onOpenCash={canCash?(s=>{if(s==="enc")setCashSub("enc");setView("cashin");}):null} prodDoc={prodDoc} canProdTurb={canProdTurb} productionExclusions={productionExclusions} plan={planDoc&&planDoc.plan} closurePeriods={closurePeriods} saveHomeLayout={isOwner?saveHomeLayout:null}/>}
             {view==="table"&&<DashboardSummary data={filtered} allData={dataWithOverrides} progress={progressEff} changeLog={changeLog} onOpenChanges={()=>setView("changes")}/>}
             {view==="table"&&<TableView data={filtered} progress={progressEff} df={df} setDf={setDf} onSetDepart={onSetDepart} setEtatFor={setEtatFor} setClientPresenceFor={setClientPresenceFor}
               selEtats={selEtats} setSelEtats={setSelEtats}

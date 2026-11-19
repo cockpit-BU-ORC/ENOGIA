@@ -79,3 +79,9 @@ test("compte rendu : lues, sans projet, écartées avec exemples, aucune fiche",
   assert.match(m, /3 ligne\(s\) écartée\(s\).*valeurs Odoo : PJ100/);
   assert.match(summary({ orders, lines }, b, { fiches: new Set(), champProjet: "x_projet" }), /aucune fiche machine/);
 });
+
+test("v413 : une ligne de PO supprimée par un admin ne revient pas", () => {
+  const b = buildPo(orders, lines, products, { champProjet: "x_projet", projetsFiches: new Set(["PJ100"]), now });
+  const r = plan({ po: {}, lignes: {}, params: { poIgnores: { o101: { at: now } } } }, b, "2026-01-01");
+  assert.ok(!r.set.o101 && r.set.o100);
+});

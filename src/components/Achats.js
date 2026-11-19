@@ -270,7 +270,7 @@ function ScopesEditor({ value, scopes, onChange }) {
   </table></div>);
 }
 
-function FormDialog({ title, vals, fields: allFields, onSave, onDelete, deleteLabel, derive, extra, lecture, note, onClose }) {
+function FormDialog({ title, vals, fields: allFields, onSave, onDelete, deleteLabel, derive, extra, lecture, note, onClose, delOk }) { // v413 : delOk = suppression permise même en lecture seule (admins de la page)
   const [v, setV] = useState(vals); const [err, setErr] = useState(""); const [conf, setConf] = useState(false); const [confX, setConfX] = useState(""); const [busy, setBusy] = useState(false);
   useEscape(onClose);
   const fields = allFields.filter(f => !f.show || f.show(v));
@@ -302,7 +302,7 @@ function FormDialog({ title, vals, fields: allFields, onSave, onDelete, deleteLa
       </div>
       {err && <div role="alert" style={{ color: T.red600, fontWeight: 600, fontSize: FZF.sm, marginTop: 10 }}>{err}</div>}
       <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
-        {!lecture && onDelete && (conf ? <button type="button" style={{ ...btn(false), color: T.red600, borderColor: T.red600 }} onClick={onDelete}>Confirmer la suppression</button>
+        {(!lecture || delOk) && onDelete && (conf ? <button type="button" style={{ ...btn(false), color: T.red600, borderColor: T.red600 }} onClick={onDelete}>Confirmer la suppression</button>
           : <button type="button" style={{ ...btn(false), color: T.red600 }} onClick={() => setConf(true)}>{deleteLabel || "Supprimer"}</button>)}
         {(extra || []).map(([l, fn, cf]) => cf && confX === l ? <button key={l} type="button" style={{ ...btn(false), color: T.red600, borderColor: T.red600 }} onClick={() => fn(v)}>{cf}</button>
           : <button key={l} type="button" style={btn(false)} onClick={() => (cf ? setConfX(l) : fn(v))}>{l}</button>)}
@@ -718,9 +718,9 @@ export function Achats({ doc, api, rows, canEdit, owner, admin, tab: tabP, onTab
             const od = isoOf(r.arrivee); return "Ordo (" + r.pj + ") : " + fd(od) + (v.dateDebut && v.dateDebut !== od ? ", écart de " + daysBetween(od, v.dateDebut) + " j." : ".") + " Figée sur la fiche, mise à jour manuelle."; } },
         { k: "note", l: "Commentaire", type: "textarea" },
       ],
-      note: isNew ? null : raw.verrou ? "Configuration verrouillée : suppression de la fiche impossible." : lines.some(l => l.poVerrou) ? "Des PO sont attribués (ou des lignes livrées sans PO) : retirez-les avant de pouvoir supprimer la fiche." : null,
+      note: isNew ? null : regulOk && (raw.verrou || lines.some(l => l.poVerrou)) ? "Fiche verrouillée ou avec des PO attribués : en tant qu'admin de la page, vous pouvez quand même la supprimer (les PO restent dans l'onglet PO)." : raw.verrou ? "Configuration verrouillée : suppression de la fiche impossible." : lines.some(l => l.poVerrou) ? "Des PO sont attribués (ou des lignes livrées sans PO) : retirez-les avant de pouvoir supprimer la fiche." : null,
       deleteLabel: lines.length ? "Supprimer la fiche et ses " + lines.length + " ligne(s)" : "Supprimer la fiche",
-      onDelete: isNew || raw.verrou || lines.some(l => l.poVerrou) ? null : async () => { for (const l of lines) await api.del("lignes", l.id); if (await del("projets", raw.id)) { setFicheSel(null); setForm(null); } },
+      onDelete: isNew || (!regulOk && (raw.verrou || lines.some(l => l.poVerrou))) ? null : async () => { for (const l of lines) await api.del("lignes", l.id); if (await del("projets", raw.id)) { setFicheSel(null); setForm(null); } },
       onSave: async v => {
         const pr = String(v.projet || "").trim(), machine = String(v.machine || "").trim();
         if (!machine) return "Choisissez le n° de machine dans la liste de l'ordo.";
@@ -825,7 +825,7 @@ export function Achats({ doc, api, rows, canEdit, owner, admin, tab: tabP, onTab
         { k: "note", l: "Note", type: "textarea" },
       ],
       deleteLabel: kids.length ? "Supprimer avec ses " + kids.length + " sous-ligne(s)" : "Supprimer",
-      onDelete: isNew || lecture || kidsPo ? null : async () => { for (const k of kids) await api.del("lignes", k.id); if (await del("lignes", raw.id)) setForm(null); },
+      onDelete: isNew || (!regulOk && (lecture || kidsPo)) ? null : async () => { for (const k of kids) await api.del("lignes", k.id); if (await del("lignes", raw.id)) setForm(null); }, delOk: regulOk,
       onSave: async v => {
         const a = A(v);
         if (!(a && a.fournisseurId) && !v.fournisseurId && !fourDefOf(v.famille || (a && a.famille))) return a ? "L'article n'a pas de fournisseur : choisissez-en un." : "Choisissez un fournisseur.";
@@ -953,8 +953,10 @@ export function Achats({ doc, api, rows, canEdit, owner, admin, tab: tabP, onTab
           return fromOdoo ? (fo.src === "po" ? (fo.relie ? "Relié à « " + fo.nom + " »." : "Pas relié : ajoutez ce nom Odoo à un fournisseur.") : "Pas de fournisseur dans Odoo pour cette ligne.")
             : fo.src === "po" ? (fo.relie ? "Fournisseur de la page." : "Inconnu : choisissez un nom de la liste.") : fo.src === "article" ? "Vide : celui de l'article (" + fo.nom + ")." : ""; } },
         ...(fromOdoo ? [{ k: "qteRecue", l: "Quantité reçue", type: "number" }] : [])],
-      deleteLabel: used ? "Supprimer (affectée à " + used + " ligne(s))" : "Supprimer",
-      onDelete: isNew ? null : async () => { for (const l of Object.values(S.lignes).filter(l => l.poId === raw.id)) await write("lignes", l.id, { ...l, poId: "" }); if (await del("po", raw.id)) setForm(null); },
+      deleteLabel: (used ? "Supprimer (affectée à " + used + " ligne(s))" : "Supprimer") + (fromOdoo ? " · ne reviendra plus d'Odoo" : ""), delOk: fromOdoo && regulOk,
+      onDelete: isNew || (fromOdoo && !regulOk) ? null : async () => { for (const l of Object.values(S.lignes).filter(l => l.poId === raw.id)) await write("lignes", l.id, { ...l, poId: "" });
+        if (fromOdoo && !(await api.setParams({ ...S.params, poIgnores: { ...(S.params.poIgnores || {}), [raw.id]: { at: new Date().toISOString(), numero: raw.numero, ligne: raw.ligne } } }))) return; // v413 : la synchronisation ne la remet plus
+        if (await del("po", raw.id)) setForm(null); },
       onSave: async v => { const numero = String(v.numero).trim(), ligne = String(v.ligne).trim(), id = isNew ? poKey(numero, ligne) : v.id;
         if (isNew && S.po[id]) return "La ligne " + ligne + " du PO " + numero + " existe déjà.";
         if (await put("po", id, { ...v, numero, ligne, fournisseur: String(v.fournisseur || "").trim() })) setForm(null); } });

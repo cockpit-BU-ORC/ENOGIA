@@ -141,3 +141,22 @@ const weeklyOnDemand = pfx => onDocumentWritten({ document: "planning/" + pfx + 
 });
 exports.cashWeeklyDemandeProd = weeklyOnDemand("");
 exports.cashWeeklyDemandeBeta = weeklyOnDemand("beta_");
+
+// ── v413 : demandes de transport ClickUp → planning/transports et planning/beta_transports (accueil du Cockpit), toutes les 15 minutes
+// Secret à créer par Gabriel : firebase functions:secrets:set CLICKUP_TOKEN (jeton personnel ClickUp, lecture de la liste SCCM › Logistique)
+const CLICKUP_TOKEN = defineSecret("CLICKUP_TOKEN");
+const { buildTransports, readTasks: readClickup, LIST_ID: CLICKUP_LIST } = require("./clickup");
+exports.clickupTransports = onSchedule({ schedule: "every 15 minutes", timeZone: "Europe/Paris", secrets: [CLICKUP_TOKEN] }, async () => {
+  const at = new Date().toISOString(), token = CLICKUP_TOKEN.value();
+  let out;
+  try {
+    if (!token) throw new Error("Jeton absent du serveur (secret CLICKUP_TOKEN)");
+    const items = buildTransports(await readClickup(token, at), at);
+    out = { items, at, etat: "ok", message: Object.keys(items).length + " demande(s) lue(s)", liste: "https://app.clickup.com/2618431/v/l/li/" + CLICKUP_LIST };
+  } catch (e) {
+    logger.error("ClickUp : lecture impossible", { message: e && e.message });
+    out = { at, etat: "erreur", message: String((e && e.message) || e).slice(0, 200) };
+  }
+  // en cas d'erreur, on garde les demandes déjà connues (merge sans « items »)
+  for (const id of ["transports", "beta_transports"]) await db.collection("planning").doc(id).set(out, { merge: out.etat === "erreur" });
+});

@@ -7,7 +7,7 @@
     "node": "22"
   },
   "scripts": {
-    "test": "node --test test/convert.test.js test/odoo.test.js test/weekly.test.js"
+    "test": "node --test test/convert.test.js test/odoo.test.js test/weekly.test.js test/clickup.test.js"
   },
   "dependencies": {
     "@resvg/resvg-js": "^2.6.2",

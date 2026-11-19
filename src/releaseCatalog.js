@@ -1263,4 +1263,9 @@ export const RELEASE_CATALOG = [
   { v: "412", t: "Compétences SAV : une vraie page du Cockpit", items: [
     ["Compétences SAV en page du site", "SAV / MES › Compétences au format du Cockpit (équipe, fiche, référentiel), sans cadre."],
   ] },
+  { v: "413", t: "Suppressions par les admins, transports ClickUp sur l'accueil, machines d'avant l'ordo dans le passeport", items: [
+    ["Suppressions par les admins", "Demandes SAV, parc, PO (Odoo compris), fiches et lignes d'achat supprimables par les admins de la page."],
+    ["Transports ClickUp sur l'accueil", "Cadran « Demandes de transport » relié à la liste ClickUp Logistique."],
+    ["Machines d'avant l'ordo", "Passeport des machines du parc SAV absentes du planning."],
+  ] },
 ];

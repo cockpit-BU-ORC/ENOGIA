@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v413",
+    date: "2026-11-19",
+    title: "V413 : Suppressions par les admins, transports ClickUp sur l'accueil, machines d'avant l'ordo dans le passeport",
+    items: [
+      { t: "Suppressions par les admins", d: "SAV / MES : les admins de la page suppriment les demandes d'intervention des chefs de projet (icône corbeille) et une fiche du parc. Achats / Appro : ils suppriment une ligne de PO, même importée d'Odoo (elle ne revient plus à la synchronisation), une fiche machine ou une ligne verrouillée." },
+      { t: "Demandes de transport", d: "Nouveau cadran d'accueil « Demandes de transport » : l'avancement des demandes ClickUp (Demande reçue, En consultation, Départ programmé, Infos demandées, Colis ramassé, Colis livré), un clic ouvre la demande dans ClickUp. Le chef de projet voit celles de ses PJ." },
+      { t: "Machines d'avant l'ordo", d: "Machines ORC › Passeport : nouveau choix « Avant l'ordo » avec les machines du parc SAV qui ne sont pas dans le planning, sans planning ni tests (identité, design, turbine et composants, MES et SAV, historique)." },
+    ],
+  },
+  {
     id: "2026-11-v412",
     date: "2026-11-19",
     title: "V412 : Compétences SAV : une vraie page du Cockpit",

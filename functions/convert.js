@@ -66,6 +66,7 @@ function plan(doc, built, depuis) {
   const cur = (doc && doc.po) || {}, lignes = (doc && doc.lignes) || {};
   const assigned = new Set(Object.values(lignes).map(l => l && l.poId).filter(Boolean));
   const set = {}, del = [], stats = { nb: 0, ajoutees: 0, maj: 0, annulees: 0 };
+  const ignored = (doc && doc.params && doc.params.poIgnores) || {}; // v413 : lignes de PO supprimées par un admin de la page, jamais remises
   const same = (a, b) => { const k = ["numero", "ligne", "ref", "designation", "qte", "qteRecue", "dateCommande", "dateLivraison", "statut", "projet", "annule"]; return k.every(x => (a[x] ?? "") === (b[x] ?? "")); };
   const retire = (id, old) => {
     if (!old || old.source !== "odoo") return;
@@ -74,6 +75,7 @@ function plan(doc, built, depuis) {
   };
   Object.entries(built.po).forEach(([id, rec]) => {
     const old = cur[id];
+    if (ignored[id]) return;
     if (old && old.source !== "odoo") return;                          // jamais une saisie manuelle
     if (built.outOfScope.has(id) && !assigned.has(id)) { if (old) retire(id, old); return; }
     stats.nb++;

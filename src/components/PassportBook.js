@@ -91,6 +91,8 @@ function Insert({ title, badge, onClose, tabs, tab, setTab, children, vars }) {
   </div>, document.body);
 }
 
+// v413 : pages d'une machine sortie avant l'ordo (pas d'achats, de fiche de lancement de fab, de tests, de RAI ni de départ)
+const LEGACY_PAGES = ["cover", "arr", "design", "fab", "sav", "hist"];
 export function PassportBook({ r, data, doc, api, canEdit, authorName, prodDoc, achatsDoc, testsDoc, savDoc, certifs }) {
   const meta = getPjMeta(r.pj, r), gk = gammeKey(doc, r.gamme), pj = r.pj;
   const chefs = [...new Set([...chefsOf(meta), ...orcChefsOf(meta)])].filter(c => c && c !== "—");
@@ -118,7 +120,9 @@ export function PassportBook({ r, data, doc, api, canEdit, authorName, prodDoc, 
   const R = ((doc.rai || {})[pj]) || null, rv = raiVerdict(R), photos = ((doc.photos || {})[pj]) || [];
   const design = L.design || {}, elec = L.elec || {}, cv = L.comps || {}, inj = L.inj || {}, std = stdOf(doc, r.gamme), dims = dimsOf(doc, gk), lists = elecListsOf(doc), st = launchState(L);
   const certifTxt = (Array.isArray(meta.certifs) ? meta.certifs : []).map(id => ((certifs || []).find(c => c.id === id) || {}).name || "").filter(Boolean).join(", ");
-  const sn = meta.numSerie || ((plannedSnOf(pj) || {}).sn ? (plannedSnOf(pj) || {}).sn + " (prévu)" : "");
+  // v413 : machine sortie avant l'ordo (parc SAV) — identité lue dans le parc, pas d'infos d'ordo ni de tests
+  const legacy = !!r.legacy, nom = legacy ? r.nomProjet || "" : (meta.nomProjet !== "—" ? meta.nomProjet || "" : ""), pays = legacy ? r.pays || "" : meta.pays;
+  const sn = legacy ? (r.sn || []).join(", ") : meta.numSerie || ((plannedSnOf(pj) || {}).sn ? (plannedSnOf(pj) || {}).sn + " (prévu)" : "");
   const cd = contractDatesOf(meta), livr = livrPrevueOf(meta, r.depart);
   const info = { pj, gamme: r.gamme, chef: chefs.join(", "), sn, certif: certifTxt,
     delais: [r.arrivee && "arrivée " + fd(r.arrivee), r.tests && "tests " + fd(r.tests), r.depart && "départ " + fd(r.depart)].filter(Boolean).join(" · "),
@@ -144,20 +148,27 @@ export function PassportBook({ r, data, doc, api, canEdit, authorName, prodDoc, 
   if (achats && achats.counts.apasser) todo.push({ t: achats.counts.apasser + " ligne" + (achats.counts.apasser > 1 ? "s" : "") + " à commander", go: "appro" });
   Object.values(tests).forEach(x => { if (x && x.bad) todo.push({ t: x.badT, go: "tests" }); });
   if (sav.ticketsOpen) todo.push({ t: sav.ticketsOpen.badT, go: "sav" });
-  if (rv.blocking) todo.push({ t: "RAI : " + rv.label, go: "rai" });
+  if (rv.blocking && !legacy) todo.push({ t: "RAI : " + rv.label, go: "rai" });
   const stOf = k => { const i = PASS_PHASES.findIndex(p => p[0] === k); return i < 0 ? "" : i < curPhI ? "done" : i === curPhI ? "now" : ""; };
   // ── les pages
   const pages = [
     { k: "cover", l: "Couverture", node: <div className="pb-cover-in">
       <div className="pb-run"><b>Passeport machine</b><span>ENOGIA · BU ORC</span></div>
       <h2 className="pb-title">{pj}</h2>
-      <div className="pb-id">{[meta.nomProjet && meta.nomProjet !== "—" ? meta.nomProjet : "", meta.pays, r.gamme, sn ? "S/N " + sn : ""].filter(Boolean).join(" · ")}</div>
-      <div className="pb-facts"><div><span>Phase</span><b>{(PASS_PHASES.find(p => p[0] === curPh) || ["", ""])[1]}</b></div><div><span>Départ prévu</span><b>{fd(r.depart) || "—"}</b></div>
-        <div><span>Pièces arrivées</span><b>{ready ? ready.pct + " %" : "—"}</b></div><div><span>À traiter</span><b>{todo.length || "rien"}</b></div></div>
+      <div className="pb-id">{[nom, pays, r.gamme, sn ? "S/N " + sn : ""].filter(Boolean).join(" · ")}</div>
+      {legacy ? <div className="pb-facts"><div><span>Phase</span><b>En service</b></div><div><span>Mise en service</span><b>{fd(r.mes) || (sav.mesDate ? sav.mesDate.v : "—")}</b></div>
+        <div><span>Contrat SAV</span><b>{r.contrat || "—"}</b></div><div><span>À traiter</span><b>{todo.length || "rien"}</b></div></div>
+      : <div className="pb-facts"><div><span>Phase</span><b>{(PASS_PHASES.find(p => p[0] === curPh) || ["", ""])[1]}</b></div><div><span>Départ prévu</span><b>{fd(r.depart) || "—"}</b></div>
+        <div><span>Pièces arrivées</span><b>{ready ? ready.pct + " %" : "—"}</b></div><div><span>À traiter</span><b>{todo.length || "rien"}</b></div></div>}
+      {legacy && <p className="pp2-sub" style={{ marginTop: 10 }}>Machine sortie avant l'ordo : identité reprise du parc SAV, sans planning ni tests</p>}
       {todo.length > 0 && <div className="pb-todo">{todo.map((x, i) => <button key={i} type="button" className="pb-todoi" onClick={() => go(x.go)}>{x.t} ›</button>)}</div>}
       <p className="pb-hint">Glissez vers la gauche pour tourner la page, ou ← →</p>
     </div> },
-    { k: "arr", l: "Arrivée dans l'outil", sub: meta.contratT0 ? "contrat du " + fd(meta.contratT0) : "", node: <Group>
+    legacy ? { k: "arr", l: "Identité de la machine", sub: "parc SAV · avant l'ordo", node: <Group>
+      <Row k="Projet" v={nom} src="SAV · parc" srcK="sav" /><Row k="Pays" v={pays} src="SAV · parc" srcK="sav" /><Row k="Ville du site" v={r.ville} src="SAV · parc" srcK="sav" />
+      <Row k="Gamme" v={r.gamme} src="SAV · parc" srcK="sav" /><Row k="S/N" v={sn} src="SAV · parc" srcK="sav" /><Row k="Application" v={r.application} src="SAV · parc" srcK="sav" />
+      <Row k="Contrat de maintenance" v={[r.contrat, r.contratNo, r.contratStatut].filter(Boolean).join(" · ")} src="SAV · parc" srcK="sav" /><Row k="Mise en service" v={fd(r.mes)} src="SAV · parc" srcK="sav" /></Group> }
+    : { k: "arr", l: "Arrivée dans l'outil", sub: meta.contratT0 ? "contrat du " + fd(meta.contratT0) : "", node: <Group>
       <Row k="Projet" v={meta.nomProjet !== "—" ? meta.nomProjet : ""} src="fiche projet" srcK="fp" /><Row k="Pays" v={meta.pays} src="fiche projet" srcK="fp" />
       <Row k="Chef de projet" v={info.chef} src="fiche projet" srcK="fp" /><Row k="Gamme" v={r.gamme} src="planning" srcK="plan" /><Row k="S/N" v={sn} src="Machines ORC" srcK="plan" />
       <Row k="T0 du contrat" v={fd(meta.contratT0)} src="fiche projet" srcK="fp" /><Row k="Certification" v={certifTxt} src="fiche projet" srcK="fp" />
@@ -182,7 +193,7 @@ export function PassportBook({ r, data, doc, api, canEdit, authorName, prodDoc, 
         <span className="pb-rub-v">{c.v}</span></button>)}</div>
       <button type="button" className="pb-open" onClick={() => { setFabTab("gen"); setIns("launch"); }}>Ouvrir la fiche de lancement de fab <span aria-hidden="true">↗</span></button></> },
     { k: "fab", l: "Fabrication et turbine", sub: [r.debutProd && "production à partir du " + fd(r.debutProd), r.tests && "tests le " + fd(r.tests)].filter(Boolean).join(" · "), node: <>
-      <Group><Row k={FAB} v={st.launched ? "Lancée le " + fd(st.at) : "Brouillon · " + st.signed + " / " + st.total + " signatures"} src="page précédente" srcK="fl" onGo={() => go("launch")} /></Group>
+      {!legacy && <Group><Row k={FAB} v={st.launched ? "Lancée le " + fd(st.at) : "Brouillon · " + st.signed + " / " + st.total + " signatures"} src="page précédente" srcK="fl" onGo={() => go("launch")} /></Group>}
       <h4 className="pb-h4">Turbine</h4>
       <Group>
         <Row k="Turbine" v={turb && turb.slots.some(s => s.allouee) ? turb.slots.filter(s => s.allouee).map(s => s.num).join(", ") : ""} src={turb ? "Turbines · " + turb.slots.filter(s => s.allouee).length + " / " + turb.slots.length + " attribuée(s)" : "Turbines"} srcK="tur" />
@@ -216,10 +227,11 @@ export function PassportBook({ r, data, doc, api, canEdit, authorName, prodDoc, 
       <Row k="Tickets ouverts" v={sav.ticketsOpen ? sav.ticketsOpen.v : "0"} bad={!!sav.ticketsOpen} src="SAV / MES" srcK="sav" />
       {Object.entries(sav).filter(([, x]) => x && x.sav).map(([k, x]) => <Row key={k} k={"Pièce changée : " + (((elementsOf(doc).find(e => e.id === k)) || {}).label || k)} v={x.v} src={x.src} srcK="sav" />)}</Group> },
     { k: "hist", l: "Historique", node: <History P={P0} doc={doc} L={L} /> },
-  ];
+  ].filter(p => !legacy || LEGACY_PAGES.includes(p.k));
   const cntV = a => a.filter(has).length;
   const STAT = {
-    arr: { d: cntV([meta.nomProjet !== "—" ? meta.nomProjet : "", meta.pays, info.chef, r.gamme, sn, meta.contratT0, certifTxt, cd.deadline || cd.mad, r.arrivee]), n: 9, l: "informations connues" },
+    arr: legacy ? { d: cntV([nom, pays, r.ville, r.gamme, sn, r.application, r.contrat, r.mes]), n: 8, l: "informations connues" }
+      : { d: cntV([nom, meta.pays, info.chef, r.gamme, sn, meta.contratT0, certifTxt, cd.deadline || cd.mad, r.arrivee]), n: 9, l: "informations connues" },
     design: { d: cntV([...DESIGN_FIELDS.map(x => design[x.id]), elec.neutre, elec.freq, elec.tension]), n: DESIGN_FIELDS.length + 3, l: "points renseignés" },
     appro: ready ? { d: ready.n, n: ready.t, l: "lignes de commande livrées" } : null,
     launch: { d: fabCards.filter(c => c.n && c.d >= c.n).length, n: fabCards.length, l: "rubriques complètes" },
