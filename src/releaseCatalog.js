@@ -1302,4 +1302,7 @@ export const RELEASE_CATALOG = [
     ["Avancement global pondéré", "7 phases pondérées (KOM à MES), export Excel pour le DAF."],
     ["Calendriers : le passé", "Défilement vers le passé dans tous les calendriers, Gantt et plannings."],
   ] },
+  { v: "424", t: "SAV / MES : demandes sur tous les PJ, refus automatique sans ressource, ma demande en jaune", items: [
+    ["SAV : demandes contrôlées", "Tous les PJ (ordo et parc, nouveau PJ à valider), refus automatique sans ressource, ma demande en jaune."],
+  ] },
 ];

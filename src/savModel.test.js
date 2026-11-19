@@ -116,3 +116,12 @@ test("v422 : 4 techniciens en 2 équipes — 2 libres = réservable, 1 libre = s
   expect(lockUntil({ lockWeeks: 4 }, "2026-11-19")).toBe("2026-12-17");
   expect(lockUntil({ lockWeeks: 0 }, "2026-11-19")).toBe("");
 });
+
+test("v424 : demande de 5 jours dont les 2 derniers sont complets = refusée (jours complets nommés)", () => {
+  const { demandeCheck } = require("./savModel");
+  const techs = ["A", "B", "C", "D"], full = { x: { a: "2026-11-26", b: "2026-11-27", resp: "A", who: ["B", "C", "D"], st: "Planifiée" } };
+  const c = demandeCheck({ inters: full, techs, demandes: {}, dispo: {}, resa: { lockWeeks: 0, team: 2 }, date: "2026-11-23", n: 5, today: "2026-11-19" });
+  expect(c.days).toEqual(["2026-11-23", "2026-11-24", "2026-11-25", "2026-11-26", "2026-11-27"]);
+  expect(c.full).toEqual(["2026-11-26", "2026-11-27"]);
+  expect(demandeCheck({ inters: {}, techs, demandes: {}, dispo: {}, resa: { lockWeeks: 4, team: 2 }, date: "2026-11-23", n: 2, today: "2026-11-19" }).lock).toEqual(["2026-11-23", "2026-11-24"]);
+});

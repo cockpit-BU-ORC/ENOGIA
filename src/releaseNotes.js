@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v424",
+    date: "2026-11-19",
+    title: "V424 : SAV / MES : demandes sur tous les PJ, refus automatique sans ressource, ma demande en jaune",
+    items: [
+      { t: "Tous les PJ", d: "Un chef de projet peut demander une intervention sur n'importe quel PJ de l'ordo ou du parc SAV (les anciens compris), ses PJ en tête de liste ; un PJ qui n'existe pas encore peut être saisi : la demande arrive marquée « nouveau PJ » et le responsable SAV / MES la valide ou non." },
+      { t: "Refus automatique", d: "Si un des jours demandés n'a plus de ressource (équipes complètes ou réservations fermées), la demande ne peut pas être envoyée : le message dit lesquels et propose de raccourcir la demande ou de changer de date." },
+      { t: "Ma demande", d: "Une demande envoyée apparaît en jaune hachuré « Ma demande · PJ… » sur la ligne SAV / MES du calendrier, jusqu'à la réponse." },
+    ],
+  },
+  {
     id: "2026-11-v423",
     date: "2026-11-19",
     title: "V423 : Avancement global ORC pondéré, export Excel pour le DAF, retour vers le passé dans les calendriers",

@@ -233,3 +233,12 @@ export function slotDays(inters, techs, pend, days, dispo, team = SAV_TEAM) {
     return { d, cap, used, left, state: left <= 0 ? "full" : left < team ? "some" : "free" };
   });
 }
+
+// v424 (demandé : « une demande de 5 jours dont les 2 derniers sont complets doit être refusée automatiquement, en expliquant ») :
+// jours ouvrés demandés → complets (personne de libre), fermés (avant T0 + N semaines), sous réserve (moins d'une équipe)
+export function demandeCheck({ inters, techs, demandes, dispo, resa, date, n, today }) {
+  if (!date) return { days: [], full: [], lock: [], some: [] };
+  const days = workDaysFrom(date, Math.max(1, Number(n) || 1)), r = resa || { lockWeeks: 0, team: SAV_TEAM }, lockTo = lockUntil(r, today);
+  const pendL = Object.values(demandes || {}).filter(x => x && x.st === "attente"), S = slotDays(inters, techs, pendL, days, dispo || {}, r.team || SAV_TEAM);
+  return { days, full: S.filter(x => x.state === "full").map(x => x.d), some: S.filter(x => x.state === "some").map(x => x.d), lock: lockTo ? days.filter(d => d < lockTo) : [] };
+}

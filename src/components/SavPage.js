@@ -15,7 +15,7 @@ import { askConfirm } from "../confirm";
 import { smooth } from "../scrollMode";
 import { TICKET_TYPES, typeOf, flowOf, PRIOS, ORIGINS, INTER_TYPES, INTER_STATUS, PREP_ITEMS, CLO_ITEMS, COST_FIELDS, CONTRACTS, DEM_STATUS,
   nextTicketId, nextInterId, isClosed, ticketAge, interCost, interTeam, interDays, planBars, dayLoad, workDaysFrom, mondayOf,
-  acceptDemande, slotDays, availTechs, unavailableWhy, setAbsence, resaOf, lockUntil, parcOf, savKpis, savStats, fournTypesOf, fournLabel, addStepNote, delStepNote } from "../savModel";
+  acceptDemande, slotDays, availTechs, unavailableWhy, setAbsence, resaOf, lockUntil, demandeCheck, parcOf, savKpis, savStats, fournTypesOf, fournLabel, addStepNote, delStepNote } from "../savModel";
 import { machinesOf } from "../turbineNeeds";
 import { elementsOf } from "../passport";
 
@@ -153,6 +153,9 @@ export function SavPage({ turbReqs, onOpenTurb, onSetAlloc, doc, dem, api, demAp
   const pjList = useMemo(() => [...new Set([...(rows || []).filter(r => r && r.pj && r.etat !== "SLOT_LIBRE").map(r => r.pj), ...Object.keys(D.parc || {})])].sort((a, b) => a.localeCompare(b, "fr", { numeric: true })), [rows, D.parc]);
   const nomOf = pj => { const r = (rows || []).find(x => x.pj === pj); return r ? getPjMeta(pj, r).nomProjet || "" : ((D.parc || {})[pj] || {}).nom || ""; };
   const k = savKpis(D, dem);
+  // v424 (demandé : « une demande de 5 jours dont les 2 derniers sont complets ne peut pas être validée : refus automatique avec l'explication ») :
+  // chaque jour ouvré demandé doit avoir au moins une personne libre (ni complet, ni réservation fermée)
+  const checkDem = (date, n) => demandeCheck({ inters, techs, demandes, dispo: D.dispo || {}, resa: resaOf(D), date, n, today: todayIso() });
   const [ticketDlg, setTicketDlg] = useState(null), [interDlg, setInterDlg] = useState(null), [parcDlg, setParcDlg] = useState(null), [demDlg, setDemDlg] = useState(null), [teamDlg, setTeamDlg] = useState(false), [typesDlg, setTypesDlg] = useState(false);
 
   const saveTicket = async (id, t) => { const nid = id || nextTicketId(tickets); if (await api.put("tickets", nid, t)) setTicketDlg(null); return nid; };
@@ -208,8 +211,8 @@ export function SavPage({ turbReqs, onOpenTurb, onSetAlloc, doc, dem, api, demAp
       onDelete={async id => { if (await askConfirm({ title: "Supprimer l'intervention " + id + " ?", message: "Elle disparaît du planning et du ticket.", confirmLabel: "Supprimer", danger: true })) { await api.del("inters", id); setInterDlg(null); } }} />}
     {parcDlg && <ParcDialog {...parcDlg} canEdit={canEdit} fournTypes={fournTypesOf(D)} onClose={() => setParcDlg(null)} onSave={async (pj, p) => { if (await api.put("parc", pj, p)) setParcDlg(null); }}
       onDelete={isAdmin ? async pj => { if (await askConfirm({ title: "Supprimer " + pj + " du parc ?", message: "Les informations saisies (contrat, lieu, fournitures…) sont effacées. Une machine expédiée du planning reste dans la liste, sans ces informations.", confirmLabel: "Supprimer", danger: true })) { await api.del("parc", pj); setParcDlg(null); } } : null} />}
-    {demDlg && <DemandeDialog init={demDlg} pjs={(myPjs && myPjs.length ? myPjs : pjList)} nomOf={nomOf} onClose={() => setDemDlg(null)}
-      onSave={async d => { const id = "d" + Date.now().toString(36); if (await demApi.put("items", id, { ...d, by: myName || "", byEmail: me || "", at: new Date().toISOString(), st: "attente" })) setDemDlg(null); }} />}
+    {demDlg && <DemandeDialog init={demDlg} pjs={[...new Set([...(myPjs || []).filter(p => pjList.includes(p)), ...pjList])]} nomOf={nomOf} onClose={() => setDemDlg(null)} check={checkDem} strict={!canEdit}
+      onSave={async d => { const id = "d" + Date.now().toString(36), known = pjList.includes(d.pj); if (await demApi.put("items", id, { ...d, ...(known ? {} : { newPj: true }), by: myName || "", byEmail: me || "", at: new Date().toISOString(), st: "attente" })) setDemDlg(null); }} />}
     {teamDlg && <TeamDialog techs={techs} onClose={() => setTeamDlg(false)} onSave={async L => { if (await api.setField("techs", L)) setTeamDlg(false); }} />}
   </div>;
 }
@@ -571,7 +574,8 @@ function PlanningView({ resa, inters, demandes, techs, canEdit, isAdmin, nomOf, 
     : <>
       <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw(T.info100, { borderLeft: "3px solid " + T.info600 })}Complet : les équipes sont toutes prises</span>
       <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw("transparent", { border: "1.5px dashed " + T.info600 })}Possible sous réserve d'acceptation (moins d'une équipe libre)</span>
-      <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw("transparent", { border: "1px solid " + T.line })}Libre : au moins une équipe, cliquez le jour pour proposer votre date</span>{lockTo && <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw(hatch("color-mix(in srgb, " + T.ink300 + " 30%, transparent)", T.surfaceAlt))}Réservation fermée jusqu'au {fdd(addDaysIso(lockTo, -1))}</span>}</>}
+      <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw("transparent", { border: "1px solid " + T.line })}Libre : au moins une équipe, cliquez le jour pour proposer votre date</span>
+      <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw(hatch(T.amber100, T.card), { border: "1.5px dashed " + T.amber500 })}Ma demande en attente</span>{lockTo && <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw(hatch("color-mix(in srgb, " + T.ink300 + " 30%, transparent)", T.surfaceAlt))}Réservation fermée jusqu'au {fdd(addDaysIso(lockTo, -1))}</span>}</>}
     <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw(hatch("color-mix(in srgb, " + T.ink300 + " 18%, transparent)", T.card), { border: "1px solid " + T.line })}Samedi, dimanche</span>
   </div>;
   return <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -587,6 +591,9 @@ function PlanningView({ resa, inters, demandes, techs, canEdit, isAdmin, nomOf, 
               return <span key={g.i0} aria-hidden="true" style={{ position: "absolute", top: 8, bottom: 8, ...pos, boxSizing: "border-box", borderRadius: 4, pointerEvents: "none",
                 background: full ? T.info100 : "transparent", border: full ? "none" : "1.5px dashed " + T.info600, borderLeft: full ? "3px solid " + T.info600 : "1.5px dashed " + T.info600,
                 color: T.info600, fontSize: 12, fontWeight: 500, lineHeight: "32px", padding: "0 6px", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>{pos.width >= 64 ? (full ? "Complet" : "Possible sous réserve") : ""}</span>; })}
+            {/* v424 (demandé : « la demande du CdP apparaît en jaune hachuré pour qu'il la voie facilement ») */}
+            {pendBars.filter(isMine).map(p => { const sp = span(p.from, p.to); if (!sp) return null; const pos = pxOf(sp[0], sp[1]);
+              return <span key={"m" + p.id} title={"Ma demande en attente : " + p.pj + " · " + (p.obj || "") + " · " + fd(p.from) + " → " + fd(p.to)} style={{ position: "absolute", top: 6, bottom: 6, ...pos, boxSizing: "border-box", borderRadius: 4, border: "1.5px dashed " + T.amber500, background: hatch(T.amber100, T.card), color: T.amber600, fontSize: 12, fontWeight: 600, lineHeight: "34px", padding: "0 6px", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", zIndex: 2, pointerEvents: "none" }}>{pos.width >= 60 ? "Ma demande · " + p.pj : ""}</span>; })}
             {slots.map(x => { const d = x.d; if (d < t0 || isWE(d) || x.state === "full" || x.state === "lock") return null; const i = idxOf[d];
               const lab = (x.state === "free" ? "Libre" : "Possible sous réserve d'acceptation du responsable SAV") + " le " + fdd(d) + " : proposer une intervention";
               return <button key={d} type="button" className="e-sav-slot" onClick={() => onRequest(d)} title={lab} aria-label={lab}
@@ -625,7 +632,7 @@ function PlanningView({ resa, inters, demandes, techs, canEdit, isAdmin, nomOf, 
     {canEdit ? <>
       <Panel level={2} title={<span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>Demandes des chefs de projet {pend.length > 0 && <Pill tone="warn">{pend.length}</Pill>}</span>}>
         {dems.length === 0 ? <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Aucune demande pour l'instant</div> : dems.slice(0, 12).map(d => <div key={d.id} style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", padding: "6px 0", borderTop: "1px solid " + T.line }}>
-          <PjPlate pj={d.pj} /><span style={{ flex: "1 1 260px", minWidth: 0, fontSize: FZ.sm, color: T.ink900 }}>{d.obj || "—"}<div style={{ fontSize: 12, color: T.ink500 }}>{nomOf(d.pj)} · demandé par {d.by || "—"} · à partir du {fdd(d.date)} · {d.days || 1} j</div></span>
+          <PjPlate pj={d.pj} />{d.newPj && <Pill tone="warn">nouveau PJ</Pill>}<span style={{ flex: "1 1 260px", minWidth: 0, fontSize: FZ.sm, color: T.ink900 }}>{d.obj || "—"}<div style={{ fontSize: 12, color: T.ink500 }}>{nomOf(d.pj)} · demandé par {d.by || "—"} · à partir du {fdd(d.date)} · {d.days || 1} j</div></span>
           {d.st === "attente" ? <>
             <input value={notes[d.id] || ""} onChange={e => setNotes(n => ({ ...n, [d.id]: e.target.value }))} placeholder="Réponse (facultative)" aria-label={"Réponse à la demande " + d.pj} style={{ ...inp(), width: 200 }} />
             <Btn size="sm" onClick={() => onAnswer(d.id, d, false, notes[d.id])}>Refuser</Btn><Btn v="pri" size="sm" onClick={() => onAnswer(d.id, d, true, notes[d.id])}>Accepter</Btn></>
@@ -640,24 +647,30 @@ function PlanningView({ resa, inters, demandes, techs, canEdit, isAdmin, nomOf, 
       </Panel></>
     : <Panel level={2} title="Mes demandes">
       {mine.length === 0 ? <div style={{ fontSize: FZ.sm, color: T.ink500 }}>Vous n'avez pas encore fait de demande. Cliquez sur « + » dans la ligne Demandes du planning.</div> : mine.map(d => <div key={d.id} style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", padding: "6px 0", borderTop: "1px solid " + T.line }}>
-        <PjPlate pj={d.pj} /><span style={{ flex: "1 1 260px", minWidth: 0, fontSize: FZ.sm }}>{d.obj || "—"}<div style={{ fontSize: 12, color: T.ink500 }}>à partir du {fdd(d.date)} · {d.days || 1} j{d.note ? " · « " + d.note + " »" : ""}</div></span>
+        <PjPlate pj={d.pj} />{d.newPj && <Pill tone="warn">nouveau PJ</Pill>}<span style={{ flex: "1 1 260px", minWidth: 0, fontSize: FZ.sm }}>{d.obj || "—"}<div style={{ fontSize: 12, color: T.ink500 }}>à partir du {fdd(d.date)} · {d.days || 1} j{d.note ? " · « " + d.note + " »" : ""}</div></span>
         <Pill tone={d.st === "ok" ? "ok" : d.st === "ko" ? "bad" : "warn"}>{DEM_STATUS[d.st] || d.st}</Pill>
         {d.st === "attente" && <Btn size="sm" onClick={() => onCancel(d.id)}>Retirer</Btn>}</div>)}
       {!(myPjs && myPjs.length) && <div style={{ fontSize: 12, color: T.ink500 }}>Aucun PJ ne vous est associé : la demande proposera tous les PJ</div>}
     </Panel>}
   </div>;
 }
-function DemandeDialog({ init, pjs, nomOf, onClose, onSave }) {
+function DemandeDialog({ init, pjs, nomOf, onClose, onSave, check, strict }) {
   const [d, setD] = useState(init); const set = (k, v) => setD(x => ({ ...x, [k]: v }));
+  const c = check ? check(d.date, d.days) : { full: [], lock: [], some: [] }, blocked = strict && (c.full.length > 0 || c.lock.length > 0), isNew = !!d.pj && !pjs.includes(d.pj);
+  const dl = L => L.map(x => fdd(x)).join(", ");
   return <Modal title={"Demander une intervention · " + fdd(d.date)} onClose={onClose} width={560}>
     <div style={grid2}>
-      <Field l="PJ"><select value={d.pj} onChange={e => set("pj", e.target.value)} style={inp()}><option value="">Choisir…</option>{pjs.map(p => <option key={p} value={p}>{p}{nomOf(p) ? " · " + nomOf(p) : ""}</option>)}</select></Field>
+      <Field l="PJ (ordo et parc SAV, ou nouveau n°)"><PjInput id="dem-pj" value={d.pj} onChange={v => set("pj", v)} pjList={pjs} nomOf={nomOf} />{isNew && <span style={{ fontSize: 12, color: T.amber600 }}>Nouveau PJ : le responsable SAV / MES validera ou non</span>}</Field>
       <Field l="Nombre de jours"><input type="number" min={1} max={20} value={d.days} onChange={e => set("days", Math.max(1, +e.target.value || 1))} style={inp()} /></Field>
       <Field l="Type de demande"><select value={d.type} onChange={e => set("type", e.target.value)} style={inp()}>{TICKET_TYPES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></Field>
       <Field l="Objectif de l'intervention" span><textarea value={d.obj} onChange={e => set("obj", e.target.value)} rows={3} style={{ ...inp(), padding: 8, resize: "vertical" }} /></Field>
     </div>
-    <div style={{ fontSize: 12, color: T.ink500 }}>Le responsable SAV accepte ou refuse ; s'il accepte, un ticket et une intervention sont créés à ces dates.</div>
-    <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}><Btn size="sm" onClick={onClose}>Annuler</Btn><Btn v="pri" size="sm" disabled={!d.pj || !String(d.obj || "").trim()} onClick={() => onSave(d)}>Envoyer la demande</Btn></div>
+    {blocked ? <div role="alert" style={{ fontSize: 13, color: T.red600, background: T.red100, borderRadius: 8, padding: "8px 10px" }}><b style={{ fontWeight: 600 }}>Demande impossible : pas de ressource disponible</b>
+        {c.full.length > 0 && <> le {dl(c.full)} (équipes complètes)</>}{c.lock.length > 0 && <>{c.full.length ? " ; " : " "}réservations fermées jusqu'au {fdd(c.lock[c.lock.length - 1])}</>}. Raccourcissez la demande ou choisissez une autre date.</div>
+      : c.some.length > 0 ? <div style={{ fontSize: 13, color: T.amber600, background: T.amber100, borderRadius: 8, padding: "8px 10px" }}>Sous réserve d'acceptation : moins d'une équipe libre le {dl(c.some)}.</div>
+      : <div style={{ fontSize: 12, color: T.ink500 }}>Le responsable SAV accepte ou refuse ; s'il accepte, un ticket et une intervention sont créés à ces dates.</div>}
+    {!strict && (c.full.length > 0) && <div style={{ fontSize: 12, color: T.amber600 }}>Attention : équipes complètes le {dl(c.full)}.</div>}
+    <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}><Btn size="sm" onClick={onClose}>Annuler</Btn><Btn v="pri" size="sm" disabled={!d.pj || !String(d.obj || "").trim() || blocked} title={blocked ? "Pas de ressource disponible sur toute la période demandée" : undefined} onClick={() => onSave(d)}>Envoyer la demande</Btn></div>
   </Modal>;
 }
 function TeamDialog({ techs, onClose, onSave }) {

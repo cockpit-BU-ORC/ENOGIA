@@ -3217,3 +3217,11 @@ Demandé : « dans tous les calendriers / Gantt / plannings, pouvoir retourner v
 - `App.js` : `advance` (une fois pour toutes les machines) partagé par `AdvanceCtx` (`src/advanceCtx.js`) ; fiche projet : tuile « Avancement global » calculée (plus de saisie `avGlobal`), barre des 7 phases, export ; Finance (`CashInTab`) : bouton « Avancement des projets (Excel) » → `exportAdvanceXlsx` (ExcelJS à la demande, `loadExcel`).
 - **Passé** : Calendrier Jour / Semaine (`PAST_W` 26 semaines, `PAST_D` 120 jours, ouverture calée sur J-7), Gantt (depuis le 1er janvier de l'an dernier), Planificateur (6 mois), planning des bancs (26 semaines), planning SAV (26 semaines), disponibilités SAV (8 semaines).
 - Fichiers : src/orcAdvance.js (+ test), src/advanceCtx.js, src/exportExcel.js, src/App.js, src/components/ManagerFiche.js, src/components/CashInTab.js, src/components/CalendarView.js, src/components/GanttView.js, src/planner/PlannerGantt.js, src/components/TestsTab.js, src/components/SavPage.js.
+
+## V424 — SAV / MES : demandes sur tous les PJ, refus automatique sans ressource, ma demande en jaune
+
+Demandé : « quand un CdP demande une intervention, tous les PJ doivent être disponibles (même les anciens du parc SAV) ; si le PJ n'existe pas, la demande est validée ou non par le responsable SAV » ; « une demande de 5 jours dont les 2 derniers sont complets ne peut pas être validée : refus automatique en expliquant qu'il n'y a pas de ressource » ; « la demande du CdP apparaît en jaune hachuré dans le calendrier ».
+
+- `src/savModel.js` (testé) : `demandeCheck` — jours ouvrés demandés, `full` (personne de libre), `lock` (avant T0 + N semaines), `some` (moins d'une équipe).
+- `SavPage.js` : `DemandeDialog` — `PjInput` (liste ordo + parc, mes PJ en tête, nouveau n° possible → `newPj: true`, pastille « nouveau PJ » côté responsable SAV) ; chef de projet (`strict`) : bouton désactivé et message rouge si un jour est complet ou fermé, avertissement jaune si un jour est sous réserve ; équipe SAV : simple avertissement ; vue chef de projet : mes demandes en attente en barre jaune hachurée (« Ma demande · PJ… »), légende.
+- Fichiers : src/savModel.js (+ test), src/components/SavPage.js.
