@@ -10,7 +10,7 @@ export const MONTHS = ["janvier", "février", "mars", "avril", "mai", "juin", "j
 const MS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 const amt = r => Number(r && r.montant) || 0;
-const live = rows => (rows || []).filter(r => r && !r.epc && amt(r) > 0);
+const live = rows => (rows || []).filter(r => r && !r.epc && !r.payeForce && amt(r) > 0);
 const ym = iso => (iso ? String(iso).slice(0, 7) : "");
 const nextYm = k => { let y = +k.slice(0, 4), m = +k.slice(5, 7) + 1; if (m > 12) { m = 1; y++; } return y + "-" + String(m).padStart(2, "0"); };
 export const monthName = k => MONTHS[+k.slice(5, 7) - 1] || "";

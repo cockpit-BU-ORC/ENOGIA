@@ -33,6 +33,7 @@ export function billDue(r) {
 }
 // paid · late (facture émise, paiement dépassé) · invoiced · tobill (facture à émettre) · future · epc
 export function statusOf(r, today) {
+  if (r.payeForce) return { k: "paid", forced: true }; // v421 : payé forcé (sans montant ni date)
   if (r.epc) return { k: "epc" };
   if (r.encReelle) return { k: "paid" };
   if (r.factReelle) return r.encPrevue && r.encPrevue < today ? { k: "late", days: diffDays(r.encPrevue, today) } : { k: "invoiced" };

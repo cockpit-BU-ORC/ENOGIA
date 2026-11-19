@@ -1292,4 +1292,7 @@ export const RELEASE_CATALOG = [
     ["Cash in : retards et mensualités", "Cash par PJ et par mois : retards en rouge, nom du projet ; jalons payés chaque mois."],
     ["Planificateur : buffers par gamme", "Buffers de production et de tests, affichés ou pris en compte ; ressource masquée ; packing non allongé."],
   ] },
+  { v: "421", t: "Cash in : statut « payé » forcé (projets EPC)", items: [
+    ["Cash in : payé forcé", "Case « payé » dans la colonne Statut : jalon payé sans montant ni date, retiré du widget Livrables Produit."],
+  ] },
 ];

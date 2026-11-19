@@ -32,3 +32,10 @@ describe("encaissements du DAF (v369)", () => {
     expect(back.statut).not.toBe("paid");
   });
 });
+
+test("v421 : payé (forcé) = payé, hors encaissements à suivre", () => {
+  const { statusOf } = require("./cashinLink");
+  const r = { pj: "PJ1", factReelle: "2026-01-01", encPrevue: "2026-02-01", payeForce: true };
+  expect(statusOf(r, "2026-11-19")).toEqual({ k: "paid", forced: true });
+  expect(toCollect([r], "2026-11-19")).toEqual([]);
+});

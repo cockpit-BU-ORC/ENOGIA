@@ -3189,3 +3189,13 @@ Demandé (responsable achats) : « dans la vue Gantt, distinguer le LT transport
 - **Packing** (GanttView.js, CalendarView.js) : segment Packaging jusqu'à `finProd`, puis « Attente du départ » hachurée jusqu'au départ.
 - **Buffers** (engine.js, Planner.js, PlannerGantt.js) : `steps[k].buf` (production, tests) réglé par gamme dans Modèles par gamme (tous les PJ de la gamme), `plan.bufOn` (« Buffers pris en compte », Affichage) — pris en compte : durée + buffer, la charge atelier ne compte pas les jours de buffer (`workedDays`, `workEnd`) ; sinon hachuré en pointillé après la tâche. Test v420 (engine.test.js).
 - Fichiers : src/App.js, public/cashin.html, src/cashinData.js, src/planner/PlannerGantt.js, src/planner/Planner.js, src/planner/engine.js (+ test), src/components/GanttView.js, src/components/CalendarView.js.
+
+## V421 — Cash in : statut « payé » forcé (projets EPC)
+
+Demandé : « dans le Cash in, pouvoir forcer le statut sur les projets EPC pour dire si ça a été payé, sans prendre en compte le montant ou la date ; le but est que le jalon ne remonte plus dans le widget Livrable produit ».
+
+- `public/cashin.html` (`CASHIN_PAGE_VERSION` 421) : `r.payeForce` — case « payé » dans la cellule Statut (aussi sur les jalons EPC), pastille « Payé (forcé) » ; `status()` = paid ; exclu de `kpis`, `monthKeys`, `monthly` (mensualités), `matrixItems`.
+- `src/cashinLink.js` `statusOf` (paid forcé), `src/cashinModel.js` (`toCollect`, `plannedUntil`, `punctual`, `monthKeys`, `matrixItems`), `src/cashWeekly.js` (`live`) : jalons forcés exclus ; `node scripts/sync-functions.js` (copie functions/shared) — **fonctions à redéployer** pour la fiche du lundi.
+- `src/cashinData.js` `produitItems` : jalons forcés exclus — la copie `planning/cashinProduit` est republiée au prochain enregistrement du Cash in.
+- Tests v421 (cashinData.test.js, cashinCollect.test.js).
+- Fichiers : public/cashin.html, src/cashinData.js, src/cashinLink.js, src/cashinModel.js, src/cashWeekly.js, functions/shared/*.

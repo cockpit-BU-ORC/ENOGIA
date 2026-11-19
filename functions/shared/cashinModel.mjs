@@ -62,7 +62,7 @@ export function plannedUntil(rows, until = "2026-12-31") {
   (rows || []).forEach(r => {
     if (!r || r.epc) return;
     if (!r.factReelle && r.factPrevue && r.factPrevue <= until) out.push({ r, kind: "facture", date: r.factPrevue, montant: Number(r.montant) || 0 });
-    if (!r.encReelle && r.encPrevue && r.encPrevue <= until) out.push({ r, kind: "encaissement", date: r.encPrevue, montant: Number(r.montant) || 0 });
+    if (!r.encReelle && !r.payeForce && r.encPrevue && r.encPrevue <= until) out.push({ r, kind: "encaissement", date: r.encPrevue, montant: Number(r.montant) || 0 });
   });
   return out.sort((a, b) => a.date.localeCompare(b.date) || a.r.pj.localeCompare(b.r.pj));
 }
@@ -96,7 +96,7 @@ export function groupStats(list, today = todayISO()) {
 // Tenue de la date : à l'heure = paiement (réel ou prévu) pas plus tard que l'encaissement initial.
 export function punctual(r, today = todayISO()) {
   const ref = r.encInit || r.encInitOld;
-  if (r.epc || !r.montant || !ref) return null;
+  if (r.epc || r.payeForce || !r.montant || !ref) return null;
   const paid = kOf(r, today) === "paid" && !!r.encReelle, eff = paid ? r.encReelle : r.encPrevue;
   if (!eff) return null;
   const d = diffDays(ref, eff);
@@ -104,7 +104,7 @@ export function punctual(r, today = todayISO()) {
   return { k: d > 0 ? "shift" : "ontime", d, paid };
 }
 export function monthKeys(r, today = todayISO()) {
-  const a = Number(r.montant) || 0; if (!a || r.epc) return null;
+  const a = Number(r.montant) || 0; if (!a || r.epc || r.payeForce) return null;
   const paid = kOf(r, today) === "paid" && !!r.encReelle, ik = r.encInit || r.encPrevue || r.encReelle, ad = paid ? r.encReelle : r.encPrevue;
   return { init: ik ? ik.slice(0, 7) : "none", act: ad ? ad.slice(0, 7) : "none", paid };
 }
@@ -123,7 +123,7 @@ export function monthly(rows, today = todayISO()) {
 }
 // Matrice PJ × mois : mois du paiement reçu, sinon de l'encaissement prévu (EPC exclus).
 export function matrixItems(rows, today = todayISO()) {
-  return (rows || []).filter(r => !r.epc && r.montant).map(r => { const paid = kOf(r, today) === "paid" && !!r.encReelle, d = paid ? r.encReelle : r.encPrevue; return { r, paid, key: d ? d.slice(0, 7) : "none" }; });
+  return (rows || []).filter(r => !r.epc && !r.payeForce && r.montant).map(r => { const paid = kOf(r, today) === "paid" && !!r.encReelle, d = paid ? r.encReelle : r.encPrevue; return { r, paid, key: d ? d.slice(0, 7) : "none" }; });
 }
 export function monthRange(sorted) {
   if (!sorted.length) return [];
@@ -189,7 +189,7 @@ export function ecartKpis(rows, today = todayISO()) {
 const sundayOf = iso => { const d = new Date(String(iso).slice(0, 10) + "T12:00:00Z"), k = (d.getUTCDay() + 6) % 7; return addDays(String(iso).slice(0, 10), 6 - k); };
 export function toCollect(rows, today = todayISO()) {
   const end = sundayOf(today), rank = { late: 0, week: 1, later: 2 };
-  return (rows || []).filter(r => r && !r.epc && r.factReelle && !r.encReelle).map(r => {
+  return (rows || []).filter(r => r && !r.epc && !r.payeForce && r.factReelle && !r.encReelle).map(r => {
     const due = r.encPrevue || (r.delai != null ? addDays(r.factReelle, r.delai) : null);
     const group = !due ? "later" : due < today ? "late" : due <= end ? "week" : "later";
     return { r, due, group, days: due ? diffDays(today, due) : null };

@@ -16,7 +16,7 @@ export const CASHIN_PRODUIT_ID = (process.env.REACT_APP_BETA === "1" ? "beta_" :
 export const CASHIN_PRODUIT_REF = () => doc(db, "planning", CASHIN_PRODUIT_ID);
 export function produitItems(d) {
   const labels = (d && d.labels) || {};
-  return ((d && Array.isArray(d.rows)) ? d.rows : []).filter(r => r && r.produit && !r.epc)
+  return ((d && Array.isArray(d.rows)) ? d.rows : []).filter(r => r && r.produit && !r.epc && !r.payeForce)
     .map(r => ({ id: r.id || "", pj: r.pj, nom: labels[r.pj] || "", jalon: r.jalon || "", montant: r.montant == null || isNaN(Number(r.montant)) ? null : Number(r.montant), factInit: r.factInit || null, factPrevue: r.factPrevue || null, factReelle: r.factReelle || null }))
     .sort((a, b) => String(a.factPrevue || a.factInit || "9").localeCompare(String(b.factPrevue || b.factInit || "9")) || a.pj.localeCompare(b.pj));
 }
@@ -27,7 +27,7 @@ export const CASHIN_SHARED_REF = () => doc(db, "planning", CASHIN_SHARED_ID);
 // v374 : fiche du lundi (destinataires, envoi automatique, demandes d'envoi, historique) — lue et écrite par la Finance (Admin), envoyée par la fonction serveur
 export const CASHIN_WEEKLY_ID = (process.env.REACT_APP_BETA === "1" ? "beta_" : "") + "cashinWeekly";
 export const CASHIN_WEEKLY_REF = () => doc(db, "planning", CASHIN_WEEKLY_ID);
-export const CASHIN_PAGE_VERSION = "420"; // change à chaque modification de public/cashin.html (évite le cache du navigateur)
+export const CASHIN_PAGE_VERSION = "421"; // change à chaque modification de public/cashin.html (évite le cache du navigateur)
 export const CASHIN_MAX_BYTES = 900 * 1024;  // limite Firestore : 1 Mo par document
 
 // Le document garde exactement la forme de l'ancien artefact : { rows, labels, totals, owners, updatedAt }.

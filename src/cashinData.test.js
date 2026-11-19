@@ -56,3 +56,9 @@ test("produitItems : seulement les jalons cochés Produit, hors EPC, triés par 
   expect(L[0].montant).toBe(800);
   expect(produitItems(null)).toEqual([]);
 });
+
+test("v421 : un jalon « payé (forcé) » ne remonte plus dans le widget Livrables Produit", () => {
+  const { produitItems } = require("./cashinData");
+  const d = { rows: [{ id: "a", pj: "PJ1", produit: true, jalon: "P&ID" }, { id: "b", pj: "PJ2", produit: true, jalon: "Plan", payeForce: true }] };
+  expect(produitItems(d).map(x => x.id)).toEqual(["a"]);
+});

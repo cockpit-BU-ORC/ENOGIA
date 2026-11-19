@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v421",
+    date: "2026-11-19",
+    title: "V421 : Cash in : statut « payé » forcé (projets EPC)",
+    items: [
+      { t: "Payé (forcé)", d: "Dans le tableau des jalons du Cash in, la colonne Statut a une case « payé » : elle marque le jalon « Payé (forcé) » sans demander de montant ni de date (utile pour les projets EPC)." },
+      { t: "Effets", d: "Un jalon payé (forcé) sort des suivis : plus d'alerte, plus dans le prévisionnel, Cash par mois, Cash par PJ et par mois, la fiche du lundi, ni dans le widget « Livrables Produit » de l'accueil." },
+    ],
+  },
+  {
     id: "2026-11-v420",
     date: "2026-11-19",
     title: "V420 : Retour en haut de la première sous-page, Cash par PJ et par mois, paiements mensuels, planificateur allégé et buffers",
