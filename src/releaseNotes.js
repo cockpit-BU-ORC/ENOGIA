@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v422",
+    date: "2026-11-19",
+    title: "V422 : SAV / MES : non dispo et congés, règle des équipes, réservations fermées à T0 + X semaines",
+    items: [
+      { t: "Disponibilités", d: "Le responsable SAV / MES pose des jours « non dispo » (journée travaillée mais pas d'intervention) et des congés, à la journée ou sur une période ; le jour off de chaque semaine disparaît." },
+      { t: "Règle des équipes", d: "Pour un chef de projet : au moins une équipe libre (2 personnes) = réservable sans message ; une seule personne libre (3 sur 4 en intervention) = possible sous réserve d'acceptation ; personne de libre (les 2 équipes prises) = complet." },
+      { t: "Réservations fermées", d: "Le responsable SAV règle « Réservations fermées sur les N prochaines semaines » : jusque-là, les jours sont grisés pour les chefs de projet (ex. le 19/11 avec 4 semaines : réservable à partir du 17/12)." },
+    ],
+  },
+  {
     id: "2026-11-v421",
     date: "2026-11-19",
     title: "V421 : Cash in : statut « payé » forcé (projets EPC)",

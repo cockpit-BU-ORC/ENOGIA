@@ -82,9 +82,9 @@ test("v332 : fournitures et commentaires d'étape", () => {
 // v379 : capacité = personnes de l'équipe sélectionnées et disponibles ce jour-là (jours off, congés)
 test("v379 : disponibilités — hors ressources, jour off chaque semaine, congés", () => {
   const { isAvailable, unavailableWhy, setAbsence } = require("./savModel");
-  let D = { Léo: { exclu: true }, Sam: { weekOff: [3] } };
+  let D = { Léo: { exclu: true }, Sam: { weekOff: [3] } }; // v422 : weekOff n'est plus lu
   expect(isAvailable(D, "Léo", "2026-11-23")).toBe(false);
-  expect(unavailableWhy(D, "Sam", "2026-11-25")).toBe("jour off chaque semaine"); // mercredi
+  expect(unavailableWhy(D, "Sam", "2026-11-25")).toBe(""); // v422 : plus de jour off chaque semaine
   expect(isAvailable(D, "Sam", "2026-11-26")).toBe(true);
   D = setAbsence(D, "Max", "2026-11-27", "2026-12-01", "conge");
   expect(Object.keys(D.Max.days)).toEqual(["2026-11-27", "2026-11-30", "2026-12-01"]); // week-end sauté
@@ -96,8 +96,23 @@ test("v379 : état des jours d'après les personnes disponibles", () => {
   const techs = ["Léo", "Sam", "Max"], dispo = { Max: { exclu: true } };
   const inters = { a: { a: "2026-11-23", b: "2026-11-24", resp: "Léo", who: ["Sam"], st: "Planifiée" }, b: { a: "2026-11-25", b: "2026-11-25", resp: "", st: "À planifier" }, c: { a: "2026-11-26", b: "2026-11-26", st: "Annulée" } };
   const S = slotDays(inters, techs, [{ date: "2026-11-26", days: 1 }], ["2026-11-23", "2026-11-25", "2026-11-26", "2026-11-27"], dispo);
-  expect(S.map(x => x.state)).toEqual(["full", "some", "some", "free"]); // Léo + Sam occupés ; 1 intervention sans personne ; 1 demande ; rien
-  expect(S[1]).toMatchObject({ cap: 2, used: 1, left: 1 });
+  expect(S.map(x => x.state)).toEqual(["full", "full", "full", "free"]); // v422 : une intervention sans personne et une demande prennent une équipe (2)
+  expect(S[1]).toMatchObject({ cap: 2, used: 2, left: 0 });
   const off = slotDays({}, techs, [], ["2026-11-27"], { Léo: { days: { "2026-11-27": "conge" } }, Sam: { days: { "2026-11-27": "off" } }, Max: { exclu: true } });
   expect(off[0].state).toBe("full"); // personne de disponible
+});
+
+test("v422 : 4 techniciens en 2 équipes — 2 libres = réservable, 1 libre = sous réserve, 0 = complet ; non dispo ; fermeture T0 + N semaines", () => {
+  const { slotDays, unavailableWhy, resaOf, lockUntil } = require("./savModel");
+  const techs = ["A", "B", "C", "D"], d = "2026-11-25";
+  const I = who => ({ x: { a: d, b: d, resp: who[0], who: who.slice(1), st: "Planifiée" } });
+  expect(slotDays({}, techs, [], [d], {})[0].state).toBe("free");
+  expect(slotDays(I(["A", "B"]), techs, [], [d], {})[0].state).toBe("free"); // une équipe libre
+  expect(slotDays(I(["A", "B", "C"]), techs, [], [d], {})[0].state).toBe("some"); // 3 sur 4 en intervention
+  expect(slotDays(I(["A", "B", "C", "D"]), techs, [], [d], {})[0].state).toBe("full"); // les 2 équipes prises
+  expect(slotDays(I(["A", "B"]), techs, [], [d], { C: { days: { [d]: "nondispo" } } })[0].state).toBe("some"); // non dispo = pas d'intervention
+  expect(unavailableWhy({ C: { days: { [d]: "nondispo" } } }, "C", d)).toBe("Non dispo (pas d'intervention)");
+  expect(resaOf({ resa: { lockWeeks: "4" } })).toEqual({ lockWeeks: 4, team: 2 });
+  expect(lockUntil({ lockWeeks: 4 }, "2026-11-19")).toBe("2026-12-17");
+  expect(lockUntil({ lockWeeks: 0 }, "2026-11-19")).toBe("");
 });

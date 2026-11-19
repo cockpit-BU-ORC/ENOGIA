@@ -15,7 +15,7 @@ import { askConfirm } from "../confirm";
 import { smooth } from "../scrollMode";
 import { TICKET_TYPES, typeOf, flowOf, PRIOS, ORIGINS, INTER_TYPES, INTER_STATUS, PREP_ITEMS, CLO_ITEMS, COST_FIELDS, CONTRACTS, DEM_STATUS,
   nextTicketId, nextInterId, isClosed, ticketAge, interCost, interTeam, interDays, planBars, dayLoad, workDaysFrom, mondayOf,
-  acceptDemande, slotDays, availTechs, unavailableWhy, setAbsence, parcOf, savKpis, savStats, fournTypesOf, fournLabel, addStepNote, delStepNote } from "../savModel";
+  acceptDemande, slotDays, availTechs, unavailableWhy, setAbsence, resaOf, lockUntil, parcOf, savKpis, savStats, fournTypesOf, fournLabel, addStepNote, delStepNote } from "../savModel";
 import { machinesOf } from "../turbineNeeds";
 import { elementsOf } from "../passport";
 
@@ -186,7 +186,7 @@ export function SavPage({ turbReqs, onOpenTurb, onSetAlloc, doc, dem, api, demAp
       onNewInter={(id, t) => setInterDlg({ id: null, i: { tk: id, pj: t.pj, obj: t.det || "", st: "À planifier", type: t.type === "mes" ? "Mise en service" : t.type === "prev" ? "Maintenance préventive" : "Maintenance curative", resp: t.resp || "", who: [], prep: [], clo: [], costs: {} } })}
       onOpenInter={id => setInterDlg({ id, i: inters[id] })} />}
     {sub === "inters" && <IntersView {...{ inters, canCost, nomOf }} onOpen={id => setInterDlg({ id, i: inters[id] })} />}
-    {sub === "planning" && <PlanningView {...{ inters, demandes, techs, canEdit, isAdmin, nomOf, me, myName, myPjs, pjList }} dispo={D.dispo || {}} onDispo={() => go("dispo")} onOpenInter={id => setInterDlg({ id, i: inters[id] })} onTeam={() => setTeamDlg(true)}
+    {sub === "planning" && <PlanningView resa={resaOf(D)} {...{ inters, demandes, techs, canEdit, isAdmin, nomOf, me, myName, myPjs, pjList }} dispo={D.dispo || {}} onDispo={() => go("dispo")} onOpenInter={id => setInterDlg({ id, i: inters[id] })} onTeam={() => setTeamDlg(true)}
       onMove={(id, patch) => api.put("inters", id, { ...inters[id], ...patch })}
       onRequest={day => setDemDlg({ date: day, days: 1, pj: focusPj && pjList.includes(focusPj) ? focusPj : (myPjs || [])[0] || "", obj: "", type: "cur" })}
       onAnswer={async (id, d, ok, note) => {
@@ -197,7 +197,7 @@ export function SavPage({ turbReqs, onOpenTurb, onSetAlloc, doc, dem, api, demAp
       onDelete={async (id, d) => { if (await askConfirm({ title: "Supprimer la demande de " + (d.by || "—") + " (" + d.pj + ") ?", message: "Elle disparaît pour tout le monde" + (d.st === "ok" ? ". Le ticket et l'intervention créés à l'acceptation restent." : "."), confirmLabel: "Supprimer", danger: true })) demApi.del("items", id); }}
       onCancel={async id => { if (await askConfirm({ title: "Retirer cette demande ?", message: "Le responsable SAV ne la verra plus.", confirmLabel: "Retirer la demande" })) demApi.del("items", id); }} />}
     {sub === "competences" && skills && <React.Suspense fallback={<div style={{ color: T.ink500, padding: 20 }}>Chargement des compétences…</div>}><SavSkills {...skills} /></React.Suspense>}
-    {sub === "dispo" && canEdit && <DispoView techs={techs} dispo={D.dispo || {}} inters={inters} onSave={d => api.setField("dispo", d)} onTeam={() => setTeamDlg(true)} />}
+    {sub === "dispo" && canEdit && <DispoView techs={techs} dispo={D.dispo || {}} inters={inters} resa={resaOf(D)} onResa={r => api.setField("resa", r)} onSave={d => api.setField("dispo", d)} onTeam={() => setTeamDlg(true)} />}
     {sub === "parc" && <ParcView {...{ rows, metaOf, parc: D.parc, tickets, canEdit, onOpenPj }} fournTypes={fournTypesOf(D)} onTypes={() => setTypesDlg(true)} onEdit={(pj, p) => setParcDlg({ pj, p })} />}
     {sub === "kpi" && <SavKpiView doc={D} techs={techs} canCost={canCost} nomOf={nomOf} />}
     {typesDlg && <TypesDialog types={fournTypesOf(D)} onClose={() => setTypesDlg(false)} onSave={async L => { if (await api.setField("fournTypes", L)) setTypesDlg(false); }} />}
@@ -434,15 +434,27 @@ const laneUp = items => { const ends = []; return items.map(it => { let k = ends
 // v379 (demandé : « dans l'équipe, sélectionner ou non les personnes et avoir leur calendrier pour indiquer leurs jours off et leurs congés ») :
 // sous-page Disponibilités — une ligne par personne (compte ou non dans les ressources, jours off chaque semaine), calendrier de 12 semaines
 // (clic sur un jour : disponible → jour off → congés → disponible ; « Congés du … au … »), ligne « Disponibles » en bas. Enregistré tout de suite.
-const DOWS = [[1, "Lu"], [2, "Ma"], [3, "Me"], [4, "Je"], [5, "Ve"]];
-function DispoView({ techs, dispo, inters, onSave, onTeam }) {
+// v422 (demandé : « le responsable SAV bloque à T0 + X semaines la possibilité aux CdP de réserver ») : fermeture des réservations et taille d'équipe
+function ResaPanel({ resa, onResa, n }) {
+  const r = resa || { lockWeeks: 0, team: 2 }, until = lockUntil(r, todayIso());
+  const num = (k, v) => onResa({ ...r, [k]: Math.max(k === "team" ? 1 : 0, Math.round(Number(v) || 0)) });
+  return <Panel level={2} title="Réservation par les chefs de projet">
+    <div style={{ display: "flex", gap: 18, flexWrap: "wrap", alignItems: "center", fontSize: FZ.sm, color: T.ink700 }}>
+      <label style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>Réservations fermées sur les <input type="number" min={0} max={52} value={r.lockWeeks} onChange={e => num("lockWeeks", e.target.value)} aria-label="Semaines fermées aux chefs de projet" style={{ ...inp(), width: 64 }} /> prochaines semaines</label>
+      <label style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>Une équipe = <input type="number" min={1} max={6} value={r.team} onChange={e => num("team", e.target.value)} aria-label="Personnes par équipe" style={{ ...inp(), width: 56 }} /> personnes</label>
+      <span style={{ color: until ? T.amber600 : T.ink500, fontWeight: 500 }}>{until ? "Les chefs de projet réservent à partir du " + fdd(until) : "Les chefs de projet réservent dès aujourd'hui"}</span>
+    </div>
+    <div style={{ fontSize: 12, color: T.ink500, maxWidth: "80ch" }}>Pour un chef de projet, un jour est réservable si au moins une équipe ({r.team} personnes) est libre ; s'il ne reste qu'{r.team > 2 ? "une partie d'une équipe" : "une personne"}, la demande est « sous réserve » de votre acceptation ; si personne n'est libre, le jour est complet. {n} personne{n > 1 ? "s" : ""} compte{n > 1 ? "nt" : ""} dans les ressources ; un jour « non dispo » ou en congés ne compte pas.</div>
+  </Panel>;
+}
+function DispoView({ techs, dispo, inters, onSave, onTeam, resa, onResa }) {
   const t0 = todayIso(), days = useMemo(() => { const out = []; let d = mondayOf(t0); while (out.length < 60) { if (!isWE(d)) out.push(d); d = addDaysIso(d, 1); } return out; }, [t0]);
   const [form, setForm] = useState(null); // { name, from, to, kind }
   const P = n => dispo[n] || {};
   const setP = (n, patch) => onSave({ ...dispo, [n]: { ...P(n), ...patch } });
-  const cycle = (n, d) => { const cur = (P(n).days || {})[d], next = !cur ? "off" : cur === "off" ? "conge" : ""; onSave(setAbsence(dispo, n, d, d, next)); };
+  const cycle = (n, d) => { const cur = (P(n).days || {})[d], next = !cur ? "nondispo" : cur === "nondispo" || cur === "off" ? "conge" : ""; onSave(setAbsence(dispo, n, d, d, next)); }; // v422 : non dispo, puis congés, puis disponible
   const CW = 26, LW = 210, busyOf = (n, d) => Object.values(inters || {}).some(i => i && i.a && i.b && i.st !== "Annulée" && i.a <= d && i.b >= d && [i.resp, ...(i.who || [])].includes(n));
-  const tone = { off: [T.amber100, T.amber600, "Off"], conge: [T.violet100, T.violet600, "C"] };
+  const tone = { nondispo: [T.amber100, T.amber600, "ND"], off: [T.amber100, T.amber600, "ND"], conge: [T.violet100, T.violet600, "C"] };
   const cnt = d => availTechs(techs, dispo, d).length;
   return <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
     <Panel level={2} title="Équipe et ressources" right={<Btn size="sm" onClick={onTeam}>Modifier la liste ({techs.length})</Btn>}>
@@ -450,21 +462,19 @@ function DispoView({ techs, dispo, inters, onSave, onTeam }) {
       : techs.map(n => { const p = P(n); return <div key={n} style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", padding: "6px 0", borderTop: "1px solid " + T.line }}>
         <label style={{ display: "inline-flex", alignItems: "center", gap: 8, minWidth: 220, fontSize: FZ.sm, fontWeight: 600, color: p.exclu ? T.ink500 : T.ink900, cursor: "pointer" }}>
           <input type="checkbox" checked={!p.exclu} onChange={e => setP(n, { exclu: !e.target.checked })} style={{ width: 18, height: 18 }} />{n}{p.exclu && <span style={{ fontWeight: 500, fontSize: 12 }}>· hors ressources</span>}</label>
-        <span role="group" aria-label={"Jours off chaque semaine de " + n} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, color: T.ink500 }}>Off chaque semaine :
-          {DOWS.map(([w, l]) => { const on = (p.weekOff || []).includes(w); return <button key={w} type="button" aria-pressed={on} onClick={() => setP(n, { weekOff: on ? (p.weekOff || []).filter(x => x !== w) : [...(p.weekOff || []), w] })}
-            style={{ minWidth: 32, minHeight: 28, borderRadius: 8, border: "1px solid " + (on ? T.amber600 : T.line), background: on ? T.amber100 : T.card, color: on ? T.amber600 : T.ink700, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>{l}</button>; })}</span>
-        <Btn size="sm" onClick={() => setForm({ name: n, from: t0, to: t0, kind: "conge" })}>＋ Congés ou absence</Btn>
+        <Btn size="sm" onClick={() => setForm({ name: n, from: t0, to: t0, kind: "conge" })}>＋ Non dispo ou congés</Btn>
       </div>; })}
       {form && <form onSubmit={e => { e.preventDefault(); if (form.from && form.to >= form.from) { onSave(setAbsence(dispo, form.name, form.from, form.to, form.kind)); setForm(null); } }}
         style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", background: T.surfaceAlt, borderRadius: 8, padding: "8px 10px", fontSize: FZ.sm }}>
         <b>{form.name}</b>
-        <select value={form.kind} onChange={e => setForm(f => ({ ...f, kind: e.target.value }))} aria-label="Type d'absence" style={{ ...inp(), width: 130 }}><option value="conge">Congés</option><option value="off">Jour off</option><option value="">Disponible (effacer)</option></select>
+        <select value={form.kind} onChange={e => setForm(f => ({ ...f, kind: e.target.value }))} aria-label="Type d'absence" style={{ ...inp(), width: 250 }}><option value="conge">Congés</option><option value="nondispo">Non dispo (journée travaillée, pas d'intervention)</option><option value="">Disponible (effacer)</option></select>
         du <input type="date" value={form.from} onChange={e => setForm(f => ({ ...f, from: e.target.value, to: f.to < e.target.value ? e.target.value : f.to }))} aria-label="Du" style={{ ...inp(), width: 150 }} />
         au <input type="date" value={form.to} min={form.from} onChange={e => setForm(f => ({ ...f, to: e.target.value }))} aria-label="Au" style={{ ...inp(), width: 150 }} />
         <Btn size="sm" v="pri" type="submit" disabled={!form.from || !form.to || form.to < form.from}>Enregistrer</Btn><Btn size="sm" v="ghost" onClick={() => setForm(null)}>Annuler</Btn>
         <span style={{ fontSize: 12, color: T.ink500 }}>Samedis et dimanches ignorés</span></form>}
     </Panel>
-    <Panel level={2} title="Calendrier des 12 prochaines semaines" pad={0} right={<span style={{ fontSize: 12, color: T.ink500, padding: "12px 14px 0 0" }}>Clic sur un jour : off, puis congés, puis disponible</span>}>
+    <ResaPanel resa={resa} onResa={onResa} n={techs.filter(n => !P(n).exclu).length} />
+    <Panel level={2} title="Calendrier des 12 prochaines semaines" pad={0} right={<span style={{ fontSize: 12, color: T.ink500, padding: "12px 14px 0 0" }}>Clic sur un jour : non dispo, puis congés, puis disponible</span>}>
       <div style={{ overflowX: "auto" }}><div style={{ width: LW + days.length * CW }}>
         <div style={{ display: "flex", position: "sticky", top: 0, background: T.surface, borderBottom: "1px solid " + T.line }}>
           <div style={{ width: LW, flexShrink: 0, position: "sticky", left: 0, background: T.surface, zIndex: 2 }} />
@@ -484,12 +494,12 @@ function DispoView({ techs, dispo, inters, onSave, onTeam }) {
         </div>
       </div></div>
       <div style={{ padding: "8px 14px", fontSize: 12, color: T.ink500, display: "flex", gap: 14, flexWrap: "wrap", borderTop: "1px solid " + T.line }}>
-        <span><b style={{ color: T.amber600 }}>Off</b> jour off</span><span><b style={{ color: T.violet600 }}>C</b> congés</span><span>gris rayé : off chaque semaine</span><span><b style={{ color: T.info600 }}>•</b> en intervention</span>
+        <span><b style={{ color: T.amber600 }}>ND</b> non dispo : journée travaillée, pas d'intervention</span><span><b style={{ color: T.violet600 }}>C</b> congés</span><span><b style={{ color: T.info600 }}>•</b> en intervention</span>
         <span>« Disponibles » = personnes qui comptent pour le planning des chefs de projet</span></div>
     </Panel>
   </div>;
 }
-function PlanningView({ inters, demandes, techs, canEdit, isAdmin, nomOf, me, myPjs, onOpenInter, onTeam, onRequest, onAnswer, onCancel, onDelete, onMove, dispo, onDispo }) {
+function PlanningView({ resa, inters, demandes, techs, canEdit, isAdmin, nomOf, me, myPjs, onOpenInter, onTeam, onRequest, onAnswer, onCancel, onDelete, onMove, dispo, onDispo }) {
   const t0 = todayIso();
   const [z, setZ0] = useState(() => { try { const v = localStorage.getItem("enogia_sav_zoom"); return v != null && ZOOMS[+v] ? +v : 3; } catch (e) { return 3; } });
   const setZ = n => { const v = Math.max(0, Math.min(ZOOMS.length - 1, n)); setZ0(v); try { localStorage.setItem("enogia_sav_zoom", String(v)); } catch (e) { /* stockage indisponible */ } };
@@ -517,7 +527,8 @@ function PlanningView({ inters, demandes, techs, canEdit, isAdmin, nomOf, me, my
   const pendOn = d => pendBars.filter(p => p.from <= d && p.to >= d);
   // v377 : vue chef de projet = une seule ligne « SAV / MES » ; le responsable SAV peut la voir (« Vue chef de projet ») et régler la règle
   const [asCdp, setAsCdp] = useState(false), cdpMode = !canEdit || asCdp;
-  const slots = slotDays(inters, techs, pend, days, dispo), availToday = availTechs(techs, dispo, t0).length;
+  const team = (resa && resa.team) || 2, lockTo = lockUntil(resa, t0); // v422 : taille d'équipe, réservations fermées jusqu'à lockTo (exclu)
+  const slots = slotDays(inters, techs, pend, days, dispo, team).map(x => (lockTo && x.d >= t0 && x.d < lockTo && !isWE(x.d) ? { ...x, state: "lock" } : x)), availToday = availTechs(techs, dispo, t0).length;
   const segs = []; slots.forEach((x, i) => { const st = isWE(x.d) ? "we" : x.state, last = segs[segs.length - 1];
     if (last && last.st === st && last.i1 === i - 1) { last.i1 = i; last.left = Math.min(last.left, x.left); } else segs.push({ st, i0: i, i1: i, left: x.left }); });
   // v335 : « Planifiée » = dates validées avec le client (barre pleine) ; « À planifier » avec dates = pas encore validée (barre en pointillés hachurée)
@@ -557,9 +568,9 @@ function PlanningView({ inters, demandes, techs, canEdit, isAdmin, nomOf, me, my
       <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw(hatch(T.amber100, T.card), { border: "1px dashed " + T.amber500 })}Demande d'un chef de projet en attente</span>
       <span>Glisser une barre : autre jour = autres dates, autre ligne = autre technicien ; un clic l'ouvre</span></>
     : <>
-      <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw(T.info100, { borderLeft: "3px solid " + T.info600 })}Complet : plus d'intervention possible</span>
-      <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw("transparent", { border: "1.5px dashed " + T.info600 })}Possible sous réserve du type, du lieu et de ce qu'il y a à faire</span>
-      <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw("transparent", { border: "1px solid " + T.line })}Libre : cliquez le jour pour proposer votre date</span></>}
+      <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw(T.info100, { borderLeft: "3px solid " + T.info600 })}Complet : les équipes sont toutes prises</span>
+      <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw("transparent", { border: "1.5px dashed " + T.info600 })}Possible sous réserve d'acceptation (moins d'une équipe libre)</span>
+      <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw("transparent", { border: "1px solid " + T.line })}Libre : au moins une équipe, cliquez le jour pour proposer votre date</span>{lockTo && <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw(hatch("color-mix(in srgb, " + T.ink300 + " 30%, transparent)", T.surfaceAlt))}Réservation fermée jusqu'au {fdd(addDaysIso(lockTo, -1))}</span>}</>}
     <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>{sw(hatch("color-mix(in srgb, " + T.ink300 + " 18%, transparent)", T.card), { border: "1px solid " + T.line })}Samedi, dimanche</span>
   </div>;
   return <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -570,12 +581,13 @@ function PlanningView({ inters, demandes, techs, canEdit, isAdmin, nomOf, me, my
           <DayHeader days={days} X={X} WD={WD} labW={labW} W={W} t0={t0} />
           {cdpMode ? <SRow labW={labW} width={W} label="SAV / MES" sub="cliquez un jour pour proposer" h={52}>
             {days.map(d => <div key={d} style={{ ...cellLine(d), background: dayBg(d) }} />)}
+            {segs.filter(g => g.st === "lock").map(g => { const pos = pxOf(g.i0, g.i1); return <span key={"l" + g.i0} aria-hidden="true" style={{ position: "absolute", top: 8, bottom: 8, ...pos, boxSizing: "border-box", borderRadius: 4, pointerEvents: "none", background: hatch("color-mix(in srgb, " + T.ink300 + " 30%, transparent)", T.surfaceAlt), color: T.ink500, fontSize: 12, fontWeight: 500, lineHeight: "32px", padding: "0 6px", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>{pos.width >= 120 ? "Réservation fermée · à partir du " + fdd(lockTo) : ""}</span>; })}
             {segs.filter(g => g.st === "full" || g.st === "some").map(g => { const pos = pxOf(g.i0, g.i1), full = g.st === "full";
               return <span key={g.i0} aria-hidden="true" style={{ position: "absolute", top: 8, bottom: 8, ...pos, boxSizing: "border-box", borderRadius: 4, pointerEvents: "none",
                 background: full ? T.info100 : "transparent", border: full ? "none" : "1.5px dashed " + T.info600, borderLeft: full ? "3px solid " + T.info600 : "1.5px dashed " + T.info600,
                 color: T.info600, fontSize: 12, fontWeight: 500, lineHeight: "32px", padding: "0 6px", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>{pos.width >= 64 ? (full ? "Complet" : "Possible sous réserve") : ""}</span>; })}
-            {slots.map(x => { const d = x.d; if (d < t0 || isWE(d) || x.state === "full") return null; const i = idxOf[d];
-              const lab = (x.state === "free" ? "Libre" : "Possible sous réserve (type, lieu et travaux à faire)") + " le " + fdd(d) + " : proposer une intervention";
+            {slots.map(x => { const d = x.d; if (d < t0 || isWE(d) || x.state === "full" || x.state === "lock") return null; const i = idxOf[d];
+              const lab = (x.state === "free" ? "Libre" : "Possible sous réserve d'acceptation du responsable SAV") + " le " + fdd(d) + " : proposer une intervention";
               return <button key={d} type="button" className="e-sav-slot" onClick={() => onRequest(d)} title={lab} aria-label={lab}
                 style={{ position: "absolute", top: 4, bottom: 4, left: X[i] + 1, width: WD[i] - 2, border: "none", borderRadius: 4, background: "transparent", cursor: "pointer", padding: 0, color: T.emerald600, fontSize: 14, fontWeight: 600, fontFamily: T.font }}>
                 {x.state === "free" && WD[i] >= 20 ? <span className="e-sav-plus">+</span> : null}</button>; })}

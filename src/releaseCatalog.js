@@ -1295,4 +1295,7 @@ export const RELEASE_CATALOG = [
   { v: "421", t: "Cash in : statut « payé » forcé (projets EPC)", items: [
     ["Cash in : payé forcé", "Case « payé » dans la colonne Statut : jalon payé sans montant ni date, retiré du widget Livrables Produit."],
   ] },
+  { v: "422", t: "SAV / MES : non dispo et congés, règle des équipes, réservations fermées à T0 + X semaines", items: [
+    ["SAV : équipes et réservations", "Non dispo et congés, règle des équipes de 2, réservations des chefs de projet fermées à T0 + X semaines."],
+  ] },
 ];

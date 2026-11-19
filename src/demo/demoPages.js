@@ -189,7 +189,7 @@ export const DEMO_PAGES = [
   { id: "home-produit", label: "Accueil · resp. produit", Render: AccueilProduit, expect: ["Livrables Produit", "P&ID validé", "Papeterie du Nord"] },
   { id: "sav", label: "SAV · équipe", Render: () => <SavDemo level="w" sub0="tickets" />, expect: ["SAV / MES", "TC-26-41", "Sucrerie Centre"] },
   { id: "sav-plan", label: "SAV · planning", Render: () => <SavDemo level="w" sub0="planning" />, expect: ["Lou Martin", "Demandes des chefs de projet", "Aujourd'hui"] },
-  { id: "sav-dispo", label: "SAV · disponibilités", Render: () => <SavDemo level="w" sub0="dispo" />, expect: ["Équipe et ressources", "Off chaque semaine", "Disponibles"] },
+  { id: "sav-dispo", label: "SAV · disponibilités", Render: () => <SavDemo level="w" sub0="dispo" />, expect: ["Équipe et ressources", "Réservation par les chefs de projet", "Disponibles"] },
   { id: "sav-cdp", label: "SAV · chef de projet", Render: () => <SavDemo level="r" sub0="planning" />, expect: ["SAV / MES", "Mes demandes", "Complet"] },
   { id: "sav-comp", label: "SAV · compétences", Render: () => <SavDemo level="a" sub0="competences" />, expect: ["Compétences"] },
   { id: "sav-kpi", label: "SAV · KPI", Render: () => <SavDemo level="w" sub0="kpi" />, expect: ["Affectation de l'équipe", "Interventions", "Finance"] },

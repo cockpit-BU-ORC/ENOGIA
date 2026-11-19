@@ -193,11 +193,12 @@ export function delStepNote(t, step, k) { const n = { ...((t && t.stepNotes) || 
 // nombre de ressources disponibles ») — v379 (demandé : « dans l'équipe, sélectionner ou non les personnes et avoir leur calendrier pour
 // indiquer leurs jours off et leurs congés ») : la capacité d'un jour = les personnes de l'équipe qui comptent dans les ressources et sont
 // disponibles ce jour-là. planning/sav.dispo = { [nom]: { exclu, weekOff: [jours 1–5], days: { AAAA-MM-JJ: "off" | "conge" } } }.
-export const DISPO_KINDS = { off: "Jour off", conge: "Congés" };
+// v422 (demandé : « jours de non dispo et / ou de congés, enlever le jour off ; non dispo = un jour travaillé mais pas sur une intervention ») :
+// « nondispo » et « conge » ; l'ancien « off » se lit comme non dispo ; les jours off de chaque semaine (weekOff) ne sont plus lus
+export const DISPO_KINDS = { nondispo: "Non dispo (pas d'intervention)", conge: "Congés", off: "Non dispo (pas d'intervention)" };
 export function unavailableWhy(dispo, name, d) {
   const p = (dispo && dispo[name]) || {};
   if (p.exclu) return "hors ressources";
-  if ((p.weekOff || []).includes(new Date(d + "T12:00:00").getDay())) return "jour off chaque semaine";
   return p.days && p.days[d] ? DISPO_KINDS[p.days[d]] || "indisponible" : "";
 }
 export const isAvailable = (dispo, name, d) => !unavailableWhy(dispo, name, d);
@@ -212,15 +213,23 @@ const addD = (d, n) => { const x = new Date(d + "T12:00:00"); x.setDate(x.getDat
 // État d'un jour pour les chefs de projet : les personnes disponibles occupées par une intervention, les interventions sans personne
 // disponible (une ressource chacune) et les demandes en attente (une chacune) prennent la place. full = plus rien de libre ;
 // some = déjà des réservations mais encore de la place (« possible sous réserve ») ; free = rien de réservé.
-export function slotDays(inters, techs, pend, days, dispo) {
+// v422 (demandé : « 4 gars, 2 équipes de 2 : les 2 équipes prises = pas réservable ; 3 sur 4 en intervention = sous réserve d'acceptation ;
+// au moins une équipe ou 3 gars dispo = réservable sans message ») : team = taille d'une équipe (2 par défaut) ; une intervention sans
+// personne désignée et une demande en attente prennent une équipe. free = au moins une équipe libre ; some = moins d'une équipe (sous réserve) ;
+// full = personne de libre.
+export const SAV_TEAM = 2;
+// réservations des chefs de projet fermées jusqu'à T0 + N semaines (réglé par le responsable SAV : planning/sav.resa = { lockWeeks, team })
+export const resaOf = doc => { const r = (doc && doc.resa) || {}; return { lockWeeks: Math.max(0, Math.round(Number(r.lockWeeks) || 0)), team: Math.max(1, Math.round(Number(r.team) || SAV_TEAM)) }; };
+export const lockUntil = (resa, today) => { const n = (resa && resa.lockWeeks) || 0; return n > 0 ? addD(today, n * 7) : ""; };
+export function slotDays(inters, techs, pend, days, dispo, team = SAV_TEAM) {
   const list = Object.values(inters || {}).filter(i => i && i.a && i.b && i.st !== "Annulée");
   const dems = (pend || []).map(p => { const L = workDaysFrom(p.date, Math.max(1, Number(p.days) || 1)); return { from: L[0], to: L[L.length - 1] }; });
   return days.map(d => {
     const av = availTechs(techs, dispo, d), on = list.filter(i => i.a <= d && i.b >= d), busy = new Set();
     let extra = 0;
-    on.forEach(i => { const t = interTeam(i).filter(x => av.includes(x)); if (t.length) t.forEach(x => busy.add(x)); else extra++; });
-    extra += dems.filter(p => p.from <= d && p.to >= d).length;
+    on.forEach(i => { const t = interTeam(i).filter(x => av.includes(x)); if (t.length) t.forEach(x => busy.add(x)); else extra += team; });
+    extra += dems.filter(p => p.from <= d && p.to >= d).length * team;
     const cap = av.length, used = busy.size + extra, left = Math.max(0, cap - used);
-    return { d, cap, used, left, state: cap <= 0 || used >= cap ? "full" : used > 0 ? "some" : "free" };
+    return { d, cap, used, left, state: left <= 0 ? "full" : left < team ? "some" : "free" };
   });
 }

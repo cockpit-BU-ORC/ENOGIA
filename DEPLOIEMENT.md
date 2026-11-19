@@ -3199,3 +3199,12 @@ Demandé : « dans le Cash in, pouvoir forcer le statut sur les projets EPC pour
 - `src/cashinData.js` `produitItems` : jalons forcés exclus — la copie `planning/cashinProduit` est republiée au prochain enregistrement du Cash in.
 - Tests v421 (cashinData.test.js, cashinCollect.test.js).
 - Fichiers : public/cashin.html, src/cashinData.js, src/cashinLink.js, src/cashinModel.js, src/cashWeekly.js, functions/shared/*.
+
+## V422 — SAV / MES : non dispo et congés, règle des équipes, réservations fermées à T0 + X semaines
+
+Demandé : « dans le calendrier Disponibilités, le responsable SAV / MES choisit des jours de non dispo et / ou de congés (enlever le jour off) ; non dispo = un jour travaillé mais pas sur une intervention » ; « 4 gars, 2 équipes de 2 : les 2 équipes prises = pas réservable ; 3 sur 4 en intervention = sous réserve d'acceptation ; au moins 1 équipe ou 3 gars dispo = réservable » ; « bloquer à T0 + X semaines la réservation des CdP ».
+
+- `src/savModel.js` (testé) : `DISPO_KINDS` nondispo / conge (ancien « off » lu comme non dispo), `weekOff` n'est plus lu ; `slotDays(…, team)` : une intervention sans personne et une demande en attente prennent une équipe ; état `free` (≥ une équipe libre), `some` (moins d'une équipe : sous réserve), `full` (personne) ; `SAV_TEAM` 2, `resaOf(doc)` = `planning/sav.resa = { lockWeeks, team }`, `lockUntil`.
+- `SavPage.js` : Disponibilités — boutons « Off chaque semaine » retirés, clic sur un jour = non dispo → congés → disponible, période « Non dispo ou congés » ; panneau **Réservation par les chefs de projet** (`ResaPanel` : semaines fermées, taille d'équipe) ; Planning, vue chef de projet : jours fermés hachurés gris non cliquables (« Réservation fermée · à partir du … »), légende de la règle des équipes.
+- **Kit Production turbines** régénéré pour Jérémie (`npm run kit:jeremie`, dossier kit-jeremie/).
+- Fichiers : src/savModel.js (+ test), src/components/SavPage.js, src/demo/demoPages.js.
