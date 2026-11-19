@@ -3225,3 +3225,11 @@ Demandé : « quand un CdP demande une intervention, tous les PJ doivent être d
 - `src/savModel.js` (testé) : `demandeCheck` — jours ouvrés demandés, `full` (personne de libre), `lock` (avant T0 + N semaines), `some` (moins d'une équipe).
 - `SavPage.js` : `DemandeDialog` — `PjInput` (liste ordo + parc, mes PJ en tête, nouveau n° possible → `newPj: true`, pastille « nouveau PJ » côté responsable SAV) ; chef de projet (`strict`) : bouton désactivé et message rouge si un jour est complet ou fermé, avertissement jaune si un jour est sous réserve ; équipe SAV : simple avertissement ; vue chef de projet : mes demandes en attente en barre jaune hachurée (« Ma demande · PJ… »), légende.
 - Fichiers : src/savModel.js (+ test), src/components/SavPage.js.
+
+## V425 — SAV / MES : une personne ne peut plus être sur 2 interventions en même temps
+
+Demandé : « mettre en rouge quand 2 interventions se superposent avec la même ressource ; ça doit être impossible de mettre la même ressource sur 2 interventions en même temps ».
+
+- `src/savModel.js` (testé) : `techClashes(inters, id, i)` (responsable + appui déjà sur une autre intervention non annulée qui chevauche), `clashSet(inters)` (barres en conflit).
+- `SavPage.js` : barres en conflit en rouge (`clash`, info-bulle « CONFLIT ») ; `InterDialog` : message rouge et bouton désactivé ; `saveInter` et `onMove` (glisser une barre) refusés avec un message (`notify`).
+- Fichiers : src/savModel.js (+ test), src/components/SavPage.js.

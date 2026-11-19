@@ -125,3 +125,11 @@ test("v424 : demande de 5 jours dont les 2 derniers sont complets = refusée (jo
   expect(c.full).toEqual(["2026-11-26", "2026-11-27"]);
   expect(demandeCheck({ inters: {}, techs, demandes: {}, dispo: {}, resa: { lockWeeks: 4, team: 2 }, date: "2026-11-23", n: 2, today: "2026-11-19" }).lock).toEqual(["2026-11-23", "2026-11-24"]);
 });
+
+test("v425 : une même personne sur 2 interventions qui se chevauchent = conflit", () => {
+  const { techClashes, clashSet } = require("./savModel");
+  const inters = { A: { a: "2026-12-07", b: "2026-12-11", resp: "Arthur", who: [], st: "Planifiée", pj: "PJ456" }, B: { a: "2026-12-10", b: "2026-12-15", resp: "Léa", who: ["Arthur"], st: "À planifier", pj: "PJ460" }, C: { a: "2026-12-10", b: "2026-12-12", resp: "Arthur", st: "Annulée" } };
+  expect(techClashes(inters, "B", inters.B)).toEqual([{ name: "Arthur", id: "A", a: "2026-12-07", b: "2026-12-11", pj: "PJ456" }]);
+  expect(techClashes(inters, "A", { ...inters.A, b: "2026-12-09" })).toEqual([]);
+  expect([...clashSet(inters)].sort()).toEqual(["A|Arthur", "B|Arthur"]);
+});

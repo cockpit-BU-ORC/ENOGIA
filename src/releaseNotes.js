@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v425",
+    date: "2026-11-19",
+    title: "V425 : SAV / MES : une personne ne peut plus être sur 2 interventions en même temps",
+    items: [
+      { t: "Conflits en rouge", d: "Dans le planning des équipes, deux interventions qui se chevauchent pour la même personne apparaissent en rouge sur sa ligne (le survol l'explique)." },
+      { t: "Impossible de doubler", d: "On ne peut plus enregistrer une intervention, ni déplacer une barre, si une des personnes (responsable ou appui) est déjà sur une autre intervention à ces dates : le message dit qui, sur quelle intervention et à quelles dates." },
+    ],
+  },
+  {
     id: "2026-11-v424",
     date: "2026-11-19",
     title: "V424 : SAV / MES : demandes sur tous les PJ, refus automatique sans ressource, ma demande en jaune",

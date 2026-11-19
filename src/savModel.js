@@ -242,3 +242,21 @@ export function demandeCheck({ inters, techs, demandes, dispo, resa, date, n, to
   const pendL = Object.values(demandes || {}).filter(x => x && x.st === "attente"), S = slotDays(inters, techs, pendL, days, dispo || {}, r.team || SAV_TEAM);
   return { days, full: S.filter(x => x.state === "full").map(x => x.d), some: S.filter(x => x.state === "some").map(x => x.d), lock: lockTo ? days.filter(d => d < lockTo) : [] };
 }
+
+// v425 (demandé : « en rouge quand 2 interventions se superposent avec la même ressource ; impossible de mettre la même personne sur 2 interventions en même temps ») :
+// personnes de l'intervention (responsable + appui) déjà sur une autre intervention non annulée aux mêmes dates → [{ name, id, a, b, pj }]
+export function techClashes(inters, id, i) {
+  if (!i || !i.a || !i.b || i.st === "Annulée") return [];
+  const team = new Set(interTeam(i)), out = [];
+  Object.entries(inters || {}).forEach(([oid, o]) => {
+    if (oid === id || !o || !o.a || !o.b || o.st === "Annulée" || o.a > i.b || o.b < i.a) return;
+    interTeam(o).forEach(n => { if (team.has(n)) out.push({ name: n, id: oid, a: o.a, b: o.b, pj: o.pj || "" }); });
+  });
+  return out;
+}
+// ensemble « id|personne » des barres en conflit dans le planning (données déjà enregistrées)
+export function clashSet(inters) {
+  const out = new Set();
+  Object.entries(inters || {}).forEach(([id, i]) => techClashes(inters, id, i).forEach(c => { out.add(id + "|" + c.name); out.add(c.id + "|" + c.name); }));
+  return out;
+}

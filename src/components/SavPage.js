@@ -9,13 +9,13 @@ import { usePointerDnD } from "../pointerDrag";
 import { T, FZ, btn, buildPalette, getThemeId } from "../theme";
 import { getPjMeta } from "../pjMeta";
 import { PlanSwitch } from "./PlanSwitch";
-import { NavIcon, Panel, Pill, Btn, Segmented, PjPlate, tableTh, tableTd, EmptyState, PageHead, useSheetJS, SortTh, useSort } from "./SharedUI";
+import { NavIcon, Panel, Pill, Btn, Segmented, PjPlate, tableTh, tableTd, EmptyState, PageHead, useSheetJS, SortTh, useSort, notify } from "./SharedUI";
 import { stageSoft } from "../theme";
 import { askConfirm } from "../confirm";
 import { smooth } from "../scrollMode";
 import { TICKET_TYPES, typeOf, flowOf, PRIOS, ORIGINS, INTER_TYPES, INTER_STATUS, PREP_ITEMS, CLO_ITEMS, COST_FIELDS, CONTRACTS, DEM_STATUS,
   nextTicketId, nextInterId, isClosed, ticketAge, interCost, interTeam, interDays, planBars, dayLoad, workDaysFrom, mondayOf,
-  acceptDemande, slotDays, availTechs, unavailableWhy, setAbsence, resaOf, lockUntil, demandeCheck, parcOf, savKpis, savStats, fournTypesOf, fournLabel, addStepNote, delStepNote } from "../savModel";
+  acceptDemande, slotDays, availTechs, unavailableWhy, setAbsence, resaOf, lockUntil, demandeCheck, techClashes, clashSet, parcOf, savKpis, savStats, fournTypesOf, fournLabel, addStepNote, delStepNote } from "../savModel";
 import { machinesOf } from "../turbineNeeds";
 import { elementsOf } from "../passport";
 
@@ -159,7 +159,10 @@ export function SavPage({ turbReqs, onOpenTurb, onSetAlloc, doc, dem, api, demAp
   const [ticketDlg, setTicketDlg] = useState(null), [interDlg, setInterDlg] = useState(null), [parcDlg, setParcDlg] = useState(null), [demDlg, setDemDlg] = useState(null), [teamDlg, setTeamDlg] = useState(false), [typesDlg, setTypesDlg] = useState(false);
 
   const saveTicket = async (id, t) => { const nid = id || nextTicketId(tickets); if (await api.put("tickets", nid, t)) setTicketDlg(null); return nid; };
+  // v425 : la même personne ne peut pas être sur 2 interventions en même temps
+  const clashMsg = L => L.map(c => c.name + " est déjà sur " + c.id + (c.pj ? " (" + c.pj + ")" : "") + " du " + fd(c.a) + " au " + fd(c.b)).join(" ; ");
   const saveInter = async (id, i) => {
+    const cl = techClashes(inters, id, i); if (cl.length) { notify("Impossible d'enregistrer : " + clashMsg(cl), "error"); return; }
     const nid = id || nextInterId(inters);
     if (!(await api.put("inters", nid, i))) return;
     if (i.tk && tickets[i.tk] && !(tickets[i.tk].inters || []).includes(nid)) await api.put("tickets", i.tk, { ...tickets[i.tk], inters: [...(tickets[i.tk].inters || []), nid] });
@@ -190,7 +193,7 @@ export function SavPage({ turbReqs, onOpenTurb, onSetAlloc, doc, dem, api, demAp
       onOpenInter={id => setInterDlg({ id, i: inters[id] })} />}
     {sub === "inters" && <IntersView {...{ inters, canCost, nomOf }} onOpen={id => setInterDlg({ id, i: inters[id] })} />}
     {sub === "planning" && <PlanningView resa={resaOf(D)} {...{ inters, demandes, techs, canEdit, isAdmin, nomOf, me, myName, myPjs, pjList }} dispo={D.dispo || {}} onDispo={() => go("dispo")} onOpenInter={id => setInterDlg({ id, i: inters[id] })} onTeam={() => setTeamDlg(true)}
-      onMove={(id, patch) => api.put("inters", id, { ...inters[id], ...patch })}
+      onMove={(id, patch) => { const next = { ...inters[id], ...patch }, cl = techClashes(inters, id, next); if (cl.length) { notify("Déplacement impossible : " + clashMsg(cl), "error"); return; } api.put("inters", id, next); }}
       onRequest={day => setDemDlg({ date: day, days: 1, pj: focusPj && pjList.includes(focusPj) ? focusPj : (myPjs || [])[0] || "", obj: "", type: "cur" })}
       onAnswer={async (id, d, ok, note) => {
         if (ok) { const r = acceptDemande({ ...d, id }, D); if (!(await api.put("tickets", r.tid, r.ticket)) || !(await api.put("inters", r.iid, r.inter))) return;
@@ -207,7 +210,7 @@ export function SavPage({ turbReqs, onOpenTurb, onSetAlloc, doc, dem, api, demAp
 
     {ticketDlg && <TicketDialog {...ticketDlg} {...{ pjList, nomOf, techs, canEdit, isAdmin, inters, turbReqs, onOpenTurb, rows }} onSetAlloc={canEdit ? onSetAlloc : null} onClose={() => setTicketDlg(null)} onSave={saveTicket}
       onDelete={async id => { if (await askConfirm({ title: "Supprimer le ticket " + id + " ?", message: "Ses interventions restent ; le ticket disparaît pour tout le monde.", confirmLabel: "Supprimer", danger: true })) { await api.del("tickets", id); setTicketDlg(null); } }} />}
-    {interDlg && <InterDialog {...interDlg} {...{ pjList, nomOf, techs, canEdit, isAdmin, canCost, tickets, turbReqs, onOpenTurb, rows }} onSetAlloc={canEdit ? onSetAlloc : null} onClose={() => setInterDlg(null)} onSave={saveInter}
+    {interDlg && <InterDialog allInters={inters} {...interDlg} {...{ pjList, nomOf, techs, canEdit, isAdmin, canCost, tickets, turbReqs, onOpenTurb, rows }} onSetAlloc={canEdit ? onSetAlloc : null} onClose={() => setInterDlg(null)} onSave={saveInter}
       onDelete={async id => { if (await askConfirm({ title: "Supprimer l'intervention " + id + " ?", message: "Elle disparaît du planning et du ticket.", confirmLabel: "Supprimer", danger: true })) { await api.del("inters", id); setInterDlg(null); } }} />}
     {parcDlg && <ParcDialog {...parcDlg} canEdit={canEdit} fournTypes={fournTypesOf(D)} onClose={() => setParcDlg(null)} onSave={async (pj, p) => { if (await api.put("parc", pj, p)) setParcDlg(null); }}
       onDelete={isAdmin ? async pj => { if (await askConfirm({ title: "Supprimer " + pj + " du parc ?", message: "Les informations saisies (contrat, lieu, fournitures…) sont effacées. Une machine expédiée du planning reste dans la liste, sans ces informations.", confirmLabel: "Supprimer", danger: true })) { await api.del("parc", pj); setParcDlg(null); } } : null} />}
@@ -343,10 +346,11 @@ function IntersView({ inters, canCost, nomOf, onOpen }) {
           {canCost && <td style={tableTd({ num: true })}>{eur(interCost(i))}</td>}</tr>; })}</tbody></table></div>}
   </Panel>;
 }
-function InterDialog({ id, i: i0, pjList, nomOf, techs, canEdit, isAdmin, canCost, tickets, onClose, onSave, onDelete, turbReqs, onOpenTurb, rows, onSetAlloc }) {
+function InterDialog({ allInters, id, i: i0, pjList, nomOf, techs, canEdit, isAdmin, canCost, tickets, onClose, onSave, onDelete, turbReqs, onOpenTurb, rows, onSetAlloc }) {
   const [i, setI] = useState({ who: [], prep: [], clo: [], costs: {}, ...i0 }); const set = (k, v) => setI(x => ({ ...x, [k]: v }));
   const tkList = Object.keys(tickets).filter(t => !i.pj || tickets[t].pj === i.pj);
-  const ok = i.pj && (i.obj || "").trim() && (!i.a || !i.b || i.a <= i.b);
+  const clashes = techClashes(allInters || {}, id, i); // v425 : personne déjà prise ailleurs à ces dates
+  const ok = i.pj && (i.obj || "").trim() && (!i.a || !i.b || i.a <= i.b) && !clashes.length;
   return <Modal title={id ? "Intervention " + id : "Nouvelle intervention sur site"} onClose={onClose} width={620}>
     {id && <TurbLinks reqs={turbReqs} rows={rows} onSetAlloc={onSetAlloc} match={r => r.inter === id || (!r.inter && i.tk && r.ticket === i.tk)} onOpen={onOpenTurb} />}
     <div style={grid2}>
@@ -381,6 +385,7 @@ function InterDialog({ id, i: i0, pjList, nomOf, techs, canEdit, isAdmin, canCos
     {canEdit && <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
       {id && isAdmin && <Btn v="dan" size="sm" onClick={() => onDelete(id)}>Supprimer</Btn>}<span style={{ flex: 1 }} />
       <Btn size="sm" onClick={onClose}>Annuler</Btn>
+      {clashes.length > 0 && <span role="alert" style={{ fontSize: 13, color: T.red600, fontWeight: 500, flex: "1 1 100%" }}>Impossible : {clashes.map(c => c.name + " est déjà sur " + c.id + (c.pj ? " (" + c.pj + ")" : "") + " du " + fd(c.a) + " au " + fd(c.b)).join(" ; ")}. Changez les dates ou la personne.</span>}
       <Btn v="pri" size="sm" disabled={!ok} onClick={() => onSave(id, { ...i, st: i.st || "À planifier" })}>{id ? "Enregistrer" : "Créer l'intervention"}</Btn></div>}
   </Modal>;
 }
@@ -519,7 +524,7 @@ function PlanningView({ resa, inters, demandes, techs, canEdit, isAdmin, nomOf, 
   const page = dir => { const el = scRef.current; if (el) el.scrollBy({ left: dir * Math.round((el.clientWidth - labW) * 0.85), behavior: smooth() }); };
   // à l'ouverture : la semaine passée à gauche ; au zoom : garder le premier jour visible
   useEffect(() => { const el = scRef.current; if (!el) return; if (first.current == null) goToday(); else { el.scrollLeft = X[idxOf[first.current] || 0]; onScroll(); } }, [colPx]); // eslint-disable-line react-hooks/exhaustive-deps
-  const bars = planBars(inters, techs), load = dayLoad(inters, techs, days), loadOf = {}; load.forEach(x => { loadOf[x.d] = x; });
+  const bars = planBars(inters, techs), clash = clashSet(inters), load = dayLoad(inters, techs, days), loadOf = {}; /* v425 : conflits de personnes */ load.forEach(x => { loadOf[x.d] = x; });
   const dems = Object.entries(demandes).map(([id, d]) => ({ id, ...d })).sort((a, b) => String(b.at || "").localeCompare(String(a.at || "")));
   const isMine = d => d.byEmail && me && d.byEmail.toLowerCase() === me.toLowerCase();
   const pend = dems.filter(d => d.st === "attente"), mine = dems.filter(isMine);
@@ -618,9 +623,9 @@ function PlanningView({ resa, inters, demandes, techs, canEdit, isAdmin, nomOf, 
             {(bars[tc] || []).map(b => { const sp = span(b.from, b.to); if (!sp) return null; const [i0, i1] = sp, pos = pxOf(i0, i1);
               const base = { position: "absolute", top: canEdit ? 5 : 6, bottom: canEdit ? 5 : 6, ...pos, borderRadius: 4, boxSizing: "border-box" };
               if (!canEdit) return <span key={b.id} title="Occupé" aria-label={"Occupé du " + fd(b.from) + " au " + fd(b.to)} style={{ ...base, background: hatch(T.ink300, T.surfaceAlt), opacity: tentative(b.st) ? 0.45 : 0.7 }} />;
-              const [bg, ink] = barColor(b.st), tent = tentative(b.st), payload = { id: b.id, tech: tc, lead: b.lead, grab: 0 }, dp = dnd.dragProps(payload);
+              const bad = clash.has(b.id + "|" + tc), [bg, ink] = bad ? [T.red100, T.red600] : barColor(b.st), tent = tentative(b.st), payload = { id: b.id, tech: tc, lead: b.lead, grab: 0 }, dp = dnd.dragProps(payload);
               return <button key={b.id} type="button" {...dp} onPointerDown={e => { const r = e.currentTarget.getBoundingClientRect(), n = workCount(days[i0], days[i1]); payload.grab = Math.min(n - 1, Math.max(0, Math.floor((e.clientX - r.left) / r.width * n))) + (b.from < days[0] ? workCount(b.from, days[0]) - 1 : 0); dp.onPointerDown(e); }}
-                onClick={() => onOpenInter(b.id)} title={b.id + " · " + b.pj + " · " + (nomOf(b.pj) || "") + " · " + fd(b.from) + " → " + fd(b.to) + (b.lead ? "" : " (appui)") + (tent ? " · à planifier : dates à confirmer avec le client" : " · planifiée")}
+                onClick={() => onOpenInter(b.id)} title={b.id + " · " + b.pj + " · " + (nomOf(b.pj) || "") + " · " + fd(b.from) + " → " + fd(b.to) + (b.lead ? "" : " (appui)") + (tent ? " · à planifier : dates à confirmer avec le client" : " · planifiée") + (bad ? " · CONFLIT : " + tc + " est aussi sur une autre intervention à ces dates" : "")}
                 style={{ ...base, border: tent ? "1.5px dashed " + ink : "none", borderLeft: tent ? "1.5px dashed " + ink : "3px solid " + ink, background: tent ? hatch(bg, T.card) : bg, color: ink, fontSize: 12, fontWeight: 500, textAlign: "left", padding: "0 6px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "grab", fontFamily: T.font, opacity: b.lead ? 1 : 0.8, pointerEvents: dnd.drag ? "none" : "auto" }}>{b.pj}{pos.width > 120 ? " · " + (nomOf(b.pj) || b.id) : ""}{tent && pos.width > 200 ? " · à confirmer" : ""}{b.lead ? "" : " (appui)"}</button>; })}
           </SRow>)
           : <div style={{ padding: 12, position: "sticky", left: 0, width: "min(100%, 600px)" }}><EmptyState compact icon="manager" title="Aucun technicien enregistré" hint={canEdit ? "« Équipe » pour ajouter les techniciens SAV." : "Les demandes restent possibles : le responsable SAV répond."} /></div>}

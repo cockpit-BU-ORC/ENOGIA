@@ -1305,4 +1305,7 @@ export const RELEASE_CATALOG = [
   { v: "424", t: "SAV / MES : demandes sur tous les PJ, refus automatique sans ressource, ma demande en jaune", items: [
     ["SAV : demandes contrôlées", "Tous les PJ (ordo et parc, nouveau PJ à valider), refus automatique sans ressource, ma demande en jaune."],
   ] },
+  { v: "425", t: "SAV / MES : une personne ne peut plus être sur 2 interventions en même temps", items: [
+    ["SAV : pas de double affectation", "Conflits de personnes en rouge ; enregistrement et déplacement refusés."],
+  ] },
 ];
