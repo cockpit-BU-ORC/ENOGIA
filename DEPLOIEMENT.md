@@ -3242,3 +3242,10 @@ Demandé : « l'export pour l'avancement doit être juste un bouton pour le DAF 
 - Retiré : bouton de la page Finance (`CashInTab`) et lien de la tuile « Avancement global » de la fiche projet.
 - Galerie : accueil avec `AdvanceCtx` (données d'exemple).
 - Fichiers : src/components/RoleHome.js, src/components/CashInTab.js, src/components/ManagerFiche.js, src/demo/demoPages.js.
+
+## V427 — Cash in : mensualités retirées, loyer du PJ457 seulement
+
+Demandé : « dans le Cash in, le système de mensualités casse tout : l'enlever, et le mettre uniquement pour le jalon 4 du PJ457 où on va recevoir 11 200 € par mois dès le mois après la MES et pendant 2 ans ».
+
+- `public/cashin.html` (`CASHIN_PAGE_VERSION` 427) : colonne et saisie « Mensualités » retirées ; l'ancien champ `mens` est effacé à la lecture (`normalize`) ; `RENT = { pj: PJ457, n: 4, monthly: 11 200, months: 24 }`, `isRent(r)` = 4e jalon du PJ457 dans l'ordre du tableau ; `parts(r)` = 24 mensualités de 11 200 € à partir du mois qui suit « Enc. prévu » du jalon (date de MES) — Cash par mois, Cash par PJ et par mois (même sans montant saisi sur le jalon) ; pas d'alerte « encaissement dépassé » sur ce jalon ; mention « loyer » dans les fenêtres et le survol.
+- Fichiers : public/cashin.html, src/cashinData.js.

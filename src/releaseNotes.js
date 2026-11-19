@@ -7,6 +7,15 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v427",
+    date: "2026-11-19",
+    title: "V427 : Cash in : mensualités retirées, loyer du PJ457 seulement",
+    items: [
+      { t: "Mensualités retirées", d: "La colonne « Mensualités » du Cash in est retirée : les jalons se paient de nouveau en une fois." },
+      { t: "Loyer du PJ457", d: "Seul le jalon 4 du PJ457 est un loyer : 11 200 € par mois pendant 2 ans (24 mois), à partir du mois qui suit la date du jalon (date de MES), dans Cash par mois et Cash par PJ et par mois." },
+    ],
+  },
+  {
     id: "2026-11-v426",
     date: "2026-11-19",
     title: "V426 : Export de l'avancement : un bouton sur l'accueil du DAF",

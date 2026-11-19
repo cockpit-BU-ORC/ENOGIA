@@ -1311,4 +1311,7 @@ export const RELEASE_CATALOG = [
   { v: "426", t: "Export de l'avancement : un bouton sur l'accueil du DAF", items: [
     ["Export avancement sur l'accueil DAF", "Bouton d'export de l'avancement sur l'accueil du DAF seulement."],
   ] },
+  { v: "427", t: "Cash in : mensualités retirées, loyer du PJ457 seulement", items: [
+    ["Cash in : loyer PJ457", "Mensualités génériques retirées ; loyer de 11 200 € × 24 sur le jalon 4 du PJ457."],
+  ] },
 ];
