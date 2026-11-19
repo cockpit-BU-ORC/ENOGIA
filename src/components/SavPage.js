@@ -175,12 +175,12 @@ export function SavPage({ turbReqs, onOpenTurb, onSetAlloc, doc, dem, api, demAp
       {isAdmin && api.merge && <HistoryImport doc={D} api={api} />}
     </div>}
 
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
+    {(sub === "tickets" || sub === "inters") && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}> {/* v417 : chiffres sur Tickets et Interventions seulement */}
       <Kpi l="Tickets ouverts" v={k.open} /><Kpi l="Haute priorité" v={k.high} tone={k.high ? "bad" : null} />
       <Kpi l="Interventions à planifier" v={k.toPlan} tone={k.toPlan ? "warn" : null} />
       {canEdit ? <Kpi l="Demandes des chefs de projet" v={k.demandes} tone={k.demandes ? "warn" : null} /> : <Kpi l="Délai moyen de traitement" v={k.avgDays == null ? null : k.avgDays + " j"} />}
       {canCost ? <Kpi l="Coût des interventions (mois)" v={eur(k.monthCost)} /> : <Kpi l="Satisfaction client" v={k.satisf == null ? null : String(k.satisf).replace(".", ",") + " / 5"} />}
-    </div>
+    </div>}
 
     {sub === "tickets" && <TicketsView {...{ tickets, inters, canEdit, isAdmin, me, myName, nomOf, onOpenPj, focusPj }} onSaveT={(id, t) => api.put("tickets", id, t)} onEdit={(id, t) => setTicketDlg({ id, t })} onStep={(id, t, d) => api.put("tickets", id, { ...t, step: Math.max(0, Math.min(flowOf(t.type).length - 1, (t.step || 0) + d)), ...((t.step || 0) + d >= flowOf(t.type).length - 1 ? { closedAt: t.closedAt || todayIso() } : { closedAt: null }) })}
       onNewInter={(id, t) => setInterDlg({ id: null, i: { tk: id, pj: t.pj, obj: t.det || "", st: "À planifier", type: t.type === "mes" ? "Mise en service" : t.type === "prev" ? "Maintenance préventive" : "Maintenance curative", resp: t.resp || "", who: [], prep: [], clo: [], costs: {} } })}

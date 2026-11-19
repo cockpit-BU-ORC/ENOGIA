@@ -3150,3 +3150,14 @@ Maquette `maquettes-design/v416-transports-plus.html` (« Go, code it »).
 - `RoleHome.js` : `TrackSteps` (véhicule, pointillé vers « Livré » en route), `TransportTrack` (ligne d'infos, étiquettes, détail repliable, « Ouvrir dans ClickUp », fiche du PJ), `TransportSummary` ; styles.css `.enogia-veh-go` (300 ms, coupé si réduire les animations).
 - **À faire** : ajouter une liste « Mode de transport » (Route / Aérien / Maritime / Express) au formulaire ClickUp LOGISTIQUE V2 pour un mode exact ; redéployer les fonctions (`firebase deploy --only functions`).
 - Fichiers : functions/clickup.js, functions/test/clickup.test.js, scripts/gen-icons.js, src/iconPaths.js, src/transports.js (+ test), src/components/RoleHome.js, src/styles.css, src/demo/demoPages.js.
+
+## V417 — Accueil chaque matin, « Ma vue », transports des PJ suivis, chiffres SAV allégés
+
+Demandé : « quand les gens se connectent chaque jour, ça doit ouvrir sur la homepage (changer le nom) et la sortir des Opérations » ; « créer une vue uniquement pour moi » ; « widget transport : uniquement les PJ de l'ordo ou du parc SAV » ; « ne mettre les chiffres que sur Tickets et Interventions ».
+
+- `App.js` : vue de départ — première ouverture du jour (`enogia_open_day`, date locale) = accueil, sauf lien vers une fiche (`&pj=`) ; libellé « Accueil » (VIEWS, menu, palette Ctrl K) ; groupe sans titre en tête de `NAV_TREE` (`g: ""` : pas de bouton de rubrique, jamais replié) ; `access.js` : page `home` = « Accueil ».
+- **« Ma vue »** : poste `moi` (propriétaire seul, jamais dans `ROLES`) — `HomeView` : `autoRole` du propriétaire = `moi`, puce « Ma vue » en tête de « Accueil de : » et dans la gestion des accueils ; `HOME_DEFAULTS.moi` (chiffres, transports, alertes, RAI, Cash in, départs du trimestre, à l'heure, tests, turbines, charge, mentions, départs) ; disposition `planning/profiles.homeLayouts.moi` (« Modifier l'accueil »).
+- Transports : `HomeView` filtre `transports.items` sur les PJ du planning et de `planning/sav.parc` (`parcPjs`, App).
+- `SavPage.js` : grille des chiffres seulement si `sub` = tickets ou inters.
+- Galerie : accueils du propriétaire sur `homeLayouts.moi`.
+- Fichiers : src/App.js, src/access.js, src/components/HomeView.js, src/components/RoleHome.js, src/components/SavPage.js, src/demo/demoPages.js.

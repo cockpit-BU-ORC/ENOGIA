@@ -52,6 +52,8 @@ export const HOME_DEFAULTS = {
   turbines: [["ptReady", 3], ["ptNoWheel", 3], ["ptPieces", 6], ["ptDates", 12], ["ptRoues", 6], ["ptInj", 6]],
   autre: [["kpis", 12], ["departs", 6], ["parcours", 6], ["transports", 6], ["benchWeek", 6], ["visites", 6], ["shipped", 6], ["etats", 6], ["fermetures", 6]],
   daf: [["encaisser", 6], ["cash", 6], ["cashCurve", 12], ["cashLate", 6], ["cashMonth", 6], ["kpis", 12], ["departs", 6]], // v370
+  // v417 : vue réservée au propriétaire (« Ma vue »), jamais attribuée à une autre personne
+  moi: [["kpis", 12], ["transports", 12], ["alertes", 6], ["raiDue", 6], ["cashCurve", 12], ["cashLate", 6], ["depQuarter", 6], ["onTime", 6], ["tests", 4], ["turbines", 4], ["charge", 4], ["mentions", 6], ["departs", 6]],
   direction: [["kpis", 12], ["cashCurve", 12], ["depQuarter", 6], ["onTime", 6], ["raiDue", 6], ["transports", 6], ["tests", 4], ["turbines", 4], ["cash", 4], ["alertes", 8], ["charge", 4], ["postes", 6], ["departs", 6], ["parcours", 12]],
 };
 
@@ -86,7 +88,7 @@ export function roleLead(role, d) {
     return [d.hello + ". ", { t: s(d.pt.ready.length, "turbine prête", "turbines prêtes"), c: "ok" }, ", " + d.pt.noWheel.length + " testée" + (d.pt.noWheel.length > 1 ? "s" : "") + " sans roue",
       d.pt.next ? " ; prochaine prête le " + d.pt.next : "", d.pt.missing.length ? [" — ", { t: s(d.pt.missing.length, "arbre manquant", "arbres manquants"), c: "late" }, " (" + d.pt.missing.map(t => t.num).join(", ") + ")."] : "."].flat();
   }
-  if (role === "direction") return null; // phrase historique de l'accueil
+  if (role === "direction" || role === "moi") return null; // phrase historique de l'accueil
   if (role === "daf") { // v370 : factures émises en attente de paiement (Cash in)
     const cd = getCashinDoc(); if (!cd) return [d.hello + ". Le Cash in n'est pas encore chargé sur ce poste."];
     const L = toCollect(cd.rows, cashToday()), late = L.filter(x => x.group === "late").length, week = L.filter(x => x.group === "week").length;

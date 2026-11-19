@@ -17,7 +17,7 @@ const maxLevel = arr => arr.reduce((m, l) => (rank(l) > rank(m) ? l : m), "n");
 // Pages et sous-pages réglables (Personnes et site, Planificateur et Accès restent au super admin).
 // Sous-pages : identifiants des vues du site (Planning : view ; Tests : sub ; Turbines : tab ; Projets / Pilotage : onglets du Manager).
 export const ACCESS_PAGES = [
-  { id: "home", g: "Opérations", l: "Aujourd'hui", d: "accueil du poste", adm: "", min: "r" },
+  { id: "home", g: "Opérations", l: "Accueil", d: "accueil du poste", adm: "", min: "r" },
   { id: "planning", g: "Opérations", l: "Planning", d: "le planning publié", adm: "changer les états, déclarer et classer les retards",
     subs: [["table", "Liste"], ["gantt", "Gantt"], ["calendar", "Calendrier"], ["changes", "Modifications"]] },
   { id: "tests", g: "Opérations", l: "Tests", d: "bancs, testeurs, fiches", adm: "affecter les testeurs, catalogue, checklists",

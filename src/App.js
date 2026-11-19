@@ -69,7 +69,7 @@ const ChangesView = React.lazy(() => import("./components/ChangesView").then(m =
 const AccessPage = React.lazy(() => import("./components/AccessPage")); // v305 : Régler › Accès
 const WorkshopScreen = React.lazy(() => import("./components/WorkshopScreen").then(m => ({ default: m.WorkshopScreen })));
 
-const APP_BUILD_VERSION = "2026-11-19-v416-transports-vehicules";
+const APP_BUILD_VERSION = "2026-11-19-v417-accueil-ma-vue";
 
 const ReleasePopup = React.lazy(() => import("./components/ReleaseNotes").then(m => ({ default: m.ReleasePopup })));
 function Navigate0({ go }) { useEffect(() => { go(); }, []); return null; } // eslint-disable-line react-hooks/exhaustive-deps
@@ -207,7 +207,7 @@ export default function App(){
   const [initialImporting,setInitialImporting]=useState(false);
   const [lastInitialImport,setLastInitialImport]=useState(null);
   const [lastInitialAdd,setLastInitialAdd]=useState(null);
-  const [view,setView]=useState(()=>{try{const u0=readUrlState();if(u0.p)return u0.p;const v0=localStorage.getItem("enogia_view"),v=v0==="prodturb"?"turbines":v0;return ["home","table","gantt","calendar","changes","comments","tests","planner","cashin","turbines","prodturb","achats"].includes(v)?v:"home";}catch(e){return "home";}});
+  const [view,setView]=useState(()=>{try{const u0=readUrlState();const d0=new Date().toLocaleDateString("sv-SE"),first=localStorage.getItem("enogia_open_day")!==d0;try{localStorage.setItem("enogia_open_day",d0);}catch(e){}if(first&&!u0.pj)return "home"; /* v417 : chaque jour, la première ouverture arrive sur l'accueil (sauf lien vers une fiche) */if(u0.p)return u0.p;const v0=localStorage.getItem("enogia_view"),v=v0==="prodturb"?"turbines":v0;return ["home","table","gantt","calendar","changes","comments","tests","planner","cashin","turbines","prodturb","achats"].includes(v)?v:"home";}catch(e){return "home";}});
   useEffect(()=>{try{localStorage.setItem("enogia_view",view);}catch(e){}},[view]);
   // v351 (UI UX Pro Max, règle 9) : après un changement de page, le focus va sur son titre (h1) — les pages chargées à la demande sont attendues
   const viewFocusInit=useRef(true);
@@ -969,7 +969,7 @@ export default function App(){
   useEffect(()=>{const rows=dataWithOverrides.filter(r=>r&&r.pj&&r.etat!=="SLOT_LIBRE");const names={};rows.forEach(r=>{names[r.pj]=getPjMeta(r.pj,r).nomProjet||"";});setOrdoPjs(rows.map(r=>r.pj),names);},[dataWithOverrides]);
   const filtered=useMemo(()=>filterRows(dataWithOverrides,{selEtats,selGammes,selPJs,selProjets,selPays,selChefs,onlyDrift,onlyChanged,selMoisArrivee,selMoisTests,selMoisFinProd,selMoisDepart},changeMarks),[dataWithOverrides,selEtats,selGammes,selPJs,selProjets,selPays,selChefs,onlyDrift,onlyChanged,changeMarks,selMoisArrivee,selMoisTests,selMoisFinProd,selMoisDepart]);
 
-  const VIEWS=[{id:"home",icon:"home",l:"Aujourd'hui"},{id:"table",icon:"list",l:"Liste"},{id:"gantt",icon:"gantt",l:"Gantt"},{id:"calendar",icon:"calendar",l:"Calendrier"},{id:"changes",icon:"changes",l:"Modifications"},{id:"comments",icon:"comments",l:"Commentaires"},...(canSeeTests?[{id:"tests",icon:"check",l:"Tests"}]:[]),...(isOwner?[{id:"planner",icon:"gantt",l:"Planificateur"}]:[]),...(canCash?[{id:"cashin",icon:"euro",l:"Cash in"}]:[]),...(canProdTurb?[{id:"turbines",icon:"gauge",l:"Turbines"}]:[]),...(canAchats?[{id:"achats",icon:"inbox",l:"Achats / Appro"}]:[])]; // v204 : planificateur réservé au propriétaire ; v217 (demandé : « Cash in et Turbines doivent ouvrir une nouvelle page, pas les pages du Manager ») : pages à part entière
+  const VIEWS=[{id:"home",icon:"home",l:"Accueil"},{id:"table",icon:"list",l:"Liste"},{id:"gantt",icon:"gantt",l:"Gantt"},{id:"calendar",icon:"calendar",l:"Calendrier"},{id:"changes",icon:"changes",l:"Modifications"},{id:"comments",icon:"comments",l:"Commentaires"},...(canSeeTests?[{id:"tests",icon:"check",l:"Tests"}]:[]),...(isOwner?[{id:"planner",icon:"gantt",l:"Planificateur"}]:[]),...(canCash?[{id:"cashin",icon:"euro",l:"Cash in"}]:[]),...(canProdTurb?[{id:"turbines",icon:"gauge",l:"Turbines"}]:[]),...(canAchats?[{id:"achats",icon:"inbox",l:"Achats / Appro"}]:[])]; // v204 : planificateur réservé au propriétaire ; v217 (demandé : « Cash in et Turbines doivent ouvrir une nouvelle page, pas les pages du Manager ») : pages à part entière
   // v304 (maquette « menu par métier » validée) : un seul menu en trois rubriques — Travailler, Suivre, Régler. Planning réunit Liste,
   // Gantt, Calendrier, Planificateur et Modifications ; l'Espace Manager disparaît du menu : ses pages vont dans Projets, Pilotage et Régler.
   const PLANNING_VIEWS=["table","gantt","calendar","planner","changes"];
@@ -1049,8 +1049,8 @@ export default function App(){
     return out;
   },[snPlan,canEditMeta,pendingDeparts,isOwner,canAchats,achatsDoc,canProdTurb,prodDoc,dataWithOverrides,accMe,prodModel,demDoc,savEdit,currentUser]); // eslint-disable-line react-hooks/exhaustive-deps
   const NAV_TREE=[
+    {g:"",items:[{id:"home",l:"Accueil",icon:"home",on:view==="home",go:()=>setView("home")}]}, // v417 : l'accueil hors des rubriques
     {g:"Opérations",items:[
-      {id:"home",l:"Aujourd'hui",icon:"home",on:view==="home",go:()=>setView("home")},
       ...(planOk?[{id:"planning",l:"Planning",icon:"gantt",on:PLANNING_VIEWS.includes(view),go:()=>setView(planViewOk(lastPlanRef.current)?lastPlanRef.current:firstPlanView()),badge:unseenChanges.length,
         subs:[["table","Liste"],["gantt","Gantt"],["calendar","Calendrier"],...(isOwner?[["planner","Planificateur"]]:[]),["changes","Modifications"]].filter(([id])=>planViewOk(id)).map(([id,l])=>({id,l,on:view===id,go:()=>setView(id)}))}]:[]),
       ...(canSeeTests?[{id:"tests",l:"Tests",icon:"check",on:view==="tests",go:()=>setView("tests"),
@@ -1144,7 +1144,7 @@ export default function App(){
   const [navPal,setNavPal]=useState(false);
   useEffect(()=>{const f=e=>{if((e.ctrlKey||e.metaKey)&&!e.altKey&&String(e.key).toLowerCase()==="k"&&view!=="manager"&&loggedIn){e.preventDefault();setNavPal(o=>!o);}};window.addEventListener("keydown",f);return()=>window.removeEventListener("keydown",f);},[view,loggedIn]);
   const palettePjs=useMemo(()=>dataWithOverrides.filter(r=>r&&r.pj).map(r=>({pj:r.pj,etat:r.etat,nomProjet:getPjMeta(r.pj,r).nomProjet||""})),[dataWithOverrides]);
-  const navGroups=NAV_TREE.map(g=>({label:g.g,entries:g.items.flatMap(it=>[{id:it.id,label:it.l,icon:it.icon,hint:"",go:it.go},...(it.subs||[]).map(sb=>({id:it.id+"-"+sb.id,label:it.l+" › "+sb.l,icon:it.icon,hint:"",go:sb.go}))])}));
+  const navGroups=NAV_TREE.map(g=>({label:g.g||"Accueil",entries:g.items.flatMap(it=>[{id:it.id,label:it.l,icon:it.icon,hint:"",go:it.go},...(it.subs||[]).map(sb=>({id:it.id+"-"+sb.id,label:it.l+" › "+sb.l,icon:it.icon,hint:"",go:sb.go}))])}));
   if(!authChecked)return null; // évite un flash de l'écran de connexion pendant la vérification initiale
   if(!loggedIn) return <LoginScreen/>;
   // Fond flouté réel (demandé explicitement : "un transparent flou ... la vision en flou derrière
@@ -1177,13 +1177,13 @@ export default function App(){
         {!navCompact&&<span style={{textAlign:"left",lineHeight:1.25}}><span style={{display:"block",fontFamily:T.fontDisplay,fontWeight:600,fontSize:14,letterSpacing:".02em",color:NAV.industrial?T.onFill:T.ink900}}>{SITE_NAME} <Hl color={NAV.industrial?NAV.mark:T.amber500} style={{fontWeight:600,whiteSpace:"nowrap"}}>{SITE_SCOPE}</Hl></span><span style={{display:"block",fontSize:12,color:NAV.ink,marginTop:2,whiteSpace:"normal"}}>{SITE_SUB}</span></span>}
         </span>
       </button>
-      {NAV_TREE.map(({g,items})=>{const closed=grpClosed.has(g),badges=items.reduce((t,it)=>t+(it.badge||0),0);return <React.Fragment key={g}>
-        {!navCompact&&<button type="button" className="enogia-nav-grp e-hov" onClick={()=>togGrp(g)} aria-expanded={!closed} aria-controls={"enogia-grp-"+g} title={(closed?"Déplier":"Replier")+" « "+g+" »"}
+      {NAV_TREE.map(({g,items})=>{const closed=!!g&&grpClosed.has(g),badges=items.reduce((t,it)=>t+(it.badge||0),0);return <React.Fragment key={g}>
+        {!navCompact&&!!g&&<button type="button" className="enogia-nav-grp e-hov" onClick={()=>togGrp(g)} aria-expanded={!closed} aria-controls={"enogia-grp-"+g} title={(closed?"Déplier":"Replier")+" « "+g+" »"}
           style={{display:"flex",alignItems:"center",gap:8,width:"100%",minHeight:36,marginTop:8,padding:"0 10px",border:"none",borderRadius:8,background:"transparent",cursor:"pointer",fontFamily:T.font,fontSize:14,fontWeight:600,color:NAV.industrial?NAV.group:T.accentInk,textAlign:"left",whiteSpace:"nowrap","--e-hov-bg":NAV.hover}}>
           <span style={{flex:1}}>{g}</span>{closed&&badges>0&&<span aria-label={badges+" nouveauté"+(badges>1?"s":"")} style={{minWidth:18,height:18,padding:"0 5px",borderRadius:999,background:T.red600,color:T.onFill,fontSize:12,fontWeight:600,lineHeight:"18px",textAlign:"center"}}>{badges}</span>}
           <span aria-hidden="true" style={{display:"inline-flex",opacity:.7,transform:closed?"rotate(-90deg)":"none",transition:"transform var(--e-dur-menu) var(--e-ease)"}}><NavIcon name="chevronDown" size={14}/></span></button>}
-        {navCompact&&<div className="enogia-nav-grp" style={{width:18,height:1,background:NAV.industrial?"rgba(255,255,255,.18)":T.line,margin:"4px 0"}}/>}
-        <div id={"enogia-grp-"+g} key={g+"-"+(grpAnim[g]||0)} role="group" aria-label={g} className={(closed?"enogia-grp-closed":"")+(grpAnim[g]?" enogia-cl-in":"")} style={{display:"flex",flexDirection:"column",gap:4}}>
+        {navCompact&&!!g&&<div className="enogia-nav-grp" style={{width:18,height:1,background:NAV.industrial?"rgba(255,255,255,.18)":T.line,margin:"4px 0"}}/>}
+        <div id={"enogia-grp-"+g} key={g+"-"+(grpAnim[g]||0)} role="group" aria-label={g||"Accueil"} className={(closed?"enogia-grp-closed":"")+(grpAnim[g]?" enogia-cl-in":"")} style={{display:"flex",flexDirection:"column",gap:4}}>
         {items.map(it=>{const on=it.on,hasSubs=it.subs&&it.subs.length>1,showSubs=(on||subsOpen.has(it.id))&&hasSubs;return(<React.Fragment key={it.id}>
           <div style={{position:"relative"}}>
           <button className="enogia-nav-btn e-hov e-hov-ink" data-on={on?"1":"0"} onClick={()=>{if(coarse&&!on&&hasSubs&&!subsOpen.has(it.id)){togSubs(it.id);return;}it.go();if(!hasSubs)setNavPeek(false);}} /* v381 : une entrée à sous-pages garde le menu ouvert : ses sous-pages se déplient sous elle */ title={it.l} aria-label={it.badge?it.l+", "+it.badge+" nouvelle"+(it.badge>1?"s":"")+" mise"+(it.badge>1?"s":"")+" à jour":it.l} aria-current={on?"page":undefined}
@@ -1277,7 +1277,7 @@ export default function App(){
                 views={[{id:"table",l:"Liste",icon:"list",key:"1"},{id:"gantt",l:"Gantt",icon:"gantt",key:"2"},{id:"calendar",l:"Calendrier",icon:"calendar",key:"3"}].filter(x=>planViewOk(x.id))}
                 tools={[...(isOwner?[{id:"planner",l:"Planificateur",icon:"edit",hint:"Brouillon, puis « Publier »"}]:[]),...(planViewOk("changes")?[{id:"changes",l:"Modifications",icon:"changes",badge:unseenChanges.length,hint:"Ce qui a changé à chaque publication"}]:[])]}/>:undefined}/>;})()}
             {view==="inbox"&&<Navigate0 go={()=>setView("home")}/>}{/* v324 : plus de page « À traiter » (la cloche ouvre le pop-up) */}
-            {view==="home"&&<HomeView transports={transportsDoc} produit={produitDoc} pinOk={pinOk} testsDoc={canSeeTests?testsView:null} data={dataWithOverrides} comments={comments} myEmail={currentUser&&currentUser.email} myName={authorName} people={peopleAll} unseenChanges={unseenChanges} lastImport={lastImport} onOpenPj={setCalSel} onGo={setView} profiles={profiles} owner={isOwner} cash={canCash} turbineDoc={turbineDoc} onOpenCash={canCash?(s=>{if(s==="enc")setCashSub("enc");setView("cashin");}):null} prodDoc={prodDoc} canProdTurb={canProdTurb} productionExclusions={productionExclusions} plan={planDoc&&planDoc.plan} closurePeriods={closurePeriods} saveHomeLayout={isOwner?saveHomeLayout:null}/>}
+            {view==="home"&&<HomeView parcPjs={Object.keys((savDoc&&savDoc.parc)||{})} transports={transportsDoc} produit={produitDoc} pinOk={pinOk} testsDoc={canSeeTests?testsView:null} data={dataWithOverrides} comments={comments} myEmail={currentUser&&currentUser.email} myName={authorName} people={peopleAll} unseenChanges={unseenChanges} lastImport={lastImport} onOpenPj={setCalSel} onGo={setView} profiles={profiles} owner={isOwner} cash={canCash} turbineDoc={turbineDoc} onOpenCash={canCash?(s=>{if(s==="enc")setCashSub("enc");setView("cashin");}):null} prodDoc={prodDoc} canProdTurb={canProdTurb} productionExclusions={productionExclusions} plan={planDoc&&planDoc.plan} closurePeriods={closurePeriods} saveHomeLayout={isOwner?saveHomeLayout:null}/>}
             {view==="table"&&<DashboardSummary data={filtered} allData={dataWithOverrides} progress={progressEff} changeLog={changeLog} onOpenChanges={()=>setView("changes")}/>}
             {view==="table"&&<TableView data={filtered} progress={progressEff} df={df} setDf={setDf} onSetDepart={onSetDepart} setEtatFor={setEtatFor} setClientPresenceFor={setClientPresenceFor}
               selEtats={selEtats} setSelEtats={setSelEtats}

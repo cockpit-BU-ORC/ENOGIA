@@ -7,6 +7,16 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v417",
+    date: "2026-11-19",
+    title: "V417 : Accueil chaque matin, « Ma vue », transports des PJ suivis, chiffres SAV allégés",
+    items: [
+      { t: "Accueil", d: "Chaque jour, la première ouverture du Cockpit arrive sur l'accueil. L'entrée « Aujourd'hui » s'appelle maintenant « Accueil » et se trouve en tête du menu, hors de la rubrique Opérations." },
+      { t: "Demandes de transport", d: "Le cadran ne montre plus que les demandes des PJ de l'ordo ou du parc SAV (plus les envois de stock ou hors projet)." },
+      { t: "SAV / MES", d: "Les chiffres (tickets ouverts, haute priorité, interventions à planifier, demandes, coût) ne s'affichent plus que sur Tickets et Interventions." },
+    ],
+  },
+  {
     id: "2026-11-v416",
     date: "2026-11-19",
     title: "V416 : Demandes de transport : camion, avion ou bateau, infos d'envoi et détail au clic",

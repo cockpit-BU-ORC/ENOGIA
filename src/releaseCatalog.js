@@ -1277,4 +1277,8 @@ export const RELEASE_CATALOG = [
   { v: "416", t: "Demandes de transport : camion, avion ou bateau, infos d'envoi et détail au clic", items: [
     ["Transports : véhicules et détail", "Camion / avion / bateau sur la frise, infos d'envoi, résumé et détail au clic."],
   ] },
+  { v: "417", t: "Accueil chaque matin, « Ma vue », transports des PJ suivis, chiffres SAV allégés", items: [
+    ["Accueil chaque matin", "Première ouverture du jour sur l'accueil, renommé « Accueil », hors des rubriques."],
+    ["Transports des PJ suivis", "Demandes de transport limitées aux PJ de l'ordo et du parc SAV."],
+  ] },
 ];
