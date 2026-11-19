@@ -22,3 +22,11 @@ test("v405 : le pont lit et écrit comme la base de l'artefact", async () => {
   await db.doc("people/p1").delete(); await flush(); expect(people).toEqual([]);
   br.stop();
 });
+
+test("v411 : un objet venu du cadre de la page est recopié en objet simple avant l'enregistrement", async () => {
+  let got = null; const be = { sub: () => () => {}, set: async (id, field, key, value) => { got = value; }, del: async () => {} };
+  const db = await makeSkillsBridge({ backend: be, me: { email: "a@enogia.com" }, people: [] }).use("db");
+  const foreign = Object.assign(Object.create({ autreFenetre: true }), { name: "Tech", skills: [1, 2] });
+  await db.doc("people/p1").set(foreign);
+  expect(Object.getPrototypeOf(got)).toBe(Object.prototype); expect(got).toEqual({ name: "Tech", skills: [1, 2] });
+});

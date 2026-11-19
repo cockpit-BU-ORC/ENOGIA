@@ -3090,3 +3090,11 @@ Demandé : « encore trop vide sur les côtés, retravailler le positionnement p
 - App.js : retour en haut de la page à chaque changement de page ou de sous-page du Manager ; Manager préchargé avec les autres pages lourdes.
 - styles.css : `.pb-pin` en grille 290 px + contenu, listes sur deux colonnes dès 300 px, styles du pop-up (`.pb-pop*`, police du site transmise par `--pp-font`).
 - Fichiers : src/components/PassportBook.js, src/useAppData.js, src/App.js, src/styles.css.
+
+## V411 — Compétences SAV : l'enregistrement fonctionne
+
+Signalé : « Enregistrement impossible : Function updateDoc() called with invalid data. Unsupported field value: a custom Object object (found in field people.p-… in document planning/savSkills) ».
+
+- Cause : la page Compétences tourne dans un cadre (`public/competences-sav.html`) ; ses objets viennent d'une autre fenêtre JavaScript, leur prototype n'est pas `Object.prototype` de la page du Cockpit, et Firestore les refuse.
+- `src/savSkills.js` : `plain` (recopie par JSON) avant chaque écriture du pont (`doc(…).set`) ; test v411 (`savSkills.test.js`).
+- Fichiers : src/savSkills.js, src/savSkills.test.js.

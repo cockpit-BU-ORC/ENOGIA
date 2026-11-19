@@ -7,6 +7,8 @@
 //                                                                             « selfeval » (auto-évaluation) écrit par elle seule
 // Les évaluations ne sont donc pas lisibles par tous les comptes (règles Firestore).
 export const SKILL_ADMIN_COLL = ["people", "assess", "objectives", "snapshots"];
+// v411 : les objets viennent du cadre de la page (autre « fenêtre ») : Firestore les refuse (« custom Object object ») — on les recopie en objets simples
+export const plain = v => (v == null ? v : JSON.parse(JSON.stringify(v)));
 export const meKey = uid => "savSkillsMe_" + String(uid || "").trim().toLowerCase();
 
 // où ranger un chemin « collection/id » de la page
@@ -26,7 +28,7 @@ export function makeSkillsBridge({ backend, me, people }) {
   const doc = path => {
     const p = placeOf(path);
     return {
-      set: async data => { if (!p) throw new Error("Chemin inconnu : " + path); return backend.set(p.doc, p.field, p.whole ? null : p.id, data, p.whole && p.field === "view" ? { email: String(p.id).toLowerCase() } : null); },
+      set: async data => { if (!p) throw new Error("Chemin inconnu : " + path); return backend.set(p.doc, p.field, p.whole ? null : p.id, plain(data), p.whole && p.field === "view" ? { email: String(p.id).toLowerCase() } : null); },
       delete: async () => { if (!p) return; return backend.del(p.doc, p.field, p.whole ? null : p.id); },
       onSnapshot: (cb, onErr) => { if (!p) { cb({ exists: false, id: path, data: () => null }); return () => {}; }
         return keep(backend.sub(p.doc, d => { const v = d ? (p.whole ? d[p.field] : (d[p.field] || {})[p.id]) : null; cb({ exists: v != null, id: p.id, data: () => v }); }, onErr)); },

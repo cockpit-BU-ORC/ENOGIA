@@ -7,6 +7,14 @@
 //   • items   : [{ t: "titre court", d: "une phrase", admin?: true }]  — admin:true = réservé au super admin (ex. Cash in)
 export const RELEASES = [
   {
+    id: "2026-11-v411",
+    date: "2026-11-19",
+    title: "V411 : Compétences SAV : l'enregistrement fonctionne",
+    items: [
+      { t: "Compétences SAV", d: "L'enregistrement était refusé (« Unsupported field value: a custom Object object ») : c'est corrigé, les personnes, catégories et évaluations s'enregistrent." },
+    ],
+  },
+  {
     id: "2026-11-v410",
     date: "2026-11-18",
     title: "V410 : Passeport en livre plus premium, documents en pop-up, Machines ORC sans chargement",

@@ -1257,4 +1257,7 @@ export const RELEASE_CATALOG = [
   { v: "410", t: "Passeport en livre plus premium, documents en pop-up, Machines ORC sans chargement", items: [
     ["Passeport premium", "Pages en deux colonnes, documents en pop-up ouverts sur la première rubrique, Machines ORC sans chargement."],
   ] },
+  { v: "411", t: "Compétences SAV : l'enregistrement fonctionne", items: [
+    ["Compétences SAV enregistrées", "Correction de l'enregistrement des compétences SAV."],
+  ] },
 ];
