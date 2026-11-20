@@ -344,6 +344,15 @@ input[type=checkbox]{width:16px;height:16px;flex-shrink:0}
 #toTop.on{opacity:1;transform:none;pointer-events:auto}
 #toTop:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){#toTop{transition:none;transform:none}}
+/* v443 (audit V433, F2 à F5) : 12 px au moins et casse normale (règles V331 / V351 du site), cases de 18 px, boutons de 28 px,
+   cartes « À traiter » sur une colonne au téléphone avec le montant sous le texte, « ✕ » d'un jalon au survol de sa ligne */
+.kpi .lab,.msum span,.mhead,.ptable th,.mtab th{font-size:12px;text-transform:none;letter-spacing:0}
+.kind,table.mx thead th,tr.colhead td,.addbtn,.mrow .m em,.recu{font-size:12px}
+input[type=checkbox]{width:18px;height:18px}
+.addbtn,.mini{min-height:28px}
+.chev{min-width:28px;min-height:28px}
+@media (max-width:640px){.alerts{grid-template-columns:minmax(0,1fr)}.alert{flex-wrap:wrap}.alert .amt{flex:1 0 100%}}
+@media (hover:hover){#tw tr:not(:hover):not(:focus-within) .mini.del:not(.arm){opacity:0}}
 </style>
 
 <div class="wrap">
@@ -442,7 +451,7 @@ $('#today').textContent=new Date().toLocaleDateString('fr-FR',{weekday:'long',da
 /* ---------- état ---------- */
 var rows=[],labels={},totals={},owners={},loaded=false,saving=false,dirty=false,saveTimer=null,lastSaved='';
 var dbRef=null,dl=null;
-var OWNERS=['Emmy Bourelly','Clément Martouzet','Gabriel Vincent'],ownerFilter='all',hideEpc=lsGet('hideepc',false),tab='jalons',filterStatus='all',query='',hidePaid=false,collapsed={},undoState=null,toastTimer=null,lastFocus=null;
+var OWNERS=['Emmy Bourelly','Clément Martouzet','Gabriel Vincent'],ownerFilter='all',hideEpc=lsGet('hideepc',false),tab=(window.innerWidth<640?'mois':'jalons'),/* v443 (F4) : au téléphone, ouvrir sur « Cash par mois » */filterStatus='all',query='',hidePaid=false,collapsed={},undoState=null,toastTimer=null,lastFocus=null;
 var dmode=lsGet('dmode','day'),compact=!!lsGet('compact',false),hidden={},HORIZON=15;
 (lsGet('cols',[])||[]).forEach(function(k){hidden[k]=1});
 var hz=lsGet('horizon',15);if([7,15,30,'m0','m1'].indexOf(hz)>=0)HORIZON=hz;
