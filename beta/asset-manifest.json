@@ -1,8 +1,8 @@
 {
   "files": {
-    "main.css": "/ENOGIA/beta/static/css/main.dea85380.css",
-    "main.js": "/ENOGIA/beta/static/js/main.9174493d.js",
-    "static/js/269.fe60f3d1.chunk.js": "/ENOGIA/beta/static/js/269.fe60f3d1.chunk.js",
+    "main.css": "/ENOGIA/beta/static/css/main.21a6a03b.css",
+    "main.js": "/ENOGIA/beta/static/js/main.5fe769ae.js",
+    "static/js/269.db3b030a.chunk.js": "/ENOGIA/beta/static/js/269.db3b030a.chunk.js",
     "static/js/149.24c20721.chunk.js": "/ENOGIA/beta/static/js/149.24c20721.chunk.js",
     "static/js/827.68e0c6b2.chunk.js": "/ENOGIA/beta/static/js/827.68e0c6b2.chunk.js",
     "static/js/119.9ee74746.chunk.js": "/ENOGIA/beta/static/js/119.9ee74746.chunk.js",
@@ -15,12 +15,12 @@
     "static/js/264.21ed1fba.chunk.js": "/ENOGIA/beta/static/js/264.21ed1fba.chunk.js",
     "static/js/784.de19c5b0.chunk.js": "/ENOGIA/beta/static/js/784.de19c5b0.chunk.js",
     "static/js/456.cc94697b.chunk.js": "/ENOGIA/beta/static/js/456.cc94697b.chunk.js",
-    "static/js/487.8ca9deb6.chunk.js": "/ENOGIA/beta/static/js/487.8ca9deb6.chunk.js",
+    "static/js/487.78acd0c5.chunk.js": "/ENOGIA/beta/static/js/487.78acd0c5.chunk.js",
     "static/js/31.3a9bb03f.chunk.js": "/ENOGIA/beta/static/js/31.3a9bb03f.chunk.js",
     "static/js/557.c42fd0bb.chunk.js": "/ENOGIA/beta/static/js/557.c42fd0bb.chunk.js",
     "static/js/113.d8b0e94c.chunk.js": "/ENOGIA/beta/static/js/113.d8b0e94c.chunk.js",
-    "static/js/214.17d27ff2.chunk.js": "/ENOGIA/beta/static/js/214.17d27ff2.chunk.js",
-    "static/js/151.7c07fee3.chunk.js": "/ENOGIA/beta/static/js/151.7c07fee3.chunk.js",
+    "static/js/214.b8f1931c.chunk.js": "/ENOGIA/beta/static/js/214.b8f1931c.chunk.js",
+    "static/js/151.ba20f5e1.chunk.js": "/ENOGIA/beta/static/js/151.ba20f5e1.chunk.js",
     "static/js/481.70f57e7a.chunk.js": "/ENOGIA/beta/static/js/481.70f57e7a.chunk.js",
     "static/js/897.a598dabc.chunk.js": "/ENOGIA/beta/static/js/897.a598dabc.chunk.js",
     "static/js/649.5385c925.chunk.js": "/ENOGIA/beta/static/js/649.5385c925.chunk.js",
@@ -33,11 +33,11 @@
     "static/js/820.a7e8b949.chunk.js": "/ENOGIA/beta/static/js/820.a7e8b949.chunk.js",
     "static/js/107.8b4c0bdb.chunk.js": "/ENOGIA/beta/static/js/107.8b4c0bdb.chunk.js",
     "static/js/567.5bff7d92.chunk.js": "/ENOGIA/beta/static/js/567.5bff7d92.chunk.js",
-    "static/js/719.1313be1b.chunk.js": "/ENOGIA/beta/static/js/719.1313be1b.chunk.js",
+    "static/js/719.6452937a.chunk.js": "/ENOGIA/beta/static/js/719.6452937a.chunk.js",
     "index.html": "/ENOGIA/beta/index.html"
   },
   "entrypoints": [
-    "static/css/main.dea85380.css",
-    "static/js/main.9174493d.js"
+    "static/css/main.21a6a03b.css",
+    "static/js/main.5fe769ae.js"
   ]
 }
