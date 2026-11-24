@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-<!-- v530 : icône d onglet = la flamme ENOGIA (deux feuilles du logo) sur bleu nuit ; v533 : flamme blanche ; la pastille de la cloche est ajoutée par src/favicon.js -->
+<!-- v530 : icône d onglet = la flamme ENOGIA (deux feuilles du logo) sur bleu nuit ; v533 : flamme blanche ; v551 : flamme agrandie ; la pastille de la cloche est ajoutée par src/favicon.js -->
 <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0A2E45"/><stop offset="1" stop-color="#03131F"/></linearGradient></defs>
 <rect width="512" height="512" rx="112" fill="url(#bg)"/><rect x="8" y="8" width="496" height="496" rx="104" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="4"/>
-<g transform="translate(244 268) scale(2.45) translate(-249 -313)" fill="#FFFFFF">
+<g transform="translate(242 276) scale(3.05) translate(-249 -313)" fill="#FFFFFF">
 <path d="M225.734,292.072c7.789-17.656,2.077-51.236,2.077-51.236c-1.039,18.176-5.192,29.601-21.117,53.662c-16.458,24.87-16.098,62.314-16.098,62.314C202.194,317.692,217.945,309.732,225.734,292.072z"/>
 <path d="M274.893,287.922c-16.454,13.53-46.389,21.985-61.967,40.16C197.347,346.257,188,385.892,188,385.892c4.154-7.789,11.582-25.736,37.042-38.077c22.848-11.079,37.56-12.118,56.773-28.734c19.213-16.618,28.214-72.361,28.214-72.361C301.202,261.263,290.471,275.11,274.893,287.922z"/>
 </g>
